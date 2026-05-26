@@ -74,8 +74,9 @@ function kc_get_access_token(int $userId) {
             'refresh_token' => $refreshToken,
             'scope'         => KC_SCOPES,
         ]),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-        CURLOPT_TIMEOUT    => 10,
+        CURLOPT_HTTPHEADER      => ['Content-Type: application/x-www-form-urlencoded'],
+        CURLOPT_CONNECTTIMEOUT  => 3,
+        CURLOPT_TIMEOUT         => 5,
     ]);
     $response = curl_exec($ch);
     $err      = curl_error($ch);
@@ -147,8 +148,9 @@ function kc_restore_session(): bool {
             'client_secret' => KC_CLIENT_SECRET,
             'refresh_token' => $refreshToken,
         ]),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-        CURLOPT_TIMEOUT    => 10,
+        CURLOPT_HTTPHEADER      => ['Content-Type: application/x-www-form-urlencoded'],
+        CURLOPT_CONNECTTIMEOUT  => 3,
+        CURLOPT_TIMEOUT         => 5,
     ]);
     $response = curl_exec($ch);
     $err      = curl_error($ch);
@@ -186,7 +188,8 @@ function kc_restore_session(): bool {
         curl_setopt_array($ch2, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $tokens['access_token']],
-            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_TIMEOUT        => 5,
         ]);
         $userInfo = json_decode(curl_exec($ch2), true);
         curl_close($ch2);
