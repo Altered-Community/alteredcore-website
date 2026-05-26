@@ -19,7 +19,9 @@ if (!function_exists('__nav_href')) {
 if (!function_exists('__nav_active')) {
     function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
         if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
-        $__p = basename(parse_url($item['url'], PHP_URL_PATH) ?: '', '.php');
+        $__parsed = parse_url($item['url'] ?? '');
+        if (!empty($__parsed['host'])) return false;
+        $__p = basename($__parsed['path'] ?? '', '.php');
         if ($__p === '') $__p = 'index';
         return $currentPage === $__p;
     }
