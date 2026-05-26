@@ -20,17 +20,11 @@ Log in at **http://localhost:8080/admin** with `admin` / `admin` (pre-seeded —
 
 | Branch | Role |
 |---|---|
-| `main` | Production-ready code. Deployed to the live server via FTP. Never committed to directly — only receives merges from `dev`. |
-| `dev` | Day-to-day working branch. Small fixes, doc changes, config tweaks go here directly. |
-| `feature/plugin-*` | One branch per plugin in active development. Created from `dev`, merged back via PR when the plugin is ready. |
-| `feature/theme-*` | One branch per theme in active development. Created from `dev`, merged back via PR when the theme changes are ready. |
-
-**Rule of thumb:** if the change touches `plugins/`, use a `feature/plugin-*` branch. If it touches `themes/`, use a `feature/theme-*` branch. Everything else (doc, config, core fixes) goes directly into `dev`.
+| `main` | Production-ready code. Deployed to the live server via FTP. Never committed to directly — only promoted from `dev`. |
+| `dev` | Day-to-day working branch. All changes (features, fixes, CSS, docs, config) go here directly. |
 
 ```
-main   ←── promoted when stable ───── dev  ←── feature/plugin-forum
-                                             ←── feature/plugin-events
-                                             ←── feature/theme-azure
+main   ←── promoted when stable ───── dev
 ```
 
 ---
@@ -53,13 +47,13 @@ Keep PRs focused on one thing. A plugin and a core change should be separate PRs
 
 ## Promoting dev → main (maintainer)
 
-When `dev` is tested and stable, open a PR on GitHub from `dev` to `main`, review the full diff, merge, then deploy.
+> **Never use a GitHub Pull Request to promote `dev` → `main`.** GitHub will immediately suggest a reverse PR to merge `main` back into `dev`, creating noise and potential merge pollution. Always use the command below.
+
+When `dev` is tested and stable, push it directly onto `main` from the terminal:
 
 ```bash
-# Alternative: local fast-forward merge
-git checkout main
-git merge --no-ff dev -m "Release: merge dev → main"
-git push origin main
+# Promote dev to main (from any branch — no checkout needed)
+git push origin dev:main
 # Then: git ftp push (see FTP deployment below)
 ```
 
@@ -96,18 +90,20 @@ See `plugins/plugin.schema.json` for all available fields and `plugins/README.ht
 
 ### Plugin workflow
 
-Each plugin lives on its own branch:
+Work directly on `dev`. Each plugin lives in its own isolated directory so concurrent plugin work doesn't conflict:
 
 ```bash
 git checkout dev
-git pull upstream dev
-git checkout -b feature/plugin-my-plugin
+git pull origin dev
 
 # ... work on plugins/my-plugin/ ...
 
-git push origin feature/plugin-my-plugin
-# Open PR → dev
+git add plugins/my-plugin/
+git commit -m "my-plugin: description"
+git push origin dev
 ```
+
+For external contributors, create a branch from `dev` and open a PR targeting `dev`.
 
 ### Testing your plugin locally
 

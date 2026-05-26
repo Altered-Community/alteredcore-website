@@ -659,7 +659,6 @@ $showPublicTab = $publicDecksApiPath !== '';
         <!-- Filter form — always shown for logged-in users, JS triggers reload on change -->
         <div class="card-altered p-3 mb-4">
             <div class="filter-row mb-0">
-                <span class="filter-label"><?= h($txt['lbl_search']) ?></span>
                 <div class="deck-search-wrap">
                     <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
                     <input type="text" id="my-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
@@ -670,8 +669,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                 </button>
             </div>
             <div class="deck-filter-collapsible">
-                <div class="filter-row mb-2 mt-2">
-                    <span class="filter-label"><?= h($txt['lbl_format']) ?></span>
+                <div class="filter-row filter-row--scroll mb-2 mt-2">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
                     <button type="button" class="filter-toggle" data-my-format="<?= h($fmtKey) ?>">
                         <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
@@ -679,8 +677,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                     </button>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_faction']) ?></span>
+                <div class="filter-row filter-row--scroll mb-2">
                     <?php foreach ($factionsData as $fCode => $fData): ?>
                     <button type="button" class="filter-toggle" data-my-faction="<?= h($fCode) ?>">
                         <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
@@ -688,8 +685,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                     </button>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_visibility']) ?></span>
+                <div class="filter-row filter-row--scroll mb-2">
                     <button type="button" class="filter-toggle" data-my-visibility="1">
                         <i class="fa-solid fa-globe me-1"></i><?= h($txt['public']) ?>
                     </button>
@@ -730,7 +726,6 @@ $showPublicTab = $publicDecksApiPath !== '';
 
         <div class="card-altered p-3 mb-4">
             <div class="filter-row mb-0">
-                <span class="filter-label"><?= h($txt['lbl_search']) ?></span>
                 <div class="deck-search-wrap">
                     <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
                     <input type="text" id="pub-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
@@ -741,8 +736,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                 </button>
             </div>
             <div class="deck-filter-collapsible">
-                <div class="filter-row mb-2 mt-2">
-                    <span class="filter-label"><?= h($txt['lbl_format']) ?></span>
+                <div class="filter-row filter-row--scroll mb-2 mt-2">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
                     <button type="button" class="filter-toggle" data-pub-format="<?= h($fmtKey) ?>">
                         <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
@@ -750,8 +744,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                     </button>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_faction']) ?></span>
+                <div class="filter-row filter-row--scroll mb-2">
                     <?php foreach ($factionsData as $fCode => $fData): ?>
                     <button type="button" class="filter-toggle" data-pub-faction="<?= h($fCode) ?>">
                         <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
@@ -1954,4 +1947,13 @@ $showPublicTab = $publicDecksApiPath !== '';
 }());
 </script>
 <?php endif; ?>
+<script>
+(function() {
+    document.querySelectorAll('.filter-row--scroll').forEach(function(el) {
+        el.addEventListener('wheel', function(e) {
+            if (e.deltaY !== 0) { e.preventDefault(); el.scrollLeft += e.deltaY; }
+        }, { passive: false });
+    });
+})();
+</script>
 
