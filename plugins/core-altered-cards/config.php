@@ -16,7 +16,7 @@ $showStockWarn = false;
 // Edit button — only visible to the deck owner.
 //   true  : links to the internal deckbuilder (/pages/deckbuilder?id={deck_id})
 //   false : links to $editDeckUrl (with {deck_id} replaced); hidden if $editDeckUrl is empty
-$showEditBtn = false;
+$showEditBtn = true;
 $editDeckUrl = 'https://deckbuilder.alteredcore.org/decks/{deck_id}';
 
 // Delete button — only visible to the deck owner. Shows a confirmation dialog.
@@ -26,7 +26,7 @@ $showDeleteBtn = true;
 // New Deck button.
 //   true  : links to the internal deckbuilder (/pages/deckbuilder)
 //   false : links to $newDeckUrl; hidden if $newDeckUrl is also empty
-$enableNewDeck = false;
+$enableNewDeck = true;
 $newDeckUrl    = 'https://deckbuilder.alteredcore.org/';
 
 // Import button — shown if $showImportBtn is true OR $importDeckUrl is non-empty.
