@@ -597,6 +597,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <i class="fa-solid fa-list"></i>
                 <span><?= h($txt['view_list']) ?></span>
             </button>
+            <button type="button" id="deck-view-stats" class="decks-tab">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Stats</span>
+            </button>
             <?php endif; ?>
             <button type="button" id="deck-view-desc" class="decks-tab<?= empty($deck['cards']) ? ' active' : '' ?>">
                 <i class="fa-solid fa-align-left"></i>
@@ -965,23 +969,28 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 <!-- View toggle -->
 <script>
 (function() {
-    var gridBtn  = document.getElementById('deck-view-grid');
-    var listBtn  = document.getElementById('deck-view-list');
-    var descBtn  = document.getElementById('deck-view-desc');
-    var gridView = document.getElementById('deck-grid-view');
-    var listView = document.getElementById('deck-list-view');
-    var descView = document.getElementById('deck-desc-view');
+    var gridBtn     = document.getElementById('deck-view-grid');
+    var listBtn     = document.getElementById('deck-view-list');
+    var descBtn     = document.getElementById('deck-view-desc');
+    var statsBtn    = document.getElementById('deck-view-stats');
+    var gridView    = document.getElementById('deck-grid-view');
+    var listView    = document.getElementById('deck-list-view');
+    var descView    = document.getElementById('deck-desc-view');
+    var deckSidebar = document.querySelector('.deck-sidebar');
     function showView(which) {
         if (gridView) gridView.style.display = which === 'grid' ? '' : 'none';
         if (listView) listView.style.display = which === 'list' ? '' : 'none';
         if (descView) descView.style.display = which === 'desc' ? '' : 'none';
-        if (gridBtn) gridBtn.classList.toggle('active', which === 'grid');
-        if (listBtn) listBtn.classList.toggle('active', which === 'list');
-        if (descBtn) descBtn.classList.toggle('active', which === 'desc');
+        if (gridBtn)  gridBtn.classList.toggle('active',  which === 'grid');
+        if (listBtn)  listBtn.classList.toggle('active',  which === 'list');
+        if (descBtn)  descBtn.classList.toggle('active',  which === 'desc');
+        if (statsBtn) statsBtn.classList.toggle('active', which === 'stats');
+        if (deckSidebar) deckSidebar.classList.toggle('deck-stats-open', which === 'stats');
     }
-    if (gridBtn) gridBtn.addEventListener('click', function() { showView('grid'); });
-    if (listBtn) listBtn.addEventListener('click', function() { showView('list'); });
-    if (descBtn) descBtn.addEventListener('click', function() { showView('desc'); });
+    if (gridBtn)  gridBtn.addEventListener('click',  function() { showView('grid'); });
+    if (listBtn)  listBtn.addEventListener('click',  function() { showView('list'); });
+    if (descBtn)  descBtn.addEventListener('click',  function() { showView('desc'); });
+    if (statsBtn) statsBtn.addEventListener('click', function() { showView('stats'); });
 })();
 </script>
 

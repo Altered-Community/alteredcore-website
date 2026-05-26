@@ -220,6 +220,7 @@
 .decklist-stat img { width:13px; height:13px; object-fit:contain; flex-shrink:0; }
 .deck-content-layout { display:grid; grid-template-columns:1fr 240px; gap:20px; align-items:start; }
 @media (max-width:900px) { .deck-content-layout { grid-template-columns:1fr; } }
+@media (max-width:900px) { .deck-sidebar { display:none; } .deck-sidebar.deck-stats-open { display:block; } }
 .deck-sidebar { position:sticky; top:80px; }
 .deck-stats-col { display:flex; flex-direction:column; gap:12px; }
 .deck-stat-card { background:var(--sand-100); border-radius:10px; padding:12px 14px; }
