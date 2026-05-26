@@ -42,11 +42,11 @@ define('API_RESPONSE_DEBUG', false);
 // Keycloak mode only. Set to false to avoid storing email and username in the
 // local DB; they will be fetched from Keycloak on each session restore instead.
 // No effect when KC_URL is empty — local auth always stores user data in the DB.
-define('STORE_KC_USER_DATA', true);
+define('STORE_KC_USER_DATA', false);
 
 // ─── Local auth (used only when KC_URL is empty) ─────────────────────────────
 // Set to false to disable self-registration; admin can still create users manually.
-define('LOCAL_ALLOW_REGISTER', true);
+define('LOCAL_ALLOW_REGISTER', false);
 
 // ─── TinyMCE ─────────────────────────────────────────────────────────────────
 // Required for the rich-text editor in the admin news / page editor and plugins.

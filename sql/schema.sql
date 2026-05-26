@@ -362,67 +362,47 @@ CREATE TABLE IF NOT EXISTS `{prefix}feedback_rate_limit` (
 
 -- --- Seed / demo data -------------------------------------------------------
 
-INSERT INTO `{prefix}announcements` (`id`, `title_en`, `title_fr`, `text_en`, `text_fr`, `color`, `icon`, `link_url`, `link_target`, `link_label_en`, `link_label_fr`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 'Export your data from Equinox', 'Export your data from Equinox', 'Test', 'Test', 'info', 'fa-solid fa-circle-info', NULL, '_self', NULL, NULL, 0, 1, '2026-05-13 22:24:14', '2026-05-13 22:24:14');
-
-INSERT INTO `{prefix}banner` (`id`, `title_en`, `title_fr`, `subtitle_en`, `subtitle_fr`, `btn_label_en`, `btn_label_fr`, `btn_url`, `bg_image`, `overlay_color`, `overlay_opacity`, `updated_at`) VALUES
-(1, 'Altered Re:Union', 'Altered Re:Union', 'The Future of Altered by its community', 'Le futur dâ€™Altered par sa communautÃ©', '', '', '', 'uploads/banner/20260513_155638_b4c6f52b.jpg', '#000000', 25, '2026-05-22 22:00:46');
-
-INSERT INTO `{prefix}community_builders` (`id`, `title`, `desc_en`, `desc_fr`, `image`, `url`, `deckbuilder_url`, `deckbuilder_logo`, `deckbuilder_enabled`, `is_visible`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 'Altered-DB', 'Card Database & Deck Builder for Altered TCG â€” Browse all Altered TCG cards, search, filter, build decks, manage your collection and wishlist, and much more!', 'Base de donnÃ©es de cartes et Deck Builder pour Altered TCG â€” Parcourez toutes les cartes Altered TCG, recherchez, filtrez, crÃ©ez des decks, gÃ©rez votre collection et votre liste de souhaits, et bien plus encore !', 'uploads/community-builders/20260501_115838_b00150bb.png', 'https://altered-db.com', 'https://altered-db.com/?open={deck_id}', 'uploads/community-builders/20260501_203426_41322bd6.webp', 0, 1, 10, '2026-05-13 17:42:04', '2026-05-22 21:06:56'),
-(4, 'AlteredCore', 'AlteredCore Platform Deckbuilder', 'AlteredCore Platform Deckbuilder', 'uploads/community-builders/20260522_165048_8bded6ab.png', 'https://deckbuilder.alteredcore.org/', 'https://deckbuilder.alteredcore.org/decks/{deck_id}', 'uploads/community-builders/20260522_165118_4253699d.png', 0, 1, 11, '2026-05-22 16:50:54', '2026-05-22 16:50:54');
-
 INSERT INTO `{prefix}footer_links` (`id`, `label_en`, `label_fr`, `url`, `icon`, `column_num`, `sort_order`, `created_at`) VALUES
-(1, 'News', 'ActualitÃ©s', '/pages/news', 'fa-solid fa-newspaper', 2, 1, '2026-05-13 18:00:00'),
-(2, 'Cards', 'Cartes', '/pages/cards', 'fa-solid fa-layer-group', 2, 2, '2026-05-13 18:00:18'),
-(3, 'Decks', 'Decks', '/pages/decks', 'fa-solid fa-table-list', 2, 3, '2026-05-13 18:02:00'),
-(4, 'RSS', 'RSS', '/pages/rss', 'fa-solid fa-square-rss', 2, 4, '2026-05-13 18:02:21'),
-(5, 'Altered.gg', 'Altered.gg', 'https://altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
-(6, 'Board Game Arena', 'Board Game Arena', 'https://boardgamearena.com/', 'fak fa-bga', 3, 6, '2026-05-13 18:04:11');
+(1, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 2, 1, '2026-05-13 18:00:00'),
+(2, 'RSS', 'RSS', '/pages/rss', 'fa-solid fa-square-rss', 2, 4, '2026-05-13 18:02:21'),
+(3, 'Altered.gg', 'Altered.gg', 'https://altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
+(4, 'Board Game Arena', 'Board Game Arena', 'https://boardgamearena.com/', 'fak fa-bga', 3, 6, '2026-05-13 18:04:11');
 
 INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
-(177, 1, 'altered-json'),
-(156, 1, 'announcement'),
-(157, 1, 'background'),
-(155, 1, 'banner'),
-(154, 1, 'categories'),
-(171, 1, 'community-builders'),
-(152, 1, 'dashboard'),
-(159, 1, 'font'),
-(160, 1, 'footer'),
-(166, 1, 'groups'),
-(172, 1, 'homepage'),
-(158, 1, 'logo'),
-(167, 1, 'maintenance'),
-(174, 1, 'media'),
-(162, 1, 'nav'),
-(153, 1, 'news'),
-(173, 1, 'pages'),
-(176, 1, 'plugins'),
-(161, 1, 'privacy'),
-(170, 1, 'project-categories'),
-(169, 1, 'projects'),
-(168, 1, 'settings'),
-(163, 1, 'sidebar'),
-(175, 1, 'themes'),
-(164, 1, 'user-menu'),
-(165, 1, 'users'),
-(180, 3, 'categories'),
-(181, 3, 'community-builders'),
-(178, 3, 'dashboard'),
-(182, 3, 'homepage'),
-(184, 3, 'media'),
-(179, 3, 'news'),
-(183, 3, 'pages');
+(1, 1, 'altered-json'),
+(2, 1, 'announcement'),
+(3, 1, 'background'),
+(4, 1, 'banner'),
+(5, 1, 'categories'),
+(6, 1, 'community-builders'),
+(7, 1, 'dashboard'),
+(8, 1, 'font'),
+(9, 1, 'footer'),
+(10, 1, 'groups'),
+(11, 1, 'homepage'),
+(12, 1, 'logo'),
+(13, 1, 'maintenance'),
+(14, 1, 'media'),
+(15, 1, 'nav'),
+(16, 1, 'news'),
+(17, 1, 'pages'),
+(18, 1, 'plugins'),
+(19, 1, 'privacy'),
+(20, 1, 'project-categories'),
+(21, 1, 'projects'),
+(22, 1, 'settings'),
+(23, 1, 'sidebar'),
+(24, 1, 'themes'),
+(25, 1, 'user-menu'),
+(26, 1, 'users'),
 
 INSERT INTO `{prefix}nav_items` (`id`, `parent_id`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `is_iframe`, `is_blank`, `is_fullwidth`, `hide_label`, `is_sidebar_toggle`, `created_at`) VALUES
 (1, NULL, 'Home', 'Accueil', '/pages/index', 'fa-solid fa-house', 10, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
-(2, NULL, 'News', 'ActualitÃ©s', '/pages/news', 'fa-solid fa-newspaper', 20, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
+(2, NULL, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 20, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
 (3, NULL, 'Cards', 'Cartes', '/pages/cards', 'fa-solid fa-layer-group', 30, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
 (4, NULL, 'Decks', 'Decks', '/pages/decks', 'fa-solid fa-table-list', 40, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
 (5, NULL, 'Menu', 'Menu', '#', 'fa-solid fa-bars-staggered', 999, 1, 0, 0, 0, 1, 1, '2026-05-13 15:57:57'),
-(6, NULL, 'Play', 'Jouer', 'https://boardgamearena.com/gamepanel?game=altered', 'fa-solid fa-dice', 1000, 1, 0, 1, 0, 0, 0, '2026-05-13 21:30:07'),
-(8, NULL, 'Bugs', 'Bugs', '/pages/feedback', 'fa-solid fa-bug', 1001, 1, 0, 0, 0, 1, 0, '2026-05-17 20:39:11');
+(6, NULL, 'Bugs', 'Bugs', '/pages/feedback', 'fa-solid fa-bug', 1001, 1, 0, 0, 0, 1, 0, '2026-05-17 20:39:11');
 
 INSERT INTO `{prefix}news` (`id`, `category_id`, `slug`, `title_en`, `title_fr`, `content_en`, `content_fr`, `excerpt_en`, `excerpt_fr`, `image`, `youtube_url`, `published_at`, `is_published`, `created_at`, `updated_at`) VALUES
 (1, 1, 'demo-news-article', 'Demo news article', 'Article de démo', '<p>This is a demo news article. Replace this content from the admin panel.</p>', '<p>Ceci est un article de démo. Remplacez ce contenu depuis le panneau d''administration.</p>', 'Demo news article excerpt.', 'Extrait de l''article de démo.', NULL, NULL, '2026-01-01 12:00:00', 1, '2026-01-01 12:00:00', '2026-01-01 12:00:00');
@@ -431,75 +411,19 @@ INSERT INTO `{prefix}news_categories` (`id`, `name_en`, `name_fr`, `slug`, `is_h
 (1, 'News', 'News', 'news', 0, 0, '2026-05-13 19:27:09'),
 (2, 'Lore', 'Lore', 'lore', 0, 0, '2026-05-16 23:48:00');
 
-INSERT INTO `{prefix}plugins` (`id`, `is_active`, `version`, `sql_installed_at`, `installed_at`, `activated_at`) VALUES
-('core-altered-cards', 1, '1.0.0', NULL, '2026-05-22 13:37:26', '2026-05-22 13:37:26');
-
-INSERT INTO `{prefix}projects` (`id`, `category_id`, `title`, `description`, `url`, `image`, `submitted_by`, `source`, `is_approved`, `is_visible`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Altered-DB', 'Card Database & Deck Builder for Altered TCG â€” Browse all Altered TCG cards, search, filter, build decks, manage your collection and wishlist, and much more!', 'https://altered-db.com/', 'uploads/projects/20260518_152415_a609c020.png', 'PolluxTroy', 'user', 1, 1, 1, '2026-05-14 11:36:39', '2026-05-18 15:24:12');
-
-INSERT INTO `{prefix}project_categories` (`id`, `name_en`, `name_fr`, `slug`, `is_hidden`, `sort_order`) VALUES
-(1, 'Deckbuilders', 'Deckbuilders', 'deckbuilders', 0, 0);
-
 INSERT INTO `{prefix}sidebar_items` (`id`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `is_separator`, `is_section_header`, `is_blank`, `created_at`) VALUES
 (1, 'Start Here', 'Pour Commencer', '#', '', 1, 1, 0, 1, 0, '2026-05-13 18:06:01'),
 (2, 'What is Altered', 'Qu\'est-ce qu\'Altered ?', 'https://www.altered.gg/the-game/what-is-altered', 'fak fa-altered-swirl', 2, 1, 0, 0, 1, '2026-05-13 18:06:25'),
 (3, 'How to Play', 'Comment jouer ?', 'https://www.altered.gg/the-game/how-to-play', 'fa-solid fa-graduation-cap', 3, 1, 0, 0, 1, '2026-05-13 18:06:46'),
 (4, 'Play Altered Online', 'Joue Ã  Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12'),
-(5, 'Community Tools', 'Outils Communautaires', 'https://alteredcore.org/pages/projects', 'fa-solid fa-briefcase', 9, 1, 0, 0, 1, '2026-05-14 09:15:37');
 
 INSERT INTO `{prefix}site_settings` (`key`, `value`, `updated_at`) VALUES
-('active_theme', 'azure', '2026-05-13 14:21:02'),
-('cookie_consent_en', NULL, '2026-05-13 15:54:52'),
-('cookie_consent_fr', NULL, '2026-05-13 15:54:52'),
-('deploy_last_at', NULL, '2026-05-13 14:21:02'),
-('deploy_last_sha', NULL, '2026-05-13 14:21:02'),
-('font_body', 'Tiller-Regular.otf', '2026-05-13 18:05:04'),
-('font_footer', 'Tiller-Regular.otf', '2026-05-13 18:05:04'),
-('font_nav', 'Tiller-Bold.otf', '2026-05-13 18:05:04'),
-('font_titles', 'Tiller-Bold.otf', '2026-05-13 18:05:04'),
-('font_user_menu', 'Tiller-Regular.otf', '2026-05-13 18:05:04'),
-('footer_bg_image', NULL, '2026-05-13 17:59:34'),
-('footer_bg_mode', 'cover', '2026-05-13 17:59:34'),
-('footer_col1_content_en', '<div class=\"footer-brand\">Altered Re:Union</div>\r\n<div class=\"footer-tagline\">\r\n<p>The Future of Altered by its community</p>\r\n</div>', '2026-05-14 08:56:50'),
-('footer_col1_content_fr', '<div class=\"footer-brand\">Altered Re:Union</div>\r\n<div class=\"footer-tagline\">\r\n<p>Le futur d&rsquo;Altered par sa communaut&eacute;</p>\r\n</div>', '2026-05-14 08:56:50'),
-('footer_col1_title_en', 'Altered Re:Union', '2026-05-13 18:01:15'),
-('footer_col1_title_fr', 'Altered Re:Union', '2026-05-13 18:01:15'),
-('footer_col2_content_en', '', '2026-05-14 08:55:19'),
-('footer_col2_content_fr', '', '2026-05-14 08:55:19'),
-('footer_col2_title_en', 'Internal Links', '2026-05-13 18:01:15'),
-('footer_col2_title_fr', 'Liens Internes', '2026-05-13 18:01:15'),
-('footer_col3_content_en', '', '2026-05-14 08:55:19'),
-('footer_col3_content_fr', '', '2026-05-14 08:55:19'),
-('footer_col3_title_en', 'External Links', '2026-05-13 18:01:15'),
-('footer_col3_title_fr', 'Liens Externes', '2026-05-13 18:01:15'),
-('footer_col4_content_en', '<p><img src=\"https://altered.re/uploads/editor/20260514_085456_96ed3e02.png\" alt=\"\" width=\"175\" height=\"56\"></p>\r\n<p><span style=\"font-size: 10pt;\">Altered Re:Union is an unofficial community website and is not affiliated with Equinox.</span></p>', '2026-05-18 16:00:24'),
-('footer_col4_content_fr', '<p><img src=\"https://altered.re/uploads/editor/20260514_085456_96ed3e02.png\" alt=\"\" width=\"175\" height=\"56\"></p>\r\n<p><span style=\"font-size: 10pt;\">Altered Re:Union est un site communautaire non officiel et n\'est pas affili&eacute; &agrave; Equinox.</span></p>', '2026-05-18 16:00:24'),
-('footer_col4_title_en', 'Altered.gg', '2026-05-13 18:03:16'),
-('footer_col4_title_fr', 'Altered.gg', '2026-05-13 18:03:16'),
-('footer_deco_left', 'uploads/footer/20260513_175931_0dc43456.png', '2026-05-13 17:59:34'),
-('footer_deco_left_opacity', '100', '2026-05-13 17:59:34'),
-('footer_deco_right', 'uploads/footer/20260513_175935_4bfe8cc3.png', '2026-05-13 17:59:34'),
-('footer_deco_right_opacity', '100', '2026-05-13 17:59:34'),
-('footer_tagline_en', 'The Future of Altered by its community', '2026-05-13 18:02:45'),
-('footer_tagline_fr', 'Le futur dâ€™Altered portÃ© par sa communautÃ©', '2026-05-13 18:02:45'),
-('homepage_content_en', '<div class=\"row mb-5\">\r\n<div class=\"col-lg-7 col-md-9\">\r\n<h2 class=\"mb-3\">[section-title text=\"Altered Re:Union\"]</h2>\r\n<p class=\"lead mb-3\">Altered Re:Union is a community project based on the Altered trading card game.</p>\r\n<p class=\"mb-2\">Equinox announced they will discontinue the digital services for Altered after May 20th 2026.</p>\r\n<p class=\"mb-2\">The community, in love with the game, gathered its forces through the Altered Re:Union.</p>\r\n<p class=\"mb-4\">We are working on keeping the game playable after May 20th and organizing ourselves democratically to develop new content for the game in the future.</p>\r\n<div class=\"d-flex flex-wrap gap-3\"><a class=\"btn btn-primary-altered px-4\" href=\"https://discord.gg/pSA9HxB7Ky\" target=\"_blank\" rel=\"noopener\">Join us</a> <a class=\"btn btn-outline-secondary px-4\" href=\"https://www.altered.gg/fr-fr/the-game/how-to-play\" target=\"_blank\" rel=\"noopener\">How to play?</a></div>\r\n</div>\r\n</div>\r\n<div class=\"card-altered p-4 p-md-5\">\r\n<h3 class=\"text-center mb-4\">Our Values</h3>\r\n<hr class=\"mb-4\">\r\n<div class=\"row g-4 text-center\">\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Open and Democratic</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_a7642043.jpg\" alt=\"Teamwork illustration\">\r\n<p class=\"small text-muted mb-0\">Anyone can join and contribute to our project following our governance and organization charter.</p>\r\n</div>\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Non Profit</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_7c2e7779.jpg\" alt=\"Non profit illustration\">\r\n<p class=\"small text-muted mb-0\">The project is non profit. All funds are reinjected into the game development.</p>\r\n</div>\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Human Creativity</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_36e7e679.jpg\" alt=\"Creativity illustration\">\r\n<p class=\"small text-muted mb-0\">We value human creativity above AI, especially for anything related to Art.</p>\r\n</div>\r\n</div>\r\n</div>', '2026-05-18 15:57:08'),
-('homepage_content_fr', '<div class=\"row mb-5\">\r\n<div class=\"col-lg-7 col-md-9\">\r\n<h2 class=\"mb-3\">[section-title text=\"Altered Re:Union\"]</h2>\r\n<p class=\"lead mb-3\">Altered Re:Union est un projet communautaire bas&eacute; sur le jeu de cartes &agrave; collectionner Altered.</p>\r\n<p class=\"mb-2\">Equinox a annonc&eacute; l\'arr&ecirc;t des services num&eacute;riques d\'Altered apr&egrave;s le 20 mai 2026.</p>\r\n<p class=\"mb-2\">La communaut&eacute;, passionn&eacute;e par le jeu, a uni ses forces au travers d\'Altered Re:Union.</p>\r\n<p class=\"mb-4\">Nous travaillons &agrave; maintenir le jeu jouable apr&egrave;s le 20 mai et &agrave; nous organiser d&eacute;mocratiquement pour d&eacute;velopper de nouveaux contenus &agrave; l\'avenir.</p>\r\n<div class=\"d-flex flex-wrap gap-3\"><a class=\"btn btn-primary-altered px-4\" href=\"https://discord.gg/pSA9HxB7Ky\" target=\"_blank\" rel=\"noopener\">Nous rejoindre</a> <a class=\"btn btn-outline-secondary px-4\" href=\"https://www.altered.gg/fr-fr/the-game/how-to-play\" target=\"_blank\" rel=\"noopener\">Comment jouer ?</a></div>\r\n</div>\r\n</div>\r\n<div class=\"card-altered p-4 p-md-5\">\r\n<h3 class=\"text-center mb-4\">Nos valeurs</h3>\r\n<hr class=\"mb-4\">\r\n<div class=\"row g-4 text-center\">\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Ouvert et d&eacute;mocratique</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_a7642043.jpg\" alt=\"Illustration travail d\'&eacute;quipe\">\r\n<p class=\"small text-muted mb-0\">Tout le monde peut rejoindre et contribuer au projet en suivant notre charte de gouvernance et d\'organisation.</p>\r\n</div>\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Sans but lucratif</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_7c2e7779.jpg\" alt=\"Illustration sans but lucratif\">\r\n<p class=\"small text-muted mb-0\">Le projet est &agrave; but non lucratif. Tous les fonds sont r&eacute;inject&eacute;s dans le d&eacute;veloppement du jeu.</p>\r\n</div>\r\n<div class=\"col-md-4\">\r\n<h4 class=\"h6 text-uppercase mb-3\" style=\"letter-spacing: .05em;\">Cr&eacute;ativit&eacute; humaine</h4>\r\n<img class=\"rounded-circle mb-3\" style=\"width: 130px; height: 130px; object-fit: cover;\" src=\"https://altered.re/uploads/homepage/20260513_185003_36e7e679.jpg\" alt=\"Illustration cr&eacute;ativit&eacute;\">\r\n<p class=\"small text-muted mb-0\">Nous valorisons la cr&eacute;ativit&eacute; humaine plut&ocirc;t que l\'IA, notamment pour tout ce qui touche &agrave; l\'Art.</p>\r\n</div>\r\n</div>\r\n</div>', '2026-05-18 15:57:08'),
-('kc_force_logout_at', '2026-05-22 13:40:52', '2026-05-22 13:40:25'),
-('logo_path', 'uploads/logo/20260513_155720_4f49c889.png', '2026-05-13 15:57:13'),
-('meta_description_en', 'TCG - Playable on Board Game Arena\r\n-----\r\nThe future of Altered by its community!', '2026-05-19 10:07:27'),
-('meta_description_fr', 'Altered Re:Union\r\n-\r\nLe futur d\'Altered par sa communautÃ©!', '2026-05-13 21:03:02'),
-('navbar_width', 'full', '2026-05-13 21:27:54'),
-('og_image', 'uploads/logo/20260513_155720_4f49c889.png', '2026-05-13 21:04:42'),
-('plugin_pages_hidden', '[]', '2026-05-21 21:40:51'),
-('sidebar_btn_position', 'brand', '2026-05-13 15:58:21'),
-('sidebar_side', 'left', '2026-05-13 15:58:09'),
-('site_name', 'Altered Re:Union', '2026-05-13 15:57:40'),
-('twitter_handle', NULL, '2026-05-13 15:54:52');
+('active_theme', 'azure', '2026-05-13 14:21:02')
 
 INSERT INTO `{prefix}user_groups` (`id`, `name`, `slug`, `color`, `icon`, `can_access_admin`, `can_delete`, `can_publish`, `can_create`, `can_edit`, `can_readonly_all`, `can_preview`, `created_at`) VALUES
 (1, 'Admin', 'admin', '#f59e0b', 'fa-solid fa-crown', 1, 1, 1, 1, 1, 0, 1, '2026-05-13 14:21:02'),
-(2, 'Users', 'users', '#6b7280', 'fa-solid fa-user', 0, 0, 0, 1, 1, 0, 0, '2026-05-13 14:21:02'),
-(3, 'Editors', 'editors', '#3b82f6', 'fa-solid fa-pen', 1, 1, 1, 1, 1, 0, 0, '2026-05-13 14:21:02');
+(2, 'Editors', 'editors', '#3b82f6', 'fa-solid fa-pen', 1, 1, 1, 1, 1, 0, 0, '2026-05-13 14:21:02'),
+(3, 'Users', 'users', '#6b7280', 'fa-solid fa-user', 0, 0, 0, 1, 1, 0, 0, '2026-05-13 14:21:02');
 
 INSERT INTO `{prefix}user_menu_items` (`id`, `type`, `system_key`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `created_at`) VALUES
 (1, 'system', 'email_display', NULL, NULL, NULL, NULL, 10, 1, '2026-05-13 14:21:02'),
@@ -509,6 +433,5 @@ INSERT INTO `{prefix}user_menu_items` (`id`, `type`, `system_key`, `label_en`, `
 
 INSERT INTO `{prefix}users` (`id`, `kc_sub`, `email`, `username`, `is_admin`, `group_id`, `admin_username`, `admin_password_hash`, `local_password_hash`, `local_remember_token`, `local_remember_expiry`, `lang_pref`, `kc_refresh_token`, `kc_token_expiry`, `created_at`, `updated_at`) VALUES
 (1, NULL, NULL, NULL, 1, 1, 'admin', '$2y$10$KD56IU3XvzJ88l3FguOL7.3hkBZMzjIOnV7626JrepXTLGN7QYSfu', NULL, NULL, NULL, 'en', NULL, 0, NOW(), NOW());
-
 
 SET foreign_key_checks = 1;
