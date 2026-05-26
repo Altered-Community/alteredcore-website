@@ -344,7 +344,7 @@ if (canPreviewGroups()) {
             <?php endforeach; ?>
             <?php endif; ?>
 
-            <?php if (!empty($_SESSION['admin_logged_in'])): ?>
+            <?php if (adminHasSection('plugins')): ?>
             <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
             <a href="<?= BASE_URL ?>/admin/plugins"
                class="nav-link <?= $currentAdmin === 'plugins' ? 'active' : '' ?>">
