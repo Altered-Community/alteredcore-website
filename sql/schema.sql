@@ -395,6 +395,8 @@ INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (24, 1, 'themes'),
 (25, 1, 'user-menu'),
 (26, 1, 'users'),
+(27, 1, 'rss'),
+(28, 1, 'shortcodes');
 
 INSERT INTO `{prefix}nav_items` (`id`, `parent_id`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `is_iframe`, `is_blank`, `is_fullwidth`, `hide_label`, `is_sidebar_toggle`, `created_at`) VALUES
 (1, NULL, 'Home', 'Accueil', '/pages/index', 'fa-solid fa-house', 10, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
@@ -415,10 +417,10 @@ INSERT INTO `{prefix}sidebar_items` (`id`, `label_en`, `label_fr`, `url`, `icon`
 (1, 'Start Here', 'Pour Commencer', '#', '', 1, 1, 0, 1, 0, '2026-05-13 18:06:01'),
 (2, 'What is Altered', 'Qu\'est-ce qu\'Altered ?', 'https://www.altered.gg/the-game/what-is-altered', 'fak fa-altered-swirl', 2, 1, 0, 0, 1, '2026-05-13 18:06:25'),
 (3, 'How to Play', 'Comment jouer ?', 'https://www.altered.gg/the-game/how-to-play', 'fa-solid fa-graduation-cap', 3, 1, 0, 0, 1, '2026-05-13 18:06:46'),
-(4, 'Play Altered Online', 'Joue Ã  Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12'),
+(4, 'Play Altered Online', 'Joue Ã  Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12');
 
 INSERT INTO `{prefix}site_settings` (`key`, `value`, `updated_at`) VALUES
-('active_theme', 'azure', '2026-05-13 14:21:02')
+('active_theme', 'azure', '2026-05-13 14:21:02');
 
 INSERT INTO `{prefix}user_groups` (`id`, `name`, `slug`, `color`, `icon`, `can_access_admin`, `can_delete`, `can_publish`, `can_create`, `can_edit`, `can_readonly_all`, `can_preview`, `created_at`) VALUES
 (1, 'Admin', 'admin', '#f59e0b', 'fa-solid fa-crown', 1, 1, 1, 1, 1, 0, 1, '2026-05-13 14:21:02'),
