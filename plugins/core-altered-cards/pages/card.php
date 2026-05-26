@@ -794,7 +794,8 @@ var AlteredCard = {
     var cardTabBar = document.getElementById('card-tab-bar');
     if (cardTabBar) {
         cardTabBar.addEventListener('shown.bs.tab', function() {
-            cardTabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            var navH = (document.querySelector('.site-header') || {}).offsetHeight || 0;
+            window.scrollTo({ top: cardTabBar.getBoundingClientRect().top + window.scrollY - navH, behavior: 'smooth' });
         });
     }
 })();

@@ -430,6 +430,11 @@ function h(string $str): string {
 function requireAdmin(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return;
+    // Attempt session restore from kc_remember cookie if KC session has expired
+    if (empty($_SESSION['kc_logged_in']) && !empty($_COOKIE['kc_remember'])) {
+        require_once __DIR__ . '/func.keycloak.php';
+        kc_restore_session();
+    }
     $authenticated = !empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']);
     if ($authenticated && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
