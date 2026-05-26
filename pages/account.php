@@ -17,6 +17,8 @@ $txt = [
         'account_preferences'      => 'Preferences',
         'account_lang_pref'        => 'Language',
         'account_lang_auto'        => 'Auto (browser)',
+        'account_faction_pref'     => 'Favourite faction',
+        'account_faction_none'     => 'None',
         'account_save'             => 'Save',
         'account_saved'            => 'Preferences saved.',
         'account_delete_btn'       => 'Delete my account',
@@ -40,6 +42,8 @@ $txt = [
         'account_preferences'      => 'Préférences',
         'account_lang_pref'        => 'Langue',
         'account_lang_auto'        => 'Auto (navigateur)',
+        'account_faction_pref'     => 'Faction favorite',
+        'account_faction_none'     => 'Aucune',
         'account_save'             => 'Enregistrer',
         'account_saved'            => 'Préférences enregistrées.',
         'account_delete_btn'       => 'Supprimer mon compte',
@@ -75,12 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_destroy();
         redirect(BASE_URL . '/');
     } else {
-        $langPref = in_array($_POST['lang_pref'] ?? '', ['en', 'fr', 'es', 'it', 'de'], true) ? $_POST['lang_pref'] : null;
+        $langPref    = in_array($_POST['lang_pref'] ?? '', ['en', 'fr', 'es', 'it', 'de'], true) ? $_POST['lang_pref'] : null;
+        $factionPref = in_array($_POST['faction_pref'] ?? '', ['AX','BR','LY','MU','OR','YZ'], true) ? $_POST['faction_pref'] : null;
         if ($userId) {
-            $db->prepare(q("UPDATE {users} SET lang_pref = :l WHERE id = :id"))
-               ->execute([':l' => $langPref, ':id' => $userId]);
+            $db->prepare(q("UPDATE {users} SET lang_pref = :l, faction_pref = :f WHERE id = :id"))
+               ->execute([':l' => $langPref, ':f' => $factionPref, ':id' => $userId]);
         }
-        $_SESSION['lang'] = $langPref ?: (strpos($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '', 'fr') !== false ? 'fr' : DEFAULT_LANG);
+        $_SESSION['lang']         = $langPref ?: (strpos($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '', 'fr') !== false ? 'fr' : DEFAULT_LANG);
+        $_SESSION['user_faction'] = $factionPref ?: '';
         $saved = true;
     }
 }
@@ -88,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Load full user row for display
 $userRow = null;
 if ($userId) {
-    $stmt = $db->prepare(q("SELECT username, email, lang_pref, kc_sub, admin_username, created_at FROM {users} WHERE id = :id"));
+    $stmt = $db->prepare(q("SELECT username, email, lang_pref, faction_pref, kc_sub, admin_username, created_at FROM {users} WHERE id = :id"));
     $stmt->execute([':id' => $userId]);
     $userRow = $stmt->fetch();
 }
@@ -159,6 +165,7 @@ include dirname(__DIR__) . '/includes/header.php';
             <div class="mb-4">
                 <label class="form-label"><?= $txt['account_lang_pref'] ?></label>
                 <select name="lang_pref" class="form-select" style="max-width:220px">
+
                     <option value="" <?= ($userRow['lang_pref'] ?? '') === '' ? 'selected' : '' ?>>
                         <?= $txt['account_lang_auto'] ?>
                     </option>
@@ -179,6 +186,65 @@ include dirname(__DIR__) . '/includes/header.php';
                     </option>
                 </select>
             </div>
+            <?php
+            $__factionPref = $userRow['faction_pref'] ?? '';
+            $__factions = [
+                'AX' => ['name' => 'Axiom',  'color' => '#B05C38'],
+                'BR' => ['name' => 'Bravos',  'color' => '#C32637'],
+                'LY' => ['name' => 'Lyra',    'color' => '#CF4171'],
+                'MU' => ['name' => 'Muna',    'color' => '#4D8A54'],
+                'OR' => ['name' => 'Ordis',   'color' => '#1A8BC0'],
+                'YZ' => ['name' => 'Yzmir',   'color' => '#8855A8'],
+            ];
+            ?>
+            <div class="mb-4">
+                <label class="form-label"><?= $txt['account_faction_pref'] ?></label>
+                <div class="d-flex flex-wrap gap-2">
+                    <label class="faction-chip<?= $__factionPref === '' ? ' faction-chip--active' : '' ?>">
+                        <input type="radio" name="faction_pref" value="" <?= $__factionPref === '' ? 'checked' : '' ?> style="display:none">
+                        <span><?= $txt['account_faction_none'] ?></span>
+                    </label>
+                    <?php foreach ($__factions as $__fc => $__fd): ?>
+                    <label class="faction-chip<?= $__factionPref === $__fc ? ' faction-chip--active' : '' ?>"
+                           data-color="<?= $__fd['color'] ?>"
+                           style="<?= $__factionPref === $__fc ? '--fc:' . $__fd['color'] . ';' : '' ?>">
+                        <input type="radio" name="faction_pref" value="<?= $__fc ?>" <?= $__factionPref === $__fc ? 'checked' : '' ?> style="display:none">
+                        <img src="<?= BASE_URL ?>/plugins/core-altered-cards/assets/faction/<?= $__fc ?>.png"
+                             width="18" height="18" alt="" style="object-fit:contain">
+                        <span><?= $__fd['name'] ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <style>
+            .faction-chip {
+                display: inline-flex; align-items: center; gap: 6px;
+                padding: 5px 12px; border-radius: 2rem; cursor: pointer;
+                border: 2px solid var(--glass-border, rgba(255,255,255,.8));
+                background: var(--glass-bg, rgba(255,255,255,.65));
+                font-size: .85rem; font-weight: 600;
+                color: var(--neutral-700, #555);
+                transition: border-color .15s, box-shadow .15s;
+                user-select: none;
+            }
+            .faction-chip:hover { border-color: var(--neutral-300, #ccc); }
+            .faction-chip--active {
+                border-color: var(--fc, var(--primary-400));
+                color: var(--fc, var(--primary-500));
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc, var(--primary-400)) 20%, transparent);
+            }
+            </style>
+            <script>
+            document.querySelectorAll('.faction-chip input[type=radio]').forEach(function(r){
+                r.addEventListener('change', function(){
+                    document.querySelectorAll('.faction-chip').forEach(function(l){ l.classList.remove('faction-chip--active'); l.style.removeProperty('--fc'); });
+                    var lbl = r.closest('.faction-chip');
+                    lbl.classList.add('faction-chip--active');
+                    var col = r.value ? r.closest('label').dataset.color : null;
+                    if (col) lbl.style.setProperty('--fc', col);
+                });
+            });
+            </script>
             <button type="submit" class="btn btn-primary-altered">
                 <i class="fa-solid fa-floppy-disk me-1"></i> <?= $txt['account_save'] ?>
             </button>

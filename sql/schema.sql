@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}users` (
     `local_remember_token`  CHAR(64)    DEFAULT NULL,
     `local_remember_expiry` INT         DEFAULT NULL,
     `lang_pref`           VARCHAR(5)   DEFAULT NULL COMMENT 'en or fr, NULL = browser auto-detect',
+    `faction_pref`        ENUM('AX','BR','LY','MU','OR','YZ') DEFAULT NULL COMMENT 'Favourite faction for theme colouring',
     `kc_refresh_token`    TEXT         DEFAULT NULL COMMENT 'AES-256-CBC encrypted',
     `kc_token_expiry`     INT          NOT NULL DEFAULT 0 COMMENT '0 = offline token',
     `created_at`          DATETIME DEFAULT CURRENT_TIMESTAMP,
