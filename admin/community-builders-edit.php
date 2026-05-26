@@ -56,14 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pickedImage = '';
         }
         $newImage = $pickedImage !== '' ? $pickedImage : null;
-        if ($oldImage && $newImage !== $oldImage && strpos($oldImage, 'uploads/') === 0) {
-            if ($newImage === null && !adminCanDelete()) {
-                $errors[] = 'You do not have permission to delete images.';
-            } else {
-                $fp = dirname(__DIR__) . '/' . $oldImage;
-                if (file_exists($fp)) unlink($fp);
-            }
-        }
 
         // Deckbuilder logo via picker
         $oldLogo    = $entry['deckbuilder_logo'] ?? null;
@@ -72,14 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pickedLogo = '';
         }
         $newLogo = $pickedLogo !== '' ? $pickedLogo : null;
-        if ($oldLogo && $newLogo !== $oldLogo && strpos($oldLogo, 'uploads/') === 0) {
-            if ($newLogo === null && !adminCanDelete()) {
-                $errors[] = 'You do not have permission to delete images.';
-            } else {
-                $fp = dirname(__DIR__) . '/' . $oldLogo;
-                if (file_exists($fp)) unlink($fp);
-            }
-        }
 
         $data = [
             'title'               => trim($_POST['title']   ?? ''),

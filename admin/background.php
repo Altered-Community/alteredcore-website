@@ -22,13 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $oldBgImage   = getSetting('bg_image');
             $oldFtBgImage = getSetting('footer_bg_image');
 
-            // Check delete permission before any destructive operation
-            $deletingAny = ($oldBgImage && $newBgImage === null)
-                        || ($oldFtBgImage && $newFtBgImage === null);
-            if ($deletingAny && !adminCanDelete()) {
-                $errors[] = 'You do not have permission to delete images.';
-            }
-
             if (empty($errors)) {
                 $color = trim($_POST['bg_color'] ?? '');
                 if ($color === '' || preg_match('/^#[0-9a-fA-F]{3,8}$/', $color)) {
@@ -38,13 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 saveSetting('footer_bg_mode', in_array($_POST['footer_bg_mode'] ?? '', ['cover','repeat'], true) ? $_POST['footer_bg_mode'] : 'cover');
 
                 foreach ([
-                    [$oldBgImage,   $newBgImage,   'bg_image',        'uploads/background/'],
-                    [$oldFtBgImage, $newFtBgImage, 'footer_bg_image', 'uploads/background/'],
-                ] as [$old, $new, $key, $prefix]) {
-                    if ($old && $new !== $old && strpos($old, $prefix) === 0) {
-                        $p = dirname(__DIR__) . '/' . $old;
-                        if (file_exists($p)) unlink($p);
-                    }
+                    [$newBgImage,   'bg_image'],
+                    [$newFtBgImage, 'footer_bg_image'],
+                ] as [$new, $key]) {
                     saveSetting($key, $new);
                 }
 

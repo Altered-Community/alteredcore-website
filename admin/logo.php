@@ -27,10 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pickedLogo = '';
         }
         if ($pickedLogo !== '') {
-            if ($logoPath && $logoPath !== $pickedLogo && strpos($logoPath, 'uploads/') === 0) {
-                $old = dirname(__DIR__) . '/' . $logoPath;
-                if (file_exists($old)) unlink($old);
-            }
             saveSetting('logo_path', $pickedLogo);
             flash('Logo updated.');
             redirect(BASE_URL . '/admin/logo');

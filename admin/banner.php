@@ -22,14 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pickedBg = '';
         }
         $bgImage = $pickedBg !== '' ? $pickedBg : null;
-        if ($oldBgImage && $bgImage !== $oldBgImage && strpos($oldBgImage, 'uploads/') === 0) {
-            if ($bgImage === null && !adminCanDelete()) {
-                $errors[] = 'You do not have permission to delete images.';
-            } else {
-                $fp = dirname(__DIR__) . '/' . $oldBgImage;
-                if (file_exists($fp)) unlink($fp);
-            }
-        }
 
         if (empty($errors)) {
             $db->prepare(q(

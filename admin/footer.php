@@ -63,11 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'footer_deco_left' => $ftDecoL,
                 'footer_deco_right' => $ftDecoR,
             ] as $settingKey => $newPath) {
-                $old = getSetting($settingKey);
-                if ($old && $newPath !== $old && strpos($old, 'uploads/') === 0) {
-                    $p = dirname(__DIR__) . '/' . $old;
-                    if (file_exists($p)) unlink($p);
-                }
+                $old = getSetting($settingKey); // kept for reference, no auto-delete
             }
         }
 

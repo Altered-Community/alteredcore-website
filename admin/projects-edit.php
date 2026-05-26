@@ -58,14 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pickedImage = '';
         }
         $newImage = $pickedImage !== '' ? $pickedImage : null;
-        if ($oldImage && $newImage !== $oldImage && strpos($oldImage, 'uploads/') === 0) {
-            if ($newImage === null && !adminCanDelete()) {
-                $errors[] = 'You do not have permission to delete images.';
-            } else {
-                $fp = dirname(__DIR__) . '/' . $oldImage;
-                if (file_exists($fp)) unlink($fp);
-            }
-        }
 
         $catId = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
         $data = [
