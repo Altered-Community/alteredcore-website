@@ -976,6 +976,15 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         if (listBtn)   listBtn.classList.toggle('active',  which === 'list');
         if (descBtn)   descBtn.classList.toggle('active',  which === 'desc');
         if (statsBtn)  statsBtn.classList.toggle('active', which === 'stats');
+        var tabBar = document.querySelector('.decks-tabs');
+        if (tabBar) {
+            if (window.innerWidth >= 992) {
+                tabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                var pane = which === 'grid' ? gridView : which === 'list' ? listView : which === 'desc' ? descView : statsView;
+                if (pane) window.scrollTo({ top: pane.getBoundingClientRect().top + window.scrollY - 8, behavior: 'smooth' });
+            }
+        }
     }
     if (gridBtn)  gridBtn.addEventListener('click',  function() { showView('grid'); });
     if (listBtn)  listBtn.addEventListener('click',  function() { showView('list'); });

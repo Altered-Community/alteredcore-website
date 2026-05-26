@@ -171,17 +171,17 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
             <div id="card-status" class="d-flex flex-wrap gap-2 mb-3" style="display:none!important"></div>
 
             <!-- Tabs -->
-            <div class="card-tabs mb-3">
-                <button class="card-tab active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+            <div class="card-tabs mb-3" id="card-tab-bar" role="tablist">
+                <button class="card-tab active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
                     <?= h($txt['tab_general']) ?>
                 </button>
-                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-rules" type="button">
+                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-rules" type="button" role="tab">
                     <?= h($txt['tab_rules']) ?>
                 </button>
-                <button id="tab-altered-btn" class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-altered" type="button">
+                <button id="tab-altered-btn" class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-altered" type="button" role="tab">
                     <?= h($txt['tab_altered']) ?>
                 </button>
-                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-lore" type="button">
+                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-lore" type="button" role="tab">
                     <?= h($txt['tab_lore']) ?>
                 </button>
             </div>
@@ -789,6 +789,13 @@ var AlteredCard = {
     }
     function escAttr(s) {
         return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    }
+    // Scroll to tab bar when switching tabs
+    var cardTabBar = document.getElementById('card-tab-bar');
+    if (cardTabBar) {
+        cardTabBar.addEventListener('shown.bs.tab', function() {
+            cardTabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
     }
 })();
 </script>
