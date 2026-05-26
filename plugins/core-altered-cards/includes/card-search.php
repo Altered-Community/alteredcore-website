@@ -450,3 +450,12 @@ $_csHasCollFilter = !empty($_csCollOpts);
          onclick="event.stopPropagation()"></div>
 </div>
 <?php endif; ?>
+<script>
+(function() {
+    document.querySelectorAll('.filter-row--scroll').forEach(function(el) {
+        el.addEventListener('wheel', function(e) {
+            if (e.deltaY !== 0) { e.preventDefault(); el.scrollLeft += e.deltaY; }
+        }, { passive: false });
+    });
+})();
+</script>

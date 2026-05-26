@@ -8,6 +8,18 @@
 
 /* ---- Card filter controls (shared: cards.php, deckbuilder.php, decks.php) ---- */
 .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.filter-row--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; scrollbar-color: var(--neutral-300) transparent; }
+.filter-row--scroll::-webkit-scrollbar { height: 3px; }
+.filter-row--scroll::-webkit-scrollbar-track { background: transparent; }
+.filter-row--scroll::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 2px; }
+@media (hover: hover) {
+    .filter-row--scroll::-webkit-scrollbar-thumb { background: transparent; transition: background .2s; }
+    .filter-row--scroll:hover::-webkit-scrollbar-thumb { background: var(--neutral-300); }
+}
+@media (hover: none) {
+    .filter-row--scroll { scrollbar-width: none; -ms-overflow-style: none; }
+    .filter-row--scroll::-webkit-scrollbar { display: none; }
+}
 .filter-label {
     font-size: .7rem;
     font-weight: 700;
