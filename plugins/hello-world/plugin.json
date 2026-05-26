@@ -1,0 +1,52 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "hello-world",
+    "name":         "Hello World",
+    "version":      "1.0.0",
+    "description":  "A minimal example plugin.",
+    "author":       "Your Name",
+    "icon":         "fa-solid fa-earth-europe",
+    "table_prefix": "hw",
+
+    "pages": [
+        {"slug": "hello-page",      "file": "pages/hellopage.php",     "title_en": "Hello World",  "title_fr": "Bonjour le monde"},
+        {"slug": "hello-page-lock", "file": "pages/hellopagelock.php", "title_en": "About",        "title_fr": "À propos"},
+        {"slug": "hello-empty",     "file": "pages/empty.php",         "title_en": "Empty Page",   "title_fr": "Page vide"}
+    ],
+
+    "admin": [
+        {
+            "section":  "hello-messages",
+            "file":     "admin/messages.php",
+            "label_en": "HW Messages",
+            "label_fr": "Messages HW",
+            "icon":     "fa-solid fa-earth-europe"
+        },
+        {
+            "section":  "hello-settings",
+            "file":     "admin/settings.php",
+            "label_en": "HW Settings",
+            "label_fr": "Paramètres HW",
+            "icon":     "fa-solid fa-gear"
+        },
+        {
+            "section":  "hello-empty",
+            "file":     "admin/empty.php",
+            "label_en": "HW Empty",
+            "label_fr": "Vide HW",
+            "icon":     "fa-solid fa-file"
+        }
+    ],
+
+    "api": [
+        {"endpoint": "data", "file": "api/data.php"}
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["assets/hello.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["messages", "settings"]
+}

@@ -1,0 +1,89 @@
+<?php
+// ─── Database ─────────────────────────────────────────────────────────────────
+define('DB_HOST', 'db');     // MySQL host (usually localhost)
+define('DB_NAME', 'alteredcore');   // Database name
+define('DB_USER', 'alteredcore');          // Database username
+define('DB_PASS', 'alteredcore');              // Database password
+// Table prefix — useful when running two instances on the same database.
+// Leave empty for the default instance. Second instance: e.g. 'site2_'
+// All DB table names will be prefixed with this value automatically.
+define('DB_PREFIX', 'dev_');            // e.g. '' or 'site2_'
+
+// ─── Keycloak ─────────────────────────────────────────────────────────────────
+// Leave KC_URL empty to disable Keycloak. The site then switches to local auth
+// mode: registered users log in with email + password. All other KC_* constants
+// are ignored when KC_URL is empty.
+define('KC_URL',           '');               // Keycloak server base URL (no trailing slash)
+define('KC_REALM',         '');               // Realm name
+define('KC_CLIENT_ID',     '');               // Client ID configured in Keycloak
+define('KC_CLIENT_SECRET', '');               // Client secret (Credentials tab in Keycloak)
+define('KC_SCOPES',        '');
+
+// ─── KC token encryption ──────────────────────────────────────────────────────
+// AES-256 key used to encrypt Keycloak tokens stored in the session.
+// Required in Keycloak mode. Not used when KC_URL is empty (local auth mode).
+// Generate with: php -r "echo bin2hex(random_bytes(32));"
+define('ENCRYPTION_KEY', ''); // 64-char hex string (32 bytes)
+
+// ─── Features ─────────────────────────────────────────────────────────────────
+// Show a newsletter signup block on the homepage (below the news section).
+define('SHOW_NEWSLETTER', false);
+
+// Collection mode: when true, logged-in users can manage their card inventory,
+// filter card browsers to owned cards, and see owned quantities on card thumbnails.
+define('COLLECTION_MODE', true);
+
+// ─── Debug ────────────────────────────────────────────────────────────────────
+// Log external API responses to the browser console (cards, decks, deck detail).
+// Set to true for local development; always false on production.
+define('API_RESPONSE_DEBUG', false);
+
+// ─── Privacy ──────────────────────────────────────────────────────────────────
+// Keycloak mode only. Set to false to avoid storing email and username in the
+// local DB; they will be fetched from Keycloak on each session restore instead.
+// No effect when KC_URL is empty — local auth always stores user data in the DB.
+define('STORE_KC_USER_DATA', true);
+
+// ─── Local auth (used only when KC_URL is empty) ─────────────────────────────
+// Set to false to disable self-registration; admin can still create users manually.
+define('LOCAL_ALLOW_REGISTER', true);
+
+// ─── TinyMCE ─────────────────────────────────────────────────────────────────
+// Required for the rich-text editor in the admin news / page editor and plugins.
+// Get a free key at https://www.tiny.cloud/
+define('TINYMCE_API_KEY', '');
+
+// ─── GitHub App ───────────────────────────────────────────────────────────────
+// GitHub App credentials for the community feedback form (/pages/feedback).
+// The App opens issues in GITHUB_REPO when a user submits feedback.
+define('GITHUB_APP_ID',              '');
+define('GITHUB_APP_INSTALLATION_ID', '');
+// Paste the full content of the .pem private key file below (including the header/footer lines).
+define('GITHUB_APP_PRIVATE_KEY', '-----BEGIN RSA PRIVATE KEY-----
+<paste your private key content here>
+-----END RSA PRIVATE KEY-----
+');
+define('GITHUB_REPO', 'owner/community-feedback'); // repo where the App opens issues
+
+// ─── External APIs ────────────────────────────────────────────────────────────
+define('CARDS_API_URL',     'https://cards.alteredcore.org');
+define('DECKS_API_URL',     'https://decks.alteredcore.org');
+define('CDN_URL',           'https://cdn.alteredcore.org');
+define('OWNERSHIP_API_URL', 'https://ownership.altered.re/');
+define('COLLECTION_API_URL', 'https://collection.alteredcore.org');
+// true: reads go through COLLECTION_API_URL; local DB is a write-through mirror.
+// false: local DB only (no external collection API calls).
+define('COLLECTION_USE_API', true);
+
+// ─── Translation service (optional) ───────────────────────────────────────────
+// Enables one-click translation buttons in the admin news/page editor.
+// Leave both lines commented out to disable the feature entirely.
+// TRANSLATE_URL    : full endpoint URL; must accept POST JSON {q, source, target, format, api_key}
+//                    and return {translatedText: "..."}  (LibreTranslate-compatible)
+// TRANSLATE_API_KEY: sent as api_key in the request body; leave empty if the server requires none.
+// define('TRANSLATE_URL',     'https://libretranslate.com/translate');
+// define('TRANSLATE_API_KEY', 'your-api-key-here');
+
+// ─── Deployment ───────────────────────────────────────────────────────────────
+define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
+define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)

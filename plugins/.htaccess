@@ -1,0 +1,6 @@
+# Block direct execution of PHP files inside plugins.
+# CSS, JS, images and fonts are served normally.
+<FilesMatch "\.php$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

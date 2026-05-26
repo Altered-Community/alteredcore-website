@@ -1,0 +1,7 @@
+docker/
+docker-compose.yml
+Dockerfile
+README.md
+LICENSE.md
+CONTRIBUTING.md
+plugins/packages/

@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlteredCore — Plugin Development Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.65; }
+  a { color: #60a5fa; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  nav { width: 260px; min-width: 260px; background: #1e293b; padding: 2rem 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+  nav .brand { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid #334155; margin-bottom: 1rem; }
+  nav .brand h1 { font-size: 1rem; font-weight: 700; color: #f8fafc; }
+  nav .brand p  { font-size: .75rem; color: #64748b; margin-top: .2rem; }
+  nav a { display: block; padding: .45rem 1.5rem; font-size: .85rem; color: #94a3b8; text-decoration: none; border-left: 3px solid transparent; }
+  nav a:hover { color: #f1f5f9; background: #0f172a22; }
+  nav a.active { color: #60a5fa; border-left-color: #60a5fa; background: #1e3a5f33; }
+  nav .nav-section { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: #475569; padding: .9rem 1.5rem .3rem; font-weight: 600; }
+
+  /* Main */
+  main { flex: 1; padding: 3rem 3.5rem; max-width: 860px; }
+  h2 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; margin: 2.5rem 0 .75rem; padding-top: 1rem; border-top: 1px solid #1e293b; }
+  h2:first-of-type { border-top: none; margin-top: 0; }
+  h3 { font-size: 1.1rem; font-weight: 600; color: #cbd5e1; margin: 1.75rem 0 .5rem; }
+  p  { color: #94a3b8; margin-bottom: .9rem; }
+  ul, ol { color: #94a3b8; padding-left: 1.4rem; margin-bottom: .9rem; }
+  li { margin-bottom: .3rem; }
+  strong { color: #e2e8f0; }
+
+  /* Code */
+  code { background: #1e293b; color: #7dd3fc; padding: .15em .4em; border-radius: 4px; font-size: .88em; font-family: 'Fira Code', 'Cascadia Code', monospace; }
+  pre  { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 1rem 0 1.4rem; }
+  pre code { background: none; padding: 0; font-size: .83rem; color: #e2e8f0; }
+
+  /* Key/value table */
+  .kv { width: 100%; border-collapse: collapse; margin: .75rem 0 1.25rem; font-size: .88rem; }
+  .kv th { text-align: left; padding: .5rem .75rem; background: #1e293b; color: #7dd3fc; font-weight: 600; border-bottom: 1px solid #334155; }
+  .kv td { padding: .5rem .75rem; border-bottom: 1px solid #1e293b; color: #94a3b8; vertical-align: top; }
+  .kv td:first-child { color: #f1f5f9; font-family: monospace; white-space: nowrap; }
+  .kv tr:last-child td { border-bottom: none; }
+  .req { color: #f87171; font-size: .75rem; font-weight: 600; }
+  .opt { color: #64748b; font-size: .75rem; }
+
+  /* Callouts */
+  .info, .warn, .tip { border-left: 3px solid; border-radius: 0 6px 6px 0; padding: .9rem 1.1rem; margin: 1rem 0 1.25rem; font-size: .9rem; }
+  .info { border-color: #3b82f6; background: #1e3a5f33; color: #93c5fd; }
+  .warn { border-color: #f59e0b; background: #431a0333; color: #fcd34d; }
+  .tip  { border-color: #10b981; background: #06402033; color: #6ee7b7; }
+
+  /* Tree */
+  .tree { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 1.1rem 1.4rem; font-family: monospace; font-size: .85rem; line-height: 1.8; color: #94a3b8; margin: .75rem 0 1.25rem; }
+  .tree .dir  { color: #60a5fa; }
+  .tree .file { color: #e2e8f0; }
+  .tree .note { color: #475569; }
+
+  /* Badge */
+  .badge { display: inline-block; padding: .2em .55em; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+  .badge-req { background: #7f1d1d; color: #fca5a5; }
+  .badge-opt { background: #1e3a5f; color: #93c5fd; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav>
+  <div class="brand">
+    <h1>AlteredCore</h1>
+    <p>Plugin Development Guide</p>
+  </div>
+  <div class="nav-section">Getting started</div>
+  <a href="#overview">Overview</a>
+  <a href="#structure">Plugin structure</a>
+  <a href="#manifest">Manifest (plugin.json)</a>
+  <div class="nav-section">Front-end</div>
+  <a href="#pages">Front-end pages</a>
+  <a href="#linking">Linking to pages</a>
+  <a href="#assets">CSS &amp; JS assets</a>
+  <div class="nav-section">Back-end</div>
+  <a href="#admin">Admin pages</a>
+  <a href="#tinymce">TinyMCE rich-text editor</a>
+  <a href="#database">Database (SQL)</a>
+  <a href="#api">HTTP API endpoints</a>
+  <a href="#helpers">Helper functions</a>
+  <a href="#inc">Shared helpers (inc/)</a>
+  <a href="#variables">Variables &amp; constants</a>
+  <div class="nav-section">Development</div>
+  <a href="#dev">Local development</a>
+  <div class="nav-section">Deployment</div>
+  <a href="#zip">Creating the ZIP</a>
+  <a href="#install">Installing, updating &amp; activating</a>
+  <a href="#security">Security notes</a>
+  <div class="nav-section">Reference</div>
+  <a href="#example">Full example</a>
+</nav>
+
+<main>
+
+<h2 id="overview">Overview</h2>
+
+<p>The plugin system lets developers add front-end pages, admin sections, CSS/JS assets and database tables to an AlteredCore site <strong>without touching any core file</strong>. Plugins live entirely in <code>plugins/{your-plugin-id}/</code> and are loaded on demand.</p>
+
+<p>The lifecycle of a plugin is:</p>
+<ol>
+  <li>Developer creates the plugin folder and a <code>plugin.json</code> manifest.</li>
+  <li>Developer packages the folder as a <code>.zip</code> file.</li>
+  <li>An admin uploads the ZIP via <strong>Admin → Plugins → Install plugin</strong>.</li>
+  <li>An admin clicks <strong>Activate</strong>. If the plugin has a SQL file, it runs automatically on first activation.</li>
+  <li>The plugin's front-end pages are accessible at <code>/pages/{slug}</code>. Its admin sections appear in the sidebar for groups that have been granted the corresponding permission.</li>
+</ol>
+
+<div class="info">
+  Plugins are PHP code. Installing a plugin is equivalent to granting its author server-side code execution rights. Only install plugins from sources you trust.
+</div>
+
+
+<h2 id="structure">Plugin structure</h2>
+
+<div class="tree">
+<span class="dir">plugins/</span><br>
+&nbsp;&nbsp;<span class="dir">my-plugin/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">plugin.json</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># manifest — required</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">pages/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">front.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># one file per front-end page</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">about.php</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">admin/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">index.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># one file per admin section</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">settings.php</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">inc/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># optional — admin-only helpers</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">assets/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">style.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># CSS and JS served as static files</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">app.js</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">api/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># one file per HTTP API endpoint</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">inc/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># optional — shared helpers for pages, admin, api</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">sql/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — runs on first activation</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta only — runs when upgrading to 1.1.0</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.2.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta only — runs when upgrading to 1.2.0</span><br>
+</div>
+
+<p>There are no mandatory subdirectory names — the paths are declared in the manifest and can be anything. The only required file is <code>plugin.json</code> at the root of the plugin directory.</p>
+
+
+<h2 id="manifest">Manifest — plugin.json</h2>
+
+<p>The manifest is a <strong>JSON file</strong> at the root of the plugin directory. It declares the plugin's identity, pages, admin sections, assets and database tables.</p>
+
+<pre><code>{
+    "$schema":      "../plugin.schema.json",
+    "id":           "my-plugin",
+    "name":         "My Plugin",
+    "version":      "1.0.0",
+    "description":  "A short description shown in the Plugins admin page.",
+    "author":       "Your Name",
+    "icon":         "fa-solid fa-star",
+    "table_prefix": "mp",
+
+    "pages": [
+        {
+            "slug":     "my-plugin",
+            "file":     "pages/front.php",
+            "title_en": "My Plugin Page",
+            "title_fr": "Ma page plugin"
+        }
+    ],
+
+    "admin": [
+        {
+            "section":  "my-plugin",
+            "file":     "admin/index.php",
+            "label_en": "My Plugin",
+            "label_fr": "Mon Plugin",
+            "icon":     "fa-solid fa-star"
+        }
+    ],
+
+    "api": [
+        {
+            "endpoint": "data",
+            "file":     "api/data.php"
+        }
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["assets/app.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["items"]
+}</code></pre>
+
+<h3>Fields reference</h3>
+<table class="kv">
+  <tr><th>Field</th><th></th><th>Description</th></tr>
+  <tr><td>$schema</td><td><span class="opt">optional</span></td><td>Path to <code>plugin.schema.json</code> — enables IDE autocompletion and validation. Set to <code>"../plugin.schema.json"</code> when the plugin is inside the <code>plugins/</code> directory.</td></tr>
+  <tr><td>id</td><td><span class="req">required</span></td><td>Unique slug. Lowercase letters, digits and hyphens only. Must match the directory name after extraction.</td></tr>
+  <tr><td>name</td><td><span class="req">required</span></td><td>Human-readable name shown in the Plugins admin page.</td></tr>
+  <tr><td>version</td><td><span class="req">required</span></td><td>Semver string, e.g. <code>1.2.0</code>. Required — the installer uses this to determine whether an upload is an upgrade.</td></tr>
+  <tr><td>description</td><td><span class="req">required</span></td><td>One-line description shown in the Plugins admin page.</td></tr>
+  <tr><td>author</td><td><span class="req">required</span></td><td>Author name or contact.</td></tr>
+  <tr><td>icon</td><td><span class="opt">optional</span></td><td>Font Awesome class used in the Plugins list, e.g. <code>fa-solid fa-star</code>.</td></tr>
+  <tr><td>table_prefix</td><td><span class="opt">optional</span></td><td>Short unique string used to namespace your database tables, e.g. <code>"hw"</code>. Results in table names like <code>altcore_plugin_hw_messages</code>. Required if your plugin declares <code>tables</code> or uses <code>qp()</code>.</td></tr>
+  <tr><td>pages</td><td><span class="opt">optional</span></td><td>Array of front-end page declarations. See <a href="#pages">Front-end pages</a>.</td></tr>
+  <tr><td>admin</td><td><span class="opt">optional</span></td><td>Array of admin section declarations. See <a href="#admin">Admin pages</a>.</td></tr>
+  <tr><td>api</td><td><span class="opt">optional</span></td><td>Array of HTTP API endpoint declarations. See <a href="#api">HTTP API endpoints</a>.</td></tr>
+  <tr><td>assets</td><td><span class="opt">optional</span></td><td>CSS and JS files to inject on the plugin's front-end pages. See <a href="#assets">CSS &amp; JS assets</a>.</td></tr>
+  <tr><td>sql</td><td><span class="opt">optional</span></td><td>Path to a SQL file (relative to plugin root) that runs once on first activation.</td></tr>
+  <tr><td>tables</td><td><span class="opt">optional</span></td><td>Array of table name placeholders (without prefix). Shown in the delete confirmation — admin can choose to drop them when uninstalling.</td></tr>
+</table>
+
+<div class="tip">
+  A <strong>JSON Schema</strong> file (<code>plugins/plugin.schema.json</code>) is included in the repository. Adding <code>"$schema": "../plugin.schema.json"</code> as the first field of your <code>plugin.json</code> enables real-time validation and autocompletion in VS Code, PhpStorm and any other editor that supports JSON Schema draft-07.
+</div>
+
+
+<h2 id="pages">Front-end pages</h2>
+
+<p>Each entry in the <code>pages</code> array registers one front-end page. The page becomes accessible at <code>/pages/{slug}</code> — exactly like a core page.</p>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>slug</td><td><span class="req">required</span></td><td>URL segment: <code>/pages/my-slug</code>. Must be unique across core pages and all active plugins.</td></tr>
+  <tr><td>file</td><td><span class="req">required</span></td><td>Path to the PHP file, relative to the plugin root.</td></tr>
+  <tr><td>title_en / title_fr</td><td><span class="opt">optional</span></td><td>Used by the router to set the default <code>$pageTitle</code> (HTML <code>&lt;title&gt;</code> + visible header) when the plugin page is loaded. The plugin page can override it by assigning <code>$pageTitle</code> anywhere before the HTML.</td></tr>
+</table>
+
+<p>A front-end page file contains <strong>only business logic and HTML</strong>. The following variables are available without any setup:</p>
+<ul>
+  <li><strong><code>$db</code></strong> — database connection, ready to use.</li>
+  <li><strong><code>$isLoggedIn</code></strong> — whether the visitor is authenticated.</li>
+  <li><strong><code>$pageTitle</code></strong> — set from the manifest's <code>title_en</code> / <code>title_fr</code>. Override by assigning a new value before the HTML.</li>
+  <li><strong><code>getUiLang()</code></strong> — returns <code>'en'</code> or <code>'fr'</code>, language is already initialized.</li>
+  <li>Site header and footer are rendered automatically.</li>
+</ul>
+
+<pre><code>&lt;?php
+// loginRequired(); // uncomment to restrict to logged-in users only
+
+$txt = [
+    'en' =&gt; ['page_title' =&gt; 'My Page'],
+    'fr' =&gt; ['page_title' =&gt; 'Ma page'],
+][getUiLang()] ?? [];
+
+// Override the default title from the manifest (optional)
+$pageTitle = $txt['page_title'];
+
+$rows = $db-&gt;query(qp("SELECT * FROM {items} ORDER BY id DESC"))-&gt;fetchAll();
+// $isLoggedIn is available for auth-conditional content
+?&gt;
+&lt;div class="container py-4"&gt;
+
+    &lt;div class="d-flex align-items-center justify-content-between mb-4"&gt;
+        &lt;div class="section-title mb-0"&gt;&lt;span&gt;&lt;?= h($pageTitle) ?&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Your content here --&gt;
+
+&lt;/div&gt;</code></pre>
+
+<div class="tip">
+  Auth guards work normally inside plugin pages. <code>redirect()</code> sends a <code>Location</code> header and exits — PHP headers are not affected by the router's output buffering, so the redirect fires correctly before the site chrome is rendered.
+</div>
+
+<h3>Showing and hiding plugin pages</h3>
+<p>Plugin pages can be individually hidden without deactivating the whole plugin. Go to <strong>Admin → Pages</strong> and find the plugin's pages in the <em>Plugin pages</em> table. Each row has a <strong>Show / Hide</strong> button (eye icon) that toggles the page's visibility instantly. A hidden page returns a 404 to visitors; the plugin's admin sections and database tables are unaffected.</p>
+<p>This is useful when a plugin has several pages and only some should be publicly accessible at a given time.</p>
+
+
+<h2 id="linking">Linking to pages</h2>
+
+<h3>Linking to a plugin front-end page</h3>
+<p>Plugin pages are accessible at <code>/pages/{slug}</code>, exactly like core pages. Use <code>BASE_URL</code> to build absolute links so they work regardless of where the site is installed:</p>
+
+<pre><code>&lt;!-- In a PHP template --&gt;
+&lt;a href="&lt;?= BASE_URL ?&gt;/pages/my-slug"&gt;Go to my page&lt;/a&gt;
+
+&lt;!-- Or as a PHP string --&gt;
+$url = BASE_URL . '/pages/my-slug';</code></pre>
+
+<p>You can also use a relative path if you are already on the same origin — but <code>BASE_URL</code> is safer when the site lives in a subdirectory:</p>
+
+<pre><code>&lt;a href="/pages/my-slug"&gt;Go to my page&lt;/a&gt;</code></pre>
+
+<h3>Linking to a plugin admin page</h3>
+<p>The admin dispatcher URL follows the pattern <code>/admin/plugin-page?plugin={id}&amp;section={section}</code>:</p>
+
+<pre><code>&lt;!-- Sidebar link (generated automatically, but useful for redirects) --&gt;
+$adminUrl = BASE_URL . '/admin/plugin-page?plugin=my-plugin&amp;section=my-plugin';
+
+redirect($adminUrl);                   // after a POST action
+header('Location: ' . $adminUrl);     // raw redirect</code></pre>
+
+<h3>Linking from admin back to the front-end page</h3>
+<pre><code>&lt;a href="&lt;?= BASE_URL ?&gt;/pages/my-slug" target="_blank" class="btn btn-sm btn-outline-secondary"&gt;
+    &lt;i class="fa-solid fa-arrow-up-right-from-square me-1"&gt;&lt;/i&gt; View page
+&lt;/a&gt;</code></pre>
+
+<h3>Registering the page in the navigation menu</h3>
+<p>Plugin pages are not added to the site nav automatically. To add a nav item, either:</p>
+<ul>
+  <li>Go to <strong>Admin → Settings → Navigation</strong> and add the entry manually after activation, <strong>or</strong></li>
+  <li>Insert the nav item from your plugin's SQL install file:</li>
+</ul>
+
+<pre><code>-- sql/install.sql
+INSERT IGNORE INTO {nav_items}
+    (`label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`)
+VALUES
+    ('My Page', 'Ma page', '/pages/my-slug', 'fa-solid fa-star', 100, 1);</code></pre>
+
+<div class="tip">
+  Use <code>INSERT IGNORE</code> so re-running the SQL (e.g. after a reinstall) does not create duplicate entries.
+</div>
+
+<h2 id="assets">CSS &amp; JS assets</h2>
+
+<p>CSS and JS files listed under <code>assets</code> in the manifest are injected <strong>only on the plugin's own front-end pages</strong> — not globally. They are served directly by Apache from the <code>plugins/{id}/assets/</code> directory.</p>
+
+<pre><code>"assets": {
+    "css": ["assets/style.css"],
+    "js":  ["assets/app.js"]
+}</code></pre>
+
+<ul>
+  <li><strong>CSS</strong> is injected as <code>&lt;link&gt;</code> tags in <code>&lt;head&gt;</code>, after Bootstrap and the theme stylesheet.</li>
+  <li><strong>JS</strong> is injected as <code>&lt;script&gt;</code> tags just before the Bootstrap bundle in the footer.</li>
+  <li>Bootstrap 5 and Font Awesome are already loaded by the theme — no need to include them.</li>
+  <li>Multiple files are supported: add them in order to the array.</li>
+</ul>
+
+<h3>CSS layering — what goes where</h3>
+<p>Follow this order when deciding where to put CSS:</p>
+<ol>
+  <li><strong>Bootstrap 5 utilities first</strong> — <code>btn</code>, <code>container</code>, <code>d-flex</code>, <code>text-muted</code>, <code>small</code>, <code>gap-2</code>, <code>mb-3</code>, etc. Use these in your PHP templates before writing any custom CSS.</li>
+  <li><strong>Site-wide classes from <code>css/style.css</code></strong> — <code>.card-altered</code>, <code>.btn-primary-altered</code>, <code>.ac-tab-toggle</code>, <code>.section-title</code>, <code>.ac-state-pane</code>, etc. These are shared across all plugins and pages and respond correctly to themes.</li>
+  <li><strong>Plugin-specific CSS in <code>assets/style.css</code></strong> — only styles that are unique to your plugin and not expressible with Bootstrap or site classes. Register this file in <code>plugin.json → assets.css</code>.</li>
+</ol>
+
+<div class="warn">
+  <strong>Never add plugin CSS to <code>css/style.css</code>.</strong> That file is global — it loads on every page. Plugin styles belong exclusively in the plugin's own <code>assets/style.css</code>.
+</div>
+
+<h3>CSS variables — making your plugin theme-aware</h3>
+<p>The site exposes a CSS custom property palette in <code>css/style.css :root</code>. Use these variables in your plugin stylesheet instead of hard-coded colours so that your plugin automatically adapts when a theme changes the palette:</p>
+
+<pre><code>/* Instead of hard-coded colour: */
+.my-badge { background: rgba(0,0,0,.7); color: #fff; }
+
+/* Use a variable with a fallback — theme can override just the variable: */
+.my-badge { background: var(--overlay-badge-bg, rgba(0,0,0,.7)); color: #fff; }</code></pre>
+
+<p>Palette groups available in all themes:</p>
+<table class="kv">
+  <tr><th>Variables</th><th>Role</th></tr>
+  <tr><td><code>--sand-50 … --sand-300</code></td><td>Page and surface backgrounds</td></tr>
+  <tr><td><code>--neutral-100 … --neutral-800</code></td><td>Text and border shades (100 = lightest, 800 = body text)</td></tr>
+  <tr><td><code>--primary-300 … --primary-500</code></td><td>Brand accent (links, active buttons)</td></tr>
+  <tr><td><code>--modal-panel-bg</code></td><td>Modal / panel background (glass in altered-db theme)</td></tr>
+  <tr><td><code>--panel-border</code></td><td>Modal / panel border color</td></tr>
+  <tr><td><code>--card-lightbox-bg</code></td><td>Full-screen lightbox overlay background</td></tr>
+  <tr><td><code>--overlay-badge-bg</code></td><td>Small overlay badge on card images</td></tr>
+  <tr><td><code>--overlay-bar-bg</code></td><td>Bar overlay on card images</td></tr>
+  <tr><td><code>--overlay-qty-bg</code></td><td>Quantity badge overlay on card images</td></tr>
+  <tr><td><code>--overlay-add-bg</code></td><td>Add-to-deck overlay background</td></tr>
+  <tr><td><code>--mobile-nav-bg</code></td><td>Fixed bottom tab bar background (mobile)</td></tr>
+  <tr><td><code>--mobile-nav-border</code></td><td>Fixed bottom tab bar top border (mobile)</td></tr>
+</table>
+
+<p>A theme can restyle your plugin with zero changes to your code — it only needs to redefine the relevant variables in its <code>:root</code> block.</p>
+
+<div class="info">
+  PHP files inside <code>plugins/</code> are blocked from direct HTTP access by the <code>.htaccess</code> at the root of the plugins directory. CSS, JS, images and fonts are served normally.
+</div>
+
+
+<h2 id="admin">Admin pages</h2>
+
+<p>Each entry in the <code>admin</code> array registers one section in the admin panel. The section link appears in the sidebar for any user whose group has been granted the section permission.</p>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>section</td><td><span class="req">required</span></td><td>Unique section slug used for permission checks. Must not conflict with core section names.</td></tr>
+  <tr><td>file</td><td><span class="req">required</span></td><td>Path to the admin PHP file, relative to the plugin root.</td></tr>
+  <tr><td>label_en / label_fr</td><td><span class="opt">optional</span></td><td>Sidebar label in English and French.</td></tr>
+  <tr><td>icon</td><td><span class="opt">optional</span></td><td>Font Awesome class for the sidebar icon.</td></tr>
+</table>
+
+<p>The admin page is accessed at <code>/admin/plugin-page?plugin={id}&amp;section={section}</code>. The dispatcher validates the user's permission automatically before including the file. The page file does <strong>not</strong> need to call <code>require_once header.php</code> or <code>getDB()</code> — both are already handled:</p>
+
+<pre><code>&lt;?php
+// This file is included inside the admin layout.
+// $db is pre-injected by the dispatcher — use it directly.
+// All site functions and CSRF helpers are available.
+// Do NOT include the admin header or footer again.
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValid($_POST['csrf_token'] ?? '')) {
+        flash('Invalid token.', 'error');
+        redirect(BASE_URL . '/admin/plugin-page?plugin=my-plugin&amp;section=my-plugin');
+    }
+    // Handle your POST action...
+}
+?&gt;
+
+&lt;div class="admin-header-bar"&gt;
+    &lt;h1&gt;&lt;i class="fa-solid fa-star me-2"&gt;&lt;/i&gt;My Plugin&lt;/h1&gt;
+&lt;/div&gt;
+
+&lt;div class="card-altered p-3"&gt;
+    &lt;!-- Your admin UI here --&gt;
+&lt;/div&gt;</code></pre>
+
+<h3>Granting access to groups</h3>
+<p>Go to <strong>Admin → Groups</strong>, edit a group, and enable the section named after the plugin's <code>section</code> value. Members of that group will see the link in the sidebar.</p>
+
+
+<h2 id="tinymce">TinyMCE rich-text editor</h2>
+
+<p>Admin pages can embed a full rich-text editor using <strong>TinyMCE</strong>. The site already has a TinyMCE API key configured via the <code>TINYMCE_API_KEY</code> constant. Always check that the constant is defined and non-empty before loading TinyMCE — if the key is absent the textareas fall back to plain <code>&lt;textarea&gt;</code> elements.</p>
+
+<h3>Loading TinyMCE</h3>
+
+<p>Load the script from the TinyCloud CDN, then call <code>tinymce.init()</code>. Both steps must be wrapped in the <code>TINYMCE_API_KEY</code> guard:</p>
+
+<pre><code>&lt;?php if (defined('TINYMCE_API_KEY') &amp;&amp; TINYMCE_API_KEY !== ''): ?&gt;
+&lt;script
+    src="https://cdn.tiny.cloud/1/&lt;?= h(TINYMCE_API_KEY) ?&gt;/tinymce/6/tinymce.min.js"
+    referrerpolicy="origin"&gt;
+&lt;/script&gt;
+&lt;script&gt;
+tinymce.init({
+    selector:      '#my_body',
+    language:      '&lt;?= getUiLang() === 'fr' ? 'fr_FR' : 'en' ?&gt;',
+    height:        400,
+    menubar:       false,
+    branding:      false,
+    plugins:       'lists link image table code',
+    toolbar:       'undo redo | blocks | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image | table | code',
+    content_style: 'body { font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.7; }',
+    // Keep the hidden textarea in sync so form submit POSTs current content.
+    setup: function (editor) {
+        editor.on('change', function () { editor.save(); });
+    },
+});
+&lt;/script&gt;
+&lt;?php else: ?&gt;
+&lt;div class="alert alert-warning small"&gt;
+    TinyMCE is not configured (&lt;code&gt;TINYMCE_API_KEY&lt;/code&gt; is empty). Plain textarea active.
+&lt;/div&gt;
+&lt;?php endif; ?&gt;</code></pre>
+
+<div class="info">
+  <code>editor.on('change', () =&gt; editor.save())</code> is required. Without it, the form's hidden <code>&lt;textarea&gt;</code> is not updated when the user types, so the POST body is empty. TinyMCE replaces the textarea with an iframe and only writes back when you call <code>save()</code>.
+</div>
+
+<h3>Multiple textareas</h3>
+
+<p>Pass a comma-separated CSS selector to <code>selector</code> to initialise several editors at once:</p>
+
+<pre><code>tinymce.init({
+    selector: '#body_en, #body_fr',
+    // ... rest of options
+});</code></pre>
+
+<h3>Textareas inside tabs / hidden panels</h3>
+
+<p>TinyMCE initialises correctly even when its parent element has <code>display:none</code> (the editor uses an absolute-height iframe). However, when the panel becomes visible after a tab switch, call a <code>resize</code> event so TinyMCE repaints its toolbar:</p>
+
+<pre><code>// In your tab-switching JS:
+document.querySelectorAll('[data-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        // ... show/hide panels ...
+        if (typeof tinymce !== 'undefined') {
+            window.dispatchEvent(new Event('resize'));
+        }
+    });
+});</code></pre>
+
+<h3>Image uploads</h3>
+
+<div class="warn">
+  <strong>PHP upload limits</strong> — If your plugin accepts file uploads, two PHP settings must both be large enough or <code>$_FILES</code> will be silently empty with no error:
+  <ul style="margin:.5rem 0 0 1.2rem">
+    <li><code>upload_max_filesize</code> — maximum size of a single uploaded file.</li>
+    <li><code>post_max_size</code> — must be <strong>greater than</strong> <code>upload_max_filesize</code>.</li>
+  </ul>
+  Detection: <code>$_FILES['f']['error'] === UPLOAD_ERR_INI_SIZE</code><br>
+  Set in <code>.htaccess</code>: <code>php_value upload_max_filesize 20M</code> / <code>php_value post_max_size 25M</code>
+</div>
+
+<p>The site provides a <strong>generic image upload endpoint</strong> at <code>/admin/plugin-file-upload.php</code>. It accepts a multipart POST, validates the file (image MIME types only, max 5 MB), and stores it in <code>uploads/p_{plugin-id}/</code> — a public, PHP-execution-blocked directory. The subdirectory is created automatically on the first upload.</p>
+
+<p>To enable image uploading in your TinyMCE editor, add the <code>automatic_uploads</code> flag and a custom <code>images_upload_handler</code> to your <code>tinymce.init()</code> call. The handler sends three POST fields: the file, your plugin id, and the admin section slug (used for permission checking — the upload is rejected if the current admin session does not have access to that section).</p>
+
+<pre><code>tinymce.init({
+    selector:          '#my_body',
+    plugins:           'lists link image table code',
+    toolbar:           '... | image | ...',
+    automatic_uploads: true,
+
+    images_upload_handler: function (blobInfo, progress) {
+        return new Promise(function (resolve, reject) {
+            var fd = new FormData();
+            fd.append('file',    blobInfo.blob(), blobInfo.filename());
+            fd.append('plugin',  'my-plugin');      // your plugin id
+            fd.append('section', 'my-section');     // your admin section slug
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '&lt;?= h(BASE_URL) ?&gt;/admin/plugin-file-upload.php');
+            xhr.withCredentials = true;
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) { progress(e.loaded / e.total * 100); }
+            };
+            xhr.onload = function () {
+                if (xhr.status &lt; 200 || xhr.status &gt;= 300) {
+                    reject({ message: 'Upload failed (' + xhr.status + ')', remove: true });
+                    return;
+                }
+                try {
+                    var json = JSON.parse(xhr.responseText);
+                    if (json.error) { reject({ message: json.error, remove: true }); return; }
+                    resolve(json.location); // absolute URL inserted into the editor
+                } catch (e) {
+                    reject({ message: 'Unexpected server response', remove: true });
+                }
+            };
+            xhr.onerror = function () { reject({ message: 'Upload error', remove: true }); };
+            xhr.send(fd);
+        });
+    },
+
+    setup: function (editor) {
+        editor.on('change', function () { editor.save(); });
+    },
+});</code></pre>
+
+<p>The endpoint returns <code>{"location": "https://…/uploads/p_my-plugin/20260510_123456_ab12cd34.jpg"}</code>. TinyMCE uses this URL as the <code>src</code> attribute of the inserted <code>&lt;img&gt;</code> tag. Because the URL is absolute and the directory is publicly served, images remain accessible even when the content is displayed outside the admin panel — including inside newsletter emails sent to recipients.</p>
+
+<div class="warn">
+  Replace <code>'my-plugin'</code> and <code>'my-section'</code> with your actual plugin id and admin section slug. If the <code>section</code> value does not match a section the current admin has access to, all upload requests will return HTTP 403.
+</div>
+
+<div class="tip">
+  You do not need to declare the <code>uploads/p_my-plugin/</code> directory anywhere — the upload endpoint creates it automatically. Files in that directory are served as static assets; PHP execution is blocked by <code>uploads/.htaccess</code>.
+</div>
+
+<h3>Putting it all together</h3>
+
+<p>A complete admin form with a TinyMCE body field and image uploads:</p>
+
+<pre><code>&lt;form method="post"&gt;
+    &lt;input type="hidden" name="csrf_token" value="&lt;?= h(csrfToken()) ?&gt;"&gt;
+    &lt;input type="hidden" name="action"     value="save"&gt;
+
+    &lt;div class="mb-3"&gt;
+        &lt;label class="form-label"&gt;Title&lt;/label&gt;
+        &lt;input type="text" name="title" class="form-control"
+               value="&lt;?= h($row['title'] ?? '') ?&gt;" required&gt;
+    &lt;/div&gt;
+
+    &lt;div class="mb-4"&gt;
+        &lt;label class="form-label"&gt;Body&lt;/label&gt;
+        &lt;textarea name="body" id="my_body" rows="16"
+                  class="form-control"&gt;&lt;?= h($row['body'] ?? '') ?&gt;&lt;/textarea&gt;
+    &lt;/div&gt;
+
+    &lt;button type="submit" class="btn btn-primary-altered"&gt;Save&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;?php if (defined('TINYMCE_API_KEY') &amp;&amp; TINYMCE_API_KEY !== ''): ?&gt;
+&lt;script src="https://cdn.tiny.cloud/1/&lt;?= h(TINYMCE_API_KEY) ?&gt;/tinymce/6/tinymce.min.js"
+        referrerpolicy="origin"&gt;&lt;/script&gt;
+&lt;script&gt;
+tinymce.init({
+    selector:          '#my_body',
+    language:          '&lt;?= getUiLang() === 'fr' ? 'fr_FR' : 'en' ?&gt;',
+    height:            400,
+    menubar:           false,
+    branding:          false,
+    plugins:           'lists link image table code',
+    toolbar:           'undo redo | blocks | bold italic underline | bullist numlist | link image | table | code',
+    content_style:     'body { font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.7; }',
+    automatic_uploads: true,
+    images_upload_handler: function (blobInfo, progress) {
+        return new Promise(function (resolve, reject) {
+            var fd = new FormData();
+            fd.append('file',    blobInfo.blob(), blobInfo.filename());
+            fd.append('plugin',  'my-plugin');
+            fd.append('section', 'my-section');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '&lt;?= h(BASE_URL) ?&gt;/admin/plugin-file-upload.php');
+            xhr.withCredentials = true;
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) { progress(e.loaded / e.total * 100); }
+            };
+            xhr.onload = function () {
+                if (xhr.status &lt; 200 || xhr.status &gt;= 300) {
+                    reject({ message: 'Upload failed (' + xhr.status + ')', remove: true });
+                    return;
+                }
+                try {
+                    var r = JSON.parse(xhr.responseText);
+                    if (r.error) { reject({ message: r.error, remove: true }); return; }
+                    resolve(r.location);
+                } catch (e) { reject({ message: 'Bad response', remove: true }); }
+            };
+            xhr.onerror = function () { reject({ message: 'Upload error', remove: true }); };
+            xhr.send(fd);
+        });
+    },
+    setup: function (editor) {
+        editor.on('change', function () { editor.save(); });
+    },
+});
+&lt;/script&gt;
+&lt;?php else: ?&gt;
+&lt;div class="alert alert-warning mt-3 small"&gt;
+    TinyMCE is not configured (&lt;code&gt;TINYMCE_API_KEY&lt;/code&gt; is empty). Plain textarea active.
+&lt;/div&gt;
+&lt;?php endif; ?&gt;</code></pre>
+
+
+<h2 id="database">Database</h2>
+
+<p>If the plugin needs its own tables, declare the install file in the manifest:</p>
+<pre><code>"sql": "sql/install.sql"</code></pre>
+
+<p><code>install.sql</code> runs automatically the <strong>first time</strong> the plugin is activated. It must contain the <strong>complete schema</strong> for that version — all tables, all default rows. It never re-runs after that.</p>
+
+<p>Use <code>{curly-brace}</code> table placeholders — the same syntax as in PHP. The site automatically passes SQL files through <strong><code>qp()</code></strong> before executing them.</p>
+
+<p><code>qp()</code> automatically combines the site prefix, a <code>plugin_</code> segment, your <code>table_prefix</code>, and the table name. You just write <code>{tablename}</code> — the namespacing is handled for you:</p>
+
+<table class="kv">
+  <tr><th>table_prefix</th><th>You write</th><th>Result (site prefix: <code>altcore_</code>)</th></tr>
+  <tr><td><code>"hw"</code></td><td>{messages}</td><td>`altcore_plugin_hw_messages`</td></tr>
+  <tr><td><code>"mp"</code></td><td>{items}</td><td>`altcore_plugin_mp_items`</td></tr>
+</table>
+
+<div class="info">
+  Always use <code>qp()</code> for your plugin's tables — it automatically applies your plugin's prefix so you just write <code>{tablename}</code>.
+</div>
+
+<pre><code>-- sql/install.sql  (complete schema for v1.0.0)
+CREATE TABLE IF NOT EXISTS {items} (
+    `id`         INT AUTO_INCREMENT PRIMARY KEY,
+    `title`      VARCHAR(255) NOT NULL,
+    `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO {items} (`id`, `title`) VALUES (1, 'Default item');</code></pre>
+
+<h3>Migration files</h3>
+<p>When you add tables or columns in a new version, create a migration file named <code>update_{version}.sql</code> containing <strong>only the delta</strong> — the changes since the previous version. The full schema goes in <code>install.sql</code> so fresh installs get everything at once:</p>
+
+<pre><code>-- sql/update_1.1.0.sql  (delta only — new table added in v1.1.0)
+CREATE TABLE IF NOT EXISTS {settings} (
+    `key`   VARCHAR(100) NOT NULL PRIMARY KEY,
+    `value` TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO {settings} (`key`, `value`) VALUES ('greeting', 'Hello!');</code></pre>
+
+<div class="tip">
+  At the same time, add the new table to <code>install.sql</code> too — so users who install v1.1.0 directly get the full schema without needing the migration.
+</div>
+
+<table class="kv" style="margin-top:.75rem">
+  <tr><th>Scenario</th><th>What runs</th></tr>
+  <tr><td>Fresh install v1.0.0, then activate</td><td><code>install.sql</code></td></tr>
+  <tr><td>Update from v1.0.0 → v1.1.0</td><td><code>update_1.1.0.sql</code></td></tr>
+  <tr><td>Fresh install v1.1.0 directly</td><td><code>install.sql</code> (already contains everything)</td></tr>
+  <tr><td>Update from v1.0.0 → v1.2.0</td><td><code>update_1.1.0.sql</code> then <code>update_1.2.0.sql</code></td></tr>
+</table>
+
+<p>Use <code>qp()</code> in PHP whenever you query your plugin's tables:</p>
+
+<pre><code>$rows = $db-&gt;query(qp("SELECT * FROM {items}"))-&gt;fetchAll();
+// → SELECT * FROM `altcore_plugin_mp_items`</code></pre>
+
+<div class="tip">
+  Use <code>INSERT IGNORE</code> and <code>CREATE TABLE IF NOT EXISTS</code> so the SQL file is safe to re-run if something went wrong the first time.
+</div>
+
+<h3>Declaring tables for clean uninstall</h3>
+<p>Declare your plugin's tables in the manifest under <code>tables</code>. Use the same placeholder names as <code>qp()</code> — without braces or prefix:</p>
+<pre><code>"tables": ["messages", "settings"]</code></pre>
+<p>When deleting the plugin, a checkbox appears offering to drop these tables. If unchecked, the tables are left intact.</p>
+
+
+<h2 id="api">HTTP API endpoints</h2>
+
+<p>A plugin can expose one or more <strong>HTTP API endpoints</strong> that return JSON data. These endpoints are callable on demand — from JavaScript on the front-end, or from any PHP page — and are only active while the plugin is activated.</p>
+
+<h3>Declaring endpoints in plugin.json</h3>
+
+<pre><code>"api": [
+    {"endpoint": "data",  "file": "api/data.php"},
+    {"endpoint": "stats", "file": "api/stats.php"}
+]</code></pre>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>endpoint</td><td><span class="req">required</span></td><td>URL slug for this endpoint. Lowercase letters, digits, hyphens and underscores only.</td></tr>
+  <tr><td>file</td><td><span class="req">required</span></td><td>Path to the PHP handler file, relative to the plugin root.</td></tr>
+</table>
+
+<h3>URL pattern</h3>
+
+<p>Every declared endpoint is reachable at:</p>
+<pre><code>GET /api/{plugin-id}/{endpoint}</code></pre>
+<p>For a plugin with id <code>hello-world</code> and endpoint <code>data</code>:</p>
+<pre><code>GET /api/hello-world/data</code></pre>
+
+<p>The endpoint returns <strong>404 JSON</strong> automatically when the plugin is deactivated — no extra guard needed in the handler file.</p>
+
+<h3>Writing the handler file</h3>
+
+<p>The handler is a plain PHP file. All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
+
+<pre><code>&lt;?php
+// Reached via GET /api/hello-world/data
+
+$db = getDB();
+
+$greeting = $db-&gt;query(qp("SELECT value FROM {settings} WHERE `key` = 'greeting'"))-&gt;fetchColumn();
+$count    = (int)$db-&gt;query(qp("SELECT COUNT(*) FROM {messages}"))-&gt;fetchColumn();
+
+echo json_encode([
+    'greeting'      =&gt; $greeting ?: 'Hello!',
+    'message_count' =&gt; $count,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);</code></pre>
+
+<h3>Consuming from JavaScript</h3>
+
+<pre><code>// Output BASE_URL from PHP first so JS knows the site root:
+// &lt;script&gt;var SITE_BASE = '&lt;?= BASE_URL ?&gt;';&lt;/script&gt;
+
+fetch(SITE_BASE + '/api/hello-world/data')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        console.log(data.greeting, data.message_count);
+    });</code></pre>
+
+<h3>Consuming from PHP</h3>
+
+<pre><code>$raw  = file_get_contents(BASE_URL . '/api/hello-world/data');
+$data = json_decode($raw, true);
+echo $data['greeting'];</code></pre>
+
+<h3>Auth and authorization</h3>
+<p>The router does <strong>not</strong> enforce any authentication — API endpoints are public by default. If an endpoint should be restricted, add a session check at the top of the handler file:</p>
+
+<pre><code>&lt;?php
+// Require login
+if (!kcIsLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}</code></pre>
+
+
+<h2 id="helpers">Helper functions</h2>
+
+<p>The following helper functions are available in all plugin files:</p>
+
+<table class="kv">
+  <tr><th>Signature</th><th>Description</th></tr>
+  <tr><td>getDB(): PDO</td><td>Returns the shared PDO connection. Identical to the <code>$db</code> variable pre-injected in page and admin files — use either form.</td></tr>
+  <tr><td>qp(string $sql): string</td><td>Replaces <code>{table}</code> placeholders with the fully-prefixed plugin table name, e.g. <code>`altcore_plugin_hw_messages`</code>. Always use this for your plugin's tables.</td></tr>
+  <tr><td>h(string $s): string</td><td>HTML-escapes a string (ENT_QUOTES, UTF-8). Always use this before echoing user-supplied or database data into HTML.</td></tr>
+  <tr><td>getUiLang(): string</td><td>Returns <code>'en'</code> or <code>'fr'</code>. Falls back to <code>'en'</code> for languages without a translation file (es, it, de). Use this for UI string selection.</td></tr>
+  <tr><td>getLang(): string</td><td>Returns the raw session language code: <code>'en'</code>, <code>'fr'</code>, <code>'es'</code>, <code>'it'</code>, or <code>'de'</code>. Prefer <code>getUiLang()</code> for choosing between translated string sets.</td></tr>
+  <tr><td>getSetting(string $key, string $default = ''): string</td><td>Reads a site setting value by key. Results are cached in memory — multiple calls cost one query.</td></tr>
+  <tr><td>saveSetting(string $key, ?string $value): void</td><td>Writes (upserts) a site setting value.</td></tr>
+  <tr><td>kcIsLoggedIn(): bool</td><td>Returns <code>true</code> if the visitor is authenticated. Works transparently in both SSO (Keycloak) and local account modes.</td></tr>
+  <tr><td>loginRequired(): void</td><td>Redirects to the login page and exits if the visitor is not authenticated. One-liner for protected pages.</td></tr>
+  <tr><td>kcUser(): array</td><td>Returns <code>['sub' =&gt; string, 'email' =&gt; string, 'username' =&gt; string]</code>. Works in both SSO and local account modes. <code>sub</code> is the Keycloak UUID — empty in local account mode.</td></tr>
+  <tr><td>flash(string $msg, string $type = 'success'): void</td><td>Stores a flash message displayed on the next page load. <code>$type</code>: <code>'success'</code> or <code>'error'</code>.</td></tr>
+  <tr><td>redirect(string $url): void</td><td>Clears all output buffers, sends a <code>Location</code> header and exits.</td></tr>
+  <tr><td>csrfToken(): string</td><td>Returns the current CSRF token. Embed in forms as <code>&lt;input type="hidden" name="csrf_token" value="…"&gt;</code>.</td></tr>
+  <tr><td>csrfValid(?string $token): bool</td><td>Returns <code>true</code> if <code>$token</code> matches the session CSRF token. Use in every POST handler.</td></tr>
+  <tr><td>loadAlteredData(string $name): array</td><td>Returns a section of <code>data/altered.json</code> as an array. Valid keys: <code>'factions'</code>, <code>'types'</code>, <code>'rarities'</code>, <code>'sets'</code>, <code>'subtypes'</code>, <code>'keywords'</code>. Returns <code>[]</code> if the key does not exist. Cached in memory — multiple calls cost one disk read.</td></tr>
+  <tr><td>deckApiToken(): string</td><td>Returns the current user's Keycloak access token (auto-refreshed from DB). Returns an empty string if the token cannot be obtained. Pass as a <code>Bearer</code> token when calling <code>DECKS_API_URL</code>.</td></tr>
+  <tr><td>collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json'): array|true|false</td><td>Makes an authenticated HTTP request to an external API using the user's KC access token. Returns the decoded JSON array, <code>true</code> on 204 No Content, or <code>false</code> on error. Pass <code>COLLECTION_API_URL</code> as <code>$apiUrl</code> and <code>$_SESSION['user_id']</code> as <code>$userId</code>.</td></tr>
+</table>
+
+<h3>Using <code>deckApiToken()</code> and <code>collApiRequest()</code></h3>
+
+<pre><code>&lt;?php
+// Call an authenticated deck API endpoint
+$token = deckApiToken();
+if ($token) {
+    $ch = curl_init(DECKS_API_URL . '/api/decks');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER =&gt; true,
+        CURLOPT_HTTPHEADER     =&gt; ['Authorization: Bearer ' . $token, 'Accept: application/json'],
+    ]);
+    $data = json_decode(curl_exec($ch), true);
+    curl_close($ch);
+}
+
+// Call the collection API (handles token refresh automatically)
+$userId = (int)($_SESSION['user_id'] ?? 0);
+$result = collApiRequest(COLLECTION_API_URL, 'GET', '/api/collection', $userId);
+if ($result !== false) {
+    // $result is the decoded JSON array
+}</code></pre>
+
+
+<h2 id="inc">Shared helpers (<code>inc/</code>)</h2>
+
+<p>A plugin can place PHP functions shared across its <code>pages/</code>, <code>admin/</code> and <code>api/</code> files in an <code>inc/</code> directory. Both the plugin root and any subdirectory (<code>admin/</code>, <code>pages/</code> …) can have their own <code>inc/</code>:</p>
+
+<table class="kv">
+  <tr><th>Location</th><th>Scope</th></tr>
+  <tr><td><code>inc/functions.php</code></td><td>Shared across pages, admin and api.</td></tr>
+  <tr><td><code>admin/inc/functions.php</code></td><td>Admin-only helpers — not available to front-end pages or api.</td></tr>
+</table>
+
+<h3>Naming convention</h3>
+<p>Prefix every function with your plugin's <code>table_prefix</code> value. This prevents name collisions between plugins that could otherwise both define a generic function called <code>getMessages()</code>:</p>
+
+<table class="kv">
+  <tr><th>table_prefix</th><th>Function name style</th></tr>
+  <tr><td><code>"hw"</code></td><td><code>hwGetMessages()</code>, <code>hwAddMessage()</code>, <code>hwGetSetting()</code></td></tr>
+  <tr><td><code>"mp"</code></td><td><code>mpGetItems()</code>, <code>mpSaveItem()</code></td></tr>
+</table>
+
+<h3>Including the file</h3>
+<p>Use <code>require_once</code> with a path relative to the including file:</p>
+
+<table class="kv">
+  <tr><th>Including from</th><th>Path to use</th></tr>
+  <tr><td><code>pages/mpage.php</code> or <code>admin/msection.php</code></td><td><code>require_once __DIR__ . '/../inc/functions.php';</code></td></tr>
+  <tr><td><code>api/endpoint.php</code></td><td><code>require_once __DIR__ . '/../../inc/functions.php';</code></td></tr>
+  <tr><td><code>admin/msection.php</code> (admin-only helpers)</td><td><code>require_once __DIR__ . '/inc/functions.php';</code></td></tr>
+</table>
+
+<h3>Example — plugin root <code>inc/functions.php</code></h3>
+
+<pre><code>&lt;?php
+// inc/functions.php — shared helpers for the hello-world plugin
+
+function hwGetMessages(): array
+{
+    global $db;
+    return $db-&gt;query(qp("SELECT * FROM {messages} ORDER BY id DESC"))-&gt;fetchAll();
+}
+
+function hwAddMessage(string $text): int
+{
+    global $db;
+    $stmt = $db-&gt;prepare(qp("INSERT INTO {messages} (text) VALUES (:t)"));
+    $stmt-&gt;execute([':t' =&gt; $text]);
+    return (int)$db-&gt;lastInsertId();
+}
+
+function hwDeleteMessage(int $id): bool
+{
+    global $db;
+    $stmt = $db-&gt;prepare(qp("DELETE FROM {messages} WHERE id = :id"));
+    $stmt-&gt;execute([':id' =&gt; $id]);
+    return $stmt-&gt;rowCount() &gt; 0;
+}</code></pre>
+
+<h3>Example — <code>admin/inc/functions.php</code></h3>
+
+<pre><code>&lt;?php
+// admin/inc/functions.php — admin-only helpers
+
+function hwCountMessages(): int
+{
+    global $db;
+    return (int)$db-&gt;query(qp("SELECT COUNT(*) FROM {messages}"))-&gt;fetchColumn();
+}</code></pre>
+
+<div class="tip">
+  Keep <code>inc/</code> files to pure functions with no side-effects: no <code>echo</code>, no redirects. Logic that is only needed in admin pages belongs in <code>admin/inc/</code>, not in the shared root <code>inc/</code>.
+</div>
+
+
+<h2 id="variables">Variables &amp; constants</h2>
+
+<p>This section lists everything that is already defined and available in a plugin's PHP files, JS context and CSS, without any additional setup.</p>
+
+<h3>PHP — constants</h3>
+<p>These constants are available in every plugin PHP file.</p>
+
+<table class="kv">
+  <tr><th>Constant</th><th>Type</th><th>Description</th></tr>
+  <tr><td>BASE_URL</td><td>string</td><td>Site root URL without trailing slash, e.g. <code>https://example.com</code>. Use this for all links and asset URLs.</td></tr>
+  <tr><td>CDN_URL</td><td>string</td><td>Base URL for card images and CDN assets.</td></tr>
+  <tr><td>CARDS_API_URL</td><td>string</td><td>Base URL of the cards API.</td></tr>
+  <tr><td>DECKS_API_URL</td><td>string</td><td>Base URL of the decks API.</td></tr>
+  <tr><td>COLLECTION_API_URL</td><td>string</td><td>Base URL of the external collection API. Only use this constant when <code>COLLECTION_USE_API</code> is <code>true</code> — check with <code>defined('COLLECTION_API_URL')</code> if needed.</td></tr>
+</table>
+
+<h3>PHP — session variables</h3>
+<p>Available via <code>$_SESSION</code> in all plugin files.</p>
+
+<table class="kv">
+  <tr><th>Key</th><th>Type</th><th>Description</th></tr>
+  <tr><td>$_SESSION['user_id']</td><td>int</td><td>Local DB user ID. Set by all auth modes.</td></tr>
+  <tr><td>$_SESSION['kc_sub']</td><td>string</td><td>Keycloak subject UUID. Empty string in local account mode (no SSO). Use this for external API calls that identify users by SSO UUID.</td></tr>
+  <tr><td>$_SESSION['lang']</td><td>string</td><td>Current language code, e.g. <code>en</code>, <code>fr</code>. Prefer <code>getUiLang()</code> over reading this directly.</td></tr>
+</table>
+
+<h3>PHP — variables set in admin pages</h3>
+<p>These variables are already set when your admin page file is included.</p>
+
+<table class="kv">
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td>$db</td><td>PDO</td><td>Database connection — use directly: <code>$db-&gt;query(qp(...))</code>.</td></tr>
+  <tr><td>$adminUser</td><td>string</td><td>Display name of the currently logged-in admin.</td></tr>
+</table>
+
+<h3>PHP — variables set in front-end pages</h3>
+<p>These variables are available in every front-end plugin page file without any setup.</p>
+
+<table class="kv">
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td>$db</td><td>PDO</td><td>Database connection — use directly: <code>$db-&gt;query(qp(...))</code>.</td></tr>
+  <tr><td>$isLoggedIn</td><td>bool</td><td>Whether the visitor is authenticated. Works in both SSO and local account modes.</td></tr>
+  <tr><td>$pageTitle</td><td>string</td><td>Default page title from the manifest (<code>title_en</code> / <code>title_fr</code>). Override by assigning a new value anywhere before the HTML.</td></tr>
+</table>
+
+<h3>JS — global variables</h3>
+<p>The <code>bootstrap</code> object (Bootstrap 5) is available globally on every page.</p>
+
+<pre><code>new bootstrap.Modal(document.getElementById('my-modal')).show();</code></pre>
+
+<div class="info">
+  There is no global JS <code>BASE_URL</code> variable. If your plugin JS needs the site URL, output it from PHP: <code>&lt;script&gt;var MY_BASE = '&lt;?= BASE_URL ?&gt;';&lt;/script&gt;</code>
+</div>
+
+<h3>Global loading spinner — <code>window.acSpinner</code></h3>
+<p>A full-screen loading overlay is injected by <code>includes/footer.php</code> on every page and exposed as <code>window.acSpinner</code>. Use it whenever an async operation (fetch, file processing, …) may take a noticeable amount of time.</p>
+
+<table class="kv">
+  <tr><th>Method</th><th>Description</th></tr>
+  <tr><td><code>acSpinner.show(msg)</code></td><td>Display the overlay. <code>msg</code> is the text shown next to the spinner (e.g. <code>'Saving…'</code>). Pass an empty string or omit it for a spinner without text.</td></tr>
+  <tr><td><code>acSpinner.hide()</code></td><td>Dismiss the overlay.</td></tr>
+</table>
+
+<pre><code>// Show while a fetch is in progress
+window.acSpinner.show('Loading…');
+fetch('/api/my-plugin/data')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        // … handle data …
+    })
+    .finally(function () {
+        window.acSpinner.hide();
+    });</code></pre>
+
+<p>The overlay renders above Bootstrap modals (<code>z-index: 9100</code>). It uses theme CSS variables (<code>--sand-50</code>, <code>--primary-400</code>, <code>--neutral-700</code>) so it automatically adapts to both the default and azure themes. The spinner circle uses Bootstrap's <code>.spinner-border</code> class — no additional CSS needed.</p>
+<p>A live demo is available on the <strong>hello-world</strong> plugin's front page (<code>/pages/hello-page</code>).</p>
+
+<h3>CSS</h3>
+<p><strong>Bootstrap 5</strong> utility classes and components (<code>btn</code>, <code>container</code>, <code>card</code>, <code>text-muted</code>, etc.) are available in all plugin templates — no import needed. <strong>Font Awesome</strong> icons are also available everywhere.</p>
+
+<h2 id="dev">Local development</h2>
+
+<p>Use the <strong>Docker setup</strong> included in the repository root. It runs the full site locally — Apache, PHP 7.4, MariaDB, and all plugins — so your plugin pages, API endpoints, and admin sections behave exactly as they would in production.</p>
+
+<pre><code>docker compose up --build</code></pre>
+
+<p>The project folder is volume-mounted into the container, so any file you edit locally is served immediately — no rebuild needed. The site is available at <strong>http://localhost:8080</strong>. Activate your plugin from <strong>Admin → Plugins</strong> and navigate to <code>/pages/{your-slug}</code>.</p>
+
+<p>See the repository <code>README.md</code> for full Docker setup instructions including creating the first admin account and resetting the database.</p>
+
+
+<h2 id="zip">Packaging a ZIP</h2>
+
+<p>Create a ZIP archive of your plugin directory and upload it via <strong>Admin → Plugins → Install plugin</strong>. Use your OS's built-in archive tool or any command-line ZIP tool — no helper script is required.</p>
+
+<pre><code># From inside the plugins/ directory — produces a single top-level folder inside the ZIP:
+zip -r my-plugin-1.0.0.zip my-plugin/
+
+# Or via git archive — cleanest option, excludes untracked files:
+git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</code></pre>
+
+<div class="tip">Before zipping, double-check your <code>plugin.json</code>: required fields (<code>id</code>, <code>name</code>, <code>version</code>, <code>description</code>, <code>author</code>), semver version, and that every file referenced in the manifest (<code>pages</code>, <code>admin</code>, <code>api</code>, <code>assets</code>, <code>sql</code>) exists on disk.</div>
+
+<h3>ZIP structure</h3>
+<p>The ZIP must contain a <code>plugin.json</code> at its root, or inside a <strong>single top-level directory</strong> (the GitHub download format). Both structures are accepted:</p>
+
+<div class="tree">
+<strong>Flat (recommended)</strong><br>
+<span class="file">plugin.json</span><br>
+<span class="dir">pages/</span><br>
+&nbsp;&nbsp;<span class="file">front.php</span><br>
+&nbsp;&nbsp;<span class="file">detail.php</span><br>
+<span class="dir">admin/</span><br>
+&nbsp;&nbsp;<span class="file">index.php</span><br>
+&nbsp;&nbsp;<span class="file">settings.php</span><br>
+<span class="dir">assets/</span><br>
+&nbsp;&nbsp;<span class="file">style.css</span><br>
+&nbsp;&nbsp;<span class="file">app.js</span><br>
+<span class="dir">api/</span><br>
+&nbsp;&nbsp;<span class="file">data.php</span><br>
+<span class="dir">sql/</span><br>
+&nbsp;&nbsp;<span class="file">install.sql</span><br>
+&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>
+</div>
+
+<div class="tree">
+<strong>Single top-level folder (GitHub archive format)</strong><br>
+<span class="dir">my-plugin/</span><br>
+&nbsp;&nbsp;<span class="file">plugin.json</span><br>
+&nbsp;&nbsp;<span class="dir">pages/</span><br>
+&nbsp;&nbsp;<span class="dir">admin/</span><br>
+&nbsp;&nbsp;<span class="dir">assets/</span><br>
+&nbsp;&nbsp;<span class="dir">sql/</span>
+</div>
+
+<div class="warn">
+  The ZIP extractor rejects any entry containing <code>..</code> or an absolute path. Make sure your ZIP tool does not produce such entries.
+</div>
+
+<h3>Automatically excluded files</h3>
+<p>The installer silently skips a built-in list of files and directories even if they are present in the ZIP. This acts as a safety net for common dev artefacts left in by mistake:</p>
+
+<table class="kv">
+  <tr><th>Rule</th><th>What it skips</th></tr>
+  <tr><td><code>.DS_Store</code></td><td>macOS metadata file</td></tr>
+  <tr><td><code>Thumbs.db</code></td><td>Windows thumbnail cache</td></tr>
+  <tr><td><code>__MACOSX/</code></td><td>macOS ZIP artefact directory and all its contents</td></tr>
+  <tr><td><code>.git/</code></td><td>Git repository data</td></tr>
+  <tr><td><code>.svn/</code></td><td>Subversion repository data</td></tr>
+</table>
+
+<p>Rules are defined in <code>PLUGIN_INSTALL_EXCLUDE</code> in <code>includes/plugins.php</code>. Three rule types are supported:</p>
+<ul>
+  <li><strong>Basename</strong> — a name with no <code>/</code>, e.g. <code>.DS_Store</code>: skips any file with that name regardless of depth.</li>
+  <li><strong>Directory prefix</strong> — ends with <code>/</code>, e.g. <code>__MACOSX/</code>: skips the entire directory tree.</li>
+  <li><strong>Exact path</strong> — contains a <code>/</code> but does not end with one, e.g. <code>docs/notes.md</code>: skips that precise path only.</li>
+</ul>
+
+
+<h2 id="install">Installing, updating &amp; activating</h2>
+
+<h3>Installing</h3>
+<ol>
+  <li>Go to <strong>Admin → Plugins</strong>.</li>
+  <li>Click <strong>Install plugin</strong> and upload the ZIP.</li>
+  <li>The plugin appears in the list with status <em>Inactive</em>.</li>
+  <li>Click <strong>Activate</strong>. If the plugin declares a SQL file, the tables are created automatically at this step.</li>
+  <li>The plugin's front-end pages are now reachable and its admin sections appear in the sidebar.</li>
+</ol>
+
+<h3>Updating</h3>
+<p>Upload a new ZIP via the same <strong>Install plugin</strong> button. If the plugin is already installed and the ZIP contains a <strong>higher version number</strong>, the files are replaced automatically and any applicable migration SQL files are executed. The plugin stays in its current state (active or inactive) — no need to deactivate first.</p>
+<p>If the uploaded version is equal to or lower than the installed version, the upload is rejected with an error.</p>
+
+<h3>SQL migrations</h3>
+<p>Place migration files in <code>sql/</code>, named <code>update_{version}.sql</code>, containing <strong>only the delta</strong> for that version. On update the system runs every applicable file in version order. See the <a href="#database">Database</a> section for the full explanation and scenario table.</p>
+<div class="tip">
+  Use <code>CREATE TABLE IF NOT EXISTS</code> and <code>ALTER TABLE ... ADD COLUMN IF NOT EXISTS</code> to keep migrations safe to re-run.
+</div>
+
+<h3>Slug conflicts</h3>
+<p>The system checks for slug conflicts <strong>before extracting the ZIP</strong>, at install time, update time, and re-activation. If a plugin declares a page slug or admin section slug that already exists — as a core page file, an admin-created page in the database, a core admin section, or a slug from another active plugin — the operation is rejected with an explicit error listing which slug conflicts and why.</p>
+<p>Choose unique slugs, typically prefixed with your plugin id to avoid collisions, e.g. <code>hello-page-lock</code> rather than <code>about</code>.</p>
+
+<h3>Multiple pages, admin sections and tables</h3>
+<p>All three are arrays in the manifest — add as many entries as needed:</p>
+<pre><code>"pages":  [ {...}, {...} ],    // each entry = one URL
+"admin":  [ {...}, {...} ],    // each entry = one sidebar link
+"tables": ["messages", "settings"]  // each entry = one table to offer for drop on delete</code></pre>
+<p>A single <code>install.sql</code> can contain multiple <code>CREATE TABLE</code> statements. SQL migrations follow the same rule.</p>
+
+<h3>Granting admin access to groups</h3>
+<p>After activation, go to <strong>Admin → Groups</strong>, edit the group, and enable the plugin's section slug(s). The links will appear in the sidebar for members of that group.</p>
+
+<h3>Deactivating &amp; deleting</h3>
+<ul>
+  <li><strong>Deactivate</strong> — pages and admin sections are hidden instantly. Plugin files and database tables are left intact.</li>
+  <li><strong>Delete</strong> — the plugin must be deactivated first. Deleting removes all plugin files and the DB registration row. If the manifest declares <code>tables</code>, a checkbox lets the admin choose to drop them — otherwise they are left intact.</li>
+</ul>
+
+
+<h2 id="security">Security notes</h2>
+
+<ul>
+  <li><strong>Trust</strong> — plugins execute arbitrary PHP on the server. Only install plugins from sources you control or fully trust.</li>
+  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>.</li>
+  <li><strong>Output escaping</strong> — always use <code>h()</code> to escape user-supplied data before rendering HTML.</li>
+  <li><strong>SQL injection</strong> — always use PDO prepared statements (<code>$db-&gt;prepare()</code> + <code>execute()</code>) for any query involving user input.</li>
+  <li><strong>Direct PHP access</strong> — PHP files in <code>plugins/</code> are not directly accessible via URL. Only static assets (CSS, JS, images) in <code>assets/</code> are served publicly.</li>
+  <li><strong>File uploads</strong> — if your plugin handles uploads, validate MIME types, restrict extensions and store files outside the webroot or in a safe subdirectory.</li>
+</ul>
+
+
+<h2 id="example">Example plugin</h2>
+
+<p>A ready-to-use example plugin is included at <code>plugins/hello-world/</code>. Read through its files to see a complete working plugin.</p>
+
+<div class="tree">
+<span class="dir">hello-world/</span><br>
+&nbsp;&nbsp;<span class="file">plugin.json</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># manifest</span><br>
+&nbsp;&nbsp;<span class="dir">inc/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># shared helpers — hwGetMessages(), hwAddMessage(), …</span><br>
+&nbsp;&nbsp;<span class="dir">pages/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">hellopage.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># /pages/hello-page — public, conditional content</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">hellopagelock.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># /pages/hello-page-lock — loginRequired()</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">empty.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># minimal front-end page template</span><br>
+&nbsp;&nbsp;<span class="dir">admin/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">messages.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># section hello-messages — add / delete messages</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">settings.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># section hello-settings — greeting setting</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">empty.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># minimal admin section template</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">inc/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># admin-only helpers — hwCountMessages()</span><br>
+&nbsp;&nbsp;<span class="dir">assets/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">style.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># scoped to plugin front-end pages</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">hello.js</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># JS counter demo</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">no_rules.png</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># static image demo</span><br>
+&nbsp;&nbsp;<span class="dir">api/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /api/hello-world/data</span><br>
+&nbsp;&nbsp;<span class="dir">sql/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — {messages} table</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta — adds {settings} table</span>
+</div>
+
+<p>What it demonstrates:</p>
+<ul>
+  <li>Two front-end pages: a public page (<code>$isLoggedIn</code> for conditional content) and a protected page (<code>loginRequired()</code>)</li>
+  <li>Two admin sections: message list with add/delete, and a key/value settings form</li>
+  <li>Two database tables with a full SQL install file and a migration</li>
+  <li>CSS and JS assets loaded automatically on the plugin's pages, plus a static image</li>
+  <li>An HTTP API endpoint returning JSON</li>
+  <li>The <code>$txt</code> multilingual pattern — all UI strings declared in one array, no hardcoded text in the HTML</li>
+  <li>Auth identity via <code>kcUser()</code> — works in both SSO and local account modes</li>
+  <li>Minimal templates: <code>pages/empty.php</code> and <code>admin/empty.php</code> as blank starting points</li>
+  <li>Shared helpers in <code>inc/functions.php</code> — plugin-prefixed functions (<code>hw*</code>) shared across pages, admin and api; included with <code>require_once __DIR__ . '/../inc/functions.php'</code></li>
+  <li>Admin-only helpers in <code>admin/inc/functions.php</code> — functions scoped to admin pages only; included with <code>require_once __DIR__ . '/inc/functions.php'</code></li>
+</ul>
+
+<h3>Checking login state</h3>
+<p><code>loginRequired()</code>, <code>kcIsLoggedIn()</code> and <code>kcUser()</code> work transparently in both SSO (Keycloak) and local account modes. Never read <code>$_SESSION</code> keys directly — use these helpers instead.</p>
+<p><strong><code>$isLoggedIn</code></strong> is pre-injected on every plugin page — no call needed for public pages that only show different content based on auth state.</p>
+
+<pre><code>// Protected page — one line is all it takes
+loginRequired();
+
+// Public page with auth-conditional block — $isLoggedIn already set
+if ($isLoggedIn) {
+    // logged-in content
+} else {
+    // anonymous content
+}
+</code></pre>
+
+<h3>User identity</h3>
+<p>Call <code>kcUser()</code> to get the logged-in user's identity. Works in both SSO and local account modes — no difference in usage:</p>
+
+<pre><code>$user     = kcUser(); // ['sub' => '...', 'email' => '...', 'username' => '...']
+$userId   = (int)($_SESSION['user_id'] ?? 0); // local DB primary key
+$userName = $user['username']; // display name
+$userMail = $user['email'];    // email address
+$userSub  = $user['sub'];      // SSO UUID — empty in local account mode
+</code></pre>
+
+<table class="kv">
+  <tr><th>Key</th><th>Description</th><th>When to use</th></tr>
+  <tr><td>$_SESSION['user_id']</td><td>Local DB primary key (<code>users.id</code>)</td><td>Internal DB joins</td></tr>
+  <tr><td>kcUser()['sub']</td><td>SSO subject UUID — empty in local account mode</td><td>Calling external APIs or cross-site identification</td></tr>
+  <tr><td>kcUser()['username']</td><td>Display name / preferred username</td><td>Showing the user's name in the UI</td></tr>
+  <tr><td>kcUser()['email']</td><td>Email address from the active session</td><td>Sending emails, account lookup</td></tr>
+</table>
+
+</main>
+</div>
+
+<script>
+// Highlight active nav link based on scroll position
+(function () {
+    var links   = document.querySelectorAll('nav a');
+    var targets = [];
+    links.forEach(function (a) {
+        var id = a.getAttribute('href').replace('#', '');
+        var el = document.getElementById(id);
+        if (el) targets.push({ a: a, el: el });
+    });
+    function onScroll() {
+        var scroll = window.scrollY + 80;
+        var active = null;
+        targets.forEach(function (t) {
+            if (t.el.offsetTop <= scroll) active = t;
+        });
+        links.forEach(function (a) { a.classList.remove('active'); });
+        if (active) active.a.classList.add('active');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+}());
+</script>
+</body>
+</html>

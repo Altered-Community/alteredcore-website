@@ -1,0 +1,15 @@
+.hello-world-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.hello-world-list li {
+    padding: .6rem .9rem;
+    border-bottom: 1px solid var(--neutral-200);
+    color: var(--neutral-800);
+}
+
+.hello-world-list li:last-child {
+    border-bottom: none;
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Altered Icons — Kit Reference</title>
+<link rel="stylesheet" href="alteredicons.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f0f13; color: #e2e8f0; padding: 2rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: .25rem; color: #fff; }
+  p  { font-size: .85rem; color: #94a3b8; margin-bottom: 2rem; }
+  code { background: #1e1e2e; border-radius: 4px; padding: 1px 5px; font-size: .8rem; color: #a78bfa; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: .75rem;
+  }
+  .icon-card {
+    background: #1e1e2e;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 1rem .75rem .75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .icon-card:hover { border-color: #a78bfa; background: #27273a; }
+  .icon-card i { font-size: 1.8rem; color: #c4b5fd; }
+  .icon-card .name {
+    font-size: .7rem;
+    color: #94a3b8;
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .icon-card .name strong { color: #e2e8f0; font-weight: 600; }
+  .copied {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #a78bfa;
+    color: #0f0f13;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .4rem 1rem;
+    border-radius: 99px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .copied.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1>Altered Icons — Kit Reference</h1>
+<p>Click any icon to copy its class. Usage: <code>&lt;i class="fak fa-{name}"&gt;&lt;/i&gt;</code></p>
+
+<div class="grid" id="grid"></div>
+<div class="copied" id="toast">Copied!</div>
+
+<script>
+const grid  = document.getElementById('grid');
+const toast = document.getElementById('toast');
+let toastTimer;
+
+function renderIcon(name) {
+  const card = document.createElement('div');
+  card.className = 'icon-card';
+  card.innerHTML = `<i class="fak ${name}"></i><div class="name"><strong>${name}</strong></div>`;
+  card.addEventListener('click', () => {
+    navigator.clipboard.writeText(`fak ${name}`).catch(() => {});
+    clearTimeout(toastTimer);
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+  });
+  grid.appendChild(card);
+}
+
+[
+  "fa-alt-wchampion", "fa-alt-wchampion2",
+  "fa-altered-0", "fa-altered-1", "fa-altered-2", "fa-altered-3", "fa-altered-4",
+  "fa-altered-5", "fa-altered-6", "fa-altered-7", "fa-altered-8", "fa-altered-9",
+  "fa-altered-a", "fa-altered-c", "fa-altered-d", "fa-altered-f", "fa-altered-g",
+  "fa-altered-h", "fa-altered-i", "fa-altered-j", "fa-altered-k", "fa-altered-l",
+  "fa-altered-m", "fa-altered-o", "fa-altered-p", "fa-altered-r", "fa-altered-swirl",
+  "fa-altered-t", "fa-altered-v", "fa-altered-x", "fa-altered-z",
+  "fa-ax", "fa-bga", "fa-bgg-social", "fa-booster-pack", "fa-br",
+  "fa-collection", "fa-display-box", "fa-ext-coreset", "fa-ext-kickstarter",
+  "fa-gamegenic", "fa-ks-set-icon", "fa-ly", "fa-mobile-notch-haptic",
+  "fa-mu", "fa-nej", "fa-or", "fa-roc", "fa-sdu", "fa-sky",
+  "fa-starter-deck", "fa-tbf", "fa-wfm", "fa-yz",
+].forEach(renderIcon);
+</script>
+</body>
+</html>

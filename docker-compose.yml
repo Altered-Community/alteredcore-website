@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: alteredcore
+      MARIADB_USER: alteredcore
+      MARIADB_PASSWORD: alteredcore
+      DB_PREFIX: "dev_"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/schema.sql:/tmp/schema-template.sql:ro
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-schema.sh:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pma:
+    image: phpmyadmin:latest
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: alteredcore
+      PMA_PASSWORD: alteredcore
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

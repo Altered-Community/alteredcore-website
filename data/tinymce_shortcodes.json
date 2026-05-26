@@ -1,0 +1,86 @@
+{
+  "shortcodes": [
+    {
+      "tag": "btn",
+      "button_id": "altered_btn",
+      "label": "Button / Link",
+      "description": "Insert a styled button or link",
+      "mce_icon": "link",
+      "params": [
+        { "name": "url",     "type": "input",     "label": "URL",              "required": true,  "default": "", "placeholder": "https://" },
+        { "name": "text",    "type": "input",     "label": "Text",             "required": false, "default": "", "placeholder": "Click here" },
+        { "name": "style",   "type": "selectbox", "label": "Style",            "required": false, "default": "primary_sm",
+          "items": [
+            { "value": "primary_sm",   "text": "Primary (small)" },
+            { "value": "primary",      "text": "Primary" },
+            { "value": "secondary_sm", "text": "Secondary (small)" },
+            { "value": "secondary",    "text": "Secondary" },
+            { "value": "danger_sm",    "text": "Danger (small)" },
+            { "value": "none",         "text": "No style" }
+          ]
+        },
+        { "name": "icon",    "type": "input",     "label": "Icon class",       "required": false, "default": "", "placeholder": "fa-solid fa-arrow-right" },
+        { "name": "iconpos", "type": "selectbox", "label": "Icon position",    "required": false, "default": "after",
+          "items": [
+            { "value": "after",  "text": "After text" },
+            { "value": "before", "text": "Before text" }
+          ]
+        },
+        { "name": "newtab",  "type": "checkbox",  "label": "Open in new tab",  "required": false, "default": false }
+      ]
+    },
+    {
+      "tag": "section-title",
+      "button_id": "altered_section_title",
+      "label": "Section Title",
+      "description": "Insert a styled section title with underline",
+      "mce_icon": "header",
+      "params": [
+        { "name": "text", "type": "input", "label": "Title text", "required": true, "default": "", "placeholder": "Latest news" }
+      ]
+    },
+    {
+      "tag": "card",
+      "button_id": "altered_card",
+      "label": "Altered Card",
+      "description": "Insert an Altered card embed",
+      "mce_icon": "image",
+      "params": [
+        { "name": "ref",  "type": "input",     "label": "Card reference", "required": true,  "default": "", "placeholder": "ALT_COREKS_B_ABYS_01_C" },
+        { "name": "lang", "type": "selectbox", "label": "Language",       "required": false, "default": "en",
+          "items": [
+            { "value": "en", "text": "English" },
+            { "value": "fr", "text": "French" },
+            { "value": "de", "text": "German" },
+            { "value": "it", "text": "Italian" },
+            { "value": "es", "text": "Spanish" }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "altered-card",
+      "button_id": "altered_card_img",
+      "label": "Card image (Non-Unique)",
+      "description": "Insert a non-unique Altered card image from the CDN, sized to fit",
+      "mce_icon": "image",
+      "params": [
+        { "name": "ref",    "type": "input", "label": "Card reference", "required": true,  "default": "",    "placeholder": "ALT_CORE_B_01_C" },
+        { "name": "width",  "type": "input", "label": "Width (px)",     "required": false, "default": "166", "placeholder": "166" },
+        { "name": "height", "type": "input", "label": "Height (px)",    "required": false, "default": "230", "placeholder": "230" }
+      ]
+    },
+    {
+      "tag": "altered-card-unique",
+      "button_id": "altered_card_unique",
+      "label": "Card image (Unique)",
+      "description": "Insert a unique Altered card rendered by the JS card renderer",
+      "mce_icon": "image",
+      "params": [
+        { "name": "ref",    "type": "input", "label": "Card reference (unique)", "required": true,  "default": "",    "placeholder": "ALT_CORE_B_01_U_1" },
+        { "name": "width",  "type": "input", "label": "Width (px)",              "required": false, "default": "166", "placeholder": "166" },
+        { "name": "height", "type": "input", "label": "Height (px)",             "required": false, "default": "230", "placeholder": "230" }
+      ]
+    }
+  ]
+}

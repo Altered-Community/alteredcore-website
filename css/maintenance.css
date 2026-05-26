@@ -1,0 +1,46 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FAF5E8;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #2C2416;
+    padding: 2rem;
+}
+.maintenance-box {
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 8px 32px rgba(44,36,22,.1);
+}
+.maintenance-icon {
+    width: 140px;
+    height: auto;
+    margin: 0 auto 1.5rem;
+    display: block;
+}
+h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -.02em;
+}
+p {
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #534B40;
+}
+.site-name {
+    display: block;
+    margin-top: 2.5rem;
+    font-size: .8rem;
+    color: #8A7D6A;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}

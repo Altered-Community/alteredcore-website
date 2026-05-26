@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Skip real files and real directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Route all /pages/{slug} through the central router (core + plugin pages)
+    RewriteRule ^pages/([a-z0-9_-]+)/?$ pages/_router.php [QSA,L]
+
+    # Plugin API endpoints: /api/{plugin-id}/{endpoint}
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/([a-z0-9_-]+)/([a-z0-9_-]+)/?$ includes/_plugin_router.php?_plugin=$1&_endpoint=$2 [QSA,L]
+
+    # All other extensionless URLs get .php appended directly
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([^.]+?)/?$ $1.php [L]
+</IfModule>
+
+# ErrorDocument 404 /pages/404.php
