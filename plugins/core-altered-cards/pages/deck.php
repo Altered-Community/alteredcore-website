@@ -467,7 +467,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 </button>
             </form>
             <?php endif; ?>
-            <button type="button" id="deck-rename-btn" class="btn btn-outline-secondary btn-sm">
+            <button type="button" id="deck-rename-btn" class="btn btn-outline-secondary btn-sm d-none">
                 <i class="fa-solid fa-pencil me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['rename_btn']) ?></span>
             </button>
             <?php endif; ?>
