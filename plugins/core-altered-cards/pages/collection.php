@@ -120,7 +120,7 @@ function _coll_from_text(string $text): array {
         if (preg_match('/^(\d+)\s+(ALT_[A-Z0-9_]+)$/i', $line, $m)) {
             $ref = strtoupper($m[2]);
             $qty = (int)$m[1];
-            if ($qty > 0 && strpos($ref, 'FOILER') === false) $map[$ref] = $qty;
+            if ($qty > 0 && strpos($ref, 'FOILER') === false) $map[$ref] = min(99, $qty);
         }
     }
     return $map;
@@ -652,7 +652,7 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
                     var ref = (fields[0] || '').trim().toUpperCase();
                     var qty = parseInt((fields[3] || '0').trim(), 10);
                     if (/^ALT_[A-Z0-9_]+$/.test(ref) && !/FOILER/.test(ref) && qty > 0) {
-                        cards[ref] = (cards[ref] || 0) + qty;
+                        cards[ref] = Math.min(99, (cards[ref] || 0) + qty);
                     }
                 });
 
