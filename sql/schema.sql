@@ -417,7 +417,7 @@ INSERT INTO `{prefix}sidebar_items` (`id`, `label_en`, `label_fr`, `url`, `icon`
 (1, 'Start Here', 'Pour Commencer', '#', '', 1, 1, 0, 1, 0, '2026-05-13 18:06:01'),
 (2, 'What is Altered', 'Qu\'est-ce qu\'Altered ?', 'https://www.altered.gg/the-game/what-is-altered', 'fak fa-altered-swirl', 2, 1, 0, 0, 1, '2026-05-13 18:06:25'),
 (3, 'How to Play', 'Comment jouer ?', 'https://www.altered.gg/the-game/how-to-play', 'fa-solid fa-graduation-cap', 3, 1, 0, 0, 1, '2026-05-13 18:06:46'),
-(4, 'Play Altered Online', 'Joue Ã  Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12');
+(4, 'Play Altered Online', 'Joue à Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12');
 
 INSERT INTO `{prefix}site_settings` (`key`, `value`, `updated_at`) VALUES
 ('active_theme', 'azure', '2026-05-13 14:21:02');
@@ -431,7 +431,7 @@ INSERT INTO `{prefix}user_menu_items` (`id`, `type`, `system_key`, `label_en`, `
 (1, 'system', 'email_display', NULL, NULL, NULL, NULL, 10, 1, '2026-05-13 14:21:02'),
 (2, 'system', 'account', 'My account', 'Mon compte', NULL, 'fa-solid fa-user', 20, 1, '2026-05-13 14:21:02'),
 (3, 'separator', NULL, NULL, NULL, NULL, NULL, 30, 1, '2026-05-13 14:21:02'),
-(4, 'system', 'logout', 'Sign out', 'DÃ©connexion', NULL, 'fa-solid fa-right-from-bracket', 40, 1, '2026-05-13 14:21:02');
+(4, 'system', 'logout', 'Sign out', 'Déconnexion', NULL, 'fa-solid fa-right-from-bracket', 40, 1, '2026-05-13 14:21:02');
 
 INSERT INTO `{prefix}users` (`id`, `kc_sub`, `email`, `username`, `is_admin`, `group_id`, `admin_username`, `admin_password_hash`, `local_password_hash`, `local_remember_token`, `local_remember_expiry`, `lang_pref`, `kc_refresh_token`, `kc_token_expiry`, `created_at`, `updated_at`) VALUES
 (1, NULL, NULL, NULL, 1, 1, 'admin', '$2y$10$KD56IU3XvzJ88l3FguOL7.3hkBZMzjIOnV7626JrepXTLGN7QYSfu', NULL, NULL, NULL, 'en', NULL, 0, NOW(), NOW());
