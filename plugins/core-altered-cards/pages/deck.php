@@ -582,12 +582,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         </div>
     </div>
 
-    <!-- Cards + sidebar layout -->
-    <div class="deck-content-layout">
-
-      <!-- Left: toggle + cards -->
-      <div>
-        <div class="decks-tabs mb-3">
+    <div class="decks-tabs mb-3">
             <?php if (!empty($deck['cards'])): ?>
             <button type="button" id="deck-view-grid" class="decks-tab active">
                 <i class="fa-solid fa-grip"></i>
@@ -597,15 +592,17 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <i class="fa-solid fa-list"></i>
                 <span><?= h($txt['view_list']) ?></span>
             </button>
-            <button type="button" id="deck-view-stats" class="decks-tab">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Stats</span>
-            </button>
             <?php endif; ?>
             <button type="button" id="deck-view-desc" class="decks-tab<?= empty($deck['cards']) ? ' active' : '' ?>">
                 <i class="fa-solid fa-align-left"></i>
                 <span><?= h($txt['description']) ?></span>
             </button>
+            <?php if (!empty($deck['cards'])): ?>
+            <button type="button" id="deck-view-stats" class="decks-tab">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Stats</span>
+            </button>
+            <?php endif; ?>
         </div>
 
         <!-- Grid view -->
@@ -703,18 +700,13 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <p class="text-muted" style="font-size:.9rem"><?= h($txt['no_description']) ?></p>
             <?php endif; ?>
         </div>
-      </div>
 
-      <!-- Right: stats sidebar -->
-      <?php if (!empty($deck['cards'])): ?>
-      <aside class="deck-sidebar">
-        <div class="d-flex align-items-center gap-2 mb-2">
-            <i class="fa-solid fa-chart-bar" style="color:var(--neutral-400);font-size:.85rem"></i>
-            <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--neutral-400)"><?= h($txt['statistics']) ?></span>
-        </div>
+        <!-- Stats view -->
+        <?php if (!empty($deck['cards'])): ?>
+        <div id="deck-stats-view" style="display:none">
         <div class="deck-stats-col">
             <?php
-            // Render a vertical cost curve (slots 0–7)
+            // Render a vertical cost curve (slots 0-7)
             $renderVCurve = function(array $curve, int $maxQty, string $color) {
                 $counts = '';
                 $bars   = '';
@@ -773,10 +765,8 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <?php endforeach; ?>
             </div>
         </div>
-      </aside>
-      <?php endif; ?>
-
-    </div>
+        </div>
+        <?php endif; ?>
 
     <?php endif; ?>
 
@@ -969,23 +959,23 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 <!-- View toggle -->
 <script>
 (function() {
-    var gridBtn     = document.getElementById('deck-view-grid');
-    var listBtn     = document.getElementById('deck-view-list');
-    var descBtn     = document.getElementById('deck-view-desc');
-    var statsBtn    = document.getElementById('deck-view-stats');
-    var gridView    = document.getElementById('deck-grid-view');
-    var listView    = document.getElementById('deck-list-view');
-    var descView    = document.getElementById('deck-desc-view');
-    var deckSidebar = document.querySelector('.deck-sidebar');
+    var gridBtn   = document.getElementById('deck-view-grid');
+    var listBtn   = document.getElementById('deck-view-list');
+    var descBtn   = document.getElementById('deck-view-desc');
+    var statsBtn  = document.getElementById('deck-view-stats');
+    var gridView  = document.getElementById('deck-grid-view');
+    var listView  = document.getElementById('deck-list-view');
+    var descView  = document.getElementById('deck-desc-view');
+    var statsView = document.getElementById('deck-stats-view');
     function showView(which) {
-        if (gridView) gridView.style.display = which === 'grid' ? '' : 'none';
-        if (listView) listView.style.display = which === 'list' ? '' : 'none';
-        if (descView) descView.style.display = which === 'desc' ? '' : 'none';
-        if (gridBtn)  gridBtn.classList.toggle('active',  which === 'grid');
-        if (listBtn)  listBtn.classList.toggle('active',  which === 'list');
-        if (descBtn)  descBtn.classList.toggle('active',  which === 'desc');
-        if (statsBtn) statsBtn.classList.toggle('active', which === 'stats');
-        if (deckSidebar) deckSidebar.classList.toggle('deck-stats-open', which === 'stats');
+        if (gridView)  gridView.style.display  = which === 'grid'  ? '' : 'none';
+        if (listView)  listView.style.display  = which === 'list'  ? '' : 'none';
+        if (descView)  descView.style.display  = which === 'desc'  ? '' : 'none';
+        if (statsView) statsView.style.display = which === 'stats' ? '' : 'none';
+        if (gridBtn)   gridBtn.classList.toggle('active',  which === 'grid');
+        if (listBtn)   listBtn.classList.toggle('active',  which === 'list');
+        if (descBtn)   descBtn.classList.toggle('active',  which === 'desc');
+        if (statsBtn)  statsBtn.classList.toggle('active', which === 'stats');
     }
     if (gridBtn)  gridBtn.addEventListener('click',  function() { showView('grid'); });
     if (listBtn)  listBtn.addEventListener('click',  function() { showView('list'); });

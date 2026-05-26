@@ -218,10 +218,6 @@
 .decklist-stat { display:flex; align-items:center; gap:2px; font-size:.75rem; font-weight:600; color:var(--neutral-500); min-width:28px; justify-content:flex-end; line-height:1; }
 .decklist-stat i, .decklist-stat img { vertical-align:middle; }
 .decklist-stat img { width:13px; height:13px; object-fit:contain; flex-shrink:0; }
-.deck-content-layout { display:grid; grid-template-columns:1fr 240px; gap:20px; align-items:start; }
-@media (max-width:900px) { .deck-content-layout { grid-template-columns:1fr; } }
-@media (max-width:900px) { .deck-sidebar { display:none; } .deck-sidebar.deck-stats-open { display:block; } }
-.deck-sidebar { position:sticky; top:80px; }
 .deck-stats-col { display:flex; flex-direction:column; gap:12px; }
 .deck-stat-card { background:var(--sand-100); border-radius:10px; padding:12px 14px; }
 .deck-stat-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--neutral-400); margin-bottom:8px; }
