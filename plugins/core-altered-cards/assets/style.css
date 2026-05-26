@@ -176,10 +176,10 @@
 .deck-search-wrap { position:relative; display:inline-flex; align-items:center; }
 .deck-search-wrap .deck-search-icon { position:absolute; left:8px; color:var(--neutral-300); font-size:.8rem; pointer-events:none; }
 .deck-search-wrap input { padding-left:26px; }
-.decks-tabs { display:flex; border-bottom:2px solid var(--sand-200); }
-.decks-tab { display:flex; align-items:center; gap:6px; background:none; border:none; border-bottom:3px solid transparent; padding:9px 20px; font-size:.9rem; font-weight:600; color:var(--neutral-500); cursor:pointer; margin-bottom:-2px; transition:color .15s,border-color .15s; }
-.decks-tab.active { color:var(--primary-500); border-bottom-color:var(--primary-400); }
-.decks-tab:hover:not(.active) { color:var(--neutral-700); }
+.decks-tabs, .card-tabs { display:flex; border-bottom:2px solid var(--sand-200); }
+.decks-tab, .card-tab { display:flex; align-items:center; gap:6px; background:none; border:none; border-bottom:3px solid transparent; padding:9px 20px; font-size:.9rem; font-weight:600; color:var(--neutral-500); cursor:pointer; margin-bottom:-2px; transition:color .15s,border-color .15s; }
+.decks-tab.active, .card-tab.active { color:var(--primary-500); border-bottom-color:var(--primary-400); }
+.decks-tab:hover:not(.active), .card-tab:hover:not(.active) { color:var(--neutral-700); }
 @media (max-width:991px) {
     .decks-tabs { position:fixed; bottom:0; left:0; right:0; z-index:1000; background:var(--mobile-nav-bg,var(--sand-50,#fff)); border-top:1px solid var(--mobile-nav-border,var(--sand-200)); border-bottom:none; box-shadow:0 -2px 8px rgba(0,0,0,.08); height:50px; margin-bottom:0 !important; padding-bottom:env(safe-area-inset-bottom,0px); }
     .decks-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; font-size:.72rem; border-bottom:none; border-top:3px solid transparent; margin-bottom:0; }

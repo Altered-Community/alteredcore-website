@@ -171,28 +171,20 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
             <div id="card-status" class="d-flex flex-wrap gap-2 mb-3" style="display:none!important"></div>
 
             <!-- Tabs -->
-            <ul class="nav nav-tabs mb-3" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
-                        <?= h($txt['tab_general']) ?>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rules" type="button" role="tab">
-                        <?= h($txt['tab_rules']) ?>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button id="tab-altered-btn" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-altered" type="button" role="tab">
-                        <?= h($txt['tab_altered']) ?>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-lore" type="button" role="tab">
-                        <?= h($txt['tab_lore']) ?>
-                    </button>
-                </li>
-            </ul>
+            <div class="card-tabs mb-3">
+                <button class="card-tab active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+                    <?= h($txt['tab_general']) ?>
+                </button>
+                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-rules" type="button">
+                    <?= h($txt['tab_rules']) ?>
+                </button>
+                <button id="tab-altered-btn" class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-altered" type="button">
+                    <?= h($txt['tab_altered']) ?>
+                </button>
+                <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-lore" type="button">
+                    <?= h($txt['tab_lore']) ?>
+                </button>
+            </div>
 
             <div class="tab-content">
 
