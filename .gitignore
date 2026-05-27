@@ -1,6 +1,2 @@
 config.local.php
-_dev/
-docs/
 .claude/
-themes/altered-db/
-plugins/altereddb-migration/
