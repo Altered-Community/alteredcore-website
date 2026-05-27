@@ -11,7 +11,7 @@ $_footerTxt  = [
         'cookie_msg'  => 'This site uses cookies necessary for it to function (session, language preference). No tracking or advertising cookies are used.',
         'cookie_btn'  => 'Accept',
         'card_detail' => 'View detail',
-        'made_by'     => 'Site created by AlteredCore',
+        'made_by'     => 'Site created by PolluxTroy',
     ],
     'fr' => [
         'rights'      => 'Tous droits réservés.',
@@ -19,7 +19,7 @@ $_footerTxt  = [
         'cookie_msg'  => 'Ce site utilise des cookies nécessaires à son fonctionnement (session, préférence de langue). Aucun cookie de suivi ou publicitaire n\'est utilisé.',
         'cookie_btn'  => 'Accepter',
         'card_detail' => 'Accéder au détail',
-        'made_by'     => 'Site créé par AlteredCore',
+        'made_by'     => 'Site créé par PolluxTroy',
     ],
 ][getUiLang()];
 $_footerRights = getSetting('footer_rights_' . getUiLang()) ?: $_footerTxt['rights'];
@@ -219,7 +219,7 @@ if ($_ftCss): ?>
         <div class="footer-bottom">
             <span>
                 &copy; <?= date('Y') ?> <?= h(getSiteName()) ?> — <?= h($_footerRights) ?>
-                &nbsp;·&nbsp; <a href="https://alteredcore.org" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
+                &nbsp;·&nbsp; <a href="https://github.com/Altered-Community/alteredcore-website" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
                 &nbsp;·&nbsp;
                 <a href="<?= BASE_URL ?>/pages/privacy" style="color:inherit;opacity:.7"><?= h($_footerTxt['privacy']) ?></a>
             </span>

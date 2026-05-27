@@ -217,7 +217,7 @@ if ($_ftCss): ?>
         <div class="footer-bottom">
             <span>
                 &copy; <?= date('Y') ?> <?= h(getSiteName()) ?> — <?= h($_footerRights) ?>
-                &nbsp;·&nbsp; <a href="https://alteredcore.org" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
+                &nbsp;·&nbsp; <a href="https://github.com/Altered-Community/alteredcore-website" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
                 &nbsp;·&nbsp;
                 <a href="<?= BASE_URL ?>/pages/privacy" style="color:inherit;opacity:.7"><?= h($_footerTxt['privacy']) ?></a>
             </span>
