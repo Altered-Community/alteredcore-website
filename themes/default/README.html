@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlteredCore — Theme Development Guide</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1.5rem;line-height:1.6;color:#222}
+  h1{border-bottom:3px solid #C49A2A;padding-bottom:.4rem}
+  h2{border-bottom:1px solid #ddd;padding-bottom:.25rem;margin-top:2rem}
+  h3{margin-top:1.5rem;color:#444}
+  code{background:#f4f4f4;padding:.1em .35em;border-radius:3px;font-size:.9em}
+  pre{background:#f4f4f4;padding:1rem;border-radius:6px;overflow-x:auto;font-size:.875em}
+  pre code{background:none;padding:0}
+  .note{background:#fff8e1;border-left:4px solid #C49A2A;padding:.75rem 1rem;margin:1rem 0;border-radius:0 4px 4px 0}
+  .warn{background:#fff3cd;border-left:4px solid #e0a800;padding:.75rem 1rem;margin:1rem 0;border-radius:0 4px 4px 0}
+  table{border-collapse:collapse;width:100%;margin:1rem 0}
+  th,td{border:1px solid #ddd;padding:.5rem .75rem;text-align:left;vertical-align:top}
+  th{background:#f8f8f8;font-weight:600}
+</style>
+</head>
+<body>
+
+<h1>AlteredCore — Theme Development Guide</h1>
+<p>This guide explains how to create a custom theme for AlteredCore. A theme controls the site's visible navigation (<code>nav.php</code>), footer (<code>footer.php</code>), and stylesheet (<code>style.css</code>). Everything else — security checks, SEO meta tags, Bootstrap, Font Awesome — is handled by the core and does not need to be repeated in a theme.</p>
+
+<h2>How themes work</h2>
+<p>Every page calls <code>includes/header.php</code> (once, at the top). That file does all the heavy lifting:</p>
+<ul>
+  <li>Initialises the session, language, and maintenance check</li>
+  <li>Runs page-access security checks (nav_items, pages visibility)</li>
+  <li>Outputs the complete <code>&lt;!DOCTYPE html&gt;</code>, <code>&lt;html&gt;</code>, and <code>&lt;head&gt;</code> (including SEO meta, Open Graph, favicons, Bootstrap, Font Awesome, theme stylesheet, custom fonts, background)</li>
+  <li>Opens <code>&lt;body&gt;</code> and <code>&lt;div class="site-wrapper"&gt;</code></li>
+  <li>Then calls <strong><code>nav.php</code></strong> from the active theme</li>
+</ul>
+<p>At the bottom of each page, <code>includes/footer.php</code> calls <strong><code>footer.php</code></strong> from the active theme, closes the wrappers, and loads Bootstrap JS.</p>
+<p>As a theme author, you write <code>nav.php</code> and <code>footer.php</code>. You never touch the page files or the core header.</p>
+
+<h2>Minimum required files</h2>
+<pre><code>themes/
+└── mytheme/
+    ├── nav.php        ← visible navigation / site header
+    ├── footer.php     ← site footer
+    ├── style.css      ← all theme CSS
+    └── config.json    ← theme metadata</code></pre>
+
+<h3>Optional files</h3>
+<table>
+  <tr><th>File</th><th>Purpose</th></tr>
+  <tr><td><code>head-extra.php</code></td><td>Included by the core inside <code>&lt;head&gt;</code> just before <code>&lt;/head&gt;</code>. Use it to add theme-specific <code>&lt;style&gt;</code> or <code>&lt;link&gt;</code> tags (e.g. navbar-width overrides, a secondary font, a third-party library). Can also set <code>$__extraBodyClasses</code> to inject additional CSS classes onto <code>&lt;body&gt;</code>.</td></tr>
+  <tr><td><code>assets/preview.png</code></td><td>Screenshot shown on the Admin → Themes page.</td></tr>
+</table>
+
+<h2>config.json</h2>
+<pre><code>{
+  "name":        "My Theme",
+  "description": "A short description shown in the admin panel",
+  "version":     "1.0",
+  "author":      "Your Name",
+  "preview":     "assets/preview.png"
+}</code></pre>
+<p>All keys are optional but <code>name</code> is strongly recommended.</p>
+
+<h2>nav.php — the visible header</h2>
+<p>When the core calls your <code>nav.php</code>, it has already output <code>&lt;body&gt;</code> and <code>&lt;div class="site-wrapper"&gt;</code>. Your file should output the <code>&lt;header&gt;</code> element and the opening <code>&lt;main&gt;</code> tag.</p>
+
+<h3>Variables provided by the core</h3>
+<p>These PHP variables are set before <code>nav.php</code> is included — do not re-query them:</p>
+<table>
+  <tr><th>Variable</th><th>Type</th><th>Contents</th></tr>
+  <tr><td><code>$lang</code></td><td>string</td><td>Active language code (<code>'en'</code>, <code>'fr'</code>, …)</td></tr>
+  <tr><td><code>$currentPage</code></td><td>string</td><td>Basename of the current PHP file without extension (e.g. <code>'index'</code>, <code>'about'</code>)</td></tr>
+  <tr><td><code>$__navItems</code></td><td>array</td><td>Nav items from <code>getNavItems()</code> — each has <code>id</code>, <code>label</code>, <code>icon</code>, <code>url</code>, <code>is_iframe</code>, <code>is_blank</code>, <code>is_visible</code>, <code>hide_label</code>, <code>children[]</code></td></tr>
+  <tr><td><code>$__iframeNavId</code></td><td>int</td><td>The <code>nav</code> query-param value when on the iframe page (0 otherwise)</td></tr>
+  <tr><td><code>$__mobileCompact</code></td><td>bool</td><td><code>true</code> when <code>MOBILE_HEADER_MODE === 1</code> (always-visible mobile nav, no burger)</td></tr>
+  <tr><td><code>$_langFlags</code></td><td>array</td><td>Emoji flag per language code</td></tr>
+  <tr><td><code>$_langNames</code></td><td>array</td><td>Full language name per code</td></tr>
+  <tr><td><code>$_langUrls</code></td><td>array</td><td>URL (query string) to switch to each language</td></tr>
+  <tr><td><code>$_hTxt</code></td><td>array</td><td>Translated UI strings: <code>dark_mode</code>, <code>light_mode</code>, <code>my_account</code>, <code>sign_out</code>, <code>sign_in</code></td></tr>
+  <tr><td><code>$_hasBg</code></td><td>bool</td><td>Whether a background color or image is active</td></tr>
+  <tr><td><code>$_pageFullwidth</code></td><td>bool</td><td>Whether the active nav item has the full-width flag</td></tr>
+</table>
+
+<h3>Helper functions</h3>
+<p>Define these in your <code>nav.php</code> (guarded with <code>if (!function_exists(...))</code>):</p>
+<pre><code>// Returns the URL for a nav item (handles iframe items)
+if (!function_exists('__nav_href')) {
+    function __nav_href(array $item): string {
+        if (!empty($item['is_iframe'])) {
+            return BASE_URL . '/pages/iframe?nav=' . (int)$item['id'];
+        }
+        return BASE_URL . $item['url'];
+    }
+}
+
+// Returns true when a nav item matches the current page
+if (!function_exists('__nav_active')) {
+    function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
+        if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
+        $p = basename(parse_url($item['url'], PHP_URL_PATH) ?: '', '.php');
+        if ($p === '') $p = 'index';
+        return $currentPage === $p;
+    }
+}</code></pre>
+
+<h3>Core PHP functions available in nav.php</h3>
+<table>
+  <tr><th>Function</th><th>Returns</th><th>Use for</th></tr>
+  <tr><td><code>getSiteName()</code></td><td>string</td><td>Site name for the logo/brand</td></tr>
+  <tr><td><code>getSetting(string $key)</code></td><td>string</td><td>Any admin setting (logo_path, theme_color, …)</td></tr>
+  <tr><td><code>assetUrl(string $path)</code></td><td>string</td><td>Public URL for an uploaded asset (logo, etc.)</td></tr>
+  <tr><td><code>kcIsLoggedIn()</code></td><td>bool</td><td>Whether the current visitor is logged in</td></tr>
+  <tr><td><code>kcUser()</code></td><td>array</td><td>Current user: <code>username</code>, <code>email</code>, <code>sub</code></td></tr>
+  <tr><td><code>getUserMenuItems()</code></td><td>array</td><td>User dropdown items configured in admin</td></tr>
+  <tr><td><code>canViewAdminPanel()</code></td><td>bool</td><td>Whether to show the admin link in the user menu</td></tr>
+  <tr><td><code>h(string $s)</code></td><td>string</td><td><code>htmlspecialchars()</code> — always escape output</td></tr>
+  <tr><td><code>BASE_URL</code></td><td>const string</td><td>Site root URL (empty for root, e.g. <code>/mysite</code> for subdirectories)</td></tr>
+</table>
+
+<h3>Minimal nav.php example</h3>
+<pre><code>&lt;?php
+$__iframeNavId = ($currentPage === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
+if (!function_exists('__nav_href')) {
+    function __nav_href(array $item): string {
+        if (!empty($item['is_iframe'])) return BASE_URL . '/pages/iframe?nav=' . (int)$item['id'];
+        return BASE_URL . $item['url'];
+    }
+}
+if (!function_exists('__nav_active')) {
+    function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
+        if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
+        $p = basename(parse_url($item['url'], PHP_URL_PATH) ?: '', '.php');
+        if ($p === '') $p = 'index';
+        return $currentPage === $p;
+    }
+}
+?&gt;
+
+&lt;header class="site-header"&gt;
+    &lt;nav&gt;
+        &lt;a href="&lt;?= BASE_URL ?&gt;/"&gt;&lt;?= h(getSiteName()) ?&gt;&lt;/a&gt;
+        &lt;ul&gt;
+        &lt;?php foreach ($__navItems as $item): ?&gt;
+            &lt;li&gt;
+                &lt;a href="&lt;?= h(__nav_href($item)) ?&gt;"
+                   class="&lt;?= __nav_active($item, $currentPage, $__iframeNavId) ? 'active' : '' ?&gt;"&gt;
+                    &lt;?= h($item['label']) ?&gt;
+                &lt;/a&gt;
+            &lt;/li&gt;
+        &lt;?php endforeach; ?&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;main&gt;</code></pre>
+
+<div class="note"><strong>Important:</strong> Your <code>nav.php</code> must end with <code>&lt;main&gt;</code> (open tag only). The page content follows immediately after, and <code>footer.php</code> closes it with <code>&lt;/main&gt;</code>.</div>
+
+<h2>footer.php — the site footer</h2>
+<p>At the time <code>footer.php</code> is called, the page content has been output inside <code>&lt;main&gt;</code>. Your footer file should close <code>&lt;/main&gt;</code>, output the footer HTML, and close <code>&lt;/div&gt;&lt;!-- .site-wrapper --&gt;</code>.</p>
+<p>The core footer (<code>includes/footer.php</code>) then loads Bootstrap JS and closes <code>&lt;/body&gt;</code> and <code>&lt;/html&gt;</code> after your file runs.</p>
+
+<h3>Variables available in footer.php</h3>
+<p>All variables set by <code>includes/header.php</code> are still in scope. Use a distinct variable name for footer translations (e.g. <code>$_footerTxt</code>) to avoid colliding with the page's own <code>$txt</code>.</p>
+
+<h3>Minimal footer.php example</h3>
+<pre><code>&lt;?php
+$_footerTxt = [
+    'en' =&gt; ['rights' =&gt; 'All rights reserved.'],
+    'fr' =&gt; ['rights' =&gt; 'Tous droits réservés.'],
+][getUiLang()] ?? [];
+?&gt;
+
+&lt;/main&gt;
+
+&lt;footer class="site-footer"&gt;
+    &lt;p&gt;&amp;copy; &lt;?= date('Y') ?&gt; &lt;?= h(getSiteName()) ?&gt; — &lt;?= h($_footerTxt['rights']) ?&gt;&lt;/p&gt;
+&lt;/footer&gt;
+
+&lt;/div&gt;&lt;!-- .site-wrapper --&gt;</code></pre>
+
+<h2>style.css</h2>
+<p>Your stylesheet is loaded after Bootstrap, the global site CSS (<code>css/style.css</code>), and Font Awesome. You can override Bootstrap variables, use CSS custom properties (<code>[data-theme="dark"]</code> for dark mode), and reference any Font Awesome 6 or Altered Icons class.</p>
+
+<h3>CSS load order</h3>
+<p>The full load order inside <code>&lt;head&gt;</code> is:</p>
+<ol>
+  <li>Bootstrap 5</li>
+  <li><code>css/style.css</code> — global site CSS and CSS variable palette (<code>:root</code>)</li>
+  <li><code>themes/{active}/style.css</code> — your theme file (overrides variables and classes)</li>
+  <li><code>plugins/{id}/assets/style.css</code> — plugin stylesheet (injected only on plugin pages)</li>
+</ol>
+<p>Because plugin CSS loads last, it wins over both the global site CSS and the theme. However, the correct way to theme a plugin is through <strong>CSS variables</strong>, not direct class overrides.</p>
+
+<h3>Required CSS class names</h3>
+<p>The core generates specific class names on <code>&lt;body&gt;</code> that your CSS should handle:</p>
+<table>
+  <tr><th>Class</th><th>When present</th><th>What to do</th></tr>
+  <tr><td><code>has-bg</code></td><td>A background color or image is active</td><td>Make <code>.site-header</code> and <code>.site-footer</code> transparent or translucent</td></tr>
+  <tr><td><code>page-fullwidth</code></td><td>The active nav item has the full-width flag</td><td>Remove max-width constraints from <code>&lt;main&gt;</code>'s inner container</td></tr>
+</table>
+
+<h3>Dark mode</h3>
+<p>The core toggles <code>data-theme="dark"</code> on <code>&lt;html&gt;</code> when the user switches theme. Scope dark-mode overrides with <code>[data-theme="dark"]</code>:</p>
+<pre><code>[data-theme="dark"] body {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+[data-theme="dark"] .site-header {
+    background: #12122a;
+}</code></pre>
+
+<h3>Theming plugins via CSS variables</h3>
+<p>Plugin stylesheets use CSS custom properties defined in <code>css/style.css :root</code> for all theme-sensitive values. To restyle plugin components, <strong>redefine the relevant variables in your theme's <code>:root</code> block</strong> — no direct class selectors needed for colour changes:</p>
+<pre><code>/* themes/mytheme/style.css */
+:root {
+    /* Override the plugin overlay/modal colour variables */
+    --overlay-badge-bg: rgba(10, 8, 28, 0.78);
+    --overlay-bar-bg:   rgba(10, 8, 28, 0.68);
+    --overlay-qty-bg:   rgba(10, 8, 28, 0.82);
+    --modal-panel-bg:   rgba(255, 255, 255, 0.65); /* glassmorphism */
+    --panel-border:     rgba(255, 255, 255, 0.7);
+    --mobile-nav-bg:    rgba(255, 255, 255, 0.88);
+    --mobile-nav-border: rgba(255, 255, 255, 0.7);
+}
+
+/* Dark mode — same approach */
+[data-theme="dark"] {
+    --overlay-badge-bg:  rgba(12, 10, 32, 0.85);
+    --modal-panel-bg:    rgba(28, 30, 55, 0.98);
+    --card-lightbox-bg:  rgba(10, 8, 28, 0.88);
+}</code></pre>
+<p>Properties that cannot be expressed as CSS variables (e.g. <code>backdrop-filter</code>) still require direct class selectors in the theme file.</p>
+
+<h2>head-extra.php — optional &lt;head&gt; additions</h2>
+<p>This file is included by the core <strong>inside <code>&lt;head&gt;</code></strong>, just before <code>&lt;/head&gt;</code>. Use it to inject theme-specific styles or scripts that must live in the document head.</p>
+
+<h3>Typical uses</h3>
+<ul>
+  <li>Navbar-width CSS driven by the <code>navbar_width</code> admin setting</li>
+  <li>Additional body classes via <code>$__extraBodyClasses</code></li>
+  <li>A secondary web font or icon library</li>
+</ul>
+
+<h3>Example head-extra.php</h3>
+<pre><code>&lt;?php
+// Navbar width — translate admin setting to CSS
+$_navbarWidth = getSetting('navbar_width');
+if ($_navbarWidth === 'full'):
+?&gt;
+&lt;style&gt;
+.site-header{width:100vw;margin-left:calc(50% - 50vw);}
+&lt;/style&gt;
+&lt;?php elseif (is_numeric($_navbarWidth) &amp;&amp; (int)$_navbarWidth &gt; 0): ?&gt;
+&lt;style&gt;
+.my-nav-inner{max-width:&lt;?= (int)$_navbarWidth ?&gt;px;margin:0 auto;}
+&lt;/style&gt;
+&lt;?php endif; ?&gt;
+&lt;?php
+// Inject an extra body class consumed by includes/header.php
+if ($__mobileCompact) {
+    $__extraBodyClasses   = isset($__extraBodyClasses) &amp;&amp; is_array($__extraBodyClasses)
+                            ? $__extraBodyClasses : [];
+    $__extraBodyClasses[] = 'my-mobile-compact';
+}
+?&gt;</code></pre>
+
+<div class="note"><strong>Font selectors:</strong> The core targets <code>.site-header</code>, <code>.site-header .dropdown-menu</code>, and <code>.site-footer</code> for custom fonts. If your theme uses different selectors, add overrides in <code>head-extra.php</code> using the same <code>SiteFont_font_nav</code> / <code>SiteFont_font_user_menu</code> font-family names declared by the core.</div>
+
+<h2>Installing a custom theme</h2>
+<ol>
+  <li>Upload your theme folder to <code>themes/{slug}/</code> on the server.</li>
+  <li>Go to <strong>Admin → Themes</strong> — your theme appears automatically.</li>
+  <li>Click <strong>Activate</strong>. On first activation the theme inherits the <code>default</code> theme's settings as a starting point.</li>
+  <li>Configure colors, fonts, background, and logo via the normal admin settings pages while your theme is active.</li>
+</ol>
+
+<div class="warn"><strong>Theme file fallback:</strong> If a file is missing from the active theme, <code>themeFile()</code> falls back to <code>themes/default/</code>. This means <code>head-extra.php</code> is completely optional — if absent, the core skips it.</div>
+
+<h2>Summary checklist</h2>
+<table>
+  <tr><th>Task</th><th>File</th><th>Required?</th></tr>
+  <tr><td>Site navigation / header HTML</td><td><code>nav.php</code></td><td>Yes</td></tr>
+  <tr><td>Site footer HTML</td><td><code>footer.php</code></td><td>Yes</td></tr>
+  <tr><td>All theme CSS</td><td><code>style.css</code></td><td>Yes</td></tr>
+  <tr><td>Theme metadata (name, version, author)</td><td><code>config.json</code></td><td>Yes</td></tr>
+  <tr><td>Theme-specific &lt;head&gt; injections (navbar-width, extra body classes, …)</td><td><code>head-extra.php</code></td><td>Optional</td></tr>
+  <tr><td>Admin panel preview image</td><td><code>assets/preview.png</code></td><td>Optional</td></tr>
+</table>
+
+<p style="margin-top:2rem;color:#888;font-size:.85em">AlteredCore Theme Development Guide — see <code>docs/site-documentation.html</code> for the full system reference.</p>
+</body>
+</html>
