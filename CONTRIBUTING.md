@@ -3,7 +3,7 @@
 ## Quick start
 
 ```bash
-git clone https://github.com/PolluxTroy0/alteredcore-website.git
+git clone https://github.com/Altered-Community/alteredcore-website.git
 cd alteredcore-website
 git checkout dev
 cp config.local.php.example config.local.php

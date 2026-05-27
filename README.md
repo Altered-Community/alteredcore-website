@@ -25,7 +25,7 @@ Pull requests that introduce external dependencies or non-standard server requir
 ## Quick start (Docker)
 
 ```bash
-git clone https://github.com/PolluxTroy0/alteredcore-website.git
+git clone https://github.com/Altered-Community/alteredcore-website.git
 cd alteredcore-website
 cp config.local.php.example config.local.php
 docker compose up --build
