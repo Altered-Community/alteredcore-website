@@ -174,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Enter the XML element name from the feed that maps to each field.
             For media namespace images use <code>media:content</code> or <code>media:thumbnail</code>.
             For standard podcast/attachment enclosures use <code>enclosure</code>.
+            For WordPress feeds (image embedded in HTML) use <code>content:encoded</code> — extracts the first <code>&lt;img&gt;</code> found in the article body.
             Leave Image empty if the feed has no images.
         </p>
         <div class="row g-3">
@@ -205,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="form-label">Image field <span class="text-muted fw-normal">(optional)</span></label>
                 <input type="text" name="map_image" class="form-control"
                        value="<?= h($entry['map_image']) ?>" placeholder="enclosure">
-                <div class="form-text">Leave empty for no images. Options: <code>enclosure</code>, <code>media:content</code>, <code>media:thumbnail</code></div>
+                <div class="form-text">Leave empty for no images. Options: <code>enclosure</code>, <code>media:content</code>, <code>media:thumbnail</code>, <code>content:encoded</code> (WordPress)</div>
             </div>
         </div>
     </div>

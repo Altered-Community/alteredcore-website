@@ -100,7 +100,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[1]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[1] !== ''): ?>
-                <div class="footer-col-content"><?= $_footerColContents[1] ?></div>
+                <div class="footer-col-content"><?= renderShortcodes($_footerColContents[1]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[1]): ?>
                 <ul class="list-unstyled mt-3 mb-0" style="font-size:.88rem">
@@ -123,7 +123,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[2]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[2] !== ''): ?>
-                <div class="footer-col-content mb-2"><?= $_footerColContents[2] ?></div>
+                <div class="footer-col-content mb-2"><?= renderShortcodes($_footerColContents[2]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[2]): ?>
                 <ul class="list-unstyled mb-0" style="font-size:.88rem">
@@ -146,7 +146,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[3]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[3] !== ''): ?>
-                <div class="footer-col-content mb-2"><?= $_footerColContents[3] ?></div>
+                <div class="footer-col-content mb-2"><?= renderShortcodes($_footerColContents[3]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[3]): ?>
                 <ul class="list-unstyled mb-0" style="font-size:.88rem">
@@ -182,7 +182,7 @@ if ($_ftCss): ?>
                 </ul>
                 <?php endif; ?>
                 <?php if ($_footerColContents[4] !== ''): ?>
-                <div class="footer-col-content"><?= $_footerColContents[4] ?></div>
+                <div class="footer-col-content"><?= renderShortcodes($_footerColContents[4]) ?></div>
                 <?php endif; ?>
             </div>
 

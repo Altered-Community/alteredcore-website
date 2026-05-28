@@ -358,6 +358,7 @@ document.getElementById('deleteModal').addEventListener('show.bs.modal', functio
 </div>
 <?php else: ?>
 <div class="card-altered p-0" style="overflow:hidden">
+    <div class="table-responsive">
     <table class="table table-sm mb-0">
         <thead>
             <tr>
@@ -421,6 +422,7 @@ document.getElementById('deleteModal').addEventListener('show.bs.modal', functio
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php endif; ?>
 

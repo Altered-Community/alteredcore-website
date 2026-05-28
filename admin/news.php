@@ -5,6 +5,18 @@ require_once __DIR__ . '/includes/header.php';
 
 $db = getDB();
 
+// ─── Toggle pin ───────────────────────────────────────────────────────────────
+if (isset($_GET['toggle_pin']) && adminCanEdit()) {
+    $pinId = (int)($_GET['toggle_pin'] ?? 0);
+    if ($pinId > 0) {
+        $db->prepare(q("UPDATE {news} SET is_pinned = 1 - is_pinned WHERE id = :id"))
+           ->execute([':id' => $pinId]);
+    }
+    $qs = array_filter(['q' => $_GET['q'] ?? '', 'date' => $_GET['date'] ?? '', 'page' => $_GET['page'] ?? '']);
+    header('Location: ' . BASE_URL . '/admin/news' . ($qs ? '?' . http_build_query($qs) : ''));
+    exit;
+}
+
 // search & pagination
 $perPage = 20;
 $page    = max(1, (int)($_GET['page'] ?? 1));
@@ -36,12 +48,12 @@ $page   = min($page, $pages);
 $offset = ($page - 1) * $perPage;
 
 $stmt = $db->prepare(q(
-    "SELECT n.id, n.title_en, n.title_fr, n.is_published, n.published_at, n.created_at,
+    "SELECT n.id, n.title_en, n.title_fr, n.is_published, n.is_pinned, n.published_at, n.created_at,
             c.name_en AS cat_en
      FROM {news} n
      LEFT JOIN {news_categories} c ON n.category_id = c.id
      $whereSql
-     ORDER BY COALESCE(n.published_at, n.created_at) DESC
+     ORDER BY n.is_pinned DESC, COALESCE(n.published_at, n.created_at) DESC
      LIMIT :limit OFFSET :offset"
 ));
 foreach ($params as $k => $v) $stmt->bindValue($k, $v);
@@ -104,7 +116,12 @@ function newsPageUrl(int $p): string {
                 ?>
                 <tr>
                     <td style="width:50px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
-                    <td><?= h($row['title_en']) ?></td>
+                    <td>
+                        <?php if ($row['is_pinned']): ?>
+                            <i class="fa-solid fa-thumbtack me-1" style="color:var(--primary-400);font-size:.8rem" title="Pinned"></i>
+                        <?php endif; ?>
+                        <?= h($row['title_en']) ?>
+                    </td>
                     <td><?= h($row['title_fr']) ?></td>
                     <td><?= h($row['cat_en'] ?? '—') ?></td>
                     <td>
@@ -121,6 +138,11 @@ function newsPageUrl(int $p): string {
                             <i class="fa-solid fa-eye"></i>
                         </a>
                         <?php if (adminCanEdit()): ?>
+                        <a href="?toggle_pin=<?= $row['id'] ?>&<?= http_build_query(array_filter(['q'=>$search,'date'=>$dateQ,'page'=>$page>1?$page:''])) ?>"
+                           class="btn btn-sm <?= $row['is_pinned'] ? 'btn-warning' : 'btn-outline-secondary' ?> me-1"
+                           title="<?= $row['is_pinned'] ? 'Unpin' : 'Pin' ?>">
+                            <i class="fa-solid fa-thumbtack"></i>
+                        </a>
                         <a href="<?= BASE_URL ?>/admin/news-edit?id=<?= $row['id'] ?>"
                            class="btn btn-sm btn-outline-primary me-1" title="Edit">
                             <i class="fa-solid fa-pen"></i>

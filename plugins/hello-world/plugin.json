@@ -2,7 +2,7 @@
     "$schema":      "../plugin.schema.json",
     "id":           "hello-world",
     "name":         "Hello World",
-    "version":      "1.1.0",
+    "version":      "1.2.0",
     "description":  "A minimal example plugin demonstrating pages, admin, API, and global assets.",
     "author":       "Your Name",
     "icon":         "fa-solid fa-earth-europe",

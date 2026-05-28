@@ -374,16 +374,90 @@ $pages  = array_values((array)($config['pages'] ?? []));
 </div>
 
 <h3>CSS layering — what goes where</h3>
-<p>Follow this order when deciding where to put CSS:</p>
-<ol>
-  <li><strong>Bootstrap 5 utilities first</strong> — <code>btn</code>, <code>container</code>, <code>d-flex</code>, <code>text-muted</code>, <code>small</code>, <code>gap-2</code>, <code>mb-3</code>, etc. Use these in your PHP templates before writing any custom CSS.</li>
-  <li><strong>Site-wide classes from <code>css/style.css</code></strong> — <code>.card-altered</code>, <code>.btn-primary-altered</code>, <code>.ac-tab-toggle</code>, <code>.section-title</code>, <code>.ac-state-pane</code>, etc. These are shared across all plugins and pages and respond correctly to themes.</li>
-  <li><strong>Plugin-specific CSS in <code>assets/style.css</code></strong> — only styles that are unique to your plugin and not expressible with Bootstrap or site classes. Register this file in <code>plugin.json → assets.css</code>.</li>
-</ol>
+
+<p>Four layers apply to every page, loaded in this order. Each layer sits on top of the previous one:</p>
+
+<table class="kv">
+  <tr><th>#</th><th>Layer</th><th>File(s)</th><th>Rule</th></tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Bootstrap 5</strong></td>
+    <td>CDN</td>
+    <td>Use Bootstrap utilities and components in HTML <em>before</em> writing any CSS. Covers layout (<code>container</code>, <code>row</code>, <code>col-*</code>), spacing (<code>mb-3</code>, <code>gap-2</code>, <code>p-4</code>), text (<code>text-muted</code>, <code>fw-bold</code>, <code>small</code>), flex (<code>d-flex</code>, <code>align-items-center</code>), buttons (<code>btn</code>, <code>btn-outline-secondary</code>), modals, dropdowns, badges, forms, and more.</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>Site CSS</strong></td>
+    <td><code>css/style.css</code></td>
+    <td>Shared site components that all pages and plugins can use. <strong>Never add plugin-specific styles here.</strong> Reuse these classes in your plugin templates — they are theme-aware and respond to dark mode automatically.</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Plugin CSS</strong></td>
+    <td><code>plugins/{id}/assets/style.css</code></td>
+    <td>Only write plugin CSS for elements that <em>cannot</em> be expressed with layers 1–2. Keep it to layout geometry and plugin-specific selectors. Use CSS variables from the site palette — never hard-code colours.</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>Active theme</strong></td>
+    <td><code>themes/{name}/style.css</code></td>
+    <td>Loaded last. Overrides everything above. Plugins do <em>not</em> need to know which theme is active — themes reskin Bootstrap components (<code>.dropdown-menu</code>, <code>.modal-content</code>, <code>.form-control</code>…) and redefine CSS variables globally. Your plugin inherits all of this automatically.</td>
+  </tr>
+</table>
+
+<h4>Layer 1 — Bootstrap first</h4>
+<p>Always start with Bootstrap. Common utilities to reach for before writing any CSS:</p>
+<ul>
+  <li><strong>Layout</strong>: <code>container</code>, <code>row g-3</code>, <code>col-12 col-md-6</code>, <code>d-flex</code>, <code>align-items-center</code>, <code>justify-content-between</code>, <code>gap-2</code>, <code>flex-wrap</code>, <code>ms-auto</code></li>
+  <li><strong>Spacing</strong>: <code>mb-3</code>, <code>py-4</code>, <code>px-3</code>, <code>p-0</code></li>
+  <li><strong>Typography</strong>: <code>fw-bold</code>, <code>text-muted</code>, <code>small</code>, <code>fs-6</code>, <code>text-truncate</code></li>
+  <li><strong>Components</strong>: <code>btn btn-sm btn-outline-secondary</code>, <code>badge</code>, <code>alert alert-danger</code>, <code>input-group input-group-sm</code>, <code>form-control form-control-sm</code>, <code>form-select</code>, <code>modal fade</code> + <code>modal-dialog modal-dialog-centered</code>, <code>dropdown-menu</code> + <code>dropdown-item</code></li>
+  <li><strong>Visibility</strong>: <code>d-none d-md-block</code>, <code>position-relative</code>, <code>overflow-hidden</code>, <code>w-100</code>, <code>h-100</code></li>
+</ul>
+
+<h4>Layer 2 — Site CSS classes</h4>
+<p>After Bootstrap, reach for site-level shared classes before writing custom CSS. These are defined in <code>css/style.css</code> and automatically adapt to both themes and dark mode:</p>
+<ul>
+  <li><strong>Cards / surfaces</strong>: <code>card-altered</code> — the site's standard card surface</li>
+  <li><strong>Buttons</strong>: <code>btn-primary-altered</code> — the branded primary button</li>
+  <li><strong>Page header</strong>: <code>section-title</code> — the underlined page title style</li>
+  <li><strong>Tabs</strong>: <code>ac-tabs</code> + <code>ac-tab</code> (active state: <code>active</code>) — site-styled tab bar</li>
+  <li><strong>State panes</strong>: <code>ac-state-pane</code> — empty/loading state panel</li>
+  <li><strong>Notices</strong>: <code>ac-notice ac-notice--warning</code>, <code>ac-notice--info</code> — themed notice boxes</li>
+  <li><strong>Modal surfaces</strong>: Bootstrap's <code>modal-content</code>, <code>modal-header</code>, <code>modal-body</code>, <code>modal-footer</code> are already themed by <code>css/style.css</code> (sand background, site border colours) and overridden per theme — use them as-is, without adding custom background or border colours.</li>
+</ul>
+
+<h4>Layer 3 — Plugin CSS (last resort)</h4>
+<p>Write plugin CSS only for things that <em>genuinely</em> cannot be achieved with layers 1–2. Typical legitimate uses:</p>
+<ul>
+  <li>Custom geometry: a specific <code>max-height</code>, a grid with a fixed column count, a sticky panel offset.</li>
+  <li>Transition or animation unique to the plugin.</li>
+  <li>A component that exists nowhere else in the site (e.g. a card-flip, a scanner overlay).</li>
+</ul>
+<p>Always use CSS variables with fallbacks so themes can override:</p>
+<pre><code>/* Good — uses site variables, falls back gracefully */
+.my-badge { background: var(--overlay-badge-bg, rgba(0,0,0,.7)); color: #fff; }
+
+/* Bad — hard-coded colour, invisible to themes and dark mode */
+.my-badge { background: #333; color: #fff; }</code></pre>
 
 <div class="warn">
   <strong>Never add plugin CSS to <code>css/style.css</code>.</strong> That file is global — it loads on every page. Plugin styles belong exclusively in the plugin's own <code>assets/style.css</code>.
 </div>
+
+<h4>Layer 4 — Themes override everything</h4>
+<p>The active theme's <code>style.css</code> is loaded after everything else. It redefines CSS variables (colours, glass effects) and overrides Bootstrap components. Your plugin does not need to handle themes at all — if you use Bootstrap classes and site CSS variables correctly, both themes (and dark mode) work automatically without any plugin changes.</p>
+<p>If a theme needs to adjust something specific to your plugin, it can add a rule targeting your plugin's selector. No coordination needed between the plugin and the theme.</p>
+
+<h4>Practical checklist</h4>
+<ol>
+  <li>Need a button? → <code>btn btn-sm btn-primary-altered</code> or <code>btn btn-outline-secondary</code>. No custom CSS needed.</li>
+  <li>Need a modal? → <code>modal fade</code> + <code>modal-dialog modal-dialog-centered</code>. Use <code>style="--bs-modal-width:400px"</code> for custom widths (not <code>max-width</code>). No custom background or border CSS needed — the site and theme handle it.</li>
+  <li>Need a dropdown? → <code>dropdown-menu</code> + <code>dropdown-item</code>. Themed automatically including dark mode.</li>
+  <li>Need a surface/card? → <code>card-altered p-3</code>. No custom CSS needed.</li>
+  <li>Need a colour? → Use <code>var(--primary-400)</code>, <code>var(--neutral-600)</code>, <code>var(--sand-200)</code>, etc. Never hard-code.</li>
+  <li>Still need custom CSS? → Write it in <code>assets/style.css</code> using CSS variables. One targeted selector, no <code>!important</code>.</li>
+</ol>
 
 <h3>CSS variables — making your plugin theme-aware</h3>
 <p>The site exposes a CSS custom property palette in <code>css/style.css :root</code>. Use these variables in your plugin stylesheet instead of hard-coded colours so that your plugin automatically adapts when a theme changes the palette:</p>
@@ -696,8 +770,13 @@ CREATE TABLE IF NOT EXISTS {items} (
 INSERT IGNORE INTO {items} (`id`, `title`) VALUES (1, 'Default item');</code></pre>
 
 <h3>Migration files</h3>
-<p>When you add tables or columns in a new version, create a migration file named <code>update_{version}.sql</code> containing <strong>only the delta</strong> — the changes since the previous version. The full schema goes in <code>install.sql</code> so fresh installs get everything at once:</p>
+<p>When you add tables or columns in a new version, create a migration file named <code>update_{version}.sql</code> containing <strong>only the delta</strong> — the changes since the previous version. The full schema goes in <code>install.sql</code> so fresh installs get everything at once.</p>
 
+<div class="info">
+  <strong>When do migrations run?</strong> Migration files run automatically when you <strong>upload a new ZIP</strong> via Admin → Plugins. You do <em>not</em> need to deactivate/reactivate the plugin. The plugin stays in its current state (active or inactive) — the files are replaced and all applicable <code>update_*.sql</code> files are executed in version order before you see the result.
+</div>
+
+<p><strong>New table (v1.1.0):</strong></p>
 <pre><code>-- sql/update_1.1.0.sql  (delta only — new table added in v1.1.0)
 CREATE TABLE IF NOT EXISTS {settings} (
     `key`   VARCHAR(100) NOT NULL PRIMARY KEY,
@@ -706,16 +785,23 @@ CREATE TABLE IF NOT EXISTS {settings} (
 
 INSERT IGNORE INTO {settings} (`key`, `value`) VALUES ('greeting', 'Hello!');</code></pre>
 
+<p><strong>New column (v1.2.0):</strong></p>
+<pre><code>-- sql/update_1.2.0.sql  (delta only — new column added in v1.2.0)
+ALTER TABLE {messages}
+    ADD COLUMN IF NOT EXISTS `author` VARCHAR(100) NOT NULL DEFAULT '' AFTER `text`;</code></pre>
+
 <div class="tip">
-  At the same time, add the new table to <code>install.sql</code> too — so users who install v1.1.0 directly get the full schema without needing the migration.
+  Always update <code>install.sql</code> at the same time — add the new table or column there too, so users who install the new version directly get the full schema without needing the migration.
 </div>
 
 <table class="kv" style="margin-top:.75rem">
   <tr><th>Scenario</th><th>What runs</th></tr>
   <tr><td>Fresh install v1.0.0, then activate</td><td><code>install.sql</code></td></tr>
-  <tr><td>Update from v1.0.0 → v1.1.0</td><td><code>update_1.1.0.sql</code></td></tr>
-  <tr><td>Fresh install v1.1.0 directly</td><td><code>install.sql</code> (already contains everything)</td></tr>
-  <tr><td>Update from v1.0.0 → v1.2.0</td><td><code>update_1.1.0.sql</code> then <code>update_1.2.0.sql</code></td></tr>
+  <tr><td>Update from v1.0.0 → v1.1.0 (ZIP upload)</td><td><code>update_1.1.0.sql</code></td></tr>
+  <tr><td>Fresh install v1.1.0 directly, then activate</td><td><code>install.sql</code> (already contains everything)</td></tr>
+  <tr><td>Update from v1.0.0 → v1.2.0 (ZIP upload)</td><td><code>update_1.1.0.sql</code> then <code>update_1.2.0.sql</code> in order</td></tr>
+  <tr><td>Update from v1.1.0 → v1.2.0 (ZIP upload)</td><td><code>update_1.2.0.sql</code> only</td></tr>
+  <tr><td>Deactivate / Reactivate</td><td>Nothing — no SQL runs on toggle</td></tr>
 </table>
 
 <p>Use <code>qp()</code> in PHP whenever you query your plugin's tables:</p>
@@ -1168,15 +1254,16 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 &nbsp;&nbsp;<span class="dir">api/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /api/hello-world/data</span><br>
 &nbsp;&nbsp;<span class="dir">sql/</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — {messages} table</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta — adds {settings} table</span>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — {messages} + {settings} tables (v1.2.0)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta — adds {settings} table</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.2.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta — ALTER TABLE adds `author` column to {messages}</span>
 </div>
 
 <p>What it demonstrates:</p>
 <ul>
   <li>Two front-end pages: a public page (<code>$isLoggedIn</code> for conditional content) and a protected page (<code>loginRequired()</code>)</li>
   <li>Two admin sections: message list with add/delete, and a key/value settings form</li>
-  <li>Two database tables with a full SQL install file and a migration</li>
+  <li>Two database tables with a full SQL install file and two migrations — including an <code>ALTER TABLE ADD COLUMN</code> example</li>
   <li>CSS and JS assets loaded automatically on the plugin's pages (<code>assets.css</code> / <code>assets.js</code>), plus a static image</li>
   <li>Global CSS and JS loaded on <strong>every page</strong> of the site (<code>assets.global_css</code> / <code>assets.global_js</code>) — demonstrated by a demo badge injected into the DOM</li>
   <li>A <code>global_php</code> file run in <code>&lt;head&gt;</code> on every page to pass PHP config data to JS (<code>window.HW_PAGES</code> — the page-filter list read from <code>config.php</code>)</li>

@@ -9,12 +9,14 @@ $txt = [
         'news_all_cats' => 'All categories',
         'no_news'       => 'No news at the moment.',
         'news_read_more'=> 'Read more',
+        'pinned'        => 'Pinned',
     ],
     'fr' => [
         'news_title'    => 'Actualités',
         'news_all_cats' => 'Toutes les catégories',
         'no_news'       => 'Aucune actualité pour le moment.',
         'news_read_more'=> 'Lire la suite',
+        'pinned'        => 'Épinglée',
     ],
 ][getUiLang()] ?? [];
 
@@ -92,6 +94,11 @@ include dirname(__DIR__) . '/includes/header.php';
                     <?php endif; ?>
                     <div class="news-card-body">
                         <div class="news-card-meta">
+                            <?php if (!empty($news['is_pinned'])): ?>
+                                <span class="badge-pinned" title="<?= h($txt['pinned']) ?>">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </span>
+                            <?php endif; ?>
                             <?php if (!empty($news['category_name'])): ?>
                                 <a href="<?= BASE_URL ?>/pages/news?cat=<?= (int)$news['category_id'] ?>" class="badge-category">
                                     <?= h($news['category_name']) ?>

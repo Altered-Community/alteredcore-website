@@ -134,6 +134,11 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
                     <?php endif; ?>
                     <div class="news-card-body">
                         <div class="news-card-meta">
+                            <?php if (!empty($news['is_pinned'])): ?>
+                                <span class="badge-pinned" title="<?= h($txt['pinned'] ?? 'Pinned') ?>">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </span>
+                            <?php endif; ?>
                             <?php if (!empty($news['category_name'])): ?>
                                 <a href="<?= BASE_URL ?>/pages/news?cat=<?= (int)$news['category_id'] ?>" class="badge-category">
                                     <?= h($news['category_name']) ?>

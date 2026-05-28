@@ -41,13 +41,24 @@ function _sc_render_btn(string $html): string {
     }, $html);
 }
 
-// [section-title text="Latest news"]
+// [section-title text="Latest news" size="md"]
+// size: xs (0.8rem) | sm (0.95rem) | md (default) | lg (1.3rem) | xl (1.6rem)
 function _sc_render_section_title(string $html): string {
-    return preg_replace_callback('/\[section-title\s([^\]]+)\]/i', function ($m) {
+    static $sizeMap = [
+        'xs' => 'font-size:.8rem',
+        'sm' => 'font-size:.95rem',
+        'md' => '',
+        'lg' => 'font-size:1.3rem',
+        'xl' => 'font-size:1.6rem',
+    ];
+    return preg_replace_callback('/\[section-title\s([^\]]+)\]/i', function ($m) use ($sizeMap) {
         $attrs = _sc_attrs($m[1]);
         $text  = html_entity_decode(trim($attrs['text'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         if ($text === '') return $m[0];
-        return '<div class="section-title mb-0"><span>' . h($text) . '</span></div>';
+        $size    = $attrs['size'] ?? 'md';
+        $style   = $sizeMap[$size] ?? '';
+        $styleAt = $style !== '' ? ' style="' . $style . '"' : '';
+        return '<div class="section-title mb-0"' . $styleAt . '><span>' . h($text) . '</span></div>';
     }, $html);
 }
 

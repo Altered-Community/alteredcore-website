@@ -971,6 +971,8 @@ html { transition: background-color 0.25s, color 0.25s; }
     --notice-info-bg:        var(--sand-200);
     --notice-info-border:    var(--sand-300);
     --notice-info-text:      var(--neutral-700);
+    /* core-altered-cards: deck list item faction gradient */
+    --deck-list-gradient-start: rgba(18,20,31,.88);
 }
 
 /* Bootstrap alerts */

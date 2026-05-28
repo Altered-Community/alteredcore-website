@@ -8,6 +8,7 @@
  *  - Atom <link href="...">: field name 'link' checks href attribute first
  *  - Standard enclosure: 'enclosure' reads the url attribute
  *  - Media namespace images: 'media:content' or 'media:thumbnail' reads url attribute
+ *  - WordPress/content namespace: 'content:encoded' extracts first <img src> from HTML
  */
 function extractRssField(\SimpleXMLElement $item, string $fieldName): ?string
 {
@@ -55,6 +56,18 @@ function extractRssField(\SimpleXMLElement $item, string $fieldName): ?string
                 $url = (string)($results[0]['url'] ?? '');
                 return $url !== '' ? $url : null;
             }
+        }
+        return null;
+    }
+
+    // content:encoded (WordPress content namespace) — extract first <img src> from HTML body
+    if ($fieldName === 'content:encoded') {
+        $item->registerXPathNamespace('content', 'http://purl.org/rss/1.0/modules/content/');
+        $nodes = $item->xpath('content:encoded');
+        if (!$nodes || !isset($nodes[0])) return null;
+        $html = (string)$nodes[0];
+        if (preg_match('/<img\b[^>]+\bsrc=["\']([^"\'>\s]+)["\']/', $html, $m)) {
+            return $m[1] !== '' ? $m[1] : null;
         }
         return null;
     }

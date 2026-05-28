@@ -236,7 +236,8 @@ function getNewsList(int $limit = 0, ?int $categoryId = null, int $offset = 0): 
                     n.title_{$lang} AS title, n.excerpt_{$lang} AS excerpt,
                     n.image, n.youtube_url, n.published_at, n.created_at,
                     c.name_{$lang} AS category_name, c.slug AS category_slug,
-                    NULL AS rss_link, NULL AS source_name, 'native' AS source_type
+                    NULL AS rss_link, NULL AS source_name, 'native' AS source_type,
+                    n.is_pinned
              FROM {news} n
              LEFT JOIN {news_categories} c ON n.category_id = c.id
              WHERE n.is_published = 1
@@ -247,13 +248,14 @@ function getNewsList(int $limit = 0, ?int $categoryId = null, int $offset = 0): 
                     rc.title, rc.description AS excerpt,
                     rc.image, NULL AS youtube_url, rc.published_at, rc.fetched_at AS created_at,
                     c.name_{$lang} AS category_name, c.slug AS category_slug,
-                    rc.link AS rss_link, f.name AS source_name, 'rss' AS source_type
+                    rc.link AS rss_link, f.name AS source_name, 'rss' AS source_type,
+                    0 AS is_pinned
              FROM {rss_cache} rc
              JOIN {rss_feeds} f ON f.id = rc.feed_id AND f.is_visible = 1
              LEFT JOIN {news_categories} c ON c.id = f.category_id
              WHERE (rc.lang = '' OR rc.lang = :ui_lang)
                AND (c.is_hidden = 0 OR c.id IS NULL){$catR})
-            ORDER BY COALESCE(published_at, created_at) DESC{$lim}";
+            ORDER BY is_pinned DESC, COALESCE(published_at, created_at) DESC{$lim}";
 
     try {
         $stmt = $db->prepare(q($sql));
@@ -280,14 +282,15 @@ function _getNewsListNative(string $lang, int $limit, ?int $categoryId, int $off
                    n.title_{$lang} AS title, n.excerpt_{$lang} AS excerpt,
                    n.image, n.youtube_url, n.published_at, n.created_at,
                    c.name_{$lang} AS category_name, c.slug AS category_slug,
-                   NULL AS rss_link, NULL AS source_name, 'native' AS source_type
+                   NULL AS rss_link, NULL AS source_name, 'native' AS source_type,
+                   n.is_pinned
             FROM {news} n
             LEFT JOIN {news_categories} c ON n.category_id = c.id
             WHERE n.is_published = 1
               AND (n.published_at IS NULL OR n.published_at <= NOW())
               AND (c.is_hidden = 0 OR c.id IS NULL)";
     if ($categoryId !== null) $sql .= " AND n.category_id = :cat_id";
-    $sql .= " ORDER BY COALESCE(n.published_at, n.created_at) DESC";
+    $sql .= " ORDER BY n.is_pinned DESC, COALESCE(n.published_at, n.created_at) DESC";
     if ($limit > 0) $sql .= " LIMIT :lim OFFSET :off";
 
     $stmt = $db->prepare(q($sql));

@@ -493,6 +493,16 @@ a:hover { color: var(--primary-400); }
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+.badge-pinned {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
 
 .news-card-title {
     font-size: 1rem;
@@ -854,7 +864,9 @@ a:hover { color: var(--primary-400); }
 .table-altered td { vertical-align: middle; }
 .table-altered tr:hover td { background: rgba(201,168,76,0.07); }
 .table-altered td:last-child,
-.table-altered th:last-child { white-space: nowrap; width: 1%; }
+.table-altered th:last-child,
+.admin-main .table td:last-child,
+.admin-main .table th:last-child { white-space: nowrap; width: 1%; }
 
 /* admin form labels */
 .form-label { font-weight: 600; color: var(--neutral-700); font-size: 0.9rem; }
@@ -1039,11 +1051,17 @@ html { transition: background-color 0.25s, color 0.25s; }
     color: #c48fa8 !important;
 }
 
-/* Bootstrap modals */
+/* Bootstrap modals — light mode: use site surface instead of Bootstrap white */
+.modal-content { background-color: var(--sand-50);  border-color: var(--sand-200); }
+.modal-header  { border-bottom-color: var(--sand-200); }
+.modal-footer  { border-top-color: var(--sand-200); background-color: var(--sand-100); }
+.modal-body    { color: var(--neutral-700); }
+
+/* Bootstrap modals — dark mode overrides */
 [data-theme="dark"] .modal-content { background-color: var(--sand-100); border-color: var(--sand-300); }
 [data-theme="dark"] .modal-body    { background-color: var(--sand-100) !important; color: var(--neutral-700); }
 [data-theme="dark"] .modal-header  { border-bottom-color: var(--sand-300); }
-[data-theme="dark"] .modal-footer  { border-top-color: var(--sand-300); }
+[data-theme="dark"] .modal-footer  { border-top-color: var(--sand-300); background-color: var(--sand-200); }
 
 /* Bootstrap form elements */
 [data-theme="dark"] .form-label  { color: var(--neutral-700); }

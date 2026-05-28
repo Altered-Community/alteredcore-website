@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}news` (
     `youtube_url`  VARCHAR(500) DEFAULT NULL,
     `published_at` DATETIME DEFAULT NULL,
     `is_published` TINYINT(1) NOT NULL DEFAULT 0,
+    `is_pinned`    TINYINT(1) NOT NULL DEFAULT 0,
     `created_at`   DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY `uq_news_slug` (`slug`),

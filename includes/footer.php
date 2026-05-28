@@ -46,4 +46,5 @@ window.acSpinner = {
 };
 </script>
 <?php
+require_once __DIR__ . '/shortcodes.php';
 require themeFile('footer.php');
