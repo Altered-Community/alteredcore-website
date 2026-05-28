@@ -20,94 +20,90 @@ Log in at **http://localhost:8080/admin** with `admin` / `admin` (pre-seeded —
 
 | Branch | Role |
 |---|---|
-| `main` | Production-ready code. Deployed to the live server via FTP. Never committed to directly — only promoted from `dev`. |
-| `dev` | Day-to-day working branch. All changes (features, fixes, CSS, docs, config) go here directly. |
+| `main` | Production-ready code. Deployed to the live server via FTP. Never committed to directly — only promoted from `dev` by a maintainer. |
+| `dev` | Integration branch. All PRs from contributors target this branch. |
 
 ```
-main   ←── promoted when stable ───── dev
+your fork / feature branch  →  PR  →  dev  →  PR  →  main
+         (contributor)              (review)    (maintainer)
 ```
 
 ---
 
-## Opening a PR (contributor)
+## Contributing a plugin (external developer)
 
-1. Fork the repository on GitHub.
-2. Clone your fork and create a branch **from `dev`**:
+Plugins are self-contained directories under `plugins/` and completely isolated from each other — you only touch your own folder.
+
+### Workflow
+
+1. **Fork** the repository on GitHub.
+2. **Clone your fork** and check out `dev`:
    ```bash
+   git clone https://github.com/YOUR_USERNAME/alteredcore-website.git
+   cd alteredcore-website
    git checkout dev
-   git pull upstream dev
-   git checkout -b feature/my-feature
    ```
-3. Work, commit, push to your fork.
-4. Open a Pull Request targeting **`dev`**, not `main`.
+3. **Create a branch** for your plugin:
+   ```bash
+   git checkout -b feature/plugin-my-plugin
+   ```
+4. **Build your plugin** inside `plugins/my-plugin/` — start from `plugins/hello-world/` or create a new folder with at minimum a `plugin.json`:
+   ```json
+   {
+     "id": "my-plugin",
+     "name": "My Plugin",
+     "version": "1.0.0",
+     "description": "What this plugin does.",
+     "author": "Your name",
+     "icon": "fa-puzzle-piece",
+     "pages": [
+       {
+         "slug": "my-page",
+         "file": "pages/index.php",
+         "title_en": "My Page",
+         "title_fr": "Ma Page"
+       }
+     ]
+   }
+   ```
+5. **Test locally** — activate the plugin from the admin panel at **http://localhost:8080/admin/plugins**. No restart needed.
+6. **Commit only your plugin folder:**
+   ```bash
+   git add plugins/my-plugin/
+   git commit -m "my-plugin: short description"
+   git push origin feature/plugin-my-plugin
+   ```
+7. **Open a Pull Request** from your branch targeting **`dev`** on the main repo.
 
-Keep PRs focused on one thing. A plugin and a core change should be separate PRs.
+Keep PRs focused on one plugin at a time. A plugin PR must not include changes to core files (`includes/`, `pages/`, `css/`, etc.) — open a separate PR for those.
+
+See `plugins/plugin.schema.json` for all available manifest fields and `plugins/README.html` for the full plugin development reference.
 
 ---
 
-## Promoting dev → main (maintainer)
+## Contributing a core change (external developer)
+
+For bug fixes or improvements to the core site (not a plugin):
+
+1. Fork the repository, check out `dev`, create a branch:
+   ```bash
+   git checkout -b fix/my-fix
+   ```
+2. Make your changes, commit, push to your fork.
+3. Open a Pull Request targeting **`dev`**.
+
+---
+
+## Promoting dev → main (maintainer only)
 
 > **Never use a GitHub Pull Request to promote `dev` → `main`.** GitHub will immediately suggest a reverse PR to merge `main` back into `dev`, creating noise and potential merge pollution. Always use the command below.
 
-When `dev` is tested and stable, push it directly onto `main` from the terminal:
+When `dev` is tested and stable:
 
 ```bash
-# Promote dev to main (from any branch — no checkout needed)
 git push origin dev:main
 # Then: git ftp push (see FTP deployment below)
 ```
-
----
-
-## Plugin development
-
-Plugins are self-contained directories under `plugins/`. Each lives in its own folder and is completely isolated — two developers can work on different plugins at the same time without conflicts.
-
-### Starting a new plugin
-
-Copy `plugins/hello-world/` as a starting point, or create a new folder with at minimum a `plugin.json`:
-
-```json
-{
-  "id": "my-plugin",
-  "name": "My Plugin",
-  "version": "1.0.0",
-  "description": "What this plugin does.",
-  "author": "Your name",
-  "icon": "fa-puzzle-piece",
-  "pages": [
-    {
-      "slug": "my-page",
-      "file": "pages/index.php",
-      "title_en": "My Page",
-      "title_fr": "Ma Page"
-    }
-  ]
-}
-```
-
-See `plugins/plugin.schema.json` for all available fields and `plugins/README.html` for full documentation.
-
-### Plugin workflow
-
-Work directly on `dev`. Each plugin lives in its own isolated directory so concurrent plugin work doesn't conflict:
-
-```bash
-git checkout dev
-git pull origin dev
-
-# ... work on plugins/my-plugin/ ...
-
-git add plugins/my-plugin/
-git commit -m "my-plugin: description"
-git push origin dev
-```
-
-For external contributors, create a branch from `dev` and open a PR targeting `dev`.
-
-### Testing your plugin locally
-
-Activate the plugin from the admin panel at **http://localhost:8080/admin/plugins**. No restart needed — the plugin system reads the directory directly.
 
 ---
 
@@ -119,6 +115,12 @@ Activate the plugin from the admin panel at **http://localhost:8080/admin/plugin
 - **CSS architecture — three levels.** (1) `css/style.css`: global site structure and shared components only — no plugin-specific or theme-specific rules. (2) `themes/*/style.css`: palette variables, layout variants, dark-mode overrides, glassmorphism effects, and plugin component *colour* overrides (only values that genuinely differ between themes). Never duplicate plugin structural rules in a theme file. (3) `plugins/*/assets/*.css`: all plugin-specific styles, including base layout, filter controls, and grid rules. Plugin CSS loads last and has the highest cascade priority.
 - **Prefer plugins over core changes.** New features should go through the plugin system whenever possible. Only modify core files if the feature is genuinely site-wide infrastructure (auth, routing, theming). If it can live in a plugin, it should.
 - **Keep it simple.** The goal is a site anyone can run on basic shared hosting — no root access, no CLI tools beyond PHP, just FTP and a database panel.
+
+---
+
+## License
+
+This project is licensed under **GPL-3.0** with an attribution requirement. If you distribute or deploy a modified version, you must keep a visible credit to **PolluxTroy** in the interface — see [LICENSE.md](LICENSE.md).
 
 ---
 
@@ -140,8 +142,7 @@ git config git-ftp.password ftppassword
 git checkout main
 git ftp init
 
-# Subsequent deploys (after merging dev → main)
-git checkout main
+# Subsequent deploys (after promoting dev → main)
 git ftp push
 ```
 
@@ -155,6 +156,7 @@ README.md
 LICENSE.md
 CONTRIBUTING.md
 plugins/packages/
+git-manager.py
 ```
 
 If a plugin has its own instance-specific config, add it here too (e.g. `plugins/my-plugin/config.local.php`).
