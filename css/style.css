@@ -19,6 +19,12 @@
     --neutral-200:  #D6CFC4;
     --neutral-100:  #EDE8E2;
     /* Plugin theming variables — used by plugin CSS, overridable by themes */
+    --notice-warning-bg:     #fef3c7;
+    --notice-warning-border: #f59e0b;
+    --notice-warning-text:   #92400e;
+    --notice-info-bg:        #eff6ff;
+    --notice-info-border:    #3b82f6;
+    --notice-info-text:      #1e40af;
     --card-lightbox-bg:  rgba(0,0,0,.82);
     --modal-panel-bg:    var(--sand-50);
     --panel-border:      var(--sand-300);
@@ -145,6 +151,9 @@ a:hover { color: var(--primary-400); }
     }
     .altered-navbar .btn-user-badge,
     .altered-navbar .btn-login { width: 100%; justify-content: flex-start; }
+    /* Nav dropdowns float over content instead of expanding the nav */
+    .altered-navbar .navbar-nav .nav-item.dropdown { position: relative; }
+    .altered-navbar .navbar-nav .dropdown-menu { position: absolute !important; top: 100%; left: 0; }
 }
 
 /* Mobile compact header (MOBILE_HEADER_MODE = 1) — icon bar, no title, no burger */
@@ -378,7 +387,7 @@ a:hover { color: var(--primary-400); }
     font-weight: 700;
     font-size: 1rem;
     padding: 0.7rem 2rem;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     text-decoration: none;
     transition: background 0.15s, transform 0.1s;
     display: inline-block;
@@ -660,7 +669,7 @@ a:hover { color: var(--primary-400); }
     color: var(--neutral-500);
     background: transparent;
     border: 1px solid var(--sand-300);
-    border-radius: 0.4rem;
+    border-radius: 0.5rem;
     padding: 0.2rem 0.55rem;
     transition: background 0.15s;
     cursor: pointer;
@@ -1154,7 +1163,7 @@ html { transition: background-color 0.25s, color 0.25s; }
     color: var(--neutral-500);
     background: transparent;
     border: 1px solid var(--sand-300);
-    border-radius: 0.4rem;
+    border-radius: 0.5rem;
     padding: 0.2rem 0.6rem;
     transition: background 0.15s;
     cursor: pointer;
@@ -1168,7 +1177,7 @@ html { transition: background-color 0.25s, color 0.25s; }
     color: var(--neutral-600);
     background: transparent;
     border: none;
-    border-radius: 0.4rem;
+    border-radius: 0.5rem;
     padding: 0.25rem 0.45rem;
     line-height: 1;
     cursor: pointer;

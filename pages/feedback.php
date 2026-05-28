@@ -26,15 +26,11 @@ $txt = [
         'type_bug'      => 'Bug report',
         'type_feature'  => 'Feature request',
         'type_question' => 'Question',
-        'svc_cards'       => 'Cards API',
-        'svc_decks'       => 'Decks API',
-        'svc_collection'  => 'Collection API',
-        'svc_ownership'   => 'Ownership',
-        'svc_auth'        => 'Auth (Keycloak)',
-        'svc_alteredcore' => 'alteredcore.org (website)',
-        'svc_altered_re'  => 'altered.re (website)',
-        'svc_bga'         => 'Board Game Arena',
         'svc_general'     => 'General',
+        'svc_card_search' => 'Card Search',
+        'svc_deckbuilder' => 'Deckbuilder',
+        'svc_collection'  => 'Collection',
+        'svc_other'       => 'Other',
         'err_token'     => 'Invalid form token. Please try again.',
         'err_type'      => 'Please select a request type.',
         'err_service'   => 'Please select a service.',
@@ -72,15 +68,11 @@ $txt = [
         'type_bug'      => 'Signalement de bug',
         'type_feature'  => 'Proposition de fonctionnalité',
         'type_question' => 'Question',
-        'svc_cards'       => 'Cards API',
-        'svc_decks'       => 'Decks API',
-        'svc_collection'  => 'Collection API',
-        'svc_ownership'   => 'Ownership',
-        'svc_auth'        => 'Auth (Keycloak)',
-        'svc_alteredcore' => 'alteredcore.org (site)',
-        'svc_altered_re'  => 'altered.re (site)',
-        'svc_bga'         => 'Board Game Arena',
         'svc_general'     => 'Général',
+        'svc_card_search' => 'Recherche de Cartes',
+        'svc_deckbuilder' => 'Deckbuilder',
+        'svc_collection'  => 'Collection',
+        'svc_other'       => 'Autres',
         'err_token'     => 'Jeton de formulaire invalide. Veuillez réessayer.',
         'err_type'      => 'Veuillez sélectionner un type de demande.',
         'err_service'   => 'Veuillez sélectionner un service.',
@@ -113,15 +105,11 @@ $typeMap = [
     'question' => ['gh_label' => 'question',    'display' => $txt['type_question'], 'title_prefix' => '[Question]'],
 ];
 $serviceMap = [
-    'general'      => ['gh_label' => 'general',                 'display' => $txt['svc_general'],    'body_name' => 'General'],
-    'cards-api'    => ['gh_label' => 'cards-api',               'display' => $txt['svc_cards'],      'body_name' => 'Cards API'],
-    'decks-api'    => ['gh_label' => 'decks-api',               'display' => $txt['svc_decks'],      'body_name' => 'Decks API'],
-    'collection'   => ['gh_label' => 'collection-api',          'display' => $txt['svc_collection'], 'body_name' => 'Collection API'],
-    'bga'          => ['gh_label' => 'bga',                     'display' => $txt['svc_bga'],        'body_name' => 'Board Game Arena'],
-    'ownership'    => ['gh_label' => 'ownership',               'display' => $txt['svc_ownership'],  'body_name' => 'Ownership'],
-    'auth'         => ['gh_label' => 'auth',                    'display' => $txt['svc_auth'],       'body_name' => 'Auth (Keycloak)'],
-    'alteredcore'  => ['gh_label' => 'alteredcore.org website', 'display' => $txt['svc_alteredcore'],'body_name' => 'alteredcore.org (website)'],
-    'altered-re'   => ['gh_label' => 'altered.re website',      'display' => $txt['svc_altered_re'], 'body_name' => 'altered.re (website)'],
+    'general'     => ['gh_label' => 'general',     'display' => $txt['svc_general'],     'body_name' => 'Général'],
+    'card-search' => ['gh_label' => 'card-search', 'display' => $txt['svc_card_search'], 'body_name' => 'Recherche de Cartes'],
+    'deckbuilder' => ['gh_label' => 'deckbuilder', 'display' => $txt['svc_deckbuilder'], 'body_name' => 'Deckbuilder'],
+    'collection'  => ['gh_label' => 'collection',  'display' => $txt['svc_collection'],  'body_name' => 'Collection'],
+    'other'       => ['gh_label' => 'other',       'display' => $txt['svc_other'],       'body_name' => 'Autres'],
 ];
 
 // rate limit check (1 submission per 10 min per user)
@@ -139,7 +127,7 @@ $waitSecondsLeft = $isRateLimited ? ($_rateLimitSecs - $_elapsed) : 0;
 $errors   = [];
 $success  = false;
 $issueUrl = '';
-$form     = ['type' => '', 'service' => '', 'title' => '', 'description' => '', 'link' => ''];
+$form     = ['type' => array_key_first($typeMap), 'service' => array_key_first($serviceMap), 'title' => '', 'description' => '', 'link' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
@@ -388,7 +376,6 @@ include dirname(__DIR__) . '/includes/header.php';
                 <?= h($txt['lbl_type']) ?> <span class="text-danger">*</span>
             </label>
             <select name="type" class="form-select" required>
-                <option value="" disabled <?= $form['type'] === '' ? 'selected' : '' ?>></option>
                 <?php foreach ($typeMap as $key => $t): ?>
                     <option value="<?= h($key) ?>" <?= $form['type'] === $key ? 'selected' : '' ?>>
                         <?= h($t['display']) ?>
@@ -402,7 +389,6 @@ include dirname(__DIR__) . '/includes/header.php';
                 <?= h($txt['lbl_service']) ?> <span class="text-danger">*</span>
             </label>
             <select name="service" class="form-select" required>
-                <option value="" disabled <?= $form['service'] === '' ? 'selected' : '' ?>></option>
                 <?php foreach ($serviceMap as $key => $s): ?>
                     <option value="<?= h($key) ?>" <?= $form['service'] === $key ? 'selected' : '' ?>>
                         <?= h($s['display']) ?>

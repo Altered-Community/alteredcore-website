@@ -6,7 +6,8 @@ require_once __DIR__ . '/includes/header.php';
 $db  = getDB();
 $id  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $row = ['id' => 0, 'parent_id' => null, 'label_en' => '', 'label_fr' => '', 'url' => '#',
-        'icon' => 'fa-solid fa-link', 'sort_order' => 0, 'is_visible' => 1, 'is_iframe' => 0, 'is_blank' => 0, 'is_fullwidth' => 0, 'hide_label' => 0];
+        'icon' => 'fa-solid fa-link', 'sort_order' => 0, 'is_visible' => 1, 'is_iframe' => 0, 'is_blank' => 0,
+        'is_fullwidth' => 0, 'hide_label' => 0, 'is_separator' => 0, 'is_section_header' => 0];
 $topLevelItems = $db->query(q("SELECT id, label_en FROM {nav_items} WHERE parent_id IS NULL ORDER BY sort_order, id"))->fetchAll();
 if (!$id) {
     $row['sort_order'] = (int)$db->query(q("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM {nav_items}"))->fetchColumn();
@@ -29,17 +30,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid form token.';
     } else {
+        $itemType = $_POST['item_type'] ?? 'link';
+        $isSep    = $itemType === 'separator'     ? 1 : 0;
+        $isHdr    = $itemType === 'section_header' ? 1 : 0;
+
         $data = [
-            ':label_en'   => trim($_POST['label_en']   ?? ''),
-            ':label_fr'   => trim($_POST['label_fr']   ?? ''),
-            ':url'        => trim($_POST['url']        ?? ''),
-            ':icon'       => trim($_POST['icon']       ?? 'fa-solid fa-link'),
-            ':sort_order' => (int)($_POST['sort_order'] ?? 0),
-            ':is_visible'  => isset($_POST['is_visible'])  ? 1 : 0,
-            ':is_iframe'   => isset($_POST['is_iframe'])   ? 1 : 0,
-            ':is_blank'    => isset($_POST['is_blank'])    ? 1 : 0,
-            ':is_fullwidth'=> isset($_POST['is_fullwidth'])? 1 : 0,
-            ':hide_label'  => isset($_POST['hide_label'])  ? 1 : 0,
+            ':label_en'          => trim($_POST['label_en']   ?? ''),
+            ':label_fr'          => trim($_POST['label_fr']   ?? ''),
+            ':url'               => $isSep ? '#' : trim($_POST['url'] ?? ''),
+            ':icon'              => trim($_POST['icon']       ?? 'fa-solid fa-link'),
+            ':sort_order'        => (int)($_POST['sort_order'] ?? 0),
+            ':is_visible'        => isset($_POST['is_visible'])   ? 1 : 0,
+            ':is_iframe'         => $isSep || $isHdr ? 0 : (isset($_POST['is_iframe'])   ? 1 : 0),
+            ':is_blank'          => $isSep || $isHdr ? 0 : (isset($_POST['is_blank'])    ? 1 : 0),
+            ':is_fullwidth'      => $isSep || $isHdr ? 0 : (isset($_POST['is_fullwidth'])? 1 : 0),
+            ':hide_label'        => $isSep           ? 0 : (isset($_POST['hide_label'])  ? 1 : 0),
+            ':is_separator'      => $isSep,
+            ':is_section_header' => $isHdr,
         ];
 
         $parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
@@ -48,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!empty($row['is_sidebar_toggle'])) $data[':url'] = '#';
 
-        if ($data[':label_en'] === '') $errors[] = 'English label is required.';
-        if ($data[':label_fr'] === '') $errors[] = 'French label is required.';
+        if (!$isSep && $data[':label_en'] === '') $errors[] = 'English label is required.';
+        if (!$isSep && $data[':label_fr'] === '') $errors[] = 'French label is required.';
 
         if (empty($errors)) {
             if ($id) {
@@ -58,12 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "UPDATE {nav_items} SET parent_id=:parent_id, label_en=:label_en, label_fr=:label_fr,
                      url=:url, icon=:icon, sort_order=:sort_order, is_visible=:is_visible,
                      is_iframe=:is_iframe, is_blank=:is_blank, is_fullwidth=:is_fullwidth,
-                     hide_label=:hide_label WHERE id=:id"
+                     hide_label=:hide_label, is_separator=:is_separator, is_section_header=:is_section_header
+                     WHERE id=:id"
                 ))->execute($data);
             } else {
                 $db->prepare(q(
-                    "INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible, is_iframe, is_blank, is_fullwidth, hide_label)
-                     VALUES (:parent_id, :label_en, :label_fr, :url, :icon, :sort_order, :is_visible, :is_iframe, :is_blank, :is_fullwidth, :hide_label)"
+                    "INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible, is_iframe, is_blank, is_fullwidth, hide_label, is_separator, is_section_header)
+                     VALUES (:parent_id, :label_en, :label_fr, :url, :icon, :sort_order, :is_visible, :is_iframe, :is_blank, :is_fullwidth, :hide_label, :is_separator, :is_section_header)"
                 ))->execute($data);
             }
             flash($id ? 'Item updated.' : 'Item added.');
@@ -71,17 +79,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $row = array_merge($row, [
-            'label_en'   => $data[':label_en'],
-            'label_fr'   => $data[':label_fr'],
-            'url'        => $data[':url'],
-            'icon'       => $data[':icon'],
-            'sort_order' => $data[':sort_order'],
-            'parent_id'  => $data[':parent_id'],
-            'is_visible'   => $data[':is_visible'],
-            'is_iframe'    => $data[':is_iframe'],
-            'is_blank'     => $data[':is_blank'],
-            'is_fullwidth' => $data[':is_fullwidth'],
-            'hide_label'   => $data[':hide_label'],
+            'label_en'          => $data[':label_en'],
+            'label_fr'          => $data[':label_fr'],
+            'url'               => $data[':url'],
+            'icon'              => $data[':icon'],
+            'sort_order'        => $data[':sort_order'],
+            'parent_id'         => $data[':parent_id'],
+            'is_visible'        => $data[':is_visible'],
+            'is_iframe'         => $data[':is_iframe'],
+            'is_blank'          => $data[':is_blank'],
+            'is_fullwidth'      => $data[':is_fullwidth'],
+            'hide_label'        => $data[':hide_label'],
+            'is_separator'      => $data[':is_separator'],
+            'is_section_header' => $data[':is_section_header'],
         ]);
     }
 }
@@ -102,6 +112,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="post" novalidate>
         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
+        <?php
+        $__itemType = !empty($row['is_separator']) ? 'separator' : (!empty($row['is_section_header']) ? 'section_header' : 'link');
+        ?>
+        <input type="hidden" name="item_type" id="item_type_val" value="<?= h($__itemType) ?>">
+
+        <div class="mb-3">
+            <label class="form-label">Item type</label>
+            <div class="d-flex gap-2">
+                <?php foreach (['link' => 'Link', 'separator' => 'Separator', 'section_header' => 'Section header'] as $__tv => $__tl): ?>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="item_type_radio"
+                           id="itype_<?= $__tv ?>" value="<?= $__tv ?>"
+                           <?= $__itemType === $__tv ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="itype_<?= $__tv ?>"><?= $__tl ?></label>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="form-text text-muted">Separator and Section header only apply inside dropdown menus (child items).</div>
+        </div>
+
         <div class="row g-3 mb-3">
             <div class="col-12">
                 <label class="form-label">Parent item <small class="text-muted">(makes this a dropdown child)</small></label>
@@ -115,15 +145,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Label English 🇬🇧 <span class="text-danger">*</span></label>
-                <input type="text" name="label_en" class="form-control" value="<?= h($row['label_en']) ?>">
+            <div id="row-labels" class="col-12 row g-3 m-0 p-0">
+                <div class="col-md-6">
+                    <label class="form-label">Label English 🇬🇧 <span class="text-danger">*</span></label>
+                    <input type="text" name="label_en" class="form-control" value="<?= h($row['label_en']) ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Label French 🇫🇷 <span class="text-danger">*</span></label>
+                    <input type="text" name="label_fr" class="form-control" value="<?= h($row['label_fr']) ?>">
+                </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Label French 🇫🇷 <span class="text-danger">*</span></label>
-                <input type="text" name="label_fr" class="form-control" value="<?= h($row['label_fr']) ?>">
-            </div>
-            <div class="col-md-8">
+            <div id="row-url" class="col-md-8">
                 <label class="form-label">URL</label>
                 <input type="text" name="url" class="form-control"
                        placeholder="/pages/cards.php or https://... (use # for dropdown parent)"
@@ -153,6 +185,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            value="1" <?= $row['is_visible'] ? 'checked' : '' ?>>
                     <label class="form-check-label" for="is_visible">Visible in menu</label>
                 </div>
+            </div>
+            <div id="row-options" class="col-12">
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="is_iframe" id="is_iframe"
                            value="1" <?= !empty($row['is_iframe']) ? 'checked' : '' ?>>
@@ -197,6 +231,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 document.getElementById('icon-input').addEventListener('input', function() {
     document.getElementById('icon-preview').className = this.value;
 });
+
+(function() {
+    var radios   = document.querySelectorAll('[name="item_type_radio"]');
+    var hidden   = document.getElementById('item_type_val');
+    var rowLabel = document.getElementById('row-labels');
+    var rowUrl   = document.getElementById('row-url');
+    var rowOpts  = document.getElementById('row-options');
+
+    function applyType(type) {
+        hidden.value = type;
+        var isSep = type === 'separator';
+        var isHdr = type === 'section_header';
+        if (rowLabel) rowLabel.style.display = isSep ? 'none' : '';
+        if (rowUrl)   rowUrl.style.display   = (isSep || isHdr) ? 'none' : '';
+        if (rowOpts)  rowOpts.style.display  = (isSep || isHdr) ? 'none' : '';
+    }
+
+    radios.forEach(function(r) {
+        r.addEventListener('change', function() { applyType(this.value); });
+    });
+
+    applyType(hidden.value);
+})();
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

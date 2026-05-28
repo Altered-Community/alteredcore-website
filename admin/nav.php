@@ -156,14 +156,21 @@ $total = count($items);
                     <?php endif; ?>
                 </td>
                 <td <?= $isChild ? 'class="ps-3"' : '' ?>>
-                    <?php if ($isChild): ?><i class="<?= h($item['icon']) ?> me-1 text-muted"></i><?php endif; ?>
-                    <?= h($item['label_en']) ?>
+                    <?php if ($isChild && empty($item['is_separator'])): ?><i class="<?= h($item['icon']) ?> me-1 text-muted"></i><?php endif; ?>
+                    <?php if (!empty($item['is_separator'])): ?>
+                        <span class="badge bg-light text-dark border" style="font-size:.7rem">separator</span>
+                    <?php elseif (!empty($item['is_section_header'])): ?>
+                        <i class="<?= h($item['icon']) ?> me-1 text-muted"></i><?= h($item['label_en']) ?>
+                        <span class="badge bg-info text-dark ms-1" style="font-size:.7rem">section header</span>
+                    <?php else: ?>
+                        <?= h($item['label_en']) ?>
+                    <?php endif; ?>
                     <?php if (!empty($item['is_sidebar_toggle'])): ?>
                         <span class="badge bg-secondary ms-1" style="font-size:.7rem">Sidebar</span>
                     <?php endif; ?>
                 </td>
-                <td><?= h($item['label_fr']) ?></td>
-                <td class="text-muted small"><?= h($item['url']) ?></td>
+                <td><?= empty($item['is_separator']) ? h($item['label_fr']) : '' ?></td>
+                <td class="text-muted small"><?= empty($item['is_separator']) && empty($item['is_section_header']) ? h($item['url']) : '' ?></td>
                 <td class="text-end" style="white-space:nowrap">
                     <?php if (adminCanPublish()): ?>
                     <form method="post" class="d-inline">

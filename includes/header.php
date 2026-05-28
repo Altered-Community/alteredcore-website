@@ -276,10 +276,25 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <style>body{background:<?= $pageBodyBg ?> !important;background-image:none !important;}</style>
     <?php endif; ?>
 
-    <!-- Plugin CSS (injected by the router for active plugin pages) -->
+    <?php
+    // Ensure plugins are initialised (no-op if _router.php already called this).
+    initPlugins();
+    $_acGlobalAssets = pluginsGetGlobalAssets();
+    $GLOBALS['_ac_global_plugin_js'] = $_acGlobalAssets['js'];
+    ?>
+    <!-- Global plugin CSS (loaded on every page for plugins that declare assets.global_css) -->
+    <?php foreach ($_acGlobalAssets['css'] as $_gcss): ?>
+    <link rel="stylesheet" href="<?= h($_gcss) ?>">
+    <?php endforeach; ?>
+    <!-- Plugin CSS (injected by the router for active plugin pages only) -->
     <?php foreach ($GLOBALS['_ac_plugin_css'] ?? [] as $_pcss): ?>
     <link rel="stylesheet" href="<?= h($_pcss) ?>">
     <?php endforeach; ?>
+    <?php
+    // Global plugin PHP files (assets.global_php) — each file may output <script>, <link>,
+    // or <style> tags into <head>. Executed after all CSS so they can reference theme variables.
+    foreach ($_acGlobalAssets['php'] as $_gphp) { require $_gphp; }
+    ?>
 
     <?php
     // Optional theme hook: themes/active-theme/head-extra.php

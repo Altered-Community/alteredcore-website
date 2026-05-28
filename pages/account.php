@@ -189,62 +189,23 @@ include dirname(__DIR__) . '/includes/header.php';
             <?php
             $__factionPref = $userRow['faction_pref'] ?? '';
             $__factions = [
-                'AX' => ['name' => 'Axiom',  'color' => '#B05C38'],
-                'BR' => ['name' => 'Bravos',  'color' => '#C32637'],
-                'LY' => ['name' => 'Lyra',    'color' => '#CF4171'],
-                'MU' => ['name' => 'Muna',    'color' => '#4D8A54'],
-                'OR' => ['name' => 'Ordis',   'color' => '#1A8BC0'],
-                'YZ' => ['name' => 'Yzmir',   'color' => '#8855A8'],
+                'AX' => 'Axiom',
+                'BR' => 'Bravos',
+                'LY' => 'Lyra',
+                'MU' => 'Muna',
+                'OR' => 'Ordis',
+                'YZ' => 'Yzmir',
             ];
             ?>
             <div class="mb-4">
                 <label class="form-label"><?= $txt['account_faction_pref'] ?></label>
-                <div class="d-flex flex-wrap gap-2">
-                    <label class="faction-chip<?= $__factionPref === '' ? ' faction-chip--active' : '' ?>">
-                        <input type="radio" name="faction_pref" value="" <?= $__factionPref === '' ? 'checked' : '' ?> style="display:none">
-                        <span><?= $txt['account_faction_none'] ?></span>
-                    </label>
-                    <?php foreach ($__factions as $__fc => $__fd): ?>
-                    <label class="faction-chip<?= $__factionPref === $__fc ? ' faction-chip--active' : '' ?>"
-                           data-color="<?= $__fd['color'] ?>"
-                           style="<?= $__factionPref === $__fc ? '--fc:' . $__fd['color'] . ';' : '' ?>">
-                        <input type="radio" name="faction_pref" value="<?= $__fc ?>" <?= $__factionPref === $__fc ? 'checked' : '' ?> style="display:none">
-                        <img src="<?= BASE_URL ?>/plugins/core-altered-cards/assets/faction/<?= $__fc ?>.png"
-                             width="18" height="18" alt="" style="object-fit:contain">
-                        <span><?= $__fd['name'] ?></span>
-                    </label>
+                <select name="faction_pref" class="form-select" style="max-width:220px">
+                    <option value="" <?= $__factionPref === '' ? 'selected' : '' ?>><?= $txt['account_faction_none'] ?></option>
+                    <?php foreach ($__factions as $__fc => $__fn): ?>
+                    <option value="<?= $__fc ?>" <?= $__factionPref === $__fc ? 'selected' : '' ?>><?= $__fn ?></option>
                     <?php endforeach; ?>
-                </div>
+                </select>
             </div>
-            <style>
-            .faction-chip {
-                display: inline-flex; align-items: center; gap: 6px;
-                padding: 5px 12px; border-radius: 2rem; cursor: pointer;
-                border: 2px solid var(--glass-border, rgba(255,255,255,.8));
-                background: var(--glass-bg, rgba(255,255,255,.65));
-                font-size: .85rem; font-weight: 600;
-                color: var(--neutral-700, #555);
-                transition: border-color .15s, box-shadow .15s;
-                user-select: none;
-            }
-            .faction-chip:hover { border-color: var(--neutral-300, #ccc); }
-            .faction-chip--active {
-                border-color: var(--fc, var(--primary-400));
-                color: var(--fc, var(--primary-500));
-                box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc, var(--primary-400)) 20%, transparent);
-            }
-            </style>
-            <script>
-            document.querySelectorAll('.faction-chip input[type=radio]').forEach(function(r){
-                r.addEventListener('change', function(){
-                    document.querySelectorAll('.faction-chip').forEach(function(l){ l.classList.remove('faction-chip--active'); l.style.removeProperty('--fc'); });
-                    var lbl = r.closest('.faction-chip');
-                    lbl.classList.add('faction-chip--active');
-                    var col = r.value ? r.closest('label').dataset.color : null;
-                    if (col) lbl.style.setProperty('--fc', col);
-                });
-            });
-            </script>
             <button type="submit" class="btn btn-primary-altered">
                 <i class="fa-solid fa-floppy-disk me-1"></i> <?= $txt['account_save'] ?>
             </button>

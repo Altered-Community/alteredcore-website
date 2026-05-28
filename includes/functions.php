@@ -424,7 +424,7 @@ function getProjectCategories(): array {
 }
 
 function h(string $str): string {
-    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8', false);
 }
 
 function requireAdmin(): void {
@@ -1068,7 +1068,7 @@ function getNavItems(): array {
     $lang = getUiLang();
     try {
         $rows = getDB()->query(q(
-            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle
+            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
              FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
         ))->fetchAll();
     } catch (Exception $e) {
@@ -1076,7 +1076,8 @@ function getNavItems(): array {
         try {
             $rows = getDB()->query(q(
                 "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe,
-                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle
+                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
+                        0 AS is_separator, 0 AS is_section_header
                  FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
             ))->fetchAll();
         } catch (Exception $e2) {
@@ -1142,4 +1143,5 @@ function getUserMenuItems(): array {
     }
     return $rows;
 }
+require_once __DIR__ . '/func.keycloak.php';
 require_once __DIR__ . '/plugins.php';

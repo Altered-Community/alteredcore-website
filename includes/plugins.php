@@ -94,6 +94,25 @@ function pluginFindPage(string $slug): ?array {
     return null;
 }
 
+function pluginsGetGlobalAssets(): array {
+    $css = [];
+    $js  = [];
+    $php = [];
+    foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
+        foreach ($plugin['assets']['global_css'] ?? [] as $f) {
+            $css[] = BASE_URL . '/plugins/' . $id . '/' . ltrim($f, '/');
+        }
+        foreach ($plugin['assets']['global_js'] ?? [] as $f) {
+            $js[] = BASE_URL . '/plugins/' . $id . '/' . ltrim($f, '/');
+        }
+        foreach ($plugin['assets']['global_php'] ?? [] as $f) {
+            $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $f), DIRECTORY_SEPARATOR);
+            if (file_exists($abs)) $php[] = $abs;
+        }
+    }
+    return ['css' => $css, 'js' => $js, 'php' => $php];
+}
+
 function pluginsGetAdminSections(): array {
     $sections = [];
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
@@ -281,6 +300,27 @@ function pluginValidateZip(ZipArchive $zip, array $manifest, string $prefix): ar
         foreach ($manifest['assets']['js'] as $f) {
             if (!$zipHasFile($f)) {
                 $errors[] = "JS asset '$f' declared in manifest but not found in ZIP.";
+            }
+        }
+    }
+    if (isset($manifest['assets']['global_css']) && is_array($manifest['assets']['global_css'])) {
+        foreach ($manifest['assets']['global_css'] as $f) {
+            if (!$zipHasFile($f)) {
+                $errors[] = "Global CSS asset '$f' declared in manifest but not found in ZIP.";
+            }
+        }
+    }
+    if (isset($manifest['assets']['global_js']) && is_array($manifest['assets']['global_js'])) {
+        foreach ($manifest['assets']['global_js'] as $f) {
+            if (!$zipHasFile($f)) {
+                $errors[] = "Global JS asset '$f' declared in manifest but not found in ZIP.";
+            }
+        }
+    }
+    if (isset($manifest['assets']['global_php']) && is_array($manifest['assets']['global_php'])) {
+        foreach ($manifest['assets']['global_php'] as $f) {
+            if (!$zipHasFile($f)) {
+                $errors[] = "Global PHP asset '$f' declared in manifest but not found in ZIP.";
             }
         }
     }

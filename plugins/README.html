@@ -77,7 +77,7 @@
   <div class="nav-section">Front-end</div>
   <a href="#pages">Front-end pages</a>
   <a href="#linking">Linking to pages</a>
-  <a href="#assets">CSS &amp; JS assets</a>
+  <a href="#assets">CSS &amp; JS assets (incl. global)</a>
   <div class="nav-section">Back-end</div>
   <a href="#admin">Admin pages</a>
   <a href="#tinymce">TinyMCE rich-text editor</a>
@@ -187,8 +187,10 @@
     ],
 
     "assets": {
-        "css": ["assets/style.css"],
-        "js":  ["assets/app.js"]
+        "css":        ["assets/style.css"],
+        "js":         ["assets/app.js"],
+        "global_css": ["assets/global.css"],
+        "global_js":  ["assets/global.js"]
     },
 
     "sql":    "sql/install.sql",
@@ -209,7 +211,7 @@
   <tr><td>pages</td><td><span class="opt">optional</span></td><td>Array of front-end page declarations. See <a href="#pages">Front-end pages</a>.</td></tr>
   <tr><td>admin</td><td><span class="opt">optional</span></td><td>Array of admin section declarations. See <a href="#admin">Admin pages</a>.</td></tr>
   <tr><td>api</td><td><span class="opt">optional</span></td><td>Array of HTTP API endpoint declarations. See <a href="#api">HTTP API endpoints</a>.</td></tr>
-  <tr><td>assets</td><td><span class="opt">optional</span></td><td>CSS and JS files to inject on the plugin's front-end pages. See <a href="#assets">CSS &amp; JS assets</a>.</td></tr>
+  <tr><td>assets</td><td><span class="opt">optional</span></td><td>CSS and JS files to inject on the plugin's front-end pages, and/or on every page of the site. See <a href="#assets">CSS &amp; JS assets</a>.</td></tr>
   <tr><td>sql</td><td><span class="opt">optional</span></td><td>Path to a SQL file (relative to plugin root) that runs once on first activation.</td></tr>
   <tr><td>tables</td><td><span class="opt">optional</span></td><td>Array of table name placeholders (without prefix). Shown in the delete confirmation — admin can choose to drop them when uninstalling.</td></tr>
 </table>
@@ -320,19 +322,56 @@ VALUES
 
 <h2 id="assets">CSS &amp; JS assets</h2>
 
-<p>CSS and JS files listed under <code>assets</code> in the manifest are injected <strong>only on the plugin's own front-end pages</strong> — not globally. They are served directly by Apache from the <code>plugins/{id}/assets/</code> directory.</p>
+<p>The <code>assets</code> object supports two scopes:</p>
+
+<table class="kv">
+  <tr><th>Key</th><th>Scope</th><th>Description</th></tr>
+  <tr><td>css</td><td>Page-scoped</td><td>Injected only on the plugin's own front-end pages.</td></tr>
+  <tr><td>js</td><td>Page-scoped</td><td>Injected only on the plugin's own front-end pages.</td></tr>
+  <tr><td>global_css</td><td><strong>Global</strong></td><td>Injected on <strong>every page</strong> of the site while the plugin is active.</td></tr>
+  <tr><td>global_js</td><td><strong>Global</strong></td><td>Injected on <strong>every page</strong> of the site while the plugin is active.</td></tr>
+  <tr><td>global_php</td><td><strong>Global (PHP)</strong></td><td>PHP files <strong>executed</strong> in <code>&lt;head&gt;</code> on every page. May output <code>&lt;script&gt;</code>, <code>&lt;link&gt;</code> or <code>&lt;style&gt;</code> tags. Use to inject PHP-computed data (e.g. configuration) as JS variables.</td></tr>
+</table>
+
+<p>All four arrays can be combined freely. Files are served directly by Apache from the <code>plugins/{id}/assets/</code> directory.</p>
 
 <pre><code>"assets": {
-    "css": ["assets/style.css"],
-    "js":  ["assets/app.js"]
+    "css":        ["assets/style.css"],
+    "js":         ["assets/app.js"],
+    "global_css": ["assets/global.css"],
+    "global_js":  ["assets/global.js"]
 }</code></pre>
 
 <ul>
-  <li><strong>CSS</strong> is injected as <code>&lt;link&gt;</code> tags in <code>&lt;head&gt;</code>, after Bootstrap and the theme stylesheet.</li>
-  <li><strong>JS</strong> is injected as <code>&lt;script&gt;</code> tags just before the Bootstrap bundle in the footer.</li>
+  <li><strong>CSS</strong> (<code>css</code> and <code>global_css</code>) is injected as <code>&lt;link&gt;</code> tags in <code>&lt;head&gt;</code>, after Bootstrap and the theme stylesheet.</li>
+  <li><strong>JS</strong> (<code>js</code> and <code>global_js</code>) is injected as <code>&lt;script&gt;</code> tags just before the Bootstrap bundle in the footer.</li>
   <li>Bootstrap 5 and Font Awesome are already loaded by the theme — no need to include them.</li>
   <li>Multiple files are supported: add them in order to the array.</li>
 </ul>
+
+<h3>Global assets — typical use cases</h3>
+<p>Use <code>global_css</code> / <code>global_js</code> when your plugin needs to inject UI or behaviour that must be present on pages it does not own — for example:</p>
+<ul>
+  <li>A floating action button (FAB) fixed to a corner on mobile.</li>
+  <li>A persistent notification badge or toast container.</li>
+  <li>A site-wide keyboard shortcut handler.</li>
+  <li>A cookie banner or consent widget.</li>
+</ul>
+
+<h3>global_php — injecting PHP data into JS</h3>
+<p><code>global_php</code> files are PHP scripts executed in <code>&lt;head&gt;</code> on every page. They can output any valid head content — the typical use case is exposing plugin configuration as a JS variable so that a <code>global_js</code> file can read it:</p>
+
+<pre><code>&lt;?php
+// assets/global_head.php
+$config = require __DIR__ . '/../config.php';
+$pages  = array_values((array)($config['pages'] ?? []));
+?&gt;&lt;script&gt;window.MY_PLUGIN_CONFIG=&lt;?= json_encode(['pages' =&gt; $pages]) ?&gt;;&lt;/script&gt;</code></pre>
+
+<p>The corresponding <code>global_js</code> file can then read <code>window.MY_PLUGIN_CONFIG</code>, which is guaranteed to be defined before the script executes (head PHP runs before footer JS).</p>
+
+<div class="warn">
+  Global assets (<code>global_css</code>, <code>global_js</code>, <code>global_php</code>) are loaded on <strong>every</strong> page while the plugin is active. Keep them small and fast. Wrap all JS in an IIFE; scope CSS selectors tightly with a unique ID or plugin-prefixed class; keep PHP files side-effect-free (output only, no redirects or session writes).
+</div>
 
 <h3>CSS layering — what goes where</h3>
 <p>Follow this order when deciding where to put CSS:</p>
@@ -1106,6 +1145,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 <div class="tree">
 <span class="dir">hello-world/</span><br>
 &nbsp;&nbsp;<span class="file">plugin.json</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># manifest</span><br>
+&nbsp;&nbsp;<span class="file">config.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># plugin config — pages where the global badge appears</span><br>
 &nbsp;&nbsp;<span class="dir">inc/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># shared helpers — hwGetMessages(), hwAddMessage(), …</span><br>
 &nbsp;&nbsp;<span class="dir">pages/</span><br>
@@ -1119,8 +1159,11 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">inc/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># admin-only helpers — hwCountMessages()</span><br>
 &nbsp;&nbsp;<span class="dir">assets/</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">style.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># scoped to plugin front-end pages</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">hello.js</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># JS counter demo</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">style.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># scoped to plugin front-end pages only</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">hello.js</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># JS counter demo — scoped to plugin pages</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global-fab.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global — demo badge, loaded on every page</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global-fab.js</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global — injects the badge, filtered by HW_PAGES</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global_head.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global_php — outputs window.HW_PAGES from config.php</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">no_rules.png</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># static image demo</span><br>
 &nbsp;&nbsp;<span class="dir">api/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /api/hello-world/data</span><br>
@@ -1134,7 +1177,9 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
   <li>Two front-end pages: a public page (<code>$isLoggedIn</code> for conditional content) and a protected page (<code>loginRequired()</code>)</li>
   <li>Two admin sections: message list with add/delete, and a key/value settings form</li>
   <li>Two database tables with a full SQL install file and a migration</li>
-  <li>CSS and JS assets loaded automatically on the plugin's pages, plus a static image</li>
+  <li>CSS and JS assets loaded automatically on the plugin's pages (<code>assets.css</code> / <code>assets.js</code>), plus a static image</li>
+  <li>Global CSS and JS loaded on <strong>every page</strong> of the site (<code>assets.global_css</code> / <code>assets.global_js</code>) — demonstrated by a demo badge injected into the DOM</li>
+  <li>A <code>global_php</code> file run in <code>&lt;head&gt;</code> on every page to pass PHP config data to JS (<code>window.HW_PAGES</code> — the page-filter list read from <code>config.php</code>)</li>
   <li>An HTTP API endpoint returning JSON</li>
   <li>The <code>$txt</code> multilingual pattern — all UI strings declared in one array, no hardcoded text in the HTML</li>
   <li>Auth identity via <code>kcUser()</code> — works in both SSO and local account modes</li>

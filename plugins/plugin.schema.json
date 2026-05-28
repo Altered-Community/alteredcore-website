@@ -58,8 +58,11 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "css": { "type": "array", "items": { "type": "string" } },
-        "js":  { "type": "array", "items": { "type": "string" } }
+        "css":        { "type": "array", "items": { "type": "string" } },
+        "js":         { "type": "array", "items": { "type": "string" } },
+        "global_css": { "type": "array", "items": { "type": "string" } },
+        "global_js":  { "type": "array", "items": { "type": "string" } },
+        "global_php": { "type": "array", "items": { "type": "string" } }
       }
     },
     "sql":    { "type": "string" },

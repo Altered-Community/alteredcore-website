@@ -2,8 +2,8 @@
     "$schema":      "../plugin.schema.json",
     "id":           "hello-world",
     "name":         "Hello World",
-    "version":      "1.0.0",
-    "description":  "A minimal example plugin.",
+    "version":      "1.1.0",
+    "description":  "A minimal example plugin demonstrating pages, admin, API, and global assets.",
     "author":       "Your Name",
     "icon":         "fa-solid fa-earth-europe",
     "table_prefix": "hw",
@@ -43,8 +43,11 @@
     ],
 
     "assets": {
-        "css": ["assets/style.css"],
-        "js":  ["assets/hello.js"]
+        "css":        ["assets/style.css"],
+        "js":         ["assets/hello.js"],
+        "global_css": ["assets/global-fab.css"],
+        "global_js":  ["assets/global-fab.js"],
+        "global_php": ["assets/global_head.php"]
     },
 
     "sql":    "sql/install.sql",
