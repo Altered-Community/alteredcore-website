@@ -1,0 +1,44 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "reunion-events",
+    "name":         "Réunion Events",
+    "version":      "1.0.0",
+    "description":  "Affiche les événements à venir depuis Altered Tournament Tools.",
+    "author":       "Your Name",
+    "icon":         "fa-solid fa-calendar-days",
+    "table_prefix": "re",
+
+    "pages": [
+        {
+            "slug":     "events",
+            "file":     "pages/events.php",
+            "title_en": "Upcoming Events",
+            "title_fr": "Événements à venir"
+        }
+    ],
+
+    "admin": [
+        {
+            "section":  "events-settings",
+            "file":     "admin/settings.php",
+            "label_en": "Events Settings",
+            "label_fr": "Paramètres Événements",
+            "icon":     "fa-solid fa-gear"
+        }
+    ],
+
+    "api": [
+        {
+            "endpoint": "events",
+            "file":     "api/data.php"
+        }
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["assets/events.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["settings"]
+}
