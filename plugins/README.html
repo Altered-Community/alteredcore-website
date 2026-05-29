@@ -839,9 +839,9 @@ ALTER TABLE {messages}
 <h3>URL pattern</h3>
 
 <p>Every declared endpoint is reachable at:</p>
-<pre><code>GET /api/{plugin-id}/{endpoint}</code></pre>
+<pre><code>GET /papi/{plugin-id}/{endpoint}</code></pre>
 <p>For a plugin with id <code>hello-world</code> and endpoint <code>data</code>:</p>
-<pre><code>GET /api/hello-world/data</code></pre>
+<pre><code>GET /papi/hello-world/data</code></pre>
 
 <p>The endpoint returns <strong>404 JSON</strong> automatically when the plugin is deactivated — no extra guard needed in the handler file.</p>
 
@@ -850,7 +850,7 @@ ALTER TABLE {messages}
 <p>The handler is a plain PHP file. All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
 
 <pre><code>&lt;?php
-// Reached via GET /api/hello-world/data
+// Reached via GET /papi/hello-world/data
 
 $db = getDB();
 
@@ -867,7 +867,7 @@ echo json_encode([
 <pre><code>// Output BASE_URL from PHP first so JS knows the site root:
 // &lt;script&gt;var SITE_BASE = '&lt;?= BASE_URL ?&gt;';&lt;/script&gt;
 
-fetch(SITE_BASE + '/api/hello-world/data')
+fetch(SITE_BASE + '/papi/hello-world/data')
     .then(function (r) { return r.json(); })
     .then(function (data) {
         console.log(data.greeting, data.message_count);
@@ -875,7 +875,7 @@ fetch(SITE_BASE + '/api/hello-world/data')
 
 <h3>Consuming from PHP</h3>
 
-<pre><code>$raw  = file_get_contents(BASE_URL . '/api/hello-world/data');
+<pre><code>$raw  = file_get_contents(BASE_URL . '/papi/hello-world/data');
 $data = json_decode($raw, true);
 echo $data['greeting'];</code></pre>
 
@@ -1076,7 +1076,7 @@ function hwCountMessages(): int
 
 <pre><code>// Show while a fetch is in progress
 window.acSpinner.show('Loading…');
-fetch('/api/my-plugin/data')
+fetch('/papi/my-plugin/data')
     .then(function (r) { return r.json(); })
     .then(function (data) {
         // … handle data …
@@ -1252,7 +1252,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global_head.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global_php — outputs window.HW_PAGES from config.php</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">no_rules.png</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># static image demo</span><br>
 &nbsp;&nbsp;<span class="dir">papi/</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /api/hello-world/data</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /papi/hello-world/data</span><br>
 &nbsp;&nbsp;<span class="dir">sql/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — {messages} + {settings} tables (v1.2.0)</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta — adds {settings} table</span><br>

@@ -8,10 +8,10 @@
     # Route all /pages/{slug} through the central router (core + plugin pages)
     RewriteRule ^pages/([a-z0-9_-]+)/?$ pages/_router.php [QSA,L]
 
-    # Plugin API endpoints: /api/{plugin-id}/{endpoint}
+    # Plugin API endpoints: /papi/{plugin-id}/{endpoint}
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^api/([a-z0-9_-]+)/([a-z0-9_-]+)/?$ includes/_plugin_router.php?_plugin=$1&_endpoint=$2 [QSA,L]
+    RewriteRule ^papi/([a-z0-9_-]+)/([a-z0-9_-]+)/?$ includes/_plugin_router.php?_plugin=$1&_endpoint=$2 [QSA,L]
 
     # All other extensionless URLs get .php appended directly
     RewriteCond %{REQUEST_FILENAME} !-f

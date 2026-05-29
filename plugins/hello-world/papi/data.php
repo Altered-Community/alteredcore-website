@@ -1,5 +1,5 @@
 <?php
-// Example plugin API endpoint — reached via GET /api/hello-world/data
+// Example plugin API endpoint — reached via GET /papi/hello-world/data
 // Full framework context is available: getDB(), qp(), session, etc.
 // The router has already set _ac_current_plugin_prefix so qp() uses the
 // correct table prefix (hw_*) for this plugin.
