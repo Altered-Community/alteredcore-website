@@ -39,14 +39,14 @@
     ],
 
     "api": [
-        {"endpoint": "data", "file": "api/data.php"}
+        {"endpoint": "data", "file": "papi/data.php"}
     ],
 
     "assets": {
         "css":        ["assets/style.css"],
-        "js":         ["assets/hello.js"],
+        "js":         ["js/hello.js"],
         "global_css": ["assets/global-fab.css"],
-        "global_js":  ["assets/global-fab.js"],
+        "global_js":  ["js/global-fab.js"],
         "global_php": ["assets/global_head.php"]
     },
 

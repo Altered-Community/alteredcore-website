@@ -1,5 +1,19 @@
 <?php
 // Central page router — handles both core pages and plugin pages.
+
+// Error logging to logs/php_errors.log (catches fatal errors swallowed by ob_start)
+ini_set('log_errors', '1');
+ini_set('error_log', dirname(__DIR__) . '/logs/php_errors.log');
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
+        $line = date('[Y-m-d H:i:s]') . ' FATAL ' . $e['type'] . ': ' . $e['message']
+              . ' in ' . $e['file'] . ' on line ' . $e['line'] . PHP_EOL;
+        error_log($line, 3, dirname(__DIR__) . '/logs/php_errors.log');
+        if (ob_get_level() > 0) ob_end_clean();
+    }
+});
+
 require_once dirname(__DIR__) . '/includes/functions.php';
 
 $_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);

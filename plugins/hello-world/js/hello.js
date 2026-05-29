@@ -1,5 +1,5 @@
 // hello-world plugin — demo script.
-// Loaded automatically on every page where this plugin is active (declared in
+// Loaded automatically on the plugin's own pages (declared in
 // plugin.json under assets.js). Use an IIFE to avoid polluting the global scope.
 (function () {
     'use strict';

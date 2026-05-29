@@ -4,7 +4,7 @@
  *
  * Usage — include at the top of any page / admin / api file:
  *   require_once __DIR__ . '/../inc/functions.php';   // from pages/ or admin/
- *   require_once __DIR__ . '/../../inc/functions.php'; // from api/
+ *   require_once __DIR__ . '/../../inc/functions.php'; // from papi/
  *
  * All functions here rely on the variables injected by the router:
  *   $db          — PDO instance

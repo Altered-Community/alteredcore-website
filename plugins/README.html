@@ -133,10 +133,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">assets/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">style.css</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># CSS and JS served as static files</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">app.js</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">api/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">papi/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># one file per HTTP API endpoint</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">inc/</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># optional — shared helpers for pages, admin, api</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">functions.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># optional — shared helpers for pages, admin, papi</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">sql/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — runs on first activation</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">update_1.1.0.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># delta only — runs when upgrading to 1.1.0</span><br>
@@ -182,7 +182,7 @@
     "api": [
         {
             "endpoint": "data",
-            "file":     "api/data.php"
+            "file":     "papi/data.php"
         }
     ],
 
@@ -826,8 +826,8 @@ ALTER TABLE {messages}
 <h3>Declaring endpoints in plugin.json</h3>
 
 <pre><code>"api": [
-    {"endpoint": "data",  "file": "api/data.php"},
-    {"endpoint": "stats", "file": "api/stats.php"}
+    {"endpoint": "data",  "file": "papi/data.php"},
+    {"endpoint": "stats", "file": "papi/stats.php"}
 ]</code></pre>
 
 <table class="kv">
@@ -941,12 +941,12 @@ if ($result !== false) {
 
 <h2 id="inc">Shared helpers (<code>inc/</code>)</h2>
 
-<p>A plugin can place PHP functions shared across its <code>pages/</code>, <code>admin/</code> and <code>api/</code> files in an <code>inc/</code> directory. Both the plugin root and any subdirectory (<code>admin/</code>, <code>pages/</code> …) can have their own <code>inc/</code>:</p>
+<p>A plugin can place PHP functions shared across its <code>pages/</code>, <code>admin/</code> and <code>papi/</code> files in an <code>inc/</code> directory. Both the plugin root and any subdirectory (<code>admin/</code>, <code>pages/</code> …) can have their own <code>inc/</code>:</p>
 
 <table class="kv">
   <tr><th>Location</th><th>Scope</th></tr>
-  <tr><td><code>inc/functions.php</code></td><td>Shared across pages, admin and api.</td></tr>
-  <tr><td><code>admin/inc/functions.php</code></td><td>Admin-only helpers — not available to front-end pages or api.</td></tr>
+  <tr><td><code>inc/functions.php</code></td><td>Shared across pages, admin and papi.</td></tr>
+  <tr><td><code>admin/inc/functions.php</code></td><td>Admin-only helpers — not available to front-end pages or papi.</td></tr>
 </table>
 
 <h3>Naming convention</h3>
@@ -964,7 +964,7 @@ if ($result !== false) {
 <table class="kv">
   <tr><th>Including from</th><th>Path to use</th></tr>
   <tr><td><code>pages/mpage.php</code> or <code>admin/msection.php</code></td><td><code>require_once __DIR__ . '/../inc/functions.php';</code></td></tr>
-  <tr><td><code>api/endpoint.php</code></td><td><code>require_once __DIR__ . '/../../inc/functions.php';</code></td></tr>
+  <tr><td><code>papi/endpoint.php</code></td><td><code>require_once __DIR__ . '/../../inc/functions.php';</code></td></tr>
   <tr><td><code>admin/msection.php</code> (admin-only helpers)</td><td><code>require_once __DIR__ . '/inc/functions.php';</code></td></tr>
 </table>
 
@@ -1129,7 +1129,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 <span class="dir">assets/</span><br>
 &nbsp;&nbsp;<span class="file">style.css</span><br>
 &nbsp;&nbsp;<span class="file">app.js</span><br>
-<span class="dir">api/</span><br>
+<span class="dir">papi/</span><br>
 &nbsp;&nbsp;<span class="file">data.php</span><br>
 <span class="dir">sql/</span><br>
 &nbsp;&nbsp;<span class="file">install.sql</span><br>
@@ -1251,7 +1251,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global-fab.js</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global — injects the badge, filtered by HW_PAGES</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">global_head.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># global_php — outputs window.HW_PAGES from config.php</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">no_rules.png</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># static image demo</span><br>
-&nbsp;&nbsp;<span class="dir">api/</span><br>
+&nbsp;&nbsp;<span class="dir">papi/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">data.php</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># GET /api/hello-world/data</span><br>
 &nbsp;&nbsp;<span class="dir">sql/</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">install.sql</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="note"># full schema — {messages} + {settings} tables (v1.2.0)</span><br>
@@ -1271,7 +1271,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
   <li>The <code>$txt</code> multilingual pattern — all UI strings declared in one array, no hardcoded text in the HTML</li>
   <li>Auth identity via <code>kcUser()</code> — works in both SSO and local account modes</li>
   <li>Minimal templates: <code>pages/empty.php</code> and <code>admin/empty.php</code> as blank starting points</li>
-  <li>Shared helpers in <code>inc/functions.php</code> — plugin-prefixed functions (<code>hw*</code>) shared across pages, admin and api; included with <code>require_once __DIR__ . '/../inc/functions.php'</code></li>
+  <li>Shared helpers in <code>inc/functions.php</code> — plugin-prefixed functions (<code>hw*</code>) shared across pages, admin and papi; included with <code>require_once __DIR__ . '/../inc/functions.php'</code></li>
   <li>Admin-only helpers in <code>admin/inc/functions.php</code> — functions scoped to admin pages only; included with <code>require_once __DIR__ . '/inc/functions.php'</code></li>
 </ul>
 

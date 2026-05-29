@@ -8,16 +8,6 @@
     # Route all /pages/{slug} through the central router (core + plugin pages)
     RewriteRule ^pages/([a-z0-9_-]+)/?$ pages/_router.php [QSA,L]
 
-    # Backup API : combined docs + openapi.json
-    RewriteRule ^api/?$ api/index.php [QSA,L]
-    RewriteRule ^api/openapi\.json$ api/index.php [QSA,L]
-
-    # Backup API sub-folders (cards, decks, …) — route vers leur propre index.php
-    # La condition vérifie qu'un index.php existe dans le sous-dossier
-    RewriteCond %{REQUEST_URI} ^(?:/[^/]+)?/api/([^/?#]+)
-    RewriteCond %{DOCUMENT_ROOT}/api/%1/index.php -f
-    RewriteRule ^api/([^/]+)(/.*)?$ api/$1/index.php [QSA,L]
-
     # Plugin API endpoints: /api/{plugin-id}/{endpoint}
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
