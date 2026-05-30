@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 $lang   = getLang();
 $uiLang = getUiLang();
 
+
 // translations
 $_ss        = loadSearchSettings();
 $_sharedTxt = $_ss['translations'][$uiLang] ?? [];
@@ -14,6 +15,8 @@ $txt        = array_merge($_sharedTxt, [
         'community'   => 'Community',
         'detail_label'=> 'View detail',
         'btn_collection' => 'My collection',
+        'lbl_effects' => 'Effects',
+        'add_effect'  => 'Add effect',
     ],
     'fr' => [
         'page_title'  => 'Cartes',
@@ -22,6 +25,8 @@ $txt        = array_merge($_sharedTxt, [
         'community'   => 'Communauté',
         'detail_label'=> 'Accéder au détail',
         'btn_collection' => 'Ma collection',
+        'lbl_effects' => 'Effets',
+        'add_effect'  => 'Ajouter un effet',
     ],
 ][$uiLang] ?? []);
 
@@ -274,10 +279,17 @@ CardSearch({
     },
     typesMerged: <?= json_encode($typesMergedData) ?>,
     txt: {
-        prev:         <?= json_encode($txt['prev']         ?? '← Prev') ?>,
-        next:         <?= json_encode($txt['next']         ?? 'Next →') ?>,
-        showing:      <?= json_encode($txt['showing']      ?? '%d cards') ?>,
-        detail_label: <?= json_encode($txt['detail_label'] ?? 'View detail') ?>,
+        prev:          <?= json_encode($txt['prev']          ?? '← Prev') ?>,
+        next:          <?= json_encode($txt['next']          ?? 'Next →') ?>,
+        showing:       <?= json_encode($txt['showing']       ?? '%d cards') ?>,
+        detail_label:  <?= json_encode($txt['detail_label']  ?? 'View detail') ?>,
+        any_trigger:    <?= json_encode($uiLang === 'fr' ? 'Tous les déclencheurs' : 'Any trigger') ?>,
+        any_condition:  <?= json_encode($uiLang === 'fr' ? 'Toutes les conditions' : 'Any condition') ?>,
+        any_effect:     <?= json_encode($uiLang === 'fr' ? 'Tous les effets'       : 'Any effect') ?>,
+        lbl_subtype:    <?= json_encode($txt['lbl_subtype']    ?? ($uiLang === 'fr' ? 'Sous-type' : 'Subtype')) ?>,
+        lbl_card_status:<?= json_encode($txt['lbl_card_status'] ?? ($uiLang === 'fr' ? 'Statut'    : 'Status')) ?>,
+        lbl_keyword:    <?= json_encode($txt['lbl_keyword']    ?? ($uiLang === 'fr' ? 'Mot-clé'   : 'Keyword')) ?>,
+        lbl_variation:  <?= json_encode($txt['lbl_variation']  ?? ($uiLang === 'fr' ? 'Variation'  : 'Variation')) ?>,
     },
     onColsChange: function(n) {
         var grid = document.getElementById('cs-grid');
