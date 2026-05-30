@@ -934,6 +934,12 @@ $showPublicTab = $publicDecksApiPath !== '';
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+    function normalizeRef(ref) {
+        var p = ref.split('_');
+        if (p[2] === 'P') p[2] = 'B';
+        if (p[1] === 'BISE') p[1] = 'CORE';
+        return p.join('_');
+    }
 
     function apiErrorHtml(msg) {
         return '<i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>'
@@ -1051,7 +1057,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         var factionData  = factions[factionCode] || {};
         var factionColor = factionData.color || '#ffffff';
         var factionImg   = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
-        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + heroRef + '_1.webp' : '';
+        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + normalizeRef(heroRef) + '_1.webp' : '';
 
         var heroStyle    = _deckHeroStyle(heroImgUrl, factionColor);
         var rarityHtml   = _deckRarityHtml(byRarity);
@@ -1461,7 +1467,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         var factionData  = factions[factionCode] || {};
         var factionColor = factionData.color || '#ffffff';
         var factionImg   = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
-        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + heroRef + '_1.webp' : '';
+        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + normalizeRef(heroRef) + '_1.webp' : '';
 
         var heroStyle    = _deckHeroStyle(heroImgUrl, factionColor);
         var rarityHtml   = _deckRarityHtml(byRarity);
@@ -1782,7 +1788,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         var factionData = factions[factionCode] || {};
         var factionColor = factionData.color || '#ffffff';
         var factionImg  = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
-        var heroImgUrl  = heroRef ? cdnUrl + '/cards/hero/' + heroRef + '_1.webp' : '';
+        var heroImgUrl  = heroRef ? cdnUrl + '/cards/hero/' + normalizeRef(heroRef) + '_1.webp' : '';
 
         var heroStyle = heroImgUrl
             ? 'background-image:linear-gradient(to right,' + factionColor + 'cc 30%,' + factionColor + '00 100%),url(' + escHtml(heroImgUrl) + ');background-size:cover;background-position:left top;'
