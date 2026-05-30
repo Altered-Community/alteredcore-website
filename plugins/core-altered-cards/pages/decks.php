@@ -452,8 +452,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!in_array($pubOrder, $allowedPubOrders, true)) $pubOrder = 'updatedAt';
     if (!in_array($pubDir,   $allowedPubDirs,   true)) $pubDir   = 'desc';
 
+    $pubFaction = $_GET['faction'] ?? '';
+    if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
+
     $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
-    if ($pubFormat !== '') $apiParams['format'] = strtolower($pubFormat);
+    if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
+    if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
     $headers = ['Accept: application/json'];
     if ($isLoggedIn) {
         $token = deckApiToken();
@@ -493,11 +497,14 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '')
     if (!in_array($myOrder, ['createdAt', 'updatedAt', 'name'], true)) $myOrder = 'updatedAt';
     if (!in_array($myDir,   ['asc', 'desc'],                    true)) $myDir   = 'desc';
 
+    $myFaction = $_GET['faction'] ?? '';
+    if (!preg_match('/^[A-Z]{2}$/', $myFaction)) $myFaction = '';
+
     $apiParams = ['page' => $myPage, 'itemsPerPage' => 21];
     if ($myFormat !== '')    $apiParams['format']   = $myFormat;
     if ($myIsPublic !== '')  $apiParams['isPublic'] = $myIsPublic === '1' ? 'true' : 'false';
     if ($myIsDraft  !== '')  $apiParams['isDraft']  = $myIsDraft  === '1' ? 'true' : 'false';
-    // $apiParams['faction'] = ...; // TODO: enable when API supports faction filtering
+    if ($myFaction !== '')   $apiParams['faction']  = $myFaction;
 
     $myUrl = DECKS_API_URL . '/api/decks?' . http_build_query($apiParams) . '&order[' . $myOrder . ']=' . $myDir;
     $ch = curl_init($myUrl);
@@ -873,7 +880,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     var myGrid        = document.getElementById('my-deck-grid');
     var myPagination  = document.getElementById('my-pagination');
     var myCountEl     = document.getElementById('my-deck-count');
-    var myFactions    = [];
+    var myFaction     = '';
     var myFormat      = '';
     var myVisibility  = '';
     var mySortVal     = 'updatedAt:desc';
@@ -1146,6 +1153,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             + '&dir='   + encodeURIComponent(sortParts[1] || 'desc');
         if (myFormat)     fetchUrl += '&format='   + encodeURIComponent(myFormat);
         if (myVisibility !== '') fetchUrl += '&isPublic=' + encodeURIComponent(myVisibility);
+        if (myFaction)    fetchUrl += '&faction='  + encodeURIComponent(myFaction);
         var q = mySearch ? mySearch.value.trim() : '';
         // name search is client-side only (API has no text search param)
 
@@ -1158,14 +1166,6 @@ $showPublicTab = $publicDecksApiPath !== '';
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
                 // Client-side name search filter
                 if (q) decks = decks.filter(function(d) { return (d.name || '').toLowerCase().indexOf(q.toLowerCase()) >= 0; });
-                // Client-side faction filter (API doesn't support it yet)
-                if (myFactions.length) {
-                    decks = decks.filter(function(d) {
-                        var ref = (d.stats && d.stats.hero && d.stats.hero.reference) || '';
-                        var fm2 = ref.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
-                        return fm2 && myFactions.indexOf(fm2[1]) >= 0;
-                    });
-                }
                 if (!decks.length) { myEmpty.style.display = ''; return; }
                 decks.forEach(function(deck) { myGrid.insertAdjacentHTML('beforeend', renderMyDeck(deck)); });
                 myAllItems = Array.from(myGrid.querySelectorAll('.my-deck-item'));
@@ -1281,9 +1281,9 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     document.querySelectorAll('[data-my-faction]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var v = btn.dataset.myFaction, idx = myFactions.indexOf(v);
-            if (idx >= 0) { myFactions.splice(idx, 1); btn.classList.remove('active'); }
-            else          { myFactions.push(v);          btn.classList.add('active'); }
+            var v = btn.dataset.myFaction;
+            if (myFaction === v) { myFaction = ''; btn.classList.remove('active'); }
+            else { document.querySelectorAll('[data-my-faction]').forEach(function(b) { b.classList.remove('active'); }); myFaction = v; btn.classList.add('active'); }
             loadMyDecks(1);
         });
     });
@@ -1316,7 +1316,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     var pubNoMatch    = document.getElementById('pub-no-match');
     var pubGrid       = document.getElementById('pub-grid');
     var pubPagination = document.getElementById('pub-pagination');
-    var pubFactions   = [];
+    var pubFaction    = '';
     var pubFormat     = '';
     var pubSortVal    = 'updatedAt:desc';
     var pubAllItems   = [];
@@ -1414,9 +1414,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         var q = pubSearch ? pubSearch.value.trim().toLowerCase() : '';
         var visible = 0;
         pubAllItems.forEach(function (el) {
-            var show = (!q              || (el.dataset.name    || '').includes(q))
-                    && (!pubFormat      || el.dataset.format   === pubFormat)
-                    && (!pubFactions.length || pubFactions.indexOf(el.dataset.faction) >= 0);
+            var show = (!q         || (el.dataset.name   || '').includes(q))
+                    && (!pubFormat || el.dataset.format  === pubFormat);
             el.style.display = show ? '' : 'none';
             if (show) visible++;
         });
@@ -1437,7 +1436,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         var fetchUrl = baseUrl + '/pages/decks?ajax=public&page=' + p
             + '&order=' + encodeURIComponent(pubSortParts[0])
             + '&dir='   + encodeURIComponent(pubSortParts[1] || 'desc');
-        if (pubFormat) fetchUrl += '&format=' + encodeURIComponent(pubFormat);
+        if (pubFormat)  fetchUrl += '&format='  + encodeURIComponent(pubFormat);
+        if (pubFaction) fetchUrl += '&faction=' + encodeURIComponent(pubFaction);
         fetch(fetchUrl)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1473,10 +1473,10 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     document.querySelectorAll('[data-pub-faction]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var v = btn.dataset.pubFaction, idx = pubFactions.indexOf(v);
-            if (idx >= 0) { pubFactions.splice(idx, 1); btn.classList.remove('active'); }
-            else          { pubFactions.push(v);         btn.classList.add('active'); }
-            filterPublic();
+            var v = btn.dataset.pubFaction;
+            if (pubFaction === v) { pubFaction = ''; btn.classList.remove('active'); }
+            else { document.querySelectorAll('[data-pub-faction]').forEach(function(b) { b.classList.remove('active'); }); pubFaction = v; btn.classList.add('active'); }
+            loadPublicDecks(1);
         });
     });
 
