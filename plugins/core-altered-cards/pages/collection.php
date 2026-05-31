@@ -379,13 +379,28 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     <div class="alert alert-danger py-2"><?= h($txt['db_error'] ?? 'Error') ?></div>
     <?php endif; ?>
 
+    <?php
+    // Browser-facing ownership app root. Prefer OWNERSHIP_WEB_URL (public URL); fall
+    // back to OWNERSHIP_API_URL for deployments where the two are the same host.
+    $_ownBase = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? OWNERSHIP_WEB_URL
+              : ((defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL) ? OWNERSHIP_API_URL : '');
+    $_ownUrl  = $_ownBase ? rtrim($_ownBase, '/') . '/' : '';
+    ?>
     <div class="ac-tab-toggle">
         <button type="button" class="btn-toggle coll-tab-btn active" data-pane="collection">
             <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['tab_collection'] ?? 'Digital Collection') ?>
         </button>
+        <?php if ($_ownUrl): ?>
+        <!-- Digital ownership lives in the AlteredOwnership service (OWNERSHIP_API_URL). -->
+        <a href="<?= h($_ownUrl) ?>" class="btn-toggle">
+            <i class="fa-solid fa-key me-1"></i><?= h($txt['tab_ownership'] ?? 'Ownership') ?>
+            <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:.72em"></i>
+        </a>
+        <?php else: ?>
         <button type="button" class="btn-toggle coll-tab-btn" data-pane="ownership">
             <i class="fa-solid fa-key me-1"></i><?= h($txt['tab_ownership'] ?? 'Ownership') ?>
         </button>
+        <?php endif; ?>
     </div>
     <div id="coll-pane-collection">
 

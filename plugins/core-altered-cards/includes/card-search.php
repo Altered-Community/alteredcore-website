@@ -35,6 +35,8 @@ $_csColOpt     = $_cs['col_options']        ?? [2, 3, 4, 5];
 $_csShowCols   = $_cs['show_cols']          ?? true;
 $_csCollMode   = $_cs['collection_mode']    ?? false;
 $_csCollEnabled= $_cs['collection_enabled'] ?? false;
+$_csOwnMode    = $_cs['ownership_mode']      ?? false;
+$_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
@@ -237,8 +239,16 @@ $_csHasCollFilter = !empty($_csCollOpts);
                                 class="filter-toggle<?= $_csCollMode ? '' : ' filter-toggle-soon' ?>"
                                 data-scope="collection"<?= $_csCollMode ? '' : ' disabled' ?>>
                             <i class="fa-solid fa-box-archive"></i>
-                            <?= h($_csTxt['scope_collection'] ?? 'My collection') ?>
+                            <?= h($_csTxt['scope_collection'] ?? 'Physical collection') ?>
                         </button>
+                        <?php if ($_csOwnEnabled): ?>
+                        <button type="button" id="<?= h($_csP) ?>-scope-ownership"
+                                class="filter-toggle<?= $_csOwnMode ? '' : ' filter-toggle-soon' ?>"
+                                data-scope="ownership"<?= $_csOwnMode ? '' : ' disabled' ?>>
+                            <i class="fa-solid fa-key"></i>
+                            <?= h($_csTxt['scope_ownership'] ?? 'Digital ownership') ?>
+                        </button>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Faction (TomSelect, syncs with quick-filter toggles above) -->
