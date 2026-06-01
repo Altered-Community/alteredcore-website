@@ -932,6 +932,12 @@ var AlteredDB = {
         var p = ref.split('_');
         return AlteredDB.cdnUrl + '/cards/' + AlteredDB.uiLang + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
+    function normalizeHeroRef(ref) {
+        var p = ref.split('_');
+        if (p[2] === 'P') p[2] = 'B';
+        if (p[1] === 'BISE') p[1] = 'CORE';
+        return p.join('_');
+    }
     function cardName(card) {
         var n = card.name;
         return typeof n === 'object' ? (n[AlteredDB.lang] || n.en || '') : (n || '');
@@ -1092,7 +1098,7 @@ var AlteredDB = {
         elHeroBanner.style.cssText = '';
 
         if (ref) {
-            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + ref + '_1.webp';
+            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + normalizeHeroRef(ref) + '_1.webp';
             var fImg    = faction ? AlteredDB.pluginAssetsUrl + '/faction/' + faction + '.png' : '';
             elHeroBanner.style.cssText =
                 'background-image:linear-gradient(to right,' + fColor + 'b3 30%,' + fColor + '00 100%),url(' + heroImg + ');' +
