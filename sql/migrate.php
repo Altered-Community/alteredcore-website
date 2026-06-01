@@ -8,14 +8,14 @@
 // never runs twice.
 //
 // Usage:
-//   php bin/migrate.php              Apply pending migrations.
-//   php bin/migrate.php --baseline   Record ALL current migrations as applied
+//   php sql/migrate.php              Apply pending migrations.
+//   php sql/migrate.php --baseline   Record ALL current migrations as applied
 //                                    WITHOUT running them. Use right after a fresh
 //                                    schema.sql import — schema.sql already reflects
 //                                    the current schema, so the migrations (which
 //                                    upgrade OLDER DBs) must not be replayed.
 //
-// docker-compose / prod (existing DB):  docker compose exec web php bin/migrate.php
+// docker-compose / prod (existing DB):  docker compose exec web php sql/migrate.php
 //
 // NOTE: write migrations idempotently (e.g. `ADD COLUMN IF NOT EXISTS`,
 // `CREATE TABLE IF NOT EXISTS`) so applying one against a hand-patched or legacy DB
@@ -27,7 +27,7 @@ require_once dirname(__DIR__) . '/includes/db.php';
 
 $baseline = in_array('--baseline', $argv, true);
 $pdo      = getDB();
-$sqlDir   = dirname(__DIR__) . '/sql';
+$sqlDir   = __DIR__;
 
 // Tracking table — prefixed like every other table via q()'s {name} placeholder.
 $pdo->exec(q(

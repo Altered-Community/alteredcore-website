@@ -4,7 +4,7 @@
 #   2. Create {prefix}schema_migrations and BASELINE every sql/migration_*.sql —
 #      i.e. record them as applied WITHOUT running them. schema.sql already reflects
 #      the current schema, so the migrations (which upgrade OLDER DBs) must not be
-#      replayed here. Migrations added later are applied by bin/migrate.php against
+#      replayed here. Migrations added later are applied by sql/migrate.php against
 #      the existing DB (see that script).
 set -e
 
