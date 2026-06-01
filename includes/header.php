@@ -176,6 +176,8 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 
     <!-- Favicons — place files in /assets/favicon/ -->
     <link rel="apple-touch-icon" sizes="180x180" href="<?= BASE_URL ?>/assets/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml"         href="<?= BASE_URL ?>/assets/favicon/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="<?= BASE_URL ?>/assets/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= BASE_URL ?>/assets/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="<?= BASE_URL ?>/assets/favicon/favicon-16x16.png">
     <link rel="manifest"      href="<?= BASE_URL ?>/assets/favicon/manifest.php">
@@ -186,6 +188,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <meta name="mobile-web-app-capable"                content="yes">
     <meta name="application-name"                      content="<?= h(getSiteName()) ?>">
     <meta name="msapplication-TileColor"               content="<?= h($_themeColor) ?>">
+    <meta name="msapplication-config"                  content="<?= BASE_URL ?>/assets/favicon/browserconfig.xml">
     <meta name="theme-color"                           content="<?= h($_themeColor) ?>">
 
     <!-- Apply saved theme before CSS loads to prevent flash of wrong theme -->
@@ -203,11 +206,28 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
-    <!-- Core libraries (always loaded) -->
+    <?php if (!empty($_preloadImage)): ?>
+    <link rel="preload" as="image" fetchpriority="high" href="<?= h($_preloadImage) ?>">
+    <?php endif; ?>
+
+
+    <!-- Bootstrap CSS — render-blocking (controls layout, must load before paint) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/font/alteredicons.css">
+
+    <!-- Font Awesome — non-blocking: preload starts fetch immediately, onload swaps rel to stylesheet -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+
+    <!-- Flag Icons — non-blocking -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"
+          as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
+
+    <!-- Altered icons — non-blocking -->
+    <link rel="preload" href="<?= BASE_URL ?>/assets/font/alteredicons.css"
+          as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="<?= BASE_URL ?>/assets/font/alteredicons.css"></noscript>
 
     <!-- Global site CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/css/style.css') ?>">
@@ -268,6 +288,14 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
         $_fontCss .= "@font-face{font-family:'{$_fFamily}';src:url('" . addslashes($_fUrl) . "')format('{$_fFmt}');font-display:swap;}";
         $_fontCss .= "{$_fSel}{font-family:'{$_fFamily}',sans-serif;}";
     }
+    foreach ($_fontSlots as $_fPreloadKey => $_) {
+        $_fPreloadFile = getSetting($_fPreloadKey);
+        if (!$_fPreloadFile) continue;
+        $_fPreloadExt = strtolower(pathinfo($_fPreloadFile, PATHINFO_EXTENSION));
+        if (!in_array($_fPreloadExt, ['woff2', 'woff'], true)) continue;
+        echo '    <link rel="preload" href="' . h(BASE_URL . '/assets/font/' . $_fPreloadFile)
+           . '" as="font" type="font/' . $_fPreloadExt . '" crossorigin>' . "\n";
+    }
     if ($_fontCss): ?>
     <style><?= $_fontCss ?></style>
     <?php endif; ?>
@@ -282,13 +310,15 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     $_acGlobalAssets = pluginsGetGlobalAssets();
     $GLOBALS['_ac_global_plugin_js'] = $_acGlobalAssets['js'];
     ?>
-    <!-- Global plugin CSS (loaded on every page for plugins that declare assets.global_css) -->
+    <!-- Global plugin CSS (non-blocking — icons and floating UI, not layout-critical) -->
     <?php foreach ($_acGlobalAssets['css'] as $_gcss): ?>
-    <link rel="stylesheet" href="<?= h($_gcss) ?>">
+    <link rel="preload" href="<?= h($_gcss) ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="<?= h($_gcss) ?>"></noscript>
     <?php endforeach; ?>
-    <!-- Plugin CSS (injected by the router for active plugin pages only) -->
+    <!-- Plugin page CSS (non-blocking — plugin controls own layout) -->
     <?php foreach ($GLOBALS['_ac_plugin_css'] ?? [] as $_pcss): ?>
-    <link rel="stylesheet" href="<?= h($_pcss) ?>">
+    <link rel="preload" href="<?= h($_pcss) ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="<?= h($_pcss) ?>"></noscript>
     <?php endforeach; ?>
     <?php
     // Global plugin PHP files (assets.global_php) — each file may output <script>, <link>,

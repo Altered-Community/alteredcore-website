@@ -130,6 +130,36 @@ function imageExtFromMime(string $tmpPath): string {
     return $map[$mime] ?? 'jpg';
 }
 
+function imageConvertToWebp(string $tmpPath, string $destDir, string $basename, int $maxWidth = 1400) {
+    if (!function_exists('imagewebp')) return false;
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime  = finfo_file($finfo, $tmpPath);
+    finfo_close($finfo);
+    if ($mime === 'image/jpeg')     $im = imagecreatefromjpeg($tmpPath);
+    elseif ($mime === 'image/png')  $im = imagecreatefrompng($tmpPath);
+    elseif ($mime === 'image/webp') $im = imagecreatefromwebp($tmpPath);
+    elseif ($mime === 'image/gif')  $im = imagecreatefromgif($tmpPath);
+    else return false;
+    if (!$im) return false;
+    $w = imagesx($im);
+    $h = imagesy($im);
+    if ($w > $maxWidth) {
+        $newH  = (int)round($h * $maxWidth / $w);
+        $newIm = imagecreatetruecolor($maxWidth, $newH);
+        imagealphablending($newIm, false);
+        imagesavealpha($newIm, true);
+        imagefilledrectangle($newIm, 0, 0, $maxWidth - 1, $newH - 1,
+            imagecolorallocatealpha($newIm, 0, 0, 0, 127));
+        imagecopyresampled($newIm, $im, 0, 0, 0, 0, $maxWidth, $newH, $w, $h);
+        imagedestroy($im);
+        $im = $newIm;
+    }
+    $filename = $basename . '.webp';
+    $ok = imagewebp($im, $destDir . $filename, 85);
+    imagedestroy($im);
+    return $ok ? $filename : false;
+}
+
 function validateSvgUpload(string $svg): bool {
     if (stripos($svg, '<script') !== false) return false;
     if (preg_match('/\bjavascript\s*:/i', $svg)) return false;
@@ -415,7 +445,7 @@ function getNewsBySlug(string $slug, bool $publishedOnly = true): ?array {
 function getCategories(): array {
     $db   = getDB();
     $lang = getUiLang();
-    $stmt = $db->query(q("SELECT id, name_{$lang} AS name, slug FROM {news_categories} WHERE is_hidden = 0 ORDER BY name_{$lang}"));
+    $stmt = $db->query(q("SELECT id, name_{$lang} AS name, slug FROM {news_categories} WHERE is_hidden = 0 ORDER BY sort_order, name_{$lang}"));
     return $stmt->fetchAll();
 }
 

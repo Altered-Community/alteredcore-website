@@ -24,10 +24,11 @@ if (defined('SHOW_NEWSLETTER') && SHOW_NEWSLETTER) {
 }
 
 // No $pageTitle — header uses getSiteName() alone for the homepage
-$newsList     = getNewsList(HOME_NEWS_COUNT);
-$banner       = getBanner();
-$_uiLang      = getUiLang();
-$announcement = getAnnouncement($_uiLang);
+$newsList      = getNewsList(HOME_NEWS_COUNT);
+$banner        = getBanner();
+$_uiLang       = getUiLang();
+$announcement  = getAnnouncement($_uiLang);
+$_preloadImage = !empty($banner['bg_image']) ? BASE_URL . '/' . $banner['bg_image'] : '';
 include dirname(__DIR__) . '/includes/header.php';
 ?>
 
@@ -125,7 +126,7 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
                         </div>
                     <?php elseif ($imgSrc): ?>
                         <a href="<?= h($newsLink) ?>"<?= $extAttrs ?> tabindex="-1">
-                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img">
+                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img" loading="lazy">
                         </a>
                     <?php else: ?>
                         <div class="news-card-img-placeholder">

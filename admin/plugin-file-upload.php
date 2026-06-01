@@ -45,19 +45,19 @@ if ($_errMsg) {
     exit;
 }
 
-$_ext     = imageExtFromMime($_file['tmp_name']);
 $_destDir = dirname(__DIR__) . '/uploads/p_' . $_plugin . '/';
-if (!is_dir($_destDir)) {
-    mkdir($_destDir, 0755, true);
-}
+if (!is_dir($_destDir)) mkdir($_destDir, 0755, true);
 
-$_filename = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $_ext;
-$_dest     = $_destDir . $_filename;
-
-if (!move_uploaded_file($_file['tmp_name'], $_dest)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Could not save file']);
-    exit;
+$_basename = date('Ymd_His') . '_' . bin2hex(random_bytes(4));
+$_filename = imageConvertToWebp($_file['tmp_name'], $_destDir, $_basename);
+if ($_filename === false) {
+    $_ext      = imageExtFromMime($_file['tmp_name']);
+    $_filename = $_basename . '.' . $_ext;
+    if (!move_uploaded_file($_file['tmp_name'], $_destDir . $_filename)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Could not save file']);
+        exit;
+    }
 }
 
 echo json_encode(['location' => BASE_URL . '/uploads/p_' . $_plugin . '/' . $_filename]);

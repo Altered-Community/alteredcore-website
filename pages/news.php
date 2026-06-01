@@ -85,7 +85,7 @@ include dirname(__DIR__) . '/includes/header.php';
                         </div>
                     <?php elseif ($imgSrc): ?>
                         <a href="<?= h($newsLink) ?>"<?= $extAttrs ?> tabindex="-1">
-                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img">
+                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img" loading="lazy">
                         </a>
                     <?php else: ?>
                         <div class="news-card-img-placeholder">

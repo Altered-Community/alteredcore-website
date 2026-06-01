@@ -77,7 +77,7 @@ include dirname(__DIR__) . '/includes/header.php';
                         allowfullscreen></iframe>
             </div>
         <?php elseif (!empty($news['image'])): ?>
-            <img src="<?= h(assetUrl($news['image'])) ?>" alt="<?= h($title) ?>" class="news-detail-image">
+            <img src="<?= h(assetUrl($news['image'])) ?>" alt="<?= h($title) ?>" class="news-detail-image" loading="lazy">
         <?php endif; ?>
 
         <div class="news-detail-content">

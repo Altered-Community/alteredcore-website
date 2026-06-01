@@ -35,17 +35,19 @@ if ($errMsg) {
     exit;
 }
 
-$ext     = imageExtFromMime($file['tmp_name']);
-$destDir = dirname(__DIR__) . '/uploads/editor/';
+$destDir  = dirname(__DIR__) . '/uploads/editor/';
 if (!is_dir($destDir)) mkdir($destDir, 0755, true);
 
-$filename = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-$dest     = $destDir . $filename;
-
-if (!move_uploaded_file($file['tmp_name'], $dest)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Could not save file']);
-    exit;
+$basename = date('Ymd_His') . '_' . bin2hex(random_bytes(4));
+$filename = imageConvertToWebp($file['tmp_name'], $destDir, $basename);
+if ($filename === false) {
+    $ext      = imageExtFromMime($file['tmp_name']);
+    $filename = $basename . '.' . $ext;
+    if (!move_uploaded_file($file['tmp_name'], $destDir . $filename)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Could not save file']);
+        exit;
+    }
 }
 
 echo json_encode(['location' => BASE_URL . '/uploads/editor/' . $filename]);

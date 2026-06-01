@@ -4,7 +4,7 @@ $adminSection   = 'font';
 require_once __DIR__ . '/includes/header.php';
 
 $fontDir  = dirname(__DIR__) . '/assets/font/';
-$fontExts = ['woff2', 'woff', 'ttf', 'otf'];
+$fontExts = ['woff2', 'woff'];
 
 $slots = [
     'font_body'      => ['label' => 'Body text',  'selector' => 'body'],

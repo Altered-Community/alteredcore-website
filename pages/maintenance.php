@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="maintenance-box">
-        <img src="<?= defined('BASE_URL') ? BASE_URL : '' ?>/assets/img/sadrobot.webp" alt="" class="maintenance-icon">
+        <img src="<?= defined('BASE_URL') ? BASE_URL : '' ?>/assets/img/sadrobot.webp" alt="" class="maintenance-icon" loading="lazy">
         <h1><?= htmlspecialchars(isset($title) ? $title : 'Under Maintenance', ENT_QUOTES) ?></h1>
         <p><?= nl2br(htmlspecialchars(isset($text) ? $text : '', ENT_QUOTES)) ?></p>
         <span class="site-name"><?= htmlspecialchars(isset($siteName) ? $siteName : '', ENT_QUOTES) ?></span>
