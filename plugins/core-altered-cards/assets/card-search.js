@@ -108,6 +108,12 @@ function CardSearch(cfg) {
         forest:      ini.forest      !== undefined ? ini.forest      : null,
         mountain:    ini.mountain    !== undefined ? ini.mountain    : null,
         ocean:       ini.ocean       !== undefined ? ini.ocean       : null,
+        mainCostOp:    'eq',
+        recallCostOp:  'eq',
+        forestOp:      'eq',
+        mountainOp:    'eq',
+        oceanOp:       'eq',
+        costRelation:  '',
         sets:           (_setsDirty ? (ini.sets || []) : DEFAULT_SETS.slice()),
         subtypes:       (ini.subtypes       || []).slice(),
         keywords:       (ini.keywords       || []).slice(),
@@ -117,6 +123,8 @@ function CardSearch(cfg) {
         isErrated:      !!ini.isErrated,
         isSuspended:    !!ini.isSuspended,
         hasNoEffect:    !!ini.hasNoEffect,
+        effects:        [],
+        effectMode:     'or',
         sort:           ini.sort            || DEFAULT_SORT_1,
     };
 
@@ -127,6 +135,9 @@ function CardSearch(cfg) {
     var tsInst             = {};
     var _collEl            = null;
     var _defaultCollection = '';
+    var _effectData    = null;
+    var _effectLoading = false;
+    var _effectQueue   = [];
 
     // sort key → API order params
     var SORT_MAP = {
@@ -252,6 +263,219 @@ function CardSearch(cfg) {
         return s || ' ';
     }
 
+    // ── Effect filter ────────────────────────────────────────────────────────
+
+    function _loadEffectData(cb) {
+        if (_effectData) { cb(_effectData); return; }
+        _effectQueue.push(cb);
+        if (_effectLoading) return;
+        _effectLoading = true;
+        var done = 0;
+        var res  = { triggers: [], conditions: [], effects: [] };
+        ['triggers', 'conditions', 'effects'].forEach(function(key) {
+            fetch(API_BASE + '/api/' + key)
+                .then(function(r) { return r.json(); })
+                .then(function(data) { res[key] = Array.isArray(data) ? data : []; })
+                .catch(function() {})
+                .then(function() {
+                    done++;
+                    if (done < 3) return;
+                    _effectData    = res;
+                    _effectLoading = false;
+                    _effectQueue.forEach(function(fn) { fn(_effectData); });
+                    _effectQueue   = [];
+                });
+        });
+    }
+
+    function _effectLabel(item) {
+        var t = item.translations || {};
+        return t[LANG] || t.en || String(item.alteredId);
+    }
+
+    function _effectLabelPlain(item) {
+        return _effectLabel(item).replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim() || String(item.alteredId);
+    }
+
+    function _alteredIconHtml(escaped) {
+        return escaped.replace(/\{([^}]+)\}/g, function(_, code) {
+            return '<i class="fak fa-altered-' + code.toLowerCase() + '" style="font-size:.9em;vertical-align:middle;margin:0 1px"></i>';
+        });
+    }
+
+    function _buildEffectSel(items, anyLabel, currentVal) {
+        var sorted = items.slice().sort(function(a, b) {
+            return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b));
+        });
+        var sel = document.createElement('select');
+        var def = document.createElement('option');
+        def.value = ''; def.textContent = anyLabel; sel.appendChild(def);
+        sorted.forEach(function(item) {
+            var o = document.createElement('option');
+            o.value = String(item.alteredId);
+            o.textContent = _effectLabel(item);
+            if (String(item.alteredId) === String(currentVal)) o.selected = true;
+            sel.appendChild(o);
+        });
+        return sel;
+    }
+
+    function _buildEffectRow(n, data, saved) {
+        saved = saved || {};
+        var rowEl = document.createElement('div');
+        rowEl.className = 'effect-row d-flex gap-1 align-items-center mb-1';
+        rowEl.dataset.effectN = n;
+
+        var sels = [
+            _buildEffectSel(data.triggers,   txt.any_trigger   || '—', saved.trigger),
+            _buildEffectSel(data.conditions, txt.any_condition || '—', saved.condition),
+            _buildEffectSel(data.effects,    txt.any_effect    || '—', saved.effect),
+        ];
+
+        var tsRender = typeof TomSelect !== 'undefined' ? {
+            option: function(d, e) {
+                return '<div style="white-space:normal;line-height:1.3">' + _alteredIconHtml(e(d.text)) + '</div>';
+            },
+            item: function(d, e) {
+                return '<div>' + _alteredIconHtml(e(d.text)) + '</div>';
+            }
+        } : null;
+
+        var tsInsts = [];
+        sels.forEach(function(sel) {
+            var wrap = document.createElement('div');
+            wrap.style.cssText = 'flex:1;min-width:160px';
+            wrap.appendChild(sel);
+            rowEl.appendChild(wrap);
+            if (tsRender) {
+                var ts = new TomSelect(sel, {
+                    create: false, maxItems: 1, plugins: [],
+                    onChange: updateFilterCount,
+                    render: tsRender,
+                });
+                tsInsts.push(ts);
+            } else {
+                sel.addEventListener('change', updateFilterCount);
+                tsInsts.push(null);
+            }
+        });
+        rowEl._tsInsts = tsInsts;
+
+        var rmBtn = document.createElement('button');
+        rmBtn.type = 'button';
+        rmBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0';
+        rmBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        rmBtn.addEventListener('click', function() { _removeEffectRow(rowEl); });
+        rowEl.appendChild(rmBtn);
+        return rowEl;
+    }
+
+    function _syncEffectUi() {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        var addBtn = document.getElementById(P + '-effect-add');
+        var modeEl = document.getElementById(P + '-effect-mode');
+        var count  = rowsEl ? rowsEl.querySelectorAll('.effect-row').length : 0;
+        if (rowsEl) {
+            rowsEl.querySelectorAll('.effect-row').forEach(function(r) {
+                var rm = r.querySelector('button');
+                if (rm) rm.style.display = count > 1 ? '' : 'none';
+            });
+        }
+        if (addBtn) addBtn.style.display = count >= 3 ? 'none' : '';
+        if (modeEl) modeEl.style.display = count > 1  ? '' : 'none';
+    }
+
+    function _removeEffectRow(rowEl) {
+        if (rowEl._tsInsts) rowEl._tsInsts.forEach(function(ts) { if (ts) ts.destroy(); });
+        if (rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
+        _syncEffectUi();
+        updateFilterCount();
+    }
+
+    function _addEffectRow(saved) {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        if (!rowsEl) return;
+        var count = rowsEl.querySelectorAll('.effect-row').length;
+        if (count >= 3) return;
+        var n = count;
+        if (_effectData) {
+            rowsEl.appendChild(_buildEffectRow(n, _effectData, saved));
+            _syncEffectUi();
+        } else {
+            var ph = document.createElement('div');
+            ph.className = 'effect-row text-muted small py-1';
+            ph.dataset.effectN = n;
+            ph.textContent = '…';
+            rowsEl.appendChild(ph);
+            _syncEffectUi();
+            _loadEffectData(function(data) {
+                var real = _buildEffectRow(n, data, saved);
+                if (ph.parentNode) ph.parentNode.replaceChild(real, ph);
+                _syncEffectUi();
+            });
+        }
+    }
+
+    function _readEffectRows() {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        var modeEl = document.getElementById(P + '-effect-mode');
+        filters.effects    = [];
+        filters.effectMode = modeEl ? (modeEl.dataset.mode || 'or') : 'or';
+        if (!rowsEl) return;
+        rowsEl.querySelectorAll('.effect-row').forEach(function(row) {
+            var insts = row._tsInsts;
+            if (insts && insts.length >= 3) {
+                filters.effects.push({
+                    trigger:   insts[0] ? String(insts[0].getValue() || '') : '',
+                    condition: insts[1] ? String(insts[1].getValue() || '') : '',
+                    effect:    insts[2] ? String(insts[2].getValue() || '') : '',
+                });
+            } else {
+                var sels = row.querySelectorAll('select');
+                if (sels.length >= 3) {
+                    filters.effects.push({ trigger: sels[0].value, condition: sels[1].value, effect: sels[2].value });
+                }
+            }
+        });
+    }
+
+    function _resetEffectRows() {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        var modeEl = document.getElementById(P + '-effect-mode');
+        if (rowsEl) { rowsEl.innerHTML = ''; _effectRowsCnt = 0; }
+        if (modeEl) {
+            modeEl.style.display = 'none';
+            modeEl.dataset.mode  = 'or';
+            modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.mode === 'or');
+            });
+        }
+        _addEffectRow(null);
+    }
+
+    function initEffects() {
+        var addBtn = document.getElementById(P + '-effect-add');
+        var modeEl = document.getElementById(P + '-effect-mode');
+        if (addBtn) {
+            addBtn.addEventListener('click', function() { _addEffectRow(null); });
+        }
+        if (modeEl) {
+            modeEl.addEventListener('click', function(e) {
+                var btn = e.target.closest('.effect-mode-btn');
+                if (!btn) return;
+                var mode = btn.dataset.mode;
+                modeEl.dataset.mode = mode;
+                modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.mode === mode);
+                });
+                filters.effectMode = mode;
+            });
+        }
+        _addEffectRow(null);
+    }
+
+    // ── End effect filter ────────────────────────────────────────────────────
+
     // build direct API URL
     function buildApiUrl(page) {
         // Reference lookup: bypass all filters and collection scope
@@ -305,16 +529,37 @@ function CardSearch(cfg) {
         filters.subtypes.forEach(function(v)   { parts.push('subTypes[]='  + encodeURIComponent(v)); });
         filters.variations.forEach(function(v) { parts.push('variation[]=' + encodeURIComponent(v)); });
 
-        if (filters.mainCost   !== null) parts.push('mainCost[]='      + filters.mainCost);
-        if (filters.recallCost !== null) parts.push('recallCost[]='    + filters.recallCost);
-        if (filters.forest     !== null) parts.push('forestPower[]='   + filters.forest);
-        if (filters.mountain   !== null) parts.push('mountainPower[]=' + filters.mountain);
-        if (filters.ocean      !== null) parts.push('oceanPower[]='    + filters.ocean);
-
+        function _costP(field, val, op) {
+            if (val === null) return;
+            var suffix = op === 'lt' ? '[lt]' : op === 'lte' ? '[lte]' : op === 'gt' ? '[gt]' : op === 'gte' ? '[gte]' : '';
+            parts.push(field + suffix + '=' + val);
+        }
+        _costP('mainCost',     filters.mainCost,   filters.mainCostOp);
+        _costP('recallCost',   filters.recallCost, filters.recallCostOp);
+        _costP('forestPower',  filters.forest,     filters.forestOp);
+        _costP('mountainPower',filters.mountain,   filters.mountainOp);
+        _costP('oceanPower',   filters.ocean,      filters.oceanOp);
+        if (filters.costRelation === 'eq')        parts.push('costRelation=equal');
+        else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
+        else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
         if (filters.isBanned)    parts.push('isBanned=true');
         if (filters.isErrated)   parts.push('isErrated=true');
         if (filters.isSuspended) parts.push('isSuspended=true');
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
+
+        _readEffectRows();
+        var _activeEffects = filters.effects.filter(function(ef) {
+            return ef.trigger || ef.condition || ef.effect;
+        });
+        if (_activeEffects.length) {
+            if (_activeEffects.length > 1) parts.push('effectSlotMode=' + filters.effectMode);
+            _activeEffects.forEach(function(ef, i) {
+                var n = i;
+                if (ef.trigger)   parts.push('effectSlot[' + n + '][trigger]='   + encodeURIComponent(ef.trigger));
+                if (ef.condition) parts.push('effectSlot[' + n + '][condition]=' + encodeURIComponent(ef.condition));
+                if (ef.effect)    parts.push('effectSlot[' + n + '][effect]='    + encodeURIComponent(ef.effect));
+            });
+        }
 
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
@@ -394,11 +639,15 @@ function CardSearch(cfg) {
         filters.subtypes      = sv('subtype');
         filters.keywords      = sv('keyword');
         filters.variations    = sv('variation');
-        filters.mainCost   = rv('maincost');
-        filters.recallCost = rv('recallcost');
-        filters.forest     = rv('forestpower');
-        filters.mountain   = rv('mountainpower');
-        filters.ocean      = rv('oceanpower');
+        function rop(id) {
+            var el = document.getElementById(P + '-filter-' + id + '-op');
+            return el ? (el.value || 'eq') : 'eq';
+        }
+        filters.mainCost      = rv('maincost');    filters.mainCostOp    = rop('maincost');
+        filters.recallCost    = rv('recallcost');  filters.recallCostOp  = rop('recallcost');
+        filters.forest        = rv('forestpower'); filters.forestOp      = rop('forestpower');
+        filters.mountain      = rv('mountainpower'); filters.mountainOp  = rop('mountainpower');
+        filters.ocean         = rv('oceanpower');  filters.oceanOp       = rop('oceanpower');
         var statusVals        = sv('status');
         filters.isBanned      = statusVals.indexOf('banned')    >= 0;
         filters.isErrated     = statusVals.indexOf('errated')   >= 0;
@@ -407,6 +656,9 @@ function CardSearch(cfg) {
         filters.hasNoEffect = hneEl ? hneEl.checked : false;
         var kwModeEl = document.getElementById(P + '-kw-mode');
         filters.keywordMode = kwModeEl ? (kwModeEl.dataset.mode || 'or') : 'or';
+        var _crEl = document.getElementById(P + '-filter-cost-relation');
+        filters.costRelation = _crEl ? _crEl.value : '';
+        _readEffectRows();
     }
 
     // filter count badge
@@ -423,7 +675,9 @@ function CardSearch(cfg) {
             + (_setsDirty ? filters.sets.length : 0) + filters.subtypes.length + filters.keywords.length
             + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
             + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
-            + (filters.hasNoEffect ? 1 : 0);
+            + (filters.hasNoEffect ? 1 : 0)
+            + (filters.costRelation ? 1 : 0)
+            + filters.effects.filter(function(ef) { return ef.trigger || ef.condition || ef.effect; }).length;
         if (elFilterCount) {
             elFilterCount.textContent = n || '';
             elFilterCount.style.display = n > 0 ? '' : 'none';
@@ -790,6 +1044,11 @@ function CardSearch(cfg) {
         filters.isErrated      = false;
         filters.isSuspended    = false;
         filters.hasNoEffect    = false;
+        filters.effects        = [];
+        filters.effectMode     = 'or';
+        filters.mainCostOp     = 'eq'; filters.recallCostOp = 'eq';
+        filters.forestOp       = 'eq'; filters.mountainOp   = 'eq'; filters.oceanOp = 'eq';
+        filters.costRelation   = '';
         filters.sort           = DEFAULT_SORT_1;
 
         if (elSearch)     elSearch.value     = '';
@@ -813,6 +1072,15 @@ function CardSearch(cfg) {
         });
         var _hneReset = document.getElementById(P + '-filter-hasnoeffect');
         if (_hneReset) _hneReset.checked = false;
+        ['maincost','recallcost','forestpower','mountainpower','oceanpower'].forEach(function(id) {
+            var opEl = document.getElementById(P + '-filter-' + id + '-op');
+            if (opEl) opEl.value = 'eq';
+            var valEl = document.getElementById(P + '-filter-' + id);
+            if (valEl) valEl.value = '';
+        });
+        var _crReset = document.getElementById(P + '-filter-cost-relation');
+        if (_crReset) _crReset.value = '';
+        _resetEffectRows();
         var _kwReset = document.getElementById(P + '-kw-mode');
         if (_kwReset) {
             _kwReset.dataset.mode = 'or';
@@ -936,10 +1204,12 @@ function CardSearch(cfg) {
         var userInit = (opts || {}).onInitialize;
         var merged = Object.assign({ plugins: ['remove_button'], create: false, maxOptions: null }, opts || {});
         merged.onInitialize = function() {
-            this.control_input.style.cssText =
-                'width:0!important;min-width:0!important;padding:0!important;margin:0!important;opacity:0!important;flex:0 0 0!important;';
-            this.control_input.setAttribute('inputmode', 'none');
-            this.control_input.readOnly = true;
+            if (!this.settings.placeholder) {
+                this.control_input.style.cssText =
+                    'width:0!important;min-width:0!important;padding:0!important;margin:0!important;opacity:0!important;flex:0 0 0!important;';
+                this.control_input.setAttribute('inputmode', 'none');
+                this.control_input.readOnly = true;
+            }
             if (userInit) userInit.call(this);
         };
         var inst = new TomSelect('#' + id, merged);
@@ -1028,8 +1298,8 @@ function CardSearch(cfg) {
             });
         }
 
-        tsInst.subtype   = makeTs('subtype',   { options: opts.subtypeOptions   || [], items: opts.initialSubtypes   || [] });
-        tsInst.keyword   = makeTs('keyword',   { options: opts.keywordOptions   || [], items: opts.initialKeywords   || [] });
+        tsInst.subtype   = makeTs('subtype',   { options: opts.subtypeOptions || [], items: opts.initialSubtypes || [], placeholder: txt.lbl_subtype || 'Subtype' });
+        tsInst.keyword   = makeTs('keyword',   { options: opts.keywordOptions || [], items: opts.initialKeywords || [], placeholder: txt.lbl_keyword || 'Keyword' });
         tsInst.variation = makeTs('variation', { options: opts.variationOptions || [], onChange: function() { _variationDirty = true; updateFilterCount(); } });
         var _initVars = (opts.initialVariations && opts.initialVariations.length) ? opts.initialVariations : DEFAULT_VARIATIONS.slice();
         if (tsInst.variation && _initVars.length) tsInst.variation.setValue(_initVars, true);
@@ -1045,7 +1315,7 @@ function CardSearch(cfg) {
                 });
             });
         });
-        tsInst.status = makeTs('status', {});
+        tsInst.status = makeTs('status', { placeholder: txt.lbl_card_status || 'Status' });
 
         // Range selects: set initial values and register change listeners
         var _iniRange = cfg.initial || {};
@@ -1087,6 +1357,16 @@ function CardSearch(cfg) {
             if (_iniRange.hasNoEffect) _hneEl.checked = true;
             _hneEl.addEventListener('change', updateFilterCount);
         }
+
+        // Cost operator selects + cost relation
+        ['maincost','recallcost','forestpower','mountainpower','oceanpower'].forEach(function(id) {
+            var el = document.getElementById(P + '-filter-' + id + '-op');
+            if (el) el.addEventListener('change', updateFilterCount);
+        });
+        var _crEl2 = document.getElementById(P + '-filter-cost-relation');
+        if (_crEl2) _crEl2.addEventListener('change', updateFilterCount);
+
+        initEffects();
     }
 
     // wire up events
