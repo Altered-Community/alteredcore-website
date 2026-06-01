@@ -109,6 +109,10 @@ $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 $_csUserId         = (int)($_SESSION['user_id'] ?? 0);
 $_collEnabled      = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collMode         = $_collEnabled && $_csUserId > 0;
+
+// digital ownership (AlteredOwnership service)
+$_ownEnabled       = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
+$_ownMode          = $_ownEnabled && $_csUserId > 0;
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {
@@ -186,6 +190,8 @@ $_cs = [
     'show_cols'          => true,
     'collection_mode'    => $_collMode,
     'collection_enabled' => $_collEnabled,
+    'ownership_mode'     => $_ownMode,
+    'ownership_enabled'  => $_ownEnabled,
     'base_url'           => BASE_URL,
 ];
 
@@ -228,7 +234,8 @@ CardSearch({
     collectionEntries: <?= json_encode($_collMode ? (object)$_collEntries : (object)[]) ?>,
     collectionCsrf:    <?= json_encode($_collMode ? csrfToken() : '') ?>,
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
-    collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/api/core-altered-cards/collection-search' : '') ?>,
+    collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
+    ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,

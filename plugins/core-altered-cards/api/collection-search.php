@@ -1,5 +1,5 @@
 <?php
-// Collection search proxy endpoint — /api/core-altered-cards/collection-search
+// Collection search proxy endpoint — /papi/core-altered-cards/collection-search
 // Fetches the user's collection from the collection API, applies filters,
 // handles server-side pagination, and returns a cards-API-compatible envelope.
 require_once dirname(__DIR__) . '/includes/functions.php';

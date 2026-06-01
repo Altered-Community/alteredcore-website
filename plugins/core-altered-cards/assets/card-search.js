@@ -131,6 +131,10 @@ function CardSearch(cfg) {
     var currentPage        = 1;
     var _abortCtrl         = null;
     var _rendererLoaded    = false;
+    // Search scope: 'all' (cards API) | 'collection' (physical) | 'ownership' (digital).
+    // _scopeCollection stays true for both owned-card scopes — they share the same UI
+    // mechanics (single-select filters, collection field mapping); only the proxy differs.
+    var _scope             = 'all';
     var _scopeCollection   = false;
     var tsInst             = {};
     var _collEl            = null;
@@ -180,8 +184,28 @@ function CardSearch(cfg) {
         return Object.assign({}, c, { reference: map.ref(c), name: map.name(c), _qty: map.qty(c) });
     }
 
+    // Resolve the proxy URL for the active owned-card scope ('' for 'all' or when unconfigured).
+    function scopeApiUrl() {
+        if (_scope === 'ownership') return cfg.ownershipApiUrl || '';
+        if (_scope === 'collection') return cfg.collApiUrl || '';
+        return '';
+    }
+
+    function setScope(s) {
+        _scope = (s === 'collection' || s === 'ownership') ? s : 'all';
+        _scopeCollection = _scope !== 'all';
+    }
+
+    function syncScopeButtons() {
+        [['all', 'scope-all'], ['collection', 'scope-collection'], ['ownership', 'scope-ownership']]
+            .forEach(function(pair) {
+                var el = q(pair[1]);
+                if (el) el.classList.toggle('active', _scope === pair[0]);
+            });
+    }
+
     function updateScopeUi() {
-        var active = _scopeCollection && !!cfg.collApiUrl;
+        var active = _scopeCollection && !!scopeApiUrl();
         if (_root) _root.classList.toggle('coll-scope-active', active);
         if (elSortSelect) {
             elSortSelect.disabled = active;
@@ -210,12 +234,15 @@ function CardSearch(cfg) {
             }
         }
         if (active) {
-            // Clear rarity (data is empty in collection API)
-            if (filters.rarity.length) {
-                filters.rarity.length = 0;
-                qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
+            // Physical collection only: clear rarity (the collection API returns no
+            // rarity data). The digital-ownership API does populate rarity, so keep it.
+            if (_scope === 'collection') {
+                if (filters.rarity.length) {
+                    filters.rarity.length = 0;
+                    qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
+                }
+                _rarityDirty = false;
             }
-            _rarityDirty = false;
             // Enforce single-select on toggle button groups (faction, type)
             ['faction', 'type'].forEach(function(key) {
                 var arr = filters[key];
@@ -484,7 +511,7 @@ function CardSearch(cfg) {
                 + '&page=' + page + '&itemsPerPage=' + PER_PAGE;
         }
 
-        if (_scopeCollection && cfg.collApiUrl) return buildCollApiUrl(page);
+        if (_scopeCollection && scopeApiUrl()) return buildCollApiUrl(page);
 
         var parts = [
             'page='         + page,
@@ -593,7 +620,7 @@ function CardSearch(cfg) {
 
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
-        return cfg.collApiUrl + '?' + parts.join('&');
+        return scopeApiUrl() + '?' + parts.join('&');
     }
 
     // build shareable URL for pushState
@@ -1054,11 +1081,8 @@ function CardSearch(cfg) {
         if (elSearch)     elSearch.value     = '';
         if (elSortSelect) elSortSelect.value = DEFAULT_SORT_1;
 
-        _scopeCollection = false;
-        var elScopeAll  = q('scope-all');
-        var elScopeColl = q('scope-collection');
-        if (elScopeAll)  elScopeAll.classList.add('active');
-        if (elScopeColl) elScopeColl.classList.remove('active');
+        setScope('all');
+        syncScopeButtons();
 
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) { b.classList.remove('active'); });
         qa('.filter-toggle[data-bool-filter]').forEach(function(b) { b.classList.remove('active'); });
@@ -1308,7 +1332,7 @@ function CardSearch(cfg) {
         ['faction', 'set', 'subtype', 'variation'].forEach(function(key) {
             if (!tsInst[key]) return;
             tsInst[key].on('item_add', function(value) {
-                if (!_scopeCollection || !cfg.collApiUrl) return;
+                if (!_scopeCollection || !scopeApiUrl()) return;
                 var self = this;
                 this.getValue().forEach(function(v) {
                     if (v !== value) self.removeItem(v, true);
@@ -1374,13 +1398,10 @@ function CardSearch(cfg) {
         _root.addEventListener('click', function(e) {
             var btn = e.target.closest('[data-scope]');
             if (!btn || !_root.contains(btn) || btn.disabled) return;
-            var newScope = btn.dataset.scope === 'collection';
+            var newScope = btn.dataset.scope;
             resetFilters();
-            _scopeCollection = newScope;
-            var elScopeAll  = q('scope-all');
-            var elScopeColl = q('scope-collection');
-            if (elScopeAll)  elScopeAll.classList.toggle('active', !_scopeCollection);
-            if (elScopeColl) elScopeColl.classList.toggle('active',  _scopeCollection);
+            setScope(newScope);
+            syncScopeButtons();
             updateScopeUi();
         });
 
@@ -1396,7 +1417,7 @@ function CardSearch(cfg) {
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
             var idx = arr.indexOf(val);
-            if (_scopeCollection && cfg.collApiUrl) {
+            if (_scopeCollection && scopeApiUrl()) {
                 var wasActive = idx >= 0;
                 qa('.filter-toggle[data-filter="' + key + '"]').forEach(function(b) { b.classList.remove('active'); });
                 arr.length = 0;

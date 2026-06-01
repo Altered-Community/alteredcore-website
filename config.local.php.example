@@ -69,7 +69,13 @@ define('GITHUB_REPO', 'owner/community-feedback'); // repo where the App opens i
 define('CARDS_API_URL',     'https://cards.alteredcore.org');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
 define('CDN_URL',           'https://cdn.alteredcore.org');
+// Digital ownership service (AlteredOwnership).
+//   OWNERSHIP_API_URL: server-side base the website proxies to (GET /api/collection).
+//   OWNERSHIP_WEB_URL: browser-facing app root the "Digital ownership" link redirects to.
+// In production these are usually the same public host; in the local Aspire stack the
+// API is reached by the internal container alias and the link by the public *.local.gd URL.
 define('OWNERSHIP_API_URL', 'https://ownership.altered.re/');
+define('OWNERSHIP_WEB_URL', 'https://ownership.altered.re/');
 define('COLLECTION_API_URL', 'https://collection.alteredcore.org');
 // true: reads go through COLLECTION_API_URL; local DB is a write-through mirror.
 // false: local DB only (no external collection API calls).

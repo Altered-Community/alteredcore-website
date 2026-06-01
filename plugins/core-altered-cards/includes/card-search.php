@@ -15,6 +15,8 @@ $_csColOpt     = $_cs['col_options']        ?? [2, 3, 4, 5];
 $_csShowCols   = $_cs['show_cols']          ?? true;
 $_csCollMode   = $_cs['collection_mode']    ?? false;
 $_csCollEnabled= $_cs['collection_enabled'] ?? false;
+$_csOwnMode    = $_cs['ownership_mode']      ?? false;
+$_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
