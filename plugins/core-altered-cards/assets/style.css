@@ -186,8 +186,22 @@
    Decks list page  (decks.php)
    ========================================================= */
 .deck-search-wrap { position:relative; display:inline-flex; align-items:center; }
-.deck-search-wrap .deck-search-icon { position:absolute; left:8px; color:var(--neutral-300); font-size:.8rem; pointer-events:none; }
+.deck-search-wrap .deck-search-icon { position:absolute; left:8px; color:var(--neutral-300); font-size:.8rem; pointer-events:none; z-index:1; }
 .deck-search-wrap input { padding-left:26px; }
+.filter-row--search { flex-wrap:wrap; gap:.5rem 1rem; align-items:center; }
+.deck-card-filter { display:inline-flex; align-items:center; gap:.5rem; }
+.filter-label--card { font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--neutral-500); white-space:nowrap; margin:0; }
+.deck-card-search-wrap input { padding-right:28px; }
+.deck-card-clear { position:absolute; right:4px; top:50%; transform:translateY(-50%); border:none; background:none; color:var(--neutral-400); padding:2px 6px; line-height:1; cursor:pointer; z-index:1; }
+.deck-card-clear:hover { color:var(--neutral-700); }
+.deck-card-suggest { position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20; background:var(--sand-50,#fff); border:1px solid var(--sand-200); border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:240px; overflow-y:auto; }
+.deck-card-suggest-item { display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; text-align:left; border:none; background:none; padding:8px 10px; font-size:.82rem; color:var(--neutral-800); cursor:pointer; }
+.deck-card-suggest-item:hover, .deck-card-suggest-item:focus { background:var(--sand-100); outline:none; }
+.deck-card-suggest-row { display:flex; align-items:center; gap:6px; width:100%; min-width:0; }
+.deck-card-suggest-icons { display:inline-flex; align-items:center; gap:3px; flex-shrink:0; }
+.deck-card-suggest-gem { width:14px; height:14px; object-fit:contain; flex-shrink:0; }
+.deck-card-suggest-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; color:var(--neutral-800); font-weight:600; }
+.deck-card-suggest-refs { display:block; width:100%; padding-left:34px; font-size:.72rem; line-height:1.35; color:var(--neutral-500); word-break:break-all; }
 .decks-tabs, .card-tabs { display:flex; border-bottom:2px solid var(--sand-200); }
 .decks-tab, .card-tab { display:flex; align-items:center; gap:6px; background:none; border:none; border-bottom:3px solid transparent; padding:9px 20px; font-size:.9rem; font-weight:600; color:var(--neutral-500); cursor:pointer; margin-bottom:-2px; transition:color .15s,border-color .15s; }
 .decks-tab.active, .card-tab.active { color:var(--primary-500); border-bottom-color:var(--primary-400); }
@@ -452,6 +466,88 @@
 .deck-hdr-on-bg { color: rgba(255,255,255,.7); font-size: .875rem; }
 .deck-badge-on-img { background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.2); color: #fff; }
 .deck-badge-no-img { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.12); color: #444; }
+
+/* Deck view / upvote stat pills (community cards + deck detail) */
+.deck-stat-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.deck-stat-pill {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(35, 8, 14, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
+button.deck-stat-pill {
+    margin: 0;
+    padding: 4px 11px;
+    min-height: 28px;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    color: inherit;
+    background: rgba(35, 8, 14, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
+.deck-stat-pill i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: inherit;
+}
+.deck-stat-pill > span {
+    min-width: 1ch;
+    line-height: 1;
+}
+.deck-stat-pill--upvote .fa-regular.fa-heart {
+    color: rgba(255, 255, 255, 0.92);
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted .fa-solid.fa-heart {
+    color: #fff;
+}
+.deck-stat-pill--upvote {
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.deck-stat-pill--upvote:hover:not(:disabled) {
+    background: rgba(45, 10, 18, 0.62);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.28);
+}
+.deck-stat-pill--upvote:disabled {
+    opacity: .75;
+    cursor: wait;
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted {
+    background: rgba(120, 24, 38, 0.58);
+    border-color: rgba(255, 210, 218, 0.35);
+}
 
 /* Collection info panels (collection.php) — left border accent strips */
 .coll-card-success { border-left: 3px solid #22c55e; }
