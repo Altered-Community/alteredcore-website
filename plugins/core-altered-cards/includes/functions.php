@@ -27,13 +27,176 @@ function loadAlteredData(string $name): array {
     return $all[$name] ?? [];
 }
 
-function deckApiToken(): ?string {
-    if (!kcIsLoggedIn()) return null;
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    if (!$userId) return null;
+/**
+ * Extract a deck UUID from a site deck URL or bare id string.
+ */
+function parseDeckPageId(string $urlOrId): ?string
+{
+    $s = trim($urlOrId);
+    if ($s === '') {
+        return null;
+    }
+    if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $s)) {
+        return $s;
+    }
+    if (preg_match('/[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $s, $m)) {
+        return $m[1];
+    }
+    if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*$/i', $s, $m)) {
+        return $m[1];
+    }
+
+    return null;
+}
+
+/**
+ * Deck UUIDs from a contest CSV: Nom du deck, URL, optional Winner (1/yes/y/true).
+ *
+ * @param string|null $filter null = all rows; 'winners' = rows with Winner set
+ * @return string[]
+ */
+function cacLoadDeckIdsFromCsvFile(string $path, ?string $filter = null): array
+{
+    if (!is_file($path)) {
+        return [];
+    }
+    $fh = fopen($path, 'r');
+    if ($fh === false) {
+        return [];
+    }
+    $winnerOnly = $filter === 'winners';
+    $ids        = [];
+    $seen       = [];
+    $first      = true;
+    while (($row = fgetcsv($fh)) !== false) {
+        if ($first) {
+            $first = false;
+            if (count($row) >= 2 && stripos(trim((string) $row[1]), 'http') !== 0) {
+                continue;
+            }
+        }
+        if (count($row) < 2) {
+            continue;
+        }
+        $url = trim((string) $row[1]);
+        if ($url === '' || stripos($url, 'http') !== 0) {
+            continue;
+        }
+        $isWinner = false;
+        if (isset($row[2])) {
+            $isWinner = in_array(strtolower(trim((string) $row[2])), ['1', 'yes', 'y', 'true', 'winner'], true);
+        }
+        if ($winnerOnly && !$isWinner) {
+            continue;
+        }
+        $id = parseDeckPageId($url);
+        if ($id === null || isset($seen[$id])) {
+            continue;
+        }
+        $seen[$id] = true;
+        $ids[]     = $id;
+    }
+    fclose($fh);
+
+    return $ids;
+}
+
+function cacUsesKeycloakForDeckApi(): bool
+{
+    return defined('KC_URL') && KC_URL !== '';
+}
+
+function deckApiToken(): ?string
+{
+    if (!kcIsLoggedIn() || !cacUsesKeycloakForDeckApi()) {
+        return null;
+    }
+    $userId = (int) ($_SESSION['user_id'] ?? 0);
+    if (!$userId) {
+        return null;
+    }
     require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
     $token = kc_get_access_token($userId);
-    return $token ?: null;
+    if ($token) {
+        return $token;
+    }
+    // Fallback: session token may still work briefly if refresh failed transiently.
+    $sessionToken = $_SESSION['kc_access_token'] ?? '';
+    return $sessionToken !== '' ? $sessionToken : null;
+}
+
+/**
+ * Toggle upvote on a public deck (POST /api/decks/{id}/upvote).
+ *
+ * @return array{upvoteCount: int, hasUpvoted: bool}|null
+ */
+function cacDeckApiUpvote(string $deckId, string $token): ?array
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '/upvote');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Authorization: Bearer ' . $token,
+            'Accept: application/json',
+            'Content-Type: application/json',
+        ],
+        CURLOPT_POSTFIELDS     => '{}',
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code < 200 || $code >= 300) {
+        return null;
+    }
+
+    if ($raw) {
+        $data = json_decode($raw, true);
+        if (is_array($data)) {
+            if (array_key_exists('upvoteCount', $data) || array_key_exists('hasUpvoted', $data)) {
+                return [
+                    'upvoteCount' => (int) ($data['upvoteCount'] ?? 0),
+                    'hasUpvoted'  => !empty($data['hasUpvoted']),
+                ];
+            }
+        }
+    }
+
+    return cacDeckApiUpvoteState($deckId, $token);
+}
+
+/**
+ * Read upvoteCount / hasUpvoted from a single deck (after toggle or on load).
+ *
+ * @return array{upvoteCount: int, hasUpvoted: bool}|null
+ */
+function cacDeckApiUpvoteState(string $deckId, string $token): ?array
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => [
+            'Authorization: Bearer ' . $token,
+            'Accept: application/json',
+        ],
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code < 200 || $code >= 300 || !$raw) {
+        return null;
+    }
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        return null;
+    }
+
+    return [
+        'upvoteCount' => (int) ($data['upvoteCount'] ?? 0),
+        'hasUpvoted'  => !empty($data['hasUpvoted']),
+    ];
 }
 
 /**
@@ -122,6 +285,170 @@ function collGetUserCollection(string $apiUrl, int $userId): array {
     $_SESSION[$cacheKey] = $result;
     $_SESSION[$tsKey]    = time();
     return $result;
+}
+
+/**
+ * Whether a deck contains at least one of the given card references.
+ *
+ * @param string[] $refs
+ */
+function cacDeckContainsCardRefs(array $deck, array $refs): bool
+{
+    if ($refs === []) {
+        return true;
+    }
+    $cards = $deck['cards'] ?? $deck['deckCards'] ?? [];
+    foreach ($cards as $card) {
+        if (!is_array($card)) {
+            continue;
+        }
+        $cr = $card['cardReference'] ?? $card['reference'] ?? '';
+        if ($cr !== '' && in_array($cr, $refs, true)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @param array<int, array> $decks
+ * @return array<int, array>
+ */
+function cacSortDecks(array $decks, string $field, string $dir): array
+{
+    usort($decks, static function ($a, $b) use ($field, $dir) {
+        $va = is_array($a) ? ($a[$field] ?? '') : '';
+        $vb = is_array($b) ? ($b[$field] ?? '') : '';
+        if ($field === 'name') {
+            $r = strcasecmp((string) $va, (string) $vb);
+        } elseif (in_array($field, ['viewCount', 'upvoteCount'], true)) {
+            $r = ((int) $va <=> (int) $vb);
+        } else {
+            $r = strcmp((string) $va, (string) $vb);
+        }
+
+        return $dir === 'desc' ? -$r : $r;
+    });
+
+    return $decks;
+}
+
+/**
+ * Collect all public deck UUIDs matching list filters (paginates the public API).
+ *
+ * @param array<string, scalar> $filters format, faction, hero, …
+ * @return string[]
+ */
+function cacFetchPublicDeckIds(
+    string $apiBase,
+    string $publicPath,
+    array $filters,
+    array $headers,
+    string $order = 'updatedAt',
+    string $dir = 'desc',
+    int $itemsPerPage = 100
+): array {
+    $ids      = [];
+    $page     = 1;
+    $lastPage = 1;
+
+    do {
+        $params = array_merge($filters, ['page' => $page, 'itemsPerPage' => $itemsPerPage]);
+        $url    = $apiBase . $publicPath . '?' . http_build_query($params)
+            . '&order[' . rawurlencode($order) . ']=' . rawurlencode($dir);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $resp = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code < 200 || $code >= 300 || !$resp) {
+            break;
+        }
+        $data = json_decode($resp, true);
+        if (!is_array($data)) {
+            break;
+        }
+        foreach ($data['member'] ?? [] as $deck) {
+            if (is_array($deck) && !empty($deck['id'])) {
+                $ids[] = $deck['id'];
+            }
+        }
+        $lastPage = max(1, (int) ($data['lastPage'] ?? 1));
+        $page++;
+    } while ($page <= $lastPage);
+
+    return $ids;
+}
+
+/**
+ * Fetch multiple deck resources from the Decks API in parallel (curl_multi).
+ *
+ * @param string[] $deckIds  Deck UUIDs (order preserved in the returned list)
+ * @param string   $apiBase  DECKS_API_URL without trailing slash
+ * @param string[] $headers  curl HTTP headers
+ * @param string|null $locale Optional locale query parameter
+ * @param int      $concurrency Max simultaneous requests (0 = all at once)
+ * @return array<int, array> Decoded deck objects
+ */
+function cacFetchDecksParallel(array $deckIds, string $apiBase, array $headers = [], ?string $locale = null, int $concurrency = 30): array
+{
+    if ($deckIds === []) {
+        return [];
+    }
+
+    $member  = [];
+    $seen    = [];
+    $chunks  = $concurrency > 0 ? array_chunk($deckIds, $concurrency) : [$deckIds];
+
+    foreach ($chunks as $chunk) {
+        $mh      = curl_multi_init();
+        $handles = [];
+        foreach ($chunk as $i => $deckId) {
+            $url = $apiBase . '/api/decks/' . rawurlencode($deckId);
+            if ($locale !== null && $locale !== '') {
+                $url .= '?locale=' . rawurlencode($locale);
+            }
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => $headers,
+                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_CONNECTTIMEOUT => 5,
+            ]);
+            curl_multi_add_handle($mh, $ch);
+            $handles[$i] = $ch;
+        }
+
+        $running = null;
+        do {
+            curl_multi_exec($mh, $running);
+            if ($running > 0) {
+                curl_multi_select($mh);
+            }
+        } while ($running > 0);
+
+        foreach ($handles as $i => $ch) {
+            $resp = curl_multi_getcontent($ch);
+            $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+            if ($code >= 200 && $code < 300 && $resp) {
+                $deck = json_decode($resp, true);
+                if (is_array($deck) && !empty($deck['id']) && !isset($seen[$deck['id']])) {
+                    $seen[$deck['id']] = true;
+                    $member[] = $deck;
+                }
+            }
+        }
+        curl_multi_close($mh);
+    }
+
+    return $member;
 }
 
 /**
