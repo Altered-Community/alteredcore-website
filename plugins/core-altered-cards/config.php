@@ -36,3 +36,8 @@ $importDeckUrl = '';
 // Base URL for plugin assets (images, JS, CSS).
 // Change this only if the plugin directory is moved or renamed.
 $pluginAssetsUrl = BASE_URL . '/plugins/core-altered-cards/assets';
+
+// Community tab contest filters — single CSV (Nom du deck, URL, Winner).
+// Winner column: 1 / yes / y / true for "Starter Deck Contest Winners"; all rows = Entries.
+$communityCuratedDeckFormat = 'nuc';
+$communityCollectionCsvFile = __DIR__ . '/data/starter-deck-contest-collection.csv';
