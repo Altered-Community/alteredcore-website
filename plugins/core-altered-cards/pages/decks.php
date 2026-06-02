@@ -10,6 +10,13 @@ require_once __DIR__ . '/../config.php';
 // Leave empty to hide the Public tab entirely.
 $publicDecksApiPath = '/api/decks/public';
 
+$communityCollectionCsvFile = $communityCollectionCsvFile ?? (__DIR__ . '/../data/starter-deck-contest-collection.csv');
+
+$communityCuratedSets = [
+    'winners'    => cacLoadDeckIdsFromCsvFile($communityCollectionCsvFile, 'winners'),
+    'collection' => cacLoadDeckIdsFromCsvFile($communityCollectionCsvFile),
+];
+
 // community deckbuilders (from DB)
 $_db = getDB();
 $_cbRows = $_db->query(q(
@@ -58,6 +65,8 @@ $txt = [
         'next'            => 'Next',
         'lbl_search'      => 'Search',
         'search_ph'       => 'Search a deck…',
+        'lbl_card'        => 'Card',
+        'card_search_ph'  => 'Contains card…',
         'lbl_format'      => 'Format',
         'lbl_faction'     => 'Faction',
         'lbl_hero'        => 'Hero',
@@ -70,6 +79,13 @@ $txt = [
         'sort_created_asc'  => 'Oldest created',
         'sort_name_asc'     => 'Name A→Z',
         'sort_name_desc'    => 'Name Z→A',
+        'sort_upvotes_desc' => 'Most upvotes',
+        'sort_upvotes_asc'  => 'Fewest upvotes',
+        'sort_views_desc'   => 'Most views',
+        'sort_views_asc'    => 'Fewest views',
+        'upvote_add'        => 'Upvote this deck',
+        'upvote_remove'     => 'Remove upvote',
+        'upvote_login'      => 'Sign in to upvote',
         'err_api_auth'    => 'Could not connect to the deck API.',
         'err_connect'     => 'Connection error.',
         'api_later'       => 'The API is currently unavailable. Please try again later.',
@@ -100,6 +116,9 @@ $txt = [
         'community_btn'         => 'View deckbuilders',
         'community_modal_title' => 'Community deckbuilders',
         'community_visit'       => 'Visit',
+        'lbl_curated'           => 'Contest winners',
+        'filter_curated'        => 'Starter Deck Contest Winners',
+        'filter_curated_collection' => 'Starter Deck Contest Entries',
         'import_modal_title'    => 'Import a deck',
         'import_tab_list'       => 'From decklist',
         'import_tab_gg'         => 'From Altered.gg',
@@ -157,6 +176,8 @@ $txt = [
         'next'            => 'Suivant',
         'lbl_search'      => 'Recherche',
         'search_ph'       => 'Rechercher un deck…',
+        'lbl_card'        => 'Carte',
+        'card_search_ph'  => 'Contient la carte…',
         'lbl_format'      => 'Format',
         'lbl_faction'     => 'Faction',
         'lbl_hero'        => 'Héros',
@@ -169,6 +190,13 @@ $txt = [
         'sort_created_asc'  => 'Plus ancien créé',
         'sort_name_asc'     => 'Nom A→Z',
         'sort_name_desc'    => 'Nom Z→A',
+        'sort_upvotes_desc' => 'Plus d\'upvotes',
+        'sort_upvotes_asc'  => 'Moins d\'upvotes',
+        'sort_views_desc'   => 'Plus de vues',
+        'sort_views_asc'    => 'Moins de vues',
+        'upvote_add'        => 'Upvoter ce deck',
+        'upvote_remove'     => 'Retirer mon upvote',
+        'upvote_login'      => 'Connectez-vous pour upvoter',
         'err_api_auth'    => 'Impossible de se connecter à l\'API de decks.',
         'err_connect'     => 'Erreur de connexion.',
         'api_later'       => 'L\'API est actuellement indisponible. Veuillez réessayer plus tard.',
@@ -199,6 +227,9 @@ $txt = [
         'community_btn'         => 'Voir les deckbuilders',
         'community_modal_title' => 'Deckbuilders communautaires',
         'community_visit'       => 'Visiter',
+        'lbl_curated'           => 'Vainqueurs',
+        'filter_curated'        => 'Vainqueurs du concours de deck de démarrage',
+        'filter_curated_collection' => 'Decklists du concours de deck de démarrage',
         'import_modal_title'    => 'Importer un deck',
         'import_tab_list'       => 'Depuis une decklist',
         'import_tab_gg'         => 'Depuis Altered.gg',
@@ -462,6 +493,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'heroes') 
     exit;
 }
 
+// AJAX: toggle deck upvote (public community decks)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote') {
+    header('Content-Type: application/json');
+    if (!csrfValid($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['ok' => false, 'error' => 'Invalid token']);
+        exit;
+    }
+    if (!$isLoggedIn) {
+        echo json_encode(['ok' => false, 'error' => 'login_required']);
+        exit;
+    }
+    if (!cacUsesKeycloakForDeckApi()) {
+        echo json_encode(['ok' => false, 'error' => 'local_auth']);
+        exit;
+    }
+    $upvoteDeckId = trim($_POST['deck_id'] ?? '');
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $upvoteDeckId)) {
+        echo json_encode(['ok' => false, 'error' => 'Invalid deck']);
+        exit;
+    }
+    $token = deckApiToken();
+    if (!$token) {
+        echo json_encode(['ok' => false, 'error' => 'api_auth']);
+        exit;
+    }
+    $upvoteResult = cacDeckApiUpvote($upvoteDeckId, $token);
+    if ($upvoteResult === null) {
+        echo json_encode(['ok' => false, 'error' => 'api_error']);
+        exit;
+    }
+    echo json_encode([
+        'ok'          => true,
+        'upvoteCount' => $upvoteResult['upvoteCount'],
+        'hasUpvoted'  => $upvoteResult['hasUpvoted'],
+    ]);
+    exit;
+}
+
 // aJAX proxy: public decks
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' && $publicDecksApiPath !== '') {
     header('Content-Type: application/json');
@@ -470,7 +539,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[a-z_]*$/', $pubFormat)) $pubFormat = '';
     $pubOrder = $_GET['order'] ?? 'updatedAt';
     $pubDir   = $_GET['dir']   ?? 'desc';
-    $allowedPubOrders = ['createdAt', 'updatedAt', 'name'];
+    $allowedPubOrders = ['createdAt', 'updatedAt', 'name', 'upvoteCount', 'viewCount'];
     $allowedPubDirs   = ['asc', 'desc'];
     if (!in_array($pubOrder, $allowedPubOrders, true)) $pubOrder = 'updatedAt';
     if (!in_array($pubDir,   $allowedPubDirs,   true)) $pubDir   = 'desc';
@@ -479,17 +548,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
     $pubHero = $_GET['hero'] ?? '';
     if (!preg_match('/^[A-Z0-9_]+$/', $pubHero)) $pubHero = '';
+    $pubAlteredIds = [];
+    if (isset($_GET['alteredId'])) {
+        $rawAlteredIds = is_array($_GET['alteredId']) ? $_GET['alteredId'] : [$_GET['alteredId']];
+        foreach ($rawAlteredIds as $pubAlteredId) {
+            $pubAlteredId = (string) $pubAlteredId;
+            if (preg_match('/^ALT_[A-Z0-9_]+$/', $pubAlteredId)) {
+                $pubAlteredIds[] = $pubAlteredId;
+            }
+        }
+    }
 
-    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
-    if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
-    if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
-    if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
+    $pubItemsPerPage = 21;
+    $listFilters     = [];
+    if ($pubFormat  !== '') $listFilters['format']  = strtolower($pubFormat);
+    if ($pubFaction !== '') $listFilters['faction'] = $pubFaction;
+    if ($pubHero    !== '') $listFilters['hero']     = $pubHero;
     $headers = ['Accept: application/json'];
     if ($isLoggedIn) {
         $token = deckApiToken();
         if ($token) $headers[] = 'Authorization: Bearer ' . $token;
     }
-    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
+
+    // /api/decks/public ignores alteredId — fetch full decks and filter server-side.
+    if ($pubAlteredIds !== []) {
+        set_time_limit(600);
+        $deckIds = cacFetchPublicDeckIds(
+            DECKS_API_URL,
+            $publicDecksApiPath,
+            $listFilters,
+            $headers,
+            $pubOrder,
+            $pubDir
+        );
+        $decks = $deckIds === []
+            ? []
+            : cacFetchDecksParallel($deckIds, DECKS_API_URL, $headers, $uiLang);
+        $decks = array_values(array_filter(
+            $decks,
+            static function (array $d) use ($pubAlteredIds): bool {
+                return cacDeckContainsCardRefs($d, $pubAlteredIds);
+            }
+        ));
+        $decks      = cacSortDecks($decks, $pubOrder, $pubDir);
+        $totalItems = count($decks);
+        $lastPage   = max(1, (int) ceil($totalItems / $pubItemsPerPage));
+        $pubPage    = min($pubPage, $lastPage);
+        $offset     = ($pubPage - 1) * $pubItemsPerPage;
+        echo json_encode([
+            'member'       => array_slice($decks, $offset, $pubItemsPerPage),
+            'totalItems'   => $totalItems,
+            'currentPage'  => $pubPage,
+            'lastPage'     => $lastPage,
+            'nextPage'     => $pubPage < $lastPage ? $pubPage + 1 : null,
+            'previousPage' => $pubPage > 1 ? $pubPage - 1 : null,
+        ]);
+        exit;
+    }
+
+    $apiParams = ['page' => $pubPage, 'itemsPerPage' => $pubItemsPerPage];
+    if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
+    if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
+    if ($pubHero    !== '') $apiParams['hero']     = $pubHero;
+    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams)
+        . '&order[' . $pubOrder . ']=' . $pubDir;
     $ch = curl_init($pubUrl);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
     $pubResp = curl_exec($ch);
@@ -501,6 +623,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
         http_response_code($pubCode ?: 500);
         echo json_encode(['error' => sprintf($txt['err_api'], $pubCode)]);
     }
+    exit;
+}
+
+// AJAX: Community tab curated deck list (winners or collection from config / CSV)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'community_curated') {
+    header('Content-Type: application/json');
+    $curatedSet = preg_replace('/[^a-z0-9_-]/', '', (string) ($_GET['set'] ?? 'winners'));
+    $deckIds    = $communityCuratedSets[$curatedSet] ?? [];
+    if ($deckIds === []) {
+        echo json_encode(['member' => []]);
+        exit;
+    }
+
+    $headers = ['Accept: application/json'];
+    if ($isLoggedIn) {
+        $token = deckApiToken();
+        if ($token) {
+            $headers[] = 'Authorization: Bearer ' . $token;
+        }
+    }
+
+    $member = cacFetchDecksParallel($deckIds, DECKS_API_URL, $headers, $uiLang);
+
+    echo json_encode(['member' => $member]);
     exit;
 }
 
@@ -591,6 +737,13 @@ $showNewDeckBtn = $enableNewDeck || $newDeckUrl !== '';
 $showImportBtnVisible = $showImportBtn || $importDeckUrl !== '';
 
 $showPublicTab = $publicDecksApiPath !== '';
+$showCommunityWinnersFilter    = $showPublicTab && ($communityCuratedSets['winners'] ?? []) !== [];
+$showCommunityCollectionFilter = $showPublicTab && ($communityCuratedSets['collection'] ?? []) !== [];
+$showCommunityCuratedFilter    = $showCommunityWinnersFilter || $showCommunityCollectionFilter;
+$communityCuratedDeckFormat = (string) ($communityCuratedDeckFormat ?? 'nuc');
+if (!preg_match('/^[a-z0-9_-]+$/', $communityCuratedDeckFormat)) {
+    $communityCuratedDeckFormat = 'nuc';
+}
 
 ?>
 
@@ -767,18 +920,47 @@ $showPublicTab = $publicDecksApiPath !== '';
     <div id="tab-public" class="decks-tab-pane"<?= (!$isLoggedIn && $showPublicTab) ? '' : ' style="display:none"' ?>>
 
         <div class="card-altered p-3 mb-4">
-            <div class="filter-row mb-0">
+            <div class="filter-row filter-row--search mb-0">
                 <div class="deck-search-wrap">
                     <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
                     <input type="text" id="pub-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
                            class="form-control form-control-sm" style="width:220px" autocomplete="off">
+                </div>
+                <div class="deck-card-filter">
+                    <span class="filter-label filter-label--card">
+                        <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['lbl_card']) ?>
+                    </span>
+                    <div class="deck-search-wrap deck-card-search-wrap">
+                        <input type="hidden" id="pub-card-id" value="">
+                        <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
+                        <input type="text" id="pub-card-search" placeholder="<?= h($txt['card_search_ph']) ?>"
+                               class="form-control form-control-sm" style="width:220px" autocomplete="off">
+                        <button type="button" id="pub-card-clear" class="deck-card-clear" style="display:none" aria-label="Clear">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <div id="pub-card-suggest" class="deck-card-suggest" style="display:none"></div>
+                    </div>
                 </div>
                 <button type="button" class="deck-filter-toggle d-lg-none ms-auto" aria-expanded="false">
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
             </div>
             <div class="deck-filter-collapsible">
+                <?php if ($showCommunityCuratedFilter): ?>
                 <div class="filter-row filter-row--scroll mb-2 mt-2">
+                    <?php if ($showCommunityWinnersFilter): ?>
+                    <button type="button" class="filter-toggle" data-pub-curated="winners" title="<?= h($txt['filter_curated']) ?>">
+                        <i class="fa-solid fa-star me-1"></i><?= h($txt['filter_curated']) ?>
+                    </button>
+                    <?php endif; ?>
+                    <?php if ($showCommunityCollectionFilter): ?>
+                    <button type="button" class="filter-toggle" data-pub-curated="collection" title="<?= h($txt['filter_curated_collection']) ?>">
+                        <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['filter_curated_collection']) ?>
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+                <div class="filter-row filter-row--scroll mb-2<?= $showCommunityCuratedFilter ? '' : ' mt-2' ?>">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
                     <button type="button" class="filter-toggle" data-pub-format="<?= h($fmtKey) ?>">
                         <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
@@ -809,6 +991,10 @@ $showPublicTab = $publicDecksApiPath !== '';
                         <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
                         <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
                         <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
+                        <option value="upvoteCount:desc"><?= h($txt['sort_upvotes_desc']) ?></option>
+                        <option value="upvoteCount:asc"><?= h($txt['sort_upvotes_asc']) ?></option>
+                        <option value="viewCount:desc"><?= h($txt['sort_views_desc']) ?></option>
+                        <option value="viewCount:asc"><?= h($txt['sort_views_asc']) ?></option>
                     </select>
                 </div>
             </div>
@@ -837,8 +1023,12 @@ $showPublicTab = $publicDecksApiPath !== '';
 (function () {
     var baseUrl         = <?= json_encode(BASE_URL) ?>;
     var pluginAssetsUrl = <?= json_encode($pluginAssetsUrl) ?>;
+    var uiLang          = <?= json_encode($uiLang) ?>;
+    var cardsApiUrl     = <?= json_encode(defined('CARDS_API_URL') ? CARDS_API_URL : 'https://cards.alteredcore.org') ?>;
     var apiDebug        = <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>;
     var showPublic = <?= json_encode($showPublicTab) ?>;
+    var showCommunityCuratedFilter = <?= json_encode($showCommunityCuratedFilter) ?>;
+    var pubCuratedFormat = <?= json_encode($showCommunityCuratedFilter ? $communityCuratedDeckFormat : '') ?>;
     var txt = <?= json_encode([
         'prev'           => $txt['prev'],
         'next'           => $txt['next'],
@@ -863,6 +1053,9 @@ $showPublicTab = $publicDecksApiPath !== '';
         'legalityErrorsSection' => $txt['legality_errors_section'],
         'legalityKeys'          => $txt['legality_keys'],
         'hero_all'              => $txt['hero_all'],
+        'upvote_add'            => $txt['upvote_add'],
+        'upvote_remove'         => $txt['upvote_remove'],
+        'upvote_login'          => $txt['upvote_login'],
     ]) ?>;
     var formats = <?= json_encode(array_map(fn($d) => [
         'label' => $d[$uiLang] ?? $d['en'] ?? '',
@@ -876,7 +1069,11 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     // My Decks AJAX vars (only populated when logged in)
     var myIsLoggedIn    = <?= json_encode($isLoggedIn) ?>;
-    var myCSRF          = <?= json_encode($isLoggedIn ? csrfToken() : '') ?>;
+    var myCSRF          = <?= json_encode(csrfToken()) ?>;
+    var pubIsLoggedIn   = myIsLoggedIn;
+    var pubCSRF         = myCSRF;
+    var loginUrl        = <?= json_encode(BASE_URL . '/pages/login') ?>;
+    var loginReturnUrl  = loginUrl + (loginUrl.indexOf('?') >= 0 ? '&' : '?') + 'redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
     var myShowEditBtn   = <?= json_encode($showEditBtn) ?>;
     var myEditDeckUrl   = <?= json_encode($editDeckUrl) ?>;
     var myShowDeleteBtn = <?= json_encode($showDeleteBtn) ?>;
@@ -1375,11 +1572,206 @@ $showPublicTab = $publicDecksApiPath !== '';
     var pubFaction    = '';
     var pubHero       = '';
     var pubFormat     = '';
+    var pubCuratedSet = '';
     var pubSortVal    = 'updatedAt:desc';
-    var pubAllItems   = [];
+    var pubAllItems       = [];
+    var pubCuratedDecks   = [];
+    var pubCuratedFetchGen = 0;
+    var pubCardRefs       = [];
+    var pubCardSearchTimer = null;
+    var pubCardSearchSeq   = 0;
+    var pubCardSearchRarities = ['COMMON', 'RARE', 'EXALTED'];
+
+    function pubCardSearchRarityQuery() {
+        return pubCardSearchRarities.map(function (r) {
+            return 'rarity[]=' + encodeURIComponent(r);
+        }).join('&');
+    }
+
+    function cardDisplayName(card) {
+        var n = card.name;
+        if (!n) return card.reference || '';
+        if (typeof n === 'object') return n[uiLang] || n.en || n.fr || card.reference || '';
+        return String(n);
+    }
+
+    function groupCardSuggestItems(items) {
+        var groups = {};
+        var order  = [];
+        items.forEach(function (card) {
+            var name      = cardDisplayName(card);
+            var faction   = card.faction && card.faction.code ? card.faction.code : '';
+            var rarityRef = card.rarity && card.rarity.reference ? card.rarity.reference : '';
+            var key       = name + '|' + faction + '|' + rarityRef;
+            if (!groups[key]) {
+                groups[key] = { card: card, name: name, faction: faction, rarityRef: rarityRef, refs: [] };
+                order.push(key);
+            }
+            var ref = card.reference || '';
+            if (ref && groups[key].refs.indexOf(ref) < 0) groups[key].refs.push(ref);
+        });
+        return order.map(function (k) { return groups[k]; });
+    }
+
+    function cardSuggestItemHtml(group) {
+        var name      = group.name;
+        var faction   = group.faction;
+        var rarityRef = group.rarityRef;
+        var refs      = group.refs || [];
+        var rGem      = { COMMON: 'C', RARE: 'R', EXALTED: 'E' }[rarityRef] || '';
+        var html      = '<span class="deck-card-suggest-row">';
+        html += '<span class="deck-card-suggest-icons">';
+        if (faction) {
+            html += '<img src="' + escHtml(pluginAssetsUrl + '/faction/' + faction + '.png') + '" alt="' + escHtml(faction) + '" class="deck-card-suggest-gem">';
+        }
+        if (rGem) {
+            html += '<img src="' + escHtml(pluginAssetsUrl + '/gems/' + rGem + '.png') + '" alt="' + escHtml(rarityRef) + '" class="deck-card-suggest-gem">';
+        }
+        html += '</span><span class="deck-card-suggest-name">' + escHtml(name) + '</span></span>';
+        if (refs.length) {
+            html += '<span class="deck-card-suggest-refs">(' + refs.map(function (ref) { return escHtml(ref); }).join(', ') + ')</span>';
+        }
+        return html;
+    }
+
+    function deckContainsCard(deck, refs) {
+        if (!refs || !refs.length) return true;
+        var cards = deck.cards || deck.deckCards || [];
+        for (var i = 0; i < cards.length; i++) {
+            var cr = cards[i].cardReference || cards[i].reference || '';
+            for (var j = 0; j < refs.length; j++) {
+                if (cr === refs[j]) return true;
+            }
+        }
+        return false;
+    }
+
+    function filterCuratedByCard(decks) {
+        if (!pubCardRefs.length) return decks;
+        return decks.filter(function (d) { return deckContainsCard(d, pubCardRefs); });
+    }
+
+    function setupPubCardSearch() {
+        var input    = document.getElementById('pub-card-search');
+        var hidden   = document.getElementById('pub-card-id');
+        var suggest  = document.getElementById('pub-card-suggest');
+        var clearBtn = document.getElementById('pub-card-clear');
+        if (!input || !suggest) return;
+
+        function updateClearBtn() {
+            if (clearBtn) clearBtn.style.display = pubCardRefs.length ? '' : 'none';
+        }
+
+        function applyCardFilter() {
+            if (pubCuratedActive()) {
+                renderPubCuratedDecks(false);
+            } else {
+                loadPublicDecks(1);
+            }
+        }
+
+        function setCardFilter(refs, label) {
+            pubCardRefs = Array.isArray(refs) ? refs.slice() : (refs ? [refs] : []);
+            if (hidden) hidden.value = pubCardRefs.join(',');
+            input.value = label || '';
+            input.dataset.selectedLabel = label || '';
+            suggest.style.display = 'none';
+            updateClearBtn();
+            applyCardFilter();
+        }
+
+        function clearCardFilter() {
+            setCardFilter([], '');
+        }
+
+        input.addEventListener('input', function () {
+            var q = input.value.trim();
+            if (pubCardSearchTimer) clearTimeout(pubCardSearchTimer);
+            if (!q) {
+                if (pubCardRefs.length) clearCardFilter();
+                suggest.style.display = 'none';
+                return;
+            }
+            if (pubCardRefs.length && q !== (input.dataset.selectedLabel || '')) {
+                pubCardRefs = [];
+                if (hidden) hidden.value = '';
+                updateClearBtn();
+            }
+            pubCardSearchTimer = setTimeout(function () {
+                var url;
+                var seq = ++pubCardSearchSeq;
+                if (/^ALT_[A-Z0-9_]+$/i.test(q)) {
+                    url = cardsApiUrl + '/api/cards?reference=' + encodeURIComponent(q.toUpperCase())
+                        + '&itemsPerPage=5&' + pubCardSearchRarityQuery();
+                } else {
+                    url = cardsApiUrl + '/api/cards?name=' + encodeURIComponent(q)
+                        + '&itemsPerPage=30&page=1&' + pubCardSearchRarityQuery();
+                }
+                fetch(url)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (seq !== pubCardSearchSeq) return;
+                        var items  = data.member || data['hydra:member'] || [];
+                        var groups = groupCardSuggestItems(items);
+                        if (!groups.length) {
+                            suggest.style.display = 'none';
+                            return;
+                        }
+                        suggest.innerHTML = '';
+                        groups.forEach(function (group) {
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'deck-card-suggest-item';
+                            btn.innerHTML = cardSuggestItemHtml(group);
+                            btn.addEventListener('click', function () {
+                                setCardFilter(group.refs, group.name);
+                            });
+                            suggest.appendChild(btn);
+                        });
+                        suggest.style.display = '';
+                    })
+                    .catch(function () { suggest.style.display = 'none'; });
+            }, 250);
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') suggest.style.display = 'none';
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.deck-card-search-wrap')) suggest.style.display = 'none';
+        });
+
+        if (clearBtn) clearBtn.addEventListener('click', clearCardFilter);
+    }
 
     var myHeroSelect  = document.getElementById('my-hero');
     var pubHeroSelect = document.getElementById('pub-hero');
+
+    function applyPubFormatUi(fmt, lockFormats) {
+        pubFormat = fmt || '';
+        document.querySelectorAll('[data-pub-format]').forEach(function (b) {
+            var selected = pubFormat !== '' && b.dataset.pubFormat === pubFormat;
+            b.classList.toggle('active', selected);
+            if (lockFormats) {
+                b.classList.toggle('filter-toggle-soon', b.dataset.pubFormat !== pubFormat);
+            } else {
+                b.classList.remove('filter-toggle-soon');
+            }
+        });
+    }
+
+    function lockPubCuratedFormat() {
+        applyPubFormatUi(pubCuratedFormat, true);
+    }
+
+    function unlockPubFormatFilters() {
+        applyPubFormatUi('', false);
+    }
+
+    function pubCuratedActive() {
+        return pubCuratedSet !== '';
+    }
 
     function populateHeroSelect(sel, heroes, activeFaction, heroAllLabel) {
         var current = sel.value;
@@ -1437,8 +1829,129 @@ $showPublicTab = $publicDecksApiPath !== '';
     if (pubHeroSelect) {
         pubHeroSelect.addEventListener('change', function() {
             pubHero = pubHeroSelect.value;
-            loadPublicDecks(1);
+            if (pubCuratedActive()) {
+                filterPublic();
+            } else {
+                pubReload(1);
+            }
         });
+    }
+
+    function pubReload(page, scroll) {
+        if (pubCuratedActive()) {
+            if (pubCuratedDecks.length) {
+                renderPubCuratedDecks(scroll);
+            } else {
+                loadCommunityCurated(scroll);
+            }
+        } else {
+            loadPublicDecks(page || 1, scroll);
+        }
+    }
+
+    function renderPubCuratedDecks(scroll) {
+        if (!pubGrid) return;
+        pubGrid.innerHTML = '';
+        pubPagination.style.setProperty('display', 'none', 'important');
+        var decks = sortPubDecks(filterCuratedByCard(pubCuratedDecks), pubSortVal);
+        if (!decks.length) {
+            pubEmpty.style.display = 'none';
+            pubNoMatch.style.display = pubCuratedDecks.length ? '' : 'none';
+            if (!pubCuratedDecks.length) pubEmpty.style.display = '';
+            pubAllItems = [];
+            return;
+        }
+        pubNoMatch.style.display = 'none';
+        decks.forEach(function (deck) {
+            pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck));
+        });
+        pubAllItems = Array.from(pubGrid.querySelectorAll('.pub-deck-item'));
+        filterPublic();
+        if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function sortPubDecks(decks, sortVal) {
+        var parts = (sortVal || 'updatedAt:desc').split(':');
+        var field = parts[0] || 'updatedAt';
+        var dir   = parts[1] || 'desc';
+        return decks.slice().sort(function (a, b) {
+            var va = a[field] != null ? a[field] : '';
+            var vb = b[field] != null ? b[field] : '';
+            var r;
+            if (field === 'name') {
+                r = String(va).localeCompare(String(vb), undefined, { sensitivity: 'base' });
+            } else if (field === 'viewCount' || field === 'upvoteCount') {
+                r = (parseInt(va, 10) || 0) - (parseInt(vb, 10) || 0);
+            } else {
+                r = String(va).localeCompare(String(vb));
+            }
+            return dir === 'desc' ? -r : r;
+        });
+    }
+
+    function syncPubCuratedDeckUpvote(deckId, upvoteCount, hasUpvoted) {
+        pubCuratedDecks.forEach(function (d) {
+            if (d.id === deckId) {
+                d.upvoteCount = upvoteCount;
+                d.hasUpvoted  = hasUpvoted;
+            }
+        });
+    }
+
+    function upvoteHeartClass(hasUpvoted) {
+        return (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+    }
+
+    function applyUpvotePillState(btn, hasUpvoted) {
+        if (!btn) return;
+        btn.dataset.upvoted = hasUpvoted ? '1' : '0';
+        btn.classList.toggle('deck-stat-pill--upvoted', hasUpvoted);
+        btn.title = hasUpvoted ? txt.upvote_remove : (pubIsLoggedIn ? txt.upvote_add : txt.upvote_login);
+        var icon = btn.querySelector('i');
+        if (icon) icon.className = upvoteHeartClass(hasUpvoted);
+    }
+
+    function handleDeckUpvote(btn) {
+        if (!pubIsLoggedIn) {
+            window.location.assign(loginReturnUrl);
+            return;
+        }
+        if (btn.disabled) return;
+
+        var deckId     = btn.dataset.deckId || '';
+        var wasUpvoted = btn.dataset.upvoted === '1';
+        var countEl    = btn.querySelector('.js-upvote-count');
+        var prevCount  = countEl ? (parseInt(countEl.textContent, 10) || 0) : 0;
+
+        btn.disabled = true;
+        applyUpvotePillState(btn, !wasUpvoted);
+        if (countEl) countEl.textContent = wasUpvoted ? Math.max(0, prevCount - 1) : prevCount + 1;
+
+        var fd = new FormData();
+        fd.append('csrf_token', pubCSRF);
+        fd.append('deck_id', deckId);
+
+        fetch(baseUrl + '/pages/decks?ajax=upvote', { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (res) {
+                var data = res.data || {};
+                if (!res.ok || !data.ok) {
+                    applyUpvotePillState(btn, wasUpvoted);
+                    if (countEl) countEl.textContent = prevCount;
+                    if (data.error === 'login_required') {
+                        window.location.assign(loginReturnUrl);
+                    }
+                    return;
+                }
+                if (countEl) countEl.textContent = data.upvoteCount;
+                applyUpvotePillState(btn, !!data.hasUpvoted);
+                syncPubCuratedDeckUpvote(deckId, data.upvoteCount, data.hasUpvoted);
+            })
+            .catch(function () {
+                applyUpvotePillState(btn, wasUpvoted);
+                if (countEl) countEl.textContent = prevCount;
+            })
+            .finally(function () { btn.disabled = false; });
     }
 
     function renderPublicDeck(deck) {
@@ -1474,12 +1987,25 @@ $showPublicTab = $publicDecksApiPath !== '';
         var legalityHtml = _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel);
 
         var viewCount   = deck.viewCount   != null ? parseInt(deck.viewCount,   10) : null;
-        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : null;
+        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : 0;
+        var hasUpvoted  = !!deck.hasUpvoted;
         var statsHtml = '';
-        if (viewCount !== null || upvoteCount !== null) {
-            statsHtml = '<span class="d-flex align-items-center gap-3" style="color:rgba(255,255,255,.6);font-size:.78rem">';
-            if (viewCount   !== null) statsHtml += '<span><i class="fa-solid fa-eye me-1"></i>' + viewCount   + '</span>';
-            if (upvoteCount !== null) statsHtml += '<span><i class="fa-solid fa-heart me-1"></i>' + upvoteCount + '</span>';
+        if (viewCount !== null || isPublic) {
+            statsHtml = '<span class="deck-stat-pills">';
+            if (viewCount !== null) {
+                statsHtml += '<span class="deck-stat-pill deck-stat-pill--view">'
+                    + '<i class="fa-solid fa-eye"></i><span>' + viewCount + '</span></span>';
+            }
+            if (isPublic !== false) {
+                statsHtml += '<button type="button" class="deck-stat-pill deck-stat-pill--upvote js-deck-upvote'
+                    + (hasUpvoted ? ' deck-stat-pill--upvoted' : '') + '"'
+                    + ' data-deck-id="' + escHtml(deckId) + '"'
+                    + ' data-upvoted="' + (hasUpvoted ? '1' : '0') + '"'
+                    + ' title="' + escHtml(hasUpvoted ? txt.upvote_remove : (pubIsLoggedIn ? txt.upvote_add : txt.upvote_login)) + '">'
+                    + '<i class="' + (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i>'
+                    + '<span class="js-upvote-count">' + upvoteCount + '</span>'
+                    + '</button>';
+            }
             statsHtml += '</span>';
         }
 
@@ -1489,6 +2015,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             + ' data-name="' + escHtml(name.toLowerCase()) + '"'
             + ' data-format="' + escHtml(fmt) + '"'
             + ' data-faction="' + escHtml(factionCode) + '"'
+            + ' data-hero="' + escHtml(heroRef) + '"'
             + ' data-public="' + (isPublic ? '1' : '0') + '"'
             + ' data-deck-id="' + escHtml(deckId) + '">'
             + '<div class="news-card h-100" style="border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
@@ -1522,24 +2049,64 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     if (pubGrid) {
         pubGrid.addEventListener('click', function(e) {
+            var upvoteBtn = e.target.closest('.js-deck-upvote');
+            if (upvoteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDeckUpvote(upvoteBtn);
+                return;
+            }
             if (e.target.closest('a, button, .dropdown')) return;
             var card = e.target.closest('.pub-deck-item');
             if (card && card.dataset.deckId) {
                 location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(card.dataset.deckId);
             }
-        });
+        }, true);
     }
 
     function filterPublic() {
         var q = pubSearch ? pubSearch.value.trim().toLowerCase() : '';
         var visible = 0;
         pubAllItems.forEach(function (el) {
-            var show = (!q         || (el.dataset.name   || '').includes(q))
-                    && (!pubFormat || el.dataset.format  === pubFormat);
+            var show = (!q         || (el.dataset.name    || '').includes(q))
+                    && (!pubFormat || el.dataset.format   === pubFormat)
+                    && (!pubFaction || el.dataset.faction === pubFaction)
+                    && (!pubHero    || el.dataset.hero    === pubHero);
             el.style.display = show ? '' : 'none';
             if (show) visible++;
         });
         if (pubNoMatch) pubNoMatch.style.display = (visible === 0 && pubAllItems.length > 0) ? '' : 'none';
+    }
+
+    function loadCommunityCurated(scroll) {
+        if (!pubGrid) return;
+        var fetchGen = ++pubCuratedFetchGen;
+        pubLoading.style.display = '';
+        pubError.style.display   = 'none';
+        pubEmpty.style.display   = 'none';
+        pubNoMatch.style.display = 'none';
+        pubGrid.innerHTML        = '';
+        pubPagination.style.setProperty('display', 'none', 'important');
+
+        fetch(baseUrl + '/pages/decks?ajax=community_curated&set=' + encodeURIComponent(pubCuratedSet))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (fetchGen !== pubCuratedFetchGen) return;
+                pubLoading.style.display = 'none';
+                if (data.error) {
+                    pubError.innerHTML = apiErrorHtml(data.error);
+                    pubError.style.display = '';
+                    return;
+                }
+                pubCuratedDecks = data.member || [];
+                renderPubCuratedDecks(scroll);
+            })
+            .catch(function () {
+                if (fetchGen !== pubCuratedFetchGen) return;
+                pubLoading.style.display = 'none';
+                pubError.innerHTML = apiErrorHtml(txt.err_connect);
+                pubError.style.display = '';
+            });
     }
 
     function renderPagination(p, t) { renderPaginationUI(pubPagination, p, t, loadPublicDecks); }
@@ -1559,6 +2126,9 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (pubFormat)  fetchUrl += '&format='  + encodeURIComponent(pubFormat);
         if (pubFaction) fetchUrl += '&faction=' + encodeURIComponent(pubFaction);
         if (pubHero)    fetchUrl += '&hero='    + encodeURIComponent(pubHero);
+        pubCardRefs.forEach(function (ref) {
+            fetchUrl += '&alteredId[]=' + encodeURIComponent(ref);
+        });
         fetch(fetchUrl)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1583,12 +2153,36 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     if (pubSearch) pubSearch.addEventListener('input', filterPublic);
 
+    setupPubCardSearch();
+
+    document.querySelectorAll('[data-pub-curated]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var set = btn.dataset.pubCurated || '';
+            if (pubCuratedSet === set) {
+                pubCuratedSet = '';
+                pubCuratedDecks = [];
+                btn.classList.remove('active');
+                unlockPubFormatFilters();
+                loadPublicDecks(1);
+            } else {
+                document.querySelectorAll('[data-pub-curated]').forEach(function (b) { b.classList.remove('active'); });
+                pubCuratedSet = set;
+                pubCuratedDecks = [];
+                btn.classList.add('active');
+                lockPubCuratedFormat();
+                loadCommunityCurated(false);
+            }
+        });
+    });
+
     document.querySelectorAll('[data-pub-format]').forEach(function (btn) {
         btn.addEventListener('click', function () {
+            if (pubCuratedActive()) return;
             var v = btn.dataset.pubFormat;
             if (pubFormat === v) { pubFormat = ''; btn.classList.remove('active'); }
             else { document.querySelectorAll('[data-pub-format]').forEach(function (b) { b.classList.remove('active'); }); pubFormat = v; btn.classList.add('active'); }
-            loadPublicDecks(1);
+            if (pubCuratedActive()) filterPublic();
+            else loadPublicDecks(1);
         });
     });
 
@@ -1602,13 +2196,17 @@ $showPublicTab = $publicDecksApiPath !== '';
                 pubHeroSelect.value = '';
                 loadHeroes(function(h) { populateHeroSelect(pubHeroSelect, h, pubFaction, txt.hero_all); });
             }
-            loadPublicDecks(1);
+            if (pubCuratedActive()) filterPublic();
+            else loadPublicDecks(1);
         });
     });
 
     var pubSort = document.getElementById('pub-sort');
     if (pubSort) {
-        pubSort.addEventListener('change', function() { pubSortVal = pubSort.value; loadPublicDecks(1); });
+        pubSort.addEventListener('change', function() {
+            pubSortVal = pubSort.value;
+            pubReload(1);
+        });
     }
 
     // Auto-load public decks when it's the default tab (visitor not logged in)
