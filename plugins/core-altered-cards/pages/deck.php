@@ -78,6 +78,10 @@ $txt = [
         'share_private_body'  => 'The link only works for you. Make the deck public so others can open it.',
         'share_make_public'   => 'Make public & share',
         'share_making_public' => 'Making public…',
+        'upvote_add'          => 'Upvote this deck',
+        'upvote_remove'       => 'Remove upvote',
+        'upvote_login'        => 'Sign in to upvote',
+        'views'               => 'Views',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -123,6 +127,10 @@ $txt = [
         'share_private_body'  => 'Le lien ne fonctionne que pour vous. Rendez le deck public pour que les autres puissent y accéder.',
         'share_make_public'   => 'Rendre public & partager',
         'share_making_public' => 'Publication…',
+        'upvote_add'          => 'Upvoter ce deck',
+        'upvote_remove'       => 'Retirer mon upvote',
+        'upvote_login'        => 'Connectez-vous pour upvoter',
+        'views'               => 'Vues',
         'view_grid'       => 'Cartes',
         'view_list'       => 'Decklist',
         'stats_cost_main'   => 'Courbe coût main',
@@ -250,6 +258,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
             echo json_encode(['ok' => true]);
         } else {
             echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
+        }
+        exit;
+    }
+    if ($action === 'upvote') {
+        if (!cacUsesKeycloakForDeckApi()) {
+            echo json_encode(['ok' => false, 'error' => 'local_auth']);
+            exit;
+        }
+        $result = cacDeckApiUpvote($deckId, $token);
+        if ($result === null) {
+            echo json_encode(['ok' => false, 'error' => 'api_error']);
+        } else {
+            echo json_encode([
+                'ok'          => true,
+                'upvoteCount' => $result['upvoteCount'],
+                'hasUpvoted'  => $result['hasUpvoted'],
+            ]);
         }
         exit;
     }
@@ -479,6 +504,26 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <button type="button" id="deck-share-btn" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-share-nodes me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['share_btn']) ?></span>
             </button>
+            <?php if (!empty($deck['isPublic'])): ?>
+            <?php
+            $_deckUpvoteCount = (int) ($deck['upvoteCount'] ?? 0);
+            $_deckHasUpvoted  = !empty($deck['hasUpvoted']);
+            $_deckViewCount   = isset($deck['viewCount']) ? (int) $deck['viewCount'] : null;
+            ?>
+            <span class="deck-stat-pills">
+                <?php if ($_deckViewCount !== null): ?>
+                <span class="deck-stat-pill deck-stat-pill--view" id="deck-view-count" title="<?= h($txt['views']) ?>">
+                    <i class="fa-solid fa-eye"></i><span><?= $_deckViewCount ?></span>
+                </span>
+                <?php endif; ?>
+                <button type="button" id="deck-upvote-btn"
+                        class="deck-stat-pill deck-stat-pill--upvote<?= $_deckHasUpvoted ? ' deck-stat-pill--upvoted' : '' ?>"
+                        data-upvoted="<?= $_deckHasUpvoted ? '1' : '0' ?>"
+                        title="<?= h($_deckHasUpvoted ? $txt['upvote_remove'] : ($isLoggedIn ? $txt['upvote_add'] : $txt['upvote_login'])) ?>">
+                    <i class="<?= $_deckHasUpvoted ? 'fa-solid' : 'fa-regular' ?> fa-heart"></i><span id="deck-upvote-count"><?= $_deckUpvoteCount ?></span>
+                </button>
+            </span>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>
@@ -993,6 +1038,74 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     if (statsBtn) statsBtn.addEventListener('click', function() { showView('stats'); });
 })();
 </script>
+
+<!-- Upvote -->
+<?php if ($deck && !empty($deck['isPublic'])): ?>
+<script>
+(function () {
+    var upvoteBtn   = document.getElementById('deck-upvote-btn');
+    if (!upvoteBtn) return;
+
+    var isLoggedIn  = <?= json_encode($isLoggedIn) ?>;
+    var loginUrl    = <?= json_encode(BASE_URL . '/pages/login') ?>;
+    var csrf        = <?= json_encode(csrfToken()) ?>;
+    var deckId      = <?= json_encode($deckId) ?>;
+    var baseUrl     = <?= json_encode(BASE_URL) ?>;
+    var txtUpvote   = <?= json_encode([
+        'add'    => $txt['upvote_add'],
+        'remove' => $txt['upvote_remove'],
+        'login'  => $txt['upvote_login'],
+    ]) ?>;
+    var loginReturnUrl = loginUrl + (loginUrl.indexOf('?') >= 0 ? '&' : '?') + 'redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+
+    function applyUpvotePillState(hasUpvoted) {
+        upvoteBtn.dataset.upvoted = hasUpvoted ? '1' : '0';
+        upvoteBtn.classList.toggle('deck-stat-pill--upvoted', hasUpvoted);
+        upvoteBtn.title = hasUpvoted ? txtUpvote.remove : (isLoggedIn ? txtUpvote.add : txtUpvote.login);
+        var icon = upvoteBtn.querySelector('i');
+        if (icon) icon.className = (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+    }
+
+    upvoteBtn.addEventListener('click', function () {
+        if (!isLoggedIn) {
+            window.location.assign(loginReturnUrl);
+            return;
+        }
+        if (upvoteBtn.disabled) return;
+
+        var countEl    = document.getElementById('deck-upvote-count');
+        var wasUpvoted = upvoteBtn.dataset.upvoted === '1';
+        var prevCount  = countEl ? (parseInt(countEl.textContent, 10) || 0) : 0;
+
+        upvoteBtn.disabled = true;
+        applyUpvotePillState(!wasUpvoted);
+        if (countEl) countEl.textContent = wasUpvoted ? Math.max(0, prevCount - 1) : prevCount + 1;
+
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('action', 'upvote');
+
+        fetch(baseUrl + '/pages/deck?ajax=1&id=' + encodeURIComponent(deckId), { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (res) {
+                var data = res.data || {};
+                if (!res.ok || !data.ok) {
+                    applyUpvotePillState(wasUpvoted);
+                    if (countEl) countEl.textContent = prevCount;
+                    return;
+                }
+                if (countEl) countEl.textContent = data.upvoteCount;
+                applyUpvotePillState(!!data.hasUpvoted);
+            })
+            .catch(function () {
+                applyUpvotePillState(wasUpvoted);
+                if (countEl) countEl.textContent = prevCount;
+            })
+            .finally(function () { upvoteBtn.disabled = false; });
+    });
+})();
+</script>
+<?php endif; ?>
 
 <!-- Share -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
