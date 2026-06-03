@@ -78,6 +78,13 @@ $txt = [
         'share_private_body'  => 'The link only works for you. Make the deck public so others can open it.',
         'share_make_public'   => 'Make public & share',
         'share_making_public' => 'Making public…',
+        'test_hand'           => 'Test hand',
+        'new_hand'            => 'New hand',
+        'hand_empty'          => 'No cards to draw.',
+        'hand_characters'     => 'Characters',
+        'hand_spells'         => 'Spells',
+        'hand_permanents'     => 'Permanents',
+        'hand_avg_cost'       => 'Avg. hand cost',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -149,6 +156,13 @@ $txt = [
             'exaltedQuantity'   => 'Trop de cartes exaltées',
         ],
         'no_description'      => 'Aucune description disponible pour ce deck.',
+        'test_hand'           => 'Main de départ',
+        'new_hand'            => 'Nouvelle main',
+        'hand_empty'          => 'Aucune carte à tirer.',
+        'hand_characters'     => 'Personnages',
+        'hand_spells'         => 'Sorts',
+        'hand_permanents'     => 'Permanents',
+        'hand_avg_cost'       => 'Coût moyen en main',
     ],
 ][$uiLang] ?? [];
 
