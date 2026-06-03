@@ -1007,26 +1007,30 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     var listBtn   = document.getElementById('deck-view-list');
     var descBtn   = document.getElementById('deck-view-desc');
     var statsBtn  = document.getElementById('deck-view-stats');
+    var handBtn   = document.getElementById('deck-view-hand');
     var gridView  = document.getElementById('deck-grid-view');
     var listView  = document.getElementById('deck-list-view');
     var descView  = document.getElementById('deck-desc-view');
     var statsView = document.getElementById('deck-stats-view');
+    var handView  = document.getElementById('deck-hand-view');
     function showView(which) {
         if (gridView)  gridView.style.display  = which === 'grid'  ? '' : 'none';
         if (listView)  listView.style.display  = which === 'list'  ? '' : 'none';
         if (descView)  descView.style.display  = which === 'desc'  ? '' : 'none';
         if (statsView) statsView.style.display = which === 'stats' ? '' : 'none';
+        if (handView)  handView.style.display  = which === 'hand'  ? '' : 'none';
         if (gridBtn)   gridBtn.classList.toggle('active',  which === 'grid');
         if (listBtn)   listBtn.classList.toggle('active',  which === 'list');
         if (descBtn)   descBtn.classList.toggle('active',  which === 'desc');
         if (statsBtn)  statsBtn.classList.toggle('active', which === 'stats');
+        if (handBtn)   handBtn.classList.toggle('active',  which === 'hand');
         var tabBar = document.querySelector('.decks-tabs');
         if (tabBar) {
             var navH = (document.querySelector('.site-header') || {}).offsetHeight || 0;
             if (window.innerWidth >= 992) {
                 window.scrollTo({ top: tabBar.getBoundingClientRect().top + window.scrollY - navH, behavior: 'smooth' });
             } else {
-                var pane = which === 'grid' ? gridView : which === 'list' ? listView : which === 'desc' ? descView : statsView;
+                var pane = which === 'grid' ? gridView : which === 'list' ? listView : which === 'desc' ? descView : which === 'stats' ? statsView : handView;
                 if (pane) window.scrollTo({ top: pane.getBoundingClientRect().top + window.scrollY - navH, behavior: 'smooth' });
             }
         }
@@ -1035,6 +1039,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     if (listBtn)  listBtn.addEventListener('click',  function() { showView('list'); });
     if (descBtn)  descBtn.addEventListener('click',  function() { showView('desc'); });
     if (statsBtn) statsBtn.addEventListener('click', function() { showView('stats'); });
+    if (handBtn)  handBtn.addEventListener('click',  function() { showView('hand'); });
 })();
 </script>
 
