@@ -5,7 +5,28 @@ $lang = getUiLang();
 
 $txt = [
     'en' => [
-        'page_title'        => 'Upcoming physical Events',
+        'page_title'        => 'Events',
+        'tab_physical'      => 'Physical',
+        'tab_bga'           => 'Online (BGA)',
+        'bga_no_data'       => 'No BGA tournaments loaded. An admin can import bga-tournaments.json in Events Settings.',
+        'bga_updated'       => 'Data from Board Game Arena',
+        'bga_open_bga'      => 'Browse on BGA',
+        'bga_count'         => 'tournament(s)',
+        'event_status'      => 'Status',
+        'bga_registration'  => 'Registration opened',
+        'bga_starts'        => 'Starts',
+        'bga_ends'          => 'Estimated end',
+        'bga_duration'      => 'Game duration',
+        'bga_deck_format'   => 'Deck format',
+        'bga_undo_off'      => 'Undo disabled',
+        'bga_pace'          => 'Pace',
+        'bga_max_players'   => 'Max players',
+        'bga_filter_title'  => 'Filter tournaments',
+        'bga_filter_format' => 'Tournament format',
+        'bga_filter_deck'   => 'Deck format',
+        'bga_filter_pace'   => 'Pace',
+        'bga_filter_all'    => 'All',
+        'bga_no_results'    => 'No tournaments match these filters.',
         'no_events'         => 'No upcoming events at the moment.',
         'no_results'        => 'No events found matching your search criteria.',
         'event_date'        => 'Date',
@@ -35,7 +56,28 @@ $txt = [
         'create_tournament' => 'Create a tournament',
     ],
     'fr' => [
-        'page_title'        => 'Événements physiques à venir',
+        'page_title'        => 'Événements',
+        'tab_physical'      => 'Physique',
+        'tab_bga'           => 'En ligne (BGA)',
+        'bga_no_data'       => 'Aucun tournoi BGA chargé. Un admin peut importer bga-tournaments.json dans Paramètres Événements.',
+        'bga_updated'       => 'Données Board Game Arena',
+        'bga_open_bga'      => 'Voir sur BGA',
+        'bga_count'         => 'tournoi(s)',
+        'event_status'      => 'Statut',
+        'bga_registration'  => 'Inscriptions ouvertes',
+        'bga_starts'        => 'Début',
+        'bga_ends'          => 'Fin estimée',
+        'bga_duration'      => 'Durée des parties',
+        'bga_deck_format'   => 'Format de deck',
+        'bga_undo_off'      => 'Annulation désactivée',
+        'bga_pace'          => 'Rythme',
+        'bga_max_players'   => 'Joueurs max',
+        'bga_filter_title'  => 'Filtrer les tournois',
+        'bga_filter_format' => 'Format de tournoi',
+        'bga_filter_deck'   => 'Format de deck',
+        'bga_filter_pace'   => 'Rythme',
+        'bga_filter_all'    => 'Tous',
+        'bga_no_results'    => 'Aucun tournoi ne correspond à ces filtres.',
         'no_events'         => 'Aucun événement à venir pour le moment.',
         'no_results'        => 'Aucun événement ne correspond à vos critères de recherche.',
         'event_date'        => 'Date',
@@ -65,7 +107,28 @@ $txt = [
         'create_tournament' => 'Créer un tournoi',
     ],
     'de' => [
-        'page_title'        => 'Bevorstehende Präsenz-Events',
+        'page_title'        => 'Events',
+        'tab_physical'      => 'Präsenz',
+        'tab_bga'           => 'Online (BGA)',
+        'bga_no_data'       => 'Keine BGA-Turniere geladen.',
+        'bga_updated'       => 'Daten von Board Game Arena',
+        'bga_open_bga'      => 'Auf BGA ansehen',
+        'bga_count'         => 'Turnier(e)',
+        'event_status'      => 'Status',
+        'bga_registration'  => 'Anmeldung geöffnet',
+        'bga_starts'        => 'Start',
+        'bga_ends'          => 'Vorauss. Ende',
+        'bga_duration'      => 'Spieldauer',
+        'bga_deck_format'   => 'Deck-Format',
+        'bga_undo_off'      => 'Rückgängig deaktiviert',
+        'bga_pace'          => 'Tempo',
+        'bga_max_players'   => 'Max. Spieler',
+        'bga_filter_title'  => 'Turniere filtern',
+        'bga_filter_format' => 'Turnierformat',
+        'bga_filter_deck'   => 'Deck-Format',
+        'bga_filter_pace'   => 'Tempo',
+        'bga_filter_all'    => 'Alle',
+        'bga_no_results'    => 'Keine Turniere entsprechen diesen Filtern.',
         'no_events'         => 'Derzeit keine bevorstehenden Events.',
         'no_results'        => 'Keine Events gefunden, die Ihren Suchkriterien entsprechen.',
         'event_date'        => 'Datum',
@@ -95,7 +158,28 @@ $txt = [
         'create_tournament' => 'Turnier erstellen',
     ],
     'es' => [
-        'page_title'        => 'Próximos eventos presenciales',
+        'page_title'        => 'Eventos',
+        'tab_physical'      => 'Presencial',
+        'tab_bga'           => 'En línea (BGA)',
+        'bga_no_data'       => 'No hay torneos BGA cargados.',
+        'bga_updated'       => 'Datos de Board Game Arena',
+        'bga_open_bga'      => 'Ver en BGA',
+        'bga_count'         => 'torneo(s)',
+        'event_status'      => 'Estado',
+        'bga_registration'  => 'Inscripción abierta',
+        'bga_starts'        => 'Inicio',
+        'bga_ends'          => 'Fin estimado',
+        'bga_duration'      => 'Duración del juego',
+        'bga_deck_format'   => 'Formato de mazo',
+        'bga_undo_off'      => 'Deshacer desactivado',
+        'bga_pace'          => 'Ritmo',
+        'bga_max_players'   => 'Jugadores máx.',
+        'bga_filter_title'  => 'Filtrar torneos',
+        'bga_filter_format' => 'Formato de torneo',
+        'bga_filter_deck'   => 'Formato de mazo',
+        'bga_filter_pace'   => 'Ritmo',
+        'bga_filter_all'    => 'Todos',
+        'bga_no_results'    => 'Ningún torneo coincide con estos filtros.',
         'no_events'         => 'No hay eventos próximos por el momento.',
         'no_results'        => 'No se encontraron eventos que coincidan con sus criterios de búsqueda.',
         'event_date'        => 'Fecha',
@@ -125,7 +209,28 @@ $txt = [
         'create_tournament' => 'Crear un torneo',
     ],
     'it' => [
-        'page_title'        => 'Prossimi eventi in presenza',
+        'page_title'        => 'Eventi',
+        'tab_physical'      => 'In presenza',
+        'tab_bga'           => 'Online (BGA)',
+        'bga_no_data'       => 'Nessun torneo BGA caricato.',
+        'bga_updated'       => 'Dati da Board Game Arena',
+        'bga_open_bga'      => 'Vedi su BGA',
+        'bga_count'         => 'torneo/i',
+        'event_status'      => 'Stato',
+        'bga_registration'  => 'Iscrizioni aperte',
+        'bga_starts'        => 'Inizio',
+        'bga_ends'          => 'Fine stimata',
+        'bga_duration'      => 'Durata partita',
+        'bga_deck_format'   => 'Formato mazzo',
+        'bga_undo_off'      => 'Annullamento disattivato',
+        'bga_pace'          => 'Ritmo',
+        'bga_max_players'   => 'Giocatori max',
+        'bga_filter_title'  => 'Filtra tornei',
+        'bga_filter_format' => 'Formato torneo',
+        'bga_filter_deck'   => 'Formato mazzo',
+        'bga_filter_pace'   => 'Ritmo',
+        'bga_filter_all'    => 'Tutti',
+        'bga_no_results'    => 'Nessun torneo corrisponde a questi filtri.',
         'no_events'         => 'Nessun evento in programma al momento.',
         'no_results'        => 'Nessun evento trovato corrispondente ai criteri di ricerca.',
         'event_date'        => 'Data',
@@ -214,13 +319,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $tournaments = $result['tournaments'] ?? [];
     }
 }
+
+$physicalCount = $error ? 0 : count($tournaments);
+
+$bgaData        = reLoadBgaTournamentsJson();
+$bgaTournaments = reFilterBgaUpcomingTournaments($bgaData['tournaments']);
+$bgaCount       = count($bgaTournaments);
+$bgaExportedAt  = $bgaData['exported_at'];
+$bgaListUrl     = 'https://boardgamearena.com/tournamentlist?gamecateg=3&game=1909';
+$bgaFilterOpts  = $bgaCount > 0 ? reCollectBgaFilterOptions($bgaTournaments) : ['formats' => [], 'decks' => [], 'paces' => []];
+$bgaForJs       = array_values(array_map(function ($b) use ($lang, $txt) {
+    $date = $b['start_date'] ?? '';
+    if ($date === '' && !empty($b['start_datetime'])) {
+        $date = substr((string)$b['start_datetime'], 0, 10);
+    }
+    $deckLabel = reBgaDeckFormatLabel($b['deck_format'] ?? null);
+
+    return [
+        'id'                => $b['id'],
+        'name'              => $b['name'] ?? '',
+        'series'            => $b['championship_name'] ?? '',
+        'date'              => $date,
+        'start_instant_iso' => $b['start_instant_iso'] ?? null,
+        'start_has_time'    => !empty($b['start_has_time']),
+        'starts_label'      => $txt['bga_starts'] ?? 'Starts',
+        'format'            => $b['format'] ?? '',
+        'filter_format'     => $b['format'] ?? '',
+        'deck_format'       => $deckLabel,
+        'filter_deck'       => $deckLabel,
+        'game_mode'         => $b['game_mode'] ?? '',
+        'game_pace'         => $b['game_pace'] ?? '',
+        'filter_pace'       => $b['game_pace'] ?? '',
+        'max_players'       => !empty($b['max_players']) ? (int)$b['max_players'] : null,
+        'max_players_label' => $txt['bga_max_players'] ?? 'Max players',
+        'url'               => $b['url'] ?? '',
+    ];
+}, $bgaTournaments));
+$bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
 ?>
 <div class="container py-4">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
+    <div class="section-title mb-4"><span><?= h($pageTitle) ?></span></div>
+
+    <div class="re-events-tabs-sticky">
+        <ul class="nav nav-tabs re-events-tabs" id="reEventsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="re-tab-physical-btn" data-bs-toggle="tab"
+                        data-bs-target="#re-tab-physical" type="button" role="tab" aria-controls="re-tab-physical" aria-selected="true">
+                    <i class="fa-solid fa-location-dot re-events-tab-icon" aria-hidden="true"></i>
+                    <span class="re-events-tab-label"><?= h($txt['tab_physical']) ?></span>
+                    <?php if ($physicalCount > 0): ?>
+                    <span class="badge re-events-tab-badge"><?= h($physicalCount) ?></span>
+                    <?php endif; ?>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="re-tab-bga-btn" data-bs-toggle="tab"
+                        data-bs-target="#re-tab-bga" type="button" role="tab" aria-controls="re-tab-bga" aria-selected="false">
+                    <i class="fa-solid fa-globe re-events-tab-icon" aria-hidden="true"></i>
+                    <span class="re-events-tab-label"><?= h($txt['tab_bga']) ?></span>
+                    <?php if ($bgaCount > 0): ?>
+                    <span class="badge re-events-tab-badge"><?= h($bgaCount) ?></span>
+                    <?php endif; ?>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content">
+    <div class="tab-pane fade show active" id="re-tab-physical" role="tabpanel">
+
+    <div class="d-flex align-items-center justify-content-end mb-4">
         <a href="https://altered-tournament-tools.com/tournaments/create"
-           class="btn btn-primary-altered"
+           class="btn btn-primary-altered btn-sm"
            target="_blank"
            rel="noopener">
             <i class="fa-solid fa-plus me-2"></i><?= h($txt['create_tournament']) ?>
@@ -351,8 +522,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         </h5>
 
                         <div class="event-details">
-                            <?php if (!empty($event['date']) || !empty($event['startDate'])): ?>
-                            <span><i class="fa-solid fa-calendar"></i><?= h(reFormatDate($event['date'] ?? $event['startDate'], $lang)) ?></span>
+                            <?php
+                            $physDateRaw  = $event['date'] ?? $event['startDate'] ?? '';
+                            $physLocation = $event['location'] ?? $event['venue'] ?? '';
+                            $physInstant  = $physDateRaw !== '' ? rePhysStartInstantIso($physDateRaw, $physLocation) : null;
+                            $physHasTime  = (bool) preg_match('/T\d{2}:\d{2}/', $physDateRaw);
+                            ?>
+                            <?php if ($physDateRaw !== ''): ?>
+                            <span><i class="fa-solid fa-calendar"></i>
+                                <?php if ($physInstant): ?>
+                                <time class="re-phys-start-dt"
+                                      datetime="<?= h($physInstant) ?>"
+                                      data-has-time="<?= $physHasTime ? '1' : '0' ?>">
+                                    <?= h(reFormatDate($physDateRaw, $lang)) ?>
+                                </time>
+                                <?php else: ?>
+                                <?= h(reFormatDate($physDateRaw, $lang)) ?>
+                                <?php endif; ?>
+                            </span>
                             <?php endif; ?>
 
                             <?php if (!empty($event['location']) || !empty($event['venue'])): ?>
@@ -413,9 +600,187 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     ?>
     <script>
     window._reEvents = <?= json_encode($eventsForJs, JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-    window._reLang   = <?= json_encode($lang) ?>;
     </script>
 
     <?php endif; ?>
 
+    </div><!-- /re-tab-physical -->
+
+    <div class="tab-pane fade" id="re-tab-bga" role="tabpanel">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <?php if ($bgaCount > 0): ?>
+                <span class="badge bg-primary"><?= h($bgaCount) ?> <?= h($txt['bga_count']) ?></span>
+                <?php if (!empty($bgaExportedAt)): ?>
+                <span class="small text-muted ms-2">
+                    <?= h($txt['bga_updated']) ?> — <?= h($bgaExportedAt) ?>
+                </span>
+                <?php endif; ?>
+                <?php endif; ?>
+            </div>
+            <a href="<?= h($bgaListUrl) ?>"
+               class="btn btn-outline-secondary btn-sm"
+               target="_blank"
+               rel="noopener">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['bga_open_bga']) ?>
+            </a>
+        </div>
+
+        <?php if ($bgaCount === 0): ?>
+        <div class="card-altered p-4 text-center">
+            <i class="fa-solid fa-cloud-arrow-down fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-0"><?= h($txt['bga_no_data']) ?></p>
+        </div>
+        <?php else: ?>
+        <script type="application/json" id="re-bga-events-json"><?= json_encode($bgaForJs, $bgaJsonFlags) ?></script>
+
+        <div class="card-altered p-4 mb-4" id="bga-filter-panel">
+            <h5 class="mb-3">
+                <i class="fa-solid fa-filter me-2"></i><?= h($txt['bga_filter_title']) ?>
+            </h5>
+            <form id="bga-filter-form" action="#" method="get" autocomplete="off">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold" for="bga-filter-format"><?= h($txt['bga_filter_format']) ?></label>
+                    <select class="form-select" id="bga-filter-format">
+                        <option value=""><?= h($txt['bga_filter_all']) ?></option>
+                        <?php foreach ($bgaFilterOpts['formats'] as $opt): ?>
+                        <option value="<?= h($opt) ?>"><?= h($opt) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold" for="bga-filter-deck"><?= h($txt['bga_filter_deck']) ?></label>
+                    <select class="form-select" id="bga-filter-deck">
+                        <option value=""><?= h($txt['bga_filter_all']) ?></option>
+                        <?php foreach ($bgaFilterOpts['decks'] as $opt): ?>
+                        <option value="<?= h($opt) ?>"><?= h($opt) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold" for="bga-filter-pace"><?= h($txt['bga_filter_pace']) ?></label>
+                    <select class="form-select" id="bga-filter-pace">
+                        <option value=""><?= h($txt['bga_filter_all']) ?></option>
+                        <?php foreach ($bgaFilterOpts['paces'] as $opt): ?>
+                        <option value="<?= h($opt) ?>"><?= h($opt) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary-altered flex-grow-1" id="bga-filter-search">
+                        <i class="fa-solid fa-search me-1"></i><?= h($txt['search_btn']) ?>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="bga-filter-reset" title="<?= h($txt['search_reset']) ?>">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+
+        <div class="view-toggle mb-3">
+            <button type="button" class="view-toggle-btn active" id="btn-bga-view-list">
+                <i class="fa-solid fa-list"></i> <?= h($txt['view_list']) ?>
+            </button>
+            <button type="button" class="view-toggle-btn" id="btn-bga-view-calendar">
+                <i class="fa-solid fa-calendar-days"></i> <?= h($txt['view_calendar']) ?>
+            </button>
+        </div>
+
+        <div id="bga-view-list">
+        <div class="card-altered p-4 text-center d-none mb-3" id="bga-filter-empty">
+            <i class="fa-solid fa-filter-circle-xmark fa-2x text-muted mb-2"></i>
+            <p class="text-muted mb-0"><?= h($txt['bga_no_results']) ?></p>
+        </div>
+        <div class="events-list" id="bga-events-list">
+            <?php foreach ($bgaTournaments as $bga): ?>
+            <?php
+                $bgaStartDisplay = $bga['start_datetime'] ?? $bga['start_date'] ?? '';
+                $bgaDeckLabel = reBgaDeckFormatLabel($bga['deck_format'] ?? null);
+            ?>
+            <a href="<?= h($bga['url']) ?>"
+               class="event-card card-altered p-4 bga-event-card"
+               target="_blank"
+               rel="noopener"
+               data-bga-format="<?= h($bga['format'] ?? '') ?>"
+               data-bga-deck="<?= h($bgaDeckLabel) ?>"
+               data-bga-pace="<?= h($bga['game_pace'] ?? '') ?>">
+                <div class="event-card-inner">
+                    <div class="event-info">
+                        <h5 class="event-title mb-1">
+                            <i class="fa-solid fa-trophy text-warning me-2"></i>
+                            <?= h($bga['name'] ?: 'Tournament') ?>
+                        </h5>
+                        <?php if (!empty($bga['championship_name'])): ?>
+                        <p class="small text-muted mb-2"><?= h($bga['championship_name']) ?></p>
+                        <?php endif; ?>
+                        <div class="event-details">
+                            <?php if (!empty($bga['start_instant_iso']) || $bgaStartDisplay !== ''): ?>
+                            <span>
+                                <i class="fa-solid fa-calendar"></i><?= h($txt['bga_starts']) ?>:
+                                <time class="re-bga-start-dt"
+                                      datetime="<?= h($bga['start_instant_iso'] ?? '') ?>"
+                                      data-has-time="<?= !empty($bga['start_has_time']) ? '1' : '0' ?>">
+                                    <?= h(reFormatDate($bgaStartDisplay, $lang)) ?>
+                                </time>
+                            </span>
+                            <?php endif; ?>
+                            <?php if (!empty($bga['format'])): ?>
+                            <span><i class="fa-solid fa-layer-group"></i><?= h($bga['format']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($bgaDeckLabel !== ''): ?>
+                            <span>
+                                <i class="fa-solid fa-clone"></i>
+                                <?= h($txt['bga_deck_format']) ?>: <?= h($bgaDeckLabel) ?>
+                            </span>
+                            <?php endif; ?>
+                            <?php if (!empty($bga['game_mode'])): ?>
+                            <span><i class="fa-solid fa-gamepad"></i><?= h($bga['game_mode']) ?></span>
+                            <?php endif; ?>
+                            <?php if (!empty($bga['game_pace'])): ?>
+                            <span><i class="fa-solid fa-clock"></i><?= h($txt['bga_pace']) ?>: <?= h($bga['game_pace']) ?></span>
+                            <?php endif; ?>
+                            <?php if (!empty($bga['max_players'])): ?>
+                            <span>
+                                <i class="fa-solid fa-users"></i>
+                                <?= h($txt['bga_max_players']) ?>: <?= h((int)$bga['max_players']) ?>
+                            </span>
+                            <?php endif; ?>
+                            <?php if (isset($bga['allow_undo']) && $bga['allow_undo'] === false): ?>
+                            <span><i class="fa-solid fa-rotate-left"></i><?= h($txt['bga_undo_off']) ?></span>
+                            <?php endif; ?>
+                            <?php if (!empty($bga['game_duration'])): ?>
+                            <span><i class="fa-solid fa-hourglass-half"></i><?= h($txt['bga_duration']) ?>: <?= h($bga['game_duration']) ?></span>
+                            <?php endif; ?>
+                            <?php if (isset($bga['progress']) && $bga['status'] === 'progress'): ?>
+                            <span><i class="fa-solid fa-chart-line"></i><?= h(round($bga['progress'] * 100)) ?>%</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="event-actions">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-muted"></i>
+                    </div>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        </div>
+
+        <div id="bga-view-calendar" style="display:none"></div>
+        <?php endif; ?>
+    </div><!-- /re-tab-bga -->
+
+    </div><!-- /tab-content -->
+    <p class="text-end text-muted small mt-3">
+        Plugin by <strong>Benhol</strong> and <strong>Re:Union team</strong>
+    </p>
 </div>
+
+<script>
+window._reLang = <?= json_encode($lang) ?>;
+window._reBgaEvents = <?= json_encode($bgaForJs, $bgaJsonFlags) ?>;
+window._reBgaStrings = <?= json_encode([
+    'no_results' => $txt['bga_no_results'] ?? '',
+], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+</script>

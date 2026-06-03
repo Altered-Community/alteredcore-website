@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlteredCore Plugin Manifest",
+  "type": "object",
+  "required": ["id", "name", "version", "description", "author"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema":      { "type": "string" },
+    "id":           { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "name":         { "type": "string", "minLength": 1 },
+    "version":      { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" },
+    "description":  { "type": "string" },
+    "author":       { "type": "string" },
+    "icon":         { "type": "string" },
+    "table_prefix": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "file", "title_en", "title_fr"],
+        "additionalProperties": false,
+        "properties": {
+          "slug":     { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "file":     { "type": "string" },
+          "title_en": { "type": "string" },
+          "title_fr": { "type": "string" }
+        }
+      }
+    },
+    "admin": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["section", "file", "label_en", "label_fr"],
+        "additionalProperties": false,
+        "properties": {
+          "section":  { "type": "string" },
+          "file":     { "type": "string" },
+          "label_en": { "type": "string" },
+          "label_fr": { "type": "string" },
+          "icon":     { "type": "string" }
+        }
+      }
+    },
+    "api": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "file"],
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": { "type": "string" },
+          "file":     { "type": "string" }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "css": { "type": "array", "items": { "type": "string" } },
+        "js":  { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sql":    { "type": "string" },
+    "tables": { "type": "array", "items": { "type": "string" } }
+  }
+}

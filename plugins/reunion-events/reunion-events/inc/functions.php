@@ -326,6 +326,18 @@ function rePhysLocationTimezone(string $location): string
 
     $geo = rePhysGeocodeAddress($location);
     if (!$geo) {
+        // Fallback: try progressively shorter suffixes (strip leading segments)
+        // e.g. "Multiplayer, Palermo, Italy" → "Palermo, Italy" → "Italy"
+        $segments = array_map('trim', explode(',', $location));
+        for ($i = 1; $i < count($segments); $i++) {
+            $shorter = implode(', ', array_slice($segments, $i));
+            $geo = rePhysGeocodeAddress($shorter);
+            if ($geo) {
+                break;
+            }
+        }
+    }
+    if (!$geo) {
         return 'UTC';
     }
 
