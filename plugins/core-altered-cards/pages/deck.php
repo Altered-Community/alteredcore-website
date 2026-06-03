@@ -616,6 +616,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <i class="fa-solid fa-chart-pie"></i>
                 <span>Stats</span>
             </button>
+            <button type="button" id="deck-view-hand" class="decks-tab">
+                <i class="fa-solid fa-hand-sparkles"></i>
+                <span><?= h($txt['test_hand']) ?></span>
+            </button>
             <?php endif; ?>
         </div>
 
@@ -780,6 +784,32 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             </div>
         </div>
         </div>
+        <?php endif; ?>
+
+        <?php if (!empty($deck['cards'])): ?>
+        <!-- Starting hand view -->
+        <div id="deck-hand-view" style="display:none">
+            <div class="hand-test-toolbar">
+                <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
+                    <i class="fa-solid fa-shuffle me-1"></i><?= h($txt['new_hand']) ?>
+                </button>
+            </div>
+            <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
+            <div id="hand-summary" class="hand-summary"></div>
+        </div>
+        <script>
+          var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
+              return $c + ['unique' => _deck_is_unique($c['ref']), 'img' => _deck_cdn_url($c['ref'], $uiLang)];
+          }, getDeckStartingHandPool($deck['cards'], $lang)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handLang = <?= json_encode($uiLang) ?>;
+          var handTxt  = {
+              empty:      <?= json_encode($txt['hand_empty']) ?>,
+              characters: <?= json_encode($txt['hand_characters']) ?>,
+              spells:     <?= json_encode($txt['hand_spells']) ?>,
+              permanents: <?= json_encode($txt['hand_permanents']) ?>,
+              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
+          };
+        </script>
         <?php endif; ?>
 
     <?php endif; ?>
