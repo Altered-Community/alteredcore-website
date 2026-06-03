@@ -462,6 +462,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'heroes') 
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote') {
+    header('Content-Type: application/json');
+    if (!csrfValid($_POST['csrf_token'] ?? '') || !$isLoggedIn) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $upvoteDeckId = trim($_POST['deck_id'] ?? '');
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $upvoteDeckId)) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $token = deckApiToken();
+    if (!$token) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $result = cacDeckApiUpvote($upvoteDeckId, $token);
+    if ($result === null) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    echo json_encode(['ok' => true, 'upvoteCount' => $result['upvoteCount'], 'hasUpvoted' => $result['hasUpvoted']]);
+    exit;
+}
+
 // aJAX proxy: public decks
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' && $publicDecksApiPath !== '') {
     header('Content-Type: application/json');
@@ -1477,12 +1502,22 @@ $showPublicTab = $publicDecksApiPath !== '';
         var legalityHtml = _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel);
 
         var viewCount   = deck.viewCount   != null ? parseInt(deck.viewCount,   10) : null;
-        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : null;
+        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : 0;
+        var hasUpvoted  = !!deck.hasUpvoted;
         var statsHtml = '';
-        if (viewCount !== null || upvoteCount !== null) {
+        if (viewCount !== null || isPublic !== false) {
             statsHtml = '<span class="d-flex align-items-center gap-3" style="color:rgba(255,255,255,.6);font-size:.78rem">';
-            if (viewCount   !== null) statsHtml += '<span><i class="fa-solid fa-eye me-1"></i>' + viewCount   + '</span>';
-            if (upvoteCount !== null) statsHtml += '<span><i class="fa-solid fa-heart me-1"></i>' + upvoteCount + '</span>';
+            if (viewCount !== null) {
+                statsHtml += '<span><i class="fa-solid fa-eye me-1"></i>' + viewCount + '</span>';
+            }
+            if (isPublic !== false) {
+                statsHtml += '<button type="button" class="pub-deck-upvote border-0 bg-transparent p-0"'
+                    + ' style="color:inherit;font-size:inherit;line-height:1;cursor:pointer"'
+                    + ' data-deck-id="' + escHtml(deckId) + '"'
+                    + ' data-upvoted="' + (hasUpvoted ? '1' : '0') + '">'
+                    + '<i class="' + (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart me-1"></i>'
+                    + '<span class="js-upvote-count">' + upvoteCount + '</span></button>';
+            }
             statsHtml += '</span>';
         }
 
@@ -1525,12 +1560,38 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     if (pubGrid) {
         pubGrid.addEventListener('click', function(e) {
+            var upvoteBtn = e.target.closest('.pub-deck-upvote');
+            if (upvoteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!myIsLoggedIn) {
+                    location.href = baseUrl + '/pages/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+                    return;
+                }
+                if (upvoteBtn.disabled) return;
+                upvoteBtn.disabled = true;
+                var fd = new FormData();
+                fd.append('csrf_token', myCSRF);
+                fd.append('deck_id', upvoteBtn.dataset.deckId || '');
+                fetch(baseUrl + '/pages/decks?ajax=upvote', { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.ok) return;
+                        upvoteBtn.dataset.upvoted = data.hasUpvoted ? '1' : '0';
+                        var icon = upvoteBtn.querySelector('i');
+                        if (icon) icon.className = (data.hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart me-1';
+                        var countEl = upvoteBtn.querySelector('.js-upvote-count');
+                        if (countEl) countEl.textContent = data.upvoteCount;
+                    })
+                    .finally(function () { upvoteBtn.disabled = false; });
+                return;
+            }
             if (e.target.closest('a, button, .dropdown')) return;
             var card = e.target.closest('.pub-deck-item');
             if (card && card.dataset.deckId) {
                 location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(card.dataset.deckId);
             }
-        });
+        }, true);
     }
 
     function filterPublic() {
