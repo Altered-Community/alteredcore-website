@@ -479,6 +479,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
     $pubHero = $_GET['hero'] ?? '';
     if (!preg_match('/^[A-Z0-9_]+$/', $pubHero)) $pubHero = '';
+    $pubQ = trim($_GET['q'] ?? '');
+    if (mb_strlen($pubQ) > 100) $pubQ = mb_substr($pubQ, 0, 100);
 
     $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
     if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
@@ -489,17 +491,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
         $token = deckApiToken();
         if ($token) $headers[] = 'Authorization: Bearer ' . $token;
     }
-    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
-    $ch = curl_init($pubUrl);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
-    $pubResp = curl_exec($ch);
-    $pubCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($pubCode >= 200 && $pubCode < 300 && $pubResp) {
-        echo $pubResp;
+
+    $fetchPublicDecks = function (array $params) use ($publicDecksApiPath, $pubOrder, $pubDir, $headers): ?array {
+        $url = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($params) . '&order[' . $pubOrder . ']=' . $pubDir;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code < 200 || $code >= 300 || !$resp) {
+            return null;
+        }
+        $data = json_decode($resp, true);
+        return is_array($data) ? $data : null;
+    };
+
+    // Decks API has no name filter; scan public listings when the user searches by name.
+    if ($pubQ !== '') {
+        $scanParams = $apiParams;
+        $scanParams['itemsPerPage'] = 100;
+        $scanParams['page'] = 1;
+        $allMembers = [];
+        $lastApiPage = 1;
+        for ($scanPage = 1; $scanPage <= $lastApiPage && $scanPage <= 20; $scanPage++) {
+            $scanParams['page'] = $scanPage;
+            $pageData = $fetchPublicDecks($scanParams);
+            if ($pageData === null) {
+                http_response_code(502);
+                echo json_encode(['error' => sprintf($txt['err_api'], 502)]);
+                exit;
+            }
+            $chunk = $pageData['member'] ?? [];
+            if (is_array($chunk)) {
+                $allMembers = array_merge($allMembers, $chunk);
+            }
+            $lastApiPage = max(1, (int)($pageData['lastPage'] ?? 1));
+        }
+        $filtered = array_values(array_filter($allMembers, static function (array $deck) use ($pubQ): bool {
+            return stripos((string)($deck['name'] ?? ''), $pubQ) !== false;
+        }));
+        usort($filtered, static function (array $a, array $b) use ($pubOrder, $pubDir): int {
+            $va = $a[$pubOrder] ?? '';
+            $vb = $b[$pubOrder] ?? '';
+            $r  = $pubOrder === 'name' ? strcasecmp((string)$va, (string)$vb) : strcmp((string)$va, (string)$vb);
+            return $pubDir === 'desc' ? -$r : $r;
+        });
+        $perPage     = 21;
+        $total       = count($filtered);
+        $lastPageOut = max(1, (int)ceil($total / $perPage));
+        $pubPage     = min($pubPage, $lastPageOut);
+        $slice       = array_slice($filtered, ($pubPage - 1) * $perPage, $perPage);
+        echo json_encode([
+            'member'       => $slice,
+            'totalItems'   => $total,
+            'currentPage'  => $pubPage,
+            'lastPage'     => $lastPageOut,
+            'nextPage'     => $pubPage < $lastPageOut ? $pubPage + 1 : null,
+            'previousPage' => $pubPage > 1 ? $pubPage - 1 : null,
+        ]);
+        exit;
+    }
+
+    $pageData = $fetchPublicDecks($apiParams);
+    if ($pageData !== null) {
+        echo json_encode($pageData);
     } else {
-        http_response_code($pubCode ?: 500);
-        echo json_encode(['error' => sprintf($txt['err_api'], $pubCode)]);
+        http_response_code(502);
+        echo json_encode(['error' => sprintf($txt['err_api'], 502)]);
     }
     exit;
 }
@@ -1559,6 +1621,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (pubFormat)  fetchUrl += '&format='  + encodeURIComponent(pubFormat);
         if (pubFaction) fetchUrl += '&faction=' + encodeURIComponent(pubFaction);
         if (pubHero)    fetchUrl += '&hero='    + encodeURIComponent(pubHero);
+        var pubQ = pubSearch ? pubSearch.value.trim() : '';
+        if (pubQ) fetchUrl += '&q=' + encodeURIComponent(pubQ);
         fetch(fetchUrl)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1566,11 +1630,15 @@ $showPublicTab = $publicDecksApiPath !== '';
                 pubLoading.style.display = 'none';
                 if (data.error) { pubError.innerHTML = apiErrorHtml(data.error); pubError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
-                if (!decks.length) { pubEmpty.style.display = ''; return; }
+                if (!decks.length) {
+                    if (pubQ) pubNoMatch.style.display = '';
+                    else pubEmpty.style.display = '';
+                    return;
+                }
                 decks.forEach(function (deck) { pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck)); });
                 pubAllItems = Array.from(pubGrid.querySelectorAll('.pub-deck-item'));
-                filterPublic();
-                var total = data.totalItems ? Math.ceil(data.totalItems / 21) : 1;
+                if (!pubQ) filterPublic();
+                var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
                 renderPagination(p, total);
                 if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })
@@ -1581,7 +1649,13 @@ $showPublicTab = $publicDecksApiPath !== '';
             });
     }
 
-    if (pubSearch) pubSearch.addEventListener('input', filterPublic);
+    var pubSearchTimer;
+    if (pubSearch) {
+        pubSearch.addEventListener('input', function () {
+            clearTimeout(pubSearchTimer);
+            pubSearchTimer = setTimeout(function () { loadPublicDecks(1); }, 350);
+        });
+    }
 
     document.querySelectorAll('[data-pub-format]').forEach(function (btn) {
         btn.addEventListener('click', function () {
