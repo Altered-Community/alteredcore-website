@@ -995,6 +995,15 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             openModal(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
         });
     });
+    var handGrid = document.getElementById('hand-cards');
+    if (handGrid) {
+        handGrid.addEventListener('click', function (e) {
+            var w = e.target.closest('.deck-card-wrap');
+            if (!w || !handGrid.contains(w)) return;
+            var srcImg = w.querySelector('img');
+            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
+        });
+    }
     modal.addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 }());
