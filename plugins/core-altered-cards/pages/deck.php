@@ -1043,6 +1043,93 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 })();
 </script>
 
+<!-- Starting hand tester -->
+<script>
+(function () {
+    var grid    = document.getElementById('hand-cards');
+    var summary = document.getElementById('hand-summary');
+    var drawBtn = document.getElementById('hand-draw-btn');
+    var tabBtn  = document.getElementById('deck-view-hand');
+    if (!grid || typeof handDeckCards === 'undefined') return;
+
+    var HAND_SIZE = 6;
+    var drawn = false;
+
+    function buildPool() {
+        // Each card is repeated qty times; the same object reference is pushed
+        // multiple times — fine as long as makeCard stays read-only.
+        var pool = [];
+        handDeckCards.forEach(function (c) {
+            for (var i = 0; i < c.qty; i++) pool.push(c);
+        });
+        return pool;
+    }
+    function shuffle(arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+        }
+        return arr;
+    }
+    function makeCard(card, index) {
+        var wrap = document.createElement('div');
+        wrap.className = 'deck-card-wrap hand-card-anim';
+        wrap.style.animationDelay = (index * 45) + 'ms';
+        wrap.dataset.ref    = card.ref;
+        wrap.dataset.unique = card.unique ? '1' : '0';
+        wrap.dataset.lang   = handLang;
+        var inner;
+        if (card.unique) {
+            inner = document.createElement('altered-card');
+            inner.setAttribute('ref', card.ref);
+            inner.setAttribute('locale', handLang);
+        } else {
+            inner = document.createElement('img');
+            inner.className = 'deck-card-img';
+            inner.src = card.img;
+            inner.alt = card.name || card.ref;
+            inner.loading = 'lazy';
+        }
+        wrap.appendChild(inner);
+        return wrap;
+    }
+    function renderSummary(hand) {
+        var counts = { CHARACTER: 0, SPELL: 0, OTHER: 0 };
+        var costTotal = 0;
+        hand.forEach(function (c) {
+            if (c.type === 'CHARACTER') counts.CHARACTER++;
+            else if (c.type === 'SPELL') counts.SPELL++;
+            else counts.OTHER++;
+            costTotal += c.mainCost;
+        });
+        var avg = hand.length ? (costTotal / hand.length).toFixed(1) : '0.0';
+        summary.innerHTML =
+            '<span class="hand-stat">' + handTxt.characters + ' <b>' + counts.CHARACTER + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.spells + ' <b>' + counts.SPELL + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.permanents + ' <b>' + counts.OTHER + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.avgCost + ' <b>' + avg + '</b></span>';
+    }
+    function draw() {
+        grid.innerHTML = '';
+        var pool = shuffle(buildPool());
+        if (!pool.length) {
+            summary.innerHTML = '';
+            grid.innerHTML = '<p class="text-muted" style="font-size:.9rem;margin:0">' + handTxt.empty + '</p>';
+            drawn = true;
+            return;
+        }
+        var hand = pool.slice(0, Math.min(HAND_SIZE, pool.length));
+        hand.forEach(function (c, i) { grid.appendChild(makeCard(c, i)); });
+        renderSummary(hand);
+        drawn = true;
+    }
+
+    if (drawBtn) drawBtn.addEventListener('click', draw);
+    // Lazy first draw on tab open; the view reveal itself is handled by the view-toggle IIFE above.
+    if (tabBtn)  tabBtn.addEventListener('click', function () { if (!drawn) draw(); });
+}());
+</script>
+
 <!-- Share -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
