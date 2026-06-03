@@ -481,7 +481,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[A-Z0-9_]+$/', $pubHero)) $pubHero = '';
 
     $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
-    if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
     if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
     if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
     $headers = ['Accept: application/json'];
@@ -489,17 +488,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
         $token = deckApiToken();
         if ($token) $headers[] = 'Authorization: Bearer ' . $token;
     }
-    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
-    $ch = curl_init($pubUrl);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
-    $pubResp = curl_exec($ch);
-    $pubCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($pubCode >= 200 && $pubCode < 300 && $pubResp) {
-        echo $pubResp;
+
+    $fetchPublicDecks = function (array $params) use ($publicDecksApiPath, $pubOrder, $pubDir, $headers): ?array {
+        $url = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($params) . '&order[' . $pubOrder . ']=' . $pubDir;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code < 200 || $code >= 300 || !$resp) {
+            return null;
+        }
+        $data = json_decode($resp, true);
+        return is_array($data) ? $data : null;
+    };
+
+    // /api/decks/public ignores format; scan listings and filter by deck format in the proxy.
+    if ($pubFormat !== '') {
+        $pubFormatNorm = strtolower($pubFormat);
+        $scanParams = $apiParams;
+        unset($scanParams['page']);
+        $scanParams['itemsPerPage'] = 100;
+        $scanParams['page'] = 1;
+        $allMembers = [];
+        $lastApiPage = 1;
+        for ($scanPage = 1; $scanPage <= $lastApiPage && $scanPage <= 20; $scanPage++) {
+            $scanParams['page'] = $scanPage;
+            $pageData = $fetchPublicDecks($scanParams);
+            if ($pageData === null) {
+                http_response_code(502);
+                echo json_encode(['error' => sprintf($txt['err_api'], 502)]);
+                exit;
+            }
+            $chunk = $pageData['member'] ?? [];
+            if (is_array($chunk)) {
+                $allMembers = array_merge($allMembers, $chunk);
+            }
+            $lastApiPage = max(1, (int)($pageData['lastPage'] ?? 1));
+        }
+        $filtered = array_values(array_filter($allMembers, static function (array $deck) use ($pubFormatNorm): bool {
+            return strtolower((string)($deck['format'] ?? '')) === $pubFormatNorm;
+        }));
+        usort($filtered, static function (array $a, array $b) use ($pubOrder, $pubDir): int {
+            $va = $a[$pubOrder] ?? '';
+            $vb = $b[$pubOrder] ?? '';
+            $r  = $pubOrder === 'name' ? strcasecmp((string)$va, (string)$vb) : strcmp((string)$va, (string)$vb);
+            return $pubDir === 'desc' ? -$r : $r;
+        });
+        $perPage     = 21;
+        $total       = count($filtered);
+        $lastPageOut = max(1, (int)ceil($total / $perPage));
+        $pubPage     = min($pubPage, $lastPageOut);
+        $slice       = array_slice($filtered, ($pubPage - 1) * $perPage, $perPage);
+        echo json_encode([
+            'member'       => $slice,
+            'totalItems'   => $total,
+            'currentPage'  => $pubPage,
+            'lastPage'     => $lastPageOut,
+            'nextPage'     => $pubPage < $lastPageOut ? $pubPage + 1 : null,
+            'previousPage' => $pubPage > 1 ? $pubPage - 1 : null,
+        ]);
+        exit;
+    }
+
+    $pageData = $fetchPublicDecks($apiParams);
+    if ($pageData !== null) {
+        echo json_encode($pageData);
     } else {
-        http_response_code($pubCode ?: 500);
-        echo json_encode(['error' => sprintf($txt['err_api'], $pubCode)]);
+        http_response_code(502);
+        echo json_encode(['error' => sprintf($txt['err_api'], 502)]);
     }
     exit;
 }
@@ -1531,11 +1592,12 @@ $showPublicTab = $publicDecksApiPath !== '';
     }
 
     function filterPublic() {
+        // Name search only — format is filtered server-side when pubFormat is set.
         var q = pubSearch ? pubSearch.value.trim().toLowerCase() : '';
+        if (!q) return;
         var visible = 0;
         pubAllItems.forEach(function (el) {
-            var show = (!q         || (el.dataset.name   || '').includes(q))
-                    && (!pubFormat || el.dataset.format  === pubFormat);
+            var show = (el.dataset.name || '').includes(q);
             el.style.display = show ? '' : 'none';
             if (show) visible++;
         });
@@ -1566,11 +1628,15 @@ $showPublicTab = $publicDecksApiPath !== '';
                 pubLoading.style.display = 'none';
                 if (data.error) { pubError.innerHTML = apiErrorHtml(data.error); pubError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
-                if (!decks.length) { pubEmpty.style.display = ''; return; }
+                if (!decks.length) {
+                    if (pubFormat) pubNoMatch.style.display = '';
+                    else pubEmpty.style.display = '';
+                    return;
+                }
                 decks.forEach(function (deck) { pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck)); });
                 pubAllItems = Array.from(pubGrid.querySelectorAll('.pub-deck-item'));
                 filterPublic();
-                var total = data.totalItems ? Math.ceil(data.totalItems / 21) : 1;
+                var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
                 renderPagination(p, total);
                 if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })
