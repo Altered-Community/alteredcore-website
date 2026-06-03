@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config.php';
 // Leave empty to hide the Public tab entirely.
 $publicDecksApiPath = '/api/decks/public';
 
+$contestDecksAll = cacLoadContestDecksFromJsonFile(__DIR__ . '/../data/starter-deck-contest-collection.json');
+
 // community deckbuilders (from DB)
 $_db = getDB();
 $_cbRows = $_db->query(q(
@@ -37,6 +39,7 @@ $txt = [
         'section_title'   => 'Decks',
         'tab_my'          => 'My Decks',
         'tab_public'      => 'Community',
+        'tab_contest'     => 'Starter Deck Contest',
         'create_btn'      => 'New deck',
         'import_btn'      => 'Import a deck',
         'login_msg'       => 'Sign in to access your decks.',
@@ -100,6 +103,8 @@ $txt = [
         'community_btn'         => 'View deckbuilders',
         'community_modal_title' => 'Community deckbuilders',
         'community_visit'       => 'Visit',
+        'filter_curated'        => 'Starter Deck Contest Winners',
+        'filter_curated_collection' => 'Starter Deck Contest Entries',
         'import_modal_title'    => 'Import a deck',
         'import_tab_list'       => 'From decklist',
         'import_tab_gg'         => 'From Altered.gg',
@@ -136,6 +141,7 @@ $txt = [
         'section_title'   => 'Decks',
         'tab_my'          => 'Mes decks',
         'tab_public'      => 'Communauté',
+        'tab_contest'     => 'Concours deck de démarrage',
         'create_btn'      => 'Nouveau deck',
         'import_btn'      => 'Importer un deck',
         'login_msg'       => 'Connectez-vous pour accéder à vos decks.',
@@ -199,6 +205,8 @@ $txt = [
         'community_btn'         => 'Voir les deckbuilders',
         'community_modal_title' => 'Deckbuilders communautaires',
         'community_visit'       => 'Visiter',
+        'filter_curated'        => 'Gagnants du concours de deck de démarrage',
+        'filter_curated_collection' => 'Decklists du concours de deck de démarrage',
         'import_modal_title'    => 'Importer un deck',
         'import_tab_list'       => 'Depuis une decklist',
         'import_tab_gg'         => 'Depuis Altered.gg',
@@ -621,6 +629,10 @@ $showPublicTab = $publicDecksApiPath !== '';
             <i class="fa-solid fa-globe"></i>
             <span><?= h($txt['tab_public']) ?></span>
         </button>
+        <button class="decks-tab" data-tab="contest">
+            <i class="fa-solid fa-trophy"></i>
+            <span><?= h($txt['tab_contest']) ?></span>
+        </button>
     </div>
     <?php else: ?>
     <div class="mb-4"></div>
@@ -834,6 +846,57 @@ $showPublicTab = $publicDecksApiPath !== '';
     </div><!-- /#tab-public -->
     <?php endif; ?>
 
+    <!-- Starter Deck Contest tab (JSON snapshot, no Decks API) -->
+    <div id="tab-contest" class="decks-tab-pane" style="display:none">
+
+        <div class="card-altered p-3 mb-4">
+            <div class="filter-row mb-0">
+                <div class="deck-search-wrap">
+                    <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
+                    <input type="text" id="contest-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
+                           class="form-control form-control-sm" style="width:220px" autocomplete="off">
+                </div>
+                <button type="button" class="deck-filter-toggle d-lg-none ms-auto" aria-expanded="false">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="deck-filter-collapsible">
+                <div class="filter-row filter-row--scroll mb-2 mt-2">
+                    <button type="button" class="filter-toggle active" data-contest-set="collection" title="<?= h($txt['filter_curated_collection']) ?>">
+                        <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['filter_curated_collection']) ?>
+                    </button>
+                    <button type="button" class="filter-toggle" data-contest-set="winners" title="<?= h($txt['filter_curated']) ?>">
+                        <i class="fa-solid fa-star me-1"></i><?= h($txt['filter_curated']) ?>
+                    </button>
+                </div>
+                <div class="filter-row filter-row--scroll mb-2">
+                    <?php $contestFmt = $formatsData['nuc'] ?? []; ?>
+                    <button type="button" class="filter-toggle active" style="cursor:default;pointer-events:none" aria-disabled="true">
+                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($contestFmt['color'] ?? '#5b8cef') ?>;flex-shrink:0;display:inline-block"></span>
+                        <?= h($contestFmt[$uiLang] ?? $contestFmt['en'] ?? 'Standard No Unique') ?>
+                    </button>
+                </div>
+                <div class="filter-row filter-row--scroll mb-2">
+                    <?php foreach ($factionsData as $fCode => $fData): ?>
+                    <button type="button" class="filter-toggle" data-contest-faction="<?= h($fCode) ?>">
+                        <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
+                        <?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <div class="filter-row mb-2">
+                    <span class="filter-label"><?= h($txt['lbl_hero']) ?></span>
+                    <select id="contest-hero" class="form-select form-select-sm" style="width:auto;max-width:260px">
+                        <option value=""><?= h($txt['hero_all']) ?></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="contest-grid" class="row g-3"></div>
+
+    </div><!-- /#tab-contest -->
+
 </div>
 
 <script>
@@ -842,6 +905,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     var pluginAssetsUrl = <?= json_encode($pluginAssetsUrl) ?>;
     var apiDebug        = <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>;
     var showPublic = <?= json_encode($showPublicTab) ?>;
+    var contestDecksAll = <?= json_encode($contestDecksAll, JSON_UNESCAPED_UNICODE) ?>;
     var txt = <?= json_encode([
         'prev'           => $txt['prev'],
         'next'           => $txt['next'],
@@ -904,6 +968,7 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     // tab switching
     var pubLoaded = false;
+    var contestRendered = false;
     document.querySelectorAll('.decks-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
             document.querySelectorAll('.decks-tab').forEach(function (b) { b.classList.remove('active'); });
@@ -914,6 +979,10 @@ $showPublicTab = $publicDecksApiPath !== '';
             if (btn.dataset.tab === 'public' && !pubLoaded) {
                 pubLoaded = true;
                 loadPublicDecks(1);
+            }
+            if (btn.dataset.tab === 'contest' && !contestRendered && typeof initContestTabView === 'function') {
+                contestRendered = true;
+                initContestTabView();
             }
         });
     });
@@ -1630,6 +1699,135 @@ $showPublicTab = $publicDecksApiPath !== '';
     if (<?= json_encode(!$isLoggedIn && $showPublicTab) ?>) {
         pubLoaded = true;
         loadPublicDecks(1);
+    }
+
+    var contestGrid       = document.getElementById('contest-grid');
+    var contestSearch     = document.getElementById('contest-deck-search');
+    var contestHeroSelect = document.getElementById('contest-hero');
+    var contestSet     = 'collection';
+    var contestFaction = '';
+    var contestHero    = '';
+
+    function contestHeroesFromDecks(decks, activeFaction) {
+        var seen = {};
+        var out  = [];
+        (decks || []).forEach(function (deck) {
+            var hero = deck.stats && deck.stats.hero;
+            if (!hero || !hero.reference) return;
+            var ref = hero.reference;
+            var m = ref.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
+            var fc = m ? m[1] : '';
+            if (activeFaction && fc !== activeFaction) return;
+            if (seen[ref]) return;
+            seen[ref] = true;
+            out.push({ reference: ref, name: hero.name || ref });
+        });
+        out.sort(function (a, b) {
+            return String(a.name || a.reference).localeCompare(String(b.name || b.reference), undefined, { sensitivity: 'base' });
+        });
+        return out;
+    }
+
+    function refreshContestHeroSelect() {
+        if (!contestHeroSelect) return;
+        var heroes = contestHeroesFromDecks(contestDecksForSet(), contestFaction);
+        populateHeroSelect(contestHeroSelect, heroes, '', txt.hero_all);
+        var stillValid = contestHero && heroes.some(function (h) { return h.reference === contestHero; });
+        if (!stillValid) {
+            contestHero = '';
+            contestHeroSelect.value = '';
+        } else {
+            contestHeroSelect.value = contestHero;
+        }
+    }
+
+    function contestDecksForSet() {
+        if (contestSet === 'winners') {
+            return contestDecksAll.filter(function (d) { return d.winner; });
+        }
+        return contestDecksAll.slice();
+    }
+
+    function filterContestDecks(decks) {
+        var q = contestSearch ? contestSearch.value.trim().toLowerCase() : '';
+        return decks.filter(function (deck) {
+            var name = (deck.name || '').toLowerCase();
+            var heroRef = (deck.stats && deck.stats.hero && deck.stats.hero.reference) ? deck.stats.hero.reference : '';
+            var factionCode = '';
+            var m = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
+            if (m) factionCode = m[1];
+            if (q && name.indexOf(q) < 0) return false;
+            if (contestFaction && factionCode !== contestFaction) return false;
+            if (contestHero && heroRef !== contestHero) return false;
+            return true;
+        });
+    }
+
+    function renderContestDecks() {
+        if (!contestGrid) return;
+        contestGrid.innerHTML = '';
+        var decks = filterContestDecks(contestDecksForSet());
+        decks.forEach(function (deck) {
+            contestGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck));
+        });
+    }
+
+    function initContestTabView() {
+        refreshContestHeroSelect();
+        renderContestDecks();
+    }
+
+    if (contestGrid) {
+        contestGrid.addEventListener('click', function(e) {
+            if (e.target.closest('a, button, .dropdown')) return;
+            var card = e.target.closest('.pub-deck-item');
+            if (card && card.dataset.deckId) {
+                location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(card.dataset.deckId);
+            }
+        });
+    }
+
+    if (contestSearch) {
+        contestSearch.addEventListener('input', function () {
+            renderContestDecks();
+        });
+    }
+
+    document.querySelectorAll('[data-contest-set]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var set = btn.dataset.contestSet || 'collection';
+            if (contestSet === set) return;
+            contestSet = set;
+            document.querySelectorAll('[data-contest-set]').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            refreshContestHeroSelect();
+            renderContestDecks();
+        });
+    });
+
+    document.querySelectorAll('[data-contest-faction]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var v = btn.dataset.contestFaction;
+            if (contestFaction === v) { contestFaction = ''; btn.classList.remove('active'); }
+            else {
+                document.querySelectorAll('[data-contest-faction]').forEach(function (b) { b.classList.remove('active'); });
+                contestFaction = v;
+                btn.classList.add('active');
+            }
+            contestHero = '';
+            if (contestHeroSelect) {
+                contestHeroSelect.value = '';
+            }
+            refreshContestHeroSelect();
+            renderContestDecks();
+        });
+    });
+
+    if (contestHeroSelect) {
+        contestHeroSelect.addEventListener('change', function () {
+            contestHero = contestHeroSelect.value;
+            renderContestDecks();
+        });
     }
 
 }());

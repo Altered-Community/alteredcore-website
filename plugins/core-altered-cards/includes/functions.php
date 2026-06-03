@@ -203,3 +203,30 @@ function collApiMultiRequest(string $apiUrl, array $reqs, int $userId): array {
     curl_multi_close($mh);
     return $results;
 }
+
+/**
+ * Starter deck contest entries from bundled JSON (no Decks API).
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function cacLoadContestDecksFromJsonFile(string $path): array
+{
+    $data = json_decode(file_get_contents($path), true);
+    $decks = [];
+    foreach ($data['decks'] as $entry) {
+        $stats = $entry['stats'];
+        $stats['totalCards'] = 39;
+        $decks[] = [
+            'id'       => $entry['id'],
+            'name'     => $entry['name'],
+            'winner'   => !empty($entry['winner']),
+            'format'   => 'nuc',
+            'isPublic' => true,
+            'isDraft'  => false,
+            'legal'    => true,
+            'stats'    => $stats,
+        ];
+    }
+
+    return $decks;
+}
