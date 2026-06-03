@@ -458,3 +458,34 @@
 .coll-card-primary { border-left: 3px solid var(--primary-400); }
 .coll-card-warning { border-left: 3px solid var(--bs-warning, #ffc107); }
 .coll-card-neutral { border-left: 3px solid var(--neutral-300); }
+
+/* ── Starting hand tester ─────────────────────────────────────────────── */
+.hand-test-toolbar { margin-bottom: 14px; }
+
+/* 6-card hand fits on one row on wide screens (overrides the 5-col .deck-cards-grid rule). */
+@media (min-width: 1200px) {
+    .hand-cards-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.hand-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--sand-200);
+    font-size: .85rem;
+    color: var(--neutral-600);
+}
+.hand-summary:empty { display: none; }
+.hand-summary .hand-stat b { color: var(--neutral-800); font-weight: 700; }
+
+@keyframes handCardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.hand-card-anim { animation: handCardIn .32s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hand-card-anim { animation: none; }
+}
