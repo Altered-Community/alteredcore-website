@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS {settings} (
+    `key`   VARCHAR(100) NOT NULL PRIMARY KEY,
+    `value` TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
