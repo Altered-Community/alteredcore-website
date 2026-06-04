@@ -109,9 +109,12 @@
         return '<div class="ho-opt">' + thumb + '<span class="ho-opt-l">' + esc(d.name) + ' <b>' + rar(d) + tail(d) + '</b></span></div>';
     }
     function itemHtml(d) {
-        // Selected tag: faded card image as background (uniques have no static image → plain tint).
-        var style = d.unique ? '' : ' style="background-image:linear-gradient(90deg,#fff 36%,rgba(255,255,255,.35)),url(' + esc(d.img) + ')"';
-        return '<div class="ho-item"' + style + '>' + esc(d.name) + ' ' + rar(d) + tail(d) + '</div>';
+        // Selected tag: faded card image as background. Uniques have no static image →
+        // a pale-gold gradient instead (opaque so it never shows tom-select's default tint).
+        var bg = d.unique
+            ? 'linear-gradient(90deg,#fff 30%,#f3e6c4)'
+            : 'linear-gradient(90deg,#fff 36%,rgba(255,255,255,.35)),url(' + esc(d.img) + ')';
+        return '<div class="ho-item" style="background-image:' + bg + '">' + esc(d.name) + ' ' + rar(d) + tail(d) + '</div>';
     }
     function optgroupHeader(d) { return '<div class="ho-optgroup-h">' + esc(d.label) + '</div>'; }
     function buildSelect(el, onChange) {
