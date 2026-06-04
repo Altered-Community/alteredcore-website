@@ -504,7 +504,16 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         ? 'background-image:linear-gradient(to right,' . $factionColor . ' 35%,' . $factionColor . '00 100%),url(' . h($heroImgUrl) . ');background-size:cover;background-position:left top;'
         : '';
     ?>
-    <div class="card-altered p-4 mb-4<?= $heroImgUrl ? ' deck-card-text-white' : '' ?>" style="<?= $hdrStyle ?>">
+    <div class="card-altered deck-hdr-banner p-4 mb-4<?= $heroImgUrl ? ' deck-card-text-white deck-hdr-banner--hero' : '' ?>" style="<?= $hdrStyle ?>"
+         <?php if ($heroRef && $heroImgUrl): ?>
+         data-ref="<?= h($heroRef) ?>"
+         data-unique="<?= _deck_is_unique($heroRef) ? '1' : '0' ?>"
+         data-lang="<?= h($uiLang) ?>"
+         data-img-src="<?= h(_deck_cdn_url($heroRef, $uiLang)) ?>"
+         role="button"
+         tabindex="0"
+         aria-label="<?= h($txt['detail_label']) ?>"
+         <?php endif; ?>>
         <div class="d-flex align-items-start flex-wrap gap-3 justify-content-between">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -940,6 +949,21 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         document.body.style.overflow = 'hidden';
     }
 
+    document.querySelectorAll('.deck-hdr-banner--hero').forEach(function (banner) {
+        function openHero() {
+            openModal(banner.dataset.ref, banner.dataset.unique === '1', banner.dataset.lang, banner.dataset.imgSrc || '');
+        }
+        banner.addEventListener('click', function (e) {
+            if (e.target.closest('.js-deck-illegal')) return;
+            openHero();
+        });
+        banner.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openHero();
+            }
+        });
+    });
     document.querySelectorAll('.deck-card-wrap').forEach(function (w) {
         w.addEventListener('click', function () {
             var srcImg = w.querySelector('img');

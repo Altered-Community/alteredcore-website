@@ -450,6 +450,18 @@
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }
 .deck-hdr-meta  { font-size: .85rem; color: rgba(255,255,255,.8); margin-top: 2px; }
 .deck-hdr-on-bg { color: rgba(255,255,255,.7); font-size: .875rem; }
+.deck-hdr-banner--hero { cursor: pointer; }
+.deck-hdr-banner--hero .deck-hdr-meta { transition: color .15s, text-decoration-color .15s; }
+.deck-hdr-banner--hero:hover .deck-hdr-meta {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, .75);
+}
+.deck-hdr-banner--hero:focus-visible {
+    outline: 2px solid var(--primary-400);
+    outline-offset: 2px;
+}
 .deck-badge-on-img { background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.2); color: #fff; }
 .deck-badge-no-img { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.12); color: #444; }
 
