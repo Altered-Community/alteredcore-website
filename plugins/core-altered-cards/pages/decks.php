@@ -1534,11 +1534,12 @@ $showPublicTab = $publicDecksApiPath !== '';
     }
 
     function filterPublic() {
+        // Name search only — format is filtered server-side via the deck API.
         var q = pubSearch ? pubSearch.value.trim().toLowerCase() : '';
+        if (!q) return;
         var visible = 0;
         pubAllItems.forEach(function (el) {
-            var show = (!q         || (el.dataset.name   || '').includes(q))
-                    && (!pubFormat || el.dataset.format  === pubFormat);
+            var show = (el.dataset.name || '').includes(q);
             el.style.display = show ? '' : 'none';
             if (show) visible++;
         });
@@ -1572,7 +1573,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                 if (data.error) { pubError.innerHTML = apiErrorHtml(data.error); pubError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
                 if (!decks.length) {
-                    if (pubQ) pubNoMatch.style.display = '';
+                    if (pubQ || pubFormat) pubNoMatch.style.display = '';
                     else pubEmpty.style.display = '';
                     return;
                 }
