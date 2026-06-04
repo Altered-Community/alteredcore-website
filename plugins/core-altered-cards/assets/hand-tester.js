@@ -313,6 +313,33 @@
 
     var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 720px)') : null;
     function isMobile() { return MOBILE_MQ ? MOBILE_MQ.matches : (window.innerWidth <= 720); }
+    var viewEl    = document.getElementById('deck-hand-view');
+    var toggleBtn = document.getElementById('pt-toggle-playground');
+    var playgroundEnabled = false;   // off by default: open on the hand-only view
+    // "simple" = hand-only view (no board/deck/discard/mana, tap = zoom). Forced on mobile,
+    // or when the user turns the playground off via the toggle.
+    function isSimple() { return isMobile() || !playgroundEnabled; }
+    function syncToggleButton() {
+        if (!toggleBtn) return;
+        toggleBtn.classList.toggle('active', playgroundEnabled);
+        toggleBtn.setAttribute('aria-pressed', playgroundEnabled ? 'true' : 'false');
+        var ic = toggleBtn.querySelector('i');
+        if (ic) ic.className = (playgroundEnabled ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off') + ' me-1';
+    }
+    function applySimpleMode() {
+        var simple = isSimple();
+        if (simple) {
+            // can't set mana in simple mode — flip any selected cards back to their front
+            state.hand.forEach(function (c) { if (c.el) c.el.classList.remove('pt-flipped'); });
+            state.manaSel = {};
+            updateCommitUI();
+        }
+        if (viewEl) viewEl.classList.toggle('pt-simple', simple);  // CSS transitions the playground collapse/expand
+        syncToggleButton();
+    }
+    if (MOBILE_MQ && MOBILE_MQ.addEventListener) MOBILE_MQ.addEventListener('change', applySimpleMode);
+    if (toggleBtn) toggleBtn.addEventListener('click', function () { playgroundEnabled = !playgroundEnabled; applySimpleMode(); });
+    applySimpleMode();
     function openZoom(card) {
         var img = card.el ? card.el.querySelector('img') : null;
         if (window.acOpenCardZoom) window.acOpenCardZoom(card.ref, !!card.unique, handLang, img ? img.src : (card.img || ''));
@@ -326,7 +353,7 @@
         if (!wrap || !handEl.contains(wrap)) return;
         var card = state.hand.filter(function (c) { return c.id === wrap.dataset.id; })[0];
         if (!card) return;
-        if (isMobile()) { openZoom(card); return; }   // mobile: tap = zoom (playground disabled)
+        if (isSimple()) { openZoom(card); return; }    // simple mode (mobile / playground off): tap = zoom
         toggleManaSelect(card);                        // desktop setup: flip-select (no-op in play phase)
     });
     if (commitBtn) commitBtn.addEventListener('click', commitInitialMana);
@@ -397,7 +424,7 @@
         }
         function onDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;   // left button only
-            if (isMobile() || state.phase !== 'play') return;          // desktop play-phase action only
+            if (isSimple() || state.phase !== 'play') return;          // desktop play-phase action only
             if (e.target.closest('.pt-loupe') || e.target.closest('.pt-tomana')) return;
             var el = e.target.closest('.pt-card');
             if (!el) return;

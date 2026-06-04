@@ -86,6 +86,7 @@ $txt = [
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Avg. hand cost',
         'pt_restart'        => 'Restart',
+        'pt_toggle_playground' => 'Game mode',
         'pt_setup_hint'     => 'Select 3 cards to set as mana',
         'pt_commit_mana'    => 'Put in mana',
         'pt_mana'           => 'Mana',
@@ -179,6 +180,7 @@ $txt = [
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Coût moyen en main',
         'pt_restart'        => 'Recommencer',
+        'pt_toggle_playground' => 'Mode jeu',
         'pt_setup_hint'     => 'Sélectionne 3 cartes à mettre en mana',
         'pt_commit_mana'    => 'Mettre en mana',
         'pt_mana'           => 'Mana',
@@ -823,9 +825,13 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
                     <i class="fa-solid fa-rotate-right me-1"></i><?= h($txt['pt_restart']) ?>
                 </button>
+                <button type="button" id="pt-toggle-playground" class="btn btn-sm pt-toggle" aria-pressed="false" title="<?= h($txt['pt_toggle_playground']) ?>">
+                    <i class="fa-solid fa-toggle-off me-1"></i><?= h($txt['pt_toggle_playground']) ?>
+                </button>
                 <span id="pt-phase-hint" class="pt-phase-hint"><?= h($txt['pt_setup_hint']) ?></span>
             </div>
 
+            <div class="pt-table-wrap">
             <div class="pt-table">
                 <div id="pt-board" class="pt-zone pt-board pt-dropzone" data-zone="board">
                     <div class="pt-zone-label"><?= h($txt['pt_board']) ?>
@@ -853,6 +859,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
 
             <div id="hand-cards" class="deck-cards-grid hand-cards-grid pt-dropzone" data-zone="hand"></div>

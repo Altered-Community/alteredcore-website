@@ -460,7 +460,12 @@
 .coll-card-neutral { border-left: 3px solid var(--neutral-300); }
 
 /* ── Starting hand tester ─────────────────────────────────────────────── */
-.hand-test-toolbar { margin-bottom: 14px; }
+.hand-test-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom: 14px; }
+/* playground toggle — green so it stays visible in light and dark themes */
+.pt-toggle{ border:1px solid #2f7d57; color:#2f7d57; background:transparent; }
+.pt-toggle:hover{ background:rgba(47,125,87,.14); color:#2f7d57; }
+.pt-toggle.active{ background:#2f7d57; border-color:#2f7d57; color:#fff; }
+.pt-toggle.active:hover{ background:#27684a; border-color:#27684a; color:#fff; }
 
 /* 6-card hand fits on one row on wide screens (overrides the 5-col .deck-cards-grid rule). */
 @media (min-width: 1200px) {
@@ -492,7 +497,14 @@
 
 /* ── Playtest sandbox ─────────────────────────────────────────────────── */
 .pt-phase-hint{font-size:.8rem;color:var(--neutral-600);margin-left:10px}
-.pt-table{display:flex;gap:12px;margin-bottom:14px}
+.pt-table{display:flex;gap:12px}
+/* playground collapse/expand: animate the height (grid-rows) so the hand glides
+   instead of jumping, plus a fade + upward drift ("back under the toolbar") */
+.pt-table-wrap{display:grid;grid-template-rows:1fr;opacity:1;margin-bottom:14px;overflow:hidden;transition:grid-template-rows .34s ease,opacity .26s ease,margin-bottom .34s ease}
+.pt-table-wrap > .pt-table{min-height:0;transition:transform .3s ease}
+#deck-hand-view.pt-simple .pt-table-wrap{grid-template-rows:0fr;opacity:0;margin-bottom:0}
+#deck-hand-view.pt-simple .pt-table-wrap > .pt-table{transform:translateY(-14px)}
+@media (prefers-reduced-motion: reduce){ .pt-table-wrap,.pt-table-wrap > .pt-table{transition:none} }
 .pt-zone{border:1px solid var(--sand-300);border-radius:10px;padding:10px;background:rgba(0,0,0,.02)}
 .pt-zone-label{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--neutral-500);margin-bottom:8px}
 .pt-board{flex:1 1 auto;min-height:220px;position:relative}
@@ -528,8 +540,9 @@
 
 @media (max-width:720px){
   /* Mobile: hand-only view — the playground (board/deck/discard/mana/commit) is disabled */
-  #deck-hand-view .pt-table,
+  #deck-hand-view .pt-table-wrap,
   #deck-hand-view .pt-hand-actions,
+  #pt-toggle-playground,
   #pt-phase-hint{ display:none !important; }
   /* fit all 6 cards on one line; they overlap to save space */
   #hand-cards.hand-cards-grid{ display:flex; flex-wrap:nowrap; justify-content:center; gap:0; overflow:visible; }
@@ -538,6 +551,11 @@
   /* tap on a card opens the zoom, so the per-card buttons are redundant */
   #hand-cards .pt-loupe, #hand-cards .pt-tomana{ display:none; }
 }
+/* Playground toggled off (desktop): hand-only view, tap = zoom */
+#deck-hand-view.pt-simple .pt-hand-actions,
+#deck-hand-view.pt-simple #pt-phase-hint{ display:none !important; }
+#deck-hand-view.pt-simple #hand-cards .pt-loupe,
+#deck-hand-view.pt-simple #hand-cards .pt-tomana{ display:none; }
 @media (prefers-reduced-motion: reduce){
   .pt-flip{transition:none}
   .pt-to-mana{animation:none;opacity:0}
