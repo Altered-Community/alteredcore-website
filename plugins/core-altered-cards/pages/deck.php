@@ -85,6 +85,24 @@ $txt = [
         'hand_spells'         => 'Spells',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Avg. hand cost',
+        'ho_stats'        => 'Opening-hand stats',
+        'ho_calc'         => 'Calculators',
+        'ho_deck'         => 'Deck',
+        'ho_drawn'        => 'Drawn',
+        'ho_slow'         => 'Slow start',          'ho_slow_sub'   => 'no playable card on day 1',
+        'ho_noearly'      => 'No early character',   'ho_noearly_sub'=> 'no character ≤3 mana',
+        'ho_tempo'        => 'Day-1 tempo',          'ho_tempo_sub'  => 'can play ≥2 cards on day 1',
+        'ho_double'       => 'Two characters T1',    'ho_double_sub' => 'can play ≥2 characters on day 1',
+        'ho_avg'          => 'Playable on day 1',    'ho_avg_sub'    => 'average, with 3 mana',
+        'ho_keep'         => 'Keepable hand',        'ho_keep_sub'   => '≥1 character ≤3 & ≥2 plays',
+        'ho_calc_card'    => 'Draw a key card',
+        'ho_calc_card_tip'=> 'Chance at least one copy of the chosen card(s) is in your opening hand.',
+        'ho_calc_combo'   => 'Draw a combo',
+        'ho_calc_combo_tip'=> 'Chance you have at least one of group A AND one of group B in your opening hand.',
+        'ho_pick'         => 'Pick cards…',
+        'ho_group_a'      => 'A', 'ho_group_b' => 'B',
+        'ho_in_hand'      => 'in opening hand',
+        'ho_variant'      => 'Display', 'ho_v1' => 'Text', 'ho_v2' => 'Image tags', 'ho_v3' => 'Thumbnails',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -163,6 +181,24 @@ $txt = [
         'hand_spells'         => 'Sorts',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Coût moyen en main',
+        'ho_stats'        => 'Stats de main de départ',
+        'ho_calc'         => 'Calculateurs',
+        'ho_deck'         => 'Deck',
+        'ho_drawn'        => 'Piochées',
+        'ho_slow'         => 'Départ lent',          'ho_slow_sub'   => 'aucune carte jouable au J1',
+        'ho_noearly'      => 'Pas de petit perso',   'ho_noearly_sub'=> 'aucun perso ≤3 mana',
+        'ho_tempo'        => 'Tempo J1',             'ho_tempo_sub'  => 'peut jouer ≥2 cartes au J1',
+        'ho_double'       => 'Double perso J1',      'ho_double_sub' => 'peut poser ≥2 persos au J1',
+        'ho_avg'          => 'Cartes jouables J1',   'ho_avg_sub'    => 'en moyenne, avec 3 mana',
+        'ho_keep'         => 'Main gardable',        'ho_keep_sub'   => '≥1 perso ≤3 & ≥2 plays',
+        'ho_calc_card'    => 'Avoir une carte clé',
+        'ho_calc_card_tip'=> 'Probabilité qu\'au moins 1 exemplaire des cartes choisies soit dans ta main de départ.',
+        'ho_calc_combo'   => 'Avoir un combo',
+        'ho_calc_combo_tip'=> 'Probabilité d\'avoir au moins 1 carte du groupe A ET 1 du groupe B en main de départ.',
+        'ho_pick'         => 'Choisir des cartes…',
+        'ho_group_a'      => 'A', 'ho_group_b' => 'B',
+        'ho_in_hand'      => 'en main de départ',
+        'ho_variant'      => 'Affichage', 'ho_v1' => 'Texte', 'ho_v2' => 'Tags image', 'ho_v3' => 'Vignettes',
     ],
 ][$uiLang] ?? [];
 
@@ -796,6 +832,37 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             </div>
             <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
             <div id="hand-summary" class="hand-summary"></div>
+            <div id="hand-odds" class="hand-odds">
+                <div class="ho-stats">
+                    <div class="ho-sec"><?= h($txt['ho_stats']) ?></div>
+                    <div id="ho-stats-grid" class="ho-grid"></div>
+                </div>
+                <div class="ho-calc">
+                    <div class="ho-sec"><?= h($txt['ho_calc']) ?></div>
+                    <div class="ho-calc-head">
+                        <span><?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
+                        <span><?= h($txt['ho_drawn']) ?> <input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
+                    </div>
+                    <div class="ho-variant" id="ho-variant">
+                        <button type="button" class="btn-toggle active" data-variant="1"><?= h($txt['ho_v1']) ?></button>
+                        <button type="button" class="btn-toggle" data-variant="2"><?= h($txt['ho_v2']) ?></button>
+                        <button type="button" class="btn-toggle" data-variant="3"><?= h($txt['ho_v3']) ?></button>
+                    </div>
+                    <div class="ho-calc-card">
+                        <div class="ho-calc-title"><?= h($txt['ho_calc_card']) ?>
+                            <i class="fa-solid fa-circle-info ho-tip" data-bs-toggle="tooltip" title="<?= h($txt['ho_calc_card_tip']) ?>"></i></div>
+                        <select id="ho-card-key" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select>
+                        <div class="ho-res" id="ho-card-res"></div>
+                    </div>
+                    <div class="ho-calc-card">
+                        <div class="ho-calc-title"><?= h($txt['ho_calc_combo']) ?>
+                            <i class="fa-solid fa-circle-info ho-tip" data-bs-toggle="tooltip" title="<?= h($txt['ho_calc_combo_tip']) ?>"></i></div>
+                        <div class="ho-ab"><span><?= h($txt['ho_group_a']) ?></span><select id="ho-combo-a" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                        <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ho-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                        <div class="ho-res" id="ho-combo-res"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         <script>
           var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
@@ -810,6 +877,38 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
           };
         </script>
+        <script>
+          // Deck cards grouped by name (+rarity) for the calculators' multiselect.
+          var handDeckGroups = <?= json_encode((function () use ($deck, $uiLang, $lang) {
+              $g = [];
+              foreach ($deck['cards'] as $c) {
+                  if (($c['cardTypeReference'] ?? '') === 'HERO') continue;
+                  $ref = $c['cardReference'] ?? '';
+                  $raw = $c['name'] ?? null;
+                  $name = is_array($raw) ? (($raw[$lang] ?? '') ?: ($raw['en'] ?? $ref)) : (($raw !== null && $raw !== '') ? $raw : $ref);
+                  $rp = explode('_', $ref);
+                  $rar = $rp[5][0] ?? '';
+                  $key = $name . '|' . $rar;
+                  if (!isset($g[$key])) $g[$key] = ['key' => $key, 'name' => $name, 'rarity' => $rar, 'qty' => 0, 'img' => _deck_cdn_url($ref, $uiLang)];
+                  $g[$key]['qty'] += (int)($c['quantity'] ?? 1);
+              }
+              return array_values($g);
+          })(), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
+          var handOddsTxt = {
+              slow:[<?= json_encode($txt['ho_slow']) ?>,<?= json_encode($txt['ho_slow_sub']) ?>],
+              noearly:[<?= json_encode($txt['ho_noearly']) ?>,<?= json_encode($txt['ho_noearly_sub']) ?>],
+              tempo:[<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>],
+              double:[<?= json_encode($txt['ho_double']) ?>,<?= json_encode($txt['ho_double_sub']) ?>],
+              avg:[<?= json_encode($txt['ho_avg']) ?>,<?= json_encode($txt['ho_avg_sub']) ?>],
+              keep:[<?= json_encode($txt['ho_keep']) ?>,<?= json_encode($txt['ho_keep_sub']) ?>],
+              inHand: <?= json_encode($txt['ho_in_hand']) ?>
+          };
+        </script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds-math.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds.js"></script>
         <?php endif; ?>
 
     <?php endif; ?>
