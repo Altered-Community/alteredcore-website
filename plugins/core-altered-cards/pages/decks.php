@@ -479,11 +479,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
     $pubHero = $_GET['hero'] ?? '';
     if (!preg_match('/^[A-Z0-9_]+$/', $pubHero)) $pubHero = '';
+    $pubQ = trim($_GET['q'] ?? '');
+    if (mb_strlen($pubQ) > 100) $pubQ = mb_substr($pubQ, 0, 100);
 
     $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
     if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
     if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
     if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
+    if ($pubQ       !== '') $apiParams['name']    = $pubQ;
     $headers = ['Accept: application/json'];
     if ($isLoggedIn) {
         $token = deckApiToken();
@@ -1559,6 +1562,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (pubFormat)  fetchUrl += '&format='  + encodeURIComponent(pubFormat);
         if (pubFaction) fetchUrl += '&faction=' + encodeURIComponent(pubFaction);
         if (pubHero)    fetchUrl += '&hero='    + encodeURIComponent(pubHero);
+        var pubQ = pubSearch ? pubSearch.value.trim() : '';
+        if (pubQ) fetchUrl += '&q=' + encodeURIComponent(pubQ);
         fetch(fetchUrl)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1566,11 +1571,15 @@ $showPublicTab = $publicDecksApiPath !== '';
                 pubLoading.style.display = 'none';
                 if (data.error) { pubError.innerHTML = apiErrorHtml(data.error); pubError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
-                if (!decks.length) { pubEmpty.style.display = ''; return; }
+                if (!decks.length) {
+                    if (pubQ) pubNoMatch.style.display = '';
+                    else pubEmpty.style.display = '';
+                    return;
+                }
                 decks.forEach(function (deck) { pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck)); });
                 pubAllItems = Array.from(pubGrid.querySelectorAll('.pub-deck-item'));
-                filterPublic();
-                var total = data.totalItems ? Math.ceil(data.totalItems / 21) : 1;
+                if (!pubQ) filterPublic();
+                var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
                 renderPagination(p, total);
                 if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })
@@ -1581,7 +1590,13 @@ $showPublicTab = $publicDecksApiPath !== '';
             });
     }
 
-    if (pubSearch) pubSearch.addEventListener('input', filterPublic);
+    var pubSearchTimer;
+    if (pubSearch) {
+        pubSearch.addEventListener('input', function () {
+            clearTimeout(pubSearchTimer);
+            pubSearchTimer = setTimeout(function () { loadPublicDecks(1); }, 350);
+        });
+    }
 
     document.querySelectorAll('[data-pub-format]').forEach(function (btn) {
         btn.addEventListener('click', function () {
