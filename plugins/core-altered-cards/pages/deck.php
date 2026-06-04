@@ -319,18 +319,43 @@ if ($isLoggedIn && $deck && $deckId && !empty($token)) {
     }
 }
 
-$typesData  = loadAlteredData('types');
-$powersData = loadAlteredData('powers');
-$txt['types'] = array_map(fn($t) => $t[$uiLang] ?? $t['en'], $typesData);
+$typesData       = loadAlteredData('types');
+$typesMergedData = loadAlteredData('types_merged');
+$powersData      = loadAlteredData('powers');
 
-$typeOrder  = array_keys($typesData);
+// Display-only type list: hide types absorbed by a merge group (same as cards filter)
+$_mergedKeys = array_keys($typesMergedData);
+$_absorbedTypes = [];
+foreach ($typesMergedData as $_mk => $_mvs) {
+    foreach ($_mvs as $_mv) {
+        if (!in_array($_mv, $_mergedKeys, true)) {
+            $_absorbedTypes[$_mv] = true;
+        }
+    }
+}
+$typesDataDisplay = array_diff_key($typesData, $_absorbedTypes);
+$txt['types'] = array_map(fn($t) => $t[$uiLang] ?? $t['en'], $typesDataDisplay);
+
+$typeOrder  = array_keys($typesDataDisplay);
 $typeOrder[] = 'OTHER'; // catch-all for cards with unrecognized types
 $txt['types']['OTHER'] = $uiLang === 'fr' ? 'Autre' : 'Other';
+
+$typeToDisplay = [];
+foreach (array_keys($typesData) as $_t) {
+    $typeToDisplay[$_t] = $_t;
+}
+foreach ($typesMergedData as $_display => $_members) {
+    foreach ($_members as $_member) {
+        $typeToDisplay[$_member] = $_display;
+    }
+}
+
 $cardGroups = array_fill_keys($typeOrder, []);
 
 if ($deck && !empty($deck['cards'])) {
     foreach ($deck['cards'] as $card) {
-        $type = $card['cardTypeReference'] ?? 'OTHER';
+        $rawType = $card['cardTypeReference'] ?? 'OTHER';
+        $type = $typeToDisplay[$rawType] ?? 'OTHER';
         $cardGroups[$type][] = $card;
     }
     foreach ($cardGroups as &$group) {
@@ -348,7 +373,8 @@ $statsPowerCount  = 0;
 
 if ($deck && !empty($deck['cards'])) {
     foreach ($deck['cards'] as $card) {
-        $type = $card['cardTypeReference'] ?? 'OTHER';
+        $rawType = $card['cardTypeReference'] ?? 'OTHER';
+        $type = $typeToDisplay[$rawType] ?? 'OTHER';
         $qty  = (int)($card['quantity'] ?? 1);
         if ($type === 'HERO') continue;
         $mainCost   = min((int)($card['mainCost']   ?? 0), 7);
