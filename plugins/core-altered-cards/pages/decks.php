@@ -1016,11 +1016,10 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (legal === true)
             return '<span class="badge" style="background:rgba(34,197,94,.85);color:#fff;font-size:.72rem"><i class="fa-solid fa-check me-1"></i>' + escHtml(txt.legal) + '</span>';
         if (legal === false && hasActualErrors)
-            return '<button type="button" class="badge border-0 js-deck-illegal"'
+            return '<button type="button" class="badge border-0 bg-danger js-deck-illegal"'
                 + ' data-errors="' + escHtml(JSON.stringify(formatErrors)) + '"'
                 + ' data-legality="' + escHtml(JSON.stringify(legalityDetail)) + '"'
-                + ' data-format="' + escHtml(fmtLabel) + '"'
-                + ' style="background:rgba(239,68,68,.85);color:#fff;font-size:.72rem;cursor:pointer">'
+                + ' data-format="' + escHtml(fmtLabel) + '">'
                 + '<i class="fa-solid fa-triangle-exclamation me-1"></i>' + escHtml(txt.illegal) + '</button>';
         return '';
     }
@@ -1275,6 +1274,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.js-deck-illegal');
         if (!btn) return;
+        e.stopPropagation();
         var errors = [], detail = {};
         try { errors = JSON.parse(btn.dataset.errors || '[]'); } catch(_) {}
         try { detail = JSON.parse(btn.dataset.legality || '{}'); } catch(_) {}

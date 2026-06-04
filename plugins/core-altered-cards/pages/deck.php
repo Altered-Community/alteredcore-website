@@ -555,8 +555,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     <button type="button" class="badge border-0 bg-danger js-deck-illegal"
                             data-errors="<?= h(json_encode($_fmtErrors)) ?>"
                             data-legality="<?= h(json_encode($_legalDetail)) ?>"
-                            data-format="<?= h($fmtLabel) ?>"
-                            style="cursor:pointer">
+                            data-format="<?= h($fmtLabel) ?>">
                         <i class="fa-solid fa-triangle-exclamation me-1"></i><?= h($txt['illegal']) ?>
                     </button>
                     <?php endif; ?>
@@ -810,6 +809,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.js-deck-illegal');
         if (!btn) return;
+        e.stopPropagation();
         var errors = [], detail = {};
         try { errors = JSON.parse(btn.dataset.errors || '[]'); } catch(_) {}
         try { detail = JSON.parse(btn.dataset.legality || '{}'); } catch(_) {}

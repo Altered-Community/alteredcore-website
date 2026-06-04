@@ -462,6 +462,18 @@
     outline: 2px solid var(--primary-400);
     outline-offset: 2px;
 }
+.js-deck-illegal {
+    cursor: pointer;
+    font-size: .72rem;
+    transition: transform .15s, box-shadow .15s, filter .15s;
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .4), 0 0 0 3px rgba(239, 68, 68, .45), 0 2px 8px rgba(0, 0, 0, .22);
+}
+.js-deck-illegal:hover {
+    transform: scale(1.06);
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .65), 0 0 0 3px rgba(239, 68, 68, .65), 0 2px 12px rgba(0, 0, 0, .32);
+}
 .deck-badge-on-img { background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.2); color: #fff; }
 .deck-badge-no-img { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.12); color: #444; }
 
