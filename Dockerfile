@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
         libwebp-dev \
         libfreetype6-dev \
         libonig-dev \
+        libzip-dev \
     && docker-php-ext-configure gd \
         --with-jpeg \
         --with-webp \
@@ -15,6 +16,7 @@ RUN apt-get update && apt-get install -y \
         gd \
         mbstring \
         opcache \
+        zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 

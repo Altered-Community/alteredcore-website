@@ -1,15 +1,22 @@
 <?php
 // Central page router — handles both core pages and plugin pages.
 
-// Error logging to logs/php_errors.log (catches fatal errors swallowed by ob_start)
+// Error logging to logs/php_errors.log (catches fatal errors swallowed by ob_start).
+// The directory must exist first: if it doesn't, both ini_set('error_log') and the
+// shutdown handler's error_log() call silently no-op, so fatal errors (e.g. a blank
+// page from a swallowed fatal) leave no trace anywhere. Create it up front.
+$_logFile = dirname(__DIR__) . '/logs/php_errors.log';
+if (!is_dir(dirname($_logFile))) {
+    @mkdir(dirname($_logFile), 0775, true);
+}
 ini_set('log_errors', '1');
-ini_set('error_log', dirname(__DIR__) . '/logs/php_errors.log');
-register_shutdown_function(function () {
+ini_set('error_log', $_logFile);
+register_shutdown_function(function () use ($_logFile) {
     $e = error_get_last();
     if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
         $line = date('[Y-m-d H:i:s]') . ' FATAL ' . $e['type'] . ': ' . $e['message']
               . ' in ' . $e['file'] . ' on line ' . $e['line'] . PHP_EOL;
-        error_log($line, 3, dirname(__DIR__) . '/logs/php_errors.log');
+        error_log($line, 3, $_logFile);
         if (ob_get_level() > 0) ob_end_clean();
     }
 });
