@@ -235,11 +235,12 @@ function getDeckStartingHandPool(array $cards, string $lang): array
             ? (($rawName[$lang] ?? '') ?: ($rawName['en'] ?? $ref))
             : (($rawName !== null && $rawName !== '') ? $rawName : $ref);
         $out[] = [
-            'ref'      => $ref,
-            'name'     => $name,
-            'qty'      => (int)($card['quantity'] ?? 1),
-            'type'     => $type,
-            'mainCost' => (int)($card['mainCost'] ?? 0),
+            'ref'        => $ref,
+            'name'       => $name,
+            'qty'        => (int)($card['quantity'] ?? 1),
+            'type'       => $type,
+            'mainCost'   => (int)($card['mainCost'] ?? 0),
+            'recallCost' => (int)($card['recallCost'] ?? 0),
         ];
     }
     return $out;

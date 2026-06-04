@@ -40,7 +40,7 @@ function canPlayTwo(costs) {
   return n[0] >= 2 || (n[0] >= 1 && (n[1]+n[2]+n[3]) >= 1) || n[1] >= 2 || (n[1] >= 1 && n[2] >= 1);
 }
 function maxPlayable(costs) { const n=[0,0,0,0]; costs.forEach(c=>{if(c<=3)n[c]++;}); let cnt=n[0],b=3; const t1=Math.min(n[1],b);cnt+=t1;b-=t1; const t2=Math.min(n[2],Math.floor(b/2));cnt+=t2;b-=2*t2; const t3=Math.min(n[3],Math.floor(b/3));cnt+=t3; return cnt; }
-let total=0, slow=0, noChar=0, tempo=0, dbl=0, keep=0, avgSum=0;
+let total=0, slow=0, noChar=0, tempo=0, dbl=0, keep=0, avgSum=0, heavy=0, explosive=0, balanced=0;
 (function comb(start, chosen) {
   if (chosen.length === hs) {
     total++;
@@ -55,6 +55,10 @@ let total=0, slow=0, noChar=0, tempo=0, dbl=0, keep=0, avgSum=0;
     if (canPlayTwo(charCosts)) dbl++;
     if (charCheap >= 1 && t) keep++;
     avgSum += maxPlayable(costs);
+    const charCount = hand.filter(c => c.isCharacter).length;
+    if (costs.filter(c => c >= 4).length >= 3) heavy++;
+    if (costs.filter(c => c <= 2).length >= 3) explosive++;
+    if (charCount >= 1 && charCount <= hs - 1) balanced++;
     return;
   }
   for (let i = start; i < N; i++) comb(i + 1, chosen.concat(i));
@@ -65,6 +69,9 @@ near(got.tempo,       tempo/total,  'handStats.tempo vs brute force');
 near(got.doubleChar,  dbl/total,    'handStats.doubleChar vs brute force');
 near(got.keepable,    keep/total,   'handStats.keepable vs brute force');
 near(got.avgPlayable, avgSum/total, 'handStats.avgPlayable vs brute force');
+near(got.heavy,       heavy/total,     'handStats.heavy vs brute force');
+near(got.explosive,   explosive/total, 'handStats.explosive vs brute force');
+near(got.balanced,    balanced/total,  'handStats.balanced vs brute force');
 ok(got.deckSize === N, 'handStats.deckSize = N');
 
 console.log(`\n${pass} checks passed`);

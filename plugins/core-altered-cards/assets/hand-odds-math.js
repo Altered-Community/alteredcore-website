@@ -55,7 +55,7 @@
         var hs = Math.min(handSize, N);
         var denom = binom(N, hs);
 
-        var acc = { slowStart: 0, noEarlyChar: 0, tempo: 0, doubleChar: 0, keepable: 0, avgPlayable: 0 };
+        var acc = { slowStart: 0, noEarlyChar: 0, tempo: 0, doubleChar: 0, keepable: 0, avgPlayable: 0, heavy: 0, explosive: 0, balanced: 0 };
         var m = buckets.length;
         var counts = new Array(m).fill(0);
         (function rec(i, remaining, numBig) {
@@ -66,10 +66,12 @@
                 if (numBig === 0n) return;
                 var w = ratio(numBig, denom);
                 if (w <= 0) return;
-                var n = [0, 0, 0, 0], cn = [0, 0, 0, 0];
+                var n = [0, 0, 0, 0], cn = [0, 0, 0, 0], n4 = 0, charTotal = 0;
                 for (var b = 0; b < m; b++) {
                     var c = buckets[b].cost, k = counts[b];
                     if (c <= 3) { n[c] += k; if (buckets[b].isChar) cn[c] += k; }
+                    else n4 += k;
+                    if (buckets[b].isChar) charTotal += k;
                 }
                 var cheap = n[0] + n[1] + n[2] + n[3];
                 var charCheap = cn[0] + cn[1] + cn[2] + cn[3];
@@ -80,6 +82,9 @@
                 if (canPlayTwo(cn[0], cn[1], cn[2], cn[3])) acc.doubleChar += w;
                 if (charCheap >= 1 && tempo) acc.keepable += w;
                 acc.avgPlayable += w * maxPlayable(n[0], n[1], n[2], n[3]);
+                if (n4 >= 3) acc.heavy += w;
+                if (n[0] + n[1] + n[2] >= 3) acc.explosive += w;
+                if (charTotal >= 1 && charTotal <= hs - 1) acc.balanced += w;
                 return;
             }
             var maxK = Math.min(remaining, buckets[i].size);
