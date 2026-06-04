@@ -95,6 +95,9 @@ $txt = [
         'ho_double'       => 'Two characters T1',    'ho_double_sub' => 'can play ≥2 characters on day 1',
         'ho_avg'          => 'Playable on day 1',    'ho_avg_sub'    => 'average, with 3 mana',
         'ho_keep'         => 'Keepable hand',        'ho_keep_sub'   => '≥1 character ≤3 & ≥2 plays',
+        'ho_heavy'        => 'Top-heavy hand',       'ho_heavy_sub'    => '≥3 cards at ≥4 mana',
+        'ho_explosive'    => 'Explosive start',      'ho_explosive_sub'=> '≥3 cards at ≤2 mana',
+        'ho_balanced'     => 'Balanced hand',        'ho_balanced_sub' => '≥1 character & ≥1 other',
         'ho_calc_card'    => 'Draw a key card',
         'ho_calc_card_tip'=> 'Chance at least one copy of the chosen card(s) is in your opening hand.',
         'ho_calc_combo'   => 'Draw a combo',
@@ -102,7 +105,7 @@ $txt = [
         'ho_pick'         => 'Pick cards…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_in_hand'      => 'in opening hand',
-        'ho_variant'      => 'Display', 'ho_v1' => 'Text', 'ho_v2' => 'Image tags', 'ho_v3' => 'Thumbnails',
+        'ho_ratio'        => '≈ {x} in {y} hands',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -191,6 +194,9 @@ $txt = [
         'ho_double'       => 'Double perso J1',      'ho_double_sub' => 'peut poser ≥2 persos au J1',
         'ho_avg'          => 'Cartes jouables J1',   'ho_avg_sub'    => 'en moyenne, avec 3 mana',
         'ho_keep'         => 'Main gardable',        'ho_keep_sub'   => '≥1 perso ≤3 & ≥2 plays',
+        'ho_heavy'        => 'Main lourde',          'ho_heavy_sub'    => '≥3 cartes à ≥4 mana',
+        'ho_explosive'    => 'Démarrage explosif',   'ho_explosive_sub'=> '≥3 cartes à ≤2 mana',
+        'ho_balanced'     => 'Main équilibrée',      'ho_balanced_sub' => '≥1 perso & ≥1 autre',
         'ho_calc_card'    => 'Avoir une carte clé',
         'ho_calc_card_tip'=> 'Probabilité qu\'au moins 1 exemplaire des cartes choisies soit dans ta main de départ.',
         'ho_calc_combo'   => 'Avoir un combo',
@@ -198,7 +204,7 @@ $txt = [
         'ho_pick'         => 'Choisir des cartes…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_in_hand'      => 'en main de départ',
-        'ho_variant'      => 'Affichage', 'ho_v1' => 'Texte', 'ho_v2' => 'Tags image', 'ho_v3' => 'Vignettes',
+        'ho_ratio'        => '≈ {x} sur {y} mains',
     ],
 ][$uiLang] ?? [];
 
@@ -843,20 +849,15 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <span><?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
                         <span><?= h($txt['ho_drawn']) ?> <input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
                     </div>
-                    <div class="ho-variant" id="ho-variant">
-                        <button type="button" class="btn-toggle active" data-variant="1"><?= h($txt['ho_v1']) ?></button>
-                        <button type="button" class="btn-toggle" data-variant="2"><?= h($txt['ho_v2']) ?></button>
-                        <button type="button" class="btn-toggle" data-variant="3"><?= h($txt['ho_v3']) ?></button>
-                    </div>
                     <div class="ho-calc-card">
-                        <div class="ho-calc-title"><?= h($txt['ho_calc_card']) ?>
-                            <i class="fa-solid fa-circle-info ho-tip" data-bs-toggle="tooltip" title="<?= h($txt['ho_calc_card_tip']) ?>"></i></div>
+                        <div class="ho-calc-title"><?= h($txt['ho_calc_card']) ?></div>
+                        <div class="ho-calc-sub"><?= h($txt['ho_calc_card_tip']) ?></div>
                         <select id="ho-card-key" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select>
                         <div class="ho-res" id="ho-card-res"></div>
                     </div>
                     <div class="ho-calc-card">
-                        <div class="ho-calc-title"><?= h($txt['ho_calc_combo']) ?>
-                            <i class="fa-solid fa-circle-info ho-tip" data-bs-toggle="tooltip" title="<?= h($txt['ho_calc_combo_tip']) ?>"></i></div>
+                        <div class="ho-calc-title"><?= h($txt['ho_calc_combo']) ?></div>
+                        <div class="ho-calc-sub"><?= h($txt['ho_calc_combo_tip']) ?></div>
                         <div class="ho-ab"><span><?= h($txt['ho_group_a']) ?></span><select id="ho-combo-a" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
                         <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ho-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
                         <div class="ho-res" id="ho-combo-res"></div>
@@ -882,19 +883,27 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
           var handDeckGroups = <?= json_encode((function () use ($deck, $uiLang, $lang) {
               $g = [];
               foreach ($deck['cards'] as $c) {
-                  if (($c['cardTypeReference'] ?? '') === 'HERO') continue;
+                  $type = $c['cardTypeReference'] ?? 'OTHER';
+                  if ($type === 'HERO') continue;
                   $ref = $c['cardReference'] ?? '';
                   $raw = $c['name'] ?? null;
                   $name = is_array($raw) ? (($raw[$lang] ?? '') ?: ($raw['en'] ?? $ref)) : (($raw !== null && $raw !== '') ? $raw : $ref);
                   $rp = explode('_', $ref);
                   $rar = $rp[5][0] ?? '';
-                  $key = $name . '|' . $rar;
-                  if (!isset($g[$key])) $g[$key] = ['key' => $key, 'name' => $name, 'rarity' => $rar, 'qty' => 0, 'img' => _deck_cdn_url($ref, $uiLang)];
+                  $isUniq = _deck_is_unique($ref);
+                  // Uniques are distinct cards (own art + costs): key by ref. Others group by name+rarity.
+                  $key = $isUniq ? $ref : ($name . '|' . $rar);
+                  if (!isset($g[$key])) $g[$key] = [
+                      'key' => $key, 'name' => $name, 'rarity' => $rar, 'type' => $type,
+                      'mainCost' => (int)($c['mainCost'] ?? 0), 'recallCost' => (int)($c['recallCost'] ?? 0),
+                      'qty' => 0, 'unique' => $isUniq, 'ref' => $ref, 'img' => _deck_cdn_url($ref, $uiLang),
+                  ];
                   $g[$key]['qty'] += (int)($c['quantity'] ?? 1);
               }
               return array_values($g);
           })(), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
+          var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handOddsTxt = {
               slow:[<?= json_encode($txt['ho_slow']) ?>,<?= json_encode($txt['ho_slow_sub']) ?>],
               noearly:[<?= json_encode($txt['ho_noearly']) ?>,<?= json_encode($txt['ho_noearly_sub']) ?>],
@@ -902,7 +911,11 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               double:[<?= json_encode($txt['ho_double']) ?>,<?= json_encode($txt['ho_double_sub']) ?>],
               avg:[<?= json_encode($txt['ho_avg']) ?>,<?= json_encode($txt['ho_avg_sub']) ?>],
               keep:[<?= json_encode($txt['ho_keep']) ?>,<?= json_encode($txt['ho_keep_sub']) ?>],
-              inHand: <?= json_encode($txt['ho_in_hand']) ?>
+              heavy:[<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>],
+              explosive:[<?= json_encode($txt['ho_explosive']) ?>,<?= json_encode($txt['ho_explosive_sub']) ?>],
+              balanced:[<?= json_encode($txt['ho_balanced']) ?>,<?= json_encode($txt['ho_balanced_sub']) ?>],
+              inHand: <?= json_encode($txt['ho_in_hand']) ?>,
+              ratio: <?= json_encode($txt['ho_ratio']) ?>
           };
         </script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">

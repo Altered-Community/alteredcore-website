@@ -1,6 +1,6 @@
 /* Hand-odds UI: opening-hand stats + draw-odds calculators.
- * Reads globals from deck.php: handDeckCards, handLang, handDeckSize, handDeckGroups, handOddsTxt.
- * Math from hand-odds-math.js (window.HandOddsMath). */
+ * Reads globals from deck.php: handDeckCards, handLang, handDeckSize, handDeckGroups,
+ * handTypeLabels, handOddsTxt. Math from hand-odds-math.js (window.HandOddsMath). */
 (function () {
     var M = window.HandOddsMath;
     var statsGrid = document.getElementById('ho-stats-grid');
@@ -9,12 +9,15 @@
     var HAND_SIZE = 6;
     // Tunable colour thresholds. dir:'low' => lower is better; 'high' => higher is better.
     var TH = {
-        slow:    { dir: 'low',  g: 10, a: 20 },
-        noearly: { dir: 'low',  g: 15, a: 30 },
-        tempo:   { dir: 'high', g: 65, a: 40 },
-        double:  { dir: 'high', g: 45, a: 25 },
-        avg:     { dir: 'high', g: 2.5, a: 1.5, isCount: true },
-        keep:    { dir: 'high', g: 80, a: 60 }
+        keep:      { dir: 'high', g: 80, a: 60 },
+        tempo:     { dir: 'high', g: 65, a: 40 },
+        slow:      { dir: 'low',  g: 10, a: 20 },
+        noearly:   { dir: 'low',  g: 15, a: 30 },
+        double:    { dir: 'high', g: 45, a: 25 },
+        explosive: { dir: 'high', g: 35, a: 20 },
+        avg:       { dir: 'high', g: 2.5, a: 1.5, isCount: true },
+        heavy:     { dir: 'low',  g: 15, a: 30 },
+        balanced:  { dir: 'high', g: 75, a: 55 }
     };
     function band(v, th) {
         if (th.dir === 'low')  return v <= th.g ? 'good' : (v <= th.a ? 'warn' : 'bad');
@@ -39,12 +42,18 @@
     function renderStats() {
         var s = computeStats();
         statsGrid.innerHTML =
-            card('slow',    s.slowStart * 100,   pct(s.slowStart)) +
-            card('noearly', s.noEarlyChar * 100, pct(s.noEarlyChar)) +
-            card('tempo',   s.tempo * 100,       pct(s.tempo)) +
-            card('double',  s.doubleChar * 100,  pct(s.doubleChar)) +
-            card('avg',     s.avgPlayable,       s.avgPlayable.toFixed(1).replace('.', ',')) +
-            card('keep',    s.keepable * 100,    pct(s.keepable));
+            // Row 1 — the essentials
+            card('keep',      s.keepable * 100,    pct(s.keepable)) +
+            card('tempo',     s.tempo * 100,       pct(s.tempo)) +
+            card('slow',      s.slowStart * 100,   pct(s.slowStart)) +
+            // Row 2 — early development
+            card('noearly',   s.noEarlyChar * 100, pct(s.noEarlyChar)) +
+            card('double',    s.doubleChar * 100,  pct(s.doubleChar)) +
+            card('explosive', s.explosive * 100,   pct(s.explosive)) +
+            // Row 3 — curve & composition
+            card('avg',       s.avgPlayable,       s.avgPlayable.toFixed(1).replace('.', ',')) +
+            card('heavy',     s.heavy * 100,       pct(s.heavy)) +
+            card('balanced',  s.balanced * 100,    pct(s.balanced));
     }
     renderStats();   // deck-level: compute once on load (does not change on redraw)
 
@@ -61,48 +70,61 @@
     function copies(ts) {
         return (ts ? ts.getValue() : []).reduce(function (s, k) { return s + (groupQty[k] || 0); }, 0);
     }
+    // Friendly "≈ X in Y hands" — best proper fraction with denominator ≤5; omitted for extreme odds.
+    function niceRatio(p) {
+        if (p <= 0 || p >= 1) return '';
+        var bestX = 0, bestY = 0, bestErr = Infinity;
+        for (var y = 1; y <= 5; y++) {
+            var x = Math.round(p * y);
+            if (x <= 0 || x >= y) continue;
+            var err = Math.abs(p - x / y);
+            if (err < bestErr - 1e-12) { bestErr = err; bestX = x; bestY = y; }
+        }
+        if (!bestY) return '';
+        return String(handOddsTxt.ratio).replace('{x}', bestX).replace('{y}', bestY);
+    }
     function showRes(el, p) {
         if (p <= 0 && el.dataset.empty === '1') { el.innerHTML = ''; return; }
-        var ratio = p > 0 ? '≈ ' + Math.round(1 / p) : '';
+        var sub = esc(handOddsTxt.inHand), r = p > 0 ? niceRatio(p) : '';
+        if (r) sub += ' · ' + esc(r);
         el.innerHTML = '<div class="ho-pct">' + (p * 100).toFixed(0) + '%</div>' +
-                       '<div class="ho-c">' + esc(handOddsTxt.inHand) + (p > 0 ? ' · ' + ratio + ' → 1' : '') + '</div>';
+                       '<div class="ho-c">' + sub + '</div>';
     }
 
-    function renders(variant) {
-        function optHtml(d) {
-            var label = esc(d.name) + ' <b>' + (d.rarity ? esc(d.rarity) + ' ' : '') + '×' + d.qty + '</b>';
-            if (variant === '3') return '<div class="ho-opt3"><img loading="lazy" src="' + esc(d.img) + '" alt="">' + label + '</div>';
-            return '<div class="ho-opt">' + label + '</div>';
-        }
-        function itemHtml(d) {
-            if (variant === '2') return '<div class="ho-item2" style="background-image:linear-gradient(90deg,#fff 38%,rgba(255,255,255,.25)),url(' + esc(d.img) + ')">' + esc(d.name) + ' ' + (d.rarity ? esc(d.rarity) : '') + ' ×' + d.qty + '</div>';
-            return '<div>' + esc(d.name) + ' ' + (d.rarity ? esc(d.rarity) : '') + ' ×' + d.qty + '</div>';
-        }
-        return { option: optHtml, item: itemHtml };
+    // ----- Multiselect (tom-select): card thumbnails, grouped by type, sorted by cost then name -----
+    var TYPE_ORDER = ['CHARACTER', 'SPELL', 'PERMANENT', 'TOKEN_MANA', 'TOKEN', 'EXPEDITION_PERMANENT', 'LANDMARK_PERMANENT', 'OTHER'];
+    function optgroups() {
+        var present = {};
+        handDeckGroups.forEach(function (g) { present[g.type] = true; });
+        var ordered = TYPE_ORDER.filter(function (t) { return present[t]; });
+        Object.keys(present).forEach(function (t) { if (ordered.indexOf(t) < 0) ordered.push(t); });
+        return ordered.map(function (t) { return { value: t, label: (handTypeLabels && handTypeLabels[t]) || t }; });
     }
-
-    var currentVariant = '1';
-    var instances = []; // {el, ts, onChange}
-    function tsConfig(onChange) {
-        return {
-            options: handDeckGroups, valueField: 'key', labelField: 'name',
-            searchField: ['name', 'rarity'], plugins: ['remove_button'],
-            maxOptions: 500, render: renders(currentVariant), onChange: onChange
-        };
+    function rar(d) { return d.rarity ? esc(d.rarity) + ' ' : ''; }
+    function tail(d) { return d.unique ? (d.mainCost + '/' + d.recallCost) : ('×' + d.qty); }
+    function optHtml(d) {
+        var thumb = d.unique
+            ? '<altered-card class="ho-thumb ho-thumb-uniq" ref="' + esc(d.ref) + '" locale="' + esc(handLang) + '"></altered-card>'
+            : '<img class="ho-thumb" loading="lazy" src="' + esc(d.img) + '" alt="">';
+        return '<div class="ho-opt">' + thumb + '<span class="ho-opt-l">' + esc(d.name) + ' <b>' + rar(d) + tail(d) + '</b></span></div>';
     }
+    function itemHtml(d) {
+        // Selected tag: faded card image as background (uniques have no static image → plain tint).
+        var style = d.unique ? '' : ' style="background-image:linear-gradient(90deg,#fff 36%,rgba(255,255,255,.35)),url(' + esc(d.img) + ')"';
+        return '<div class="ho-item"' + style + '>' + esc(d.name) + ' ' + rar(d) + tail(d) + '</div>';
+    }
+    function optgroupHeader(d) { return '<div class="ho-optgroup-h">' + esc(d.label) + '</div>'; }
     function buildSelect(el, onChange) {
-        var ts = new TomSelect(el, tsConfig(onChange));
-        instances.push({ el: el, ts: ts, onChange: onChange });
-        return ts;
-    }
-    function rebuildAll() {
-        instances.forEach(function (inst) {
-            var vals = inst.ts.getValue();
-            inst.ts.destroy();
-            inst.ts = new TomSelect(inst.el, tsConfig(inst.onChange));
-            inst.ts.setValue(vals, true);
+        return new TomSelect(el, {
+            options: handDeckGroups, optgroups: optgroups(),
+            valueField: 'key', labelField: 'name', searchField: ['name', 'rarity'],
+            optgroupField: 'type', optgroupValueField: 'value', optgroupLabelField: 'label',
+            lockOptgroupOrder: true,
+            sortField: [{ field: 'mainCost', direction: 'asc' }, { field: 'recallCost', direction: 'asc' }, { field: 'name', direction: 'asc' }],
+            plugins: ['remove_button'], maxOptions: 1000,
+            render: { option: optHtml, item: itemHtml, optgroup_header: optgroupHeader },
+            onChange: onChange
         });
-        recalcAll();
     }
 
     var cardSel = document.getElementById('ho-card-key');
@@ -128,18 +150,5 @@
     function recalcAll() { recalcCard(); recalcCombo(); }
 
     if (drawnEl) drawnEl.addEventListener('input', recalcAll);
-    var variantBar = document.getElementById('ho-variant');
-    if (variantBar) variantBar.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-variant]'); if (!btn) return;
-        currentVariant = btn.dataset.variant;
-        variantBar.querySelectorAll('[data-variant]').forEach(function (b) { b.classList.toggle('active', b === btn); });
-        rebuildAll();
-    });
-
-    // Init Bootstrap tooltips for the calculators' info icons, if Bootstrap is present.
-    if (window.bootstrap && window.bootstrap.Tooltip) {
-        document.querySelectorAll('#hand-odds [data-bs-toggle="tooltip"]').forEach(function (e) { new window.bootstrap.Tooltip(e); });
-    }
-
     recalcAll();
 }());
