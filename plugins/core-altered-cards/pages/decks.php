@@ -862,10 +862,10 @@ $showPublicTab = $publicDecksApiPath !== '';
             </div>
             <div class="deck-filter-collapsible">
                 <div class="filter-row filter-row--scroll mb-2 mt-2">
-                    <button type="button" class="filter-toggle active" data-contest-set="collection" title="<?= h($txt['filter_curated_collection']) ?>">
+                    <button type="button" class="filter-toggle" data-contest-set="collection" title="<?= h($txt['filter_curated_collection']) ?>">
                         <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['filter_curated_collection']) ?>
                     </button>
-                    <button type="button" class="filter-toggle" data-contest-set="winners" title="<?= h($txt['filter_curated']) ?>">
+                    <button type="button" class="filter-toggle active" data-contest-set="winners" title="<?= h($txt['filter_curated']) ?>">
                         <i class="fa-solid fa-star me-1"></i><?= h($txt['filter_curated']) ?>
                     </button>
                 </div>
@@ -1704,7 +1704,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     var contestGrid       = document.getElementById('contest-grid');
     var contestSearch     = document.getElementById('contest-deck-search');
     var contestHeroSelect = document.getElementById('contest-hero');
-    var contestSet     = 'collection';
+    var contestSet     = 'winners';
     var contestFaction = '';
     var contestHero    = '';
 
