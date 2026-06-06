@@ -1379,7 +1379,6 @@ $showPublicTab = $publicDecksApiPath !== '';
     var pubHero       = '';
     var pubFormat     = '';
     var pubSortVal    = 'updatedAt:desc';
-    var pubAllItems   = [];
 
     var myHeroSelect  = document.getElementById('my-hero');
     var pubHeroSelect = document.getElementById('pub-hero');
@@ -1533,19 +1532,6 @@ $showPublicTab = $publicDecksApiPath !== '';
         });
     }
 
-    function filterPublic() {
-        // Name search only — format is filtered server-side via the deck API.
-        var q = pubSearch ? pubSearch.value.trim().toLowerCase() : '';
-        if (!q) return;
-        var visible = 0;
-        pubAllItems.forEach(function (el) {
-            var show = (el.dataset.name || '').includes(q);
-            el.style.display = show ? '' : 'none';
-            if (show) visible++;
-        });
-        if (pubNoMatch) pubNoMatch.style.display = (visible === 0 && pubAllItems.length > 0) ? '' : 'none';
-    }
-
     function renderPagination(p, t) { renderPaginationUI(pubPagination, p, t, loadPublicDecks); }
 
     function loadPublicDecks(p, scroll) {
@@ -1573,13 +1559,11 @@ $showPublicTab = $publicDecksApiPath !== '';
                 if (data.error) { pubError.innerHTML = apiErrorHtml(data.error); pubError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
                 if (!decks.length) {
-                    if (pubQ || pubFormat) pubNoMatch.style.display = '';
+                    if (pubQ || pubFormat || pubFaction || pubHero) pubNoMatch.style.display = '';
                     else pubEmpty.style.display = '';
                     return;
                 }
                 decks.forEach(function (deck) { pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck)); });
-                pubAllItems = Array.from(pubGrid.querySelectorAll('.pub-deck-item'));
-                if (!pubQ) filterPublic();
                 var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
                 renderPagination(p, total);
                 if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
