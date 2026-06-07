@@ -235,3 +235,44 @@ function collApiMultiRequest(string $apiUrl, array $reqs, int $userId): array {
     curl_multi_close($mh);
     return $results;
 }
+
+/**
+ * Build the pool of drawable cards for the "starting hand" tester.
+ *
+ * This does NOT draw a hand — it only prepares the source data the client-side
+ * tester draws from. The actual shuffle + pick-6 happens in JS. This returns the
+ * deck's cards with HERO excluded (the hero is never drawn), each with its
+ * quantity preserved, so the JS can expand the pool (each card ×qty) and shuffle.
+ *
+ * Mirrors the decklist's name resolution (localized-array -> $lang -> 'en' ->
+ * ref; a plain-string name is kept as-is). qty/mainCost are coerced to ints.
+ *
+ * Returns a list of ['ref','name','qty','type','mainCost']. The caller adds the
+ * presentation-only 'img'/'unique' fields — those depend on page-level helpers
+ * and the CDN_URL constant, so they stay out of this pure, testable function.
+ *
+ * @param array  $cards The deck's `cards` array (each an assoc array from the API).
+ * @param string $lang  Card language for name resolution ('en'|'fr').
+ * @return array<int,array{ref:string,name:string,qty:int,type:string,mainCost:int}>
+ */
+function getDeckStartingHandPool(array $cards, string $lang): array
+{
+    $out = [];
+    foreach ($cards as $card) {
+        $type = $card['cardTypeReference'] ?? 'OTHER';
+        if ($type === 'HERO') continue;
+        $ref     = $card['cardReference'] ?? '';
+        $rawName = $card['name'] ?? null;
+        $name    = is_array($rawName)
+            ? (($rawName[$lang] ?? '') ?: ($rawName['en'] ?? $ref))
+            : (($rawName !== null && $rawName !== '') ? $rawName : $ref);
+        $out[] = [
+            'ref'      => $ref,
+            'name'     => $name,
+            'qty'      => (int)($card['quantity'] ?? 1),
+            'type'     => $type,
+            'mainCost' => (int)($card['mainCost'] ?? 0),
+        ];
+    }
+    return $out;
+}
