@@ -4,7 +4,7 @@ name: Deploy
 # Déclenché à chaque push (ou merge) sur la branche dev.
 on:
   push:
-    branches: [dev]
+    branches: [preprod]
   workflow_dispatch: {} # permet aussi un déclenchement manuel depuis l'onglet Actions
 
 concurrency:
@@ -15,6 +15,7 @@ jobs:
   deploy:
     name: Sync to server
     runs-on: ubuntu-latest
+    environment: preprod # secrets/variables sont définis dans cet environnement GitHub
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,12 +23,15 @@ jobs:
       - name: Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          # ─── Connexion (définis dans Settings → Secrets and variables → Actions) ───
-          protocol: ${{ secrets.DEPLOY_PROTOCOL }} # "ftp", "ftps" ou "sftp"
-          server: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          # ─── Connexion (Settings → Secrets and variables → Actions) ──────────
+          # protocol / host / user peuvent être des Variables (non-secret) OU des
+          # Secrets : le workflow prend la Variable si elle existe, sinon le Secret.
+          # Le mot de passe DOIT être un Secret (les Variables sont visibles en clair).
+          protocol: ${{ vars.DEPLOY_PROTOCOL || secrets.DEPLOY_PROTOCOL }} # "ftp", "ftps" ou "sftp"
+          server: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ vars.DEPLOY_PORT || (secrets.DEPLOY_PROTOCOL == 'sftp' && '22' || '21') }}
+          port: ${{ vars.DEPLOY_PORT || ((vars.DEPLOY_PROTOCOL || secrets.DEPLOY_PROTOCOL) == 'sftp' && '22' || '21') }}
 
           # Répertoire cible sur le serveur (laisser ./ si la racine du compte FTP
           # pointe déjà sur le site ; sinon ex: "public_html/").
