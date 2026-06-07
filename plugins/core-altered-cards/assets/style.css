@@ -599,11 +599,138 @@
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }
 .deck-hdr-meta  { font-size: .85rem; color: rgba(255,255,255,.8); margin-top: 2px; }
 .deck-hdr-on-bg { color: rgba(255,255,255,.7); font-size: .875rem; }
+.deck-hdr-banner--hero { cursor: pointer; }
+.deck-hdr-banner--hero .deck-hdr-meta { transition: color .15s, text-decoration-color .15s; }
+.deck-hdr-banner--hero:hover .deck-hdr-meta {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, .75);
+}
+.deck-hdr-banner--hero:focus-visible {
+    outline: 2px solid var(--primary-400);
+    outline-offset: 2px;
+}
+.js-deck-illegal {
+    cursor: pointer;
+    font-size: .72rem;
+    transition: transform .15s, box-shadow .15s, filter .15s;
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .4), 0 0 0 3px rgba(239, 68, 68, .45), 0 2px 8px rgba(0, 0, 0, .22);
+}
+.js-deck-illegal:hover {
+    transform: scale(1.06);
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .65), 0 0 0 3px rgba(239, 68, 68, .65), 0 2px 12px rgba(0, 0, 0, .32);
+}
 .deck-badge-on-img { background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.2); color: #fff; }
 .deck-badge-no-img { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.12); color: #444; }
+
+/* Community deck cards — view / upvote stat pills */
+.deck-stat-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.deck-stat-pill {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(35, 8, 14, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
+button.deck-stat-pill {
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.deck-stat-pill i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+.deck-stat-pill > span {
+    min-width: 1ch;
+    line-height: 1;
+}
+.deck-stat-pill--upvote {
+    position: relative;
+    z-index: 2;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.deck-stat-pill--upvote:hover:not(:disabled) {
+    background: rgba(168, 32, 54, 0.92);
+    border-color: rgba(255, 190, 200, 0.75);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+    transform: scale(1.04);
+}
+.deck-stat-pill--upvote:disabled {
+    opacity: .75;
+    cursor: wait;
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted {
+    background: rgba(120, 24, 38, 0.58);
+    border-color: rgba(255, 210, 218, 0.35);
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted:hover:not(:disabled) {
+    background: rgba(200, 44, 68, 0.95);
+    border-color: rgba(255, 220, 228, 0.85);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+    transform: scale(1.04);
+}
 
 /* Collection info panels (collection.php) — left border accent strips */
 .coll-card-success { border-left: 3px solid #22c55e; }
 .coll-card-primary { border-left: 3px solid var(--primary-400); }
 .coll-card-warning { border-left: 3px solid var(--bs-warning, #ffc107); }
 .coll-card-neutral { border-left: 3px solid var(--neutral-300); }
+
+/* ── Starting hand tester ─────────────────────────────────────────────── */
+.hand-test-toolbar { margin-bottom: 14px; }
+
+/* 6-card hand fits on one row on wide screens (overrides the 5-col .deck-cards-grid rule). */
+@media (min-width: 1200px) {
+    .hand-cards-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.hand-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--sand-200);
+    font-size: .85rem;
+    color: var(--neutral-600);
+}
+.hand-summary:empty { display: none; }
+.hand-summary .hand-stat b { color: var(--neutral-800); font-weight: 700; }
+
+@keyframes handCardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.hand-card-anim { animation: handCardIn .32s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hand-card-anim { animation: none; }
+}
