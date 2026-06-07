@@ -237,6 +237,32 @@ function collApiMultiRequest(string $apiUrl, array $reqs, int $userId): array {
 }
 
 /**
+ * Starter deck contest entries from bundled JSON (no Decks API).
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function cacLoadContestDecksFromJsonFile(string $path): array
+{
+    $data = json_decode(file_get_contents($path), true);
+    $decks = [];
+    foreach ($data['decks'] as $entry) {
+        $stats = $entry['stats'];
+        $stats['totalCards'] = 39;
+        $decks[] = [
+            'id'       => $entry['id'],
+            'name'     => $entry['name'],
+            'winner'   => !empty($entry['winner']),
+            'format'   => 'nuc',
+            'isPublic' => true,
+            'isDraft'  => false,
+            'legal'    => true,
+            'stats'    => $stats,
+        ];
+    }
+
+    return $decks;
+}
+
  * Build the pool of drawable cards for the "starting hand" tester.
  *
  * This does NOT draw a hand — it only prepares the source data the client-side
