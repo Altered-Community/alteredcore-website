@@ -73,6 +73,7 @@ $txt = [
         'sort_created_asc'  => 'Oldest created',
         'sort_name_asc'     => 'Name A→Z',
         'sort_name_desc'    => 'Name Z→A',
+        'sort_upvotes_desc' => 'Most upvotes',
         'err_api_auth'    => 'Could not connect to the deck API.',
         'err_connect'     => 'Connection error.',
         'api_later'       => 'The API is currently unavailable. Please try again later.',
@@ -175,6 +176,7 @@ $txt = [
         'sort_created_asc'  => 'Plus ancien créé',
         'sort_name_asc'     => 'Nom A→Z',
         'sort_name_desc'    => 'Nom Z→A',
+        'sort_upvotes_desc' => 'Plus d\'upvotes',
         'err_api_auth'    => 'Impossible de se connecter à l\'API de decks.',
         'err_connect'     => 'Erreur de connexion.',
         'api_later'       => 'L\'API est actuellement indisponible. Veuillez réessayer plus tard.',
@@ -470,6 +472,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'heroes') 
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote') {
+    header('Content-Type: application/json');
+    if (!csrfValid($_POST['csrf_token'] ?? '') || !$isLoggedIn) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $upvoteDeckId = trim($_POST['deck_id'] ?? '');
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $upvoteDeckId)) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $token = deckApiToken();
+    if (!$token) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    $result = cacDeckApiUpvote($upvoteDeckId, $token);
+    if ($result === null) {
+        echo json_encode(['ok' => false]);
+        exit;
+    }
+    echo json_encode(['ok' => true, 'upvoteCount' => $result['upvoteCount'], 'hasUpvoted' => $result['hasUpvoted']]);
+    exit;
+}
+
 // aJAX proxy: public decks
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' && $publicDecksApiPath !== '') {
     header('Content-Type: application/json');
@@ -478,10 +505,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     if (!preg_match('/^[a-z_]*$/', $pubFormat)) $pubFormat = '';
     $pubOrder = $_GET['order'] ?? 'updatedAt';
     $pubDir   = $_GET['dir']   ?? 'desc';
-    $allowedPubOrders = ['createdAt', 'updatedAt', 'name'];
+    $allowedPubOrders = ['createdAt', 'updatedAt', 'name', 'upvoteCount'];
     $allowedPubDirs   = ['asc', 'desc'];
     if (!in_array($pubOrder, $allowedPubOrders, true)) $pubOrder = 'updatedAt';
     if (!in_array($pubDir,   $allowedPubDirs,   true)) $pubDir   = 'desc';
+    if ($pubOrder === 'upvoteCount') $pubDir = 'desc';
 
     $pubFaction = $_GET['faction'] ?? '';
     if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
@@ -500,7 +528,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
         $token = deckApiToken();
         if ($token) $headers[] = 'Authorization: Bearer ' . $token;
     }
-    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
+    if ($pubOrder === 'upvoteCount') {
+        $apiParams['sortBy'] = 'upvotes';
+        $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams);
+    } else {
+        $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
+    }
     $ch = curl_init($pubUrl);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
     $pubResp = curl_exec($ch);
@@ -824,6 +857,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                         <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
                         <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
                         <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
+                        <option value="upvoteCount:desc"><?= h($txt['sort_upvotes_desc']) ?></option>
                     </select>
                 </div>
             </div>
@@ -1546,12 +1580,23 @@ $showPublicTab = $publicDecksApiPath !== '';
         var legalityHtml = _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel);
 
         var viewCount   = deck.viewCount   != null ? parseInt(deck.viewCount,   10) : null;
-        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : null;
+        var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : 0;
+        var hasUpvoted  = !!deck.hasUpvoted;
         var statsHtml = '';
-        if (viewCount !== null || upvoteCount !== null) {
-            statsHtml = '<span class="d-flex align-items-center gap-3" style="color:rgba(255,255,255,.6);font-size:.78rem">';
-            if (viewCount   !== null) statsHtml += '<span><i class="fa-solid fa-eye me-1"></i>' + viewCount   + '</span>';
-            if (upvoteCount !== null) statsHtml += '<span><i class="fa-solid fa-heart me-1"></i>' + upvoteCount + '</span>';
+        if (viewCount !== null || isPublic !== false) {
+            statsHtml = '<span class="deck-stat-pills">';
+            if (viewCount !== null) {
+                statsHtml += '<span class="deck-stat-pill deck-stat-pill--view">'
+                    + '<i class="fa-solid fa-eye"></i><span>' + viewCount + '</span></span>';
+            }
+            if (isPublic !== false) {
+                statsHtml += '<button type="button" class="deck-stat-pill deck-stat-pill--upvote pub-deck-upvote'
+                    + (hasUpvoted ? ' deck-stat-pill--upvoted' : '') + '"'
+                    + ' data-deck-id="' + escHtml(deckId) + '"'
+                    + ' data-upvoted="' + (hasUpvoted ? '1' : '0') + '">'
+                    + '<i class="' + (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i>'
+                    + '<span class="js-upvote-count">' + upvoteCount + '</span></button>';
+            }
             statsHtml += '</span>';
         }
 
@@ -1594,12 +1639,39 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     if (pubGrid) {
         pubGrid.addEventListener('click', function(e) {
+            var upvoteBtn = e.target.closest('.pub-deck-upvote');
+            if (upvoteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!myIsLoggedIn) {
+                    location.href = baseUrl + '/pages/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+                    return;
+                }
+                if (upvoteBtn.disabled) return;
+                upvoteBtn.disabled = true;
+                var fd = new FormData();
+                fd.append('csrf_token', myCSRF);
+                fd.append('deck_id', upvoteBtn.dataset.deckId || '');
+                fetch(baseUrl + '/pages/decks?ajax=upvote', { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.ok) return;
+                        upvoteBtn.dataset.upvoted = data.hasUpvoted ? '1' : '0';
+                        upvoteBtn.classList.toggle('deck-stat-pill--upvoted', !!data.hasUpvoted);
+                        var icon = upvoteBtn.querySelector('i');
+                        if (icon) icon.className = (data.hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+                        var countEl = upvoteBtn.querySelector('.js-upvote-count');
+                        if (countEl) countEl.textContent = data.upvoteCount;
+                    })
+                    .finally(function () { upvoteBtn.disabled = false; });
+                return;
+            }
             if (e.target.closest('a, button, .dropdown')) return;
             var card = e.target.closest('.pub-deck-item');
             if (card && card.dataset.deckId) {
                 location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(card.dataset.deckId);
             }
-        });
+        }, true);
     }
 
     function filterPublic() {

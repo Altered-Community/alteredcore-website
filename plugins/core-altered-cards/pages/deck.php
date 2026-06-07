@@ -78,6 +78,13 @@ $txt = [
         'share_private_body'  => 'The link only works for you. Make the deck public so others can open it.',
         'share_make_public'   => 'Make public & share',
         'share_making_public' => 'Making public…',
+        'test_hand'           => 'Test hand',
+        'new_hand'            => 'New hand',
+        'hand_empty'          => 'No cards to draw.',
+        'hand_characters'     => 'Characters',
+        'hand_spells'         => 'Spells',
+        'hand_permanents'     => 'Permanents',
+        'hand_avg_cost'       => 'Avg. hand cost',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -149,6 +156,13 @@ $txt = [
             'exaltedQuantity'   => 'Trop de cartes exaltées',
         ],
         'no_description'      => 'Aucune description disponible pour ce deck.',
+        'test_hand'           => 'Main de départ',
+        'new_hand'            => 'Nouvelle main',
+        'hand_empty'          => 'Aucune carte à tirer.',
+        'hand_characters'     => 'Personnages',
+        'hand_spells'         => 'Sorts',
+        'hand_permanents'     => 'Permanents',
+        'hand_avg_cost'       => 'Coût moyen en main',
     ],
 ][$uiLang] ?? [];
 
@@ -602,6 +616,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <i class="fa-solid fa-chart-pie"></i>
                 <span>Stats</span>
             </button>
+            <button type="button" id="deck-view-hand" class="decks-tab">
+                <i class="fa-solid fa-hand-sparkles"></i>
+                <span><?= h($txt['test_hand']) ?></span>
+            </button>
             <?php endif; ?>
         </div>
 
@@ -766,6 +784,32 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             </div>
         </div>
         </div>
+        <?php endif; ?>
+
+        <?php if (!empty($deck['cards'])): ?>
+        <!-- Starting hand view -->
+        <div id="deck-hand-view" style="display:none">
+            <div class="hand-test-toolbar">
+                <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
+                    <i class="fa-solid fa-shuffle me-1"></i><?= h($txt['new_hand']) ?>
+                </button>
+            </div>
+            <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
+            <div id="hand-summary" class="hand-summary"></div>
+        </div>
+        <script>
+          var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
+              return $c + ['unique' => _deck_is_unique($c['ref']), 'img' => _deck_cdn_url($c['ref'], $uiLang)];
+          }, getDeckStartingHandPool($deck['cards'], $lang)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handLang = <?= json_encode($uiLang) ?>;
+          var handTxt  = {
+              empty:      <?= json_encode($txt['hand_empty']) ?>,
+              characters: <?= json_encode($txt['hand_characters']) ?>,
+              spells:     <?= json_encode($txt['hand_spells']) ?>,
+              permanents: <?= json_encode($txt['hand_permanents']) ?>,
+              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
+          };
+        </script>
         <?php endif; ?>
 
     <?php endif; ?>
@@ -951,6 +995,15 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             openModal(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
         });
     });
+    var handGrid = document.getElementById('hand-cards');
+    if (handGrid) {
+        handGrid.addEventListener('click', function (e) {
+            var w = e.target.closest('.deck-card-wrap');
+            if (!w || !handGrid.contains(w)) return;
+            var srcImg = w.querySelector('img');
+            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
+        });
+    }
     modal.addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 }());
@@ -963,26 +1016,30 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     var listBtn   = document.getElementById('deck-view-list');
     var descBtn   = document.getElementById('deck-view-desc');
     var statsBtn  = document.getElementById('deck-view-stats');
+    var handBtn   = document.getElementById('deck-view-hand');
     var gridView  = document.getElementById('deck-grid-view');
     var listView  = document.getElementById('deck-list-view');
     var descView  = document.getElementById('deck-desc-view');
     var statsView = document.getElementById('deck-stats-view');
+    var handView  = document.getElementById('deck-hand-view');
     function showView(which) {
         if (gridView)  gridView.style.display  = which === 'grid'  ? '' : 'none';
         if (listView)  listView.style.display  = which === 'list'  ? '' : 'none';
         if (descView)  descView.style.display  = which === 'desc'  ? '' : 'none';
         if (statsView) statsView.style.display = which === 'stats' ? '' : 'none';
+        if (handView)  handView.style.display  = which === 'hand'  ? '' : 'none';
         if (gridBtn)   gridBtn.classList.toggle('active',  which === 'grid');
         if (listBtn)   listBtn.classList.toggle('active',  which === 'list');
         if (descBtn)   descBtn.classList.toggle('active',  which === 'desc');
         if (statsBtn)  statsBtn.classList.toggle('active', which === 'stats');
+        if (handBtn)   handBtn.classList.toggle('active',  which === 'hand');
         var tabBar = document.querySelector('.decks-tabs');
         if (tabBar) {
             var navH = (document.querySelector('.site-header') || {}).offsetHeight || 0;
             if (window.innerWidth >= 992) {
                 window.scrollTo({ top: tabBar.getBoundingClientRect().top + window.scrollY - navH, behavior: 'smooth' });
             } else {
-                var pane = which === 'grid' ? gridView : which === 'list' ? listView : which === 'desc' ? descView : statsView;
+                var pane = which === 'grid' ? gridView : which === 'list' ? listView : which === 'desc' ? descView : which === 'stats' ? statsView : handView;
                 if (pane) window.scrollTo({ top: pane.getBoundingClientRect().top + window.scrollY - navH, behavior: 'smooth' });
             }
         }
@@ -991,7 +1048,95 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     if (listBtn)  listBtn.addEventListener('click',  function() { showView('list'); });
     if (descBtn)  descBtn.addEventListener('click',  function() { showView('desc'); });
     if (statsBtn) statsBtn.addEventListener('click', function() { showView('stats'); });
+    if (handBtn)  handBtn.addEventListener('click',  function() { showView('hand'); });
 })();
+</script>
+
+<!-- Starting hand tester -->
+<script>
+(function () {
+    var grid    = document.getElementById('hand-cards');
+    var summary = document.getElementById('hand-summary');
+    var drawBtn = document.getElementById('hand-draw-btn');
+    var tabBtn  = document.getElementById('deck-view-hand');
+    if (!grid || typeof handDeckCards === 'undefined') return;
+
+    var HAND_SIZE = 6;
+    var drawn = false;
+
+    function buildPool() {
+        // Each card is repeated qty times; the same object reference is pushed
+        // multiple times — fine as long as makeCard stays read-only.
+        var pool = [];
+        handDeckCards.forEach(function (c) {
+            for (var i = 0; i < c.qty; i++) pool.push(c);
+        });
+        return pool;
+    }
+    function shuffle(arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+        }
+        return arr;
+    }
+    function makeCard(card, index) {
+        var wrap = document.createElement('div');
+        wrap.className = 'deck-card-wrap hand-card-anim';
+        wrap.style.animationDelay = (index * 45) + 'ms';
+        wrap.dataset.ref    = card.ref;
+        wrap.dataset.unique = card.unique ? '1' : '0';
+        wrap.dataset.lang   = handLang;
+        var inner;
+        if (card.unique) {
+            inner = document.createElement('altered-card');
+            inner.setAttribute('ref', card.ref);
+            inner.setAttribute('locale', handLang);
+        } else {
+            inner = document.createElement('img');
+            inner.className = 'deck-card-img';
+            inner.src = card.img;
+            inner.alt = card.name || card.ref;
+            inner.loading = 'lazy';
+        }
+        wrap.appendChild(inner);
+        return wrap;
+    }
+    function renderSummary(hand) {
+        var counts = { CHARACTER: 0, SPELL: 0, OTHER: 0 };
+        var costTotal = 0;
+        hand.forEach(function (c) {
+            if (c.type === 'CHARACTER') counts.CHARACTER++;
+            else if (c.type === 'SPELL') counts.SPELL++;
+            else counts.OTHER++;
+            costTotal += c.mainCost;
+        });
+        var avg = hand.length ? (costTotal / hand.length).toFixed(1) : '0.0';
+        summary.innerHTML =
+            '<span class="hand-stat">' + handTxt.characters + ' <b>' + counts.CHARACTER + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.spells + ' <b>' + counts.SPELL + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.permanents + ' <b>' + counts.OTHER + '</b></span>' +
+            '<span class="hand-stat">' + handTxt.avgCost + ' <b>' + avg + '</b></span>';
+    }
+    function draw() {
+        grid.innerHTML = '';
+        var pool = shuffle(buildPool());
+        if (!pool.length) {
+            summary.innerHTML = '';
+            grid.innerHTML = '<p class="text-muted" style="font-size:.9rem;margin:0">' + handTxt.empty + '</p>';
+            drawn = true;
+            return;
+        }
+        var hand = pool.slice(0, Math.min(HAND_SIZE, pool.length));
+        hand.forEach(function (c, i) { grid.appendChild(makeCard(c, i)); });
+        renderSummary(hand);
+        drawn = true;
+    }
+
+    if (drawBtn) drawBtn.addEventListener('click', draw);
+    // Lazy first draw on tab open; the view reveal itself is handled by the view-toggle IIFE above.
+    if (tabBtn)  tabBtn.addEventListener('click', function () { if (!drawn) draw(); });
+}());
 </script>
 
 <!-- Share -->
