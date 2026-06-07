@@ -1,0 +1,61 @@
+name: Deploy
+
+# Synchronise les fichiers suivis par git vers le serveur via FTP / FTPS / SFTP.
+# Déclenché à chaque push (ou merge) sur la branche dev.
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch: {} # permet aussi un déclenchement manuel depuis l'onglet Actions
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true # un nouveau push annule un déploiement en cours
+
+jobs:
+  deploy:
+    name: Sync to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          # ─── Connexion (définis dans Settings → Secrets and variables → Actions) ───
+          protocol: ${{ secrets.DEPLOY_PROTOCOL }} # "ftp", "ftps" ou "sftp"
+          server: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ vars.DEPLOY_PORT || (secrets.DEPLOY_PROTOCOL == 'sftp' && '22' || '21') }}
+
+          # Répertoire cible sur le serveur (laisser ./ si la racine du compte FTP
+          # pointe déjà sur le site ; sinon ex: "public_html/").
+          server-dir: ${{ vars.DEPLOY_SERVER_DIR || './' }}
+
+          # ─── Suppressions sûres ──────────────────────────────────────────────
+          # L'action conserve un fichier d'état (.ftp-deploy-sync-state.json) sur le
+          # serveur et ne supprime QUE les fichiers qu'elle a elle-même déployés.
+          # Les plugins externes (présents uniquement sur le serveur, jamais poussés
+          # par cette action) ne sont donc jamais supprimés.
+
+          # ─── Fichiers à NE PAS envoyer / supprimer ──────────────────────────
+          # Note : fournir "exclude" remplace la liste par défaut, donc on
+          # ré-inclut les motifs git habituels.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            .claude/**
+            memory/**
+            docs/**
+            logs/**
+            config.local.php
+            docker/**
+            docker-compose.yml
+            Dockerfile
+            README.md
+            LICENSE.md
+            CONTRIBUTING.md
+            git-manager.py
