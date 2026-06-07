@@ -263,6 +263,7 @@ function cacLoadContestDecksFromJsonFile(string $path): array
     return $decks;
 }
 
+/**
  * Build the pool of drawable cards for the "starting hand" tester.
  *
  * This does NOT draw a hand — it only prepares the source data the client-side
