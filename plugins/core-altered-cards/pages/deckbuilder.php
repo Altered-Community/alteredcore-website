@@ -17,6 +17,9 @@ $token   = $isGuest ? null : deckApiToken();
 $_dbUserId          = (int)($_SESSION['user_id'] ?? 0);
 $_collectionEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
+// digital ownership (AlteredOwnership service)
+$_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
+$_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
 $_userCollection    = []; // {ref => qty}
 $_collEntries       = []; // {ref => api_entry_id} — populated in API mode only
 if ($_collectionMode) {
@@ -458,6 +461,8 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     'show_cols'          => true,
                     'collection_mode'    => $_collectionMode,
                     'collection_enabled' => $_collectionEnabled,
+                    'ownership_mode'     => $_ownMode,
+                    'ownership_enabled'  => $_ownEnabled,
                     'base_url'           => BASE_URL,
                 ];
                 include __DIR__ . '/../includes/card-search.php';
@@ -767,6 +772,19 @@ var AlteredDB = {
     keywordOptionsJson:   <?= $keywordOptionsJson ?>,
     variationOptionsJson: <?= $variationOptionsJson ?>,
     defaultCollection:    <?= json_encode($defaultCollection) ?>,
+<?php
+    // Promo set linking (main edition → its promo sub editions) + flat sub list.
+    $setChildren = [];
+    $subSets     = [];
+    foreach ($setsData as $_sref => $_sd) {
+        if (($_sd['subtype'] ?? '') !== 'sub') continue;
+        $subSets[] = $_sref;
+        if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
+    }
+?>
+    setChildren:  <?= json_encode($setChildren) ?>,
+    subSets:      <?= json_encode($subSets) ?>,
+    ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
 };
 </script>
 <script>
@@ -2204,6 +2222,12 @@ var AlteredDB = {
         collectionCsrf:    AlteredDB.collectionCsrf,
         collectionUrl:     AlteredDB.collectionUrl,
         collApiUrl:        AlteredDB.collApiUrl,
+        ownershipApiUrl:   AlteredDB.ownershipApiUrl,
+        setChildren:  AlteredDB.setChildren,
+        subSets:      AlteredDB.subSets,
+        uniqueType:   ['CHARACTER'],
+        uniqueRarity: ['UNIQUE'],
+        uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
         defaults: {
             factions:   <?= json_encode($defaultFactions) ?>,
             types:      <?= json_encode($defaultTypes) ?>,

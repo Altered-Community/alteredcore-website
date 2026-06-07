@@ -76,7 +76,7 @@ $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 $q    = trim($_GET['q'] ?? '');
 $sort = in_array($_GET['sort'] ?? '', $validSorts) ? $_GET['sort'] : 'default';
 $cols = (int)($_GET['cols'] ?? $_defaultCols);
-if (!in_array($cols, [2, 3, 4, 5])) $cols = $_defaultCols;
+if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
 $validCostPower = array_map('strval', range(0, 12));
 $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
@@ -113,6 +113,11 @@ $_collMode         = $_collEnabled && $_csUserId > 0;
 // digital ownership (AlteredOwnership service)
 $_ownEnabled       = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $_ownMode          = $_ownEnabled && $_csUserId > 0;
+// Browser-facing ownership app root (same resolution as pages/collection.php):
+// prefer the public OWNERSHIP_WEB_URL, fall back to OWNERSHIP_API_URL.
+$_ownWebBase       = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? OWNERSHIP_WEB_URL
+                   : ((defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL) ? OWNERSHIP_API_URL : '');
+$_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {
@@ -148,6 +153,16 @@ $variationOptionsJson = json_encode(array_values(array_map(
     function($code, $names) use ($uiLang) { return ['value' => $code, 'text' => $names[$uiLang] ?? $names['en']]; },
     array_keys($variationsData), array_values($variationsData)
 )));
+
+// Promo set linking: parent (main) edition → its promo (sub) editions, plus the
+// flat list of sub editions. Used client-side to (de)select promos with their parent.
+$setChildren = [];
+$subSets     = [];
+foreach ($setsData as $_sref => $_sd) {
+    if (($_sd['subtype'] ?? '') !== 'sub') continue;
+    $subSets[] = $_sref;
+    if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
+}
 
 // widget config for card-search.php
 $_cs = [
@@ -186,12 +201,13 @@ $_cs = [
         'isErrated'   => $isErrated,
         'isSuspended' => $isSuspended,
     ],
-    'col_options'        => [2, 3, 4, 5],
+    'col_options'        => [1, 2, 3, 4, 5],
     'show_cols'          => true,
     'collection_mode'    => $_collMode,
     'collection_enabled' => $_collEnabled,
     'ownership_mode'     => $_ownMode,
     'ownership_enabled'  => $_ownEnabled,
+    'ownership_url'      => $_ownWebUrl,
     'base_url'           => BASE_URL,
 ];
 
@@ -199,16 +215,6 @@ $pageTitle = $txt['page_title'];
 ?>
 
 <div class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-        <?php if ($_collEnabled): ?>
-        <a href="<?= BASE_URL ?>/pages/collection" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-layer-group me-1"></i>
-            <?= h($txt['btn_collection']) ?>
-        </a>
-        <?php endif; ?>
-    </div>
-
     <?php include __DIR__ . '/../includes/card-search.php'; ?>
 </div>
 
@@ -285,6 +291,11 @@ CardSearch({
         defaultCollection:     <?= json_encode($defaultCollection) ?>,
     },
     typesMerged: <?= json_encode($typesMergedData) ?>,
+    setChildren:  <?= json_encode($setChildren) ?>,
+    subSets:      <?= json_encode($subSets) ?>,
+    uniqueType:   <?= json_encode(['CHARACTER']) ?>,
+    uniqueRarity: <?= json_encode(['UNIQUE']) ?>,
+    uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
     txt: {
         prev:          <?= json_encode($txt['prev']          ?? '← Prev') ?>,
         next:          <?= json_encode($txt['next']          ?? 'Next →') ?>,
