@@ -89,23 +89,44 @@ $txt = [
         'ho_calc'         => 'Calculators',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Drawn',
-        'ho_slow'         => 'Slow start',          'ho_slow_sub'   => 'no playable card on day 1',
-        'ho_noearly'      => 'No early character',   'ho_noearly_sub'=> 'no character ≤3 mana',
-        'ho_tempo'        => 'Day-1 tempo',          'ho_tempo_sub'  => 'can play ≥2 cards on day 1',
-        'ho_double'       => 'Two characters T1',    'ho_double_sub' => 'can play ≥2 characters on day 1',
-        'ho_avg'          => 'Playable on day 1',    'ho_avg_sub'    => 'average, with 3 mana',
-        'ho_keep'         => 'Keepable hand',        'ho_keep_sub'   => '≥1 character ≤3 & ≥2 plays',
-        'ho_heavy'        => 'Top-heavy hand',       'ho_heavy_sub'    => '≥3 cards at ≥4 mana',
-        'ho_explosive'    => 'Explosive start',      'ho_explosive_sub'=> '≥3 cards at ≤2 mana',
-        'ho_balanced'     => 'Balanced hand',        'ho_balanced_sub' => '≥1 character & ≥1 other',
-        'ho_calc_card'    => 'Draw a key card',
-        'ho_calc_card_tip'=> 'Chance at least one copy of the chosen card(s) is in your opening hand.',
-        'ho_calc_combo'   => 'Draw a combo',
-        'ho_calc_combo_tip'=> 'Chance you have at least one of group A AND one of group B in your opening hand.',
-        'ho_pick'         => 'Pick cards…',
+        'ho_oncurve'      => 'On curve',
+        'ho_oncurve_sub'  => 'spend all 3 mana on day 1',
+        'ho_oncurve_exp'  => 'Spending all your mana early means a smooth, efficient start with nothing wasted.',
+        'ho_tempo'        => 'Day 1 tempo',
+        'ho_tempo_sub'    => 'play two cards or more on day 1',
+        'ho_tempo_exp'    => 'Playing several cards on the first day builds your board faster than your opponent.',
+        'ho_avg'          => 'Playable on day 1',
+        'ho_avg_sub'      => 'average number of cards playable on day 1',
+        'ho_avg_exp'      => 'How much your typical opening hand can actually do with 3 mana on day one.',
+        'ho_slowfreq'     => 'No playable card Day 1',
+        'ho_slowfreq_sub' => 'a hand with only cards costing 4 mana or more',
+        'ho_slowfreq_exp' => 'A completely unplayable first day — rare, but it can cost you the game.',
+        'ho_noearly'      => 'No early character',
+        'ho_noearly_sub'  => 'no character costing 3 mana or less',
+        'ho_noearly_exp'  => 'Cheap characters get you onto the board early; a hand without any starts slowly.',
+        'ho_double'       => 'Two characters Day 1',
+        'ho_double_sub'   => 'play two characters or more on day 1',
+        'ho_double_exp'   => 'Deploying two characters on day 1 pressures both Expeditions at once.',
+        'ho_heavy'        => 'Top-heavy hand',
+        'ho_heavy_sub'    => 'three cards or more costing 4 mana or more',
+        'ho_heavy_exp'    => 'Too many expensive cards means a clunky hand you cannot play out early.',
+        'ho_congestion'   => 'Mana congestion',
+        'ho_congestion_sub'=> 'four cards or more sharing the same mana cost',
+        'ho_congestion_exp'=> 'Too many cards stuck on the same cost slow your early game — you can only play so many at once.',
+        'ho_types_label'  => 'Average composition',
+        'ho_freq'         => '1 game in {x}',
+        'ho_never'        => 'Never',
+        'ho_pick'         => 'Pick…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
-        'ho_in_hand'      => 'in opening hand',
         'ho_ratio'        => '≈ {x} in {y} hands',
+        'ho_ratio_generic'=> '≈ {x} chances in {y}',
+        'nc_atleast'       => 'Chances of having at least',
+        'nc_atleast_combo' => 'Chances of having at least one of',
+        'nc_among'         => 'cards among',
+        'nc_among_combo'   => 'among',
+        'nc_draw_a'        => 'by drawing',
+        'nc_draw_b'        => 'cards',
+        'nc_both'          => 'Both',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -188,23 +209,44 @@ $txt = [
         'ho_calc'         => 'Calculateurs',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Piochées',
-        'ho_slow'         => 'Départ lent',          'ho_slow_sub'   => 'aucune carte jouable au J1',
-        'ho_noearly'      => 'Pas de petit perso',   'ho_noearly_sub'=> 'aucun perso ≤3 mana',
-        'ho_tempo'        => 'Tempo J1',             'ho_tempo_sub'  => 'peut jouer ≥2 cartes au J1',
-        'ho_double'       => 'Double perso J1',      'ho_double_sub' => 'peut poser ≥2 persos au J1',
-        'ho_avg'          => 'Cartes jouables J1',   'ho_avg_sub'    => 'en moyenne, avec 3 mana',
-        'ho_keep'         => 'Main gardable',        'ho_keep_sub'   => '≥1 perso ≤3 & ≥2 plays',
-        'ho_heavy'        => 'Main lourde',          'ho_heavy_sub'    => '≥3 cartes à ≥4 mana',
-        'ho_explosive'    => 'Démarrage explosif',   'ho_explosive_sub'=> '≥3 cartes à ≤2 mana',
-        'ho_balanced'     => 'Main équilibrée',      'ho_balanced_sub' => '≥1 perso & ≥1 autre',
-        'ho_calc_card'    => 'Avoir une carte clé',
-        'ho_calc_card_tip'=> 'Probabilité qu\'au moins 1 exemplaire des cartes choisies soit dans ta main de départ.',
-        'ho_calc_combo'   => 'Avoir un combo',
-        'ho_calc_combo_tip'=> 'Probabilité d\'avoir au moins 1 carte du groupe A ET 1 du groupe B en main de départ.',
-        'ho_pick'         => 'Choisir des cartes…',
+        'ho_oncurve'      => 'Sur la courbe',
+        'ho_oncurve_sub'  => 'dépenser tes 3 mana au jour 1',
+        'ho_oncurve_exp'  => 'Dépenser tout ton mana tôt, c\'est un démarrage fluide et efficace, sans rien gâcher.',
+        'ho_tempo'        => 'Tempo Jour 1',
+        'ho_tempo_sub'    => 'jouer deux cartes ou plus au jour 1',
+        'ho_tempo_exp'    => 'Jouer plusieurs cartes dès le premier jour développe ton plateau plus vite que l\'adversaire.',
+        'ho_avg'          => 'Cartes jouables Jour 1',
+        'ho_avg_sub'      => 'nombre moyen de cartes jouables au jour 1',
+        'ho_avg_exp'      => 'Ce que ta main de départ typique peut vraiment faire avec 3 mana au premier jour.',
+        'ho_slowfreq'     => 'Aucune carte jouable Jour 1',
+        'ho_slowfreq_sub' => 'une main avec uniquement des cartes à 4 mana ou plus',
+        'ho_slowfreq_exp' => 'Un premier jour totalement injouable — rare, mais ça peut coûter la partie.',
+        'ho_noearly'      => 'Pas de petit perso',
+        'ho_noearly_sub'  => 'aucun personnage à 3 mana ou moins',
+        'ho_noearly_exp'  => 'Les petits personnages te posent tôt sur le plateau ; une main sans en a un départ lent.',
+        'ho_double'       => 'Double perso Jour 1',
+        'ho_double_sub'   => 'poser deux personnages ou plus au jour 1',
+        'ho_double_exp'   => 'Poser deux personnages au jour 1 met la pression sur les deux Expéditions à la fois.',
+        'ho_heavy'        => 'Main lourde',
+        'ho_heavy_sub'    => 'trois cartes ou plus à 4 mana ou plus',
+        'ho_heavy_exp'    => 'Trop de cartes chères, c\'est une main encombrée, injouable tôt dans la partie.',
+        'ho_congestion'   => 'Engorgement de mana',
+        'ho_congestion_sub'=> 'quatre cartes ou plus au même coût en mana',
+        'ho_congestion_exp'=> 'Trop de cartes au même coût ralentissent ton début de partie : tu ne peux en jouer qu\'un nombre limité à la fois.',
+        'ho_types_label'  => 'Composition moyenne',
+        'ho_freq'         => '1 partie sur {x}',
+        'ho_never'        => 'Jamais',
+        'ho_pick'         => 'Choisir…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
-        'ho_in_hand'      => 'en main de départ',
         'ho_ratio'        => '≈ {x} sur {y} mains',
+        'ho_ratio_generic'=> '≈ {x} chances sur {y}',
+        'nc_atleast'       => 'Chances d\'avoir au moins',
+        'nc_atleast_combo' => 'Chances d\'avoir au moins une de',
+        'nc_among'         => 'cartes parmi',
+        'nc_among_combo'   => 'parmi',
+        'nc_draw_a'        => 'en piochant',
+        'nc_draw_b'        => 'cartes',
+        'nc_both'          => 'A + B',
     ],
 ][$uiLang] ?? [];
 
@@ -849,24 +891,31 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <span><?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
                         <span><?= h($txt['ho_drawn']) ?> <input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
                     </div>
-                    <div class="ho-calc-card">
-                        <div class="ho-calc-title"><?= h($txt['ho_calc_card']) ?></div>
-                        <div class="ho-calc-sub"><?= h($txt['ho_calc_card_tip']) ?></div>
-                        <select id="ho-card-key" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select>
-                        <div class="ho-res" id="ho-card-res"></div>
-                    </div>
-                    <div class="ho-calc-card">
-                        <div class="ho-calc-title"><?= h($txt['ho_calc_combo']) ?></div>
-                        <div class="ho-calc-sub"><?= h($txt['ho_calc_combo_tip']) ?></div>
-                        <div class="ho-ab"><span><?= h($txt['ho_group_a']) ?></span><select id="ho-combo-a" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
-                        <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ho-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
-                        <div class="ho-res" id="ho-combo-res"></div>
+                    <!-- Calculators -->
+                    <div id="hand-odds-x" class="hand-odds-x">
+                        <div class="ncalc">
+                            <div class="nc-head"><?= h($txt['nc_atleast']) ?></div>
+                            <div class="nc-bars" id="ncx-card-bars"></div>
+                            <div class="nc-mid"><?= h($txt['nc_among']) ?></div>
+                            <select id="ncx-card-key" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select>
+                            <div class="nc-foot"><?= h($txt['nc_draw_a']) ?> <b class="ncx-drawn">6</b> <?= h($txt['nc_draw_b']) ?></div>
+                            <div class="nc-ratio" id="ncx-card-ratio"></div>
+                        </div>
+                        <div class="ncalc">
+                            <div class="nc-head"><?= h($txt['nc_atleast_combo']) ?></div>
+                            <div class="nc-bars" id="ncx-combo-bars"></div>
+                            <div class="nc-mid"><?= h($txt['nc_among_combo']) ?></div>
+                            <div class="ho-ab"><span><?= h($txt['ho_group_a']) ?></span><select id="ncx-combo-a" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                            <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ncx-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                            <div class="nc-foot"><?= h($txt['nc_draw_a']) ?> <b class="ncx-drawn">6</b> <?= h($txt['nc_draw_b']) ?></div>
+                            <div class="nc-ratio" id="ncx-combo-ratio"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         <script>
-          var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
+          var handDeckCards =<?= json_encode(array_map(static function ($c) use ($uiLang) {
               return $c + ['unique' => _deck_is_unique($c['ref']), 'img' => _deck_cdn_url($c['ref'], $uiLang)];
           }, getDeckStartingHandPool($deck['cards'], $lang)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handLang = <?= json_encode($uiLang) ?>;
@@ -905,17 +954,20 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
           var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
           var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handOddsTxt = {
-              slow:[<?= json_encode($txt['ho_slow']) ?>,<?= json_encode($txt['ho_slow_sub']) ?>],
-              noearly:[<?= json_encode($txt['ho_noearly']) ?>,<?= json_encode($txt['ho_noearly_sub']) ?>],
-              tempo:[<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>],
-              double:[<?= json_encode($txt['ho_double']) ?>,<?= json_encode($txt['ho_double_sub']) ?>],
-              avg:[<?= json_encode($txt['ho_avg']) ?>,<?= json_encode($txt['ho_avg_sub']) ?>],
-              keep:[<?= json_encode($txt['ho_keep']) ?>,<?= json_encode($txt['ho_keep_sub']) ?>],
-              heavy:[<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>],
-              explosive:[<?= json_encode($txt['ho_explosive']) ?>,<?= json_encode($txt['ho_explosive_sub']) ?>],
-              balanced:[<?= json_encode($txt['ho_balanced']) ?>,<?= json_encode($txt['ho_balanced_sub']) ?>],
-              inHand: <?= json_encode($txt['ho_in_hand']) ?>,
-              ratio: <?= json_encode($txt['ho_ratio']) ?>
+              oncurve:   [<?= json_encode($txt['ho_oncurve']) ?>,<?= json_encode($txt['ho_oncurve_sub']) ?>,<?= json_encode($txt['ho_oncurve_exp']) ?>],
+              tempo:     [<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>,<?= json_encode($txt['ho_tempo_exp']) ?>],
+              avg:       [<?= json_encode($txt['ho_avg']) ?>,<?= json_encode($txt['ho_avg_sub']) ?>,<?= json_encode($txt['ho_avg_exp']) ?>],
+              slowfreq:  [<?= json_encode($txt['ho_slowfreq']) ?>,<?= json_encode($txt['ho_slowfreq_sub']) ?>,<?= json_encode($txt['ho_slowfreq_exp']) ?>],
+              noearly:   [<?= json_encode($txt['ho_noearly']) ?>,<?= json_encode($txt['ho_noearly_sub']) ?>,<?= json_encode($txt['ho_noearly_exp']) ?>],
+              double:    [<?= json_encode($txt['ho_double']) ?>,<?= json_encode($txt['ho_double_sub']) ?>,<?= json_encode($txt['ho_double_exp']) ?>],
+              heavy:     [<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>,<?= json_encode($txt['ho_heavy_exp']) ?>],
+              congestion:[<?= json_encode($txt['ho_congestion']) ?>,<?= json_encode($txt['ho_congestion_sub']) ?>,<?= json_encode($txt['ho_congestion_exp']) ?>],
+              typesLabel: <?= json_encode($txt['ho_types_label']) ?>,
+              freq: <?= json_encode($txt['ho_freq']) ?>,
+              never: <?= json_encode($txt['ho_never']) ?>,
+              both: <?= json_encode($txt['nc_both']) ?>,
+              ratio: <?= json_encode($txt['ho_ratio']) ?>,
+              ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>
           };
         </script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">

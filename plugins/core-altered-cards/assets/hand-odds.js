@@ -7,53 +7,102 @@
     if (!M || !statsGrid || typeof handDeckCards === 'undefined') return;
 
     var HAND_SIZE = 6;
-    // Tunable colour thresholds. dir:'low' => lower is better; 'high' => higher is better.
-    var TH = {
-        keep:      { dir: 'high', g: 80, a: 60 },
-        tempo:     { dir: 'high', g: 65, a: 40 },
-        slow:      { dir: 'low',  g: 10, a: 20 },
-        noearly:   { dir: 'low',  g: 15, a: 30 },
-        double:    { dir: 'high', g: 45, a: 25 },
-        explosive: { dir: 'high', g: 35, a: 20 },
-        avg:       { dir: 'high', g: 2.5, a: 1.5, isCount: true },
-        heavy:     { dir: 'low',  g: 15, a: 30 },
-        balanced:  { dir: 'high', g: 75, a: 55 }
-    };
-    function band(v, th) {
-        if (th.dir === 'low')  return v <= th.g ? 'good' : (v <= th.a ? 'warn' : 'bad');
-        return v >= th.g ? 'good' : (v >= th.a ? 'warn' : 'bad');
-    }
-    function pct(x) { return (x * 100).toFixed(0) + '%'; }
+    var DEC = handLang === 'en' ? '.' : ',';
     function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     var groupQty = {}; handDeckGroups.forEach(function (g) { groupQty[g.key] = g.qty; });
 
+    // ----- Stats -----
     function computeStats() {
         var cards = handDeckCards.map(function (c) {
             return { cost: c.mainCost, isCharacter: c.type === 'CHARACTER', qty: c.qty };
         });
         return M.handStats(cards, HAND_SIZE);
     }
-    function card(key, valueNum, displayVal) {
-        var th = TH[key], t = handOddsTxt[key] || ['', ''];
-        var b = band(valueNum, th);
-        return '<div class="ho-card ' + b + '"><div class="ho-l">' + t[0] + '</div>' +
-               '<div class="ho-v">' + displayVal + '</div><div class="ho-s">' + t[1] + '</div></div>';
+    function dec1(x) { return x.toFixed(1).replace('.', DEC); }
+    function clampPct(x) { return Math.max(0, Math.min(100, x)).toFixed(1) + '%'; }
+    function precisePct(p) { return (p * 100).toFixed(2).replace('.', DEC) + '%'; }
+    // % with nuance: 0%, "< 1%" (rare but possible), "> 99%", 100%.
+    function fmtPct(p) {
+        if (p <= 0) return '0%';
+        if (p >= 1) return '100%';
+        var v = p * 100;
+        if (v < 1) return '< 1%';
+        if (v > 99) return '> 99%';
+        return v.toFixed(0) + '%';
     }
+    // Abbreviate large counts so the value stays short at full size (12345 → "12k", 3.3M).
+    function compact(x) {
+        if (x >= 1000000) return (x / 1000000).toFixed(1).replace('.', DEC) + 'M';
+        if (x >= 10000) return Math.round(x / 1000) + 'k';
+        return String(x);
+    }
+    // "1 game in X" frequency, for very rare events shown as odds rather than a %.
+    function freqText(p) {
+        return p <= 0 ? String(handOddsTxt.never) : String(handOddsTxt.freq).replace('{x}', compact(Math.round(1 / p)));
+    }
+    // opts: { bar: 0..100 (progress bar), tipPct: 0..1 (hover tooltip, 2 decimals), small: bool }
+    // Every row (label / value / bar / hint / explainer) keeps a fixed slot so cards line up.
+    function statCard(key, valueText, opts) {
+        opts = opts || {};
+        var t = handOddsTxt[key] || ['', '', ''];
+        var vAttr = (opts.tipPct != null) ? ' tabindex="0" data-bs-toggle="tooltip" title="' + esc(precisePct(opts.tipPct)) + '"' : '';
+        var num = '<span class="ho-v-n"' + vAttr + '>' + valueText + '</span>';
+        var bar = (opts.bar != null)
+            ? '<div class="ho-bar"><i style="width:' + clampPct(opts.bar) + '"></i></div>'
+            : '<div class="ho-bar ho-bar-empty"></div>';
+        return '<div class="ho-card"><div class="ho-l">' + t[0] + '</div>' +
+               '<div class="ho-v">' + num + '</div>' + bar +
+               '<div class="ho-s">' + t[1] + '</div>' +
+               (t[2] ? '<div class="ho-x">' + t[2] + '</div>' : '') + '</div>';
+    }
+    var TYPE_COLORS = { CHARACTER: '#2f7d57', SPELL: '#C9A84C', REST: '#5b7aa8' };
+    function typesCard() {
+        var tc = { CHARACTER: 0, SPELL: 0, REST: 0 };
+        handDeckCards.forEach(function (c) {
+            tc[c.type === 'CHARACTER' ? 'CHARACTER' : (c.type === 'SPELL' ? 'SPELL' : 'REST')] += c.qty;
+        });
+        var total = tc.CHARACTER + tc.SPELL + tc.REST || 1;
+        var per = function (qty) { return dec1(handDeckSize ? HAND_SIZE * qty / handDeckSize : 0); };
+        var L = handTypeLabels || {};
+        // Donut: conic-gradient slices sized by the deck's type proportions.
+        var a = tc.CHARACTER / total * 100, b = a + tc.SPELL / total * 100;
+        var ring = 'conic-gradient(' + TYPE_COLORS.CHARACTER + ' 0 ' + a.toFixed(2) + '%,' +
+                   TYPE_COLORS.SPELL + ' ' + a.toFixed(2) + '% ' + b.toFixed(2) + '%,' +
+                   TYPE_COLORS.REST + ' ' + b.toFixed(2) + '% 100%)';
+        function row(color, qty, label) {
+            return '<div class="ho-comp-item"><span class="ho-comp-dot" style="background:' + color + '"></span>' +
+                   '<span class="ho-comp-lbl">' + esc(label) + '</span>' +
+                   '<span class="ho-comp-n" style="color:' + color + '">' + per(qty) + '</span></div>';
+        }
+        return '<div class="ho-card ho-card-wide ho-comp"><div class="ho-l">' + esc(handOddsTxt.typesLabel) + '</div>' +
+               '<div class="ho-comp-body">' +
+               '<div class="ho-donut" style="background:' + ring + '"></div>' +
+               '<div class="ho-comp-legend">' +
+               row(TYPE_COLORS.CHARACTER, tc.CHARACTER, L.CHARACTER || 'Characters') +
+               row(TYPE_COLORS.SPELL, tc.SPELL, L.SPELL || 'Spells') +
+               row(TYPE_COLORS.REST, tc.REST, L.PERMANENT || 'Permanents') +
+               '</div></div></div>';
+    }
+    function pctOpts(p) { return { bar: p * 100, tipPct: p }; }
     function renderStats() {
         var s = computeStats();
         statsGrid.innerHTML =
-            // Row 1 — the essentials
-            card('keep',      s.keepable * 100,    pct(s.keepable)) +
-            card('tempo',     s.tempo * 100,       pct(s.tempo)) +
-            card('slow',      s.slowStart * 100,   pct(s.slowStart)) +
-            // Row 2 — early development
-            card('noearly',   s.noEarlyChar * 100, pct(s.noEarlyChar)) +
-            card('double',    s.doubleChar * 100,  pct(s.doubleChar)) +
-            card('explosive', s.explosive * 100,   pct(s.explosive)) +
-            // Row 3 — curve & composition
-            card('avg',       s.avgPlayable,       s.avgPlayable.toFixed(1).replace('.', ',')) +
-            card('heavy',     s.heavy * 100,       pct(s.heavy)) +
-            card('balanced',  s.balanced * 100,    pct(s.balanced));
+            typesCard() +                                                            // full width, first
+            statCard('oncurve',    fmtPct(s.onCurve),     pctOpts(s.onCurve)) +
+            statCard('tempo',      fmtPct(s.tempo),       pctOpts(s.tempo)) +
+            statCard('avg',        dec1(s.avgPlayable),   {}) +
+            statCard('slowfreq',   freqText(s.slowStart), { tipPct: s.slowStart }) +
+            statCard('noearly',    fmtPct(s.noEarlyChar), pctOpts(s.noEarlyChar)) +
+            statCard('double',     fmtPct(s.doubleChar),  pctOpts(s.doubleChar)) +
+            statCard('heavy',      fmtPct(s.heavy),       pctOpts(s.heavy)) +
+            statCard('congestion', fmtPct(s.congestion),  pctOpts(s.congestion));
+        initTooltips();
+    }
+    function initTooltips() {
+        if (!(window.bootstrap && window.bootstrap.Tooltip)) return;
+        statsGrid.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!el._tt) el._tt = new window.bootstrap.Tooltip(el);
+        });
     }
     renderStats();   // deck-level: compute once on load (does not change on redraw)
 
@@ -70,9 +119,9 @@
     function copies(ts) {
         return (ts ? ts.getValue() : []).reduce(function (s, k) { return s + (groupQty[k] || 0); }, 0);
     }
-    // Friendly "≈ X in Y hands" — best proper fraction with denominator ≤5; omitted for extreme odds.
-    function niceRatio(p) {
-        if (p <= 0 || p >= 1) return '';
+    // Best proper fraction with denominator ≤5 (e.g. 0.72 → 3/4); null for extreme odds.
+    function bestFraction(p) {
+        if (p <= 0 || p >= 1) return null;
         var bestX = 0, bestY = 0, bestErr = Infinity;
         for (var y = 1; y <= 5; y++) {
             var x = Math.round(p * y);
@@ -80,17 +129,8 @@
             var err = Math.abs(p - x / y);
             if (err < bestErr - 1e-12) { bestErr = err; bestX = x; bestY = y; }
         }
-        if (!bestY) return '';
-        return String(handOddsTxt.ratio).replace('{x}', bestX).replace('{y}', bestY);
+        return bestY ? { x: bestX, y: bestY } : null;
     }
-    function showRes(el, p) {
-        if (p <= 0 && el.dataset.empty === '1') { el.innerHTML = ''; return; }
-        var sub = esc(handOddsTxt.inHand), r = p > 0 ? niceRatio(p) : '';
-        if (r) sub += ' · ' + esc(r);
-        el.innerHTML = '<div class="ho-pct">' + (p * 100).toFixed(0) + '%</div>' +
-                       '<div class="ho-c">' + sub + '</div>';
-    }
-
     // ----- Multiselect (tom-select): card thumbnails, grouped by type, sorted by cost then name -----
     var TYPE_ORDER = ['CHARACTER', 'SPELL', 'PERMANENT', 'TOKEN_MANA', 'TOKEN', 'EXPEDITION_PERMANENT', 'LANDMARK_PERMANENT', 'OTHER'];
     function optgroups() {
@@ -130,27 +170,60 @@
         });
     }
 
-    var cardSel = document.getElementById('ho-card-key');
-    var cardRes = document.getElementById('ho-card-res');
-    var cardTS = cardSel ? buildSelect(cardSel, function () { recalcCard(); }) : null;
-    function recalcCard() {
-        if (!cardRes) return;
-        var K = copies(cardTS);
-        cardRes.dataset.empty = K ? '0' : '1';
-        showRes(cardRes, M.pAtLeastOne(handDeckSize, K, drawn()));
+    // ----- Calculators (bar layout) -----
+    function renderBars(el, rows) {
+        if (!el) return;
+        el.innerHTML = rows.map(function (r) {
+            var p = r[1], has = p != null, w = has ? Math.round(p * 100) : 0;
+            return '<div class="nc-bar"><span class="nc-bar-l">' + esc(r[0]) + '</span>' +
+                   '<span class="nc-bar-track"><i style="width:' + w + '%"></i></span>' +
+                   '<span class="nc-bar-v">' + (has ? w + '%' : '') + '</span></div>';
+        }).join('');
+    }
+    // "≈ X in Y hands" (or "≈ X chances in Y" for a non-6 draw) for the headline probability.
+    function ratioPhrase(p) {
+        var fr = bestFraction(p);
+        if (!fr) return '';
+        var tpl = drawn() === HAND_SIZE ? handOddsTxt.ratio : handOddsTxt.ratioGeneric;
+        return String(tpl).replace('{x}', fr.x).replace('{y}', fr.y);
+    }
+    var ncCardBars = document.getElementById('ncx-card-bars');
+    var ncCardSel = document.getElementById('ncx-card-key');
+    var ncCardRatio = document.getElementById('ncx-card-ratio');
+    var ncCardTS = ncCardSel ? buildSelect(ncCardSel, function () { recalcNcCard(); }) : null;
+    function recalcNcCard() {
+        if (!ncCardBars) return;
+        var K = copies(ncCardTS), n = drawn();
+        renderBars(ncCardBars, [
+            ['0',  K ? 1 - M.pAtLeastOne(handDeckSize, K, n) : null],
+            ['1+', K ? M.pAtLeast(handDeckSize, K, n, 1) : null],
+            ['2+', K ? M.pAtLeast(handDeckSize, K, n, 2) : null],
+            ['3+', K ? M.pAtLeast(handDeckSize, K, n, 3) : null]
+        ]);
+        if (ncCardRatio) ncCardRatio.textContent = K ? ratioPhrase(M.pAtLeast(handDeckSize, K, n, 1)) : '';
+    }
+    var ncComboBars = document.getElementById('ncx-combo-bars');
+    var ncComboRatio = document.getElementById('ncx-combo-ratio');
+    var ncAsel = document.getElementById('ncx-combo-a'), ncBsel = document.getElementById('ncx-combo-b');
+    var ncAts = ncAsel ? buildSelect(ncAsel, function () { recalcNcCombo(); }) : null;
+    var ncBts = ncBsel ? buildSelect(ncBsel, function () { recalcNcCombo(); }) : null;
+    function recalcNcCombo() {
+        if (!ncComboBars) return;
+        var a = copies(ncAts), b = copies(ncBts), n = drawn();
+        var both = (a && b) ? M.pComboBoth(handDeckSize, a, b, n) : null;
+        renderBars(ncComboBars, [
+            ['A', a ? M.pAtLeastOne(handDeckSize, a, n) : null],
+            ['B', b ? M.pAtLeastOne(handDeckSize, b, n) : null],
+            [handOddsTxt.both, both]
+        ]);
+        if (ncComboRatio) ncComboRatio.textContent = (both != null) ? ratioPhrase(both) : '';
+    }
+    function updateDrawnLabels() {
+        var n = drawn();
+        document.querySelectorAll('.ncx-drawn').forEach(function (el) { el.textContent = n; });
     }
 
-    var aSel = document.getElementById('ho-combo-a'), bSel = document.getElementById('ho-combo-b');
-    var comboRes = document.getElementById('ho-combo-res');
-    var aTS = aSel ? buildSelect(aSel, function () { recalcCombo(); }) : null;
-    var bTS = bSel ? buildSelect(bSel, function () { recalcCombo(); }) : null;
-    function recalcCombo() {
-        if (!comboRes) return;
-        var a = copies(aTS), b = copies(bTS);
-        comboRes.dataset.empty = (a && b) ? '0' : '1';
-        showRes(comboRes, (a && b) ? M.pComboBoth(handDeckSize, a, b, drawn()) : 0);
-    }
-    function recalcAll() { recalcCard(); recalcCombo(); }
+    function recalcAll() { recalcNcCard(); recalcNcCombo(); updateDrawnLabels(); }
 
     if (drawnEl) drawnEl.addEventListener('input', recalcAll);
     recalcAll();
