@@ -96,7 +96,7 @@ function kc_get_access_token(int $userId) {
  * after it has been garbage-collected.
  */
 function kc_set_remember_cookie(int $userId): void {
-    $secure  = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure  = request_is_https();
     $expires = time() + 15 * 86400;
     setcookie('kc_remember', kc_encrypt(json_encode(['uid' => $userId, 'exp' => $expires])), [
         'expires'  => $expires,

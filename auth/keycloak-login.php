@@ -8,8 +8,7 @@ if (!defined('KC_URL') || KC_URL === '') {
     exit;
 }
 
-$scheme      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$redirectUri = $scheme . '://' . $_SERVER['HTTP_HOST'] . BASE_URL . '/auth/keycloak-callback.php';
+$redirectUri = request_scheme() . '://' . $_SERVER['HTTP_HOST'] . BASE_URL . '/auth/keycloak-callback.php';
 $state       = bin2hex(random_bytes(16));
 $action      = $_GET['action'] ?? 'login';
 

@@ -1194,7 +1194,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 <script>
 (function() {
     var shareUrl    = <?= json_encode(
-        ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http')
+        request_scheme()
         . '://' . $_SERVER['HTTP_HOST']
         . BASE_URL . '/pages/deck?id=' . rawurlencode($deckId)
     ) ?>;

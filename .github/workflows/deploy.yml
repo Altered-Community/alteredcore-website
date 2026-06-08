@@ -54,6 +54,7 @@ jobs:
             *) echo "DEPLOY_PROTOCOL invalide: '$PROTO' (attendu: ftp, ftps ou sftp)"; exit 1 ;;
           esac
           RP="${REMOTE_PATH%/}"; [ -n "$RP" ] || RP="."
+          echo "lftp transfer → protocol=$PROTO port=$PORT path=$RP"
 
           # ── Liste blanche ────────────────────────────────────────────────────
           MIRROR_DIRS=(admin assets auth css includes js pages sql themes)

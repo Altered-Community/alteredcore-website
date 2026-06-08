@@ -6,7 +6,7 @@ require_once dirname(__DIR__) . '/includes/func.keycloak.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Signal logout to all installations on the same domain
-$secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+$secure = request_is_https();
 setcookie('ac_global_logout', (string)time(), [
     'expires'  => time() + 30 * 86400,
     'path'     => '/',

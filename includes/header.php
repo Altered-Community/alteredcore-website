@@ -118,7 +118,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     $_themeColor  = getSetting('theme_color') ?: '#C49A2A';
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
-    $_scheme      = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+    $_scheme      = request_scheme();
     $_host        = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
     $_path        = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
     $_qp          = $_GET;

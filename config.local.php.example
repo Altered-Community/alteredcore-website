@@ -93,3 +93,9 @@ define('COLLECTION_USE_API', true);
 // ─── Deployment ───────────────────────────────────────────────────────────────
 define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
 define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)
+
+// Behind a TLS-terminating reverse proxy, PHP may see the request as plain HTTP,
+// producing http:// absolute URLs (e.g. a wrong Keycloak redirect_uri). The app
+// auto-detects X-Forwarded-Proto / -Ssl; uncomment to force HTTPS if your proxy
+// does not send those headers.
+// define('FORCE_HTTPS', true);

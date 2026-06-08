@@ -1,6 +1,40 @@
 <?php
 require_once __DIR__ . '/db.php';
 
+/**
+ * True when the *original* request is HTTPS, honouring a TLS-terminating reverse
+ * proxy / load balancer (which makes PHP see a plain-HTTP connection).
+ * Checks, in order: a FORCE_HTTPS config override, the direct HTTPS flag, the
+ * X-Forwarded-Proto / X-Forwarded-Ssl proxy headers, then the 443 port.
+ *
+ * Used to build correct absolute URLs (e.g. the Keycloak redirect_uri) and to set
+ * the `secure` flag on cookies when behind a proxy.
+ */
+function request_is_https(): bool {
+    if (defined('FORCE_HTTPS') && FORCE_HTTPS) {
+        return true;
+    }
+    if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+    $xfProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+    if ($xfProto !== '') {
+        // May be a comma-separated chain ("https, http") — the first hop is the client's.
+        if (strtolower(trim(explode(',', $xfProto)[0])) === 'https') {
+            return true;
+        }
+    }
+    if (strtolower($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '') === 'on') {
+        return true;
+    }
+    return ($_SERVER['SERVER_PORT'] ?? '') === '443';
+}
+
+/** Scheme ('https' or 'http') of the original request — see request_is_https(). */
+function request_scheme(): string {
+    return request_is_https() ? 'https' : 'http';
+}
+
 
 // Legacy: THEME_SETTING_KEYS was removed — all settings now live in site_settings.
 // Left as empty const so any third-party code that references it does not fatal.
@@ -728,7 +762,7 @@ function kcClearSession(): void {
               'kc_access_token_exp', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure = request_is_https();
     setcookie('kc_remember', '', [
         'expires' => time() - 3600, 'path' => '/',
         'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
@@ -750,7 +784,7 @@ function localClearSession(): void {
     foreach (['local_logged_in', 'local_logged_in_at', 'local_email', 'local_username', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure = request_is_https();
     setcookie('local_remember', '', [
         'expires' => time() - 3600, 'path' => '/',
         'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
