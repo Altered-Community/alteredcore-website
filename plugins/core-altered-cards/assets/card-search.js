@@ -1021,7 +1021,18 @@ function CardSearch(cfg) {
             wrap.appendChild(img);
         }
 
-        if (cfg.collectionMode && cfg.collectionData) {
+        if (_scope === 'ownership') {
+            // Digital-ownership tab: read-only count of digital copies returned by
+            // the ownership API, marked with a key icon. No editable footer — the
+            // ownership service is the source of truth and isn't edited from here.
+            var oqty = card._qty || 0;
+
+            var obadge = document.createElement('span');
+            obadge.className = 'card-own-badge';
+            obadge.dataset.ref = ref;
+            obadge.innerHTML = '<i class="fa-solid fa-key"></i> \xd7' + oqty;
+            wrap.appendChild(obadge);
+        } else if (cfg.collectionMode && cfg.collectionData) {
             var cqty = cfg.collectionData[ref] || 0;
 
             var cbadge = document.createElement('span');
@@ -1133,7 +1144,9 @@ function CardSearch(cfg) {
                     elGrid.innerHTML = '';
                     cards.forEach(function(c) {
                         var norm = normalizeCard(c);
-                        if (_scopeCollection && norm._qty && norm.reference) {
+                        // Only the physical-collection scope feeds collectionData; the
+                        // ownership scope renders its own read-only key badge from _qty.
+                        if (_scope === 'collection' && norm._qty && norm.reference) {
                             cfg.collectionData = cfg.collectionData || {};
                             cfg.collectionData[norm.reference] = norm._qty;
                         }
