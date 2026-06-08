@@ -1,7 +1,9 @@
 name: Deploy
 
-# Synchronise les fichiers suivis par git vers le serveur via FTP / FTPS / SFTP.
-# Déclenché à chaque push (ou merge) sur la branche dev.
+# Déploie les fichiers suivis par git vers le serveur, puis joue les migrations DB.
+#  • Transfert : lftp (même logique liste blanche pour ftp, ftps ET sftp).
+#  • Migrations : php sql/migrate.php exécuté en SSH (preprod et prod ont SSH).
+# Déclenché à chaque push (ou merge) sur la branche preprod.
 on:
   push:
     branches: [preprod]
@@ -20,46 +22,112 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      # ─── Transfert (lftp : ftp / ftps / sftp) ───────────────────────────────
+      # APPROCHE LISTE BLANCHE : on ne synchronise QUE les dossiers/fichiers
+      # explicitement listés. Tout le reste du serveur (staticpages, files,
+      # dossiers créés par les plugins, plugins externes, config.local.php…) n'est
+      # jamais référencé → jamais touché ni supprimé.
+      #   • MIRROR_DIRS : dossiers 100 % gérés par git → miroir avec --delete
+      #                   (les fichiers retirés de git sont nettoyés côté serveur).
+      #   • PUSH_DIRS   : dossiers à contenu serveur → envoi SANS --delete.
+      #   • ROOT_FILES  : fichiers racine déployés explicitement.
+      #   • plugins/    : chaque plugin SUIVI par git en miroir (--delete) + les
+      #                   fichiers de niveau racine ; plugins externes non touchés.
+      # lftp parle ftp, ftps ET sftp → exactement la même logique pour preprod et prod.
+      - name: Deploy via lftp
+        env:
+          PROTO: ${{ vars.DEPLOY_PROTOCOL || secrets.DEPLOY_PROTOCOL }} # ftp | ftps | sftp
+          REMOTE_HOST: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          REMOTE_USER: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
+          REMOTE_PASS: ${{ secrets.DEPLOY_PASSWORD }}
+          REMOTE_PORT: ${{ vars.DEPLOY_PORT || '' }} # vide → 22 (sftp) ou 21 (ftp/ftps)
+          REMOTE_PATH: ${{ vars.DEPLOY_SERVER_DIR || '.' }}
+          VERIFY_CERT: ${{ vars.DEPLOY_VERIFY_CERT || 'yes' }} # ftps : 'no' si certif auto-signé
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y lftp
+
+          PORT="$REMOTE_PORT"
+          case "$PROTO" in
+            sftp)      PORT="${PORT:-22}" ;;
+            ftp|ftps)  PORT="${PORT:-21}" ;;
+            *) echo "DEPLOY_PROTOCOL invalide: '$PROTO' (attendu: ftp, ftps ou sftp)"; exit 1 ;;
+          esac
+          RP="${REMOTE_PATH%/}"; [ -n "$RP" ] || RP="."
+
+          # ── Liste blanche ────────────────────────────────────────────────────
+          MIRROR_DIRS=(admin assets auth css includes js pages sql themes)
+          # data/ est volontairement ABSENT : data/tinymce_shortcodes.json est
+          # éditable depuis l'admin → jamais écrasé. On dépose seulement une COPIE de
+          # référence (.dist) que sql/bootstrap.php copie si le fichier manque (1er run).
+          PUSH_DIRS=(uploads)
+          ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example)
+          PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)
+
+          # Prépare la copie de référence du seed data (déposée en .dist, voir bootstrap).
+          cp data/tinymce_shortcodes.json data/tinymce_shortcodes.json.dist
+
+          # Construit le script lftp (identités passées par stdin, jamais loggées).
+          build_cmds() {
+            echo "set cmd:fail-exit true"
+            echo "set net:timeout 20"
+            echo "set net:max-retries 3"
+            echo "set net:reconnect-interval-base 5"
+            case "$PROTO" in
+              sftp) echo "set sftp:auto-confirm yes" ;;
+              ftps) echo "set ftp:ssl-force true"
+                    echo "set ftp:ssl-protect-data true"
+                    echo "set ftp:passive-mode true"
+                    echo "set ssl:verify-certificate $VERIFY_CERT" ;;
+              ftp)  echo "set ftp:ssl-allow no"
+                    echo "set ftp:passive-mode true" ;;
+            esac
+            echo "open $PROTO://$REMOTE_HOST:$PORT"
+            echo "user \"$REMOTE_USER\" \"$REMOTE_PASS\""
+            # 1) Dossiers en miroir (--delete).
+            for d in "${MIRROR_DIRS[@]}"; do
+              echo "mirror -R --delete -v ./$d/ $RP/$d/"
+            done
+            # 2) Dossiers à contenu serveur : sans --delete.
+            for d in "${PUSH_DIRS[@]}"; do
+              echo "mirror -R -v ./$d/ $RP/$d/"
+            done
+            # 3) Fichiers racine.
+            echo "mput -O $RP ${ROOT_FILES[*]}"
+            # 3b) Copie de référence du seed data (.dist) ; bootstrap.php sème le
+            #     fichier réel s'il manque, sans jamais écraser celui du serveur.
+            echo "mkdir -p $RP/data || echo 'data dir exists'"
+            echo "mput -O $RP/data data/tinymce_shortcodes.json.dist"
+            # 4) Chaque plugin suivi par git en miroir (--delete) ; puis les fichiers
+            #    de niveau racine de plugins/ (la boucle a créé $RP/plugins).
+            for d in plugins/*/; do
+              name="$(basename "$d")"
+              echo "mirror -R --delete -v ./plugins/$name/ $RP/plugins/$name/"
+            done
+            echo "mput -O $RP/plugins ${PLUGIN_TOP_FILES[*]}"
+            echo "bye"
+          }
+
+          lftp -f <(build_cmds)
+
+      # ─── Bootstrap + migrations DB (après l'upload, via SSH) ─────────────────
+      # Exécute sql/bootstrap.php sur le serveur. Idempotent et zéro-touch :
+      #   • crée uploads/ et sème data/tinymce_shortcodes.json si absents ;
+      #   • CREATE DATABASE IF NOT EXISTS (DB_USER doit avoir le droit) ;
+      #   • DB neuve  → import schema.sql + baseline des migrations ;
+      #   • DB existante → applique les migrations en attente.
+      # Réutilise host/user/password ; ajoute si besoin les variables :
+      #   DEPLOY_SSH_PORT   port SSH (défaut: 22)
+      #   DEPLOY_SERVER_DIR chemin du site (où se trouve sql/ ; défaut: ~/)
+      #   PHP_BIN           binaire PHP, ex: php8.2 (défaut: php)
+      - name: Bootstrap & migrate DB (SSH)
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          # ─── Connexion (Settings → Secrets and variables → Actions) ──────────
-          # protocol / host / user peuvent être des Variables (non-secret) OU des
-          # Secrets : le workflow prend la Variable si elle existe, sinon le Secret.
-          # Le mot de passe DOIT être un Secret (les Variables sont visibles en clair).
-          protocol: ${{ vars.DEPLOY_PROTOCOL || secrets.DEPLOY_PROTOCOL }} # "ftp", "ftps" ou "sftp"
-          server: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
           username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ vars.DEPLOY_PORT || ((vars.DEPLOY_PROTOCOL || secrets.DEPLOY_PROTOCOL) == 'sftp' && '22' || '21') }}
-
-          # Répertoire cible sur le serveur (laisser ./ si la racine du compte FTP
-          # pointe déjà sur le site ; sinon ex: "public_html/").
-          server-dir: ${{ vars.DEPLOY_SERVER_DIR || './' }}
-
-          # ─── Suppressions sûres ──────────────────────────────────────────────
-          # L'action conserve un fichier d'état (.ftp-deploy-sync-state.json) sur le
-          # serveur et ne supprime QUE les fichiers qu'elle a elle-même déployés.
-          # Les plugins externes (présents uniquement sur le serveur, jamais poussés
-          # par cette action) ne sont donc jamais supprimés.
-
-          # ─── Fichiers à NE PAS envoyer / supprimer ──────────────────────────
-          # Note : fournir "exclude" remplace la liste par défaut, donc on
-          # ré-inclut les motifs git habituels.
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            .github/**
-            .claude/**
-            memory/**
-            docs/**
-            logs/**
-            config.local.php
-            docker/**
-            docker-compose.yml
-            Dockerfile
-            README.md
-            LICENSE.md
-            CONTRIBUTING.md
-            git-manager.py
+          port: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          script_stop: true # échoue le job si une commande échoue
+          script: |
+            cd "${{ vars.DEPLOY_SERVER_DIR || '~/' }}"
+            ${{ vars.PHP_BIN || 'php' }} sql/bootstrap.php
