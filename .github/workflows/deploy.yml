@@ -43,9 +43,10 @@ jobs:
           REMOTE_PORT: ${{ vars.DEPLOY_PORT || '' }} # vide → 22 (sftp) ou 21 (ftp/ftps)
           REMOTE_PATH: ${{ vars.DEPLOY_SERVER_DIR || '.' }}
           VERIFY_CERT: ${{ vars.DEPLOY_VERIFY_CERT || 'yes' }} # ftps : 'no' si certif auto-signé
+          DEPLOY_PARALLEL: ${{ vars.DEPLOY_PARALLEL || '8' }} # transferts SFTP simultanés
         run: |
           set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y lftp
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
 
           PORT="$REMOTE_PORT"
           case "$PROTO" in
@@ -54,62 +55,99 @@ jobs:
             *) echo "DEPLOY_PROTOCOL invalide: '$PROTO' (attendu: ftp, ftps ou sftp)"; exit 1 ;;
           esac
           RP="${REMOTE_PATH%/}"; [ -n "$RP" ] || RP="."
-          echo "lftp transfer → protocol=$PROTO port=$PORT path=$RP"
+          PARALLEL="${DEPLOY_PARALLEL:-8}"
+          HASHDIR=".deploy-hashes"
+          echo "lftp → protocol=$PROTO port=$PORT path=$RP parallel=$PARALLEL"
 
           # ── Liste blanche ────────────────────────────────────────────────────
           MIRROR_DIRS=(admin assets auth css includes js pages sql themes)
-          # data/ est volontairement ABSENT : data/tinymce_shortcodes.json est
-          # éditable depuis l'admin → jamais écrasé. On dépose seulement une COPIE de
-          # référence (.dist) que sql/bootstrap.php copie si le fichier manque (1er run).
-          PUSH_DIRS=(uploads)
           ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example)
           PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)
-
-          # Prépare la copie de référence du seed data (déposée en .dist, voir bootstrap).
           cp data/tinymce_shortcodes.json data/tinymce_shortcodes.json.dist
 
-          # Construit le script lftp (identités passées par stdin, jamais loggées).
-          build_cmds() {
-            echo "set cmd:fail-exit true"
+          # Unités hash-gatées "nom|chemin_local|chemin_distant" : on compare un hash
+          # du CONTENU du dossier à celui stocké côté serveur ($RP/.deploy-hashes/<nom>)
+          # et on SAUTE le dossier si identique. Sans ça, actions/checkout réécrit les
+          # mtime → lftp re-transfère tout à chaque run (lent + "supprime/recrée tout").
+          UNITS=()
+          for d in "${MIRROR_DIRS[@]}"; do UNITS+=("$d|$d|$RP/$d"); done
+          for d in plugins/*/; do n="$(basename "$d")"; UNITS+=("plugin_$n|${d%/}|$RP/plugins/$n"); done
+
+          # Préambule de connexion (identifiants par stdin, jamais loggés).
+          conn() {
             echo "set net:timeout 20"
             echo "set net:max-retries 3"
-            echo "set net:reconnect-interval-base 5"
             case "$PROTO" in
               sftp) echo "set sftp:auto-confirm yes" ;;
-              ftps) echo "set ftp:ssl-force true"
-                    echo "set ftp:ssl-protect-data true"
-                    echo "set ftp:passive-mode true"
-                    echo "set ssl:verify-certificate $VERIFY_CERT" ;;
-              ftp)  echo "set ftp:ssl-allow no"
-                    echo "set ftp:passive-mode true" ;;
+              ftps) echo "set ftp:ssl-force true; set ftp:ssl-protect-data true; set ftp:passive-mode true; set ssl:verify-certificate $VERIFY_CERT" ;;
+              ftp)  echo "set ftp:ssl-allow no; set ftp:passive-mode true" ;;
             esac
             echo "open $PROTO://$REMOTE_HOST:$PORT"
             echo "user \"$REMOTE_USER\" \"$REMOTE_PASS\""
-            # 1) Dossiers en miroir (--delete).
-            for d in "${MIRROR_DIRS[@]}"; do
-              echo "mirror -R --delete -v ./$d/ $RP/$d/"
-            done
-            # 2) Dossiers à contenu serveur : sans --delete.
-            for d in "${PUSH_DIRS[@]}"; do
-              echo "mirror -R -v ./$d/ $RP/$d/"
-            done
-            # 3) Fichiers racine.
-            echo "mput -O $RP ${ROOT_FILES[*]}"
-            # 3b) Copie de référence du seed data (.dist) ; bootstrap.php sème le
-            #     fichier réel s'il manque, sans jamais écraser celui du serveur.
-            echo "mkdir -p $RP/data || echo 'data dir exists'"
-            echo "mput -O $RP/data data/tinymce_shortcodes.json.dist"
-            # 4) Chaque plugin suivi par git en miroir (--delete) ; puis les fichiers
-            #    de niveau racine de plugins/ (la boucle a créé $RP/plugins).
-            for d in plugins/*/; do
-              name="$(basename "$d")"
-              echo "mirror -R --delete -v ./plugins/$name/ $RP/plugins/$name/"
-            done
-            echo "mput -O $RP/plugins ${PLUGIN_TOP_FILES[*]}"
-            echo "bye"
           }
 
-          lftp -f <(build_cmds)
+          # 1) Hash local de chaque unité (contenu + chemins triés → couvre ajout/suppr/renommage).
+          mkdir -p /tmp/lh /tmp/rh
+          for u in "${UNITS[@]}"; do
+            name="${u%%|*}"; rest="${u#*|}"; lpath="${rest%%|*}"
+            ( cd "$lpath" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum ) \
+              | sha256sum | awk '{print $1}' > "/tmp/lh/$name"
+            : > "/tmp/rh/$name"
+          done
+
+          # 2) Récupère les hash distants (best-effort : absents au 1er run → vides).
+          {
+            conn
+            echo "set cmd:fail-exit no"
+            echo "lcd /tmp/rh"
+            for u in "${UNITS[@]}"; do echo "get \"$RP/$HASHDIR/${u%%|*}\""; done
+            echo "bye"
+          } | lftp || true
+
+          # 3) Décide quoi synchroniser (boucle SANS pipe → variables conservées).
+          MIRROR_LINES=(); CHANGED=()
+          for u in "${UNITS[@]}"; do
+            name="${u%%|*}"; rest="${u#*|}"; lpath="${rest%%|*}"; rpath="${rest#*|}"
+            lh="$(tr -d '[:space:]' < "/tmp/lh/$name")"
+            rh="$(tr -d '[:space:]' < "/tmp/rh/$name" 2>/dev/null || true)"
+            if [ -n "$lh" ] && [ "$lh" = "$rh" ]; then
+              echo "[skip] $lpath (inchangé)"
+            else
+              echo "[sync] $lpath"
+              MIRROR_LINES+=("mirror -R --delete --parallel=$PARALLEL -- ./$lpath/ $rpath/")
+              CHANGED+=("$name")
+            fi
+          done
+
+          # 4) Miroir des unités modifiées + uploads (sans --delete) + fichiers racine/plugins.
+          {
+            conn
+            echo "set cmd:fail-exit yes"
+            for line in "${MIRROR_LINES[@]}"; do echo "$line"; done
+            # uploads/ : on pousse seulement le(s) fichier(s) suivi(s) (pas de --delete,
+            # pas de scan distant) → les images uploadées par les users sont préservées.
+            echo "mkdir -p $RP/uploads || echo exists"
+            echo "mput -O $RP/uploads uploads/.htaccess"
+            echo "mput -O $RP ${ROOT_FILES[*]}"
+            echo "mkdir -p $RP/data || echo exists"
+            echo "mput -O $RP/data data/tinymce_shortcodes.json.dist"
+            echo "mkdir -p $RP/plugins || echo exists"
+            echo "mput -O $RP/plugins ${PLUGIN_TOP_FILES[*]}"
+            echo "bye"
+          } | lftp
+
+          # 5) Met à jour les hash distants des unités synchronisées (session séparée :
+          #    un miroir échoué laisse le hash périmé → retry idempotent au run suivant).
+          if [ "${#CHANGED[@]}" -gt 0 ]; then
+            {
+              conn
+              echo "set cmd:fail-exit no"
+              echo "mkdir -p $RP/$HASHDIR"
+              echo "set cmd:fail-exit yes"
+              for name in "${CHANGED[@]}"; do echo "put -O $RP/$HASHDIR /tmp/lh/$name"; done
+              echo "bye"
+            } | lftp
+          fi
 
       # ─── Bootstrap + migrations DB (après l'upload, via SSH) ─────────────────
       # Exécute sql/bootstrap.php sur le serveur. Idempotent et zéro-touch :
