@@ -53,7 +53,7 @@
     display: flex;
     overflow: hidden;
     width: 82px;
-    height: 82px;
+    height: 60px;
     flex: 0 0 82px;
     border-radius: 8px;
     background-size: cover;
@@ -181,6 +181,9 @@
 .card-coll-btn:hover:not(:disabled) { background:rgba(255,255,255,.35); }
 .card-coll-btn:disabled { opacity:.4; cursor:default; }
 .card-coll-qty { color:#fff; font-weight:700; font-size:.8rem; min-width:1.4em; text-align:center; }
+.card-coll-bar-icon { color:rgba(255,255,255,.7); font-size:.7rem; flex-shrink:0; }
+/* Digital-ownership badge: read-only copy count (key icon), always visible (no hover fade, no edit bar). */
+.card-own-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:3; }
 
 /* =========================================================
    Decks list page  (decks.php)
@@ -446,12 +449,256 @@
     margin-left: 3px;
 }
 
+/* ============================================================
+   Card search — tabbed layout
+   ============================================================ */
+
+/* ---- Search tabs ---- */
+.cs-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--sand-200);
+}
+.cs-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: var(--neutral-500);
+    font-size: .84rem;
+    font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: background .12s, color .12s, border-color .12s;
+}
+/* Tabs sit flush on top of the search card: drop the card's top rounding and
+   border so the active tab connects seamlessly (no gap, no doubled line). */
+.cs-tabs + .card-altered {
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.cs-tab i { font-size: .9em; }
+.cs-tab:hover:not(.active):not([disabled]) { color: var(--neutral-700); background: var(--sand-100); }
+.cs-tab.active {
+    color: var(--neutral-800);
+    background: var(--sand-50);
+    border-color: var(--sand-200);
+    border-bottom: 2px solid var(--sand-50);
+    box-shadow: inset 0 3px 0 var(--primary-400);
+}
+.cs-tab-soon { opacity: .45; cursor: not-allowed; }
+[data-theme="dark"] .cs-tab.active { background: var(--neutral-800, #1f2937); border-bottom-color: var(--neutral-800, #1f2937); }
+@media (max-width: 575px) {
+    .cs-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .cs-tabs::-webkit-scrollbar { display: none; }
+    .cs-tab { padding: 5px 11px; font-size: .8rem; white-space: nowrap; }
+}
+
+/* ---- Compact rarity buttons + separators ---- */
+.cs-rarities { display: inline-flex; align-items: center; gap: 8px; }
+.cs-sep { width: 1px; align-self: stretch; background: var(--neutral-300, #dee2e6); margin: 0 4px; flex-shrink: 0; }
+.filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
+
+/* ---- Promo toggle (switch) + panel ---- */
+.cs-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: .85rem; color: var(--neutral-600); }
+.cs-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.cs-switch-track { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--neutral-300); transition: background .15s; flex-shrink: 0; }
+.cs-switch-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.cs-switch input:checked + .cs-switch-track { background: var(--primary-400); }
+.cs-switch input:checked + .cs-switch-track .cs-switch-thumb { transform: translateX(16px); }
+.cs-switch input:focus-visible + .cs-switch-track { box-shadow: 0 0 0 .2rem rgba(201,168,76,.3); }
+.cs-promo-panel {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px dashed var(--sand-300, #cbb994);
+    border-radius: 8px;
+    background: var(--sand-100);
+}
+.promo-qf-btn { font-size: .78rem; }
+.promo-qf-btn i { width: 14px; text-align: center; }
+
+/* ---- Advanced accordion ---- */
+/* "Manage" pill that lives inside the collection / ownership tab button. Hidden
+   until that tab is active, then revealed as a small clickable pill. */
+.cs-tab-manage { display: none; }
+.cs-tab.active .cs-tab-manage {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border: 1px solid var(--primary-400);
+    border-radius: 999px;
+    color: var(--primary-400);
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .12s, color .12s;
+}
+.cs-tab.active .cs-tab-manage:hover { background: var(--primary-400); color: #fff; }
+.cs-tab-manage i { font-size: .9em; }
+@media (max-width: 575px) {
+    .cs-tab.active .cs-tab-manage { padding: 1px 6px; }
+    .cs-tab-manage .cs-tab-manage-txt { display: none; }
+}
+.cs-adv-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 2px;
+    background: transparent;
+    border: none;
+    color: var(--neutral-600);
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.cs-adv-toggle:hover { color: var(--neutral-800); }
+.cs-adv-chevron { font-size: .75em; transition: transform .15s; }
+.cs-adv-toggle.open .cs-adv-chevron { transform: rotate(90deg); }
+.cs-advanced {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    background: var(--sand-50);
+}
+.cs-check { font-size: .85rem; color: var(--neutral-600); cursor: pointer; }
+.cs-adv-head { margin-bottom: 0; }
+/* Two-up fields inside the accordion (keyword + subtype); collapses to one column */
+.cs-adv-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.cs-adv-grid > div { flex: 1; min-width: 180px; }
+
+/* ---- Numeric (text-expression) inputs ---- */
+.cs-num-input { width: 100px; }
+@media (max-width: 575px) { .cs-num-input { width: 92px; } }
+
+/* ---- Results control bar (count + sort + cols) ---- */
+.cs-controlbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cs-controlbar-end { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.cs-count { font-size: .85rem; color: var(--neutral-500); min-height: 1.2em; }
+.cs-control-label { font-size: .8rem; color: var(--neutral-500); }
+
+/* ---- Search/Reset actions (inline on the advanced-search row, pushed right) ---- */
+.cs-actions { margin-left: auto; }
+
+/* Mobile: rarity filters drop to their own line under the factions */
+@media (max-width: 575px) {
+    .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
+    .cs-faction-row .cs-rarities .cs-sep { display: none; }
+}
+
 /* Deck header (deck.php) */
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }
 .deck-hdr-meta  { font-size: .85rem; color: rgba(255,255,255,.8); margin-top: 2px; }
 .deck-hdr-on-bg { color: rgba(255,255,255,.7); font-size: .875rem; }
+.deck-hdr-banner--hero { cursor: pointer; }
+.deck-hdr-banner--hero .deck-hdr-meta { transition: color .15s, text-decoration-color .15s; }
+.deck-hdr-banner--hero:hover .deck-hdr-meta {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, .75);
+}
+.deck-hdr-banner--hero:focus-visible {
+    outline: 2px solid var(--primary-400);
+    outline-offset: 2px;
+}
+.js-deck-illegal {
+    cursor: pointer;
+    font-size: .72rem;
+    transition: transform .15s, box-shadow .15s, filter .15s;
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .4), 0 0 0 3px rgba(239, 68, 68, .45), 0 2px 8px rgba(0, 0, 0, .22);
+}
+.js-deck-illegal:hover {
+    transform: scale(1.06);
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .65), 0 0 0 3px rgba(239, 68, 68, .65), 0 2px 12px rgba(0, 0, 0, .32);
+}
 .deck-badge-on-img { background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.2); color: #fff; }
 .deck-badge-no-img { background: rgba(255,255,255,.85); border: 1px solid rgba(0,0,0,.12); color: #444; }
+
+/* Community deck cards — view / upvote stat pills */
+.deck-stat-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.deck-stat-pill {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(35, 8, 14, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
+button.deck-stat-pill {
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.deck-stat-pill i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+.deck-stat-pill > span {
+    min-width: 1ch;
+    line-height: 1;
+}
+.deck-stat-pill--upvote {
+    position: relative;
+    z-index: 2;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.deck-stat-pill--upvote:hover:not(:disabled) {
+    background: rgba(168, 32, 54, 0.92);
+    border-color: rgba(255, 190, 200, 0.75);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+    transform: scale(1.04);
+}
+.deck-stat-pill--upvote:disabled {
+    opacity: .75;
+    cursor: wait;
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted {
+    background: rgba(120, 24, 38, 0.58);
+    border-color: rgba(255, 210, 218, 0.35);
+}
+.deck-stat-pill--upvote.deck-stat-pill--upvoted:hover:not(:disabled) {
+    background: rgba(200, 44, 68, 0.95);
+    border-color: rgba(255, 220, 228, 0.85);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+    transform: scale(1.04);
+}
 
 /* Collection info panels (collection.php) — left border accent strips */
 .coll-card-success { border-left: 3px solid #22c55e; }

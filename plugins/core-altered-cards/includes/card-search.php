@@ -1,6 +1,6 @@
 <?php
 /**
- * Reusable card search widget — flat layout, no modal.
+ * Reusable card search widget — tabbed layout.
  * Set $_cs before including.
  */
 
@@ -69,110 +69,106 @@ foreach ($_csSets as $_sr => $_sd) {
 }
 $_csHasCollFilter = !empty($_csCollOpts);
 
-$_csOfficialSets = array_filter($_csSets, fn($s) => ($s['type'] ?? '') === 'official' && ($s['subtype'] ?? '') === 'main');
+// Main (standard) editions shown in the quick-filter bar.
+$_csOfficialSets = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'main');
+// Promotional / sub editions — revealed under the "show promo" toggle. Standard
+// sets never appear here.
+$_csPromoSets    = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'sub');
 
 $_csRangeFields = [
-    'maincost'      => ['icon' => '<i class="fak fa-altered-h" style="font-size:1.1rem;flex-shrink:0"></i>',                                                                                  'title' => $_csTxt['lbl_cost_m']   ?? 'Hand'],
-    'recallcost'    => ['icon' => '<i class="fak fa-altered-r" style="font-size:1.1rem;flex-shrink:0"></i>',                                                                                  'title' => $_csTxt['lbl_cost_r']   ?? 'Reserve'],
-    'forestpower'   => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/F.webp" style="height:20px;width:auto;flex-shrink:0" alt="">',                    'title' => $_csTxt['lbl_forest']   ?? 'Forest'],
-    'mountainpower' => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/M.webp" style="height:20px;width:auto;flex-shrink:0" alt="">',                    'title' => $_csTxt['lbl_mountain'] ?? 'Mountain'],
-    'oceanpower'    => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/O.webp" style="height:20px;width:auto;flex-shrink:0" alt="">',                    'title' => $_csTxt['lbl_ocean']    ?? 'Ocean'],
+    'maincost'      => ['icon' => '<i class="fak fa-altered-h" style="font-size:1.1rem;flex-shrink:0"></i>',                                                                'title' => $_csTxt['lbl_cost_m']   ?? 'Hand'],
+    'recallcost'    => ['icon' => '<i class="fak fa-altered-r" style="font-size:1.1rem;flex-shrink:0"></i>',                                                                'title' => $_csTxt['lbl_cost_r']   ?? 'Reserve'],
+    'forestpower'   => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/F.webp" style="height:20px;width:auto;flex-shrink:0" alt="">', 'title' => $_csTxt['lbl_forest']   ?? 'Forest'],
+    'mountainpower' => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/M.webp" style="height:20px;width:auto;flex-shrink:0" alt="">', 'title' => $_csTxt['lbl_mountain'] ?? 'Mountain'],
+    'oceanpower'    => ['icon' => '<img src="' . h($_csBaseUrl) . '/plugins/core-altered-cards/assets/biome/O.webp" style="height:20px;width:auto;flex-shrink:0" alt="">', 'title' => $_csTxt['lbl_ocean']    ?? 'Ocean'],
 ];
 
-$_csOpEq = $_csLang === 'fr' ? 'égal'       : 'equal';
-$_csOpLt = $_csLang === 'fr' ? 'inférieur'  : 'less than';
-$_csOpGt = $_csLang === 'fr' ? 'supérieur'  : 'greater than';
-$_csHeroLabel = $_csTxt['lbl_hero'] ?? ($_csLang === 'fr' ? 'Héros' : 'Hero');
-$_csHeroAll   = $_csTxt['hero_all'] ?? ($_csLang === 'fr' ? 'Tous les héros' : 'All heroes');
-?>
+// Labels (fall back to FR/EN literals when not provided via search_settings)
+$_csLblSortBy   = $_csTxt['sort_by']    ?? ($_csLang === 'fr' ? 'Trier par'                : 'Sort by');
+$_csLblUnique   = $_csTxt['tab_unique'] ?? ($_csLang === 'fr' ? 'Uniques'                  : 'Uniques');
+$_csLblAllCards = $_csTxt['scope_all']  ?? ($_csLang === 'fr' ? 'Toutes les cartes'        : 'All cards');
+$_csLblColl     = $_csTxt['scope_collection'] ?? ($_csLang === 'fr' ? 'Collection physique' : 'Physical collection');
+$_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriété numérique' : 'Digital ownership');
+$_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
+$_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
+$_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
+$_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
+$_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
+$_csLblManageOwn  = $_csTxt['manage_own']   ?? ($_csLang === 'fr' ? 'Gérer ma propriété numérique'   : 'Manage my digital ownership');
 
-<!-- Card count — outside the search box -->
-<span id="<?= h($_csP) ?>-count" style="display:block;font-size:.85rem;color:var(--neutral-500);min-height:1.2em;margin-bottom:.5rem"></span>
+// "Manage" link targets: physical collection → import page; digital ownership →
+// the ownership app (falls back to the collection page when no URL is configured).
+$_csCollManageUrl = $_csBaseUrl . '/pages/collection';
+$_csOwnManageUrl  = !empty($_cs['ownership_url']) ? $_cs['ownership_url'] : $_csCollManageUrl;
+$_csOwnIsExternal = !empty($_cs['ownership_url']);
+$_csNumPh       = $_csLang === 'fr' ? 'ex : 3, 1-3, 4+' : 'e.g. 3, 1-3, 4+';
+$_csNumTitle    = $_csLang === 'fr'
+    ? "3 (=3) · 1,3 (∈ {1, 3}) · 1-3 (1 à 3 inclus) · 4+ (≥4) · 4- (≤4) · <4 · >2 · <=4 · >=2"
+    : "3 (=3) · 1,3 (∈ {1, 3}) · 1-3 (1 to 3) · 4+ (≥4) · 4- (≤4) · <4 · >2 · <=4 · >=2";
+
+// Render one numeric (text-expression) filter input.
+$_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTitle) {
+    $rf = $_csRangeFields[$key];
+    ob_start(); ?>
+    <div class="cs-num d-flex align-items-center gap-1" title="<?= h($rf['title']) ?> — <?= h($_csNumTitle) ?>">
+        <?= $rf['icon'] ?>
+        <input type="text" id="<?= h($_csP) ?>-filter-<?= h($key) ?>"
+               class="form-control form-control-sm cs-num-input"
+               placeholder="<?= h($_csNumPh) ?>" autocomplete="off" spellcheck="false"
+               aria-label="<?= h($rf['title']) ?>">
+    </div>
+    <?php return ob_get_clean();
+};
+?>
 
 <div id="<?= h($_csP) ?>-panel">
 
+    <!-- Search tabs -->
+    <div class="cs-tabs">
+        <button type="button" class="cs-tab active" data-tab="all" data-scope="all">
+            <i class="fa-solid fa-table-cells"></i>
+            <span><?= h($_csLblAllCards) ?></span>
+        </button>
+        <button type="button" class="cs-tab" data-tab="unique" data-scope="all">
+            <i class="fa-solid fa-gem"></i>
+            <span><?= h($_csLblUnique) ?></span>
+        </button>
+        <button type="button" class="cs-tab<?= $_csCollMode ? '' : ' cs-tab-soon' ?>"
+                data-tab="collection" data-scope="collection"<?= $_csCollMode ? '' : ' disabled' ?>>
+            <i class="fa-solid fa-box-archive"></i>
+            <span><?= h($_csLblColl) ?></span>
+            <!-- Shown (via CSS) only when this tab is active -->
+            <span class="cs-tab-manage" data-href="<?= h($_csCollManageUrl) ?>" title="<?= h($_csLblManageColl) ?>">
+                <i class="fa-solid fa-file-import"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
+            </span>
+        </button>
+        <button type="button" class="cs-tab<?= $_csOwnMode ? '' : ' cs-tab-soon' ?>"
+                data-tab="ownership" data-scope="ownership"<?= $_csOwnMode ? '' : ' disabled' ?>>
+            <i class="fa-solid fa-key"></i>
+            <span><?= h($_csLblOwn) ?></span>
+            <span class="cs-tab-manage" data-href="<?= h($_csOwnManageUrl) ?>"<?= $_csOwnIsExternal ? ' data-external="1"' : '' ?> title="<?= h($_csLblManageOwn) ?>">
+                <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
+            </span>
+        </button>
+    </div>
+
     <div class="card-altered p-3 mb-3">
 
-        <!-- Row 1: scope + sort + controls -->
-        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-            <button type="button" id="<?= h($_csP) ?>-scope-all"
-                    class="filter-toggle active" data-scope="all">
-                <i class="fa-solid fa-table-cells"></i>
-                <?= h($_csTxt['scope_all'] ?? 'All cards') ?>
-            </button>
-            <button type="button" id="<?= h($_csP) ?>-scope-collection"
-                    class="filter-toggle<?= $_csCollMode ? '' : ' filter-toggle-soon' ?>"
-                    data-scope="collection"<?= $_csCollMode ? '' : ' disabled' ?>>
-                <i class="fa-solid fa-box-archive"></i>
-                <?= h($_csTxt['scope_collection'] ?? 'My collection') ?>
-            </button>
-            <select id="<?= h($_csP) ?>-sort" class="form-select form-select-sm flex-shrink-0 ms-auto" style="width:auto">
-                <?php foreach ($_csSorts as $_sv => $_sl): ?>
-                <option value="<?= h($_sv) ?>"<?= $_csSelSort === $_sv ? ' selected' : '' ?>><?= h($_sl) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <?php if ($_csShowCols): ?>
-            <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                <i class="fa-solid fa-table-cells" style="font-size:.8rem;color:var(--neutral-400)"></i>
-                <select id="<?= h($_csP) ?>-cols" class="form-select form-select-sm" style="width:auto">
-                    <?php foreach ($_csColOpt as $_cv): ?>
-                    <option value="<?= (int)$_cv ?>"<?= (int)$_cv === $_csDefCols ? ' selected' : '' ?>><?= (int)$_cv ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <?php endif; ?>
-            <button type="button" id="<?= h($_csP) ?>-reset-btn"
-                    class="btn btn-sm btn-outline-secondary flex-shrink-0"
-                    title="<?= h($_csTxt['reset'] ?? 'Reset') ?>">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span class="d-none d-sm-inline ms-1"><?= h($_csTxt['reset'] ?? 'Reset') ?></span>
-            </button>
-            <button type="button" id="<?= h($_csP) ?>-apply-btn"
-                    class="btn btn-sm btn-primary-altered flex-shrink-0">
-                <i class="fa-solid fa-magnifying-glass me-1"></i><?= h($_csTxt['search'] ?? 'Search') ?>
-            </button>
-            <span id="<?= h($_csP) ?>-filter-count" class="cs-filter-count" style="display:none"></span>
-        </div>
-
-        <!-- Row 2: name + keyword + variation + status -->
-        <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+        <!-- Name + hand/reserve costs (same line) -->
+        <div class="cs-name-row d-flex gap-2 align-items-center flex-wrap mb-2"
+             data-tabs="all unique collection ownership">
             <input type="text" id="<?= h($_csP) ?>-search"
                    value="<?= h($_csSelQ) ?>"
                    placeholder="<?= h($_csTxt['search_ph'] ?? 'Search…') ?>"
-                   class="form-control form-control-sm" autocomplete="off" style="min-width:140px;flex:2">
-            <div style="flex:1;min-width:160px;max-width:280px;display:flex;align-items:center;gap:6px">
-                <div id="<?= h($_csP) ?>-kw-mode" data-mode="or"
-                     class="btn-group btn-group-sm flex-shrink-0" role="group">
-                    <button type="button" class="btn btn-outline-secondary kw-mode-btn active" data-mode="or" style="padding:1px 5px;font-size:.65rem"><?= h($_csTxt['kw_mode_or'] ?? 'OR') ?></button>
-                    <button type="button" class="btn btn-outline-secondary kw-mode-btn" data-mode="and" style="padding:1px 5px;font-size:.65rem"><?= h($_csTxt['kw_mode_and'] ?? 'AND') ?></button>
-                </div>
-                <div style="flex:1;min-width:0">
-                    <select id="<?= h($_csP) ?>-filter-keyword" multiple>
-                        <?php foreach ($_csKeywords as $_kk => $_kv): ?>
-                        <option value="<?= h($_kk) ?>"><?= h($_kv[$_csLang] ?? $_kv['en'] ?? $_kk) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div style="flex:1;min-width:130px;max-width:200px">
-                <select id="<?= h($_csP) ?>-filter-variation" multiple>
-                    <?php foreach ($_csVariations as $_vk => $_vv): ?>
-                    <option value="<?= h($_vk) ?>"><?= h($_vv[$_csLang] ?? $_vv['en'] ?? $_vk) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div style="flex:1;min-width:130px;max-width:200px">
-                <select id="<?= h($_csP) ?>-filter-status" multiple>
-                    <option value="banned"<?= $_csIsBanned ? ' selected' : '' ?>><?= h($_csTxt['lbl_banned'] ?? 'Banned') ?></option>
-                    <option value="errated"<?= $_csIsErrated ? ' selected' : '' ?>><?= h($_csTxt['lbl_errated'] ?? 'Errated') ?></option>
-                    <option value="suspended"<?= $_csIsSuspended ? ' selected' : '' ?>><?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?></option>
-                </select>
-            </div>
+                   class="form-control form-control-sm" autocomplete="off"
+                   style="flex:1;min-width:160px">
+            <?= $_csNumInput('maincost') ?>
+            <?= $_csNumInput('recallcost') ?>
         </div>
 
-        <!-- Set — quick-filter buttons -->
+        <!-- Main editions — quick-filter buttons -->
         <?php if (!empty($_csOfficialSets)): ?>
-        <div class="filter-row filter-row--scroll mb-1">
+        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
             <button type="button"
                     class="filter-toggle set-qf-btn<?= in_array($_sk, $_csSelSets) ? ' active' : '' ?>"
@@ -186,6 +182,183 @@ $_csHeroAll   = $_csTxt['hero_all'] ?? ($_csLang === 'fr' ? 'Tous les héros' : 
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+
+        <!-- Faction (+ rarity) -->
+        <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
+        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership">
+            <?php foreach ($_csFactions as $_fk => $_fv): ?>
+            <button type="button"
+                    class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
+                    data-filter="faction" data-value="<?= h($_fk) ?>"
+                    title="<?= h($_csFactionNames[$_fk] ?? $_fk) ?>">
+                <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_fk) ?>.png" alt="<?= h($_fk) ?>">
+                <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
+            </button>
+            <?php endforeach; ?>
+            <?php if (!empty($_csRarities)): ?>
+            <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
+            <span class="cs-rarities" data-tabs="all ownership">
+                <?php if (!empty($_csFactions)): ?>
+                <span class="cs-sep"></span>
+                <?php endif; ?>
+                <?php foreach ($_csRarities as $_rk => $_rv): ?>
+                <button type="button"
+                        class="filter-toggle filter-toggle--compact<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
+                        data-filter="rarity" data-value="<?= h($_rk) ?>"
+                        title="<?= h($_csRarityTxt[$_rk] ?? $_rk) ?>">
+                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
+                         alt="<?= h($_rk) ?>" style="width:15px;height:15px">
+                    <?= h(mb_strtoupper(mb_substr($_csRarityTxt[$_rk] ?? $_rk, 0, 1))) ?>
+                </button>
+                <?php endforeach; ?>
+            </span>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Type (hidden on Uniques: all characters) -->
+        <?php if (!empty($_csTypes)): ?>
+        <div class="filter-row filter-row--scroll mb-2" data-tabs="all collection ownership">
+            <?php foreach ($_csTypes as $_tk => $_tv): ?>
+            <button type="button"
+                    class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
+                    data-filter="type" data-value="<?= h($_tk) ?>">
+                <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Effects (Uniques tab only) — shown before the advanced section -->
+        <div class="mb-2" data-tabs="unique" style="min-width:0">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="filter-label mb-0"><?= h($_csTxt['lbl_effects'] ?? 'Effects') ?></span>
+                <div id="<?= h($_csP) ?>-effect-mode" data-mode="or"
+                     class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary effect-mode-btn active"
+                            data-mode="or" style="padding:1px 8px;font-size:.7rem">OR</button>
+                    <button type="button" class="btn btn-outline-secondary effect-mode-btn"
+                            data-mode="and" style="padding:1px 8px;font-size:.7rem">AND</button>
+                </div>
+            </div>
+            <div id="<?= h($_csP) ?>-effect-rows"></div>
+            <button type="button" id="<?= h($_csP) ?>-effect-add"
+                    class="btn btn-sm btn-outline-secondary mt-1" style="font-size:.8rem">
+                <i class="fa-solid fa-plus me-1"></i><?= h($_csTxt['add_effect'] ?? ($_csLang === 'fr' ? 'Ajouter un effet' : 'Add effect')) ?>
+            </button>
+        </div>
+
+        <!-- Advanced search + promo toggle (same line) -->
+        <div class="cs-adv-wrap mb-2" data-tabs="all unique collection ownership">
+            <div class="cs-adv-head d-flex align-items-center gap-3 flex-wrap">
+                <button type="button" class="cs-adv-toggle" aria-expanded="false">
+                    <i class="fa-solid fa-chevron-right cs-adv-chevron"></i>
+                    <span><?= h($_csLblAdvanced) ?></span>
+                    <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
+                </button>
+                <?php if (!empty($_csPromoSets)): ?>
+                <label class="cs-switch" data-tabs="all">
+                    <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
+                    <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+                    <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($_csLblPromo) ?></span>
+                </label>
+                <?php endif; ?>
+                <div class="cs-actions d-flex align-items-center gap-2">
+                    <button type="button" id="<?= h($_csP) ?>-reset-btn"
+                            class="btn btn-sm btn-outline-secondary"
+                            title="<?= h($_csTxt['reset'] ?? 'Reset') ?>">
+                        <i class="fa-solid fa-rotate-left me-1"></i><?= h($_csTxt['reset'] ?? 'Reset') ?>
+                    </button>
+                    <button type="button" id="<?= h($_csP) ?>-apply-btn"
+                            class="btn btn-sm btn-primary-altered">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i><?= h($_csTxt['search'] ?? 'Search') ?>
+                    </button>
+                    <span id="<?= h($_csP) ?>-filter-count" class="cs-filter-count" style="display:none"></span>
+                </div>
+            </div>
+
+            <div class="cs-advanced" style="display:none">
+
+                <!-- Biome powers (top of accordion) -->
+                <div class="filter-row flex-wrap mb-2" style="row-gap:.5rem" data-tabs="all unique collection ownership">
+                    <?= $_csNumInput('forestpower') ?>
+                    <?= $_csNumInput('mountainpower') ?>
+                    <?= $_csNumInput('oceanpower') ?>
+                </div>
+
+                <!-- Promo options (shown when "show promo" is on; all-cards tab only) -->
+                <?php if (!empty($_csPromoSets)): ?>
+                <div id="<?= h($_csP) ?>-promo-panel" class="cs-promo-panel mb-2" style="display:none">
+                    <div class="cs-promo-variation mb-2">
+                        <div class="filter-label mb-1"><?= h($_csTxt['lbl_variation'] ?? 'Variation') ?></div>
+                        <select id="<?= h($_csP) ?>-filter-variation" multiple>
+                            <?php foreach ($_csVariations as $_vk => $_vv): ?>
+                            <option value="<?= h($_vk) ?>"><?= h($_vv[$_csLang] ?? $_vv['en'] ?? $_vk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <div class="filter-label mb-1"><?= h($_csLblPromoEd) ?></div>
+                        <select id="<?= h($_csP) ?>-filter-promoset" multiple>
+                            <?php foreach ($_csPromoSets as $_pk => $_pv): ?>
+                            <option value="<?= h($_pk) ?>"<?= in_array($_pk, $_csSelSets) ? ' selected' : '' ?>><?= h($_pv[$_csLang] ?? $_pv['en'] ?? $_pk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Keyword + subtype (same line) -->
+                <div class="cs-adv-grid mb-2">
+                    <div data-tabs="all">
+                        <div class="filter-label mb-1"><?= h($_csTxt['lbl_keyword'] ?? 'Keyword') ?></div>
+                        <select id="<?= h($_csP) ?>-filter-keyword" multiple>
+                            <?php foreach ($_csKeywords as $_kk => $_kv): ?>
+                            <option value="<?= h($_kk) ?>"><?= h($_kv[$_csLang] ?? $_kv['en'] ?? $_kk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php if (!empty($_csSubtypes)): ?>
+                    <div data-tabs="all unique collection ownership">
+                        <div class="filter-label mb-1"><?= h($_csTxt['lbl_subtype'] ?? 'Subtype') ?></div>
+                        <select id="<?= h($_csP) ?>-filter-subtype" multiple>
+                            <?php foreach ($_csSubtypes as $_sk => $_sv): ?>
+                            <option value="<?= h($_sk) ?>"><?= h($_sv[$_csLang] ?? $_sv['en'] ?? $_sk) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Status + cost management + no-effect (grouped on one wrapping line) -->
+                <div class="filter-row flex-wrap mb-0" style="row-gap:.5rem" data-tabs="all unique collection ownership">
+                    <span class="filter-label"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
+                    <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned">
+                        <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
+                    </button>
+                    <button type="button" class="filter-toggle<?= $_csIsErrated ? ' active' : '' ?>"
+                            data-bool-filter="isErrated" data-tabs="all unique">
+                        <i class="fa-solid fa-pen-to-square"></i> <?= h($_csTxt['lbl_errated'] ?? 'Errated') ?>
+                    </button>
+                    <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended">
+                        <i class="fa-solid fa-pause"></i> <?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?>
+                    </button>
+                    <span class="cs-sep" data-tabs="all unique"></span>
+                    <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all unique">
+                        <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>
+                        <option value="eq"><?= h($_csTxt['cost_main_eq_recall']    ?? ($_csLang === 'fr' ? 'Coût main = réserve'      : 'Main cost = reserve')) ?></option>
+                        <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
+                        <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
+                    </select>
+                    <label class="cs-check d-flex align-items-center gap-1" data-tabs="all unique">
+                        <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
+                        <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
+                    </label>
+                </div>
+
+            </div><!-- /.cs-advanced -->
+        </div>
+
         <!-- Hidden selects for TomSelect / collection filter JS -->
         <div class="d-none">
             <?php if ($_csHasCollFilter): ?>
@@ -202,101 +375,32 @@ $_csHeroAll   = $_csTxt['hero_all'] ?? ($_csLang === 'fr' ? 'Tous les héros' : 
             </select>
         </div>
 
-        <!-- Faction + Rarity -->
-        <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
-        <div class="filter-row filter-row--scroll mb-1">
-            <?php foreach ($_csFactions as $_fk => $_fv): ?>
-            <button type="button"
-                    class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
-                    data-filter="faction" data-value="<?= h($_fk) ?>"
-                    title="<?= h($_csFactionNames[$_fk] ?? $_fk) ?>">
-                <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_fk) ?>.png" alt="<?= h($_fk) ?>">
-                <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
-            </button>
-            <?php endforeach; ?>
-            <?php if (!empty($_csFactions) && !empty($_csRarities)): ?>
-            <span style="width:1px;background:var(--neutral-300,#dee2e6);align-self:stretch;margin:0 4px;flex-shrink:0"></span>
-            <?php endif; ?>
-            <?php foreach ($_csRarities as $_rk => $_rv): ?>
-            <button type="button"
-                    class="filter-toggle<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
-                    data-filter="rarity" data-value="<?= h($_rk) ?>">
-                <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
-                     alt="<?= h($_rk) ?>" style="width:15px;height:15px">
-                <?= h($_csRarityTxt[$_rk] ?? $_rk) ?>
-            </button>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+    </div><!-- /.card-altered -->
 
-        <!-- Type + Subtype -->
-        <?php if (!empty($_csTypes)): ?>
-        <div class="filter-row filter-row--scroll mb-1">
-            <?php foreach ($_csTypes as $_tk => $_tv): ?>
-            <button type="button"
-                    class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
-                    data-filter="type" data-value="<?= h($_tk) ?>">
-                <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
-            </button>
-            <?php endforeach; ?>
-            <?php if (!empty($_csSubtypes)): ?>
-            <span style="width:1px;background:var(--neutral-300,#dee2e6);align-self:stretch;margin:0 4px;flex-shrink:0"></span>
-            <div style="min-width:140px;max-width:200px;flex-shrink:0">
-                <select id="<?= h($_csP) ?>-filter-subtype" multiple>
-                    <?php foreach ($_csSubtypes as $_sk => $_sv): ?>
-                    <option value="<?= h($_sk) ?>"><?= h($_sv[$_csLang] ?? $_sv['en'] ?? $_sk) ?></option>
+    <!-- Results control bar: count + sort + columns (between search and grid) -->
+    <div class="cs-controlbar mb-2">
+        <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
+        <div class="cs-controlbar-end">
+            <div class="d-flex align-items-center gap-1">
+                <span class="cs-control-label"><?= h($_csLblSortBy) ?></span>
+                <select id="<?= h($_csP) ?>-sort" class="form-select form-select-sm" style="width:auto">
+                    <?php foreach ($_csSorts as $_sv => $_sl): ?>
+                    <option value="<?= h($_sv) ?>"<?= $_csSelSort === $_sv ? ' selected' : '' ?>><?= h($_sl) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php if ($_csShowCols): ?>
+            <div class="d-flex align-items-center gap-1">
+                <i class="fa-solid fa-table-cells" style="font-size:.8rem;color:var(--neutral-400)"></i>
+                <select id="<?= h($_csP) ?>-cols" class="form-select form-select-sm" style="width:auto">
+                    <?php foreach ($_csColOpt as $_cv): ?>
+                    <option value="<?= (int)$_cv ?>"<?= (int)$_cv === $_csDefCols ? ' selected' : '' ?>><?= (int)$_cv ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <?php endif; ?>
         </div>
-        <?php endif; ?>
-
-        <!-- Cost (operator + value per type) + subtype + gestion -->
-        <div class="filter-row flex-wrap mb-1" style="row-gap:.5rem">
-            <?php foreach ($_csRangeFields as $_rfKey => $_rfData): ?>
-            <div class="d-flex align-items-center gap-1" title="<?= h($_rfData['title']) ?>">
-                <?= $_rfData['icon'] ?>
-                <select id="<?= h($_csP) ?>-filter-<?= h($_rfKey) ?>-op"
-                        class="form-select form-select-sm" style="width:auto">
-                    <option value="eq">&#61;</option>
-                    <option value="lt">&lt;</option>
-                    <option value="lte">&#8804;</option>
-                    <option value="gt">&gt;</option>
-                    <option value="gte">&#8805;</option>
-                </select>
-                <input type="number" id="<?= h($_csP) ?>-filter-<?= h($_rfKey) ?>"
-                       min="0" max="12" placeholder="—"
-                       class="form-control form-control-sm" style="width:52px">
-            </div>
-            <?php endforeach; ?>
-            <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto">
-                <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>
-                <option value="eq"><?= h($_csTxt['cost_main_eq_recall']    ?? ($_csLang === 'fr' ? 'Coût main = réserve'       : 'Main cost = reserve')) ?></option>
-                <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'     : 'Higher main cost')) ?></option>
-                <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
-            </select>
-        </div>
-
-        <!-- Effects -->
-        <div class="filter-row flex-wrap mb-0" style="row-gap:.5rem;align-items:flex-start;min-width:0">
-            <div style="flex:1;min-width:0">
-                <div id="<?= h($_csP) ?>-effect-mode" data-mode="or"
-                     class="btn-group btn-group-sm mb-1" style="display:none">
-                    <button type="button" class="btn btn-outline-secondary effect-mode-btn active"
-                            data-mode="or" style="padding:1px 6px;font-size:.65rem">OR</button>
-                    <button type="button" class="btn btn-outline-secondary effect-mode-btn"
-                            data-mode="and" style="padding:1px 6px;font-size:.65rem">AND</button>
-                </div>
-                <div id="<?= h($_csP) ?>-effect-rows"></div>
-                <button type="button" id="<?= h($_csP) ?>-effect-add"
-                        class="btn btn-sm btn-outline-secondary mt-1" style="font-size:.8rem">
-                    <i class="fa-solid fa-plus me-1"></i><?= h($_csTxt['add_effect'] ?? ($_csLang === 'fr' ? 'Ajouter un effet' : 'Add effect')) ?>
-                </button>
-            </div>
-        </div>
-
-    </div><!-- /.card-altered -->
+    </div>
 
     <!-- Loading -->
     <div id="<?= h($_csP) ?>-loading" class="ac-state-pane" style="display:none">
@@ -346,10 +450,36 @@ $_csHeroAll   = $_csTxt['hero_all'] ?? ($_csLang === 'fr' ? 'Tous les héros' : 
 
 <script>
 (function() {
-    document.querySelectorAll('.filter-row--scroll').forEach(function(el) {
+    var root = document.getElementById('<?= h($_csP) ?>-panel');
+    if (!root) return;
+    // Horizontal wheel-scroll for filter rows
+    root.querySelectorAll('.filter-row--scroll').forEach(function(el) {
         el.addEventListener('wheel', function(e) {
             if (e.deltaY !== 0) { e.preventDefault(); el.scrollLeft += e.deltaY; }
         }, { passive: false });
+    });
+    // Advanced-search accordion
+    var advToggle = root.querySelector('.cs-adv-toggle');
+    var advBody   = root.querySelector('.cs-advanced');
+    if (advToggle && advBody) {
+        advToggle.addEventListener('click', function() {
+            var open = advBody.style.display !== 'none';
+            advBody.style.display = open ? 'none' : '';
+            advToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+            advToggle.classList.toggle('open', !open);
+        });
+    }
+    // "Manage" pill inside the active collection/ownership tab. It lives inside the
+    // tab <button>, so stop the click from bubbling to the tab-switch handler.
+    root.querySelectorAll('.cs-tab-manage[data-href]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var href = el.getAttribute('data-href');
+            if (!href) return;
+            if (el.getAttribute('data-external')) window.open(href, '_blank', 'noopener');
+            else window.location.href = href;
+        });
     });
 })();
 </script>

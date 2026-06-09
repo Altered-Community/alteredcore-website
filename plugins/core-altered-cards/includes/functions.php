@@ -49,6 +49,38 @@ function deckApiToken(): ?string {
     return $token ?: null;
 }
 
+/** @return array{upvoteCount: int, hasUpvoted: bool}|null */
+function cacDeckApiUpvote(string $deckId, string $token): ?array
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '/upvote');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Authorization: Bearer ' . $token,
+            'Accept: application/json',
+            'Content-Type: application/json',
+        ],
+        CURLOPT_POSTFIELDS     => '{}',
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code < 200 || $code >= 300 || !$raw) {
+        return null;
+    }
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        return null;
+    }
+
+    return [
+        'upvoteCount' => (int) ($data['upvoteCount'] ?? 0),
+        'hasUpvoted'  => !empty($data['hasUpvoted']),
+    ];
+}
+
 /**
  * Make an authenticated request to the collection API.
  *
@@ -202,6 +234,33 @@ function collApiMultiRequest(string $apiUrl, array $reqs, int $userId): array {
     }
     curl_multi_close($mh);
     return $results;
+}
+
+/**
+ * Starter deck contest entries from bundled JSON (no Decks API).
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function cacLoadContestDecksFromJsonFile(string $path): array
+{
+    $data = json_decode(file_get_contents($path), true);
+    $decks = [];
+    foreach ($data['decks'] as $entry) {
+        $stats = $entry['stats'];
+        $stats['totalCards'] = 39;
+        $decks[] = [
+            'id'       => $entry['id'],
+            'name'     => $entry['name'],
+            'winner'   => !empty($entry['winner']),
+            'format'   => 'nuc',
+            'isPublic' => true,
+            'isDraft'  => false,
+            'legal'    => true,
+            'stats'    => $stats,
+        ];
+    }
+
+    return $decks;
 }
 
 /**

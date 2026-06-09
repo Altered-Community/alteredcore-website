@@ -103,21 +103,20 @@ function CardSearch(cfg) {
         faction:        (_factionDirty ? (ini.faction || []) : DEFAULT_FACTIONS.slice()),
         type:           (_typeDirty   ? (ini.type   || []) : DEFAULT_TYPES.slice()),
         rarity:         (_rarityDirty ? (ini.rarity || []) : DEFAULT_RARITIES.slice()),
-        mainCost:    ini.mainCost    !== undefined ? ini.mainCost    : null,
-        recallCost:  ini.recallCost  !== undefined ? ini.recallCost  : null,
-        forest:      ini.forest      !== undefined ? ini.forest      : null,
-        mountain:    ini.mountain    !== undefined ? ini.mountain    : null,
-        ocean:       ini.ocean       !== undefined ? ini.ocean       : null,
-        mainCostOp:    'eq',
-        recallCostOp:  'eq',
-        forestOp:      'eq',
-        mountainOp:    'eq',
-        oceanOp:       'eq',
+        // Numeric fields hold a raw text expression (e.g. "3", "1,3", "1-3", "<4", ">=2")
+        // parsed by parseNumExpr() at URL-build time. null/'' when empty.
+        mainCost:    ini.mainCost    != null && ini.mainCost    !== '' ? String(ini.mainCost)    : null,
+        recallCost:  ini.recallCost  != null && ini.recallCost  !== '' ? String(ini.recallCost)  : null,
+        forest:      ini.forest      != null && ini.forest      !== '' ? String(ini.forest)      : null,
+        mountain:    ini.mountain    != null && ini.mountain    !== '' ? String(ini.mountain)    : null,
+        ocean:       ini.ocean       != null && ini.ocean       !== '' ? String(ini.ocean)       : null,
         costRelation:  '',
+        showPromo:     !!ini.showPromo,
         sets:           (_setsDirty ? (ini.sets || []) : DEFAULT_SETS.slice()),
         subtypes:       (ini.subtypes       || []).slice(),
         keywords:       (ini.keywords       || []).slice(),
-        keywordMode:    ini.keywordMode || 'or',
+        // Keyword OR/AND toggle was removed from the UI; keywords always match as AND.
+        keywordMode:    'and',
         variations:     (ini.variations     || DEFAULT_VARIATIONS).slice(),
         isBanned:       !!ini.isBanned,
         isErrated:      !!ini.isErrated,
@@ -136,6 +135,9 @@ function CardSearch(cfg) {
     // mechanics (single-select filters, collection field mapping); only the proxy differs.
     var _scope             = 'all';
     var _scopeCollection   = false;
+    // Active UI tab: 'all' | 'unique' | 'collection' | 'ownership'.
+    // 'unique' uses the cards API (scope 'all') with forced rarity/type presets.
+    var _tab               = 'all';
     var tsInst             = {};
     var _collEl            = null;
     var _defaultCollection = '';
@@ -290,6 +292,87 @@ function CardSearch(cfg) {
         return s || ' ';
     }
 
+    // ── Numeric range filters (text expressions) ─────────────────────────────
+    // Five numeric filters, each driven by a free-text input. filters[key] holds
+    // the raw expression; the DOM input id is P + '-filter-' + id; api is the
+    // API field name.
+    var NUM_FIELDS = [
+        { key: 'mainCost',   id: 'maincost',      api: 'mainCost' },
+        { key: 'recallCost', id: 'recallcost',    api: 'recallCost' },
+        { key: 'forest',     id: 'forestpower',   api: 'forestPower' },
+        { key: 'mountain',   id: 'mountainpower', api: 'mountainPower' },
+        { key: 'ocean',      id: 'oceanpower',    api: 'oceanPower' },
+    ];
+
+    // Parse a numeric filter expression into a structured form, or null if empty/invalid.
+    //   "3"      → { kind:'exact', val:3 }
+    //   "1,3"    → { kind:'list',  vals:[1,3] }
+    //   "1-3"    → { kind:'range', min:1, max:3 }   (bounds reordered if reversed)
+    //   "<4" ">2" "<=4" ">=2" → { kind:'bound', op:'lt'|'gt'|'lte'|'gte', val:N }
+    //   "4+" (≥4) "4-" (≤4)   → { kind:'bound', op:'gte'|'lte', val:N }
+    function parseNumExpr(raw) {
+        if (raw == null) return null;
+        var s = String(raw).replace(/\s+/g, '');
+        if (!s) return null;
+        var m = s.match(/^(<=|>=|<|>)(\d+)$/);
+        if (m) {
+            var op = { '<': 'lt', '>': 'gt', '<=': 'lte', '>=': 'gte' }[m[1]];
+            return { kind: 'bound', op: op, val: parseInt(m[2], 10) };
+        }
+        // Trailing-sign bounds: "4+" → ≥4, "4-" → ≤4.
+        m = s.match(/^(\d+)([+-])$/);
+        if (m) {
+            return { kind: 'bound', op: m[2] === '+' ? 'gte' : 'lte', val: parseInt(m[1], 10) };
+        }
+        m = s.match(/^(\d+)-(\d+)$/);
+        if (m) {
+            var a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+            if (a > b) { var t = a; a = b; b = t; }
+            return { kind: 'range', min: a, max: b };
+        }
+        if (/^\d+(,\d+)*$/.test(s)) {
+            var vals = s.split(',').map(function(v) { return parseInt(v, 10); });
+            var uniq = [];
+            vals.forEach(function(v) { if (uniq.indexOf(v) < 0) uniq.push(v); });
+            return uniq.length === 1 ? { kind: 'exact', val: uniq[0] } : { kind: 'list', vals: uniq };
+        }
+        return null;
+    }
+
+    // True when the expression yields an active filter.
+    function numExprActive(raw) { return parseNumExpr(raw) !== null; }
+
+    // Cards API (API Platform) query parts for one numeric field.
+    function numCardsParts(api, raw) {
+        var p = parseNumExpr(raw);
+        if (!p) return [];
+        if (p.kind === 'exact') return [api + '=' + p.val];
+        if (p.kind === 'list')  return p.vals.map(function(v) { return api + '[]=' + v; });
+        if (p.kind === 'range') return [api + '[gte]=' + p.min, api + '[lte]=' + p.max];
+        return [api + '[' + p.op + ']=' + p.val]; // bound
+    }
+
+    // Collection proxy query parts (reads mainCost[gte]/[lte]/[gt]/[lt]).
+    // exact → equal bounds; list → min..max envelope (degraded); range/bound direct.
+    function numCollParts(api, raw) {
+        var p = parseNumExpr(raw);
+        if (!p) return [];
+        if (p.kind === 'exact') return [api + '[gte]=' + p.val, api + '[lte]=' + p.val];
+        if (p.kind === 'list') {
+            var mn = Math.min.apply(null, p.vals), mx = Math.max.apply(null, p.vals);
+            return [api + '[gte]=' + mn, api + '[lte]=' + mx];
+        }
+        if (p.kind === 'range') return [api + '[gte]=' + p.min, api + '[lte]=' + p.max];
+        return [api + '[' + p.op + ']=' + p.val]; // bound
+    }
+
+    // Ownership proxy supports exact only (mainCost=N). Returns [] for non-exact.
+    function numOwnParts(api, raw) {
+        var p = parseNumExpr(raw);
+        if (p && p.kind === 'exact') return [api + '=' + p.val];
+        return [];
+    }
+
     // ── Effect filter ────────────────────────────────────────────────────────
 
     function _loadEffectData(cb) {
@@ -330,18 +413,24 @@ function CardSearch(cfg) {
         });
     }
 
-    function _buildEffectSel(items, anyLabel, currentVal) {
+    function _asArr(v) { return Array.isArray(v) ? v.filter(Boolean) : (v ? [String(v)] : []); }
+    function _selectedVals(sel) {
+        return Array.from(sel.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
+    }
+
+    // Multi-select dropdown of effect items. currentVals may be a value or array.
+    function _buildEffectSel(items, currentVals) {
         var sorted = items.slice().sort(function(a, b) {
             return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b));
         });
+        var cur = _asArr(currentVals).map(String);
         var sel = document.createElement('select');
-        var def = document.createElement('option');
-        def.value = ''; def.textContent = anyLabel; sel.appendChild(def);
+        sel.multiple = true;
         sorted.forEach(function(item) {
             var o = document.createElement('option');
             o.value = String(item.alteredId);
             o.textContent = _effectLabel(item);
-            if (String(item.alteredId) === String(currentVal)) o.selected = true;
+            if (cur.indexOf(String(item.alteredId)) >= 0) o.selected = true;
             sel.appendChild(o);
         });
         return sel;
@@ -350,14 +439,15 @@ function CardSearch(cfg) {
     function _buildEffectRow(n, data, saved) {
         saved = saved || {};
         var rowEl = document.createElement('div');
-        rowEl.className = 'effect-row d-flex gap-1 align-items-center mb-1';
+        rowEl.className = 'effect-row d-flex gap-1 align-items-start mb-1';
         rowEl.dataset.effectN = n;
 
         var sels = [
-            _buildEffectSel(data.triggers,   txt.any_trigger   || '—', saved.trigger),
-            _buildEffectSel(data.conditions, txt.any_condition || '—', saved.condition),
-            _buildEffectSel(data.effects,    txt.any_effect    || '—', saved.effect),
+            _buildEffectSel(data.triggers,   saved.trigger),
+            _buildEffectSel(data.conditions, saved.condition),
+            _buildEffectSel(data.effects,    saved.effect),
         ];
+        var phs = [txt.any_trigger || '—', txt.any_condition || '—', txt.any_effect || '—'];
 
         var tsRender = typeof TomSelect !== 'undefined' ? {
             option: function(d, e) {
@@ -368,15 +458,22 @@ function CardSearch(cfg) {
             }
         } : null;
 
+        // OR mode → multi-select per dropdown (a single row, options OR'd).
+        // AND mode → single value per dropdown (one slot per row, rows AND'd).
+        var _multiSel = filters.effectMode !== 'and';
+
         var tsInsts = [];
-        sels.forEach(function(sel) {
+        sels.forEach(function(sel, idx) {
             var wrap = document.createElement('div');
             wrap.style.cssText = 'flex:1;min-width:160px';
             wrap.appendChild(sel);
             rowEl.appendChild(wrap);
             if (tsRender) {
                 var ts = new TomSelect(sel, {
-                    create: false, maxItems: 1, plugins: [],
+                    create: false,
+                    maxItems: _multiSel ? null : 1,
+                    plugins: _multiSel ? ['remove_button'] : [],
+                    placeholder: phs[idx], hideSelected: _multiSel,
                     onChange: updateFilterCount,
                     render: tsRender,
                 });
@@ -390,7 +487,7 @@ function CardSearch(cfg) {
 
         var rmBtn = document.createElement('button');
         rmBtn.type = 'button';
-        rmBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0';
+        rmBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0 effect-rm-btn align-self-start';
         rmBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
         rmBtn.addEventListener('click', function() { _removeEffectRow(rowEl); });
         rowEl.appendChild(rmBtn);
@@ -400,16 +497,16 @@ function CardSearch(cfg) {
     function _syncEffectUi() {
         var rowsEl = document.getElementById(P + '-effect-rows');
         var addBtn = document.getElementById(P + '-effect-add');
-        var modeEl = document.getElementById(P + '-effect-mode');
         var count  = rowsEl ? rowsEl.querySelectorAll('.effect-row').length : 0;
+        var isAnd  = filters.effectMode === 'and';
         if (rowsEl) {
             rowsEl.querySelectorAll('.effect-row').forEach(function(r) {
-                var rm = r.querySelector('button');
-                if (rm) rm.style.display = count > 1 ? '' : 'none';
+                var rm = r.querySelector('.effect-rm-btn');
+                if (rm) rm.style.display = (isAnd && count > 1) ? '' : 'none';
             });
         }
-        if (addBtn) addBtn.style.display = count >= 3 ? 'none' : '';
-        if (modeEl) modeEl.style.display = count > 1  ? '' : 'none';
+        // "Add effect" only in AND mode (OR uses a single multi-select row).
+        if (addBtn) addBtn.style.display = (isAnd && count < 3) ? '' : 'none';
     }
 
     function _removeEffectRow(rowEl) {
@@ -451,54 +548,113 @@ function CardSearch(cfg) {
         if (!rowsEl) return;
         rowsEl.querySelectorAll('.effect-row').forEach(function(row) {
             var insts = row._tsInsts;
+            var t = [], c = [], e = [];
             if (insts && insts.length >= 3) {
-                filters.effects.push({
-                    trigger:   insts[0] ? String(insts[0].getValue() || '') : '',
-                    condition: insts[1] ? String(insts[1].getValue() || '') : '',
-                    effect:    insts[2] ? String(insts[2].getValue() || '') : '',
-                });
+                t = _asArr(insts[0] && insts[0].getValue());
+                c = _asArr(insts[1] && insts[1].getValue());
+                e = _asArr(insts[2] && insts[2].getValue());
             } else {
                 var sels = row.querySelectorAll('select');
                 if (sels.length >= 3) {
-                    filters.effects.push({ trigger: sels[0].value, condition: sels[1].value, effect: sels[2].value });
+                    t = _selectedVals(sels[0]); c = _selectedVals(sels[1]); e = _selectedVals(sels[2]);
                 }
             }
+            // Cartesian product: the API accepts one value per slot field, so each
+            // combination of the row's selections becomes its own effect slot.
+            var T = t.length ? t : [''], C = c.length ? c : [''], E = e.length ? e : [''];
+            T.forEach(function(tt) { C.forEach(function(cc) { E.forEach(function(ee) {
+                if (tt || cc || ee) filters.effects.push({ trigger: tt, condition: cc, effect: ee });
+            }); }); });
         });
     }
 
-    function _resetEffectRows() {
+    function _destroyEffectRows() {
         var rowsEl = document.getElementById(P + '-effect-rows');
-        var modeEl = document.getElementById(P + '-effect-mode');
-        if (rowsEl) { rowsEl.innerHTML = ''; _effectRowsCnt = 0; }
-        if (modeEl) {
-            modeEl.style.display = 'none';
-            modeEl.dataset.mode  = 'or';
-            modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.mode === 'or');
+        if (!rowsEl) return;
+        rowsEl.querySelectorAll('.effect-row').forEach(function(r) {
+            if (r._tsInsts) r._tsInsts.forEach(function(ts) { if (ts) ts.destroy(); });
+        });
+        rowsEl.innerHTML = '';
+    }
+
+    // Selections of the first effect row (arrays), to carry across a mode switch.
+    function _firstRowSaved() {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        var row = rowsEl ? rowsEl.querySelector('.effect-row') : null;
+        if (!row || !row._tsInsts) return null;
+        return {
+            trigger:   _asArr(row._tsInsts[0] && row._tsInsts[0].getValue()),
+            condition: _asArr(row._tsInsts[1] && row._tsInsts[1].getValue()),
+            effect:    _asArr(row._tsInsts[2] && row._tsInsts[2].getValue()),
+        };
+    }
+
+    // True if any effect dropdown currently holds more than one value.
+    function _anyEffectMultiSelected() {
+        var rowsEl = document.getElementById(P + '-effect-rows');
+        if (!rowsEl) return false;
+        var found = false;
+        rowsEl.querySelectorAll('.effect-row').forEach(function(row) {
+            if (row._tsInsts) row._tsInsts.forEach(function(ts) {
+                if (ts && _asArr(ts.getValue()).length > 1) found = true;
             });
+        });
+        return found;
+    }
+
+    function _syncEffectModeButtons() {
+        var modeEl = document.getElementById(P + '-effect-mode');
+        if (!modeEl) return;
+        modeEl.dataset.mode = filters.effectMode;
+        modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.mode === filters.effectMode);
+        });
+    }
+
+    // OR → one multi-select row (options OR'd). AND → single value per dropdown,
+    // multiple rows AND'd. Mixing the two (multi-select inside AND) isn't supported.
+    function _setEffectMode(mode) {
+        mode = mode === 'and' ? 'and' : 'or';
+        if (mode === filters.effectMode) return;
+        if (mode === 'and' && _anyEffectMultiSelected()) {
+            window.alert(txt.effect_mix_warning || (UI_LANG === 'fr'
+                ? "Il n'est pas encore possible de mélanger des ET et des OU dans la recherche d'effets. Retirez les sélections multiples avant de passer en ET."
+                : "Mixing AND and OR in the effect search isn't possible yet. Remove the multiple selections before switching to AND."));
+            _syncEffectModeButtons(); // keep the toggle on the current (OR) mode
+            return;
         }
+        var saved = _firstRowSaved();
+        filters.effectMode = mode;
+        _syncEffectModeButtons();
+        _destroyEffectRows();
+        _addEffectRow(saved);
+        _syncEffectUi();
+        updateFilterCount();
+    }
+
+    function _resetEffectRows() {
+        filters.effectMode = 'or';
+        _syncEffectModeButtons();
+        _destroyEffectRows();
         _addEffectRow(null);
+        _syncEffectUi();
     }
 
     function initEffects() {
         var addBtn = document.getElementById(P + '-effect-add');
         var modeEl = document.getElementById(P + '-effect-mode');
         if (addBtn) {
-            addBtn.addEventListener('click', function() { _addEffectRow(null); });
+            addBtn.addEventListener('click', function() { _addEffectRow(null); _syncEffectUi(); });
         }
         if (modeEl) {
             modeEl.addEventListener('click', function(e) {
                 var btn = e.target.closest('.effect-mode-btn');
-                if (!btn) return;
-                var mode = btn.dataset.mode;
-                modeEl.dataset.mode = mode;
-                modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.mode === mode);
-                });
-                filters.effectMode = mode;
+                if (btn) _setEffectMode(btn.dataset.mode);
             });
         }
+        _syncEffectModeButtons();
         _addEffectRow(null);
+        _syncEffectUi();
     }
 
     // ── End effect filter ────────────────────────────────────────────────────
@@ -556,16 +712,9 @@ function CardSearch(cfg) {
         filters.subtypes.forEach(function(v)   { parts.push('subTypes[]='  + encodeURIComponent(v)); });
         filters.variations.forEach(function(v) { parts.push('variation[]=' + encodeURIComponent(v)); });
 
-        function _costP(field, val, op) {
-            if (val === null) return;
-            var suffix = op === 'lt' ? '[lt]' : op === 'lte' ? '[lte]' : op === 'gt' ? '[gt]' : op === 'gte' ? '[gte]' : '';
-            parts.push(field + suffix + '=' + val);
-        }
-        _costP('mainCost',     filters.mainCost,   filters.mainCostOp);
-        _costP('recallCost',   filters.recallCost, filters.recallCostOp);
-        _costP('forestPower',  filters.forest,     filters.forestOp);
-        _costP('mountainPower',filters.mountain,   filters.mountainOp);
-        _costP('oceanPower',   filters.ocean,      filters.oceanOp);
+        NUM_FIELDS.forEach(function(f) {
+            numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+        });
         if (filters.costRelation === 'eq')        parts.push('costRelation=equal');
         else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
         else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
@@ -578,6 +727,7 @@ function CardSearch(cfg) {
         var _activeEffects = filters.effects.filter(function(ef) {
             return ef.trigger || ef.condition || ef.effect;
         });
+        if (_activeEffects.length > 24) _activeEffects = _activeEffects.slice(0, 24);
         if (_activeEffects.length) {
             if (_activeEffects.length > 1) parts.push('effectSlotMode=' + filters.effectMode);
             _activeEffects.forEach(function(ef, i) {
@@ -612,11 +762,12 @@ function CardSearch(cfg) {
         if (filters.isErrated)   parts.push('isErrated=true');
         if (filters.isSuspended) parts.push('isSuspended=true');
 
-        if (filters.mainCost   !== null) parts.push('mainCost[]='      + filters.mainCost);
-        if (filters.recallCost !== null) parts.push('recallCost[]='    + filters.recallCost);
-        if (filters.forest     !== null) parts.push('forestPower[]='   + filters.forest);
-        if (filters.mountain   !== null) parts.push('mountainPower[]=' + filters.mountain);
-        if (filters.ocean      !== null) parts.push('oceanPower[]='    + filters.ocean);
+        // Numeric filters: ownership proxy wants exact (mainCost=N); collection
+        // proxy wants bracketed ranges (mainCost[gte]/[lte]/[gt]/[lt]).
+        var _numFn = _scope === 'ownership' ? numOwnParts : numCollParts;
+        NUM_FIELDS.forEach(function(f) {
+            _numFn(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+        });
 
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
@@ -626,6 +777,7 @@ function CardSearch(cfg) {
     // build shareable URL for pushState
     function buildPageUrl(page) {
         var parts = [];
+        if (_tab && _tab !== 'all') parts.push('tab=' + _tab);
         if (filters.q) parts.push('q=' + encodeURIComponent(filters.q));
         if (_factionDirty) filters.faction.forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
         if (_typeDirty)   filters.type.forEach(function(v)   { parts.push('type[]='   + encodeURIComponent(v)); });
@@ -634,11 +786,12 @@ function CardSearch(cfg) {
         filters.keywords.forEach(function(v)      { parts.push('keyword[]='      + encodeURIComponent(v)); });
         filters.subtypes.forEach(function(v)      { parts.push('subtype[]='      + encodeURIComponent(v)); });
         filters.variations.forEach(function(v)    { parts.push('variation[]='    + encodeURIComponent(v)); });
-        if (filters.mainCost   !== null) parts.push('mainCost='   + filters.mainCost);
-        if (filters.recallCost !== null) parts.push('recallCost=' + filters.recallCost);
-        if (filters.forest     !== null) parts.push('forest='     + filters.forest);
-        if (filters.mountain   !== null) parts.push('mountain='   + filters.mountain);
-        if (filters.ocean      !== null) parts.push('ocean='      + filters.ocean);
+        if (filters.mainCost)   parts.push('mainCost='   + encodeURIComponent(filters.mainCost));
+        if (filters.recallCost) parts.push('recallCost=' + encodeURIComponent(filters.recallCost));
+        if (filters.forest)     parts.push('forest='     + encodeURIComponent(filters.forest));
+        if (filters.mountain)   parts.push('mountain='   + encodeURIComponent(filters.mountain));
+        if (filters.ocean)      parts.push('ocean='      + encodeURIComponent(filters.ocean));
+        if (filters.showPromo)   parts.push('promo=true');
         if (filters.isBanned)    parts.push('isBanned=true');
         if (filters.isErrated)   parts.push('isErrated=true');
         if (filters.isSuspended) parts.push('isSuspended=true');
@@ -657,32 +810,20 @@ function CardSearch(cfg) {
             var el = document.getElementById(P + '-filter-' + key);
             return el ? Array.from(el.selectedOptions).map(function(o) { return o.value; }) : [];
         }
-        function rv(id) {
-            var el = document.getElementById(P + '-filter-' + id);
-            return el && el.value !== '' ? el.value : null;
-        }
         filters.sets          = sv('set');
         if (tsInst.faction) filters.faction = sv('faction');
         filters.subtypes      = sv('subtype');
         filters.keywords      = sv('keyword');
         filters.variations    = sv('variation');
-        function rop(id) {
-            var el = document.getElementById(P + '-filter-' + id + '-op');
-            return el ? (el.value || 'eq') : 'eq';
-        }
-        filters.mainCost      = rv('maincost');    filters.mainCostOp    = rop('maincost');
-        filters.recallCost    = rv('recallcost');  filters.recallCostOp  = rop('recallcost');
-        filters.forest        = rv('forestpower'); filters.forestOp      = rop('forestpower');
-        filters.mountain      = rv('mountainpower'); filters.mountainOp  = rop('mountainpower');
-        filters.ocean         = rv('oceanpower');  filters.oceanOp       = rop('oceanpower');
-        var statusVals        = sv('status');
-        filters.isBanned      = statusVals.indexOf('banned')    >= 0;
-        filters.isErrated     = statusVals.indexOf('errated')   >= 0;
-        filters.isSuspended   = statusVals.indexOf('suspended') >= 0;
+        // Numeric filters: read the raw text expression (null when empty).
+        NUM_FIELDS.forEach(function(f) {
+            var el = document.getElementById(P + '-filter-' + f.id);
+            filters[f.key] = el && el.value.trim() !== '' ? el.value.trim() : null;
+        });
+        // Card status is held by data-bool-filter buttons (set on click); nothing to read here.
         var hneEl = document.getElementById(P + '-filter-hasnoeffect');
         filters.hasNoEffect = hneEl ? hneEl.checked : false;
-        var kwModeEl = document.getElementById(P + '-kw-mode');
-        filters.keywordMode = kwModeEl ? (kwModeEl.dataset.mode || 'or') : 'or';
+        filters.keywordMode = 'and';
         var _crEl = document.getElementById(P + '-filter-cost-relation');
         filters.costRelation = _crEl ? _crEl.value : '';
         _readEffectRows();
@@ -694,11 +835,7 @@ function CardSearch(cfg) {
         var n = (_factionDirty ? filters.faction.length : 0)
             + (_typeDirty   ? filters.type.length   : 0)
             + (_rarityDirty ? filters.rarity.length : 0)
-            + (filters.mainCost   !== null ? 1 : 0)
-            + (filters.recallCost !== null ? 1 : 0)
-            + (filters.forest     !== null ? 1 : 0)
-            + (filters.mountain   !== null ? 1 : 0)
-            + (filters.ocean      !== null ? 1 : 0)
+            + NUM_FIELDS.reduce(function(acc, f) { return acc + (numExprActive(filters[f.key]) ? 1 : 0); }, 0)
             + (_setsDirty ? filters.sets.length : 0) + filters.subtypes.length + filters.keywords.length
             + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
             + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
@@ -708,6 +845,18 @@ function CardSearch(cfg) {
         if (elFilterCount) {
             elFilterCount.textContent = n || '';
             elFilterCount.style.display = n > 0 ? '' : 'none';
+        }
+        // Advanced-accordion badge: count of filters living inside the accordion.
+        var advN = filters.subtypes.length + filters.keywords.length
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
+            + (filters.hasNoEffect ? 1 : 0) + (filters.costRelation ? 1 : 0)
+            + (numExprActive(filters.forest)   ? 1 : 0)
+            + (numExprActive(filters.mountain) ? 1 : 0)
+            + (numExprActive(filters.ocean)    ? 1 : 0);
+        var advBadge = document.getElementById(P + '-adv-count');
+        if (advBadge) {
+            advBadge.textContent = advN || '';
+            advBadge.style.display = advN > 0 ? '' : 'none';
         }
     }
 
@@ -872,7 +1021,18 @@ function CardSearch(cfg) {
             wrap.appendChild(img);
         }
 
-        if (cfg.collectionMode && cfg.collectionData) {
+        if (_scope === 'ownership') {
+            // Digital-ownership tab: read-only count of digital copies returned by
+            // the ownership API, marked with a key icon. No editable footer — the
+            // ownership service is the source of truth and isn't edited from here.
+            var oqty = card._qty || 0;
+
+            var obadge = document.createElement('span');
+            obadge.className = 'card-own-badge';
+            obadge.dataset.ref = ref;
+            obadge.innerHTML = '<i class="fa-solid fa-key"></i> \xd7' + oqty;
+            wrap.appendChild(obadge);
+        } else if (cfg.collectionMode && cfg.collectionData) {
             var cqty = cfg.collectionData[ref] || 0;
 
             var cbadge = document.createElement('span');
@@ -883,6 +1043,10 @@ function CardSearch(cfg) {
 
             var collBar = document.createElement('div');
             collBar.className = 'card-coll-bar';
+
+            // Archive icon — keeps the collection cue visible once the badge fades on hover.
+            var collIcon = document.createElement('i');
+            collIcon.className = 'fa-solid fa-box-archive card-coll-bar-icon';
 
             var btnM = document.createElement('button');
             btnM.type = 'button';
@@ -902,6 +1066,7 @@ function CardSearch(cfg) {
             var fbSpan = document.createElement('span');
             fbSpan.style.cssText = 'font-size:.85rem;min-width:14px;flex-shrink:0';
 
+            collBar.appendChild(collIcon);
             collBar.appendChild(btnM);
             collBar.appendChild(qtySpan);
             collBar.appendChild(btnP);
@@ -979,7 +1144,9 @@ function CardSearch(cfg) {
                     elGrid.innerHTML = '';
                     cards.forEach(function(c) {
                         var norm = normalizeCard(c);
-                        if (_scopeCollection && norm._qty && norm.reference) {
+                        // Only the physical-collection scope feeds collectionData; the
+                        // ownership scope renders its own read-only key badge from _qty.
+                        if (_scope === 'collection' && norm._qty && norm.reference) {
                             cfg.collectionData = cfg.collectionData || {};
                             cfg.collectionData[norm.reference] = norm._qty;
                         }
@@ -1045,6 +1212,139 @@ function CardSearch(cfg) {
         if (tsInst.set && !_setsDirty) tsInst.set.setValue(DEFAULT_SETS, true);
     }
 
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    function syncTabButtons() {
+        qa('.cs-tab[data-tab]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.tab === _tab);
+        });
+    }
+
+    // Show/hide filter blocks based on the active tab. Each block opts in via
+    // data-tabs="all unique collection ownership".
+    function applyTabVisibility() {
+        if (!_root) return;
+        _root.querySelectorAll('[data-tabs]').forEach(function(el) {
+            var tabs = el.getAttribute('data-tabs').split(/\s+/);
+            el.style.display = tabs.indexOf(_tab) >= 0 ? '' : 'none';
+        });
+    }
+
+    // Switch tab. On a user click, filters are reset first (resetFilters) and the
+    // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
+    // the URL-loaded filters are preserved and only scope/visibility are applied.
+    function setTab(t, keepFilters) {
+        _tab = (t === 'unique' || t === 'collection' || t === 'ownership') ? t : 'all';
+        setScope(_tab === 'collection' || _tab === 'ownership' ? _tab : 'all');
+        if (_tab === 'unique') {
+            if (!keepFilters) {
+                _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice();
+                _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice();
+                // Uniques also live in the KS edition — add it to the default sets.
+                var _uExtra = cfg.uniqueExtraSets || [];
+                if (_uExtra.length) {
+                    _setsDirty = true;
+                    filters.sets = DEFAULT_SETS.slice();
+                    _uExtra.forEach(function(s) { if (filters.sets.indexOf(s) < 0) filters.sets.push(s); });
+                    if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+                }
+            }
+            // Effect search defaults to OR (multi-select). The mode is managed by
+            // the always-visible OR/AND toggle and reset by resetFilters().
+        }
+        syncTabButtons();
+        applyTabVisibility();
+        updateScopeUi();
+        syncDefaultsToUi();
+        updateFilterCount();
+    }
+
+    // ── Promo sets ────────────────────────────────────────────────────────────
+    function syncSetButtons() {
+        qa('.filter-toggle[data-filter="sets"]').forEach(function(b) {
+            b.classList.toggle('active', filters.sets.indexOf(b.dataset.value) >= 0);
+        });
+    }
+
+    // Recompute the promo (sub) set selection from the currently-active main sets:
+    // promo sets follow their parent, discarding any manual promo picks.
+    function recomputePromoSetsFromMains() {
+        var children = cfg.setChildren || {};
+        var subs     = cfg.subSets     || [];
+        var activeMains = filters.sets.filter(function(s) { return subs.indexOf(s) < 0; });
+        var next = activeMains.slice();
+        activeMains.forEach(function(m) {
+            (children[m] || []).forEach(function(ch) { if (next.indexOf(ch) < 0) next.push(ch); });
+        });
+        filters.sets = next;
+    }
+
+    // All variation codes (read from the variation <select> options).
+    function _allVariationValues() {
+        var el = document.getElementById(P + '-filter-variation');
+        return el ? Array.from(el.options).map(function(o) { return o.value; }) : DEFAULT_VARIATIONS.slice();
+    }
+
+    // Reflect the promo (sub) sets currently in filters.sets into the promo dropdown.
+    function syncPromoDropdown() {
+        if (!tsInst.promoset) return;
+        var subs = cfg.subSets || [];
+        tsInst.promoset.setValue(filters.sets.filter(function(s) { return subs.indexOf(s) >= 0; }), true);
+    }
+
+    // Merge a manual promo-dropdown selection with the current main-set selection.
+    function applyPromoSelection(promoVals) {
+        var subs = cfg.subSets || [];
+        var next = filters.sets.filter(function(s) { return subs.indexOf(s) < 0; });
+        (promoVals || []).forEach(function(v) { if (next.indexOf(v) < 0) next.push(v); });
+        filters.sets = next;
+        _setsDirty = true;
+        if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+        syncSetButtons();
+        updateFilterCount();
+    }
+
+    function setShowPromo(on) {
+        filters.showPromo = !!on;
+        var panel = document.getElementById(P + '-promo-panel');
+        if (panel) panel.style.display = on ? '' : 'none';
+        var subs = cfg.subSets || [];
+        if (on) {
+            // Select all variations, and pull in the promo editions belonging to
+            // the currently-selected main sets.
+            if (tsInst.variation) tsInst.variation.setValue(_allVariationValues(), true);
+            _variationDirty = false;
+            recomputePromoSetsFromMains();
+            _setsDirty = true;
+            if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+            syncSetButtons();
+            syncPromoDropdown();
+        } else {
+            // Drop promo (sub) sets and reset variations back to standard.
+            if (filters.sets.some(function(s) { return subs.indexOf(s) >= 0; })) {
+                filters.sets = filters.sets.filter(function(s) { return subs.indexOf(s) < 0; });
+                _setsDirty = true;
+                if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+                syncSetButtons();
+            }
+            if (tsInst.promoset) tsInst.promoset.clear(true);
+            _variationDirty = false;
+            if (tsInst.variation) {
+                tsInst.variation.clear(true);
+                if (DEFAULT_VARIATIONS.length) tsInst.variation.setValue(DEFAULT_VARIATIONS.slice(), true);
+            }
+        }
+        updateFilterCount();
+    }
+
+    function initPromoToggle() {
+        var t = document.getElementById(P + '-promo-toggle');
+        if (!t) return;
+        t.checked = !!filters.showPromo;
+        var panel = document.getElementById(P + '-promo-panel');
+        if (panel) panel.style.display = filters.showPromo ? '' : 'none';
+        t.addEventListener('change', function() { setShowPromo(this.checked); });
+    }
+
     // reset filters
     function resetFilters() {
         _factionDirty   = false;
@@ -1065,7 +1365,7 @@ function CardSearch(cfg) {
         filters.sets           = DEFAULT_SETS.slice();
         filters.subtypes       = [];
         filters.keywords       = [];
-        filters.keywordMode    = 'or';
+        filters.keywordMode    = 'and';
         filters.variations     = DEFAULT_VARIATIONS.slice();
         filters.isBanned       = false;
         filters.isErrated      = false;
@@ -1073,9 +1373,8 @@ function CardSearch(cfg) {
         filters.hasNoEffect    = false;
         filters.effects        = [];
         filters.effectMode     = 'or';
-        filters.mainCostOp     = 'eq'; filters.recallCostOp = 'eq';
-        filters.forestOp       = 'eq'; filters.mountainOp   = 'eq'; filters.oceanOp = 'eq';
         filters.costRelation   = '';
+        filters.showPromo      = false;
         filters.sort           = DEFAULT_SORT_1;
 
         if (elSearch)     elSearch.value     = '';
@@ -1087,31 +1386,23 @@ function CardSearch(cfg) {
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) { b.classList.remove('active'); });
         qa('.filter-toggle[data-bool-filter]').forEach(function(b) { b.classList.remove('active'); });
 
-        ['faction','subtype','keyword','status'].forEach(function(k) {
+        ['faction','subtype','keyword'].forEach(function(k) {
             if (tsInst[k]) tsInst[k].clear(true);
         });
-        ['maincost','recallcost','forestpower','mountainpower','oceanpower'].forEach(function(id) {
-            var el = document.getElementById(P + '-filter-' + id);
+        NUM_FIELDS.forEach(function(f) {
+            var el = document.getElementById(P + '-filter-' + f.id);
             if (el) el.value = '';
         });
         var _hneReset = document.getElementById(P + '-filter-hasnoeffect');
         if (_hneReset) _hneReset.checked = false;
-        ['maincost','recallcost','forestpower','mountainpower','oceanpower'].forEach(function(id) {
-            var opEl = document.getElementById(P + '-filter-' + id + '-op');
-            if (opEl) opEl.value = 'eq';
-            var valEl = document.getElementById(P + '-filter-' + id);
-            if (valEl) valEl.value = '';
-        });
         var _crReset = document.getElementById(P + '-filter-cost-relation');
         if (_crReset) _crReset.value = '';
         _resetEffectRows();
-        var _kwReset = document.getElementById(P + '-kw-mode');
-        if (_kwReset) {
-            _kwReset.dataset.mode = 'or';
-            _kwReset.querySelectorAll('.kw-mode-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.mode === 'or');
-            });
-        }
+        var _promoReset = document.getElementById(P + '-promo-toggle');
+        if (_promoReset) _promoReset.checked = false;
+        var _promoPanel = document.getElementById(P + '-promo-panel');
+        if (_promoPanel) _promoPanel.style.display = 'none';
+        if (tsInst.promoset) tsInst.promoset.clear(true);
         if (tsInst.collection) {
             tsInst.collection.setValue(_defaultCollection, true);
         } else if (_collEl && _defaultCollection) {
@@ -1148,12 +1439,13 @@ function CardSearch(cfg) {
         filters.sets           = _setsDirty ? p.getAll('set[]') : DEFAULT_SETS.slice();
         filters.subtypes       = p.getAll('subtype[]');
         filters.keywords       = p.getAll('keyword[]');
-        filters.keywordMode    = p.get('kwMode') === 'and' ? 'and' : 'or';
+        filters.keywordMode    = p.get('kwMode') === 'or' ? 'or' : 'and';
         filters.variations     = p.getAll('variation[]');
         filters.isBanned       = p.get('isBanned')    === 'true';
         filters.isErrated      = p.get('isErrated')   === 'true';
         filters.isSuspended    = p.get('isSuspended') === 'true';
         filters.hasNoEffect    = p.get('hasNoEffect') === 'true';
+        filters.showPromo      = p.get('promo')       === 'true';
         filters.sort           = p.get('sort') || DEFAULT_SORT_1;
         var pg = parseInt(p.get('page') || '1', 10);
 
@@ -1200,21 +1492,20 @@ function CardSearch(cfg) {
         setNativeSel('forestpower',   filters.forest);
         setNativeSel('mountainpower', filters.mountain);
         setNativeSel('oceanpower',    filters.ocean);
-        var statusFromUrl = [];
-        if (filters.isBanned)    statusFromUrl.push('banned');
-        if (filters.isErrated)   statusFromUrl.push('errated');
-        if (filters.isSuspended) statusFromUrl.push('suspended');
-        setTs('status', statusFromUrl);
+        // Card status restored onto the data-bool-filter buttons above.
 
         var _hneRestore = document.getElementById(P + '-filter-hasnoeffect');
         if (_hneRestore) _hneRestore.checked = !!filters.hasNoEffect;
-        var _kwRestore = document.getElementById(P + '-kw-mode');
-        if (_kwRestore) {
-            _kwRestore.dataset.mode = filters.keywordMode;
-            _kwRestore.querySelectorAll('.kw-mode-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.mode === filters.keywordMode);
-            });
-        }
+        var _promoRestore = document.getElementById(P + '-promo-toggle');
+        if (_promoRestore) _promoRestore.checked = !!filters.showPromo;
+        var _promoPanelR = document.getElementById(P + '-promo-panel');
+        if (_promoPanelR) _promoPanelR.style.display = filters.showPromo ? '' : 'none';
+        if (filters.showPromo) syncPromoDropdown();
+
+        var _urlTab = p.get('tab');
+        if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
+        if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
+        setTab(_urlTab && /^(unique|collection|ownership)$/.test(_urlTab) ? _urlTab : 'all', true);
 
         updateFilterCount();
         search(pg, true);
@@ -1328,6 +1619,10 @@ function CardSearch(cfg) {
         var _initVars = (opts.initialVariations && opts.initialVariations.length) ? opts.initialVariations : DEFAULT_VARIATIONS.slice();
         if (tsInst.variation && _initVars.length) tsInst.variation.setValue(_initVars, true);
 
+        // Promo editions dropdown — options come from the <select> markup. Manual
+        // changes merge into the set selection; main-set toggles override it.
+        tsInst.promoset = makeTs('promoset', { onChange: function() { applyPromoSelection(tsInst.promoset.getValue()); } });
+
         // In collection scope, faction/set/subtype/variation only support a single value
         ['faction', 'set', 'subtype', 'variation'].forEach(function(key) {
             if (!tsInst[key]) return;
@@ -1339,41 +1634,16 @@ function CardSearch(cfg) {
                 });
             });
         });
-        tsInst.status = makeTs('status', { placeholder: txt.lbl_card_status || 'Status' });
-
-        // Range selects: set initial values and register change listeners
+        // Numeric text inputs: set initial expression + live count update
         var _iniRange = cfg.initial || {};
-        function _initRangeSel(id, val) {
-            var el = document.getElementById(P + '-filter-' + id);
+        NUM_FIELDS.forEach(function(f) {
+            var el = document.getElementById(P + '-filter-' + f.id);
             if (!el) return;
-            if (val !== null && val !== undefined) el.value = String(val);
+            var v = _iniRange[f.key];
+            if (v !== null && v !== undefined && v !== '') el.value = String(v);
+            el.addEventListener('input',  updateFilterCount);
             el.addEventListener('change', updateFilterCount);
-        }
-        _initRangeSel('maincost',      _iniRange.mainCost);
-        _initRangeSel('recallcost',    _iniRange.recallCost);
-        _initRangeSel('forestpower',   _iniRange.forest);
-        _initRangeSel('mountainpower', _iniRange.mountain);
-        _initRangeSel('oceanpower',    _iniRange.ocean);
-
-        // Keyword mode toggle
-        var _kwModeEl = document.getElementById(P + '-kw-mode');
-        if (_kwModeEl) {
-            var _initMode = _iniRange.keywordMode === 'and' ? 'and' : 'or';
-            _kwModeEl.dataset.mode = _initMode;
-            _kwModeEl.querySelectorAll('.kw-mode-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.mode === _initMode);
-            });
-            _kwModeEl.addEventListener('click', function(e) {
-                var btn = e.target.closest('.kw-mode-btn');
-                if (!btn || btn.disabled) return;
-                var mode = btn.dataset.mode;
-                _kwModeEl.dataset.mode = mode;
-                _kwModeEl.querySelectorAll('.kw-mode-btn').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.mode === mode);
-                });
-                filters.keywordMode = mode;
-            });
-        }
+        });
 
         // hasNoEffect checkbox
         var _hneEl = document.getElementById(P + '-filter-hasnoeffect');
@@ -1382,27 +1652,23 @@ function CardSearch(cfg) {
             _hneEl.addEventListener('change', updateFilterCount);
         }
 
-        // Cost operator selects + cost relation
-        ['maincost','recallcost','forestpower','mountainpower','oceanpower'].forEach(function(id) {
-            var el = document.getElementById(P + '-filter-' + id + '-op');
-            if (el) el.addEventListener('change', updateFilterCount);
-        });
+        // Cost relation select
         var _crEl2 = document.getElementById(P + '-filter-cost-relation');
         if (_crEl2) _crEl2.addEventListener('change', updateFilterCount);
 
+        initPromoToggle();
         initEffects();
     }
 
     // wire up events
     if (_root) {
         _root.addEventListener('click', function(e) {
-            var btn = e.target.closest('[data-scope]');
+            var btn = e.target.closest('.cs-tab[data-tab]');
             if (!btn || !_root.contains(btn) || btn.disabled) return;
-            var newScope = btn.dataset.scope;
+            if (btn.dataset.tab === _tab) return;
             resetFilters();
-            setScope(newScope);
-            syncScopeButtons();
-            updateScopeUi();
+            setTab(btn.dataset.tab);
+            if (MODE === 'cards') search(1);
         });
 
         _root.addEventListener('click', function(e) {
@@ -1425,6 +1691,13 @@ function CardSearch(cfg) {
             } else {
                 if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
                 else          { arr.push(val);       btn.classList.add('active'); }
+            }
+            // Promo linking: toggling a MAIN set recomputes its promo children
+            // (only while "show promo" is active), discarding manual promo picks.
+            if (key === 'sets' && filters.showPromo && (cfg.subSets || []).indexOf(val) < 0) {
+                recomputePromoSetsFromMains();
+                syncSetButtons();
+                syncPromoDropdown();
             }
             if (key === 'faction' && tsInst.faction) tsInst.faction.setValue(filters.faction, true);
             if (key === 'sets'   && tsInst.set)     tsInst.set.setValue(filters.sets, true);
@@ -1624,6 +1897,16 @@ function CardSearch(cfg) {
     // init
     initTomSelects();
     syncDefaultsToUi();
+    // Restore the active tab from the URL (cards mode) so a refresh keeps it.
+    var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
+    if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
+    if (_initTab === 'ownership'  && !cfg.ownershipApiUrl) _initTab = null;
+    if (_initTab && /^(unique|collection|ownership)$/.test(_initTab)) {
+        setTab(_initTab, true); // keepFilters: URL already carries the filter state
+    } else {
+        syncTabButtons();
+        applyTabVisibility();
+    }
     updateFilterCount();
     if (cfg.autoSearch) {
         var _initPage = parseInt(new URLSearchParams(location.search).get('page') || '1', 10);

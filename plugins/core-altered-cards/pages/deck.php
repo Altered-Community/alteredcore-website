@@ -417,18 +417,43 @@ if ($isLoggedIn && $deck && $deckId && !empty($token)) {
     }
 }
 
-$typesData  = loadAlteredData('types');
-$powersData = loadAlteredData('powers');
-$txt['types'] = array_map(fn($t) => $t[$uiLang] ?? $t['en'], $typesData);
+$typesData       = loadAlteredData('types');
+$typesMergedData = loadAlteredData('types_merged');
+$powersData      = loadAlteredData('powers');
 
-$typeOrder  = array_keys($typesData);
+// Display-only type list: hide types absorbed by a merge group (same as cards filter)
+$_mergedKeys = array_keys($typesMergedData);
+$_absorbedTypes = [];
+foreach ($typesMergedData as $_mk => $_mvs) {
+    foreach ($_mvs as $_mv) {
+        if (!in_array($_mv, $_mergedKeys, true)) {
+            $_absorbedTypes[$_mv] = true;
+        }
+    }
+}
+$typesDataDisplay = array_diff_key($typesData, $_absorbedTypes);
+$txt['types'] = array_map(fn($t) => $t[$uiLang] ?? $t['en'], $typesDataDisplay);
+
+$typeOrder  = array_keys($typesDataDisplay);
 $typeOrder[] = 'OTHER'; // catch-all for cards with unrecognized types
 $txt['types']['OTHER'] = $uiLang === 'fr' ? 'Autre' : 'Other';
+
+$typeToDisplay = [];
+foreach (array_keys($typesData) as $_t) {
+    $typeToDisplay[$_t] = $_t;
+}
+foreach ($typesMergedData as $_display => $_members) {
+    foreach ($_members as $_member) {
+        $typeToDisplay[$_member] = $_display;
+    }
+}
+
 $cardGroups = array_fill_keys($typeOrder, []);
 
 if ($deck && !empty($deck['cards'])) {
     foreach ($deck['cards'] as $card) {
-        $type = $card['cardTypeReference'] ?? 'OTHER';
+        $rawType = $card['cardTypeReference'] ?? 'OTHER';
+        $type = $typeToDisplay[$rawType] ?? 'OTHER';
         $cardGroups[$type][] = $card;
     }
     foreach ($cardGroups as &$group) {
@@ -446,7 +471,8 @@ $statsPowerCount  = 0;
 
 if ($deck && !empty($deck['cards'])) {
     foreach ($deck['cards'] as $card) {
-        $type = $card['cardTypeReference'] ?? 'OTHER';
+        $rawType = $card['cardTypeReference'] ?? 'OTHER';
+        $type = $typeToDisplay[$rawType] ?? 'OTHER';
         $qty  = (int)($card['quantity'] ?? 1);
         if ($type === 'HERO') continue;
         $mainCost   = min((int)($card['mainCost']   ?? 0), 7);
@@ -602,7 +628,16 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         ? 'background-image:linear-gradient(to right,' . $factionColor . ' 35%,' . $factionColor . '00 100%),url(' . h($heroImgUrl) . ');background-size:cover;background-position:left top;'
         : '';
     ?>
-    <div class="card-altered p-4 mb-4<?= $heroImgUrl ? ' deck-card-text-white' : '' ?>" style="<?= $hdrStyle ?>">
+    <div class="card-altered deck-hdr-banner p-4 mb-4<?= $heroImgUrl ? ' deck-card-text-white deck-hdr-banner--hero' : '' ?>" style="<?= $hdrStyle ?>"
+         <?php if ($heroRef && $heroImgUrl): ?>
+         data-ref="<?= h($heroRef) ?>"
+         data-unique="<?= _deck_is_unique($heroRef) ? '1' : '0' ?>"
+         data-lang="<?= h($uiLang) ?>"
+         data-img-src="<?= h(_deck_cdn_url($heroRef, $uiLang)) ?>"
+         role="button"
+         tabindex="0"
+         aria-label="<?= h($txt['detail_label']) ?>"
+         <?php endif; ?>>
         <div class="d-flex align-items-start flex-wrap gap-3 justify-content-between">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -644,8 +679,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     <button type="button" class="badge border-0 bg-danger js-deck-illegal"
                             data-errors="<?= h(json_encode($_fmtErrors)) ?>"
                             data-legality="<?= h(json_encode($_legalDetail)) ?>"
-                            data-format="<?= h($fmtLabel) ?>"
-                            style="cursor:pointer">
+                            data-format="<?= h($fmtLabel) ?>">
                         <i class="fa-solid fa-triangle-exclamation me-1"></i><?= h($txt['illegal']) ?>
                     </button>
                     <?php endif; ?>
@@ -1009,6 +1043,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.js-deck-illegal');
         if (!btn) return;
+        e.stopPropagation();
         var errors = [], detail = {};
         try { errors = JSON.parse(btn.dataset.errors || '[]'); } catch(_) {}
         try { detail = JSON.parse(btn.dataset.legality || '{}'); } catch(_) {}
@@ -1148,6 +1183,21 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         document.body.style.overflow = 'hidden';
     }
 
+    document.querySelectorAll('.deck-hdr-banner--hero').forEach(function (banner) {
+        function openHero() {
+            openModal(banner.dataset.ref, banner.dataset.unique === '1', banner.dataset.lang, banner.dataset.imgSrc || '');
+        }
+        banner.addEventListener('click', function (e) {
+            if (e.target.closest('.js-deck-illegal')) return;
+            openHero();
+        });
+        banner.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openHero();
+            }
+        });
+    });
     document.querySelectorAll('.deck-card-wrap').forEach(function (w) {
         w.addEventListener('click', function () {
             var srcImg = w.querySelector('img');
