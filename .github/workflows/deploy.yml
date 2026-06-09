@@ -3,24 +3,21 @@ name: Deploy
 # Déploie les fichiers suivis par git vers le serveur, puis joue les migrations DB.
 #  • Transfert : lftp (même logique liste blanche pour ftp, ftps ET sftp).
 #  • Migrations : php sql/migrate.php exécuté en SSH (preprod et prod ont SSH).
-# Mapping branche → environnement GitHub (secrets/variables) :
-#   preprod → environnement "preprod"
-#   main    → environnement "prod"
+# Déclenché à chaque push (ou merge) sur la branche preprod.
 on:
   push:
-    branches: [preprod, main]
-  workflow_dispatch: {} # déclenchement manuel ; l'environnement suit la branche choisie
+    branches: [preprod]
+  workflow_dispatch: {} # permet aussi un déclenchement manuel depuis l'onglet Actions
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true # un nouveau push annule un déploiement en cours sur la même branche
+  cancel-in-progress: true # un nouveau push annule un déploiement en cours
 
 jobs:
   deploy:
     name: Sync to server
     runs-on: ubuntu-latest
-    # La branche détermine l'environnement (et donc ses secrets/variables).
-    environment: ${{ github.ref_name == 'main' && 'prod' || 'preprod' }}
+    environment: preprod # secrets/variables sont définis dans cet environnement GitHub
     steps:
       - name: Checkout
         uses: actions/checkout@v4
