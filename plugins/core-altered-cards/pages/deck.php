@@ -127,6 +127,22 @@ $txt = [
         'nc_draw_a'        => 'by drawing',
         'nc_draw_b'        => 'cards',
         'nc_both'          => 'Both',
+        'pt_restart'        => 'Restart',
+        'pt_toggle_playground' => 'Game mode',
+        'pt_setup_hint'     => 'Select 3 cards to set as mana',
+        'pt_commit_mana'    => 'Put in mana',
+        'pt_mana'           => 'Mana',
+        'pt_mana_list'      => 'Cards in mana',
+        'pt_empty_zone'     => 'Empty',
+        'pt_deck'           => 'Deck',
+        'pt_draw'           => 'Draw',
+        'pt_to_mana'        => 'To mana',
+        'pt_board'          => 'Game board',
+        'pt_discard'        => 'Discard',
+        'pt_board_more'     => 'See all',
+        'pt_return_hand'    => 'Return to hand',
+        'pt_board_list'     => 'Board cards',
+        'pt_discard_list'   => 'Discard pile',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -247,6 +263,22 @@ $txt = [
         'nc_draw_a'        => 'en piochant',
         'nc_draw_b'        => 'cartes',
         'nc_both'          => 'A + B',
+        'pt_restart'        => 'Recommencer',
+        'pt_toggle_playground' => 'Mode jeu',
+        'pt_setup_hint'     => 'Sélectionne 3 cartes à mettre en mana',
+        'pt_commit_mana'    => 'Mettre en mana',
+        'pt_mana'           => 'Mana',
+        'pt_mana_list'      => 'Cartes en mana',
+        'pt_empty_zone'     => 'Vide',
+        'pt_deck'           => 'Deck',
+        'pt_draw'           => 'Piocher',
+        'pt_to_mana'        => 'En mana',
+        'pt_board'          => 'Plateau de jeu',
+        'pt_discard'        => 'Défausse',
+        'pt_board_more'     => 'Voir +',
+        'pt_return_hand'    => 'Remettre en main',
+        'pt_board_list'     => 'Cartes du plateau',
+        'pt_discard_list'   => 'Défausse',
     ],
 ][$uiLang] ?? [];
 
@@ -909,10 +941,51 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         <div id="deck-hand-view" style="display:none">
             <div class="hand-test-toolbar">
                 <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
-                    <i class="fa-solid fa-shuffle me-1"></i><?= h($txt['new_hand']) ?>
+                    <i class="fa-solid fa-rotate-right me-1"></i><?= h($txt['pt_restart']) ?>
+                </button>
+                <button type="button" id="pt-toggle-playground" class="btn btn-sm pt-toggle" aria-pressed="false" title="<?= h($txt['pt_toggle_playground']) ?>">
+                    <i class="fa-solid fa-toggle-off me-1"></i><?= h($txt['pt_toggle_playground']) ?>
+                </button>
+                <span id="pt-phase-hint" class="pt-phase-hint"><?= h($txt['pt_setup_hint']) ?></span>
+            </div>
+
+            <div class="pt-table-wrap">
+            <div class="pt-table">
+                <div id="pt-board" class="pt-zone pt-board pt-dropzone" data-zone="board">
+                    <div class="pt-zone-label"><?= h($txt['pt_board']) ?>
+                        <a href="#" id="pt-board-more" class="pt-board-more" style="display:none"><?= h($txt['pt_board_more']) ?></a></div>
+                    <div id="pt-board-cards" class="pt-board-cards"></div>
+                    <div id="pt-mana" class="pt-mana" role="button" tabindex="0" title="<?= h($txt['pt_mana_list']) ?>">
+                        <i class="fa-solid fa-droplet"></i>
+                        <span class="pt-mana-label"><?= h($txt['pt_mana']) ?></span>
+                        <span id="pt-mana-count" class="pt-mana-count">0</span>
+                    </div>
+                </div>
+                <div class="pt-aside">
+                    <div class="pt-resources-row">
+                        <div id="pt-discard" class="pt-discard pt-dropzone" data-zone="discard" role="button" tabindex="0">
+                            <div class="pt-zone-label"><?= h($txt['pt_discard']) ?></div>
+                            <div id="pt-discard-pile" class="pt-discard-pile"></div>
+                            <span id="pt-discard-count" class="pt-discard-count">0</span>
+                        </div>
+                        <div id="pt-deck" class="pt-deck" role="button" tabindex="0" title="<?= h($txt['pt_draw']) ?>">
+                            <div class="pt-zone-label"><?= h($txt['pt_deck']) ?></div>
+                            <div class="pt-deck-pile">
+                                <span id="pt-deck-count" class="pt-deck-count">0</span>
+                                <span class="pt-deck-hint"><?= h($txt['pt_draw']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div id="hand-cards" class="deck-cards-grid hand-cards-grid pt-dropzone" data-zone="hand"></div>
+            <div class="pt-hand-actions">
+                <button type="button" id="pt-commit-mana" class="btn btn-primary-altered btn-sm" style="display:none" disabled>
+                    <i class="fa-solid fa-droplet me-1"></i><?= h($txt['pt_commit_mana']) ?>
                 </button>
             </div>
-            <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
             <div id="hand-summary" class="hand-summary"></div>
             <div id="hand-odds" class="hand-odds">
                 <div class="ho-stats">
@@ -958,7 +1031,21 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               characters: <?= json_encode($txt['hand_characters']) ?>,
               spells:     <?= json_encode($txt['hand_spells']) ?>,
               permanents: <?= json_encode($txt['hand_permanents']) ?>,
-              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
+              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>,
+              restart:    <?= json_encode($txt['pt_restart']) ?>,
+              setupHint:  <?= json_encode($txt['pt_setup_hint']) ?>,
+              commitMana: <?= json_encode($txt['pt_commit_mana']) ?>,
+              manaLabel:  <?= json_encode($txt['pt_mana']) ?>,
+              manaList:   <?= json_encode($txt['pt_mana_list']) ?>,
+              emptyZone:  <?= json_encode($txt['pt_empty_zone']) ?>,
+              deck:       <?= json_encode($txt['pt_deck']) ?>,
+              toMana:     <?= json_encode($txt['pt_to_mana']) ?>,
+              board:      <?= json_encode($txt['pt_board']) ?>,
+              discard:    <?= json_encode($txt['pt_discard']) ?>,
+              boardMore:  <?= json_encode($txt['pt_board_more']) ?>,
+              returnHand: <?= json_encode($txt['pt_return_hand']) ?>,
+              boardList:  <?= json_encode($txt['pt_board_list']) ?>,
+              discardList:<?= json_encode($txt['pt_discard_list']) ?>
           };
         </script>
         <script>
@@ -1143,6 +1230,50 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     <div id="card-modal-inner" class="ac-lightbox-inner" onclick="event.stopPropagation()"></div>
 </div>
 
+<!-- Playtest card-list modal -->
+<div id="pt-list-modal" class="ac-lightbox-overlay" style="display:none">
+  <div class="ac-list-panel" onclick="event.stopPropagation()">
+    <div class="ac-list-head"><span id="pt-list-title"></span>
+      <button type="button" class="btn-close" id="pt-list-close" aria-label="Close"></button></div>
+    <div id="pt-list-body" class="ac-list-body"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var modal = document.getElementById('pt-list-modal');
+  var title = document.getElementById('pt-list-title');
+  var body  = document.getElementById('pt-list-body');
+  function close() { modal.style.display = 'none'; body.innerHTML = ''; document.body.style.overflow = ''; }
+  window.acOpenCardListModal = function (titleText, cards, perCardAction) {
+    title.textContent = titleText + ' (' + cards.length + ')';
+    body.innerHTML = '';
+    cards.forEach(function (c) {
+      var row = document.createElement('div'); row.className = 'ac-list-row';
+      var thumb;
+      if (c.unique) {
+        thumb = document.createElement('altered-card'); thumb.className = 'ac-list-thumb';
+        thumb.setAttribute('ref', c.ref); thumb.setAttribute('locale', (typeof handLang !== 'undefined' ? handLang : 'en'));
+      } else {
+        thumb = document.createElement('img'); thumb.className = 'ac-list-thumb'; thumb.src = c.img || ''; thumb.alt = c.name || c.ref; thumb.loading = 'lazy';
+      }
+      var nm = document.createElement('span'); nm.className = 'ac-list-name'; nm.textContent = c.name || c.ref;
+      row.appendChild(thumb); row.appendChild(nm);
+      if (perCardAction) {
+        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn btn-sm btn-primary-altered';
+        btn.textContent = perCardAction.label;
+        btn.addEventListener('click', function () { perCardAction.fn(c); close(); });
+        row.appendChild(btn);
+      }
+      body.appendChild(row);
+    });
+    modal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+  };
+  document.getElementById('pt-list-close').addEventListener('click', close);
+  modal.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+}());
+</script>
+
 <?php if ($hasUniqueCards): ?>
 <script src="<?= h($rendererSrc) ?>"></script>
 <?php endif; ?>
@@ -1182,6 +1313,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
+    window.acOpenCardZoom = function (ref, unique, lang, imgSrc) { openModal(ref, unique, lang, imgSrc); };
 
     document.querySelectorAll('.deck-hdr-banner--hero').forEach(function (banner) {
         function openHero() {
@@ -1209,15 +1341,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             openModal(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
         });
     });
-    var handGrid = document.getElementById('hand-cards');
-    if (handGrid) {
-        handGrid.addEventListener('click', function (e) {
-            var w = e.target.closest('.deck-card-wrap');
-            if (!w || !handGrid.contains(w)) return;
-            var srcImg = w.querySelector('img');
-            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
-        });
-    }
     modal.addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 }());
@@ -1267,91 +1390,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </script>
 
 <!-- Starting hand tester -->
-<script>
-(function () {
-    var grid    = document.getElementById('hand-cards');
-    var summary = document.getElementById('hand-summary');
-    var drawBtn = document.getElementById('hand-draw-btn');
-    var tabBtn  = document.getElementById('deck-view-hand');
-    if (!grid || typeof handDeckCards === 'undefined') return;
-
-    var HAND_SIZE = 6;
-    var drawn = false;
-
-    function buildPool() {
-        // Each card is repeated qty times; the same object reference is pushed
-        // multiple times — fine as long as makeCard stays read-only.
-        var pool = [];
-        handDeckCards.forEach(function (c) {
-            for (var i = 0; i < c.qty; i++) pool.push(c);
-        });
-        return pool;
-    }
-    function shuffle(arr) {
-        for (var i = arr.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-        }
-        return arr;
-    }
-    function makeCard(card, index) {
-        var wrap = document.createElement('div');
-        wrap.className = 'deck-card-wrap hand-card-anim';
-        wrap.style.animationDelay = (index * 45) + 'ms';
-        wrap.dataset.ref    = card.ref;
-        wrap.dataset.unique = card.unique ? '1' : '0';
-        wrap.dataset.lang   = handLang;
-        var inner;
-        if (card.unique) {
-            inner = document.createElement('altered-card');
-            inner.setAttribute('ref', card.ref);
-            inner.setAttribute('locale', handLang);
-        } else {
-            inner = document.createElement('img');
-            inner.className = 'deck-card-img';
-            inner.src = card.img;
-            inner.alt = card.name || card.ref;
-            inner.loading = 'lazy';
-        }
-        wrap.appendChild(inner);
-        return wrap;
-    }
-    function renderSummary(hand) {
-        var counts = { CHARACTER: 0, SPELL: 0, OTHER: 0 };
-        var costTotal = 0;
-        hand.forEach(function (c) {
-            if (c.type === 'CHARACTER') counts.CHARACTER++;
-            else if (c.type === 'SPELL') counts.SPELL++;
-            else counts.OTHER++;
-            costTotal += c.mainCost;
-        });
-        var avg = hand.length ? (costTotal / hand.length).toFixed(1) : '0.0';
-        summary.innerHTML =
-            '<span class="hand-stat">' + handTxt.characters + ' <b>' + counts.CHARACTER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.spells + ' <b>' + counts.SPELL + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.permanents + ' <b>' + counts.OTHER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.avgCost + ' <b>' + avg + '</b></span>';
-    }
-    function draw() {
-        grid.innerHTML = '';
-        var pool = shuffle(buildPool());
-        if (!pool.length) {
-            summary.innerHTML = '';
-            grid.innerHTML = '<p class="text-muted" style="font-size:.9rem;margin:0">' + handTxt.empty + '</p>';
-            drawn = true;
-            return;
-        }
-        var hand = pool.slice(0, Math.min(HAND_SIZE, pool.length));
-        hand.forEach(function (c, i) { grid.appendChild(makeCard(c, i)); });
-        renderSummary(hand);
-        drawn = true;
-    }
-
-    if (drawBtn) drawBtn.addEventListener('click', draw);
-    // Lazy first draw on tab open; the view reveal itself is handled by the view-toggle IIFE above.
-    if (tabBtn)  tabBtn.addEventListener('click', function () { if (!drawn) draw(); });
-}());
-</script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-tester.js"></script>
 
 <!-- Share -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
