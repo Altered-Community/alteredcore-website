@@ -1479,7 +1479,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <div class="modal-body p-4 db-modal-body">
                 <h5 class="fw-bold mb-3"><?= h($txt['duplicate_modal_title']) ?></h5>
                 <div id="deck-duplicate-error" class="alert alert-danger p-2 mb-3 small" style="display:none;white-space:pre-line"></div>
-                <label class="form-label small mb-1"><?= h($txt['duplicate_label']) ?></label>
+                <label for="deck-duplicate-input" class="form-label small mb-1"><?= h($txt['duplicate_label']) ?></label>
                 <input type="text" id="deck-duplicate-input" class="form-control mb-3"
                        placeholder="<?= h($txt['rename_ph']) ?>"
                        value="<?= h(($deck['name'] ?? '') . $txt['duplicate_suffix']) ?>">
