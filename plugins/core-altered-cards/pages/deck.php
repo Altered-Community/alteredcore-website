@@ -79,12 +79,80 @@ $txt = [
         'share_make_public'   => 'Make public & share',
         'share_making_public' => 'Making public…',
         'test_hand'           => 'Test hand',
-        'new_hand'            => 'New hand',
         'hand_empty'          => 'No cards to draw.',
         'hand_characters'     => 'Characters',
         'hand_spells'         => 'Spells',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Avg. hand cost',
+        'ho_stats'        => 'At a glance',
+        'ho_calc'         => 'Calculators',
+        'ho_deck'         => 'Deck',
+        'ho_drawn'        => 'Drawn',
+        'ho_tempo'        => 'Day 1 tempo',
+        'ho_tempo_sub'    => 'play two cards or more on day 1',
+        'ho_tempo_exp'    => 'Playing several cards on the first day builds your board faster than your opponent.',
+        'ho_heavy'        => 'Top-heavy hand',
+        'ho_heavy_sub'    => 'three cards or more costing 4 mana or more',
+        'ho_heavy_exp'    => 'Too many expensive cards means a clunky hand you cannot play out early.',
+        'ho_types_label'  => 'Average composition',
+        'ho_pick'         => 'Pick…',
+        'ho_group_a'      => 'A', 'ho_group_b' => 'B',
+        'ho_ratio'        => '≈ {x} in {y} hands',
+        'ho_ratio_generic'=> '≈ {x} chances in {y}',
+        'nc_atleast'       => 'Chances of having at least',
+        'nc_atleast_combo' => 'Chances of having at least one of',
+        'nc_among'         => 'cards among',
+        'nc_among_combo'   => 'among',
+        'nc_draw_a'        => 'by drawing',
+        'nc_draw_b'        => 'cards',
+        'nc_both'          => 'Both',
+        'ohs_title'      => 'Opening hand stats',
+        'ohs_detail'     => 'See details',
+        'ohs_card'       => 'card', 'ohs_cards' => 'cards',
+        'ohs_b1_title'   => 'Mana used on day 1',
+        'ohs_b1_sub'     => 'How much of your 3 mana you can spend on the first day',
+        'ohs_b1_h1'      => 'Optimal start',
+        'ohs_b1_h1_note' => 'of games let you spend all 3 mana',
+        'ohs_b1_h2'      => 'Dead hand',
+        'ohs_b1_h2_note' => 'no play possible — i.e. 0.8%',
+        'ohs_b1_detail'  => 'Breakdown by spendable mana',
+        'ohs_b2_title'   => 'Expensive cards',
+        'ohs_b2_sub'     => 'Cards at 4 mana or more, unplayable on the first day',
+        'ohs_b2_note'    => 'of hands hold 4 expensive cards or more — fewer options for your initial mana',
+        'ohs_b2_detail'  => 'Number of cards at 4 mana or more in the opening hand',
+        'ohs_b3_title'   => 'Reactivity (after you)',
+        'ohs_b3_sub'     => 'Chaining several plays on day 1: act, watch, then respond',
+        'ohs_b3_note'    => 'of hands let you chain 2 plays or more on day 1 (combined cost 3 or less)',
+        'ohs_b3_detail'  => 'Number of possible plays on day 1',
+        'ohs_b4_title'   => 'Contestable Expeditions on day 1',
+        'ohs_b4_sub'     => 'Characters you can deploy on the first day',
+        'ohs_b4_h1'      => 'Both Expeditions',
+        'ohs_b4_h1_note' => 'you can deploy 2 or 3 characters on day 1',
+        'ohs_b4_h2'      => 'No Expedition',
+        'ohs_b4_h2_note' => 'no character playable on day 1',
+        'ohs_b4_detail'  => 'Number of contestable Expeditions on day 1',
+        'ohs_b4_none'    => 'No character',
+        'ohs_b4_one'     => '1 Expedition',
+        'ohs_b4_both'    => 'Both Expeditions',
+        'pt_restart'        => 'New hand',
+        'pt_toggle_playground' => 'Game mode',
+        'pt_setup_hint'     => 'Select 3 cards to set as mana',
+        'pt_commit_mana'    => 'Put in mana',
+        'pt_mana'           => 'Mana',
+        'pt_mana_list'      => 'Cards in mana',
+        'pt_empty_zone'     => 'Empty',
+        'pt_deck'           => 'Deck',
+        'pt_draw'           => 'Draw',
+        'pt_to_mana'        => 'To mana',
+        'pt_play_board'     => 'Play to board',
+        'pt_cancel'         => 'Cancel',
+        'pt_zoom'           => 'Zoom',
+        'pt_board'          => 'In play (Expeditions, Reserve, Landmarks)',
+        'pt_discard'        => 'Discard',
+        'pt_board_more'     => 'See all',
+        'pt_return_hand'    => 'Return to hand',
+        'pt_board_list'     => 'Board cards',
+        'pt_discard_list'   => 'Discard pile',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -157,12 +225,80 @@ $txt = [
         ],
         'no_description'      => 'Aucune description disponible pour ce deck.',
         'test_hand'           => 'Main de départ',
-        'new_hand'            => 'Nouvelle main',
         'hand_empty'          => 'Aucune carte à tirer.',
         'hand_characters'     => 'Personnages',
         'hand_spells'         => 'Sorts',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Coût moyen en main',
+        'ho_stats'        => 'En un coup d\'œil',
+        'ho_calc'         => 'Calculateurs',
+        'ho_deck'         => 'Deck',
+        'ho_drawn'        => 'Piochées',
+        'ho_tempo'        => 'Tempo Jour 1',
+        'ho_tempo_sub'    => 'jouer deux cartes ou plus au jour 1',
+        'ho_tempo_exp'    => 'Jouer plusieurs cartes dès le premier jour développe ton plateau plus vite que l\'adversaire.',
+        'ho_heavy'        => 'Main lourde',
+        'ho_heavy_sub'    => 'trois cartes ou plus à 4 mana ou plus',
+        'ho_heavy_exp'    => 'Trop de cartes chères, c\'est une main encombrée, injouable tôt dans la partie.',
+        'ho_types_label'  => 'Composition moyenne',
+        'ho_pick'         => 'Choisir…',
+        'ho_group_a'      => 'A', 'ho_group_b' => 'B',
+        'ho_ratio'        => '≈ {x} sur {y} mains',
+        'ho_ratio_generic'=> '≈ {x} chances sur {y}',
+        'nc_atleast'       => 'Chances d\'avoir au moins',
+        'nc_atleast_combo' => 'Chances d\'avoir au moins une de',
+        'nc_among'         => 'cartes parmi',
+        'nc_among_combo'   => 'parmi',
+        'nc_draw_a'        => 'en piochant',
+        'nc_draw_b'        => 'cartes',
+        'nc_both'          => 'A + B',
+        'ohs_title'      => 'Stats de main de départ',
+        'ohs_detail'     => 'Voir le détail',
+        'ohs_card'       => 'carte', 'ohs_cards' => 'cartes',
+        'ohs_b1_title'   => 'Mana utilisé au jour 1',
+        'ohs_b1_sub'     => 'Combien de tes 3 mana tu peux dépenser dès le premier jour',
+        'ohs_b1_h1'      => 'Démarrage optimal',
+        'ohs_b1_h1_note' => 'des parties te laissent dépenser tes 3 mana',
+        'ohs_b1_h2'      => 'Main morte',
+        'ohs_b1_h2_note' => 'aucun jeu possible — soit 0,8 %',
+        'ohs_b1_detail'  => 'Répartition par mana consommable',
+        'ohs_b2_title'   => 'Cartes chères',
+        'ohs_b2_sub'     => 'Cartes à 4 mana ou plus, injouables dès le premier jour',
+        'ohs_b2_note'    => 'des mains contiennent 4 cartes chères ou plus — réduit tes choix pour la mise en mana initiale',
+        'ohs_b2_detail'  => 'Nombre de cartes à 4 mana ou plus dans la main de départ',
+        'ohs_b3_title'   => 'Réactivité (après-vous)',
+        'ohs_b3_sub'     => 'Pouvoir enchaîner plusieurs plays au jour 1 : jouer, voir, puis répondre',
+        'ohs_b3_note'    => 'des mains te laissent enchaîner 2 plays ou plus au jour 1 (coût cumulé 3 ou moins)',
+        'ohs_b3_detail'  => 'Nombre de plays possibles au jour 1',
+        'ohs_b4_title'   => 'Expéditions contestables au jour 1',
+        'ohs_b4_sub'     => 'Personnages déployables dès le premier jour',
+        'ohs_b4_h1'      => 'Les deux Expéditions',
+        'ohs_b4_h1_note' => 'tu peux déployer 2 ou 3 personnages au jour 1',
+        'ohs_b4_h2'      => 'Aucune Expédition',
+        'ohs_b4_h2_note' => 'aucun personnage jouable au jour 1',
+        'ohs_b4_detail'  => 'Nombre d\'Expéditions contestables au jour 1',
+        'ohs_b4_none'    => 'Aucun personnage',
+        'ohs_b4_one'     => '1 Expédition',
+        'ohs_b4_both'    => 'Les 2 Expéditions',
+        'pt_restart'        => 'Nouvelle main',
+        'pt_toggle_playground' => 'Mode jeu',
+        'pt_setup_hint'     => 'Sélectionne 3 cartes à mettre en mana',
+        'pt_commit_mana'    => 'Mettre en mana',
+        'pt_mana'           => 'Mana',
+        'pt_mana_list'      => 'Cartes en mana',
+        'pt_empty_zone'     => 'Vide',
+        'pt_deck'           => 'Deck',
+        'pt_draw'           => 'Piocher',
+        'pt_to_mana'        => 'En mana',
+        'pt_play_board'     => 'Jouer sur le plateau',
+        'pt_cancel'         => 'Annuler',
+        'pt_zoom'           => 'Zoom',
+        'pt_board'          => 'En jeu (Expéditions, Réserve, Permanents)',
+        'pt_discard'        => 'Défausse',
+        'pt_board_more'     => 'Voir +',
+        'pt_return_hand'    => 'Remettre en main',
+        'pt_board_list'     => 'Cartes du plateau',
+        'pt_discard_list'   => 'Défausse',
     ],
 ][$uiLang] ?? [];
 
@@ -825,11 +961,193 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         <div id="deck-hand-view" style="display:none">
             <div class="hand-test-toolbar">
                 <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
-                    <i class="fa-solid fa-shuffle me-1"></i><?= h($txt['new_hand']) ?>
+                    <i class="fa-solid fa-rotate-right me-1"></i><?= h($txt['pt_restart']) ?>
+                </button>
+                <button type="button" id="pt-toggle-playground" class="btn btn-sm pt-toggle" aria-pressed="false" title="<?= h($txt['pt_toggle_playground']) ?>">
+                    <i class="fa-solid fa-toggle-off me-1"></i><?= h($txt['pt_toggle_playground']) ?>
+                </button>
+                <span id="pt-phase-hint" class="pt-phase-hint"><?= h($txt['pt_setup_hint']) ?></span>
+            </div>
+
+            <div class="pt-table-wrap">
+            <div class="pt-table">
+                <div id="pt-board" class="pt-zone pt-board pt-dropzone" data-zone="board">
+                    <div class="pt-zone-label"><?= h($txt['pt_board']) ?>
+                        <a href="#" id="pt-board-more" class="pt-board-more" style="display:none"><?= h($txt['pt_board_more']) ?></a></div>
+                    <div id="pt-board-cards" class="pt-board-cards"></div>
+                    <div id="pt-mana" class="pt-mana" role="button" tabindex="0" title="<?= h($txt['pt_mana_list']) ?>">
+                        <i class="fa-solid fa-droplet"></i>
+                        <span class="pt-mana-label"><?= h($txt['pt_mana']) ?></span>
+                        <span id="pt-mana-count" class="pt-mana-count">0</span>
+                    </div>
+                </div>
+                <div class="pt-aside">
+                    <div class="pt-resources-row">
+                        <div id="pt-discard" class="pt-discard pt-dropzone" data-zone="discard" role="button" tabindex="0">
+                            <div class="pt-zone-label"><?= h($txt['pt_discard']) ?></div>
+                            <div id="pt-discard-pile" class="pt-discard-pile"></div>
+                            <span id="pt-discard-count" class="pt-discard-count">0</span>
+                        </div>
+                        <div id="pt-deck" class="pt-deck" role="button" tabindex="0" title="<?= h($txt['pt_draw']) ?>">
+                            <div class="pt-zone-label"><?= h($txt['pt_deck']) ?></div>
+                            <div class="pt-deck-pile">
+                                <span id="pt-deck-count" class="pt-deck-count">0</span>
+                                <span class="pt-deck-hint"><?= h($txt['pt_draw']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div id="hand-cards" class="deck-cards-grid hand-cards-grid pt-dropzone" data-zone="hand"></div>
+            <div class="pt-hand-actions">
+                <button type="button" id="pt-commit-mana" class="btn btn-primary-altered btn-sm" style="display:none" disabled>
+                    <i class="fa-solid fa-droplet me-1"></i><?= h($txt['pt_commit_mana']) ?>
                 </button>
             </div>
-            <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
             <div id="hand-summary" class="hand-summary"></div>
+            <div id="hand-odds" class="hand-odds">
+                <div class="ho-stats">
+                    <div class="ho-sec"><?= h($txt['ho_stats']) ?></div>
+                    <div id="ho-stats-grid" class="ho-grid"></div>
+                </div>
+                <div class="ho-calc">
+                    <div class="ho-sec"><?= h($txt['ho_calc']) ?></div>
+                    <div class="ho-calc-head">
+                        <span><?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
+                        <span><?= h($txt['ho_drawn']) ?> <input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
+                    </div>
+                    <!-- Calculators -->
+                    <div id="hand-odds-x" class="hand-odds-x">
+                        <div class="ncalc">
+                            <div class="nc-head"><?= h($txt['nc_atleast']) ?></div>
+                            <div class="nc-bars" id="ncx-card-bars"></div>
+                            <div class="nc-mid"><?= h($txt['nc_among']) ?></div>
+                            <select id="ncx-card-key" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select>
+                            <div class="nc-foot"><?= h($txt['nc_draw_a']) ?> <b class="ncx-drawn">6</b> <?= h($txt['nc_draw_b']) ?></div>
+                            <div class="nc-ratio" id="ncx-card-ratio"></div>
+                        </div>
+                        <div class="ncalc">
+                            <div class="nc-head"><?= h($txt['nc_atleast_combo']) ?></div>
+                            <div class="nc-bars" id="ncx-combo-bars"></div>
+                            <div class="nc-mid"><?= h($txt['nc_among_combo']) ?></div>
+                            <div class="ho-ab"><span><?= h($txt['ho_group_a']) ?></span><select id="ncx-combo-a" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                            <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ncx-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
+                            <div class="nc-foot"><?= h($txt['nc_draw_a']) ?> <b class="ncx-drawn">6</b> <?= h($txt['nc_draw_b']) ?></div>
+                            <div class="nc-ratio" id="ncx-combo-ratio"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Opening hand stats — detailed blocks (dummy data for now) -->
+            <div class="ohs-section">
+                <div class="ho-sec"><?= h($txt['ohs_title']) ?></div>
+                <div class="ohs-grid">
+                    <!-- Block 1 — Mana used on day 1 -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b1_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b1_sub']) ?></div>
+                        <div class="ohs-head"><div class="ohs-highlights">
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h1']) ?></div>
+                                <div class="ohs-hl-v">89%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h1_note']) ?></div>
+                            </div>
+                            <div class="ohs-hl ohs-hl--warn">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h2']) ?></div>
+                                <div class="ohs-hl-v">1 / 120</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h2_note']) ?></div>
+                            </div>
+                        </div></div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d1" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d1">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b1_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 mana</span><span class="ohs-bar-t"><i style="width:89%"></i></span><span class="ohs-bar-v">89%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 mana</span><span class="ohs-bar-t"><i style="width:7%"></i></span><span class="ohs-bar-v">7%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 mana</span><span class="ohs-bar-t"><i style="width:3%"></i></span><span class="ohs-bar-v">3%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 mana</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 2 — Expensive cards -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b2_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b2_sub']) ?></div>
+                        <div class="ohs-head">
+                            <div class="ohs-big-v">6%</div>
+                            <div class="ohs-big-note"><?= h($txt['ohs_b2_note']) ?></div>
+                        </div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d2" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d2">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b2_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar"><span class="ohs-bar-l">0 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:9%"></i></span><span class="ohs-bar-v">9%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:30%"></i></span><span class="ohs-bar-v">30%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:36%"></i></span><span class="ohs-bar-v">36%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:19%"></i></span><span class="ohs-bar-v">19%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">4 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:5%"></i></span><span class="ohs-bar-v">5%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">5 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">6 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 3 — Reactivity (after you) -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b3_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b3_sub']) ?></div>
+                        <div class="ohs-head">
+                            <div class="ohs-big-v">60%</div>
+                            <div class="ohs-big-note"><?= h($txt['ohs_b3_note']) ?></div>
+                        </div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d3" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d3">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b3_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 play</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 play</span><span class="ohs-bar-t"><i style="width:39%"></i></span><span class="ohs-bar-v">39%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 plays</span><span class="ohs-bar-t"><i style="width:48%"></i></span><span class="ohs-bar-v">48%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 plays</span><span class="ohs-bar-t"><i style="width:12%"></i></span><span class="ohs-bar-v">12%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 4 — Contestable Expeditions on day 1 -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b4_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b4_sub']) ?></div>
+                        <div class="ohs-head"><div class="ohs-highlights">
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h1']) ?></div>
+                                <div class="ohs-hl-v">25%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h1_note']) ?></div>
+                            </div>
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h2']) ?></div>
+                                <div class="ohs-hl-v">15%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h2_note']) ?></div>
+                            </div>
+                        </div></div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d4" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d4">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b4_detail']) ?></div>
+                            <div class="ohs-bars ohs-bars--wide">
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_none']) ?></span><span class="ohs-bar-t"><i style="width:15%"></i></span><span class="ohs-bar-v">15%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_one']) ?></span><span class="ohs-bar-t"><i style="width:60%"></i></span><span class="ohs-bar-v">60%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_both']) ?></span><span class="ohs-bar-t"><i style="width:25%"></i></span><span class="ohs-bar-v">25%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <script>
           var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
@@ -841,9 +1159,57 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               characters: <?= json_encode($txt['hand_characters']) ?>,
               spells:     <?= json_encode($txt['hand_spells']) ?>,
               permanents: <?= json_encode($txt['hand_permanents']) ?>,
-              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
+              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>,
+              manaList:   <?= json_encode($txt['pt_mana_list']) ?>,
+              toMana:     <?= json_encode($txt['pt_to_mana']) ?>,
+              playBoard:  <?= json_encode($txt['pt_play_board']) ?>,
+              zoom:       <?= json_encode($txt['pt_zoom']) ?>,
+              cancel:     <?= json_encode($txt['pt_cancel']) ?>,
+              discard:    <?= json_encode($txt['pt_discard']) ?>,
+              returnHand: <?= json_encode($txt['pt_return_hand']) ?>,
+              boardList:  <?= json_encode($txt['pt_board_list']) ?>,
+              discardList:<?= json_encode($txt['pt_discard_list']) ?>
           };
         </script>
+        <script>
+          // Deck cards grouped by name (+rarity) for the calculators' multiselect.
+          var handDeckGroups = <?= json_encode((function () use ($deck, $uiLang, $lang) {
+              $g = [];
+              foreach ($deck['cards'] as $c) {
+                  $type = $c['cardTypeReference'] ?? 'OTHER';
+                  if ($type === 'HERO') continue;
+                  $ref = $c['cardReference'] ?? '';
+                  $raw = $c['name'] ?? null;
+                  $name = is_array($raw) ? (($raw[$lang] ?? '') ?: ($raw['en'] ?? $ref)) : (($raw !== null && $raw !== '') ? $raw : $ref);
+                  $rp = explode('_', $ref);
+                  $rar = $rp[5][0] ?? '';
+                  $isUniq = _deck_is_unique($ref);
+                  // Uniques are distinct cards (own art + costs): key by ref. Others group by name+rarity.
+                  $key = $isUniq ? $ref : ($name . '|' . $rar);
+                  if (!isset($g[$key])) $g[$key] = [
+                      'key' => $key, 'name' => $name, 'rarity' => $rar, 'type' => $type,
+                      'mainCost' => (int)($c['mainCost'] ?? 0), 'recallCost' => (int)($c['recallCost'] ?? 0),
+                      'qty' => 0, 'unique' => $isUniq, 'ref' => $ref, 'img' => _deck_cdn_url($ref, $uiLang),
+                  ];
+                  $g[$key]['qty'] += (int)($c['quantity'] ?? 1);
+              }
+              return array_values($g);
+          })(), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
+          var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handOddsTxt = {
+              tempo:     [<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>,<?= json_encode($txt['ho_tempo_exp']) ?>],
+              heavy:     [<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>,<?= json_encode($txt['ho_heavy_exp']) ?>],
+              typesLabel: <?= json_encode($txt['ho_types_label']) ?>,
+              both: <?= json_encode($txt['nc_both']) ?>,
+              ratio: <?= json_encode($txt['ho_ratio']) ?>,
+              ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>
+          };
+        </script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds-math.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds.js"></script>
         <?php endif; ?>
 
     <?php endif; ?>
@@ -979,6 +1345,50 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     <div id="card-modal-inner" class="ac-lightbox-inner" onclick="event.stopPropagation()"></div>
 </div>
 
+<!-- Playtest card-list modal -->
+<div id="pt-list-modal" class="ac-lightbox-overlay" style="display:none">
+  <div class="ac-list-panel" onclick="event.stopPropagation()">
+    <div class="ac-list-head"><span id="pt-list-title"></span>
+      <button type="button" class="btn-close" id="pt-list-close" aria-label="Close"></button></div>
+    <div id="pt-list-body" class="ac-list-body"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var modal = document.getElementById('pt-list-modal');
+  var title = document.getElementById('pt-list-title');
+  var body  = document.getElementById('pt-list-body');
+  function close() { modal.style.display = 'none'; body.innerHTML = ''; document.body.style.overflow = ''; }
+  window.acOpenCardListModal = function (titleText, cards, perCardAction) {
+    title.textContent = titleText + ' (' + cards.length + ')';
+    body.innerHTML = '';
+    cards.forEach(function (c) {
+      var row = document.createElement('div'); row.className = 'ac-list-row';
+      var thumb;
+      if (c.unique) {
+        thumb = document.createElement('altered-card'); thumb.className = 'ac-list-thumb';
+        thumb.setAttribute('ref', c.ref); thumb.setAttribute('locale', (typeof handLang !== 'undefined' ? handLang : 'en'));
+      } else {
+        thumb = document.createElement('img'); thumb.className = 'ac-list-thumb'; thumb.src = c.img || ''; thumb.alt = c.name || c.ref; thumb.loading = 'lazy';
+      }
+      var nm = document.createElement('span'); nm.className = 'ac-list-name'; nm.textContent = c.name || c.ref;
+      row.appendChild(thumb); row.appendChild(nm);
+      if (perCardAction) {
+        var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn btn-sm btn-primary-altered';
+        btn.textContent = perCardAction.label;
+        btn.addEventListener('click', function () { perCardAction.fn(c); close(); });
+        row.appendChild(btn);
+      }
+      body.appendChild(row);
+    });
+    modal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+  };
+  document.getElementById('pt-list-close').addEventListener('click', close);
+  modal.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+}());
+</script>
+
 <?php if ($hasUniqueCards): ?>
 <script src="<?= h($rendererSrc) ?>"></script>
 <?php endif; ?>
@@ -1018,6 +1428,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
+    window.acOpenCardZoom = function (ref, unique, lang, imgSrc) { openModal(ref, unique, lang, imgSrc); };
 
     document.querySelectorAll('.deck-hdr-banner--hero').forEach(function (banner) {
         function openHero() {
@@ -1045,15 +1456,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             openModal(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
         });
     });
-    var handGrid = document.getElementById('hand-cards');
-    if (handGrid) {
-        handGrid.addEventListener('click', function (e) {
-            var w = e.target.closest('.deck-card-wrap');
-            if (!w || !handGrid.contains(w)) return;
-            var srcImg = w.querySelector('img');
-            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
-        });
-    }
     modal.addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 }());
@@ -1103,91 +1505,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </script>
 
 <!-- Starting hand tester -->
-<script>
-(function () {
-    var grid    = document.getElementById('hand-cards');
-    var summary = document.getElementById('hand-summary');
-    var drawBtn = document.getElementById('hand-draw-btn');
-    var tabBtn  = document.getElementById('deck-view-hand');
-    if (!grid || typeof handDeckCards === 'undefined') return;
-
-    var HAND_SIZE = 6;
-    var drawn = false;
-
-    function buildPool() {
-        // Each card is repeated qty times; the same object reference is pushed
-        // multiple times — fine as long as makeCard stays read-only.
-        var pool = [];
-        handDeckCards.forEach(function (c) {
-            for (var i = 0; i < c.qty; i++) pool.push(c);
-        });
-        return pool;
-    }
-    function shuffle(arr) {
-        for (var i = arr.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-        }
-        return arr;
-    }
-    function makeCard(card, index) {
-        var wrap = document.createElement('div');
-        wrap.className = 'deck-card-wrap hand-card-anim';
-        wrap.style.animationDelay = (index * 45) + 'ms';
-        wrap.dataset.ref    = card.ref;
-        wrap.dataset.unique = card.unique ? '1' : '0';
-        wrap.dataset.lang   = handLang;
-        var inner;
-        if (card.unique) {
-            inner = document.createElement('altered-card');
-            inner.setAttribute('ref', card.ref);
-            inner.setAttribute('locale', handLang);
-        } else {
-            inner = document.createElement('img');
-            inner.className = 'deck-card-img';
-            inner.src = card.img;
-            inner.alt = card.name || card.ref;
-            inner.loading = 'lazy';
-        }
-        wrap.appendChild(inner);
-        return wrap;
-    }
-    function renderSummary(hand) {
-        var counts = { CHARACTER: 0, SPELL: 0, OTHER: 0 };
-        var costTotal = 0;
-        hand.forEach(function (c) {
-            if (c.type === 'CHARACTER') counts.CHARACTER++;
-            else if (c.type === 'SPELL') counts.SPELL++;
-            else counts.OTHER++;
-            costTotal += c.mainCost;
-        });
-        var avg = hand.length ? (costTotal / hand.length).toFixed(1) : '0.0';
-        summary.innerHTML =
-            '<span class="hand-stat">' + handTxt.characters + ' <b>' + counts.CHARACTER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.spells + ' <b>' + counts.SPELL + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.permanents + ' <b>' + counts.OTHER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.avgCost + ' <b>' + avg + '</b></span>';
-    }
-    function draw() {
-        grid.innerHTML = '';
-        var pool = shuffle(buildPool());
-        if (!pool.length) {
-            summary.innerHTML = '';
-            grid.innerHTML = '<p class="text-muted" style="font-size:.9rem;margin:0">' + handTxt.empty + '</p>';
-            drawn = true;
-            return;
-        }
-        var hand = pool.slice(0, Math.min(HAND_SIZE, pool.length));
-        hand.forEach(function (c, i) { grid.appendChild(makeCard(c, i)); });
-        renderSummary(hand);
-        drawn = true;
-    }
-
-    if (drawBtn) drawBtn.addEventListener('click', draw);
-    // Lazy first draw on tab open; the view reveal itself is handled by the view-toggle IIFE above.
-    if (tabBtn)  tabBtn.addEventListener('click', function () { if (!drawn) draw(); });
-}());
-</script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-tester.js"></script>
 
 <!-- Share -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
