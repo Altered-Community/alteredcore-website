@@ -1471,6 +1471,88 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </script>
 <?php endif; ?>
 
+<?php if ($isLoggedIn && !empty($deck['cards'])): ?>
+<!-- Duplicate modal -->
+<div class="modal fade" id="deckDuplicateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content db-modal-content">
+            <div class="modal-body p-4 db-modal-body">
+                <h5 class="fw-bold mb-3"><?= h($txt['duplicate_modal_title']) ?></h5>
+                <div id="deck-duplicate-error" class="alert alert-danger p-2 mb-3 small" style="display:none;white-space:pre-line"></div>
+                <label class="form-label small mb-1"><?= h($txt['duplicate_label']) ?></label>
+                <input type="text" id="deck-duplicate-input" class="form-control mb-3"
+                       placeholder="<?= h($txt['rename_ph']) ?>"
+                       value="<?= h(($deck['name'] ?? '') . $txt['duplicate_suffix']) ?>">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">
+                        <?= h($txt['cancel']) ?>
+                    </button>
+                    <button type="button" id="deck-duplicate-confirm" class="btn btn-primary-altered flex-fill">
+                        <i class="fa-solid fa-clone me-1"></i><?= h($txt['duplicate_btn']) ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var csrfToken = <?= json_encode(csrfToken()) ?>;
+    var deckId    = <?= json_encode($deckId) ?>;
+    var baseUrl   = <?= json_encode(BASE_URL) ?>;
+    var duplicating = <?= json_encode($txt['duplicating']) ?>;
+    var errConn   = <?= json_encode($txt['err_connect']) ?>;
+    var dupLabel  = <?= json_encode('<i class="fa-solid fa-clone me-1"></i>' . h($txt['duplicate_btn'])) ?>;
+    var reqLbl    = <?= json_encode($txt['name_required']) ?>;
+
+    var dupBtn     = document.getElementById('deck-duplicate-btn');
+    var dupConfirm = document.getElementById('deck-duplicate-confirm');
+    var dupInput   = document.getElementById('deck-duplicate-input');
+    var dupError   = document.getElementById('deck-duplicate-error');
+    var dupModal   = null;
+
+    if (dupBtn) dupBtn.addEventListener('click', function() {
+        if (!dupModal) dupModal = new bootstrap.Modal(document.getElementById('deckDuplicateModal'));
+        dupError.style.display = 'none';
+        dupModal.show();
+        setTimeout(function() { dupInput.select(); }, 300);
+    });
+
+    if (dupConfirm) dupConfirm.addEventListener('click', function() {
+        var name = dupInput.value.trim();
+        if (!name) { dupError.textContent = reqLbl; dupError.style.display = ''; return; }
+        dupConfirm.disabled = true;
+        dupConfirm.textContent = duplicating;
+        dupError.style.display = 'none';
+
+        var fd = new FormData();
+        fd.append('csrf_token', csrfToken);
+        fd.append('action', 'duplicate');
+        fd.append('name', name);
+
+        fetch(baseUrl + '/pages/deck?ajax=1&id=' + encodeURIComponent(deckId), { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.ok && d.id) {
+                    window.location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(d.id);
+                } else {
+                    dupError.textContent = d.error || errConn;
+                    dupError.style.display = '';
+                    dupConfirm.disabled = false;
+                    dupConfirm.innerHTML = dupLabel;
+                }
+            })
+            .catch(function() {
+                dupError.textContent = errConn;
+                dupError.style.display = '';
+                dupConfirm.disabled = false;
+                dupConfirm.innerHTML = dupLabel;
+            });
+    });
+})();
+</script>
+<?php endif; ?>
+
 <script>
 (function () {
     var theme = localStorage.getItem('acTheme') === 'dark' ? 'dark' : 'light';
