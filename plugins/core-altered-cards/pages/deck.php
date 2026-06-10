@@ -579,6 +579,11 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <i class="fa-solid fa-clipboard-list me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['copy_btn']) ?></span>
             </button>
             <?php endif; ?>
+            <?php if ($isLoggedIn && !empty($deck['cards'])): ?>
+            <button type="button" id="deck-duplicate-btn" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-clone me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['duplicate_btn']) ?></span>
+            </button>
+            <?php endif; ?>
             <button type="button" id="deck-share-btn" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-share-nodes me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['share_btn']) ?></span>
             </button>
