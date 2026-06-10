@@ -181,6 +181,49 @@ function formatApiViolations(array $violations): string {
 }
 
 /**
+ * Build the POST /api/decks payload for duplicating an existing deck.
+ *
+ * Copies every card (including the hero), resets visibility to private,
+ * mirrors the source draft flag (falling back to sandbox => draft), and
+ * only carries a description when the source has a non-empty one.
+ *
+ * @param array  $sourceDeck Deck as returned by GET /api/decks/{id}.
+ * @param string $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @return array Payload ready for json_encode().
+ */
+function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
+{
+    $deckCards = [];
+    foreach ($sourceDeck['cards'] ?? [] as $card) {
+        if (empty($card['cardReference'])) {
+            continue;
+        }
+        $deckCards[] = [
+            'cardReference' => $card['cardReference'],
+            'quantity'      => (int)($card['quantity'] ?? 1),
+        ];
+    }
+
+    $format  = $sourceDeck['format'] ?? 'standard';
+    $newName = trim($newName);
+
+    $payload = [
+        'name'      => $newName !== '' ? $newName : (string)($sourceDeck['name'] ?? 'Deck'),
+        'format'    => $format,
+        'isPublic'  => false,
+        'isDraft'   => $sourceDeck['isDraft'] ?? ($format === 'sandbox'),
+        'deckCards' => $deckCards,
+    ];
+
+    $description = trim((string)($sourceDeck['description'] ?? ''));
+    if ($description !== '') {
+        $payload['description'] = $description;
+    }
+
+    return $payload;
+}
+
+/**
  * Execute multiple collection API requests in parallel using curl_multi.
  *
  * @param string $apiUrl  Base URL (no trailing slash)
