@@ -279,6 +279,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         }
         exit;
     }
+    if ($action === 'duplicate') {
+        // Re-fetch the source deck authoritatively. A private deck owned by
+        // another user returns 401/403 here, which naturally enforces the
+        // "own deck or a public deck" rule without any extra ownership check.
+        $srcCh = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($uiLang));
+        curl_setopt_array($srcCh, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $srcRes  = curl_exec($srcCh);
+        $srcCode = curl_getinfo($srcCh, CURLINFO_HTTP_CODE);
+        curl_close($srcCh);
+        if ($srcCode < 200 || $srcCode >= 300 || !$srcRes) {
+            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $srcCode)]); exit;
+        }
+        $source = json_decode($srcRes, true);
+        if (!is_array($source) || empty($source['cards'])) {
+            echo json_encode(['ok' => false, 'error' => $txt['not_found']]); exit;
+        }
+
+        $newName = trim($_POST['name'] ?? '');
+        if ($newName === '') {
+            $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
+        }
+        $payload = cacBuildDuplicateDeckPayload($source, $newName);
+
+        $ch = curl_init(DECKS_API_URL . '/api/decks');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST  => 'POST',
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+        if ($c >= 200 && $c < 300) {
+            $newDeck = json_decode($r, true);
+            echo json_encode(['ok' => true, 'id' => $newDeck['id'] ?? '']); exit;
+        }
+        $msg  = sprintf($txt['duplicate_err'], $c);
+        $body = json_decode($r, true);
+        if (!empty($body['violations']) && is_array($body['violations'])) {
+            $msg .= "\n" . formatApiViolations($body['violations']);
+        } elseif (!empty($body['detail'])) {
+            $msg .= "\n" . $body['detail'];
+        } elseif (!empty($body['title'])) {
+            $msg .= "\n" . $body['title'];
+        }
+        echo json_encode(['ok' => false, 'error' => $msg]); exit;
+    }
     echo json_encode(['ok' => false, 'error' => 'Unknown action']); exit;
 }
 
