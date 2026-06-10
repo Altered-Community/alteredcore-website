@@ -30,16 +30,6 @@
         if (v > 99) return '> 99%';
         return v.toFixed(0) + '%';
     }
-    // Abbreviate large counts so the value stays short at full size (12345 → "12k", 3.3M).
-    function compact(x) {
-        if (x >= 1000000) return (x / 1000000).toFixed(1).replace('.', DEC) + 'M';
-        if (x >= 10000) return Math.round(x / 1000) + 'k';
-        return String(x);
-    }
-    // "1 game in X" frequency, for very rare events shown as odds rather than a %.
-    function freqText(p) {
-        return p <= 0 ? String(handOddsTxt.never) : String(handOddsTxt.freq).replace('{x}', compact(Math.round(1 / p)));
-    }
     // opts: { bar: 0..100 (progress bar), tipPct: 0..1 (hover tooltip, 2 decimals), small: bool }
     // Every row (label / value / bar / hint / explainer) keeps a fixed slot so cards line up.
     function statCard(key, valueText, opts) {
@@ -87,15 +77,9 @@
     function renderStats() {
         var s = computeStats();
         statsGrid.innerHTML =
-            typesCard() +                                                            // full width, first
-            statCard('oncurve',    fmtPct(s.onCurve),     pctOpts(s.onCurve)) +
-            statCard('tempo',      fmtPct(s.tempo),       pctOpts(s.tempo)) +
-            statCard('avg',        dec1(s.avgPlayable),   {}) +
-            statCard('slowfreq',   freqText(s.slowStart), { tipPct: s.slowStart }) +
-            statCard('noearly',    fmtPct(s.noEarlyChar), pctOpts(s.noEarlyChar)) +
-            statCard('double',     fmtPct(s.doubleChar),  pctOpts(s.doubleChar)) +
-            statCard('heavy',      fmtPct(s.heavy),       pctOpts(s.heavy)) +
-            statCard('congestion', fmtPct(s.congestion),  pctOpts(s.congestion));
+            typesCard() +                                            // full width, first
+            statCard('tempo', fmtPct(s.tempo), pctOpts(s.tempo)) +
+            statCard('heavy', fmtPct(s.heavy), pctOpts(s.heavy));
         initTooltips();
     }
     function initTooltips() {

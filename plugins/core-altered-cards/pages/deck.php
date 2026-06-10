@@ -85,37 +85,17 @@ $txt = [
         'hand_spells'         => 'Spells',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Avg. hand cost',
-        'ho_stats'        => 'Opening-hand stats',
+        'ho_stats'        => 'At a glance',
         'ho_calc'         => 'Calculators',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Drawn',
-        'ho_oncurve'      => 'On curve',
-        'ho_oncurve_sub'  => 'spend all 3 mana on day 1',
-        'ho_oncurve_exp'  => 'Spending all your mana early means a smooth, efficient start with nothing wasted.',
         'ho_tempo'        => 'Day 1 tempo',
         'ho_tempo_sub'    => 'play two cards or more on day 1',
         'ho_tempo_exp'    => 'Playing several cards on the first day builds your board faster than your opponent.',
-        'ho_avg'          => 'Playable on day 1',
-        'ho_avg_sub'      => 'average number of cards playable on day 1',
-        'ho_avg_exp'      => 'How much your typical opening hand can actually do with 3 mana on day one.',
-        'ho_slowfreq'     => 'No playable card Day 1',
-        'ho_slowfreq_sub' => 'a hand with only cards costing 4 mana or more',
-        'ho_slowfreq_exp' => 'A completely unplayable first day — rare, but it can cost you the game.',
-        'ho_noearly'      => 'No early character',
-        'ho_noearly_sub'  => 'no character costing 3 mana or less',
-        'ho_noearly_exp'  => 'Cheap characters get you onto the board early; a hand without any starts slowly.',
-        'ho_double'       => 'Two characters Day 1',
-        'ho_double_sub'   => 'play two characters or more on day 1',
-        'ho_double_exp'   => 'Deploying two characters on day 1 pressures both Expeditions at once.',
         'ho_heavy'        => 'Top-heavy hand',
         'ho_heavy_sub'    => 'three cards or more costing 4 mana or more',
         'ho_heavy_exp'    => 'Too many expensive cards means a clunky hand you cannot play out early.',
-        'ho_congestion'   => 'Mana congestion',
-        'ho_congestion_sub'=> 'four cards or more sharing the same mana cost',
-        'ho_congestion_exp'=> 'Too many cards stuck on the same cost slow your early game — you can only play so many at once.',
         'ho_types_label'  => 'Average composition',
-        'ho_freq'         => '1 game in {x}',
-        'ho_never'        => 'Never',
         'ho_pick'         => 'Pick…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_ratio'        => '≈ {x} in {y} hands',
@@ -127,7 +107,35 @@ $txt = [
         'nc_draw_a'        => 'by drawing',
         'nc_draw_b'        => 'cards',
         'nc_both'          => 'Both',
-        'pt_restart'        => 'Restart',
+        'ohs_title'      => 'Opening hand stats',
+        'ohs_detail'     => 'See details',
+        'ohs_card'       => 'card', 'ohs_cards' => 'cards',
+        'ohs_b1_title'   => 'Mana used on day 1',
+        'ohs_b1_sub'     => 'How much of your 3 mana you can spend on the first day',
+        'ohs_b1_h1'      => 'Optimal start',
+        'ohs_b1_h1_note' => 'of games let you spend all 3 mana',
+        'ohs_b1_h2'      => 'Dead hand',
+        'ohs_b1_h2_note' => 'no play possible — i.e. 0.8%',
+        'ohs_b1_detail'  => 'Breakdown by spendable mana',
+        'ohs_b2_title'   => 'Expensive cards',
+        'ohs_b2_sub'     => 'Cards at 4 mana or more, unplayable on the first day',
+        'ohs_b2_note'    => 'of hands hold 4 expensive cards or more — fewer options for your initial mana',
+        'ohs_b2_detail'  => 'Number of cards at 4 mana or more in the opening hand',
+        'ohs_b3_title'   => 'Reactivity (after you)',
+        'ohs_b3_sub'     => 'Chaining several plays on day 1: act, watch, then respond',
+        'ohs_b3_note'    => 'of hands let you chain 2 plays or more on day 1 (combined cost 3 or less)',
+        'ohs_b3_detail'  => 'Number of possible plays on day 1',
+        'ohs_b4_title'   => 'Contestable Expeditions on day 1',
+        'ohs_b4_sub'     => 'Characters you can deploy on the first day',
+        'ohs_b4_h1'      => 'Both Expeditions',
+        'ohs_b4_h1_note' => 'you can deploy 2 or 3 characters on day 1',
+        'ohs_b4_h2'      => 'No Expedition',
+        'ohs_b4_h2_note' => 'no character playable on day 1',
+        'ohs_b4_detail'  => 'Number of contestable Expeditions on day 1',
+        'ohs_b4_none'    => 'No character',
+        'ohs_b4_one'     => '1 Expedition',
+        'ohs_b4_both'    => 'Both Expeditions',
+        'pt_restart'        => 'New hand',
         'pt_toggle_playground' => 'Game mode',
         'pt_setup_hint'     => 'Select 3 cards to set as mana',
         'pt_commit_mana'    => 'Put in mana',
@@ -137,7 +145,7 @@ $txt = [
         'pt_deck'           => 'Deck',
         'pt_draw'           => 'Draw',
         'pt_to_mana'        => 'To mana',
-        'pt_board'          => 'Game board',
+        'pt_board'          => 'In play (Expeditions, Reserve, Landmarks)',
         'pt_discard'        => 'Discard',
         'pt_board_more'     => 'See all',
         'pt_return_hand'    => 'Return to hand',
@@ -221,37 +229,17 @@ $txt = [
         'hand_spells'         => 'Sorts',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Coût moyen en main',
-        'ho_stats'        => 'Stats de main de départ',
+        'ho_stats'        => 'En un coup d\'œil',
         'ho_calc'         => 'Calculateurs',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Piochées',
-        'ho_oncurve'      => 'Sur la courbe',
-        'ho_oncurve_sub'  => 'dépenser tes 3 mana au jour 1',
-        'ho_oncurve_exp'  => 'Dépenser tout ton mana tôt, c\'est un démarrage fluide et efficace, sans rien gâcher.',
         'ho_tempo'        => 'Tempo Jour 1',
         'ho_tempo_sub'    => 'jouer deux cartes ou plus au jour 1',
         'ho_tempo_exp'    => 'Jouer plusieurs cartes dès le premier jour développe ton plateau plus vite que l\'adversaire.',
-        'ho_avg'          => 'Cartes jouables Jour 1',
-        'ho_avg_sub'      => 'nombre moyen de cartes jouables au jour 1',
-        'ho_avg_exp'      => 'Ce que ta main de départ typique peut vraiment faire avec 3 mana au premier jour.',
-        'ho_slowfreq'     => 'Aucune carte jouable Jour 1',
-        'ho_slowfreq_sub' => 'une main avec uniquement des cartes à 4 mana ou plus',
-        'ho_slowfreq_exp' => 'Un premier jour totalement injouable — rare, mais ça peut coûter la partie.',
-        'ho_noearly'      => 'Pas de petit perso',
-        'ho_noearly_sub'  => 'aucun personnage à 3 mana ou moins',
-        'ho_noearly_exp'  => 'Les petits personnages te posent tôt sur le plateau ; une main sans en a un départ lent.',
-        'ho_double'       => 'Double perso Jour 1',
-        'ho_double_sub'   => 'poser deux personnages ou plus au jour 1',
-        'ho_double_exp'   => 'Poser deux personnages au jour 1 met la pression sur les deux Expéditions à la fois.',
         'ho_heavy'        => 'Main lourde',
         'ho_heavy_sub'    => 'trois cartes ou plus à 4 mana ou plus',
         'ho_heavy_exp'    => 'Trop de cartes chères, c\'est une main encombrée, injouable tôt dans la partie.',
-        'ho_congestion'   => 'Engorgement de mana',
-        'ho_congestion_sub'=> 'quatre cartes ou plus au même coût en mana',
-        'ho_congestion_exp'=> 'Trop de cartes au même coût ralentissent ton début de partie : tu ne peux en jouer qu\'un nombre limité à la fois.',
         'ho_types_label'  => 'Composition moyenne',
-        'ho_freq'         => '1 partie sur {x}',
-        'ho_never'        => 'Jamais',
         'ho_pick'         => 'Choisir…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_ratio'        => '≈ {x} sur {y} mains',
@@ -263,7 +251,35 @@ $txt = [
         'nc_draw_a'        => 'en piochant',
         'nc_draw_b'        => 'cartes',
         'nc_both'          => 'A + B',
-        'pt_restart'        => 'Recommencer',
+        'ohs_title'      => 'Stats de main de départ',
+        'ohs_detail'     => 'Voir le détail',
+        'ohs_card'       => 'carte', 'ohs_cards' => 'cartes',
+        'ohs_b1_title'   => 'Mana utilisé au jour 1',
+        'ohs_b1_sub'     => 'Combien de tes 3 mana tu peux dépenser dès le premier jour',
+        'ohs_b1_h1'      => 'Démarrage optimal',
+        'ohs_b1_h1_note' => 'des parties te laissent dépenser tes 3 mana',
+        'ohs_b1_h2'      => 'Main morte',
+        'ohs_b1_h2_note' => 'aucun jeu possible — soit 0,8 %',
+        'ohs_b1_detail'  => 'Répartition par mana consommable',
+        'ohs_b2_title'   => 'Cartes chères',
+        'ohs_b2_sub'     => 'Cartes à 4 mana ou plus, injouables dès le premier jour',
+        'ohs_b2_note'    => 'des mains contiennent 4 cartes chères ou plus — réduit tes choix pour la mise en mana initiale',
+        'ohs_b2_detail'  => 'Nombre de cartes à 4 mana ou plus dans la main de départ',
+        'ohs_b3_title'   => 'Réactivité (après-vous)',
+        'ohs_b3_sub'     => 'Pouvoir enchaîner plusieurs plays au jour 1 : jouer, voir, puis répondre',
+        'ohs_b3_note'    => 'des mains te laissent enchaîner 2 plays ou plus au jour 1 (coût cumulé 3 ou moins)',
+        'ohs_b3_detail'  => 'Nombre de plays possibles au jour 1',
+        'ohs_b4_title'   => 'Expéditions contestables au jour 1',
+        'ohs_b4_sub'     => 'Personnages déployables dès le premier jour',
+        'ohs_b4_h1'      => 'Les deux Expéditions',
+        'ohs_b4_h1_note' => 'tu peux déployer 2 ou 3 personnages au jour 1',
+        'ohs_b4_h2'      => 'Aucune Expédition',
+        'ohs_b4_h2_note' => 'aucun personnage jouable au jour 1',
+        'ohs_b4_detail'  => 'Nombre d\'Expéditions contestables au jour 1',
+        'ohs_b4_none'    => 'Aucun personnage',
+        'ohs_b4_one'     => '1 Expédition',
+        'ohs_b4_both'    => 'Les 2 Expéditions',
+        'pt_restart'        => 'Nouvelle main',
         'pt_toggle_playground' => 'Mode jeu',
         'pt_setup_hint'     => 'Sélectionne 3 cartes à mettre en mana',
         'pt_commit_mana'    => 'Mettre en mana',
@@ -273,7 +289,7 @@ $txt = [
         'pt_deck'           => 'Deck',
         'pt_draw'           => 'Piocher',
         'pt_to_mana'        => 'En mana',
-        'pt_board'          => 'Plateau de jeu',
+        'pt_board'          => 'En jeu (Expéditions, Réserve, Permanents)',
         'pt_discard'        => 'Défausse',
         'pt_board_more'     => 'Voir +',
         'pt_return_hand'    => 'Remettre en main',
@@ -1020,6 +1036,114 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     </div>
                 </div>
             </div>
+            <!-- Opening hand stats — detailed blocks (dummy data for now) -->
+            <div class="ohs-section">
+                <div class="ho-sec"><?= h($txt['ohs_title']) ?></div>
+                <div class="ohs-grid">
+                    <!-- Block 1 — Mana used on day 1 -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b1_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b1_sub']) ?></div>
+                        <div class="ohs-head"><div class="ohs-highlights">
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h1']) ?></div>
+                                <div class="ohs-hl-v">89%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h1_note']) ?></div>
+                            </div>
+                            <div class="ohs-hl ohs-hl--warn">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h2']) ?></div>
+                                <div class="ohs-hl-v">1 / 120</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h2_note']) ?></div>
+                            </div>
+                        </div></div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d1" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d1">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b1_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 mana</span><span class="ohs-bar-t"><i style="width:89%"></i></span><span class="ohs-bar-v">89%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 mana</span><span class="ohs-bar-t"><i style="width:7%"></i></span><span class="ohs-bar-v">7%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 mana</span><span class="ohs-bar-t"><i style="width:3%"></i></span><span class="ohs-bar-v">3%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 mana</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 2 — Expensive cards -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b2_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b2_sub']) ?></div>
+                        <div class="ohs-head">
+                            <div class="ohs-big-v">6%</div>
+                            <div class="ohs-big-note"><?= h($txt['ohs_b2_note']) ?></div>
+                        </div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d2" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d2">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b2_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar"><span class="ohs-bar-l">0 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:9%"></i></span><span class="ohs-bar-v">9%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:30%"></i></span><span class="ohs-bar-v">30%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:36%"></i></span><span class="ohs-bar-v">36%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:19%"></i></span><span class="ohs-bar-v">19%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">4 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:5%"></i></span><span class="ohs-bar-v">5%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">5 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">6 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 3 — Reactivity (after you) -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b3_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b3_sub']) ?></div>
+                        <div class="ohs-head">
+                            <div class="ohs-big-v">60%</div>
+                            <div class="ohs-big-note"><?= h($txt['ohs_b3_note']) ?></div>
+                        </div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d3" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d3">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b3_detail']) ?></div>
+                            <div class="ohs-bars">
+                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 play</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">1 play</span><span class="ohs-bar-t"><i style="width:39%"></i></span><span class="ohs-bar-v">39%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">2 plays</span><span class="ohs-bar-t"><i style="width:48%"></i></span><span class="ohs-bar-v">48%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l">3 plays</span><span class="ohs-bar-t"><i style="width:12%"></i></span><span class="ohs-bar-v">12%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Block 4 — Contestable Expeditions on day 1 -->
+                    <div class="ohs-block">
+                        <div class="ohs-b-title"><?= h($txt['ohs_b4_title']) ?></div>
+                        <div class="ohs-b-sub"><?= h($txt['ohs_b4_sub']) ?></div>
+                        <div class="ohs-head"><div class="ohs-highlights">
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h1']) ?></div>
+                                <div class="ohs-hl-v">25%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h1_note']) ?></div>
+                            </div>
+                            <div class="ohs-hl">
+                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h2']) ?></div>
+                                <div class="ohs-hl-v">15%</div>
+                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h2_note']) ?></div>
+                            </div>
+                        </div></div>
+                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d4" aria-expanded="true">
+                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                        </button>
+                        <div class="collapse show" id="ohs-d4">
+                            <div class="ohs-d-label"><?= h($txt['ohs_b4_detail']) ?></div>
+                            <div class="ohs-bars ohs-bars--wide">
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_none']) ?></span><span class="ohs-bar-t"><i style="width:15%"></i></span><span class="ohs-bar-v">15%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_one']) ?></span><span class="ohs-bar-t"><i style="width:60%"></i></span><span class="ohs-bar-v">60%</span></div>
+                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_both']) ?></span><span class="ohs-bar-t"><i style="width:25%"></i></span><span class="ohs-bar-v">25%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <script>
           var handDeckCards =<?= json_encode(array_map(static function ($c) use ($uiLang) {
@@ -1075,17 +1199,9 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
           var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
           var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handOddsTxt = {
-              oncurve:   [<?= json_encode($txt['ho_oncurve']) ?>,<?= json_encode($txt['ho_oncurve_sub']) ?>,<?= json_encode($txt['ho_oncurve_exp']) ?>],
               tempo:     [<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>,<?= json_encode($txt['ho_tempo_exp']) ?>],
-              avg:       [<?= json_encode($txt['ho_avg']) ?>,<?= json_encode($txt['ho_avg_sub']) ?>,<?= json_encode($txt['ho_avg_exp']) ?>],
-              slowfreq:  [<?= json_encode($txt['ho_slowfreq']) ?>,<?= json_encode($txt['ho_slowfreq_sub']) ?>,<?= json_encode($txt['ho_slowfreq_exp']) ?>],
-              noearly:   [<?= json_encode($txt['ho_noearly']) ?>,<?= json_encode($txt['ho_noearly_sub']) ?>,<?= json_encode($txt['ho_noearly_exp']) ?>],
-              double:    [<?= json_encode($txt['ho_double']) ?>,<?= json_encode($txt['ho_double_sub']) ?>,<?= json_encode($txt['ho_double_exp']) ?>],
               heavy:     [<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>,<?= json_encode($txt['ho_heavy_exp']) ?>],
-              congestion:[<?= json_encode($txt['ho_congestion']) ?>,<?= json_encode($txt['ho_congestion_sub']) ?>,<?= json_encode($txt['ho_congestion_exp']) ?>],
               typesLabel: <?= json_encode($txt['ho_types_label']) ?>,
-              freq: <?= json_encode($txt['ho_freq']) ?>,
-              never: <?= json_encode($txt['ho_never']) ?>,
               both: <?= json_encode($txt['nc_both']) ?>,
               ratio: <?= json_encode($txt['ho_ratio']) ?>,
               ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>
