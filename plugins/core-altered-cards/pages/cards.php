@@ -164,6 +164,32 @@ foreach ($setsData as $_sref => $_sd) {
     if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
 }
 
+// Playset heatmap metadata: faction rows (canonical order, with colors) and the
+// main-set columns ordered chronologically descending (recent first) — same
+// reverse-of-file-order convention as the quick-filter set bar.
+$playsetFactions = [];
+foreach ($factionsData as $_fk => $_fv) {
+    $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? '#888'];
+}
+// The playset API merges the Kickstarter edition (COREKS) into CORE, so only a
+// single "Au-delà des Portes" column appears — flagged with an explanatory note.
+// Label lives under translations.{lang}.playset.core_note in search_settings.json.
+$_psCoreNote = $_sharedTxt['playset']['core_note'] ?? ($uiLang === 'fr'
+    ? 'Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS).'
+    : 'Combines the Beyond the Gates (CORE) edition and its Kickstarter version (COREKS).');
+$playsetSets = [];
+foreach (array_reverse(array_filter($setsData, fn($s) => ($s['subtype'] ?? '') === 'main'), true) as $_sk => $_sv) {
+    $_entry = [
+        'code' => $_sk,
+        'name' => $_sv[$uiLang] ?? $_sv['en'] ?? $_sk,
+        'icon' => $_sv['icon'] ?? '',
+    ];
+    if ($_sk === 'CORE') $_entry['note'] = $_psCoreNote;
+    $playsetSets[] = $_entry;
+}
+$playsetSetBg      = BASE_URL . '/plugins/core-altered-cards/assets/set/small_bg/';
+$playsetFactionIcon = BASE_URL . '/plugins/core-altered-cards/assets/faction/';
+
 // widget config for card-search.php
 $_cs = [
     'prefix'  => 'cs',
@@ -208,6 +234,7 @@ $_cs = [
     'ownership_mode'     => $_ownMode,
     'ownership_enabled'  => $_ownEnabled,
     'ownership_url'      => $_ownWebUrl,
+    'playset_mode'       => $_collMode,
     'base_url'           => BASE_URL,
 ];
 
@@ -242,6 +269,8 @@ CardSearch({
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
+    playsetApiUrl:     <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset' : '') ?>,
+    playsetMeta:       { factions: <?= json_encode($playsetFactions) ?>, sets: <?= json_encode($playsetSets) ?>, setBg: <?= json_encode($playsetSetBg) ?>, factionIcon: <?= json_encode($playsetFactionIcon) ?> },
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,

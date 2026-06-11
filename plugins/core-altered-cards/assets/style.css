@@ -597,6 +597,252 @@
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
 }
 
+/* ============================================================
+   Playset dashboard (Profile G — Player playset)
+   ============================================================ */
+.cs-playset { margin-top: 16px; }
+
+/* Zone 1 — header */
+.cs-ps-header { margin-bottom: 14px; }
+.cs-ps-intro  { font-size: .88rem; color: var(--neutral-500); margin: 0; line-height: 1.55; }
+
+/* Rarity selector */
+.cs-ps-rarity-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.cs-ps-rarity-label { font-size: .8rem; color: var(--neutral-500); margin-right: 2px; }
+
+/* KPI grid — wireframe proportions on desktop (global · distribution · 3 metrics),
+   responsive wrap below. The distribution card stays double-wide when wrapped. */
+.cs-ps-kpis {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.cs-ps-kpi-dist { grid-column: span 2; }
+@media (min-width: 992px) {
+    .cs-ps-kpis { grid-template-columns: 1.4fr 2fr 1fr 1fr 1fr; }
+    .cs-ps-kpi-dist { grid-column: auto; }
+}
+.cs-ps-kpi {
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+.cs-ps-kpi-label {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    font-weight: 700;
+    color: var(--neutral-400);
+    margin-bottom: 10px;
+}
+.cs-ps-kpi-value {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--neutral-800);
+    font-variant-numeric: tabular-nums;
+}
+.cs-ps-kpi-unit { font-size: 1.4rem; font-weight: 700; margin-left: 1px; }
+.cs-ps-kpi-sub  { margin-top: 8px; font-size: .82rem; color: var(--neutral-500); font-weight: 500; }
+
+/* Plain metric cards (copies owned · cards to complete · copies to acquire) */
+.cs-ps-kpi-metric .cs-ps-kpi-value { font-size: 1.7rem; }
+.cs-ps-kpi-metric .cs-ps-kpi-sub   { margin-top: 4px; font-size: .76rem; color: var(--neutral-400); }
+
+/* Highlighted "overall completion" card — theme-aware primary tint */
+.cs-ps-kpi-global {
+    background: color-mix(in srgb, var(--primary-400) 9%, var(--sand-50));
+    border-color: var(--primary-400);
+}
+.cs-ps-kpi-global .cs-ps-kpi-value { color: var(--primary-500); }
+.cs-ps-kpi-global .cs-ps-kpi-sub   { color: var(--primary-500); }
+
+/* Card distribution — stacked bar (semantic status colors, theme-independent) */
+.cs-playset {
+    --ps-complete: #3aa856;
+    --ps-progress: #e8a23c;
+    --ps-missing:  #d64545;
+}
+.cs-ps-stacked {
+    display: flex;
+    height: 26px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 2px;
+    background: var(--neutral-200);
+}
+.cs-ps-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    transition: flex-grow .25s;
+}
+.cs-ps-seg.complete    { background: var(--ps-complete); }
+.cs-ps-seg.in-progress { background: var(--ps-progress); }
+.cs-ps-seg.missing     { background: var(--ps-missing); }
+.cs-ps-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: .76rem;
+    color: var(--neutral-600);
+}
+.cs-ps-leg { display: inline-flex; align-items: center; gap: 5px; }
+.cs-ps-leg-frac { color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.cs-ps-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.cs-ps-dot.complete    { background: var(--ps-complete); }
+.cs-ps-dot.in-progress { background: var(--ps-progress); }
+.cs-ps-dot.missing     { background: var(--ps-missing); }
+
+/* ---- Heatmap (faction × set) ---- */
+.cs-ps-section-title {
+    margin: 24px 0 10px;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    font-weight: 700;
+    color: var(--neutral-400);
+}
+/* Continuous heatmap grid: cells are flush; rounding comes from the wrapper,
+   which also clips the corners (overflow). */
+.cs-ps-heatmap-wrap {
+    position: relative;
+    overflow-x: auto;
+    border: 1px solid var(--sand-200);
+    border-radius: 10px;
+}
+table.cs-ps-heatmap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .76rem;
+}
+.cs-ps-heatmap th, .cs-ps-heatmap td {
+    padding: 7px 6px;
+    text-align: center;
+    min-width: 74px;
+}
+.cs-ps-heatmap thead th {
+    background: var(--sand-100);
+    color: var(--neutral-600);
+    font-weight: 700;
+    font-size: .64rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    line-height: 1.25;
+    vertical-align: bottom;
+}
+.cs-ps-heatmap thead th.cs-ps-hm-corner { background: transparent; text-align: left; }
+.cs-ps-hm-rowhead {
+    background: var(--sand-100);
+    color: var(--neutral-700);
+    text-align: left !important;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.cs-ps-hm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+/* Heatmap cells stay light pastel in every theme → fixed dark text for contrast.
+   A faint white hairline separates cells without breaking the gradient. */
+.cs-ps-hm { color: #243042; font-weight: 600; cursor: default; border: 1px solid rgba(255, 255, 255, .55); }
+.cs-ps-hm-pct  { display: block; font-size: .86rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cs-ps-hm.empty { background: var(--sand-100); color: var(--neutral-400); font-weight: 600; }
+/* Cross highlight: two blue rectangles (row + column) positioned in JS. */
+.cs-ps-hm-cross {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 2px solid var(--primary-500);
+    border-radius: 3px;
+    z-index: 5;
+}
+/* Custom 3-line popover (set · faction · count), built in JS, appended to <body> */
+.cs-ps-hm-tip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    background: #243042;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .28);
+    white-space: nowrap;
+    text-align: left;
+    line-height: 1.35;
+}
+.cs-ps-tip-set, .cs-ps-tip-faction { display: flex; align-items: center; gap: 6px; font-size: .8rem; }
+.cs-ps-tip-set     { font-weight: 700; gap: 9px; }
+.cs-ps-tip-faction { font-weight: 600; color: rgba(255, 255, 255, .85); }
+.cs-ps-tip-count   { font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 3px; }
+.cs-ps-tip-icon    { width: 15px; height: 15px; flex-shrink: 0; }
+img.cs-ps-tip-icon { object-fit: contain; }
+i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
+/* Margins (per-faction, per-set, grand total) — bolder, isolated by a white band:
+   right of the Total column (first data column), above the Total row. */
+.cs-ps-hm-rowtot, .cs-ps-hm-coltot, .cs-ps-hm-grand { font-weight: 800; }
+.cs-ps-hm-th-total, .cs-ps-hm-rowtot, .cs-ps-hm-grand { border-right: 5px solid #fff; }
+.cs-ps-hm-foot > * { border-top: 5px solid #fff; }
+
+/* Set-column headers — flush image band (mirrors the set quick-filter buttons) */
+.cs-ps-heatmap thead th.cs-ps-hm-setcol { background: transparent; padding: 0; vertical-align: bottom; }
+.cs-ps-setchip {
+    position: relative;
+    overflow: hidden;
+    height: 56px;
+    border-radius: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--neutral-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cs-ps-setchip::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
+.cs-ps-setchip-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 3px;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .9);
+}
+.cs-ps-setchip-inner i { font-size: 1.05rem; line-height: 1; }
+.cs-ps-setchip-name { font-size: .58rem; font-weight: 700; line-height: 1.15; text-align: center; text-transform: none; letter-spacing: 0; }
+.cs-ps-setchip-note {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    z-index: 2;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .9);
+    color: #243042;
+    font-size: .6rem;
+    font-weight: 800;
+    line-height: 14px;
+    text-align: center;
+    cursor: help;
+}
+
 /* Deck header (deck.php) */
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }
 .deck-hdr-meta  { font-size: .85rem; color: rgba(255,255,255,.8); margin-top: 2px; }

@@ -70,6 +70,12 @@ function CardSearch(cfg) {
     var elError       = q('error');
     var elPagin       = q('pagination');
     var elSearch      = q('search');
+    // Playset dashboard (Profile G) — a non-grid tab.
+    var elPlayset        = q('playset');
+    var elPlaysetLoading = q('playset-loading');
+    var elPlaysetError   = q('playset-error');
+    var elPlaysetDash    = q('playset-dash');
+    var _playsetLoaded   = false;
     var elFilterBtn     = q('filter-btn');
     var elFilterModal   = document.getElementById(P + '-filter-modal');
     var elModalResetBtn = document.getElementById(P + '-modal-reset-btn');
@@ -1094,6 +1100,8 @@ function CardSearch(cfg) {
 
     // main search
     function search(page, skipPushState) {
+        // The playset tab shows a dashboard, not the result grid — never query.
+        if (_tab === 'playset') return;
         updateScopeUi();
         readTsValues();
         currentPage = page || 1;
@@ -1233,7 +1241,7 @@ function CardSearch(cfg) {
     // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
     // the URL-loaded filters are preserved and only scope/visibility are applied.
     function setTab(t, keepFilters) {
-        _tab = (t === 'unique' || t === 'collection' || t === 'ownership') ? t : 'all';
+        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'playset') ? t : 'all';
         setScope(_tab === 'collection' || _tab === 'ownership' ? _tab : 'all');
         if (_tab === 'unique') {
             if (!keepFilters) {
@@ -1256,6 +1264,339 @@ function CardSearch(cfg) {
         updateScopeUi();
         syncDefaultsToUi();
         updateFilterCount();
+        // The playset dashboard replaces the result grid. applyTabVisibility has
+        // already toggled the [data-tabs] blocks (search box, control bar,
+        // dashboard); here we just clear any leftover search results and lazily
+        // load the dashboard data.
+        if (_tab === 'playset') {
+            if (elGrid)  elGrid.style.display = 'none';
+            if (elPagin) elPagin.style.setProperty('display', 'none', 'important');
+            [elLoading, elInitial, elEmpty, elError].forEach(function(e) { if (e) e.style.display = 'none'; });
+            // search() (which normally syncs the URL) is a no-op here, so reflect
+            // the active tab ourselves — unless we're restoring from the URL.
+            if (!keepFilters && cfg.pushState && MODE === 'cards') {
+                history.pushState({ page: 1 }, '', buildPageUrl(1));
+            }
+            loadPlayset();
+        }
+    }
+
+    // ── Playset dashboard (Profile G — Player playset) ──────────────────────────
+    // Fetches the physical-collection playset completion (faction × set quantity
+    // buckets) and renders the dashboard KPIs + heatmap. Completion is copies-based,
+    // capped at 3 per reference: owned = 1·n1 + 2·n2 + 3·n(3+), needed = 3 · totalRefs.
+    // The rarity selector (COMMON/RARE/EXALTED) narrows the universe server-side.
+    function loadPlayset() {           // lazy: first time the tab is opened
+        if (!cfg.playsetApiUrl || _playsetLoaded) return;
+        fetchPlayset();
+    }
+    function fetchPlayset() {          // (re)fetch with the current rarity selection
+        if (!cfg.playsetApiUrl) return;
+        _playsetLoaded = true;
+        if (elPlaysetError)   elPlaysetError.style.display   = 'none';
+
+        var rar = _psRarities || [];
+        // No rarity selected → empty universe (don't query: an empty rarity list
+        // would be omitted upstream and wrongly return everything).
+        if (!rar.length) {
+            if (elPlaysetLoading) elPlaysetLoading.style.display = 'none';
+            renderPlayset({ byFaction: [], bySet: [], byFactionAndSet: [] });
+            return;
+        }
+
+        if (elPlaysetLoading) elPlaysetLoading.style.display = '';
+        if (elPlaysetDash)    elPlaysetDash.style.display    = 'none';
+
+        var qs = 'locale=' + encodeURIComponent(UI_LANG);
+        rar.forEach(function(r) { qs += '&rarity[]=' + encodeURIComponent(r); });
+
+        fetch(cfg.playsetApiUrl + '?' + qs, { headers: { 'Accept': 'application/json' } })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                if (DEBUG) console.log('[CardSearch] playset response:', data);
+                renderPlayset(data);
+            })
+            .catch(function(err) {
+                _playsetLoaded = false; // allow a retry on the next tab switch
+                if (elPlaysetLoading) elPlaysetLoading.style.display = 'none';
+                if (elPlaysetError)   elPlaysetError.style.display   = '';
+                if (cfg.onError) cfg.onError(err);
+            });
+    }
+
+    // Rarity selector state — persisted in localStorage, default all selected.
+    var _psRarities = null;
+    var PS_RARITY_KEY = 'ac_playset_rarities';
+    function psRarityButtons() {
+        var wrap = q('playset-rarities');
+        return wrap ? wrap.querySelectorAll('[data-rarity]') : [];
+    }
+    function syncPsRarityButtons() {
+        Array.prototype.forEach.call(psRarityButtons(), function(b) {
+            b.classList.toggle('active', _psRarities.indexOf(b.dataset.rarity) >= 0);
+        });
+    }
+    function initPlaysetRarities() {
+        var btns = psRarityButtons();
+        if (!btns.length) return;
+        var all = Array.prototype.map.call(btns, function(b) { return b.dataset.rarity; });
+        var stored = null;
+        try { stored = JSON.parse(localStorage.getItem(PS_RARITY_KEY)); } catch (e) {}
+        if (!Array.isArray(stored)) stored = all.slice();          // default: all
+        _psRarities = stored.filter(function(r) { return all.indexOf(r) >= 0; });
+        syncPsRarityButtons();
+        Array.prototype.forEach.call(btns, function(b) {
+            b.addEventListener('click', function() {
+                var r = b.dataset.rarity, i = _psRarities.indexOf(r);
+                if (i >= 0) _psRarities.splice(i, 1); else _psRarities.push(r);
+                try { localStorage.setItem(PS_RARITY_KEY, JSON.stringify(_psRarities)); } catch (e) {}
+                syncPsRarityButtons();
+                fetchPlayset();
+            });
+        });
+    }
+
+    function renderPlayset(data) {
+        // Sum the quantity buckets across the whole playset universe.
+        var rows = (data && data.byFaction) || [];
+        var n0 = 0, n1 = 0, n2 = 0, n3 = 0;
+        rows.forEach(function(row) {
+            var qb = (row && row.quantities) || {};
+            n0 += qb['0'] || 0; n1 += qb['1'] || 0; n2 += qb['2'] || 0; n3 += qb['3+'] || 0;
+        });
+        var total = n0 + n1 + n2 + n3;
+
+        // ── Overall completion (copies-based, capped at 3 per reference) ──
+        var ownedCapped = n1 + 2 * n2 + 3 * n3;
+        var needed      = 3 * total;
+        var pct         = needed > 0 ? Math.round((ownedCapped / needed) * 100) : 0;
+
+        var pctEl = q('playset-pct');
+        if (pctEl) pctEl.textContent = pct;
+        var copiesEl = q('playset-copies');
+        if (copiesEl) {
+            var word = copiesEl.getAttribute('data-copies-label') || '';
+            copiesEl.textContent = ownedCapped.toLocaleString() + ' / ' + needed.toLocaleString() + ' ' + word;
+        }
+
+        // ── Card distribution (by line: complete 3/3 · in progress 1–2/3 · missing 0/3) ──
+        var dist = { complete: n3, progress: n1 + n2, missing: n0 };
+        ['complete', 'progress', 'missing'].forEach(function(key) {
+            var seg = q('seg-' + key);
+            if (!seg) return;
+            var val = dist[key];
+            seg.style.flexGrow = val;                 // proportional width
+            seg.style.display  = val > 0 ? '' : 'none';
+            seg.textContent    = val > 0 ? val.toLocaleString() : '';
+        });
+
+        // ── Metric KPIs ──
+        var cardsToComplete = n0 + n1 + n2;           // references below 3/3
+        var copiesToAcquire = 3 * n0 + 2 * n1 + n2;   // = needed - ownedCapped
+        function setMetric(id, val) { var el = q(id); if (el) el.textContent = val.toLocaleString(); }
+        setMetric('playset-owned',      ownedCapped);
+        setMetric('playset-tocomplete', cardsToComplete);
+        setMetric('playset-toacquire',  copiesToAcquire);
+
+        // ── Heatmap (faction × set) ──
+        renderPlaysetHeatmap(data);
+
+        if (elPlaysetLoading) elPlaysetLoading.style.display = 'none';
+        if (elPlaysetError)   elPlaysetError.style.display   = 'none';
+        if (elPlaysetDash)    elPlaysetDash.style.display    = '';
+    }
+
+    // Custom heatmap hover popover — three lines (set · faction · count) shown
+    // above the cell. position:fixed → relative to the viewport, so the scroll
+    // container never clips it and it causes no layout reflow.
+    var _hmTip = null;
+    function hmTipEl() {
+        if (!_hmTip) {
+            _hmTip = document.createElement('div');
+            _hmTip.className = 'cs-ps-hm-tip';
+            _hmTip.style.display = 'none';
+            document.body.appendChild(_hmTip);
+        }
+        return _hmTip;
+    }
+    function showHmTip(cell) {
+        if (!cell.dataset.count) return;
+        var tip = hmTipEl();
+        tip.innerHTML = '';
+        // A line is an icon (font <i> for sets, <img> for factions) + label text.
+        function line(cls, txt, iconClass, iconImg) {
+            var d = document.createElement('div'); d.className = cls;
+            if (iconClass) { var i = document.createElement('i'); i.className = 'cs-ps-tip-icon ' + iconClass; d.appendChild(i); }
+            else if (iconImg) { var im = document.createElement('img'); im.className = 'cs-ps-tip-icon'; im.src = iconImg; im.alt = ''; d.appendChild(im); }
+            d.appendChild(document.createTextNode(txt));
+            tip.appendChild(d);
+        }
+        line('cs-ps-tip-set',     cell.dataset.set || '',     cell.dataset.setIcon || '', '');
+        line('cs-ps-tip-faction', cell.dataset.faction || '', '', cell.dataset.factionIcon || '');
+        line('cs-ps-tip-count',   cell.dataset.count || '');
+        tip.style.display = 'block';
+        var r = cell.getBoundingClientRect(), t = tip.getBoundingClientRect();
+        var left = r.left + r.width / 2 - t.width / 2;
+        left = Math.max(6, Math.min(left, window.innerWidth - t.width - 6));
+        var top = r.top - t.height - 8;
+        if (top < 6) top = r.bottom + 8; // flip below the cell when there's no room above
+        tip.style.left = left + 'px';
+        tip.style.top  = top + 'px';
+    }
+    function hideHmTip() { if (_hmTip) _hmTip.style.display = 'none'; }
+
+    // Cross-highlight overlays: two blue rectangles (one row, one column) layered
+    // over the table — no per-cell borders. Lazily created inside the scroll wrap.
+    var _hmCol = null, _hmRow = null;
+    function hmRects(wrap) {
+        if (!_hmCol) {
+            _hmCol = document.createElement('div'); _hmCol.className = 'cs-ps-hm-cross';
+            _hmRow = document.createElement('div'); _hmRow.className = 'cs-ps-hm-cross';
+            wrap.appendChild(_hmCol); wrap.appendChild(_hmRow);
+        }
+        return [_hmCol, _hmRow];
+    }
+    function hideHmCross() { if (_hmCol) { _hmCol.style.display = 'none'; _hmRow.style.display = 'none'; } }
+
+    // Build the faction × set completion table. Each cell is copies-based and
+    // capped at 3/reference (owned/needed), with an absolute 0–100% heatmap
+    // background. Margins (right column, bottom row, grand total) aggregate the
+    // same buckets so they always reconcile with the KPIs.
+    function renderPlaysetHeatmap(data) {
+        var table = q('heatmap');
+        if (!table) return;
+        var meta         = cfg.playsetMeta || {};
+        var metaFactions = meta.factions || [];
+        var metaSets     = meta.sets || [];
+        var fbs          = (data && data.byFactionAndSet) || [];
+
+        // Aggregate buckets into grid[faction][set] = {owned, needed}.
+        var grid = {}, present = {};
+        fbs.forEach(function(r) {
+            var qb = r.quantities || {};
+            var n0 = qb['0'] || 0, n1 = qb['1'] || 0, n2 = qb['2'] || 0, n3 = qb['3+'] || 0;
+            if (!grid[r.faction]) grid[r.faction] = {};
+            grid[r.faction][r.cardSet] = { owned: n1 + 2 * n2 + 3 * n3, needed: 3 * (n0 + n1 + n2 + n3) };
+            present[r.cardSet] = true;
+        });
+
+        // Columns: meta order (recent-first), kept only if present; unknown sets appended.
+        var cols = metaSets.filter(function(s) { return present[s.code]; });
+        var known = {}; cols.forEach(function(c) { known[c.code] = true; });
+        Object.keys(present).forEach(function(code) { if (!known[code]) cols.push({ code: code, name: code }); });
+        // Rows: meta faction order, kept only if present (fallback to all).
+        var rows = metaFactions.filter(function(f) { return grid[f.code]; });
+        if (!rows.length) rows = metaFactions;
+
+        var factionLabel  = table.getAttribute('data-faction-label')     || 'Faction';
+        var totalLabel    = table.getAttribute('data-total-label')       || 'Total';
+        var copiesLabel   = table.getAttribute('data-copies-label')      || '';
+        var allSetsLabel  = table.getAttribute('data-allsets-label')     || totalLabel;
+        var allFacLabel   = table.getAttribute('data-allfactions-label') || totalLabel;
+
+        function dataCell(owned, needed, cls, setLabel, factionLabel, setIcon, factionIcon) {
+            var td = document.createElement('td');
+            td.className = 'cs-ps-hm ' + cls;
+            if (!needed) { td.classList.add('empty'); td.textContent = '–'; return td; }
+            var pct = Math.round(owned / needed * 100);
+            td.style.background = 'hsl(' + (pct * 1.2) + ', 60%, 86%)';
+            // Cell shows the percentage only; the hover popover carries the detail
+            // (set · faction · count), positioned over the cell with no reflow.
+            td.dataset.set        = setLabel || '';
+            td.dataset.faction    = factionLabel || '';
+            td.dataset.count      = owned.toLocaleString() + ' / ' + needed.toLocaleString() + (copiesLabel ? ' ' + copiesLabel : '');
+            if (setIcon)     td.dataset.setIcon     = setIcon;
+            if (factionIcon) td.dataset.factionIcon = factionIcon;
+            td.addEventListener('mouseenter', function() { showHmTip(td); highlightCross(td, true); });
+            td.addEventListener('mouseleave', function() { hideHmTip(); highlightCross(td, false); });
+            var p = document.createElement('span'); p.className = 'cs-ps-hm-pct';
+            p.textContent = pct + '%';
+            td.appendChild(p);
+            return td;
+        }
+        function th(cls, text) { var e = document.createElement('th'); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+        // Cross-highlight: position the two overlay rectangles over the hovered
+        // cell's full column and full row.
+        function highlightCross(td, on) {
+            var wrap = table.parentNode;
+            var r = hmRects(wrap);
+            if (!on) { hideHmCross(); return; }
+            var wr = wrap.getBoundingClientRect(), tb = table.getBoundingClientRect();
+            var cr = td.getBoundingClientRect(), rr = td.parentNode.getBoundingClientRect();
+            var ox = -wr.left - wrap.clientLeft + wrap.scrollLeft;
+            var oy = -wr.top  - wrap.clientTop  + wrap.scrollTop;
+            var col = r[0], row = r[1];
+            col.style.display = 'block';
+            col.style.left = (cr.left + ox) + 'px'; col.style.top = (tb.top + oy) + 'px';
+            col.style.width = cr.width + 'px';       col.style.height = tb.height + 'px';
+            row.style.display = 'block';
+            row.style.left = (tb.left + ox) + 'px'; row.style.top = (rr.top + oy) + 'px';
+            row.style.width = tb.width + 'px';       row.style.height = rr.height + 'px';
+        }
+        // Rich set-column header: set background image + kit icon + name (mirrors
+        // the set quick-filter buttons in the "All cards" tab).
+        function setHeaderTh(s) {
+            var el = document.createElement('th');
+            el.className = 'cs-ps-hm-setcol';
+            var chip = document.createElement('div');
+            chip.className = 'cs-ps-setchip';
+            if (s.code && meta.setBg) chip.style.backgroundImage = "url('" + meta.setBg + s.code + ".webp')";
+            var inner = document.createElement('span'); inner.className = 'cs-ps-setchip-inner';
+            if (s.icon) { var ic = document.createElement('i'); ic.className = s.icon; inner.appendChild(ic); }
+            var nm = document.createElement('span'); nm.className = 'cs-ps-setchip-name'; nm.textContent = s.name;
+            inner.appendChild(nm);
+            chip.appendChild(inner);
+            // Optional explanatory note (e.g. CORE merging the Kickstarter edition).
+            if (s.note) {
+                var nb = document.createElement('span'); nb.className = 'cs-ps-setchip-note';
+                nb.textContent = '?'; nb.title = s.note;
+                chip.appendChild(nb);
+            }
+            el.appendChild(chip);
+            return el;
+        }
+
+        table.innerHTML = '';
+
+        // Header row — Faction · Total · then each set
+        var thead = document.createElement('thead'), htr = document.createElement('tr');
+        htr.appendChild(th('cs-ps-hm-corner', factionLabel));
+        htr.appendChild(th('cs-ps-hm-th-total', totalLabel));
+        cols.forEach(function(c) { htr.appendChild(setHeaderTh(c)); });
+        thead.appendChild(htr); table.appendChild(thead);
+
+        // Body rows (one per faction) + accumulate column / grand totals
+        var tbody = document.createElement('tbody'), colTot = {}, grandO = 0, grandN = 0;
+        cols.forEach(function(c) { colTot[c.code] = { owned: 0, needed: 0 }; });
+        rows.forEach(function(f) {
+            var tr = document.createElement('tr');
+            var rowHead = th('cs-ps-hm-rowhead');
+            var dot = document.createElement('span'); dot.className = 'cs-ps-hm-dot'; dot.style.background = f.color || '#888';
+            rowHead.appendChild(dot); rowHead.appendChild(document.createTextNode(f.name));
+            tr.appendChild(rowHead);
+            // Tally the row first so the leading Total cell can be filled.
+            var facIcon = meta.factionIcon ? meta.factionIcon + f.code + '.png' : '';
+            var rowO = 0, rowN = 0, setCells = [];
+            cols.forEach(function(c) {
+                var cell = (grid[f.code] || {})[c.code] || { owned: 0, needed: 0 };
+                setCells.push(dataCell(cell.owned, cell.needed, 'cs-ps-hm-cell', c.name, f.name, c.icon, facIcon));
+                rowO += cell.owned; rowN += cell.needed;
+                colTot[c.code].owned += cell.owned; colTot[c.code].needed += cell.needed;
+            });
+            tr.appendChild(dataCell(rowO, rowN, 'cs-ps-hm-rowtot', allSetsLabel, f.name, '', facIcon));   // Total column first
+            setCells.forEach(function(td) { tr.appendChild(td); });
+            grandO += rowO; grandN += rowN;
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        // Footer — Total label · grand total · then per-set totals
+        var tfoot = document.createElement('tfoot'), ftr = document.createElement('tr');
+        ftr.className = 'cs-ps-hm-foot';
+        ftr.appendChild(th('cs-ps-hm-rowhead', totalLabel));
+        ftr.appendChild(dataCell(grandO, grandN, 'cs-ps-hm-grand', allSetsLabel, allFacLabel));
+        cols.forEach(function(c) { ftr.appendChild(dataCell(colTot[c.code].owned, colTot[c.code].needed, 'cs-ps-hm-coltot', c.name, allFacLabel, c.icon, '')); });
+        tfoot.appendChild(ftr); table.appendChild(tfoot);
     }
 
     // ── Promo sets ────────────────────────────────────────────────────────────
@@ -1505,7 +1846,8 @@ function CardSearch(cfg) {
         var _urlTab = p.get('tab');
         if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
         if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
-        setTab(_urlTab && /^(unique|collection|ownership)$/.test(_urlTab) ? _urlTab : 'all', true);
+        if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
+        setTab(_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab) ? _urlTab : 'all', true);
 
         updateFilterCount();
         search(pg, true);
@@ -1897,11 +2239,13 @@ function CardSearch(cfg) {
     // init
     initTomSelects();
     syncDefaultsToUi();
+    initPlaysetRarities(); // before any tab restore that may trigger loadPlayset()
     // Restore the active tab from the URL (cards mode) so a refresh keeps it.
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
     if (_initTab === 'ownership'  && !cfg.ownershipApiUrl) _initTab = null;
-    if (_initTab && /^(unique|collection|ownership)$/.test(_initTab)) {
+    if (_initTab === 'playset'    && !cfg.playsetApiUrl)   _initTab = null;
+    if (_initTab && /^(unique|collection|ownership|playset)$/.test(_initTab)) {
         setTab(_initTab, true); // keepFilters: URL already carries the filter state
     } else {
         syncTabButtons();

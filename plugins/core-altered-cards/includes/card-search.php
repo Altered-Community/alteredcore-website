@@ -17,6 +17,7 @@ $_csCollMode   = $_cs['collection_mode']    ?? false;
 $_csCollEnabled= $_cs['collection_enabled'] ?? false;
 $_csOwnMode    = $_cs['ownership_mode']      ?? false;
 $_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
+$_csPlaysetMode= $_cs['playset_mode']        ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
@@ -89,6 +90,33 @@ $_csLblUnique   = $_csTxt['tab_unique'] ?? ($_csLang === 'fr' ? 'Uniques'       
 $_csLblAllCards = $_csTxt['scope_all']  ?? ($_csLang === 'fr' ? 'Toutes les cartes'        : 'All cards');
 $_csLblColl     = $_csTxt['scope_collection'] ?? ($_csLang === 'fr' ? 'Collection physique' : 'Physical collection');
 $_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriété numérique' : 'Digital ownership');
+// Playset dashboard (Profile G — Player playset). All labels live under the
+// "playset" object in search_settings.json (translations.{lang}.playset); the
+// literals below are only fallbacks when a key is missing.
+$_csPs = $_csTxt['playset'] ?? [];
+$_csLblPlayset  = $_csPs['tab_playset'] ?? ($_csLang === 'fr' ? 'Playset physique'   : 'Physical playset');
+$_csPsIntro     = $_csPs['intro']       ?? ($_csLang === 'fr'
+    ? 'Suivez votre progression vers 3 exemplaires de chaque carte Commune, Rare, Rare OOF et Exaltée. Les Héros, Uniques et alternatives ne sont pas comptabilisés dans cette vue.'
+    : 'Track your progress toward 3 copies of each Common, Rare, Rare OOF and Exalted card. Heroes, Uniques and alternatives are not counted in this view.');
+$_csPsRarityLabel = $_csPs['rarity_label'] ?? ($_csLang === 'fr' ? 'Raretés incluses' : 'Rarities included');
+$_csPsRarityCodes = ['COMMON', 'RARE', 'EXALTED']; // playset scope (no Unique)
+$_csPsKpiGlobal = $_csPs['kpi_global'] ?? ($_csLang === 'fr' ? 'Complétude globale' : 'Overall completion');
+$_csPsCopies    = $_csPs['copies']     ?? ($_csLang === 'fr' ? 'exemplaires'        : 'copies');
+$_csPsKpiDist   = $_csPs['kpi_dist']   ?? ($_csLang === 'fr' ? 'Distribution des cartes' : 'Card distribution');
+$_csPsComplete  = $_csPs['complete']   ?? ($_csLang === 'fr' ? 'Complètes'   : 'Complete');
+$_csPsProgress  = $_csPs['progress']   ?? ($_csLang === 'fr' ? 'En cours'    : 'In progress');
+$_csPsMissing   = $_csPs['missing']    ?? ($_csLang === 'fr' ? 'Manquantes'  : 'Missing');
+$_csPsOwned        = $_csPs['owned']        ?? ($_csLang === 'fr' ? 'Exemplaires possédés'   : 'Copies owned');
+$_csPsOwnedSub     = $_csPs['owned_sub']    ?? ($_csLang === 'fr' ? 'au total'               : 'total');
+$_csPsToComplete   = $_csPs['to_complete']  ?? ($_csLang === 'fr' ? 'Cartes à compléter'     : 'Cards to complete');
+$_csPsToCompleteSub= $_csPs['to_complete_sub'] ?? ($_csLang === 'fr' ? 'références < 3/3'     : 'references < 3/3');
+$_csPsToAcquire    = $_csPs['to_acquire']   ?? ($_csLang === 'fr' ? 'Exemplaires à acquérir' : 'Copies to acquire');
+$_csPsToAcquireSub = $_csPs['to_acquire_sub'] ?? ($_csLang === 'fr' ? 'pour atteindre 3/3'   : 'to reach 3/3');
+$_csPsHeatTitle = $_csPs['heat_title'] ?? ($_csLang === 'fr' ? 'Complétude par faction × extension' : 'Completion by faction × set');
+$_csPsFaction   = $_csPs['faction']    ?? ($_csLang === 'fr' ? 'Faction' : 'Faction');
+$_csPsTotal     = $_csPs['total']      ?? ($_csLang === 'fr' ? 'Total'   : 'Total');
+$_csPsAllSets     = $_csPs['all_sets']     ?? ($_csLang === 'fr' ? 'Tous les sets'        : 'All sets');
+$_csPsAllFactions = $_csPs['all_factions'] ?? ($_csLang === 'fr' ? 'Toutes les factions'  : 'All factions');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -150,9 +178,14 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
             </span>
         </button>
+        <button type="button" class="cs-tab<?= $_csPlaysetMode ? '' : ' cs-tab-soon' ?>"
+                data-tab="playset" data-scope="all"<?= $_csPlaysetMode ? '' : ' disabled' ?>>
+            <i class="fa-solid fa-layer-group"></i>
+            <span><?= h($_csLblPlayset) ?></span>
+        </button>
     </div>
 
-    <div class="card-altered p-3 mb-3">
+    <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
 
         <!-- Name + hand/reserve costs (same line) -->
         <div class="cs-name-row d-flex gap-2 align-items-center flex-wrap mb-2"
@@ -378,7 +411,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     </div><!-- /.card-altered -->
 
     <!-- Results control bar: count + sort + columns (between search and grid) -->
-    <div class="cs-controlbar mb-2">
+    <div class="cs-controlbar mb-2" data-tabs="all unique collection ownership">
         <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
         <div class="cs-controlbar-end">
             <div class="d-flex align-items-center gap-1">
@@ -439,6 +472,104 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     <div id="<?= h($_csP) ?>-pagination"
          class="d-flex align-items-center justify-content-center gap-2 mt-3 flex-wrap"
          style="display:none!important"></div>
+
+    <!-- ===== Playset dashboard (Profile G — Player playset) ===== -->
+    <div id="<?= h($_csP) ?>-playset" class="cs-playset" data-tabs="playset" style="display:none">
+
+        <!-- Zone 1 — parameter / header -->
+        <div class="cs-ps-header mb-3">
+            <p class="cs-ps-intro"><?= h($_csPsIntro) ?></p>
+        </div>
+
+        <!-- Rarity selector (COMMON / RARE / EXALTED) — filters KPIs and heatmap -->
+        <div class="cs-ps-rarity-row" id="<?= h($_csP) ?>-playset-rarities">
+            <span class="cs-ps-rarity-label"><?= h($_csPsRarityLabel) ?></span>
+            <?php foreach ($_csPsRarityCodes as $_rk): if (!isset($_csRarities[$_rk])) continue; ?>
+            <button type="button" class="filter-toggle cs-ps-rarity active" data-rarity="<?= h($_rk) ?>">
+                <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
+                     alt="" style="width:15px;height:15px">
+                <?= h($_csRarityTxt[$_rk] ?? $_rk) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Loading -->
+        <div id="<?= h($_csP) ?>-playset-loading" class="ac-state-pane">
+            <div class="spinner-border" role="status"
+                 style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+            <div class="mt-2 small text-muted"><?= h($_csTxt['loading'] ?? '') ?></div>
+        </div>
+
+        <!-- Error -->
+        <div id="<?= h($_csP) ?>-playset-error" class="ac-state-pane" style="display:none">
+            <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:#f87171"></i>
+            <p class="small text-muted mb-0"><?= h($_csTxt['err_api'] ?? 'Could not load data.') ?></p>
+        </div>
+
+        <!-- Dashboard content -->
+        <div id="<?= h($_csP) ?>-playset-dash" style="display:none">
+            <div class="cs-ps-kpis">
+                <!-- Overall completion -->
+                <div class="cs-ps-kpi cs-ps-kpi-global">
+                    <div class="cs-ps-kpi-label"><?= h($_csPsKpiGlobal) ?></div>
+                    <div class="cs-ps-kpi-value">
+                        <span id="<?= h($_csP) ?>-playset-pct">0</span><span class="cs-ps-kpi-unit">%</span>
+                    </div>
+                    <div class="cs-ps-kpi-sub" id="<?= h($_csP) ?>-playset-copies"
+                         data-copies-label="<?= h($_csPsCopies) ?>"></div>
+                </div>
+
+                <!-- Card distribution (by line: complete / in progress / missing) -->
+                <div class="cs-ps-kpi cs-ps-kpi-dist">
+                    <div class="cs-ps-kpi-label"><?= h($_csPsKpiDist) ?></div>
+                    <div class="cs-ps-stacked" role="img"
+                         aria-label="<?= h($_csPsKpiDist) ?>">
+                        <div class="cs-ps-seg complete"    id="<?= h($_csP) ?>-seg-complete"></div>
+                        <div class="cs-ps-seg in-progress" id="<?= h($_csP) ?>-seg-progress"></div>
+                        <div class="cs-ps-seg missing"     id="<?= h($_csP) ?>-seg-missing"></div>
+                    </div>
+                    <div class="cs-ps-legend">
+                        <span class="cs-ps-leg"><span class="cs-ps-dot complete"></span><?= h($_csPsComplete) ?> <span class="cs-ps-leg-frac">3/3</span></span>
+                        <span class="cs-ps-leg"><span class="cs-ps-dot in-progress"></span><?= h($_csPsProgress) ?> <span class="cs-ps-leg-frac">1&ndash;2/3</span></span>
+                        <span class="cs-ps-leg"><span class="cs-ps-dot missing"></span><?= h($_csPsMissing) ?> <span class="cs-ps-leg-frac">0/3</span></span>
+                    </div>
+                </div>
+
+                <!-- Copies owned (counted toward the playset, capped at 3 / reference) -->
+                <div class="cs-ps-kpi cs-ps-kpi-metric">
+                    <div class="cs-ps-kpi-label"><?= h($_csPsOwned) ?></div>
+                    <div class="cs-ps-kpi-value" id="<?= h($_csP) ?>-playset-owned">0</div>
+                    <div class="cs-ps-kpi-sub"><?= h($_csPsOwnedSub) ?></div>
+                </div>
+
+                <!-- Cards to complete (references below 3/3) -->
+                <div class="cs-ps-kpi cs-ps-kpi-metric">
+                    <div class="cs-ps-kpi-label"><?= h($_csPsToComplete) ?></div>
+                    <div class="cs-ps-kpi-value" id="<?= h($_csP) ?>-playset-tocomplete">0</div>
+                    <div class="cs-ps-kpi-sub"><?= h($_csPsToCompleteSub) ?></div>
+                </div>
+
+                <!-- Copies to acquire (to reach 3/3) -->
+                <div class="cs-ps-kpi cs-ps-kpi-metric">
+                    <div class="cs-ps-kpi-label"><?= h($_csPsToAcquire) ?></div>
+                    <div class="cs-ps-kpi-value" id="<?= h($_csP) ?>-playset-toacquire">0</div>
+                    <div class="cs-ps-kpi-sub"><?= h($_csPsToAcquireSub) ?></div>
+                </div>
+            </div>
+
+            <!-- Heatmap — completion by faction × set -->
+            <div class="cs-ps-section-title"><?= h($_csPsHeatTitle) ?></div>
+            <div class="cs-ps-heatmap-wrap">
+                <table class="cs-ps-heatmap" id="<?= h($_csP) ?>-heatmap"
+                       data-faction-label="<?= h($_csPsFaction) ?>"
+                       data-total-label="<?= h($_csPsTotal) ?>"
+                       data-copies-label="<?= h($_csPsCopies) ?>"
+                       data-allsets-label="<?= h($_csPsAllSets) ?>"
+                       data-allfactions-label="<?= h($_csPsAllFactions) ?>"></table>
+            </div>
+        </div>
+
+    </div><!-- /#{prefix}-playset -->
 
 </div><!-- /#{prefix}-panel -->
 
