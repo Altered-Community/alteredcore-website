@@ -1119,7 +1119,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (legal === true)
             return '<span class="badge" style="background:rgba(34,197,94,.85);color:#fff;font-size:.72rem"><i class="fa-solid fa-check me-1"></i>' + escHtml(txt.legal) + '</span>';
         if (legal === false && hasActualErrors)
-            return '<button type="button" class="badge border-0 bg-danger js-deck-illegal"'
+            return '<button type="button" class="badge border-0 bg-danger js-deck-illegal" style="position:relative;z-index:2"'
                 + ' data-errors="' + escHtml(JSON.stringify(formatErrors)) + '"'
                 + ' data-legality="' + escHtml(JSON.stringify(legalityDetail)) + '"'
                 + ' data-format="' + escHtml(fmtLabel) + '">'
@@ -1174,7 +1174,8 @@ $showPublicTab = $publicDecksApiPath !== '';
             : '';
 
         return '<div class="col-12 col-md-6 col-lg-4 my-deck-item" data-format="' + escHtml(fmt) + '" data-public="' + (isPublic ? '1' : '0') + '" data-faction="' + escHtml(factionCode) + '" data-deck-id="' + escHtml(deckId) + '">'
-            + '<div class="news-card h-100" style="border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
+            + '<div class="news-card h-100" style="position:relative;border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
+            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-card-link-overlay" aria-label="' + escHtml(name) + '" style="position:absolute;inset:0;z-index:1"></a>'
             + '<div class="news-card-body d-flex flex-column gap-2 deck-card-text-white">'
 
             + '<div class="d-flex flex-wrap gap-1 align-items-center">'
@@ -1591,6 +1592,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             if (isPublic !== false) {
                 statsHtml += '<button type="button" class="deck-stat-pill deck-stat-pill--upvote pub-deck-upvote'
                     + (hasUpvoted ? ' deck-stat-pill--upvoted' : '') + '"'
+                    + ' style="position:relative;z-index:2"'
                     + ' data-deck-id="' + escHtml(deckId) + '"'
                     + ' data-upvoted="' + (hasUpvoted ? '1' : '0') + '">'
                     + '<i class="' + (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i>'
@@ -1607,7 +1609,8 @@ $showPublicTab = $publicDecksApiPath !== '';
             + ' data-faction="' + escHtml(factionCode) + '"'
             + ' data-public="' + (isPublic ? '1' : '0') + '"'
             + ' data-deck-id="' + escHtml(deckId) + '">'
-            + '<div class="news-card h-100" style="border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
+            + '<div class="news-card h-100" style="position:relative;border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
+            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-card-link-overlay" aria-label="' + escHtml(name) + '" style="position:absolute;inset:0;z-index:1"></a>'
             + '<div class="news-card-body d-flex flex-column gap-2 deck-card-text-white">'
 
             + '<div class="d-flex flex-wrap gap-1 align-items-center">'
