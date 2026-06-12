@@ -1018,6 +1018,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                 contestRendered = true;
                 initContestTabView();
             }
+            syncDeckUrl(btn.dataset.tab);
         });
     });
 
@@ -1036,6 +1037,129 @@ $showPublicTab = $publicDecksApiPath !== '';
     var mySortVal     = 'updatedAt:desc';
     var mySearchTimer = null;
     var myAllItems    = [];
+
+    // ── URL filter sync (mirrors the cards page) ─────────────────────────
+    // The active tab's filters are mirrored into the query string, and any
+    // filters present in the URL on load are applied to the matching tab.
+    var DEFAULT_DECK_SORT = 'updatedAt:desc';
+    var DEFAULT_DECK_TAB  = myIsLoggedIn ? 'my' : (showPublic ? 'public' : 'my');
+    var _deckUrlParams    = new URLSearchParams(location.search);
+    var _urlSyncReady     = false;  // stays false during the initial restore so we don't rewrite the URL we just read
+
+    var _wantTab   = _deckUrlParams.get('tab');
+    var TARGET_TAB = (_wantTab === 'my' || _wantTab === 'public' || _wantTab === 'contest') ? _wantTab : DEFAULT_DECK_TAB;
+    if (TARGET_TAB !== 'my' && !showPublic) TARGET_TAB = 'my';
+    if (TARGET_TAB === 'my' && !myIsLoggedIn && showPublic) TARGET_TAB = 'public';
+
+    function activeDeckTab() {
+        var t = document.querySelector('.decks-tab.active');
+        return t ? t.dataset.tab : DEFAULT_DECK_TAB;
+    }
+
+    function buildDeckQuery(tab) {
+        var parts = [];
+        // Always carry the tab when tabs exist, so the URL lands on the right
+        // tab regardless of the visitor's per-login default.
+        if (showPublic) parts.push('tab=' + encodeURIComponent(tab));
+        if (tab === 'my') {
+            if (myFormat)            parts.push('format='     + encodeURIComponent(myFormat));
+            if (myFaction)           parts.push('faction='    + encodeURIComponent(myFaction));
+            if (myHero)              parts.push('hero='        + encodeURIComponent(myHero));
+            if (myVisibility !== '') parts.push('visibility=' + encodeURIComponent(myVisibility));
+            if (mySortVal && mySortVal !== DEFAULT_DECK_SORT) parts.push('sort=' + encodeURIComponent(mySortVal));
+            var mq = mySearch ? mySearch.value.trim() : '';
+            if (mq) parts.push('q=' + encodeURIComponent(mq));
+        } else if (tab === 'public') {
+            if (pubFormat)  parts.push('format='  + encodeURIComponent(pubFormat));
+            if (pubFaction) parts.push('faction=' + encodeURIComponent(pubFaction));
+            if (pubHero)    parts.push('hero='    + encodeURIComponent(pubHero));
+            if (pubSortVal && pubSortVal !== DEFAULT_DECK_SORT) parts.push('sort=' + encodeURIComponent(pubSortVal));
+            var pq = pubSearch ? pubSearch.value.trim() : '';
+            if (pq) parts.push('q=' + encodeURIComponent(pq));
+        } else if (tab === 'contest') {
+            if (contestSet && contestSet !== 'winners') parts.push('set=' + encodeURIComponent(contestSet));
+            if (contestFaction) parts.push('faction=' + encodeURIComponent(contestFaction));
+            if (contestHero)    parts.push('hero='    + encodeURIComponent(contestHero));
+            var cq = contestSearch ? contestSearch.value.trim() : '';
+            if (cq) parts.push('q=' + encodeURIComponent(cq));
+        }
+        return parts;
+    }
+
+    // Write the given tab's filters to the URL — but only once the initial
+    // restore is done and only for the tab the user is actually looking at.
+    function syncDeckUrl(tab) {
+        if (!_urlSyncReady) return;
+        if (tab !== activeDeckTab()) return;
+        var parts = buildDeckQuery(tab);
+        history.replaceState(null, '', location.pathname + (parts.length ? '?' + parts.join('&') : ''));
+    }
+
+    function applyMyUrlFilters(p) {
+        var fmt = p.get('format');
+        if (fmt) {
+            var fb = document.querySelector('[data-my-format="' + fmt.replace(/[^a-z0-9_-]/gi, '') + '"]');
+            if (fb) { document.querySelectorAll('[data-my-format]').forEach(function(b){ b.classList.remove('active'); }); fb.classList.add('active'); myFormat = fb.dataset.myFormat; }
+        }
+        var fac = p.get('faction');
+        if (fac) {
+            var ab = document.querySelector('[data-my-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
+            if (ab) { document.querySelectorAll('[data-my-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); myFaction = ab.dataset.myFaction; }
+        }
+        var vis = p.get('visibility');
+        if (vis === '0' || vis === '1') {
+            var vb = document.querySelector('[data-my-visibility="' + vis + '"]');
+            if (vb) { document.querySelectorAll('[data-my-visibility]').forEach(function(b){ b.classList.remove('active'); }); vb.classList.add('active'); myVisibility = vis; }
+        }
+        var sort = p.get('sort');
+        var mySortEl = document.getElementById('my-sort');
+        if (sort && mySortEl && mySortEl.querySelector('option[value="' + sort.replace(/[^a-z0-9:]/gi, '') + '"]')) {
+            mySortEl.value = sort; mySortVal = sort;
+        }
+        var hero = p.get('hero');
+        if (hero) myHero = hero;            // applied to the <select> once heroes load
+        var q = p.get('q');
+        if (q && mySearch) mySearch.value = q;
+    }
+
+    function applyPubUrlFilters(p) {
+        var fmt = p.get('format');
+        if (fmt) {
+            var fb = document.querySelector('[data-pub-format="' + fmt.replace(/[^a-z0-9_-]/gi, '') + '"]');
+            if (fb) { document.querySelectorAll('[data-pub-format]').forEach(function(b){ b.classList.remove('active'); }); fb.classList.add('active'); pubFormat = fb.dataset.pubFormat; }
+        }
+        var fac = p.get('faction');
+        if (fac) {
+            var ab = document.querySelector('[data-pub-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
+            if (ab) { document.querySelectorAll('[data-pub-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); pubFaction = ab.dataset.pubFaction; }
+        }
+        var sort = p.get('sort');
+        var pubSortEl = document.getElementById('pub-sort');
+        if (sort && pubSortEl && pubSortEl.querySelector('option[value="' + sort.replace(/[^a-z0-9:]/gi, '') + '"]')) {
+            pubSortEl.value = sort; pubSortVal = sort;
+        }
+        var hero = p.get('hero');
+        if (hero) pubHero = hero;
+        var q = p.get('q');
+        if (q && pubSearch) pubSearch.value = q;
+    }
+
+    function applyContestUrlFilters(p) {
+        var set = p.get('set');
+        if (set === 'collection' || set === 'winners') {
+            var sb = document.querySelector('[data-contest-set="' + set + '"]');
+            if (sb) { document.querySelectorAll('[data-contest-set]').forEach(function(b){ b.classList.remove('active'); }); sb.classList.add('active'); contestSet = set; }
+        }
+        var fac = p.get('faction');
+        if (fac) {
+            var ab = document.querySelector('[data-contest-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
+            if (ab) { document.querySelectorAll('[data-contest-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); contestFaction = ab.dataset.contestFaction; }
+        }
+        var hero = p.get('hero');
+        if (hero) contestHero = hero;       // applied during refreshContestHeroSelect()
+        var q = p.get('q');
+        if (q && contestSearch) contestSearch.value = q;
+    }
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1314,6 +1438,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         var q = mySearch ? mySearch.value.trim() : '';
         // name search is client-side only (API has no text search param)
 
+        syncDeckUrl('my');
+
         fetch(fetchUrl)
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -1465,26 +1591,15 @@ $showPublicTab = $publicDecksApiPath !== '';
         mySort.addEventListener('change', function() { mySortVal = mySort.value; loadMyDecks(1); });
     }
 
-    // Pre-select a My Decks format filter from the ?format= URL parameter
-    // (e.g. /pages/decks?format=standard). Ignored if the value is unknown.
-    (function applyInitialMyFormat() {
-        try {
-            var fmt = new URLSearchParams(window.location.search).get('format');
-            if (!fmt) return;
-            var safe = fmt.replace(/[^a-z0-9_-]/gi, '');
-            var btn = safe && document.querySelector('[data-my-format="' + safe + '"]');
-            if (!btn) return;
-            document.querySelectorAll('[data-my-format]').forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            myFormat = btn.dataset.myFormat;
-        } catch (e) {}
-    })();
+    // Apply My Decks filters (format, faction, hero, visibility, sort, search)
+    // from the URL when the My tab is the one being opened.
+    if (TARGET_TAB === 'my') applyMyUrlFilters(_deckUrlParams);
 
     if (myIsLoggedIn && myGrid) {
         loadMyDecks(1);
     }
 
-    if (!showPublic) return;
+    if (!showPublic) { _urlSyncReady = true; return; }
 
     // public Decks
     var pubSearch     = document.getElementById('pub-deck-search');
@@ -1545,8 +1660,8 @@ $showPublicTab = $publicDecksApiPath !== '';
 
     loadHeroes(function(heroes) {
         var label = txt.hero_all;
-        if (myHeroSelect) populateHeroSelect(myHeroSelect,  heroes, myFaction,  label);
-        if (pubHeroSelect) populateHeroSelect(pubHeroSelect, heroes, pubFaction, label);
+        if (myHeroSelect) { populateHeroSelect(myHeroSelect,  heroes, myFaction,  label); if (myHero) myHeroSelect.value = myHero; }
+        if (pubHeroSelect) { populateHeroSelect(pubHeroSelect, heroes, pubFaction, label); if (pubHero) pubHeroSelect.value = pubHero; }
     });
 
     if (myHeroSelect) {
@@ -1710,6 +1825,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (pubHero)    fetchUrl += '&hero='    + encodeURIComponent(pubHero);
         var pubQ = pubSearch ? pubSearch.value.trim() : '';
         if (pubQ) fetchUrl += '&q=' + encodeURIComponent(pubQ);
+        syncDeckUrl('public');
         fetch(fetchUrl)
             .then(function (r) { return r.json(); })
             .then(function (data) {
@@ -1770,11 +1886,8 @@ $showPublicTab = $publicDecksApiPath !== '';
         pubSort.addEventListener('change', function() { pubSortVal = pubSort.value; loadPublicDecks(1); });
     }
 
-    // Auto-load public decks when it's the default tab (visitor not logged in)
-    if (<?= json_encode(!$isLoggedIn && $showPublicTab) ?>) {
-        pubLoaded = true;
-        loadPublicDecks(1);
-    }
+    // (Initial public/contest tab activation happens in the URL-restore block
+    //  at the end of this IIFE, once every tab's handlers are wired up.)
 
     var contestGrid       = document.getElementById('contest-grid');
     var contestSearch     = document.getElementById('contest-deck-search');
@@ -1865,6 +1978,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     if (contestSearch) {
         contestSearch.addEventListener('input', function () {
             renderContestDecks();
+            syncDeckUrl('contest');
         });
     }
 
@@ -1877,6 +1991,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             btn.classList.add('active');
             refreshContestHeroSelect();
             renderContestDecks();
+            syncDeckUrl('contest');
         });
     });
 
@@ -1895,6 +2010,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             }
             refreshContestHeroSelect();
             renderContestDecks();
+            syncDeckUrl('contest');
         });
     });
 
@@ -1902,8 +2018,25 @@ $showPublicTab = $publicDecksApiPath !== '';
         contestHeroSelect.addEventListener('change', function () {
             contestHero = contestHeroSelect.value;
             renderContestDecks();
+            syncDeckUrl('contest');
         });
     }
+
+    // ── Restore tab + filters from the URL, then enable URL writing ──────
+    // (The My tab, if it's the target, was already filtered & loaded above.)
+    if (TARGET_TAB === 'public') {
+        applyPubUrlFilters(_deckUrlParams);
+        var _pubTabBtn = document.querySelector('.decks-tab[data-tab="public"]');
+        if (_pubTabBtn) _pubTabBtn.click();
+        else { pubLoaded = true; loadPublicDecks(1); }
+    } else if (TARGET_TAB === 'contest') {
+        applyContestUrlFilters(_deckUrlParams);
+        var _contestTabBtn = document.querySelector('.decks-tab[data-tab="contest"]');
+        if (_contestTabBtn) _contestTabBtn.click();
+    }
+    _urlSyncReady = true;
+    // Reflect the active tab in the URL immediately, even on a bare landing.
+    syncDeckUrl(activeDeckTab());
 
 }());
 </script>
