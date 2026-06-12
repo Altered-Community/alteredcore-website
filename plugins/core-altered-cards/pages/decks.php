@@ -1465,6 +1465,21 @@ $showPublicTab = $publicDecksApiPath !== '';
         mySort.addEventListener('change', function() { mySortVal = mySort.value; loadMyDecks(1); });
     }
 
+    // Pre-select a My Decks format filter from the ?format= URL parameter
+    // (e.g. /pages/decks?format=standard). Ignored if the value is unknown.
+    (function applyInitialMyFormat() {
+        try {
+            var fmt = new URLSearchParams(window.location.search).get('format');
+            if (!fmt) return;
+            var safe = fmt.replace(/[^a-z0-9_-]/gi, '');
+            var btn = safe && document.querySelector('[data-my-format="' + safe + '"]');
+            if (!btn) return;
+            document.querySelectorAll('[data-my-format]').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            myFormat = btn.dataset.myFormat;
+        } catch (e) {}
+    })();
+
     if (myIsLoggedIn && myGrid) {
         loadMyDecks(1);
     }
