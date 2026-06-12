@@ -49,52 +49,53 @@ function canPlayTwo(costs) {
   return n[0] >= 2 || (n[0] >= 1 && (n[1]+n[2]+n[3]) >= 1) || n[1] >= 2 || (n[1] >= 1 && n[2] >= 1);
 }
 function maxPlayable(costs) { const n=[0,0,0,0]; costs.forEach(c=>{if(c<=3)n[c]++;}); let cnt=n[0],b=3; const t1=Math.min(n[1],b);cnt+=t1;b-=t1; const t2=Math.min(n[2],Math.floor(b/2));cnt+=t2;b-=2*t2; const t3=Math.min(n[3],Math.floor(b/3));cnt+=t3; return cnt; }
-let total=0, slow=0, noChar=0, tempo=0, dbl=0, onCurve=0, avgSum=0, heavy=0, explosive=0, balanced=0, congestion=0;
+let total=0, tempo=0, heavy=0;
+const bMana=[0,0,0,0], bExp=new Array(hs+1).fill(0), bPlays=[0,0,0,0], bExped=[0,0,0];
 (function comb(start, chosen) {
   if (chosen.length === hs) {
     total++;
     const hand = chosen.map(i => deck[i]);
     const costs = hand.map(c => c.cost);
     const charCosts = hand.filter(c => c.isCharacter).map(c => c.cost);
-    const cheap = costs.filter(c => c <= 3).length;
-    const charCheap = charCosts.filter(c => c <= 3).length;
-    if (cheap === 0) slow++;
-    if (charCheap === 0) noChar++;
-    const t = canPlayTwo(costs); if (t) tempo++;
-    if (canPlayTwo(charCosts)) dbl++;
-    // on curve = can spend exactly 3 mana on day 1 (true subset-sum over the hand)
-    let canSpend3 = false;
+    if (canPlayTwo(costs)) tempo++;
+    if (costs.filter(c => c >= 4).length >= 3) heavy++;
+    // max mana spendable on day 1 = largest subset-sum <= 3 (true brute force)
+    let maxSpend = 0;
     for (let mask = 0; mask < (1 << costs.length); mask++) {
       let s = 0; for (let i = 0; i < costs.length; i++) if (mask & (1 << i)) s += costs[i];
-      if (s === 3) { canSpend3 = true; break; }
+      if (s <= 3 && s > maxSpend) maxSpend = s;
     }
-    if (canSpend3) onCurve++;
-    avgSum += maxPlayable(costs);
-    const charCount = hand.filter(c => c.isCharacter).length;
-    if (costs.filter(c => c >= 4).length >= 3) heavy++;
-    if (costs.filter(c => c <= 2).length >= 3) explosive++;
-    if (charCount >= 1 && charCount <= hs - 1) balanced++;
-    const tier = {}; costs.forEach(c => { const t = Math.min(c, 5); tier[t] = (tier[t] || 0) + 1; });
-    if (Object.values(tier).some(v => v >= 4)) congestion++;
+    bMana[maxSpend]++;
+    bExp[costs.filter(c => c >= 4).length]++;
+    bPlays[Math.min(maxPlayable(costs), 3)]++;
+    bExped[Math.min(maxPlayable(charCosts), 2)]++;
     return;
   }
   for (let i = start; i < N; i++) comb(i + 1, chosen.concat(i));
 })(0, []);
-near(got.slowStart,   slow/total,   'handStats.slowStart vs brute force');
-near(got.noEarlyChar, noChar/total, 'handStats.noEarlyChar vs brute force');
-near(got.tempo,       tempo/total,  'handStats.tempo vs brute force');
-near(got.doubleChar,  dbl/total,    'handStats.doubleChar vs brute force');
-near(got.onCurve,     onCurve/total, 'handStats.onCurve vs brute force');
-near(got.avgPlayable, avgSum/total, 'handStats.avgPlayable vs brute force');
-near(got.heavy,       heavy/total,     'handStats.heavy vs brute force');
-near(got.explosive,   explosive/total, 'handStats.explosive vs brute force');
-near(got.balanced,    balanced/total,  'handStats.balanced vs brute force');
-near(got.congestion,  congestion/total, 'handStats.congestion vs brute force');
+near(got.tempo, tempo/total, 'handStats.tempo vs brute force');
+near(got.heavy, heavy/total, 'handStats.heavy vs brute force');
 ok(got.deckSize === N, 'handStats.deckSize = N');
+for (let k = 0; k < 4; k++) near(got.manaSpent[k],   bMana[k]/total,  `handStats.manaSpent[${k}] vs brute force`);
+for (let k = 0; k <= hs; k++) near(got.expensive[k],  bExp[k]/total,   `handStats.expensive[${k}] vs brute force`);
+for (let k = 0; k < 4; k++) near(got.plays[k],        bPlays[k]/total, `handStats.plays[${k}] vs brute force`);
+for (let k = 0; k < 3; k++) near(got.expeditions[k],  bExped[k]/total, `handStats.expeditions[${k}] vs brute force`);
 
-// congestion: 6 copies of one cost, drawn 6 → always congested
-near(M.handStats([{ cost: 2, isCharacter: true, qty: 6 }], 6).congestion, 1, 'congestion: all-same-cost hand is congested');
-// on curve: deck of only 5-cost cards can never spend exactly 3 on day 1
-near(M.handStats([{ cost: 5, isCharacter: false, qty: 10 }], 6).onCurve, 0, 'onCurve: all 5-cost cannot spend 3');
+// distributions are proper (sum to 1) and the headlines the UI derives hold
+const sum = a => a.reduce((s, x) => s + x, 0);
+near(sum(got.manaSpent), 1, 'manaSpent sums to 1');
+near(sum(got.expensive), 1, 'expensive sums to 1');
+near(sum(got.plays), 1, 'plays sums to 1');
+near(sum(got.expeditions), 1, 'expeditions sums to 1');
+near(got.plays[2] + got.plays[3], got.tempo, 'P(>=2 plays) equals tempo');
+
+// edge decks
+const allFive = M.handStats([{ cost: 5, isCharacter: false, qty: 10 }], 6);
+near(allFive.manaSpent[0], 1, 'all 5-cost: never spend any mana on day 1');
+near(allFive.plays[0], 1, 'all 5-cost: no play on day 1');
+near(allFive.expensive[6], 1, 'all 5-cost: 6 expensive cards every hand');
+const oneDrops = M.handStats([{ cost: 1, isCharacter: true, qty: 10 }], 6);
+near(oneDrops.manaSpent[3], 1, 'all 1-cost: always spend the full 3 mana');
+near(oneDrops.expeditions[2], 1, 'all 1-cost characters: both expeditions contestable');
 
 console.log(`\n${pass} checks passed`);

@@ -50,6 +50,13 @@
         var t3 = Math.min(n3, Math.floor(b / 3)); cnt += t3;
         return cnt;
     }
+    // Most of the 3 day-1 mana you can actually spend, given counts of 1/2/3-cost cards.
+    function maxManaSpend(n1, n2, n3) {
+        if (n3 >= 1 || (n2 >= 1 && n1 >= 1) || n1 >= 3) return 3;
+        if (n2 >= 1 || n1 >= 2) return 2;
+        if (n1 >= 1) return 1;
+        return 0;
+    }
 
     function handStats(cards, handSize) {
         var bk = {};
@@ -65,7 +72,14 @@
         var hs = Math.min(handSize, N);
         var denom = binom(N, hs);
 
-        var acc = { slowStart: 0, noEarlyChar: 0, tempo: 0, doubleChar: 0, onCurve: 0, avgPlayable: 0, heavy: 0, explosive: 0, balanced: 0, congestion: 0 };
+        // Two scalars feed the "at a glance" cards; four distributions feed the detailed blocks.
+        var acc = {
+            tempo: 0, heavy: 0,
+            manaSpent: [0, 0, 0, 0],              // P(max mana spent on day 1 = k), k = 0..3
+            expensive: new Array(hs + 1).fill(0), // P(exactly k cards cost >= 4), k = 0..hs
+            plays: [0, 0, 0, 0],                  // P(max cards playable on day 1 = k), capped at 3
+            expeditions: [0, 0, 0]                // P(max characters playable on day 1 = k), capped at 2
+        };
         var m = buckets.length;
         var counts = new Array(m).fill(0);
         (function rec(i, remaining, numBig) {
@@ -76,28 +90,18 @@
                 if (numBig === 0n) return;
                 var w = ratio(numBig, denom);
                 if (w <= 0) return;
-                var n = [0, 0, 0, 0], cn = [0, 0, 0, 0], nGe4 = 0, nEq4 = 0, charTotal = 0;
+                var n = [0, 0, 0, 0], cn = [0, 0, 0, 0], nGe4 = 0;
                 for (var b = 0; b < m; b++) {
                     var c = buckets[b].cost, k = counts[b];
                     if (c <= 3) { n[c] += k; if (buckets[b].isChar) cn[c] += k; }
-                    else { nGe4 += k; if (c === 4) nEq4 += k; }
-                    if (buckets[b].isChar) charTotal += k;
+                    else nGe4 += k;
                 }
-                var cheap = n[0] + n[1] + n[2] + n[3];
-                var charCheap = cn[0] + cn[1] + cn[2] + cn[3];
-                var tempo = canPlayTwo(n[0], n[1], n[2], n[3]);
-                if (cheap === 0) acc.slowStart += w;
-                if (charCheap === 0) acc.noEarlyChar += w;
-                if (tempo) acc.tempo += w;
-                if (canPlayTwo(cn[0], cn[1], cn[2], cn[3])) acc.doubleChar += w;
-                // On curve: can spend all 3 mana on day 1 (a 3, or a 2+1, or three 1s).
-                if (n[3] >= 1 || (n[2] >= 1 && n[1] >= 1) || n[1] >= 3) acc.onCurve += w;
-                acc.avgPlayable += w * maxPlayable(n[0], n[1], n[2], n[3]);
-                if (nGe4 >= 3) acc.heavy += w;
-                if (n[0] + n[1] + n[2] >= 3) acc.explosive += w;
-                if (charTotal >= 1 && charTotal <= hs - 1) acc.balanced += w;
-                // Congestion: ≥4 cards sharing one mana value (5+ grouped together).
-                if (n[0] >= 4 || n[1] >= 4 || n[2] >= 4 || n[3] >= 4 || nEq4 >= 4 || (nGe4 - nEq4) >= 4) acc.congestion += w;
+                if (canPlayTwo(n[0], n[1], n[2], n[3])) acc.tempo += w;   // can chain >=2 plays on day 1
+                if (nGe4 >= 3) acc.heavy += w;                           // >=3 cards cost >=4
+                acc.manaSpent[maxManaSpend(n[1], n[2], n[3])] += w;
+                acc.expensive[nGe4] += w;
+                acc.plays[Math.min(maxPlayable(n[0], n[1], n[2], n[3]), 3)] += w;
+                acc.expeditions[Math.min(maxPlayable(cn[0], cn[1], cn[2], cn[3]), 2)] += w;
                 return;
             }
             var maxK = Math.min(remaining, buckets[i].size);
@@ -111,5 +115,5 @@
         return acc;
     }
 
-    return { binom: binom, pAtLeastOne: pAtLeastOne, pAtLeast: pAtLeast, pComboBoth: pComboBoth, handStats: handStats, canPlayTwo: canPlayTwo, maxPlayable: maxPlayable };
+    return { binom: binom, pAtLeastOne: pAtLeastOne, pAtLeast: pAtLeast, pComboBoth: pComboBoth, handStats: handStats, canPlayTwo: canPlayTwo, maxPlayable: maxPlayable, maxManaSpend: maxManaSpend };
 }));

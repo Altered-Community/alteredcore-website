@@ -109,16 +109,17 @@ $txt = [
         'ohs_title'      => 'Opening hand stats',
         'ohs_detail'     => 'See details',
         'ohs_card'       => 'card', 'ohs_cards' => 'cards',
+        'ohs_play'       => 'play', 'ohs_plays' => 'plays',
         'ohs_b1_title'   => 'Mana used on day 1',
         'ohs_b1_sub'     => 'How much of your 3 mana you can spend on the first day',
         'ohs_b1_h1'      => 'Optimal start',
         'ohs_b1_h1_note' => 'of games let you spend all 3 mana',
         'ohs_b1_h2'      => 'Dead hand',
-        'ohs_b1_h2_note' => 'no play possible — i.e. 0.8%',
+        'ohs_b1_h2_note' => 'no play possible',
         'ohs_b1_detail'  => 'Breakdown by spendable mana',
         'ohs_b2_title'   => 'Expensive cards',
         'ohs_b2_sub'     => 'Cards at 4 mana or more, unplayable on the first day',
-        'ohs_b2_note'    => 'of hands hold 4 expensive cards or more — fewer options for your initial mana',
+        'ohs_b2_note'    => 'of hands hold 3 expensive cards or more — fewer options for your initial mana',
         'ohs_b2_detail'  => 'Number of cards at 4 mana or more in the opening hand',
         'ohs_b3_title'   => 'Reactivity (after you)',
         'ohs_b3_sub'     => 'Chaining several plays on day 1: act, watch, then respond',
@@ -255,16 +256,17 @@ $txt = [
         'ohs_title'      => 'Stats de main de départ',
         'ohs_detail'     => 'Voir le détail',
         'ohs_card'       => 'carte', 'ohs_cards' => 'cartes',
+        'ohs_play'       => 'play', 'ohs_plays' => 'plays',
         'ohs_b1_title'   => 'Mana utilisé au jour 1',
         'ohs_b1_sub'     => 'Combien de tes 3 mana tu peux dépenser dès le premier jour',
         'ohs_b1_h1'      => 'Démarrage optimal',
         'ohs_b1_h1_note' => 'des parties te laissent dépenser tes 3 mana',
         'ohs_b1_h2'      => 'Main morte',
-        'ohs_b1_h2_note' => 'aucun jeu possible — soit 0,8 %',
+        'ohs_b1_h2_note' => 'aucun jeu possible',
         'ohs_b1_detail'  => 'Répartition par mana consommable',
         'ohs_b2_title'   => 'Cartes chères',
         'ohs_b2_sub'     => 'Cartes à 4 mana ou plus, injouables dès le premier jour',
-        'ohs_b2_note'    => 'des mains contiennent 4 cartes chères ou plus — réduit tes choix pour la mise en mana initiale',
+        'ohs_b2_note'    => 'des mains contiennent 3 cartes chères ou plus — réduit tes choix pour la mise en mana initiale',
         'ohs_b2_detail'  => 'Nombre de cartes à 4 mana ou plus dans la main de départ',
         'ohs_b3_title'   => 'Réactivité (après-vous)',
         'ohs_b3_sub'     => 'Pouvoir enchaîner plusieurs plays au jour 1 : jouer, voir, puis répondre',
@@ -1051,12 +1053,12 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <div class="ohs-head"><div class="ohs-highlights">
                             <div class="ohs-hl">
                                 <div class="ohs-hl-l"><?= h($txt['ohs_b1_h1']) ?></div>
-                                <div class="ohs-hl-v">89%</div>
+                                <div class="ohs-hl-v" id="ohs-b1-h1"></div>
                                 <div class="ohs-hl-note"><?= h($txt['ohs_b1_h1_note']) ?></div>
                             </div>
                             <div class="ohs-hl ohs-hl--warn">
                                 <div class="ohs-hl-l"><?= h($txt['ohs_b1_h2']) ?></div>
-                                <div class="ohs-hl-v">1 / 120</div>
+                                <div class="ohs-hl-v" id="ohs-b1-h2"></div>
                                 <div class="ohs-hl-note"><?= h($txt['ohs_b1_h2_note']) ?></div>
                             </div>
                         </div></div>
@@ -1065,12 +1067,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         </button>
                         <div class="collapse show" id="ohs-d1">
                             <div class="ohs-d-label"><?= h($txt['ohs_b1_detail']) ?></div>
-                            <div class="ohs-bars">
-                                <div class="ohs-bar"><span class="ohs-bar-l">3 mana</span><span class="ohs-bar-t"><i style="width:89%"></i></span><span class="ohs-bar-v">89%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">2 mana</span><span class="ohs-bar-t"><i style="width:7%"></i></span><span class="ohs-bar-v">7%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">1 mana</span><span class="ohs-bar-t"><i style="width:3%"></i></span><span class="ohs-bar-v">3%</span></div>
-                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 mana</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
-                            </div>
+                            <div class="ohs-bars" id="ohs-b1-bars"></div>
                         </div>
                     </div>
                     <!-- Block 2 — Expensive cards -->
@@ -1078,7 +1075,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <div class="ohs-b-title"><?= h($txt['ohs_b2_title']) ?></div>
                         <div class="ohs-b-sub"><?= h($txt['ohs_b2_sub']) ?></div>
                         <div class="ohs-head">
-                            <div class="ohs-big-v">6%</div>
+                            <div class="ohs-big-v" id="ohs-b2-v"></div>
                             <div class="ohs-big-note"><?= h($txt['ohs_b2_note']) ?></div>
                         </div>
                         <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d2" aria-expanded="true">
@@ -1086,15 +1083,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         </button>
                         <div class="collapse show" id="ohs-d2">
                             <div class="ohs-d-label"><?= h($txt['ohs_b2_detail']) ?></div>
-                            <div class="ohs-bars">
-                                <div class="ohs-bar"><span class="ohs-bar-l">0 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:9%"></i></span><span class="ohs-bar-v">9%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">1 <?= h($txt['ohs_card']) ?></span><span class="ohs-bar-t"><i style="width:30%"></i></span><span class="ohs-bar-v">30%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">2 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:36%"></i></span><span class="ohs-bar-v">36%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">3 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:19%"></i></span><span class="ohs-bar-v">19%</span></div>
-                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">4 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:5%"></i></span><span class="ohs-bar-v">5%</span></div>
-                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">5 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
-                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">6 <?= h($txt['ohs_cards']) ?></span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">&lt;1%</span></div>
-                            </div>
+                            <div class="ohs-bars" id="ohs-b2-bars"></div>
                         </div>
                     </div>
                     <!-- Block 3 — Reactivity (after you) -->
@@ -1102,7 +1091,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <div class="ohs-b-title"><?= h($txt['ohs_b3_title']) ?></div>
                         <div class="ohs-b-sub"><?= h($txt['ohs_b3_sub']) ?></div>
                         <div class="ohs-head">
-                            <div class="ohs-big-v">60%</div>
+                            <div class="ohs-big-v" id="ohs-b3-v"></div>
                             <div class="ohs-big-note"><?= h($txt['ohs_b3_note']) ?></div>
                         </div>
                         <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d3" aria-expanded="true">
@@ -1110,12 +1099,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         </button>
                         <div class="collapse show" id="ohs-d3">
                             <div class="ohs-d-label"><?= h($txt['ohs_b3_detail']) ?></div>
-                            <div class="ohs-bars">
-                                <div class="ohs-bar ohs-bar--warn"><span class="ohs-bar-l">0 play</span><span class="ohs-bar-t"><i style="width:1%"></i></span><span class="ohs-bar-v">1%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">1 play</span><span class="ohs-bar-t"><i style="width:39%"></i></span><span class="ohs-bar-v">39%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">2 plays</span><span class="ohs-bar-t"><i style="width:48%"></i></span><span class="ohs-bar-v">48%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l">3 plays</span><span class="ohs-bar-t"><i style="width:12%"></i></span><span class="ohs-bar-v">12%</span></div>
-                            </div>
+                            <div class="ohs-bars" id="ohs-b3-bars"></div>
                         </div>
                     </div>
                     <!-- Block 4 — Contestable Expeditions on day 1 -->
@@ -1125,12 +1109,12 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <div class="ohs-head"><div class="ohs-highlights">
                             <div class="ohs-hl">
                                 <div class="ohs-hl-l"><?= h($txt['ohs_b4_h1']) ?></div>
-                                <div class="ohs-hl-v">25%</div>
+                                <div class="ohs-hl-v" id="ohs-b4-h1"></div>
                                 <div class="ohs-hl-note"><?= h($txt['ohs_b4_h1_note']) ?></div>
                             </div>
                             <div class="ohs-hl">
                                 <div class="ohs-hl-l"><?= h($txt['ohs_b4_h2']) ?></div>
-                                <div class="ohs-hl-v">15%</div>
+                                <div class="ohs-hl-v" id="ohs-b4-h2"></div>
                                 <div class="ohs-hl-note"><?= h($txt['ohs_b4_h2_note']) ?></div>
                             </div>
                         </div></div>
@@ -1139,11 +1123,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         </button>
                         <div class="collapse show" id="ohs-d4">
                             <div class="ohs-d-label"><?= h($txt['ohs_b4_detail']) ?></div>
-                            <div class="ohs-bars ohs-bars--wide">
-                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_none']) ?></span><span class="ohs-bar-t"><i style="width:15%"></i></span><span class="ohs-bar-v">15%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_one']) ?></span><span class="ohs-bar-t"><i style="width:60%"></i></span><span class="ohs-bar-v">60%</span></div>
-                                <div class="ohs-bar"><span class="ohs-bar-l"><?= h($txt['ohs_b4_both']) ?></span><span class="ohs-bar-t"><i style="width:25%"></i></span><span class="ohs-bar-v">25%</span></div>
-                            </div>
+                            <div class="ohs-bars ohs-bars--wide" id="ohs-b4-bars"></div>
                         </div>
                     </div>
                 </div>
@@ -1203,7 +1183,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               typesLabel: <?= json_encode($txt['ho_types_label']) ?>,
               both: <?= json_encode($txt['nc_both']) ?>,
               ratio: <?= json_encode($txt['ho_ratio']) ?>,
-              ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>
+              ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>,
+              card: <?= json_encode($txt['ohs_card']) ?>, cards: <?= json_encode($txt['ohs_cards']) ?>,
+              play: <?= json_encode($txt['ohs_play']) ?>, plays: <?= json_encode($txt['ohs_plays']) ?>,
+              expNone: <?= json_encode($txt['ohs_b4_none']) ?>, expOne: <?= json_encode($txt['ohs_b4_one']) ?>, expBoth: <?= json_encode($txt['ohs_b4_both']) ?>
           };
         </script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">

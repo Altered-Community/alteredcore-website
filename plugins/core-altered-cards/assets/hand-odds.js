@@ -74,21 +74,62 @@
                '</div></div></div>';
     }
     function pctOpts(p) { return { bar: p * 100, tipPct: p }; }
+    var STATS = computeStats();   // deck-level composition math: runs once, feeds the cards + the blocks
     function renderStats() {
-        var s = computeStats();
         statsGrid.innerHTML =
             typesCard() +                                            // full width, first
-            statCard('tempo', fmtPct(s.tempo), pctOpts(s.tempo)) +
-            statCard('heavy', fmtPct(s.heavy), pctOpts(s.heavy));
+            statCard('tempo', fmtPct(STATS.tempo), pctOpts(STATS.tempo)) +
+            statCard('heavy', fmtPct(STATS.heavy), pctOpts(STATS.heavy));
         initTooltips();
     }
-    function initTooltips() {
+    function initTooltips(root) {
         if (!(window.bootstrap && window.bootstrap.Tooltip)) return;
-        statsGrid.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        (root || statsGrid).querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
             if (!el._tt) el._tt = new window.bootstrap.Tooltip(el);
         });
     }
     renderStats();   // deck-level: compute once on load (does not change on redraw)
+
+    // ----- Detailed "Opening hand stats" blocks (deck-level, same composition math) -----
+    function ohsBars(rows) {                                          // rows: [label, p, warn?]
+        return rows.map(function (r) {
+            var p = r[1], pct = p * 100, w = pct <= 0 ? 0 : Math.max(pct, 0.8);
+            return '<div class="ohs-bar' + (r[2] ? ' ohs-bar--warn' : '') + '">' +
+                   '<span class="ohs-bar-l">' + esc(r[0]) + '</span>' +
+                   '<span class="ohs-bar-t"><i style="width:' + w.toFixed(2) + '%"></i></span>' +
+                   '<span class="ohs-bar-v">' + esc(fmtPct(p)) + '</span></div>';
+        }).join('');
+    }
+    // Hero number: rounded value shown, exact 2-decimal value on hover (like the "at a glance" cards).
+    // The tooltip lives on an inner inline span so the hover target is just the digits, not the
+    // full-width value box.
+    function ohsText(id, p) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = '<span tabindex="0" data-bs-toggle="tooltip" title="' + esc(precisePct(p)) + '">' + esc(fmtPct(p)) + '</span>';
+    }
+    function ohsFill(id, rows) { var el = document.getElementById(id); if (el) el.innerHTML = ohsBars(rows); }
+    function tailSum(arr, from) { var s = 0; for (var k = from; k < arr.length; k++) s += arr[k]; return s; }
+    function renderBlocks() {
+        var ms = STATS.manaSpent, ex = STATS.expensive, pl = STATS.plays, xp = STATS.expeditions;
+        var card = handOddsTxt.card, cards = handOddsTxt.cards, play = handOddsTxt.play, plays = handOddsTxt.plays;
+        // Block 1 — mana spendable on day 1: optimal start (3) vs dead hand (0)
+        ohsText('ohs-b1-h1', ms[3]);
+        ohsText('ohs-b1-h2', ms[0]);
+        ohsFill('ohs-b1-bars', [['3 mana', ms[3]], ['2 mana', ms[2]], ['1 mana', ms[1]], ['0 mana', ms[0], true]]);
+        // Block 2 — expensive cards (cost >= 4): headline is P(3 or more), matching "top-heavy"
+        ohsText('ohs-b2-v', tailSum(ex, 3));
+        ohsFill('ohs-b2-bars', ex.map(function (p, k) { return [k + ' ' + (k === 1 ? card : cards), p, k >= 3]; }));
+        // Block 3 — reactivity: number of plays chainable on day 1
+        ohsText('ohs-b3-v', pl[2] + pl[3]);
+        ohsFill('ohs-b3-bars', [['0 ' + plays, pl[0], true], ['1 ' + play, pl[1]], ['2 ' + plays, pl[2]], ['3 ' + plays, pl[3]]]);
+        // Block 4 — contestable Expeditions: both (>=2 chars) vs none (0)
+        ohsText('ohs-b4-h1', xp[2]);
+        ohsText('ohs-b4-h2', xp[0]);
+        ohsFill('ohs-b4-bars', [[handOddsTxt.expNone, xp[0]], [handOddsTxt.expOne, xp[1]], [handOddsTxt.expBoth, xp[2]]]);
+        initTooltips(document.querySelector('.ohs-section'));
+    }
+    renderBlocks();
 
     // ----- Calculators -----
     var deckSizeEl = document.getElementById('ho-deck-size');
