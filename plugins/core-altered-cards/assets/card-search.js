@@ -1268,6 +1268,14 @@ function CardSearch(cfg) {
             // Effect search defaults to OR (multi-select). The mode is managed by
             // the always-visible OR/AND toggle and reset by resetFilters().
         }
+        if (_tab === 'ownership' && !keepFilters) {
+            // Digital-ownership tab: enable alt-art search by default so every owned
+            // printing shows, pulling in the promo (secondary) editions linked to the
+            // pre-selected main sets.
+            setShowPromo(true);
+            var _promoT = document.getElementById(P + '-promo-toggle');
+            if (_promoT) _promoT.checked = true;
+        }
         syncTabButtons();
         applyTabVisibility();
         updateScopeUi();
