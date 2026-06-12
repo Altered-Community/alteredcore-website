@@ -1728,6 +1728,9 @@ function CardSearch(cfg) {
     if (elResetBtn) {
         elResetBtn.addEventListener('click', function() {
             resetFilters();
+            // Stay on the current tab: resetFilters() forces scope back to 'all',
+            // so re-apply the active tab's scope/presets before searching.
+            setTab(_tab);
             if (MODE === 'cards') search(1);
         });
     }
@@ -1752,6 +1755,8 @@ function CardSearch(cfg) {
     if (elModalResetBtn) {
         elModalResetBtn.addEventListener('click', function() {
             resetFilters();
+            // Stay on the current tab (see elResetBtn handler).
+            setTab(_tab);
             if (MODE === 'cards') search(1);
         });
     }
