@@ -1,0 +1,50 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "reunion-events",
+    "name":         "Réunion Events",
+    "version":      "1.3.7",
+    "description":  "Événements physiques (ATT) et tournois en ligne BGA (import JSON).",
+    "author":       "Benhol & Aran",
+    "icon":         "fa-solid fa-calendar-days",
+    "table_prefix": "re",
+
+    "pages": [
+        {
+            "slug":     "events",
+            "file":     "pages/events.php",
+            "title_en": "Events",
+            "title_fr": "Événements"
+        },
+        {
+            "slug":     "re-bga-json-download",
+            "file":     "pages/bga-json-download.php",
+            "title_en": "BGA JSON download",
+            "title_fr": "Téléchargement JSON BGA"
+        }
+    ],
+
+    "admin": [
+        {
+            "section":  "events-settings",
+            "file":     "admin/settings.php",
+            "label_en": "Events Settings",
+            "label_fr": "Paramètres Événements",
+            "icon":     "fa-solid fa-gear"
+        }
+    ],
+
+    "api": [
+        {
+            "endpoint": "events",
+            "file":     "api/data.php"
+        }
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["assets/events.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["settings"]
+}

@@ -189,7 +189,7 @@ include dirname(__DIR__) . '/includes/header.php';
                 <div style="position:relative">
                     <a href="<?= h($p['url']) ?>" target="_blank" rel="noopener noreferrer" tabindex="-1">
                         <?php if (!empty($p['image'])): ?>
-                            <img src="<?= h(assetUrl($p['image'])) ?>" alt="<?= h($p['title']) ?>" class="news-card-img">
+                            <img src="<?= h(assetUrl($p['image'])) ?>" alt="<?= h($p['title']) ?>" class="news-card-img" loading="lazy">
                         <?php else: ?>
                             <div class="news-card-img-placeholder">
                                 <i class="fa-solid fa-rocket"></i>

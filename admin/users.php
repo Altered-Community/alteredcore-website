@@ -169,6 +169,7 @@ function usersPageUrl(int $p): string {
     <?php if (empty($users)): ?>
         <p class="text-muted">No users found.</p>
     <?php else: ?>
+    <div class="table-responsive">
     <table class="table table-sm mb-0">
         <thead>
             <tr>
@@ -255,6 +256,7 @@ function usersPageUrl(int $p): string {
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endif; ?>
 </div>
 

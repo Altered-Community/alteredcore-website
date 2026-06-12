@@ -1,6 +1,6 @@
 <?php
 // Plugin API router — blocked from direct access by includes/.htaccess.
-// Reached via: GET /api/{plugin-id}/{endpoint}
+// Reached via: GET /papi/{plugin-id}/{endpoint}
 // Rewritten by .htaccess with ?_plugin=&_endpoint= query params.
 require_once __DIR__ . '/functions.php';
 

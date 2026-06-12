@@ -23,8 +23,7 @@ if (!$code) {
     exit;
 }
 
-$scheme      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$redirectUri = $scheme . '://' . $_SERVER['HTTP_HOST'] . BASE_URL . '/auth/keycloak-callback.php';
+$redirectUri = request_scheme() . '://' . $_SERVER['HTTP_HOST'] . BASE_URL . '/auth/keycloak-callback.php';
 
 // Exchange authorisation code for tokens
 $ch = curl_init(KC_URL . '/realms/' . KC_REALM . '/protocol/openid-connect/token');

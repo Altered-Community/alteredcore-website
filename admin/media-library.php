@@ -160,12 +160,23 @@ if ($action === 'upload') {
     }
 
     if (!is_dir($folderDir)) mkdir($folderDir, 0755, true);
-    $filename = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-    $dest     = $folderDir . $filename;
+    $basename = date('Ymd_His') . '_' . bin2hex(random_bytes(4));
 
-    if (!move_uploaded_file($file['tmp_name'], $dest)) {
-        echo json_encode(['ok' => false, 'error' => 'Could not save file']);
-        exit;
+    if (!$isSvg) {
+        $filename = imageConvertToWebp($file['tmp_name'], $folderDir, $basename);
+        if ($filename === false) {
+            $filename = $basename . '.' . $ext;
+            if (!move_uploaded_file($file['tmp_name'], $folderDir . $filename)) {
+                echo json_encode(['ok' => false, 'error' => 'Could not save file']);
+                exit;
+            }
+        }
+    } else {
+        $filename = $basename . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], $folderDir . $filename)) {
+            echo json_encode(['ok' => false, 'error' => 'Could not save file']);
+            exit;
+        }
     }
 
     $path = 'uploads/' . $folder . '/' . $filename;

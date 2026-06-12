@@ -69,7 +69,13 @@ define('GITHUB_REPO', 'owner/community-feedback'); // repo where the App opens i
 define('CARDS_API_URL',     'https://cards.alteredcore.org');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
 define('CDN_URL',           'https://cdn.alteredcore.org');
+// Digital ownership service (AlteredOwnership).
+//   OWNERSHIP_API_URL: server-side base the website proxies to (GET /api/collection).
+//   OWNERSHIP_WEB_URL: browser-facing app root the "Digital ownership" link redirects to.
+// In production these are usually the same public host; in the local Aspire stack the
+// API is reached by the internal container alias and the link by the public *.local.gd URL.
 define('OWNERSHIP_API_URL', 'https://ownership.altered.re/');
+define('OWNERSHIP_WEB_URL', 'https://ownership.altered.re/');
 define('COLLECTION_API_URL', 'https://collection.alteredcore.org');
 // true: reads go through COLLECTION_API_URL; local DB is a write-through mirror.
 // false: local DB only (no external collection API calls).
@@ -87,3 +93,9 @@ define('COLLECTION_USE_API', true);
 // ─── Deployment ───────────────────────────────────────────────────────────────
 define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
 define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)
+
+// Behind a TLS-terminating reverse proxy, PHP may see the request as plain HTTP,
+// producing http:// absolute URLs (e.g. a wrong Keycloak redirect_uri). The app
+// auto-detects X-Forwarded-Proto / -Ssl; uncomment to force HTTPS if your proxy
+// does not send those headers.
+// define('FORCE_HTTPS', true);

@@ -63,7 +63,7 @@
 <?php endif; ?>
 
 <?php
-if (defined('TINYMCE_API_KEY') && (isset($__tinymce_editor) || isset($__tinymce_footer))):
+if (isset($__tinymce_editor) || isset($__tinymce_footer)):
     $_scFile = dirname(__DIR__, 2) . '/data/tinymce_shortcodes.json';
     $_scDefs = [];
     if (file_exists($_scFile)) {
@@ -71,7 +71,7 @@ if (defined('TINYMCE_API_KEY') && (isset($__tinymce_editor) || isset($__tinymce_
         $_scDefs = $_scJson['shortcodes'] ?? [];
     }
 ?>
-<script src="https://cdn.tiny.cloud/1/<?= TINYMCE_API_KEY ?>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="<?= BASE_URL ?>/js/tinymce/tinymce.min.js"></script>
 <script>
 (function () {
     var BASE      = '<?= BASE_URL ?>';
@@ -215,7 +215,8 @@ if (defined('TINYMCE_API_KEY') && (isset($__tinymce_editor) || isset($__tinymce_
             THEME_CSS,
         ],
         content_style: 'body { font-family: inherit; font-size: 15px; padding: 12px; }',
-        skin:  'oxide',
+        skin:        'oxide',
+        license_key: 'gpl',
         setup: mceSetup,
     };
 

@@ -4,7 +4,7 @@ require_once dirname(__DIR__) . '/includes/db.php';
 require_once dirname(__DIR__) . '/includes/functions.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+$secure = request_is_https();
 
 // Signal logout to all installations on the same domain
 setcookie('ac_global_logout', (string)time(), [

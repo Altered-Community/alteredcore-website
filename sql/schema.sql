@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}news` (
     `youtube_url`  VARCHAR(500) DEFAULT NULL,
     `published_at` DATETIME DEFAULT NULL,
     `is_published` TINYINT(1) NOT NULL DEFAULT 0,
+    `is_pinned`    TINYINT(1) NOT NULL DEFAULT 0,
     `created_at`   DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY `uq_news_slug` (`slug`),
@@ -153,6 +154,8 @@ CREATE TABLE IF NOT EXISTS `{prefix}nav_items` (
     `is_fullwidth`      TINYINT(1) NOT NULL DEFAULT 0,
     `hide_label`        TINYINT(1) NOT NULL DEFAULT 0,
     `is_sidebar_toggle` TINYINT(1) NOT NULL DEFAULT 0,
+    `is_separator`      TINYINT(1) NOT NULL DEFAULT 0,
+    `is_section_header` TINYINT(1) NOT NULL DEFAULT 0,
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`parent_id`) REFERENCES `{prefix}nav_items`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -399,13 +402,13 @@ INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (27, 1, 'rss'),
 (28, 1, 'shortcodes');
 
-INSERT INTO `{prefix}nav_items` (`id`, `parent_id`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `is_iframe`, `is_blank`, `is_fullwidth`, `hide_label`, `is_sidebar_toggle`, `created_at`) VALUES
-(1, NULL, 'Home', 'Accueil', '/pages/index', 'fa-solid fa-house', 10, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
-(2, NULL, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 20, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
-(3, NULL, 'Cards', 'Cartes', '/pages/cards', 'fa-solid fa-layer-group', 30, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
-(4, NULL, 'Decks', 'Decks', '/pages/decks', 'fa-solid fa-table-list', 40, 1, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
-(5, NULL, 'Menu', 'Menu', '#', 'fa-solid fa-bars-staggered', 999, 1, 0, 0, 0, 1, 1, '2026-05-13 15:57:57'),
-(6, NULL, 'Bugs', 'Bugs', '/pages/feedback', 'fa-solid fa-bug', 1001, 1, 0, 0, 0, 1, 0, '2026-05-17 20:39:11');
+INSERT INTO `{prefix}nav_items` (`id`, `parent_id`, `label_en`, `label_fr`, `url`, `icon`, `sort_order`, `is_visible`, `is_iframe`, `is_blank`, `is_fullwidth`, `hide_label`, `is_sidebar_toggle`, `is_separator`, `is_section_header`, `created_at`) VALUES
+(1, NULL, 'Home', 'Accueil', '/pages/index', 'fa-solid fa-house', 10, 1, 0, 0, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
+(2, NULL, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 20, 1, 0, 0, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
+(3, NULL, 'Cards', 'Cartes', '/pages/cards', 'fa-solid fa-layer-group', 30, 1, 0, 0, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
+(4, NULL, 'Decks', 'Decks', '/pages/decks', 'fa-solid fa-table-list', 40, 1, 0, 0, 0, 0, 0, 0, 0, '2026-05-13 14:21:02'),
+(5, NULL, 'Menu', 'Menu', '#', 'fa-solid fa-bars-staggered', 999, 1, 0, 0, 0, 1, 1, 0, 0, '2026-05-13 15:57:57'),
+(6, NULL, 'Bugs', 'Bugs', '/pages/feedback', 'fa-solid fa-bug', 1001, 1, 0, 0, 0, 1, 0, 0, 0, '2026-05-17 20:39:11');
 
 INSERT INTO `{prefix}news` (`id`, `category_id`, `slug`, `title_en`, `title_fr`, `content_en`, `content_fr`, `excerpt_en`, `excerpt_fr`, `image`, `youtube_url`, `published_at`, `is_published`, `created_at`, `updated_at`) VALUES
 (1, 1, 'demo-news-article', 'Demo news article', 'Article de démo', '<p>This is a demo news article. Replace this content from the admin panel.</p>', '<p>Ceci est un article de démo. Remplacez ce contenu depuis le panneau d''administration.</p>', 'Demo news article excerpt.', 'Extrait de l''article de démo.', NULL, NULL, '2026-01-01 12:00:00', 1, '2026-01-01 12:00:00', '2026-01-01 12:00:00');

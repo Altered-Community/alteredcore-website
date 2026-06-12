@@ -97,4 +97,5 @@ PRs are welcome — target the `dev` branch, not `main`.
 
 ## License
 
-Licensed under a **custom source-available license** — see [LICENSE.md](LICENSE.md).
+Licensed under **GPL-3.0** with an attribution requirement — see [LICENSE.md](LICENSE.md).  
+Forks and modifications are welcome; derivative works must credit **PolluxTroy** visibly.

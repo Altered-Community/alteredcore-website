@@ -99,6 +99,16 @@ if (!function_exists('__nav_active')) {
                             </a>
                             <ul class="dropdown-menu">
                                 <?php foreach ($__ni['children'] as $__nc): ?>
+                                <?php if (!empty($__nc['is_separator'])): ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <?php elseif (!empty($__nc['is_section_header'])): ?>
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        <?php if (!empty($__nc['icon'])): ?><i class="<?= h($__nc['icon']) ?> me-1"></i><?php endif; ?>
+                                        <?= h($__nc['label']) ?>
+                                    </h6>
+                                </li>
+                                <?php else: ?>
                                 <li>
                                     <a class="dropdown-item <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
                                        href="<?= h(__nav_href($__nc)) ?>"
@@ -109,6 +119,7 @@ if (!function_exists('__nav_active')) {
                                         <?= h($__nc['label']) ?>
                                     </a>
                                 </li>
+                                <?php endif; ?>
                                 <?php endforeach; ?>
                             </ul>
                         </li>
@@ -301,13 +312,26 @@ if ($__hasSidebarBtn || !empty($__sidebarItems)):
 </script>
 <script>
 (function () {
-    var navbar  = document.querySelector('.altered-navbar');
-    var navList = navbar ? navbar.querySelector('.navbar-nav') : null;
-    var navRight= navbar ? navbar.querySelector('.navbar-right') : null;
+    var navbar          = document.querySelector('.altered-navbar');
+    var navList         = navbar ? navbar.querySelector('.navbar-nav') : null;
+    var navRight        = navbar ? navbar.querySelector('.navbar-right') : null;
+    var isMobileCompact = <?= $__mobileCompact ? 'true' : 'false' ?>;
     if (!navbar || !navList || !navRight) return;
 
     function checkFit() {
-        if (window.innerWidth < 768) { navbar.classList.remove('icons-only'); return; }
+        if (window.innerWidth < 768) {
+            navbar.classList.remove('icons-only');
+            if (isMobileCompact) {
+                // Re-apply compact class, then check if items overflow — if so, fall back to burger
+                document.body.classList.add('mobile-nav-compact');
+                if (navList.scrollWidth > navList.clientWidth + 4) {
+                    document.body.classList.remove('mobile-nav-compact');
+                }
+            }
+            return;
+        }
+        // Desktop: restore compact class (no visual effect), then check icons-only
+        if (isMobileCompact) document.body.classList.add('mobile-nav-compact');
         navbar.classList.remove('icons-only');
         var listRect  = navList.getBoundingClientRect();
         var rightRect = navRight.getBoundingClientRect();

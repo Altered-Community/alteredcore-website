@@ -25,7 +25,7 @@ $stmt = $db->prepare(q("
 $stmt->execute();
 $items = $stmt->fetchAll();
 
-$scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$scheme  = request_scheme();
 $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $siteUrl = $scheme . '://' . $host . BASE_URL;
 

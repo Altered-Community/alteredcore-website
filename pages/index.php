@@ -24,10 +24,11 @@ if (defined('SHOW_NEWSLETTER') && SHOW_NEWSLETTER) {
 }
 
 // No $pageTitle — header uses getSiteName() alone for the homepage
-$newsList     = getNewsList(HOME_NEWS_COUNT);
-$banner       = getBanner();
-$_uiLang      = getUiLang();
-$announcement = getAnnouncement($_uiLang);
+$newsList      = getNewsList(HOME_NEWS_COUNT);
+$banner        = getBanner();
+$_uiLang       = getUiLang();
+$announcement  = getAnnouncement($_uiLang);
+$_preloadImage = !empty($banner['bg_image']) ? BASE_URL . '/' . $banner['bg_image'] : '';
 include dirname(__DIR__) . '/includes/header.php';
 ?>
 
@@ -125,7 +126,7 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
                         </div>
                     <?php elseif ($imgSrc): ?>
                         <a href="<?= h($newsLink) ?>"<?= $extAttrs ?> tabindex="-1">
-                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img">
+                            <img src="<?= h($imgSrc) ?>" alt="<?= h($title) ?>" class="news-card-img" loading="lazy">
                         </a>
                     <?php else: ?>
                         <div class="news-card-img-placeholder">
@@ -134,6 +135,11 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
                     <?php endif; ?>
                     <div class="news-card-body">
                         <div class="news-card-meta">
+                            <?php if (!empty($news['is_pinned'])): ?>
+                                <span class="badge-pinned" title="<?= h($txt['pinned'] ?? 'Pinned') ?>">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </span>
+                            <?php endif; ?>
                             <?php if (!empty($news['category_name'])): ?>
                                 <a href="<?= BASE_URL ?>/pages/news?cat=<?= (int)$news['category_id'] ?>" class="badge-category">
                                     <?= h($news['category_name']) ?>

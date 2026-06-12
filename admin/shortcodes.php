@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if (empty($scDefs)): ?>
         <p class="text-muted">No shortcodes defined yet.</p>
     <?php else: ?>
+    <div class="table-responsive">
     <table class="table table-sm mb-0">
         <thead>
             <tr>
@@ -96,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endif; ?>
 </div>
 

@@ -22,7 +22,7 @@ services:
       DB_PREFIX: "dev_"
     volumes:
       - db_data:/var/lib/mysql
-      - ./sql/schema.sql:/tmp/schema-template.sql:ro
+      - ./sql:/tmp/sql:ro
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-schema.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]

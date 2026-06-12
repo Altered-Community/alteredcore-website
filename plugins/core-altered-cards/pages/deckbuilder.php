@@ -17,6 +17,9 @@ $token   = $isGuest ? null : deckApiToken();
 $_dbUserId          = (int)($_SESSION['user_id'] ?? 0);
 $_collectionEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
+// digital ownership (AlteredOwnership service)
+$_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
+$_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
 $_userCollection    = []; // {ref => qty}
 $_collEntries       = []; // {ref => api_entry_id} — populated in API mode only
 if ($_collectionMode) {
@@ -458,6 +461,8 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     'show_cols'          => true,
                     'collection_mode'    => $_collectionMode,
                     'collection_enabled' => $_collectionEnabled,
+                    'ownership_mode'     => $_ownMode,
+                    'ownership_enabled'  => $_ownEnabled,
                     'base_url'           => BASE_URL,
                 ];
                 include __DIR__ . '/../includes/card-search.php';
@@ -750,7 +755,7 @@ var AlteredDB = {
     showStockWarn:     <?= $showStockWarn ? 'true' : 'false' ?>,
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collectionCsrf:    <?= json_encode($_collectionMode ? csrfToken() : '') ?>,
-    collApiUrl:        <?= json_encode($_collectionMode ? BASE_URL . '/api/core-altered-cards/collection-search' : '') ?>,
+    collApiUrl:        <?= json_encode($_collectionMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     heroTypes:      <?= json_encode($_heroTypes) ?>,
     heroRarities:   <?= json_encode($_heroRarities) ?>,
     heroSets:       <?= json_encode($_heroSets) ?>,
@@ -767,6 +772,19 @@ var AlteredDB = {
     keywordOptionsJson:   <?= $keywordOptionsJson ?>,
     variationOptionsJson: <?= $variationOptionsJson ?>,
     defaultCollection:    <?= json_encode($defaultCollection) ?>,
+<?php
+    // Promo set linking (main edition → its promo sub editions) + flat sub list.
+    $setChildren = [];
+    $subSets     = [];
+    foreach ($setsData as $_sref => $_sd) {
+        if (($_sd['subtype'] ?? '') !== 'sub') continue;
+        $subSets[] = $_sref;
+        if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
+    }
+?>
+    setChildren:  <?= json_encode($setChildren) ?>,
+    subSets:      <?= json_encode($subSets) ?>,
+    ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
 };
 </script>
 <script>
@@ -932,6 +950,12 @@ var AlteredDB = {
         var p = ref.split('_');
         return AlteredDB.cdnUrl + '/cards/' + AlteredDB.uiLang + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
+    function normalizeHeroRef(ref) {
+        var p = ref.split('_');
+        if (p[2] === 'P') p[2] = 'B';
+        if (p[1] === 'BISE') p[1] = 'CORE';
+        return p.join('_');
+    }
     function cardName(card) {
         var n = card.name;
         return typeof n === 'object' ? (n[AlteredDB.lang] || n.en || '') : (n || '');
@@ -1092,7 +1116,7 @@ var AlteredDB = {
         elHeroBanner.style.cssText = '';
 
         if (ref) {
-            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + ref + '_1.webp';
+            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + normalizeHeroRef(ref) + '_1.webp';
             var fImg    = faction ? AlteredDB.pluginAssetsUrl + '/faction/' + faction + '.png' : '';
             elHeroBanner.style.cssText =
                 'background-image:linear-gradient(to right,' + fColor + 'b3 30%,' + fColor + '00 100%),url(' + heroImg + ');' +
@@ -2198,6 +2222,12 @@ var AlteredDB = {
         collectionCsrf:    AlteredDB.collectionCsrf,
         collectionUrl:     AlteredDB.collectionUrl,
         collApiUrl:        AlteredDB.collApiUrl,
+        ownershipApiUrl:   AlteredDB.ownershipApiUrl,
+        setChildren:  AlteredDB.setChildren,
+        subSets:      AlteredDB.subSets,
+        uniqueType:   ['CHARACTER'],
+        uniqueRarity: ['UNIQUE'],
+        uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
         defaults: {
             factions:   <?= json_encode($defaultFactions) ?>,
             types:      <?= json_encode($defaultTypes) ?>,

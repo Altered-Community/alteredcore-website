@@ -21,7 +21,8 @@
     ],
 
     "api": [
-        {"endpoint": "collection-search", "file": "api/collection-search.php"}
+        {"endpoint": "collection-search", "file": "api/collection-search.php"},
+        {"endpoint": "ownership-search",  "file": "api/ownership-search.php"}
     ],
 
     "admin": [

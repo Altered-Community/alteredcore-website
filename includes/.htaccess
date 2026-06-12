@@ -6,3 +6,15 @@
     Order deny,allow
     Deny from all
 </IfModule>
+
+# _plugin_router.php is the internal rewrite target for /api/{plugin}/{endpoint} routes.
+# It must be reachable by Apache after the root .htaccess rewrite.
+<Files "_plugin_router.php">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</Files>

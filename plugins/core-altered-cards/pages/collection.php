@@ -14,7 +14,7 @@ if (!$userId) {
 // translations
 $txt = [
     'en' => [
-        'page_title'    => 'My Collection',
+        'page_title'    => 'My Physical Collection',
         'intro'         => 'Paste or type your collection below. One card per line: quantity followed by the card reference.',
         'format_hint'   => 'Example: 3 ALT_CORE_B_AX_01_C',
         'textarea_ph'   => "3 ALT_CORE_B_AX_01_C\n1 ALT_EOLE_B_LY_15_R\n…",
@@ -28,6 +28,8 @@ $txt = [
         'empty'         => 'Your collection is empty.',
         'back_cards'    => 'Cards',
         'browse_coll'   => 'Browse my collection',
+        'qty_tip_title' => 'Adjusting card quantities',
+        'qty_tip'       => 'When browsing your collection in the card search, hover a card and use the + and − buttons in the card footer to adjust how many copies you own.',
         'db_error'      => 'Could not load your collection. Please try again later.',
         'saving'        => 'Saving…',
         'clearing'      => 'Clearing…',
@@ -53,7 +55,7 @@ $txt = [
         'import_err_batch'   => 'Import failed. Please try again.',
     ],
     'fr' => [
-        'page_title'    => 'Ma Collection',
+        'page_title'    => 'Ma Collection Physique',
         'intro'         => 'Collez ou saisissez votre collection ci-dessous. Une carte par ligne : quantité suivie de la référence.',
         'format_hint'   => 'Exemple : 3 ALT_CORE_B_AX_01_C',
         'textarea_ph'   => "3 ALT_CORE_B_AX_01_C\n1 ALT_EOLE_B_LY_15_R\n…",
@@ -67,6 +69,8 @@ $txt = [
         'empty'         => 'Votre collection est vide.',
         'back_cards'    => 'Cartes',
         'browse_coll'   => 'Parcourir ma collection',
+        'qty_tip_title' => 'Modifier la quantité des cartes',
+        'qty_tip'       => 'Lorsque vous parcourez votre collection dans la recherche de cartes, survolez une carte et utilisez les boutons + et − dans le bas de la carte pour ajuster le nombre d\'exemplaires possédés.',
         'db_error'      => 'Impossible de charger votre collection. Veuillez réessayer plus tard.',
         'saving'        => 'Enregistrement…',
         'clearing'      => 'Suppression…',
@@ -379,16 +383,6 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     <div class="alert alert-danger py-2"><?= h($txt['db_error'] ?? 'Error') ?></div>
     <?php endif; ?>
 
-    <div class="ac-tab-toggle">
-        <button type="button" class="btn-toggle coll-tab-btn active" data-pane="collection">
-            <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['tab_collection'] ?? 'Digital Collection') ?>
-        </button>
-        <button type="button" class="btn-toggle coll-tab-btn" data-pane="ownership">
-            <i class="fa-solid fa-key me-1"></i><?= h($txt['tab_ownership'] ?? 'Ownership') ?>
-        </button>
-    </div>
-    <div id="coll-pane-collection">
-
     <!-- Physical collection disclaimer -->
     <div class="card-altered p-3 mb-3 coll-card-success">
         <div class="d-flex align-items-start gap-2">
@@ -396,6 +390,29 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
             <p class="mb-0 small" style="color:var(--neutral-600);line-height:1.55">
                 <?= h($txt['physical_disclaimer']) ?>
             </p>
+        </div>
+    </div>
+
+    <!-- How to edit quantities — reuses the card-grid +/- footer classes for the illustration -->
+    <div class="card-altered p-3 mb-3 coll-card-primary">
+        <div class="d-flex align-items-center gap-3">
+            <div class="card-img-wrap" style="width:200px;height:277px;flex-shrink:0;cursor:default">
+                <span class="card-coll-badge" style="opacity:1"><i class="fa-solid fa-box-archive"></i> &times;2</span>
+                <div class="card-coll-bar" style="opacity:1;pointer-events:auto">
+                    <i class="fa-solid fa-box-archive card-coll-bar-icon"></i>
+                    <button type="button" class="card-coll-btn" tabindex="-1">&minus;</button>
+                    <span class="card-coll-qty">2</span>
+                    <button type="button" class="card-coll-btn" tabindex="-1">+</button>
+                </div>
+            </div>
+            <div>
+                <div class="fw-bold small mb-1" style="color:var(--neutral-700)">
+                    <i class="fa-solid fa-circle-info me-1" style="color:var(--primary-400)"></i><?= h($txt['qty_tip_title'] ?? 'Adjusting card quantities') ?>
+                </div>
+                <p class="mb-0 small" style="color:var(--neutral-600);line-height:1.55">
+                    <?= h($txt['qty_tip'] ?? '') ?>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -477,19 +494,6 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
         </form>
     </div>
 
-    </div><!-- /coll-pane-collection -->
-
-    <div id="coll-pane-ownership" style="display:none">
-        <div class="card-altered p-3 mb-3 coll-card-neutral">
-            <div class="d-flex align-items-start gap-2">
-                <i class="fa-solid fa-clock mt-1 flex-shrink-0 text-secondary" style="font-size:.9rem"></i>
-                <p class="mb-0 small" style="color:var(--neutral-600);line-height:1.55">
-                    <?= h($txt['ownership_msg'] ?? 'Digital card ownership is not yet managed on this platform. This feature is planned for a future update.') ?>
-                </p>
-            </div>
-        </div>
-
-    </div><!-- /coll-pane-ownership -->
 
 </div>
 
@@ -535,16 +539,6 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
         });
     });
     window.addEventListener('pageshow', function () { window.acSpinner.hide(); });
-
-    document.querySelectorAll('.coll-tab-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.coll-tab-btn').forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            var pane = btn.dataset.pane;
-            document.getElementById('coll-pane-collection').style.display = pane === 'collection' ? '' : 'none';
-            document.getElementById('coll-pane-ownership').style.display  = pane === 'ownership'  ? '' : 'none';
-        });
-    });
 }());
 </script>
 

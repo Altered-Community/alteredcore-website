@@ -11,7 +11,7 @@ $_footerTxt  = [
         'cookie_msg'  => 'This site uses cookies necessary for it to function (session, language preference). No tracking or advertising cookies are used.',
         'cookie_btn'  => 'Accept',
         'card_detail' => 'View detail',
-        'made_by'     => 'Site created by PolluxTroy',
+        'made_by'     => 'Site created by ' . (defined('SITE_NAME') ? SITE_NAME : 'AlteredCore'),
     ],
     'fr' => [
         'rights'      => 'Tous droits réservés.',
@@ -19,7 +19,7 @@ $_footerTxt  = [
         'cookie_msg'  => 'Ce site utilise des cookies nécessaires à son fonctionnement (session, préférence de langue). Aucun cookie de suivi ou publicitaire n\'est utilisé.',
         'cookie_btn'  => 'Accepter',
         'card_detail' => 'Accéder au détail',
-        'made_by'     => 'Site créé par PolluxTroy',
+        'made_by'     => 'Site créé par ' . (defined('SITE_NAME') ? SITE_NAME : 'AlteredCore'),
     ],
 ][getUiLang()];
 $_footerRights = getSetting('footer_rights_' . getUiLang()) ?: $_footerTxt['rights'];
@@ -100,7 +100,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[1]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[1] !== ''): ?>
-                <div class="footer-col-content"><?= $_footerColContents[1] ?></div>
+                <div class="footer-col-content"><?= renderShortcodes($_footerColContents[1]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[1]): ?>
                 <ul class="list-unstyled mt-3 mb-0" style="font-size:.88rem">
@@ -123,7 +123,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[2]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[2] !== ''): ?>
-                <div class="footer-col-content mb-2"><?= $_footerColContents[2] ?></div>
+                <div class="footer-col-content mb-2"><?= renderShortcodes($_footerColContents[2]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[2]): ?>
                 <ul class="list-unstyled mb-0" style="font-size:.88rem">
@@ -146,7 +146,7 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[3]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerColContents[3] !== ''): ?>
-                <div class="footer-col-content mb-2"><?= $_footerColContents[3] ?></div>
+                <div class="footer-col-content mb-2"><?= renderShortcodes($_footerColContents[3]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[3]): ?>
                 <ul class="list-unstyled mb-0" style="font-size:.88rem">
@@ -182,7 +182,7 @@ if ($_ftCss): ?>
                 </ul>
                 <?php endif; ?>
                 <?php if ($_footerColContents[4] !== ''): ?>
-                <div class="footer-col-content"><?= $_footerColContents[4] ?></div>
+                <div class="footer-col-content"><?= renderShortcodes($_footerColContents[4]) ?></div>
                 <?php endif; ?>
             </div>
 
@@ -219,7 +219,7 @@ if ($_ftCss): ?>
         <div class="footer-bottom">
             <span>
                 &copy; <?= date('Y') ?> <?= h(getSiteName()) ?> — <?= h($_footerRights) ?>
-                &nbsp;·&nbsp; <a href="https://github.com/Altered-Community/alteredcore-website" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
+                &nbsp;·&nbsp; <a href="https://alteredcore.org" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
                 &nbsp;·&nbsp;
                 <a href="<?= BASE_URL ?>/pages/privacy" style="color:inherit;opacity:.7"><?= h($_footerTxt['privacy']) ?></a>
             </span>
@@ -340,6 +340,9 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
 })();
 </script>
 
+<?php foreach ($GLOBALS['_ac_global_plugin_js'] ?? [] as $_pgjs): ?>
+<script src="<?= h($_pgjs) ?>"></script>
+<?php endforeach; ?>
 <?php foreach ($GLOBALS['_ac_plugin_js'] ?? [] as $_pjs): ?>
 <script src="<?= h($_pjs) ?>"></script>
 <?php endforeach; ?>

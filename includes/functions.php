@@ -1,6 +1,40 @@
 <?php
 require_once __DIR__ . '/db.php';
 
+/**
+ * True when the *original* request is HTTPS, honouring a TLS-terminating reverse
+ * proxy / load balancer (which makes PHP see a plain-HTTP connection).
+ * Checks, in order: a FORCE_HTTPS config override, the direct HTTPS flag, the
+ * X-Forwarded-Proto / X-Forwarded-Ssl proxy headers, then the 443 port.
+ *
+ * Used to build correct absolute URLs (e.g. the Keycloak redirect_uri) and to set
+ * the `secure` flag on cookies when behind a proxy.
+ */
+function request_is_https(): bool {
+    if (defined('FORCE_HTTPS') && FORCE_HTTPS) {
+        return true;
+    }
+    if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+    $xfProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+    if ($xfProto !== '') {
+        // May be a comma-separated chain ("https, http") — the first hop is the client's.
+        if (strtolower(trim(explode(',', $xfProto)[0])) === 'https') {
+            return true;
+        }
+    }
+    if (strtolower($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '') === 'on') {
+        return true;
+    }
+    return ($_SERVER['SERVER_PORT'] ?? '') === '443';
+}
+
+/** Scheme ('https' or 'http') of the original request — see request_is_https(). */
+function request_scheme(): string {
+    return request_is_https() ? 'https' : 'http';
+}
+
 
 // Legacy: THEME_SETTING_KEYS was removed — all settings now live in site_settings.
 // Left as empty const so any third-party code that references it does not fatal.
@@ -130,6 +164,36 @@ function imageExtFromMime(string $tmpPath): string {
     return $map[$mime] ?? 'jpg';
 }
 
+function imageConvertToWebp(string $tmpPath, string $destDir, string $basename, int $maxWidth = 1400) {
+    if (!function_exists('imagewebp')) return false;
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime  = finfo_file($finfo, $tmpPath);
+    finfo_close($finfo);
+    if ($mime === 'image/jpeg')     $im = imagecreatefromjpeg($tmpPath);
+    elseif ($mime === 'image/png')  $im = imagecreatefrompng($tmpPath);
+    elseif ($mime === 'image/webp') $im = imagecreatefromwebp($tmpPath);
+    elseif ($mime === 'image/gif')  $im = imagecreatefromgif($tmpPath);
+    else return false;
+    if (!$im) return false;
+    $w = imagesx($im);
+    $h = imagesy($im);
+    if ($w > $maxWidth) {
+        $newH  = (int)round($h * $maxWidth / $w);
+        $newIm = imagecreatetruecolor($maxWidth, $newH);
+        imagealphablending($newIm, false);
+        imagesavealpha($newIm, true);
+        imagefilledrectangle($newIm, 0, 0, $maxWidth - 1, $newH - 1,
+            imagecolorallocatealpha($newIm, 0, 0, 0, 127));
+        imagecopyresampled($newIm, $im, 0, 0, 0, 0, $maxWidth, $newH, $w, $h);
+        imagedestroy($im);
+        $im = $newIm;
+    }
+    $filename = $basename . '.webp';
+    $ok = imagewebp($im, $destDir . $filename, 85);
+    imagedestroy($im);
+    return $ok ? $filename : false;
+}
+
 function validateSvgUpload(string $svg): bool {
     if (stripos($svg, '<script') !== false) return false;
     if (preg_match('/\bjavascript\s*:/i', $svg)) return false;
@@ -236,7 +300,8 @@ function getNewsList(int $limit = 0, ?int $categoryId = null, int $offset = 0): 
                     n.title_{$lang} AS title, n.excerpt_{$lang} AS excerpt,
                     n.image, n.youtube_url, n.published_at, n.created_at,
                     c.name_{$lang} AS category_name, c.slug AS category_slug,
-                    NULL AS rss_link, NULL AS source_name, 'native' AS source_type
+                    NULL AS rss_link, NULL AS source_name, 'native' AS source_type,
+                    n.is_pinned
              FROM {news} n
              LEFT JOIN {news_categories} c ON n.category_id = c.id
              WHERE n.is_published = 1
@@ -247,13 +312,14 @@ function getNewsList(int $limit = 0, ?int $categoryId = null, int $offset = 0): 
                     rc.title, rc.description AS excerpt,
                     rc.image, NULL AS youtube_url, rc.published_at, rc.fetched_at AS created_at,
                     c.name_{$lang} AS category_name, c.slug AS category_slug,
-                    rc.link AS rss_link, f.name AS source_name, 'rss' AS source_type
+                    rc.link AS rss_link, f.name AS source_name, 'rss' AS source_type,
+                    0 AS is_pinned
              FROM {rss_cache} rc
              JOIN {rss_feeds} f ON f.id = rc.feed_id AND f.is_visible = 1
              LEFT JOIN {news_categories} c ON c.id = f.category_id
              WHERE (rc.lang = '' OR rc.lang = :ui_lang)
                AND (c.is_hidden = 0 OR c.id IS NULL){$catR})
-            ORDER BY COALESCE(published_at, created_at) DESC{$lim}";
+            ORDER BY is_pinned DESC, COALESCE(published_at, created_at) DESC{$lim}";
 
     try {
         $stmt = $db->prepare(q($sql));
@@ -280,14 +346,15 @@ function _getNewsListNative(string $lang, int $limit, ?int $categoryId, int $off
                    n.title_{$lang} AS title, n.excerpt_{$lang} AS excerpt,
                    n.image, n.youtube_url, n.published_at, n.created_at,
                    c.name_{$lang} AS category_name, c.slug AS category_slug,
-                   NULL AS rss_link, NULL AS source_name, 'native' AS source_type
+                   NULL AS rss_link, NULL AS source_name, 'native' AS source_type,
+                   n.is_pinned
             FROM {news} n
             LEFT JOIN {news_categories} c ON n.category_id = c.id
             WHERE n.is_published = 1
               AND (n.published_at IS NULL OR n.published_at <= NOW())
               AND (c.is_hidden = 0 OR c.id IS NULL)";
     if ($categoryId !== null) $sql .= " AND n.category_id = :cat_id";
-    $sql .= " ORDER BY COALESCE(n.published_at, n.created_at) DESC";
+    $sql .= " ORDER BY n.is_pinned DESC, COALESCE(n.published_at, n.created_at) DESC";
     if ($limit > 0) $sql .= " LIMIT :lim OFFSET :off";
 
     $stmt = $db->prepare(q($sql));
@@ -412,7 +479,7 @@ function getNewsBySlug(string $slug, bool $publishedOnly = true): ?array {
 function getCategories(): array {
     $db   = getDB();
     $lang = getUiLang();
-    $stmt = $db->query(q("SELECT id, name_{$lang} AS name, slug FROM {news_categories} WHERE is_hidden = 0 ORDER BY name_{$lang}"));
+    $stmt = $db->query(q("SELECT id, name_{$lang} AS name, slug FROM {news_categories} WHERE is_hidden = 0 ORDER BY sort_order, name_{$lang}"));
     return $stmt->fetchAll();
 }
 
@@ -424,7 +491,7 @@ function getProjectCategories(): array {
 }
 
 function h(string $str): string {
-    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8', false);
 }
 
 function requireAdmin(): void {
@@ -695,7 +762,7 @@ function kcClearSession(): void {
               'kc_access_token_exp', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure = request_is_https();
     setcookie('kc_remember', '', [
         'expires' => time() - 3600, 'path' => '/',
         'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
@@ -717,7 +784,7 @@ function localClearSession(): void {
     foreach (['local_logged_in', 'local_logged_in_at', 'local_email', 'local_username', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure = request_is_https();
     setcookie('local_remember', '', [
         'expires' => time() - 3600, 'path' => '/',
         'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
@@ -1068,7 +1135,7 @@ function getNavItems(): array {
     $lang = getUiLang();
     try {
         $rows = getDB()->query(q(
-            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle
+            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
              FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
         ))->fetchAll();
     } catch (Exception $e) {
@@ -1076,7 +1143,8 @@ function getNavItems(): array {
         try {
             $rows = getDB()->query(q(
                 "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe,
-                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle
+                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
+                        0 AS is_separator, 0 AS is_section_header
                  FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
             ))->fetchAll();
         } catch (Exception $e2) {
@@ -1142,4 +1210,5 @@ function getUserMenuItems(): array {
     }
     return $rows;
 }
+require_once __DIR__ . '/func.keycloak.php';
 require_once __DIR__ . '/plugins.php';

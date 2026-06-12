@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 $lang   = getLang();
 $uiLang = getUiLang();
 
+
 // translations
 $_ss        = loadSearchSettings();
 $_sharedTxt = $_ss['translations'][$uiLang] ?? [];
@@ -14,6 +15,8 @@ $txt        = array_merge($_sharedTxt, [
         'community'   => 'Community',
         'detail_label'=> 'View detail',
         'btn_collection' => 'My collection',
+        'lbl_effects' => 'Effects',
+        'add_effect'  => 'Add effect',
     ],
     'fr' => [
         'page_title'  => 'Cartes',
@@ -22,6 +25,8 @@ $txt        = array_merge($_sharedTxt, [
         'community'   => 'Communauté',
         'detail_label'=> 'Accéder au détail',
         'btn_collection' => 'Ma collection',
+        'lbl_effects' => 'Effets',
+        'add_effect'  => 'Ajouter un effet',
     ],
 ][$uiLang] ?? []);
 
@@ -71,7 +76,7 @@ $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 $q    = trim($_GET['q'] ?? '');
 $sort = in_array($_GET['sort'] ?? '', $validSorts) ? $_GET['sort'] : 'default';
 $cols = (int)($_GET['cols'] ?? $_defaultCols);
-if (!in_array($cols, [2, 3, 4, 5])) $cols = $_defaultCols;
+if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
 $validCostPower = array_map('strval', range(0, 12));
 $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
@@ -104,6 +109,15 @@ $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 $_csUserId         = (int)($_SESSION['user_id'] ?? 0);
 $_collEnabled      = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collMode         = $_collEnabled && $_csUserId > 0;
+
+// digital ownership (AlteredOwnership service)
+$_ownEnabled       = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
+$_ownMode          = $_ownEnabled && $_csUserId > 0;
+// Browser-facing ownership app root (same resolution as pages/collection.php):
+// prefer the public OWNERSHIP_WEB_URL, fall back to OWNERSHIP_API_URL.
+$_ownWebBase       = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? OWNERSHIP_WEB_URL
+                   : ((defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL) ? OWNERSHIP_API_URL : '');
+$_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {
@@ -139,6 +153,16 @@ $variationOptionsJson = json_encode(array_values(array_map(
     function($code, $names) use ($uiLang) { return ['value' => $code, 'text' => $names[$uiLang] ?? $names['en']]; },
     array_keys($variationsData), array_values($variationsData)
 )));
+
+// Promo set linking: parent (main) edition → its promo (sub) editions, plus the
+// flat list of sub editions. Used client-side to (de)select promos with their parent.
+$setChildren = [];
+$subSets     = [];
+foreach ($setsData as $_sref => $_sd) {
+    if (($_sd['subtype'] ?? '') !== 'sub') continue;
+    $subSets[] = $_sref;
+    if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
+}
 
 // widget config for card-search.php
 $_cs = [
@@ -177,10 +201,13 @@ $_cs = [
         'isErrated'   => $isErrated,
         'isSuspended' => $isSuspended,
     ],
-    'col_options'        => [2, 3, 4, 5],
+    'col_options'        => [1, 2, 3, 4, 5],
     'show_cols'          => true,
     'collection_mode'    => $_collMode,
     'collection_enabled' => $_collEnabled,
+    'ownership_mode'     => $_ownMode,
+    'ownership_enabled'  => $_ownEnabled,
+    'ownership_url'      => $_ownWebUrl,
     'base_url'           => BASE_URL,
 ];
 
@@ -188,16 +215,6 @@ $pageTitle = $txt['page_title'];
 ?>
 
 <div class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-        <?php if ($_collEnabled): ?>
-        <a href="<?= BASE_URL ?>/pages/collection" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-layer-group me-1"></i>
-            <?= h($txt['btn_collection']) ?>
-        </a>
-        <?php endif; ?>
-    </div>
-
     <?php include __DIR__ . '/../includes/card-search.php'; ?>
 </div>
 
@@ -223,7 +240,8 @@ CardSearch({
     collectionEntries: <?= json_encode($_collMode ? (object)$_collEntries : (object)[]) ?>,
     collectionCsrf:    <?= json_encode($_collMode ? csrfToken() : '') ?>,
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
-    collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/api/core-altered-cards/collection-search' : '') ?>,
+    collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
+    ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,
@@ -273,11 +291,23 @@ CardSearch({
         defaultCollection:     <?= json_encode($defaultCollection) ?>,
     },
     typesMerged: <?= json_encode($typesMergedData) ?>,
+    setChildren:  <?= json_encode($setChildren) ?>,
+    subSets:      <?= json_encode($subSets) ?>,
+    uniqueType:   <?= json_encode(['CHARACTER']) ?>,
+    uniqueRarity: <?= json_encode(['UNIQUE']) ?>,
+    uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
     txt: {
-        prev:         <?= json_encode($txt['prev']         ?? '← Prev') ?>,
-        next:         <?= json_encode($txt['next']         ?? 'Next →') ?>,
-        showing:      <?= json_encode($txt['showing']      ?? '%d cards') ?>,
-        detail_label: <?= json_encode($txt['detail_label'] ?? 'View detail') ?>,
+        prev:          <?= json_encode($txt['prev']          ?? '← Prev') ?>,
+        next:          <?= json_encode($txt['next']          ?? 'Next →') ?>,
+        showing:       <?= json_encode($txt['showing']       ?? '%d cards') ?>,
+        detail_label:  <?= json_encode($txt['detail_label']  ?? 'View detail') ?>,
+        any_trigger:    <?= json_encode($uiLang === 'fr' ? 'Tous les déclencheurs' : 'Any trigger') ?>,
+        any_condition:  <?= json_encode($uiLang === 'fr' ? 'Toutes les conditions' : 'Any condition') ?>,
+        any_effect:     <?= json_encode($uiLang === 'fr' ? 'Tous les effets'       : 'Any effect') ?>,
+        lbl_subtype:    <?= json_encode($txt['lbl_subtype']    ?? ($uiLang === 'fr' ? 'Sous-type' : 'Subtype')) ?>,
+        lbl_card_status:<?= json_encode($txt['lbl_card_status'] ?? ($uiLang === 'fr' ? 'Statut'    : 'Status')) ?>,
+        lbl_keyword:    <?= json_encode($txt['lbl_keyword']    ?? ($uiLang === 'fr' ? 'Mot-clé'   : 'Keyword')) ?>,
+        lbl_variation:  <?= json_encode($txt['lbl_variation']  ?? ($uiLang === 'fr' ? 'Variation'  : 'Variation')) ?>,
     },
     onColsChange: function(n) {
         var grid = document.getElementById('cs-grid');

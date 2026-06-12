@@ -60,6 +60,7 @@ $groups = $db->query(q(
     <?php if (empty($groups)): ?>
         <p class="text-muted">No groups yet.</p>
     <?php else: ?>
+    <div class="table-responsive">
     <table class="table table-sm mb-0">
         <thead>
             <tr>
@@ -127,6 +128,7 @@ $groups = $db->query(q(
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endif; ?>
 </div>
 
