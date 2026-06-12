@@ -235,16 +235,16 @@ function CardSearch(cfg) {
                 filters.hasNoEffect = false;
             }
         }
-        if (active) {
-            // Physical collection only: clear rarity (the collection API returns no
-            // rarity data). The digital-ownership API does populate rarity, so keep it.
-            if (_scope === 'collection') {
-                if (filters.rarity.length) {
-                    filters.rarity.length = 0;
-                    qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
-                }
-                _rarityDirty = false;
+        if (active && _scope === 'collection') {
+            // Physical-collection scope only: clear rarity (the collection API returns no
+            // rarity data) and enforce single-value filters (its API/proxy collapse repeated
+            // params to one). The digital-ownership API populates rarity and filters with IN,
+            // so it keeps rarity and allows multiple values.
+            if (filters.rarity.length) {
+                filters.rarity.length = 0;
+                qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
             }
+            _rarityDirty = false;
             // Enforce single-select on toggle button groups (faction, type)
             ['faction', 'type'].forEach(function(key) {
                 var arr = filters[key];
@@ -751,12 +751,26 @@ function CardSearch(cfg) {
             'itemsPerPage=' + PER_PAGE,
         ];
 
-        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction=' + encodeURIComponent(v)); });
-        (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType=' + encodeURIComponent(v)); });
-        (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity='   + encodeURIComponent(v)); });
-        (_setsDirty   ? filters.sets   : []).forEach(function(v) { parts.push('cardSet='  + encodeURIComponent(v)); });
-        filters.subtypes.forEach(function(v)  { parts.push('subTypes='  + encodeURIComponent(v)); });
-        filters.variations.forEach(function(v){ parts.push('variation=' + encodeURIComponent(v)); });
+        // Array filters use bracketed keys (faction[]=A&faction[]=B) so PHP $_GET keeps
+        // every value — a plain repeated key (faction=A&faction=B) collapses to the last
+        // one, which silently drops all but one selection (e.g. the promo toggle's
+        // "all variations"). The collection/ownership proxies remap these to each API.
+        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
+        (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
+        // Ownership scope applies the default editions by default, matching the pre-selected
+        // edition chips in the UI. The collection scope sends nothing by default (no edition
+        // restriction): its API/proxy collapse repeated cardSet params to one, so sending the
+        // default set would wrongly narrow results to a single edition.
+        (_setsDirty ? filters.sets : (_scope === 'ownership' ? DEFAULT_SETS : [])).forEach(function(v) { parts.push('cardSet[]='  + encodeURIComponent(v)); });
+        filters.subtypes.forEach(function(v)  { parts.push('subTypes[]='  + encodeURIComponent(v)); });
+        // The collection API filters variation by exact match and can't express "any
+        // variation", which would hide promos/alt-arts. Omit it entirely on the collection
+        // scope so every owned printing (incl. promos) shows. The ownership API supports
+        // variation IN, so it still gets the filter (driven by the promo toggle there).
+        if (_scope === 'ownership') {
+            filters.variations.forEach(function(v){ parts.push('variation[]=' + encodeURIComponent(v)); });
+        }
 
         if (filters.isBanned)    parts.push('isBanned=true');
         if (filters.isErrated)   parts.push('isErrated=true');
@@ -1195,7 +1209,10 @@ function CardSearch(cfg) {
 
     // sync default filter values to UI toggle buttons
     function syncDefaultsToUi() {
-        var effectiveRarities = _rarityDirty ? filters.rarity : DEFAULT_RARITIES;
+        // No default rarity preselection on the digital-ownership tab: by default it sends
+        // no rarity filter (all rarities), so the buttons should reflect that — none active.
+        var effectiveRarities = _rarityDirty ? filters.rarity
+            : (_tab === 'ownership' ? [] : DEFAULT_RARITIES);
         var effectiveSets     = _setsDirty   ? filters.sets   : DEFAULT_SETS;
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) {
             b.classList.toggle('active', _factionDirty && filters.faction.indexOf(b.dataset.value) >= 0);
@@ -1278,8 +1295,16 @@ function CardSearch(cfg) {
         filters.sets = next;
     }
 
-    // All variation codes (read from the variation <select> options).
+    // All variation codes. Source from TomSelect's internal option registry, which always
+    // holds every registered variation — the native <select> is pruned by TomSelect to the
+    // currently-selected options, so reading it would return only what's already picked
+    // (e.g. just "standard" by default), silently dropping serialized/promo/etc. when the
+    // promo toggle tries to select "all variations".
     function _allVariationValues() {
+        if (tsInst.variation && tsInst.variation.options) {
+            var keys = Object.keys(tsInst.variation.options);
+            if (keys.length) return keys;
+        }
         var el = document.getElementById(P + '-filter-variation');
         return el ? Array.from(el.options).map(function(o) { return o.value; }) : DEFAULT_VARIATIONS.slice();
     }
@@ -1623,11 +1648,13 @@ function CardSearch(cfg) {
         // changes merge into the set selection; main-set toggles override it.
         tsInst.promoset = makeTs('promoset', { onChange: function() { applyPromoSelection(tsInst.promoset.getValue()); } });
 
-        // In collection scope, faction/set/subtype/variation only support a single value
+        // In the physical-collection scope, faction/set/subtype/variation only support a
+        // single value (the collection API/proxy collapses repeated params to one). The
+        // digital-ownership API filters these with IN, so it allows multiple values.
         ['faction', 'set', 'subtype', 'variation'].forEach(function(key) {
             if (!tsInst[key]) return;
             tsInst[key].on('item_add', function(value) {
-                if (!_scopeCollection || !scopeApiUrl()) return;
+                if (_scope !== 'collection' || !scopeApiUrl()) return;
                 var self = this;
                 this.getValue().forEach(function(v) {
                     if (v !== value) self.removeItem(v, true);
@@ -1683,7 +1710,8 @@ function CardSearch(cfg) {
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
             var idx = arr.indexOf(val);
-            if (_scopeCollection && scopeApiUrl()) {
+            if (_scope === 'collection' && scopeApiUrl()) {
+                // Physical-collection scope is single-value only (see TomSelect note above).
                 var wasActive = idx >= 0;
                 qa('.filter-toggle[data-filter="' + key + '"]').forEach(function(b) { b.classList.remove('active'); });
                 arr.length = 0;
