@@ -1705,7 +1705,10 @@ function CardSearch(cfg) {
             var val = btn.dataset.value;
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
             if (key === 'type')    { if (!_typeDirty)    { _typeDirty    = true; filters.type    = []; } }
-            if (key === 'rarity')  _rarityDirty  = true;
+            // Seed rarity from what's actually shown active on first interaction so the click
+            // toggles in sync with the UI. The ownership tab shows no default rarity; the
+            // other tabs (all/unique) show the defaults as active.
+            if (key === 'rarity')  { if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
             if (key === 'sets')    _setsDirty    = true;
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
