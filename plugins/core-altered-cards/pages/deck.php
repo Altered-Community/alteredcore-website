@@ -47,6 +47,12 @@ $txt = [
         'detail_label'    => 'View detail',
         'cancel'          => 'Cancel',
         'name_required'   => 'Name required.',
+        'duplicate_btn'         => 'Duplicate',
+        'duplicate_modal_title' => 'Duplicate deck',
+        'duplicate_label'       => 'New deck name',
+        'duplicating'           => 'Duplicating…',
+        'duplicate_suffix'      => ' (Copy)',
+        'duplicate_err'         => 'Could not duplicate this deck (HTTP %d).',
         'legal'               => 'Legal',
         'illegal'             => 'Illegal',
         'format_errors_title' => 'Format errors',
@@ -188,6 +194,12 @@ $txt = [
         'detail_label'    => 'Accéder au détail',
         'cancel'          => 'Annuler',
         'name_required'   => 'Nom requis.',
+        'duplicate_btn'         => 'Dupliquer',
+        'duplicate_modal_title' => 'Dupliquer le deck',
+        'duplicate_label'       => 'Nom du nouveau deck',
+        'duplicating'           => 'Duplication…',
+        'duplicate_suffix'      => ' (Copie)',
+        'duplicate_err'         => 'Impossible de dupliquer ce deck (HTTP %d).',
         'copy_btn'        => 'Copier la decklist',
         'copy_ok'         => 'Copié !',
         'share_btn'           => 'Partager',
@@ -404,6 +416,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
             echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
         }
         exit;
+    }
+    if ($action === 'duplicate') {
+        // Re-fetch the source deck authoritatively. A private deck owned by
+        // another user returns 401/403 here, which naturally enforces the
+        // "own deck or a public deck" rule without any extra ownership check.
+        $srcCh = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($uiLang));
+        curl_setopt_array($srcCh, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $srcRes  = curl_exec($srcCh);
+        $srcCode = curl_getinfo($srcCh, CURLINFO_HTTP_CODE);
+        curl_close($srcCh);
+        if ($srcCode < 200 || $srcCode >= 300 || !$srcRes) {
+            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $srcCode)]); exit;
+        }
+        $source = json_decode($srcRes, true);
+        if (!is_array($source) || empty($source['cards'])) {
+            echo json_encode(['ok' => false, 'error' => $txt['not_found']]); exit;
+        }
+
+        $newName = trim($_POST['name'] ?? '');
+        if ($newName === '') {
+            $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
+        }
+        $payload = cacBuildDuplicateDeckPayload($source, $newName);
+
+        $ch = curl_init(DECKS_API_URL . '/api/decks');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST  => 'POST',
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+        if ($c >= 200 && $c < 300) {
+            $newDeck = json_decode($r, true);
+            echo json_encode(['ok' => true, 'id' => $newDeck['id'] ?? '']); exit;
+        }
+        $msg  = sprintf($txt['duplicate_err'], $c);
+        $body = json_decode($r, true);
+        if (!empty($body['violations']) && is_array($body['violations'])) {
+            $msg .= "\n" . formatApiViolations($body['violations']);
+        } elseif (!empty($body['detail'])) {
+            $msg .= "\n" . $body['detail'];
+        } elseif (!empty($body['title'])) {
+            $msg .= "\n" . $body['title'];
+        }
+        echo json_encode(['ok' => false, 'error' => $msg]); exit;
     }
     echo json_encode(['ok' => false, 'error' => 'Unknown action']); exit;
 }
@@ -652,6 +715,11 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <?php if (!empty($deck['cards'])): ?>
             <button type="button" id="deck-copy-btn" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-clipboard-list me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['copy_btn']) ?></span>
+            </button>
+            <?php endif; ?>
+            <?php if ($isLoggedIn && !empty($deck['cards'])): ?>
+            <button type="button" id="deck-duplicate-btn" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-clone me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['duplicate_btn']) ?></span>
             </button>
             <?php endif; ?>
             <button type="button" id="deck-share-btn" class="btn btn-outline-secondary btn-sm">
@@ -1699,6 +1767,88 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             renameConfirm.disabled = false;
             renameConfirm.innerHTML = renameLbl;
         });
+    });
+})();
+</script>
+<?php endif; ?>
+
+<?php if ($isLoggedIn && !empty($deck['cards'])): ?>
+<!-- Duplicate modal -->
+<div class="modal fade" id="deckDuplicateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content db-modal-content">
+            <div class="modal-body p-4 db-modal-body">
+                <h5 class="fw-bold mb-3"><?= h($txt['duplicate_modal_title']) ?></h5>
+                <div id="deck-duplicate-error" class="alert alert-danger p-2 mb-3 small" style="display:none;white-space:pre-line"></div>
+                <label for="deck-duplicate-input" class="form-label small mb-1"><?= h($txt['duplicate_label']) ?></label>
+                <input type="text" id="deck-duplicate-input" class="form-control mb-3"
+                       placeholder="<?= h($txt['rename_ph']) ?>"
+                       value="<?= h(($deck['name'] ?? '') . $txt['duplicate_suffix']) ?>">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">
+                        <?= h($txt['cancel']) ?>
+                    </button>
+                    <button type="button" id="deck-duplicate-confirm" class="btn btn-primary-altered flex-fill">
+                        <i class="fa-solid fa-clone me-1"></i><?= h($txt['duplicate_btn']) ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var csrfToken = <?= json_encode(csrfToken()) ?>;
+    var deckId    = <?= json_encode($deckId) ?>;
+    var baseUrl   = <?= json_encode(BASE_URL) ?>;
+    var duplicating = <?= json_encode($txt['duplicating']) ?>;
+    var errConn   = <?= json_encode($txt['err_connect']) ?>;
+    var dupLabel  = <?= json_encode('<i class="fa-solid fa-clone me-1"></i>' . h($txt['duplicate_btn'])) ?>;
+    var reqLbl    = <?= json_encode($txt['name_required']) ?>;
+
+    var dupBtn     = document.getElementById('deck-duplicate-btn');
+    var dupConfirm = document.getElementById('deck-duplicate-confirm');
+    var dupInput   = document.getElementById('deck-duplicate-input');
+    var dupError   = document.getElementById('deck-duplicate-error');
+    var dupModal   = null;
+
+    if (dupBtn) dupBtn.addEventListener('click', function() {
+        if (!dupModal) dupModal = new bootstrap.Modal(document.getElementById('deckDuplicateModal'));
+        dupError.style.display = 'none';
+        dupModal.show();
+        setTimeout(function() { dupInput.select(); }, 300);
+    });
+
+    if (dupConfirm) dupConfirm.addEventListener('click', function() {
+        var name = dupInput.value.trim();
+        if (!name) { dupError.textContent = reqLbl; dupError.style.display = ''; return; }
+        dupConfirm.disabled = true;
+        dupConfirm.textContent = duplicating;
+        dupError.style.display = 'none';
+
+        var fd = new FormData();
+        fd.append('csrf_token', csrfToken);
+        fd.append('action', 'duplicate');
+        fd.append('name', name);
+
+        fetch(baseUrl + '/pages/deck?ajax=1&id=' + encodeURIComponent(deckId), { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.ok && d.id) {
+                    window.location.href = baseUrl + '/pages/deck?id=' + encodeURIComponent(d.id);
+                } else {
+                    dupError.textContent = d.error || errConn;
+                    dupError.style.display = '';
+                    dupConfirm.disabled = false;
+                    dupConfirm.innerHTML = dupLabel;
+                }
+            })
+            .catch(function() {
+                dupError.textContent = errConn;
+                dupError.style.display = '';
+                dupConfirm.disabled = false;
+                dupConfirm.innerHTML = dupLabel;
+            });
     });
 })();
 </script>
