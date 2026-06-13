@@ -98,7 +98,15 @@
                 "total":            "Total",
                 "all_sets":         "All sets",
                 "all_factions":     "All factions",
-                "core_note":        "Combines the Beyond the Gates (CORE) edition and its Kickstarter version (COREKS)."
+                "core_note":        "Combines the Beyond the Gates (CORE) edition and its Kickstarter version (COREKS).",
+                "explore_title":    "Exploration",
+                "explore_cards":    "cards",
+                "versions":         "versions",
+                "oof":              "OOF",
+                "copies_label":     "Copies owned",
+                "copies_1_2":       "1 or 2",
+                "copies_4plus":     "4 or more",
+                "donut_title":      "Cards by number of copies owned"
             },
             "sorts": {
                 "default":          "Default",
@@ -196,7 +204,15 @@
                 "total":            "Total",
                 "all_sets":         "Tous les sets",
                 "all_factions":     "Toutes les factions",
-                "core_note":        "Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS)."
+                "core_note":        "Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS).",
+                "explore_title":    "Exploration",
+                "explore_cards":    "cartes",
+                "versions":         "versions",
+                "oof":              "OOF",
+                "copies_label":     "Exemplaires possédés",
+                "copies_1_2":       "1 ou 2",
+                "copies_4plus":     "4 et +",
+                "donut_title":      "Cartes par nombre d'exemplaires possédés"
             },
             "sorts": {
                 "default":          "Par défaut",

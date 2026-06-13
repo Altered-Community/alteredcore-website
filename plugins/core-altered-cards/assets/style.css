@@ -666,7 +666,8 @@
 
 /* Card distribution — stacked bar (semantic status colors, theme-independent) */
 .cs-playset {
-    --ps-complete: #3aa856;
+    --ps-complete: #3aa856;   /* 3/3 — light green */
+    --ps-extra:    #1e7a3a;   /* 4+  — darker green */
     --ps-progress: #e8a23c;
     --ps-missing:  #d64545;
 }
@@ -755,7 +756,7 @@ table.cs-ps-heatmap {
     font-weight: 700;
     white-space: nowrap;
 }
-.cs-ps-hm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.cs-ps-hm-ficon { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 6px; }
 /* Heatmap cells stay light pastel in every theme → fixed dark text for contrast.
    A faint white hairline separates cells without breaking the gradient. */
 .cs-ps-hm { color: #243042; font-weight: 600; cursor: default; border: 1px solid rgba(255, 255, 255, .55); }
@@ -842,6 +843,120 @@ i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
     text-align: center;
     cursor: help;
 }
+
+/* ---- Exploration (Zone 3 — shopping list) ---- */
+.cs-ps-name-row { margin-bottom: 10px; }
+.cs-ps-name-input { max-width: 340px; }
+.cs-ps-set-filter { margin-bottom: 10px; }
+.cs-ps-faction-filter { margin-bottom: 10px; }
+.cs-ps-rarity-filter { margin-bottom: 10px; }
+.cs-ps-copies-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.cs-ps-copies-label { font-size: .8rem; color: var(--neutral-500); margin-right: 2px; }
+
+/* Filters (left) + summary donut (right). Summary stretches to the filters'
+   height (no empty gap below) and lays donut + legend side by side (compact). */
+.cs-ps-explore-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; margin-bottom: 14px; }
+.cs-ps-filters { flex: 0 1 540px; min-width: 0; }   /* sized to the set row; doesn't grow */
+.cs-ps-summary {
+    flex: 1 1 320px;                                  /* grows to fill the space beside the filters */
+    max-width: 720px;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;                             /* children fill the panel height */
+    justify-content: space-evenly;                    /* equal spacing around stats · divider · chart */
+    gap: 0;
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+/* Two KPIs stacked on the left, spread to fill the height. Label above value,
+   same style as the dashboard's top KPI labels. */
+.cs-ps-sum-stats { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: space-evenly; text-align: left; }
+.cs-ps-sum-lbl { display: block; font-size: .65rem; text-transform: uppercase; letter-spacing: 1.1px; font-weight: 700; color: var(--neutral-400); margin-bottom: 5px; }
+.cs-ps-sum-val { display: block; font-size: 1.5rem; font-weight: 800; color: var(--neutral-800); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cs-ps-sum-divider { align-self: stretch; width: 1px; background: var(--sand-200); flex: 0 0 auto; }
+/* Title + (donut + legend). Legend rows stay tight (values next to labels). */
+.cs-ps-sum-chart { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.cs-ps-chart-title { font-size: .9rem; color: var(--neutral-600); text-align: center; line-height: 1.3; }
+/* Loading overlay (filter change) — frosted cover + spinner, like the listing */
+.cs-ps-sum-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, .72); border-radius: 8px; z-index: 2; }
+.cs-ps-chart-body { display: flex; align-items: center; gap: 18px; }
+.cs-ps-donut { flex: 0 0 auto; }
+.cs-ps-donut-svg { display: block; width: 104px; height: 104px; }
+.cs-ps-donut-legend { display: flex; flex-direction: column; gap: 5px; }
+.cs-ps-leg-row { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--neutral-600); }
+.cs-ps-leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.cs-ps-leg-lab { min-width: 52px; }
+.cs-ps-leg-val { min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--neutral-700); }
+.cs-ps-leg-pct { width: 34px; text-align: right; color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.cs-ps-explore-meta { font-size: .8rem; color: var(--neutral-500); margin-bottom: 10px; }
+.cs-ps-explore { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 991px) { .cs-ps-explore { grid-template-columns: 1fr; } }
+.cs-ps-explore.is-loading { opacity: .5; }
+.cs-ps-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.cs-ps-card:hover { border-color: var(--primary-400); box-shadow: 0 2px 8px rgba(15, 30, 50, .07); }
+.cs-ps-card-mini {
+    flex: 0 0 99px;
+    width: 99px;
+    height: 138px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--neutral-200);
+}
+.cs-ps-card-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cs-ps-card-info { flex: 1; min-width: 0; }
+.cs-ps-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.cs-ps-card-titlewrap { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 10px; }
+.cs-ps-card-title { font-size: .95rem; font-weight: 700; color: var(--neutral-800); }
+.cs-ps-card-meta { display: inline-flex; flex-wrap: wrap; gap: 10px; font-size: .76rem; color: var(--neutral-500); }
+.cs-ps-card-tag { display: inline-flex; align-items: center; gap: 4px; }
+.cs-ps-card-seticon { font-size: .9rem; flex-shrink: 0; }
+.cs-ps-card-summary { text-align: right; white-space: nowrap; font-size: .7rem; color: var(--neutral-400); }
+.cs-ps-card-summary-val { font-size: 1rem; font-weight: 700; color: var(--neutral-700); font-variant-numeric: tabular-nums; }
+
+.cs-ps-versions { display: flex; flex-direction: column; gap: 3px; }
+.cs-ps-version {
+    display: grid;
+    grid-template-columns: minmax(120px, 180px) 1fr 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: background .1s;
+}
+.cs-ps-version:hover { background: var(--sand-100); }
+.cs-ps-version-label { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--neutral-700); min-width: 0; }
+.cs-ps-gem { width: 14px; height: 14px; flex-shrink: 0; }
+/* Fixed-width rarity → faction columns line up vertically across version rows. */
+.cs-ps-version-rarity { flex: 0 0 auto; min-width: 66px; }
+.cs-ps-version-faction { display: inline-flex; align-items: center; gap: 4px; color: var(--neutral-500); font-size: .75rem; min-width: 0; }
+.cs-ps-version-faction span, .cs-ps-version-faction { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-ps-version-ficon { width: 14px; height: 14px; object-fit: contain; flex-shrink: 0; }
+.cs-ps-bar { background: var(--neutral-200); height: 9px; border-radius: 5px; overflow: hidden; }
+.cs-ps-bar-fill { height: 100%; border-radius: 5px; transition: width .2s; }
+.cs-ps-bar-fill.p0 { width: 4%;  min-width: 4px; background: var(--ps-missing); }
+.cs-ps-bar-fill.p1 { width: 33%;  background: var(--ps-progress); }
+.cs-ps-bar-fill.p2 { width: 66%;  background: var(--ps-progress); }
+.cs-ps-bar-fill.p3 { width: 100%; background: var(--ps-complete); }
+.cs-ps-bar-fill.p4 { width: 100%; background: var(--ps-extra); }
+.cs-ps-frac { text-align: right; font-size: .8rem; font-weight: 600; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
+.cs-ps-frac.zero  { color: var(--ps-missing); }
+.cs-ps-frac.full  { color: var(--ps-complete); }
+.cs-ps-frac.extra { color: var(--ps-extra); }
+
+.cs-ps-explore-pag { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+.cs-ps-pag-info { font-size: .82rem; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
 
 /* Deck header (deck.php) */
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }

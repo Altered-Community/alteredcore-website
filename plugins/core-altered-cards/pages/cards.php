@@ -189,6 +189,21 @@ foreach (array_reverse(array_filter($setsData, fn($s) => ($s['subtype'] ?? '') =
 }
 $playsetSetBg      = BASE_URL . '/plugins/core-altered-cards/assets/set/small_bg/';
 $playsetFactionIcon = BASE_URL . '/plugins/core-altered-cards/assets/faction/';
+$playsetGemBase     = BASE_URL . '/plugins/core-altered-cards/assets/gems/';
+// Rarity display names + gem letters for the exploration version labels.
+$playsetRarities = [];
+foreach (['COMMON', 'RARE', 'EXALTED'] as $_rk) {
+    if (!isset($raritiesData[$_rk])) continue;
+    $playsetRarities[$_rk] = [
+        'name' => $raritiesData[$_rk][$uiLang] ?? $raritiesData[$_rk]['en'] ?? $_rk,
+        'gem'  => $raritiesData[$_rk]['gem'] ?? substr($_rk, 0, 1),
+    ];
+}
+// Card-type code → localized display name (e.g. LANDMARK_PERMANENT → "Repère Permanent").
+$playsetTypes = [];
+foreach ($typesData as $_tk => $_tv) {
+    $playsetTypes[$_tk] = $_tv[$uiLang] ?? $_tv['en'] ?? $_tk;
+}
 
 // widget config for card-search.php
 $_cs = [
@@ -270,7 +285,8 @@ CardSearch({
     collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     playsetApiUrl:     <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset' : '') ?>,
-    playsetMeta:       { factions: <?= json_encode($playsetFactions) ?>, sets: <?= json_encode($playsetSets) ?>, setBg: <?= json_encode($playsetSetBg) ?>, factionIcon: <?= json_encode($playsetFactionIcon) ?> },
+    playsetCardsApiUrl:<?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset-cards' : '') ?>,
+    playsetMeta:       { factions: <?= json_encode($playsetFactions) ?>, sets: <?= json_encode($playsetSets) ?>, setBg: <?= json_encode($playsetSetBg) ?>, factionIcon: <?= json_encode($playsetFactionIcon) ?>, gemBase: <?= json_encode($playsetGemBase) ?>, rarities: <?= json_encode($playsetRarities) ?>, types: <?= json_encode($playsetTypes) ?> },
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,

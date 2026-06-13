@@ -117,6 +117,13 @@ $_csPsFaction   = $_csPs['faction']    ?? ($_csLang === 'fr' ? 'Faction' : 'Fact
 $_csPsTotal     = $_csPs['total']      ?? ($_csLang === 'fr' ? 'Total'   : 'Total');
 $_csPsAllSets     = $_csPs['all_sets']     ?? ($_csLang === 'fr' ? 'Tous les sets'        : 'All sets');
 $_csPsAllFactions = $_csPs['all_factions'] ?? ($_csLang === 'fr' ? 'Toutes les factions'  : 'All factions');
+$_csPsExploreTitle = $_csPs['explore_title'] ?? ($_csLang === 'fr' ? 'Exploration' : 'Exploration');
+$_csPsExploreCards = $_csPs['explore_cards'] ?? ($_csLang === 'fr' ? 'cartes' : 'cards');
+$_csPsVersions     = $_csPs['versions']      ?? ($_csLang === 'fr' ? 'versions' : 'versions');
+$_csPsCopiesLabel  = $_csPs['copies_label'] ?? ($_csLang === 'fr' ? 'Exemplaires possédés' : 'Copies owned');
+$_csPsCopies12     = $_csPs['copies_1_2']   ?? ($_csLang === 'fr' ? '1 ou 2' : '1 or 2');
+$_csPsCopies4      = $_csPs['copies_4plus'] ?? ($_csLang === 'fr' ? '4 et +' : '4 or more');
+$_csPsDonutTitle   = $_csPs['donut_title'] ?? ($_csLang === 'fr' ? 'Cartes par nombre d\'exemplaires possédés' : 'Cards by number of copies owned');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -567,7 +574,112 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                        data-allsets-label="<?= h($_csPsAllSets) ?>"
                        data-allfactions-label="<?= h($_csPsAllFactions) ?>"></table>
             </div>
-        </div>
+        </div><!-- /#{prefix}-playset-dash (KPIs + heatmap only) -->
+
+        <!-- ===== Zone 3 — Exploration (independent section: own filters, loading & list) ===== -->
+            <div class="cs-ps-section-title cs-ps-explore-title"><?= h($_csPsExploreTitle) ?></div>
+
+            <div class="cs-ps-explore-top">
+            <div class="cs-ps-filters">
+
+            <!-- Name search (above the sets) -->
+            <div class="cs-ps-name-row">
+                <input type="text" id="<?= h($_csP) ?>-playset-name" class="form-control form-control-sm cs-ps-name-input"
+                       placeholder="<?= h($_csTxt['search_ph'] ?? 'Search…') ?>" autocomplete="off">
+            </div>
+
+            <!-- Set filter (reuses the "All cards" set quick-filter design).
+                 Excluded: COREKS (KS, folded into CORE) and FUGUE (no playset cards). -->
+            <?php $_psSetSkip = ['COREKS', 'FUGUE']; ?>
+            <?php if (!empty($_csOfficialSets)): ?>
+            <div class="filter-row filter-row--scroll cs-ps-set-filter" id="<?= h($_csP) ?>-playset-set-filter">
+                <?php foreach (array_reverse($_csOfficialSets, true) as $_psSk => $_psSv): if (in_array($_psSk, $_psSetSkip, true)) continue; ?>
+                <button type="button" class="filter-toggle set-qf-btn cs-ps-set active" data-set="<?= h($_psSk) ?>"
+                        style="background-image:url('<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/set/small_bg/<?= h($_psSk) ?>.webp')">
+                    <span class="set-qf-inner">
+                        <?php if (!empty($_psSv['icon'])): ?><i class="<?= h($_psSv['icon']) ?>"></i><?php endif; ?>
+                        <span><?= h($_psSv[$_csLang] ?? $_psSv['en'] ?? $_psSk) ?></span>
+                    </span>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Faction filter (reuses the "All cards" faction pill design) -->
+            <?php if (!empty($_csFactions)): ?>
+            <div class="filter-row filter-row--scroll cs-ps-faction-filter" id="<?= h($_csP) ?>-playset-faction-filter">
+                <?php foreach ($_csFactions as $_pfk => $_pfv): ?>
+                <button type="button" class="filter-toggle cs-ps-faction active" data-faction="<?= h($_pfk) ?>"
+                        title="<?= h($_csFactionNames[$_pfk] ?? $_pfk) ?>">
+                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_pfk) ?>.png" alt="<?= h($_pfk) ?>">
+                    <?= h($_csFactionNames[$_pfk] ?? $_pfk) ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Rarity filter (scope, under the factions) — gem + full name pills -->
+            <?php if (!empty($_csRarities)): ?>
+            <div class="filter-row filter-row--scroll cs-ps-rarity-filter" id="<?= h($_csP) ?>-playset-explore-rarities">
+                <?php foreach ($_csPsRarityCodes as $_prk): if (!isset($_csRarities[$_prk])) continue; ?>
+                <button type="button" class="filter-toggle cs-ps-explore-rarity active" data-rarity="<?= h($_prk) ?>">
+                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_prk] ?? substr($_prk, 0, 1)) ?>.png"
+                         alt="" style="width:15px;height:15px">
+                    <?= h($_csRarityTxt[$_prk] ?? $_prk) ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Number of copies filter (card-level, multi-select; default 0 + 1-2, saved in localStorage) -->
+            <div class="filter-row cs-ps-copies-filter" id="<?= h($_csP) ?>-playset-copies-filter">
+                <span class="cs-ps-copies-label"><?= h($_csPsCopiesLabel) ?></span>
+                <button type="button" class="filter-toggle cs-ps-copies active" data-copies="0">0</button>
+                <button type="button" class="filter-toggle cs-ps-copies active" data-copies="1-2"><?= h($_csPsCopies12) ?></button>
+                <button type="button" class="filter-toggle cs-ps-copies active" data-copies="3">3</button>
+                <button type="button" class="filter-toggle cs-ps-copies active" data-copies="4plus"><?= h($_csPsCopies4) ?></button>
+            </div>
+
+            </div><!-- /.cs-ps-filters -->
+
+            <!-- Summary panel (totals + donut of owned buckets) — reflects the current filters -->
+            <div class="cs-ps-summary" id="<?= h($_csP) ?>-playset-summary"
+                 data-lbl-12="<?= h($_csPsCopies12) ?>" data-lbl-4plus="<?= h($_csPsCopies4) ?>">
+                <div class="cs-ps-sum-loading" id="<?= h($_csP) ?>-playset-summary-loading" style="display:none">
+                    <div class="spinner-border" role="status"
+                         style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+                </div>
+                <div class="cs-ps-sum-stats">
+                    <div class="cs-ps-sum-stat">
+                        <span class="cs-ps-sum-lbl"><?= h($_csPsVersions) ?></span>
+                        <span class="cs-ps-sum-val" id="<?= h($_csP) ?>-playset-sum-versions">&ndash;</span>
+                    </div>
+                    <div class="cs-ps-sum-stat">
+                        <span class="cs-ps-sum-lbl"><?= h($_csPsCopiesLabel) ?></span>
+                        <span class="cs-ps-sum-val" id="<?= h($_csP) ?>-playset-sum-owned">&ndash;</span>
+                    </div>
+                </div>
+                <div class="cs-ps-sum-divider"></div>
+                <div class="cs-ps-sum-chart">
+                    <div class="cs-ps-chart-title"><?= h($_csPsDonutTitle) ?></div>
+                    <div class="cs-ps-chart-body">
+                        <div class="cs-ps-donut" id="<?= h($_csP) ?>-playset-donut"></div>
+                        <div class="cs-ps-donut-legend" id="<?= h($_csP) ?>-playset-donut-legend"></div>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- /.cs-ps-explore-top -->
+
+            <!-- Exploration loading / error (independent of the dashboard) -->
+            <div id="<?= h($_csP) ?>-playset-explore-loading" class="ac-state-pane" style="display:none">
+                <div class="spinner-border" role="status"
+                     style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+                <div class="mt-2 small text-muted"><?= h($_csTxt['loading'] ?? '') ?></div>
+            </div>
+            <div id="<?= h($_csP) ?>-playset-explore" class="cs-ps-explore"
+                 data-cards-label="<?= h($_csPsExploreCards) ?>"></div>
+            <div id="<?= h($_csP) ?>-playset-explore-pag" class="cs-ps-explore-pag"></div>
 
     </div><!-- /#{prefix}-playset -->
 

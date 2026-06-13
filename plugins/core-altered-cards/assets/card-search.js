@@ -75,7 +75,13 @@ function CardSearch(cfg) {
     var elPlaysetLoading = q('playset-loading');
     var elPlaysetError   = q('playset-error');
     var elPlaysetDash    = q('playset-dash');
-    var _playsetLoaded   = false;
+    var elPlaysetExplore     = q('playset-explore');
+    var elPlaysetExploreMeta = q('playset-explore-meta');
+    var elPlaysetExplorePag  = q('playset-explore-pag');
+    var elPlaysetExploreLoading = q('playset-explore-loading');
+    var elPlaysetSummaryLoading = q('playset-summary-loading');
+    var _playsetLoaded      = false;
+    var _playsetCardsLoaded = false;
     var elFilterBtn     = q('filter-btn');
     var elFilterModal   = document.getElementById(P + '-filter-modal');
     var elModalResetBtn = document.getElementById(P + '-modal-reset-btn');
@@ -1287,8 +1293,11 @@ function CardSearch(cfg) {
     // capped at 3 per reference: owned = 1·n1 + 2·n2 + 3·n(3+), needed = 3 · totalRefs.
     // The rarity selector (COMMON/RARE/EXALTED) narrows the universe server-side.
     function loadPlayset() {           // lazy: first time the tab is opened
-        if (!cfg.playsetApiUrl || _playsetLoaded) return;
-        fetchPlayset();
+        if (cfg.playsetApiUrl && !_playsetLoaded) fetchPlayset();
+        if (cfg.playsetCardsApiUrl && !_playsetCardsLoaded) {
+            _playsetCardsLoaded = true;
+            fetchPlaysetCards(1);
+        }
     }
     function fetchPlayset() {          // (re)fetch with the current rarity selection
         if (!cfg.playsetApiUrl) return;
@@ -1352,6 +1361,96 @@ function CardSearch(cfg) {
                 try { localStorage.setItem(PS_RARITY_KEY, JSON.stringify(_psRarities)); } catch (e) {}
                 syncPsRarityButtons();
                 fetchPlayset();
+            });
+        });
+    }
+
+    // Exploration filters (set, faction) — default all selected. Clicking one
+    // while all are selected narrows to just it; subsequent clicks add/remove;
+    // emptying the selection resets it to all.
+    function psToggleSelection(sel, all, code) {
+        if (sel.length === all.length) return [code];        // all → narrow to this one
+        var next = sel.slice(), i = next.indexOf(code);
+        if (i >= 0) next.splice(i, 1); else next.push(code);
+        return next.length ? next : all.slice();             // emptied → back to all
+    }
+    // Wire a [data-<attr>] button row into a selection that drives the exploration.
+    // get()/set() read/write the backing state; allRef stores the full code list.
+    function initPsFilterRow(wrapId, attr, get, set, allRef) {
+        var wrap = q(wrapId);
+        var btns = wrap ? wrap.querySelectorAll('[data-' + attr + ']') : [];
+        if (!btns.length) return;
+        allRef.all = Array.prototype.map.call(btns, function(b) { return b.dataset[attr]; });
+        set(allRef.all.slice());   // default: all selected
+        function sync() {
+            var cur = get();
+            Array.prototype.forEach.call(btns, function(b) { b.classList.toggle('active', cur.indexOf(b.dataset[attr]) >= 0); });
+        }
+        sync();
+        Array.prototype.forEach.call(btns, function(b) {
+            b.addEventListener('click', function() {
+                set(psToggleSelection(get(), allRef.all, b.dataset[attr]));
+                sync();
+                fetchPlaysetCards(1);   // filter changed → back to page 1
+            });
+        });
+    }
+    var _psSets = { sel: null, all: [] };
+    var _psFactions = { sel: null, all: [] };
+    var _psExpRarities = { sel: null, all: [] };
+    var _psName = '';
+    function initPlaysetSets() {
+        initPsFilterRow('playset-set-filter', 'set',
+            function() { return _psSets.sel; }, function(v) { _psSets.sel = v; }, _psSets);
+    }
+    function initPlaysetFactions() {
+        initPsFilterRow('playset-faction-filter', 'faction',
+            function() { return _psFactions.sel; }, function(v) { _psFactions.sel = v; }, _psFactions);
+    }
+    function initPlaysetExploreRarities() {
+        initPsFilterRow('playset-explore-rarities', 'rarity',
+            function() { return _psExpRarities.sel; }, function(v) { _psExpRarities.sel = v; }, _psExpRarities);
+    }
+    // Name search — debounced; resets to page 1.
+    function initPlaysetName() {
+        var inp = q('playset-name');
+        if (!inp) return;
+        var timer = null;
+        inp.addEventListener('input', function() {
+            _psName = inp.value.trim();
+            clearTimeout(timer);
+            timer = setTimeout(function() { fetchPlaysetCards(1); }, 300);
+        });
+    }
+    // Number-of-copies filter — plain multi-select (no narrow logic), default
+    // all 4 buckets, persisted in localStorage. Empty selection = no filter (all).
+    var _psCopies = null;
+    var PS_COPIES_KEY = 'ac_playset_copies';
+    function psCopiesButtons() {
+        var wrap = q('playset-copies-filter');
+        return wrap ? wrap.querySelectorAll('[data-copies]') : [];
+    }
+    function syncPsCopiesButtons() {
+        Array.prototype.forEach.call(psCopiesButtons(), function(b) {
+            b.classList.toggle('active', _psCopies.indexOf(b.dataset.copies) >= 0);
+        });
+    }
+    function initPlaysetCopies() {
+        var btns = psCopiesButtons();
+        if (!btns.length) return;
+        var all = Array.prototype.map.call(btns, function(b) { return b.dataset.copies; });
+        var stored = null;
+        try { stored = JSON.parse(localStorage.getItem(PS_COPIES_KEY)); } catch (e) {}
+        if (!Array.isArray(stored)) stored = ['0', '1-2', '3', '4plus'];   // default: all
+        _psCopies = stored.filter(function(c) { return all.indexOf(c) >= 0; });
+        syncPsCopiesButtons();
+        Array.prototype.forEach.call(btns, function(b) {
+            b.addEventListener('click', function() {
+                var c = b.dataset.copies, i = _psCopies.indexOf(c);
+                if (i >= 0) _psCopies.splice(i, 1); else _psCopies.push(c);
+                try { localStorage.setItem(PS_COPIES_KEY, JSON.stringify(_psCopies)); } catch (e) {}
+                syncPsCopiesButtons();
+                fetchPlaysetCards(1);
             });
         });
     }
@@ -1570,12 +1669,12 @@ function CardSearch(cfg) {
         cols.forEach(function(c) { colTot[c.code] = { owned: 0, needed: 0 }; });
         rows.forEach(function(f) {
             var tr = document.createElement('tr');
+            var facIcon = meta.factionIcon ? meta.factionIcon + f.code + '.png' : '';
             var rowHead = th('cs-ps-hm-rowhead');
-            var dot = document.createElement('span'); dot.className = 'cs-ps-hm-dot'; dot.style.background = f.color || '#888';
-            rowHead.appendChild(dot); rowHead.appendChild(document.createTextNode(f.name));
+            if (facIcon) { var fih = document.createElement('img'); fih.className = 'cs-ps-hm-ficon'; fih.src = facIcon; fih.alt = ''; rowHead.appendChild(fih); }
+            rowHead.appendChild(document.createTextNode(f.name));
             tr.appendChild(rowHead);
             // Tally the row first so the leading Total cell can be filled.
-            var facIcon = meta.factionIcon ? meta.factionIcon + f.code + '.png' : '';
             var rowO = 0, rowN = 0, setCells = [];
             cols.forEach(function(c) {
                 var cell = (grid[f.code] || {})[c.code] || { owned: 0, needed: 0 };
@@ -1597,6 +1696,256 @@ function CardSearch(cfg) {
         ftr.appendChild(dataCell(grandO, grandN, 'cs-ps-hm-grand', allSetsLabel, allFacLabel));
         cols.forEach(function(c) { ftr.appendChild(dataCell(colTot[c.code].owned, colTot[c.code].needed, 'cs-ps-hm-coltot', c.name, allFacLabel, c.icon, '')); });
         tfoot.appendChild(ftr); table.appendChild(tfoot);
+    }
+
+    // ── Playset exploration (Zone 3 — shopping list, card by card) ──────────────
+    var PS_PER_PAGE = 30;
+    function fetchPlaysetCards(page) {
+        if (!cfg.playsetCardsApiUrl || !elPlaysetExplore) return;
+        page = page || 1;
+        elPlaysetExplore.classList.add('is-loading');
+        if (elPlaysetExploreLoading) elPlaysetExploreLoading.style.display = '';
+        if (elPlaysetSummaryLoading) elPlaysetSummaryLoading.style.display = '';
+        var qs = 'locale=' + encodeURIComponent(UI_LANG) + '&page=' + page + '&itemsPerPage=' + PS_PER_PAGE;
+        // Set / faction filters: send params only for a strict subset (all selected = no filter).
+        if (_psSets.sel && _psSets.sel.length && _psSets.sel.length < _psSets.all.length) {
+            _psSets.sel.forEach(function(s) { qs += '&cardSet[]=' + encodeURIComponent(s); });
+        }
+        if (_psFactions.sel && _psFactions.sel.length && _psFactions.sel.length < _psFactions.all.length) {
+            _psFactions.sel.forEach(function(f) { qs += '&faction[]=' + encodeURIComponent(f); });
+        }
+        if (_psExpRarities.sel && _psExpRarities.sel.length && _psExpRarities.sel.length < _psExpRarities.all.length) {
+            _psExpRarities.sel.forEach(function(r) { qs += '&rarity[]=' + encodeURIComponent(r); });
+        }
+        if (_psName) qs += '&name=' + encodeURIComponent(_psName);
+        // Copies buckets (card-level): send each selected; empty = no filter (all).
+        if (_psCopies && _psCopies.length) {
+            _psCopies.forEach(function(c) { qs += '&copies[]=' + encodeURIComponent(c); });
+        }
+        fetch(cfg.playsetCardsApiUrl + '?' + qs, { headers: { 'Accept': 'application/json' } })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(d) { if (DEBUG) console.log('[CardSearch] playset cards:', d); renderPlaysetCards(d); })
+            .catch(function(err) {
+                elPlaysetExplore.classList.remove('is-loading');
+                if (elPlaysetExploreLoading) elPlaysetExploreLoading.style.display = 'none';
+                if (elPlaysetSummaryLoading) elPlaysetSummaryLoading.style.display = 'none';
+                if (elPlaysetExploreMeta) elPlaysetExploreMeta.textContent = '';
+                elPlaysetExplore.innerHTML = '<div class="ac-state-pane"><i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:#f87171"></i></div>';
+                if (cfg.onError) cfg.onError(err);
+            });
+    }
+
+    // Lookups from meta (faction name/color, rarity name/gem).
+    function _psFactionMeta(code) {
+        var fs = (cfg.playsetMeta || {}).factions || [];
+        for (var i = 0; i < fs.length; i++) if (fs[i].code === code) return fs[i];
+        return { code: code, name: code, color: '#888' };
+    }
+    function _psRarityMeta(code) {
+        var rs = (cfg.playsetMeta || {}).rarities || {};
+        return rs[code] || { name: code, gem: code.charAt(0) };
+    }
+
+    function renderPlaysetCards(d) {
+        if (!elPlaysetExplore) return;
+        elPlaysetExplore.classList.remove('is-loading');
+        if (elPlaysetExploreLoading) elPlaysetExploreLoading.style.display = 'none';
+        if (elPlaysetSummaryLoading) elPlaysetSummaryLoading.style.display = 'none';
+        var items   = (d && d.items) || [];
+        var page    = (d && d.page) || 1;
+        var total   = (d && d.totalItems) || 0;
+        var pages   = (d && d.totalPages) || 1;
+        var cardsLbl = elPlaysetExplore.getAttribute('data-cards-label') || 'cards';
+
+        if (elPlaysetExploreMeta) {
+            elPlaysetExploreMeta.textContent = total.toLocaleString() + ' ' + cardsLbl +
+                (pages > 1 ? '  ·  ' + page + ' / ' + pages : '');
+        }
+        elPlaysetExplore.innerHTML = '';
+        items.forEach(function(card) { elPlaysetExplore.appendChild(renderExploreCard(card)); });
+        renderExplorePagination(page, pages);
+        renderPlaysetSummary(d && d.summary);
+    }
+
+    // Summary panel — totals + donut of owned-version buckets (reflects filters).
+    function renderPlaysetSummary(summary) {
+        var panel = q('playset-summary');
+        if (!panel) return;
+        if (!summary || !summary.ownedBuckets) { panel.style.visibility = 'hidden'; return; }
+        panel.style.visibility = '';
+        var ownedEl = q('playset-sum-owned');    if (ownedEl) ownedEl.textContent = (summary.totalOwned || 0).toLocaleString();
+        var verEl   = q('playset-sum-versions'); if (verEl)   verEl.textContent   = (summary.totalVersions || 0).toLocaleString();
+
+        var b = summary.ownedBuckets;
+        var segs = [
+            { label: '0',                                color: 'var(--ps-missing)',  val: b['0'] || 0 },
+            { label: panel.getAttribute('data-lbl-12') || '1-2',   color: 'var(--ps-progress)', val: b['1-2'] || 0 },
+            { label: '3',                                color: 'var(--ps-complete)', val: b['3'] || 0 },
+            { label: panel.getAttribute('data-lbl-4plus') || '4+', color: 'var(--ps-extra)',    val: b['4plus'] || 0 }
+        ];
+        var total = segs.reduce(function(s, x) { return s + x.val; }, 0);
+
+        // Donut (SVG, stroke-dasharray on a circumference-100 circle).
+        var donut = q('playset-donut');
+        if (donut) {
+            var svg = '<svg viewBox="0 0 42 42" class="cs-ps-donut-svg">' +
+                '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--neutral-200)" stroke-width="5"></circle>';
+            var acc = 0;
+            if (total > 0) segs.forEach(function(s) {
+                if (!s.val) return;
+                var pct = s.val / total * 100;
+                svg += '<circle cx="21" cy="21" r="15.915" fill="none" stroke="' + s.color +
+                    '" stroke-width="5" stroke-dasharray="' + pct.toFixed(2) + ' ' + (100 - pct).toFixed(2) +
+                    '" stroke-dashoffset="' + (25 - acc).toFixed(2) + '"></circle>';
+                acc += pct;
+            });
+            svg += '</svg>';
+            donut.innerHTML = svg;
+        }
+
+        // Legend (colored dot + bucket label + count).
+        var legend = q('playset-donut-legend');
+        if (legend) {
+            legend.innerHTML = '';
+            segs.forEach(function(s) {
+                var row = document.createElement('div'); row.className = 'cs-ps-leg-row';
+                var dot = document.createElement('span'); dot.className = 'cs-ps-leg-dot'; dot.style.background = s.color;
+                var lab = document.createElement('span'); lab.className = 'cs-ps-leg-lab'; lab.textContent = s.label;
+                var val = document.createElement('span'); val.className = 'cs-ps-leg-val'; val.textContent = s.val.toLocaleString();
+                var pct = document.createElement('span'); pct.className = 'cs-ps-leg-pct';
+                pct.textContent = (total > 0 ? Math.round(s.val / total * 100) : 0) + '%';
+                row.appendChild(dot); row.appendChild(lab); row.appendChild(val); row.appendChild(pct);
+                legend.appendChild(row);
+            });
+        }
+    }
+
+    function renderExploreCard(card) {
+        var versions  = card.versions || [];
+
+        var row = document.createElement('div'); row.className = 'cs-ps-card';
+
+        // Mini visual — default to the Common art (else first version); swaps on version hover.
+        var def = null;
+        for (var i = 0; i < versions.length; i++) { if (versions[i].rarity === 'COMMON') { def = versions[i]; break; } }
+        if (!def) def = versions[0] || {};
+        var mini = document.createElement('div'); mini.className = 'cs-ps-card-mini';
+        var img = document.createElement('img'); img.loading = 'lazy'; img.alt = card.name || '';
+        // Use the site's CDN (reference → .webp), same source as the card grid,
+        // rather than the API's imagePath (which points at a dev S3 bucket).
+        var defImg = def.reference ? cdnUrl(def.reference) : '';
+        if (defImg) img.src = defImg;
+        img.onerror = function() { this.style.display = 'none'; };
+        mini.appendChild(img);
+        row.appendChild(mini);
+
+        var info = document.createElement('div'); info.className = 'cs-ps-card-info';
+
+        // Header: name with inline type · set tags (set icon, no faction here) + a capped X/Y summary.
+        var head = document.createElement('div'); head.className = 'cs-ps-card-head';
+        var headL = document.createElement('div'); headL.className = 'cs-ps-card-titlewrap';
+        var title = document.createElement('span'); title.className = 'cs-ps-card-title'; title.textContent = card.name || '';
+        headL.appendChild(title);
+        var meta = document.createElement('span'); meta.className = 'cs-ps-card-meta';
+        var typeName = ((cfg.playsetMeta || {}).types || {})[card.cardType] || card.cardType || '';
+        meta.appendChild(_tag([document.createTextNode(typeName)]));
+        var sm = setMeta(card.cardSet);
+        var setTag = [];
+        if (sm.icon) { var si = document.createElement('i'); si.className = 'cs-ps-card-seticon ' + sm.icon; setTag.push(si); }
+        setTag.push(document.createTextNode(sm.name));
+        meta.appendChild(_tag(setTag));
+        headL.appendChild(meta);
+        head.appendChild(headL);
+
+        var capped = 0, needed = 3 * versions.length;
+        versions.forEach(function(v) { capped += Math.min(v.owned || 0, 3); });
+        var summary = document.createElement('div'); summary.className = 'cs-ps-card-summary';
+        var sv = document.createElement('div'); sv.className = 'cs-ps-card-summary-val';
+        sv.textContent = capped + '/' + needed;
+        summary.appendChild(sv);
+        head.appendChild(summary);
+        info.appendChild(head);
+
+        // Version sub-rows
+        var vwrap = document.createElement('div'); vwrap.className = 'cs-ps-versions';
+        versions.forEach(function(v) {
+            var rm = _psRarityMeta(v.rarity);
+            var fmv = _psFactionMeta(v.faction);
+            var vr = document.createElement('div'); vr.className = 'cs-ps-version';
+
+            var label = document.createElement('span'); label.className = 'cs-ps-version-label';
+            if ((cfg.playsetMeta || {}).gemBase && rm.gem) {
+                var gem = document.createElement('img'); gem.className = 'cs-ps-gem';
+                gem.src = cfg.playsetMeta.gemBase + rm.gem + '.png'; gem.alt = '';
+                label.appendChild(gem);
+            }
+            var rar = document.createElement('span'); rar.className = 'cs-ps-version-rarity'; rar.textContent = rm.name;
+            label.appendChild(rar);
+            var fac = document.createElement('span'); fac.className = 'cs-ps-version-faction';
+            if ((cfg.playsetMeta || {}).factionIcon && v.faction) {
+                var ficon = document.createElement('img'); ficon.className = 'cs-ps-version-ficon';
+                ficon.src = cfg.playsetMeta.factionIcon + v.faction + '.png'; ficon.alt = '';
+                fac.appendChild(ficon);
+            }
+            fac.appendChild(document.createTextNode(fmv.name));
+            label.appendChild(fac);
+            vr.appendChild(label);
+
+            var owned = v.owned || 0;
+            var bar = document.createElement('div'); bar.className = 'cs-ps-bar';
+            var fill = document.createElement('div');
+            fill.className = 'cs-ps-bar-fill p' + (owned >= 4 ? 4 : owned);
+            bar.appendChild(fill);
+            vr.appendChild(bar);
+
+            var frac = document.createElement('span');
+            frac.className = 'cs-ps-frac ' + (owned === 0 ? 'zero' : owned >= 4 ? 'extra' : owned >= 3 ? 'full' : '');
+            frac.textContent = owned + '/3';
+            vr.appendChild(frac);
+
+            // Hover a version → mini shows that version's art.
+            if (v.reference) {
+                var vImg = cdnUrl(v.reference);
+                vr.addEventListener('mouseenter', function() { img.style.display = ''; img.src = vImg; });
+                vr.addEventListener('mouseleave', function() { if (defImg) { img.style.display = ''; img.src = defImg; } });
+            }
+            vwrap.appendChild(vr);
+        });
+        info.appendChild(vwrap);
+        row.appendChild(info);
+        return row;
+    }
+
+    function _tag(children) {
+        var s = document.createElement('span'); s.className = 'cs-ps-card-tag';
+        children.forEach(function(c) { s.appendChild(c); });
+        return s;
+    }
+    function setMeta(code) {
+        var sets = (cfg.playsetMeta || {}).sets || [];
+        for (var i = 0; i < sets.length; i++) if (sets[i].code === code) return sets[i];
+        return { name: code || '', icon: '' };
+    }
+
+    function renderExplorePagination(page, pages) {
+        if (!elPlaysetExplorePag) return;
+        elPlaysetExplorePag.innerHTML = '';
+        if (pages <= 1) return;
+        function btn(label, target, disabled) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'btn btn-sm btn-outline-secondary'; b.textContent = label;
+            b.disabled = !!disabled;
+            if (!disabled) b.addEventListener('click', function() {
+                fetchPlaysetCards(target);
+                if (elPlaysetExplore && elPlaysetExplore.scrollIntoView) elPlaysetExplore.scrollIntoView({ block: 'start' });
+            });
+            return b;
+        }
+        elPlaysetExplorePag.appendChild(btn(txt.prev || '← Prev', page - 1, page <= 1));
+        var info = document.createElement('span'); info.className = 'cs-ps-pag-info';
+        info.textContent = page + ' / ' + pages;
+        elPlaysetExplorePag.appendChild(info);
+        elPlaysetExplorePag.appendChild(btn(txt.next || 'Next →', page + 1, page >= pages));
     }
 
     // ── Promo sets ────────────────────────────────────────────────────────────
@@ -2240,6 +2589,11 @@ function CardSearch(cfg) {
     initTomSelects();
     syncDefaultsToUi();
     initPlaysetRarities(); // before any tab restore that may trigger loadPlayset()
+    initPlaysetSets();
+    initPlaysetFactions();
+    initPlaysetExploreRarities();
+    initPlaysetName();
+    initPlaysetCopies();
     // Restore the active tab from the URL (cards mode) so a refresh keeps it.
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
