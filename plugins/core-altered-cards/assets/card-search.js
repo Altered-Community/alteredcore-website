@@ -1530,9 +1530,10 @@ function CardSearch(cfg) {
             d.appendChild(document.createTextNode(txt));
             tip.appendChild(d);
         }
-        line('cs-ps-tip-set',     cell.dataset.set || '',     cell.dataset.setIcon || '', '');
-        line('cs-ps-tip-faction', cell.dataset.faction || '', '', cell.dataset.factionIcon || '');
-        line('cs-ps-tip-count',   cell.dataset.count || '');
+        line('cs-ps-tip-set',      cell.dataset.set || '',      cell.dataset.setIcon || '', '');
+        line('cs-ps-tip-faction',  cell.dataset.faction || '',  '', cell.dataset.factionIcon || '');
+        line('cs-ps-tip-count',    cell.dataset.count || '');
+        if (cell.dataset.complete) line('cs-ps-tip-count', cell.dataset.complete + ' ' + (cell.dataset.completeLabel || 'Complete'));
         tip.style.display = 'block';
         var r = cell.getBoundingClientRect(), t = tip.getBoundingClientRect();
         var left = r.left + r.width / 2 - t.width / 2;
@@ -1569,13 +1570,13 @@ function CardSearch(cfg) {
         var metaSets     = meta.sets || [];
         var fbs          = (data && data.byFactionAndSet) || [];
 
-        // Aggregate buckets into grid[faction][set] = {owned, needed}.
+        // Aggregate buckets into grid[faction][set] = {owned, needed, complete}.
         var grid = {}, present = {};
         fbs.forEach(function(r) {
             var qb = r.quantities || {};
             var n0 = qb['0'] || 0, n1 = qb['1'] || 0, n2 = qb['2'] || 0, n3 = qb['3+'] || 0;
             if (!grid[r.faction]) grid[r.faction] = {};
-            grid[r.faction][r.cardSet] = { owned: n1 + 2 * n2 + 3 * n3, needed: 3 * (n0 + n1 + n2 + n3) };
+            grid[r.faction][r.cardSet] = { owned: n1 + 2 * n2 + 3 * n3, needed: 3 * (n0 + n1 + n2 + n3), complete: n3 };
             present[r.cardSet] = true;
         });
 
@@ -1587,13 +1588,14 @@ function CardSearch(cfg) {
         var rows = metaFactions.filter(function(f) { return grid[f.code]; });
         if (!rows.length) rows = metaFactions;
 
-        var factionLabel  = table.getAttribute('data-faction-label')     || 'Faction';
-        var totalLabel    = table.getAttribute('data-total-label')       || 'Total';
-        var copiesLabel   = table.getAttribute('data-copies-label')      || '';
-        var allSetsLabel  = table.getAttribute('data-allsets-label')     || totalLabel;
-        var allFacLabel   = table.getAttribute('data-allfactions-label') || totalLabel;
+        var factionLabel   = table.getAttribute('data-faction-label')     || 'Faction';
+        var totalLabel     = table.getAttribute('data-total-label')       || 'Total';
+        var copiesLabel    = table.getAttribute('data-copies-label')      || '';
+        var allSetsLabel   = table.getAttribute('data-allsets-label')     || totalLabel;
+        var allFacLabel    = table.getAttribute('data-allfactions-label') || totalLabel;
+        var completeLabel  = table.getAttribute('data-complete-label')    || 'Complete';
 
-        function dataCell(owned, needed, cls, setLabel, factionLabel, setIcon, factionIcon) {
+        function dataCell(owned, needed, complete, cls, setLabel, factionLabel, setIcon, factionIcon) {
             var td = document.createElement('td');
             td.className = 'cs-ps-hm ' + cls;
             if (!needed) { td.classList.add('empty'); td.textContent = '–'; return td; }
@@ -1615,6 +1617,7 @@ function CardSearch(cfg) {
             td.dataset.set        = setLabel || '';
             td.dataset.faction    = factionLabel || '';
             td.dataset.count      = owned.toLocaleString() + ' / ' + needed.toLocaleString() + (copiesLabel ? ' ' + copiesLabel : '');
+            if (complete != null) { td.dataset.complete = complete.toLocaleString(); td.dataset.completeLabel = completeLabel; }
             if (setIcon)     td.dataset.setIcon     = setIcon;
             if (factionIcon) td.dataset.factionIcon = factionIcon;
             td.addEventListener('mouseenter', function() { showHmTip(td); highlightCross(td, true); });
@@ -1676,8 +1679,8 @@ function CardSearch(cfg) {
         thead.appendChild(htr); table.appendChild(thead);
 
         // Body rows (one per faction) + accumulate column / grand totals
-        var tbody = document.createElement('tbody'), colTot = {}, grandO = 0, grandN = 0;
-        cols.forEach(function(c) { colTot[c.code] = { owned: 0, needed: 0 }; });
+        var tbody = document.createElement('tbody'), colTot = {}, grandO = 0, grandN = 0, grandC = 0;
+        cols.forEach(function(c) { colTot[c.code] = { owned: 0, needed: 0, complete: 0 }; });
         rows.forEach(function(f) {
             var tr = document.createElement('tr');
             var facIcon = meta.factionIcon ? meta.factionIcon + f.code + '.png' : '';
@@ -1686,16 +1689,16 @@ function CardSearch(cfg) {
             rowHead.appendChild(document.createTextNode(f.name));
             tr.appendChild(rowHead);
             // Tally the row first so the leading Total cell can be filled.
-            var rowO = 0, rowN = 0, setCells = [];
+            var rowO = 0, rowN = 0, rowC = 0, setCells = [];
             cols.forEach(function(c) {
-                var cell = (grid[f.code] || {})[c.code] || { owned: 0, needed: 0 };
-                setCells.push(dataCell(cell.owned, cell.needed, 'cs-ps-hm-cell', c.name, f.name, c.icon, facIcon));
-                rowO += cell.owned; rowN += cell.needed;
-                colTot[c.code].owned += cell.owned; colTot[c.code].needed += cell.needed;
+                var cell = (grid[f.code] || {})[c.code] || { owned: 0, needed: 0, complete: 0 };
+                setCells.push(dataCell(cell.owned, cell.needed, cell.complete, 'cs-ps-hm-cell', c.name, f.name, c.icon, facIcon));
+                rowO += cell.owned; rowN += cell.needed; rowC += cell.complete || 0;
+                colTot[c.code].owned += cell.owned; colTot[c.code].needed += cell.needed; colTot[c.code].complete += cell.complete || 0;
             });
-            tr.appendChild(dataCell(rowO, rowN, 'cs-ps-hm-rowtot', allSetsLabel, f.name, '', facIcon));   // Total column first
+            tr.appendChild(dataCell(rowO, rowN, rowC, 'cs-ps-hm-rowtot', allSetsLabel, f.name, '', facIcon));   // Total column first
             setCells.forEach(function(td) { tr.appendChild(td); });
-            grandO += rowO; grandN += rowN;
+            grandO += rowO; grandN += rowN; grandC += rowC;
             tbody.appendChild(tr);
         });
         table.appendChild(tbody);
@@ -1704,8 +1707,8 @@ function CardSearch(cfg) {
         var tfoot = document.createElement('tfoot'), ftr = document.createElement('tr');
         ftr.className = 'cs-ps-hm-foot';
         ftr.appendChild(th('cs-ps-hm-rowhead', totalLabel));
-        ftr.appendChild(dataCell(grandO, grandN, 'cs-ps-hm-grand', allSetsLabel, allFacLabel));
-        cols.forEach(function(c) { ftr.appendChild(dataCell(colTot[c.code].owned, colTot[c.code].needed, 'cs-ps-hm-coltot', c.name, allFacLabel, c.icon, '')); });
+        ftr.appendChild(dataCell(grandO, grandN, grandC, 'cs-ps-hm-grand', allSetsLabel, allFacLabel));
+        cols.forEach(function(c) { ftr.appendChild(dataCell(colTot[c.code].owned, colTot[c.code].needed, colTot[c.code].complete, 'cs-ps-hm-coltot', c.name, allFacLabel, c.icon, '')); });
         tfoot.appendChild(ftr); table.appendChild(tfoot);
     }
 

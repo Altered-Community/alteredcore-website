@@ -536,7 +536,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <div class="cs-ps-seg missing"     id="<?= h($_csP) ?>-seg-missing"></div>
                     </div>
                     <div class="cs-ps-legend">
-                        <span class="cs-ps-leg"><span class="cs-ps-dot complete"></span><?= h($_csPsComplete) ?> <span class="cs-ps-leg-frac">3/3</span></span>
+                        <span class="cs-ps-leg"><span class="cs-ps-dot complete"></span><?= h($_csPsComplete) ?> <span class="cs-ps-leg-frac">3+/3</span></span>
                         <span class="cs-ps-leg"><span class="cs-ps-dot in-progress"></span><?= h($_csPsProgress) ?> <span class="cs-ps-leg-frac">1&ndash;2/3</span></span>
                         <span class="cs-ps-leg"><span class="cs-ps-dot missing"></span><?= h($_csPsMissing) ?> <span class="cs-ps-leg-frac">0/3</span></span>
                     </div>
@@ -572,7 +572,8 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                        data-total-label="<?= h($_csPsTotal) ?>"
                        data-copies-label="<?= h($_csPsCopies) ?>"
                        data-allsets-label="<?= h($_csPsAllSets) ?>"
-                       data-allfactions-label="<?= h($_csPsAllFactions) ?>"></table>
+                       data-allfactions-label="<?= h($_csPsAllFactions) ?>"
+                       data-complete-label="<?= h($_csPsComplete) ?>"></table>
             </div>
         </div><!-- /#{prefix}-playset-dash (KPIs + heatmap only) -->
 
