@@ -169,15 +169,15 @@
             onChange: onChange
         });
     }
-    // Re-sync a multiselect's options to the current deck (edit page), keeping still-valid picks.
+    // Re-sync a multiselect's options to the current deck (edit page). updateOption() re-renders
+    // the selected item too, so a quantity change is reflected on the chip — not just the dropdown.
     function syncSelect(ts) {
         if (!ts) return;
-        var keep = ts.getValue().filter(function (k) { return groupQty[k]; });
-        ts.clearOptions();
-        if (ts.clearOptionGroups) ts.clearOptionGroups();
-        optgroups().forEach(function (g) { ts.addOptionGroup(g.value, g); });
-        ts.addOptions(handDeckGroups);
-        ts.setValue(keep, true);   // silent: caller recalculates
+        optgroups().forEach(function (g) { if (!ts.optgroups[g.value]) ts.addOptionGroup(g.value, g); });
+        handDeckGroups.forEach(function (g) {
+            if (ts.options[g.key]) ts.updateOption(g.key, g); else ts.addOption(g);
+        });
+        Object.keys(ts.options).forEach(function (k) { if (!groupQty[k]) ts.removeOption(k, true); });
         ts.refreshOptions(false);
     }
 

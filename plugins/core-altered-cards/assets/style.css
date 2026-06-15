@@ -803,8 +803,8 @@ button.deck-stat-pill {
    instead of jumping, plus a fade + upward drift ("back under the toolbar") */
 .pt-table-wrap{display:grid;grid-template-rows:1fr;opacity:1;margin-bottom:14px;overflow:hidden;transition:grid-template-rows .34s ease,opacity .26s ease,margin-bottom .34s ease}
 .pt-table-wrap > .pt-table{min-height:0;transition:transform .3s ease}
-#deck-hand-view.pt-simple .pt-table-wrap{grid-template-rows:0fr;opacity:0;margin-bottom:0}
-#deck-hand-view.pt-simple .pt-table-wrap > .pt-table{transform:translateY(-14px)}
+.pt-root.pt-simple .pt-table-wrap{grid-template-rows:0fr;opacity:0;margin-bottom:0}
+.pt-root.pt-simple .pt-table-wrap > .pt-table{transform:translateY(-14px)}
 @media (prefers-reduced-motion: reduce){ .pt-table-wrap,.pt-table-wrap > .pt-table{transition:none} }
 .pt-zone{border:1px solid var(--sand-300);border-radius:10px;padding:10px;background:rgba(0,0,0,.02)}
 .pt-zone-label{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--neutral-500);margin-bottom:8px}
@@ -841,28 +841,28 @@ button.deck-stat-pill {
 
 @media (max-width:720px){
   /* Hand-only mode (playground toggled off): fan the 6 cards, hide the playground bits */
-  #deck-hand-view.pt-simple .pt-table-wrap,
-  #deck-hand-view.pt-simple .pt-hand-actions,
-  #deck-hand-view.pt-simple #pt-phase-hint{ display:none !important; }
-  #deck-hand-view.pt-simple #hand-cards.hand-cards-grid{ display:flex; flex-wrap:nowrap; justify-content:center; gap:0; overflow:visible; }
-  #deck-hand-view.pt-simple #hand-cards .pt-card{ width:88px; flex:0 0 auto; margin-right:-34px; touch-action:auto; }
-  #deck-hand-view.pt-simple #hand-cards .pt-card:last-child{ margin-right:0; }
+  .pt-root.pt-simple .pt-table-wrap,
+  .pt-root.pt-simple .pt-hand-actions,
+  .pt-root.pt-simple #pt-phase-hint{ display:none !important; }
+  .pt-root.pt-simple #hand-cards.hand-cards-grid{ display:flex; flex-wrap:nowrap; justify-content:center; gap:0; overflow:visible; }
+  .pt-root.pt-simple #hand-cards .pt-card{ width:88px; flex:0 0 auto; margin-right:-34px; touch-action:auto; }
+  .pt-root.pt-simple #hand-cards .pt-card:last-child{ margin-right:0; }
 
   /* Playground ON (mobile): vertical layout + compact resources; tap action-sheet, no drag */
-  #deck-hand-view:not(.pt-simple) .pt-table{ flex-direction:column; gap:10px; }
-  #deck-hand-view:not(.pt-simple) .pt-board{ min-height:118px; }
-  #deck-hand-view:not(.pt-simple) .pt-resources-row{ justify-content:flex-start; gap:12px; }
-  #deck-hand-view:not(.pt-simple) .pt-deck-pile,
-  #deck-hand-view:not(.pt-simple) .pt-discard-pile{ width:84px; height:118px; }
-  #deck-hand-view:not(.pt-simple) .pt-discard-pile .deck-card-img,
-  #deck-hand-view:not(.pt-simple) .pt-discard-pile altered-card{ width:84px; height:118px; }
-  #deck-hand-view:not(.pt-simple) #hand-cards.hand-cards-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
-  #deck-hand-view:not(.pt-simple) .pt-board-cards .pt-card{ width:58px; }
-  #deck-hand-view:not(.pt-simple) .pt-board-cards.pt-overlap .pt-card{ width:58px; margin-right:-28px; }
+  .pt-root:not(.pt-simple) .pt-table{ flex-direction:column; gap:10px; }
+  .pt-root:not(.pt-simple) .pt-board{ min-height:118px; }
+  .pt-root:not(.pt-simple) .pt-resources-row{ justify-content:flex-start; gap:12px; }
+  .pt-root:not(.pt-simple) .pt-deck-pile,
+  .pt-root:not(.pt-simple) .pt-discard-pile{ width:84px; height:118px; }
+  .pt-root:not(.pt-simple) .pt-discard-pile .deck-card-img,
+  .pt-root:not(.pt-simple) .pt-discard-pile altered-card{ width:84px; height:118px; }
+  .pt-root:not(.pt-simple) #hand-cards.hand-cards-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .pt-root:not(.pt-simple) .pt-board-cards .pt-card{ width:58px; }
+  .pt-root:not(.pt-simple) .pt-board-cards.pt-overlap .pt-card{ width:58px; margin-right:-28px; }
 
   /* mobile always uses the action sheet → per-card buttons hidden (hand + board) */
-  #deck-hand-view .pt-loupe,
-  #deck-hand-view .pt-tomana{ display:none !important; }
+  .pt-root .pt-loupe,
+  .pt-root .pt-tomana{ display:none !important; }
 }
 /* Mobile action sheet (tap-to-act, replaces drag on touch) */
 .pt-sheet-backdrop{position:fixed;inset:0;z-index:1080;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
@@ -876,10 +876,10 @@ button.deck-stat-pill {
 .pt-sheet-cancel i{display:none}
 @media (prefers-reduced-motion: reduce){ .pt-sheet-backdrop,.pt-sheet{transition:none} }
 /* Playground toggled off (desktop): hand-only view, tap = zoom */
-#deck-hand-view.pt-simple .pt-hand-actions,
-#deck-hand-view.pt-simple #pt-phase-hint{ display:none !important; }
-#deck-hand-view.pt-simple #hand-cards .pt-loupe,
-#deck-hand-view.pt-simple #hand-cards .pt-tomana{ display:none; }
+.pt-root.pt-simple .pt-hand-actions,
+.pt-root.pt-simple #pt-phase-hint{ display:none !important; }
+.pt-root.pt-simple #hand-cards .pt-loupe,
+.pt-root.pt-simple #hand-cards .pt-tomana{ display:none; }
 @media (prefers-reduced-motion: reduce){
   .pt-flip{transition:none}
   .pt-to-mana{animation:none;opacity:0}
@@ -919,7 +919,7 @@ button.deck-stat-pill {
 .pt-drop-hover{outline:2px dashed var(--primary-400);outline-offset:-3px;border-radius:10px}
 
 /* ── Opening hand stats — detailed blocks ─────────────────────────────── */
-.ohs-section{margin-top:0}
+.ohs-section{margin-top:28px}
 /* Stat cards size to their own content (a single expanded "see details" no longer stretches
    its row-mates); .ohs-head keeps a fixed height so headers + the hr line stay aligned. */
 .ohs-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;align-items:start}
@@ -928,8 +928,27 @@ button.deck-stat-pill {
 .ohs-grid > .ohs-block:nth-child(n+4){grid-column:span 3}
 @media (max-width:1100px){ .ohs-grid{grid-template-columns:1fr 1fr} .ohs-grid > .ohs-block,.ohs-grid > .ohs-block:nth-child(n+4){grid-column:auto} }
 .ohs-block-comp{display:flex;flex-direction:column}
-.ohs-block-comp .ho-comp-body{flex:1;justify-content:flex-start;gap:34px;margin-top:10px}
-.ohs-block-comp .ho-comp-legend{flex-direction:column;align-items:flex-start;justify-content:center;gap:9px}
+/* Compact donut + legend. Small enough to fit the card's base height (and stay side-by-side in
+   the builder's narrow 3-col column); wraps to a tidy stack only if the column gets really tight. */
+.ohs-block-comp .ho-comp-body{flex:1;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 16px;margin-top:6px}
+.ohs-block-comp .ho-comp-legend{flex:0 1 auto;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px}
+.ohs-block-comp .ho-donut{width:62px;height:62px}
+.ohs-block-comp .ho-comp-item{font-size:.82rem;gap:6px}
+.ohs-block-comp .ho-comp-n{font-size:1rem;margin-left:2px}
+/* Deck detail page is full-width — give the composition card a roomier donut + legend. */
+#deck-hand-view .ohs-block-comp .ho-comp-body{gap:16px 26px}
+#deck-hand-view .ohs-block-comp .ho-donut{width:96px;height:96px}
+#deck-hand-view .ohs-block-comp .ho-comp-item{font-size:.9rem;gap:8px}
+#deck-hand-view .ohs-block-comp .ho-comp-n{font-size:1.35rem;margin-left:4px}
+/* Mobile: cards stack full-width, so the composition gets room for the bigger donut + legend too. */
+@media (max-width:820px){
+    .ohs-block-comp .ho-comp-body{gap:16px 26px}
+    .ohs-block-comp .ho-donut{width:96px;height:96px}
+    .ohs-block-comp .ho-comp-item{font-size:.9rem;gap:8px}
+    .ohs-block-comp .ho-comp-n{font-size:1.35rem;margin-left:4px}
+}
+/* Deck builder: the starting-hand block sits in the main content pane (full width). */
+#db-search-pane-hand .hand-odds{margin-top:0}
 /* All cards share a base height so a row looks even when collapsed; min-height (not a fixed
    height) lets a single expanded "see details" grow on its own without stretching its row-mates. */
 .ohs-block{background:var(--sand-50);border:1px solid var(--sand-200);border-radius:12px;padding:16px;min-height:260px}

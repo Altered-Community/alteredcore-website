@@ -82,7 +82,7 @@
         };
         var m = buckets.length;
         var counts = new Array(m).fill(0);
-        (function rec(i, remaining, numBig) {
+        if (m > 0) (function rec(i, remaining, numBig) {
             if (i === m - 1) {
                 if (remaining > buckets[i].size) return;
                 counts[i] = remaining;

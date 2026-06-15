@@ -22,6 +22,7 @@
     var boardMoreEl  = document.getElementById('pt-board-more');
     var discardPile  = document.getElementById('pt-discard-pile');
     var discardCount = document.getElementById('pt-discard-count');
+    var rootEl    = handEl ? handEl.closest('.pt-root') : null;   // page-agnostic playground wrapper
     var BOARD_OVERLAP_AT = 8;
     if (!handEl || typeof handDeckCards === 'undefined') return;
 
@@ -249,7 +250,7 @@
     }
     function updatePhaseUI() {
         if (phaseHint) phaseHint.style.display = state.phase === 'setup' ? '' : 'none';
-        document.getElementById('deck-hand-view').classList.toggle('pt-play', state.phase === 'play');
+        if (rootEl) rootEl.classList.toggle('pt-play', state.phase === 'play');
         updateCommitUI();
         renderDeck();
     }
@@ -313,7 +314,7 @@
 
     var MOBILE_MQ = window.matchMedia ? window.matchMedia('(max-width: 720px)') : null;
     function isMobile() { return MOBILE_MQ ? MOBILE_MQ.matches : (window.innerWidth <= 720); }
-    var viewEl    = document.getElementById('deck-hand-view');
+    var viewEl    = rootEl;
     var toggleBtn = document.getElementById('pt-toggle-playground');
     var playgroundEnabled = false;   // off by default: open on the hand-only view
     // "simple" = hand-only view (no board/deck/discard/mana, tap = zoom). Driven only by the
@@ -491,4 +492,8 @@
         }
     }
     setupDrag();
+
+    // Exposed so the deck builder can draw the first hand when its Starting-hand tab opens
+    // (the detail page does this via the #deck-view-hand button, absent in the builder).
+    window.HandTester = { reset: reset, isStarted: function () { return started; } };
 }());

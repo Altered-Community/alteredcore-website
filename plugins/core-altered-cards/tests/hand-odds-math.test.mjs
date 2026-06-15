@@ -98,4 +98,11 @@ const oneDrops = M.handStats([{ cost: 1, isCharacter: true, qty: 10 }], 6);
 near(oneDrops.manaSpent[3], 1, 'all 1-cost: always spend the full 3 mana');
 near(oneDrops.expeditions[2], 1, 'all 1-cost characters: both expeditions contestable');
 
+// empty deck (a brand-new deck in the builder) must not crash and yields zeroed distributions
+const emptyStats = M.handStats([], 6);
+ok(emptyStats.deckSize === 0, 'handStats([]): deckSize 0');
+ok(emptyStats.manaSpent.every(x => x === 0) && emptyStats.plays.every(x => x === 0)
+   && emptyStats.expeditions.every(x => x === 0) && emptyStats.tempo === 0,
+   'handStats([]): zeroed distributions, no crash');
+
 console.log(`\n${pass} checks passed`);
