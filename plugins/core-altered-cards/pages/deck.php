@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$lang   = getLang();
-$uiLang = getUiLang();
+$lang         = getLang();
+$uiLang       = getUiLang();
+$uniqueLocale = in_array($lang, ['en', 'fr'], true) ? $lang : 'en';
 
 // page configuration
 require_once __DIR__ . '/../config.php';
@@ -283,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         // Re-fetch the source deck authoritatively. A private deck owned by
         // another user returns 401/403 here, which naturally enforces the
         // "own deck or a public deck" rule without any extra ownership check.
-        $srcCh = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($uiLang));
+        $srcCh = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($lang));
         curl_setopt_array($srcCh, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
@@ -347,7 +348,7 @@ if ($deckId) {
         }
     }
     if (!$apiError) {
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($uiLang));
+        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($lang));
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER     => $headers,
@@ -616,8 +617,8 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
          <?php if ($heroRef && $heroImgUrl): ?>
          data-ref="<?= h($heroRef) ?>"
          data-unique="<?= _deck_is_unique($heroRef) ? '1' : '0' ?>"
-         data-lang="<?= h($uiLang) ?>"
-         data-img-src="<?= h(_deck_cdn_url($heroRef, $uiLang)) ?>"
+         data-lang="<?= h($uniqueLocale) ?>"
+         data-img-src="<?= h(_deck_cdn_url($heroRef, $lang)) ?>"
          role="button"
          tabindex="0"
          aria-label="<?= h($txt['detail_label']) ?>"
@@ -742,12 +743,12 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 $qty = (int)($card['quantity'] ?? 1);
             ?>
             <div class="deck-card-wrap" data-ref="<?= h($ref) ?>"
-                 data-unique="<?= _deck_is_unique($ref) ? '1' : '0' ?>" data-lang="<?= h($uiLang) ?>">
+                 data-unique="<?= _deck_is_unique($ref) ? '1' : '0' ?>" data-lang="<?= h(_deck_is_unique($ref) ? $uniqueLocale : $lang) ?>">
                 <span class="deck-card-qty">×<?= $qty ?></span>
                 <?php if (_deck_is_unique($ref)): ?>
-                <altered-card ref="<?= h($ref) ?>" locale="<?= h($uiLang) ?>"></altered-card>
+                <altered-card ref="<?= h($ref) ?>" locale="<?= h($uniqueLocale) ?>"></altered-card>
                 <?php else: ?>
-                <img src="<?= h(_deck_cdn_url($ref, $uiLang)) ?>" alt="<?= h($card['name'] ?? $ref) ?>" class="deck-card-img" loading="lazy">
+                <img src="<?= h(_deck_cdn_url($ref, $lang)) ?>" alt="<?= h($card['name'] ?? $ref) ?>" class="deck-card-img" loading="lazy">
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -785,8 +786,8 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             ?>
             <div class="decklist-row" data-ref="<?= h($ref) ?>"
                  data-unique="<?= _deck_is_unique($ref) ? '1' : '0' ?>"
-                 data-lang="<?= h($uiLang) ?>"
-                 data-img-src="<?= h(_deck_cdn_url($ref, $uiLang)) ?>">
+                 data-lang="<?= h(_deck_is_unique($ref) ? $uniqueLocale : $lang) ?>"
+                 data-img-src="<?= h(_deck_cdn_url($ref, $lang)) ?>">
                 <span class="decklist-qty">×<?= $qty ?></span>
                 <span class="decklist-faction">
                     <?php if ($cardFaction): ?>
@@ -900,10 +901,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <div id="hand-summary" class="hand-summary"></div>
         </div>
         <script>
-          var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
-              return $c + ['unique' => _deck_is_unique($c['ref']), 'img' => _deck_cdn_url($c['ref'], $uiLang)];
+          var handDeckCards = <?= json_encode(array_map(static function ($c) use ($lang) {
+              return $c + ['unique' => _deck_is_unique($c['ref']), 'img' => _deck_cdn_url($c['ref'], $lang)];
           }, getDeckStartingHandPool($deck['cards'], $lang)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-          var handLang = <?= json_encode($uiLang) ?>;
+          var handLang = <?= json_encode($uniqueLocale) ?>;
           var handTxt  = {
               empty:      <?= json_encode($txt['hand_empty']) ?>,
               characters: <?= json_encode($txt['hand_characters']) ?>,
@@ -1057,7 +1058,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     var inner = document.getElementById('card-modal-inner');
     var detailLabel = <?= json_encode($txt['detail_label']) ?>;
     var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
-    var cardDetailLang = <?= json_encode(in_array($uiLang, ['en', 'fr']) ? $uiLang : 'en') ?>;
+    var cardDetailLang = <?= json_encode($lang) ?>;
 
     function closeModal() {
         modal.style.display = 'none'; inner.innerHTML = '';
