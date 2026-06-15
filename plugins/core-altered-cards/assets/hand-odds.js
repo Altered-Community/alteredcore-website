@@ -1,25 +1,16 @@
 /* Hand-odds UI: opening-hand stats + draw-odds calculators.
- * Reads globals from deck.php: handDeckCards, handLang, handDeckSize, handDeckGroups,
- * handTypeLabels, handOddsTxt. Math from hand-odds-math.js (window.HandOddsMath). */
+ * Reads globals from the page: handDeckCards, handLang, handDeckSize, handDeckGroups,
+ * handTypeLabels, handOddsTxt. Math from hand-odds-math.js (window.HandOddsMath).
+ * Exposes window.HandOdds.refresh() so the deck-builder can recompute live as the deck changes. */
 (function () {
     var M = window.HandOddsMath;
-    var statsGrid = document.getElementById('ho-stats-grid');
-    if (!M || !statsGrid || typeof handDeckCards === 'undefined') return;
+    var oddsRoot = document.getElementById('hand-odds');
+    if (!M || !oddsRoot || typeof handDeckCards === 'undefined') return;
 
     var HAND_SIZE = 6;
     var DEC = handLang === 'en' ? '.' : ',';
     function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    var groupQty = {}; handDeckGroups.forEach(function (g) { groupQty[g.key] = g.qty; });
-
-    // ----- Stats -----
-    function computeStats() {
-        var cards = handDeckCards.map(function (c) {
-            return { cost: c.mainCost, isCharacter: c.type === 'CHARACTER', qty: c.qty };
-        });
-        return M.handStats(cards, HAND_SIZE);
-    }
     function dec1(x) { return x.toFixed(1).replace('.', DEC); }
-    function clampPct(x) { return Math.max(0, Math.min(100, x)).toFixed(1) + '%'; }
     function precisePct(p) { return (p * 100).toFixed(2).replace('.', DEC) + '%'; }
     // % with nuance: 0%, "< 1%" (rare but possible), "> 99%", 100%.
     function fmtPct(p) {
@@ -30,23 +21,28 @@
         if (v > 99) return '> 99%';
         return v.toFixed(0) + '%';
     }
-    // opts: { bar: 0..100 (progress bar), tipPct: 0..1 (hover tooltip, 2 decimals), small: bool }
-    // Every row (label / value / bar / hint / explainer) keeps a fixed slot so cards line up.
-    function statCard(key, valueText, opts) {
-        opts = opts || {};
-        var t = handOddsTxt[key] || ['', '', ''];
-        var vAttr = (opts.tipPct != null) ? ' tabindex="0" data-bs-toggle="tooltip" title="' + esc(precisePct(opts.tipPct)) + '"' : '';
-        var num = '<span class="ho-v-n"' + vAttr + '>' + valueText + '</span>';
-        var bar = (opts.bar != null)
-            ? '<div class="ho-bar"><i style="width:' + clampPct(opts.bar) + '"></i></div>'
-            : '<div class="ho-bar ho-bar-empty"></div>';
-        return '<div class="ho-card"><div class="ho-l">' + t[0] + '</div>' +
-               '<div class="ho-v">' + num + '</div>' + bar +
-               '<div class="ho-s">' + t[1] + '</div>' +
-               (t[2] ? '<div class="ho-x">' + t[2] + '</div>' : '') + '</div>';
+
+    // Deck-level context, rebuilt on every refresh() so the edit page can recompute live.
+    var groupQty = {};
+    var STATS = null;
+    function rebuildContext() {
+        groupQty = {};
+        handDeckGroups.forEach(function (g) { groupQty[g.key] = g.qty; });
+        STATS = M.handStats(handDeckCards.map(function (c) {
+            return { cost: c.mainCost, isCharacter: c.type === 'CHARACTER', qty: c.qty };
+        }), HAND_SIZE);
     }
+
+    function initTooltips(root) {
+        if (!(window.bootstrap && window.bootstrap.Tooltip)) return;
+        (root || oddsRoot).querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!el._tt) el._tt = new window.bootstrap.Tooltip(el);
+        });
+    }
+
+    // ----- Average-composition card (donut + legend), injected into #ohs-comp -----
     var TYPE_COLORS = { CHARACTER: '#2f7d57', SPELL: '#C9A84C', REST: '#5b7aa8' };
-    function typesCard() {
+    function compBody() {
         var tc = { CHARACTER: 0, SPELL: 0, REST: 0 };
         handDeckCards.forEach(function (c) {
             tc[c.type === 'CHARACTER' ? 'CHARACTER' : (c.type === 'SPELL' ? 'SPELL' : 'REST')] += c.qty;
@@ -64,33 +60,15 @@
                    '<span class="ho-comp-lbl">' + esc(label) + '</span>' +
                    '<span class="ho-comp-n" style="color:' + color + '">' + per(qty) + '</span></div>';
         }
-        return '<div class="ho-card ho-card-wide ho-comp"><div class="ho-l">' + esc(handOddsTxt.typesLabel) + '</div>' +
-               '<div class="ho-comp-body">' +
-               '<div class="ho-donut" style="background:' + ring + '"></div>' +
+        return '<div class="ho-donut" style="background:' + ring + '"></div>' +
                '<div class="ho-comp-legend">' +
                row(TYPE_COLORS.CHARACTER, tc.CHARACTER, L.CHARACTER || 'Characters') +
                row(TYPE_COLORS.SPELL, tc.SPELL, L.SPELL || 'Spells') +
                row(TYPE_COLORS.REST, tc.REST, L.PERMANENT || 'Permanents') +
-               '</div></div></div>';
+               '</div>';
     }
-    function pctOpts(p) { return { bar: p * 100, tipPct: p }; }
-    var STATS = computeStats();   // deck-level composition math: runs once, feeds the cards + the blocks
-    function renderStats() {
-        statsGrid.innerHTML =
-            typesCard() +                                            // full width, first
-            statCard('tempo', fmtPct(STATS.tempo), pctOpts(STATS.tempo)) +
-            statCard('heavy', fmtPct(STATS.heavy), pctOpts(STATS.heavy));
-        initTooltips();
-    }
-    function initTooltips(root) {
-        if (!(window.bootstrap && window.bootstrap.Tooltip)) return;
-        (root || statsGrid).querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-            if (!el._tt) el._tt = new window.bootstrap.Tooltip(el);
-        });
-    }
-    renderStats();   // deck-level: compute once on load (does not change on redraw)
 
-    // ----- Detailed "Opening hand stats" blocks (deck-level, same composition math) -----
+    // ----- Detailed "Opening hand stats" blocks -----
     function ohsBars(rows) {                                          // rows: [label, p, warn?]
         return rows.map(function (r) {
             var p = r[1], pct = p * 100, w = pct <= 0 ? 0 : Math.max(pct, 0.8);
@@ -100,42 +78,39 @@
                    '<span class="ohs-bar-v">' + esc(fmtPct(p)) + '</span></div>';
         }).join('');
     }
-    // Hero number: rounded value shown, exact 2-decimal value on hover (like the "at a glance" cards).
-    // The tooltip lives on an inner inline span so the hover target is just the digits, not the
-    // full-width value box.
+    // Hero number: rounded value shown, exact 2-decimal value on hover. The tooltip lives on an
+    // inner inline span so the hover target is just the digits, not the full-width value box.
     function ohsText(id, p) {
         var el = document.getElementById(id);
         if (!el) return;
         el.innerHTML = '<span tabindex="0" data-bs-toggle="tooltip" title="' + esc(precisePct(p)) + '">' + esc(fmtPct(p)) + '</span>';
     }
     function ohsFill(id, rows) { var el = document.getElementById(id); if (el) el.innerHTML = ohsBars(rows); }
-    function tailSum(arr, from) { var s = 0; for (var k = from; k < arr.length; k++) s += arr[k]; return s; }
     function renderBlocks() {
         var ms = STATS.manaSpent, ex = STATS.expensive, pl = STATS.plays, xp = STATS.expeditions;
         var card = handOddsTxt.card, cards = handOddsTxt.cards, play = handOddsTxt.play, plays = handOddsTxt.plays;
-        // Block 1 — mana spendable on day 1: optimal start (3) vs dead hand (0)
+        var comp = document.getElementById('ohs-comp');
+        if (comp) comp.innerHTML = compBody();
+        // Mana used on day 1: optimal start (3) vs dead hand (0)
         ohsText('ohs-b1-h1', ms[3]);
         ohsText('ohs-b1-h2', ms[0]);
         ohsFill('ohs-b1-bars', [['3 mana', ms[3]], ['2 mana', ms[2]], ['1 mana', ms[1]], ['0 mana', ms[0], true]]);
-        // Block 2 — expensive cards (cost >= 4): headline is P(3 or more), matching "top-heavy"
-        ohsText('ohs-b2-v', tailSum(ex, 3));
+        // Expensive cards (cost >= 4): headline P(>=3), warn bars at >=3
+        ohsText('ohs-b2-v', STATS.heavy);
         ohsFill('ohs-b2-bars', ex.map(function (p, k) { return [k + ' ' + (k === 1 ? card : cards), p, k >= 3]; }));
-        // Block 3 — reactivity: number of plays chainable on day 1
-        ohsText('ohs-b3-v', pl[2] + pl[3]);
+        // Reactivity: plays chainable on day 1; headline P(>=2 plays)
+        ohsText('ohs-b3-v', STATS.tempo);
         ohsFill('ohs-b3-bars', [['0 ' + plays, pl[0], true], ['1 ' + play, pl[1]], ['2 ' + plays, pl[2]], ['3 ' + plays, pl[3]]]);
-        // Block 4 — contestable Expeditions: both (>=2 chars) vs none (0)
+        // Contestable Expeditions: both (>=2 chars) vs none (0)
         ohsText('ohs-b4-h1', xp[2]);
         ohsText('ohs-b4-h2', xp[0]);
         ohsFill('ohs-b4-bars', [[handOddsTxt.expNone, xp[0]], [handOddsTxt.expOne, xp[1]], [handOddsTxt.expBoth, xp[2]]]);
         initTooltips(document.querySelector('.ohs-section'));
     }
-    renderBlocks();
 
     // ----- Calculators -----
     var deckSizeEl = document.getElementById('ho-deck-size');
     var drawnEl    = document.getElementById('ho-drawn');
-    if (deckSizeEl) deckSizeEl.textContent = handDeckSize;
-    if (drawnEl) drawnEl.max = handDeckSize;
 
     function drawn() {
         var n = parseInt(drawnEl && drawnEl.value, 10) || HAND_SIZE;
@@ -193,6 +168,17 @@
             render: { option: optHtml, item: itemHtml, optgroup_header: optgroupHeader },
             onChange: onChange
         });
+    }
+    // Re-sync a multiselect's options to the current deck (edit page), keeping still-valid picks.
+    function syncSelect(ts) {
+        if (!ts) return;
+        var keep = ts.getValue().filter(function (k) { return groupQty[k]; });
+        ts.clearOptions();
+        if (ts.clearOptionGroups) ts.clearOptionGroups();
+        optgroups().forEach(function (g) { ts.addOptionGroup(g.value, g); });
+        ts.addOptions(handDeckGroups);
+        ts.setValue(keep, true);   // silent: caller recalculates
+        ts.refreshOptions(false);
     }
 
     // ----- Calculators (bar layout) -----
@@ -253,9 +239,25 @@
         var n = drawn();
         document.querySelectorAll('.ncx-drawn').forEach(function (el) { el.textContent = n; });
     }
-
     function recalcAll() { recalcNcCard(); recalcNcCombo(); updateDrawnLabels(); }
 
+    // ----- Live refresh (deck-builder): recompute everything from the current globals -----
+    function refresh() {
+        rebuildContext();
+        renderBlocks();
+        if (deckSizeEl) deckSizeEl.textContent = handDeckSize;
+        if (drawnEl) drawnEl.max = handDeckSize;
+        syncSelect(ncCardTS); syncSelect(ncAts); syncSelect(ncBts);
+        recalcAll();
+    }
+
+    // ----- Initial render -----
+    rebuildContext();
+    renderBlocks();
+    if (deckSizeEl) deckSizeEl.textContent = handDeckSize;
+    if (drawnEl) drawnEl.max = handDeckSize;
     if (drawnEl) drawnEl.addEventListener('input', recalcAll);
     recalcAll();
+
+    window.HandOdds = { refresh: refresh };
 }());

@@ -90,22 +90,16 @@ $txt = [
         'hand_spells'         => 'Spells',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Avg. hand cost',
-        'ho_stats'        => 'At a glance',
         'ho_calc'         => 'Calculators',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Drawn',
-        'ho_tempo'        => 'Day 1 tempo',
-        'ho_tempo_sub'    => 'play two cards or more on day 1',
-        'ho_tempo_exp'    => 'Playing several cards on the first day builds your board faster than your opponent.',
-        'ho_heavy'        => 'Top-heavy hand',
-        'ho_heavy_sub'    => 'three cards or more costing 4 mana or more',
-        'ho_heavy_exp'    => 'Too many expensive cards means a clunky hand you cannot play out early.',
         'ho_types_label'  => 'Average composition',
+        'ohs_comp_sub'    => 'Average card types in a 6-card opening hand',
         'ho_pick'         => 'Pick…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_ratio'        => '≈ {x} in {y} hands',
         'ho_ratio_generic'=> '≈ {x} chances in {y}',
-        'nc_atleast'       => 'Chances of having at least',
+        'nc_atleast'       => 'Chances of having',
         'nc_atleast_combo' => 'Chances of having at least one of',
         'nc_among'         => 'cards among',
         'nc_among_combo'   => 'among',
@@ -243,22 +237,16 @@ $txt = [
         'hand_spells'         => 'Sorts',
         'hand_permanents'     => 'Permanents',
         'hand_avg_cost'       => 'Coût moyen en main',
-        'ho_stats'        => 'En un coup d\'œil',
         'ho_calc'         => 'Calculateurs',
         'ho_deck'         => 'Deck',
         'ho_drawn'        => 'Piochées',
-        'ho_tempo'        => 'Tempo Jour 1',
-        'ho_tempo_sub'    => 'jouer deux cartes ou plus au jour 1',
-        'ho_tempo_exp'    => 'Jouer plusieurs cartes dès le premier jour développe ton plateau plus vite que l\'adversaire.',
-        'ho_heavy'        => 'Main lourde',
-        'ho_heavy_sub'    => 'trois cartes ou plus à 4 mana ou plus',
-        'ho_heavy_exp'    => 'Trop de cartes chères, c\'est une main encombrée, injouable tôt dans la partie.',
         'ho_types_label'  => 'Composition moyenne',
+        'ohs_comp_sub'    => 'Types de cartes moyens dans une main d\'ouverture de 6 cartes',
         'ho_pick'         => 'Choisir…',
         'ho_group_a'      => 'A', 'ho_group_b' => 'B',
         'ho_ratio'        => '≈ {x} sur {y} mains',
         'ho_ratio_generic'=> '≈ {x} chances sur {y}',
-        'nc_atleast'       => 'Chances d\'avoir au moins',
+        'nc_atleast'       => 'Chances d\'avoir',
         'nc_atleast_combo' => 'Chances d\'avoir au moins une de',
         'nc_among'         => 'cartes parmi',
         'nc_among_combo'   => 'parmi',
@@ -1078,17 +1066,105 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             </div>
             <div id="hand-summary" class="hand-summary"></div>
             <div id="hand-odds" class="hand-odds">
-                <div class="ho-stats">
-                    <div class="ho-sec"><?= h($txt['ho_stats']) ?></div>
-                    <div id="ho-stats-grid" class="ho-grid"></div>
+                <!-- Opening hand stats -->
+                <div class="ohs-section">
+                    <div class="ho-sec"><?= h($txt['ohs_title']) ?></div>
+                    <div class="ohs-grid">
+                        <!-- Average composition (stat card, first) -->
+                        <div class="ohs-block ohs-block-comp">
+                            <div class="ohs-b-title"><?= h($txt['ho_types_label']) ?></div>
+                            <div class="ohs-b-sub"><?= h($txt['ohs_comp_sub']) ?></div>
+                            <div class="ho-comp-body" id="ohs-comp"></div>
+                        </div>
+                        <!-- Expensive cards -->
+                        <div class="ohs-block">
+                            <div class="ohs-b-title"><?= h($txt['ohs_b2_title']) ?></div>
+                            <div class="ohs-b-sub"><?= h($txt['ohs_b2_sub']) ?></div>
+                            <div class="ohs-head">
+                                <div class="ohs-big-v" id="ohs-b2-v"></div>
+                                <div class="ohs-big-note"><?= h($txt['ohs_b2_note']) ?></div>
+                            </div>
+                            <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d2" aria-expanded="false">
+                                <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                            </button>
+                            <div class="collapse" id="ohs-d2">
+                                <div class="ohs-d-label"><?= h($txt['ohs_b2_detail']) ?></div>
+                                <div class="ohs-bars" id="ohs-b2-bars"></div>
+                            </div>
+                        </div>
+                        <!-- Reactivity (after you) -->
+                        <div class="ohs-block">
+                            <div class="ohs-b-title"><?= h($txt['ohs_b3_title']) ?></div>
+                            <div class="ohs-b-sub"><?= h($txt['ohs_b3_sub']) ?></div>
+                            <div class="ohs-head">
+                                <div class="ohs-big-v" id="ohs-b3-v"></div>
+                                <div class="ohs-big-note"><?= h($txt['ohs_b3_note']) ?></div>
+                            </div>
+                            <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d3" aria-expanded="false">
+                                <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                            </button>
+                            <div class="collapse" id="ohs-d3">
+                                <div class="ohs-d-label"><?= h($txt['ohs_b3_detail']) ?></div>
+                                <div class="ohs-bars" id="ohs-b3-bars"></div>
+                            </div>
+                        </div>
+                        <!-- Mana used on day 1 -->
+                        <div class="ohs-block">
+                            <div class="ohs-b-title"><?= h($txt['ohs_b1_title']) ?></div>
+                            <div class="ohs-b-sub"><?= h($txt['ohs_b1_sub']) ?></div>
+                            <div class="ohs-head"><div class="ohs-highlights">
+                                <div class="ohs-hl">
+                                    <div class="ohs-hl-l"><?= h($txt['ohs_b1_h1']) ?></div>
+                                    <div class="ohs-hl-v" id="ohs-b1-h1"></div>
+                                    <div class="ohs-hl-note"><?= h($txt['ohs_b1_h1_note']) ?></div>
+                                </div>
+                                <div class="ohs-hl ohs-hl--warn">
+                                    <div class="ohs-hl-l"><?= h($txt['ohs_b1_h2']) ?></div>
+                                    <div class="ohs-hl-v" id="ohs-b1-h2"></div>
+                                    <div class="ohs-hl-note"><?= h($txt['ohs_b1_h2_note']) ?></div>
+                                </div>
+                            </div></div>
+                            <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d1" aria-expanded="false">
+                                <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                            </button>
+                            <div class="collapse" id="ohs-d1">
+                                <div class="ohs-d-label"><?= h($txt['ohs_b1_detail']) ?></div>
+                                <div class="ohs-bars" id="ohs-b1-bars"></div>
+                            </div>
+                        </div>
+                        <!-- Contestable Expeditions on day 1 -->
+                        <div class="ohs-block">
+                            <div class="ohs-b-title"><?= h($txt['ohs_b4_title']) ?></div>
+                            <div class="ohs-b-sub"><?= h($txt['ohs_b4_sub']) ?></div>
+                            <div class="ohs-head"><div class="ohs-highlights">
+                                <div class="ohs-hl">
+                                    <div class="ohs-hl-l"><?= h($txt['ohs_b4_h1']) ?></div>
+                                    <div class="ohs-hl-v" id="ohs-b4-h1"></div>
+                                    <div class="ohs-hl-note"><?= h($txt['ohs_b4_h1_note']) ?></div>
+                                </div>
+                                <div class="ohs-hl">
+                                    <div class="ohs-hl-l"><?= h($txt['ohs_b4_h2']) ?></div>
+                                    <div class="ohs-hl-v" id="ohs-b4-h2"></div>
+                                    <div class="ohs-hl-note"><?= h($txt['ohs_b4_h2_note']) ?></div>
+                                </div>
+                            </div></div>
+                            <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d4" aria-expanded="false">
+                                <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
+                            </button>
+                            <div class="collapse" id="ohs-d4">
+                                <div class="ohs-d-label"><?= h($txt['ohs_b4_detail']) ?></div>
+                                <div class="ohs-bars ohs-bars--wide" id="ohs-b4-bars"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                <!-- Draw-odds calculators (full width, below the stats) -->
                 <div class="ho-calc">
                     <div class="ho-sec"><?= h($txt['ho_calc']) ?></div>
                     <div class="ho-calc-head">
-                        <span><?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
-                        <span><?= h($txt['ho_drawn']) ?> <input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
+                        <span class="ho-calc-deck"><i class="fa-solid fa-layer-group"></i> <?= h($txt['ho_deck']) ?> <b id="ho-deck-size">0</b></span>
+                        <span class="ho-calc-draw"><label for="ho-drawn"><?= h($txt['ho_drawn']) ?></label><input type="number" id="ho-drawn" class="ho-drawn" value="6" min="1"></span>
                     </div>
-                    <!-- Calculators -->
                     <div id="hand-odds-x" class="hand-odds-x">
                         <div class="ncalc">
                             <div class="nc-head"><?= h($txt['nc_atleast']) ?></div>
@@ -1106,92 +1182,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                             <div class="ho-ab"><span><?= h($txt['ho_group_b']) ?></span><select id="ncx-combo-b" multiple placeholder="<?= h($txt['ho_pick']) ?>"></select></div>
                             <div class="nc-foot"><?= h($txt['nc_draw_a']) ?> <b class="ncx-drawn">6</b> <?= h($txt['nc_draw_b']) ?></div>
                             <div class="nc-ratio" id="ncx-combo-ratio"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Opening hand stats — detailed blocks (dummy data for now) -->
-            <div class="ohs-section">
-                <div class="ho-sec"><?= h($txt['ohs_title']) ?></div>
-                <div class="ohs-grid">
-                    <!-- Block 1 — Mana used on day 1 -->
-                    <div class="ohs-block">
-                        <div class="ohs-b-title"><?= h($txt['ohs_b1_title']) ?></div>
-                        <div class="ohs-b-sub"><?= h($txt['ohs_b1_sub']) ?></div>
-                        <div class="ohs-head"><div class="ohs-highlights">
-                            <div class="ohs-hl">
-                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h1']) ?></div>
-                                <div class="ohs-hl-v" id="ohs-b1-h1"></div>
-                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h1_note']) ?></div>
-                            </div>
-                            <div class="ohs-hl ohs-hl--warn">
-                                <div class="ohs-hl-l"><?= h($txt['ohs_b1_h2']) ?></div>
-                                <div class="ohs-hl-v" id="ohs-b1-h2"></div>
-                                <div class="ohs-hl-note"><?= h($txt['ohs_b1_h2_note']) ?></div>
-                            </div>
-                        </div></div>
-                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d1" aria-expanded="true">
-                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
-                        </button>
-                        <div class="collapse show" id="ohs-d1">
-                            <div class="ohs-d-label"><?= h($txt['ohs_b1_detail']) ?></div>
-                            <div class="ohs-bars" id="ohs-b1-bars"></div>
-                        </div>
-                    </div>
-                    <!-- Block 2 — Expensive cards -->
-                    <div class="ohs-block">
-                        <div class="ohs-b-title"><?= h($txt['ohs_b2_title']) ?></div>
-                        <div class="ohs-b-sub"><?= h($txt['ohs_b2_sub']) ?></div>
-                        <div class="ohs-head">
-                            <div class="ohs-big-v" id="ohs-b2-v"></div>
-                            <div class="ohs-big-note"><?= h($txt['ohs_b2_note']) ?></div>
-                        </div>
-                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d2" aria-expanded="true">
-                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
-                        </button>
-                        <div class="collapse show" id="ohs-d2">
-                            <div class="ohs-d-label"><?= h($txt['ohs_b2_detail']) ?></div>
-                            <div class="ohs-bars" id="ohs-b2-bars"></div>
-                        </div>
-                    </div>
-                    <!-- Block 3 — Reactivity (after you) -->
-                    <div class="ohs-block">
-                        <div class="ohs-b-title"><?= h($txt['ohs_b3_title']) ?></div>
-                        <div class="ohs-b-sub"><?= h($txt['ohs_b3_sub']) ?></div>
-                        <div class="ohs-head">
-                            <div class="ohs-big-v" id="ohs-b3-v"></div>
-                            <div class="ohs-big-note"><?= h($txt['ohs_b3_note']) ?></div>
-                        </div>
-                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d3" aria-expanded="true">
-                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
-                        </button>
-                        <div class="collapse show" id="ohs-d3">
-                            <div class="ohs-d-label"><?= h($txt['ohs_b3_detail']) ?></div>
-                            <div class="ohs-bars" id="ohs-b3-bars"></div>
-                        </div>
-                    </div>
-                    <!-- Block 4 — Contestable Expeditions on day 1 -->
-                    <div class="ohs-block">
-                        <div class="ohs-b-title"><?= h($txt['ohs_b4_title']) ?></div>
-                        <div class="ohs-b-sub"><?= h($txt['ohs_b4_sub']) ?></div>
-                        <div class="ohs-head"><div class="ohs-highlights">
-                            <div class="ohs-hl">
-                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h1']) ?></div>
-                                <div class="ohs-hl-v" id="ohs-b4-h1"></div>
-                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h1_note']) ?></div>
-                            </div>
-                            <div class="ohs-hl">
-                                <div class="ohs-hl-l"><?= h($txt['ohs_b4_h2']) ?></div>
-                                <div class="ohs-hl-v" id="ohs-b4-h2"></div>
-                                <div class="ohs-hl-note"><?= h($txt['ohs_b4_h2_note']) ?></div>
-                            </div>
-                        </div></div>
-                        <button type="button" class="ohs-toggle" data-bs-toggle="collapse" data-bs-target="#ohs-d4" aria-expanded="true">
-                            <?= h($txt['ohs_detail']) ?> <i class="fa-solid fa-chevron-up ohs-caret"></i>
-                        </button>
-                        <div class="collapse show" id="ohs-d4">
-                            <div class="ohs-d-label"><?= h($txt['ohs_b4_detail']) ?></div>
-                            <div class="ohs-bars ohs-bars--wide" id="ohs-b4-bars"></div>
                         </div>
                     </div>
                 </div>
@@ -1246,9 +1236,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
           var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
           var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
           var handOddsTxt = {
-              tempo:     [<?= json_encode($txt['ho_tempo']) ?>,<?= json_encode($txt['ho_tempo_sub']) ?>,<?= json_encode($txt['ho_tempo_exp']) ?>],
-              heavy:     [<?= json_encode($txt['ho_heavy']) ?>,<?= json_encode($txt['ho_heavy_sub']) ?>,<?= json_encode($txt['ho_heavy_exp']) ?>],
-              typesLabel: <?= json_encode($txt['ho_types_label']) ?>,
               both: <?= json_encode($txt['nc_both']) ?>,
               ratio: <?= json_encode($txt['ho_ratio']) ?>,
               ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>,
