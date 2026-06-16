@@ -103,6 +103,7 @@ $txt = array_merge($_sharedTxt, [
         'tab_deck'        => 'Deck',
         'tab_cards'       => 'Cards',
         'tab_stats'       => 'Stats',
+        'tab_hand'        => 'Starting hand',
         'tab_grid'        => 'View Deck',
         'stats_cost_main'   => 'Hand cost curve',
         'stats_cost_recall' => 'Reserve cost curve',
@@ -190,6 +191,7 @@ $txt = array_merge($_sharedTxt, [
         'tab_deck'        => 'Deck',
         'tab_cards'       => 'Cartes',
         'tab_stats'       => 'Stats',
+        'tab_hand'        => 'Main de départ',
         'tab_grid'        => 'Voir le deck',
         'stats_cost_main'   => 'Courbe coût main',
         'stats_cost_recall' => 'Courbe coût réserve',
@@ -209,6 +211,7 @@ $txt = array_merge($_sharedTxt, [
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
     ],
 ][$uiLang] ?? []);
+$txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
 
 // handle AJAX save
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax'])) {
@@ -404,6 +407,10 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
             <i class="fa-solid fa-eye"></i>
             <span><?= h($txt['tab_grid']) ?></span>
         </button>
+        <button type="button" class="db-mobile-tab" data-tab="hand">
+            <i class="fa-solid fa-hand-sparkles"></i>
+            <span><?= h($txt['tab_hand']) ?></span>
+        </button>
         <button type="button" class="db-mobile-tab" data-tab="deck">
             <i class="fa-solid fa-layer-group"></i>
             <span><?= h($txt['tab_deck']) ?></span>
@@ -422,6 +429,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 </button>
                 <button type="button" class="btn-toggle db-search-tab" data-pane="view">
                     <i class="fa-solid fa-eye me-1"></i><?= h($txt['tab_grid']) ?>
+                </button>
+                <button type="button" class="btn-toggle db-search-tab" data-pane="hand">
+                    <i class="fa-solid fa-hand-sparkles me-1"></i><?= h($txt['tab_hand']) ?>
                 </button>
             </div>
 
@@ -483,6 +493,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     </div>
                 </div>
                 <div id="db-deckgrid-content"></div>
+            </div>
+
+            <!-- Starting-hand stats (main content, full width) -->
+            <div id="db-search-pane-hand" class="db-search-pane" style="display:none">
+                <?php include __DIR__ . '/_starting-hand-sandbox.php'; ?>
+                <?php include __DIR__ . '/_starting-hand-stats.php'; ?>
             </div>
 
         </div>
@@ -1426,6 +1442,7 @@ var AlteredDB = {
 
         renderStatsPane();
         renderGridPane();
+        renderHandPane();
     }
 
     function openValidationModal(results, fmtKey) {
@@ -1646,6 +1663,25 @@ var AlteredDB = {
             });
         }
         content.innerHTML = html;
+    }
+
+    // Starting-hand pane: rebuild the hand-odds globals from the live deck, then recompute.
+    // (deck.cards holds no hero — heroes live on deck.hero — so the pool needs no filtering.)
+    function renderHandPane() {
+        ensureRenderer();   // the calculators' unique thumbnails use the <altered-card> web component
+        var cards = [], groups = {};
+        Object.keys(deck.cards).forEach(function(ref) {
+            var c = deck.cards[ref], nm = cardName(c), uniq = isUnique(ref), img = cdnUrl(ref);
+            cards.push({ ref: ref, name: nm, qty: c.qty, type: c.type, mainCost: c.mainCost, recallCost: c.recallCost, unique: uniq, img: img });
+            // Uniques are distinct cards (own art + costs): key by ref; others group by name+rarity.
+            var key = uniq ? ref : (nm + '|' + (c.rarity || ''));
+            if (!groups[key]) groups[key] = { key: key, name: nm, rarity: c.rarity || '', type: c.type, mainCost: c.mainCost, recallCost: c.recallCost, qty: 0, unique: uniq, ref: ref, img: img };
+            groups[key].qty += c.qty;
+        });
+        window.handDeckCards  = cards;
+        window.handDeckGroups = Object.keys(groups).map(function(k) { return groups[k]; });
+        window.handDeckSize   = cards.reduce(function(s, c) { return s + c.qty; }, 0);
+        if (window.HandOdds) window.HandOdds.refresh();
     }
 
     // hero modal
@@ -1974,18 +2010,20 @@ var AlteredDB = {
             tab.classList.add('active');
             var t = tab.dataset.tab;
             // 'view' shares the left panel with 'search'
-            var paneId = 'db-tab-' + (t === 'view' ? 'search' : t);
+            var paneId = 'db-tab-' + (t === 'view' || t === 'hand' ? 'search' : t);
             document.querySelectorAll('.db-tab-pane').forEach(function(p) { p.classList.remove('active'); });
             var pane = document.getElementById(paneId);
             if (pane) pane.classList.add('active');
-            // Switch sub-pane between search form and deck view
-            if (t === 'search' || t === 'view') {
+            // Switch sub-pane between search form, deck view and starting hand
+            if (t === 'search' || t === 'view' || t === 'hand') {
                 document.getElementById('db-search-pane-search').style.display = t === 'search' ? '' : 'none';
                 document.getElementById('db-search-pane-view').style.display   = t === 'view'   ? '' : 'none';
+                document.getElementById('db-search-pane-hand').style.display   = t === 'hand'   ? '' : 'none';
                 document.querySelectorAll('.db-search-tab').forEach(function(st) {
                     st.classList.toggle('active', st.dataset.pane === t);
                 });
                 if (t === 'view') renderGridPane();
+                if (t === 'hand') { renderHandPane(); if (window.HandTester && !window.HandTester.isStarted()) window.HandTester.reset(); }
             }
         });
     });
@@ -2165,7 +2203,9 @@ var AlteredDB = {
             var pane = tab.dataset.pane;
             document.getElementById('db-search-pane-search').style.display = pane === 'search' ? '' : 'none';
             document.getElementById('db-search-pane-view').style.display   = pane === 'view'   ? '' : 'none';
+            document.getElementById('db-search-pane-hand').style.display   = pane === 'hand'   ? '' : 'none';
             if (pane === 'view') renderGridPane();
+            if (pane === 'hand') { renderHandPane(); if (window.HandTester && !window.HandTester.isStarted()) window.HandTester.reset(); }
         });
     });
 
@@ -2265,4 +2305,44 @@ var AlteredDB = {
     window.loadCards         = engine.search;
 })();
 </script>
+
+<!-- Playtest card modals (mana / board / discard list + card zoom) -->
+<?php include __DIR__ . '/_card-list-modal.php'; ?>
+<?php include __DIR__ . '/_card-zoom-modal.php'; ?>
+
+<!-- Starting-hand tab: shared stats + draw-odds, recomputed live from the deck via renderHandPane() -->
+<script>
+    window.handLang       = <?= json_encode($uiLang) ?>;
+    window.handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+    window.handOddsTxt    = {
+        both:         <?= json_encode($txt['nc_both']) ?>,
+        ratio:        <?= json_encode($txt['ho_ratio']) ?>,
+        ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>,
+        card: <?= json_encode($txt['ohs_card']) ?>, cards: <?= json_encode($txt['ohs_cards']) ?>,
+        play: <?= json_encode($txt['ohs_play']) ?>, plays: <?= json_encode($txt['ohs_plays']) ?>,
+        expNone: <?= json_encode($txt['ohs_b4_none']) ?>, expOne: <?= json_encode($txt['ohs_b4_one']) ?>, expBoth: <?= json_encode($txt['ohs_b4_both']) ?>
+    };
+    window.handDeckCards  = window.handDeckCards  || [];
+    window.handDeckGroups = window.handDeckGroups || [];
+    window.handDeckSize   = window.handDeckSize   || 0;
+    window.handTxt = {
+        empty:      <?= json_encode($txt['hand_empty']) ?>,
+        characters: <?= json_encode($txt['hand_characters']) ?>,
+        spells:     <?= json_encode($txt['hand_spells']) ?>,
+        permanents: <?= json_encode($txt['hand_permanents']) ?>,
+        avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>,
+        manaList:   <?= json_encode($txt['pt_mana_list']) ?>,
+        toMana:     <?= json_encode($txt['pt_to_mana']) ?>,
+        playBoard:  <?= json_encode($txt['pt_play_board']) ?>,
+        zoom:       <?= json_encode($txt['pt_zoom']) ?>,
+        cancel:     <?= json_encode($txt['pt_cancel']) ?>,
+        discard:    <?= json_encode($txt['pt_discard']) ?>,
+        returnHand: <?= json_encode($txt['pt_return_hand']) ?>,
+        boardList:  <?= json_encode($txt['pt_board_list']) ?>,
+        discardList:<?= json_encode($txt['pt_discard_list']) ?>
+    };
+</script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-odds-math.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-odds.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-tester.js"></script>
 
