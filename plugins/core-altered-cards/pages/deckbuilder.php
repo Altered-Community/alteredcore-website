@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$lang   = getLang();
-$uiLang = getUiLang();
+$lang         = getLang();
+$uiLang       = getUiLang();
+$uniqueLocale = in_array($lang, ['en', 'fr'], true) ? $lang : 'en';
 
 require_once __DIR__ . '/../config.php';
 
@@ -283,7 +284,7 @@ $existingDeck = null;
 $apiError     = null;
 
 if ($editDeckId && $token) {
-    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($editDeckId) . '?locale=' . rawurlencode($uiLang));
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($editDeckId) . '?locale=' . rawurlencode($lang));
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Authorization: Bearer ' . $token],
@@ -694,8 +695,9 @@ var AlteredDB = {
     baseUrl:         <?= json_encode(BASE_URL) ?>,
     pluginAssetsUrl: <?= json_encode($pluginAssetsUrl) ?>,
     cdnUrl:    <?= json_encode(CDN_URL) ?>,
-    lang:      <?= json_encode($lang) ?>,
-    uiLang:    <?= json_encode($uiLang) ?>,
+    lang:         <?= json_encode($lang) ?>,
+    uniqueLocale: <?= json_encode($uniqueLocale) ?>,
+    uiLang:       <?= json_encode($uiLang) ?>,
     csrfToken: <?= json_encode(csrfToken()) ?>,
     deckId:    <?= json_encode($editDeckId) ?>,
     isGuest:   <?= $isGuest ? 'true' : 'false' ?>,
@@ -964,7 +966,7 @@ var AlteredDB = {
     function fmtMsg(tpl, n) { return String(tpl).replace('%d', n); }
     function cdnUrl(ref) {
         var p = ref.split('_');
-        return AlteredDB.cdnUrl + '/cards/' + AlteredDB.uiLang + '/' + (p[1] || '') + '/' + ref + '.webp';
+        return AlteredDB.cdnUrl + '/cards/' + AlteredDB.lang + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
     function normalizeHeroRef(ref) {
         var p = ref.split('_');
@@ -1022,7 +1024,7 @@ var AlteredDB = {
             ensureRenderer();
             var el = document.createElement('altered-card');
             el.setAttribute('ref', ref);
-            el.setAttribute('locale', AlteredDB.lang);
+            el.setAttribute('locale', AlteredDB.uniqueLocale);
             wrap.appendChild(el);
         } else {
             var img = document.createElement('img');
@@ -1623,7 +1625,7 @@ var AlteredDB = {
                     var dName = typeof c.name === 'object' ? (c.name[AlteredDB.lang] || c.name.en || '') : (c.name || '');
                     var p = c.ref.split('_');
                     var cardImg = (p[5] && p[5][0] === 'U')
-                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uiLang) + '" style="display:block;width:100%;border-radius:7px;overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
+                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uniqueLocale) + '" style="display:block;width:100%;border-radius:7px;overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
                         : '<img src="' + cdnUrl(c.ref) + '" alt="' + escAttr(dName) + '" loading="lazy">';
                     html += '<div class="db-deckgrid-card" onclick="openDbCardModal(\'' + escAttr(c.ref) + '\')" title="' + escAttr(dName) + '">'
                         + cardImg
@@ -2036,7 +2038,7 @@ var AlteredDB = {
     }
     var detailLabel = <?= json_encode($txt['detail_label']) ?>;
     var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
-    var cardDetailLang = <?= json_encode(in_array($uiLang, ['en', 'fr']) ? $uiLang : 'en') ?>;
+    var cardDetailLang = <?= json_encode($lang) ?>;
     window.openDbCardModal = function(ref) {
         dbCardModalInner.innerHTML = '';
         var cardEl;
@@ -2044,7 +2046,7 @@ var AlteredDB = {
             ensureRenderer();
             cardEl = document.createElement('altered-card');
             cardEl.setAttribute('ref', ref);
-            cardEl.setAttribute('locale', AlteredDB.uiLang);
+            cardEl.setAttribute('locale', AlteredDB.uniqueLocale);
             cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
         } else {
             cardEl = document.createElement('img');

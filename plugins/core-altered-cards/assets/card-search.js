@@ -37,7 +37,7 @@ function CardSearch(cfg) {
 
     var API_BASE = cfg.apiBase     || 'https://cards.alteredcore.org';
     var LANG     = cfg.lang        || 'en';
-    var UI_LANG  = cfg.uiLang      || 'en'; // en/fr only — used for CDN image paths
+    var UI_LANG  = cfg.uiLang      || 'en'; // en/fr only — UI strings (alerts, etc.)
     var MODE     = cfg.mode        || 'cards';
     var P        = cfg.prefix      || 'cs';
     var CDN_URL  = cfg.cdnUrl      || '';
@@ -280,9 +280,14 @@ function CardSearch(cfg) {
         return (ref.split('_')[5] || '')[0] === 'U';
     }
 
+    // altered-card web component supports en/fr only
+    function rendererLocale() {
+        return (LANG === 'en' || LANG === 'fr') ? LANG : 'en';
+    }
+
     function cdnUrl(ref) {
         var p = ref.split('_');
-        return CDN_URL + '/cards/' + UI_LANG + '/' + (p[1] || '') + '/' + ref + '.webp';
+        return CDN_URL + '/cards/' + LANG + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
 
     function cardName(card) {
@@ -1025,7 +1030,7 @@ function CardSearch(cfg) {
             ensureRenderer();
             var ac = document.createElement('altered-card');
             ac.setAttribute('ref', ref);
-            ac.setAttribute('locale', UI_LANG);
+            ac.setAttribute('locale', rendererLocale());
             wrap.appendChild(ac);
         } else {
             var img = document.createElement('img');
@@ -1890,7 +1895,7 @@ function CardSearch(cfg) {
                 ensureRenderer();
                 cardEl = document.createElement('altered-card');
                 cardEl.setAttribute('ref', ref);
-                cardEl.setAttribute('locale', UI_LANG);
+                cardEl.setAttribute('locale', rendererLocale());
                 cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)';
             } else {
                 cardEl = document.createElement('img');
