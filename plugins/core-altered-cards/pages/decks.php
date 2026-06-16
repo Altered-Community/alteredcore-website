@@ -42,6 +42,7 @@ $txt = [
         'tab_contest'     => 'Starter Deck Contest',
         'create_btn'      => 'New deck',
         'import_btn'      => 'Import a deck',
+        'import_bulk_btn' => 'Import from Equinox ZIP',
         'login_msg'       => 'Sign in to access your decks.',
         'login_btn'       => 'Sign in',
         'no_decks'        => 'No decks yet.',
@@ -145,6 +146,7 @@ $txt = [
         'tab_contest'     => 'Concours deck de démarrage',
         'create_btn'      => 'Nouveau deck',
         'import_btn'      => 'Importer un deck',
+        'import_bulk_btn' => 'Importer depuis le ZIP Equinox',
         'login_msg'       => 'Connectez-vous pour accéder à vos decks.',
         'login_btn'       => 'Se connecter',
         'no_decks'        => 'Aucun deck pour l\'instant.',
@@ -689,6 +691,10 @@ $showPublicTab = $publicDecksApiPath !== '';
                         title="<?= h($txt['import_btn']) ?>">
                     <i class="fa-solid fa-file-import me-1"></i><?= h($txt['import_btn']) ?>
                 </button>
+                <a href="<?= h(BASE_URL) ?>/pages/equinox-deck-import" class="btn btn-outline-secondary btn-sm"
+                   title="<?= h($txt['import_bulk_btn']) ?>">
+                    <i class="fa-solid fa-file-zipper me-1"></i><?= h($txt['import_bulk_btn']) ?>
+                </a>
                 <?php if ($showNewDeckBtn): ?>
                 <a href="<?= h($newDeckHref) ?>" class="btn btn-primary-altered btn-sm" title="<?= h($txt['create_btn']) ?>">
                     <i class="fa-solid fa-plus me-1"></i><?= h($txt['create_btn']) ?>
