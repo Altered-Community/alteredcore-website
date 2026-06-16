@@ -83,7 +83,21 @@ function kc_get_access_token(int $userId) {
 
     if ($err || !$response) return false;
     $data = json_decode($response, true);
-    if (empty($data['access_token'])) return false;
+    if (empty($data['access_token'])) {
+        // KC actively rejected the refresh token (expired/revoked). Drop the dead
+        // token so we stop retrying it on every request and the user is steered
+        // back to a fresh login. Mirrors kc_restore_session()'s cleanup. Only on a
+        // genuine rejection — never on a transport error (handled above), which is
+        // transient and must not nuke an otherwise-valid token.
+        if (($data['error'] ?? '') === 'invalid_grant') {
+            try {
+                getDB()->prepare(q("UPDATE {users} SET kc_refresh_token = NULL, kc_token_expiry = 0 WHERE id = :id"))
+                       ->execute([':id' => $userId]);
+            } catch (Throwable $e) {}
+            unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
+        }
+        return false;
+    }
 
     kc_save_tokens($userId, $data);
     return $data['access_token'];
