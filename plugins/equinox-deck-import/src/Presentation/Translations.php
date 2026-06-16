@@ -42,7 +42,9 @@ final class Translations
             'en' => [
                 'page' => [
                     'page_title' => 'Import Decks from the Altered Site Export',
-                    'intro' => 'Upload the <code>.zip</code> exported by Equinox. It must contain a <code>decks.csv</code> file.',
+                    'intro' => 'Upload the <code>.zip</code> exported from the Altered.gg site. It must contain a <code>decks.csv</code> file.',
+                    'step1' => 'Log in to Altered.gg and go to <a href="https://www.altered.gg/en-us/manage-account/personal-data" target="_blank" rel="noopener">altered.gg › Manage Account › Personal Data</a>.',
+                    'step2' => 'Request and download your personal data export. Save the ZIP archive as-is — no need to extract it.',
                     'file_label' => 'Equinox export (.zip)',
                     'submit' => 'Import',
                     'noscript' => 'This importer requires JavaScript. Please enable it to import your decks.',
@@ -116,7 +118,9 @@ final class Translations
             'fr' => [
                 'page' => [
                     'page_title' => "Importer des decks depuis l'export du site Altered",
-                    'intro' => 'Uploadez le <code>.zip</code> exporté par Equinox. Il doit contenir un fichier <code>decks.csv</code>.',
+                    'intro' => 'Uploadez le <code>.zip</code> exporté depuis le site Altered.gg. Il doit contenir un fichier <code>decks.csv</code>.',
+                    'step1' => 'Connectez-vous à Altered.gg et allez dans <a href="https://www.altered.gg/fr-fr/manage-account/personal-data" target="_blank" rel="noopener">altered.gg › Gérer le compte › Données personnelles</a>.',
+                    'step2' => 'Demandez et téléchargez l\'export de vos données personnelles. Enregistrez l\'archive ZIP telle quelle — pas besoin de l\'extraire.',
                     'file_label' => 'Export Equinox (.zip)',
                     'submit' => 'Importer',
                     'noscript' => "Cet outil d'import nécessite JavaScript. Veuillez l'activer pour importer vos decks.",

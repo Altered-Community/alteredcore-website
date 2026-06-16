@@ -3,6 +3,44 @@
     background-color: var(--primary-400, #C9A84C);
 }
 
+/* Import instructions — numbered "how to get your export" steps (import page).
+   Theme-aware: sand surface + gold number badges from the site palette. */
+.edi-steps {
+    list-style: none;
+    counter-reset: edi-step;
+    margin: 0 0 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--sand-100, #F3EFE7);
+    border: 1px solid var(--panel-border, #E4DDCF);
+    border-radius: .5rem;
+    font-size: .9rem;
+}
+.edi-steps li {
+    counter-increment: edi-step;
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+}
+.edi-steps li + li {
+    margin-top: .65rem;
+}
+.edi-steps li::before {
+    content: counter(edi-step);
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-top: .05rem;
+    border-radius: 50%;
+    background: var(--primary-400, #C9A84C);
+    color: #fff;
+    font-weight: 700;
+    font-size: .78rem;
+    line-height: 1;
+}
+
 /* Pending badge — neutral colour matching the design system */
 #edi-deck-tbody .badge-pending {
     background-color: var(--neutral-200, #D6CFC4);
