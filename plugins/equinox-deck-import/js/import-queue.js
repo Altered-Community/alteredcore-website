@@ -9,8 +9,8 @@
 
     var MAX_RETRIES  = 3;
     var ETA_WINDOW   = 5;
-    var RATE_PER_SEC = 3;                              // client-side cap: max import starts per second
-    var MIN_INTERVAL = Math.ceil(1000 / RATE_PER_SEC); // min ms between two consecutive import starts (~334ms)
+    var RATE_PER_SEC = 1;                              // client-side cap: max import starts per second
+    var MIN_INTERVAL = Math.ceil(1000 / RATE_PER_SEC); // min ms between two consecutive import starts (1000ms)
 
     function create(opts) {
         var siteBase = opts.siteBase || '';

@@ -8,7 +8,7 @@ assertTrue(function_exists('getDeckStartingHandPool'), 'getDeckStartingHandPool:
 
 $sample = [
     ['cardReference' => 'ALT_CORE_B_AX_01_C', 'cardTypeReference' => 'HERO',      'name' => ['en' => 'Hero EN', 'fr' => 'Héros FR'], 'quantity' => 1, 'mainCost' => 0],
-    ['cardReference' => 'ALT_CORE_B_AX_02_C', 'cardTypeReference' => 'CHARACTER', 'name' => ['en' => 'Char EN', 'fr' => 'Perso FR'], 'quantity' => 3, 'mainCost' => 2],
+    ['cardReference' => 'ALT_CORE_B_AX_02_C', 'cardTypeReference' => 'CHARACTER', 'name' => ['en' => 'Char EN', 'fr' => 'Perso FR'], 'quantity' => 3, 'mainCost' => 2, 'recallCost' => 1],
     ['cardReference' => 'ALT_CORE_B_AX_03_C', 'cardTypeReference' => 'SPELL',     'name' => 'Plain Name', 'quantity' => 1, 'mainCost' => 1],
     ['cardReference' => 'ALT_CORE_B_AX_04_C', 'cardTypeReference' => 'PERMANENT'],
 ];
@@ -21,12 +21,14 @@ assertSame('Perso FR', $result[0]['name'], 'getDeckStartingHandPool: localized n
 assertSame(3, $result[0]['qty'], 'getDeckStartingHandPool: quantity coerced to int');
 assertSame('CHARACTER', $result[0]['type'], 'getDeckStartingHandPool: type preserved');
 assertSame(2, $result[0]['mainCost'], 'getDeckStartingHandPool: mainCost coerced to int');
+assertSame(1, $result[0]['recallCost'], 'getDeckStartingHandPool: recallCost coerced to int');
 assertSame('Plain Name', $result[1]['name'], 'getDeckStartingHandPool: plain-string name kept as-is');
 
 // Missing fields default sensibly.
 assertSame('ALT_CORE_B_AX_04_C', $result[2]['name'], 'getDeckStartingHandPool: name falls back to ref when absent');
 assertSame(1, $result[2]['qty'], 'getDeckStartingHandPool: qty defaults to 1');
 assertSame(0, $result[2]['mainCost'], 'getDeckStartingHandPool: mainCost defaults to 0');
+assertSame(0, $result[2]['recallCost'], 'getDeckStartingHandPool: recallCost defaults to 0');
 
 // Name falls back to en when requested lang missing.
 $enFallback = getDeckStartingHandPool(

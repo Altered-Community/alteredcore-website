@@ -19,6 +19,8 @@ final class ImportView
         // Variables consumed by the (global-namespace) view template.
         $pageTitle = $page['page_title'];
         $intro = $page['intro'];
+        $step1 = $page['step1'];
+        $step2 = $page['step2'];
         $fileLabel = $page['file_label'];
         $submit = $page['submit'];
         $noscript = $page['noscript'];

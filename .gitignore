@@ -4,3 +4,4 @@ git-manager.py
 docs/superpowers/
 logs/
 data/tinymce_shortcodes.json.dist
+.idea/
