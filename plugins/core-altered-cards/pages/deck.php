@@ -85,12 +85,6 @@ $txt = [
         'share_make_public'   => 'Make public & share',
         'share_making_public' => 'Making public…',
         'test_hand'           => 'Test hand',
-        'new_hand'            => 'New hand',
-        'hand_empty'          => 'No cards to draw.',
-        'hand_characters'     => 'Characters',
-        'hand_spells'         => 'Spells',
-        'hand_permanents'     => 'Permanents',
-        'hand_avg_cost'       => 'Avg. hand cost',
     ],
     'fr' => [
         'page_title'      => 'Deck',
@@ -169,14 +163,9 @@ $txt = [
         ],
         'no_description'      => 'Aucune description disponible pour ce deck.',
         'test_hand'           => 'Main de départ',
-        'new_hand'            => 'Nouvelle main',
-        'hand_empty'          => 'Aucune carte à tirer.',
-        'hand_characters'     => 'Personnages',
-        'hand_spells'         => 'Sorts',
-        'hand_permanents'     => 'Permanents',
-        'hand_avg_cost'       => 'Coût moyen en main',
     ],
 ][$uiLang] ?? [];
+$txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
 
 $deckId     = trim($_GET['id'] ?? '');
 $isLoggedIn = kcIsLoggedIn();
@@ -891,13 +880,8 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         <?php if (!empty($deck['cards'])): ?>
         <!-- Starting hand view -->
         <div id="deck-hand-view" style="display:none">
-            <div class="hand-test-toolbar">
-                <button type="button" id="hand-draw-btn" class="btn btn-primary-altered btn-sm">
-                    <i class="fa-solid fa-shuffle me-1"></i><?= h($txt['new_hand']) ?>
-                </button>
-            </div>
-            <div id="hand-cards" class="deck-cards-grid hand-cards-grid"></div>
-            <div id="hand-summary" class="hand-summary"></div>
+            <?php include __DIR__ . '/_starting-hand-sandbox.php'; ?>
+            <?php include __DIR__ . '/_starting-hand-stats.php'; ?>
         </div>
         <script>
           var handDeckCards = <?= json_encode(array_map(static function ($c) use ($uiLang) {
@@ -909,9 +893,57 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               characters: <?= json_encode($txt['hand_characters']) ?>,
               spells:     <?= json_encode($txt['hand_spells']) ?>,
               permanents: <?= json_encode($txt['hand_permanents']) ?>,
-              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>
+              avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>,
+              manaList:   <?= json_encode($txt['pt_mana_list']) ?>,
+              toMana:     <?= json_encode($txt['pt_to_mana']) ?>,
+              playBoard:  <?= json_encode($txt['pt_play_board']) ?>,
+              zoom:       <?= json_encode($txt['pt_zoom']) ?>,
+              cancel:     <?= json_encode($txt['pt_cancel']) ?>,
+              discard:    <?= json_encode($txt['pt_discard']) ?>,
+              returnHand: <?= json_encode($txt['pt_return_hand']) ?>,
+              boardList:  <?= json_encode($txt['pt_board_list']) ?>,
+              discardList:<?= json_encode($txt['pt_discard_list']) ?>
           };
         </script>
+        <script>
+          // Deck cards grouped by name (+rarity) for the calculators' multiselect.
+          var handDeckGroups = <?= json_encode((function () use ($deck, $uiLang, $lang) {
+              $g = [];
+              foreach ($deck['cards'] as $c) {
+                  $type = $c['cardTypeReference'] ?? 'OTHER';
+                  if ($type === 'HERO') continue;
+                  $ref = $c['cardReference'] ?? '';
+                  $raw = $c['name'] ?? null;
+                  $name = is_array($raw) ? (($raw[$lang] ?? '') ?: ($raw['en'] ?? $ref)) : (($raw !== null && $raw !== '') ? $raw : $ref);
+                  $rp = explode('_', $ref);
+                  $rar = $rp[5][0] ?? '';
+                  $isUniq = _deck_is_unique($ref);
+                  // Uniques are distinct cards (own art + costs): key by ref. Others group by name+rarity.
+                  $key = $isUniq ? $ref : ($name . '|' . $rar);
+                  if (!isset($g[$key])) $g[$key] = [
+                      'key' => $key, 'name' => $name, 'rarity' => $rar, 'type' => $type,
+                      'mainCost' => (int)($c['mainCost'] ?? 0), 'recallCost' => (int)($c['recallCost'] ?? 0),
+                      'qty' => 0, 'unique' => $isUniq, 'ref' => $ref, 'img' => _deck_cdn_url($ref, $uiLang),
+                  ];
+                  $g[$key]['qty'] += (int)($c['quantity'] ?? 1);
+              }
+              return array_values($g);
+          })(), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handDeckSize = handDeckGroups.reduce(function (s, g) { return s + g.qty; }, 0);
+          var handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+          var handOddsTxt = {
+              both: <?= json_encode($txt['nc_both']) ?>,
+              ratio: <?= json_encode($txt['ho_ratio']) ?>,
+              ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>,
+              card: <?= json_encode($txt['ohs_card']) ?>, cards: <?= json_encode($txt['ohs_cards']) ?>,
+              play: <?= json_encode($txt['ohs_play']) ?>, plays: <?= json_encode($txt['ohs_plays']) ?>,
+              expNone: <?= json_encode($txt['ohs_b4_none']) ?>, expOne: <?= json_encode($txt['ohs_b4_one']) ?>, expBoth: <?= json_encode($txt['ohs_b4_both']) ?>
+          };
+        </script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds-math.js"></script>
+        <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-odds.js"></script>
         <?php endif; ?>
 
     <?php endif; ?>
@@ -1042,88 +1074,41 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </div>
 <?php endif; ?>
 
-<!-- Card lightbox -->
-<div id="card-modal" class="ac-lightbox-overlay" style="display:none">
-    <div id="card-modal-inner" class="ac-lightbox-inner" onclick="event.stopPropagation()"></div>
-</div>
+<!-- Playtest card-list modal (shared) -->
+<?php include __DIR__ . '/_card-list-modal.php'; ?>
 
 <?php if ($hasUniqueCards): ?>
 <script src="<?= h($rendererSrc) ?>"></script>
 <?php endif; ?>
 
+<!-- Card zoom lightbox (shared) -->
+<?php include __DIR__ . '/_card-zoom-modal.php'; ?>
 <script>
 (function () {
-    var modal = document.getElementById('card-modal');
-    var inner = document.getElementById('card-modal-inner');
-    var detailLabel = <?= json_encode($txt['detail_label']) ?>;
-    var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
-    var cardDetailLang = <?= json_encode(in_array($uiLang, ['en', 'fr']) ? $uiLang : 'en') ?>;
-
-    function closeModal() {
-        modal.style.display = 'none'; inner.innerHTML = '';
-        document.body.style.overflow = '';
-    }
-    function openModal(ref, unique, lang, imgSrc) {
-        inner.innerHTML = '';
-        var cardEl;
-        if (unique) {
-            cardEl = document.createElement('altered-card');
-            cardEl.setAttribute('ref', ref); cardEl.setAttribute('locale', lang);
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
-        } else {
-            cardEl = document.createElement('img');
-            cardEl.src = imgSrc || ''; cardEl.alt = '';
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
-        }
-        cardEl.addEventListener('click', closeModal);
-        inner.appendChild(cardEl);
-        var detailBtn = document.createElement('a');
-        detailBtn.href = cardDetailBase + '?ref=' + encodeURIComponent(ref) + '&card_lang=' + cardDetailLang;
-        detailBtn.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>' + detailLabel;
-        detailBtn.className = 'btn btn-sm btn-primary-altered';
-        detailBtn.style.cssText = 'display:block;width:100%;margin-top:8px;text-decoration:none';
-        inner.appendChild(detailBtn);
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-
+    // Detail-page zoom triggers → the shared lightbox (window.acOpenCardZoom).
     document.querySelectorAll('.deck-hdr-banner--hero').forEach(function (banner) {
         function openHero() {
-            openModal(banner.dataset.ref, banner.dataset.unique === '1', banner.dataset.lang, banner.dataset.imgSrc || '');
+            window.acOpenCardZoom(banner.dataset.ref, banner.dataset.unique === '1', banner.dataset.lang, banner.dataset.imgSrc || '');
         }
         banner.addEventListener('click', function (e) {
             if (e.target.closest('.js-deck-illegal')) return;
             openHero();
         });
         banner.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openHero();
-            }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHero(); }
         });
     });
     document.querySelectorAll('.deck-card-wrap').forEach(function (w) {
         w.addEventListener('click', function () {
             var srcImg = w.querySelector('img');
-            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
+            window.acOpenCardZoom(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
         });
     });
     document.querySelectorAll('.decklist-row[data-ref]').forEach(function (row) {
         row.addEventListener('click', function () {
-            openModal(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
+            window.acOpenCardZoom(row.dataset.ref, row.dataset.unique === '1', row.dataset.lang, row.dataset.imgSrc || '');
         });
     });
-    var handGrid = document.getElementById('hand-cards');
-    if (handGrid) {
-        handGrid.addEventListener('click', function (e) {
-            var w = e.target.closest('.deck-card-wrap');
-            if (!w || !handGrid.contains(w)) return;
-            var srcImg = w.querySelector('img');
-            openModal(w.dataset.ref, w.dataset.unique === '1', w.dataset.lang, srcImg ? srcImg.src : '');
-        });
-    }
-    modal.addEventListener('click', closeModal);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 }());
 </script>
 
@@ -1171,91 +1156,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </script>
 
 <!-- Starting hand tester -->
-<script>
-(function () {
-    var grid    = document.getElementById('hand-cards');
-    var summary = document.getElementById('hand-summary');
-    var drawBtn = document.getElementById('hand-draw-btn');
-    var tabBtn  = document.getElementById('deck-view-hand');
-    if (!grid || typeof handDeckCards === 'undefined') return;
-
-    var HAND_SIZE = 6;
-    var drawn = false;
-
-    function buildPool() {
-        // Each card is repeated qty times; the same object reference is pushed
-        // multiple times — fine as long as makeCard stays read-only.
-        var pool = [];
-        handDeckCards.forEach(function (c) {
-            for (var i = 0; i < c.qty; i++) pool.push(c);
-        });
-        return pool;
-    }
-    function shuffle(arr) {
-        for (var i = arr.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-        }
-        return arr;
-    }
-    function makeCard(card, index) {
-        var wrap = document.createElement('div');
-        wrap.className = 'deck-card-wrap hand-card-anim';
-        wrap.style.animationDelay = (index * 45) + 'ms';
-        wrap.dataset.ref    = card.ref;
-        wrap.dataset.unique = card.unique ? '1' : '0';
-        wrap.dataset.lang   = handLang;
-        var inner;
-        if (card.unique) {
-            inner = document.createElement('altered-card');
-            inner.setAttribute('ref', card.ref);
-            inner.setAttribute('locale', handLang);
-        } else {
-            inner = document.createElement('img');
-            inner.className = 'deck-card-img';
-            inner.src = card.img;
-            inner.alt = card.name || card.ref;
-            inner.loading = 'lazy';
-        }
-        wrap.appendChild(inner);
-        return wrap;
-    }
-    function renderSummary(hand) {
-        var counts = { CHARACTER: 0, SPELL: 0, OTHER: 0 };
-        var costTotal = 0;
-        hand.forEach(function (c) {
-            if (c.type === 'CHARACTER') counts.CHARACTER++;
-            else if (c.type === 'SPELL') counts.SPELL++;
-            else counts.OTHER++;
-            costTotal += c.mainCost;
-        });
-        var avg = hand.length ? (costTotal / hand.length).toFixed(1) : '0.0';
-        summary.innerHTML =
-            '<span class="hand-stat">' + handTxt.characters + ' <b>' + counts.CHARACTER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.spells + ' <b>' + counts.SPELL + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.permanents + ' <b>' + counts.OTHER + '</b></span>' +
-            '<span class="hand-stat">' + handTxt.avgCost + ' <b>' + avg + '</b></span>';
-    }
-    function draw() {
-        grid.innerHTML = '';
-        var pool = shuffle(buildPool());
-        if (!pool.length) {
-            summary.innerHTML = '';
-            grid.innerHTML = '<p class="text-muted" style="font-size:.9rem;margin:0">' + handTxt.empty + '</p>';
-            drawn = true;
-            return;
-        }
-        var hand = pool.slice(0, Math.min(HAND_SIZE, pool.length));
-        hand.forEach(function (c, i) { grid.appendChild(makeCard(c, i)); });
-        renderSummary(hand);
-        drawn = true;
-    }
-
-    if (drawBtn) drawBtn.addEventListener('click', draw);
-    // Lazy first draw on tab open; the view reveal itself is handled by the view-toggle IIFE above.
-    if (tabBtn)  tabBtn.addEventListener('click', function () { if (!drawn) draw(); });
-}());
-</script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/hand-tester.js"></script>
 
 <!-- Share -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
