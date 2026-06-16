@@ -1,7 +1,7 @@
 <?php
 /**
  * Shared card zoom lightbox. Defines window.acOpenCardZoom(ref, unique, lang, imgSrc).
- * Expects $txt['detail_label'], BASE_URL and $uiLang in scope.
+ * Expects $txt['detail_label'], BASE_URL and $lang in scope.
  * Unique cards render via <altered-card>, so the renderer must be loaded (deck.php loads it
  * conditionally; the deck builder loads it on demand via ensureRenderer()).
  * Included by the deck detail page (deck.php) and the deck builder (deckbuilder.php).
@@ -16,7 +16,7 @@
     var inner = document.getElementById('card-modal-inner');
     var detailLabel = <?= json_encode($txt['detail_label']) ?>;
     var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
-    var cardDetailLang = <?= json_encode(in_array($uiLang, ['en', 'fr']) ? $uiLang : 'en') ?>;
+    var cardDetailLang = <?= json_encode($lang) ?>;
 
     function closeModal() {
         modal.style.display = 'none'; inner.innerHTML = '';
