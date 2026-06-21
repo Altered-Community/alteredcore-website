@@ -257,7 +257,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
                 </button>
                 <?php if (!empty($_csPromoSets)): ?>
-                <label class="cs-switch" data-tabs="all">
+                <label class="cs-switch" data-tabs="all ownership">
                     <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
                     <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
                     <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($_csLblPromo) ?></span>
