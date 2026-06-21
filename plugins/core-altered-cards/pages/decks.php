@@ -761,7 +761,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             <div class="deck-filter-collapsible">
                 <div class="filter-row filter-row--scroll mb-2 mt-2">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                    <button type="button" class="filter-toggle" data-my-format="<?= h($fmtKey) ?>">
+                    <button type="button" class="filter-toggle" data-my-format="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>>
                         <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
                         <?= h($fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey)) ?>
                     </button>
@@ -834,7 +834,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             <div class="deck-filter-collapsible">
                 <div class="filter-row filter-row--scroll mb-2 mt-2">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                    <button type="button" class="filter-toggle" data-pub-format="<?= h($fmtKey) ?>">
+                    <button type="button" class="filter-toggle" data-pub-format="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>>
                         <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
                         <?= h($fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey)) ?>
                     </button>
@@ -941,6 +941,17 @@ $showPublicTab = $publicDecksApiPath !== '';
 
 <script>
 (function () {
+    // BGA tester: hidden formats (filters + import select) become visible only when
+    // the tester flag has been enabled via the secret /pages/bgatester opt-in page.
+    var _bgaTester = false;
+    try { _bgaTester = localStorage.getItem('bgatester') === 'true'; } catch (e) {}
+    if (_bgaTester) {
+        document.querySelectorAll('[data-hidden]').forEach(function (el) {
+            el.hidden = false;
+            el.removeAttribute('hidden');
+        });
+    }
+
     var baseUrl         = <?= json_encode(BASE_URL) ?>;
     var pluginAssetsUrl = <?= json_encode($pluginAssetsUrl) ?>;
     var apiDebug        = <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>;
@@ -2361,7 +2372,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                             <label class="form-label small fw-semibold"><?= h($txt['import_format_label']) ?></label>
                             <select id="import-format" class="form-select form-select-sm">
                                 <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                                <option value="<?= h($fmtKey) ?>"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
+                                <option value="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

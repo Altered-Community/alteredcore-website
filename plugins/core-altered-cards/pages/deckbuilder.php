@@ -546,7 +546,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                         <label class="filter-label mb-1"><?= h($txt['format']) ?></label>
                         <select id="db-deck-format" class="form-select form-select-sm">
                             <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                            <option value="<?= h($fmtKey) ?>"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
+                            <?php // Hidden formats (e.g. BGA tester format) are rendered but stay
+                                  // out of the dropdown until the tester flag is set client-side. ?>
+                            <option value="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -934,6 +936,19 @@ var AlteredDB = {
     var elDeckFormat = document.getElementById('db-deck-format');
     var elDeckPublic = document.getElementById('db-deck-public');
     var elDeckDraft  = document.getElementById('db-deck-draft');
+
+    // BGA tester formats: hidden <option>s become selectable only when the tester
+    // flag has been enabled via the secret /pages/bgatester opt-in page.
+    if (elDeckFormat) {
+        var _bgaTester = false;
+        try { _bgaTester = localStorage.getItem('bgatester') === 'true'; } catch (e) {}
+        if (_bgaTester) {
+            elDeckFormat.querySelectorAll('option[data-hidden]').forEach(function(opt) {
+                opt.hidden = false;
+                opt.removeAttribute('hidden');
+            });
+        }
+    }
 
     // card helpers
     // Refs: ALT_{SET}_{SUB}_{FACTION}_{NUM}_{RARITY}[_{VAR}]

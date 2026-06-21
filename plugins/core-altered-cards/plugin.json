@@ -17,7 +17,8 @@
         {"slug": "deckbuilder", "file": "pages/deckbuilder.php", "title_en": "Deck Builder",  "title_fr": "Créateur de deck"},
         {"slug": "deck",        "file": "pages/deck.php",        "title_en": "Deck",          "title_fr": "Deck"},
         {"slug": "decks",       "file": "pages/decks.php",       "title_en": "Decks",         "title_fr": "Decks"},
-        {"slug": "collection",  "file": "pages/collection.php",  "title_en": "Collection",    "title_fr": "Collection"}
+        {"slug": "collection",  "file": "pages/collection.php",  "title_en": "Collection",    "title_fr": "Collection"},
+        {"slug": "bgatester",   "file": "pages/bgatester.php",   "title_en": "Test Team",     "title_fr": "Équipe de tests"}
     ],
 
     "api": [
