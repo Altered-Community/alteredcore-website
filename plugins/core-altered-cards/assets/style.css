@@ -286,6 +286,7 @@
 .db-card-wrap:hover .db-card-add-overlay { opacity:1; }
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
 .db-card-btn-group { position:absolute; bottom:5px; right:5px; }
+.db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }

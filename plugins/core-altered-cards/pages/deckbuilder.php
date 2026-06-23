@@ -1064,7 +1064,7 @@ var AlteredDB = {
             });
         } else {
             var btnGroup = document.createElement('div');
-            btnGroup.className = 'db-card-btn-group btn-group btn-group-sm';
+            btnGroup.className = 'db-card-btn-group btn-group';
 
             var removeBtn = document.createElement('button');
             removeBtn.type = 'button';
