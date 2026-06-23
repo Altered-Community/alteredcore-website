@@ -106,7 +106,12 @@
                 "copies_label":     "Copies owned",
                 "copies_1_2":       "1 or 2",
                 "copies_4plus":     "4 or more",
-                "donut_title":      "Cards by number of copies owned"
+                "donut_title":      "Cards by number of copies owned",
+                "layout":           "Layout",
+                "layout_2col":      "2 per row",
+                "layout_3col":      "3 per row",
+                "layout_visual":    "Visual view",
+                "layout_list":      "List view"
             },
             "sorts": {
                 "default":          "Default",
@@ -212,7 +217,12 @@
                 "copies_label":     "Exemplaires possédés",
                 "copies_1_2":       "1 ou 2",
                 "copies_4plus":     "4 et +",
-                "donut_title":      "Cartes par nombre d'exemplaires possédés"
+                "donut_title":      "Cartes par nombre d'exemplaires possédés",
+                "layout":           "Affichage",
+                "layout_2col":      "2 par ligne",
+                "layout_3col":      "3 par ligne",
+                "layout_visual":    "Vue visuelle",
+                "layout_list":      "Vue liste"
             },
             "sorts": {
                 "default":          "Par défaut",

@@ -858,8 +858,7 @@ i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
 .cs-ps-explore-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; margin-bottom: 14px; }
 .cs-ps-filters { flex: 0 1 540px; min-width: 0; }   /* sized to the set row; doesn't grow */
 .cs-ps-summary {
-    flex: 1 1 320px;                                  /* grows to fill the space beside the filters */
-    max-width: 720px;
+    flex: 1 1 auto;                                   /* fills the right column above the switcher */
     position: relative;
     display: flex;
     flex-direction: row;
@@ -892,8 +891,25 @@ i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
 .cs-ps-leg-val { min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--neutral-700); }
 .cs-ps-leg-pct { width: 34px; text-align: right; color: var(--neutral-400); font-variant-numeric: tabular-nums; }
 .cs-ps-explore-meta { font-size: .8rem; color: var(--neutral-500); margin-bottom: 10px; }
+/* Right column of the explore-top: summary panel (grows) + layout switcher row
+   (fixed) stacked, together matching the filters' height. */
+.cs-ps-explore-right { flex: 1 1 320px; max-width: 720px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.cs-ps-layout-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cs-ps-layout-label { font-size: .8rem; font-weight: 600; color: var(--neutral-500); }
+.cs-ps-layout-switch { display: inline-flex; gap: 4px; flex-shrink: 0; background: var(--sand-50); border: 1px solid var(--sand-200); border-radius: 8px; padding: 3px; }
+.cs-ps-layout-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 28px; padding: 0;
+    border: none; border-radius: 5px; cursor: pointer;
+    background: transparent; color: var(--neutral-400); font-size: .9rem;
+    transition: background .15s, color .15s;
+}
+.cs-ps-layout-btn:hover { color: var(--neutral-600); }
+.cs-ps-layout-btn.active { background: #fff; color: var(--primary-500); box-shadow: 0 1px 2px rgba(15, 30, 50, .08); }
 .cs-ps-explore { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 991px) { .cs-ps-explore { grid-template-columns: 1fr; } }
+.cs-ps-explore.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 1199px) { .cs-ps-explore.cols-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 991px) { .cs-ps-explore, .cs-ps-explore.cols-3 { grid-template-columns: 1fr; } }
 .cs-ps-explore.is-loading { opacity: .5; }
 .cs-ps-card {
     display: flex;
@@ -951,9 +967,107 @@ i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
 .cs-ps-bar-fill.p3 { width: 100%; background: var(--ps-complete); }
 .cs-ps-bar-fill.p4 { width: 100%; background: var(--ps-extra); }
 .cs-ps-frac { text-align: right; font-size: .8rem; font-weight: 600; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
-.cs-ps-frac.zero  { color: var(--ps-missing); }
-.cs-ps-frac.full  { color: var(--ps-complete); }
-.cs-ps-frac.extra { color: var(--ps-extra); }
+.cs-ps-frac.zero    { color: var(--ps-missing); }
+.cs-ps-frac.partial { color: var(--ps-progress); }
+.cs-ps-frac.full    { color: var(--ps-complete); }
+.cs-ps-frac.extra   { color: var(--ps-extra); }
+
+/* 3-per-row layout: cards are narrower, so render X/3 as a filled colored badge
+   to keep the 0 / 1–2 / 3+ distinction obvious at a glance. Only when 3 columns
+   actually render (≥1200px) — below that cols-3 collapses to 2/1 columns (wider
+   cards), where the badge would look out of place like the plain 2-per-row view. */
+@media (min-width: 1200px) {
+    .cs-ps-explore.cols-3 .cs-ps-frac {
+        justify-self: end;
+        min-width: 0;
+        padding: 1px 7px;
+        border-radius: 9px;
+        color: #fff;
+        background: var(--neutral-400);
+        white-space: nowrap;
+        font-size: .72rem;
+        line-height: 1.5;
+    }
+    .cs-ps-explore.cols-3 .cs-ps-frac.zero    { background: var(--ps-missing); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.partial { background: var(--ps-progress); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.full    { background: var(--ps-complete); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.extra   { background: var(--ps-extra); }
+}
+
+/* ── Visual gallery layout ──────────────────────────────────────────────────
+   Image-forward: a larger card image (~+50%) stacked over compact version
+   chips (rarity gem + faction icon + quantity badge only). No name/type/set or
+   global summary. auto-fill packs as many cards per line as the width allows
+   (~6 at desktop), and reflows down on narrower viewports. */
+.cs-ps-explore.cols-visual { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 14px; }
+.cs-ps-explore.cols-visual .cs-ps-card { flex-direction: column; gap: 8px; padding: 8px; }
+.cs-ps-explore.cols-visual .cs-ps-card-mini {     /* full-width, ~+50% vs the list view */
+    flex: none; width: 100%; height: auto; aspect-ratio: 99 / 138;
+}
+.cs-ps-explore.cols-visual .cs-ps-card-head { display: none; }   /* no name / type / set / summary */
+.cs-ps-explore.cols-visual .cs-ps-card-info { width: 100%; }
+.cs-ps-explore.cols-visual .cs-ps-versions { gap: 4px; }
+.cs-ps-explore.cols-visual .cs-ps-version {
+    display: flex; align-items: center; justify-content: center; gap: 7px; padding: 2px 4px;
+}
+.cs-ps-explore.cols-visual .cs-ps-gem,
+.cs-ps-explore.cols-visual .cs-ps-version-ficon { width: 16px; height: 16px; }
+
+/* ── Icon-only version chips (shared by the visual & list layouts) ──────────
+   Both reduce each version to: rarity gem + faction icon + a filled colored
+   quantity badge (no rarity/faction name text, no bar), with a little space
+   between the gem and the faction icon. */
+.cs-ps-explore.cols-visual .cs-ps-version-label,
+.cs-ps-explore.cols-list   .cs-ps-version-label { gap: 6px; }
+.cs-ps-explore.cols-visual .cs-ps-version-rarity,
+.cs-ps-explore.cols-visual .cs-ps-version-fname,
+.cs-ps-explore.cols-visual .cs-ps-bar,
+.cs-ps-explore.cols-list   .cs-ps-version-rarity,
+.cs-ps-explore.cols-list   .cs-ps-version-fname,
+.cs-ps-explore.cols-list   .cs-ps-bar { display: none; }
+.cs-ps-explore.cols-visual .cs-ps-frac,
+.cs-ps-explore.cols-list   .cs-ps-frac {
+    min-width: 0; padding: 1px 7px; border-radius: 9px;
+    color: #fff; background: var(--neutral-400);
+    white-space: nowrap; font-size: .72rem; line-height: 1.5;
+}
+.cs-ps-explore.cols-visual .cs-ps-frac.zero,    .cs-ps-explore.cols-list .cs-ps-frac.zero    { background: var(--ps-missing); }
+.cs-ps-explore.cols-visual .cs-ps-frac.partial, .cs-ps-explore.cols-list .cs-ps-frac.partial { background: var(--ps-progress); }
+.cs-ps-explore.cols-visual .cs-ps-frac.full,    .cs-ps-explore.cols-list .cs-ps-frac.full    { background: var(--ps-complete); }
+.cs-ps-explore.cols-visual .cs-ps-frac.extra,   .cs-ps-explore.cols-list .cs-ps-frac.extra   { background: var(--ps-extra); }
+
+/* ── List layout ────────────────────────────────────────────────────────────
+   No image, one card per line: name (+ type · set) on the left, all versions
+   inline on the right. Styled like the deck page's decklist — flat rows with a
+   thin bottom separator instead of card boxes — but without the type grouping. */
+.cs-ps-explore.cols-list { display: block; }
+/* Tabular row — fixed columns: name | type | extension | v1 | v2 | v3. Each card
+   is its own grid, so the non-name columns use FIXED widths to line up across
+   rows; the wrappers are flattened with display:contents so name/type/set/versions
+   become direct grid cells. Versions column fits exactly 3 fixed slots (84px each
+   + two 10px gaps = 272px), so the version blocks align column-for-column too. */
+.cs-ps-explore.cols-list .cs-ps-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px 180px 272px;
+    column-gap: 16px;
+    align-items: center;
+    background: transparent; border: none; border-bottom: 1px solid var(--neutral-100);
+    border-radius: 0; padding: 6px 6px;
+}
+.cs-ps-explore.cols-list .cs-ps-card:hover { background: var(--sand-50); box-shadow: none; }
+.cs-ps-explore.cols-list .cs-ps-card-mini,
+.cs-ps-explore.cols-list .cs-ps-card-summary { display: none; }   /* no image / global total */
+.cs-ps-explore.cols-list .cs-ps-card-info,
+.cs-ps-explore.cols-list .cs-ps-card-head,
+.cs-ps-explore.cols-list .cs-ps-card-titlewrap,
+.cs-ps-explore.cols-list .cs-ps-card-meta { display: contents; }  /* flatten into the card grid */
+.cs-ps-explore.cols-list .cs-ps-card-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-ps-explore.cols-list .cs-ps-card-meta .cs-ps-card-tag { min-width: 0; overflow: hidden; white-space: nowrap; }
+.cs-ps-explore.cols-list .cs-ps-versions { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; }
+.cs-ps-explore.cols-list .cs-ps-version { display: flex; align-items: center; gap: 5px; padding: 0; width: 84px; flex: none; }
+.cs-ps-explore.cols-list .cs-ps-version:hover { background: transparent; }
+.cs-ps-explore.cols-list .cs-ps-gem,
+.cs-ps-explore.cols-list .cs-ps-version-ficon { width: 15px; height: 15px; }
 
 .cs-ps-explore-pag { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
 .cs-ps-pag-info { font-size: .82rem; color: var(--neutral-500); font-variant-numeric: tabular-nums; }

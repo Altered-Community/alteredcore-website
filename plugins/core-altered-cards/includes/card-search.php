@@ -124,6 +124,11 @@ $_csPsCopiesLabel  = $_csPs['copies_label'] ?? ($_csLang === 'fr' ? 'Exemplaires
 $_csPsCopies12     = $_csPs['copies_1_2']   ?? ($_csLang === 'fr' ? '1 ou 2' : '1 or 2');
 $_csPsCopies4      = $_csPs['copies_4plus'] ?? ($_csLang === 'fr' ? '4 et +' : '4 or more');
 $_csPsDonutTitle   = $_csPs['donut_title'] ?? ($_csLang === 'fr' ? 'Cartes par nombre d\'exemplaires possédés' : 'Cards by number of copies owned');
+$_csPsLayout       = $_csPs['layout']        ?? ($_csLang === 'fr' ? 'Affichage' : 'Layout');
+$_csPsLayout2      = $_csPs['layout_2col']   ?? ($_csLang === 'fr' ? '2 par ligne' : '2 per row');
+$_csPsLayout3      = $_csPs['layout_3col']   ?? ($_csLang === 'fr' ? '3 par ligne' : '3 per row');
+$_csPsLayoutVisual = $_csPs['layout_visual'] ?? ($_csLang === 'fr' ? 'Vue visuelle' : 'Visual view');
+$_csPsLayoutList   = $_csPs['layout_list']   ?? ($_csLang === 'fr' ? 'Vue liste' : 'List view');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -643,6 +648,10 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
             </div><!-- /.cs-ps-filters -->
 
+            <!-- Right column: summary panel + layout switcher stacked, matching the
+                 filters' height (summary shrinks to leave room for the switcher). -->
+            <div class="cs-ps-explore-right">
+
             <!-- Summary panel (totals + donut of owned buckets) — reflects the current filters -->
             <div class="cs-ps-summary" id="<?= h($_csP) ?>-playset-summary"
                  data-lbl-12="<?= h($_csPsCopies12) ?>" data-lbl-4plus="<?= h($_csPsCopies4) ?>">
@@ -668,7 +677,32 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <div class="cs-ps-donut-legend" id="<?= h($_csP) ?>-playset-donut-legend"></div>
                     </div>
                 </div>
+            </div><!-- /.cs-ps-summary -->
+
+            <!-- Layout switcher (card density). Persisted client-side; default 2 per row. -->
+            <div class="cs-ps-layout-row">
+                <span class="cs-ps-layout-label"><?= h($_csPsLayout) ?></span>
+                <div class="cs-ps-layout-switch" id="<?= h($_csP) ?>-playset-layout" role="group" aria-label="<?= h($_csPsLayout) ?>">
+                    <button type="button" class="cs-ps-layout-btn" data-layout="cols-list"
+                            title="<?= h($_csPsLayoutList) ?>" aria-label="<?= h($_csPsLayoutList) ?>">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                    <button type="button" class="cs-ps-layout-btn active" data-layout="cols-2"
+                            title="<?= h($_csPsLayout2) ?>" aria-label="<?= h($_csPsLayout2) ?>">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                    </button>
+                    <button type="button" class="cs-ps-layout-btn" data-layout="cols-3"
+                            title="<?= h($_csPsLayout3) ?>" aria-label="<?= h($_csPsLayout3) ?>">
+                        <i class="fa-solid fa-table-cells"></i>
+                    </button>
+                    <button type="button" class="cs-ps-layout-btn" data-layout="cols-visual"
+                            title="<?= h($_csPsLayoutVisual) ?>" aria-label="<?= h($_csPsLayoutVisual) ?>">
+                        <i class="fa-solid fa-images"></i>
+                    </button>
+                </div>
             </div>
+
+            </div><!-- /.cs-ps-explore-right -->
 
             </div><!-- /.cs-ps-explore-top -->
 

@@ -1455,6 +1455,34 @@ function CardSearch(cfg) {
         });
     }
 
+    // Exploration layout switcher (card density) — toggles a class on the grid,
+    // persisted in localStorage. Default 2 per row (no extra class = base 2-col).
+    var PS_LAYOUT_KEY = 'ac_playset_layout';
+    var PS_LAYOUTS = ['cols-list', 'cols-2', 'cols-3', 'cols-visual'];
+    function applyPsLayout(layout) {
+        if (!elPlaysetExplore) return;
+        PS_LAYOUTS.forEach(function(l) { elPlaysetExplore.classList.remove(l); });
+        if (layout && layout !== 'cols-2') elPlaysetExplore.classList.add(layout);
+    }
+    function initPlaysetLayout() {
+        var wrap = q('playset-layout');
+        var btns = wrap ? wrap.querySelectorAll('[data-layout]') : [];
+        if (!btns.length) return;
+        var stored = null;
+        try { stored = localStorage.getItem(PS_LAYOUT_KEY); } catch (e) {}
+        if (PS_LAYOUTS.indexOf(stored) < 0) stored = 'cols-2';   // default
+        applyPsLayout(stored);
+        Array.prototype.forEach.call(btns, function(b) {
+            b.classList.toggle('active', b.dataset.layout === stored);
+            b.addEventListener('click', function() {
+                var layout = b.dataset.layout;
+                applyPsLayout(layout);
+                Array.prototype.forEach.call(btns, function(o) { o.classList.toggle('active', o === b); });
+                try { localStorage.setItem(PS_LAYOUT_KEY, layout); } catch (e) {}
+            });
+        });
+    }
+
     function renderPlayset(data) {
         // Sum the quantity buckets across the whole playset universe.
         var rows = (data && data.byFaction) || [];
@@ -1901,7 +1929,9 @@ function CardSearch(cfg) {
                 ficon.src = cfg.playsetMeta.factionIcon + v.faction + '.png'; ficon.alt = '';
                 fac.appendChild(ficon);
             }
-            fac.appendChild(document.createTextNode(fmv.name));
+            var fname = document.createElement('span'); fname.className = 'cs-ps-version-fname';
+            fname.textContent = fmv.name;
+            fac.appendChild(fname);
             label.appendChild(fac);
             vr.appendChild(label);
 
@@ -1913,7 +1943,9 @@ function CardSearch(cfg) {
             vr.appendChild(bar);
 
             var frac = document.createElement('span');
-            frac.className = 'cs-ps-frac ' + (owned === 0 ? 'zero' : owned >= 4 ? 'extra' : owned >= 3 ? 'full' : '');
+            // NB: avoid the bare class name "progress" — it collides with Bootstrap's
+            // .progress component (pale rounded background bleeds onto the X/3 text).
+            frac.className = 'cs-ps-frac ' + (owned === 0 ? 'zero' : owned >= 4 ? 'extra' : owned >= 3 ? 'full' : 'partial');
             frac.textContent = owned + '/3';
             vr.appendChild(frac);
 
@@ -2608,6 +2640,7 @@ function CardSearch(cfg) {
     initPlaysetExploreRarities();
     initPlaysetName();
     initPlaysetCopies();
+    initPlaysetLayout();
     // Restore the active tab from the URL (cards mode) so a refresh keeps it.
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
