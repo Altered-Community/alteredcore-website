@@ -1768,6 +1768,8 @@ function CardSearch(cfg) {
             .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function(d) { if (DEBUG) console.log('[CardSearch] playset cards:', d); renderPlaysetCards(d); })
             .catch(function(err) {
+                // Allow a retry on the next tab open (loadPlayset gates on this flag).
+                _playsetCardsLoaded = false;
                 elPlaysetExplore.classList.remove('is-loading');
                 if (elPlaysetExploreLoading) elPlaysetExploreLoading.style.display = 'none';
                 if (elPlaysetSummaryLoading) elPlaysetSummaryLoading.style.display = 'none';
