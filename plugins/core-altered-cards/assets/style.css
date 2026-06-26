@@ -905,6 +905,7 @@ i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
     transition: background .15s, color .15s;
 }
 .cs-ps-layout-btn:hover { color: var(--neutral-600); }
+.cs-ps-layout-btn:focus-visible { outline: 2px solid var(--primary-400); outline-offset: 2px; }
 .cs-ps-layout-btn.active { background: #fff; color: var(--primary-500); box-shadow: 0 1px 2px rgba(15, 30, 50, .08); }
 .cs-ps-explore { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .cs-ps-explore.cols-3 { grid-template-columns: 1fr 1fr 1fr; }

@@ -402,7 +402,7 @@ function CardSearchPlayset(ctx) {
             td.appendChild(p);
             return td;
         }
-        function th(cls, text) { var e = document.createElement('th'); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+        function th(cls, text, scope) { var e = document.createElement('th'); if (cls) e.className = cls; if (text != null) e.textContent = text; if (scope) e.setAttribute('scope', scope); return e; }
         // Cross-highlight: position the two overlay rectangles over the hovered
         // cell's full column and full row.
         function highlightCross(td, on) {
@@ -426,6 +426,7 @@ function CardSearchPlayset(ctx) {
         function setHeaderTh(s) {
             var el = document.createElement('th');
             el.className = 'cs-ps-hm-setcol';
+            el.setAttribute('scope', 'col');
             var chip = document.createElement('div');
             chip.className = 'cs-ps-setchip';
             if (s.code && meta.setBg) chip.style.backgroundImage = "url('" + meta.setBg + s.code + ".webp')";
@@ -448,8 +449,8 @@ function CardSearchPlayset(ctx) {
 
         // Header row — Faction · Total · then each set
         var thead = document.createElement('thead'), htr = document.createElement('tr');
-        htr.appendChild(th('cs-ps-hm-corner', factionLabel));
-        htr.appendChild(th('cs-ps-hm-th-total', totalLabel));
+        htr.appendChild(th('cs-ps-hm-corner', factionLabel, 'col'));
+        htr.appendChild(th('cs-ps-hm-th-total', totalLabel, 'col'));
         cols.forEach(function(c) { htr.appendChild(setHeaderTh(c)); });
         thead.appendChild(htr); table.appendChild(thead);
 
@@ -459,7 +460,7 @@ function CardSearchPlayset(ctx) {
         rows.forEach(function(f) {
             var tr = document.createElement('tr');
             var facIcon = meta.factionIcon ? meta.factionIcon + f.code + '.png' : '';
-            var rowHead = th('cs-ps-hm-rowhead');
+            var rowHead = th('cs-ps-hm-rowhead', null, 'row');
             if (facIcon) { var fih = document.createElement('img'); fih.className = 'cs-ps-hm-ficon'; fih.src = facIcon; fih.alt = ''; rowHead.appendChild(fih); }
             rowHead.appendChild(document.createTextNode(f.name));
             tr.appendChild(rowHead);
@@ -481,7 +482,7 @@ function CardSearchPlayset(ctx) {
         // Footer — Total label · grand total · then per-set totals
         var tfoot = document.createElement('tfoot'), ftr = document.createElement('tr');
         ftr.className = 'cs-ps-hm-foot';
-        ftr.appendChild(th('cs-ps-hm-rowhead', totalLabel));
+        ftr.appendChild(th('cs-ps-hm-rowhead', totalLabel, 'row'));
         ftr.appendChild(dataCell(grandO, grandN, grandC, 'cs-ps-hm-grand', allSetsLabel, allFacLabel));
         cols.forEach(function(c) { ftr.appendChild(dataCell(colTot[c.code].owned, colTot[c.code].needed, colTot[c.code].complete, 'cs-ps-hm-coltot', c.name, allFacLabel, c.icon, '')); });
         tfoot.appendChild(ftr); table.appendChild(tfoot);
@@ -592,6 +593,24 @@ function CardSearchPlayset(ctx) {
             });
             svg += '</svg>';
             donut.innerHTML = svg;
+
+            // The chart encodes its buckets by color only, so give screen readers
+            // a text equivalent: chart title + per-bucket count and share.
+            var titleEl = panel.querySelector('.cs-ps-chart-title');
+            var donutTitle = titleEl ? titleEl.textContent.trim() : '';
+            var parts = segs.filter(function(s) { return s.val; }).map(function(s) {
+                return s.label + ': ' + s.val.toLocaleString() +
+                    ' (' + (total > 0 ? Math.round(s.val / total * 100) : 0) + '%)';
+            });
+            var label = (donutTitle ? donutTitle + ' — ' : '') + (parts.length ? parts.join(', ') : '0');
+            var svgEl = donut.querySelector('svg');
+            if (svgEl) {
+                svgEl.setAttribute('role', 'img');
+                svgEl.setAttribute('aria-label', label);
+                var titleNode = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                titleNode.textContent = label;
+                svgEl.insertBefore(titleNode, svgEl.firstChild);
+            }
         }
 
         // Legend (colored dot + bucket label + count).
