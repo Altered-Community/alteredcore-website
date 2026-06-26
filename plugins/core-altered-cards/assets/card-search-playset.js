@@ -375,18 +375,24 @@ function CardSearchPlayset(ctx) {
             td.className = 'cs-ps-hm ' + cls;
             if (!needed) { td.classList.add('empty'); td.textContent = '–'; return td; }
             var pct = Math.round(owned / needed * 100);
-            // Three-stop heatmap: light gray (0%) → orange (50%) → green (100%).
+            // Three-stop heatmap interpolated by completion %: 0% → 50% → 100%.
+            // The stops are CSS variables (--hm-0/50/100) so the dark theme can
+            // swap in a darker palette and the cells recolor live on a theme
+            // toggle. color-mix does the blend; the absolute hsl() line below is a
+            // fallback for browsers without color-mix (invalid value is ignored,
+            // so the hsl one sticks).
             var p = pct / 100;
-            var gray   = [45, 10, 95];   // light warm gray
+            var gray   = [45, 10, 95];   // light warm gray (light-theme fallback only)
             var orange = [32, 60, 72];
             var green  = [135, 38, 66];
-            var from, to, t;
-            if (p < 0.5) { from = gray;   to = orange; t = p / 0.5; }
-            else         { from = orange; to = green;  t = (p - 0.5) / 0.5; }
+            var from, to, t, fromVar, toVar;
+            if (p < 0.5) { from = gray;   to = orange; t = p / 0.5;         fromVar = '--hm-0';  toVar = '--hm-50';  }
+            else         { from = orange; to = green;  t = (p - 0.5) / 0.5; fromVar = '--hm-50'; toVar = '--hm-100'; }
             var h = from[0] + (to[0] - from[0]) * t;
             var s = from[1] + (to[1] - from[1]) * t;
             var l = from[2] + (to[2] - from[2]) * t;
             td.style.background = 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+            td.style.background = 'color-mix(in hsl, var(' + toVar + ') ' + (t * 100).toFixed(1) + '%, var(' + fromVar + '))';
             // Cell shows the percentage only; the hover popover carries the detail
             // (set · faction · count), positioned over the cell with no reflow.
             td.dataset.set        = setLabel || '';
