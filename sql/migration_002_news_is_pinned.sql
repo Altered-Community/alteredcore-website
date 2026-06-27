@@ -7,7 +7,7 @@ SET @col_exists = (
 );
 SET @sql = IF(@col_exists = 0,
     'ALTER TABLE `{prefix}news` ADD COLUMN `is_pinned` TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_published`',
-    'SELECT 1'
+    'DO 1'
 );
 PREPARE _stmt FROM @sql;
 EXECUTE _stmt;

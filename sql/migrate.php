@@ -21,7 +21,7 @@
 // `CREATE TABLE IF NOT EXISTS` works everywhere. For ADD COLUMN, MySQL does not support
 // `IF NOT EXISTS` (MariaDB-only) — use the INFORMATION_SCHEMA + PREPARE/EXECUTE pattern:
 //   SET @e=(SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE ...);
-//   SET @s=IF(@e=0,'ALTER TABLE ... ADD COLUMN ...','SELECT 1');
+//   SET @s=IF(@e=0,'ALTER TABLE ... ADD COLUMN ...','DO 1');  -- DO 1 not SELECT 1 (no result set)
 //   PREPARE _stmt FROM @s; EXECUTE _stmt; DEALLOCATE PREPARE _stmt;
 // is a safe no-op. Statements are split on ';' after stripping `--` line comments,
 // so keep migrations to plain DDL/DML (no stored-program bodies with inner ';').
