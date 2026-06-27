@@ -17,8 +17,12 @@
 //
 // docker-compose / prod (existing DB):  docker compose exec web php sql/migrate.php
 //
-// NOTE: write migrations idempotently (e.g. `ADD COLUMN IF NOT EXISTS`,
-// `CREATE TABLE IF NOT EXISTS`) so applying one against a hand-patched or legacy DB
+// NOTE: write migrations idempotently so they are safe against hand-patched DBs.
+// `CREATE TABLE IF NOT EXISTS` works everywhere. For ADD COLUMN, MySQL does not support
+// `IF NOT EXISTS` (MariaDB-only) — use the INFORMATION_SCHEMA + PREPARE/EXECUTE pattern:
+//   SET @e=(SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE ...);
+//   SET @s=IF(@e=0,'ALTER TABLE ... ADD COLUMN ...','SELECT 1');
+//   PREPARE _stmt FROM @s; EXECUTE _stmt; DEALLOCATE PREPARE _stmt;
 // is a safe no-op. Statements are split on ';' after stripping `--` line comments,
 // so keep migrations to plain DDL/DML (no stored-program bodies with inner ';').
 // ─────────────────────────────────────────────────────────────────────────────
