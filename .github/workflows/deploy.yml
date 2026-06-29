@@ -2,11 +2,12 @@ name: Deploy
 
 # Déploie les fichiers suivis par git vers le serveur, puis joue les migrations DB.
 #  • Transfert : lftp (même logique liste blanche pour ftp, ftps ET sftp).
-#  • Migrations : php sql/migrate.php exécuté en SSH (preprod et prod ont SSH).
-# Déclenché à chaque push (ou merge) sur la branche preprod.
+#  • Migrations : php sql/bootstrap.php exécuté en SSH (preprod et prod ont SSH).
+# Déclenché à chaque push (ou merge) sur preprod → environnement preprod
+#                                          sur main  → environnement prod
 on:
   push:
-    branches: [preprod,main]
+    branches: [preprod, main]
   workflow_dispatch: {} # permet aussi un déclenchement manuel depuis l'onglet Actions
 
 concurrency:
@@ -17,8 +18,15 @@ jobs:
   deploy:
     name: Sync to server
     runs-on: ubuntu-latest
-    environment: preprod # secrets/variables sont définis dans cet environnement GitHub
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'preprod' }}
     steps:
+      - name: Vérification de la branche
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" && "$GITHUB_REF" != "refs/heads/preprod" ]]; then
+            echo "::error::Ce workflow ne peut être déclenché que depuis 'main' (prod) ou 'preprod'. Branche courante : $GITHUB_REF"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
