@@ -1,4 +1,4 @@
-# AlteredCore
+# AlteredCore 
 
 Unofficial community website for the [Altered TCG](https://www.altered.gg/) card game.
 
