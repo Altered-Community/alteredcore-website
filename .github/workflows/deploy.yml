@@ -6,7 +6,7 @@ name: Deploy
 # Déclenché à chaque push (ou merge) sur la branche preprod.
 on:
   push:
-    branches: [preprod]
+    branches: [preprod,main]
   workflow_dispatch: {} # permet aussi un déclenchement manuel depuis l'onglet Actions
 
 concurrency:
