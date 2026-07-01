@@ -37,7 +37,10 @@ jobs:
       # jamais référencé → jamais touché ni supprimé.
       #   • MIRROR_DIRS : dossiers 100 % gérés par git → miroir avec --delete
       #                   (les fichiers retirés de git sont nettoyés côté serveur).
-      #   • PUSH_DIRS   : dossiers à contenu serveur → envoi SANS --delete.
+      #   • PUSH_DIRS   : dossiers à contenu mixte (pages modifiées à la main sur
+      #                   le serveur) → envoi SANS --delete : seuls les fichiers
+      #                   qui existent aussi dans git sont écrasés, les pages
+      #                   ajoutées uniquement côté serveur ne sont jamais touchées.
       #   • ROOT_FILES  : fichiers racine déployés explicitement.
       #   • plugins/    : chaque plugin SUIVI par git en miroir (--delete) + les
       #                   fichiers de niveau racine ; plugins externes non touchés.
@@ -68,18 +71,22 @@ jobs:
           echo "lftp → protocol=$PROTO port=$PORT path=$RP parallel=$PARALLEL"
 
           # ── Liste blanche ────────────────────────────────────────────────────
-          MIRROR_DIRS=(admin assets auth css includes js pages sql themes)
+          MIRROR_DIRS=(admin assets auth css includes js sql themes)
+          PUSH_DIRS=(pages)
           ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example)
           PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)
           cp data/tinymce_shortcodes.json data/tinymce_shortcodes.json.dist
 
-          # Unités hash-gatées "nom|chemin_local|chemin_distant" : on compare un hash
-          # du CONTENU du dossier à celui stocké côté serveur ($RP/.deploy-hashes/<nom>)
-          # et on SAUTE le dossier si identique. Sans ça, actions/checkout réécrit les
-          # mtime → lftp re-transfère tout à chaque run (lent + "supprime/recrée tout").
+          # Unités hash-gatées "nom|chemin_local|chemin_distant|mode" : on compare un
+          # hash du CONTENU du dossier à celui stocké côté serveur
+          # ($RP/.deploy-hashes/<nom>) et on SAUTE le dossier si identique. Sans ça,
+          # actions/checkout réécrit les mtime → lftp re-transfère tout à chaque run
+          # (lent + "supprime/recrée tout"). mode=mirror → --delete ; mode=push → pas
+          # de --delete (les fichiers ajoutés uniquement côté serveur sont préservés).
           UNITS=()
-          for d in "${MIRROR_DIRS[@]}"; do UNITS+=("$d|$d|$RP/$d"); done
-          for d in plugins/*/; do n="$(basename "$d")"; UNITS+=("plugin_$n|${d%/}|$RP/plugins/$n"); done
+          for d in "${MIRROR_DIRS[@]}"; do UNITS+=("$d|$d|$RP/$d|mirror"); done
+          for d in "${PUSH_DIRS[@]}"; do UNITS+=("$d|$d|$RP/$d|push"); done
+          for d in plugins/*/; do n="$(basename "$d")"; UNITS+=("plugin_$n|${d%/}|$RP/plugins/$n|mirror"); done
 
           # Préambule de connexion (identifiants par stdin, jamais loggés).
           conn() {
@@ -115,14 +122,15 @@ jobs:
           # 3) Décide quoi synchroniser (boucle SANS pipe → variables conservées).
           MIRROR_LINES=(); CHANGED=()
           for u in "${UNITS[@]}"; do
-            name="${u%%|*}"; rest="${u#*|}"; lpath="${rest%%|*}"; rpath="${rest#*|}"
+            IFS='|' read -r name lpath rpath mode <<< "$u"
             lh="$(tr -d '[:space:]' < "/tmp/lh/$name")"
             rh="$(tr -d '[:space:]' < "/tmp/rh/$name" 2>/dev/null || true)"
             if [ -n "$lh" ] && [ "$lh" = "$rh" ]; then
               echo "[skip] $lpath (inchangé)"
             else
-              echo "[sync] $lpath"
-              MIRROR_LINES+=("mirror -R --delete --parallel=$PARALLEL -- ./$lpath/ $rpath/")
+              DELETE_FLAG=""; [ "$mode" = "mirror" ] && DELETE_FLAG="--delete"
+              echo "[sync] $lpath (mode=$mode)"
+              MIRROR_LINES+=("mirror -R $DELETE_FLAG --parallel=$PARALLEL -- ./$lpath/ $rpath/")
               CHANGED+=("$name")
             fi
           done
