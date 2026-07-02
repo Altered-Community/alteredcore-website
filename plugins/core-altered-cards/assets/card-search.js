@@ -1840,7 +1840,7 @@ function CardSearch(cfg) {
             label.style.cssText = 'color:rgba(255,255,255,.65);font-size:.82rem;flex:1';
             label.textContent = 'Collection';
 
-            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;flex-shrink:0';
+            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;min-width:2.25rem;min-height:2.25rem;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;cursor:pointer;flex-shrink:0';
 
             var btnMinus = document.createElement('button');
             btnMinus.type = 'button';

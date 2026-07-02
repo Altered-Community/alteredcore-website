@@ -175,12 +175,12 @@
 .card-name { font-size:.82rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
 .card-coll-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:2; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-badge { opacity:0; }
-.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--overlay-bar-bg); padding:4px 6px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
+.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--overlay-bar-bg); padding:6px 8px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-bar { opacity:1; pointer-events:auto; }
-.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:4px; width:22px; height:22px; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
+.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:5px; min-width:2.25rem; min-height:2.25rem; font-size:1.15rem; font-weight:700; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
 .card-coll-btn:hover:not(:disabled) { background:rgba(255,255,255,.35); }
 .card-coll-btn:disabled { opacity:.4; cursor:default; }
-.card-coll-qty { color:#fff; font-weight:700; font-size:.8rem; min-width:1.4em; text-align:center; }
+.card-coll-qty { color:#fff; font-weight:700; font-size:.95rem; min-width:1.5em; text-align:center; }
 .card-coll-bar-icon { color:rgba(255,255,255,.7); font-size:.7rem; flex-shrink:0; }
 /* Digital-ownership badge: read-only copy count (key icon), always visible (no hover fade, no edit bar). */
 .card-own-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:3; }
