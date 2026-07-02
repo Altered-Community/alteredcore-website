@@ -70,6 +70,13 @@ function CardSearch(cfg) {
     var elError       = q('error');
     var elPagin       = q('pagination');
     var elSearch      = q('search');
+    // Playset dashboard (Profile G) — a non-grid tab implemented in its own
+    // module (card-search-playset.js). Instantiated only when that script is
+    // loaded (cards mode); deck/deckbuilder pages never include it, so the
+    // typeof guard keeps CardSearch working without it.
+    var _playset = (typeof CardSearchPlayset === 'function')
+        ? CardSearchPlayset({ cfg: cfg, q: q, uiLang: UI_LANG, debug: DEBUG, txt: txt, cdnUrl: cdnUrl })
+        : null;
     var elFilterBtn     = q('filter-btn');
     var elFilterModal   = document.getElementById(P + '-filter-modal');
     var elModalResetBtn = document.getElementById(P + '-modal-reset-btn');
@@ -1113,6 +1120,8 @@ function CardSearch(cfg) {
 
     // main search
     function search(page, skipPushState) {
+        // The playset tab shows a dashboard, not the result grid — never query.
+        if (_tab === 'playset') return;
         updateScopeUi();
         readTsValues();
         currentPage = page || 1;
@@ -1255,7 +1264,7 @@ function CardSearch(cfg) {
     // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
     // the URL-loaded filters are preserved and only scope/visibility are applied.
     function setTab(t, keepFilters) {
-        _tab = (t === 'unique' || t === 'collection' || t === 'ownership') ? t : 'all';
+        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'playset') ? t : 'all';
         setScope(_tab === 'collection' || _tab === 'ownership' ? _tab : 'all');
         if (_tab === 'unique') {
             if (!keepFilters) {
@@ -1286,6 +1295,21 @@ function CardSearch(cfg) {
         updateScopeUi();
         syncDefaultsToUi();
         updateFilterCount();
+        // The playset dashboard replaces the result grid. applyTabVisibility has
+        // already toggled the [data-tabs] blocks (search box, control bar,
+        // dashboard); here we just clear any leftover search results and lazily
+        // load the dashboard data.
+        if (_tab === 'playset') {
+            if (elGrid)  elGrid.style.display = 'none';
+            if (elPagin) elPagin.style.setProperty('display', 'none', 'important');
+            [elLoading, elInitial, elEmpty, elError].forEach(function(e) { if (e) e.style.display = 'none'; });
+            // search() (which normally syncs the URL) is a no-op here, so reflect
+            // the active tab ourselves — unless we're restoring from the URL.
+            if (!keepFilters && cfg.pushState && MODE === 'cards') {
+                history.pushState({ page: 1 }, '', buildPageUrl(1));
+            }
+            if (_playset) _playset.load();
+        }
     }
 
     // ── Promo sets ────────────────────────────────────────────────────────────
@@ -1543,7 +1567,8 @@ function CardSearch(cfg) {
         var _urlTab = p.get('tab');
         if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
         if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
-        setTab(_urlTab && /^(unique|collection|ownership)$/.test(_urlTab) ? _urlTab : 'all', true);
+        if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
+        setTab(_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab) ? _urlTab : 'all', true);
 
         updateFilterCount();
         search(pg, true);
@@ -1946,11 +1971,13 @@ function CardSearch(cfg) {
     // init
     initTomSelects();
     syncDefaultsToUi();
+    if (_playset) _playset.init(); // before any tab restore that may trigger _playset.load()
     // Restore the active tab from the URL (cards mode) so a refresh keeps it.
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
     if (_initTab === 'ownership'  && !cfg.ownershipApiUrl) _initTab = null;
-    if (_initTab && /^(unique|collection|ownership)$/.test(_initTab)) {
+    if (_initTab === 'playset'    && !cfg.playsetApiUrl)   _initTab = null;
+    if (_initTab && /^(unique|collection|ownership|playset)$/.test(_initTab)) {
         setTab(_initTab, true); // keepFilters: URL already carries the filter state
     } else {
         syncTabButtons();
