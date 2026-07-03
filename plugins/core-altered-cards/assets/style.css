@@ -173,6 +173,26 @@
 .card-img-wrap:hover img, .card-img-wrap:hover altered-card { transform:scale(1.03); }
 .card-item { min-width:0; }
 .card-name { font-size:.82rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+
+/* Favorite star — top-right, revealed on hover, always shown when favorited */
+.card-fav-btn { position:absolute; top:5px; right:5px; z-index:4; width:26px; height:26px; padding:0;
+    display:flex; align-items:center; justify-content:center; border:none; border-radius:50%;
+    background:rgba(0,0,0,.45); color:var(--neutral-300); font-size:.9rem; cursor:pointer;
+    opacity:0; transition:opacity .15s, color .15s, transform .1s; }
+.card-img-wrap:hover .card-fav-btn,
+.db-card-wrap:hover .card-fav-btn,
+.card-view-img-wrap:hover .card-fav-btn,
+.deck-card-wrap:hover .card-fav-btn { opacity:1; }
+.card-fav-btn:hover { transform:scale(1.12); color:#fff; }
+.card-fav-btn.is-fav { opacity:1; color:#f5c518; }
+.card-fav-btn.is-fav:hover { color:#ffd634; }
+/* Touch devices have no hover: always show the star */
+@media (hover: none) { .card-fav-btn { opacity:1; } }
+/* Card detail: constrain to the card width (block, NOT inline-block — inline-block collapses the
+   <altered-card> renderer used by unique cards) so the star aligns to the image. */
+#card-img-toggle { position:relative; max-width:300px; margin:0 auto; }
+/* Favorites scope: hide the results toolbar's sort/columns (tabbed filters + count remain). */
+.cs-scope-fav .cs-controlbar-end { display:none !important; }
 .card-coll-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:2; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-badge { opacity:0; }
 .card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--overlay-bar-bg); padding:6px 8px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
@@ -216,7 +236,7 @@
 @media (min-width:900px) { .deck-cards-grid { grid-template-columns:repeat(4,1fr); } }
 @media (min-width:1200px) { .deck-cards-grid { grid-template-columns:repeat(5,1fr); } }
 .deck-card-wrap { position:relative; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; cursor:pointer; }
-.deck-card-qty { position:absolute; top:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
+.deck-card-qty { position:absolute; bottom:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
 .deck-card-img { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; }
 .deck-card-wrap altered-card { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; }
 .deck-type-section { margin-bottom:1.5rem; }
@@ -458,12 +478,20 @@
 .cs-tabs {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
+    /* Scroll horizontally instead of wrapping so the tab row never widens the page
+       (5 tabs: All / Uniques / Collection / Ownership / Favorites) on mobile. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     border-bottom: 2px solid var(--sand-200);
 }
+.cs-tabs::-webkit-scrollbar { display: none; }
 .cs-tab {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
     gap: 6px;
     padding: 5px 14px;
     border: 1px solid transparent;

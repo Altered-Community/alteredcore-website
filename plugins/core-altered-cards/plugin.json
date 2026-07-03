@@ -2,10 +2,11 @@
     "$schema":    "../plugin.schema.json",
     "id":          "core-altered-cards",
     "name":        "Altered Cards",
-    "version":     "1.0.0",
+    "version":     "1.1.0",
     "description": "Cards browser, deck builder and collection manager for Altered TCG",
     "author":      "AlteredCore",
     "icon":        "fa-solid fa-layer-group",
+    "table_prefix": "cac",
 
     "assets": {
         "css": ["assets/style.css"]
@@ -26,6 +27,8 @@
         {"endpoint": "ownership-search",  "file": "api/ownership-search.php"},
         {"endpoint": "playset",           "file": "api/playset.php"},
         {"endpoint": "playset-cards",     "file": "api/playset-cards.php"}
+        {"endpoint": "favorites-search",  "file": "api/favorites-search.php"},
+        {"endpoint": "favorites-toggle",  "file": "api/favorites-toggle.php"}
     ],
 
     "admin": [
@@ -36,5 +39,8 @@
             "label_fr": "Altered JSON",
             "icon":     "fa-solid fa-code"
         }
-    ]
+    ],
+
+    "sql":    "sql/install.sql",
+    "tables": ["favorites"]
 }

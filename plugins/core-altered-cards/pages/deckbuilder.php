@@ -30,6 +30,11 @@ if ($_collectionMode) {
     $_collEntries    = $_coll['entries'];
 }
 
+// favorites (stockage DB locale du plugin — voir includes/favorites.php)
+require_once __DIR__ . '/../includes/favorites.php';
+$_favMode       = !$isGuest && $_dbUserId > 0;
+$_userFavorites = $_favMode ? array_fill_keys(cacFavGetRefs($_dbUserId), true) : [];
+
 // translations (shared from search_settings.json + page-specific)
 $_ss = loadSearchSettings();
 $_sharedTxt = $_ss['translations'][$uiLang] ?? [];
@@ -474,6 +479,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     'collection_enabled' => $_collectionEnabled,
                     'ownership_mode'     => $_ownMode,
                     'ownership_enabled'  => $_ownEnabled,
+                    'favorites_mode'     => $_favMode,
                     'base_url'           => BASE_URL,
                 ];
                 include __DIR__ . '/../includes/card-search.php';
@@ -776,6 +782,12 @@ var AlteredDB = {
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collectionCsrf:    <?= json_encode($_collectionMode ? csrfToken() : '') ?>,
     collApiUrl:        <?= json_encode($_collectionMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
+    favoritesEnabled:  <?= $_favMode ? 'true' : 'false' ?>,
+    favoritesData:     <?= json_encode($_favMode ? (object)$_userFavorites : (object)[]) ?>,
+    favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
+    favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
+    favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
+    favoriteLabel:     <?= json_encode($uiLang === 'fr' ? 'Favori' : 'Favorite') ?>,
     heroTypes:      <?= json_encode($_heroTypes) ?>,
     heroRarities:   <?= json_encode($_heroRarities) ?>,
     heroSets:       <?= json_encode($_heroSets) ?>,
@@ -1048,6 +1060,12 @@ var AlteredDB = {
             img.className = 'db-card-img';
             img.loading = 'lazy';
             wrap.appendChild(img);
+        }
+
+        // Favorite star — top-right (helper exposed by card-search.js)
+        if (window.acMakeFavButton) {
+            var favBtn = window.acMakeFavButton(card);
+            if (favBtn) wrap.appendChild(favBtn);
         }
 
         if (notInDeck) {
@@ -2280,6 +2298,11 @@ var AlteredDB = {
         collectionUrl:     AlteredDB.collectionUrl,
         collApiUrl:        AlteredDB.collApiUrl,
         ownershipApiUrl:   AlteredDB.ownershipApiUrl,
+        favoritesEnabled:  AlteredDB.favoritesEnabled,
+        favoritesData:     AlteredDB.favoritesData,
+        favoritesCsrf:     AlteredDB.favoritesCsrf,
+        favToggleUrl:      AlteredDB.favToggleUrl,
+        favApiUrl:         AlteredDB.favApiUrl,
         setChildren:  AlteredDB.setChildren,
         subSets:      AlteredDB.subSets,
         uniqueType:   ['CHARACTER'],
@@ -2314,7 +2337,7 @@ var AlteredDB = {
         typesMerged: AlteredDB.typesMerged,
         renderDeckCard: window.renderBrowserCard,
         formatCount: function(n) { return n + ' ' + AlteredDB.txt.deck_cards; },
-        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next },
+        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel },
     });
     window.updateFilterCount = engine.updateFilterCount;
     window.loadCards         = engine.search;
