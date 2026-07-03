@@ -17,8 +17,6 @@ $txt = [
         'account_preferences'      => 'Preferences',
         'account_lang_pref'        => 'Language',
         'account_lang_auto'        => 'Auto (browser)',
-        'account_faction_pref'     => 'Favourite faction',
-        'account_faction_none'     => 'None',
         'account_save'             => 'Save',
         'account_saved'            => 'Preferences saved.',
         'account_delete_btn'       => 'Delete my account',
@@ -42,8 +40,6 @@ $txt = [
         'account_preferences'      => 'Préférences',
         'account_lang_pref'        => 'Langue',
         'account_lang_auto'        => 'Auto (navigateur)',
-        'account_faction_pref'     => 'Faction favorite',
-        'account_faction_none'     => 'Aucune',
         'account_save'             => 'Enregistrer',
         'account_saved'            => 'Préférences enregistrées.',
         'account_delete_btn'       => 'Supprimer mon compte',
@@ -79,14 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_destroy();
         redirect(BASE_URL . '/');
     } else {
-        $langPref    = in_array($_POST['lang_pref'] ?? '', ['en', 'fr', 'es', 'it', 'de'], true) ? $_POST['lang_pref'] : null;
-        $factionPref = in_array($_POST['faction_pref'] ?? '', ['AX','BR','LY','MU','OR','YZ'], true) ? $_POST['faction_pref'] : null;
+        $langPref = in_array($_POST['lang_pref'] ?? '', ['en', 'fr', 'es', 'it', 'de'], true) ? $_POST['lang_pref'] : null;
         if ($userId) {
-            $db->prepare(q("UPDATE {users} SET lang_pref = :l, faction_pref = :f WHERE id = :id"))
-               ->execute([':l' => $langPref, ':f' => $factionPref, ':id' => $userId]);
+            $db->prepare(q("UPDATE {users} SET lang_pref = :l WHERE id = :id"))
+               ->execute([':l' => $langPref, ':id' => $userId]);
         }
-        $_SESSION['lang']         = $langPref ?: (strpos($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '', 'fr') !== false ? 'fr' : DEFAULT_LANG);
-        $_SESSION['user_faction'] = $factionPref ?: '';
+        $_SESSION['lang'] = $langPref ?: (strpos($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '', 'fr') !== false ? 'fr' : DEFAULT_LANG);
         $saved = true;
     }
 }
@@ -94,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Load full user row for display
 $userRow = null;
 if ($userId) {
-    $stmt = $db->prepare(q("SELECT username, email, lang_pref, faction_pref, kc_sub, admin_username, created_at FROM {users} WHERE id = :id"));
+    $stmt = $db->prepare(q("SELECT username, email, lang_pref, kc_sub, admin_username, created_at FROM {users} WHERE id = :id"));
     $stmt->execute([':id' => $userId]);
     $userRow = $stmt->fetch();
 }
@@ -184,26 +178,6 @@ include dirname(__DIR__) . '/includes/header.php';
                     <option value="de" <?= ($userRow['lang_pref'] ?? '') === 'de' ? 'selected' : '' ?>>
                         🇩🇪 Deutsch
                     </option>
-                </select>
-            </div>
-            <?php
-            $__factionPref = $userRow['faction_pref'] ?? '';
-            $__factions = [
-                'AX' => 'Axiom',
-                'BR' => 'Bravos',
-                'LY' => 'Lyra',
-                'MU' => 'Muna',
-                'OR' => 'Ordis',
-                'YZ' => 'Yzmir',
-            ];
-            ?>
-            <div class="mb-4">
-                <label class="form-label"><?= $txt['account_faction_pref'] ?></label>
-                <select name="faction_pref" class="form-select" style="max-width:220px">
-                    <option value="" <?= $__factionPref === '' ? 'selected' : '' ?>><?= $txt['account_faction_none'] ?></option>
-                    <?php foreach ($__factions as $__fc => $__fn): ?>
-                    <option value="<?= $__fc ?>" <?= $__factionPref === $__fc ? 'selected' : '' ?>><?= $__fn ?></option>
-                    <?php endforeach; ?>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary-altered">

@@ -17,6 +17,7 @@ $_csCollMode   = $_cs['collection_mode']    ?? false;
 $_csCollEnabled= $_cs['collection_enabled'] ?? false;
 $_csOwnMode    = $_cs['ownership_mode']      ?? false;
 $_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
+$_csFavMode    = $_cs['favorites_mode']      ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
@@ -89,6 +90,7 @@ $_csLblUnique   = $_csTxt['tab_unique'] ?? ($_csLang === 'fr' ? 'Uniques'       
 $_csLblAllCards = $_csTxt['scope_all']  ?? ($_csLang === 'fr' ? 'Toutes les cartes'        : 'All cards');
 $_csLblColl     = $_csTxt['scope_collection'] ?? ($_csLang === 'fr' ? 'Collection physique' : 'Physical collection');
 $_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriété numérique' : 'Digital ownership');
+$_csLblFav      = $_csTxt['scope_favoris']    ?? ($_csLang === 'fr' ? 'Favoris' : 'Favorites');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -150,6 +152,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
             </span>
         </button>
+        <?php if ($_csFavMode): ?>
+        <button type="button" class="cs-tab" data-tab="favoris" data-scope="favoris">
+            <i class="fa-solid fa-star"></i>
+            <span><?= h($_csLblFav) ?></span>
+        </button>
+        <?php endif; ?>
     </div>
 
     <div class="card-altered p-3 mb-3">
@@ -168,7 +176,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Main editions — quick-filter buttons -->
         <?php if (!empty($_csOfficialSets)): ?>
-        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
             <button type="button"
                     class="filter-toggle set-qf-btn<?= in_array($_sk, $_csSelSets) ? ' active' : '' ?>"
@@ -185,7 +193,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Faction (+ rarity) -->
         <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
-        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
                     class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
@@ -197,7 +205,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endforeach; ?>
             <?php if (!empty($_csRarities)): ?>
             <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
-            <span class="cs-rarities" data-tabs="all ownership">
+            <span class="cs-rarities" data-tabs="all ownership favoris">
                 <?php if (!empty($_csFactions)): ?>
                 <span class="cs-sep"></span>
                 <?php endif; ?>

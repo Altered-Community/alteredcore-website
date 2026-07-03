@@ -131,6 +131,42 @@ function collApiRequest(string $apiUrl, string $method, string $path, int $userI
 }
 
 /**
+ * Fetch several cards by reference in ONE public call (no auth) via POST /api/cards/batch.
+ * Used to hydrate a page of favorites. Returns a flat array of card objects (card:read),
+ * or [] on error/empty.
+ *
+ * @param string[] $refs    Card references (max 200 per the cards API)
+ * @param string   $locale  'en'|'fr'
+ */
+function cacCardsApiBatch(array $refs, string $locale = 'en'): array {
+    $refs = array_values(array_filter($refs, function($r) { return is_string($r) && $r !== ''; }));
+    if (empty($refs)) return [];
+    if (!defined('CARDS_API_URL') || CARDS_API_URL === '') return [];
+
+    $url = rtrim(CARDS_API_URL, '/') . '/api/cards/batch?locale=' . rawurlencode($locale);
+    $ch  = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Content-Type: application/json'],
+        CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['references' => $refs], JSON_UNESCAPED_UNICODE),
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_errno($ch);
+    curl_close($ch);
+
+    if ($err || $code >= 400 || !$raw) return [];
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) return [];
+    // The batch endpoint returns a flat array; tolerate an enveloped {member:[...]} too.
+    if (isset($decoded['member']) && is_array($decoded['member'])) return $decoded['member'];
+    return $decoded;
+}
+
+/**
  * Returns the user's collection, session-cached for 5 minutes.
  *
  * @param string $apiUrl  Collection API base URL

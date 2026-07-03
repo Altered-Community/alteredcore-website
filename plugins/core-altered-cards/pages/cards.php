@@ -127,6 +127,11 @@ if ($_collMode) {
     $_collEntries    = $_coll['entries'];
 }
 
+// favorites (stockage DB locale du plugin — voir includes/favorites.php)
+require_once __DIR__ . '/../includes/favorites.php';
+$_favMode       = $_csUserId > 0;
+$_userFavorites = $_favMode ? array_fill_keys(cacFavGetRefs($_csUserId), true) : [];
+
 // tomSelect option arrays
 $setOptionsJson = json_encode(array_values(array_map(
     function($ref, $set) use ($uiLang) {
@@ -208,6 +213,7 @@ $_cs = [
     'ownership_mode'     => $_ownMode,
     'ownership_enabled'  => $_ownEnabled,
     'ownership_url'      => $_ownWebUrl,
+    'favorites_mode'     => $_favMode,
     'base_url'           => BASE_URL,
 ];
 
@@ -242,6 +248,11 @@ CardSearch({
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
+    favoritesEnabled:  <?= $_favMode ? 'true' : 'false' ?>,
+    favoritesData:     <?= json_encode($_favMode ? (object)$_userFavorites : (object)[]) ?>,
+    favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
+    favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
+    favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,
@@ -301,6 +312,7 @@ CardSearch({
         next:          <?= json_encode($txt['next']          ?? 'Next →') ?>,
         showing:       <?= json_encode($txt['showing']       ?? '%d cards') ?>,
         detail_label:  <?= json_encode($txt['detail_label']  ?? 'View detail') ?>,
+        favorite:       <?= json_encode($uiLang === 'fr' ? 'Favori' : 'Favorite') ?>,
         any_trigger:    <?= json_encode($uiLang === 'fr' ? 'Tous les déclencheurs' : 'Any trigger') ?>,
         any_condition:  <?= json_encode($uiLang === 'fr' ? 'Toutes les conditions' : 'Any condition') ?>,
         any_effect:     <?= json_encode($uiLang === 'fr' ? 'Tous les effets'       : 'Any effect') ?>,
