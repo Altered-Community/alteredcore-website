@@ -190,11 +190,13 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
             </span>
         </button>
+        <?php if ($_csMode === 'cards'): ?>
         <button type="button" class="cs-tab<?= $_csPlaysetMode ? '' : ' cs-tab-soon' ?>"
                 data-tab="playset" data-scope="all"<?= $_csPlaysetMode ? '' : ' disabled' ?>>
             <i class="fa-solid fa-layer-group"></i>
             <span><?= h($_csLblPlayset) ?></span>
         </button>
+        <?php endif; ?>
     </div>
 
     <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
@@ -485,7 +487,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
          class="d-flex align-items-center justify-content-center gap-2 mt-3 flex-wrap"
          style="display:none!important"></div>
 
+    <?php if ($_csMode === 'cards'): ?>
     <?php include __DIR__ . '/_playset-tab.php'; ?>
+    <?php endif; ?>
 
 </div><!-- /#{prefix}-panel -->
 
