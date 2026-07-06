@@ -92,6 +92,10 @@ $_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriét
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
+$_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
+$_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
+$_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
+$_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Effet de réserve (Support)' : 'Support effect');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
 $_csLblManageOwn  = $_csTxt['manage_own']   ?? ($_csLang === 'fr' ? 'Gérer ma propriété numérique'   : 'Manage my digital ownership');
@@ -229,23 +233,35 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Effects (Uniques tab only) — shown before the advanced section -->
-        <div class="mb-2" data-tabs="unique" style="min-width:0">
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="filter-label mb-0"><?= h($_csTxt['lbl_effects'] ?? 'Effects') ?></span>
-                <div id="<?= h($_csP) ?>-effect-mode" data-mode="or"
-                     class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-secondary effect-mode-btn active"
-                            data-mode="or" style="padding:1px 8px;font-size:.7rem">OR</button>
-                    <button type="button" class="btn btn-outline-secondary effect-mode-btn"
-                            data-mode="and" style="padding:1px 8px;font-size:.7rem">AND</button>
-                </div>
+        <!-- Format / environment (Uniques tab only) -->
+        <div class="mb-2" id="<?= h($_csP) ?>-format-wrap" data-tabs="unique">
+            <span class="filter-label mb-1 d-block"><?= h($_csLblFormat) ?></span>
+            <div class="filter-row filter-row--scroll">
+                <button type="button" class="filter-toggle active" data-filter="format" data-value="">
+                    <?= h($_csLblFormatAll) ?>
+                </button>
+                <button type="button" class="filter-toggle" data-filter="format" data-value="frontier">
+                    <?= h($_csLblFormatFrontier) ?>
+                </button>
             </div>
+        </div>
+
+        <!-- Effects (Uniques tab only) — shown before the advanced section. Rows
+             combine with AND; each dropdown is multi-select and combines with OR. -->
+        <div class="mb-2" data-tabs="unique" style="min-width:0">
+            <span class="filter-label mb-1 d-block"><?= h($_csTxt['lbl_effects'] ?? 'Effects') ?></span>
             <div id="<?= h($_csP) ?>-effect-rows"></div>
             <button type="button" id="<?= h($_csP) ?>-effect-add"
                     class="btn btn-sm btn-outline-secondary mt-1" style="font-size:.8rem">
                 <i class="fa-solid fa-plus me-1"></i><?= h($_csTxt['add_effect'] ?? ($_csLang === 'fr' ? 'Ajouter un effet' : 'Add effect')) ?>
             </button>
+        </div>
+
+        <!-- Support effect (Uniques tab only) — a single fixed row, filtered to
+             catalog entries valid on the echo/support line. No matchCount, no add/remove. -->
+        <div class="mb-2" data-tabs="unique" style="min-width:0">
+            <span class="filter-label mb-1 d-block"><?= h($_csLblSupportEffect) ?></span>
+            <div id="<?= h($_csP) ?>-support-row"></div>
         </div>
 
         <!-- Advanced search + promo toggle (same line) -->
@@ -319,7 +335,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         </select>
                     </div>
                     <?php if (!empty($_csSubtypes)): ?>
-                    <div data-tabs="all unique collection ownership">
+                    <div data-tabs="all collection ownership">
                         <div class="filter-label mb-1"><?= h($_csTxt['lbl_subtype'] ?? 'Subtype') ?></div>
                         <select id="<?= h($_csP) ?>-filter-subtype" multiple>
                             <?php foreach ($_csSubtypes as $_sk => $_sv): ?>
@@ -333,24 +349,24 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <!-- Status + cost management + no-effect (grouped on one wrapping line) -->
                 <div class="filter-row flex-wrap mb-0" style="row-gap:.5rem" data-tabs="all unique collection ownership">
                     <span class="filter-label"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
-                    <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned">
+                    <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned" data-tabs="all collection ownership">
                         <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
                     </button>
                     <button type="button" class="filter-toggle<?= $_csIsErrated ? ' active' : '' ?>"
-                            data-bool-filter="isErrated" data-tabs="all unique">
+                            data-bool-filter="isErrated" data-tabs="all">
                         <i class="fa-solid fa-pen-to-square"></i> <?= h($_csTxt['lbl_errated'] ?? 'Errated') ?>
                     </button>
-                    <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended">
+                    <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended" data-tabs="all collection ownership">
                         <i class="fa-solid fa-pause"></i> <?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?>
                     </button>
-                    <span class="cs-sep" data-tabs="all unique"></span>
-                    <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all unique">
+                    <span class="cs-sep" data-tabs="all"></span>
+                    <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all">
                         <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>
                         <option value="eq"><?= h($_csTxt['cost_main_eq_recall']    ?? ($_csLang === 'fr' ? 'Coût main = réserve'      : 'Main cost = reserve')) ?></option>
                         <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
                         <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
                     </select>
-                    <label class="cs-check d-flex align-items-center gap-1" data-tabs="all unique">
+                    <label class="cs-check d-flex align-items-center gap-1" data-tabs="all">
                         <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
                         <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
                     </label>
@@ -381,7 +397,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     <div class="cs-controlbar mb-2">
         <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
         <div class="cs-controlbar-end">
-            <div class="d-flex align-items-center gap-1">
+            <div class="d-flex align-items-center gap-1" data-tabs="all collection ownership">
                 <span class="cs-control-label"><?= h($_csLblSortBy) ?></span>
                 <select id="<?= h($_csP) ?>-sort" class="form-select form-select-sm" style="width:auto">
                     <?php foreach ($_csSorts as $_sv => $_sl): ?>

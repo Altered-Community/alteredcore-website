@@ -67,6 +67,9 @@ define('GITHUB_REPO', 'owner/community-feedback'); // repo where the App opens i
 
 // ─── External APIs ────────────────────────────────────────────────────────────
 define('CARDS_API_URL',     'https://cards.alteredcore.org');
+// Uniques search API (rust-cards-api / uniques-search-api), dev-local only for now.
+// Leave empty to keep the Uniques tab on CARDS_API_URL (old backend).
+define('UNIQUES_API_URL',   'http://localhost:8005');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
 define('CDN_URL',           'https://cdn.alteredcore.org');
 // Digital ownership service (AlteredOwnership).
