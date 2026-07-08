@@ -1463,3 +1463,16 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     });
 }());
 </script>
+
+<?php require_once __DIR__ . '/../includes/favorites-inject.php'; ?>
+<script>
+(function () {
+    if (!window.acFavButton) return;
+    // Étoile favori en haut à droite de chaque carte de la grille (faction/rareté laissées au
+    // backfill ; set déduit de la référence par le module).
+    document.querySelectorAll('.deck-cards-grid .deck-card-wrap[data-ref]').forEach(function (w) {
+        var star = window.acFavButton({ ref: w.dataset.ref });
+        if (star) w.appendChild(star);
+    });
+})();
+</script>

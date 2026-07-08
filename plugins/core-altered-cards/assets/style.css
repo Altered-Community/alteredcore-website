@@ -173,14 +173,34 @@
 .card-img-wrap:hover img, .card-img-wrap:hover altered-card { transform:scale(1.03); }
 .card-item { min-width:0; }
 .card-name { font-size:.82rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+
+/* Favorite star — top-right, revealed on hover, always shown when favorited */
+.card-fav-btn { position:absolute; top:5px; right:5px; z-index:4; width:26px; height:26px; padding:0;
+    display:flex; align-items:center; justify-content:center; border:none; border-radius:50%;
+    background:rgba(0,0,0,.45); color:var(--neutral-300); font-size:.9rem; cursor:pointer;
+    opacity:0; transition:opacity .15s, color .15s, transform .1s; }
+.card-img-wrap:hover .card-fav-btn,
+.db-card-wrap:hover .card-fav-btn,
+.card-view-img-wrap:hover .card-fav-btn,
+.deck-card-wrap:hover .card-fav-btn { opacity:1; }
+.card-fav-btn:hover { transform:scale(1.12); color:#fff; }
+.card-fav-btn.is-fav { opacity:1; color:#f5c518; }
+.card-fav-btn.is-fav:hover { color:#ffd634; }
+/* Touch devices have no hover: always show the star */
+@media (hover: none) { .card-fav-btn { opacity:1; } }
+/* Card detail: constrain to the card width (block, NOT inline-block — inline-block collapses the
+   <altered-card> renderer used by unique cards) so the star aligns to the image. */
+#card-img-toggle { position:relative; max-width:300px; margin:0 auto; }
+/* Favorites scope: hide the results toolbar's sort/columns (tabbed filters + count remain). */
+.cs-scope-fav .cs-controlbar-end { display:none !important; }
 .card-coll-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:2; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-badge { opacity:0; }
-.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--overlay-bar-bg); padding:4px 6px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
+.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--overlay-bar-bg); padding:6px 8px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-bar { opacity:1; pointer-events:auto; }
-.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:4px; width:22px; height:22px; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
+.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:5px; min-width:2.25rem; min-height:2.25rem; font-size:1.15rem; font-weight:700; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
 .card-coll-btn:hover:not(:disabled) { background:rgba(255,255,255,.35); }
 .card-coll-btn:disabled { opacity:.4; cursor:default; }
-.card-coll-qty { color:#fff; font-weight:700; font-size:.8rem; min-width:1.4em; text-align:center; }
+.card-coll-qty { color:#fff; font-weight:700; font-size:.95rem; min-width:1.5em; text-align:center; }
 .card-coll-bar-icon { color:rgba(255,255,255,.7); font-size:.7rem; flex-shrink:0; }
 /* Digital-ownership badge: read-only copy count (key icon), always visible (no hover fade, no edit bar). */
 .card-own-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:3; }
@@ -216,7 +236,7 @@
 @media (min-width:900px) { .deck-cards-grid { grid-template-columns:repeat(4,1fr); } }
 @media (min-width:1200px) { .deck-cards-grid { grid-template-columns:repeat(5,1fr); } }
 .deck-card-wrap { position:relative; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; cursor:pointer; }
-.deck-card-qty { position:absolute; top:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
+.deck-card-qty { position:absolute; bottom:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
 .deck-card-img { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; }
 .deck-card-wrap altered-card { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; }
 .deck-type-section { margin-bottom:1.5rem; }
@@ -286,6 +306,7 @@
 .db-card-wrap:hover .db-card-add-overlay { opacity:1; }
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
 .db-card-btn-group { position:absolute; bottom:5px; right:5px; }
+.db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }
@@ -457,12 +478,20 @@
 .cs-tabs {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
+    /* Scroll horizontally instead of wrapping so the tab row never widens the page
+       (5 tabs: All / Uniques / Collection / Ownership / Favorites) on mobile. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     border-bottom: 2px solid var(--sand-200);
 }
+.cs-tabs::-webkit-scrollbar { display: none; }
 .cs-tab {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
     gap: 6px;
     padding: 5px 14px;
     border: 1px solid transparent;
@@ -596,6 +625,502 @@
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
 }
+
+/* ============================================================
+   Playset dashboard (Profile G — Player playset)
+   ============================================================ */
+.cs-playset { margin-top: 16px; }
+
+/* Zone 1 — header */
+.cs-ps-header { margin-bottom: 14px; }
+.cs-ps-intro  { font-size: .88rem; color: var(--neutral-500); margin: 0; line-height: 1.55; }
+
+/* Rarity selector */
+.cs-ps-rarity-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.cs-ps-rarity-label { font-size: .8rem; color: var(--neutral-500); margin-right: 2px; }
+
+/* KPI grid — wireframe proportions on desktop (global · distribution · 3 metrics),
+   responsive wrap below. The distribution card stays double-wide when wrapped. */
+.cs-ps-kpis {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.cs-ps-kpi-dist { grid-column: span 2; }
+@media (min-width: 992px) {
+    .cs-ps-kpis { grid-template-columns: 1.4fr 2fr 1fr 1fr 1fr; }
+    .cs-ps-kpi-dist { grid-column: auto; }
+}
+.cs-ps-kpi {
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+.cs-ps-kpi-label {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    font-weight: 700;
+    color: var(--neutral-400);
+    margin-bottom: 10px;
+}
+.cs-ps-kpi-value {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--neutral-800);
+    font-variant-numeric: tabular-nums;
+}
+.cs-ps-kpi-unit { font-size: 1.4rem; font-weight: 700; margin-left: 1px; }
+.cs-ps-kpi-sub  { margin-top: 8px; font-size: .82rem; color: var(--neutral-500); font-weight: 500; }
+
+/* Plain metric cards (copies owned · cards to complete · copies to acquire) */
+.cs-ps-kpi-metric .cs-ps-kpi-value { font-size: 1.7rem; }
+.cs-ps-kpi-metric .cs-ps-kpi-sub   { margin-top: 4px; font-size: .76rem; color: var(--neutral-400); }
+
+/* Highlighted "overall completion" card — theme-aware primary tint */
+.cs-ps-kpi-global {
+    background: color-mix(in srgb, var(--primary-400) 9%, var(--sand-50));
+    border-color: var(--primary-400);
+}
+.cs-ps-kpi-global .cs-ps-kpi-value { color: var(--primary-500); }
+.cs-ps-kpi-global .cs-ps-kpi-sub   { color: var(--primary-500); }
+
+/* Card distribution — stacked bar (semantic status colors, theme-independent) */
+.cs-playset {
+    --ps-complete: #3aa856;   /* 3/3 — light green */
+    --ps-extra:    #1e7a3a;   /* 4+  — darker green */
+    --ps-progress: #e8a23c;
+    --ps-missing:  #d64545;
+}
+.cs-ps-stacked {
+    display: flex;
+    height: 26px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 2px;
+    background: var(--neutral-200);
+}
+.cs-ps-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    transition: flex-grow .25s;
+}
+.cs-ps-seg.complete    { background: var(--ps-complete); }
+.cs-ps-seg.in-progress { background: var(--ps-progress); }
+.cs-ps-seg.missing     { background: var(--ps-missing); }
+.cs-ps-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: .76rem;
+    color: var(--neutral-600);
+}
+.cs-ps-leg { display: inline-flex; align-items: center; gap: 5px; }
+.cs-ps-leg-frac { color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.cs-ps-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.cs-ps-dot.complete    { background: var(--ps-complete); }
+.cs-ps-dot.in-progress { background: var(--ps-progress); }
+.cs-ps-dot.missing     { background: var(--ps-missing); }
+
+/* ---- Heatmap (faction × set) ---- */
+.cs-ps-section-title {
+    margin: 24px 0 10px;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    font-weight: 700;
+    color: var(--neutral-400);
+}
+/* Continuous heatmap grid: cells are flush; rounding comes from the wrapper,
+   which also clips the corners (overflow). */
+.cs-ps-heatmap-wrap {
+    position: relative;
+    overflow-x: auto;
+    border: 1px solid var(--sand-200);
+    border-radius: 10px;
+}
+table.cs-ps-heatmap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .76rem;
+}
+.cs-ps-heatmap th, .cs-ps-heatmap td {
+    padding: 7px 6px;
+    text-align: center;
+    min-width: 74px;
+}
+.cs-ps-heatmap thead th {
+    background: var(--sand-100);
+    color: var(--neutral-600);
+    font-weight: 700;
+    font-size: .64rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    line-height: 1.25;
+    vertical-align: bottom;
+}
+.cs-ps-heatmap thead th.cs-ps-hm-corner { background: transparent; text-align: left; }
+.cs-ps-hm-rowhead {
+    background: var(--sand-100);
+    color: var(--neutral-700);
+    text-align: left !important;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.cs-ps-hm-ficon { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 6px; }
+/* Heatmap gradient stops + cell text/hairline as CSS variables, so the dark theme
+   can use a darker palette (light cells looked washed-out on the dark UI). The JS
+   blends between the stops with color-mix, so cells recolor live on a theme toggle. */
+.cs-ps-heatmap {
+    --hm-0:    hsl(45, 10%, 95%);   /* 0%  — light warm gray */
+    --hm-50:   hsl(32, 60%, 72%);   /* 50% — orange */
+    --hm-100:  hsl(135, 38%, 66%);  /* 100% — green */
+    --hm-text: #243042;
+    --hm-line: rgba(255, 255, 255, .55);
+}
+[data-theme="dark"] .cs-ps-heatmap {
+    --hm-0:    hsl(232, 16%, 22%);  /* dark slate instead of light gray */
+    --hm-50:   hsl(32, 42%, 34%);   /* deep orange */
+    --hm-100:  hsl(135, 32%, 32%);  /* deep green */
+    --hm-text: #e7e9f3;
+    --hm-line: rgba(255, 255, 255, .12);
+}
+.cs-ps-hm { color: var(--hm-text); font-weight: 600; cursor: default; border: 1px solid var(--hm-line); }
+.cs-ps-hm-pct  { display: block; font-size: .86rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cs-ps-hm.empty { background: var(--sand-100); color: var(--neutral-400); font-weight: 600; }
+/* Cross highlight: two blue rectangles (row + column) positioned in JS. */
+.cs-ps-hm-cross {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 2px solid var(--primary-500);
+    border-radius: 3px;
+    z-index: 5;
+}
+/* Custom 3-line popover (set · faction · count), built in JS, appended to <body> */
+.cs-ps-hm-tip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    background: #243042;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .28);
+    white-space: nowrap;
+    text-align: left;
+    line-height: 1.35;
+}
+.cs-ps-tip-set, .cs-ps-tip-faction { display: flex; align-items: center; gap: 6px; font-size: .8rem; }
+.cs-ps-tip-set     { font-weight: 700; gap: 9px; }
+.cs-ps-tip-faction { font-weight: 600; color: rgba(255, 255, 255, .85); }
+.cs-ps-tip-count   { font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 3px; }
+.cs-ps-tip-icon    { width: 15px; height: 15px; flex-shrink: 0; }
+img.cs-ps-tip-icon { object-fit: contain; }
+i.cs-ps-tip-icon   { font-size: .95rem; line-height: 15px; text-align: center; }
+/* Margins (per-faction, per-set, grand total) — bolder, isolated by a band the
+   color of the page background (var(--sand-50)) so it reads as a gap in both
+   themes — right of the Total column (first data column), above the Total row.
+   Hardcoding #fff here showed as a bright stripe in dark mode. */
+.cs-ps-hm-rowtot, .cs-ps-hm-coltot, .cs-ps-hm-grand { font-weight: 800; }
+.cs-ps-hm-th-total, .cs-ps-hm-rowtot, .cs-ps-hm-grand { border-right: 5px solid var(--sand-50); }
+.cs-ps-hm-foot > * { border-top: 5px solid var(--sand-50); }
+
+/* Set-column headers — flush image band (mirrors the set quick-filter buttons) */
+.cs-ps-heatmap thead th.cs-ps-hm-setcol { background: transparent; padding: 0; vertical-align: bottom; }
+.cs-ps-setchip {
+    position: relative;
+    overflow: hidden;
+    height: 56px;
+    border-radius: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--neutral-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cs-ps-setchip::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .6); }
+.cs-ps-setchip-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 3px;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .9);
+}
+.cs-ps-setchip-inner i { font-size: 1.05rem; line-height: 1; }
+.cs-ps-setchip-name { font-size: .58rem; font-weight: 700; line-height: 1.15; text-align: center; text-transform: none; letter-spacing: 0; }
+.cs-ps-setchip-note {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    z-index: 2;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .9);
+    color: #243042;
+    font-size: .6rem;
+    font-weight: 800;
+    line-height: 14px;
+    text-align: center;
+    cursor: help;
+}
+
+/* ---- Exploration (Zone 3 — shopping list) ---- */
+.cs-ps-name-row { margin-bottom: 10px; }
+.cs-ps-name-input { max-width: 340px; }
+.cs-ps-set-filter { margin-bottom: 10px; }
+.cs-ps-faction-filter { margin-bottom: 10px; }
+.cs-ps-rarity-filter { margin-bottom: 10px; }
+.cs-ps-copies-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.cs-ps-copies-label { font-size: .8rem; color: var(--neutral-500); margin-right: 2px; }
+
+/* Filters (left) + summary donut (right). Summary stretches to the filters'
+   height (no empty gap below) and lays donut + legend side by side (compact). */
+.cs-ps-explore-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; margin-bottom: 14px; }
+.cs-ps-filters { flex: 0 1 540px; min-width: 0; }   /* sized to the set row; doesn't grow */
+.cs-ps-summary {
+    flex: 1 1 auto;                                   /* fills the right column above the switcher */
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;                             /* children fill the panel height */
+    justify-content: space-evenly;                    /* equal spacing around stats · divider · chart */
+    gap: 0;
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+/* Two KPIs stacked on the left, spread to fill the height. Label above value,
+   same style as the dashboard's top KPI labels. */
+.cs-ps-sum-stats { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: space-evenly; text-align: left; }
+.cs-ps-sum-lbl { display: block; font-size: .65rem; text-transform: uppercase; letter-spacing: 1.1px; font-weight: 700; color: var(--neutral-400); margin-bottom: 5px; }
+.cs-ps-sum-val { display: block; font-size: 1.5rem; font-weight: 800; color: var(--neutral-800); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cs-ps-sum-divider { align-self: stretch; width: 1px; background: var(--sand-200); flex: 0 0 auto; }
+/* Title + (donut + legend). Legend rows stay tight (values next to labels). */
+.cs-ps-sum-chart { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.cs-ps-chart-title { font-size: .9rem; color: var(--neutral-600); text-align: center; line-height: 1.3; }
+/* Loading overlay (filter change) — frosted cover + spinner, like the listing */
+.cs-ps-sum-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, .72); border-radius: 8px; z-index: 2; }
+.cs-ps-chart-body { display: flex; align-items: center; gap: 18px; }
+.cs-ps-donut { flex: 0 0 auto; }
+.cs-ps-donut-svg { display: block; width: 104px; height: 104px; }
+.cs-ps-donut-legend { display: flex; flex-direction: column; gap: 5px; }
+.cs-ps-leg-row { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--neutral-600); }
+.cs-ps-leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.cs-ps-leg-lab { min-width: 52px; }
+.cs-ps-leg-val { min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--neutral-700); }
+.cs-ps-leg-pct { width: 34px; text-align: right; color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.cs-ps-explore-meta { font-size: .8rem; color: var(--neutral-500); margin-bottom: 10px; }
+/* Right column of the explore-top: summary panel (grows) + layout switcher row
+   (fixed) stacked, together matching the filters' height. */
+.cs-ps-explore-right { flex: 1 1 320px; max-width: 720px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.cs-ps-layout-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cs-ps-layout-label { font-size: .8rem; font-weight: 600; color: var(--neutral-500); }
+.cs-ps-layout-switch { display: inline-flex; gap: 4px; flex-shrink: 0; background: var(--sand-50); border: 1px solid var(--sand-200); border-radius: 8px; padding: 3px; }
+.cs-ps-layout-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 28px; padding: 0;
+    border: none; border-radius: 5px; cursor: pointer;
+    background: transparent; color: var(--neutral-400); font-size: .9rem;
+    transition: background .15s, color .15s;
+}
+.cs-ps-layout-btn:hover { color: var(--neutral-600); }
+.cs-ps-layout-btn:focus-visible { outline: 2px solid var(--primary-400); outline-offset: 2px; }
+.cs-ps-layout-btn.active { background: #fff; color: var(--primary-500); box-shadow: 0 1px 2px rgba(15, 30, 50, .08); }
+/* Dark mode: the track is var(--sand-50) (near-black), so the raised pill must
+   be a *lighter* dark surface — not white. Gold text uses the lighter --primary-300. */
+[data-theme="dark"] .cs-ps-layout-btn.active { background: var(--sand-300); color: var(--primary-300); box-shadow: none; }
+.cs-ps-explore { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cs-ps-explore.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 1199px) { .cs-ps-explore.cols-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 991px) { .cs-ps-explore, .cs-ps-explore.cols-3 { grid-template-columns: 1fr; } }
+.cs-ps-explore.is-loading { opacity: .5; }
+.cs-ps-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--sand-50);
+    border: 1px solid var(--sand-200);
+    border-radius: 8px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.cs-ps-card:hover { border-color: var(--primary-400); box-shadow: 0 2px 8px rgba(15, 30, 50, .07); }
+.cs-ps-card-mini {
+    flex: 0 0 99px;
+    width: 99px;
+    height: 138px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--neutral-200);
+}
+.cs-ps-card-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cs-ps-card-info { flex: 1; min-width: 0; }
+.cs-ps-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.cs-ps-card-titlewrap { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 10px; }
+.cs-ps-card-title { font-size: .95rem; font-weight: 700; color: var(--neutral-800); }
+.cs-ps-card-meta { display: inline-flex; flex-wrap: wrap; gap: 10px; font-size: .76rem; color: var(--neutral-500); }
+.cs-ps-card-tag { display: inline-flex; align-items: center; gap: 4px; }
+.cs-ps-card-seticon { font-size: .9rem; flex-shrink: 0; }
+.cs-ps-card-summary { text-align: right; white-space: nowrap; font-size: .7rem; color: var(--neutral-400); }
+.cs-ps-card-summary-val { font-size: 1rem; font-weight: 700; color: var(--neutral-700); font-variant-numeric: tabular-nums; }
+
+.cs-ps-versions { display: flex; flex-direction: column; gap: 3px; }
+.cs-ps-version {
+    display: grid;
+    grid-template-columns: minmax(120px, 180px) 1fr 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: background .1s;
+}
+.cs-ps-version:hover { background: var(--sand-100); }
+.cs-ps-version-label { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--neutral-700); min-width: 0; }
+.cs-ps-gem { width: 14px; height: 14px; flex-shrink: 0; }
+/* Fixed-width rarity → faction columns line up vertically across version rows. */
+.cs-ps-version-rarity { flex: 0 0 auto; min-width: 66px; }
+.cs-ps-version-faction { display: inline-flex; align-items: center; gap: 4px; color: var(--neutral-500); font-size: .75rem; min-width: 0; }
+.cs-ps-version-faction span, .cs-ps-version-faction { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-ps-version-ficon { width: 14px; height: 14px; object-fit: contain; flex-shrink: 0; }
+.cs-ps-bar { background: var(--neutral-200); height: 9px; border-radius: 5px; overflow: hidden; }
+.cs-ps-bar-fill { height: 100%; border-radius: 5px; transition: width .2s; }
+.cs-ps-bar-fill.p0 { width: 4%;  min-width: 4px; background: var(--ps-missing); }
+.cs-ps-bar-fill.p1 { width: 33%;  background: var(--ps-progress); }
+.cs-ps-bar-fill.p2 { width: 66%;  background: var(--ps-progress); }
+.cs-ps-bar-fill.p3 { width: 100%; background: var(--ps-complete); }
+.cs-ps-bar-fill.p4 { width: 100%; background: var(--ps-extra); }
+.cs-ps-frac { text-align: right; font-size: .8rem; font-weight: 600; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
+.cs-ps-frac.zero    { color: var(--ps-missing); }
+.cs-ps-frac.partial { color: var(--ps-progress); }
+.cs-ps-frac.full    { color: var(--ps-complete); }
+.cs-ps-frac.extra   { color: var(--ps-extra); }
+
+/* 3-per-row layout: cards are narrower, so render X/3 as a filled colored badge
+   to keep the 0 / 1–2 / 3+ distinction obvious at a glance. Only when 3 columns
+   actually render (≥1200px) — below that cols-3 collapses to 2/1 columns (wider
+   cards), where the badge would look out of place like the plain 2-per-row view. */
+@media (min-width: 1200px) {
+    .cs-ps-explore.cols-3 .cs-ps-frac {
+        justify-self: end;
+        min-width: 0;
+        padding: 1px 7px;
+        border-radius: 9px;
+        color: #fff;
+        background: var(--neutral-400);
+        white-space: nowrap;
+        font-size: .72rem;
+        line-height: 1.5;
+    }
+    .cs-ps-explore.cols-3 .cs-ps-frac.zero    { background: var(--ps-missing); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.partial { background: var(--ps-progress); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.full    { background: var(--ps-complete); }
+    .cs-ps-explore.cols-3 .cs-ps-frac.extra   { background: var(--ps-extra); }
+}
+
+/* ── Visual gallery layout ──────────────────────────────────────────────────
+   Image-forward: a larger card image (~+50%) stacked over compact version
+   chips (rarity gem + faction icon + quantity badge only). No name/type/set or
+   global summary. auto-fill packs as many cards per line as the width allows
+   (~6 at desktop), and reflows down on narrower viewports. */
+.cs-ps-explore.cols-visual { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 14px; }
+.cs-ps-explore.cols-visual .cs-ps-card { flex-direction: column; gap: 8px; padding: 8px; }
+.cs-ps-explore.cols-visual .cs-ps-card-mini {     /* full-width, ~+50% vs the list view */
+    flex: none; width: 100%; height: auto; aspect-ratio: 99 / 138;
+}
+.cs-ps-explore.cols-visual .cs-ps-card-head { display: none; }   /* no name / type / set / summary */
+.cs-ps-explore.cols-visual .cs-ps-card-info { width: 100%; }
+.cs-ps-explore.cols-visual .cs-ps-versions { gap: 4px; }
+.cs-ps-explore.cols-visual .cs-ps-version {
+    display: flex; align-items: center; justify-content: center; gap: 7px; padding: 2px 4px;
+}
+.cs-ps-explore.cols-visual .cs-ps-gem,
+.cs-ps-explore.cols-visual .cs-ps-version-ficon { width: 16px; height: 16px; }
+
+/* ── Icon-only version chips (shared by the visual & list layouts) ──────────
+   Both reduce each version to: rarity gem + faction icon + a filled colored
+   quantity badge (no rarity/faction name text, no bar), with a little space
+   between the gem and the faction icon. */
+.cs-ps-explore.cols-visual .cs-ps-version-label,
+.cs-ps-explore.cols-list   .cs-ps-version-label { gap: 6px; }
+.cs-ps-explore.cols-visual .cs-ps-version-rarity,
+.cs-ps-explore.cols-visual .cs-ps-version-fname,
+.cs-ps-explore.cols-visual .cs-ps-bar,
+.cs-ps-explore.cols-list   .cs-ps-version-rarity,
+.cs-ps-explore.cols-list   .cs-ps-version-fname,
+.cs-ps-explore.cols-list   .cs-ps-bar { display: none; }
+.cs-ps-explore.cols-visual .cs-ps-frac,
+.cs-ps-explore.cols-list   .cs-ps-frac {
+    min-width: 0; padding: 1px 7px; border-radius: 9px;
+    color: #fff; background: var(--neutral-400);
+    white-space: nowrap; font-size: .72rem; line-height: 1.5;
+}
+.cs-ps-explore.cols-visual .cs-ps-frac.zero,    .cs-ps-explore.cols-list .cs-ps-frac.zero    { background: var(--ps-missing); }
+.cs-ps-explore.cols-visual .cs-ps-frac.partial, .cs-ps-explore.cols-list .cs-ps-frac.partial { background: var(--ps-progress); }
+.cs-ps-explore.cols-visual .cs-ps-frac.full,    .cs-ps-explore.cols-list .cs-ps-frac.full    { background: var(--ps-complete); }
+.cs-ps-explore.cols-visual .cs-ps-frac.extra,   .cs-ps-explore.cols-list .cs-ps-frac.extra   { background: var(--ps-extra); }
+
+/* ── List layout ────────────────────────────────────────────────────────────
+   No image, one card per line: name (+ type · set) on the left, all versions
+   inline on the right. Styled like the deck page's decklist — flat rows with a
+   thin bottom separator instead of card boxes — but without the type grouping. */
+.cs-ps-explore.cols-list { display: block; }
+/* Tabular row — fixed columns: name | type | extension | v1 | v2 | v3. Each card
+   is its own grid, so the non-name columns use FIXED widths to line up across
+   rows; the wrappers are flattened with display:contents so name/type/set/versions
+   become direct grid cells. Versions column fits exactly 3 fixed slots (84px each
+   + two 10px gaps = 272px), so the version blocks align column-for-column too. */
+.cs-ps-explore.cols-list .cs-ps-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px 180px 272px;
+    column-gap: 16px;
+    align-items: center;
+    background: transparent; border: none; border-bottom: 1px solid var(--neutral-100);
+    border-radius: 0; padding: 6px 6px;
+}
+.cs-ps-explore.cols-list .cs-ps-card:hover { background: var(--sand-50); box-shadow: none; }
+.cs-ps-explore.cols-list .cs-ps-card-mini,
+.cs-ps-explore.cols-list .cs-ps-card-summary { display: none; }   /* no image / global total */
+.cs-ps-explore.cols-list .cs-ps-card-info,
+.cs-ps-explore.cols-list .cs-ps-card-head,
+.cs-ps-explore.cols-list .cs-ps-card-titlewrap,
+.cs-ps-explore.cols-list .cs-ps-card-meta { display: contents; }  /* flatten into the card grid */
+.cs-ps-explore.cols-list .cs-ps-card-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-ps-explore.cols-list .cs-ps-card-meta .cs-ps-card-tag { min-width: 0; overflow: hidden; white-space: nowrap; }
+.cs-ps-explore.cols-list .cs-ps-versions { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; }
+.cs-ps-explore.cols-list .cs-ps-version { display: flex; align-items: center; gap: 5px; padding: 0; width: 84px; flex: none; }
+.cs-ps-explore.cols-list .cs-ps-version:hover { background: transparent; }
+.cs-ps-explore.cols-list .cs-ps-gem,
+.cs-ps-explore.cols-list .cs-ps-version-ficon { width: 15px; height: 15px; }
+
+.cs-ps-explore-pag { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+.cs-ps-pag-info { font-size: .82rem; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
 
 /* Deck header (deck.php) */
 .deck-hdr-title { font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.2; }

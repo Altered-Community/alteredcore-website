@@ -800,5 +800,20 @@ var AlteredCard = {
     }
 })();
 </script>
+
+<?php require_once __DIR__ . '/../includes/favorites-inject.php'; ?>
+<script>
+(function () {
+    if (!window.acFavButton) return;
+    // #card-img-toggle hugs the card image; the inline renderer only replaces the
+    // #card-render child, so a star appended here survives the async render.
+    var wrap = document.getElementById('card-img-toggle');
+    if (!wrap) return;
+    // faction/rareté non fiables côté serveur ici (transfuges) → laissées vides, remplies par le
+    // backfill quand l'onglet Favoris non filtré récupère la carte. Le set est fiable.
+    var star = window.acFavButton({ ref: <?= json_encode($ref) ?>, set: <?= json_encode($_assetSet) ?> });
+    if (star) wrap.appendChild(star);
+})();
+</script>
 <?php endif; ?>
 

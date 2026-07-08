@@ -70,6 +70,13 @@ function CardSearch(cfg) {
     var elError       = q('error');
     var elPagin       = q('pagination');
     var elSearch      = q('search');
+    // Playset dashboard (Profile G) — a non-grid tab implemented in its own
+    // module (card-search-playset.js). Instantiated only when that script is
+    // loaded (cards mode); deck/deckbuilder pages never include it, so the
+    // typeof guard keeps CardSearch working without it.
+    var _playset = (typeof CardSearchPlayset === 'function')
+        ? CardSearchPlayset({ cfg: cfg, q: q, uiLang: UI_LANG, debug: DEBUG, txt: txt, cdnUrl: cdnUrl })
+        : null;
     var elFilterBtn     = q('filter-btn');
     var elFilterModal   = document.getElementById(P + '-filter-modal');
     var elModalResetBtn = document.getElementById(P + '-modal-reset-btn');
@@ -135,6 +142,10 @@ function CardSearch(cfg) {
     // mechanics (single-select filters, collection field mapping); only the proxy differs.
     var _scope             = 'all';
     var _scopeCollection   = false;
+    // Favorites scope: browse the user's favorite cards (local DB proxy). Kept separate from
+    // _scopeCollection so cards keep the normal 'cards' field mapping (the fav proxy returns
+    // cards-API-shaped objects).
+    var _scopeFavoris      = false;
     // Active UI tab: 'all' | 'unique' | 'collection' | 'ownership'.
     // 'unique' uses the cards API (scope 'all') with forced rarity/type presets.
     var _tab               = 'all';
@@ -190,12 +201,14 @@ function CardSearch(cfg) {
     function scopeApiUrl() {
         if (_scope === 'ownership') return cfg.ownershipApiUrl || '';
         if (_scope === 'collection') return cfg.collApiUrl || '';
+        if (_scope === 'favoris')   return cfg.favApiUrl || '';
         return '';
     }
 
     function setScope(s) {
-        _scope = (s === 'collection' || s === 'ownership') ? s : 'all';
-        _scopeCollection = _scope !== 'all';
+        _scope = (s === 'collection' || s === 'ownership' || s === 'favoris') ? s : 'all';
+        _scopeCollection = (_scope === 'collection' || _scope === 'ownership');
+        _scopeFavoris    = (_scope === 'favoris');
     }
 
     function syncScopeButtons() {
@@ -209,6 +222,8 @@ function CardSearch(cfg) {
     function updateScopeUi() {
         var active = _scopeCollection && !!scopeApiUrl();
         if (_root) _root.classList.toggle('coll-scope-active', active);
+        // Favorites scope: hide the search-engine toolbar via CSS (only tabbed filters remain).
+        if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
             if (active) {
@@ -672,6 +687,7 @@ function CardSearch(cfg) {
                 + '&page=' + page + '&itemsPerPage=' + PER_PAGE;
         }
 
+        if (_scopeFavoris && cfg.favApiUrl) return buildFavApiUrl(page);
         if (_scopeCollection && scopeApiUrl()) return buildCollApiUrl(page);
 
         var parts = [
@@ -791,6 +807,88 @@ function CardSearch(cfg) {
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
         return scopeApiUrl() + '?' + parts.join('&');
+    }
+
+    // build favorites proxy URL — no search engine, just paginated favorites +
+    // optional Set/Faction/Rarity filters (only when the user explicitly picked them).
+    function buildFavApiUrl(page) {
+        var parts = [
+            'locale='       + encodeURIComponent(LANG),
+            'page='         + page,
+            'itemsPerPage=' + PER_PAGE,
+        ];
+        if (_factionDirty) filters.faction.forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        if (_rarityDirty)  filters.rarity.forEach(function(v)  { parts.push('rarity[]='  + encodeURIComponent(v)); });
+        if (_setsDirty)    filters.sets.forEach(function(v)    { parts.push('set[]='     + encodeURIComponent(v)); });
+        return cfg.favApiUrl + '?' + parts.join('&');
+    }
+
+    // ── Favorites star button ─────────────────────────────────────────────────
+    function _applyFavBtnState(btn, isFav) {
+        btn.classList.toggle('is-fav', !!isFav);
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-solid',   !!isFav);
+            icon.classList.toggle('fa-regular', !isFav);
+        }
+    }
+    function _makeFavButton(card) {
+        if (!cfg.favoritesEnabled || !card) return null;
+        var ref = card.reference || '';
+        if (!ref) return null;
+        var isFav = !!(cfg.favoritesData && cfg.favoritesData[ref]);
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'card-fav-btn' + (isFav ? ' is-fav' : '');
+        b.setAttribute('data-fav-toggle', '');
+        b.dataset.ref = ref;
+        // Real codes from the card (faction correct even for transfuges). The cards API returns
+        // faction/rarity/set as nested objects; tolerate a plain string too.
+        b.dataset.faction = (card.faction && card.faction.code) || card.factionCode || '';
+        b.dataset.rarity  = (card.rarity && card.rarity.reference) || (typeof card.rarity === 'string' ? card.rarity : '') || '';
+        b.dataset.set     = (card.set && card.set.reference) || ref.split('_')[1] || '';
+        b.title = (cfg.txt && cfg.txt.favorite) || 'Favori';
+        b.innerHTML = '<i class="' + (isFav ? 'fa-solid' : 'fa-regular') + ' fa-star"></i>';
+        b.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); _toggleFav(b); });
+        return b;
+    }
+    if (cfg.favoritesEnabled) window.acMakeFavButton = _makeFavButton;
+
+    // Persist a favorite toggle to our DB, then sync the UI.
+    function _toggleFav(btn) {
+        if (!cfg.favoritesEnabled || !cfg.favToggleUrl) return;
+        var ref = btn.dataset.ref;
+        if (!ref || btn.disabled) return;
+        btn.disabled = true;
+        var body = new URLSearchParams();
+        body.append('csrf_token', cfg.favoritesCsrf || '');
+        body.append('card_ref',   ref);
+        body.append('faction',    btn.dataset.faction || '');
+        body.append('rarity',     btn.dataset.rarity  || '');
+        body.append('card_set',   btn.dataset.set     || '');
+        fetch(cfg.favToggleUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    body.toString(),
+        })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+            btn.disabled = false;
+            if (!data || !data.ok) return;
+            cfg.favoritesData = cfg.favoritesData || {};
+            if (data.favorited) cfg.favoritesData[ref] = true;
+            else                delete cfg.favoritesData[ref];
+            qa('[data-fav-toggle][data-ref="' + ref + '"]').forEach(function(b) {
+                _applyFavBtnState(b, data.favorited);
+            });
+            // In the Favorites tab, refresh so the removed card + count + pagination stay accurate.
+            if (_scopeFavoris && !data.favorited) {
+                var onPage     = elGrid ? elGrid.children.length : 0;
+                var targetPage = (onPage <= 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+                search(targetPage);
+            }
+        })
+        .catch(function() { btn.disabled = false; });
     }
 
     // build shareable URL for pushState
@@ -1040,6 +1138,10 @@ function CardSearch(cfg) {
             wrap.appendChild(img);
         }
 
+        // Favorite star — top-right (visible on hover / when favorited)
+        var favBtn = _makeFavButton(card);
+        if (favBtn) wrap.appendChild(favBtn);
+
         if (_scope === 'ownership') {
             // Digital-ownership tab: read-only count of digital copies returned by
             // the ownership API, marked with a key icon. No editable footer — the
@@ -1113,6 +1215,8 @@ function CardSearch(cfg) {
 
     // main search
     function search(page, skipPushState) {
+        // The playset tab shows a dashboard, not the result grid — never query.
+        if (_tab === 'playset') return;
         updateScopeUi();
         readTsValues();
         currentPage = page || 1;
@@ -1255,8 +1359,8 @@ function CardSearch(cfg) {
     // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
     // the URL-loaded filters are preserved and only scope/visibility are applied.
     function setTab(t, keepFilters) {
-        _tab = (t === 'unique' || t === 'collection' || t === 'ownership') ? t : 'all';
-        setScope(_tab === 'collection' || _tab === 'ownership' ? _tab : 'all');
+        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
+        setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
         if (_tab === 'unique') {
             if (!keepFilters) {
                 _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice();
@@ -1286,6 +1390,21 @@ function CardSearch(cfg) {
         updateScopeUi();
         syncDefaultsToUi();
         updateFilterCount();
+        // The playset dashboard replaces the result grid. applyTabVisibility has
+        // already toggled the [data-tabs] blocks (search box, control bar,
+        // dashboard); here we just clear any leftover search results and lazily
+        // load the dashboard data.
+        if (_tab === 'playset') {
+            if (elGrid)  elGrid.style.display = 'none';
+            if (elPagin) elPagin.style.setProperty('display', 'none', 'important');
+            [elLoading, elInitial, elEmpty, elError].forEach(function(e) { if (e) e.style.display = 'none'; });
+            // search() (which normally syncs the URL) is a no-op here, so reflect
+            // the active tab ourselves — unless we're restoring from the URL.
+            if (!keepFilters && cfg.pushState && MODE === 'cards') {
+                history.pushState({ page: 1 }, '', buildPageUrl(1));
+            }
+            if (_playset) _playset.load();
+        }
     }
 
     // ── Promo sets ────────────────────────────────────────────────────────────
@@ -1543,7 +1662,8 @@ function CardSearch(cfg) {
         var _urlTab = p.get('tab');
         if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
         if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
-        setTab(_urlTab && /^(unique|collection|ownership)$/.test(_urlTab) ? _urlTab : 'all', true);
+        if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
+        setTab(_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab) ? _urlTab : 'all', true);
 
         updateFilterCount();
         search(pg, true);
@@ -1708,7 +1828,8 @@ function CardSearch(cfg) {
             if (btn.dataset.tab === _tab) return;
             resetFilters();
             setTab(btn.dataset.tab);
-            if (MODE === 'cards') search(1);
+            // Favorites tab has no Apply button flow — load it immediately, even in deck mode.
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
         _root.addEventListener('click', function(e) {
@@ -1746,6 +1867,8 @@ function CardSearch(cfg) {
             if (key === 'faction' && tsInst.faction) tsInst.faction.setValue(filters.faction, true);
             if (key === 'sets'   && tsInst.set)     tsInst.set.setValue(filters.sets, true);
             updateFilterCount();
+            // Favorites tab has no Apply button — filters apply live on toggle.
+            if (_scopeFavoris) search(1);
         });
 
         _root.addEventListener('click', function(e) {
@@ -1775,7 +1898,7 @@ function CardSearch(cfg) {
             // Stay on the current tab: resetFilters() forces scope back to 'all',
             // so re-apply the active tab's scope/presets before searching.
             setTab(_tab);
-            if (MODE === 'cards') search(1);
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
     }
     if (elSortSelect) {
@@ -1801,7 +1924,7 @@ function CardSearch(cfg) {
             resetFilters();
             // Stay on the current tab (see elResetBtn handler).
             setTab(_tab);
-            if (MODE === 'cards') search(1);
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
     }
     if (elModalApplyBtn) {
@@ -1840,7 +1963,7 @@ function CardSearch(cfg) {
             label.style.cssText = 'color:rgba(255,255,255,.65);font-size:.82rem;flex:1';
             label.textContent = 'Collection';
 
-            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;flex-shrink:0';
+            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;min-width:2.25rem;min-height:2.25rem;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;cursor:pointer;flex-shrink:0';
 
             var btnMinus = document.createElement('button');
             btnMinus.type = 'button';
@@ -1946,11 +2069,13 @@ function CardSearch(cfg) {
     // init
     initTomSelects();
     syncDefaultsToUi();
+    if (_playset) _playset.init(); // before any tab restore that may trigger _playset.load()
     // Restore the active tab from the URL (cards mode) so a refresh keeps it.
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
     if (_initTab === 'ownership'  && !cfg.ownershipApiUrl) _initTab = null;
-    if (_initTab && /^(unique|collection|ownership)$/.test(_initTab)) {
+    if (_initTab === 'playset'    && !cfg.playsetApiUrl)   _initTab = null;
+    if (_initTab && /^(unique|collection|ownership|playset)$/.test(_initTab)) {
         setTab(_initTab, true); // keepFilters: URL already carries the filter state
     } else {
         syncTabButtons();

@@ -17,6 +17,8 @@ $_csCollMode   = $_cs['collection_mode']    ?? false;
 $_csCollEnabled= $_cs['collection_enabled'] ?? false;
 $_csOwnMode    = $_cs['ownership_mode']      ?? false;
 $_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
+$_csPlaysetMode= $_cs['playset_mode']        ?? false;
+$_csFavMode    = $_cs['favorites_mode']      ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
@@ -89,6 +91,46 @@ $_csLblUnique   = $_csTxt['tab_unique'] ?? ($_csLang === 'fr' ? 'Uniques'       
 $_csLblAllCards = $_csTxt['scope_all']  ?? ($_csLang === 'fr' ? 'Toutes les cartes'        : 'All cards');
 $_csLblColl     = $_csTxt['scope_collection'] ?? ($_csLang === 'fr' ? 'Collection physique' : 'Physical collection');
 $_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriété numérique' : 'Digital ownership');
+// Playset dashboard (Profile G — Player playset). All labels live under the
+// "playset" object in search_settings.json (translations.{lang}.playset); the
+// literals below are only fallbacks when a key is missing.
+$_csPs = $_csTxt['playset'] ?? [];
+$_csLblPlayset  = $_csPs['tab_playset'] ?? ($_csLang === 'fr' ? 'Playset physique'   : 'Physical playset');
+$_csPsIntro     = $_csPs['intro']       ?? ($_csLang === 'fr'
+    ? 'Suivez votre progression vers 3 exemplaires de chaque carte Commune, Rare, Rare OOF et Exaltée. Les Héros, Uniques et alternatives ne sont pas comptabilisés dans cette vue.'
+    : 'Track your progress toward 3 copies of each Common, Rare, Rare OOF and Exalted card. Heroes, Uniques and alternatives are not counted in this view.');
+$_csPsRarityLabel = $_csPs['rarity_label'] ?? ($_csLang === 'fr' ? 'Raretés incluses' : 'Rarities included');
+$_csPsRarityCodes = ['COMMON', 'RARE', 'EXALTED']; // playset scope (no Unique)
+$_csPsKpiGlobal = $_csPs['kpi_global'] ?? ($_csLang === 'fr' ? 'Complétude globale' : 'Overall completion');
+$_csPsCopies    = $_csPs['copies']     ?? ($_csLang === 'fr' ? 'exemplaires'        : 'copies');
+$_csPsKpiDist   = $_csPs['kpi_dist']   ?? ($_csLang === 'fr' ? 'Distribution des cartes' : 'Card distribution');
+$_csPsComplete  = $_csPs['complete']   ?? ($_csLang === 'fr' ? 'Complètes'   : 'Complete');
+$_csPsProgress  = $_csPs['progress']   ?? ($_csLang === 'fr' ? 'En cours'    : 'In progress');
+$_csPsMissing   = $_csPs['missing']    ?? ($_csLang === 'fr' ? 'Manquantes'  : 'Missing');
+$_csPsOwned        = $_csPs['owned']        ?? ($_csLang === 'fr' ? 'Exemplaires possédés'   : 'Copies owned');
+$_csPsOwnedSub     = $_csPs['owned_sub']    ?? ($_csLang === 'fr' ? 'au total'               : 'total');
+$_csPsToComplete   = $_csPs['to_complete']  ?? ($_csLang === 'fr' ? 'Cartes à compléter'     : 'Cards to complete');
+$_csPsToCompleteSub= $_csPs['to_complete_sub'] ?? ($_csLang === 'fr' ? 'références < 3/3'     : 'references < 3/3');
+$_csPsToAcquire    = $_csPs['to_acquire']   ?? ($_csLang === 'fr' ? 'Exemplaires à acquérir' : 'Copies to acquire');
+$_csPsToAcquireSub = $_csPs['to_acquire_sub'] ?? ($_csLang === 'fr' ? 'pour atteindre 3/3'   : 'to reach 3/3');
+$_csPsHeatTitle = $_csPs['heat_title'] ?? ($_csLang === 'fr' ? 'Complétude par faction × extension' : 'Completion by faction × set');
+$_csPsFaction   = $_csPs['faction']    ?? ($_csLang === 'fr' ? 'Faction' : 'Faction');
+$_csPsTotal     = $_csPs['total']      ?? ($_csLang === 'fr' ? 'Total'   : 'Total');
+$_csPsAllSets     = $_csPs['all_sets']     ?? ($_csLang === 'fr' ? 'Tous les sets'        : 'All sets');
+$_csPsAllFactions = $_csPs['all_factions'] ?? ($_csLang === 'fr' ? 'Toutes les factions'  : 'All factions');
+$_csPsExploreTitle = $_csPs['explore_title'] ?? ($_csLang === 'fr' ? 'Exploration' : 'Exploration');
+$_csPsExploreCards = $_csPs['explore_cards'] ?? ($_csLang === 'fr' ? 'cartes' : 'cards');
+$_csPsVersions     = $_csPs['versions']      ?? ($_csLang === 'fr' ? 'versions' : 'versions');
+$_csPsCopiesLabel  = $_csPs['copies_label'] ?? ($_csLang === 'fr' ? 'Exemplaires possédés' : 'Copies owned');
+$_csPsCopies12     = $_csPs['copies_1_2']   ?? ($_csLang === 'fr' ? '1 ou 2' : '1 or 2');
+$_csPsCopies4      = $_csPs['copies_4plus'] ?? ($_csLang === 'fr' ? '4 et +' : '4 or more');
+$_csPsDonutTitle   = $_csPs['donut_title'] ?? ($_csLang === 'fr' ? 'Cartes par nombre d\'exemplaires possédés' : 'Cards by number of copies owned');
+$_csPsLayout       = $_csPs['layout']        ?? ($_csLang === 'fr' ? 'Affichage' : 'Layout');
+$_csPsLayout2      = $_csPs['layout_2col']   ?? ($_csLang === 'fr' ? '2 par ligne' : '2 per row');
+$_csPsLayout3      = $_csPs['layout_3col']   ?? ($_csLang === 'fr' ? '3 par ligne' : '3 per row');
+$_csPsLayoutVisual = $_csPs['layout_visual'] ?? ($_csLang === 'fr' ? 'Vue visuelle' : 'Visual view');
+$_csPsLayoutList   = $_csPs['layout_list']   ?? ($_csLang === 'fr' ? 'Vue liste' : 'List view');
+$_csLblFav      = $_csTxt['scope_favoris']    ?? ($_csLang === 'fr' ? 'Favoris' : 'Favorites');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -150,9 +192,22 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
             </span>
         </button>
+        <?php if ($_csMode === 'cards'): ?>
+        <button type="button" class="cs-tab<?= $_csPlaysetMode ? '' : ' cs-tab-soon' ?>"
+                data-tab="playset" data-scope="all"<?= $_csPlaysetMode ? '' : ' disabled' ?>>
+            <i class="fa-solid fa-layer-group"></i>
+            <span><?= h($_csLblPlayset) ?></span>
+        </button>
+        <?php endif; ?>
+        <?php if ($_csFavMode): ?>
+        <button type="button" class="cs-tab" data-tab="favoris" data-scope="favoris">
+            <i class="fa-solid fa-star"></i>
+            <span><?= h($_csLblFav) ?></span>
+        </button>
+        <?php endif; ?>
     </div>
 
-    <div class="card-altered p-3 mb-3">
+    <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
 
         <!-- Name + hand/reserve costs (same line) -->
         <div class="cs-name-row d-flex gap-2 align-items-center flex-wrap mb-2"
@@ -168,7 +223,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Main editions — quick-filter buttons -->
         <?php if (!empty($_csOfficialSets)): ?>
-        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
             <button type="button"
                     class="filter-toggle set-qf-btn<?= in_array($_sk, $_csSelSets) ? ' active' : '' ?>"
@@ -185,7 +240,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Faction (+ rarity) -->
         <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
-        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
                     class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
@@ -197,7 +252,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endforeach; ?>
             <?php if (!empty($_csRarities)): ?>
             <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
-            <span class="cs-rarities" data-tabs="all ownership">
+            <span class="cs-rarities" data-tabs="all ownership favoris">
                 <?php if (!empty($_csFactions)): ?>
                 <span class="cs-sep"></span>
                 <?php endif; ?>
@@ -378,7 +433,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     </div><!-- /.card-altered -->
 
     <!-- Results control bar: count + sort + columns (between search and grid) -->
-    <div class="cs-controlbar mb-2">
+    <div class="cs-controlbar mb-2" data-tabs="all unique collection ownership">
         <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
         <div class="cs-controlbar-end">
             <div class="d-flex align-items-center gap-1">
@@ -439,6 +494,10 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     <div id="<?= h($_csP) ?>-pagination"
          class="d-flex align-items-center justify-content-center gap-2 mt-3 flex-wrap"
          style="display:none!important"></div>
+
+    <?php if ($_csMode === 'cards'): ?>
+    <?php include __DIR__ . '/_playset-tab.php'; ?>
+    <?php endif; ?>
 
 </div><!-- /#{prefix}-panel -->
 

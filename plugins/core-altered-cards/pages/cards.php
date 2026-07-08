@@ -127,6 +127,11 @@ if ($_collMode) {
     $_collEntries    = $_coll['entries'];
 }
 
+// favorites (stockage DB locale du plugin — voir includes/favorites.php)
+require_once __DIR__ . '/../includes/favorites.php';
+$_favMode       = $_csUserId > 0;
+$_userFavorites = $_favMode ? array_fill_keys(cacFavGetRefs($_csUserId), true) : [];
+
 // tomSelect option arrays
 $setOptionsJson = json_encode(array_values(array_map(
     function($ref, $set) use ($uiLang) {
@@ -162,6 +167,47 @@ foreach ($setsData as $_sref => $_sd) {
     if (($_sd['subtype'] ?? '') !== 'sub') continue;
     $subSets[] = $_sref;
     if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
+}
+
+// Playset heatmap metadata: faction rows (canonical order, with colors) and the
+// main-set columns ordered chronologically descending (recent first) — same
+// reverse-of-file-order convention as the quick-filter set bar.
+$playsetFactions = [];
+foreach ($factionsData as $_fk => $_fv) {
+    $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? '#888'];
+}
+// The playset API merges the Kickstarter edition (COREKS) into CORE, so only a
+// single "Au-delà des Portes" column appears — flagged with an explanatory note.
+// Label lives under translations.{lang}.playset.core_note in search_settings.json.
+$_psCoreNote = $_sharedTxt['playset']['core_note'] ?? ($uiLang === 'fr'
+    ? 'Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS).'
+    : 'Combines the Beyond the Gates (CORE) edition and its Kickstarter version (COREKS).');
+$playsetSets = [];
+foreach (array_reverse(array_filter($setsData, fn($s) => ($s['subtype'] ?? '') === 'main'), true) as $_sk => $_sv) {
+    $_entry = [
+        'code' => $_sk,
+        'name' => $_sv[$uiLang] ?? $_sv['en'] ?? $_sk,
+        'icon' => $_sv['icon'] ?? '',
+    ];
+    if ($_sk === 'CORE') $_entry['note'] = $_psCoreNote;
+    $playsetSets[] = $_entry;
+}
+$playsetSetBg      = BASE_URL . '/plugins/core-altered-cards/assets/set/small_bg/';
+$playsetFactionIcon = BASE_URL . '/plugins/core-altered-cards/assets/faction/';
+$playsetGemBase     = BASE_URL . '/plugins/core-altered-cards/assets/gems/';
+// Rarity display names + gem letters for the exploration version labels.
+$playsetRarities = [];
+foreach (['COMMON', 'RARE', 'EXALTED'] as $_rk) {
+    if (!isset($raritiesData[$_rk])) continue;
+    $playsetRarities[$_rk] = [
+        'name' => $raritiesData[$_rk][$uiLang] ?? $raritiesData[$_rk]['en'] ?? $_rk,
+        'gem'  => $raritiesData[$_rk]['gem'] ?? substr($_rk, 0, 1),
+    ];
+}
+// Card-type code → localized display name (e.g. LANDMARK_PERMANENT → "Repère Permanent").
+$playsetTypes = [];
+foreach ($typesData as $_tk => $_tv) {
+    $playsetTypes[$_tk] = $_tv[$uiLang] ?? $_tv['en'] ?? $_tk;
 }
 
 // widget config for card-search.php
@@ -208,6 +254,8 @@ $_cs = [
     'ownership_mode'     => $_ownMode,
     'ownership_enabled'  => $_ownEnabled,
     'ownership_url'      => $_ownWebUrl,
+    'playset_mode'       => $_collMode,
+    'favorites_mode'     => $_favMode,
     'base_url'           => BASE_URL,
 ];
 
@@ -220,6 +268,7 @@ $pageTitle = $txt['page_title'];
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-playset.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search.js"></script>
 <script>
 CardSearch({
@@ -242,6 +291,14 @@ CardSearch({
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
+    playsetApiUrl:     <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset' : '') ?>,
+    playsetCardsApiUrl:<?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset-cards' : '') ?>,
+    playsetMeta:       { factions: <?= json_encode($playsetFactions) ?>, sets: <?= json_encode($playsetSets) ?>, setBg: <?= json_encode($playsetSetBg) ?>, factionIcon: <?= json_encode($playsetFactionIcon) ?>, gemBase: <?= json_encode($playsetGemBase) ?>, rarities: <?= json_encode($playsetRarities) ?>, types: <?= json_encode($playsetTypes) ?> },
+    favoritesEnabled:  <?= $_favMode ? 'true' : 'false' ?>,
+    favoritesData:     <?= json_encode($_favMode ? (object)$_userFavorites : (object)[]) ?>,
+    favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
+    favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
+    favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,
@@ -301,6 +358,7 @@ CardSearch({
         next:          <?= json_encode($txt['next']          ?? 'Next →') ?>,
         showing:       <?= json_encode($txt['showing']       ?? '%d cards') ?>,
         detail_label:  <?= json_encode($txt['detail_label']  ?? 'View detail') ?>,
+        favorite:       <?= json_encode($uiLang === 'fr' ? 'Favori' : 'Favorite') ?>,
         any_trigger:    <?= json_encode($uiLang === 'fr' ? 'Tous les déclencheurs' : 'Any trigger') ?>,
         any_condition:  <?= json_encode($uiLang === 'fr' ? 'Toutes les conditions' : 'Any condition') ?>,
         any_effect:     <?= json_encode($uiLang === 'fr' ? 'Tous les effets'       : 'Any effect') ?>,
