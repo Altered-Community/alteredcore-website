@@ -2,7 +2,7 @@
     "$schema":    "../plugin.schema.json",
     "id":          "core-altered-cards",
     "name":        "Altered Cards",
-    "version":     "1.1.0",
+    "version":     "1.1.2",
     "description": "Cards browser, deck builder and collection manager for Altered TCG",
     "author":      "AlteredCore",
     "icon":        "fa-solid fa-layer-group",
@@ -26,7 +26,7 @@
         {"endpoint": "collection-search", "file": "api/collection-search.php"},
         {"endpoint": "ownership-search",  "file": "api/ownership-search.php"},
         {"endpoint": "playset",           "file": "api/playset.php"},
-        {"endpoint": "playset-cards",     "file": "api/playset-cards.php"}
+        {"endpoint": "playset-cards",     "file": "api/playset-cards.php"},
         {"endpoint": "favorites-search",  "file": "api/favorites-search.php"},
         {"endpoint": "favorites-toggle",  "file": "api/favorites-toggle.php"}
     ],
