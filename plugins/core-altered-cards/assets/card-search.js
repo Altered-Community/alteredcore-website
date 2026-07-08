@@ -37,7 +37,7 @@ function CardSearch(cfg) {
 
     var API_BASE = cfg.apiBase     || 'https://cards.alteredcore.org';
     var LANG     = cfg.lang        || 'en';
-    var UI_LANG  = cfg.uiLang      || 'en'; // en/fr only — used for CDN image paths
+    var UI_LANG  = cfg.uiLang      || 'en'; // en/fr only — UI strings (alerts, etc.)
     var MODE     = cfg.mode        || 'cards';
     var P        = cfg.prefix      || 'cs';
     var CDN_URL  = cfg.cdnUrl      || '';
@@ -142,6 +142,10 @@ function CardSearch(cfg) {
     // mechanics (single-select filters, collection field mapping); only the proxy differs.
     var _scope             = 'all';
     var _scopeCollection   = false;
+    // Favorites scope: browse the user's favorite cards (local DB proxy). Kept separate from
+    // _scopeCollection so cards keep the normal 'cards' field mapping (the fav proxy returns
+    // cards-API-shaped objects).
+    var _scopeFavoris      = false;
     // Active UI tab: 'all' | 'unique' | 'collection' | 'ownership'.
     // 'unique' uses the cards API (scope 'all') with forced rarity/type presets.
     var _tab               = 'all';
@@ -197,12 +201,14 @@ function CardSearch(cfg) {
     function scopeApiUrl() {
         if (_scope === 'ownership') return cfg.ownershipApiUrl || '';
         if (_scope === 'collection') return cfg.collApiUrl || '';
+        if (_scope === 'favoris')   return cfg.favApiUrl || '';
         return '';
     }
 
     function setScope(s) {
-        _scope = (s === 'collection' || s === 'ownership') ? s : 'all';
-        _scopeCollection = _scope !== 'all';
+        _scope = (s === 'collection' || s === 'ownership' || s === 'favoris') ? s : 'all';
+        _scopeCollection = (_scope === 'collection' || _scope === 'ownership');
+        _scopeFavoris    = (_scope === 'favoris');
     }
 
     function syncScopeButtons() {
@@ -216,6 +222,8 @@ function CardSearch(cfg) {
     function updateScopeUi() {
         var active = _scopeCollection && !!scopeApiUrl();
         if (_root) _root.classList.toggle('coll-scope-active', active);
+        // Favorites scope: hide the search-engine toolbar via CSS (only tabbed filters remain).
+        if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
             if (active) {
@@ -242,16 +250,16 @@ function CardSearch(cfg) {
                 filters.hasNoEffect = false;
             }
         }
-        if (active) {
-            // Physical collection only: clear rarity (the collection API returns no
-            // rarity data). The digital-ownership API does populate rarity, so keep it.
-            if (_scope === 'collection') {
-                if (filters.rarity.length) {
-                    filters.rarity.length = 0;
-                    qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
-                }
-                _rarityDirty = false;
+        if (active && _scope === 'collection') {
+            // Physical-collection scope only: clear rarity (the collection API returns no
+            // rarity data) and enforce single-value filters (its API/proxy collapse repeated
+            // params to one). The digital-ownership API populates rarity and filters with IN,
+            // so it keeps rarity and allows multiple values.
+            if (filters.rarity.length) {
+                filters.rarity.length = 0;
+                qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
             }
+            _rarityDirty = false;
             // Enforce single-select on toggle button groups (faction, type)
             ['faction', 'type'].forEach(function(key) {
                 var arr = filters[key];
@@ -287,9 +295,14 @@ function CardSearch(cfg) {
         return (ref.split('_')[5] || '')[0] === 'U';
     }
 
+    // altered-card web component supports en/fr only
+    function rendererLocale() {
+        return (LANG === 'en' || LANG === 'fr') ? LANG : 'en';
+    }
+
     function cdnUrl(ref) {
         var p = ref.split('_');
-        return CDN_URL + '/cards/' + UI_LANG + '/' + (p[1] || '') + '/' + ref + '.webp';
+        return CDN_URL + '/cards/' + LANG + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
 
     function cardName(card) {
@@ -674,6 +687,7 @@ function CardSearch(cfg) {
                 + '&page=' + page + '&itemsPerPage=' + PER_PAGE;
         }
 
+        if (_scopeFavoris && cfg.favApiUrl) return buildFavApiUrl(page);
         if (_scopeCollection && scopeApiUrl()) return buildCollApiUrl(page);
 
         var parts = [
@@ -758,12 +772,26 @@ function CardSearch(cfg) {
             'itemsPerPage=' + PER_PAGE,
         ];
 
-        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction=' + encodeURIComponent(v)); });
-        (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType=' + encodeURIComponent(v)); });
-        (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity='   + encodeURIComponent(v)); });
-        (_setsDirty   ? filters.sets   : []).forEach(function(v) { parts.push('cardSet='  + encodeURIComponent(v)); });
-        filters.subtypes.forEach(function(v)  { parts.push('subTypes='  + encodeURIComponent(v)); });
-        filters.variations.forEach(function(v){ parts.push('variation=' + encodeURIComponent(v)); });
+        // Array filters use bracketed keys (faction[]=A&faction[]=B) so PHP $_GET keeps
+        // every value — a plain repeated key (faction=A&faction=B) collapses to the last
+        // one, which silently drops all but one selection (e.g. the promo toggle's
+        // "all variations"). The collection/ownership proxies remap these to each API.
+        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
+        (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
+        // Ownership scope applies the default editions by default, matching the pre-selected
+        // edition chips in the UI. The collection scope sends nothing by default (no edition
+        // restriction): its API/proxy collapse repeated cardSet params to one, so sending the
+        // default set would wrongly narrow results to a single edition.
+        (_setsDirty ? filters.sets : (_scope === 'ownership' ? DEFAULT_SETS : [])).forEach(function(v) { parts.push('cardSet[]='  + encodeURIComponent(v)); });
+        filters.subtypes.forEach(function(v)  { parts.push('subTypes[]='  + encodeURIComponent(v)); });
+        // The collection API filters variation by exact match and can't express "any
+        // variation", which would hide promos/alt-arts. Omit it entirely on the collection
+        // scope so every owned printing (incl. promos) shows. The ownership API supports
+        // variation IN, so it still gets the filter (driven by the promo toggle there).
+        if (_scope === 'ownership') {
+            filters.variations.forEach(function(v){ parts.push('variation[]=' + encodeURIComponent(v)); });
+        }
 
         if (filters.isBanned)    parts.push('isBanned=true');
         if (filters.isErrated)   parts.push('isErrated=true');
@@ -779,6 +807,88 @@ function CardSearch(cfg) {
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
         return scopeApiUrl() + '?' + parts.join('&');
+    }
+
+    // build favorites proxy URL — no search engine, just paginated favorites +
+    // optional Set/Faction/Rarity filters (only when the user explicitly picked them).
+    function buildFavApiUrl(page) {
+        var parts = [
+            'locale='       + encodeURIComponent(LANG),
+            'page='         + page,
+            'itemsPerPage=' + PER_PAGE,
+        ];
+        if (_factionDirty) filters.faction.forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        if (_rarityDirty)  filters.rarity.forEach(function(v)  { parts.push('rarity[]='  + encodeURIComponent(v)); });
+        if (_setsDirty)    filters.sets.forEach(function(v)    { parts.push('set[]='     + encodeURIComponent(v)); });
+        return cfg.favApiUrl + '?' + parts.join('&');
+    }
+
+    // ── Favorites star button ─────────────────────────────────────────────────
+    function _applyFavBtnState(btn, isFav) {
+        btn.classList.toggle('is-fav', !!isFav);
+        var icon = btn.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-solid',   !!isFav);
+            icon.classList.toggle('fa-regular', !isFav);
+        }
+    }
+    function _makeFavButton(card) {
+        if (!cfg.favoritesEnabled || !card) return null;
+        var ref = card.reference || '';
+        if (!ref) return null;
+        var isFav = !!(cfg.favoritesData && cfg.favoritesData[ref]);
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'card-fav-btn' + (isFav ? ' is-fav' : '');
+        b.setAttribute('data-fav-toggle', '');
+        b.dataset.ref = ref;
+        // Real codes from the card (faction correct even for transfuges). The cards API returns
+        // faction/rarity/set as nested objects; tolerate a plain string too.
+        b.dataset.faction = (card.faction && card.faction.code) || card.factionCode || '';
+        b.dataset.rarity  = (card.rarity && card.rarity.reference) || (typeof card.rarity === 'string' ? card.rarity : '') || '';
+        b.dataset.set     = (card.set && card.set.reference) || ref.split('_')[1] || '';
+        b.title = (cfg.txt && cfg.txt.favorite) || 'Favori';
+        b.innerHTML = '<i class="' + (isFav ? 'fa-solid' : 'fa-regular') + ' fa-star"></i>';
+        b.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); _toggleFav(b); });
+        return b;
+    }
+    if (cfg.favoritesEnabled) window.acMakeFavButton = _makeFavButton;
+
+    // Persist a favorite toggle to our DB, then sync the UI.
+    function _toggleFav(btn) {
+        if (!cfg.favoritesEnabled || !cfg.favToggleUrl) return;
+        var ref = btn.dataset.ref;
+        if (!ref || btn.disabled) return;
+        btn.disabled = true;
+        var body = new URLSearchParams();
+        body.append('csrf_token', cfg.favoritesCsrf || '');
+        body.append('card_ref',   ref);
+        body.append('faction',    btn.dataset.faction || '');
+        body.append('rarity',     btn.dataset.rarity  || '');
+        body.append('card_set',   btn.dataset.set     || '');
+        fetch(cfg.favToggleUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    body.toString(),
+        })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+            btn.disabled = false;
+            if (!data || !data.ok) return;
+            cfg.favoritesData = cfg.favoritesData || {};
+            if (data.favorited) cfg.favoritesData[ref] = true;
+            else                delete cfg.favoritesData[ref];
+            qa('[data-fav-toggle][data-ref="' + ref + '"]').forEach(function(b) {
+                _applyFavBtnState(b, data.favorited);
+            });
+            // In the Favorites tab, refresh so the removed card + count + pagination stay accurate.
+            if (_scopeFavoris && !data.favorited) {
+                var onPage     = elGrid ? elGrid.children.length : 0;
+                var targetPage = (onPage <= 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+                search(targetPage);
+            }
+        })
+        .catch(function() { btn.disabled = false; });
     }
 
     // build shareable URL for pushState
@@ -1018,7 +1128,7 @@ function CardSearch(cfg) {
             ensureRenderer();
             var ac = document.createElement('altered-card');
             ac.setAttribute('ref', ref);
-            ac.setAttribute('locale', UI_LANG);
+            ac.setAttribute('locale', rendererLocale());
             wrap.appendChild(ac);
         } else {
             var img = document.createElement('img');
@@ -1027,6 +1137,10 @@ function CardSearch(cfg) {
             img.loading = 'lazy';
             wrap.appendChild(img);
         }
+
+        // Favorite star — top-right (visible on hover / when favorited)
+        var favBtn = _makeFavButton(card);
+        if (favBtn) wrap.appendChild(favBtn);
 
         if (_scope === 'ownership') {
             // Digital-ownership tab: read-only count of digital copies returned by
@@ -1204,7 +1318,10 @@ function CardSearch(cfg) {
 
     // sync default filter values to UI toggle buttons
     function syncDefaultsToUi() {
-        var effectiveRarities = _rarityDirty ? filters.rarity : DEFAULT_RARITIES;
+        // No default rarity preselection on the digital-ownership tab: by default it sends
+        // no rarity filter (all rarities), so the buttons should reflect that — none active.
+        var effectiveRarities = _rarityDirty ? filters.rarity
+            : (_tab === 'ownership' ? [] : DEFAULT_RARITIES);
         var effectiveSets     = _setsDirty   ? filters.sets   : DEFAULT_SETS;
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) {
             b.classList.toggle('active', _factionDirty && filters.faction.indexOf(b.dataset.value) >= 0);
@@ -1242,8 +1359,8 @@ function CardSearch(cfg) {
     // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
     // the URL-loaded filters are preserved and only scope/visibility are applied.
     function setTab(t, keepFilters) {
-        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'playset') ? t : 'all';
-        setScope(_tab === 'collection' || _tab === 'ownership' ? _tab : 'all');
+        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
+        setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
         if (_tab === 'unique') {
             if (!keepFilters) {
                 _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice();
@@ -1259,6 +1376,14 @@ function CardSearch(cfg) {
             }
             // Effect search defaults to OR (multi-select). The mode is managed by
             // the always-visible OR/AND toggle and reset by resetFilters().
+        }
+        if (_tab === 'ownership' && !keepFilters) {
+            // Digital-ownership tab: enable alt-art search by default so every owned
+            // printing shows, pulling in the promo (secondary) editions linked to the
+            // pre-selected main sets.
+            setShowPromo(true);
+            var _promoT = document.getElementById(P + '-promo-toggle');
+            if (_promoT) _promoT.checked = true;
         }
         syncTabButtons();
         applyTabVisibility();
@@ -1302,8 +1427,16 @@ function CardSearch(cfg) {
         filters.sets = next;
     }
 
-    // All variation codes (read from the variation <select> options).
+    // All variation codes. Source from TomSelect's internal option registry, which always
+    // holds every registered variation — the native <select> is pruned by TomSelect to the
+    // currently-selected options, so reading it would return only what's already picked
+    // (e.g. just "standard" by default), silently dropping serialized/promo/etc. when the
+    // promo toggle tries to select "all variations".
     function _allVariationValues() {
+        if (tsInst.variation && tsInst.variation.options) {
+            var keys = Object.keys(tsInst.variation.options);
+            if (keys.length) return keys;
+        }
         var el = document.getElementById(P + '-filter-variation');
         return el ? Array.from(el.options).map(function(o) { return o.value; }) : DEFAULT_VARIATIONS.slice();
     }
@@ -1648,11 +1781,13 @@ function CardSearch(cfg) {
         // changes merge into the set selection; main-set toggles override it.
         tsInst.promoset = makeTs('promoset', { onChange: function() { applyPromoSelection(tsInst.promoset.getValue()); } });
 
-        // In collection scope, faction/set/subtype/variation only support a single value
+        // In the physical-collection scope, faction/set/subtype/variation only support a
+        // single value (the collection API/proxy collapses repeated params to one). The
+        // digital-ownership API filters these with IN, so it allows multiple values.
         ['faction', 'set', 'subtype', 'variation'].forEach(function(key) {
             if (!tsInst[key]) return;
             tsInst[key].on('item_add', function(value) {
-                if (!_scopeCollection || !scopeApiUrl()) return;
+                if (_scope !== 'collection' || !scopeApiUrl()) return;
                 var self = this;
                 this.getValue().forEach(function(v) {
                     if (v !== value) self.removeItem(v, true);
@@ -1693,7 +1828,8 @@ function CardSearch(cfg) {
             if (btn.dataset.tab === _tab) return;
             resetFilters();
             setTab(btn.dataset.tab);
-            if (MODE === 'cards') search(1);
+            // Favorites tab has no Apply button flow — load it immediately, even in deck mode.
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
         _root.addEventListener('click', function(e) {
@@ -1703,12 +1839,16 @@ function CardSearch(cfg) {
             var val = btn.dataset.value;
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
             if (key === 'type')    { if (!_typeDirty)    { _typeDirty    = true; filters.type    = []; } }
-            if (key === 'rarity')  _rarityDirty  = true;
+            // Seed rarity from what's actually shown active on first interaction so the click
+            // toggles in sync with the UI. The ownership tab shows no default rarity; the
+            // other tabs (all/unique) show the defaults as active.
+            if (key === 'rarity')  { if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
             if (key === 'sets')    _setsDirty    = true;
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
             var idx = arr.indexOf(val);
-            if (_scopeCollection && scopeApiUrl()) {
+            if (_scope === 'collection' && scopeApiUrl()) {
+                // Physical-collection scope is single-value only (see TomSelect note above).
                 var wasActive = idx >= 0;
                 qa('.filter-toggle[data-filter="' + key + '"]').forEach(function(b) { b.classList.remove('active'); });
                 arr.length = 0;
@@ -1727,6 +1867,8 @@ function CardSearch(cfg) {
             if (key === 'faction' && tsInst.faction) tsInst.faction.setValue(filters.faction, true);
             if (key === 'sets'   && tsInst.set)     tsInst.set.setValue(filters.sets, true);
             updateFilterCount();
+            // Favorites tab has no Apply button — filters apply live on toggle.
+            if (_scopeFavoris) search(1);
         });
 
         _root.addEventListener('click', function(e) {
@@ -1753,7 +1895,10 @@ function CardSearch(cfg) {
     if (elResetBtn) {
         elResetBtn.addEventListener('click', function() {
             resetFilters();
-            if (MODE === 'cards') search(1);
+            // Stay on the current tab: resetFilters() forces scope back to 'all',
+            // so re-apply the active tab's scope/presets before searching.
+            setTab(_tab);
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
     }
     if (elSortSelect) {
@@ -1777,7 +1922,9 @@ function CardSearch(cfg) {
     if (elModalResetBtn) {
         elModalResetBtn.addEventListener('click', function() {
             resetFilters();
-            if (MODE === 'cards') search(1);
+            // Stay on the current tab (see elResetBtn handler).
+            setTab(_tab);
+            if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
     }
     if (elModalApplyBtn) {
@@ -1816,7 +1963,7 @@ function CardSearch(cfg) {
             label.style.cssText = 'color:rgba(255,255,255,.65);font-size:.82rem;flex:1';
             label.textContent = 'Collection';
 
-            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;flex-shrink:0';
+            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;min-width:2.25rem;min-height:2.25rem;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;cursor:pointer;flex-shrink:0';
 
             var btnMinus = document.createElement('button');
             btnMinus.type = 'button';
@@ -1871,7 +2018,7 @@ function CardSearch(cfg) {
                 ensureRenderer();
                 cardEl = document.createElement('altered-card');
                 cardEl.setAttribute('ref', ref);
-                cardEl.setAttribute('locale', UI_LANG);
+                cardEl.setAttribute('locale', rendererLocale());
                 cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)';
             } else {
                 cardEl = document.createElement('img');

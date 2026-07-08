@@ -80,7 +80,7 @@ if ($remember) {
     $expiry = time() + SESSION_LIFETIME_DAYS * 86400;
     $db->prepare(q("UPDATE {users} SET local_remember_token = :tok, local_remember_expiry = :exp WHERE id = :id"))
        ->execute([':tok' => $token, ':exp' => $expiry, ':id' => $user['id']]);
-    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $secure = request_is_https();
     setcookie('local_remember', $token, [
         'expires'  => $expiry,
         'path'     => '/',

@@ -3,3 +3,5 @@ git-manager.py
 .claude/
 docs/superpowers/
 logs/
+data/tinymce_shortcodes.json.dist
+.idea/

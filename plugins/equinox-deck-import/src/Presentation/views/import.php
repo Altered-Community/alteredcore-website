@@ -26,6 +26,11 @@ var EDI_TXT = <?= json_encode($jsTxt, JSON_UNESCAPED_UNICODE) ?>;
     </noscript>
 
     <div class="card-altered p-4">
+        <ol class="edi-steps">
+            <li><span><?= $step1 ?></span></li>
+            <li><span><?= $step2 ?></span></li>
+        </ol>
+
         <p class="text-muted small mb-4"><?= $intro ?></p>
 
         <form method="post" enctype="multipart/form-data">

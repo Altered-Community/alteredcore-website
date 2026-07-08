@@ -166,21 +166,41 @@
    ========================================================= */
 .cards-grid { display:grid; grid-template-columns:repeat(var(--cards-cols,4),1fr); gap:10px; }
 @media (max-width:575px) { .cards-grid { grid-template-columns:repeat(var(--cards-mobile-cols,2),1fr); gap:6px; } }
-.card-img-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('/assets/img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; }
+.card-img-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; }
 .card-img-wrap img, .card-img-wrap altered-card { display:block; width:100%; border-radius:8px; overflow:hidden; }
 .card-img-wrap img { aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .15s ease; }
 .card-img-wrap altered-card { aspect-ratio:63.5/88; }
 .card-img-wrap:hover img, .card-img-wrap:hover altered-card { transform:scale(1.03); }
 .card-item { min-width:0; }
 .card-name { font-size:.82rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
+
+/* Favorite star — top-right, revealed on hover, always shown when favorited */
+.card-fav-btn { position:absolute; top:5px; right:5px; z-index:4; width:26px; height:26px; padding:0;
+    display:flex; align-items:center; justify-content:center; border:none; border-radius:50%;
+    background:rgba(0,0,0,.45); color:var(--neutral-300); font-size:.9rem; cursor:pointer;
+    opacity:0; transition:opacity .15s, color .15s, transform .1s; }
+.card-img-wrap:hover .card-fav-btn,
+.db-card-wrap:hover .card-fav-btn,
+.card-view-img-wrap:hover .card-fav-btn,
+.deck-card-wrap:hover .card-fav-btn { opacity:1; }
+.card-fav-btn:hover { transform:scale(1.12); color:#fff; }
+.card-fav-btn.is-fav { opacity:1; color:#f5c518; }
+.card-fav-btn.is-fav:hover { color:#ffd634; }
+/* Touch devices have no hover: always show the star */
+@media (hover: none) { .card-fav-btn { opacity:1; } }
+/* Card detail: constrain to the card width (block, NOT inline-block — inline-block collapses the
+   <altered-card> renderer used by unique cards) so the star aligns to the image. */
+#card-img-toggle { position:relative; max-width:300px; margin:0 auto; }
+/* Favorites scope: hide the results toolbar's sort/columns (tabbed filters + count remain). */
+.cs-scope-fav .cs-controlbar-end { display:none !important; }
 .card-coll-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:2; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-badge { opacity:0; }
-.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--overlay-bar-bg); padding:4px 6px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
+.card-coll-bar { position:absolute; bottom:0; left:0; right:0; z-index:3; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--overlay-bar-bg); padding:6px 8px; border-radius:0 0 8px 8px; opacity:0; pointer-events:none; transition:opacity .15s; }
 .card-img-wrap:hover .card-coll-bar { opacity:1; pointer-events:auto; }
-.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:4px; width:22px; height:22px; font-size:1rem; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
+.card-coll-btn { border:none; background:var(--overlay-btn-bg); color:#fff; border-radius:5px; min-width:2.25rem; min-height:2.25rem; font-size:1.15rem; font-weight:700; line-height:1; cursor:pointer; flex-shrink:0; padding:0; display:flex; align-items:center; justify-content:center; }
 .card-coll-btn:hover:not(:disabled) { background:rgba(255,255,255,.35); }
 .card-coll-btn:disabled { opacity:.4; cursor:default; }
-.card-coll-qty { color:#fff; font-weight:700; font-size:.8rem; min-width:1.4em; text-align:center; }
+.card-coll-qty { color:#fff; font-weight:700; font-size:.95rem; min-width:1.5em; text-align:center; }
 .card-coll-bar-icon { color:rgba(255,255,255,.7); font-size:.7rem; flex-shrink:0; }
 /* Digital-ownership badge: read-only copy count (key icon), always visible (no hover fade, no edit bar). */
 .card-own-badge { position:absolute; bottom:5px; left:5px; background:var(--overlay-badge-bg); color:#fff; font-size:.65rem; font-weight:700; border-radius:5px; padding:1px 4px; pointer-events:none; z-index:3; }
@@ -215,8 +235,8 @@
 @media (min-width:576px) { .deck-cards-grid { grid-template-columns:repeat(3,1fr); } }
 @media (min-width:900px) { .deck-cards-grid { grid-template-columns:repeat(4,1fr); } }
 @media (min-width:1200px) { .deck-cards-grid { grid-template-columns:repeat(5,1fr); } }
-.deck-card-wrap { position:relative; background:url('/assets/img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; cursor:pointer; }
-.deck-card-qty { position:absolute; top:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
+.deck-card-wrap { position:relative; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; cursor:pointer; }
+.deck-card-qty { position:absolute; bottom:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
 .deck-card-img { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; }
 .deck-card-wrap altered-card { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; }
 .deck-type-section { margin-bottom:1.5rem; }
@@ -276,7 +296,7 @@
 }
 .cards-grid-db { display:grid; grid-template-columns:repeat(var(--db-cols,3),1fr); gap:8px; }
 @media (max-width:575px) { .cards-grid-db { grid-template-columns:repeat(2,1fr); } }
-.db-card-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('/assets/img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:7px; }
+.db-card-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:7px; }
 .db-card-img { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .12s; }
 .db-card-wrap altered-card { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; transition:transform .12s; }
 .db-card-wrap:hover .db-card-img, .db-card-wrap:hover altered-card { transform:scale(1.04); }
@@ -286,6 +306,7 @@
 .db-card-wrap:hover .db-card-add-overlay { opacity:1; }
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
 .db-card-btn-group { position:absolute; bottom:5px; right:5px; }
+.db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }
@@ -457,12 +478,20 @@
 .cs-tabs {
     display: flex;
     gap: 4px;
-    flex-wrap: wrap;
+    /* Scroll horizontally instead of wrapping so the tab row never widens the page
+       (5 tabs: All / Uniques / Collection / Ownership / Favorites) on mobile. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     border-bottom: 2px solid var(--sand-200);
 }
+.cs-tabs::-webkit-scrollbar { display: none; }
 .cs-tab {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
     gap: 6px;
     padding: 5px 14px;
     border: 1px solid transparent;
@@ -1203,7 +1232,12 @@ button.deck-stat-pill {
 .coll-card-neutral { border-left: 3px solid var(--neutral-300); }
 
 /* ── Starting hand tester ─────────────────────────────────────────────── */
-.hand-test-toolbar { margin-bottom: 14px; }
+.hand-test-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom: 14px; }
+/* playground toggle — green so it stays visible in light and dark themes */
+.pt-toggle{ border:1px solid #2f7d57; color:#2f7d57; background:transparent; }
+.pt-toggle:hover{ background:rgba(47,125,87,.14); color:#2f7d57; }
+.pt-toggle.active{ background:#2f7d57; border-color:#2f7d57; color:#fff; }
+.pt-toggle.active:hover{ background:#27684a; border-color:#27684a; color:#fff; }
 
 /* 6-card hand fits on one row on wide screens (overrides the 5-col .deck-cards-grid rule). */
 @media (min-width: 1200px) {
@@ -1232,3 +1266,239 @@ button.deck-stat-pill {
 @media (prefers-reduced-motion: reduce) {
     .hand-card-anim { animation: none; }
 }
+
+/* ── Hand-odds (stats + calculators) ──────────────────────────────────── */
+.hand-odds{margin-top:32px;font-size:.9rem}
+.ho-calc{margin-top:26px}
+.ho-sec{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--neutral-400);margin-bottom:9px}
+.ho-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ho-card{display:flex;flex-direction:column;gap:3px;background:var(--sand-100);border:1px solid var(--sand-200);border-radius:10px;padding:11px 13px;position:relative;overflow:hidden}
+.ho-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sand-300)}
+.ho-card .ho-l{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--neutral-500);line-height:1.15;min-height:2.3em;display:flex;align-items:flex-start}
+.ho-card .ho-v{min-height:1.85rem;display:flex;align-items:flex-end}
+.ho-card .ho-v-n{font-size:1.75rem;font-weight:800;color:var(--neutral-800);line-height:1.05}
+.ho-card .ho-v-n[data-bs-toggle]{cursor:help}
+.ho-card .ho-s{font-size:.7rem;color:var(--neutral-400);line-height:1.2;min-height:2.4em}
+.ho-card .ho-x{font-size:.68rem;font-style:italic;color:var(--neutral-400);line-height:1.25;margin-top:3px}
+.ho-bar{height:6px;background:var(--sand-200);border-radius:4px;overflow:hidden;margin:2px 0}
+.ho-bar>i{display:block;height:100%;background:var(--neutral-400);border-radius:4px}
+.ho-bar-empty{background:transparent}
+.ho-card-wide{grid-column:1 / -1}
+.ho-comp .ho-l{min-height:0;margin-bottom:2px}
+.ho-comp-body{display:flex;align-items:center;gap:26px;margin-top:6px}
+.ho-donut{width:96px;height:96px;border-radius:50%;flex:none;-webkit-mask:radial-gradient(circle,transparent 44%,#000 45%);mask:radial-gradient(circle,transparent 44%,#000 45%)}
+.ho-comp-legend{flex:1;display:flex;flex-wrap:wrap;justify-content:space-around;gap:10px 20px}
+.ho-comp-item{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--neutral-700)}
+.ho-comp-dot{width:11px;height:11px;border-radius:50%;flex:none}
+.ho-comp-lbl{white-space:nowrap}
+.ho-comp-n{font-size:1.35rem;font-weight:800;margin-left:4px}
+.ho-calc-head{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px 30px;font-size:.92rem;color:var(--neutral-700);background:var(--sand-100);border:1px solid var(--sand-200);border-radius:10px;padding:12px 18px;margin-bottom:14px}
+.ho-calc-deck{display:inline-flex;align-items:center;gap:7px}
+.ho-calc-deck i{color:var(--neutral-400)}
+.ho-calc-deck b{font-weight:800;color:var(--neutral-900)}
+.ho-calc-draw{display:inline-flex;align-items:center;gap:9px;font-weight:600}
+.ho-drawn{width:60px;border:1px solid var(--sand-300);border-radius:8px;padding:5px 8px;text-align:center;font-weight:800;font-size:1rem;color:var(--neutral-900);background:#fff}
+.ho-drawn:focus{outline:none;border-color:var(--primary-400)}
+.ho-ab{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.ho-ab>span{font-size:.78rem;font-weight:700;color:var(--neutral-500);width:14px}
+.ho-ab>.ts-wrapper{flex:1}
+.ho-opt{display:flex;align-items:center;gap:9px}
+.ho-thumb{width:34px;height:47px;object-fit:cover;border-radius:4px;flex:none;background:var(--sand-200)}
+.ho-thumb-uniq{display:inline-block;overflow:hidden}
+.ho-opt-l{font-size:.82rem;line-height:1.2}
+.ho-item{background:var(--sand-200);border-radius:4px;padding:1px 7px;background-size:cover!important;background-position:right center!important;color:var(--neutral-800);font-weight:600;font-size:.8rem}
+.ho-optgroup-h{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--neutral-500);padding:6px 9px 3px;border-top:1px solid var(--sand-200)}
+.hand-odds-x{display:flex;gap:16px;align-items:flex-start;margin-top:18px}
+.ncalc{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--sand-50);border:1px solid var(--sand-200);border-radius:12px;padding:16px;min-height:320px}
+.nc-head{text-align:center;font-size:.9rem;font-weight:600;color:var(--neutral-600)}
+.nc-bars{margin:10px 0}
+.nc-bar{display:flex;align-items:center;gap:9px;font-size:.82rem;margin:6px 0}
+.nc-bar-l{width:34px;white-space:nowrap;font-weight:700;color:var(--neutral-600);text-align:right;flex:none}
+.nc-bar-track{flex:1;height:10px;background:var(--sand-200);border-radius:5px;overflow:hidden}
+.nc-bar-track>i{display:block;height:100%;width:0;background:#2f7d57;border-radius:5px;transition:width .15s}
+.nc-bar-v{width:42px;text-align:right;font-weight:700;color:var(--neutral-700);flex:none}
+.nc-mid{text-align:center;font-size:.8rem;color:var(--neutral-500);margin:6px 0}
+.nc-foot{text-align:center;font-size:.84rem;color:var(--neutral-600);margin-top:auto;padding-top:12px}
+.nc-ratio{text-align:center;font-size:.78rem;color:var(--neutral-500);min-height:1.1em;margin-top:3px}
+@media (max-width:820px){ .hand-odds-x{flex-direction:column;align-items:stretch} }
+/* ── Playtest sandbox ─────────────────────────────────────────────────── */
+.pt-phase-hint{font-size:.8rem;color:var(--neutral-600);margin-left:10px}
+.pt-table{display:flex;gap:12px}
+/* playground collapse/expand: animate the height (grid-rows) so the hand glides
+   instead of jumping, plus a fade + upward drift ("back under the toolbar") */
+.pt-table-wrap{display:grid;grid-template-rows:1fr;opacity:1;margin-bottom:14px;overflow:hidden;transition:grid-template-rows .34s ease,opacity .26s ease,margin-bottom .34s ease}
+.pt-table-wrap > .pt-table{min-height:0;transition:transform .3s ease}
+.pt-root.pt-simple .pt-table-wrap{grid-template-rows:0fr;opacity:0;margin-bottom:0}
+.pt-root.pt-simple .pt-table-wrap > .pt-table{transform:translateY(-14px)}
+@media (prefers-reduced-motion: reduce){ .pt-table-wrap,.pt-table-wrap > .pt-table{transition:none} }
+.pt-zone{border:1px solid var(--sand-300);border-radius:10px;padding:10px;background:rgba(0,0,0,.02)}
+.pt-zone-label{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--neutral-500);margin-bottom:8px}
+.pt-board{flex:1 1 auto;min-height:220px;position:relative}
+.pt-aside{flex:0 0 auto;display:flex;flex-direction:column;gap:10px}
+.pt-resources-row{display:flex;gap:14px;align-items:flex-start;justify-content:flex-end}
+.pt-mana{position:absolute;bottom:10px;right:10px;z-index:3;display:inline-flex;align-items:center;gap:6px;background:#2f7d57;color:#fff;border-radius:16px;padding:5px 12px;font-weight:700;cursor:pointer;user-select:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.pt-mana-count{background:rgba(255,255,255,.25);border-radius:10px;padding:0 8px}
+.pt-hand-actions{margin:10px 0}
+/* keep the hand a droppable target even when empty (so board cards can return) */
+#hand-cards{min-height:130px}
+#hand-cards:empty{border:2px dashed var(--sand-300);border-radius:10px}
+
+/* card flip */
+.pt-card{perspective:700px;background:transparent;user-select:none;-webkit-user-select:none}
+.pt-flip{position:relative;width:100%;aspect-ratio:63.5/88;transform-style:preserve-3d;transition:transform .4s ease;pointer-events:none}
+.pt-card.pt-flipped .pt-flip{transform:rotateY(180deg)}
+.pt-face{position:absolute;inset:0;border-radius:8px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.pt-front{background:transparent}
+.pt-back{transform:rotateY(180deg);background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100)}
+.pt-loupe{position:absolute;top:6px;right:6px;z-index:2;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.62);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;padding:0}
+
+/* fly-out to mana */
+@keyframes ptToMana{to{opacity:0;transform:translateY(40px) scale(.6)}}
+.pt-to-mana{animation:ptToMana .3s ease forwards}
+
+/* list modal */
+.ac-list-panel{background:var(--sand-50);border-radius:12px;max-width:460px;width:92%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.ac-list-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--sand-200);font-weight:700}
+.ac-list-body{overflow:auto;padding:8px 12px}
+.ac-list-row{display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid var(--sand-100)}
+.ac-list-thumb{width:34px;height:47px;object-fit:cover;border-radius:4px;flex:0 0 auto;display:block;overflow:hidden}
+.ac-list-name{flex:1;font-size:.85rem}
+
+@media (max-width:720px){
+  /* Hand-only mode (playground toggled off): fan the 6 cards, hide the playground bits */
+  .pt-root.pt-simple .pt-table-wrap,
+  .pt-root.pt-simple .pt-hand-actions,
+  .pt-root.pt-simple #pt-phase-hint{ display:none !important; }
+  .pt-root.pt-simple #hand-cards.hand-cards-grid{ display:flex; flex-wrap:nowrap; justify-content:center; gap:0; overflow:visible; }
+  .pt-root.pt-simple #hand-cards .pt-card{ width:88px; flex:0 0 auto; margin-right:-34px; touch-action:auto; }
+  .pt-root.pt-simple #hand-cards .pt-card:last-child{ margin-right:0; }
+
+  /* Playground ON (mobile): vertical layout + compact resources; tap action-sheet, no drag */
+  .pt-root:not(.pt-simple) .pt-table{ flex-direction:column; gap:10px; }
+  .pt-root:not(.pt-simple) .pt-board{ min-height:118px; }
+  .pt-root:not(.pt-simple) .pt-resources-row{ justify-content:flex-start; gap:12px; }
+  .pt-root:not(.pt-simple) .pt-deck-pile,
+  .pt-root:not(.pt-simple) .pt-discard-pile{ width:84px; height:118px; }
+  .pt-root:not(.pt-simple) .pt-discard-pile .deck-card-img,
+  .pt-root:not(.pt-simple) .pt-discard-pile altered-card{ width:84px; height:118px; }
+  .pt-root:not(.pt-simple) #hand-cards.hand-cards-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .pt-root:not(.pt-simple) .pt-board-cards .pt-card{ width:58px; }
+  .pt-root:not(.pt-simple) .pt-board-cards.pt-overlap .pt-card{ width:58px; margin-right:-28px; }
+
+  /* mobile always uses the action sheet → per-card buttons hidden (hand + board) */
+  .pt-root .pt-loupe,
+  .pt-root .pt-tomana{ display:none !important; }
+}
+/* Mobile action sheet (tap-to-act, replaces drag on touch) */
+.pt-sheet-backdrop{position:fixed;inset:0;z-index:1080;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.pt-sheet-backdrop.pt-sheet-open{opacity:1}
+.pt-sheet{width:100%;max-width:480px;background:var(--sand-50);border-radius:14px 14px 0 0;padding:8px;padding-bottom:max(8px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;transform:translateY(100%);transition:transform .22s ease;box-shadow:0 -4px 20px rgba(0,0,0,.25)}
+.pt-sheet-backdrop.pt-sheet-open .pt-sheet{transform:none}
+.pt-sheet-btn{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;border:none;border-radius:10px;background:var(--sand-100);color:var(--neutral-800);font-size:.95rem;font-weight:600;text-align:left;cursor:pointer}
+.pt-sheet-btn i{width:18px;text-align:center;color:var(--neutral-500)}
+.pt-sheet-btn:active{background:var(--sand-200)}
+.pt-sheet-cancel{background:transparent;color:var(--neutral-500);font-weight:500;justify-content:center}
+.pt-sheet-cancel i{display:none}
+@media (prefers-reduced-motion: reduce){ .pt-sheet-backdrop,.pt-sheet{transition:none} }
+/* Playground toggled off (desktop): hand-only view, tap = zoom */
+.pt-root.pt-simple .pt-hand-actions,
+.pt-root.pt-simple #pt-phase-hint{ display:none !important; }
+.pt-root.pt-simple #hand-cards .pt-loupe,
+.pt-root.pt-simple #hand-cards .pt-tomana{ display:none; }
+@media (prefers-reduced-motion: reduce){
+  .pt-flip{transition:none}
+  .pt-to-mana{animation:none;opacity:0}
+}
+
+/* ── Étape 3: deck pile + draw buttons + to-mana icon + draw animation ─── */
+#pt-deck{position:relative}
+.pt-deck-pile{position:relative;width:132px;height:184px;border-radius:8px;
+  background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100);
+  box-shadow:2px 2px 0 var(--neutral-300),4px 4px 0 var(--neutral-200);margin:4px 0 8px}
+.pt-deck-count{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:.72rem;font-weight:700;border-radius:5px;padding:1px 6px}
+/* click the deck to draw a card; a "Draw" hint appears on hover (play phase only) */
+.pt-play #pt-deck{cursor:pointer}
+.pt-deck-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);color:#fff;font-weight:700;font-size:.85rem;border-radius:8px;opacity:0;transition:opacity .15s;pointer-events:none}
+.pt-play #pt-deck:hover .pt-deck-hint,.pt-play #pt-deck:focus-visible .pt-deck-hint{opacity:1}
+.pt-deck.pt-empty{cursor:default}
+.pt-deck.pt-empty .pt-deck-hint{display:none}
+.pt-tomana{position:absolute;bottom:6px;right:6px;z-index:2;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:#2f7d57;color:#fff;display:none;align-items:center;justify-content:center;font-size:.7rem;cursor:pointer;padding:0}
+.pt-play #hand-cards .pt-tomana{display:flex}
+@keyframes ptDrawIn{from{opacity:0;transform:translateY(-24px) scale(.85)}to{opacity:1;transform:none}}
+.pt-draw-anim{animation:ptDrawIn .3s ease both}
+@media (prefers-reduced-motion: reduce){ .pt-draw-anim{animation:none} }
+
+/* ── Étape 4: board, discard, drag visuals ─────────────────────────────── */
+.pt-board-cards{display:flex;flex-wrap:wrap;gap:6px;min-height:96px}
+.pt-board-cards .pt-card{width:70px}
+.pt-board-cards.pt-overlap{flex-wrap:nowrap;overflow:hidden}
+.pt-board-cards.pt-overlap .pt-card{width:70px;margin-right:-34px}
+.pt-board-more{font-size:.7rem;margin-left:8px}
+.pt-discard{position:relative}
+.pt-discard-pile{position:relative;width:132px;height:184px;border-radius:8px;background:rgba(0,0,0,.04)}
+.pt-discard-pile .deck-card-img,.pt-discard-pile altered-card{display:block;width:132px;height:184px;border-radius:8px;overflow:hidden}
+.pt-discard-pile.pt-stacked{box-shadow:2px 2px 0 var(--neutral-300),4px 4px 0 var(--neutral-200)}
+.pt-discard-count{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:.72rem;font-weight:700;border-radius:5px;padding:1px 6px}
+.pt-card{touch-action:none}
+.pt-dragging{z-index:50;opacity:.92;cursor:grabbing}
+.pt-drop-hover{outline:2px dashed var(--primary-400);outline-offset:-3px;border-radius:10px}
+
+/* ── Opening hand stats — detailed blocks ─────────────────────────────── */
+.ohs-section{margin-top:28px}
+/* Stat cards size to their own content (a single expanded "see details" no longer stretches
+   its row-mates); .ohs-head keeps a fixed height so headers + the hr line stay aligned. */
+.ohs-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;align-items:start}
+/* row 1 = three cards (span 2 of 6); row 2 = two cards filling the width (span 3 of 6) */
+.ohs-grid > .ohs-block{grid-column:span 2}
+.ohs-grid > .ohs-block:nth-child(n+4){grid-column:span 3}
+@media (max-width:1100px){ .ohs-grid{grid-template-columns:1fr 1fr} .ohs-grid > .ohs-block,.ohs-grid > .ohs-block:nth-child(n+4){grid-column:auto} }
+.ohs-block-comp{display:flex;flex-direction:column}
+/* Compact donut + legend. Small enough to fit the card's base height (and stay side-by-side in
+   the builder's narrow 3-col column); wraps to a tidy stack only if the column gets really tight. */
+.ohs-block-comp .ho-comp-body{flex:1;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 16px;margin-top:6px}
+.ohs-block-comp .ho-comp-legend{flex:0 1 auto;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px}
+.ohs-block-comp .ho-donut{width:62px;height:62px}
+.ohs-block-comp .ho-comp-item{font-size:.82rem;gap:6px}
+.ohs-block-comp .ho-comp-n{font-size:1rem;margin-left:2px}
+/* Deck detail page is full-width — give the composition card a roomier donut + legend. */
+#deck-hand-view .ohs-block-comp .ho-comp-body{gap:16px 26px}
+#deck-hand-view .ohs-block-comp .ho-donut{width:96px;height:96px}
+#deck-hand-view .ohs-block-comp .ho-comp-item{font-size:.9rem;gap:8px}
+#deck-hand-view .ohs-block-comp .ho-comp-n{font-size:1.35rem;margin-left:4px}
+/* Mobile: cards stack full-width, so the composition gets room for the bigger donut + legend too. */
+@media (max-width:820px){
+    .ohs-block-comp .ho-comp-body{gap:16px 26px}
+    .ohs-block-comp .ho-donut{width:96px;height:96px}
+    .ohs-block-comp .ho-comp-item{font-size:.9rem;gap:8px}
+    .ohs-block-comp .ho-comp-n{font-size:1.35rem;margin-left:4px}
+}
+/* Deck builder: the starting-hand block sits in the main content pane (full width). */
+#db-search-pane-hand .hand-odds{margin-top:0}
+/* All cards share a base height so a row looks even when collapsed; min-height (not a fixed
+   height) lets a single expanded "see details" grow on its own without stretching its row-mates. */
+.ohs-block{background:var(--sand-50);border:1px solid var(--sand-200);border-radius:12px;padding:16px;min-height:260px}
+.ohs-b-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary-500);margin-bottom:4px}
+.ohs-b-sub{font-size:.85rem;color:var(--neutral-600);line-height:1.35;margin-bottom:10px;min-height:2.6em}
+.ohs-head{min-height:112px;display:flex;flex-direction:column;justify-content:center}
+.ohs-highlights{display:flex;flex-wrap:wrap;gap:12px;width:100%}
+.ohs-hl{flex:1;min-width:130px;background:var(--sand-100);border:1px solid var(--sand-200);border-radius:10px;padding:11px 13px}
+.ohs-hl-l{font-size:.82rem;color:var(--neutral-600)}
+.ohs-hl-v{font-size:1.7rem;font-weight:800;color:var(--neutral-800);line-height:1.15;margin:1px 0}
+.ohs-hl--warn .ohs-hl-v{color:var(--primary-500)}
+.ohs-hl-note{font-size:.74rem;color:var(--neutral-500);line-height:1.3}
+.ohs-big-v{font-size:2rem;font-weight:800;color:var(--neutral-800);line-height:1}
+.ohs-hl-v [data-bs-toggle],.ohs-big-v [data-bs-toggle]{cursor:help}
+.ohs-big-note{font-size:.85rem;color:var(--neutral-600);line-height:1.35;margin:6px 0 0}
+.ohs-toggle{display:flex;align-items:center;gap:7px;width:100%;margin-top:12px;padding:11px 0 0;border:none;border-top:1px solid var(--sand-200);background:none;color:var(--neutral-500);font-size:.82rem;font-weight:600;cursor:pointer}
+.ohs-caret{font-size:.68rem;transition:transform .15s}
+.ohs-toggle[aria-expanded="false"] .ohs-caret{transform:rotate(180deg)}
+.ohs-d-label{font-size:.8rem;color:var(--neutral-500);margin:10px 0 8px}
+.ohs-bars{display:flex;flex-direction:column;gap:7px}
+.ohs-bar{display:flex;align-items:center;gap:10px;font-size:.82rem}
+.ohs-bar-l{width:62px;flex:none;color:var(--neutral-600)}
+.ohs-bars--wide .ohs-bar-l{width:132px}
+.ohs-bar-t{flex:1;height:9px;background:var(--sand-200);border-radius:5px;overflow:hidden}
+.ohs-bar-t>i{display:block;height:100%;background:#2f7d57;border-radius:5px}
+.ohs-bar--warn .ohs-bar-t>i{background:var(--primary-400)}
+.ohs-bar-v{width:48px;flex:none;text-align:right;font-weight:600;color:var(--neutral-700)}
+@media (max-width:820px){ .ohs-grid{grid-template-columns:1fr} }

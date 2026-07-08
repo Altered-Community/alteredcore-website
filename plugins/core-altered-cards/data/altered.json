@@ -102,6 +102,15 @@
                         "sameFaction": false, "maxRare": null, "maxExalted": null, "maxUnique": null,
                         "allowBanned": true, "allowSuspended": true,
                         "heroUniqueLimits": []
+                    },
+                    "test": {
+                        "en": "Test", "fr": "Test", "color": "#e0cda9",
+                        "gg_format": "TEST", "hidden": true,
+                        "minCards": 4, "maxCards": 100, "heroRequired": true,
+                        "maxCopiesPerRef": null, "maxCopiesPerName": null, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": null,
+                        "sameFaction": false, "maxRare": null, "maxExalted": null, "maxUnique": null,
+                        "allowBanned": true, "allowSuspended": true,
+                        "heroUniqueLimits": []
                     }
                 },
     "sets":  {

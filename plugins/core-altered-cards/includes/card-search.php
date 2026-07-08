@@ -18,6 +18,7 @@ $_csCollEnabled= $_cs['collection_enabled'] ?? false;
 $_csOwnMode    = $_cs['ownership_mode']      ?? false;
 $_csOwnEnabled = $_cs['ownership_enabled']   ?? false;
 $_csPlaysetMode= $_cs['playset_mode']        ?? false;
+$_csFavMode    = $_cs['favorites_mode']      ?? false;
 $_csBaseUrl    = $_cs['base_url']           ?? (defined('BASE_URL') ? BASE_URL : '');
 
 $_csFactions   = $_csData['factions']   ?? [];
@@ -129,6 +130,7 @@ $_csPsLayout2      = $_csPs['layout_2col']   ?? ($_csLang === 'fr' ? '2 par lign
 $_csPsLayout3      = $_csPs['layout_3col']   ?? ($_csLang === 'fr' ? '3 par ligne' : '3 per row');
 $_csPsLayoutVisual = $_csPs['layout_visual'] ?? ($_csLang === 'fr' ? 'Vue visuelle' : 'Visual view');
 $_csPsLayoutList   = $_csPs['layout_list']   ?? ($_csLang === 'fr' ? 'Vue liste' : 'List view');
+$_csLblFav      = $_csTxt['scope_favoris']    ?? ($_csLang === 'fr' ? 'Favoris' : 'Favorites');
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
@@ -197,6 +199,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <span><?= h($_csLblPlayset) ?></span>
         </button>
         <?php endif; ?>
+        <?php if ($_csFavMode): ?>
+        <button type="button" class="cs-tab" data-tab="favoris" data-scope="favoris">
+            <i class="fa-solid fa-star"></i>
+            <span><?= h($_csLblFav) ?></span>
+        </button>
+        <?php endif; ?>
     </div>
 
     <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
@@ -215,7 +223,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Main editions — quick-filter buttons -->
         <?php if (!empty($_csOfficialSets)): ?>
-        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
             <button type="button"
                     class="filter-toggle set-qf-btn<?= in_array($_sk, $_csSelSets) ? ' active' : '' ?>"
@@ -232,7 +240,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
         <!-- Faction (+ rarity) -->
         <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
-        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership">
+        <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
                     class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
@@ -244,7 +252,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endforeach; ?>
             <?php if (!empty($_csRarities)): ?>
             <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
-            <span class="cs-rarities" data-tabs="all ownership">
+            <span class="cs-rarities" data-tabs="all ownership favoris">
                 <?php if (!empty($_csFactions)): ?>
                 <span class="cs-sep"></span>
                 <?php endif; ?>
@@ -304,7 +312,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
                 </button>
                 <?php if (!empty($_csPromoSets)): ?>
-                <label class="cs-switch" data-tabs="all">
+                <label class="cs-switch" data-tabs="all ownership">
                     <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
                     <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
                     <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($_csLblPromo) ?></span>

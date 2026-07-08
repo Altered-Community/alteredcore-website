@@ -131,6 +131,42 @@ function collApiRequest(string $apiUrl, string $method, string $path, int $userI
 }
 
 /**
+ * Fetch several cards by reference in ONE public call (no auth) via POST /api/cards/batch.
+ * Used to hydrate a page of favorites. Returns a flat array of card objects (card:read),
+ * or [] on error/empty.
+ *
+ * @param string[] $refs    Card references (max 200 per the cards API)
+ * @param string   $locale  'en'|'fr'
+ */
+function cacCardsApiBatch(array $refs, string $locale = 'en'): array {
+    $refs = array_values(array_filter($refs, function($r) { return is_string($r) && $r !== ''; }));
+    if (empty($refs)) return [];
+    if (!defined('CARDS_API_URL') || CARDS_API_URL === '') return [];
+
+    $url = rtrim(CARDS_API_URL, '/') . '/api/cards/batch?locale=' . rawurlencode($locale);
+    $ch  = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Content-Type: application/json'],
+        CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['references' => $refs], JSON_UNESCAPED_UNICODE),
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_errno($ch);
+    curl_close($ch);
+
+    if ($err || $code >= 400 || !$raw) return [];
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) return [];
+    // The batch endpoint returns a flat array; tolerate an enveloped {member:[...]} too.
+    if (isset($decoded['member']) && is_array($decoded['member'])) return $decoded['member'];
+    return $decoded;
+}
+
+/**
  * Returns the user's collection, session-cached for 5 minutes.
  *
  * @param string $apiUrl  Collection API base URL
@@ -178,6 +214,49 @@ function formatApiViolations(array $violations): string {
         function ($v) { return ($v['propertyPath'] ? $v['propertyPath'] . ': ' : '') . ($v['message'] ?? ''); },
         $violations
     ));
+}
+
+/**
+ * Build the POST /api/decks payload for duplicating an existing deck.
+ *
+ * Copies every card (including the hero), resets visibility to private,
+ * mirrors the source draft flag (falling back to sandbox => draft), and
+ * only carries a description when the source has a non-empty one.
+ *
+ * @param array  $sourceDeck Deck as returned by GET /api/decks/{id}.
+ * @param string $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @return array Payload ready for json_encode().
+ */
+function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
+{
+    $deckCards = [];
+    foreach ($sourceDeck['cards'] ?? [] as $card) {
+        if (empty($card['cardReference'])) {
+            continue;
+        }
+        $deckCards[] = [
+            'cardReference' => $card['cardReference'],
+            'quantity'      => (int)($card['quantity'] ?? 1),
+        ];
+    }
+
+    $format  = $sourceDeck['format'] ?? 'standard';
+    $newName = trim($newName);
+
+    $payload = [
+        'name'      => $newName !== '' ? $newName : (string)($sourceDeck['name'] ?? 'Deck'),
+        'format'    => $format,
+        'isPublic'  => false,
+        'isDraft'   => $sourceDeck['isDraft'] ?? ($format === 'sandbox'),
+        'deckCards' => $deckCards,
+    ];
+
+    $description = trim((string)($sourceDeck['description'] ?? ''));
+    if ($description !== '') {
+        $payload['description'] = $description;
+    }
+
+    return $payload;
 }
 
 /**
@@ -294,12 +373,169 @@ function getDeckStartingHandPool(array $cards, string $lang): array
             ? (($rawName[$lang] ?? '') ?: ($rawName['en'] ?? $ref))
             : (($rawName !== null && $rawName !== '') ? $rawName : $ref);
         $out[] = [
-            'ref'      => $ref,
-            'name'     => $name,
-            'qty'      => (int)($card['quantity'] ?? 1),
-            'type'     => $type,
-            'mainCost' => (int)($card['mainCost'] ?? 0),
+            'ref'        => $ref,
+            'name'       => $name,
+            'qty'        => (int)($card['quantity'] ?? 1),
+            'type'       => $type,
+            'mainCost'   => (int)($card['mainCost'] ?? 0),
+            'recallCost' => (int)($card['recallCost'] ?? 0),
         ];
     }
     return $out;
+}
+
+/**
+ * i18n for the shared "Starting hand" stats + draw-odds block (rendered by
+ * pages/_starting-hand-stats.php on both the deck detail page and the deck builder).
+ * Single source so the two pages never drift. Returns the resolved strings for $lang.
+ */
+function cacStartingHandStatsTxt(string $lang): array
+{
+    $t = [
+        'en' => [
+            'ho_calc'          => 'Calculators',
+            'ho_deck'          => 'Deck',
+            'ho_drawn'         => 'Drawn',
+            'ho_types_label'   => 'Average composition',
+            'ohs_comp_sub'     => 'Average card types in a 6-card opening hand',
+            'ho_pick'          => 'Pick…',
+            'ho_group_a'       => 'A', 'ho_group_b' => 'B',
+            'ho_ratio'         => '≈ {x} in {y} hands',
+            'ho_ratio_generic' => '≈ {x} chances in {y}',
+            'nc_atleast'       => 'Chances of having',
+            'nc_atleast_combo' => 'Chances of having at least one of',
+            'nc_among'         => 'cards among',
+            'nc_among_combo'   => 'among',
+            'nc_draw_a'        => 'by drawing',
+            'nc_draw_b'        => 'cards',
+            'nc_both'          => 'Both',
+            'ohs_title'        => 'Opening hand stats',
+            'ohs_detail'       => 'See details',
+            'ohs_card'         => 'card', 'ohs_cards' => 'cards',
+            'ohs_play'         => 'play', 'ohs_plays' => 'plays',
+            'ohs_b1_title'     => 'Mana used on day 1',
+            'ohs_b1_sub'       => 'How much of your 3 mana you can spend on the first day',
+            'ohs_b1_h1'        => 'Optimal start',
+            'ohs_b1_h1_note'   => 'of games let you spend all 3 mana',
+            'ohs_b1_h2'        => 'Dead hand',
+            'ohs_b1_h2_note'   => 'no play possible',
+            'ohs_b1_detail'    => 'Breakdown by spendable mana',
+            'ohs_b2_title'     => 'Expensive cards',
+            'ohs_b2_sub'       => 'Cards at 4 mana or more, unplayable on the first day',
+            'ohs_b2_note'      => 'of hands hold 3 expensive cards or more — fewer options for your initial mana',
+            'ohs_b2_detail'    => 'Number of cards at 4 mana or more in the opening hand',
+            'ohs_b3_title'     => 'Reactivity (after you)',
+            'ohs_b3_sub'       => 'Chaining several plays on day 1: act, watch, then respond',
+            'ohs_b3_note'      => 'of hands let you chain 2 plays or more on day 1 (combined cost 3 or less)',
+            'ohs_b3_detail'    => 'Number of possible plays on day 1',
+            'ohs_b4_title'     => 'Contestable Expeditions on day 1',
+            'ohs_b4_sub'       => 'Characters you can deploy on the first day',
+            'ohs_b4_h1'        => 'Both Expeditions',
+            'ohs_b4_h1_note'   => 'you can deploy 2 or 3 characters on day 1',
+            'ohs_b4_h2'        => 'No Expedition',
+            'ohs_b4_h2_note'   => 'no character playable on day 1',
+            'ohs_b4_detail'    => 'Number of contestable Expeditions on day 1',
+            'ohs_b4_none'      => 'No character',
+            'ohs_b4_one'       => '1 Expedition',
+            'ohs_b4_both'      => 'Both Expeditions',
+            // playtest sandbox
+            'hand_empty'           => 'No cards to draw.',
+            'hand_characters'      => 'Characters',
+            'hand_spells'          => 'Spells',
+            'hand_permanents'      => 'Permanents',
+            'hand_avg_cost'        => 'Avg. hand cost',
+            'pt_restart'           => 'New hand',
+            'pt_toggle_playground' => 'Game mode',
+            'pt_setup_hint'        => 'Select 3 cards to set as mana',
+            'pt_commit_mana'       => 'Put in mana',
+            'pt_mana'              => 'Mana',
+            'pt_mana_list'         => 'Cards in mana',
+            'pt_empty_zone'        => 'Empty',
+            'pt_deck'              => 'Deck',
+            'pt_draw'              => 'Draw',
+            'pt_to_mana'           => 'To mana',
+            'pt_play_board'        => 'Play to board',
+            'pt_cancel'            => 'Cancel',
+            'pt_zoom'              => 'Zoom',
+            'pt_board'             => 'In play (Expeditions, Reserve, Landmarks)',
+            'pt_discard'           => 'Discard',
+            'pt_board_more'        => 'See all',
+            'pt_return_hand'       => 'Return to hand',
+            'pt_board_list'        => 'Board cards',
+            'pt_discard_list'      => 'Discard pile',
+        ],
+        'fr' => [
+            'ho_calc'          => 'Calculateurs',
+            'ho_deck'          => 'Deck',
+            'ho_drawn'         => 'Piochées',
+            'ho_types_label'   => 'Composition moyenne',
+            'ohs_comp_sub'     => 'Types de cartes moyens dans une main d\'ouverture de 6 cartes',
+            'ho_pick'          => 'Choisir…',
+            'ho_group_a'       => 'A', 'ho_group_b' => 'B',
+            'ho_ratio'         => '≈ {x} sur {y} mains',
+            'ho_ratio_generic' => '≈ {x} chances sur {y}',
+            'nc_atleast'       => 'Chances d\'avoir',
+            'nc_atleast_combo' => 'Chances d\'avoir au moins une de',
+            'nc_among'         => 'cartes parmi',
+            'nc_among_combo'   => 'parmi',
+            'nc_draw_a'        => 'en piochant',
+            'nc_draw_b'        => 'cartes',
+            'nc_both'          => 'A + B',
+            'ohs_title'        => 'Stats de main de départ',
+            'ohs_detail'       => 'Voir le détail',
+            'ohs_card'         => 'carte', 'ohs_cards' => 'cartes',
+            'ohs_play'         => 'play', 'ohs_plays' => 'plays',
+            'ohs_b1_title'     => 'Mana utilisé au jour 1',
+            'ohs_b1_sub'       => 'Combien de tes 3 mana tu peux dépenser dès le premier jour',
+            'ohs_b1_h1'        => 'Démarrage optimal',
+            'ohs_b1_h1_note'   => 'des parties te laissent dépenser tes 3 mana',
+            'ohs_b1_h2'        => 'Main morte',
+            'ohs_b1_h2_note'   => 'aucun jeu possible',
+            'ohs_b1_detail'    => 'Répartition par mana consommable',
+            'ohs_b2_title'     => 'Cartes chères',
+            'ohs_b2_sub'       => 'Cartes à 4 mana ou plus, injouables dès le premier jour',
+            'ohs_b2_note'      => 'des mains contiennent 3 cartes chères ou plus — réduit tes choix pour la mise en mana initiale',
+            'ohs_b2_detail'    => 'Nombre de cartes à 4 mana ou plus dans la main de départ',
+            'ohs_b3_title'     => 'Réactivité (après-vous)',
+            'ohs_b3_sub'       => 'Pouvoir enchaîner plusieurs plays au jour 1 : jouer, voir, puis répondre',
+            'ohs_b3_note'      => 'des mains te laissent enchaîner 2 plays ou plus au jour 1 (coût cumulé 3 ou moins)',
+            'ohs_b3_detail'    => 'Nombre de plays possibles au jour 1',
+            'ohs_b4_title'     => 'Expéditions contestables au jour 1',
+            'ohs_b4_sub'       => 'Personnages déployables dès le premier jour',
+            'ohs_b4_h1'        => 'Les deux Expéditions',
+            'ohs_b4_h1_note'   => 'tu peux déployer 2 ou 3 personnages au jour 1',
+            'ohs_b4_h2'        => 'Aucune Expédition',
+            'ohs_b4_h2_note'   => 'aucun personnage jouable au jour 1',
+            'ohs_b4_detail'    => 'Nombre d\'Expéditions contestables au jour 1',
+            'ohs_b4_none'      => 'Aucun personnage',
+            'ohs_b4_one'       => '1 Expédition',
+            'ohs_b4_both'      => 'Les 2 Expéditions',
+            // playtest sandbox
+            'hand_empty'           => 'Aucune carte à tirer.',
+            'hand_characters'      => 'Personnages',
+            'hand_spells'          => 'Sorts',
+            'hand_permanents'      => 'Permanents',
+            'hand_avg_cost'        => 'Coût moyen en main',
+            'pt_restart'           => 'Nouvelle main',
+            'pt_toggle_playground' => 'Mode jeu',
+            'pt_setup_hint'        => 'Sélectionne 3 cartes à mettre en mana',
+            'pt_commit_mana'       => 'Mettre en mana',
+            'pt_mana'              => 'Mana',
+            'pt_mana_list'         => 'Cartes en mana',
+            'pt_empty_zone'        => 'Vide',
+            'pt_deck'              => 'Deck',
+            'pt_draw'              => 'Piocher',
+            'pt_to_mana'           => 'En mana',
+            'pt_play_board'        => 'Jouer sur le plateau',
+            'pt_cancel'            => 'Annuler',
+            'pt_zoom'              => 'Zoom',
+            'pt_board'             => 'En jeu (Expéditions, Réserve, Permanents)',
+            'pt_discard'           => 'Défausse',
+            'pt_board_more'        => 'Voir +',
+            'pt_return_hand'       => 'Remettre en main',
+            'pt_board_list'        => 'Cartes du plateau',
+            'pt_discard_list'      => 'Défausse',
+        ],
+    ];
+    return $t[$lang] ?? $t['en'];
 }

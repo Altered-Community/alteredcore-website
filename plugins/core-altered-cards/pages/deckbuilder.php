@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$lang   = getLang();
-$uiLang = getUiLang();
+$lang         = getLang();
+$uiLang       = getUiLang();
+$uniqueLocale = in_array($lang, ['en', 'fr'], true) ? $lang : 'en';
 
 require_once __DIR__ . '/../config.php';
 
@@ -28,6 +29,11 @@ if ($_collectionMode) {
     $_userCollection = $_coll['collection'];
     $_collEntries    = $_coll['entries'];
 }
+
+// favorites (stockage DB locale du plugin — voir includes/favorites.php)
+require_once __DIR__ . '/../includes/favorites.php';
+$_favMode       = !$isGuest && $_dbUserId > 0;
+$_userFavorites = $_favMode ? array_fill_keys(cacFavGetRefs($_dbUserId), true) : [];
 
 // translations (shared from search_settings.json + page-specific)
 $_ss = loadSearchSettings();
@@ -102,6 +108,7 @@ $txt = array_merge($_sharedTxt, [
         'tab_deck'        => 'Deck',
         'tab_cards'       => 'Cards',
         'tab_stats'       => 'Stats',
+        'tab_hand'        => 'Starting hand',
         'tab_grid'        => 'View Deck',
         'stats_cost_main'   => 'Hand cost curve',
         'stats_cost_recall' => 'Reserve cost curve',
@@ -189,6 +196,7 @@ $txt = array_merge($_sharedTxt, [
         'tab_deck'        => 'Deck',
         'tab_cards'       => 'Cartes',
         'tab_stats'       => 'Stats',
+        'tab_hand'        => 'Main de départ',
         'tab_grid'        => 'Voir le deck',
         'stats_cost_main'   => 'Courbe coût main',
         'stats_cost_recall' => 'Courbe coût réserve',
@@ -208,6 +216,7 @@ $txt = array_merge($_sharedTxt, [
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
     ],
 ][$uiLang] ?? []);
+$txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
 
 // handle AJAX save
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax'])) {
@@ -280,7 +289,7 @@ $existingDeck = null;
 $apiError     = null;
 
 if ($editDeckId && $token) {
-    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($editDeckId) . '?locale=' . rawurlencode($uiLang));
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($editDeckId) . '?locale=' . rawurlencode($lang));
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Authorization: Bearer ' . $token],
@@ -403,6 +412,10 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
             <i class="fa-solid fa-eye"></i>
             <span><?= h($txt['tab_grid']) ?></span>
         </button>
+        <button type="button" class="db-mobile-tab" data-tab="hand">
+            <i class="fa-solid fa-hand-sparkles"></i>
+            <span><?= h($txt['tab_hand']) ?></span>
+        </button>
         <button type="button" class="db-mobile-tab" data-tab="deck">
             <i class="fa-solid fa-layer-group"></i>
             <span><?= h($txt['tab_deck']) ?></span>
@@ -421,6 +434,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 </button>
                 <button type="button" class="btn-toggle db-search-tab" data-pane="view">
                     <i class="fa-solid fa-eye me-1"></i><?= h($txt['tab_grid']) ?>
+                </button>
+                <button type="button" class="btn-toggle db-search-tab" data-pane="hand">
+                    <i class="fa-solid fa-hand-sparkles me-1"></i><?= h($txt['tab_hand']) ?>
                 </button>
             </div>
 
@@ -463,6 +479,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     'collection_enabled' => $_collectionEnabled,
                     'ownership_mode'     => $_ownMode,
                     'ownership_enabled'  => $_ownEnabled,
+                    'favorites_mode'     => $_favMode,
                     'base_url'           => BASE_URL,
                 ];
                 include __DIR__ . '/../includes/card-search.php';
@@ -482,6 +499,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     </div>
                 </div>
                 <div id="db-deckgrid-content"></div>
+            </div>
+
+            <!-- Starting-hand stats (main content, full width) -->
+            <div id="db-search-pane-hand" class="db-search-pane" style="display:none">
+                <?php include __DIR__ . '/_starting-hand-sandbox.php'; ?>
+                <?php include __DIR__ . '/_starting-hand-stats.php'; ?>
             </div>
 
         </div>
@@ -529,7 +552,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                         <label class="filter-label mb-1"><?= h($txt['format']) ?></label>
                         <select id="db-deck-format" class="form-select form-select-sm">
                             <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                            <option value="<?= h($fmtKey) ?>"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
+                            <?php // Hidden formats (e.g. BGA tester format) are rendered but stay
+                                  // out of the dropdown until the tester flag is set client-side. ?>
+                            <option value="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -678,8 +703,9 @@ var AlteredDB = {
     baseUrl:         <?= json_encode(BASE_URL) ?>,
     pluginAssetsUrl: <?= json_encode($pluginAssetsUrl) ?>,
     cdnUrl:    <?= json_encode(CDN_URL) ?>,
-    lang:      <?= json_encode($lang) ?>,
-    uiLang:    <?= json_encode($uiLang) ?>,
+    lang:         <?= json_encode($lang) ?>,
+    uniqueLocale: <?= json_encode($uniqueLocale) ?>,
+    uiLang:       <?= json_encode($uiLang) ?>,
     csrfToken: <?= json_encode(csrfToken()) ?>,
     deckId:    <?= json_encode($editDeckId) ?>,
     isGuest:   <?= $isGuest ? 'true' : 'false' ?>,
@@ -756,6 +782,12 @@ var AlteredDB = {
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collectionCsrf:    <?= json_encode($_collectionMode ? csrfToken() : '') ?>,
     collApiUrl:        <?= json_encode($_collectionMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
+    favoritesEnabled:  <?= $_favMode ? 'true' : 'false' ?>,
+    favoritesData:     <?= json_encode($_favMode ? (object)$_userFavorites : (object)[]) ?>,
+    favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
+    favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
+    favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
+    favoriteLabel:     <?= json_encode($uiLang === 'fr' ? 'Favori' : 'Favorite') ?>,
     heroTypes:      <?= json_encode($_heroTypes) ?>,
     heroRarities:   <?= json_encode($_heroRarities) ?>,
     heroSets:       <?= json_encode($_heroSets) ?>,
@@ -917,6 +949,19 @@ var AlteredDB = {
     var elDeckPublic = document.getElementById('db-deck-public');
     var elDeckDraft  = document.getElementById('db-deck-draft');
 
+    // BGA tester formats: hidden <option>s become selectable only when the tester
+    // flag has been enabled via the secret /pages/bgatester opt-in page.
+    if (elDeckFormat) {
+        var _bgaTester = false;
+        try { _bgaTester = localStorage.getItem('bgatester') === 'true'; } catch (e) {}
+        if (_bgaTester) {
+            elDeckFormat.querySelectorAll('option[data-hidden]').forEach(function(opt) {
+                opt.hidden = false;
+                opt.removeAttribute('hidden');
+            });
+        }
+    }
+
     // card helpers
     // Refs: ALT_{SET}_{SUB}_{FACTION}_{NUM}_{RARITY}[_{VAR}]
     // Unique example: ALT_EOLE_B_AX_106_U_530 — rarity is always parts[5][0]
@@ -948,7 +993,7 @@ var AlteredDB = {
     function fmtMsg(tpl, n) { return String(tpl).replace('%d', n); }
     function cdnUrl(ref) {
         var p = ref.split('_');
-        return AlteredDB.cdnUrl + '/cards/' + AlteredDB.uiLang + '/' + (p[1] || '') + '/' + ref + '.webp';
+        return AlteredDB.cdnUrl + '/cards/' + AlteredDB.lang + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
     function normalizeHeroRef(ref) {
         var p = ref.split('_');
@@ -1006,7 +1051,7 @@ var AlteredDB = {
             ensureRenderer();
             var el = document.createElement('altered-card');
             el.setAttribute('ref', ref);
-            el.setAttribute('locale', AlteredDB.lang);
+            el.setAttribute('locale', AlteredDB.uniqueLocale);
             wrap.appendChild(el);
         } else {
             var img = document.createElement('img');
@@ -1015,6 +1060,12 @@ var AlteredDB = {
             img.className = 'db-card-img';
             img.loading = 'lazy';
             wrap.appendChild(img);
+        }
+
+        // Favorite star — top-right (helper exposed by card-search.js)
+        if (window.acMakeFavButton) {
+            var favBtn = window.acMakeFavButton(card);
+            if (favBtn) wrap.appendChild(favBtn);
         }
 
         if (notInDeck) {
@@ -1031,7 +1082,7 @@ var AlteredDB = {
             });
         } else {
             var btnGroup = document.createElement('div');
-            btnGroup.className = 'db-card-btn-group btn-group btn-group-sm';
+            btnGroup.className = 'db-card-btn-group btn-group';
 
             var removeBtn = document.createElement('button');
             removeBtn.type = 'button';
@@ -1424,6 +1475,7 @@ var AlteredDB = {
 
         renderStatsPane();
         renderGridPane();
+        renderHandPane();
     }
 
     function openValidationModal(results, fmtKey) {
@@ -1606,7 +1658,7 @@ var AlteredDB = {
                     var dName = typeof c.name === 'object' ? (c.name[AlteredDB.lang] || c.name.en || '') : (c.name || '');
                     var p = c.ref.split('_');
                     var cardImg = (p[5] && p[5][0] === 'U')
-                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uiLang) + '" style="display:block;width:100%;border-radius:7px;overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
+                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uniqueLocale) + '" style="display:block;width:100%;border-radius:7px;overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
                         : '<img src="' + cdnUrl(c.ref) + '" alt="' + escAttr(dName) + '" loading="lazy">';
                     html += '<div class="db-deckgrid-card" onclick="openDbCardModal(\'' + escAttr(c.ref) + '\')" title="' + escAttr(dName) + '">'
                         + cardImg
@@ -1644,6 +1696,25 @@ var AlteredDB = {
             });
         }
         content.innerHTML = html;
+    }
+
+    // Starting-hand pane: rebuild the hand-odds globals from the live deck, then recompute.
+    // (deck.cards holds no hero — heroes live on deck.hero — so the pool needs no filtering.)
+    function renderHandPane() {
+        ensureRenderer();   // the calculators' unique thumbnails use the <altered-card> web component
+        var cards = [], groups = {};
+        Object.keys(deck.cards).forEach(function(ref) {
+            var c = deck.cards[ref], nm = cardName(c), uniq = isUnique(ref), img = cdnUrl(ref);
+            cards.push({ ref: ref, name: nm, qty: c.qty, type: c.type, mainCost: c.mainCost, recallCost: c.recallCost, unique: uniq, img: img });
+            // Uniques are distinct cards (own art + costs): key by ref; others group by name+rarity.
+            var key = uniq ? ref : (nm + '|' + (c.rarity || ''));
+            if (!groups[key]) groups[key] = { key: key, name: nm, rarity: c.rarity || '', type: c.type, mainCost: c.mainCost, recallCost: c.recallCost, qty: 0, unique: uniq, ref: ref, img: img };
+            groups[key].qty += c.qty;
+        });
+        window.handDeckCards  = cards;
+        window.handDeckGroups = Object.keys(groups).map(function(k) { return groups[k]; });
+        window.handDeckSize   = cards.reduce(function(s, c) { return s + c.qty; }, 0);
+        if (window.HandOdds) window.HandOdds.refresh();
     }
 
     // hero modal
@@ -1972,18 +2043,20 @@ var AlteredDB = {
             tab.classList.add('active');
             var t = tab.dataset.tab;
             // 'view' shares the left panel with 'search'
-            var paneId = 'db-tab-' + (t === 'view' ? 'search' : t);
+            var paneId = 'db-tab-' + (t === 'view' || t === 'hand' ? 'search' : t);
             document.querySelectorAll('.db-tab-pane').forEach(function(p) { p.classList.remove('active'); });
             var pane = document.getElementById(paneId);
             if (pane) pane.classList.add('active');
-            // Switch sub-pane between search form and deck view
-            if (t === 'search' || t === 'view') {
+            // Switch sub-pane between search form, deck view and starting hand
+            if (t === 'search' || t === 'view' || t === 'hand') {
                 document.getElementById('db-search-pane-search').style.display = t === 'search' ? '' : 'none';
                 document.getElementById('db-search-pane-view').style.display   = t === 'view'   ? '' : 'none';
+                document.getElementById('db-search-pane-hand').style.display   = t === 'hand'   ? '' : 'none';
                 document.querySelectorAll('.db-search-tab').forEach(function(st) {
                     st.classList.toggle('active', st.dataset.pane === t);
                 });
                 if (t === 'view') renderGridPane();
+                if (t === 'hand') { renderHandPane(); if (window.HandTester && !window.HandTester.isStarted()) window.HandTester.reset(); }
             }
         });
     });
@@ -1998,7 +2071,7 @@ var AlteredDB = {
     }
     var detailLabel = <?= json_encode($txt['detail_label']) ?>;
     var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
-    var cardDetailLang = <?= json_encode(in_array($uiLang, ['en', 'fr']) ? $uiLang : 'en') ?>;
+    var cardDetailLang = <?= json_encode($lang) ?>;
     window.openDbCardModal = function(ref) {
         dbCardModalInner.innerHTML = '';
         var cardEl;
@@ -2006,7 +2079,7 @@ var AlteredDB = {
             ensureRenderer();
             cardEl = document.createElement('altered-card');
             cardEl.setAttribute('ref', ref);
-            cardEl.setAttribute('locale', AlteredDB.uiLang);
+            cardEl.setAttribute('locale', AlteredDB.uniqueLocale);
             cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
         } else {
             cardEl = document.createElement('img');
@@ -2163,7 +2236,9 @@ var AlteredDB = {
             var pane = tab.dataset.pane;
             document.getElementById('db-search-pane-search').style.display = pane === 'search' ? '' : 'none';
             document.getElementById('db-search-pane-view').style.display   = pane === 'view'   ? '' : 'none';
+            document.getElementById('db-search-pane-hand').style.display   = pane === 'hand'   ? '' : 'none';
             if (pane === 'view') renderGridPane();
+            if (pane === 'hand') { renderHandPane(); if (window.HandTester && !window.HandTester.isStarted()) window.HandTester.reset(); }
         });
     });
 
@@ -2223,6 +2298,11 @@ var AlteredDB = {
         collectionUrl:     AlteredDB.collectionUrl,
         collApiUrl:        AlteredDB.collApiUrl,
         ownershipApiUrl:   AlteredDB.ownershipApiUrl,
+        favoritesEnabled:  AlteredDB.favoritesEnabled,
+        favoritesData:     AlteredDB.favoritesData,
+        favoritesCsrf:     AlteredDB.favoritesCsrf,
+        favToggleUrl:      AlteredDB.favToggleUrl,
+        favApiUrl:         AlteredDB.favApiUrl,
         setChildren:  AlteredDB.setChildren,
         subSets:      AlteredDB.subSets,
         uniqueType:   ['CHARACTER'],
@@ -2257,10 +2337,50 @@ var AlteredDB = {
         typesMerged: AlteredDB.typesMerged,
         renderDeckCard: window.renderBrowserCard,
         formatCount: function(n) { return n + ' ' + AlteredDB.txt.deck_cards; },
-        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next },
+        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel },
     });
     window.updateFilterCount = engine.updateFilterCount;
     window.loadCards         = engine.search;
 })();
 </script>
+
+<!-- Playtest card modals (mana / board / discard list + card zoom) -->
+<?php include __DIR__ . '/_card-list-modal.php'; ?>
+<?php include __DIR__ . '/_card-zoom-modal.php'; ?>
+
+<!-- Starting-hand tab: shared stats + draw-odds, recomputed live from the deck via renderHandPane() -->
+<script>
+    window.handLang       = <?= json_encode($uiLang) ?>;
+    window.handTypeLabels = <?= json_encode($txt['types'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+    window.handOddsTxt    = {
+        both:         <?= json_encode($txt['nc_both']) ?>,
+        ratio:        <?= json_encode($txt['ho_ratio']) ?>,
+        ratioGeneric: <?= json_encode($txt['ho_ratio_generic']) ?>,
+        card: <?= json_encode($txt['ohs_card']) ?>, cards: <?= json_encode($txt['ohs_cards']) ?>,
+        play: <?= json_encode($txt['ohs_play']) ?>, plays: <?= json_encode($txt['ohs_plays']) ?>,
+        expNone: <?= json_encode($txt['ohs_b4_none']) ?>, expOne: <?= json_encode($txt['ohs_b4_one']) ?>, expBoth: <?= json_encode($txt['ohs_b4_both']) ?>
+    };
+    window.handDeckCards  = window.handDeckCards  || [];
+    window.handDeckGroups = window.handDeckGroups || [];
+    window.handDeckSize   = window.handDeckSize   || 0;
+    window.handTxt = {
+        empty:      <?= json_encode($txt['hand_empty']) ?>,
+        characters: <?= json_encode($txt['hand_characters']) ?>,
+        spells:     <?= json_encode($txt['hand_spells']) ?>,
+        permanents: <?= json_encode($txt['hand_permanents']) ?>,
+        avgCost:    <?= json_encode($txt['hand_avg_cost']) ?>,
+        manaList:   <?= json_encode($txt['pt_mana_list']) ?>,
+        toMana:     <?= json_encode($txt['pt_to_mana']) ?>,
+        playBoard:  <?= json_encode($txt['pt_play_board']) ?>,
+        zoom:       <?= json_encode($txt['pt_zoom']) ?>,
+        cancel:     <?= json_encode($txt['pt_cancel']) ?>,
+        discard:    <?= json_encode($txt['pt_discard']) ?>,
+        returnHand: <?= json_encode($txt['pt_return_hand']) ?>,
+        boardList:  <?= json_encode($txt['pt_board_list']) ?>,
+        discardList:<?= json_encode($txt['pt_discard_list']) ?>
+    };
+</script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-odds-math.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-odds.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/hand-tester.js"></script>
 
