@@ -95,6 +95,7 @@ $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avanc
 $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
+$_csLblFormatLivingLegend = $_csTxt['format_living_legend'] ?? ($_csLang === 'fr' ? 'Living Legend' : 'Living Legend');
 $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Effet de réserve (Support)' : 'Support effect');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
@@ -242,6 +243,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 </button>
                 <button type="button" class="filter-toggle" data-filter="format" data-value="frontier">
                     <?= h($_csLblFormatFrontier) ?>
+                </button>
+                <button type="button" class="filter-toggle" data-filter="format" data-value="living-legend">
+                    <?= h($_csLblFormatLivingLegend) ?>
                 </button>
             </div>
         </div>

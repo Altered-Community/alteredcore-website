@@ -92,6 +92,7 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Banned cards not allowed',
         'rule_no_suspended'    => 'Suspended cards not allowed',
         'rule_frontier_legal'  => 'Unique cards must be part of the Frontier allowlist',
+        'rule_living-legend_legal' => 'Unique cards must be part of the Living Legend allowlist',
         'hero_label'      => 'Hero',
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
@@ -181,6 +182,7 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Cartes bannies non autorisées',
         'rule_no_suspended'    => 'Cartes suspendues non autorisées',
         'rule_frontier_legal'  => 'Les cartes uniques doivent faire partie de la liste autorisée Frontier',
+        'rule_living-legend_legal' => 'Les cartes uniques doivent faire partie de la liste autorisée Living Legend',
         'hero_label'      => 'Héros',
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
@@ -742,6 +744,7 @@ var AlteredDB = {
         'rule_no_banned'       => $txt['rule_no_banned'],
         'rule_no_suspended'    => $txt['rule_no_suspended'],
         'rule_frontier_legal'  => $txt['rule_frontier_legal'],
+        'rule_living-legend_legal' => $txt['rule_living-legend_legal'],
         'saving'        => $txt['saving'],
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
@@ -1400,18 +1403,19 @@ var AlteredDB = {
             });
         }
 
-        // Frontier allowlist — verified live against the uniques search API,
-        // since the ~30k reference allowlist is never shipped to the browser.
+        // Format allowlist (Frontier, Living Legend, ...) — verified live against
+        // the uniques search API, since the allowlist is never shipped to the browser.
         if (rules.requireUniqueLegality) {
             var illegalUniqueRefs = [];
             Object.keys(deck.cards).forEach(function(ref) {
-                if (isUnique(ref) && deck.cards[ref].isFrontierIllegal) illegalUniqueRefs.push(ref);
+                if (isUnique(ref) && deck.cards[ref].illegalUniqueFormats && deck.cards[ref].illegalUniqueFormats[fmtKey]) illegalUniqueRefs.push(ref);
             });
-            addRule(AlteredDB.txt.rule_frontier_legal, illegalUniqueRefs.length === 0, illegalUniqueRefs.length > 0 ? illegalUniqueRefs.length : null, null);
+            var ruleLegalTxt = AlteredDB.txt['rule_' + fmtKey + '_legal'] || AlteredDB.txt.rule_frontier_legal;
+            addRule(ruleLegalTxt, illegalUniqueRefs.length === 0, illegalUniqueRefs.length > 0 ? illegalUniqueRefs.length : null, null);
             illegalUniqueRefs.forEach(function(ref) {
-                violatingRefs[ref] = violatingRefs[ref] ? violatingRefs[ref] + '\n' + AlteredDB.txt.rule_frontier_legal : AlteredDB.txt.rule_frontier_legal;
+                violatingRefs[ref] = violatingRefs[ref] ? violatingRefs[ref] + '\n' + ruleLegalTxt : ruleLegalTxt;
             });
-            checkFrontierLegality();
+            checkUniqueFormatLegality(fmtKey);
         }
 
         deck._valid = ruleResults.every(function(r) { return r.ok; });
@@ -1441,7 +1445,7 @@ var AlteredDB = {
             var c = deck.cards[ref];
             var t = c.type || 'OTHER';
             if (!grouped[t]) grouped[t] = [];
-            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isFrontierIllegal: !!c.isFrontierIllegal });
+            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isUniqueIllegal: !!(c.illegalUniqueFormats && c.illegalUniqueFormats[fmtKey]) });
         });
         elCardList.innerHTML = '';
         TYPE_ORDER.forEach(function(type) {
@@ -1472,7 +1476,7 @@ var AlteredDB = {
                     + '</span>'
                     + (c.isBanned    && rules.allowBanned    === false ? '<span class="deck-list-banned"    title="' + escAttr(AlteredDB.txt.rule_no_banned)    + '"><i class="fa-solid fa-ban"></i></span>'          : '')
                     + (c.isSuspended && rules.allowSuspended === false ? '<span class="deck-list-suspended" title="' + escAttr(AlteredDB.txt.rule_no_suspended) + '"><i class="fa-solid fa-circle-pause"></i></span>' : '')
-                    + (c.isFrontierIllegal && rules.requireUniqueLegality ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt.rule_frontier_legal) + '"><i class="fa-solid fa-map"></i></span>' : '')
+                    + (c.isUniqueIllegal && rules.requireUniqueLegality ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt['rule_' + fmtKey + '_legal'] || AlteredDB.txt.rule_frontier_legal) + '"><i class="fa-solid fa-map"></i></span>' : '')
                     + (violatingRefs[c.ref] ? '<span class="deck-list-violation" title="' + escAttr(violatingRefs[c.ref]) + '">!</span>' : '')
                     + (AlteredDB.showStockWarn && AlteredDB.collectionMode && c.qty > (AlteredDB.collection[c.ref] || 0)
                         ? '<span class="deck-list-stockwarn" title="' + <?= json_encode($txt['stock_warn']) ?> + '"><i class="fa-solid fa-box-archive" style="font-size:.6rem"></i></span>'
@@ -2026,31 +2030,34 @@ var AlteredDB = {
             .catch(function() {});
     }
 
-    // Frontier allowlist check — mirrors the backend FrontierFormatValidator,
-    // which calls the same uniques search API server-side on save. Runs here too
-    // so the deckbuilder's validation badge doesn't show "valid" for a deck the
-    // API will actually reject. Only re-checks refs not already resolved, so
-    // repeated calls from updateDeckDisplay() are cheap no-ops once settled.
-    var _frontierCheckInFlight = {};
-    function checkFrontierLegality() {
+    // Format allowlist check (Frontier, Living Legend, ...) — mirrors the backend
+    // FormatValidator, which calls the same uniques search API server-side on save.
+    // Runs here too so the deckbuilder's validation badge doesn't show "valid" for
+    // a deck the API will actually reject. Only re-checks refs not already resolved
+    // for the current format, so repeated calls from updateDeckDisplay() are cheap
+    // no-ops once settled.
+    var _uniqueFormatCheckInFlight = {};
+    function checkUniqueFormatLegality(fmtKey) {
         if (!AlteredDB.uniquesApiBase) return;
         var pending = [];
         Object.keys(deck.cards).forEach(function(ref) {
             if (!isUnique(ref)) return;
-            if (deck.cards[ref].isFrontierIllegal !== undefined) return;
-            if (_frontierCheckInFlight[ref]) return;
+            var c = deck.cards[ref];
+            if (!c.illegalUniqueFormats) c.illegalUniqueFormats = {};
+            if (c.illegalUniqueFormats[fmtKey] !== undefined) return;
+            if (_uniqueFormatCheckInFlight[fmtKey + ':' + ref]) return;
             pending.push(ref);
         });
         if (!pending.length) return;
-        pending.forEach(function(ref) { _frontierCheckInFlight[ref] = true; });
-        fetch(AlteredDB.uniquesApiBase + '/api/v2/cards?ref=' + pending.map(encodeURIComponent).join(',') + '&format=frontier')
+        pending.forEach(function(ref) { _uniqueFormatCheckInFlight[fmtKey + ':' + ref] = true; });
+        fetch(AlteredDB.uniquesApiBase + '/api/v2/cards?ref=' + pending.map(encodeURIComponent).join(',') + '&format=' + encodeURIComponent(fmtKey))
             .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function(data) {
                 var legal = {};
                 (data.cards || []).forEach(function(c) { if (c.reference) legal[c.reference] = true; });
                 pending.forEach(function(ref) {
-                    if (deck.cards[ref]) deck.cards[ref].isFrontierIllegal = !legal[ref];
-                    delete _frontierCheckInFlight[ref];
+                    if (deck.cards[ref]) deck.cards[ref].illegalUniqueFormats[fmtKey] = !legal[ref];
+                    delete _uniqueFormatCheckInFlight[fmtKey + ':' + ref];
                 });
                 updateDeckDisplay();
             })
@@ -2058,8 +2065,8 @@ var AlteredDB = {
                 // Fail closed, like the backend: an unreachable allowlist service
                 // means the deck can't be confirmed legal.
                 pending.forEach(function(ref) {
-                    if (deck.cards[ref]) deck.cards[ref].isFrontierIllegal = true;
-                    delete _frontierCheckInFlight[ref];
+                    if (deck.cards[ref]) deck.cards[ref].illegalUniqueFormats[fmtKey] = true;
+                    delete _uniqueFormatCheckInFlight[fmtKey + ':' + ref];
                 });
                 updateDeckDisplay();
             });
