@@ -36,6 +36,7 @@ var CARD_SEARCH_DEBUG = false;
 function CardSearch(cfg) {
 
     var API_BASE = cfg.apiBase     || 'https://cards.alteredcore.org';
+    var UNIQUES_API_BASE = cfg.uniquesApiBase || '';
     var LANG     = cfg.lang        || 'en';
     var UI_LANG  = cfg.uiLang      || 'en'; // en/fr only — UI strings (alerts, etc.)
     var MODE     = cfg.mode        || 'cards';
@@ -130,11 +131,20 @@ function CardSearch(cfg) {
         isSuspended:    !!ini.isSuspended,
         hasNoEffect:    !!ini.hasNoEffect,
         effects:        [],
-        effectMode:     'or',
+        // Effect OR/AND toggle was removed from the UI: rows always combine with AND,
+        // each row's dropdowns are always multi-select and combine with OR within the row.
+        effectMode:     'and',
+        // The single support/echo-line filter (support[t|c|o]), separate from the
+        // main effect[N] slots above — see initSupport().
+        support:        { trigger: [], condition: [], effect: [] },
+        format:         '',
         sort:           ini.sort            || DEFAULT_SORT_1,
     };
 
     var currentPage        = 1;
+    // Uniques tab (rust-cards-api) pagination: opaque cursor, "load more" style.
+    // null = first page; undefined (from the API) = no more pages.
+    var _uniqueCursor      = null;
     var _abortCtrl         = null;
     var _rendererLoaded    = false;
     // Search scope: 'all' (cards API) | 'collection' (physical) | 'ownership' (digital).
@@ -155,6 +165,7 @@ function CardSearch(cfg) {
     var _effectData    = null;
     var _effectLoading = false;
     var _effectQueue   = [];
+    var _supportRowEl  = null; // the single support/echo effect row (region 'echo')
 
     // sort key → API order params
     var SORT_MAP = {
@@ -305,10 +316,18 @@ function CardSearch(cfg) {
         return CDN_URL + '/cards/' + LANG + '/' + (p[1] || '') + '/' + ref + '.webp';
     }
 
+    // rust-cards-api (Uniques) locale maps use long codes (en_US, fr_FR, ...); the
+    // site's LANG/UI strings use short codes (en, fr). Try both.
+    var LOCALE_MAP = { en: 'en_US', fr: 'fr_FR' };
+    function pickLocale(map, lang) {
+        if (!map) return '';
+        return map[lang] || map[LOCALE_MAP[lang]] || map.en_US || map.en || Object.values(map)[0] || '';
+    }
+
     function cardName(card) {
         var n = card.name;
         if (!n) return ' ';
-        var s = typeof n === 'object' ? (n[LANG] || n.en || '') : String(n);
+        var s = typeof n === 'object' ? pickLocale(n, LANG) : String(n);
         return s || ' ';
     }
 
@@ -395,11 +414,55 @@ function CardSearch(cfg) {
 
     // ── Effect filter ────────────────────────────────────────────────────────
 
+    // Remap rust-cards-api's /api/v2/effects shape ({triggers,conditions,output},
+    // items {idGd,text,isMain,isEcho}) into the shape the rest of this file expects
+    // ({triggers,conditions,effects}, items {alteredId,translations}) so
+    // _effectLabel/_buildEffectSel/_buildEffectRow need no further changes.
+    function _remapUniquesEffects(data) {
+        function remapList(list) {
+            return (Array.isArray(list) ? list : []).map(function(item) {
+                return {
+                    alteredId: item.idGd, translations: item.text || {},
+                    isMain: !!item.isMain, isEcho: !!item.isEcho,
+                };
+            });
+        }
+        return {
+            triggers:   remapList(data.triggers),
+            conditions: remapList(data.conditions),
+            effects:    remapList(data.output),
+        };
+    }
+
+    // Main effect slots only show catalog entries valid on a main line (isMain);
+    // the support/echo row only shows entries valid on the echo line (isEcho).
+    function _catalogForRegion(items, region) {
+        return items.filter(function(item) { return region === 'echo' ? item.isEcho : item.isMain; });
+    }
+
     function _loadEffectData(cb) {
         if (_effectData) { cb(_effectData); return; }
         _effectQueue.push(cb);
         if (_effectLoading) return;
         _effectLoading = true;
+
+        // The effect dropdowns only ever render inside the Uniques tab's filter UI
+        // (see includes/card-search.php data-tabs="unique"), so this data source
+        // check does not need to look at the currently active tab.
+        if (UNIQUES_API_BASE) {
+            fetch(UNIQUES_API_BASE + '/api/v2/effects')
+                .then(function(r) { return r.json(); })
+                .then(function(data) { return _remapUniquesEffects(data); })
+                .catch(function() { return { triggers: [], conditions: [], effects: [] }; })
+                .then(function(res) {
+                    _effectData    = res;
+                    _effectLoading = false;
+                    _effectQueue.forEach(function(fn) { fn(_effectData); });
+                    _effectQueue   = [];
+                });
+            return;
+        }
+
         var done = 0;
         var res  = { triggers: [], conditions: [], effects: [] };
         ['triggers', 'conditions', 'effects'].forEach(function(key) {
@@ -420,7 +483,7 @@ function CardSearch(cfg) {
 
     function _effectLabel(item) {
         var t = item.translations || {};
-        return t[LANG] || t.en || String(item.alteredId);
+        return pickLocale(t, LANG) || String(item.alteredId);
     }
 
     function _effectLabelPlain(item) {
@@ -456,16 +519,37 @@ function CardSearch(cfg) {
         return sel;
     }
 
-    function _buildEffectRow(n, data, saved) {
+    // Rebuild a dropdown's option list down to `idGds` (plus whatever is currently
+    // selected, so existing chips keep their label even if a filter change made
+    // them no longer suggested). Mirrors the clear+re-add+restore idiom already
+    // used for the set filter in applyCollectionFilter().
+    function _applyEffectNarrowing(ts, items, idGds) {
+        var keep = {};
+        idGds.forEach(function(id) { keep[String(id)] = true; });
+        _asArr(ts.getValue()).forEach(function(v) { keep[v] = true; });
+        var narrowed = items.filter(function(item) { return keep[String(item.alteredId)]; });
+        narrowed.sort(function(a, b) { return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b)); });
+        ts.clearOptions();
+        narrowed.forEach(function(item) {
+            ts.addOption({ value: String(item.alteredId), text: _effectLabel(item) });
+        });
+        ts.refreshOptions(false);
+    }
+
+    // region: 'main' (default, an effect[N] slot) or 'echo' (the support row,
+    // n === 'support' — see initSupport()). Support has no remove button (there's
+    // only ever one) and its catalog is filtered to isEcho entries instead of isMain.
+    function _buildEffectRow(n, data, saved, region) {
+        region = region || 'main';
         saved = saved || {};
         var rowEl = document.createElement('div');
         rowEl.className = 'effect-row d-flex gap-1 align-items-start mb-1';
         rowEl.dataset.effectN = n;
 
         var sels = [
-            _buildEffectSel(data.triggers,   saved.trigger),
-            _buildEffectSel(data.conditions, saved.condition),
-            _buildEffectSel(data.effects,    saved.effect),
+            _buildEffectSel(_catalogForRegion(data.triggers,   region), saved.trigger),
+            _buildEffectSel(_catalogForRegion(data.conditions, region), saved.condition),
+            _buildEffectSel(_catalogForRegion(data.effects,    region), saved.effect),
         ];
         var phs = [txt.any_trigger || '—', txt.any_condition || '—', txt.any_effect || '—'];
 
@@ -478,10 +562,10 @@ function CardSearch(cfg) {
             }
         } : null;
 
-        // OR mode → multi-select per dropdown (a single row, options OR'd).
-        // AND mode → single value per dropdown (one slot per row, rows AND'd).
-        var _multiSel = filters.effectMode !== 'and';
-
+        // Each dropdown is always multi-select (options within a row combine with
+        // OR); each row combines with the others via AND (see filters.effectMode).
+        var partKeys  = ['triggers', 'conditions', 'effects'];  // _effectData keys
+        var partNames = ['trigger', 'condition', 'output'];     // API 'editing' vocabulary
         var tsInsts = [];
         sels.forEach(function(sel, idx) {
             var wrap = document.createElement('div');
@@ -491,11 +575,24 @@ function CardSearch(cfg) {
             if (tsRender) {
                 var ts = new TomSelect(sel, {
                     create: false,
-                    maxItems: _multiSel ? null : 1,
-                    plugins: _multiSel ? ['remove_button'] : [],
-                    placeholder: phs[idx], hideSelected: _multiSel,
+                    maxItems: null,
+                    plugins: ['remove_button'],
+                    placeholder: phs[idx], hideSelected: true,
                     onChange: updateFilterCount,
                     render: tsRender,
+                    // Narrow this box's options to what still yields a card given
+                    // the current filters (rust-cards-api only — see
+                    // buildEffectsFilteredUrl / GET /api/v2/effects/filtered).
+                    onDropdownOpen: !UNIQUES_API_BASE ? undefined : function() {
+                        fetch(buildEffectsFilteredUrl(partNames[idx], n))
+                            .then(function(r) { return r.ok ? r.json() : null; })
+                            .then(function(res) {
+                                if (res && Array.isArray(res.idGds)) {
+                                    _applyEffectNarrowing(ts, _catalogForRegion(data[partKeys[idx]], region), res.idGds);
+                                }
+                            })
+                            .catch(function() {});
+                    },
                 });
                 tsInsts.push(ts);
             } else {
@@ -505,12 +602,14 @@ function CardSearch(cfg) {
         });
         rowEl._tsInsts = tsInsts;
 
-        var rmBtn = document.createElement('button');
-        rmBtn.type = 'button';
-        rmBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0 effect-rm-btn align-self-start';
-        rmBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-        rmBtn.addEventListener('click', function() { _removeEffectRow(rowEl); });
-        rowEl.appendChild(rmBtn);
+        if (region === 'main') {
+            var rmBtn = document.createElement('button');
+            rmBtn.type = 'button';
+            rmBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0 effect-rm-btn align-self-start';
+            rmBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            rmBtn.addEventListener('click', function() { _removeEffectRow(rowEl); });
+            rowEl.appendChild(rmBtn);
+        }
         return rowEl;
     }
 
@@ -518,15 +617,13 @@ function CardSearch(cfg) {
         var rowsEl = document.getElementById(P + '-effect-rows');
         var addBtn = document.getElementById(P + '-effect-add');
         var count  = rowsEl ? rowsEl.querySelectorAll('.effect-row').length : 0;
-        var isAnd  = filters.effectMode === 'and';
         if (rowsEl) {
             rowsEl.querySelectorAll('.effect-row').forEach(function(r) {
                 var rm = r.querySelector('.effect-rm-btn');
-                if (rm) rm.style.display = (isAnd && count > 1) ? '' : 'none';
+                if (rm) rm.style.display = count > 1 ? '' : 'none';
             });
         }
-        // "Add effect" only in AND mode (OR uses a single multi-select row).
-        if (addBtn) addBtn.style.display = (isAnd && count < 3) ? '' : 'none';
+        if (addBtn) addBtn.style.display = count < 3 ? '' : 'none';
     }
 
     function _removeEffectRow(rowEl) {
@@ -560,11 +657,13 @@ function CardSearch(cfg) {
         }
     }
 
+    // One entry per row, each field an array of selected ids (possibly empty).
+    // rust-cards-api's effect[n][t|c|o] accepts a comma-separated OR list directly,
+    // so a row's multi-selects map to ONE slot; see _cartesianEffectSlots() for the
+    // old Cards API, which needs one value per field per slot.
     function _readEffectRows() {
         var rowsEl = document.getElementById(P + '-effect-rows');
-        var modeEl = document.getElementById(P + '-effect-mode');
-        filters.effects    = [];
-        filters.effectMode = modeEl ? (modeEl.dataset.mode || 'or') : 'or';
+        filters.effects = [];
         if (!rowsEl) return;
         rowsEl.querySelectorAll('.effect-row').forEach(function(row) {
             var insts = row._tsInsts;
@@ -579,13 +678,37 @@ function CardSearch(cfg) {
                     t = _selectedVals(sels[0]); c = _selectedVals(sels[1]); e = _selectedVals(sels[2]);
                 }
             }
-            // Cartesian product: the API accepts one value per slot field, so each
-            // combination of the row's selections becomes its own effect slot.
-            var T = t.length ? t : [''], C = c.length ? c : [''], E = e.length ? e : [''];
+            if (t.length || c.length || e.length) {
+                filters.effects.push({ trigger: t, condition: c, effect: e });
+            }
+        });
+    }
+
+    // Read the single support/echo row (see initSupport()) into filters.support.
+    function _readSupportRow() {
+        filters.support = { trigger: [], condition: [], effect: [] };
+        var insts = _supportRowEl && _supportRowEl._tsInsts;
+        if (insts && insts.length >= 3) {
+            filters.support.trigger   = _asArr(insts[0] && insts[0].getValue());
+            filters.support.condition = _asArr(insts[1] && insts[1].getValue());
+            filters.support.effect    = _asArr(insts[2] && insts[2].getValue());
+        }
+    }
+
+    // Expand each row's multi-select combinations into one slot per combination,
+    // for the old Cards API (effectSlot[n][trigger|condition|effect] takes only one
+    // value per field, unlike rust-cards-api's comma-separated OR lists).
+    function _cartesianEffectSlots(effects) {
+        var out = [];
+        effects.forEach(function(ef) {
+            var T = ef.trigger.length ? ef.trigger : [''];
+            var C = ef.condition.length ? ef.condition : [''];
+            var E = ef.effect.length ? ef.effect : [''];
             T.forEach(function(tt) { C.forEach(function(cc) { E.forEach(function(ee) {
-                if (tt || cc || ee) filters.effects.push({ trigger: tt, condition: cc, effect: ee });
+                if (tt || cc || ee) out.push({ trigger: tt, condition: cc, effect: ee });
             }); }); });
         });
+        return out;
     }
 
     function _destroyEffectRows() {
@@ -597,84 +720,48 @@ function CardSearch(cfg) {
         rowsEl.innerHTML = '';
     }
 
-    // Selections of the first effect row (arrays), to carry across a mode switch.
-    function _firstRowSaved() {
-        var rowsEl = document.getElementById(P + '-effect-rows');
-        var row = rowsEl ? rowsEl.querySelector('.effect-row') : null;
-        if (!row || !row._tsInsts) return null;
-        return {
-            trigger:   _asArr(row._tsInsts[0] && row._tsInsts[0].getValue()),
-            condition: _asArr(row._tsInsts[1] && row._tsInsts[1].getValue()),
-            effect:    _asArr(row._tsInsts[2] && row._tsInsts[2].getValue()),
-        };
-    }
-
-    // True if any effect dropdown currently holds more than one value.
-    function _anyEffectMultiSelected() {
-        var rowsEl = document.getElementById(P + '-effect-rows');
-        if (!rowsEl) return false;
-        var found = false;
-        rowsEl.querySelectorAll('.effect-row').forEach(function(row) {
-            if (row._tsInsts) row._tsInsts.forEach(function(ts) {
-                if (ts && _asArr(ts.getValue()).length > 1) found = true;
-            });
-        });
-        return found;
-    }
-
-    function _syncEffectModeButtons() {
-        var modeEl = document.getElementById(P + '-effect-mode');
-        if (!modeEl) return;
-        modeEl.dataset.mode = filters.effectMode;
-        modeEl.querySelectorAll('.effect-mode-btn').forEach(function(b) {
-            b.classList.toggle('active', b.dataset.mode === filters.effectMode);
-        });
-    }
-
-    // OR → one multi-select row (options OR'd). AND → single value per dropdown,
-    // multiple rows AND'd. Mixing the two (multi-select inside AND) isn't supported.
-    function _setEffectMode(mode) {
-        mode = mode === 'and' ? 'and' : 'or';
-        if (mode === filters.effectMode) return;
-        if (mode === 'and' && _anyEffectMultiSelected()) {
-            window.alert(txt.effect_mix_warning || (UI_LANG === 'fr'
-                ? "Il n'est pas encore possible de mélanger des ET et des OU dans la recherche d'effets. Retirez les sélections multiples avant de passer en ET."
-                : "Mixing AND and OR in the effect search isn't possible yet. Remove the multiple selections before switching to AND."));
-            _syncEffectModeButtons(); // keep the toggle on the current (OR) mode
-            return;
-        }
-        var saved = _firstRowSaved();
-        filters.effectMode = mode;
-        _syncEffectModeButtons();
-        _destroyEffectRows();
-        _addEffectRow(saved);
-        _syncEffectUi();
-        updateFilterCount();
-    }
-
     function _resetEffectRows() {
-        filters.effectMode = 'or';
-        _syncEffectModeButtons();
         _destroyEffectRows();
         _addEffectRow(null);
         _syncEffectUi();
+        _resetSupportRow();
+    }
+
+    // Build (or rebuild) the single support/echo row into #<prefix>-support-row.
+    function _buildSupportInto(wrap, data) {
+        wrap.innerHTML = '';
+        _supportRowEl = _buildEffectRow('support', data, null, 'echo');
+        wrap.appendChild(_supportRowEl);
+    }
+
+    function initSupport() {
+        var wrap = document.getElementById(P + '-support-row');
+        if (!wrap) return;
+        if (_effectData) {
+            _buildSupportInto(wrap, _effectData);
+        } else {
+            _loadEffectData(function(data) { _buildSupportInto(wrap, data); });
+        }
+    }
+
+    function _resetSupportRow() {
+        var wrap = document.getElementById(P + '-support-row');
+        if (!wrap) return;
+        if (_supportRowEl && _supportRowEl._tsInsts) {
+            _supportRowEl._tsInsts.forEach(function(ts) { if (ts) ts.destroy(); });
+        }
+        _supportRowEl = null;
+        initSupport();
     }
 
     function initEffects() {
         var addBtn = document.getElementById(P + '-effect-add');
-        var modeEl = document.getElementById(P + '-effect-mode');
         if (addBtn) {
             addBtn.addEventListener('click', function() { _addEffectRow(null); _syncEffectUi(); });
         }
-        if (modeEl) {
-            modeEl.addEventListener('click', function(e) {
-                var btn = e.target.closest('.effect-mode-btn');
-                if (btn) _setEffectMode(btn.dataset.mode);
-            });
-        }
-        _syncEffectModeButtons();
         _addEffectRow(null);
         _syncEffectUi();
+        initSupport();
     }
 
     // ── End effect filter ────────────────────────────────────────────────────
@@ -745,9 +832,7 @@ function CardSearch(cfg) {
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
         _readEffectRows();
-        var _activeEffects = filters.effects.filter(function(ef) {
-            return ef.trigger || ef.condition || ef.effect;
-        });
+        var _activeEffects = _cartesianEffectSlots(filters.effects);
         if (_activeEffects.length > 24) _activeEffects = _activeEffects.slice(0, 24);
         if (_activeEffects.length) {
             if (_activeEffects.length > 1) parts.push('effectSlotMode=' + filters.effectMode);
@@ -762,6 +847,60 @@ function CardSearch(cfg) {
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
         return API_BASE + '/api/cards?' + parts.join('&');
+    }
+
+    // Shared query parts for rust-cards-api, used by both /api/v2/cards (via
+    // buildUniquesApiUrl) and /api/v2/effects/filtered (which reads the exact same
+    // filter params, plus its own 'editing' param — see buildEffectsFilteredUrl).
+    // effectMode is not sent: rows always combine with AND, the API's default when
+    // effectMode is omitted. Each effect field is a comma-separated OR list — one
+    // row is one slot, no cartesian expansion needed (see _cartesianEffectSlots()
+    // for why the old Cards API needs that instead).
+    function _uniquesFilterParts() {
+        var parts = [];
+        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        (_setsDirty ? filters.sets : DEFAULT_SETS).forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
+
+        NUM_FIELDS.forEach(function(f) {
+            numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+        });
+
+        _readEffectRows();
+        filters.effects.forEach(function(ef, i) {
+            if (ef.trigger.length)   parts.push('effect[' + i + '][t]=' + ef.trigger.map(encodeURIComponent).join(','));
+            if (ef.condition.length) parts.push('effect[' + i + '][c]=' + ef.condition.map(encodeURIComponent).join(','));
+            if (ef.effect.length)    parts.push('effect[' + i + '][o]=' + ef.effect.map(encodeURIComponent).join(','));
+        });
+
+        _readSupportRow();
+        if (filters.support.trigger.length)   parts.push('support[t]=' + filters.support.trigger.map(encodeURIComponent).join(','));
+        if (filters.support.condition.length) parts.push('support[c]=' + filters.support.condition.map(encodeURIComponent).join(','));
+        if (filters.support.effect.length)    parts.push('support[o]=' + filters.support.effect.map(encodeURIComponent).join(','));
+
+        if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
+        if (filters.format) parts.push('format=' + encodeURIComponent(filters.format));
+        return parts;
+    }
+
+    // build rust-cards-api (Uniques tab) URL — cursor-based, no page/sort/keyword/
+    // subtype/variation/costRelation/status/hasNoEffect (unsupported by that API;
+    // the matching UI controls are hidden on this tab, see includes/card-search.php).
+    function buildUniquesApiUrl(cursor) {
+        var parts = ['limit=' + PER_PAGE];
+        if (cursor != null) parts.push('cursor=' + cursor);
+        parts = parts.concat(_uniquesFilterParts());
+        return UNIQUES_API_BASE + '/api/v2/cards?' + parts.join('&');
+    }
+
+    // Per-combobox autocomplete narrowing: given the current filter state and which
+    // effect box is being edited, /api/v2/effects/filtered returns just the idGds
+    // for that box that would still yield a matching card. slot is a row index
+    // (matching effect[N]) or the literal 'support' (unused here — this site has no
+    // support/echo effect UI).
+    function buildEffectsFilteredUrl(part, slot) {
+        var parts = _uniquesFilterParts();
+        parts.push('editing=' + encodeURIComponent(part + ':' + slot));
+        return UNIQUES_API_BASE + '/api/v2/effects/filtered?' + parts.join('&');
     }
 
     // build collection proxy URL
@@ -944,6 +1083,7 @@ function CardSearch(cfg) {
         var _crEl = document.getElementById(P + '-filter-cost-relation');
         filters.costRelation = _crEl ? _crEl.value : '';
         _readEffectRows();
+        _readSupportRow();
     }
 
     // filter count badge
@@ -958,7 +1098,9 @@ function CardSearch(cfg) {
             + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0)
             + (filters.costRelation ? 1 : 0)
-            + filters.effects.filter(function(ef) { return ef.trigger || ef.condition || ef.effect; }).length;
+            + (filters.format ? 1 : 0)
+            + filters.effects.length
+            + (filters.support.trigger.length || filters.support.condition.length || filters.support.effect.length ? 1 : 0);
         if (elFilterCount) {
             elFilterCount.textContent = n || '';
             elFilterCount.style.display = n > 0 ? '' : 'none';
@@ -1213,6 +1355,113 @@ function CardSearch(cfg) {
         return item;
     }
 
+    // "Load more" footer for the Uniques tab (replaces numbered renderPagination()
+    // for this tab — the API is cursor-based, no arbitrary page jump).
+    function renderLoadMore(hasMore) {
+        if (!elPagin) return;
+        elPagin.innerHTML = '';
+        if (!hasMore) { elPagin.style.setProperty('display', 'none', 'important'); return; }
+        elPagin.style.removeProperty('display');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-outline-secondary btn-sm';
+        btn.textContent = txt.load_more || (UI_LANG === 'fr' ? 'Charger plus' : 'Load more');
+        btn.onclick = function() { searchUnique(true, true); };
+        elPagin.appendChild(btn);
+    }
+
+    // Uniques tab search (rust-cards-api). append=false: fresh search, clears the
+    // grid. append=true: "load more" click, appends to the grid using _uniqueCursor.
+    function searchUnique(append, skipPushState) {
+        if (_abortCtrl) { _abortCtrl.abort(); }
+        _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+
+        if (!append) {
+            if (elInitial) elInitial.style.display = 'none';
+            if (elEmpty)   elEmpty.style.display   = 'none';
+            if (elError)   elError.style.display   = 'none';
+            if (elGrid)    elGrid.style.display    = 'none';
+            if (elPagin)   elPagin.style.setProperty('display', 'none', 'important');
+            if (cfg.closeFiltersOnSearch) hideFilterModal();
+        }
+        if (elLoading) elLoading.style.display = 'block';
+        if (cfg.onSearchStart) cfg.onSearchStart();
+
+        if (!append && MODE === 'cards' && cfg.pushState && !skipPushState) {
+            history.pushState({ page: 1 }, '', buildPageUrl(1));
+        }
+
+        var opts = _abortCtrl ? { signal: _abortCtrl.signal } : {};
+
+        // Reference lookup: an exact ALT_... reference bypasses the name filter
+        // (which only matches character names, not references) and every other
+        // filter, same as buildApiUrl()'s old-API reference bypass above.
+        var refMatch = !append && filters.q && /^ALT_[A-Z0-9_]+$/i.test(filters.q);
+        var url, resp;
+        if (refMatch) {
+            url  = UNIQUES_API_BASE + '/api/v2/card/' + encodeURIComponent(filters.q.toUpperCase());
+            resp = fetch(url, opts).then(function(r) {
+                if (r.status === 404 || r.status === 400) return { iter: { total: 0 }, cards: [] };
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json().then(function(card) { return { iter: { total: 1 }, cards: [card] }; });
+            });
+        } else {
+            url  = buildUniquesApiUrl(append ? _uniqueCursor : null);
+            resp = fetch(url, opts).then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            });
+        }
+
+        if (DEBUG) console.log('[CardSearch] Uniques API call:', url);
+        resp
+            .then(function(data) {
+                if (DEBUG) console.log('[CardSearch] Uniques API response:', data);
+                if (elLoading) elLoading.style.display = 'none';
+                _abortCtrl = null;
+
+                var cards = data.cards || [];
+                var total = (data.iter && data.iter.total) || 0;
+                _uniqueCursor = data.iter && data.iter.cursor;
+
+                if (!append && !cards.length) {
+                    if (elEmpty) elEmpty.style.display = 'block';
+                    if (elCount) elCount.textContent = '';
+                    if (cfg.onEmpty) cfg.onEmpty();
+                    renderLoadMore(false);
+                    return;
+                }
+
+                if (elGrid) {
+                    if (!append) elGrid.innerHTML = '';
+                    cards.forEach(function(c) {
+                        var norm = normalizeCard(c);
+                        var el = (MODE === 'deck' && cfg.renderDeckCard)
+                            ? cfg.renderDeckCard(norm)
+                            : renderCard(norm);
+                        if (el) elGrid.appendChild(el);
+                    });
+                    elGrid.style.display = '';
+                }
+
+                renderLoadMore(_uniqueCursor != null);
+
+                if (elCount) {
+                    elCount.textContent = cfg.formatCount
+                        ? cfg.formatCount(total)
+                        : (txt.showing ? String(txt.showing).replace('%d', total) : total);
+                }
+
+                if (cfg.onCardsRendered) cfg.onCardsRendered(cards);
+            })
+            .catch(function(err) {
+                if (err && err.name === 'AbortError') return;
+                if (elLoading) elLoading.style.display = 'none';
+                if (elError)   elError.style.display   = 'block';
+                if (cfg.onError) cfg.onError(err);
+                _abortCtrl = null;
+            });
+    }
+
     // main search
     function search(page, skipPushState) {
         // The playset tab shows a dashboard, not the result grid — never query.
@@ -1220,6 +1469,15 @@ function CardSearch(cfg) {
         updateScopeUi();
         readTsValues();
         currentPage = page || 1;
+
+        // Uniques tab → rust-cards-api (cursor-based "load more"). Falls through to
+        // the code below (old Cards API, numbered pagination) when UNIQUES_API_BASE
+        // isn't configured (e.g. no local dev backend wired up yet).
+        if (_tab === 'unique' && UNIQUES_API_BASE) {
+            _uniqueCursor = null;
+            searchUnique(false, skipPushState);
+            return;
+        }
 
         if (_abortCtrl) { _abortCtrl.abort(); }
         _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -1353,6 +1611,10 @@ function CardSearch(cfg) {
             var tabs = el.getAttribute('data-tabs').split(/\s+/);
             el.style.display = tabs.indexOf(_tab) >= 0 ? '' : 'none';
         });
+        // Format only makes sense against rust-cards-api; hide it when falling back
+        // to the old Cards API (no UNIQUES_API_BASE configured), even on the Uniques tab.
+        var elFormatWrap = document.getElementById(P + '-format-wrap');
+        if (elFormatWrap && !UNIQUES_API_BASE) elFormatWrap.style.display = 'none';
     }
 
     // Switch tab. On a user click, filters are reset first (resetFilters) and the
@@ -1529,7 +1791,8 @@ function CardSearch(cfg) {
         filters.isSuspended    = false;
         filters.hasNoEffect    = false;
         filters.effects        = [];
-        filters.effectMode     = 'or';
+        filters.support         = { trigger: [], condition: [], effect: [] };
+        filters.format          = '';
         filters.costRelation   = '';
         filters.showPromo      = false;
         filters.sort           = DEFAULT_SORT_1;
@@ -1542,6 +1805,7 @@ function CardSearch(cfg) {
 
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) { b.classList.remove('active'); });
         qa('.filter-toggle[data-bool-filter]').forEach(function(b) { b.classList.remove('active'); });
+        qa('.filter-toggle[data-filter="format"]').forEach(function(b) { b.classList.toggle('active', b.dataset.value === ''); });
 
         ['faction','subtype','keyword'].forEach(function(k) {
             if (tsInst[k]) tsInst[k].clear(true);
@@ -1837,6 +2101,14 @@ function CardSearch(cfg) {
             if (!btn || !_root.contains(btn)) return;
             var key = btn.dataset.filter;
             var val = btn.dataset.value;
+            // Format is a single-value ("radio") filter, unlike the array filters below.
+            if (key === 'format') {
+                qa('.filter-toggle[data-filter="format"]').forEach(function(b) { b.classList.remove('active'); });
+                filters.format = val;
+                btn.classList.add('active');
+                updateFilterCount();
+                return;
+            }
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
             if (key === 'type')    { if (!_typeDirty)    { _typeDirty    = true; filters.type    = []; } }
             // Seed rarity from what's actually shown active on first interaction so the click
