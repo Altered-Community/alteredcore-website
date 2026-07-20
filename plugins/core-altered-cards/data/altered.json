@@ -17,6 +17,15 @@
                         "allowBanned": false, "allowSuspended": false,
                         "heroUniqueLimits": []
                     },
+                    "frontier": {
+                        "en": "Frontier", "fr": "Frontier", "color": "#2ec4b6",
+                        "gg_format": "FRONTIER",
+                        "minCards": 39, "maxCards": 59, "heroRequired": true,
+                        "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,
+                        "sameFaction": true, "maxRare": 15, "maxExalted": 3, "maxUnique": 3,
+                        "allowBanned": false, "allowSuspended": false, "requireUniqueLegality": true,
+                        "heroUniqueLimits": []
+                    },
                     "nuc": {
                         "en": "Standard No Unique", "fr": "Standard No Unique", "color": "#5b8cef",
                         "gg_format": "NO_UNIQUE",
