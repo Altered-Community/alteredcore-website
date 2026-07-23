@@ -27,6 +27,8 @@ $txt = [
         'api_later'    => 'The API is currently unavailable. Please try again later.',
         'lbl_info'          => 'Information',
         'lbl_stats'         => 'Statistics',
+        'lbl_reserve_size'  => 'Reserve',
+        'lbl_landmark_size' => 'Landmarks',
         'lbl_lore'          => 'Lore',
         'lbl_altered_cards'   => 'Altered Cards',
         'lbl_rulings'         => 'Rulings & Clarifications',
@@ -66,6 +68,8 @@ $txt = [
         'api_later'    => 'L\'API est actuellement indisponible. Veuillez réessayer plus tard.',
         'lbl_info'          => 'Informations',
         'lbl_stats'         => 'Statistiques',
+        'lbl_reserve_size'  => 'Réserve',
+        'lbl_landmark_size' => 'Repères',
         'lbl_lore'          => 'Lore',
         'lbl_altered_cards'   => 'Cartes Altérées',
         'lbl_rulings'         => 'Règlement & Clarifications',
@@ -266,6 +270,8 @@ var AlteredCard = {
         'err_connect'  => $txt['err_connect'],
         'lbl_info'     => $txt['lbl_info'],
         'lbl_stats'    => $txt['lbl_stats'],
+        'lbl_reserve_size'  => $txt['lbl_reserve_size'],
+        'lbl_landmark_size' => $txt['lbl_landmark_size'],
         'lbl_set'      => $txt['lbl_set'],
         'lbl_ref'      => $txt['lbl_ref'],
         'lbl_main'     => $txt['lbl_main'],
@@ -526,8 +532,22 @@ var AlteredCard = {
         var statsContent = document.getElementById('card-stats-content');
         var statsHtml    = '';
         var biomes = { forestPower:'F', mountainPower:'M', oceanPower:'O' };
-        if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
-        if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
+        if (tCode === 'HERO') {
+            // Heroes have no Hand/Reserve cost — instead show their fixed Reserve
+            // and Landmark size limits. The cards API has no field for either (its
+            // "permanent" field is a constant, not the real per-hero value), so
+            // these are hardcoded from the printed cards: every hero is 2/2 except
+            // Matz & Hive (Ordis, faction+number OR_85), printed at 2/3 across all
+            // its reprints and serialized variants.
+            var isMatzHive   = /_OR_85_C(_\d+)?$/.test(ref);
+            var reserveSize  = 2;
+            var landmarkSize = isMatzHive ? 3 : 2;
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-layer-group" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-chess-rook" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
+        } else {
+            if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
+            if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
+        }
         Object.keys(biomes).forEach(function (f) {
             var biomeKey = f.replace('Power', '');
             var dp = (card.displayPowers && card.displayPowers[biomeKey] !== undefined) ? card.displayPowers[biomeKey] : null;
