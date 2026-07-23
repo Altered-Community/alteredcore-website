@@ -149,6 +149,8 @@
 .card-stat-val { font-weight:600; color:var(--neutral-800); }
 .power-pip { display:inline-flex; align-items:center; gap:.3rem; background:var(--sand-200); border-radius:.4rem; padding:.15rem .55rem; font-size:.88rem; font-weight:700; }
 .card-section-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--neutral-400); margin-bottom:.5rem; }
+.card-format-illegal { color:#bf7a7a; }
+.card-format-illegal:not(:last-child)::after { content:"·"; margin-left:.75rem; color:var(--neutral-300); }
 .effect-hl { color:#C37424; }
 /* Bootstrap nav-tabs override for card detail page */
 .nav-tabs { border-bottom:2px solid var(--sand-200); gap:.2rem; flex-wrap:nowrap; }
