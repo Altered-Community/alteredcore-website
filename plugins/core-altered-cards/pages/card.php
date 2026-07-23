@@ -16,6 +16,7 @@ $factionsData = loadAlteredData('factions');
 $raritiesData = loadAlteredData('rarities');
 $setsData     = loadAlteredData('sets');
 $subtypesData = loadAlteredData('subtypes');
+$formatsData  = loadAlteredData('formats');
 
 // translations
 $txt = [
@@ -40,6 +41,9 @@ $txt = [
         'lbl_keywords' => 'Keywords',
         'lbl_main'     => 'Main effect',
         'lbl_echo'     => 'Echo effect',
+        'lbl_formats'  => 'Legal in',
+        'lbl_formats_illegal' => 'Not legal in',
+        'bga_not_legal'=> 'This set is not yet available on Board Game Arena and cannot be used in BGA games.',
         'banned'       => 'Banned',
         'errated'      => 'Errata',
         'suspended'    => 'Suspended',
@@ -79,6 +83,9 @@ $txt = [
         'lbl_keywords' => 'Mots-clés',
         'lbl_main'     => 'Effet principal',
         'lbl_echo'     => 'Effet de réserve',
+        'lbl_formats'  => 'Autorisée en',
+        'lbl_formats_illegal' => 'Non autorisée en',
+        'bga_not_legal'=> 'Ce set n\'est pas encore disponible sur Board Game Arena et n\'est donc pas légal en partie BGA.',
         'banned'       => 'Banni',
         'errated'      => 'Erratum',
         'suspended'    => 'Suspendu',
@@ -260,6 +267,7 @@ var AlteredCard = {
     rarities: <?= json_encode($raritiesData) ?>,
     sets:     <?= json_encode($setsData) ?>,
     subtypes: <?= json_encode($subtypesData) ?>,
+    formats:  <?= json_encode($formatsData) ?>,
     txt: <?= json_encode([
         'not_found'    => $txt['not_found'],
         'err_api'      => $txt['err_api'],
@@ -270,6 +278,9 @@ var AlteredCard = {
         'lbl_ref'      => $txt['lbl_ref'],
         'lbl_main'     => $txt['lbl_main'],
         'lbl_echo'     => $txt['lbl_echo'],
+        'lbl_formats'  => $txt['lbl_formats'],
+        'lbl_formats_illegal' => $txt['lbl_formats_illegal'],
+        'bga_not_legal'=> $txt['bga_not_legal'],
         'lbl_rulings'  => $txt['lbl_rulings'],
         'lbl_altered_cards' => $txt['lbl_altered_cards'],
         'search_unique'=> $txt['search_unique'],
@@ -520,6 +531,87 @@ var AlteredCard = {
         infoHtml += '<span style="font-family:monospace;font-size:.78rem;color:var(--neutral-500)">' + escHtml(ref) + '</span>'
             + '</span></div>';
         infoEl.innerHTML = infoHtml;
+
+        // Legal formats — only formats this card is currently allowed in are shown.
+        function formatChipHtml(fmt) {
+            var label = fmt[uiLang] || fmt.en || '';
+            return '<span class="d-flex align-items-center gap-1">'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--neutral-400)') + ';display:inline-block;flex-shrink:0"></span>'
+                + escHtml(label) + '</span>';
+        }
+        function appendFormatChip(fmt) {
+            var val = document.getElementById('card-formats-val');
+            if (val) { val.insertAdjacentHTML('beforeend', formatChipHtml(fmt)); return; }
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="card-stat-row" id="card-formats-row">'
+                + '<span class="card-stat-label">' + escHtml(txt.lbl_formats) + '</span>'
+                + '<span id="card-formats-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:1rem;row-gap:.4rem">'
+                + formatChipHtml(fmt) + '</span></div>');
+        }
+        function isFormatStaticLegal(fmt) {
+            if (group.isBanned    && fmt.allowBanned    === false) return false;
+            if (group.isSuspended && fmt.allowSuspended === false) return false;
+            if (isUnique && fmt.maxUnique === 0) return false;
+            return true;
+        }
+        var fmtList = Object.keys(AlteredCard.formats || {}).map(function (k) { return AlteredCard.formats[k]; }).filter(function (f) { return !f.hidden; });
+        var immediateFmts = [], pendingFrontierFmts = [];
+        fmtList.forEach(function (f) {
+            if (!isFormatStaticLegal(f)) return;
+            if (isUnique && f.requireUniqueLegality) { pendingFrontierFmts.push(f); return; }
+            immediateFmts.push(f);
+        });
+        if (immediateFmts.length) {
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="card-stat-row" id="card-formats-row">'
+                + '<span class="card-stat-label">' + escHtml(txt.lbl_formats) + '</span>'
+                + '<span id="card-formats-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:1rem;row-gap:.4rem">'
+                + immediateFmts.map(formatChipHtml).join('')
+                + '</span></div>');
+        }
+
+        // Non-legal formats — plain text (no dot, no chip styling), light desaturated
+        // red. Row is created up front (hidden if empty) so a later async Frontier
+        // resolution (see below) lands in the right spot even though it may run
+        // after the synchronous BGA banner is inserted.
+        function illegalChipHtml(fmt) {
+            return '<span class="card-format-illegal">' + escHtml(fmt[uiLang] || fmt.en || '') + '</span>';
+        }
+        function appendIllegalFormatChip(fmt) {
+            var val = document.getElementById('card-formats-illegal-val');
+            if (!val) return;
+            val.insertAdjacentHTML('beforeend', illegalChipHtml(fmt));
+            document.getElementById('card-formats-illegal-row').style.display = '';
+        }
+        infoEl.insertAdjacentHTML('beforeend',
+            '<div class="card-stat-row" id="card-formats-illegal-row" style="display:none">'
+            + '<span class="card-stat-label">' + escHtml(txt.lbl_formats_illegal) + '</span>'
+            + '<span id="card-formats-illegal-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:.5rem;row-gap:.4rem"></span></div>');
+        var illegalFmts = fmtList.filter(function (f) { return !isFormatStaticLegal(f); });
+        illegalFmts.forEach(appendIllegalFormatChip);
+
+        // Frontier requires each Unique print to be on a dynamic allowlist — not
+        // derivable from local data, so it's checked separately and appended once
+        // resolved either as legal or (now confirmed) not legal. Left out of both
+        // lists if unverifiable, mirroring deckbuilder.php's checkFrontierLegality().
+        if (isUnique && UNIQUES_API && pendingFrontierFmts.length) {
+            fetch(UNIQUES_API + '/api/v2/cards?ref=' + encodeURIComponent(ref) + '&format=frontier', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    var legalRefs = {};
+                    (data.cards || []).forEach(function (c) { if (c.reference) legalRefs[c.reference] = true; });
+                    pendingFrontierFmts.forEach(function (f) {
+                        if (legalRefs[ref]) appendFormatChip(f); else appendIllegalFormatChip(f);
+                    });
+                })
+                .catch(function () {});
+        }
+
+        // BGA legality — distinct mention, not mixed into the formats list.
+        if (setData.bgalegal === false) {
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="db-info-banner mt-2"><i class="fa-solid fa-circle-info me-1"></i>' + escHtml(txt.bga_not_legal) + '</div>');
+        }
 
         // stats
         var statsBlock   = document.getElementById('card-stats-block');
