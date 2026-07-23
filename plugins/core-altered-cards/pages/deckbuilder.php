@@ -1112,23 +1112,25 @@ var AlteredDB = {
 
             wrap.appendChild(btnGroup);
 
+            var addPayload = {
+                cardReference: ref,
+                name: name,
+                cardTypeReference: type,
+                rarity: rarityCode(ref),
+                factionCode: (card.faction && card.faction.code) || null,
+                mainCost: card.mainCost || 0,
+                recallCost: card.recallCost || 0,
+                oceanPower: card.oceanPower || 0,
+                mountainPower: card.mountainPower || 0,
+                forestPower: card.forestPower || 0,
+                deckLimit: lim,
+                isBanned:    !!card.isBanned,
+                isSuspended: !!card.isSuspended,
+            };
+
             addBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                addCard({
-                    cardReference: ref,
-                    name: name,
-                    cardTypeReference: type,
-                    rarity: rarityCode(ref),
-                    factionCode: (card.faction && card.faction.code) || null,
-                    mainCost: card.mainCost || 0,
-                    recallCost: card.recallCost || 0,
-                    oceanPower: card.oceanPower || 0,
-                    mountainPower: card.mountainPower || 0,
-                    forestPower: card.forestPower || 0,
-                    deckLimit: lim,
-                    isBanned:    !!card.isBanned,
-                    isSuspended: !!card.isSuspended,
-                });
+                addCard(addPayload);
             });
 
             removeBtn.addEventListener('click', function (e) {
@@ -1137,7 +1139,7 @@ var AlteredDB = {
             });
 
             wrap.addEventListener('click', function () {
-                openDbCardModal(ref);
+                openDbCardModal(ref, addPayload);
             });
         }
 
@@ -2159,113 +2161,52 @@ var AlteredDB = {
     };
     dbCardModal.addEventListener('click', closeDbCardModal);
 
-    // collection helpers
-    function doCollUpdate(ref, newQty, onDone, onError) {
-        newQty = Math.max(0, newQty);
-        var fd = new FormData();
-        fd.append('action', 'set_qty');
-        fd.append('csrf_token', AlteredDB.csrfToken);
-        fd.append('ref', ref);
-        fd.append('qty', newQty);
-        var entryId = AlteredDB.collectionEntries[ref] || 0;
-        if (entryId) fd.append('entry_id', entryId);
-        fetch(AlteredDB.collectionUrl, { method: 'POST', body: fd })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (!d.ok) { if (onError) onError(); return; }
-                if (newQty === 0) {
-                    delete AlteredDB.collection[ref];
-                    delete AlteredDB.collectionEntries[ref];
-                } else {
-                    AlteredDB.collection[ref] = newQty;
-                    if (d.entry_id) AlteredDB.collectionEntries[ref] = d.entry_id;
-                }
-                // Update collection badge on card wrap in browser
-                var cbadge = elCards.querySelector('.db-card-coll-badge[data-ref="' + ref + '"]');
-                if (newQty > 0) {
-                    if (!cbadge) {
-                        var wrap = elCards.querySelector('.db-card-wrap[data-ref="' + ref + '"]');
-                        if (wrap) {
-                            cbadge = document.createElement('span');
-                            cbadge.className = 'db-card-coll-badge';
-                            cbadge.dataset.ref = ref;
-                            wrap.appendChild(cbadge);
-                        }
-                    }
-                    if (cbadge) cbadge.innerHTML = '<i class="fa-solid fa-box-archive"></i> \xd7' + newQty;
-                } else {
-                    if (!cbadge) {
-                        var wrap2 = elCards.querySelector('.db-card-wrap[data-ref="' + ref + '"]');
-                        if (wrap2) {
-                            cbadge = document.createElement('span');
-                            cbadge.className = 'db-card-coll-badge';
-                            cbadge.dataset.ref = ref;
-                            wrap2.appendChild(cbadge);
-                        }
-                    }
-                    if (cbadge) cbadge.innerHTML = '<i class="fa-solid fa-box-archive"></i> \xd7' + newQty;
-                }
-                // Refresh sidebar (stock warning may change)
-                updateDeckDisplay();
-                if (onDone) onDone(newQty);
-            })
-            .catch(function () { if (onError) onError(); });
-    }
-
-    function buildDbCollControls(ref) {
-        var qty = AlteredDB.collection[ref] || 0;
+    // deck quantity stepper (modal)
+    function buildDbQtyControls(ref, cardData) {
+        function addPayload() {
+            if (cardData) return cardData;
+            var c = deck.cards[ref];
+            return c ? {
+                cardReference: ref, name: c.name, cardTypeReference: c.type, rarity: c.rarity,
+                factionCode: c.factionCode || null,
+                mainCost: c.mainCost || 0, recallCost: c.recallCost || 0,
+                oceanPower: c.oceanPower || 0, mountainPower: c.mountainPower || 0, forestPower: c.forestPower || 0,
+                isBanned: !!c.isBanned, isSuspended: !!c.isSuspended,
+            } : { cardReference: ref };
+        }
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;background:rgba(0,0,0,.32);border-radius:8px;padding:5px 10px';
         var lbl = document.createElement('span');
         lbl.style.cssText = 'color:rgba(255,255,255,.7);font-size:.76rem;white-space:nowrap';
-        lbl.innerHTML = '<i class="fa-solid fa-box-archive" style="margin-right:3px"></i>' + <?= json_encode($txt['scope_collection']) ?>;
+        lbl.innerHTML = '<i class="fa-solid fa-layer-group" style="margin-right:3px"></i>' + <?= json_encode($txt['tab_deck']) ?>;
         var ctrl = document.createElement('div');
         ctrl.style.cssText = 'display:flex;align-items:center;gap:6px';
         var btnM = document.createElement('button');
         btnM.type = 'button'; btnM.className = 'btn btn-sm btn-outline-secondary';
         btnM.style.cssText = 'padding:1px 8px;font-size:.9rem'; btnM.textContent = '−';
-        btnM.disabled = qty === 0;
         var qtyEl = document.createElement('span');
         qtyEl.style.cssText = 'color:#fff;font-weight:700;font-size:.9rem;min-width:22px;text-align:center';
-        qtyEl.textContent = qty;
         var btnP = document.createElement('button');
         btnP.type = 'button'; btnP.className = 'btn btn-sm btn-outline-secondary';
         btnP.style.cssText = 'padding:1px 8px;font-size:.9rem'; btnP.textContent = '+';
-        var statusEl = document.createElement('span');
-        statusEl.style.cssText = 'font-size:.85rem;font-weight:700;transition:opacity .4s;opacity:0;min-width:14px;text-align:center';
-        ctrl.appendChild(btnM); ctrl.appendChild(qtyEl); ctrl.appendChild(btnP); ctrl.appendChild(statusEl);
+        ctrl.appendChild(btnM); ctrl.appendChild(qtyEl); ctrl.appendChild(btnP);
         row.appendChild(lbl); row.appendChild(ctrl);
-        function _showStatus(ok) {
-            statusEl.textContent = ok ? '✓' : '✗';
-            statusEl.style.color  = ok ? '#4ade80' : '#f87171';
-            statusEl.style.opacity = '1';
-            clearTimeout(statusEl._t);
-            statusEl._t = setTimeout(function() { statusEl.style.opacity = '0'; }, ok ? 1500 : 2500);
+        function refresh() {
+            var q = deck.cards[ref] ? deck.cards[ref].qty : 0;
+            qtyEl.textContent = q;
+            btnM.disabled = q === 0;
         }
-        function update(delta) {
-            var cur = AlteredDB.collection[ref] || 0;
-            btnM.disabled = true; btnP.disabled = true;
-            doCollUpdate(ref, cur + delta, function (q) {
-                qtyEl.textContent = q;
-                btnM.disabled = q === 0; btnP.disabled = false;
-                _showStatus(true);
-            }, function () {
-                btnM.disabled = cur === 0; btnP.disabled = false;
-                _showStatus(false);
-            });
-        }
-        btnM.addEventListener('click', function () { update(-1); });
-        btnP.addEventListener('click', function () { update(1); });
+        btnM.addEventListener('click', function () { removeCard(ref); refresh(); });
+        btnP.addEventListener('click', function () { addCard(addPayload()); refresh(); });
+        refresh();
         return row;
     }
 
-    // patch openDbCardModal: add collection controls then detail button
+    // patch openDbCardModal: add deck quantity controls then detail button
     var _origOpenDbCardModal = window.openDbCardModal;
-    window.openDbCardModal = function (ref) {
+    window.openDbCardModal = function (ref, cardData) {
         _origOpenDbCardModal(ref);
-        if (AlteredDB.collectionMode) {
-            dbCardModalInner.appendChild(buildDbCollControls(ref));
-        }
+        dbCardModalInner.appendChild(buildDbQtyControls(ref, cardData));
         var detailBtn = document.createElement('a');
         detailBtn.href = cardDetailBase + '?ref=' + encodeURIComponent(ref) + '&card_lang=' + cardDetailLang;
         detailBtn.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>' + detailLabel;
