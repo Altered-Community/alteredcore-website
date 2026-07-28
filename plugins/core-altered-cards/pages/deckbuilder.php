@@ -104,6 +104,10 @@ $txt = array_merge($_sharedTxt, [
         'hero_art'        => 'Artwork',
         'hero_art_note'   => 'No effect on deck rules',
         'hero_confirm'    => 'Choose this hero',
+        'wizard_step1'    => 'Step 1 of 2',
+        'wizard_hero_msg' => 'Choose a hero. It sets your faction and the cards you can play.',
+        'wizard_cancel'   => 'Cancel',
+        'wizard_next'     => 'Continue',
         'lbl_status'      => 'Status',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Draft',
@@ -196,6 +200,10 @@ $txt = array_merge($_sharedTxt, [
         'hero_art'        => 'Illustration',
         'hero_art_note'   => 'Sans effet sur les règles du deck',
         'hero_confirm'    => 'Choisir ce héros',
+        'wizard_step1'    => 'Étape 1 sur 2',
+        'wizard_hero_msg' => 'Choisissez un héros. Il détermine votre faction et les cartes disponibles.',
+        'wizard_cancel'   => 'Annuler',
+        'wizard_next'     => 'Continuer',
         'lbl_status'      => 'Statut',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Brouillon',
@@ -652,11 +660,14 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
 <!-- Hero selector modal -->
 <?php // Heroes are browsed one faction at a time — Axiom opens by default.
       $_heroDefaultFaction = isset($factionsData['AX']) ? 'AX' : (string)array_key_first($factionsData); ?>
-<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)this.style.display='none'">
+<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)dbHeroClose()">
     <div class="db-hero-panel" onclick="event.stopPropagation()">
-        <button onclick="document.getElementById('db-hero-modal').style.display='none'"
-                class="db-hero-close-btn">×</button>
-        <h3 class="db-hero-title"><?= h($txt['choose_hero']) ?></h3>
+        <button onclick="dbHeroClose()" class="db-hero-close-btn">×</button>
+        <h3 class="db-hero-title">
+            <span id="db-hero-title-text"><?= h($txt['choose_hero']) ?></span>
+            <span id="db-hero-step" class="db-hero-step" style="display:none"><?= h($txt['wizard_step1']) ?></span>
+        </h3>
+        <p id="db-hero-intro" class="db-hero-intro" style="display:none"><?= h($txt['wizard_hero_msg']) ?></p>
         <div id="db-hero-factions">
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
@@ -681,6 +692,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
             <div id="db-hero-arts-strip" class="db-hero-arts-strip"></div>
         </div>
         <div class="db-hero-footer">
+            <button type="button" id="db-hero-cancel" class="btn btn-outline-secondary btn-sm" style="display:none" onclick="dbHeroClose()">
+                <?= h($txt['wizard_cancel']) ?>
+            </button>
             <button type="button" id="db-hero-confirm" class="btn btn-primary-altered btn-sm" disabled>
                 <?= h($txt['hero_confirm']) ?>
             </button>
@@ -772,6 +786,10 @@ var AlteredDB = {
         'save_btn'      => $txt['save_btn'],
         'change_hero'   => $txt['change_hero'],
         'hero_art'      => $txt['hero_art'],
+        'hero_confirm'  => $txt['hero_confirm'],
+        'choose_hero'   => $txt['choose_hero'],
+        'new_deck'      => $txt['new_deck'],
+        'wizard_next'   => $txt['wizard_next'],
         'types'         => $txt['types'],
         'status_auto'   => $txt['status_auto'],
         'status_draft'  => $txt['status_draft'],
@@ -822,6 +840,11 @@ var AlteredDB = {
     heroNoDuplicate:     <?= json_encode($_heroNoDuplicate) ?>,
     heroDuplicateOrder:  <?= json_encode($_heroDuplicateOrder) ?>,
     heroDefaultFaction:  <?= json_encode($_heroDefaultFaction) ?>,
+    // Creation flow: no ?id= and a usable builder means this is a brand-new deck,
+    // so the wizard opens on step 1 instead of dropping the user into an empty
+    // builder where the deck's own fields are easy to miss.
+    newDeckFlow: <?= (!$editDeckId && ($isGuest || $token)) ? 'true' : 'false' ?>,
+    decksUrl:    <?= json_encode(BASE_URL . '/pages/decks') ?>,
     setNames:   <?= json_encode(array_map(fn($s) => $s[$uiLang] ?? $s['en'], $setsData)) ?>,
     variations: <?= json_encode(array_map(fn($v) => $v[$uiLang] ?? $v['en'], $variationsData)) ?>,
     defaultVariations: <?= json_encode($_defaultVariations) ?>,
@@ -1780,6 +1803,29 @@ var AlteredDB = {
     var elHeroArts      = document.getElementById('db-hero-arts');
     var elHeroArtsStrip = document.getElementById('db-hero-arts-strip');
     var elHeroConfirm   = document.getElementById('db-hero-confirm');
+    var elHeroCancel    = document.getElementById('db-hero-cancel');
+    var elHeroStep      = document.getElementById('db-hero-step');
+    var elHeroIntro     = document.getElementById('db-hero-intro');
+    var elHeroTitle     = document.getElementById('db-hero-title-text');
+
+    // The picker doubles as step 1 of the new-deck wizard. In that mode it is not
+    // a dismissible overlay on top of a working builder: closing it means giving
+    // up on creating the deck, so it navigates back to the deck list.
+    var _heroWizard = false;
+
+    function heroSetWizardMode(on) {
+        _heroWizard = on;
+        if (elHeroStep)  elHeroStep.style.display  = on ? '' : 'none';
+        if (elHeroIntro) elHeroIntro.style.display = on ? '' : 'none';
+        if (elHeroCancel) elHeroCancel.style.display = on ? '' : 'none';
+        if (elHeroTitle) elHeroTitle.textContent = on ? AlteredDB.txt.new_deck : AlteredDB.txt.choose_hero;
+        if (elHeroConfirm) elHeroConfirm.textContent = on ? AlteredDB.txt.wizard_next : AlteredDB.txt.hero_confirm;
+    }
+
+    window.dbHeroClose = function() {
+        if (_heroWizard) { window.location.href = AlteredDB.decksUrl; return; }
+        document.getElementById('db-hero-modal').style.display = 'none';
+    };
 
     // Printings keep the order the API returned them in, which follows the hero
     // search settings (sort_1, by default newest set first) — so the artwork the
@@ -1867,12 +1913,24 @@ var AlteredDB = {
         if (tile) tile.classList.add('selected');
         if (elHeroConfirm) elHeroConfirm.disabled = false;
         heroArtsRender();
+
+        // Showing the artwork strip shortens the grid, which can push the tile
+        // just clicked out of view. Wait for the new layout, then scroll the grid
+        // by the minimum needed to bring it back.
+        if (tile && window.requestAnimationFrame) {
+            requestAnimationFrame(function() {
+                tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+        }
     }
 
     if (elHeroConfirm) {
         elHeroConfirm.addEventListener('click', function() {
             if (!_heroPick) return;
             setHero({ cardReference: _heroPick.ref, name: _heroPick.name, factionCode: _heroPick.faction });
+            // Step 2 (name, format, visibility) is not built yet — for now the
+            // wizard ends here and hands over to the builder.
+            if (_heroWizard) heroSetWizardMode(false);
             document.getElementById('db-hero-modal').style.display = 'none';
         });
     }
@@ -2440,6 +2498,13 @@ var AlteredDB = {
         initFromExisting();
         updateDeckDisplay();
         enrichDeckCardStatus();
+    }
+
+    // A brand-new deck opens on the wizard. Guard on deck.hero as well: a guest
+    // deck restored from localStorage is an existing deck even without an ?id=.
+    if (AlteredDB.newDeckFlow && !deck.hero) {
+        heroSetWizardMode(true);
+        dbSelectHero();
     }
 
     window.renderBrowserCard = renderBrowserCard;

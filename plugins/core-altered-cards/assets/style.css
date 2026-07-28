@@ -326,7 +326,11 @@
 .db-hero-art.selected { border-color:var(--primary-400); }
 .db-hero-art.selected .db-hero-art-label { color:var(--primary-500); }
 
-.db-hero-footer { flex:0 0 auto; display:flex; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
+/* Wizard chrome — only visible while the picker acts as step 1 of deck creation */
+.db-hero-step { margin-left:8px; font-size:.72rem; font-weight:700; padding:2px 9px; border-radius:20px; background:var(--sand-200); color:var(--neutral-500); vertical-align:middle; }
+[data-theme="dark"] .db-hero-step { background:rgba(255,255,255,.1); }
+.db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
+.db-hero-footer { flex:0 0 auto; display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
 .db-layout { display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start; }
 .db-panel-left  { min-width:0; }
 .db-panel-right { position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto; padding-bottom:1.5rem; }
