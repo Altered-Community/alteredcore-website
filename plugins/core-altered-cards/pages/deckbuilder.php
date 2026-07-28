@@ -105,9 +105,24 @@ $txt = array_merge($_sharedTxt, [
         'hero_art_note'   => 'No effect on deck rules',
         'hero_confirm'    => 'Choose this hero',
         'wizard_step1'    => 'Step 1 of 2',
+        'wizard_step2'    => 'Step 2 of 2',
         'wizard_hero_msg' => 'Choose a hero. It sets your faction and the cards you can play.',
         'wizard_cancel'   => 'Cancel',
         'wizard_next'     => 'Continue',
+        'wizard_create'   => 'Create deck',
+        'wizard_creating' => 'Creating…',
+        'wizard_change'   => 'Change',
+        'wizard_name_req' => 'Give your deck a name.',
+        'wizard_fmt_req'  => 'Pick a format.',
+        'wizard_vis_priv' => 'Visible to you only. Changeable at any time.',
+        'wizard_desc_add' => 'Add a description',
+        'wizard_anyway'   => 'Continue without saving',
+        'fmt_cards'       => '%1$s–%2$s cards',
+        'fmt_singleton'   => '1 copy per card',
+        'fmt_no_unique'   => 'no unique cards',
+        'fmt_max_unique'  => 'up to %d uniques',
+        'fmt_frontier'    => 'Frontier-legal uniques only',
+        'fmt_free'        => 'no restrictions',
         'lbl_status'      => 'Status',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Draft',
@@ -201,9 +216,24 @@ $txt = array_merge($_sharedTxt, [
         'hero_art_note'   => 'Sans effet sur les règles du deck',
         'hero_confirm'    => 'Choisir ce héros',
         'wizard_step1'    => 'Étape 1 sur 2',
+        'wizard_step2'    => 'Étape 2 sur 2',
         'wizard_hero_msg' => 'Choisissez un héros. Il détermine votre faction et les cartes disponibles.',
         'wizard_cancel'   => 'Annuler',
         'wizard_next'     => 'Continuer',
+        'wizard_create'   => 'Créer le deck',
+        'wizard_creating' => 'Création…',
+        'wizard_change'   => 'Changer',
+        'wizard_name_req' => 'Donnez un nom à votre deck.',
+        'wizard_fmt_req'  => 'Choisissez un format.',
+        'wizard_vis_priv' => 'Visible de vous seul. Modifiable à tout moment.',
+        'wizard_desc_add' => 'Ajouter une description',
+        'wizard_anyway'   => 'Continuer sans sauvegarder',
+        'fmt_cards'       => '%1$s à %2$s cartes',
+        'fmt_singleton'   => '1 exemplaire par carte',
+        'fmt_no_unique'   => 'sans cartes uniques',
+        'fmt_max_unique'  => '%d uniques maximum',
+        'fmt_frontier'    => 'uniques de la liste Frontier',
+        'fmt_free'        => 'aucune contrainte',
         'lbl_status'      => 'Statut',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Brouillon',
@@ -660,7 +690,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
 <!-- Hero selector modal -->
 <?php // Heroes are browsed one faction at a time — Axiom opens by default.
       $_heroDefaultFaction = isset($factionsData['AX']) ? 'AX' : (string)array_key_first($factionsData); ?>
-<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)dbHeroClose()">
+<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)dbHeroBackdrop()">
     <div class="db-hero-panel" onclick="event.stopPropagation()">
         <button onclick="dbHeroClose()" class="db-hero-close-btn">×</button>
         <h3 class="db-hero-title">
@@ -698,6 +728,96 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
             <button type="button" id="db-hero-confirm" class="btn btn-primary-altered btn-sm" disabled>
                 <?= h($txt['hero_confirm']) ?>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- New deck wizard — step 2: deck identity -->
+<?php
+// One-line format descriptors, derived from the rules themselves so they cannot
+// drift from altered.json.
+$_fmtDesc = [];
+foreach ($formatsData as $_fk => $_fv) {
+    if (!empty($_fv['hidden'])) continue;
+    $_bits = [sprintf($txt['fmt_cards'], $_fv['minCards'], $_fv['maxCards'])];
+    if (($_fv['maxCopiesPerRef'] ?? null) === 1)              $_bits[] = $txt['fmt_singleton'];
+    if (($_fv['maxUnique'] ?? null) === 0)                    $_bits[] = $txt['fmt_no_unique'];
+    elseif (!empty($_fv['requireUniqueLegality']))            $_bits[] = $txt['fmt_frontier'];
+    elseif (!empty($_fv['maxUnique']))                        $_bits[] = sprintf($txt['fmt_max_unique'], $_fv['maxUnique']);
+    if (count($_bits) === 1 && ($_fv['maxCopiesPerRef'] ?? null) === null) $_bits[] = $txt['fmt_free'];
+    $_fmtDesc[$_fk] = implode(' · ', $_bits);
+}
+?>
+<!-- No backdrop dismissal: this step holds typed input, and leaving means
+     abandoning the deck. The × and Cancel are the deliberate exits. -->
+<div id="db-new-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998">
+    <div class="db-hero-panel db-new-panel" onclick="event.stopPropagation()">
+        <button onclick="dbNewCancel()" class="db-hero-close-btn">×</button>
+        <h3 class="db-hero-title">
+            <span><?= h($txt['new_deck']) ?></span>
+            <span class="db-hero-step"><?= h($txt['wizard_step2']) ?></span>
+        </h3>
+
+        <div class="db-new-body">
+            <!-- Hero chosen at step 1 -->
+            <div class="db-new-hero">
+                <img id="db-new-hero-img" alt="">
+                <div class="db-new-hero-id">
+                    <span id="db-new-hero-name"></span>
+                    <small id="db-new-hero-faction"></small>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dbNewBack()"><?= h($txt['wizard_change']) ?></button>
+            </div>
+
+            <!-- Name -->
+            <label class="filter-label mb-1" for="db-new-name"><?= h($txt['deck_name']) ?> <span class="db-new-req">*</span></label>
+            <input type="text" id="db-new-name" class="form-control form-control-sm mb-3" maxlength="120">
+
+            <!-- Format -->
+            <div class="filter-label mb-1"><?= h($txt['format']) ?> <span class="db-new-req">*</span></div>
+            <div class="db-new-formats mb-3">
+                <?php foreach ($formatsData as $fmtKey => $fmtData): if (!empty($fmtData['hidden'])) continue; ?>
+                <label class="db-new-format" style="--format-color:<?= h($fmtData['color'] ?? 'var(--neutral-300)') ?>">
+                    <input type="radio" name="db-new-format" value="<?= h($fmtKey) ?>">
+                    <span class="db-new-format-txt">
+                        <span class="db-new-format-name"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></span>
+                        <small><?= h($_fmtDesc[$fmtKey] ?? '') ?></small>
+                    </span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (!$isGuest): ?>
+            <!-- Visibility -->
+            <div class="filter-label mb-1"><?= h($txt['visibility']) ?></div>
+            <div class="db-new-vis mb-1">
+                <button type="button" class="db-new-vis-btn active" data-public="0">
+                    <i class="fa-solid fa-lock"></i><?= h($txt['private']) ?>
+                </button>
+                <button type="button" class="db-new-vis-btn" data-public="1">
+                    <i class="fa-solid fa-eye"></i><?= h($txt['public']) ?>
+                </button>
+            </div>
+            <p class="db-new-note mb-3" id="db-new-vis-note"><?= h($txt['wizard_vis_priv']) ?></p>
+            <?php endif; ?>
+
+            <!-- Description, folded away: nobody writes one before building the deck -->
+            <button type="button" id="db-new-desc-toggle" class="db-new-desc-toggle" onclick="dbNewToggleDesc()">
+                <i class="fa-solid fa-plus"></i><?= h($txt['wizard_desc_add']) ?>
+            </button>
+            <div id="db-new-desc-wrap" style="display:none">
+                <label class="filter-label mb-1" for="db-new-desc"><?= h($txt['description']) ?></label>
+                <textarea id="db-new-desc" class="form-control form-control-sm" rows="3"></textarea>
+            </div>
+
+            <div id="db-new-error" class="alert alert-danger p-2 mt-3 mb-0 small" style="display:none"></div>
+        </div>
+
+        <div class="db-hero-footer">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dbNewCancel()">
+                <?= h($txt['wizard_cancel']) ?>
+            </button>
+            <button type="button" id="db-new-submit" class="btn btn-primary-altered btn-sm"><?= h($txt['wizard_create']) ?></button>
         </div>
     </div>
 </div>
@@ -790,6 +910,11 @@ var AlteredDB = {
         'choose_hero'   => $txt['choose_hero'],
         'new_deck'      => $txt['new_deck'],
         'wizard_next'   => $txt['wizard_next'],
+        'wizard_create'   => $txt['wizard_create'],
+        'wizard_creating' => $txt['wizard_creating'],
+        'wizard_name_req' => $txt['wizard_name_req'],
+        'wizard_fmt_req'  => $txt['wizard_fmt_req'],
+        'wizard_anyway'   => $txt['wizard_anyway'],
         'types'         => $txt['types'],
         'status_auto'   => $txt['status_auto'],
         'status_draft'  => $txt['status_draft'],
@@ -896,6 +1021,10 @@ var AlteredDB = {
     }
 
     function scheduleAutoSave() {
+        // While the creation wizard is open the deck must not exist yet: picking a
+        // hero marks the deck dirty, and the timer would otherwise create it under
+        // the "unnamed" fallback before the user has validated step 2.
+        if (_heroWizard) return;
         if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
         _autoSaveTimer = setTimeout(function() {
             _autoSaveTimer = null;
@@ -967,13 +1096,13 @@ var AlteredDB = {
                     if (onDone) onDone(true);
                 } else {
                     _setAutoStatus('', false);
-                    if (onDone) onDone(false);
+                    if (onDone) onDone(false, data.error || '');
                 }
             })
             .catch(function() {
                 _autoSaving = false;
                 _setAutoStatus('', false);
-                if (onDone) onDone(false);
+                if (onDone) onDone(false, AlteredDB.txt.err_api);
             });
     }
 
@@ -1823,9 +1952,21 @@ var AlteredDB = {
     }
 
     window.dbHeroClose = function() {
-        if (_heroWizard) { window.location.href = AlteredDB.decksUrl; return; }
+        if (_heroWizard) { dbWizardLeave(); return; }
         document.getElementById('db-hero-modal').style.display = 'none';
     };
+
+    // Clicking the backdrop dismisses the picker when it merely floats over a
+    // working builder, but not during creation: there, closing abandons the deck,
+    // which is too destructive for a stray click outside the panel.
+    window.dbHeroBackdrop = function() { if (!_heroWizard) dbHeroClose(); };
+
+    // Giving up on creation: clear the dirty flag first, otherwise the unsaved
+    // guard pops a browser confirm on a deck that was never meant to exist.
+    function dbWizardLeave() {
+        markClean();
+        window.location.href = AlteredDB.decksUrl;
+    }
 
     // Printings keep the order the API returned them in, which follows the hero
     // search settings (sort_1, by default newest set first) — so the artwork the
@@ -1928,10 +2069,118 @@ var AlteredDB = {
         elHeroConfirm.addEventListener('click', function() {
             if (!_heroPick) return;
             setHero({ cardReference: _heroPick.ref, name: _heroPick.name, factionCode: _heroPick.faction });
-            // Step 2 (name, format, visibility) is not built yet — for now the
-            // wizard ends here and hands over to the builder.
-            if (_heroWizard) heroSetWizardMode(false);
             document.getElementById('db-hero-modal').style.display = 'none';
+            if (_heroWizard) dbNewOpen();
+        });
+    }
+
+    // ---- new-deck wizard, step 2: name / format / visibility / description ----
+    var elNewModal   = document.getElementById('db-new-modal');
+    var elNewName    = document.getElementById('db-new-name');
+    var elNewDesc    = document.getElementById('db-new-desc');
+    var elNewSubmit  = document.getElementById('db-new-submit');
+    var elNewError   = document.getElementById('db-new-error');
+    var _newIsPublic = '0';
+
+    function dbNewShowError(msg, withAnyway) {
+        if (!elNewError) return;
+        elNewError.textContent = msg;
+        if (withAnyway) {
+            // The deck could not be created server-side. Rather than trapping the
+            // user in the wizard, let them proceed: the builder keeps the fields
+            // and the regular autosave will retry on the first change.
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-danger ms-2';
+            btn.textContent = AlteredDB.txt.wizard_anyway;
+            btn.addEventListener('click', dbNewFinish);
+            elNewError.appendChild(btn);
+        }
+        elNewError.style.display = '';
+    }
+
+    function dbNewSelectedFormat() {
+        var picked = elNewModal.querySelector('input[name="db-new-format"]:checked');
+        return picked ? picked.value : '';
+    }
+
+    // Hand over to the builder: the right-hand panel stays the source of truth for
+    // saving, so the wizard writes into its controls rather than duplicating state.
+    function dbNewApplyToPanel() {
+        var fmt = dbNewSelectedFormat();
+        elDeckName.value = elNewName.value.trim();
+        elDeckDesc.value = elNewDesc ? elNewDesc.value.trim() : '';
+        if (fmt) elDeckFormat.value = fmt;
+        if (elDeckPublic) elDeckPublic.value = _newIsPublic;
+        updateDeckDisplay();
+    }
+
+    function dbNewFinish() {
+        heroSetWizardMode(false);
+        elNewModal.style.display = 'none';
+    }
+
+    window.dbNewOpen = function() {
+        var hero = deck.hero || {};
+        var img  = document.getElementById('db-new-hero-img');
+        if (img) { img.src = cdnUrl(hero.cardReference || ''); img.alt = hero.name || ''; }
+        document.getElementById('db-new-hero-name').textContent = hero.name || '';
+        var fData = AlteredDB.factions[hero.factionCode] || null;
+        document.getElementById('db-new-hero-faction').textContent =
+            fData ? (fData[AlteredDB.uiLang] || fData.en || '') : (hero.factionCode || '');
+        if (elNewError) { elNewError.style.display = 'none'; elNewError.textContent = ''; }
+        elNewModal.style.display = 'flex';
+        if (elNewName) elNewName.focus();
+    };
+
+    window.dbNewBack = function() {
+        elNewModal.style.display = 'none';
+        dbSelectHero();
+    };
+
+    window.dbNewCancel = function() { dbWizardLeave(); };
+
+    window.dbNewToggleDesc = function() {
+        var wrap   = document.getElementById('db-new-desc-wrap');
+        var toggle = document.getElementById('db-new-desc-toggle');
+        wrap.style.display = 'block';
+        toggle.style.display = 'none';
+        if (elNewDesc) elNewDesc.focus();
+        // The field is the last thing in a scrollable body — bring all of it into
+        // view, not just its top edge, once the new layout is in place.
+        if (window.requestAnimationFrame) {
+            requestAnimationFrame(function() { wrap.scrollIntoView({ block: 'end', behavior: 'smooth' }); });
+        }
+    };
+
+    elNewModal.querySelectorAll('.db-new-vis-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            _newIsPublic = btn.dataset.public;
+            elNewModal.querySelectorAll('.db-new-vis-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var note = document.getElementById('db-new-vis-note');
+            if (note) note.style.visibility = (_newIsPublic === '0') ? '' : 'hidden';
+        });
+    });
+
+    if (elNewSubmit) {
+        elNewSubmit.addEventListener('click', function() {
+            // The button stays enabled and explains what is missing on use — a
+            // greyed-out button gives no reason for being greyed out.
+            if (elNewError) elNewError.style.display = 'none';
+            if (!elNewName.value.trim()) { dbNewShowError(AlteredDB.txt.wizard_name_req); elNewName.focus(); return; }
+            if (!dbNewSelectedFormat())  { dbNewShowError(AlteredDB.txt.wizard_fmt_req); return; }
+
+            dbNewApplyToPanel();
+            elNewSubmit.disabled    = true;
+            elNewSubmit.textContent = AlteredDB.txt.wizard_creating;
+            markDirty();
+            autoSave(function(ok, err) {
+                elNewSubmit.disabled    = false;
+                elNewSubmit.textContent = AlteredDB.txt.wizard_create;
+                if (ok) dbNewFinish();
+                else    dbNewShowError(err || AlteredDB.txt.err_api, true);
+            });
         });
     }
 
