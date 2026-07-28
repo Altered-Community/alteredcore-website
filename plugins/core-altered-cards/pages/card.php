@@ -41,13 +41,12 @@ $txt = [
         'tab_lore'            => 'Lore',
         'tab_deck'            => 'Deck',
         'deck_search_ph'      => 'Search a deck…',
-        'deck_no_decks'       => 'You have no decks yet.',
+        'deck_no_decks'       => 'You have no decks yet in',
         'deck_no_match'       => 'No decks match these filters.',
         'deck_cards'          => 'cards',
         'deck_add_btn'        => 'Add to deck',
         'deck_added_ok'       => 'Added!',
         'deck_add_err'        => 'Error',
-        'deck_view_all'       => 'View all my decks',
         'lbl_set'      => 'Set',
         'lbl_ref'      => 'References',
         'lbl_keywords' => 'Keywords',
@@ -94,13 +93,12 @@ $txt = [
         'tab_lore'            => 'Lore',
         'tab_deck'            => 'Deck',
         'deck_search_ph'      => 'Rechercher un deck…',
-        'deck_no_decks'       => 'Vous n\'avez pas encore de deck.',
+        'deck_no_decks'       => 'Vous n\'avez pas encore de deck',
         'deck_no_match'       => 'Aucun deck ne correspond à ces filtres.',
         'deck_cards'          => 'cartes',
         'deck_add_btn'        => 'Ajouter au deck',
         'deck_added_ok'       => 'Ajouté !',
         'deck_add_err'        => 'Erreur',
-        'deck_view_all'       => 'Voir tous mes decks',
         'lbl_set'      => 'Set',
         'lbl_ref'      => 'Références',
         'lbl_keywords' => 'Mots-clés',
@@ -276,17 +274,17 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                 <!-- Tab Deck -->
                 <div class="tab-pane fade" id="tab-deck" role="tabpanel">
                     <div class="card-altered p-3">
-                        <div class="filter-row mb-2">
+                        <div class="filter-row mb-3">
                             <input type="text" id="deck-tab-search" class="form-control form-control-sm" style="max-width:220px"
                                    placeholder="<?= h($txt['deck_search_ph']) ?>">
-                        </div>
-                        <div class="filter-row mb-3" id="deck-tab-faction-row">
-                            <?php foreach ($factionsData as $_dfCode => $_dfData): ?>
-                            <button type="button" class="filter-toggle filter-toggle--compact<?= $_dfCode === $_deckDefaultFaction ? ' active' : '' ?>" data-faction="<?= h($_dfCode) ?>"
-                                    title="<?= h($_dfData[$uiLang] ?? $_dfData['en'] ?? $_dfCode) ?>">
-                                <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/<?= h($_dfCode) ?>.png" alt="<?= h($_dfCode) ?>">
-                            </button>
-                            <?php endforeach; ?>
+                            <div class="d-flex flex-wrap gap-1" id="deck-tab-faction-row">
+                                <?php foreach ($factionsData as $_dfCode => $_dfData): ?>
+                                <button type="button" class="filter-toggle filter-toggle--compact<?= $_dfCode === $_deckDefaultFaction ? ' active' : '' ?>" data-faction="<?= h($_dfCode) ?>"
+                                        title="<?= h($_dfData[$uiLang] ?? $_dfData['en'] ?? $_dfCode) ?>">
+                                    <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/<?= h($_dfCode) ?>.png" alt="<?= h($_dfCode) ?>">
+                                </button>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                         <div id="deck-tab-loading" class="text-center py-3" style="display:none">
                             <i class="fa-solid fa-spinner fa-spin" style="color:var(--neutral-400)"></i>
@@ -294,9 +292,6 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                         <div id="deck-tab-error" class="text-muted small py-2" style="display:none"></div>
                         <div id="deck-tab-empty" class="text-muted small py-2" style="display:none"></div>
                         <div id="deck-tab-list"></div>
-                        <div id="deck-tab-viewall" class="text-center pt-2" style="display:none">
-                            <a href="<?= h(BASE_URL) ?>/pages/decks" class="small"><?= h($txt['deck_view_all']) ?> <i class="fa-solid fa-arrow-right ms-1"></i></a>
-                        </div>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -367,7 +362,6 @@ var AlteredCard = {
         'deck_add_btn'     => $txt['deck_add_btn'],
         'deck_added_ok'    => $txt['deck_added_ok'],
         'deck_add_err'     => $txt['deck_add_err'],
-        'deck_view_all'    => $txt['deck_view_all'],
     ]) ?>,
 };
 </script>
@@ -914,6 +908,7 @@ var AlteredCard = {
     if (deckTabBtn && AlteredCard.isLoggedIn) {
         var deckLoaded         = false;
         var deckAllDecks       = [];
+        var deckAddedIds       = {}; // deckId -> true, once a card was successfully added — frozen permanently
         var deckCurrentFaction = AlteredCard.deckDefaultFaction || '';
         var deckSearchEl   = document.getElementById('deck-tab-search');
         var deckFactionRow = document.getElementById('deck-tab-faction-row');
@@ -921,7 +916,6 @@ var AlteredCard = {
         var deckLoadingEl  = document.getElementById('deck-tab-loading');
         var deckErrorEl    = document.getElementById('deck-tab-error');
         var deckEmptyEl    = document.getElementById('deck-tab-empty');
-        var deckViewAllEl  = document.getElementById('deck-tab-viewall');
 
         deckTabBtn.addEventListener('click', function () {
             if (!deckLoaded) { deckLoaded = true; loadMyDecksForCard(); }
@@ -946,22 +940,38 @@ var AlteredCard = {
             deckLoadingEl.style.display = '';
             deckErrorEl.style.display   = 'none';
             deckEmptyEl.style.display   = 'none';
-            deckViewAllEl.style.display = 'none';
             deckListEl.innerHTML = '';
+            deckAllDecks = [];
+            fetchDeckPage(1);
+        }
 
-            var url = BASE + '/pages/decks?ajax=my&page=1';
+        function fetchDeckPage(page) {
+            var url = BASE + '/pages/decks?ajax=my&page=' + page;
             if (deckCurrentFaction) url += '&faction=' + encodeURIComponent(deckCurrentFaction);
 
             fetch(url, { headers: { 'Accept': 'application/json' } })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    deckLoadingEl.style.display = 'none';
-                    if (data.error) { deckErrorEl.textContent = txt.err_connect; deckErrorEl.style.display = ''; return; }
-                    deckAllDecks = data.member || data.data || (Array.isArray(data) ? data : []);
+                    if (data.error) {
+                        deckLoadingEl.style.display = 'none';
+                        deckErrorEl.textContent = txt.err_connect;
+                        deckErrorEl.style.display = '';
+                        return;
+                    }
+                    var decks = data.member || data.data || (Array.isArray(data) ? data : []);
+                    deckAllDecks = deckAllDecks.concat(decks);
                     var pagination = data.pagination || {};
-                    var total = pagination.totalItems || data.totalItems || deckAllDecks.length;
-                    deckViewAllEl.style.display = (total > deckAllDecks.length) ? '' : 'none';
-                    renderDeckList();
+                    var total      = pagination.totalItems || data.totalItems || null;
+                    // decks.php's ?ajax=my hardcodes itemsPerPage=21 — fetch every page so the
+                    // compact list is never silently truncated. Without reliable pagination
+                    // metadata, fall back to "a full page came back, there might be more".
+                    var morePages = total !== null ? (deckAllDecks.length < total) : (decks.length === 21);
+                    if (decks.length && morePages) {
+                        fetchDeckPage(page + 1);
+                    } else {
+                        deckLoadingEl.style.display = 'none';
+                        renderDeckList();
+                    }
                 })
                 .catch(function () {
                     deckLoadingEl.style.display = 'none';
@@ -970,13 +980,30 @@ var AlteredCard = {
                 });
         }
 
+        // Used to render each row's faction icon (the actual filtering is done
+        // server-side via the &faction= param above).
+        function deckFactionCode(deck) {
+            var heroRef = ((deck.stats || {}).hero || {}).reference || '';
+            var m = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
+            return m ? m[1] : '';
+        }
+
+        function deckEmptyFactionHtml() {
+            var fData = (AlteredCard.factions || {})[deckCurrentFaction] || {};
+            var fName = fData[uiLang] || fData.en || deckCurrentFaction;
+            var fImg  = deckCurrentFaction ? BASE + '/plugins/core-altered-cards/assets/faction/' + deckCurrentFaction + '.png' : '';
+            return escHtml(txt.deck_no_decks)
+                + (fImg ? ' <img src="' + escAttr(fImg) + '" alt="' + escAttr(deckCurrentFaction) + '" style="width:16px;height:16px;object-fit:contain;vertical-align:text-bottom">' : '')
+                + ' ' + escHtml(fName);
+        }
+
         function renderDeckList() {
             var q = deckSearchEl ? deckSearchEl.value.trim().toLowerCase() : '';
             var decks = q ? deckAllDecks.filter(function (d) { return (d.name || '').toLowerCase().indexOf(q) >= 0; }) : deckAllDecks;
 
             deckListEl.innerHTML = '';
             if (!deckAllDecks.length) {
-                deckEmptyEl.textContent = txt.deck_no_decks;
+                deckEmptyEl.innerHTML = deckEmptyFactionHtml();
                 deckEmptyEl.style.display = '';
                 return;
             }
@@ -998,14 +1025,16 @@ var AlteredCard = {
             var fmtColor  = fmtData.color || 'var(--neutral-400)';
             var stats     = deck.stats || {};
             var hero      = stats.hero || {};
-            var heroRef   = hero.reference || '';
             var heroName  = hero.name || '';
             var totalCards = stats.totalCards != null ? stats.totalCards : null;
 
-            var factionCode = '';
-            var fm = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
-            if (fm) factionCode = fm[1];
-            var factionImg = factionCode ? BASE + '/plugins/core-altered-cards/assets/faction/' + factionCode + '.png' : '';
+            var factionCode = deckFactionCode(deck);
+            var factionImg  = factionCode ? BASE + '/plugins/core-altered-cards/assets/faction/' + factionCode + '.png' : '';
+
+            var added   = !!deckAddedIds[deckId];
+            var btnHtml = added
+                ? '<button type="button" class="deck-compact-add-btn deck-compact-add-btn--ok" data-deck-id="' + escAttr(deckId) + '" disabled>' + escHtml(txt.deck_added_ok) + '</button>'
+                : '<button type="button" class="deck-compact-add-btn" data-deck-id="' + escAttr(deckId) + '">' + escHtml(txt.deck_add_btn) + '</button>';
 
             return '<div class="deck-compact-row">'
                 + '<a href="' + BASE + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-compact-link" aria-label="' + escAttr(name) + '"></a>'
@@ -1017,7 +1046,7 @@ var AlteredCard = {
                 + (totalCards !== null ? totalCards + ' ' + escHtml(txt.deck_cards) + ' ' : '')
                 + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.68rem">' + escHtml(fmtLabel) + '</span>'
                 + '</div></div>'
-                + '<button type="button" class="deck-compact-add-btn" data-deck-id="' + escAttr(deckId) + '">' + escHtml(txt.deck_add_btn) + '</button>'
+                + btnHtml
                 + '</div>';
         }
 
@@ -1025,23 +1054,33 @@ var AlteredCard = {
             deckListEl.addEventListener('click', function (e) {
                 var btn = e.target.closest('.deck-compact-add-btn');
                 if (!btn || btn.disabled) return;
+                var deckId = btn.dataset.deckId;
                 var originalText = txt.deck_add_btn;
                 btn.disabled = true;
                 btn.textContent = '…';
                 var body = new URLSearchParams();
-                body.append('deck_id',    btn.dataset.deckId);
+                body.append('deck_id',    deckId);
                 body.append('card_ref',   ref);
                 body.append('csrf_token', AlteredCard.csrf);
                 fetch(AlteredCard.deckAddUrl, { method: 'POST', body: body })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
-                        btn.textContent = data.ok ? txt.deck_added_ok : txt.deck_add_err;
-                        btn.classList.add(data.ok ? 'deck-compact-add-btn--ok' : 'deck-compact-add-btn--err');
-                        setTimeout(function () {
-                            btn.textContent = originalText;
-                            btn.classList.remove('deck-compact-add-btn--ok', 'deck-compact-add-btn--err');
-                            btn.disabled = false;
-                        }, 1500);
+                        if (data.ok) {
+                            // Frozen permanently: no revert timeout, no re-enable — the deck
+                            // is done for this card, even after the mouse leaves the row or
+                            // the list re-renders (search/faction filter).
+                            deckAddedIds[deckId] = true;
+                            btn.textContent = txt.deck_added_ok;
+                            btn.classList.add('deck-compact-add-btn--ok');
+                        } else {
+                            btn.textContent = txt.deck_add_err;
+                            btn.classList.add('deck-compact-add-btn--err');
+                            setTimeout(function () {
+                                btn.textContent = originalText;
+                                btn.classList.remove('deck-compact-add-btn--err');
+                                btn.disabled = false;
+                            }, 1500);
+                        }
                     })
                     .catch(function () {
                         btn.textContent = txt.deck_add_err;
