@@ -274,8 +274,59 @@
 /* =========================================================
    Deck builder  (deckbuilder.php)
    ========================================================= */
-#db-hero-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-@media (min-width:576px) { #db-hero-grid { grid-template-columns:repeat(3,1fr); } }
+/* Hero picker — one tile per hero identity, printings live in the artwork strip */
+/* minmax(0,1fr), not 1fr: the auto minimum would resolve to each card image's
+   intrinsic width (~630px) and force a single column. */
+#db-hero-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; overflow-y:auto; flex:1 1 auto; min-height:0; }
+@media (min-width:768px) { #db-hero-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+/* Faction tabs span the modal width — styled by id so Bootstrap's !important
+   utilities are not involved (the markup carries no d-flex here). Each button
+   carries its faction colour as --faction-color, from altered.json. */
+#db-hero-factions { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px; margin-bottom:14px; }
+.db-faction-btn {
+    position:relative; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:9px 4px 7px; border:none; border-radius:10px;
+    border-bottom:3px solid var(--faction-color);
+    background:var(--sand-100); color:var(--neutral-500);
+    font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    transition:background .12s,color .12s;
+}
+.db-faction-btn img { position:relative; z-index:1; width:30px; height:30px; object-fit:contain; transition:filter .12s; }
+.db-faction-btn span { position:relative; z-index:1; line-height:1.1; }
+/* Tint on hover comes from the faction colour itself, kept faint by opacity so
+   no per-faction alpha value has to be hardcoded. */
+.db-faction-btn::before {
+    content:''; position:absolute; inset:0; background:var(--faction-color);
+    opacity:0; transition:opacity .12s;
+}
+.db-faction-btn:hover::before { opacity:.12; }
+.db-faction-btn.active { background:var(--faction-color); color:#fff; }
+.db-faction-btn.active::before { opacity:0; }
+/* Logos are drawn in their own faction colour, invisible once the button is
+   filled with it — flatten to white instead (alpha is preserved). */
+.db-faction-btn.active img { filter:brightness(0) invert(1); }
+[data-theme="dark"] .db-faction-btn { background:rgba(255,255,255,.06); }
+.db-hero-tile { min-width:0; cursor:pointer; border:2px solid transparent; border-radius:9px; padding:4px; transition:border-color .12s,background .12s; }
+.db-hero-tile img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; transition:transform .12s; }
+.db-hero-tile:hover img { transform:scale(1.04); }
+.db-hero-tile-name { margin-top:6px; font-size:.86rem; font-weight:600; text-align:center; color:var(--neutral-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.db-hero-tile.selected { border-color:var(--primary-400); background:var(--sand-100); }
+.db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
+[data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
+
+.db-hero-arts { flex:0 0 auto; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
+.db-hero-arts-head { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.db-hero-arts-title { font-size:.78rem; font-weight:700; color:var(--neutral-500); }
+.db-hero-arts-note { font-size:.72rem; color:var(--neutral-400); }
+.db-hero-arts-strip { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.db-hero-art { flex:0 0 148px; min-width:0; cursor:pointer; border:2px solid transparent; border-radius:9px; padding:4px; transition:border-color .12s; }
+.db-hero-art img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; }
+.db-hero-art-label { margin-top:5px; font-size:.76rem; text-align:center; color:var(--neutral-400); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.db-hero-art.selected { border-color:var(--primary-400); }
+.db-hero-art.selected .db-hero-art-label { color:var(--primary-500); }
+
+.db-hero-footer { flex:0 0 auto; display:flex; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
 .db-layout { display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start; }
 .db-panel-left  { min-width:0; }
 .db-panel-right { position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto; padding-bottom:1.5rem; }
@@ -380,10 +431,14 @@
     border: 1px solid var(--panel-border, var(--sand-200));
     border-radius: 12px;
     padding: 20px;
-    max-width: 700px;
+    max-width: 1050px;
     width: 94vw;
     max-height: 90vh;
-    overflow-y: auto;
+    /* Column layout: only the hero grid scrolls, so the artwork strip and the
+       confirm button stay reachable without scrolling past every hero. */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
     cursor: default;
 }

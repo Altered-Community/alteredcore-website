@@ -101,6 +101,9 @@ $txt = array_merge($_sharedTxt, [
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
         'select_hero_msg' => 'Choose a hero to start building your deck.',
+        'hero_art'        => 'Artwork',
+        'hero_art_note'   => 'No effect on deck rules',
+        'hero_confirm'    => 'Choose this hero',
         'lbl_status'      => 'Status',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Draft',
@@ -190,6 +193,9 @@ $txt = array_merge($_sharedTxt, [
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
         'select_hero_msg' => 'Choisissez un héros pour commencer à construire votre deck.',
+        'hero_art'        => 'Illustration',
+        'hero_art_note'   => 'Sans effet sur les règles du deck',
+        'hero_confirm'    => 'Choisir ce héros',
         'lbl_status'      => 'Statut',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Brouillon',
@@ -644,27 +650,40 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
 </div>
 
 <!-- Hero selector modal -->
+<?php // Heroes are browsed one faction at a time — Axiom opens by default.
+      $_heroDefaultFaction = isset($factionsData['AX']) ? 'AX' : (string)array_key_first($factionsData); ?>
 <div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)this.style.display='none'">
     <div class="db-hero-panel" onclick="event.stopPropagation()">
         <button onclick="document.getElementById('db-hero-modal').style.display='none'"
                 class="db-hero-close-btn">×</button>
         <h3 class="db-hero-title"><?= h($txt['choose_hero']) ?></h3>
-        <div class="d-flex gap-1 mb-3 flex-wrap" id="db-hero-factions">
-            <button type="button" onclick="dbLoadHeroes('')"
-                    class="btn btn-outline-secondary btn-sm active" id="db-hero-all-btn">
-                <?= h($txt['collection_all']) ?>
-            </button>
+        <div id="db-hero-factions">
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
-                    class="btn btn-outline-secondary btn-sm" data-faction="<?= $fCode ?>">
-                <img src="<?= $pluginAssetsUrl ?>/faction/<?= $fCode ?>.png" alt="<?= h($fCode) ?>" style="width:16px;height:16px;object-fit:contain;vertical-align:middle">
-                <?= h($fData[$uiLang] ?? $fData['en']) ?>
+                    class="db-faction-btn<?= $fCode === $_heroDefaultFaction ? ' active' : '' ?>"
+                    data-faction="<?= $fCode ?>"
+                    style="--faction-color:<?= h($fData['color'] ?? '#888') ?>">
+                <img src="<?= $pluginAssetsUrl ?>/faction/<?= $fCode ?>.png" alt="">
+                <span><?= h($fData[$uiLang] ?? $fData['en']) ?></span>
             </button>
             <?php endforeach; ?>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>
         <div id="db-hero-grid">
             <!-- populated by JS -->
+        </div>
+        <!-- Artwork strip — shown only when the selected hero has several printings -->
+        <div id="db-hero-arts" class="db-hero-arts" style="display:none">
+            <div class="db-hero-arts-head">
+                <span class="db-hero-arts-title"></span>
+                <span class="db-hero-arts-note"><?= h($txt['hero_art_note']) ?></span>
+            </div>
+            <div id="db-hero-arts-strip" class="db-hero-arts-strip"></div>
+        </div>
+        <div class="db-hero-footer">
+            <button type="button" id="db-hero-confirm" class="btn btn-primary-altered btn-sm" disabled>
+                <?= h($txt['hero_confirm']) ?>
+            </button>
         </div>
     </div>
 </div>
@@ -752,6 +771,7 @@ var AlteredDB = {
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
         'change_hero'   => $txt['change_hero'],
+        'hero_art'      => $txt['hero_art'],
         'types'         => $txt['types'],
         'status_auto'   => $txt['status_auto'],
         'status_draft'  => $txt['status_draft'],
@@ -801,6 +821,9 @@ var AlteredDB = {
     heroSortAlpha:       <?= json_encode($_heroSortAlpha) ?>,
     heroNoDuplicate:     <?= json_encode($_heroNoDuplicate) ?>,
     heroDuplicateOrder:  <?= json_encode($_heroDuplicateOrder) ?>,
+    heroDefaultFaction:  <?= json_encode($_heroDefaultFaction) ?>,
+    setNames:   <?= json_encode(array_map(fn($s) => $s[$uiLang] ?? $s['en'], $setsData)) ?>,
+    variations: <?= json_encode(array_map(fn($v) => $v[$uiLang] ?? $v['en'], $variationsData)) ?>,
     defaultVariations: <?= json_encode($_defaultVariations) ?>,
     setOptionsJson:     <?= $setOptionsJson ?>,
     subtypeOptionsJson:   <?= $subtypeOptionsJson ?>,
@@ -1746,10 +1769,121 @@ var AlteredDB = {
     }
 
     // hero modal
+    //
+    // The grid holds one tile per hero identity (heroStableKey), not one per
+    // printing: a hero reprinted in several sets or as a promo used to appear as
+    // many unlabelled tiles scattered through the API's own ordering. Picking
+    // which printing lands on the deck is a second, purely cosmetic step — the
+    // artwork strip below the grid — since format rules key off the stable key.
+    var _heroPick = null; // { key, name, faction, prints: [ref], ref }
+
+    var elHeroArts      = document.getElementById('db-hero-arts');
+    var elHeroArtsStrip = document.getElementById('db-hero-arts-strip');
+    var elHeroConfirm   = document.getElementById('db-hero-confirm');
+
+    // Printings keep the order the API returned them in, which follows the hero
+    // search settings (sort_1, by default newest set first) — so the artwork the
+    // grid shows is the admin's stated preference, not an arbitrary pick. Only
+    // the class below reorders: booster printings from a main set come first, so
+    // a promo or a collector-booster printing never becomes the representative
+    // artwork. Array#sort is stable, so the API order survives within a class.
+    function heroPrintClass(ref) {
+        var p = ref.split('_');
+        return ((AlteredDB.subSets || []).indexOf(p[1] || '') !== -1 ? 2 : 0)
+             + (p[2] === 'B' ? 0 : 1);
+    }
+
+    // Human label for a printing: the set name, plus the variation when it is not
+    // the standard one, plus the product letter as a last resort — two printings
+    // of one hero in the same set and variation differ only by that letter.
+    function heroPrintLabels(prints) {
+        var labels = prints.map(function(pr) {
+            var setCode = pr.ref.split('_')[1];
+            var label   = (AlteredDB.setNames && AlteredDB.setNames[setCode]) || setCode || pr.ref;
+            var varName = (AlteredDB.variations && AlteredDB.variations[pr.variation]);
+            if (pr.variation && pr.variation !== 'standard' && varName) label += ' – ' + varName;
+            return label;
+        });
+        return labels.map(function(label, i) {
+            var dup = labels.some(function(other, j) { return j !== i && other === label; });
+            return dup ? label + ' (' + (prints[i].ref.split('_')[2] || '') + ')' : label;
+        });
+    }
+
+    function heroArtsClear() {
+        if (elHeroArts) elHeroArts.style.display = 'none';
+        if (elHeroArtsStrip) elHeroArtsStrip.innerHTML = '';
+    }
+
+    function heroArtsRender() {
+        if (!elHeroArts || !elHeroArtsStrip || !_heroPick) return;
+        // A single printing leaves nothing to choose — keep the strip out of the way.
+        if (_heroPick.prints.length < 2) { heroArtsClear(); return; }
+
+        var titleEl = elHeroArts.querySelector('.db-hero-arts-title');
+        if (titleEl) titleEl.textContent = AlteredDB.txt.hero_art + ' — ' + _heroPick.name;
+
+        elHeroArtsStrip.innerHTML = '';
+        var labels = heroPrintLabels(_heroPick.prints);
+        _heroPick.prints.forEach(function(pr, i) {
+            var ref  = pr.ref;
+            var cell = document.createElement('div');
+            cell.className = 'db-hero-art' + (ref === _heroPick.ref ? ' selected' : '');
+            cell.title = ref;
+
+            var img = document.createElement('img');
+            img.src = cdnUrl(ref);
+            img.alt = labels[i];
+            img.loading = 'lazy';
+            cell.appendChild(img);
+
+            var cap = document.createElement('div');
+            cap.className = 'db-hero-art-label';
+            cap.textContent = labels[i];
+            cell.appendChild(cap);
+
+            cell.addEventListener('click', function() {
+                _heroPick.ref = ref;
+                heroArtsRender();
+            });
+            elHeroArtsStrip.appendChild(cell);
+        });
+        elHeroArts.style.display = '';
+    }
+
+    function heroPickSelect(group, tile) {
+        _heroPick = {
+            key:     group.key,
+            name:    group.name,
+            faction: group.faction,
+            prints:  group.prints,
+            // Keep the printing already on the deck when re-opening on that hero.
+            ref:     (deck.hero && group.prints.some(function(pr) { return pr.ref === deck.hero.cardReference; }))
+                     ? deck.hero.cardReference : group.prints[0].ref,
+        };
+        document.querySelectorAll('#db-hero-grid .db-hero-tile.selected').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+        if (tile) tile.classList.add('selected');
+        if (elHeroConfirm) elHeroConfirm.disabled = false;
+        heroArtsRender();
+    }
+
+    if (elHeroConfirm) {
+        elHeroConfirm.addEventListener('click', function() {
+            if (!_heroPick) return;
+            setHero({ cardReference: _heroPick.ref, name: _heroPick.name, factionCode: _heroPick.faction });
+            document.getElementById('db-hero-modal').style.display = 'none';
+        });
+    }
+
     window.dbSelectHero = function() {
         document.getElementById('db-hero-modal').style.display = 'flex';
-        if (!document.getElementById('db-hero-grid').children.length) {
-            dbLoadHeroes('');
+        // Open on the current hero's faction when there is one, so changing hero
+        // starts from the pool the deck is already built in.
+        var wanted = (deck.hero && deck.hero.factionCode) || AlteredDB.heroDefaultFaction;
+        if (wanted !== heroCurrFaction || !document.getElementById('db-hero-grid').children.length) {
+            dbLoadHeroes(wanted);
         }
     };
     window.dbLoadHeroes = function(faction) {
@@ -1758,9 +1892,11 @@ var AlteredDB = {
         var loading = document.getElementById('db-hero-loading');
         grid.innerHTML    = '';
         loading.style.display = 'block';
+        _heroPick = null;
+        heroArtsClear();
+        if (elHeroConfirm) elHeroConfirm.disabled = true;
 
         // Update faction buttons
-        document.getElementById('db-hero-all-btn').classList.toggle('active', !faction);
         document.querySelectorAll('#db-hero-factions [data-faction]').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.faction === faction);
         });
@@ -1801,25 +1937,55 @@ var AlteredDB = {
                     grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
+                // Collapse printings into one entry per hero identity.
+                var groups = {};
                 allCards.forEach(function(card) {
-                    var ref  = card.reference || '';
-                    var name = typeof card.name === 'string' ? card.name : (card.name ? (card.name[AlteredDB.lang] || card.name.en || '') : '');
-                    var imgSrc = cdnUrl(ref);
-                    var wrap = document.createElement('div');
-                    wrap.style.cssText = 'cursor:pointer;overflow:hidden;border-radius:7px;';
-                    var img  = document.createElement('img');
-                    img.src  = imgSrc;
-                    img.alt  = name;
-                    img.style.cssText = 'display:block;width:100%;border-radius:7px;aspect-ratio:63.5/88;object-fit:cover;transition:transform .12s';
-                    wrap.onmouseenter = function() { img.style.transform = 'scale(1.05)'; };
-                    wrap.onmouseleave = function() { img.style.transform = ''; };
-                    wrap.appendChild(img);
-                    wrap.onclick = function() {
-                        var fCode = (card.faction && card.faction.code) ? card.faction.code : factionFromRef(ref);
-                        setHero({ cardReference: ref, name: name, factionCode: fCode });
-                        document.getElementById('db-hero-modal').style.display = 'none';
-                    };
-                    grid.appendChild(wrap);
+                    var ref = card.reference || '';
+                    if (!ref) return;
+                    var key = heroStableKey(ref);
+                    if (!groups[key]) {
+                        groups[key] = {
+                            key:     key,
+                            name:    cardName(card),
+                            faction: (card.faction && card.faction.code) || factionFromRef(ref),
+                            prints:  [],
+                        };
+                    }
+                    var known = groups[key].prints.some(function(pr) { return pr.ref === ref; });
+                    if (!known) groups[key].prints.push({ ref: ref, variation: card.variation || '' });
+                });
+
+                var list = Object.keys(groups).map(function(k) { return groups[k]; });
+                if (!list.length) {
+                    grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
+                    return;
+                }
+                list.forEach(function(g) { g.prints.sort(function(a, b) { return heroPrintClass(a.ref) - heroPrintClass(b.ref); }); });
+                list.sort(function(a, b) { return a.name.localeCompare(b.name, AlteredDB.lang) || (a.key < b.key ? -1 : 1); });
+
+                var currentKey = deck.hero ? heroStableKey(deck.hero.cardReference) : null;
+                list.forEach(function(g) {
+                    var tile = document.createElement('div');
+                    tile.className = 'db-hero-tile';
+                    tile.dataset.key = g.key;
+
+                    var img = document.createElement('img');
+                    img.src = cdnUrl(g.prints[0].ref);
+                    img.alt = g.name;
+                    img.loading = 'lazy';
+                    tile.appendChild(img);
+
+                    var cap = document.createElement('div');
+                    cap.className = 'db-hero-tile-name';
+                    cap.title = g.name;
+                    cap.textContent = g.name;
+                    tile.appendChild(cap);
+
+                    tile.addEventListener('click', function() { heroPickSelect(g, tile); });
+                    grid.appendChild(tile);
+
+                    // Re-opening the picker lands on the hero already in the deck.
+                    if (currentKey && g.key === currentKey) heroPickSelect(g, tile);
                 });
             })
             .catch(function(err) {
