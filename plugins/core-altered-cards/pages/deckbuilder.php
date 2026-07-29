@@ -344,6 +344,10 @@ foreach ($typesMergedData as $_mk => $_mvs) {
     }
 }
 $typesDataDisplay = array_diff_key($typesData, $_absorbedTypes);
+// Deckbuilder type filter row default: everything shown there (Hero/Token
+// already excluded from the row itself) except Mana, which isn't a useful
+// search target when building a deck.
+$_defaultDeckTypes = array_keys(array_diff_key($typesDataDisplay, array_flip(['HERO', 'TOKEN', 'TOKEN_MANA'])));
 $validRarities  = array_keys($raritiesData);
 $validSets      = array_keys($setsData);
 $validCostPower = array_map('strval', range(0, 12));
@@ -484,7 +488,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                         'perPage'    => CARDS_DISPLAY_PER_PAGE,
                     ],
                     'selected'           => [
-                        'type'    => [],
+                        'type'    => $_defaultDeckTypes,
                         'rarity'  => [],
                         'faction' => $_existingHeroFaction ? [$_existingHeroFaction] : [],
                     ],
@@ -2365,8 +2369,8 @@ var AlteredDB = {
         initial: {
             faction:        <?= json_encode($_existingHeroFaction ? [$_existingHeroFaction] : $defaultFactions) ?>,
             factionExplicit:<?= $_existingHeroFaction ? 'true' : 'false' ?>,
-            type:           <?= json_encode($defaultTypes) ?>,
-            typeExplicit:   false,
+            type:           <?= json_encode($_defaultDeckTypes) ?>,
+            typeExplicit:   true,
             rarity:         <?= json_encode($defaultRarities) ?>,
             rarityExplicit: false,
         },
@@ -2387,15 +2391,28 @@ var AlteredDB = {
     window.CardSearchInstances = window.CardSearchInstances || {};
     window.CardSearchInstances.db = engine;
 
-    // "Réinitialiser" clears every filter, including faction — re-select the
-    // hero's faction right after so a deck's card search doesn't lose its
-    // faction scope on reset. Registered after CardSearch's own reset listener
-    // so resetFilters() has already run by the time this fires.
+    // "Réinitialiser" clears every filter, including faction and type — re-apply
+    // the hero's faction and the deckbuilder's default types right after, so a
+    // deck's card search doesn't lose its useful scope on reset. Registered after
+    // CardSearch's own reset listener so resetFilters() has already run by the
+    // time this fires.
+    var DB_DEFAULT_TYPES = <?= json_encode($_defaultDeckTypes) ?>;
     var _dbResetBtn = document.getElementById('db-reset-btn');
     if (_dbResetBtn) {
         _dbResetBtn.addEventListener('click', function() {
+            var root = document.getElementById('db-panel');
+            if (root) {
+                DB_DEFAULT_TYPES.forEach(function(t) {
+                    var btn = root.querySelector('.filter-toggle[data-filter="type"][data-value="' + t + '"]');
+                    if (btn && !btn.classList.contains('active')) btn.click();
+                });
+            }
             var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
-            if (heroFaction) window.updateHeroFactionFilter(heroFaction);
+            if (heroFaction) {
+                window.updateHeroFactionFilter(heroFaction); // also runs the single search(1) below
+            } else {
+                engine.search(1);
+            }
         });
     }
 })();
