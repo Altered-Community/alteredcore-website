@@ -832,7 +832,22 @@ function CardSearch(cfg) {
             (mapped || [v]).forEach(function(t) { if (_tmExpanded.indexOf(t) < 0) _tmExpanded.push(t); });
         });
         _tmExpanded.forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
-        var _statusActive = filters.isBanned || filters.isErrated || filters.isSuspended;
+        // Cards page: isBanned/isSuspended/isErrated ISOLATE, so dropping the default
+        // rarity restriction makes sense — someone browsing "all banned cards" wants
+        // every rarity, not just the defaults. Deckbuilder: isBanned/isSuspended mean
+        // "include them anyway" (see _statusFilterParts), not isolate — they must NOT
+        // also widen the rarity scope to Unique, or "include suspended cards" silently
+        // floods the grid with unrelated unique cards. Only isErrated still isolates
+        // there, so it's the only one left able to drop the rarity restriction.
+        //
+        // TODO(discuss with team): the Cards-page isolate behavior itself is being
+        // questioned — should isBanned/isSuspended/isErrated ever silently widen the
+        // rarity scope to Unique there either? If we decide no, this MODE==='deck'
+        // branch becomes the behavior everywhere and this whole condition collapses
+        // to `filters.isErrated`.
+        var _statusActive = (MODE === 'deck' && cfg.getFormatLegality)
+            ? filters.isErrated
+            : (filters.isBanned || filters.isErrated || filters.isSuspended);
         (_rarityDirty ? filters.rarity : (_statusActive ? [] : DEFAULT_RARITIES)).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
         (_setsDirty ? filters.sets : DEFAULT_SETS).slice().reverse().forEach(function(v) { parts.push('set.reference[]=' + encodeURIComponent(v)); });
         filters.keywords.forEach(function(v) { parts.push('effectKeyword[]=' + encodeURIComponent(v)); });
