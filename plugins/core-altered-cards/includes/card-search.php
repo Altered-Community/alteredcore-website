@@ -292,9 +292,17 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <?php endif; ?>
 
         <!-- Type (hidden on Uniques: all characters) -->
-        <?php if (!empty($_csTypes)): ?>
+        <?php
+        // In deckbuilder mode, Hero and Token aren't real search targets (the hero
+        // has its own picker; tokens aren't deckbuilder-legal cards), so drop them
+        // from the type filter row. Cards page keeps the full list.
+        $_csTypesFilterRow = ($_csMode === 'deck')
+            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
+            : $_csTypes;
+        ?>
+        <?php if (!empty($_csTypesFilterRow)): ?>
         <div class="filter-row filter-row--scroll mb-2" data-tabs="all collection ownership">
-            <?php foreach ($_csTypes as $_tk => $_tv): ?>
+            <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
             <button type="button"
                     class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
                     data-filter="type" data-value="<?= h($_tk) ?>">
