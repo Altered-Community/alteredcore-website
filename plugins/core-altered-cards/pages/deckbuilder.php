@@ -1186,6 +1186,7 @@ var AlteredDB = {
             ? (heroData.name[AlteredDB.lang] || heroData.name.en || '')
             : (heroData.name || '');
         var faction = heroData.factionCode || factionFromRef(ref);
+        deck.hero.factionCode = faction; // resolved once here so later reads (e.g. reset) don't need to recompute
         var fData   = AlteredDB.factions[faction] || {};
         var fColor  = fData.color || '#fff';
 
@@ -2308,6 +2309,10 @@ var AlteredDB = {
     }
 
     window.renderBrowserCard = renderBrowserCard;
+    // Exposed so the (separately-scoped) CardSearch engine setup can wire the
+    // "Réinitialiser" button to restore the hero's faction instead of clearing it.
+    window.updateHeroFactionFilter = updateHeroFactionFilter;
+    window.getDeckHeroFaction = function() { return deck.hero ? deck.hero.factionCode : null; };
 })();
 </script>
 
@@ -2381,6 +2386,18 @@ var AlteredDB = {
     window.loadCards         = engine.search;
     window.CardSearchInstances = window.CardSearchInstances || {};
     window.CardSearchInstances.db = engine;
+
+    // "Réinitialiser" clears every filter, including faction — re-select the
+    // hero's faction right after so a deck's card search doesn't lose its
+    // faction scope on reset. Registered after CardSearch's own reset listener
+    // so resetFilters() has already run by the time this fires.
+    var _dbResetBtn = document.getElementById('db-reset-btn');
+    if (_dbResetBtn) {
+        _dbResetBtn.addEventListener('click', function() {
+            var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
+            if (heroFaction) window.updateHeroFactionFilter(heroFaction);
+        });
+    }
 })();
 </script>
 
