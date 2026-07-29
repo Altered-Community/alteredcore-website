@@ -273,9 +273,22 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             </span>
             <?php endif; ?>
         </div>
-        <?php elseif (($_csMode === 'deck') && !empty($_csRarities)): ?>
-        <!-- Rarity only (faction in advanced in deckbuilder mode) -->
-        <div class="filter-row filter-row--scroll cs-rarity-row mb-2" data-tabs="all unique collection ownership favoris">
+        <?php endif; ?>
+
+        <!-- Type (hidden on Uniques: all characters); in deckbuilder mode the
+             rarity row shares this same line instead of getting its own row. -->
+        <?php
+        // In deckbuilder mode, Hero and Token aren't real search targets (the hero
+        // has its own picker; tokens aren't deckbuilder-legal cards), so drop them
+        // from the type filter row. Cards page keeps the full list.
+        $_csTypesFilterRow = ($_csMode === 'deck')
+            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
+            : $_csTypes;
+        $_csDeckRarityInline = ($_csMode === 'deck') && !empty($_csRarities);
+        ?>
+        <?php if (!empty($_csTypesFilterRow) || $_csDeckRarityInline): ?>
+        <div class="filter-row filter-row--scroll cs-rarity-type-row mb-2">
+            <?php if ($_csDeckRarityInline): ?>
             <span class="cs-rarities" data-tabs="all ownership favoris">
                 <?php foreach ($_csRarities as $_rk => $_rv): ?>
                 <button type="button"
@@ -288,27 +301,24 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 </button>
                 <?php endforeach; ?>
             </span>
-        </div>
-        <?php endif; ?>
-
-        <!-- Type (hidden on Uniques: all characters) -->
-        <?php
-        // In deckbuilder mode, Hero and Token aren't real search targets (the hero
-        // has its own picker; tokens aren't deckbuilder-legal cards), so drop them
-        // from the type filter row. Cards page keeps the full list.
-        $_csTypesFilterRow = ($_csMode === 'deck')
-            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
-            : $_csTypes;
-        ?>
-        <?php if (!empty($_csTypesFilterRow)): ?>
-        <div class="filter-row filter-row--scroll mb-2" data-tabs="all collection ownership">
-            <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
-            <button type="button"
-                    class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
-                    data-filter="type" data-value="<?= h($_tk) ?>">
-                <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
-            </button>
-            <?php endforeach; ?>
+            <?php endif; ?>
+            <?php if ($_csDeckRarityInline && !empty($_csTypesFilterRow)): ?>
+            <!-- Grows to fill the gap between the two groups, keeping the bar centered in it -->
+            <span class="cs-rarity-type-spacer" data-tabs="all ownership">
+                <span class="cs-sep"></span>
+            </span>
+            <?php endif; ?>
+            <?php if (!empty($_csTypesFilterRow)): ?>
+            <span class="cs-types" data-tabs="all collection ownership">
+                <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
+                <button type="button"
+                        class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
+                        data-filter="type" data-value="<?= h($_tk) ?>">
+                    <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
+                </button>
+                <?php endforeach; ?>
+            </span>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 

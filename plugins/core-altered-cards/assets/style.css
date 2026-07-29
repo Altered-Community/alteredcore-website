@@ -533,9 +533,14 @@
 }
 
 /* ---- Compact rarity buttons + separators ---- */
-.cs-rarities { display: inline-flex; align-items: center; gap: 8px; }
+.cs-rarities { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .cs-sep { width: 1px; align-self: stretch; background: var(--neutral-300, #dee2e6); margin: 0 4px; flex-shrink: 0; }
 .filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
+
+/* ---- Deckbuilder rarity + type row: rarity left, type right, bar centered
+   in whatever gap remains between them (the spacer grows to fill it). ---- */
+.cs-types { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cs-rarity-type-spacer { flex: 1 1 auto; align-self: stretch; display: flex; justify-content: center; align-items: stretch; min-width: 8px; }
 
 /* ---- Promo toggle (switch) + panel ---- */
 .cs-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: .85rem; color: var(--neutral-600); }
@@ -626,6 +631,12 @@
     .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
+
+    /* Deckbuilder: type filters drop to their own line under rarity; no bar to
+       center once the two groups stack instead of sharing the row. */
+    .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
+    .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
 }
 
 /* ============================================================
