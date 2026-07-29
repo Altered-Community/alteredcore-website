@@ -242,8 +242,8 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Faction (+ rarity) -->
-        <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
+        <!-- Faction (+ rarity) — hidden in deckbuilder mode (moved to advanced) -->
+        <?php if (($_csMode !== 'deck') && (!empty($_csFactions) || !empty($_csRarities))): ?>
         <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
@@ -272,6 +272,22 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <?php endforeach; ?>
             </span>
             <?php endif; ?>
+        </div>
+        <?php elseif (($_csMode === 'deck') && !empty($_csRarities)): ?>
+        <!-- Rarity only (faction in advanced in deckbuilder mode) -->
+        <div class="filter-row filter-row--scroll cs-rarity-row mb-2" data-tabs="all unique collection ownership favoris">
+            <span class="cs-rarities" data-tabs="all ownership favoris">
+                <?php foreach ($_csRarities as $_rk => $_rv): ?>
+                <button type="button"
+                        class="filter-toggle filter-toggle--compact<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
+                        data-filter="rarity" data-value="<?= h($_rk) ?>"
+                        title="<?= h($_csRarityTxt[$_rk] ?? $_rk) ?>">
+                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
+                         alt="<?= h($_rk) ?>" style="width:15px;height:15px">
+                    <?= h(mb_strtoupper(mb_substr($_csRarityTxt[$_rk] ?? $_rk, 0, 1))) ?>
+                </button>
+                <?php endforeach; ?>
+            </span>
         </div>
         <?php endif; ?>
 
@@ -349,6 +365,21 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             </div>
 
             <div class="cs-advanced" style="display:none">
+
+                <!-- Faction (duplicate for deckbuilder mode) -->
+                <?php if ($_csMode === 'deck' && !empty($_csFactions)): ?>
+                <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
+                    <?php foreach ($_csFactions as $_fk => $_fv): ?>
+                    <button type="button"
+                            class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
+                            data-filter="faction" data-value="<?= h($_fk) ?>"
+                            title="<?= h($_csFactionNames[$_fk] ?? $_fk) ?>">
+                        <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_fk) ?>.png" alt="<?= h($_fk) ?>">
+                        <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
 
                 <!-- Biome powers (top of accordion) -->
                 <div class="filter-row flex-wrap mb-2" style="row-gap:.5rem" data-tabs="all unique collection ownership">

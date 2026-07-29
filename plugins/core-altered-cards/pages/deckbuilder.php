@@ -307,6 +307,18 @@ if ($editDeckId && $token) {
     }
 }
 
+// hero faction of the deck being edited (drives default faction filter in search)
+$_existingHeroFaction = null;
+if ($existingDeck) {
+    $_existingHeroCards = $existingDeck['deckCards'] ?? $existingDeck['cards'] ?? [];
+    foreach ($_existingHeroCards as $_hc) {
+        if (($_hc['cardTypeReference'] ?? '') === 'HERO') {
+            $_existingHeroFaction = $_hc['factionCode'] ?? null;
+            break;
+        }
+    }
+}
+
 // static data
 $factionsData = loadAlteredData('factions');
 $formatsData  = loadAlteredData('formats');
@@ -472,8 +484,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                         'perPage'    => CARDS_DISPLAY_PER_PAGE,
                     ],
                     'selected'           => [
-                        'type'   => [],
-                        'rarity' => [],
+                        'type'    => [],
+                        'rarity'  => [],
+                        'faction' => $_existingHeroFaction ? [$_existingHeroFaction] : [],
                     ],
                     'col_options'        => [2, 3, 4],
                     'show_cols'          => true,
@@ -1201,7 +1214,25 @@ var AlteredDB = {
         elHeroBanner.appendChild(textEl);
 
         updateDeckDisplay();
+        updateHeroFactionFilter(faction);
         if (AlteredDB.isGuest) saveGuestDeck();
+    }
+
+    // Sync the (advanced-search) faction filter to the hero's faction when the
+    // hero changes mid-session. No-op at page load: the CardSearch engine
+    // (window.CardSearchInstances.db) is created by a later <script> block and
+    // doesn't exist yet while initFromExisting() runs.
+    function updateHeroFactionFilter(faction) {
+        var engine = window.CardSearchInstances && window.CardSearchInstances.db;
+        if (!engine || !faction) return;
+        var root = document.getElementById('db-panel');
+        if (!root) return;
+        root.querySelectorAll('.filter-toggle[data-filter="faction"]').forEach(function(btn) {
+            var isTarget = btn.dataset.value === faction;
+            var isActive = btn.classList.contains('active');
+            if (isTarget !== isActive) btn.click(); // reuses card-search.js's own toggle logic
+        });
+        engine.search(1);
     }
 
     // deck card management
@@ -2296,7 +2327,7 @@ var AlteredDB = {
         cdnUrl:      AlteredDB.cdnUrl,
         rendererSrc: AlteredDB.rendererSrc,
         pushState:   false,
-        autoSearch:  false,
+        autoSearch:  true,
         closeFiltersOnSearch: true,
         collectionMode:    AlteredDB.collectionMode,
         collectionData:    AlteredDB.collection,
@@ -2327,8 +2358,8 @@ var AlteredDB = {
             perPage:    <?= CARDS_DISPLAY_PER_PAGE ?>,
         },
         initial: {
-            faction:        <?= json_encode($defaultFactions) ?>,
-            factionExplicit:false,
+            faction:        <?= json_encode($_existingHeroFaction ? [$_existingHeroFaction] : $defaultFactions) ?>,
+            factionExplicit:<?= $_existingHeroFaction ? 'true' : 'false' ?>,
             type:           <?= json_encode($defaultTypes) ?>,
             typeExplicit:   false,
             rarity:         <?= json_encode($defaultRarities) ?>,
@@ -2348,6 +2379,8 @@ var AlteredDB = {
     });
     window.updateFilterCount = engine.updateFilterCount;
     window.loadCards         = engine.search;
+    window.CardSearchInstances = window.CardSearchInstances || {};
+    window.CardSearchInstances.db = engine;
 })();
 </script>
 
