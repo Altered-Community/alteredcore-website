@@ -171,16 +171,10 @@
 .deck-compact-body { min-width:0; flex:1 1 auto; }
 .deck-compact-name { font-size:.88rem; font-weight:700; color:var(--neutral-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .deck-compact-meta { display:flex; align-items:center; gap:.35rem; font-size:.78rem; color:var(--neutral-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.deck-compact-add-btn { position:relative; z-index:2; flex-shrink:0; border:1px solid var(--primary-400); background:var(--primary-400); color:#fff; border-radius:6px; padding:.3rem .65rem; font-size:.78rem; font-weight:600; cursor:pointer; opacity:0; pointer-events:none; transition:opacity .15s; }
-.deck-compact-row:hover .deck-compact-add-btn { opacity:1; pointer-events:auto; }
-.deck-compact-add-btn:disabled { cursor:default; }
-/* Confirmation/error state stays visible until its timeout expires, even once the
-   mouse leaves the row (overrides the hover-only reveal above). */
-.deck-compact-add-btn--ok, .deck-compact-add-btn--err { opacity:1 !important; pointer-events:none !important; }
+.deck-compact-add-btn { position:relative; z-index:2; flex-shrink:0; border:1px solid var(--primary-400); background:var(--primary-400); color:#fff; border-radius:6px; padding:.3rem .65rem; font-size:.78rem; font-weight:600; cursor:pointer; }
+.deck-compact-add-btn:disabled { cursor:default; pointer-events:none; }
 .deck-compact-add-btn--ok { background:#22c55e; border-color:#22c55e; }
 .deck-compact-add-btn--err { background:#dc2626; border-color:#dc2626; }
-/* Touch devices have no hover: always show the add button */
-@media (hover: none) { .deck-compact-add-btn { opacity:1; pointer-events:auto; } }
 
 /* =========================================================
    Cards browser  (cards.php)
