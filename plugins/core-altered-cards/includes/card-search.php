@@ -456,10 +456,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned" data-tabs="all collection ownership">
                         <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
                     </button>
+                    <?php if ($_csMode !== 'deck'): ?>
                     <button type="button" class="filter-toggle<?= $_csIsErrated ? ' active' : '' ?>"
                             data-bool-filter="isErrated" data-tabs="all">
                         <i class="fa-solid fa-pen-to-square"></i> <?= h($_csTxt['lbl_errated'] ?? 'Errated') ?>
                     </button>
+                    <?php endif; ?>
                     <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended" data-tabs="all collection ownership">
                         <i class="fa-solid fa-pause"></i> <?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?>
                     </button>
@@ -470,10 +472,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
                         <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
                     </select>
+                    <?php if ($_csMode !== 'deck'): ?>
                     <label class="cs-check d-flex align-items-center gap-1" data-tabs="all">
                         <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
                         <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
                     </label>
+                    <?php endif; ?>
                 </div>
 
             </div><!-- /.cs-advanced -->
