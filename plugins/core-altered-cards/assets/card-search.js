@@ -1122,12 +1122,25 @@ function CardSearch(cfg) {
     // "Toutes les cartes" has a plain Unique rarity toggle that quietly returns
     // basic results — the dedicated Uniques tab (format/effect/support-effect
     // search) is one click away but easy to miss. Nudge toward it whenever
-    // Unique is selected while still on the "all" tab.
+    // Unique is selected while still on the "all" tab. On the Uniques tab
+    // itself (deckbuilder only), swap to a warning instead when the deck's
+    // format doesn't allow Uniques at all (cfg.getFormatLegality().maxUnique
+    // === 0) — no data-tabs attribute on the banner on purpose, so this stays
+    // the one place deciding its visibility (see card-search.php comment).
     function _syncUniqueNudge() {
-        var el = document.getElementById(P + '-unique-nudge');
+        var el = document.getElementById(P + '-unique-banner');
         if (!el) return;
-        var show = _tab === 'all' && _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
+        var nudgeEl   = el.querySelector('.cs-unique-banner-nudge');
+        var blockedEl = el.querySelector('.cs-unique-banner-blocked');
+        var legality = cfg.getFormatLegality ? cfg.getFormatLegality() : null;
+        var blocked = !!(legality && legality.maxUnique === 0);
+        var show;
+        if (_tab === 'unique')    show = blocked;
+        else if (_tab === 'all')  show = _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
+        else                      show = false;
         el.style.display = show ? '' : 'none';
+        if (nudgeEl)   nudgeEl.style.display   = (show && !blocked) ? '' : 'none';
+        if (blockedEl) blockedEl.style.display = (show && blocked)  ? '' : 'none';
     }
 
     // filter count badge

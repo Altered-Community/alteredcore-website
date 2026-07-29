@@ -136,6 +136,7 @@ $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions p
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
 $_csLblUniqueNudge   = $_csTxt['unique_nudge']     ?? ($_csLang === 'fr' ? 'Cherchez-vous une Unique ?' : 'Looking for a Unique?');
 $_csLblUniqueNudgeCta= $_csTxt['unique_nudge_cta'] ?? ($_csLang === 'fr' ? 'Essayez l\'onglet dédié, avec recherche par effet et format' : 'Try the dedicated tab, with effect and format search');
+$_csLblUniqueNotAllowed = $_csTxt['unique_not_allowed'] ?? ($_csLang === 'fr' ? 'Le format sélectionné n\'autorise aucune carte Unique dans ce deck.' : 'The selected format doesn\'t allow any Unique cards in this deck.');
 $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
@@ -214,6 +215,28 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     </div>
 
     <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
+
+        <!-- Unique-related nudge/warning — content and color swap between a
+             gold "try the dedicated Uniques tab" nudge (both pages) and an
+             orange "this format doesn't allow Uniques" warning (deckbuilder
+             only). Fully driven by _syncUniqueNudge() in card-search.js — no
+             data-tabs here on purpose, to avoid fighting the generic
+             tab-visibility sweep over what should show on which tab. -->
+        <div id="<?= h($_csP) ?>-unique-banner" class="cs-unique-banner" style="display:none">
+            <div class="cs-unique-banner-nudge">
+                <i class="fa-solid fa-circle-info"></i>
+                <span><strong><?= h($_csLblUniqueNudge) ?></strong> <?= h($_csLblUniqueNudgeCta) ?></span>
+                <button type="button" class="cs-unique-nudge-btn" data-goto-tab="unique">
+                    <?= h($_csLblUnique) ?> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+            <?php if ($_csMode === 'deck'): ?>
+            <div class="cs-unique-banner-blocked" style="display:none">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span><?= h($_csLblUniqueNotAllowed) ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
 
         <!-- Name + hand/reserve costs (same line) -->
         <div class="cs-name-row d-flex gap-2 align-items-center flex-wrap mb-2"
@@ -323,16 +346,6 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endif; ?>
         </div>
         <?php endif; ?>
-
-        <!-- Nudge toward the dedicated Uniques tab when Unique is toggled on
-             "Toutes les cartes" — see _syncUniqueNudge() in card-search.js. -->
-        <div id="<?= h($_csP) ?>-unique-nudge" class="cs-unique-nudge" style="display:none">
-            <i class="fa-solid fa-circle-info"></i>
-            <span><strong><?= h($_csLblUniqueNudge) ?></strong> <?= h($_csLblUniqueNudgeCta) ?></span>
-            <button type="button" class="cs-unique-nudge-btn" data-goto-tab="unique">
-                <?= h($_csLblUnique) ?> <i class="fa-solid fa-arrow-right"></i>
-            </button>
-        </div>
 
         <!-- Format / environment (Uniques tab only) -->
         <div class="mb-2" id="<?= h($_csP) ?>-format-wrap" data-tabs="unique">

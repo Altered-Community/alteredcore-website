@@ -101,6 +101,7 @@ $txt = array_merge($_sharedTxt, [
         'tt_show_suspended'    => 'Show suspended cards (hidden by default for this format)',
         'tt_banned_allowed'    => 'The selected format already allows banned cards — this filter has no effect',
         'tt_suspended_allowed' => 'The selected format already allows suspended cards — this filter has no effect',
+        'unique_not_allowed'   => 'The selected format doesn\'t allow any Unique cards in this deck.',
         'hero_label'      => 'Hero',
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
@@ -194,6 +195,7 @@ $txt = array_merge($_sharedTxt, [
         'tt_show_suspended'    => 'Afficher les cartes suspendues (masquées par défaut pour ce format)',
         'tt_banned_allowed'    => 'Le format sélectionné autorise déjà les cartes bannies — ce filtre est sans effet',
         'tt_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues — ce filtre est sans effet',
+        'unique_not_allowed'   => 'Le format sélectionné n\'autorise aucune carte Unique dans ce deck.',
         'hero_label'      => 'Héros',
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
@@ -777,6 +779,7 @@ var AlteredDB = {
         'tt_show_suspended'    => $txt['tt_show_suspended'],
         'tt_banned_allowed'    => $txt['tt_banned_allowed'],
         'tt_suspended_allowed' => $txt['tt_suspended_allowed'],
+        'unique_not_allowed'   => $txt['unique_not_allowed'],
         'saving'        => $txt['saving'],
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
@@ -2329,14 +2332,17 @@ var AlteredDB = {
     // "Réinitialiser" button to restore the hero's faction instead of clearing it.
     window.updateHeroFactionFilter = updateHeroFactionFilter;
     window.getDeckHeroFaction = function() { return deck.hero ? deck.hero.factionCode : null; };
-    // Banned/suspended-card visibility depends on the deck's current format —
-    // exposed so the CardSearch engine can read it live on every search.
+    // Banned/suspended-card visibility, and the Uniques tab's own adjustments,
+    // depend on the deck's current format — exposed so the CardSearch engine
+    // and the Uniques-tab sync below can read it live on every change.
     window.getDeckFormatLegality = function() {
         var fmtKey = elDeckFormat ? elDeckFormat.value : '';
         var fmt = (AlteredDB.formats && AlteredDB.formats[fmtKey]) || {};
         return {
+            key:            fmtKey,
             allowBanned:    fmt.allowBanned    !== false,
             allowSuspended: fmt.allowSuspended !== false,
+            maxUnique:      fmt.maxUnique,
         };
     };
 })();
@@ -2430,6 +2436,7 @@ var AlteredDB = {
                     if (btn && !btn.classList.contains('active')) btn.click();
                 });
             }
+            _syncUniqueTabToFormat(); // restores the Frontier preset if the deck is Frontier
             var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
             if (heroFaction) {
                 window.updateHeroFactionFilter(heroFaction); // also runs the single search(1) below
@@ -2459,11 +2466,31 @@ var AlteredDB = {
             suspendedBtn.title = legality.allowSuspended ? AlteredDB.txt.tt_suspended_allowed : AlteredDB.txt.tt_show_suspended;
         }
     }
+
+    // Preselect the Uniques tab's Frontier preset when the deck itself is
+    // Frontier, re-applied whenever the deck's format changes. The "this
+    // format doesn't allow Uniques at all" warning is handled entirely by
+    // _syncUniqueNudge() in card-search.js (driven by getFormatLegality
+    // above) — updateFilterCount() re-triggers it even when the click below
+    // is a no-op (deck format changes but Frontier-preset stays the same).
+    function _syncUniqueTabToFormat() {
+        var root = document.getElementById('db-panel');
+        var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
+        if (!root || !legality) return;
+        var wantFrontier = legality.key === 'frontier';
+        var targetBtn = root.querySelector(
+            '.filter-toggle[data-filter="format"][data-value="' + (wantFrontier ? 'frontier' : '') + '"]'
+        );
+        if (targetBtn && !targetBtn.classList.contains('active')) targetBtn.click();
+        if (window.updateFilterCount) window.updateFilterCount();
+    }
     _syncStatusButtonsToFormat();
+    _syncUniqueTabToFormat();
     var _dbFormatSelect = document.getElementById('db-deck-format');
     if (_dbFormatSelect) {
         _dbFormatSelect.addEventListener('change', function() {
             _syncStatusButtonsToFormat();
+            _syncUniqueTabToFormat();
             engine.search(1);
         });
     }
