@@ -134,6 +134,8 @@ $_csLblFav      = $_csTxt['scope_favoris']    ?? ($_csLang === 'fr' ? 'Favoris' 
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
+$_csLblUniqueNudge   = $_csTxt['unique_nudge']     ?? ($_csLang === 'fr' ? 'Cherchez-vous une Unique ?' : 'Looking for a Unique?');
+$_csLblUniqueNudgeCta= $_csTxt['unique_nudge_cta'] ?? ($_csLang === 'fr' ? 'Essayez l\'onglet dédié, avec recherche par effet et format' : 'Try the dedicated tab, with effect and format search');
 $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
@@ -321,6 +323,16 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endif; ?>
         </div>
         <?php endif; ?>
+
+        <!-- Nudge toward the dedicated Uniques tab when Unique is toggled on
+             "Toutes les cartes" — see _syncUniqueNudge() in card-search.js. -->
+        <div id="<?= h($_csP) ?>-unique-nudge" class="cs-unique-nudge" style="display:none">
+            <i class="fa-solid fa-circle-info"></i>
+            <span><strong><?= h($_csLblUniqueNudge) ?></strong> <?= h($_csLblUniqueNudgeCta) ?></span>
+            <button type="button" class="cs-unique-nudge-btn" data-goto-tab="unique">
+                <?= h($_csLblUnique) ?> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
 
         <!-- Format / environment (Uniques tab only) -->
         <div class="mb-2" id="<?= h($_csP) ?>-format-wrap" data-tabs="unique">

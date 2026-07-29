@@ -1119,9 +1119,21 @@ function CardSearch(cfg) {
         _readSupportRow();
     }
 
+    // "Toutes les cartes" has a plain Unique rarity toggle that quietly returns
+    // basic results — the dedicated Uniques tab (format/effect/support-effect
+    // search) is one click away but easy to miss. Nudge toward it whenever
+    // Unique is selected while still on the "all" tab.
+    function _syncUniqueNudge() {
+        var el = document.getElementById(P + '-unique-nudge');
+        if (!el) return;
+        var show = _tab === 'all' && _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
+        el.style.display = show ? '' : 'none';
+    }
+
     // filter count badge
     function updateFilterCount() {
         readTsValues();
+        _syncUniqueNudge();
         var n = (_factionDirty ? filters.faction.length : 0)
             + (_typeDirty   ? filters.type.length   : 0)
             + (_rarityDirty ? filters.rarity.length : 0)
@@ -2127,6 +2139,15 @@ function CardSearch(cfg) {
             setTab(btn.dataset.tab);
             // Favorites tab has no Apply button flow — load it immediately, even in deck mode.
             if (MODE === 'cards' || _tab === 'favoris') search(1);
+        });
+
+        // Unique-nudge CTA: reuse the real tab button's own click handling
+        // (reset + setTab + scope-appropriate search) instead of duplicating it.
+        _root.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-goto-tab]');
+            if (!btn || !_root.contains(btn)) return;
+            var tabBtn = qa('.cs-tab[data-tab="' + btn.dataset.gotoTab + '"]')[0];
+            if (tabBtn) tabBtn.click();
         });
 
         _root.addEventListener('click', function(e) {
