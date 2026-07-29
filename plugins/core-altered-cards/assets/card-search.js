@@ -766,6 +766,28 @@ function CardSearch(cfg) {
 
     // ── End effect filter ────────────────────────────────────────────────────
 
+    // isBanned/isSuspended query params.
+    // Cards page (and any mode without cfg.getFormatLegality): the buttons
+    // ISOLATE — toggling "Banni" narrows results to banned cards only.
+    // Deckbuilder: cfg.getFormatLegality() reports whether the deck's current
+    // format allows banned/suspended cards at all. When it doesn't, those
+    // cards are excluded by default (isBanned=false) and the same buttons
+    // become an "include them anyway" override (clearing the exclusion,
+    // never isolating — isolating would hide the *legal* cards instead).
+    function _statusFilterParts() {
+        var parts = [];
+        var legality = (MODE === 'deck' && cfg.getFormatLegality) ? (cfg.getFormatLegality() || {}) : null;
+        if (legality) {
+            if (legality.allowBanned === false && !filters.isBanned)       parts.push('isBanned=false');
+            if (legality.allowSuspended === false && !filters.isSuspended) parts.push('isSuspended=false');
+        } else {
+            if (filters.isBanned)    parts.push('isBanned=true');
+            if (filters.isSuspended) parts.push('isSuspended=true');
+        }
+        if (filters.isErrated) parts.push('isErrated=true');
+        return parts;
+    }
+
     // build direct API URL
     function buildApiUrl(page) {
         // Reference lookup: bypass all filters and collection scope
@@ -826,9 +848,7 @@ function CardSearch(cfg) {
         if (filters.costRelation === 'eq')        parts.push('costRelation=equal');
         else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
         else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
-        if (filters.isBanned)    parts.push('isBanned=true');
-        if (filters.isErrated)   parts.push('isErrated=true');
-        if (filters.isSuspended) parts.push('isSuspended=true');
+        _statusFilterParts().forEach(function(p) { parts.push(p); });
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
         _readEffectRows();
@@ -932,9 +952,7 @@ function CardSearch(cfg) {
             filters.variations.forEach(function(v){ parts.push('variation[]=' + encodeURIComponent(v)); });
         }
 
-        if (filters.isBanned)    parts.push('isBanned=true');
-        if (filters.isErrated)   parts.push('isErrated=true');
-        if (filters.isSuspended) parts.push('isSuspended=true');
+        _statusFilterParts().forEach(function(p) { parts.push(p); });
 
         // Numeric filters: ownership proxy wants exact (mainCost=N); collection
         // proxy wants bracketed ranges (mainCost[gte]/[lte]/[gt]/[lt]).

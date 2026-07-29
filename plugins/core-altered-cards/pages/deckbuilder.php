@@ -97,6 +97,10 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Banned cards not allowed',
         'rule_no_suspended'    => 'Suspended cards not allowed',
         'rule_frontier_legal'  => 'Unique cards must be part of the Frontier allowlist',
+        'tt_show_banned'       => 'Show banned cards (hidden by default for this format)',
+        'tt_show_suspended'    => 'Show suspended cards (hidden by default for this format)',
+        'tt_banned_allowed'    => 'The selected format already allows banned cards — this filter has no effect',
+        'tt_suspended_allowed' => 'The selected format already allows suspended cards — this filter has no effect',
         'hero_label'      => 'Hero',
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
@@ -186,6 +190,10 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Cartes bannies non autorisées',
         'rule_no_suspended'    => 'Cartes suspendues non autorisées',
         'rule_frontier_legal'  => 'Les cartes uniques doivent faire partie de la liste autorisée Frontier',
+        'tt_show_banned'       => 'Afficher les cartes bannies (masquées par défaut pour ce format)',
+        'tt_show_suspended'    => 'Afficher les cartes suspendues (masquées par défaut pour ce format)',
+        'tt_banned_allowed'    => 'Le format sélectionné autorise déjà les cartes bannies — ce filtre est sans effet',
+        'tt_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues — ce filtre est sans effet',
         'hero_label'      => 'Héros',
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
@@ -765,6 +773,10 @@ var AlteredDB = {
         'rule_no_banned'       => $txt['rule_no_banned'],
         'rule_no_suspended'    => $txt['rule_no_suspended'],
         'rule_frontier_legal'  => $txt['rule_frontier_legal'],
+        'tt_show_banned'       => $txt['tt_show_banned'],
+        'tt_show_suspended'    => $txt['tt_show_suspended'],
+        'tt_banned_allowed'    => $txt['tt_banned_allowed'],
+        'tt_suspended_allowed' => $txt['tt_suspended_allowed'],
         'saving'        => $txt['saving'],
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
@@ -2317,6 +2329,16 @@ var AlteredDB = {
     // "Réinitialiser" button to restore the hero's faction instead of clearing it.
     window.updateHeroFactionFilter = updateHeroFactionFilter;
     window.getDeckHeroFaction = function() { return deck.hero ? deck.hero.factionCode : null; };
+    // Banned/suspended-card visibility depends on the deck's current format —
+    // exposed so the CardSearch engine can read it live on every search.
+    window.getDeckFormatLegality = function() {
+        var fmtKey = elDeckFormat ? elDeckFormat.value : '';
+        var fmt = (AlteredDB.formats && AlteredDB.formats[fmtKey]) || {};
+        return {
+            allowBanned:    fmt.allowBanned    !== false,
+            allowSuspended: fmt.allowSuspended !== false,
+        };
+    };
 })();
 </script>
 
@@ -2385,6 +2407,7 @@ var AlteredDB = {
         renderDeckCard: window.renderBrowserCard,
         formatCount: function(n) { return n + ' ' + AlteredDB.txt.deck_cards; },
         txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel },
+        getFormatLegality: function() { return window.getDeckFormatLegality ? window.getDeckFormatLegality() : null; },
     });
     window.updateFilterCount = engine.updateFilterCount;
     window.loadCards         = engine.search;
@@ -2413,6 +2436,35 @@ var AlteredDB = {
             } else {
                 engine.search(1);
             }
+        });
+    }
+
+    // The format picks which of banned/suspended cards are hidden by default
+    // (see getFormatLegality above). When it changes: re-run the search so the
+    // grid reflects the new format immediately, and grey out the "Banni"/
+    // "Suspendu" buttons when the new format allows them anyway (toggling
+    // would have no effect since nothing is being hidden to include back).
+    function _syncStatusButtonsToFormat() {
+        var root = document.getElementById('db-panel');
+        var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
+        if (!root || !legality) return;
+        var bannedBtn    = root.querySelector('[data-bool-filter="isBanned"]');
+        var suspendedBtn = root.querySelector('[data-bool-filter="isSuspended"]');
+        if (bannedBtn) {
+            bannedBtn.classList.toggle('filter-toggle-soon', legality.allowBanned);
+            bannedBtn.title = legality.allowBanned ? AlteredDB.txt.tt_banned_allowed : AlteredDB.txt.tt_show_banned;
+        }
+        if (suspendedBtn) {
+            suspendedBtn.classList.toggle('filter-toggle-soon', legality.allowSuspended);
+            suspendedBtn.title = legality.allowSuspended ? AlteredDB.txt.tt_suspended_allowed : AlteredDB.txt.tt_show_suspended;
+        }
+    }
+    _syncStatusButtonsToFormat();
+    var _dbFormatSelect = document.getElementById('db-deck-format');
+    if (_dbFormatSelect) {
+        _dbFormatSelect.addEventListener('change', function() {
+            _syncStatusButtonsToFormat();
+            engine.search(1);
         });
     }
 })();
