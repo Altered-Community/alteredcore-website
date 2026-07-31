@@ -2440,27 +2440,63 @@ var AlteredDB = {
 
     // "Réinitialiser" clears every filter, including faction and type — re-apply
     // the hero's faction and the deckbuilder's default types right after, so a
-    // deck's card search doesn't lose its useful scope on reset. Registered after
-    // CardSearch's own reset listener so resetFilters() has already run by the
-    // time this fires.
+    // deck's card search doesn't lose its useful scope on reset. Also reused
+    // below on tab switches, which resetFilters() blanks out the exact same way.
+    //   - hero faction: restored on every tab (the faction buttons are shown on
+    //     all of them, and every scope's API honors the filter). A single value,
+    //     so it survives the physical-collection scope's single-value filters.
+    //   - default types: skipped on the Uniques tab, whose own preset forces
+    //     type=CHARACTER and has to win, and on the physical-collection tab,
+    //     where types are single-value (each click clears the others), so
+    //     replaying all four would leave just the last one arbitrarily active
     var DB_DEFAULT_TYPES = <?= json_encode($_defaultDeckTypes) ?>;
+    function _restoreDeckDefaults(opts) {
+        var root = document.getElementById('db-panel');
+        if (root && !(opts && opts.skipTypes)) {
+            DB_DEFAULT_TYPES.forEach(function(t) {
+                var btn = root.querySelector('.filter-toggle[data-filter="type"][data-value="' + t + '"]');
+                if (btn && !btn.classList.contains('active')) btn.click();
+            });
+        }
+        var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
+        if (heroFaction) {
+            window.updateHeroFactionFilter(heroFaction); // also runs the single search(1) below
+        } else {
+            engine.search(1);
+        }
+    }
     var _dbResetBtn = document.getElementById('db-reset-btn');
     if (_dbResetBtn) {
         _dbResetBtn.addEventListener('click', function() {
-            var root = document.getElementById('db-panel');
-            if (root) {
-                DB_DEFAULT_TYPES.forEach(function(t) {
-                    var btn = root.querySelector('.filter-toggle[data-filter="type"][data-value="' + t + '"]');
-                    if (btn && !btn.classList.contains('active')) btn.click();
-                });
-            }
+            _restoreDeckDefaults();
             _syncUniqueTabToFormat(); // restores the Frontier preset if the deck is Frontier
-            var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
-            if (heroFaction) {
-                window.updateHeroFactionFilter(heroFaction); // also runs the single search(1) below
-            } else {
-                engine.search(1);
-            }
+        });
+    }
+
+    // card-search.js's tab-click handler calls resetFilters() on every switch
+    // (even back to a tab you were already on before, via a different tab) —
+    // wiping the hero-faction/default-type preselection above just like Reset
+    // does — and, in deck mode, never re-searches on tab switch (unlike the
+    // Cards page), so the grid is left showing the *previous* tab's results
+    // under the new tab's filters until "Rechercher" is clicked. Re-apply the
+    // defaults on every switch, which also (re)searches so the grid always
+    // matches whichever tab is now active. Registered after CardSearch's own
+    // tab listener so setTab() has already run by the time this fires. Tracks
+    // the last tab itself (mirroring the native handler's own no-op guard)
+    // since _tab is private to card-search.js. The playset tab is a dashboard
+    // with no result grid — search() no-ops there, so it needs no special case.
+    var _dbLastTab = 'all';
+    var _dbTabsPanel = document.getElementById('db-panel');
+    if (_dbTabsPanel) {
+        _dbTabsPanel.addEventListener('click', function(e) {
+            var tabBtn = e.target.closest('.cs-tab[data-tab]');
+            if (!tabBtn || tabBtn.disabled) return;
+            var newTab = tabBtn.dataset.tab;
+            if (newTab === _dbLastTab) return;
+            _dbLastTab = newTab;
+            // Favoris already (re)searched itself in the native handler; the
+            // duplicate here is harmless (search() aborts the in-flight one).
+            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
         });
     }
 
