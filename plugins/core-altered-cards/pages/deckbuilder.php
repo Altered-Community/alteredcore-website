@@ -132,6 +132,7 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Unnamed',
         'detail_label'    => 'View detail',
         'bga_sets_info'   => 'The following sets are not yet available on Board Game Arena and cannot be used in BGA games: %s.',
+        'bga_alt_art_info' => 'Board Game Arena currently displays the standard art for every card, regardless of its actual printing — so alt-art selection isn\'t available here, and the Kickstarter edition (a copy of the base set with alt arts) is hidden from the set filters. Once BGA supports alt arts, choosing which art to play will move to its own, separate menu.',
     ],
     'fr' => [
         'page_title'      => 'Deckbuilder',
@@ -226,6 +227,7 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Sans nom',
         'detail_label'    => 'Accéder au détail',
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
+        'bga_alt_art_info' => 'Board Game Arena affiche actuellement l\'art standard pour chaque carte, quel que soit son tirage réel — la sélection d\'alt art n\'est donc pas disponible ici, et l\'édition Kickstarter (une copie du set de base avec des alt arts) est masquée des filtres de sets. Quand BGA prendra en charge les alt arts, le choix de l\'art joué aura son propre menu, séparé de la constitution du deck.',
     ],
 ][$uiLang] ?? []);
 $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
@@ -658,6 +660,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 </div>
             </div>
             <?php endif; ?>
+            <div class="card-altered p-3 mt-2 db-info-banner">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fa-solid fa-circle-info flex-shrink-0 text-secondary" style="margin-top:.15em"></i>
+                    <span><?= h($txt['bga_alt_art_info']) ?></span>
+                </div>
+            </div>
         </div>
 
     </div>

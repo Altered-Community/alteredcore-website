@@ -71,8 +71,14 @@ foreach ($_csSets as $_sr => $_sd) {
 }
 $_csHasCollFilter = !empty($_csCollOpts);
 
-// Main (standard) editions shown in the quick-filter bar.
+// Main (standard) editions shown in the quick-filter bar. Deckbuilder only:
+// drop COREKS — it's just CORE with a handful of alt arts BGA doesn't even
+// render (falls back to the standard art), so it'd only add a confusing
+// near-duplicate quick-filter button when building a deck.
 $_csOfficialSets = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'main');
+if ($_csMode === 'deck') {
+    unset($_csOfficialSets['COREKS']);
+}
 // Promotional / sub editions — revealed under the "show promo" toggle. Standard
 // sets never appear here.
 $_csPromoSets    = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'sub');
@@ -386,7 +392,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <span><?= h($_csLblAdvanced) ?></span>
                     <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
                 </button>
-                <?php if (!empty($_csPromoSets)): ?>
+                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
                 <label class="cs-switch" data-tabs="all ownership">
                     <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
                     <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
@@ -431,8 +437,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <?= $_csNumInput('oceanpower') ?>
                 </div>
 
-                <!-- Promo options (shown when "show promo" is on; all-cards tab only) -->
-                <?php if (!empty($_csPromoSets)): ?>
+                <!-- Promo options (shown when "show promo" is on; all-cards tab only).
+                     Deckbuilder has no "show promo" toggle to reveal this, so skip it there. -->
+                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
                 <div id="<?= h($_csP) ?>-promo-panel" class="cs-promo-panel mb-2" style="display:none">
                     <div class="cs-promo-variation mb-2">
                         <div class="filter-label mb-1"><?= h($_csTxt['lbl_variation'] ?? 'Variation') ?></div>
