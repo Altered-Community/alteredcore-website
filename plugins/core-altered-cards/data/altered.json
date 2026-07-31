@@ -1,4 +1,5 @@
 {
+    "bgaArena":  { "format":  "frontier" },
     "factions":  {
                      "AX":  { "en":  "Axiom",  "fr":  "Axiom",  "color":  "#8c432a" },
                      "BR":  { "en":  "Bravos",  "fr":  "Bravos",  "color":  "#c32637" },

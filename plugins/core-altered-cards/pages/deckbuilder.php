@@ -123,6 +123,8 @@ $txt = array_merge($_sharedTxt, [
         'bga_fmt_ko'      => 'BGA - Format unavailable',
         'bga_hero_ko'     => 'BGA - Hero unavailable',
         'bga_hero_partial' => 'BGA - Availability depends on format',
+        'bga_arena'       => 'BGA Arena',
+        'bga_arena_title' => 'Format currently used by Board Game Arena for Arena mode, its competitive queue.',
         'bga_hero_title'  => 'This hero only exists in sets that are not on Board Game Arena. The deck can still be built here.',
         'bga_partial_title' => 'This hero is only available in some Board Game Arena formats — the format list says which.',
         'lbl_status'      => 'Status',
@@ -236,6 +238,8 @@ $txt = array_merge($_sharedTxt, [
         'bga_fmt_ko'      => 'BGA - Format indisponible',
         'bga_hero_ko'     => 'BGA - Héros indisponible',
         'bga_hero_partial' => 'BGA - Disponible selon format',
+        'bga_arena'       => 'Arène BGA',
+        'bga_arena_title' => 'Format actuellement utilisé par Board Game Arena pour le mode Arène, sa file compétitive.',
         'bga_hero_title'  => 'Ce héros n\'existe que dans des sets absents de Board Game Arena. Le deck reste constructible ici.',
         'bga_partial_title' => 'Ce héros n\'est disponible que sur certains formats Board Game Arena — la liste des formats précise lesquels.',
         'lbl_status'      => 'Statut',
@@ -722,8 +726,13 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
     </div>
 </div>
 
-<!-- New deck wizard — step 2: deck identity -->
+<!-- New deck creation dialog -->
 <?php
+// Board Game Arena runs its competitive "Arena" queue on one format at a time, and
+// which one changes on BGA's schedule. The pointer lives in altered.json so it can
+// be corrected from the admin JSON editor without a deploy.
+$_bgaArenaFormat = (string)(loadAlteredData('bgaArena')['format'] ?? '');
+
 // One-line format descriptors, derived from the rules themselves so they cannot
 // drift from altered.json.
 $_fmtDesc = [];
@@ -737,6 +746,27 @@ foreach ($formatsData as $_fk => $_fv) {
     if (count($_bits) === 1 && ($_fv['maxCopiesPerRef'] ?? null) === null) $_bits[] = $txt['fmt_free'];
     $_fmtDesc[$_fk] = implode(' · ', $_bits);
 }
+
+// Display order: the Arena format, then the other BGA formats, then the free-for-all
+// ones, then the rest — each group alphabetical on the displayed name. Puts what most
+// players are looking for at the top instead of the reference data's own order.
+// A format with no card restrictions at all (Sandbox) sits last among the BGA ones:
+// it is a scratchpad, not something anyone plays competitively.
+$_fmtKeys = array_keys($_fmtDesc);
+usort($_fmtKeys, function ($a, $b) use ($formatsData, $uiLang, $_bgaArenaFormat) {
+    $rank = function ($k) use ($formatsData, $_bgaArenaFormat) {
+        if ($_bgaArenaFormat !== '' && $k === $_bgaArenaFormat) return 0;
+        if (empty($formatsData[$k]['bgalegal'])) return 3;
+        $unrestricted = ($formatsData[$k]['maxCopiesPerRef'] ?? null) === null
+                     && ($formatsData[$k]['maxUnique'] ?? null) === null;
+        return $unrestricted ? 2 : 1;
+    };
+    $ra = $rank($a);
+    $rb = $rank($b);
+    if ($ra !== $rb) return $ra <=> $rb;
+    $label = fn($k) => $formatsData[$k][$uiLang] ?? $formatsData[$k]['en'] ?? $k;
+    return strcasecmp($label($a), $label($b));
+});
 ?>
 <!-- No backdrop dismissal: this step holds typed input, and leaving means
      abandoning the deck. The × and Cancel are the deliberate exits. -->
@@ -767,14 +797,20 @@ foreach ($formatsData as $_fk => $_fv) {
             <!-- Format -->
             <div class="filter-label mb-1"><?= h($txt['format']) ?> <span class="db-new-req">*</span></div>
             <div class="db-new-formats mb-3">
-                <?php foreach ($formatsData as $fmtKey => $fmtData): if (!empty($fmtData['hidden'])) continue; ?>
+                <?php foreach ($_fmtKeys as $fmtKey): $fmtData = $formatsData[$fmtKey]; ?>
                 <label class="db-new-format" style="--format-color:<?= h($fmtData['color'] ?? 'var(--neutral-300)') ?>">
                     <input type="radio" name="db-new-format" value="<?= h($fmtKey) ?>">
                     <span class="db-new-format-txt">
                         <span class="db-new-format-head">
                             <span class="db-new-format-name"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></span>
                             <?php // Text and colour set by JS: the verdict also depends on the hero. ?>
-                            <span class="db-bga-pill" data-fmt-key="<?= h($fmtKey) ?>" data-fmt-bga="<?= !empty($fmtData['bgalegal']) ? '1' : '0' ?>"></span>
+                            <span class="db-bga-pill" data-fmt-key="<?= h($fmtKey) ?>" data-fmt-bga="<?= !empty($fmtData['bgalegal']) ? '1' : '0' ?>"
+                                  data-fmt-arena="<?= ($_bgaArenaFormat !== '' && $fmtKey === $_bgaArenaFormat) ? '1' : '0' ?>"></span>
+                            <?php if ($_bgaArenaFormat !== '' && $fmtKey === $_bgaArenaFormat): ?>
+                            <span class="db-arena-pill" title="<?= h($txt['bga_arena_title']) ?>">
+                                <i class="fa-solid fa-trophy"></i><?= h($txt['bga_arena']) ?>
+                            </span>
+                            <?php endif; ?>
                         </span>
                         <small><?= h($_fmtDesc[$fmtKey] ?? '') ?></small>
                     </span>
@@ -2095,6 +2131,11 @@ var AlteredDB = {
             // user can fix without leaving the format — hence its own colour.
             pill.className = 'db-bga-pill' + (!fmtOk ? ' fmt-ko' : heroKo ? ' ko' : '');
             pill.title = (fmtOk && heroKo) ? AlteredDB.txt.bga_hero_title : '';
+            // The Arena badge already says the format runs on BGA, so a green
+            // "available" next to it would just be a second pill saying less. A
+            // warning still shows: that one is not implied by the badge.
+            var redundant = pill.dataset.fmtArena === '1' && fmtOk && !heroKo;
+            pill.style.display = redundant ? 'none' : '';
         });
     }
 

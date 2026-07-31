@@ -330,6 +330,11 @@
 .db-bga-pill.fmt-ko  { background:#fbdcdc; color:#8f1f2b; }
 /* Under a hero tile the pill sits below the name and must be free to wrap */
 .db-hero-tile-bga { margin-top:4px; text-align:center; white-space:normal; line-height:1.25; }
+/* BGA's competitive queue runs on one format at a time — a distinct colour, since
+   this says "notable", not "available or not" like the pills above. */
+.db-arena-pill { display:inline-flex; align-items:center; gap:4px; font-size:.64rem; font-weight:700;
+                 letter-spacing:.04em; padding:1px 7px; border-radius:20px; white-space:nowrap;
+                 background:#764891; color:#fff; }
 /* New-deck dialog — a form, not a grid, so it stays narrow. Qualified with
    .db-hero-panel so it wins regardless of rule order in this file. */
 .db-hero-panel.db-new-panel { max-width:460px; }
