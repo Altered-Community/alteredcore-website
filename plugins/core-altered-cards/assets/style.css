@@ -317,33 +317,45 @@
 .db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
 [data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
 
-.db-hero-arts { flex:0 0 auto; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
-.db-hero-arts-head { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-.db-hero-arts-title { font-size:.78rem; font-weight:700; color:var(--neutral-500); }
-.db-hero-arts-note { font-size:.72rem; color:var(--neutral-400); }
-.db-hero-arts-strip { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
-.db-hero-art { flex:0 0 148px; min-width:0; cursor:pointer; border:2px solid transparent; border-radius:9px; padding:4px; transition:border-color .12s; }
-.db-hero-art img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; }
-.db-hero-art-label { margin-top:5px; font-size:.76rem; text-align:center; color:var(--neutral-400); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.db-hero-art.selected { border-color:var(--primary-400); }
-.db-hero-art.selected .db-hero-art-label { color:var(--primary-500); }
-
-/* Wizard chrome — only visible while the picker acts as step 1 of deck creation */
-.db-hero-step { margin-left:8px; font-size:.72rem; font-weight:700; padding:2px 9px; border-radius:20px; background:var(--sand-200); color:var(--neutral-500); vertical-align:middle; }
-[data-theme="dark"] .db-hero-step { background:rgba(255,255,255,.1); }
 .db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
-/* New-deck wizard, step 2 — a form, not a grid, so it stays narrow. Qualified
-   with .db-hero-panel so it wins regardless of rule order in this file. */
+
+/* Board Game Arena availability — an attribute of the format and of the hero */
+.db-bga-pill { font-size:.64rem; font-weight:700; letter-spacing:.04em; padding:1px 6px; border-radius:20px;
+               background:#4f8a55; color:#fff; white-space:nowrap; }
+/* Much lighter orange, so it needs dark text of the same family to stay legible */
+.db-bga-pill.ko      { background:#ffd9a8; color:#7a3f05; }
+/* Yellow — usable on BGA, but only in some formats */
+.db-bga-pill.partial { background:#fdf1bd; color:#71570a; }
+/* Very light red — reserved for a format BGA does not run at all */
+.db-bga-pill.fmt-ko  { background:#fbdcdc; color:#8f1f2b; }
+/* Under a hero tile the pill sits below the name and must be free to wrap */
+.db-hero-tile-bga { margin-top:4px; text-align:center; white-space:normal; line-height:1.25; }
+/* New-deck dialog — a form, not a grid, so it stays narrow. Qualified with
+   .db-hero-panel so it wins regardless of rule order in this file. */
 .db-hero-panel.db-new-panel { max-width:460px; }
 .db-new-body { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-gutter:stable; padding-right:10px; }
 .db-new-req { color:var(--danger, #c32637); }
 .db-new-note { font-size:.76rem; color:var(--neutral-400); margin-bottom:0; }
-.db-new-hero { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:var(--sand-100); margin-bottom:16px; }
+/* Hero row — a form field that opens the picker, with an empty state */
+.db-new-hero { width:100%; text-align:left; cursor:pointer; display:flex; align-items:center; gap:12px;
+               padding:10px 12px; margin-bottom:16px; border-radius:9px;
+               border:1px solid var(--panel-border, var(--sand-300)); background:var(--sand-100);
+               transition:border-color .12s; }
+.db-new-hero:hover { border-color:var(--primary-400); }
 [data-theme="dark"] .db-new-hero { background:rgba(255,255,255,.06); }
+.db-new-hero.empty { border-style:dashed; }
+/* Once a hero is set, the row carries its faction colour the same way the faction
+   buttons of the picker do — a 3px bottom accent, kept through hover. */
+.db-new-hero:not(.empty),
+.db-new-hero:not(.empty):hover { border-bottom:3px solid var(--faction-color, var(--panel-border, var(--sand-300))); }
 .db-new-hero img { width:44px; height:60px; border-radius:5px; object-fit:cover; flex-shrink:0; }
-.db-new-hero-id { display:flex; flex-direction:column; flex:1 1 auto; min-width:0; }
+.db-new-hero > i { width:44px; font-size:1.5rem; text-align:center; color:var(--neutral-300); flex-shrink:0; }
+.db-new-hero-id { display:flex; flex-direction:column; align-items:flex-start; gap:2px; flex:1 1 auto; min-width:0; }
 .db-new-hero-id span { font-size:.92rem; font-weight:600; }
+.db-new-hero.empty .db-new-hero-id span { font-weight:400; color:var(--neutral-400); }
 .db-new-hero-id small { font-size:.76rem; color:var(--neutral-400); }
+.db-new-hero-action { flex-shrink:0; font-size:.78rem; font-weight:600; color:var(--primary-500); }
+#db-new-hero-bga { font-size:.6rem; }
 
 .db-new-formats { border:1px solid var(--panel-border, var(--sand-200)); border-radius:9px; overflow:hidden; }
 .db-new-format { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; cursor:pointer; margin:0;
@@ -353,6 +365,7 @@
 [data-theme="dark"] .db-new-format:hover { background:rgba(255,255,255,.05); }
 .db-new-format input { margin-top:.25rem; flex-shrink:0; }
 .db-new-format-txt { display:flex; flex-direction:column; min-width:0; }
+.db-new-format-head { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .db-new-format-name { font-size:.88rem; font-weight:600; }
 .db-new-format-txt small { font-size:.74rem; color:var(--neutral-400); }
 
