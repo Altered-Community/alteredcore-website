@@ -129,6 +129,9 @@ function CardSearch(cfg) {
         isBanned:       !!ini.isBanned,
         isErrated:      !!ini.isErrated,
         isSuspended:    !!ini.isSuspended,
+        // Deckbuilder-only combined toggle (see _statusFilterParts): replaces
+        // isBanned/isSuspended there with a single "include them anyway" flag.
+        bannedOrSuspended: !!ini.bannedOrSuspended,
         hasNoEffect:    !!ini.hasNoEffect,
         effects:        [],
         // Effect OR/AND toggle was removed from the UI: rows always combine with AND,
@@ -771,15 +774,17 @@ function CardSearch(cfg) {
     // ISOLATE — toggling "Banni" narrows results to banned cards only.
     // Deckbuilder: cfg.getFormatLegality() reports whether the deck's current
     // format allows banned/suspended cards at all. When it doesn't, those
-    // cards are excluded by default (isBanned=false) and the same buttons
-    // become an "include them anyway" override (clearing the exclusion,
-    // never isolating — isolating would hide the *legal* cards instead).
+    // cards are excluded by default (isBanned=false / isSuspended=false) and
+    // the single "Suspendus et bannis" toggle (filters.bannedOrSuspended)
+    // becomes an "include them anyway" override — never isolating, since
+    // isolating would hide the *legal* cards instead.
     function _statusFilterParts() {
         var parts = [];
         var legality = (MODE === 'deck' && cfg.getFormatLegality) ? (cfg.getFormatLegality() || {}) : null;
         if (legality) {
-            if (legality.allowBanned === false && !filters.isBanned)       parts.push('isBanned=false');
-            if (legality.allowSuspended === false && !filters.isSuspended) parts.push('isSuspended=false');
+            var includeAnyway = !!filters.bannedOrSuspended;
+            if (legality.allowBanned === false && !includeAnyway)    parts.push('isBanned=false');
+            if (legality.allowSuspended === false && !includeAnyway) parts.push('isSuspended=false');
         } else {
             if (filters.isBanned)    parts.push('isBanned=true');
             if (filters.isSuspended) parts.push('isSuspended=true');
@@ -1153,7 +1158,7 @@ function CardSearch(cfg) {
             + NUM_FIELDS.reduce(function(acc, f) { return acc + (numExprActive(filters[f.key]) ? 1 : 0); }, 0)
             + (_setsDirty ? filters.sets.length : 0) + filters.subtypes.length + filters.keywords.length
             + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0)
             + (filters.costRelation ? 1 : 0)
             + (filters.format ? 1 : 0)
@@ -1165,7 +1170,7 @@ function CardSearch(cfg) {
         }
         // Advanced-accordion badge: count of filters living inside the accordion.
         var advN = filters.subtypes.length + filters.keywords.length
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0) + (filters.costRelation ? 1 : 0)
             + (numExprActive(filters.forest)   ? 1 : 0)
             + (numExprActive(filters.mountain) ? 1 : 0)
@@ -1847,6 +1852,7 @@ function CardSearch(cfg) {
         filters.isBanned       = false;
         filters.isErrated      = false;
         filters.isSuspended    = false;
+        filters.bannedOrSuspended = false;
         filters.hasNoEffect    = false;
         filters.effects        = [];
         filters.support         = { trigger: [], condition: [], effect: [] };
@@ -1863,6 +1869,7 @@ function CardSearch(cfg) {
 
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) { b.classList.remove('active'); });
         qa('.filter-toggle[data-bool-filter]').forEach(function(b) { b.classList.remove('active'); });
+        qa('.cs-switch[data-bool-filter] input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
         qa('.filter-toggle[data-filter="format"]').forEach(function(b) { b.classList.toggle('active', b.dataset.value === ''); });
 
         ['faction','subtype','keyword'].forEach(function(k) {
@@ -2216,6 +2223,16 @@ function CardSearch(cfg) {
             var key = btn.dataset.boolFilter;
             filters[key] = !filters[key];
             btn.classList.toggle('active', !!filters[key]);
+            updateFilterCount();
+        });
+
+        // Same data-bool-filter convention, but for a cs-switch toggle
+        // (checkbox) instead of a filter-toggle button.
+        _root.addEventListener('change', function(e) {
+            if (e.target.type !== 'checkbox') return;
+            var label = e.target.closest('.cs-switch[data-bool-filter]');
+            if (!label || !_root.contains(label)) return;
+            filters[label.dataset.boolFilter] = e.target.checked;
             updateFilterCount();
         });
     }

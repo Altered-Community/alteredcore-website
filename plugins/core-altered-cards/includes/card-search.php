@@ -147,6 +147,7 @@ $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' 
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
 $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Effet de réserve (Support)' : 'Support effect');
+$_csLblBannedSuspended = $_csTxt['lbl_banned_suspended'] ?? ($_csLang === 'fr' ? 'Suspendus et bannis' : 'Suspended & banned');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
 $_csLblManageOwn  = $_csTxt['manage_own']   ?? ($_csLang === 'fr' ? 'Gérer ma propriété numérique'   : 'Manage my digital ownership');
@@ -484,19 +485,25 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
                 <!-- Status + cost management + no-effect (grouped on one wrapping line) -->
                 <div class="filter-row flex-wrap mb-0" style="row-gap:.5rem" data-tabs="all unique collection ownership">
+                    <?php if ($_csMode === 'deck'): ?>
+                    <label class="cs-switch" data-bool-filter="bannedOrSuspended" data-tabs="all collection ownership">
+                        <input type="checkbox" id="<?= h($_csP) ?>-filter-bannedorsuspended"<?= ($_csIsBanned || $_csIsSuspended) ? ' checked' : '' ?>>
+                        <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+                        <span class="cs-switch-label"><i class="fa-solid fa-ban me-1"></i><i class="fa-solid fa-pause me-1"></i><?= h($_csLblBannedSuspended) ?></span>
+                    </label>
+                    <?php else: ?>
                     <span class="filter-label"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
                     <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned" data-tabs="all collection ownership">
                         <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
                     </button>
-                    <?php if ($_csMode !== 'deck'): ?>
                     <button type="button" class="filter-toggle<?= $_csIsErrated ? ' active' : '' ?>"
                             data-bool-filter="isErrated" data-tabs="all">
                         <i class="fa-solid fa-pen-to-square"></i> <?= h($_csTxt['lbl_errated'] ?? 'Errated') ?>
                     </button>
-                    <?php endif; ?>
                     <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended" data-tabs="all collection ownership">
                         <i class="fa-solid fa-pause"></i> <?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?>
                     </button>
+                    <?php endif; ?>
                     <span class="cs-sep" data-tabs="all"></span>
                     <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all">
                         <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>

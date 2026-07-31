@@ -309,6 +309,13 @@
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
 .db-card-btn-group { position:absolute; bottom:5px; right:5px; }
 .db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
+
+/* "Suspendus et bannis" toggle: grey out + flag a banned/suspended card that's
+   showing because the user chose to include it anyway. */
+.db-card-flagged .db-card-img,
+.db-card-flagged altered-card { filter:grayscale(1) brightness(.65); }
+.db-card-status-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:2; }
+.db-card-status-overlay i { font-size:2.6rem; color:#fff; text-shadow:0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9); }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }

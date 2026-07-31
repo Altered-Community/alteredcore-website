@@ -97,10 +97,9 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Banned cards not allowed',
         'rule_no_suspended'    => 'Suspended cards not allowed',
         'rule_frontier_legal'  => 'Unique cards must be part of the Frontier allowlist',
-        'tt_show_banned'       => 'Show banned cards (hidden by default for this format)',
-        'tt_show_suspended'    => 'Show suspended cards (hidden by default for this format)',
-        'tt_banned_allowed'    => 'The selected format already allows banned cards — this filter has no effect',
-        'tt_suspended_allowed' => 'The selected format already allows suspended cards — this filter has no effect',
+        'tt_show_banned_suspended'    => 'Show suspended and banned cards (hidden by default for this format)',
+        'tt_banned_suspended_allowed' => 'The selected format already allows suspended and banned cards — this filter has no effect',
+        'lbl_banned_suspended'        => 'Suspended & banned',
         'unique_not_allowed'   => 'The selected format doesn\'t allow any Unique cards in this deck.',
         'hero_label'      => 'Hero',
         'choose_hero'     => 'Choose hero',
@@ -192,10 +191,9 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Cartes bannies non autorisées',
         'rule_no_suspended'    => 'Cartes suspendues non autorisées',
         'rule_frontier_legal'  => 'Les cartes uniques doivent faire partie de la liste autorisée Frontier',
-        'tt_show_banned'       => 'Afficher les cartes bannies (masquées par défaut pour ce format)',
-        'tt_show_suspended'    => 'Afficher les cartes suspendues (masquées par défaut pour ce format)',
-        'tt_banned_allowed'    => 'Le format sélectionné autorise déjà les cartes bannies — ce filtre est sans effet',
-        'tt_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues — ce filtre est sans effet',
+        'tt_show_banned_suspended'    => 'Afficher les cartes suspendues et bannies (masquées par défaut pour ce format)',
+        'tt_banned_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues et bannies — ce filtre est sans effet',
+        'lbl_banned_suspended'        => 'Suspendus et bannis',
         'unique_not_allowed'   => 'Le format sélectionné n\'autorise aucune carte Unique dans ce deck.',
         'hero_label'      => 'Héros',
         'choose_hero'     => 'Choisir héros',
@@ -783,10 +781,8 @@ var AlteredDB = {
         'rule_no_banned'       => $txt['rule_no_banned'],
         'rule_no_suspended'    => $txt['rule_no_suspended'],
         'rule_frontier_legal'  => $txt['rule_frontier_legal'],
-        'tt_show_banned'       => $txt['tt_show_banned'],
-        'tt_show_suspended'    => $txt['tt_show_suspended'],
-        'tt_banned_allowed'    => $txt['tt_banned_allowed'],
-        'tt_suspended_allowed' => $txt['tt_suspended_allowed'],
+        'tt_show_banned_suspended'    => $txt['tt_show_banned_suspended'],
+        'tt_banned_suspended_allowed' => $txt['tt_banned_suspended_allowed'],
         'unique_not_allowed'   => $txt['unique_not_allowed'],
         'saving'        => $txt['saving'],
         'saved_ok'      => $txt['saved_ok'],
@@ -1111,6 +1107,20 @@ var AlteredDB = {
             img.className = 'db-card-img';
             img.loading = 'lazy';
             wrap.appendChild(img);
+        }
+
+        // "Suspendus et bannis" toggle: grey out + flag any banned/suspended
+        // card actually showing (only reached when the deck's format doesn't
+        // allow it and the user chose to include it anyway — see
+        // _statusFilterParts in card-search.js).
+        var _searchEngine = window.CardSearchInstances && window.CardSearchInstances.db;
+        var _bannedOrSuspendedOn = !!(_searchEngine && _searchEngine.filters && _searchEngine.filters.bannedOrSuspended);
+        if (_bannedOrSuspendedOn && (card.isBanned || card.isSuspended)) {
+            wrap.classList.add('db-card-flagged');
+            var statusOverlay = document.createElement('div');
+            statusOverlay.className = 'db-card-status-overlay';
+            statusOverlay.innerHTML = '<i class="fa-solid fa-' + (card.isBanned ? 'ban' : 'pause') + '"></i>';
+            wrap.appendChild(statusOverlay);
         }
 
         // Favorite star — top-right (helper exposed by card-search.js)
@@ -2454,24 +2464,22 @@ var AlteredDB = {
         });
     }
 
-    // The format picks which of banned/suspended cards are hidden by default
+    // The format picks whether banned/suspended cards are hidden by default
     // (see getFormatLegality above). When it changes: re-run the search so the
-    // grid reflects the new format immediately, and grey out the "Banni"/
-    // "Suspendu" buttons when the new format allows them anyway (toggling
+    // grid reflects the new format immediately, and grey out the "Suspendus
+    // et bannis" toggle when the new format allows both anyway (toggling
     // would have no effect since nothing is being hidden to include back).
     function _syncStatusButtonsToFormat() {
         var root = document.getElementById('db-panel');
         var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
         if (!root || !legality) return;
-        var bannedBtn    = root.querySelector('[data-bool-filter="isBanned"]');
-        var suspendedBtn = root.querySelector('[data-bool-filter="isSuspended"]');
-        if (bannedBtn) {
-            bannedBtn.classList.toggle('filter-toggle-soon', legality.allowBanned);
-            bannedBtn.title = legality.allowBanned ? AlteredDB.txt.tt_banned_allowed : AlteredDB.txt.tt_show_banned;
-        }
-        if (suspendedBtn) {
-            suspendedBtn.classList.toggle('filter-toggle-soon', legality.allowSuspended);
-            suspendedBtn.title = legality.allowSuspended ? AlteredDB.txt.tt_suspended_allowed : AlteredDB.txt.tt_show_suspended;
+        var switchEl = root.querySelector('.cs-switch[data-bool-filter="bannedOrSuspended"]');
+        if (switchEl) {
+            var bothAllowed = legality.allowBanned && legality.allowSuspended;
+            switchEl.classList.toggle('filter-toggle-soon', bothAllowed);
+            switchEl.title = bothAllowed ? AlteredDB.txt.tt_banned_suspended_allowed : AlteredDB.txt.tt_show_banned_suspended;
+            var cb = switchEl.querySelector('input[type="checkbox"]');
+            if (cb) cb.disabled = bothAllowed;
         }
     }
 
