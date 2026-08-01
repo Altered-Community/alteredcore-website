@@ -163,6 +163,19 @@
 .card-skeleton { background:var(--sand-200); border-radius:4px; animation:card-skeleton-pulse 1.4s ease-in-out infinite; }
 @keyframes card-skeleton-pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
 
+/* Card detail: "Deck" tab — compact list of the user's own decks */
+.deck-compact-row { position:relative; display:flex; align-items:center; gap:.6rem; padding:.5rem .6rem; border:1px solid var(--sand-200); border-radius:8px; margin-bottom:.5rem; transition:background .15s; }
+.deck-compact-row:hover { background:var(--sand-100); }
+.deck-compact-link { position:absolute; inset:0; z-index:1; }
+.deck-compact-faction { width:24px; height:24px; object-fit:contain; flex-shrink:0; }
+.deck-compact-body { min-width:0; flex:1 1 auto; }
+.deck-compact-name { font-size:.88rem; font-weight:700; color:var(--neutral-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.deck-compact-meta { display:flex; align-items:center; gap:.35rem; font-size:.78rem; color:var(--neutral-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.deck-compact-add-btn { position:relative; z-index:2; flex-shrink:0; border:1px solid var(--primary-400); background:var(--primary-400); color:#fff; border-radius:6px; padding:.3rem .65rem; font-size:.78rem; font-weight:600; cursor:pointer; }
+.deck-compact-add-btn:disabled { cursor:default; pointer-events:none; }
+.deck-compact-add-btn--ok { background:#22c55e; border-color:#22c55e; }
+.deck-compact-add-btn--err { background:#dc2626; border-color:#dc2626; }
+
 /* =========================================================
    Cards browser  (cards.php)
    ========================================================= */
