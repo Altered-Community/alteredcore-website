@@ -101,6 +101,32 @@ $txt = array_merge($_sharedTxt, [
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
         'select_hero_msg' => 'Choose a hero to start building your deck.',
+        'hero_confirm'    => 'Choose this hero',
+        'wizard_hero_msg' => 'Choose a hero. It sets your faction and the cards you can play.',
+        'wizard_cancel'   => 'Cancel',
+        'wizard_create'   => 'Create deck',
+        'wizard_creating' => 'Creating…',
+        'wizard_change'   => 'Change',
+        'wizard_hero_req' => 'Choose a hero.',
+        'wizard_name_req' => 'Give your deck a name.',
+        'wizard_fmt_req'  => 'Pick a format.',
+        'wizard_vis_priv' => 'Visible to you only. Changeable at any time.',
+        'wizard_desc_add' => 'Add a description',
+        'wizard_anyway'   => 'Continue without saving',
+        'fmt_cards'       => '%1$s–%2$s cards',
+        'fmt_singleton'   => '1 copy per card',
+        'fmt_no_unique'   => 'no unique cards',
+        'fmt_max_unique'  => 'up to %d uniques',
+        'fmt_frontier'    => 'Frontier-legal uniques only',
+        'fmt_free'        => 'no restrictions',
+        'bga_ok'          => 'BGA - Available',
+        'bga_fmt_ko'      => 'BGA - Format unavailable',
+        'bga_hero_ko'     => 'BGA - Hero unavailable',
+        'bga_hero_partial' => 'BGA - Availability depends on format',
+        'bga_arena'       => 'BGA Arena',
+        'bga_arena_title' => 'Format currently used by Board Game Arena for Arena mode, its competitive queue.',
+        'bga_hero_title'  => 'This hero only exists in sets that are not on Board Game Arena. The deck can still be built here.',
+        'bga_partial_title' => 'This hero is only available in some Board Game Arena formats — the format list says which.',
         'lbl_status'      => 'Status',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Draft',
@@ -190,6 +216,32 @@ $txt = array_merge($_sharedTxt, [
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
         'select_hero_msg' => 'Choisissez un héros pour commencer à construire votre deck.',
+        'hero_confirm'    => 'Choisir ce héros',
+        'wizard_hero_msg' => 'Choisissez un héros. Il détermine votre faction et les cartes disponibles.',
+        'wizard_cancel'   => 'Annuler',
+        'wizard_create'   => 'Créer le deck',
+        'wizard_creating' => 'Création…',
+        'wizard_change'   => 'Changer',
+        'wizard_hero_req' => 'Choisissez un héros.',
+        'wizard_name_req' => 'Donnez un nom à votre deck.',
+        'wizard_fmt_req'  => 'Choisissez un format.',
+        'wizard_vis_priv' => 'Visible de vous seul. Modifiable à tout moment.',
+        'wizard_desc_add' => 'Ajouter une description',
+        'wizard_anyway'   => 'Continuer sans sauvegarder',
+        'fmt_cards'       => '%1$s à %2$s cartes',
+        'fmt_singleton'   => '1 exemplaire par carte',
+        'fmt_no_unique'   => 'sans cartes uniques',
+        'fmt_max_unique'  => '%d uniques maximum',
+        'fmt_frontier'    => 'uniques de la liste Frontier',
+        'fmt_free'        => 'aucune contrainte',
+        'bga_ok'          => 'BGA - Disponible',
+        'bga_fmt_ko'      => 'BGA - Format indisponible',
+        'bga_hero_ko'     => 'BGA - Héros indisponible',
+        'bga_hero_partial' => 'BGA - Disponible selon format',
+        'bga_arena'       => 'Arène BGA',
+        'bga_arena_title' => 'Format actuellement utilisé par Board Game Arena pour le mode Arène, sa file compétitive.',
+        'bga_hero_title'  => 'Ce héros n\'existe que dans des sets absents de Board Game Arena. Le deck reste constructible ici.',
+        'bga_partial_title' => 'Ce héros n\'est disponible que sur certains formats Board Game Arena — la liste des formats précise lesquels.',
         'lbl_status'      => 'Statut',
         'status_auto'     => 'Auto',
         'status_draft'    => 'Brouillon',
@@ -644,27 +696,159 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
 </div>
 
 <!-- Hero selector modal -->
-<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)this.style.display='none'">
+<?php // Heroes are browsed one faction at a time — Axiom opens by default.
+      $_heroDefaultFaction = isset($factionsData['AX']) ? 'AX' : (string)array_key_first($factionsData); ?>
+<div id="db-hero-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998" onclick="if(event.target===this)dbHeroBackdrop()">
     <div class="db-hero-panel" onclick="event.stopPropagation()">
-        <button onclick="document.getElementById('db-hero-modal').style.display='none'"
-                class="db-hero-close-btn">×</button>
+        <button onclick="dbHeroClose()" class="db-hero-close-btn">×</button>
         <h3 class="db-hero-title"><?= h($txt['choose_hero']) ?></h3>
-        <div class="d-flex gap-1 mb-3 flex-wrap" id="db-hero-factions">
-            <button type="button" onclick="dbLoadHeroes('')"
-                    class="btn btn-outline-secondary btn-sm active" id="db-hero-all-btn">
-                <?= h($txt['collection_all']) ?>
-            </button>
+        <p class="db-hero-intro"><?= h($txt['wizard_hero_msg']) ?></p>
+        <div id="db-hero-factions">
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
-                    class="btn btn-outline-secondary btn-sm" data-faction="<?= $fCode ?>">
-                <img src="<?= $pluginAssetsUrl ?>/faction/<?= $fCode ?>.png" alt="<?= h($fCode) ?>" style="width:16px;height:16px;object-fit:contain;vertical-align:middle">
-                <?= h($fData[$uiLang] ?? $fData['en']) ?>
+                    class="db-faction-btn<?= $fCode === $_heroDefaultFaction ? ' active' : '' ?>"
+                    data-faction="<?= $fCode ?>"
+                    style="--faction-color:<?= h($fData['color'] ?? '#888') ?>">
+                <img src="<?= $pluginAssetsUrl ?>/faction/<?= $fCode ?>.png" alt="">
+                <span><?= h($fData[$uiLang] ?? $fData['en']) ?></span>
             </button>
             <?php endforeach; ?>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>
         <div id="db-hero-grid">
             <!-- populated by JS -->
+        </div>
+        <div class="db-hero-footer">
+            <button type="button" id="db-hero-confirm" class="btn btn-primary-altered btn-sm" disabled>
+                <?= h($txt['hero_confirm']) ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- New deck creation dialog -->
+<?php
+// Board Game Arena runs its competitive "Arena" queue on one format at a time, and
+// which one changes on BGA's schedule. The pointer lives in altered.json so it can
+// be corrected from the admin JSON editor without a deploy.
+$_bgaArenaFormat = (string)(loadAlteredData('bgaArena')['format'] ?? '');
+
+// One-line format descriptors, derived from the rules themselves so they cannot
+// drift from altered.json.
+$_fmtDesc = [];
+foreach ($formatsData as $_fk => $_fv) {
+    if (!empty($_fv['hidden'])) continue;
+    $_bits = [sprintf($txt['fmt_cards'], $_fv['minCards'], $_fv['maxCards'])];
+    if (($_fv['maxCopiesPerRef'] ?? null) === 1)              $_bits[] = $txt['fmt_singleton'];
+    if (($_fv['maxUnique'] ?? null) === 0)                    $_bits[] = $txt['fmt_no_unique'];
+    elseif (!empty($_fv['requireUniqueLegality']))            $_bits[] = $txt['fmt_frontier'];
+    elseif (!empty($_fv['maxUnique']))                        $_bits[] = sprintf($txt['fmt_max_unique'], $_fv['maxUnique']);
+    if (count($_bits) === 1 && ($_fv['maxCopiesPerRef'] ?? null) === null) $_bits[] = $txt['fmt_free'];
+    $_fmtDesc[$_fk] = implode(' · ', $_bits);
+}
+
+// Display order: the Arena format, then the other BGA formats, then the free-for-all
+// ones, then the rest — each group alphabetical on the displayed name. Puts what most
+// players are looking for at the top instead of the reference data's own order.
+// A format with no card restrictions at all (Sandbox) sits last among the BGA ones:
+// it is a scratchpad, not something anyone plays competitively.
+$_fmtKeys = array_keys($_fmtDesc);
+usort($_fmtKeys, function ($a, $b) use ($formatsData, $uiLang, $_bgaArenaFormat) {
+    $rank = function ($k) use ($formatsData, $_bgaArenaFormat) {
+        if ($_bgaArenaFormat !== '' && $k === $_bgaArenaFormat) return 0;
+        if (empty($formatsData[$k]['bgalegal'])) return 3;
+        $unrestricted = ($formatsData[$k]['maxCopiesPerRef'] ?? null) === null
+                     && ($formatsData[$k]['maxUnique'] ?? null) === null;
+        return $unrestricted ? 2 : 1;
+    };
+    $ra = $rank($a);
+    $rb = $rank($b);
+    if ($ra !== $rb) return $ra <=> $rb;
+    $label = fn($k) => $formatsData[$k][$uiLang] ?? $formatsData[$k]['en'] ?? $k;
+    return strcasecmp($label($a), $label($b));
+});
+?>
+<!-- No backdrop dismissal: this step holds typed input, and leaving means
+     abandoning the deck. The × and Cancel are the deliberate exits. -->
+<div id="db-new-modal" class="ac-lightbox-overlay" style="display:none;overflow:hidden;z-index:9998">
+    <div class="db-hero-panel db-new-panel" onclick="event.stopPropagation()">
+        <button onclick="dbNewCancel()" class="db-hero-close-btn">×</button>
+        <h3 class="db-hero-title"><?= h($txt['new_deck']) ?></h3>
+
+        <div class="db-new-body">
+            <!-- Hero: a field of this form, opening the picker as a sub-dialog.
+                 Starts empty — nothing is preselected. -->
+            <div class="filter-label mb-1"><?= h($txt['hero_label']) ?> <span class="db-new-req">*</span></div>
+            <button type="button" id="db-new-hero" class="db-new-hero empty" onclick="dbNewPickHero()">
+                <img id="db-new-hero-img" alt="" style="display:none">
+                <i id="db-new-hero-icon" class="fa-solid fa-person-rays"></i>
+                <span class="db-new-hero-id">
+                    <span id="db-new-hero-name"><?= h($txt['hero_slot']) ?></span>
+                    <small id="db-new-hero-faction"></small>
+                    <span id="db-new-hero-bga" class="db-bga-pill ko" style="display:none"></span>
+                </span>
+                <span class="db-new-hero-action" id="db-new-hero-action"><?= h($txt['choose_hero']) ?></span>
+            </button>
+
+            <!-- Name -->
+            <label class="filter-label mb-1" for="db-new-name"><?= h($txt['deck_name']) ?> <span class="db-new-req">*</span></label>
+            <input type="text" id="db-new-name" class="form-control form-control-sm mb-3" maxlength="120">
+
+            <!-- Format -->
+            <div class="filter-label mb-1"><?= h($txt['format']) ?> <span class="db-new-req">*</span></div>
+            <div class="db-new-formats mb-3">
+                <?php foreach ($_fmtKeys as $fmtKey): $fmtData = $formatsData[$fmtKey]; ?>
+                <label class="db-new-format" style="--format-color:<?= h($fmtData['color'] ?? 'var(--neutral-300)') ?>">
+                    <input type="radio" name="db-new-format" value="<?= h($fmtKey) ?>">
+                    <span class="db-new-format-txt">
+                        <span class="db-new-format-head">
+                            <span class="db-new-format-name"><?= h($fmtData[$uiLang] ?? $fmtData['en']) ?></span>
+                            <?php // Text and colour set by JS: the verdict also depends on the hero. ?>
+                            <span class="db-bga-pill" data-fmt-key="<?= h($fmtKey) ?>" data-fmt-bga="<?= !empty($fmtData['bgalegal']) ? '1' : '0' ?>"
+                                  data-fmt-arena="<?= ($_bgaArenaFormat !== '' && $fmtKey === $_bgaArenaFormat) ? '1' : '0' ?>"></span>
+                            <?php if ($_bgaArenaFormat !== '' && $fmtKey === $_bgaArenaFormat): ?>
+                            <span class="db-arena-pill" title="<?= h($txt['bga_arena_title']) ?>">
+                                <i class="fa-solid fa-trophy"></i><?= h($txt['bga_arena']) ?>
+                            </span>
+                            <?php endif; ?>
+                        </span>
+                        <small><?= h($_fmtDesc[$fmtKey] ?? '') ?></small>
+                    </span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (!$isGuest): ?>
+            <!-- Visibility -->
+            <div class="filter-label mb-1"><?= h($txt['visibility']) ?></div>
+            <div class="db-new-vis mb-1">
+                <button type="button" class="db-new-vis-btn active" data-public="0">
+                    <i class="fa-solid fa-lock"></i><?= h($txt['private']) ?>
+                </button>
+                <button type="button" class="db-new-vis-btn" data-public="1">
+                    <i class="fa-solid fa-eye"></i><?= h($txt['public']) ?>
+                </button>
+            </div>
+            <p class="db-new-note mb-3" id="db-new-vis-note"><?= h($txt['wizard_vis_priv']) ?></p>
+            <?php endif; ?>
+
+            <!-- Description, folded away: nobody writes one before building the deck -->
+            <button type="button" id="db-new-desc-toggle" class="db-new-desc-toggle" onclick="dbNewToggleDesc()">
+                <i class="fa-solid fa-plus"></i><?= h($txt['wizard_desc_add']) ?>
+            </button>
+            <div id="db-new-desc-wrap" style="display:none">
+                <label class="filter-label mb-1" for="db-new-desc"><?= h($txt['description']) ?></label>
+                <textarea id="db-new-desc" class="form-control form-control-sm" rows="3"></textarea>
+            </div>
+
+            <div id="db-new-error" class="alert alert-danger p-2 mt-3 mb-0 small" style="display:none"></div>
+        </div>
+
+        <div class="db-hero-footer">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dbNewCancel()">
+                <?= h($txt['wizard_cancel']) ?>
+            </button>
+            <button type="button" id="db-new-submit" class="btn btn-primary-altered btn-sm"><?= h($txt['wizard_create']) ?></button>
         </div>
     </div>
 </div>
@@ -752,6 +936,23 @@ var AlteredDB = {
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
         'change_hero'   => $txt['change_hero'],
+        'hero_confirm'  => $txt['hero_confirm'],
+        'choose_hero'   => $txt['choose_hero'],
+        'hero_slot'     => $txt['hero_slot'],
+        'new_deck'      => $txt['new_deck'],
+        'wizard_change'   => $txt['wizard_change'],
+        'wizard_create'   => $txt['wizard_create'],
+        'wizard_creating' => $txt['wizard_creating'],
+        'wizard_hero_req' => $txt['wizard_hero_req'],
+        'wizard_name_req' => $txt['wizard_name_req'],
+        'wizard_fmt_req'  => $txt['wizard_fmt_req'],
+        'wizard_anyway'   => $txt['wizard_anyway'],
+        'bga_ok'            => $txt['bga_ok'],
+        'bga_fmt_ko'        => $txt['bga_fmt_ko'],
+        'bga_hero_ko'       => $txt['bga_hero_ko'],
+        'bga_hero_partial'  => $txt['bga_hero_partial'],
+        'bga_hero_title'    => $txt['bga_hero_title'],
+        'bga_partial_title' => $txt['bga_partial_title'],
         'types'         => $txt['types'],
         'status_auto'   => $txt['status_auto'],
         'status_draft'  => $txt['status_draft'],
@@ -801,6 +1002,14 @@ var AlteredDB = {
     heroSortAlpha:       <?= json_encode($_heroSortAlpha) ?>,
     heroNoDuplicate:     <?= json_encode($_heroNoDuplicate) ?>,
     heroDuplicateOrder:  <?= json_encode($_heroDuplicateOrder) ?>,
+    heroDefaultFaction:  <?= json_encode($_heroDefaultFaction) ?>,
+    // Creation flow: no ?id= and a usable builder means this is a brand-new deck,
+    // so the wizard opens on step 1 instead of dropping the user into an empty
+    // builder where the deck's own fields are easy to miss.
+    newDeckFlow: <?= (!$editDeckId && ($isGuest || $token)) ? 'true' : 'false' ?>,
+    decksUrl:    <?= json_encode(BASE_URL . '/pages/decks') ?>,
+    // Sets absent from Board Game Arena (EOLE, FUGUE and their sub-editions).
+    setsBga: <?= json_encode(array_map(fn($s) => ($s['bgalegal'] ?? true) !== false, $setsData)) ?>,
     defaultVariations: <?= json_encode($_defaultVariations) ?>,
     setOptionsJson:     <?= $setOptionsJson ?>,
     subtypeOptionsJson:   <?= $subtypeOptionsJson ?>,
@@ -850,6 +1059,10 @@ var AlteredDB = {
     }
 
     function scheduleAutoSave() {
+        // While the creation wizard is open the deck must not exist yet: picking a
+        // hero marks the deck dirty, and the timer would otherwise create it under
+        // the "unnamed" fallback before the user has validated step 2.
+        if (_wizardOpen) return;
         if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
         _autoSaveTimer = setTimeout(function() {
             _autoSaveTimer = null;
@@ -921,13 +1134,13 @@ var AlteredDB = {
                     if (onDone) onDone(true);
                 } else {
                     _setAutoStatus('', false);
-                    if (onDone) onDone(false);
+                    if (onDone) onDone(false, data.error || '');
                 }
             })
             .catch(function() {
                 _autoSaving = false;
                 _setAutoStatus('', false);
-                if (onDone) onDone(false);
+                if (onDone) onDone(false, AlteredDB.txt.err_api);
             });
     }
 
@@ -1746,10 +1959,299 @@ var AlteredDB = {
     }
 
     // hero modal
+    //
+    // The grid holds one tile per hero identity (heroStableKey), not one per
+    // printing: a hero reprinted in several sets or as a promo used to appear as
+    // many unlabelled tiles scattered through the API's own ordering. Which
+    // printing lands on the deck is picked deterministically — format rules key
+    // off the stable key, so it changes nothing but the image.
+    var _heroPick = null; // { key, name, faction, bgaState, prints: [{ref}], ref }
+    // Printings of the hero on the deck, kept so per-format BGA availability can be
+    // recomputed without reopening the picker.
+    var _heroPrints = null;
+
+    var elHeroConfirm = document.getElementById('db-hero-confirm');
+
+    // True while the creation dialog is up, from page load until the deck is
+    // created or abandoned. The picker can open on top of it as a sub-dialog.
+    var _wizardOpen = false;
+
+    // Closing the picker returns to whatever opened it — the creation dialog, or
+    // the builder.
+    window.dbHeroClose = function() {
+        document.getElementById('db-hero-modal').style.display = 'none';
+        if (_wizardOpen) elNewModal.style.display = 'flex';
+    };
+    window.dbHeroBackdrop = function() { dbHeroClose(); };
+
+    // Giving up on creation: clear the dirty flag first, otherwise the unsaved
+    // guard pops a browser confirm on a deck that was never meant to exist.
+    function dbWizardLeave() {
+        markClean();
+        window.location.href = AlteredDB.decksUrl;
+    }
+
+    // Printings keep the order the API returned them in, which follows the hero
+    // search settings (sort_1, by default newest set first) — so the artwork the
+    // grid shows is the admin's stated preference, not an arbitrary pick. Only
+    // the class below reorders: booster printings from a main set come first, so
+    // a promo or a collector-booster printing never becomes the representative
+    // artwork. Array#sort is stable, so the API order survives within a class.
+    function heroPrintClass(ref) {
+        var p = ref.split('_');
+        return ((AlteredDB.subSets || []).indexOf(p[1] || '') !== -1 ? 2 : 0)
+             + (p[2] === 'B' ? 0 : 1);
+    }
+
+    function heroPrintBgaOk(ref) {
+        var setCode = ref.split('_')[1] || '';
+        return (AlteredDB.setsBga || {})[setCode] !== false;
+    }
+
+    // Formats may ban whole sets (rotation). A printing counts towards BGA
+    // availability in a format only if its set is both on BGA and allowed there.
+    function heroPrintOkIn(ref, fmtKey) {
+        if (!heroPrintBgaOk(ref)) return false;
+        var banned = ((AlteredDB.formats[fmtKey] || {}).bannedSets) || [];
+        return banned.indexOf(ref.split('_')[1] || '') === -1;
+    }
+
+    // The BGA formats, i.e. the only ones these pills speak about.
+    var _bgaFormats = Object.keys(AlteredDB.formats).filter(function(k) {
+        var f = AlteredDB.formats[k];
+        return f.bgalegal && !f.hidden;
+    });
+
+    // 'ok' in every BGA format, 'ko' in none, 'partial' in between — the last case
+    // arises when a hero's only printings come from sets some formats have banned.
+    function heroBgaState(prints) {
+        var n = _bgaFormats.filter(function(k) {
+            return prints.some(function(pr) { return heroPrintOkIn(pr.ref, k); });
+        }).length;
+        return n === 0 ? 'ko' : (n === _bgaFormats.length ? 'ok' : 'partial');
+    }
+
+    function heroPickSelect(group, tile) {
+        _heroPick = {
+            key:      group.key,
+            name:     group.name,
+            faction:  group.faction,
+            bgaState: group.bgaState,
+            prints:   group.prints,
+            // Keep the printing already on the deck when re-opening on that hero.
+            ref:      (deck.hero && group.prints.some(function(pr) { return pr.ref === deck.hero.cardReference; }))
+                      ? deck.hero.cardReference : group.prints[0].ref,
+        };
+        document.querySelectorAll('#db-hero-grid .db-hero-tile.selected').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+        if (tile) tile.classList.add('selected');
+        if (elHeroConfirm) elHeroConfirm.disabled = false;
+
+        // Auto-selecting the deck's current hero on open can land on a tile that
+        // is scrolled out of view — bring it back by the minimum needed.
+        if (tile && window.requestAnimationFrame) {
+            requestAnimationFrame(function() {
+                tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+        }
+    }
+
+    if (elHeroConfirm) {
+        elHeroConfirm.addEventListener('click', function() {
+            if (!_heroPick) return;
+            _heroPrints = _heroPick.prints;
+            setHero({ cardReference: _heroPick.ref, name: _heroPick.name,
+                      factionCode: _heroPick.faction, bgaState: _heroPick.bgaState });
+            document.getElementById('db-hero-modal').style.display = 'none';
+            if (_wizardOpen) { dbNewRenderHero(); elNewModal.style.display = 'flex'; }
+        });
+    }
+
+    // ---- new-deck dialog: hero / name / format / visibility / description ----
+    var elNewModal   = document.getElementById('db-new-modal');
+    var elNewName    = document.getElementById('db-new-name');
+    var elNewDesc    = document.getElementById('db-new-desc');
+    var elNewSubmit  = document.getElementById('db-new-submit');
+    var elNewError   = document.getElementById('db-new-error');
+    var _newIsPublic = '0';
+
+    function dbNewShowError(msg, withAnyway) {
+        if (!elNewError) return;
+        elNewError.textContent = msg;
+        if (withAnyway) {
+            // The deck could not be created server-side. Rather than trapping the
+            // user in the wizard, let them proceed: the builder keeps the fields
+            // and the regular autosave will retry on the first change.
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-danger ms-2';
+            btn.textContent = AlteredDB.txt.wizard_anyway;
+            btn.addEventListener('click', dbNewFinish);
+            elNewError.appendChild(btn);
+        }
+        elNewError.style.display = '';
+    }
+
+    function dbNewSelectedFormat() {
+        var picked = elNewModal.querySelector('input[name="db-new-format"]:checked');
+        return picked ? picked.value : '';
+    }
+
+    // Hand over to the builder: the right-hand panel stays the source of truth for
+    // saving, so the wizard writes into its controls rather than duplicating state.
+    function dbNewApplyToPanel() {
+        var fmt = dbNewSelectedFormat();
+        elDeckName.value = elNewName.value.trim();
+        elDeckDesc.value = elNewDesc ? elNewDesc.value.trim() : '';
+        if (fmt) elDeckFormat.value = fmt;
+        if (elDeckPublic) elDeckPublic.value = _newIsPublic;
+        updateDeckDisplay();
+    }
+
+    function dbNewFinish() {
+        _wizardOpen = false;
+        elNewModal.style.display = 'none';
+    }
+
+    // BGA availability per format, for the hero currently selected. The format's own
+    // status comes first: on a format BGA does not run, the hero is beside the point.
+    // With no hero picked yet, only the format is judged.
+    function dbNewUpdateFormatPills() {
+        var hero = deck.hero;
+        elNewModal.querySelectorAll('.db-bga-pill[data-fmt-bga]').forEach(function(pill) {
+            var fmtOk  = pill.dataset.fmtBga === '1';
+            var heroKo = fmtOk && hero && !(_heroPrints || []).some(function(pr) {
+                return heroPrintOkIn(pr.ref, pill.dataset.fmtKey);
+            });
+            pill.textContent = !fmtOk ? AlteredDB.txt.bga_fmt_ko
+                             : heroKo ? AlteredDB.txt.bga_hero_ko
+                                      : AlteredDB.txt.bga_ok;
+            // Format-level unavailability is a harder no than a hero one, which the
+            // user can fix without leaving the format — hence its own colour.
+            pill.className = 'db-bga-pill' + (!fmtOk ? ' fmt-ko' : heroKo ? ' ko' : '');
+            pill.title = (fmtOk && heroKo) ? AlteredDB.txt.bga_hero_title : '';
+            // The Arena badge already says the format runs on BGA, so a green
+            // "available" next to it would just be a second pill saying less. A
+            // warning still shows: that one is not implied by the badge.
+            var redundant = pill.dataset.fmtArena === '1' && fmtOk && !heroKo;
+            pill.style.display = redundant ? 'none' : '';
+        });
+    }
+
+    // Hero row: empty placeholder until one is picked, then artwork + name +
+    // faction, with the action label switching from "choose" to "change".
+    function dbNewRenderHero() {
+        var hero   = deck.hero;
+        var row    = document.getElementById('db-new-hero');
+        var img    = document.getElementById('db-new-hero-img');
+        var icon   = document.getElementById('db-new-hero-icon');
+        var name   = document.getElementById('db-new-hero-name');
+        var fact   = document.getElementById('db-new-hero-faction');
+        var action = document.getElementById('db-new-hero-action');
+        var bga    = document.getElementById('db-new-hero-bga');
+
+        dbNewUpdateFormatPills();
+
+        if (!hero) {
+            row.classList.add('empty');
+            img.style.display  = 'none';
+            icon.style.display = '';
+            bga.style.display  = 'none';
+            name.textContent   = AlteredDB.txt.hero_slot;
+            fact.textContent   = '';
+            action.textContent = AlteredDB.txt.choose_hero;
+            return;
+        }
+        row.classList.remove('empty');
+        img.src            = cdnUrl(hero.cardReference || '');
+        img.alt            = hero.name || '';
+        img.style.display  = '';
+        icon.style.display = 'none';
+        name.textContent   = hero.name || '';
+        var fData = AlteredDB.factions[hero.factionCode] || null;
+        fact.textContent   = fData ? (fData[AlteredDB.uiLang] || fData.en || '') : (hero.factionCode || '');
+        // Echo the faction colour the way the picker's faction buttons do.
+        row.style.setProperty('--faction-color', (fData && fData.color) || 'var(--neutral-300)');
+        action.textContent = AlteredDB.txt.wizard_change;
+
+        var partial = hero.bgaState === 'partial';
+        var ko      = hero.bgaState === 'ko';
+        bga.style.display = (partial || ko) ? '' : 'none';
+        bga.className     = 'db-bga-pill ' + (partial ? 'partial' : 'ko');
+        bga.textContent   = ko ? AlteredDB.txt.bga_hero_ko    : AlteredDB.txt.bga_hero_partial;
+        bga.title         = ko ? AlteredDB.txt.bga_hero_title : AlteredDB.txt.bga_partial_title;
+    }
+
+    window.dbNewOpen = function() {
+        _wizardOpen = true;
+        dbNewRenderHero();
+        if (elNewError) { elNewError.style.display = 'none'; elNewError.textContent = ''; }
+        elNewModal.style.display = 'flex';
+        if (elNewName) elNewName.focus();
+    };
+
+    // The picker opens over the dialog; hiding the dialog meanwhile avoids two
+    // stacked backdrops, and dbHeroClose brings it back either way.
+    window.dbNewPickHero = function() {
+        elNewModal.style.display = 'none';
+        dbSelectHero();
+    };
+
+    window.dbNewCancel = function() { dbWizardLeave(); };
+
+    window.dbNewToggleDesc = function() {
+        var wrap   = document.getElementById('db-new-desc-wrap');
+        var toggle = document.getElementById('db-new-desc-toggle');
+        wrap.style.display = 'block';
+        toggle.style.display = 'none';
+        if (elNewDesc) elNewDesc.focus();
+        // The field is the last thing in a scrollable body — bring all of it into
+        // view, not just its top edge, once the new layout is in place.
+        if (window.requestAnimationFrame) {
+            requestAnimationFrame(function() { wrap.scrollIntoView({ block: 'end', behavior: 'smooth' }); });
+        }
+    };
+
+    elNewModal.querySelectorAll('.db-new-vis-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            _newIsPublic = btn.dataset.public;
+            elNewModal.querySelectorAll('.db-new-vis-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var note = document.getElementById('db-new-vis-note');
+            if (note) note.style.visibility = (_newIsPublic === '0') ? '' : 'hidden';
+        });
+    });
+
+    if (elNewSubmit) {
+        elNewSubmit.addEventListener('click', function() {
+            // The button stays enabled and explains what is missing on use — a
+            // greyed-out button gives no reason for being greyed out.
+            if (elNewError) elNewError.style.display = 'none';
+            if (!deck.hero)              { dbNewShowError(AlteredDB.txt.wizard_hero_req); return; }
+            if (!elNewName.value.trim()) { dbNewShowError(AlteredDB.txt.wizard_name_req); elNewName.focus(); return; }
+            if (!dbNewSelectedFormat())  { dbNewShowError(AlteredDB.txt.wizard_fmt_req); return; }
+
+            dbNewApplyToPanel();
+            elNewSubmit.disabled    = true;
+            elNewSubmit.textContent = AlteredDB.txt.wizard_creating;
+            markDirty();
+            autoSave(function(ok, err) {
+                elNewSubmit.disabled    = false;
+                elNewSubmit.textContent = AlteredDB.txt.wizard_create;
+                if (ok) dbNewFinish();
+                else    dbNewShowError(err || AlteredDB.txt.err_api, true);
+            });
+        });
+    }
+
     window.dbSelectHero = function() {
         document.getElementById('db-hero-modal').style.display = 'flex';
-        if (!document.getElementById('db-hero-grid').children.length) {
-            dbLoadHeroes('');
+        // Open on the current hero's faction when there is one, so changing hero
+        // starts from the pool the deck is already built in.
+        var wanted = (deck.hero && deck.hero.factionCode) || AlteredDB.heroDefaultFaction;
+        if (wanted !== heroCurrFaction || !document.getElementById('db-hero-grid').children.length) {
+            dbLoadHeroes(wanted);
         }
     };
     window.dbLoadHeroes = function(faction) {
@@ -1758,9 +2260,10 @@ var AlteredDB = {
         var loading = document.getElementById('db-hero-loading');
         grid.innerHTML    = '';
         loading.style.display = 'block';
+        _heroPick = null;
+        if (elHeroConfirm) elHeroConfirm.disabled = true;
 
         // Update faction buttons
-        document.getElementById('db-hero-all-btn').classList.toggle('active', !faction);
         document.querySelectorAll('#db-hero-factions [data-faction]').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.faction === faction);
         });
@@ -1801,25 +2304,71 @@ var AlteredDB = {
                     grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
+                // Collapse printings into one entry per hero identity.
+                var groups = {};
                 allCards.forEach(function(card) {
-                    var ref  = card.reference || '';
-                    var name = typeof card.name === 'string' ? card.name : (card.name ? (card.name[AlteredDB.lang] || card.name.en || '') : '');
-                    var imgSrc = cdnUrl(ref);
-                    var wrap = document.createElement('div');
-                    wrap.style.cssText = 'cursor:pointer;overflow:hidden;border-radius:7px;';
-                    var img  = document.createElement('img');
-                    img.src  = imgSrc;
-                    img.alt  = name;
-                    img.style.cssText = 'display:block;width:100%;border-radius:7px;aspect-ratio:63.5/88;object-fit:cover;transition:transform .12s';
-                    wrap.onmouseenter = function() { img.style.transform = 'scale(1.05)'; };
-                    wrap.onmouseleave = function() { img.style.transform = ''; };
-                    wrap.appendChild(img);
-                    wrap.onclick = function() {
-                        var fCode = (card.faction && card.faction.code) ? card.faction.code : factionFromRef(ref);
-                        setHero({ cardReference: ref, name: name, factionCode: fCode });
-                        document.getElementById('db-hero-modal').style.display = 'none';
-                    };
-                    grid.appendChild(wrap);
+                    var ref = card.reference || '';
+                    if (!ref) return;
+                    var key = heroStableKey(ref);
+                    if (!groups[key]) {
+                        groups[key] = {
+                            key:     key,
+                            name:    cardName(card),
+                            faction: (card.faction && card.faction.code) || factionFromRef(ref),
+                            prints:  [],
+                        };
+                    }
+                    var known = groups[key].prints.some(function(pr) { return pr.ref === ref; });
+                    if (!known) groups[key].prints.push({ ref: ref, variation: card.variation || '' });
+                });
+
+                var list = Object.keys(groups).map(function(k) { return groups[k]; });
+                if (!list.length) {
+                    grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
+                    return;
+                }
+                list.forEach(function(g) {
+                    g.prints.sort(function(a, b) { return heroPrintClass(a.ref) - heroPrintClass(b.ref); });
+                    // Availability is a property of the hero, not of one printing: a
+                    // single usable printing is enough.
+                    g.bgaState = heroBgaState(g.prints);
+                });
+                list.sort(function(a, b) { return a.name.localeCompare(b.name, AlteredDB.lang) || (a.key < b.key ? -1 : 1); });
+
+                var currentKey = deck.hero ? heroStableKey(deck.hero.cardReference) : null;
+                list.forEach(function(g) {
+                    var tile = document.createElement('div');
+                    tile.className = 'db-hero-tile';
+                    tile.dataset.key = g.key;
+
+                    var img = document.createElement('img');
+                    img.src = cdnUrl(g.prints[0].ref);
+                    img.alt = g.name;
+                    img.loading = 'lazy';
+                    tile.appendChild(img);
+
+                    var cap = document.createElement('div');
+                    cap.className = 'db-hero-tile-name';
+                    cap.title = g.name;
+                    cap.textContent = g.name;
+                    tile.appendChild(cap);
+
+                    // Heroes unusable on BGA stay pickable — theory crafting is
+                    // allowed — but say so up front.
+                    if (g.bgaState !== 'ok') {
+                        var ko = g.bgaState === 'ko';
+                        var warn = document.createElement('div');
+                        warn.className = 'db-bga-pill db-hero-tile-bga ' + (ko ? 'ko' : 'partial');
+                        warn.textContent = ko ? AlteredDB.txt.bga_hero_ko : AlteredDB.txt.bga_hero_partial;
+                        warn.title = ko ? AlteredDB.txt.bga_hero_title : AlteredDB.txt.bga_partial_title;
+                        tile.appendChild(warn);
+                    }
+
+                    tile.addEventListener('click', function() { heroPickSelect(g, tile); });
+                    grid.appendChild(tile);
+
+                    // Re-opening the picker lands on the hero already in the deck.
+                    if (currentKey && g.key === currentKey) heroPickSelect(g, tile);
                 });
             })
             .catch(function(err) {
@@ -2275,6 +2824,10 @@ var AlteredDB = {
         updateDeckDisplay();
         enrichDeckCardStatus();
     }
+
+    // A brand-new deck opens on the creation dialog. Guard on deck.hero as well: a
+    // guest deck restored from localStorage is an existing deck even without ?id=.
+    if (AlteredDB.newDeckFlow && !deck.hero) dbNewOpen();
 
     window.renderBrowserCard = renderBrowserCard;
 })();

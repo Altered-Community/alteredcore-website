@@ -287,8 +287,114 @@
 /* =========================================================
    Deck builder  (deckbuilder.php)
    ========================================================= */
-#db-hero-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-@media (min-width:576px) { #db-hero-grid { grid-template-columns:repeat(3,1fr); } }
+/* Hero picker — one tile per hero identity, printings live in the artwork strip */
+/* minmax(0,1fr), not 1fr: the auto minimum would resolve to each card image's
+   intrinsic width (~630px) and force a single column. */
+/* padding-right keeps the scrollbar off the tiles; scrollbar-gutter reserves the
+   space up front so the grid does not reflow when the artwork strip appears. */
+#db-hero-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; overflow-y:auto; scrollbar-gutter:stable; padding-right:10px; flex:1 1 auto; min-height:0; }
+@media (min-width:768px) { #db-hero-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+/* Faction tabs span the modal width — styled by id so Bootstrap's !important
+   utilities are not involved (the markup carries no d-flex here). Each button
+   carries its faction colour as --faction-color, from altered.json. */
+#db-hero-factions { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px; margin-bottom:14px; }
+.db-faction-btn {
+    position:relative; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:9px 4px 7px; border:none; border-radius:10px;
+    border-bottom:3px solid var(--faction-color);
+    background:var(--sand-100); color:var(--neutral-500);
+    font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    transition:background .12s,color .12s;
+}
+.db-faction-btn img { position:relative; z-index:1; width:30px; height:30px; object-fit:contain; transition:filter .12s; }
+.db-faction-btn span { position:relative; z-index:1; line-height:1.1; }
+/* Tint on hover comes from the faction colour itself, kept faint by opacity so
+   no per-faction alpha value has to be hardcoded. */
+.db-faction-btn::before {
+    content:''; position:absolute; inset:0; background:var(--faction-color);
+    opacity:0; transition:opacity .12s;
+}
+.db-faction-btn:hover::before { opacity:.12; }
+.db-faction-btn.active { background:var(--faction-color); color:#fff; }
+.db-faction-btn.active::before { opacity:0; }
+/* Logos are drawn in their own faction colour, invisible once the button is
+   filled with it — flatten to white instead (alpha is preserved). */
+.db-faction-btn.active img { filter:brightness(0) invert(1); }
+[data-theme="dark"] .db-faction-btn { background:rgba(255,255,255,.06); }
+.db-hero-tile { min-width:0; cursor:pointer; border:2px solid transparent; border-radius:9px; padding:4px; transition:border-color .12s,background .12s; }
+.db-hero-tile img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; transition:transform .12s; }
+.db-hero-tile:hover img { transform:scale(1.04); }
+.db-hero-tile-name { margin-top:6px; font-size:.86rem; font-weight:600; text-align:center; color:var(--neutral-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.db-hero-tile.selected { border-color:var(--primary-400); background:var(--sand-100); }
+.db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
+[data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
+
+.db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
+
+/* Board Game Arena availability — an attribute of the format and of the hero */
+.db-bga-pill { font-size:.64rem; font-weight:700; letter-spacing:.04em; padding:1px 6px; border-radius:20px;
+               background:#4f8a55; color:#fff; white-space:nowrap; }
+/* Much lighter orange, so it needs dark text of the same family to stay legible */
+.db-bga-pill.ko      { background:#ffd9a8; color:#7a3f05; }
+/* Yellow — usable on BGA, but only in some formats */
+.db-bga-pill.partial { background:#fdf1bd; color:#71570a; }
+/* Very light red — reserved for a format BGA does not run at all */
+.db-bga-pill.fmt-ko  { background:#fbdcdc; color:#8f1f2b; }
+/* Under a hero tile the pill sits below the name and must be free to wrap */
+.db-hero-tile-bga { margin-top:4px; text-align:center; white-space:normal; line-height:1.25; }
+/* BGA's competitive queue runs on one format at a time — a distinct colour, since
+   this says "notable", not "available or not" like the pills above. */
+.db-arena-pill { display:inline-flex; align-items:center; gap:4px; font-size:.64rem; font-weight:700;
+                 letter-spacing:.04em; padding:1px 7px; border-radius:20px; white-space:nowrap;
+                 background:#764891; color:#fff; }
+/* New-deck dialog — a form, not a grid, so it stays narrow. Qualified with
+   .db-hero-panel so it wins regardless of rule order in this file. */
+.db-hero-panel.db-new-panel { max-width:460px; }
+.db-new-body { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-gutter:stable; padding-right:10px; }
+.db-new-req { color:var(--danger, #c32637); }
+.db-new-note { font-size:.76rem; color:var(--neutral-400); margin-bottom:0; }
+/* Hero row — a form field that opens the picker, with an empty state */
+.db-new-hero { width:100%; text-align:left; cursor:pointer; display:flex; align-items:center; gap:12px;
+               padding:10px 12px; margin-bottom:16px; border-radius:9px;
+               border:1px solid var(--panel-border, var(--sand-300)); background:var(--sand-100);
+               transition:border-color .12s; }
+.db-new-hero:hover { border-color:var(--primary-400); }
+[data-theme="dark"] .db-new-hero { background:rgba(255,255,255,.06); }
+.db-new-hero.empty { border-style:dashed; }
+/* Once a hero is set, the row carries its faction colour the same way the faction
+   buttons of the picker do — a 3px bottom accent, kept through hover. */
+.db-new-hero:not(.empty),
+.db-new-hero:not(.empty):hover { border-bottom:3px solid var(--faction-color, var(--panel-border, var(--sand-300))); }
+.db-new-hero img { width:44px; height:60px; border-radius:5px; object-fit:cover; flex-shrink:0; }
+.db-new-hero > i { width:44px; font-size:1.5rem; text-align:center; color:var(--neutral-300); flex-shrink:0; }
+.db-new-hero-id { display:flex; flex-direction:column; align-items:flex-start; gap:2px; flex:1 1 auto; min-width:0; }
+.db-new-hero-id span { font-size:.92rem; font-weight:600; }
+.db-new-hero.empty .db-new-hero-id span { font-weight:400; color:var(--neutral-400); }
+.db-new-hero-id small { font-size:.76rem; color:var(--neutral-400); }
+.db-new-hero-action { flex-shrink:0; font-size:.78rem; font-weight:600; color:var(--primary-500); }
+#db-new-hero-bga { font-size:.6rem; }
+
+.db-new-formats { border:1px solid var(--panel-border, var(--sand-200)); border-radius:9px; overflow:hidden; }
+.db-new-format { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; cursor:pointer; margin:0;
+                 border-left:3px solid var(--format-color); border-bottom:1px solid var(--panel-border, var(--sand-200)); }
+.db-new-format:last-child { border-bottom:none; }
+.db-new-format:hover { background:var(--sand-100); }
+[data-theme="dark"] .db-new-format:hover { background:rgba(255,255,255,.05); }
+.db-new-format input { margin-top:.25rem; flex-shrink:0; }
+.db-new-format-txt { display:flex; flex-direction:column; min-width:0; }
+.db-new-format-head { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.db-new-format-name { font-size:.88rem; font-weight:600; }
+.db-new-format-txt small { font-size:.74rem; color:var(--neutral-400); }
+
+.db-new-vis { display:flex; gap:6px; }
+.db-new-vis-btn { display:flex; align-items:center; gap:6px; padding:6px 14px; font-size:.82rem; font-weight:600; cursor:pointer;
+                  border:1px solid var(--panel-border, var(--sand-300)); border-radius:7px; background:none; color:var(--neutral-500); }
+.db-new-vis-btn.active { border-color:var(--primary-400); background:var(--primary-400); color:var(--neutral-800); }
+
+.db-new-desc-toggle { background:none; border:none; padding:0; cursor:pointer; font-size:.84rem; font-weight:600;
+                      color:var(--primary-500); display:flex; align-items:center; gap:6px; }
+.db-hero-footer { flex:0 0 auto; display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
 .db-layout { display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start; }
 .db-panel-left  { min-width:0; }
 .db-panel-right { position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto; padding-bottom:1.5rem; }
@@ -393,10 +499,14 @@
     border: 1px solid var(--panel-border, var(--sand-200));
     border-radius: 12px;
     padding: 20px;
-    max-width: 700px;
+    max-width: 1050px;
     width: 94vw;
     max-height: 90vh;
-    overflow-y: auto;
+    /* Column layout: only the hero grid scrolls, so the artwork strip and the
+       confirm button stay reachable without scrolling past every hero. */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
     cursor: default;
 }

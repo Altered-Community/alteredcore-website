@@ -1,4 +1,5 @@
 {
+    "bgaArena":  { "format":  "frontier" },
     "factions":  {
                      "AX":  { "en":  "Axiom",  "fr":  "Axiom",  "color":  "#8c432a" },
                      "BR":  { "en":  "Bravos",  "fr":  "Bravos",  "color":  "#c32637" },
@@ -10,7 +11,7 @@
     "formats":  {
                     "standard": {
                         "en": "Standard All Uniques", "fr": "Standard All Uniques", "color": "var(--primary-400)",
-                        "gg_format": "STANDARD",
+                        "gg_format": "STANDARD", "bgalegal": true,
                         "minCards": 39, "maxCards": 59, "heroRequired": true,
                         "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": 15, "maxExalted": 3, "maxUnique": 3,
@@ -19,7 +20,7 @@
                     },
                     "frontier": {
                         "en": "Frontier", "fr": "Frontier", "color": "#2ec4b6",
-                        "gg_format": "FRONTIER",
+                        "gg_format": "FRONTIER", "bgalegal": true,
                         "minCards": 39, "maxCards": 59, "heroRequired": true,
                         "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": 15, "maxExalted": 3, "maxUnique": 3,
@@ -28,7 +29,7 @@
                     },
                     "nuc": {
                         "en": "Standard No Unique", "fr": "Standard No Unique", "color": "#5b8cef",
-                        "gg_format": "NO_UNIQUE",
+                        "gg_format": "NO_UNIQUE", "bgalegal": false,
                         "minCards": 39, "maxCards": 59, "heroRequired": true,
                         "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": 15, "maxExalted": 3, "maxUnique": 0,
@@ -37,7 +38,7 @@
                     },
                     "singleton": {
                         "en": "Singleton", "fr": "Singleton", "color": "#9b6edb",
-                        "gg_format": "SINGLETON",
+                        "gg_format": "SINGLETON", "bgalegal": false,
                         "minCards": 59, "maxCards": 79, "heroRequired": true,
                         "maxCopiesPerRef": 1, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": 1, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": null, "maxExalted": null, "maxUnique": 3,
@@ -71,7 +72,7 @@
                     },
                     "singleton_nuc": {
                         "en": "Singleton No Unique", "fr": "Singleton No Unique", "color": "#9b6edb",
-                        "gg_format": "SINGLETON_NO_UNIQUE",
+                        "gg_format": "SINGLETON_NO_UNIQUE", "bgalegal": true,
                         "minCards": 59, "maxCards": 79, "heroRequired": true,
                         "maxCopiesPerRef": 1, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": 1, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": null, "maxExalted": null, "maxUnique": 0,
@@ -105,7 +106,7 @@
                     },
                     "sandbox": {
                         "en": "Sandbox", "fr": "Sandbox", "color": "#e0cda9",
-                        "gg_format": "SANDBOX",
+                        "gg_format": "SANDBOX", "bgalegal": true,
                         "minCards": 4, "maxCards": 100, "heroRequired": true,
                         "maxCopiesPerRef": null, "maxCopiesPerName": null, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": null,
                         "sameFaction": false, "maxRare": null, "maxExalted": null, "maxUnique": null,
@@ -114,7 +115,7 @@
                     },
                     "test": {
                         "en": "Test", "fr": "Test", "color": "#e0cda9",
-                        "gg_format": "TEST", "hidden": true,
+                        "gg_format": "TEST", "bgalegal": false, "hidden": true,
                         "minCards": 4, "maxCards": 100, "heroRequired": true,
                         "maxCopiesPerRef": null, "maxCopiesPerName": null, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": null,
                         "sameFaction": false, "maxRare": null, "maxExalted": null, "maxUnique": null,
