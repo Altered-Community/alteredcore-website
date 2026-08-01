@@ -97,6 +97,7 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Banned cards not allowed',
         'rule_no_suspended'    => 'Suspended cards not allowed',
         'rule_frontier_legal'  => 'Unique cards must be part of the Frontier allowlist',
+        'rule_set_legal'       => 'Cards must be from a set legal in this format',
         'tt_show_banned_suspended'    => 'Show suspended and banned cards (hidden by default for this format)',
         'tt_banned_suspended_allowed' => 'The selected format already allows suspended and banned cards — this filter has no effect',
         'lbl_banned_suspended'        => 'Suspended & banned',
@@ -191,6 +192,7 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Cartes bannies non autorisées',
         'rule_no_suspended'    => 'Cartes suspendues non autorisées',
         'rule_frontier_legal'  => 'Les cartes uniques doivent faire partie de la liste autorisée Frontier',
+        'rule_set_legal'       => 'Les cartes doivent provenir d\'un set légal dans ce format',
         'tt_show_banned_suspended'    => 'Afficher les cartes suspendues et bannies (masquées par défaut pour ce format)',
         'tt_banned_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues et bannies — ce filtre est sans effet',
         'lbl_banned_suspended'        => 'Suspendus et bannis',
@@ -747,6 +749,7 @@ var AlteredDB = {
     debug:     <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
     factions:  <?= json_encode($factionsData) ?>,
     formats:   <?= json_encode($formatsData) ?>,
+    sets:      <?= json_encode($setsData) ?>,
     rarities:  <?= json_encode($raritiesData) ?>,
     types:        <?= json_encode($typesData) ?>,
     typesMerged:  <?= json_encode($typesMergedData) ?>,
@@ -781,6 +784,7 @@ var AlteredDB = {
         'rule_no_banned'       => $txt['rule_no_banned'],
         'rule_no_suspended'    => $txt['rule_no_suspended'],
         'rule_frontier_legal'  => $txt['rule_frontier_legal'],
+        'rule_set_legal'       => $txt['rule_set_legal'],
         'tt_show_banned_suspended'    => $txt['tt_show_banned_suspended'],
         'tt_banned_suspended_allowed' => $txt['tt_banned_suspended_allowed'],
         'unique_not_allowed'   => $txt['unique_not_allowed'],
@@ -1007,6 +1011,7 @@ var AlteredDB = {
     // Unique example: ALT_EOLE_B_AX_106_U_530 — rarity is always parts[5][0]
     function isUnique(ref) { return (ref.split('_')[5] || '')[0] === 'U'; }
     function rarityCode(ref) { return (ref.split('_')[5] || '')[0] || '?'; }
+    function setFromRef(ref) { return (ref || '').split('_')[1] || ''; }
     // Stable hero key: FACTION_NUMBER (e.g. "LY_105"), ignores set/subtype/rarity/variation
     function heroStableKey(ref) {
         var p = ref ? ref.split('_') : [];
@@ -1365,6 +1370,49 @@ var AlteredDB = {
             ruleResults.push({ label: label, ok: ok, current: current, limit: limit });
         }
 
+        // Sets legal in this format — applies to every card, hero included.
+        // Derived from sets[X].bgalegal (single source of truth, also used for
+        // the "not yet on BGA" info banner) rather than a separate hardcoded
+        // list. Unknown/future sets fail closed (illegal), unlike the banner's
+        // own `?? true` default — this check and the banner intentionally read
+        // the same field with opposite defaults for their opposite purposes.
+        // 'test' opts out via ignoreBgaIllegalSets (sets not yet BGA-legal are
+        // exactly what that format exists to try out).
+        function isSetLegal(set) {
+            var s = AlteredDB.sets[set];
+            if (!s) return false;
+            if (s.bgalegal === false && !rules.ignoreBgaIllegalSets) return false;
+            return true;
+        }
+
+        var illegalSetRefs = [];
+        Object.keys(deck.cards).forEach(function(ref) {
+            var legal = isSetLegal(setFromRef(ref));
+            deck.cards[ref].isSetIllegal = !legal;
+            if (!legal) illegalSetRefs.push(ref);
+        });
+        var heroSetIllegal = deck.hero ? !isSetLegal(setFromRef(deck.hero.cardReference)) : false;
+        var setsOk = illegalSetRefs.length === 0 && !heroSetIllegal;
+        addRule(AlteredDB.txt.rule_set_legal, setsOk, setsOk ? null : (illegalSetRefs.length + (heroSetIllegal ? 1 : 0)), null);
+        illegalSetRefs.forEach(function(ref) {
+            violatingRefs[ref] = violatingRefs[ref] ? violatingRefs[ref] + '\n' + AlteredDB.txt.rule_set_legal : AlteredDB.txt.rule_set_legal;
+        });
+        if (elHeroBanner) {
+            var heroWarn = elHeroBanner.querySelector('.db-hero-set-warn');
+            if (heroSetIllegal) {
+                if (!heroWarn) {
+                    heroWarn = document.createElement('span');
+                    heroWarn.className = 'db-hero-set-warn';
+                    heroWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:#ef4444;font-size:.9rem;cursor:help';
+                    heroWarn.title = AlteredDB.txt.rule_set_legal;
+                    heroWarn.innerHTML = '<i class="fa-solid fa-ban"></i>';
+                    elHeroBanner.appendChild(heroWarn);
+                }
+            } else if (heroWarn) {
+                heroWarn.remove();
+            }
+        }
+
         // Hero required
         if (rules.heroRequired) {
             addRule(AlteredDB.txt.rule_hero, !!deck.hero, null, null);
@@ -1530,7 +1578,7 @@ var AlteredDB = {
             var c = deck.cards[ref];
             var t = c.type || 'OTHER';
             if (!grouped[t]) grouped[t] = [];
-            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isFrontierIllegal: !!c.isFrontierIllegal });
+            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isFrontierIllegal: !!c.isFrontierIllegal, isSetIllegal: !!c.isSetIllegal });
         });
         elCardList.innerHTML = '';
         TYPE_ORDER.forEach(function(type) {
@@ -1562,6 +1610,7 @@ var AlteredDB = {
                     + (c.isBanned    && rules.allowBanned    === false ? '<span class="deck-list-banned"    title="' + escAttr(AlteredDB.txt.rule_no_banned)    + '"><i class="fa-solid fa-ban"></i></span>'          : '')
                     + (c.isSuspended && rules.allowSuspended === false ? '<span class="deck-list-suspended" title="' + escAttr(AlteredDB.txt.rule_no_suspended) + '"><i class="fa-solid fa-circle-pause"></i></span>' : '')
                     + (c.isFrontierIllegal && rules.requireUniqueLegality ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt.rule_frontier_legal) + '"><i class="fa-solid fa-map"></i></span>' : '')
+                    + (c.isSetIllegal ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt.rule_set_legal) + '"><i class="fa-solid fa-layer-group"></i></span>' : '')
                     + (violatingRefs[c.ref] ? '<span class="deck-list-violation" title="' + escAttr(violatingRefs[c.ref]) + '">!</span>' : '')
                     + (AlteredDB.showStockWarn && AlteredDB.collectionMode && c.qty > (AlteredDB.collection[c.ref] || 0)
                         ? '<span class="deck-list-stockwarn" title="' + <?= json_encode($txt['stock_warn']) ?> + '"><i class="fa-solid fa-box-archive" style="font-size:.6rem"></i></span>'

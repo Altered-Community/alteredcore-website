@@ -119,6 +119,7 @@
                         "maxCopiesPerRef": null, "maxCopiesPerName": null, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": null,
                         "sameFaction": false, "maxRare": null, "maxExalted": null, "maxUnique": null,
                         "allowBanned": true, "allowSuspended": true,
+                        "ignoreBgaIllegalSets": true,
                         "heroUniqueLimits": []
                     }
                 },
