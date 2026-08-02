@@ -899,7 +899,15 @@ function CardSearch(cfg) {
     function _uniquesFilterParts() {
         var parts = [];
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
-        (_setsDirty ? filters.sets : DEFAULT_SETS).forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
+        // Drop sets the uniques API doesn't know about (cfg.noUniqueSets, from
+        // sets[X].uniques === false). Their quick-filter button is already
+        // hidden on this tab, but the selection survives a switch from another
+        // tab — and a single unknown set makes the API reject the whole query
+        // with HTTP 400 "invalid set value", breaking the search entirely.
+        var _noUniq = cfg.noUniqueSets || [];
+        (_setsDirty ? filters.sets : DEFAULT_SETS)
+            .filter(function(v) { return _noUniq.indexOf(v) < 0; })
+            .forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
 
         NUM_FIELDS.forEach(function(f) {
             numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });

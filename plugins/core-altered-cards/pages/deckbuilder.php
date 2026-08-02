@@ -1065,9 +1065,12 @@ var AlteredDB = {
         $subSets[] = $_sref;
         if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
     }
+    // Sets the uniques API rejects outright (HTTP 400) — see card-search.js.
+    $noUniqueSets = array_keys(array_filter($setsData, fn($s) => ($s['uniques'] ?? true) === false));
 ?>
     setChildren:  <?= json_encode($setChildren) ?>,
     subSets:      <?= json_encode($subSets) ?>,
+    noUniqueSets: <?= json_encode(array_values($noUniqueSets)) ?>,
     ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     uniquesApiBase:  <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
 };
@@ -3000,6 +3003,7 @@ var AlteredDB = {
         favApiUrl:         AlteredDB.favApiUrl,
         setChildren:  AlteredDB.setChildren,
         subSets:      AlteredDB.subSets,
+        noUniqueSets: AlteredDB.noUniqueSets,
         uniqueType:   ['CHARACTER'],
         uniqueRarity: ['UNIQUE'],
         uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
