@@ -858,24 +858,17 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
 /* ---- Search/Reset actions (inline on the advanced-search row, pushed right) ---- */
 .cs-actions { margin-left: auto; }
 
-/* Mobile: rarity filters drop to their own line under the factions */
+/* Mobile: rarity filters drop to their own line under the factions.
+   The rarity/type row deliberately gets no such treatment: it keeps
+   filter-row--scroll's single scrolling line, like the set and faction rows.
+   It used to wrap here, but .cs-types is nowrap/flex-shrink:0 — it holds one
+   line so the row can scroll on the wide layout — so wrapping the row only
+   pushed its buttons out of the frame with no scroll container left to reach
+   them. */
 @media (max-width: 575px) {
     .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
-
-    /* Deckbuilder: type filters drop to their own line under rarity; no bar to
-       center once the two groups stack instead of sharing the row. */
-    .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
-    .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
-    .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
-
-    /* The groups are nowrap/flex-shrink:0 so they hold one line on the wide layout,
-       where the row itself scrolls. Once the row wraps instead of scrolling, that
-       makes them overflow with no way to reach what spilled out — type labels are
-       long enough ("Permanent d'Expédition") to run well past the screen. Let the
-       buttons inside wrap too, so these rows read like the faction row above. */
-    .cs-rarities, .cs-types { flex-wrap: wrap; }
 }
 
 /* ============================================================
