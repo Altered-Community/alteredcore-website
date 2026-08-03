@@ -855,6 +855,12 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
 /* ---- Numeric (text-expression) inputs ---- */
 .cs-num-input { width: 100px; }
 @media (max-width: 575px) { .cs-num-input { width: 92px; } }
+/* Hand + reserve cost: one group, so the name row wraps the pair as a unit rather
+   than leaving one cost stranded on the next line. gap matches the row's gap-2.
+   The inputs keep their width (shrink:0) and the group scrolls instead, for the
+   case where even the pair alone is wider than the line. */
+.cs-costs { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.cs-costs > .cs-num { flex-shrink: 0; }
 
 /* ---- Results control bar (count + sort + cols) ---- */
 .cs-controlbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

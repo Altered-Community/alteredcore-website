@@ -253,8 +253,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                    placeholder="<?= h($_csTxt['search_ph'] ?? 'Search…') ?>"
                    class="form-control form-control-sm" autocomplete="off"
                    style="flex:1;min-width:160px">
-            <?= $_csNumInput('maincost') ?>
-            <?= $_csNumInput('recallcost') ?>
+            <!-- One pair, one group: the row's flex-wrap must not split hand from
+                 reserve, so they wrap together instead of one per line. -->
+            <span class="cs-costs cs-scroll-x">
+                <?= $_csNumInput('maincost') ?>
+                <?= $_csNumInput('recallcost') ?>
+            </span>
         </div>
 
         <!-- Main editions — quick-filter buttons -->
