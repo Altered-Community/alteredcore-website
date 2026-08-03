@@ -3096,8 +3096,11 @@ var AlteredDB = {
     var _dbResetBtn = document.getElementById('db-reset-btn');
     if (_dbResetBtn) {
         _dbResetBtn.addEventListener('click', function() {
-            _restoreDeckDefaults();
+            // Before _restoreDeckDefaults, not after: that call ends in the single
+            // search(1), and the preset has to be in filters by then to be part of
+            // the query rather than only landing in the one after it.
             _syncUniqueTabToFormat(); // restores the Frontier preset if the deck is Frontier
+            _restoreDeckDefaults();
         });
     }
 
@@ -3122,6 +3125,10 @@ var AlteredDB = {
             var newTab = tabBtn.dataset.tab;
             if (newTab === _dbLastTab) return;
             _dbLastTab = newTab;
+            // resetFilters() also cleared filters.format back to "all", so a Frontier
+            // deck arrived on the Uniques tab with the Frontier preset unselected.
+            // Re-apply it here for the same reason the defaults above are re-applied.
+            _syncUniqueTabToFormat();
             // Favoris already (re)searched itself in the native handler; the
             // duplicate here is harmless (search() aborts the in-flight one).
             _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
