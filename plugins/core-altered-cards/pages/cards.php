@@ -168,6 +168,8 @@ foreach ($setsData as $_sref => $_sd) {
     $subSets[] = $_sref;
     if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
 }
+// Sets the uniques API rejects outright (HTTP 400) — see card-search.js.
+$noUniqueSets = array_values(array_keys(array_filter($setsData, fn($s) => ($s['uniques'] ?? true) === false)));
 
 // Playset heatmap metadata: faction rows (canonical order, with colors) and the
 // main-set columns ordered chronologically descending (recent first) — same
@@ -351,6 +353,7 @@ CardSearch({
     typesMerged: <?= json_encode($typesMergedData) ?>,
     setChildren:  <?= json_encode($setChildren) ?>,
     subSets:      <?= json_encode($subSets) ?>,
+    noUniqueSets: <?= json_encode($noUniqueSets) ?>,
     uniqueType:   <?= json_encode(['CHARACTER']) ?>,
     uniqueRarity: <?= json_encode(['UNIQUE']) ?>,
     uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,

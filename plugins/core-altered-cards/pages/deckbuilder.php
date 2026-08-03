@@ -97,6 +97,11 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Banned cards not allowed',
         'rule_no_suspended'    => 'Suspended cards not allowed',
         'rule_frontier_legal'  => 'Unique cards must be part of the Frontier allowlist',
+        'rule_set_legal'       => 'Cards must be from a set legal in this format',
+        'tt_show_banned_suspended'    => 'Show suspended and banned cards (hidden by default for this format)',
+        'tt_banned_suspended_allowed' => 'The selected format already allows suspended and banned cards — this filter has no effect',
+        'lbl_banned_suspended'        => 'Suspended & banned',
+        'unique_not_allowed'   => 'The selected format doesn\'t allow any Unique cards in this deck.',
         'hero_label'      => 'Hero',
         'choose_hero'     => 'Choose hero',
         'change_hero'     => 'Change hero',
@@ -153,6 +158,7 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Unnamed',
         'detail_label'    => 'View detail',
         'bga_sets_info'   => 'The following sets are not yet available on Board Game Arena and cannot be used in BGA games: %s.',
+        'bga_alt_art_info' => 'For now, alt arts are replaced by their base art on BGA — so art selection isn\'t available here.',
     ],
     'fr' => [
         'page_title'      => 'Deckbuilder',
@@ -212,6 +218,11 @@ $txt = array_merge($_sharedTxt, [
         'rule_no_banned'       => 'Cartes bannies non autorisées',
         'rule_no_suspended'    => 'Cartes suspendues non autorisées',
         'rule_frontier_legal'  => 'Les cartes uniques doivent faire partie de la liste autorisée Frontier',
+        'rule_set_legal'       => 'Les cartes doivent provenir d\'un set légal dans ce format',
+        'tt_show_banned_suspended'    => 'Afficher les cartes suspendues et bannies (masquées par défaut pour ce format)',
+        'tt_banned_suspended_allowed' => 'Le format sélectionné autorise déjà les cartes suspendues et bannies — ce filtre est sans effet',
+        'lbl_banned_suspended'        => 'Suspendus et bannis',
+        'unique_not_allowed'   => 'Le format sélectionné n\'autorise aucune carte Unique dans ce deck.',
         'hero_label'      => 'Héros',
         'choose_hero'     => 'Choisir héros',
         'change_hero'     => 'Changer de héros',
@@ -268,6 +279,7 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Sans nom',
         'detail_label'    => 'Accéder au détail',
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
+        'bga_alt_art_info' => 'Pour le moment, les alt arts sont remplacés par leur version de base sur BGA — la sélection d\'art n\'est donc pas disponible ici.',
     ],
 ][$uiLang] ?? []);
 $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
@@ -359,6 +371,18 @@ if ($editDeckId && $token) {
     }
 }
 
+// hero faction of the deck being edited (drives default faction filter in search)
+$_existingHeroFaction = null;
+if ($existingDeck) {
+    $_existingHeroCards = $existingDeck['deckCards'] ?? $existingDeck['cards'] ?? [];
+    foreach ($_existingHeroCards as $_hc) {
+        if (($_hc['cardTypeReference'] ?? '') === 'HERO') {
+            $_existingHeroFaction = $_hc['factionCode'] ?? null;
+            break;
+        }
+    }
+}
+
 // static data
 $factionsData = loadAlteredData('factions');
 $formatsData  = loadAlteredData('formats');
@@ -384,6 +408,10 @@ foreach ($typesMergedData as $_mk => $_mvs) {
     }
 }
 $typesDataDisplay = array_diff_key($typesData, $_absorbedTypes);
+// Deckbuilder type filter row default: everything shown there (Hero/Token
+// already excluded from the row itself) except Mana, which isn't a useful
+// search target when building a deck.
+$_defaultDeckTypes = array_keys(array_diff_key($typesDataDisplay, array_flip(['HERO', 'TOKEN', 'TOKEN_MANA'])));
 $validRarities  = array_keys($raritiesData);
 $validSets      = array_keys($setsData);
 $validCostPower = array_map('strval', range(0, 12));
@@ -524,8 +552,9 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                         'perPage'    => CARDS_DISPLAY_PER_PAGE,
                     ],
                     'selected'           => [
-                        'type'   => [],
-                        'rarity' => [],
+                        'type'    => $_defaultDeckTypes,
+                        'rarity'  => [],
+                        'faction' => $_existingHeroFaction ? [$_existingHeroFaction] : [],
                     ],
                     'col_options'        => [2, 3, 4],
                     'show_cols'          => true,
@@ -683,6 +712,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 </div>
             </div>
             <?php endif; ?>
+            <div class="card-altered p-3 mt-2 db-info-banner">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fa-solid fa-circle-info flex-shrink-0 text-secondary" style="margin-top:.15em"></i>
+                    <span><?= h($txt['bga_alt_art_info']) ?></span>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -898,6 +933,7 @@ var AlteredDB = {
     debug:     <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
     factions:  <?= json_encode($factionsData) ?>,
     formats:   <?= json_encode($formatsData) ?>,
+    sets:      <?= json_encode($setsData) ?>,
     rarities:  <?= json_encode($raritiesData) ?>,
     types:        <?= json_encode($typesData) ?>,
     typesMerged:  <?= json_encode($typesMergedData) ?>,
@@ -932,6 +968,10 @@ var AlteredDB = {
         'rule_no_banned'       => $txt['rule_no_banned'],
         'rule_no_suspended'    => $txt['rule_no_suspended'],
         'rule_frontier_legal'  => $txt['rule_frontier_legal'],
+        'rule_set_legal'       => $txt['rule_set_legal'],
+        'tt_show_banned_suspended'    => $txt['tt_show_banned_suspended'],
+        'tt_banned_suspended_allowed' => $txt['tt_banned_suspended_allowed'],
+        'unique_not_allowed'   => $txt['unique_not_allowed'],
         'saving'        => $txt['saving'],
         'saved_ok'      => $txt['saved_ok'],
         'save_btn'      => $txt['save_btn'],
@@ -1025,9 +1065,12 @@ var AlteredDB = {
         $subSets[] = $_sref;
         if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
     }
+    // Sets the uniques API rejects outright (HTTP 400) — see card-search.js.
+    $noUniqueSets = array_keys(array_filter($setsData, fn($s) => ($s['uniques'] ?? true) === false));
 ?>
     setChildren:  <?= json_encode($setChildren) ?>,
     subSets:      <?= json_encode($subSets) ?>,
+    noUniqueSets: <?= json_encode(array_values($noUniqueSets)) ?>,
     ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     uniquesApiBase:  <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
 };
@@ -1184,6 +1227,7 @@ var AlteredDB = {
     // Unique example: ALT_EOLE_B_AX_106_U_530 — rarity is always parts[5][0]
     function isUnique(ref) { return (ref.split('_')[5] || '')[0] === 'U'; }
     function rarityCode(ref) { return (ref.split('_')[5] || '')[0] || '?'; }
+    function setFromRef(ref) { return (ref || '').split('_')[1] || ''; }
     // Stable hero key: FACTION_NUMBER (e.g. "LY_105"), ignores set/subtype/rarity/variation
     function heroStableKey(ref) {
         var p = ref ? ref.split('_') : [];
@@ -1286,6 +1330,20 @@ var AlteredDB = {
             wrap.appendChild(img);
         }
 
+        // "Suspendus et bannis" toggle: grey out + flag any banned/suspended
+        // card actually showing (only reached when the deck's format doesn't
+        // allow it and the user chose to include it anyway — see
+        // _statusFilterParts in card-search.js).
+        var _searchEngine = window.CardSearchInstances && window.CardSearchInstances.db;
+        var _bannedOrSuspendedOn = !!(_searchEngine && _searchEngine.filters && _searchEngine.filters.bannedOrSuspended);
+        if (_bannedOrSuspendedOn && (card.isBanned || card.isSuspended)) {
+            wrap.classList.add('db-card-flagged');
+            var statusOverlay = document.createElement('div');
+            statusOverlay.className = 'db-card-status-overlay';
+            statusOverlay.innerHTML = '<i class="fa-solid fa-' + (card.isBanned ? 'ban' : 'pause') + '"></i>';
+            wrap.appendChild(statusOverlay);
+        }
+
         // Favorite star — top-right (helper exposed by card-search.js)
         if (window.acMakeFavButton) {
             var favBtn = window.acMakeFavButton(card);
@@ -1386,6 +1444,7 @@ var AlteredDB = {
             ? (heroData.name[AlteredDB.lang] || heroData.name.en || '')
             : (heroData.name || '');
         var faction = heroData.factionCode || factionFromRef(ref);
+        deck.hero.factionCode = faction; // resolved once here so later reads (e.g. reset) don't need to recompute
         var fData   = AlteredDB.factions[faction] || {};
         var fColor  = fData.color || '#fff';
 
@@ -1414,7 +1473,25 @@ var AlteredDB = {
         elHeroBanner.appendChild(textEl);
 
         updateDeckDisplay();
+        updateHeroFactionFilter(faction);
         if (AlteredDB.isGuest) saveGuestDeck();
+    }
+
+    // Sync the (advanced-search) faction filter to the hero's faction when the
+    // hero changes mid-session. No-op at page load: the CardSearch engine
+    // (window.CardSearchInstances.db) is created by a later <script> block and
+    // doesn't exist yet while initFromExisting() runs.
+    function updateHeroFactionFilter(faction) {
+        var engine = window.CardSearchInstances && window.CardSearchInstances.db;
+        if (!engine || !faction) return;
+        var root = document.getElementById('db-panel');
+        if (!root) return;
+        root.querySelectorAll('.filter-toggle[data-filter="faction"]').forEach(function(btn) {
+            var isTarget = btn.dataset.value === faction;
+            var isActive = btn.classList.contains('active');
+            if (isTarget !== isActive) btn.click(); // reuses card-search.js's own toggle logic
+        });
+        engine.search(1);
     }
 
     // deck card management
@@ -1507,6 +1584,49 @@ var AlteredDB = {
 
         function addRule(label, ok, current, limit) {
             ruleResults.push({ label: label, ok: ok, current: current, limit: limit });
+        }
+
+        // Sets legal in this format — applies to every card, hero included.
+        // Derived from sets[X].bgalegal (single source of truth, also used for
+        // the "not yet on BGA" info banner) rather than a separate hardcoded
+        // list. Unknown/future sets fail closed (illegal), unlike the banner's
+        // own `?? true` default — this check and the banner intentionally read
+        // the same field with opposite defaults for their opposite purposes.
+        // 'test' opts out via ignoreBgaIllegalSets (sets not yet BGA-legal are
+        // exactly what that format exists to try out).
+        function isSetLegal(set) {
+            var s = AlteredDB.sets[set];
+            if (!s) return false;
+            if (s.bgalegal === false && !rules.ignoreBgaIllegalSets) return false;
+            return true;
+        }
+
+        var illegalSetRefs = [];
+        Object.keys(deck.cards).forEach(function(ref) {
+            var legal = isSetLegal(setFromRef(ref));
+            deck.cards[ref].isSetIllegal = !legal;
+            if (!legal) illegalSetRefs.push(ref);
+        });
+        var heroSetIllegal = deck.hero ? !isSetLegal(setFromRef(deck.hero.cardReference)) : false;
+        var setsOk = illegalSetRefs.length === 0 && !heroSetIllegal;
+        addRule(AlteredDB.txt.rule_set_legal, setsOk, setsOk ? null : (illegalSetRefs.length + (heroSetIllegal ? 1 : 0)), null);
+        illegalSetRefs.forEach(function(ref) {
+            violatingRefs[ref] = violatingRefs[ref] ? violatingRefs[ref] + '\n' + AlteredDB.txt.rule_set_legal : AlteredDB.txt.rule_set_legal;
+        });
+        if (elHeroBanner) {
+            var heroWarn = elHeroBanner.querySelector('.db-hero-set-warn');
+            if (heroSetIllegal) {
+                if (!heroWarn) {
+                    heroWarn = document.createElement('span');
+                    heroWarn.className = 'db-hero-set-warn';
+                    heroWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:#ef4444;font-size:.9rem;cursor:help';
+                    heroWarn.title = AlteredDB.txt.rule_set_legal;
+                    heroWarn.innerHTML = '<i class="fa-solid fa-ban"></i>';
+                    elHeroBanner.appendChild(heroWarn);
+                }
+            } else if (heroWarn) {
+                heroWarn.remove();
+            }
         }
 
         // Hero required
@@ -1674,7 +1794,7 @@ var AlteredDB = {
             var c = deck.cards[ref];
             var t = c.type || 'OTHER';
             if (!grouped[t]) grouped[t] = [];
-            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isFrontierIllegal: !!c.isFrontierIllegal });
+            grouped[t].push({ ref: ref, qty: c.qty, name: c.name, rarity: c.rarity || rarityCode(ref), mainCost: c.mainCost, faction: c.factionCode || null, isBanned: !!c.isBanned, isSuspended: !!c.isSuspended, isFrontierIllegal: !!c.isFrontierIllegal, isSetIllegal: !!c.isSetIllegal });
         });
         elCardList.innerHTML = '';
         TYPE_ORDER.forEach(function(type) {
@@ -1706,6 +1826,7 @@ var AlteredDB = {
                     + (c.isBanned    && rules.allowBanned    === false ? '<span class="deck-list-banned"    title="' + escAttr(AlteredDB.txt.rule_no_banned)    + '"><i class="fa-solid fa-ban"></i></span>'          : '')
                     + (c.isSuspended && rules.allowSuspended === false ? '<span class="deck-list-suspended" title="' + escAttr(AlteredDB.txt.rule_no_suspended) + '"><i class="fa-solid fa-circle-pause"></i></span>' : '')
                     + (c.isFrontierIllegal && rules.requireUniqueLegality ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt.rule_frontier_legal) + '"><i class="fa-solid fa-map"></i></span>' : '')
+                    + (c.isSetIllegal ? '<span class="deck-list-banned" title="' + escAttr(AlteredDB.txt.rule_set_legal) + '"><i class="fa-solid fa-layer-group"></i></span>' : '')
                     + (violatingRefs[c.ref] ? '<span class="deck-list-violation" title="' + escAttr(violatingRefs[c.ref]) + '">!</span>' : '')
                     + (AlteredDB.showStockWarn && AlteredDB.collectionMode && c.qty > (AlteredDB.collection[c.ref] || 0)
                         ? '<span class="deck-list-stockwarn" title="' + <?= json_encode($txt['stock_warn']) ?> + '"><i class="fa-solid fa-box-archive" style="font-size:.6rem"></i></span>'
@@ -2830,6 +2951,23 @@ var AlteredDB = {
     if (AlteredDB.newDeckFlow && !deck.hero) dbNewOpen();
 
     window.renderBrowserCard = renderBrowserCard;
+    // Exposed so the (separately-scoped) CardSearch engine setup can wire the
+    // "Réinitialiser" button to restore the hero's faction instead of clearing it.
+    window.updateHeroFactionFilter = updateHeroFactionFilter;
+    window.getDeckHeroFaction = function() { return deck.hero ? deck.hero.factionCode : null; };
+    // Banned/suspended-card visibility, and the Uniques tab's own adjustments,
+    // depend on the deck's current format — exposed so the CardSearch engine
+    // and the Uniques-tab sync below can read it live on every change.
+    window.getDeckFormatLegality = function() {
+        var fmtKey = elDeckFormat ? elDeckFormat.value : '';
+        var fmt = (AlteredDB.formats && AlteredDB.formats[fmtKey]) || {};
+        return {
+            key:            fmtKey,
+            allowBanned:    fmt.allowBanned    !== false,
+            allowSuspended: fmt.allowSuspended !== false,
+            maxUnique:      fmt.maxUnique,
+        };
+    };
 })();
 </script>
 
@@ -2849,7 +2987,7 @@ var AlteredDB = {
         cdnUrl:      AlteredDB.cdnUrl,
         rendererSrc: AlteredDB.rendererSrc,
         pushState:   false,
-        autoSearch:  false,
+        autoSearch:  true,
         closeFiltersOnSearch: true,
         collectionMode:    AlteredDB.collectionMode,
         collectionData:    AlteredDB.collection,
@@ -2865,6 +3003,7 @@ var AlteredDB = {
         favApiUrl:         AlteredDB.favApiUrl,
         setChildren:  AlteredDB.setChildren,
         subSets:      AlteredDB.subSets,
+        noUniqueSets: AlteredDB.noUniqueSets,
         uniqueType:   ['CHARACTER'],
         uniqueRarity: ['UNIQUE'],
         uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,
@@ -2880,10 +3019,10 @@ var AlteredDB = {
             perPage:    <?= CARDS_DISPLAY_PER_PAGE ?>,
         },
         initial: {
-            faction:        <?= json_encode($defaultFactions) ?>,
-            factionExplicit:false,
-            type:           <?= json_encode($defaultTypes) ?>,
-            typeExplicit:   false,
+            faction:        <?= json_encode($_existingHeroFaction ? [$_existingHeroFaction] : $defaultFactions) ?>,
+            factionExplicit:<?= $_existingHeroFaction ? 'true' : 'false' ?>,
+            type:           <?= json_encode($_defaultDeckTypes) ?>,
+            typeExplicit:   true,
             rarity:         <?= json_encode($defaultRarities) ?>,
             rarityExplicit: false,
         },
@@ -2898,9 +3037,121 @@ var AlteredDB = {
         renderDeckCard: window.renderBrowserCard,
         formatCount: function(n) { return n + ' ' + AlteredDB.txt.deck_cards; },
         txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel },
+        getFormatLegality: function() { return window.getDeckFormatLegality ? window.getDeckFormatLegality() : null; },
     });
     window.updateFilterCount = engine.updateFilterCount;
     window.loadCards         = engine.search;
+    window.CardSearchInstances = window.CardSearchInstances || {};
+    window.CardSearchInstances.db = engine;
+
+    // "Réinitialiser" clears every filter, including faction and type — re-apply
+    // the hero's faction and the deckbuilder's default types right after, so a
+    // deck's card search doesn't lose its useful scope on reset. Also reused
+    // below on tab switches, which resetFilters() blanks out the exact same way.
+    //   - hero faction: restored on every tab (the faction buttons are shown on
+    //     all of them, and every scope's API honors the filter). A single value,
+    //     so it survives the physical-collection scope's single-value filters.
+    //   - default types: skipped on the Uniques tab, whose own preset forces
+    //     type=CHARACTER and has to win, and on the physical-collection tab,
+    //     where types are single-value (each click clears the others), so
+    //     replaying all four would leave just the last one arbitrarily active
+    var DB_DEFAULT_TYPES = <?= json_encode($_defaultDeckTypes) ?>;
+    function _restoreDeckDefaults(opts) {
+        var root = document.getElementById('db-panel');
+        if (root && !(opts && opts.skipTypes)) {
+            DB_DEFAULT_TYPES.forEach(function(t) {
+                var btn = root.querySelector('.filter-toggle[data-filter="type"][data-value="' + t + '"]');
+                if (btn && !btn.classList.contains('active')) btn.click();
+            });
+        }
+        var heroFaction = window.getDeckHeroFaction && window.getDeckHeroFaction();
+        if (heroFaction) {
+            window.updateHeroFactionFilter(heroFaction); // also runs the single search(1) below
+        } else {
+            engine.search(1);
+        }
+    }
+    var _dbResetBtn = document.getElementById('db-reset-btn');
+    if (_dbResetBtn) {
+        _dbResetBtn.addEventListener('click', function() {
+            _restoreDeckDefaults();
+            _syncUniqueTabToFormat(); // restores the Frontier preset if the deck is Frontier
+        });
+    }
+
+    // card-search.js's tab-click handler calls resetFilters() on every switch
+    // (even back to a tab you were already on before, via a different tab) —
+    // wiping the hero-faction/default-type preselection above just like Reset
+    // does — and, in deck mode, never re-searches on tab switch (unlike the
+    // Cards page), so the grid is left showing the *previous* tab's results
+    // under the new tab's filters until "Rechercher" is clicked. Re-apply the
+    // defaults on every switch, which also (re)searches so the grid always
+    // matches whichever tab is now active. Registered after CardSearch's own
+    // tab listener so setTab() has already run by the time this fires. Tracks
+    // the last tab itself (mirroring the native handler's own no-op guard)
+    // since _tab is private to card-search.js. The playset tab is a dashboard
+    // with no result grid — search() no-ops there, so it needs no special case.
+    var _dbLastTab = 'all';
+    var _dbTabsPanel = document.getElementById('db-panel');
+    if (_dbTabsPanel) {
+        _dbTabsPanel.addEventListener('click', function(e) {
+            var tabBtn = e.target.closest('.cs-tab[data-tab]');
+            if (!tabBtn || tabBtn.disabled) return;
+            var newTab = tabBtn.dataset.tab;
+            if (newTab === _dbLastTab) return;
+            _dbLastTab = newTab;
+            // Favoris already (re)searched itself in the native handler; the
+            // duplicate here is harmless (search() aborts the in-flight one).
+            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
+        });
+    }
+
+    // The format picks whether banned/suspended cards are hidden by default
+    // (see getFormatLegality above). When it changes: re-run the search so the
+    // grid reflects the new format immediately, and grey out the "Suspendus
+    // et bannis" toggle when the new format allows both anyway (toggling
+    // would have no effect since nothing is being hidden to include back).
+    function _syncStatusButtonsToFormat() {
+        var root = document.getElementById('db-panel');
+        var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
+        if (!root || !legality) return;
+        var switchEl = root.querySelector('.cs-switch[data-bool-filter="bannedOrSuspended"]');
+        if (switchEl) {
+            var bothAllowed = legality.allowBanned && legality.allowSuspended;
+            switchEl.classList.toggle('filter-toggle-soon', bothAllowed);
+            switchEl.title = bothAllowed ? AlteredDB.txt.tt_banned_suspended_allowed : AlteredDB.txt.tt_show_banned_suspended;
+            var cb = switchEl.querySelector('input[type="checkbox"]');
+            if (cb) cb.disabled = bothAllowed;
+        }
+    }
+
+    // Preselect the Uniques tab's Frontier preset when the deck itself is
+    // Frontier, re-applied whenever the deck's format changes. The "this
+    // format doesn't allow Uniques at all" warning is handled entirely by
+    // _syncUniqueNudge() in card-search.js (driven by getFormatLegality
+    // above) — updateFilterCount() re-triggers it even when the click below
+    // is a no-op (deck format changes but Frontier-preset stays the same).
+    function _syncUniqueTabToFormat() {
+        var root = document.getElementById('db-panel');
+        var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
+        if (!root || !legality) return;
+        var wantFrontier = legality.key === 'frontier';
+        var targetBtn = root.querySelector(
+            '.filter-toggle[data-filter="format"][data-value="' + (wantFrontier ? 'frontier' : '') + '"]'
+        );
+        if (targetBtn && !targetBtn.classList.contains('active')) targetBtn.click();
+        if (window.updateFilterCount) window.updateFilterCount();
+    }
+    _syncStatusButtonsToFormat();
+    _syncUniqueTabToFormat();
+    var _dbFormatSelect = document.getElementById('db-deck-format');
+    if (_dbFormatSelect) {
+        _dbFormatSelect.addEventListener('change', function() {
+            _syncStatusButtonsToFormat();
+            _syncUniqueTabToFormat();
+            engine.search(1);
+        });
+    }
 })();
 </script>
 

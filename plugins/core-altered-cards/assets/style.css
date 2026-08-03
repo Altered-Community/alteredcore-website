@@ -428,6 +428,13 @@
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
 .db-card-btn-group { position:absolute; bottom:5px; right:5px; }
 .db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
+
+/* "Suspendus et bannis" toggle: grey out + flag a banned/suspended card that's
+   showing because the user chose to include it anyway. */
+.db-card-flagged .db-card-img,
+.db-card-flagged altered-card { filter:grayscale(1) brightness(.65); }
+.db-card-status-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:2; }
+.db-card-status-overlay i { font-size:2.6rem; color:#fff; text-shadow:0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9); }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }
@@ -656,9 +663,56 @@
 }
 
 /* ---- Compact rarity buttons + separators ---- */
-.cs-rarities { display: inline-flex; align-items: center; gap: 8px; }
+.cs-rarities { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .cs-sep { width: 1px; align-self: stretch; background: var(--neutral-300, #dee2e6); margin: 0 4px; flex-shrink: 0; }
 .filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
+
+/* ---- Deckbuilder rarity + type row: rarity left, type right, bar centered
+   in whatever gap remains between them (the spacer grows to fill it). ---- */
+.cs-types { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cs-rarity-type-spacer { flex: 1 1 auto; align-self: stretch; display: flex; justify-content: center; align-items: stretch; min-width: 8px; }
+
+/* ---- Unique banner: gold "try the dedicated Uniques tab" nudge, or orange
+   "this format doesn't allow Uniques" warning — see _syncUniqueNudge() in
+   card-search.js for which variant shows and when. Gold is deliberately a
+   fixed hex rather than var(--primary-400), which some themes (e.g. azure)
+   redefine to blue; same gold accent reused on the Uniques tab's own gem
+   icon below, so the two visually tie together. ---- */
+.cs-unique-banner { margin: 2px 0 10px; }
+.cs-unique-banner-nudge,
+.cs-unique-banner-blocked {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 10px;
+    background: var(--sand-100);
+    border-radius: 6px;
+    font-size: .82rem; color: var(--neutral-600);
+}
+.cs-unique-banner-nudge { border-left: 3px solid #c9962c; }
+.cs-unique-banner-nudge i { color: #c9962c; flex-shrink: 0; }
+.cs-unique-banner-nudge strong { color: var(--neutral-700, #374151); }
+.cs-unique-nudge-btn {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 1px solid #c9962c; color: #c9962c;
+    border-radius: 6px; padding: 3px 10px; font-size: .8rem; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+}
+.cs-unique-nudge-btn:hover { background: #c9962c; color: #fff; }
+[data-theme="dark"] .cs-unique-banner-nudge { border-left-color: #e0b23c; }
+[data-theme="dark"] .cs-unique-banner-nudge i { color: #e0b23c; }
+[data-theme="dark"] .cs-unique-nudge-btn { border-color: #e0b23c; color: #e0b23c; }
+[data-theme="dark"] .cs-unique-nudge-btn:hover { background: #e0b23c; color: #12141f; }
+
+.cs-unique-banner-blocked { border-left: 3px solid #e0651a; }
+.cs-unique-banner-blocked i { color: #e0651a; flex-shrink: 0; }
+[data-theme="dark"] .cs-unique-banner-blocked { border-left-color: #f08847; }
+[data-theme="dark"] .cs-unique-banner-blocked i { color: #f08847; }
+
+/* Uniques tab's gem icon picks up the same gold accent so it stands out a
+   little among the other (neutral-colored) tab icons. */
+.cs-tab[data-tab="unique"] i { color: #c9962c; }
+.cs-tab[data-tab="unique"].active { box-shadow: inset 0 3px 0 #c9962c; }
+[data-theme="dark"] .cs-tab[data-tab="unique"] i { color: #e0b23c; }
+[data-theme="dark"] .cs-tab[data-tab="unique"].active { box-shadow: inset 0 3px 0 #e0b23c; }
 
 /* ---- Promo toggle (switch) + panel ---- */
 .cs-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: .85rem; color: var(--neutral-600); }
@@ -749,6 +803,12 @@
     .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
+
+    /* Deckbuilder: type filters drop to their own line under rarity; no bar to
+       center once the two groups stack instead of sharing the row. */
+    .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
+    .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
 }
 
 /* ============================================================

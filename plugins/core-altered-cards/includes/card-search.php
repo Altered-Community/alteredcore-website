@@ -73,6 +73,12 @@ $_csHasCollFilter = !empty($_csCollOpts);
 
 // Main (standard) editions shown in the quick-filter bar.
 $_csOfficialSets = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'main');
+// Deckbuilder only: COREKS is CORE with a handful of alt arts BGA doesn't even
+// render, so it'd be a confusing near-duplicate on the regular tabs — but its
+// *uniques* are genuinely different cards, not just alt arts. Restrict it to
+// the Uniques tab instead of dropping it (dropping it left an invisible,
+// unremovable filter there: deselecting CORE still showed its COREKS twins).
+$_csUniquesOnlySets = ($_csMode === 'deck') ? ['COREKS'] : [];
 // Promotional / sub editions — revealed under the "show promo" toggle. Standard
 // sets never appear here.
 $_csPromoSets    = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'sub');
@@ -134,10 +140,14 @@ $_csLblFav      = $_csTxt['scope_favoris']    ?? ($_csLang === 'fr' ? 'Favoris' 
 $_csLblPromo    = $_csTxt['show_promo'] ?? 'Alt arts';
 $_csLblPromoEd  = $_csTxt['promo_editions'] ?? ($_csLang === 'fr' ? 'Éditions promo' : 'Promo editions');
 $_csLblAdvanced = $_csTxt['advanced']   ?? ($_csLang === 'fr' ? 'Recherche avancée'        : 'Advanced search');
+$_csLblUniqueNudge   = $_csTxt['unique_nudge']     ?? ($_csLang === 'fr' ? 'Cherchez-vous une Unique ?' : 'Looking for a Unique?');
+$_csLblUniqueNudgeCta= $_csTxt['unique_nudge_cta'] ?? ($_csLang === 'fr' ? 'Essayez l\'onglet dédié, avec recherche par effet et format' : 'Try the dedicated tab, with effect and format search');
+$_csLblUniqueNotAllowed = $_csTxt['unique_not_allowed'] ?? ($_csLang === 'fr' ? 'Le format sélectionné n\'autorise aucune carte Unique dans ce deck.' : 'The selected format doesn\'t allow any Unique cards in this deck.');
 $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
 $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Effet de réserve (Support)' : 'Support effect');
+$_csLblBannedSuspended = $_csTxt['lbl_banned_suspended'] ?? ($_csLang === 'fr' ? 'Suspendus et bannis' : 'Suspended & banned');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
 $_csLblManageOwn  = $_csTxt['manage_own']   ?? ($_csLang === 'fr' ? 'Gérer ma propriété numérique'   : 'Manage my digital ownership');
@@ -213,6 +223,28 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
     <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
 
+        <!-- Unique-related nudge/warning — content and color swap between a
+             gold "try the dedicated Uniques tab" nudge (both pages) and an
+             orange "this format doesn't allow Uniques" warning (deckbuilder
+             only). Fully driven by _syncUniqueNudge() in card-search.js — no
+             data-tabs here on purpose, to avoid fighting the generic
+             tab-visibility sweep over what should show on which tab. -->
+        <div id="<?= h($_csP) ?>-unique-banner" class="cs-unique-banner" style="display:none">
+            <div class="cs-unique-banner-nudge">
+                <i class="fa-solid fa-circle-info"></i>
+                <span><strong><?= h($_csLblUniqueNudge) ?></strong> <?= h($_csLblUniqueNudgeCta) ?></span>
+                <button type="button" class="cs-unique-nudge-btn" data-goto-tab="unique">
+                    <?= h($_csLblUnique) ?> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+            <?php if ($_csMode === 'deck'): ?>
+            <div class="cs-unique-banner-blocked" style="display:none">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span><?= h($_csLblUniqueNotAllowed) ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Name + hand/reserve costs (same line) -->
         <div class="cs-name-row d-flex gap-2 align-items-center flex-wrap mb-2"
              data-tabs="all unique collection ownership">
@@ -229,9 +261,25 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <?php if (!empty($_csOfficialSets)): ?>
         <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
+            <?php
+                // Which tabs this set's quick-filter shows on:
+                //  - Uniques-only sets (see $_csUniquesOnlySets above).
+                //  - Sets the uniques API doesn't know about yet
+                //    ("uniques": false) must NOT appear on the Uniques tab:
+                //    sending one makes it reject the whole query (HTTP 400
+                //    "invalid set value"), so the search fails outright
+                //    instead of just returning nothing for that set.
+                if (in_array($_sk, $_csUniquesOnlySets, true)) {
+                    $_sTabs = 'unique';
+                } elseif ($_sv['uniques'] ?? true) {
+                    $_sTabs = 'all unique collection ownership favoris';
+                } else {
+                    $_sTabs = 'all collection ownership favoris';
+                }
+            ?>
             <button type="button"
                     class="filter-toggle set-qf-btn<?= in_array($_sk, $_csSelSets) ? ' active' : '' ?>"
-                    data-filter="sets" data-value="<?= h($_sk) ?>"
+                    data-filter="sets" data-value="<?= h($_sk) ?>" data-tabs="<?= $_sTabs ?>"
                     style="background-image:url('<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/set/small_bg/<?= h($_sk) ?>.webp')">
                 <span class="set-qf-inner">
                     <?php if (!empty($_sv['icon'])): ?><i class="<?= h($_sv['icon']) ?>"></i><?php endif; ?>
@@ -242,8 +290,8 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Faction (+ rarity) -->
-        <?php if (!empty($_csFactions) || !empty($_csRarities)): ?>
+        <!-- Faction (+ rarity) — hidden in deckbuilder mode (moved to advanced) -->
+        <?php if (($_csMode !== 'deck') && (!empty($_csFactions) || !empty($_csRarities))): ?>
         <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
@@ -275,16 +323,50 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Type (hidden on Uniques: all characters) -->
-        <?php if (!empty($_csTypes)): ?>
-        <div class="filter-row filter-row--scroll mb-2" data-tabs="all collection ownership">
-            <?php foreach ($_csTypes as $_tk => $_tv): ?>
-            <button type="button"
-                    class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
-                    data-filter="type" data-value="<?= h($_tk) ?>">
-                <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
-            </button>
-            <?php endforeach; ?>
+        <!-- Type (hidden on Uniques: all characters); in deckbuilder mode the
+             rarity row shares this same line instead of getting its own row. -->
+        <?php
+        // In deckbuilder mode, Hero and Token aren't real search targets (the hero
+        // has its own picker; tokens aren't deckbuilder-legal cards), so drop them
+        // from the type filter row. Cards page keeps the full list.
+        $_csTypesFilterRow = ($_csMode === 'deck')
+            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
+            : $_csTypes;
+        $_csDeckRarityInline = ($_csMode === 'deck') && !empty($_csRarities);
+        ?>
+        <?php if (!empty($_csTypesFilterRow) || $_csDeckRarityInline): ?>
+        <div class="filter-row filter-row--scroll cs-rarity-type-row mb-2">
+            <?php if ($_csDeckRarityInline): ?>
+            <span class="cs-rarities" data-tabs="all ownership favoris">
+                <?php foreach ($_csRarities as $_rk => $_rv): ?>
+                <button type="button"
+                        class="filter-toggle filter-toggle--compact<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
+                        data-filter="rarity" data-value="<?= h($_rk) ?>"
+                        title="<?= h($_csRarityTxt[$_rk] ?? $_rk) ?>">
+                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
+                         alt="<?= h($_rk) ?>" style="width:15px;height:15px">
+                    <?= h(mb_strtoupper(mb_substr($_csRarityTxt[$_rk] ?? $_rk, 0, 1))) ?>
+                </button>
+                <?php endforeach; ?>
+            </span>
+            <?php endif; ?>
+            <?php if ($_csDeckRarityInline && !empty($_csTypesFilterRow)): ?>
+            <!-- Grows to fill the gap between the two groups, keeping the bar centered in it -->
+            <span class="cs-rarity-type-spacer" data-tabs="all ownership">
+                <span class="cs-sep"></span>
+            </span>
+            <?php endif; ?>
+            <?php if (!empty($_csTypesFilterRow)): ?>
+            <span class="cs-types" data-tabs="all collection ownership">
+                <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
+                <button type="button"
+                        class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"
+                        data-filter="type" data-value="<?= h($_tk) ?>">
+                    <?= h($_csTypeTxt[$_tk] ?? $_tk) ?>
+                </button>
+                <?php endforeach; ?>
+            </span>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -327,7 +409,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <span><?= h($_csLblAdvanced) ?></span>
                     <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
                 </button>
-                <?php if (!empty($_csPromoSets)): ?>
+                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
                 <label class="cs-switch" data-tabs="all ownership">
                     <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
                     <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
@@ -350,6 +432,21 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
             <div class="cs-advanced" style="display:none">
 
+                <!-- Faction (duplicate for deckbuilder mode) -->
+                <?php if ($_csMode === 'deck' && !empty($_csFactions)): ?>
+                <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
+                    <?php foreach ($_csFactions as $_fk => $_fv): ?>
+                    <button type="button"
+                            class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
+                            data-filter="faction" data-value="<?= h($_fk) ?>"
+                            title="<?= h($_csFactionNames[$_fk] ?? $_fk) ?>">
+                        <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_fk) ?>.png" alt="<?= h($_fk) ?>">
+                        <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
                 <!-- Biome powers (top of accordion) -->
                 <div class="filter-row flex-wrap mb-2" style="row-gap:.5rem" data-tabs="all unique collection ownership">
                     <?= $_csNumInput('forestpower') ?>
@@ -357,8 +454,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <?= $_csNumInput('oceanpower') ?>
                 </div>
 
-                <!-- Promo options (shown when "show promo" is on; all-cards tab only) -->
-                <?php if (!empty($_csPromoSets)): ?>
+                <!-- Promo options (shown when "show promo" is on; all-cards tab only).
+                     Deckbuilder has no "show promo" toggle to reveal this, so skip it there. -->
+                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
                 <div id="<?= h($_csP) ?>-promo-panel" class="cs-promo-panel mb-2" style="display:none">
                     <div class="cs-promo-variation mb-2">
                         <div class="filter-label mb-1"><?= h($_csTxt['lbl_variation'] ?? 'Variation') ?></div>
@@ -403,6 +501,13 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
                 <!-- Status + cost management + no-effect (grouped on one wrapping line) -->
                 <div class="filter-row flex-wrap mb-0" style="row-gap:.5rem" data-tabs="all unique collection ownership">
+                    <?php if ($_csMode === 'deck'): ?>
+                    <label class="cs-switch" data-bool-filter="bannedOrSuspended" data-tabs="all collection ownership">
+                        <input type="checkbox" id="<?= h($_csP) ?>-filter-bannedorsuspended"<?= ($_csIsBanned || $_csIsSuspended) ? ' checked' : '' ?>>
+                        <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+                        <span class="cs-switch-label"><i class="fa-solid fa-ban me-1"></i><i class="fa-solid fa-pause me-1"></i><?= h($_csLblBannedSuspended) ?></span>
+                    </label>
+                    <?php else: ?>
                     <span class="filter-label"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
                     <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned" data-tabs="all collection ownership">
                         <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
@@ -414,6 +519,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <button type="button" class="filter-toggle<?= $_csIsSuspended ? ' active' : '' ?>" data-bool-filter="isSuspended" data-tabs="all collection ownership">
                         <i class="fa-solid fa-pause"></i> <?= h($_csTxt['lbl_suspended'] ?? 'Suspended') ?>
                     </button>
+                    <?php endif; ?>
                     <span class="cs-sep" data-tabs="all"></span>
                     <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all">
                         <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>
@@ -421,10 +527,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
                         <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
                     </select>
+                    <?php if ($_csMode !== 'deck'): ?>
                     <label class="cs-check d-flex align-items-center gap-1" data-tabs="all">
                         <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
                         <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
                     </label>
+                    <?php endif; ?>
                 </div>
 
             </div><!-- /.cs-advanced -->
