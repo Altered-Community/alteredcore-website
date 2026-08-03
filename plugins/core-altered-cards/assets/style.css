@@ -508,7 +508,10 @@
     padding: 20px;
     max-width: 1050px;
     width: 94vw;
+    /* dvh tracks the browser chrome on mobile; vh does not, so a 90vh panel can
+       have its footer sitting under the address bar. vh stays as the fallback. */
     max-height: 90vh;
+    max-height: 90dvh;
     /* Column layout: only the hero grid scrolls, so the artwork strip and the
        confirm button stay reachable without scrolling past every hero. */
     display: flex;
@@ -536,6 +539,63 @@
     text-align: center;
     padding: 20px;
     color: var(--neutral-400);
+}
+
+/* Scroll lock while a deckbuilder dialog is up — see dbLockScroll(). Beats the
+   theme's `html { overflow-x: clip }` on specificity. */
+html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
+
+/* ---- New-deck dialog and hero picker on phones ----
+   Both are full-screen sheets rather than centred panels: at 375px a centred
+   panel spends most of the viewport on backdrop, and every px of that backdrop
+   is one the form does not get. Filling the viewport also removes the centring
+   arithmetic, so nothing can end up half off-screen when the browser chrome or
+   an iOS focus zoom moves the goalposts. The card lightbox keeps its centred
+   treatment — an image wants the dark surround. */
+@media (max-width: 575px) {
+    #db-new-modal, #db-hero-modal { align-items: stretch; justify-content: stretch; }
+    #db-new-modal  .db-hero-panel,
+    #db-hero-modal .db-hero-panel {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        padding: 14px 14px 0;
+    }
+    /* No scrollbar to keep clear of on touch, so the reserved gutter is dead space */
+    #db-new-modal .db-new-body,
+    #db-hero-modal #db-hero-grid { padding-right: 0; scrollbar-gutter: auto; }
+
+    /* The panel is a flex column, so the footer stays put while the body scrolls —
+       it only needs to clear the home-bar area. */
+    #db-new-modal  .db-hero-footer,
+    #db-hero-modal .db-hero-footer {
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    /* Full-width actions: nothing else competes for the row on a phone */
+    #db-new-modal  .db-hero-footer .btn,
+    #db-hero-modal .db-hero-footer .btn { flex: 1 1 0; padding: 10px 8px; font-size: .9rem; }
+
+    /* 16px is the threshold below which iOS zooms the page on focus. That zoom
+       shrinks the visual viewport under the fixed overlay, which is what makes the
+       dialog look cropped on the right and bottom until you pinch back out. */
+    #db-new-name, #db-new-desc { font-size: 16px; }
+
+    /* Touch-sized targets for the rows and toggles */
+    .db-new-format { padding: 12px; }
+    .db-new-vis-btn { flex: 1 1 0; justify-content: center; padding: 10px 8px; }
+    .db-hero-close-btn {
+        top: 2px; right: 2px;
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; line-height: 1;
+    }
+    /* Keep the title clear of the enlarged close button */
+    #db-new-modal  .db-hero-title,
+    #db-hero-modal .db-hero-title { padding-right: 44px; }
 }
 
 /* Bootstrap modal overrides — use panel background from theme */

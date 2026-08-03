@@ -2102,6 +2102,7 @@ var AlteredDB = {
     window.dbHeroClose = function() {
         document.getElementById('db-hero-modal').style.display = 'none';
         if (_wizardOpen) elNewModal.style.display = 'flex';
+        else             dbLockScroll(false);
     };
     window.dbHeroBackdrop = function() { dbHeroClose(); };
 
@@ -2186,6 +2187,7 @@ var AlteredDB = {
                       factionCode: _heroPick.faction, bgaState: _heroPick.bgaState });
             document.getElementById('db-hero-modal').style.display = 'none';
             if (_wizardOpen) { dbNewRenderHero(); elNewModal.style.display = 'flex'; }
+            else             { dbLockScroll(false); }
         });
     }
 
@@ -2233,6 +2235,7 @@ var AlteredDB = {
     function dbNewFinish() {
         _wizardOpen = false;
         elNewModal.style.display = 'none';
+        dbLockScroll(false);
     }
 
     // BGA availability per format, for the hero currently selected. The format's own
@@ -2304,12 +2307,28 @@ var AlteredDB = {
         bga.title         = ko ? AlteredDB.txt.bga_hero_title : AlteredDB.txt.bga_partial_title;
     }
 
+    // The dialogs are fixed overlays over a page that is metres tall — without this
+    // the page scrolls behind them, and on touch the overlay itself gets dragged
+    // around by the momentum.
+    // A class, not an inline body.style.overflow: the card lightbox and the card
+    // search both write that same inline property on this page, so whichever of
+    // them closes last would release the wizard's lock too.
+    function dbLockScroll(on) {
+        document.documentElement.classList.toggle('db-scroll-lock', !!on);
+    }
+
+    // Autofocusing the name field costs more than it gives on a phone: the keyboard
+    // takes half the sheet before the user has even seen the form, and hero — not
+    // name — is the first thing to fill in anyway.
+    var _dbCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
     window.dbNewOpen = function() {
         _wizardOpen = true;
         dbNewRenderHero();
         if (elNewError) { elNewError.style.display = 'none'; elNewError.textContent = ''; }
         elNewModal.style.display = 'flex';
-        if (elNewName) elNewName.focus();
+        dbLockScroll(true);
+        if (elNewName && !_dbCoarsePointer) elNewName.focus();
     };
 
     // The picker opens over the dialog; hiding the dialog meanwhile avoids two
@@ -2368,6 +2387,7 @@ var AlteredDB = {
 
     window.dbSelectHero = function() {
         document.getElementById('db-hero-modal').style.display = 'flex';
+        dbLockScroll(true);
         // Open on the current hero's faction when there is one, so changing hero
         // starts from the pool the deck is already built in.
         var wanted = (deck.hero && deck.hero.factionCode) || AlteredDB.heroDefaultFaction;
@@ -2887,8 +2907,10 @@ var AlteredDB = {
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
+            // Through dbHeroClose, not a bare hide: it is what brings the creation
+            // dialog back underneath and releases the scroll lock.
             var m = document.getElementById('db-hero-modal');
-            if (m && m.style.display !== 'none') { m.style.display = 'none'; return; }
+            if (m && m.style.display !== 'none') { dbHeroClose(); return; }
             if (dbCardModal && dbCardModal.style.display !== 'none') closeDbCardModal();
         }
     });
