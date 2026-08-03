@@ -253,8 +253,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                    placeholder="<?= h($_csTxt['search_ph'] ?? 'Search…') ?>"
                    class="form-control form-control-sm" autocomplete="off"
                    style="flex:1;min-width:160px">
-            <?= $_csNumInput('maincost') ?>
-            <?= $_csNumInput('recallcost') ?>
+            <!-- One pair, one group: the row's flex-wrap must not split hand from
+                 reserve, so they wrap together instead of one per line. -->
+            <span class="cs-costs cs-scroll-x">
+                <?= $_csNumInput('maincost') ?>
+                <?= $_csNumInput('recallcost') ?>
+            </span>
         </div>
 
         <!-- Main editions — quick-filter buttons -->
@@ -304,7 +308,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <?php endforeach; ?>
             <?php if (!empty($_csRarities)): ?>
             <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
-            <span class="cs-rarities" data-tabs="all ownership favoris">
+            <span class="cs-rarities cs-scroll-x" data-tabs="all ownership favoris">
                 <?php if (!empty($_csFactions)): ?>
                 <span class="cs-sep"></span>
                 <?php endif; ?>
@@ -337,7 +341,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <?php if (!empty($_csTypesFilterRow) || $_csDeckRarityInline): ?>
         <div class="filter-row filter-row--scroll cs-rarity-type-row mb-2">
             <?php if ($_csDeckRarityInline): ?>
-            <span class="cs-rarities" data-tabs="all ownership favoris">
+            <span class="cs-rarities cs-scroll-x" data-tabs="all ownership favoris">
                 <?php foreach ($_csRarities as $_rk => $_rv): ?>
                 <button type="button"
                         class="filter-toggle filter-toggle--compact<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
@@ -357,7 +361,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             </span>
             <?php endif; ?>
             <?php if (!empty($_csTypesFilterRow)): ?>
-            <span class="cs-types" data-tabs="all collection ownership">
+            <span class="cs-types cs-scroll-x" data-tabs="all collection ownership">
                 <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
                 <button type="button"
                         class="filter-toggle<?= in_array($_tk, $_csSelTypes) ? ' active' : '' ?>"

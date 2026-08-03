@@ -8,17 +8,20 @@
 
 /* ---- Card filter controls (shared: cards.php, deckbuilder.php, decks.php) ---- */
 .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.filter-row--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; scrollbar-color: var(--neutral-300) transparent; }
-.filter-row--scroll::-webkit-scrollbar { height: 3px; }
-.filter-row--scroll::-webkit-scrollbar-track { background: transparent; }
-.filter-row--scroll::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 2px; }
+.filter-row--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; }
+/* Same scrollbar chrome for a whole row and for a single group inside one — see
+   .cs-rarities / .cs-types, which become their own scrollers on narrow screens. */
+.filter-row--scroll, .cs-scroll-x { scrollbar-width: thin; scrollbar-color: var(--neutral-300) transparent; }
+.filter-row--scroll::-webkit-scrollbar, .cs-scroll-x::-webkit-scrollbar { height: 3px; }
+.filter-row--scroll::-webkit-scrollbar-track, .cs-scroll-x::-webkit-scrollbar-track { background: transparent; }
+.filter-row--scroll::-webkit-scrollbar-thumb, .cs-scroll-x::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 2px; }
 @media (hover: hover) {
-    .filter-row--scroll::-webkit-scrollbar-thumb { background: transparent; transition: background .2s; }
-    .filter-row--scroll:hover::-webkit-scrollbar-thumb { background: var(--neutral-300); }
+    .filter-row--scroll::-webkit-scrollbar-thumb, .cs-scroll-x::-webkit-scrollbar-thumb { background: transparent; transition: background .2s; }
+    .filter-row--scroll:hover::-webkit-scrollbar-thumb, .cs-scroll-x:hover::-webkit-scrollbar-thumb { background: var(--neutral-300); }
 }
 @media (hover: none) {
-    .filter-row--scroll { scrollbar-width: none; -ms-overflow-style: none; }
-    .filter-row--scroll::-webkit-scrollbar { display: none; }
+    .filter-row--scroll, .cs-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+    .filter-row--scroll::-webkit-scrollbar, .cs-scroll-x::-webkit-scrollbar { display: none; }
 }
 .filter-label {
     font-size: .7rem;
@@ -508,7 +511,10 @@
     padding: 20px;
     max-width: 1050px;
     width: 94vw;
+    /* dvh tracks the browser chrome on mobile; vh does not, so a 90vh panel can
+       have its footer sitting under the address bar. vh stays as the fallback. */
     max-height: 90vh;
+    max-height: 90dvh;
     /* Column layout: only the hero grid scrolls, so the artwork strip and the
        confirm button stay reachable without scrolling past every hero. */
     display: flex;
@@ -536,6 +542,63 @@
     text-align: center;
     padding: 20px;
     color: var(--neutral-400);
+}
+
+/* Scroll lock while a deckbuilder dialog is up — see dbLockScroll(). Beats the
+   theme's `html { overflow-x: clip }` on specificity. */
+html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
+
+/* ---- New-deck dialog and hero picker on phones ----
+   Both are full-screen sheets rather than centred panels: at 375px a centred
+   panel spends most of the viewport on backdrop, and every px of that backdrop
+   is one the form does not get. Filling the viewport also removes the centring
+   arithmetic, so nothing can end up half off-screen when the browser chrome or
+   an iOS focus zoom moves the goalposts. The card lightbox keeps its centred
+   treatment — an image wants the dark surround. */
+@media (max-width: 575px) {
+    #db-new-modal, #db-hero-modal { align-items: stretch; justify-content: stretch; }
+    #db-new-modal  .db-hero-panel,
+    #db-hero-modal .db-hero-panel {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        padding: 14px 14px 0;
+    }
+    /* No scrollbar to keep clear of on touch, so the reserved gutter is dead space */
+    #db-new-modal .db-new-body,
+    #db-hero-modal #db-hero-grid { padding-right: 0; scrollbar-gutter: auto; }
+
+    /* The panel is a flex column, so the footer stays put while the body scrolls —
+       it only needs to clear the home-bar area. */
+    #db-new-modal  .db-hero-footer,
+    #db-hero-modal .db-hero-footer {
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    /* Full-width actions: nothing else competes for the row on a phone */
+    #db-new-modal  .db-hero-footer .btn,
+    #db-hero-modal .db-hero-footer .btn { flex: 1 1 0; padding: 10px 8px; font-size: .9rem; }
+
+    /* 16px is the threshold below which iOS zooms the page on focus. That zoom
+       shrinks the visual viewport under the fixed overlay, which is what makes the
+       dialog look cropped on the right and bottom until you pinch back out. */
+    #db-new-name, #db-new-desc { font-size: 16px; }
+
+    /* Touch-sized targets for the rows and toggles */
+    .db-new-format { padding: 12px; }
+    .db-new-vis-btn { flex: 1 1 0; justify-content: center; padding: 10px 8px; }
+    .db-hero-close-btn {
+        top: 2px; right: 2px;
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; line-height: 1;
+    }
+    /* Keep the title clear of the enlarged close button */
+    #db-new-modal  .db-hero-title,
+    #db-hero-modal .db-hero-title { padding-right: 44px; }
 }
 
 /* Bootstrap modal overrides — use panel background from theme */
@@ -663,7 +726,11 @@
 }
 
 /* ---- Compact rarity buttons + separators ---- */
+/* .cs-scroll-x: each group is its own scroll container, so scrolling the rarities
+   never drags the types along. A no-op while the whole row scrolls on one line —
+   the groups are sized to their content there, so there is nothing to scroll. */
 .cs-rarities { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cs-scroll-x { overflow-x: auto; }
 .cs-sep { width: 1px; align-self: stretch; background: var(--neutral-300, #dee2e6); margin: 0 4px; flex-shrink: 0; }
 .filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
 
@@ -788,6 +855,12 @@
 /* ---- Numeric (text-expression) inputs ---- */
 .cs-num-input { width: 100px; }
 @media (max-width: 575px) { .cs-num-input { width: 92px; } }
+/* Hand + reserve cost: one group, so the name row wraps the pair as a unit rather
+   than leaving one cost stranded on the next line. gap matches the row's gap-2.
+   The inputs keep their width (shrink:0) and the group scrolls instead, for the
+   case where even the pair alone is wider than the line. */
+.cs-costs { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.cs-costs > .cs-num { flex-shrink: 0; }
 
 /* ---- Results control bar (count + sort + cols) ---- */
 .cs-controlbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -798,16 +871,19 @@
 /* ---- Search/Reset actions (inline on the advanced-search row, pushed right) ---- */
 .cs-actions { margin-left: auto; }
 
-/* Mobile: rarity filters drop to their own line under the factions */
+/* Mobile: each filter group gets its own line, and scrolls on its own line.
+   The row stops scrolling here — one scrolling line shared by rarities and types
+   would mean dragging one group to reach the other, which are unrelated filters.
+   Each group carries .cs-scroll-x, so what overflows stays reachable within it. */
 @media (max-width: 575px) {
     .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
 
-    /* Deckbuilder: type filters drop to their own line under rarity; no bar to
-       center once the two groups stack instead of sharing the row. */
     .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-rarity-type-row .cs-rarities { flex-basis: 100%; }
     .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
+    /* Nothing left to center once the two groups stack instead of sharing the row */
     .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
 }
 
