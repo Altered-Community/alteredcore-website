@@ -869,6 +869,13 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
     .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
     .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
+
+    /* The groups are nowrap/flex-shrink:0 so they hold one line on the wide layout,
+       where the row itself scrolls. Once the row wraps instead of scrolling, that
+       makes them overflow with no way to reach what spilled out — type labels are
+       long enough ("Permanent d'Expédition") to run well past the screen. Let the
+       buttons inside wrap too, so these rows read like the faction row above. */
+    .cs-rarities, .cs-types { flex-wrap: wrap; }
 }
 
 /* ============================================================
