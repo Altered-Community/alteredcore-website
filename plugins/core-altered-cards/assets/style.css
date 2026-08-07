@@ -424,12 +424,12 @@
 .db-card-img { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .12s; }
 .db-card-wrap altered-card { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; transition:transform .12s; }
 .db-card-wrap:hover .db-card-img, .db-card-wrap:hover altered-card { transform:scale(1.04); }
-.db-card-qty-badge { position:absolute; top:5px; right:5px; background:var(--overlay-qty-bg); color:#fff; font-size:.8rem; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid rgba(255,255,255,.25); pointer-events:none; }
+.db-card-bottom-controls { position:absolute; bottom:5px; right:5px; z-index:3; display:flex; align-items:center; gap:6px; }
+.db-card-qty-badge { background:var(--overlay-qty-bg); color:#fff; font-size:.8rem; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid rgba(255,255,255,.25); pointer-events:none; }
 .db-card-name { font-size:.72rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
 .db-card-add-overlay { position:absolute; inset:0; background:var(--overlay-add-bg); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .12s; border-radius:7px; }
 .db-card-wrap:hover .db-card-add-overlay { opacity:1; }
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
-.db-card-btn-group { position:absolute; bottom:5px; right:5px; }
 .db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
 
 /* "Suspendus et bannis" toggle: grey out + flag a banned/suspended card that's
@@ -563,6 +563,11 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
         max-width: none;
         height: 100vh;
         height: 100dvh;
+        /* Set by JS (see the visualViewport sync near dbLockScroll) once the
+           on-screen keyboard is up, so the footer stays above it instead of
+           behind it — falls back to 100dvh where visualViewport isn't wired
+           up or hasn't reported anything yet. */
+        height: var(--vv-height, 100dvh);
         max-height: none;
         border: none;
         border-radius: 0;

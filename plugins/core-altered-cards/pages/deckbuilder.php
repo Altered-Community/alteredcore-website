@@ -1381,7 +1381,10 @@ var AlteredDB = {
             addBtn.textContent = '+';
             btnGroup.appendChild(addBtn);
 
-            wrap.appendChild(btnGroup);
+            var bottomControls = document.createElement('div');
+            bottomControls.className = 'db-card-bottom-controls';
+            bottomControls.appendChild(btnGroup);
+            wrap.appendChild(bottomControls);
 
             var addPayload = {
                 cardReference: ref,
@@ -1418,7 +1421,14 @@ var AlteredDB = {
             var badge = document.createElement('span');
             badge.className = 'db-card-qty-badge';
             badge.textContent = '×' + qty;
-            wrap.appendChild(badge);
+            // Placed to the left of the +/- buttons, in the same bottom-right
+            // group, rather than top-right where it used to collide with the
+            // favorite star (window.acMakeFavButton, appended above).
+            if (bottomControls) {
+                bottomControls.insertBefore(badge, bottomControls.firstChild);
+            } else {
+                wrap.appendChild(badge);
+            }
         }
 
         if (AlteredDB.collectionMode && !isH) {
@@ -1528,6 +1538,7 @@ var AlteredDB = {
     function updateBrowserCardBadge(ref) {
         var wrap = elCards.querySelector('[data-ref="' + ref.replace(/"/g, '\\"') + '"]');
         if (!wrap) return;
+        var controls  = wrap.querySelector('.db-card-bottom-controls');
         var badge     = wrap.querySelector('.db-card-qty-badge');
         var removeBtn = wrap.querySelector('.db-card-btn-group .btn-danger');
         var qty = deck.cards[ref] ? deck.cards[ref].qty : 0;
@@ -1535,7 +1546,13 @@ var AlteredDB = {
             if (!badge) {
                 badge = document.createElement('span');
                 badge.className = 'db-card-qty-badge';
-                wrap.appendChild(badge);
+                // Left of the +/- buttons, same as the initial render (see
+                // the badge/bottomControls handling in the card-render loop).
+                if (controls) {
+                    controls.insertBefore(badge, controls.firstChild);
+                } else {
+                    wrap.appendChild(badge);
+                }
             }
             badge.textContent = '×' + qty;
             if (removeBtn) removeBtn.style.display = '';
@@ -2316,6 +2333,38 @@ var AlteredDB = {
     function dbLockScroll(on) {
         document.documentElement.classList.toggle('db-scroll-lock', !!on);
     }
+
+    // On phones these dialogs are 100dvh sheets (see style.css), but dvh tracks
+    // the browser's own chrome (address bar) — not the on-screen keyboard. Many
+    // mobile browsers shrink only the *visual* viewport when the keyboard opens
+    // and leave the layout viewport (and therefore 100dvh) untouched, so a sheet
+    // sized with dvh alone keeps its full height and its footer ends up rendered
+    // under the keyboard: scrolling the sheet's own body to the bottom does
+    // nothing, because the footer was never inside that scroll area to begin
+    // with (see .db-hero-footer, a non-scrolling flex child of the sheet).
+    // Pinning the sheet's actual height to `visualViewport.height` whenever it
+    // changes keeps the footer inside the space that's really visible above the
+    // keyboard, on every browser that exposes the API.
+    (function () {
+        if (!window.visualViewport) return;
+        var panels = ['#db-new-modal', '#db-hero-modal'].map(function (sel) {
+            var el = document.querySelector(sel + ' .db-hero-panel');
+            return el;
+        }).filter(Boolean);
+        if (!panels.length) return;
+
+        function syncPanelHeights() {
+            // Desktop keeps the centred, non-full-height panel (see the
+            // max-width:575px sheet override in style.css) — nothing to sync.
+            if (window.innerWidth > 575) return;
+            var vvh = window.visualViewport.height + 'px';
+            panels.forEach(function (p) { p.style.setProperty('--vv-height', vvh); });
+        }
+
+        window.visualViewport.addEventListener('resize', syncPanelHeights);
+        window.visualViewport.addEventListener('scroll', syncPanelHeights);
+        syncPanelHeights();
+    })();
 
     // Autofocusing the name field costs more than it gives on a phone: the keyboard
     // takes half the sheet before the user has even seen the form, and hero — not
