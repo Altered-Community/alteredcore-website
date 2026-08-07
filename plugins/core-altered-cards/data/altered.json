@@ -29,7 +29,7 @@
                     },
                     "nuc": {
                         "en": "Standard No Unique", "fr": "Standard No Unique", "color": "#5b8cef",
-                        "gg_format": "NO_UNIQUE", "bgalegal": false,
+                        "gg_format": "NO_UNIQUE", "bgalegal": true,
                         "minCards": 39, "maxCards": 59, "heroRequired": true,
                         "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,
                         "sameFaction": true, "maxRare": 15, "maxExalted": 3, "maxUnique": 0,
