@@ -338,6 +338,9 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
 })();
 </script>
 
+<?php foreach ($GLOBALS['_ac_global_plugin_js'] ?? [] as $_pgjs): ?>
+<script src="<?= h($_pgjs) ?>"></script>
+<?php endforeach; ?>
 <?php foreach ($GLOBALS['_ac_plugin_js'] ?? [] as $_pjs): ?>
 <script src="<?= h($_pjs) ?>"></script>
 <?php endforeach; ?>

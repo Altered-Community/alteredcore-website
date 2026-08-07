@@ -1,0 +1,44 @@
+/* card-scan — floating QR-scan button, mobile only. */
+
+#cs-fab { display: none; }
+
+@media (max-width: 767.98px) {
+    #cs-fab {
+        position: fixed;
+        bottom: 14px;
+        right: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 18px;
+        border-radius: 999px;
+        background: var(--primary-400);
+        color: var(--neutral-800);
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .32);
+        z-index: 8000;
+        transition: transform .15s ease, box-shadow .15s ease;
+        line-height: 1;
+    }
+
+    #cs-fab:hover,
+    #cs-fab:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 22px rgba(0, 0, 0, .38);
+        color: var(--neutral-800);
+        text-decoration: none;
+    }
+
+    #cs-fab:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .28);
+    }
+
+    #cs-fab i {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+}
