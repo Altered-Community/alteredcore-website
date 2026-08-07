@@ -14,7 +14,7 @@
     "default_heroes": {
         "types":           ["HERO"],
         "rarities":        ["COMMON", "RARE", "EXALTED"],
-        "sets":            ["CORE", "ALIZE", "BISE", "CYCLONE", "DUSTER"],
+        "sets":            ["CORE", "ALIZE", "BISE", "CYCLONE", "DUSTER", "EOLE", "FUGUE"],
         "variations":      ["standard"],
         "sort_alpha":      true,
         "no_duplicate":    true,

@@ -8,17 +8,20 @@
 
 /* ---- Card filter controls (shared: cards.php, deckbuilder.php, decks.php) ---- */
 .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.filter-row--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; scrollbar-color: var(--neutral-300) transparent; }
-.filter-row--scroll::-webkit-scrollbar { height: 3px; }
-.filter-row--scroll::-webkit-scrollbar-track { background: transparent; }
-.filter-row--scroll::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 2px; }
+.filter-row--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; }
+/* Same scrollbar chrome for a whole row and for a single group inside one — see
+   .cs-rarities / .cs-types, which become their own scrollers on narrow screens. */
+.filter-row--scroll, .cs-scroll-x { scrollbar-width: thin; scrollbar-color: var(--neutral-300) transparent; }
+.filter-row--scroll::-webkit-scrollbar, .cs-scroll-x::-webkit-scrollbar { height: 3px; }
+.filter-row--scroll::-webkit-scrollbar-track, .cs-scroll-x::-webkit-scrollbar-track { background: transparent; }
+.filter-row--scroll::-webkit-scrollbar-thumb, .cs-scroll-x::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 2px; }
 @media (hover: hover) {
-    .filter-row--scroll::-webkit-scrollbar-thumb { background: transparent; transition: background .2s; }
-    .filter-row--scroll:hover::-webkit-scrollbar-thumb { background: var(--neutral-300); }
+    .filter-row--scroll::-webkit-scrollbar-thumb, .cs-scroll-x::-webkit-scrollbar-thumb { background: transparent; transition: background .2s; }
+    .filter-row--scroll:hover::-webkit-scrollbar-thumb, .cs-scroll-x:hover::-webkit-scrollbar-thumb { background: var(--neutral-300); }
 }
 @media (hover: none) {
-    .filter-row--scroll { scrollbar-width: none; -ms-overflow-style: none; }
-    .filter-row--scroll::-webkit-scrollbar { display: none; }
+    .filter-row--scroll, .cs-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+    .filter-row--scroll::-webkit-scrollbar, .cs-scroll-x::-webkit-scrollbar { display: none; }
 }
 .filter-label {
     font-size: .7rem;
@@ -149,6 +152,8 @@
 .card-stat-val { font-weight:600; color:var(--neutral-800); }
 .power-pip { display:inline-flex; align-items:center; gap:.3rem; background:var(--sand-200); border-radius:.4rem; padding:.15rem .55rem; font-size:.88rem; font-weight:700; }
 .card-section-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--neutral-400); margin-bottom:.5rem; }
+.card-format-illegal { color:#bf7a7a; }
+.card-format-illegal:not(:last-child)::after { content:"·"; margin-left:.75rem; color:var(--neutral-300); }
 .effect-hl { color:#C37424; }
 /* Bootstrap nav-tabs override for card detail page */
 .nav-tabs { border-bottom:2px solid var(--sand-200); gap:.2rem; flex-wrap:nowrap; }
@@ -160,6 +165,19 @@
 /* Skeleton loading placeholders */
 .card-skeleton { background:var(--sand-200); border-radius:4px; animation:card-skeleton-pulse 1.4s ease-in-out infinite; }
 @keyframes card-skeleton-pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+
+/* Card detail: "Deck" tab — compact list of the user's own decks */
+.deck-compact-row { position:relative; display:flex; align-items:center; gap:.6rem; padding:.5rem .6rem; border:1px solid var(--sand-200); border-radius:8px; margin-bottom:.5rem; transition:background .15s; }
+.deck-compact-row:hover { background:var(--sand-100); }
+.deck-compact-link { position:absolute; inset:0; z-index:1; }
+.deck-compact-faction { width:24px; height:24px; object-fit:contain; flex-shrink:0; }
+.deck-compact-body { min-width:0; flex:1 1 auto; }
+.deck-compact-name { font-size:.88rem; font-weight:700; color:var(--neutral-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.deck-compact-meta { display:flex; align-items:center; gap:.35rem; font-size:.78rem; color:var(--neutral-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.deck-compact-add-btn { position:relative; z-index:2; flex-shrink:0; border:1px solid var(--primary-400); background:var(--primary-400); color:#fff; border-radius:6px; padding:.3rem .65rem; font-size:.78rem; font-weight:600; cursor:pointer; }
+.deck-compact-add-btn:disabled { cursor:default; pointer-events:none; }
+.deck-compact-add-btn--ok { background:#22c55e; border-color:#22c55e; }
+.deck-compact-add-btn--err { background:#dc2626; border-color:#dc2626; }
 
 /* =========================================================
    Cards browser  (cards.php)
@@ -272,8 +290,114 @@
 /* =========================================================
    Deck builder  (deckbuilder.php)
    ========================================================= */
-#db-hero-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-@media (min-width:576px) { #db-hero-grid { grid-template-columns:repeat(3,1fr); } }
+/* Hero picker — one tile per hero identity, printings live in the artwork strip */
+/* minmax(0,1fr), not 1fr: the auto minimum would resolve to each card image's
+   intrinsic width (~630px) and force a single column. */
+/* padding-right keeps the scrollbar off the tiles; scrollbar-gutter reserves the
+   space up front so the grid does not reflow when the artwork strip appears. */
+#db-hero-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; overflow-y:auto; scrollbar-gutter:stable; padding-right:10px; flex:1 1 auto; min-height:0; }
+@media (min-width:768px) { #db-hero-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+/* Faction tabs span the modal width — styled by id so Bootstrap's !important
+   utilities are not involved (the markup carries no d-flex here). Each button
+   carries its faction colour as --faction-color, from altered.json. */
+#db-hero-factions { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px; margin-bottom:14px; }
+.db-faction-btn {
+    position:relative; overflow:hidden; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:9px 4px 7px; border:none; border-radius:10px;
+    border-bottom:3px solid var(--faction-color);
+    background:var(--sand-100); color:var(--neutral-500);
+    font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    transition:background .12s,color .12s;
+}
+.db-faction-btn img { position:relative; z-index:1; width:30px; height:30px; object-fit:contain; transition:filter .12s; }
+.db-faction-btn span { position:relative; z-index:1; line-height:1.1; }
+/* Tint on hover comes from the faction colour itself, kept faint by opacity so
+   no per-faction alpha value has to be hardcoded. */
+.db-faction-btn::before {
+    content:''; position:absolute; inset:0; background:var(--faction-color);
+    opacity:0; transition:opacity .12s;
+}
+.db-faction-btn:hover::before { opacity:.12; }
+.db-faction-btn.active { background:var(--faction-color); color:#fff; }
+.db-faction-btn.active::before { opacity:0; }
+/* Logos are drawn in their own faction colour, invisible once the button is
+   filled with it — flatten to white instead (alpha is preserved). */
+.db-faction-btn.active img { filter:brightness(0) invert(1); }
+[data-theme="dark"] .db-faction-btn { background:rgba(255,255,255,.06); }
+.db-hero-tile { min-width:0; cursor:pointer; border:2px solid transparent; border-radius:9px; padding:4px; transition:border-color .12s,background .12s; }
+.db-hero-tile img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; transition:transform .12s; }
+.db-hero-tile:hover img { transform:scale(1.04); }
+.db-hero-tile-name { margin-top:6px; font-size:.86rem; font-weight:600; text-align:center; color:var(--neutral-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.db-hero-tile.selected { border-color:var(--primary-400); background:var(--sand-100); }
+.db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
+[data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
+
+.db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
+
+/* Board Game Arena availability — an attribute of the format and of the hero */
+.db-bga-pill { font-size:.64rem; font-weight:700; letter-spacing:.04em; padding:1px 6px; border-radius:20px;
+               background:#4f8a55; color:#fff; white-space:nowrap; }
+/* Much lighter orange, so it needs dark text of the same family to stay legible */
+.db-bga-pill.ko      { background:#ffd9a8; color:#7a3f05; }
+/* Yellow — usable on BGA, but only in some formats */
+.db-bga-pill.partial { background:#fdf1bd; color:#71570a; }
+/* Very light red — reserved for a format BGA does not run at all */
+.db-bga-pill.fmt-ko  { background:#fbdcdc; color:#8f1f2b; }
+/* Under a hero tile the pill sits below the name and must be free to wrap */
+.db-hero-tile-bga { margin-top:4px; text-align:center; white-space:normal; line-height:1.25; }
+/* BGA's competitive queue runs on one format at a time — a distinct colour, since
+   this says "notable", not "available or not" like the pills above. */
+.db-arena-pill { display:inline-flex; align-items:center; gap:4px; font-size:.64rem; font-weight:700;
+                 letter-spacing:.04em; padding:1px 7px; border-radius:20px; white-space:nowrap;
+                 background:#764891; color:#fff; }
+/* New-deck dialog — a form, not a grid, so it stays narrow. Qualified with
+   .db-hero-panel so it wins regardless of rule order in this file. */
+.db-hero-panel.db-new-panel { max-width:460px; }
+.db-new-body { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-gutter:stable; padding-right:10px; }
+.db-new-req { color:var(--danger, #c32637); }
+.db-new-note { font-size:.76rem; color:var(--neutral-400); margin-bottom:0; }
+/* Hero row — a form field that opens the picker, with an empty state */
+.db-new-hero { width:100%; text-align:left; cursor:pointer; display:flex; align-items:center; gap:12px;
+               padding:10px 12px; margin-bottom:16px; border-radius:9px;
+               border:1px solid var(--panel-border, var(--sand-300)); background:var(--sand-100);
+               transition:border-color .12s; }
+.db-new-hero:hover { border-color:var(--primary-400); }
+[data-theme="dark"] .db-new-hero { background:rgba(255,255,255,.06); }
+.db-new-hero.empty { border-style:dashed; }
+/* Once a hero is set, the row carries its faction colour the same way the faction
+   buttons of the picker do — a 3px bottom accent, kept through hover. */
+.db-new-hero:not(.empty),
+.db-new-hero:not(.empty):hover { border-bottom:3px solid var(--faction-color, var(--panel-border, var(--sand-300))); }
+.db-new-hero img { width:44px; height:60px; border-radius:5px; object-fit:cover; flex-shrink:0; }
+.db-new-hero > i { width:44px; font-size:1.5rem; text-align:center; color:var(--neutral-300); flex-shrink:0; }
+.db-new-hero-id { display:flex; flex-direction:column; align-items:flex-start; gap:2px; flex:1 1 auto; min-width:0; }
+.db-new-hero-id span { font-size:.92rem; font-weight:600; }
+.db-new-hero.empty .db-new-hero-id span { font-weight:400; color:var(--neutral-400); }
+.db-new-hero-id small { font-size:.76rem; color:var(--neutral-400); }
+.db-new-hero-action { flex-shrink:0; font-size:.78rem; font-weight:600; color:var(--primary-500); }
+#db-new-hero-bga { font-size:.6rem; }
+
+.db-new-formats { border:1px solid var(--panel-border, var(--sand-200)); border-radius:9px; overflow:hidden; }
+.db-new-format { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; cursor:pointer; margin:0;
+                 border-left:3px solid var(--format-color); border-bottom:1px solid var(--panel-border, var(--sand-200)); }
+.db-new-format:last-child { border-bottom:none; }
+.db-new-format:hover { background:var(--sand-100); }
+[data-theme="dark"] .db-new-format:hover { background:rgba(255,255,255,.05); }
+.db-new-format input { margin-top:.25rem; flex-shrink:0; }
+.db-new-format-txt { display:flex; flex-direction:column; min-width:0; }
+.db-new-format-head { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.db-new-format-name { font-size:.88rem; font-weight:600; }
+.db-new-format-txt small { font-size:.74rem; color:var(--neutral-400); }
+
+.db-new-vis { display:flex; gap:6px; }
+.db-new-vis-btn { display:flex; align-items:center; gap:6px; padding:6px 14px; font-size:.82rem; font-weight:600; cursor:pointer;
+                  border:1px solid var(--panel-border, var(--sand-300)); border-radius:7px; background:none; color:var(--neutral-500); }
+.db-new-vis-btn.active { border-color:var(--primary-400); background:var(--primary-400); color:var(--neutral-800); }
+
+.db-new-desc-toggle { background:none; border:none; padding:0; cursor:pointer; font-size:.84rem; font-weight:600;
+                      color:var(--primary-500); display:flex; align-items:center; gap:6px; }
+.db-hero-footer { flex:0 0 auto; display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-border, var(--sand-200)); }
 .db-layout { display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start; }
 .db-panel-left  { min-width:0; }
 .db-panel-right { position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto; padding-bottom:1.5rem; }
@@ -300,13 +424,20 @@
 .db-card-img { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .12s; }
 .db-card-wrap altered-card { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; transition:transform .12s; }
 .db-card-wrap:hover .db-card-img, .db-card-wrap:hover altered-card { transform:scale(1.04); }
-.db-card-qty-badge { position:absolute; top:5px; right:5px; background:var(--overlay-qty-bg); color:#fff; font-size:.8rem; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid rgba(255,255,255,.25); pointer-events:none; }
+.db-card-bottom-controls { position:absolute; bottom:5px; right:5px; z-index:3; display:flex; align-items:center; gap:6px; }
+.db-card-qty-badge { background:var(--overlay-qty-bg); color:#fff; font-size:.8rem; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid rgba(255,255,255,.25); pointer-events:none; }
 .db-card-name { font-size:.72rem; font-weight:600; text-align:center; margin-bottom:2px; color:var(--neutral-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; }
 .db-card-add-overlay { position:absolute; inset:0; background:var(--overlay-add-bg); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .12s; border-radius:7px; }
 .db-card-wrap:hover .db-card-add-overlay { opacity:1; }
 .db-card-add-overlay span { background:rgba(255,255,255,.92); color:#111; font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:20px; }
-.db-card-btn-group { position:absolute; bottom:5px; right:5px; }
 .db-card-btn-group .btn { min-width:2.25rem; min-height:2.25rem; padding:.2rem .5rem; font-size:1.15rem; font-weight:700; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
+
+/* "Suspendus et bannis" toggle: grey out + flag a banned/suspended card that's
+   showing because the user chose to include it anyway. */
+.db-card-flagged .db-card-img,
+.db-card-flagged altered-card { filter:grayscale(1) brightness(.65); }
+.db-card-status-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:2; }
+.db-card-status-overlay i { font-size:2.6rem; color:#fff; text-shadow:0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9); }
 .deck-list-item { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--neutral-100); min-width:0; }
 .deck-list-item:last-child { border-bottom:none; }
 .deck-list-qty { display:flex; align-items:center; gap:4px; flex-shrink:0; }
@@ -378,10 +509,17 @@
     border: 1px solid var(--panel-border, var(--sand-200));
     border-radius: 12px;
     padding: 20px;
-    max-width: 700px;
+    max-width: 1050px;
     width: 94vw;
+    /* dvh tracks the browser chrome on mobile; vh does not, so a 90vh panel can
+       have its footer sitting under the address bar. vh stays as the fallback. */
     max-height: 90vh;
-    overflow-y: auto;
+    max-height: 90dvh;
+    /* Column layout: only the hero grid scrolls, so the artwork strip and the
+       confirm button stay reachable without scrolling past every hero. */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
     cursor: default;
 }
@@ -404,6 +542,68 @@
     text-align: center;
     padding: 20px;
     color: var(--neutral-400);
+}
+
+/* Scroll lock while a deckbuilder dialog is up — see dbLockScroll(). Beats the
+   theme's `html { overflow-x: clip }` on specificity. */
+html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
+
+/* ---- New-deck dialog and hero picker on phones ----
+   Both are full-screen sheets rather than centred panels: at 375px a centred
+   panel spends most of the viewport on backdrop, and every px of that backdrop
+   is one the form does not get. Filling the viewport also removes the centring
+   arithmetic, so nothing can end up half off-screen when the browser chrome or
+   an iOS focus zoom moves the goalposts. The card lightbox keeps its centred
+   treatment — an image wants the dark surround. */
+@media (max-width: 575px) {
+    #db-new-modal, #db-hero-modal { align-items: stretch; justify-content: stretch; }
+    #db-new-modal  .db-hero-panel,
+    #db-hero-modal .db-hero-panel {
+        width: 100%;
+        max-width: none;
+        height: 100vh;
+        height: 100dvh;
+        /* Set by JS (see the visualViewport sync near dbLockScroll) once the
+           on-screen keyboard is up, so the footer stays above it instead of
+           behind it — falls back to 100dvh where visualViewport isn't wired
+           up or hasn't reported anything yet. */
+        height: var(--vv-height, 100dvh);
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        padding: 14px 14px 0;
+    }
+    /* No scrollbar to keep clear of on touch, so the reserved gutter is dead space */
+    #db-new-modal .db-new-body,
+    #db-hero-modal #db-hero-grid { padding-right: 0; scrollbar-gutter: auto; }
+
+    /* The panel is a flex column, so the footer stays put while the body scrolls —
+       it only needs to clear the home-bar area. */
+    #db-new-modal  .db-hero-footer,
+    #db-hero-modal .db-hero-footer {
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    /* Full-width actions: nothing else competes for the row on a phone */
+    #db-new-modal  .db-hero-footer .btn,
+    #db-hero-modal .db-hero-footer .btn { flex: 1 1 0; padding: 10px 8px; font-size: .9rem; }
+
+    /* 16px is the threshold below which iOS zooms the page on focus. That zoom
+       shrinks the visual viewport under the fixed overlay, which is what makes the
+       dialog look cropped on the right and bottom until you pinch back out. */
+    #db-new-name, #db-new-desc { font-size: 16px; }
+
+    /* Touch-sized targets for the rows and toggles */
+    .db-new-format { padding: 12px; }
+    .db-new-vis-btn { flex: 1 1 0; justify-content: center; padding: 10px 8px; }
+    .db-hero-close-btn {
+        top: 2px; right: 2px;
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; line-height: 1;
+    }
+    /* Keep the title clear of the enlarged close button */
+    #db-new-modal  .db-hero-title,
+    #db-hero-modal .db-hero-title { padding-right: 44px; }
 }
 
 /* Bootstrap modal overrides — use panel background from theme */
@@ -531,9 +731,60 @@
 }
 
 /* ---- Compact rarity buttons + separators ---- */
-.cs-rarities { display: inline-flex; align-items: center; gap: 8px; }
+/* .cs-scroll-x: each group is its own scroll container, so scrolling the rarities
+   never drags the types along. A no-op while the whole row scrolls on one line —
+   the groups are sized to their content there, so there is nothing to scroll. */
+.cs-rarities { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cs-scroll-x { overflow-x: auto; }
 .cs-sep { width: 1px; align-self: stretch; background: var(--neutral-300, #dee2e6); margin: 0 4px; flex-shrink: 0; }
 .filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
+
+/* ---- Deckbuilder rarity + type row: rarity left, type right, bar centered
+   in whatever gap remains between them (the spacer grows to fill it). ---- */
+.cs-types { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cs-rarity-type-spacer { flex: 1 1 auto; align-self: stretch; display: flex; justify-content: center; align-items: stretch; min-width: 8px; }
+
+/* ---- Unique banner: gold "try the dedicated Uniques tab" nudge, or orange
+   "this format doesn't allow Uniques" warning — see _syncUniqueNudge() in
+   card-search.js for which variant shows and when. Gold is deliberately a
+   fixed hex rather than var(--primary-400), which some themes (e.g. azure)
+   redefine to blue; same gold accent reused on the Uniques tab's own gem
+   icon below, so the two visually tie together. ---- */
+.cs-unique-banner { margin: 2px 0 10px; }
+.cs-unique-banner-nudge,
+.cs-unique-banner-blocked {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 10px;
+    background: var(--sand-100);
+    border-radius: 6px;
+    font-size: .82rem; color: var(--neutral-600);
+}
+.cs-unique-banner-nudge { border-left: 3px solid #c9962c; }
+.cs-unique-banner-nudge i { color: #c9962c; flex-shrink: 0; }
+.cs-unique-banner-nudge strong { color: var(--neutral-700, #374151); }
+.cs-unique-nudge-btn {
+    margin-left: auto; flex-shrink: 0;
+    background: none; border: 1px solid #c9962c; color: #c9962c;
+    border-radius: 6px; padding: 3px 10px; font-size: .8rem; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+}
+.cs-unique-nudge-btn:hover { background: #c9962c; color: #fff; }
+[data-theme="dark"] .cs-unique-banner-nudge { border-left-color: #e0b23c; }
+[data-theme="dark"] .cs-unique-banner-nudge i { color: #e0b23c; }
+[data-theme="dark"] .cs-unique-nudge-btn { border-color: #e0b23c; color: #e0b23c; }
+[data-theme="dark"] .cs-unique-nudge-btn:hover { background: #e0b23c; color: #12141f; }
+
+.cs-unique-banner-blocked { border-left: 3px solid #e0651a; }
+.cs-unique-banner-blocked i { color: #e0651a; flex-shrink: 0; }
+[data-theme="dark"] .cs-unique-banner-blocked { border-left-color: #f08847; }
+[data-theme="dark"] .cs-unique-banner-blocked i { color: #f08847; }
+
+/* Uniques tab's gem icon picks up the same gold accent so it stands out a
+   little among the other (neutral-colored) tab icons. */
+.cs-tab[data-tab="unique"] i { color: #c9962c; }
+.cs-tab[data-tab="unique"].active { box-shadow: inset 0 3px 0 #c9962c; }
+[data-theme="dark"] .cs-tab[data-tab="unique"] i { color: #e0b23c; }
+[data-theme="dark"] .cs-tab[data-tab="unique"].active { box-shadow: inset 0 3px 0 #e0b23c; }
 
 /* ---- Promo toggle (switch) + panel ---- */
 .cs-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: .85rem; color: var(--neutral-600); }
@@ -609,6 +860,12 @@
 /* ---- Numeric (text-expression) inputs ---- */
 .cs-num-input { width: 100px; }
 @media (max-width: 575px) { .cs-num-input { width: 92px; } }
+/* Hand + reserve cost: one group, so the name row wraps the pair as a unit rather
+   than leaving one cost stranded on the next line. gap matches the row's gap-2.
+   The inputs keep their width (shrink:0) and the group scrolls instead, for the
+   case where even the pair alone is wider than the line. */
+.cs-costs { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.cs-costs > .cs-num { flex-shrink: 0; }
 
 /* ---- Results control bar (count + sort + cols) ---- */
 .cs-controlbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -619,11 +876,20 @@
 /* ---- Search/Reset actions (inline on the advanced-search row, pushed right) ---- */
 .cs-actions { margin-left: auto; }
 
-/* Mobile: rarity filters drop to their own line under the factions */
+/* Mobile: each filter group gets its own line, and scrolls on its own line.
+   The row stops scrolling here — one scrolling line shared by rarities and types
+   would mean dragging one group to reach the other, which are unrelated filters.
+   Each group carries .cs-scroll-x, so what overflows stays reachable within it. */
 @media (max-width: 575px) {
     .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
     .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
     .cs-faction-row .cs-rarities .cs-sep { display: none; }
+
+    .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-rarity-type-row .cs-rarities { flex-basis: 100%; }
+    .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
+    /* Nothing left to center once the two groups stack instead of sharing the row */
+    .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
 }
 
 /* ============================================================

@@ -129,6 +129,9 @@ function CardSearch(cfg) {
         isBanned:       !!ini.isBanned,
         isErrated:      !!ini.isErrated,
         isSuspended:    !!ini.isSuspended,
+        // Deckbuilder-only combined toggle (see _statusFilterParts): replaces
+        // isBanned/isSuspended there with a single "include them anyway" flag.
+        bannedOrSuspended: !!ini.bannedOrSuspended,
         hasNoEffect:    !!ini.hasNoEffect,
         effects:        [],
         // Effect OR/AND toggle was removed from the UI: rows always combine with AND,
@@ -766,6 +769,30 @@ function CardSearch(cfg) {
 
     // ── End effect filter ────────────────────────────────────────────────────
 
+    // isBanned/isSuspended query params.
+    // Cards page (and any mode without cfg.getFormatLegality): the buttons
+    // ISOLATE — toggling "Banni" narrows results to banned cards only.
+    // Deckbuilder: cfg.getFormatLegality() reports whether the deck's current
+    // format allows banned/suspended cards at all. When it doesn't, those
+    // cards are excluded by default (isBanned=false / isSuspended=false) and
+    // the single "Suspendus et bannis" toggle (filters.bannedOrSuspended)
+    // becomes an "include them anyway" override — never isolating, since
+    // isolating would hide the *legal* cards instead.
+    function _statusFilterParts() {
+        var parts = [];
+        var legality = (MODE === 'deck' && cfg.getFormatLegality) ? (cfg.getFormatLegality() || {}) : null;
+        if (legality) {
+            var includeAnyway = !!filters.bannedOrSuspended;
+            if (legality.allowBanned === false && !includeAnyway)    parts.push('isBanned=false');
+            if (legality.allowSuspended === false && !includeAnyway) parts.push('isSuspended=false');
+        } else {
+            if (filters.isBanned)    parts.push('isBanned=true');
+            if (filters.isSuspended) parts.push('isSuspended=true');
+        }
+        if (filters.isErrated) parts.push('isErrated=true');
+        return parts;
+    }
+
     // build direct API URL
     function buildApiUrl(page) {
         // Reference lookup: bypass all filters and collection scope
@@ -810,7 +837,22 @@ function CardSearch(cfg) {
             (mapped || [v]).forEach(function(t) { if (_tmExpanded.indexOf(t) < 0) _tmExpanded.push(t); });
         });
         _tmExpanded.forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
-        var _statusActive = filters.isBanned || filters.isErrated || filters.isSuspended;
+        // Cards page: isBanned/isSuspended/isErrated ISOLATE, so dropping the default
+        // rarity restriction makes sense — someone browsing "all banned cards" wants
+        // every rarity, not just the defaults. Deckbuilder: isBanned/isSuspended mean
+        // "include them anyway" (see _statusFilterParts), not isolate — they must NOT
+        // also widen the rarity scope to Unique, or "include suspended cards" silently
+        // floods the grid with unrelated unique cards. Only isErrated still isolates
+        // there, so it's the only one left able to drop the rarity restriction.
+        //
+        // TODO(discuss with team): the Cards-page isolate behavior itself is being
+        // questioned — should isBanned/isSuspended/isErrated ever silently widen the
+        // rarity scope to Unique there either? If we decide no, this MODE==='deck'
+        // branch becomes the behavior everywhere and this whole condition collapses
+        // to `filters.isErrated`.
+        var _statusActive = (MODE === 'deck' && cfg.getFormatLegality)
+            ? filters.isErrated
+            : (filters.isBanned || filters.isErrated || filters.isSuspended);
         (_rarityDirty ? filters.rarity : (_statusActive ? [] : DEFAULT_RARITIES)).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
         (_setsDirty ? filters.sets : DEFAULT_SETS).slice().reverse().forEach(function(v) { parts.push('set.reference[]=' + encodeURIComponent(v)); });
         filters.keywords.forEach(function(v) { parts.push('effectKeyword[]=' + encodeURIComponent(v)); });
@@ -826,9 +868,7 @@ function CardSearch(cfg) {
         if (filters.costRelation === 'eq')        parts.push('costRelation=equal');
         else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
         else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
-        if (filters.isBanned)    parts.push('isBanned=true');
-        if (filters.isErrated)   parts.push('isErrated=true');
-        if (filters.isSuspended) parts.push('isSuspended=true');
+        _statusFilterParts().forEach(function(p) { parts.push(p); });
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
         _readEffectRows();
@@ -859,7 +899,15 @@ function CardSearch(cfg) {
     function _uniquesFilterParts() {
         var parts = [];
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
-        (_setsDirty ? filters.sets : DEFAULT_SETS).forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
+        // Drop sets the uniques API doesn't know about (cfg.noUniqueSets, from
+        // sets[X].uniques === false). Their quick-filter button is already
+        // hidden on this tab, but the selection survives a switch from another
+        // tab — and a single unknown set makes the API reject the whole query
+        // with HTTP 400 "invalid set value", breaking the search entirely.
+        var _noUniq = cfg.noUniqueSets || [];
+        (_setsDirty ? filters.sets : DEFAULT_SETS)
+            .filter(function(v) { return _noUniq.indexOf(v) < 0; })
+            .forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
 
         NUM_FIELDS.forEach(function(f) {
             numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
@@ -932,9 +980,7 @@ function CardSearch(cfg) {
             filters.variations.forEach(function(v){ parts.push('variation[]=' + encodeURIComponent(v)); });
         }
 
-        if (filters.isBanned)    parts.push('isBanned=true');
-        if (filters.isErrated)   parts.push('isErrated=true');
-        if (filters.isSuspended) parts.push('isSuspended=true');
+        _statusFilterParts().forEach(function(p) { parts.push(p); });
 
         // Numeric filters: ownership proxy wants exact (mainCost=N); collection
         // proxy wants bracketed ranges (mainCost[gte]/[lte]/[gt]/[lt]).
@@ -1086,16 +1132,41 @@ function CardSearch(cfg) {
         _readSupportRow();
     }
 
+    // "Toutes les cartes" has a plain Unique rarity toggle that quietly returns
+    // basic results — the dedicated Uniques tab (format/effect/support-effect
+    // search) is one click away but easy to miss. Nudge toward it whenever
+    // Unique is selected while still on the "all" tab. On the Uniques tab
+    // itself (deckbuilder only), swap to a warning instead when the deck's
+    // format doesn't allow Uniques at all (cfg.getFormatLegality().maxUnique
+    // === 0) — no data-tabs attribute on the banner on purpose, so this stays
+    // the one place deciding its visibility (see card-search.php comment).
+    function _syncUniqueNudge() {
+        var el = document.getElementById(P + '-unique-banner');
+        if (!el) return;
+        var nudgeEl   = el.querySelector('.cs-unique-banner-nudge');
+        var blockedEl = el.querySelector('.cs-unique-banner-blocked');
+        var legality = cfg.getFormatLegality ? cfg.getFormatLegality() : null;
+        var blocked = !!(legality && legality.maxUnique === 0);
+        var show;
+        if (_tab === 'unique')    show = blocked;
+        else if (_tab === 'all')  show = _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
+        else                      show = false;
+        el.style.display = show ? '' : 'none';
+        if (nudgeEl)   nudgeEl.style.display   = (show && !blocked) ? '' : 'none';
+        if (blockedEl) blockedEl.style.display = (show && blocked)  ? '' : 'none';
+    }
+
     // filter count badge
     function updateFilterCount() {
         readTsValues();
+        _syncUniqueNudge();
         var n = (_factionDirty ? filters.faction.length : 0)
             + (_typeDirty   ? filters.type.length   : 0)
             + (_rarityDirty ? filters.rarity.length : 0)
             + NUM_FIELDS.reduce(function(acc, f) { return acc + (numExprActive(filters[f.key]) ? 1 : 0); }, 0)
             + (_setsDirty ? filters.sets.length : 0) + filters.subtypes.length + filters.keywords.length
             + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0)
             + (filters.costRelation ? 1 : 0)
             + (filters.format ? 1 : 0)
@@ -1107,7 +1178,7 @@ function CardSearch(cfg) {
         }
         // Advanced-accordion badge: count of filters living inside the accordion.
         var advN = filters.subtypes.length + filters.keywords.length
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0)
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0) + (filters.costRelation ? 1 : 0)
             + (numExprActive(filters.forest)   ? 1 : 0)
             + (numExprActive(filters.mountain) ? 1 : 0)
@@ -1789,6 +1860,7 @@ function CardSearch(cfg) {
         filters.isBanned       = false;
         filters.isErrated      = false;
         filters.isSuspended    = false;
+        filters.bannedOrSuspended = false;
         filters.hasNoEffect    = false;
         filters.effects        = [];
         filters.support         = { trigger: [], condition: [], effect: [] };
@@ -1805,6 +1877,7 @@ function CardSearch(cfg) {
 
         qa('.filter-toggle[data-filter="faction"]').forEach(function(b) { b.classList.remove('active'); });
         qa('.filter-toggle[data-bool-filter]').forEach(function(b) { b.classList.remove('active'); });
+        qa('.cs-switch[data-bool-filter] input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
         qa('.filter-toggle[data-filter="format"]').forEach(function(b) { b.classList.toggle('active', b.dataset.value === ''); });
 
         ['faction','subtype','keyword'].forEach(function(k) {
@@ -2096,6 +2169,15 @@ function CardSearch(cfg) {
             if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
+        // Unique-nudge CTA: reuse the real tab button's own click handling
+        // (reset + setTab + scope-appropriate search) instead of duplicating it.
+        _root.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-goto-tab]');
+            if (!btn || !_root.contains(btn)) return;
+            var tabBtn = qa('.cs-tab[data-tab="' + btn.dataset.gotoTab + '"]')[0];
+            if (tabBtn) tabBtn.click();
+        });
+
         _root.addEventListener('click', function(e) {
             var btn = e.target.closest('.filter-toggle[data-filter]');
             if (!btn || !_root.contains(btn)) return;
@@ -2149,6 +2231,16 @@ function CardSearch(cfg) {
             var key = btn.dataset.boolFilter;
             filters[key] = !filters[key];
             btn.classList.toggle('active', !!filters[key]);
+            updateFilterCount();
+        });
+
+        // Same data-bool-filter convention, but for a cs-switch toggle
+        // (checkbox) instead of a filter-toggle button.
+        _root.addEventListener('change', function(e) {
+            if (e.target.type !== 'checkbox') return;
+            var label = e.target.closest('.cs-switch[data-bool-filter]');
+            if (!label || !_root.contains(label)) return;
+            filters[label.dataset.boolFilter] = e.target.checked;
             updateFilterCount();
         });
     }

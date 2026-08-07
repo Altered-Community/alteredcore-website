@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 $lang   = getLang();
 $uiLang = getUiLang();
+$isLoggedIn = kcIsLoggedIn();
 
 // Unique cards: renderer only supports en/fr. Non-unique: API supports en/fr/de/it/es.
 $_refParts    = explode('_', trim($_GET['ref'] ?? ''));
@@ -16,6 +17,7 @@ $factionsData = loadAlteredData('factions');
 $raritiesData = loadAlteredData('rarities');
 $setsData     = loadAlteredData('sets');
 $subtypesData = loadAlteredData('subtypes');
+$formatsData  = loadAlteredData('formats');
 
 // translations
 $txt = [
@@ -27,6 +29,8 @@ $txt = [
         'api_later'    => 'The API is currently unavailable. Please try again later.',
         'lbl_info'          => 'Information',
         'lbl_stats'         => 'Statistics',
+        'lbl_reserve_size'  => 'Reserve',
+        'lbl_landmark_size' => 'Landmarks',
         'lbl_lore'          => 'Lore',
         'lbl_altered_cards'   => 'Altered Cards',
         'lbl_rulings'         => 'Rulings & Clarifications',
@@ -35,11 +39,22 @@ $txt = [
         'tab_rules'           => 'Rules',
         'tab_altered'         => 'Altered Cards',
         'tab_lore'            => 'Lore',
+        'tab_deck'            => 'Deck',
+        'deck_search_ph'      => 'Search a deck…',
+        'deck_no_decks'       => 'You have no decks yet in',
+        'deck_no_match'       => 'No decks match these filters.',
+        'deck_cards'          => 'cards',
+        'deck_add_btn'        => 'Add to deck',
+        'deck_added_ok'       => 'Added!',
+        'deck_add_err'        => 'Error',
         'lbl_set'      => 'Set',
         'lbl_ref'      => 'References',
         'lbl_keywords' => 'Keywords',
         'lbl_main'     => 'Main effect',
         'lbl_echo'     => 'Echo effect',
+        'lbl_formats'  => 'Legal in',
+        'lbl_formats_illegal' => 'Not legal in',
+        'bga_not_legal'=> 'This set is not yet available on Board Game Arena and cannot be used in BGA games.',
         'banned'       => 'Banned',
         'errated'      => 'Errata',
         'suspended'    => 'Suspended',
@@ -66,6 +81,8 @@ $txt = [
         'api_later'    => 'L\'API est actuellement indisponible. Veuillez réessayer plus tard.',
         'lbl_info'          => 'Informations',
         'lbl_stats'         => 'Statistiques',
+        'lbl_reserve_size'  => 'Réserve',
+        'lbl_landmark_size' => 'Repères',
         'lbl_lore'          => 'Lore',
         'lbl_altered_cards'   => 'Cartes Altérées',
         'lbl_rulings'         => 'Règlement & Clarifications',
@@ -74,11 +91,22 @@ $txt = [
         'tab_rules'           => 'Règles',
         'tab_altered'         => 'Cartes Altérées',
         'tab_lore'            => 'Lore',
+        'tab_deck'            => 'Deck',
+        'deck_search_ph'      => 'Rechercher un deck…',
+        'deck_no_decks'       => 'Vous n\'avez pas encore de deck',
+        'deck_no_match'       => 'Aucun deck ne correspond à ces filtres.',
+        'deck_cards'          => 'cartes',
+        'deck_add_btn'        => 'Ajouter au deck',
+        'deck_added_ok'       => 'Ajouté !',
+        'deck_add_err'        => 'Erreur',
         'lbl_set'      => 'Set',
         'lbl_ref'      => 'Références',
         'lbl_keywords' => 'Mots-clés',
         'lbl_main'     => 'Effet principal',
         'lbl_echo'     => 'Effet de réserve',
+        'lbl_formats'  => 'Autorisée en',
+        'lbl_formats_illegal' => 'Non autorisée en',
+        'bga_not_legal'=> 'Ce set n\'est pas encore disponible sur Board Game Arena et n\'est donc pas légal en partie BGA.',
         'banned'       => 'Banni',
         'errated'      => 'Erratum',
         'suspended'    => 'Suspendu',
@@ -109,6 +137,11 @@ if (!preg_match('/^[A-Za-z0-9_-]+$/', $ref)) {
 $_assetParts = explode('_', $ref);
 $_assetSet   = $_assetParts[1] ?? '';
 $_assetRef   = $_refIsUnique ? preg_replace('/_\d+$/', '', $ref) : $ref;
+$_cardFactionCode = preg_match('/^ALT_[^_]+_[^_]+_([A-Z]{2})_/', $ref, $_fm) ? $_fm[1] : '';
+if (!isset($factionsData[$_cardFactionCode])) $_cardFactionCode = '';
+// Deck tab faction filter is single-select and always has one active — fall back
+// to the first known faction when the card's own faction can't be derived.
+$_deckDefaultFaction = $_cardFactionCode !== '' ? $_cardFactionCode : (array_key_first($factionsData) ?? '');
 $pageTitle   = $txt['page_title'];
 $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef . '.webp' : '';
 
@@ -184,6 +217,11 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                 <button class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-lore" type="button" role="tab">
                     <?= h($txt['tab_lore']) ?>
                 </button>
+                <?php if ($isLoggedIn): ?>
+                <button id="tab-deck-btn" class="card-tab" data-bs-toggle="tab" data-bs-target="#tab-deck" type="button" role="tab">
+                    <?= h($txt['tab_deck']) ?>
+                </button>
+                <?php endif; ?>
             </div>
 
             <div class="tab-content">
@@ -232,6 +270,32 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                     </div>
                 </div>
 
+                <?php if ($isLoggedIn): ?>
+                <!-- Tab Deck -->
+                <div class="tab-pane fade" id="tab-deck" role="tabpanel">
+                    <div class="card-altered p-3">
+                        <div class="filter-row mb-3">
+                            <input type="text" id="deck-tab-search" class="form-control form-control-sm" style="max-width:220px"
+                                   placeholder="<?= h($txt['deck_search_ph']) ?>">
+                            <div class="d-flex flex-wrap gap-1" id="deck-tab-faction-row">
+                                <?php foreach ($factionsData as $_dfCode => $_dfData): ?>
+                                <button type="button" class="filter-toggle filter-toggle--compact<?= $_dfCode === $_deckDefaultFaction ? ' active' : '' ?>" data-faction="<?= h($_dfCode) ?>"
+                                        title="<?= h($_dfData[$uiLang] ?? $_dfData['en'] ?? $_dfCode) ?>">
+                                    <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/<?= h($_dfCode) ?>.png" alt="<?= h($_dfCode) ?>">
+                                </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <div id="deck-tab-loading" class="text-center py-3" style="display:none">
+                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--neutral-400)"></i>
+                        </div>
+                        <div id="deck-tab-error" class="text-muted small py-2" style="display:none"></div>
+                        <div id="deck-tab-empty" class="text-muted small py-2" style="display:none"></div>
+                        <div id="deck-tab-list"></div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
             </div><!-- /tab-content -->
 
         </div><!-- /col details -->
@@ -260,16 +324,27 @@ var AlteredCard = {
     rarities: <?= json_encode($raritiesData) ?>,
     sets:     <?= json_encode($setsData) ?>,
     subtypes: <?= json_encode($subtypesData) ?>,
+    formats:  <?= json_encode($formatsData) ?>,
+    isLoggedIn: <?= $isLoggedIn ? 'true' : 'false' ?>,
+    csrf:     <?= json_encode($isLoggedIn ? csrfToken() : '') ?>,
+    deckAddUrl: <?= json_encode(BASE_URL . '/papi/core-altered-cards/deck-add-card') ?>,
+    cardFactionCode: <?= json_encode($_cardFactionCode) ?>,
+    deckDefaultFaction: <?= json_encode($_deckDefaultFaction) ?>,
     txt: <?= json_encode([
         'not_found'    => $txt['not_found'],
         'err_api'      => $txt['err_api'],
         'err_connect'  => $txt['err_connect'],
         'lbl_info'     => $txt['lbl_info'],
         'lbl_stats'    => $txt['lbl_stats'],
+        'lbl_reserve_size'  => $txt['lbl_reserve_size'],
+        'lbl_landmark_size' => $txt['lbl_landmark_size'],
         'lbl_set'      => $txt['lbl_set'],
         'lbl_ref'      => $txt['lbl_ref'],
         'lbl_main'     => $txt['lbl_main'],
         'lbl_echo'     => $txt['lbl_echo'],
+        'lbl_formats'  => $txt['lbl_formats'],
+        'lbl_formats_illegal' => $txt['lbl_formats_illegal'],
+        'bga_not_legal'=> $txt['bga_not_legal'],
         'lbl_rulings'  => $txt['lbl_rulings'],
         'lbl_altered_cards' => $txt['lbl_altered_cards'],
         'search_unique'=> $txt['search_unique'],
@@ -280,6 +355,13 @@ var AlteredCard = {
         'detail_label' => $txt['detail_label'],
         'loading'      => $txt['loading'],
         'types'        => $txt['types'],
+        'deck_search_ph'   => $txt['deck_search_ph'],
+        'deck_no_decks'    => $txt['deck_no_decks'],
+        'deck_no_match'    => $txt['deck_no_match'],
+        'deck_cards'       => $txt['deck_cards'],
+        'deck_add_btn'     => $txt['deck_add_btn'],
+        'deck_added_ok'    => $txt['deck_added_ok'],
+        'deck_add_err'     => $txt['deck_add_err'],
     ]) ?>,
 };
 </script>
@@ -521,13 +603,108 @@ var AlteredCard = {
             + '</span></div>';
         infoEl.innerHTML = infoHtml;
 
+        // Legal formats — only formats this card is currently allowed in are shown.
+        function formatChipHtml(fmt) {
+            var label = fmt[uiLang] || fmt.en || '';
+            return '<span class="d-flex align-items-center gap-1">'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--neutral-400)') + ';display:inline-block;flex-shrink:0"></span>'
+                + escHtml(label) + '</span>';
+        }
+        function appendFormatChip(fmt) {
+            var val = document.getElementById('card-formats-val');
+            if (val) { val.insertAdjacentHTML('beforeend', formatChipHtml(fmt)); return; }
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="card-stat-row" id="card-formats-row">'
+                + '<span class="card-stat-label">' + escHtml(txt.lbl_formats) + '</span>'
+                + '<span id="card-formats-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:1rem;row-gap:.4rem">'
+                + formatChipHtml(fmt) + '</span></div>');
+        }
+        function isFormatStaticLegal(fmt) {
+            if (group.isBanned    && fmt.allowBanned    === false) return false;
+            if (group.isSuspended && fmt.allowSuspended === false) return false;
+            if (isUnique && fmt.maxUnique === 0) return false;
+            return true;
+        }
+        var fmtList = Object.keys(AlteredCard.formats || {}).map(function (k) { return AlteredCard.formats[k]; }).filter(function (f) { return !f.hidden; });
+        var immediateFmts = [], pendingFrontierFmts = [];
+        fmtList.forEach(function (f) {
+            if (!isFormatStaticLegal(f)) return;
+            if (isUnique && f.requireUniqueLegality) { pendingFrontierFmts.push(f); return; }
+            immediateFmts.push(f);
+        });
+        if (immediateFmts.length) {
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="card-stat-row" id="card-formats-row">'
+                + '<span class="card-stat-label">' + escHtml(txt.lbl_formats) + '</span>'
+                + '<span id="card-formats-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:1rem;row-gap:.4rem">'
+                + immediateFmts.map(formatChipHtml).join('')
+                + '</span></div>');
+        }
+
+        // Non-legal formats — plain text (no dot, no chip styling), light desaturated
+        // red. Row is created up front (hidden if empty) so a later async Frontier
+        // resolution (see below) lands in the right spot even though it may run
+        // after the synchronous BGA banner is inserted.
+        function illegalChipHtml(fmt) {
+            return '<span class="card-format-illegal">' + escHtml(fmt[uiLang] || fmt.en || '') + '</span>';
+        }
+        function appendIllegalFormatChip(fmt) {
+            var val = document.getElementById('card-formats-illegal-val');
+            if (!val) return;
+            val.insertAdjacentHTML('beforeend', illegalChipHtml(fmt));
+            document.getElementById('card-formats-illegal-row').style.display = '';
+        }
+        infoEl.insertAdjacentHTML('beforeend',
+            '<div class="card-stat-row" id="card-formats-illegal-row" style="display:none">'
+            + '<span class="card-stat-label">' + escHtml(txt.lbl_formats_illegal) + '</span>'
+            + '<span id="card-formats-illegal-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:.5rem;row-gap:.4rem"></span></div>');
+        var illegalFmts = fmtList.filter(function (f) { return !isFormatStaticLegal(f); });
+        illegalFmts.forEach(appendIllegalFormatChip);
+
+        // Frontier requires each Unique print to be on a dynamic allowlist — not
+        // derivable from local data, so it's checked separately and appended once
+        // resolved either as legal or (now confirmed) not legal. Left out of both
+        // lists if unverifiable, mirroring deckbuilder.php's checkFrontierLegality().
+        if (isUnique && UNIQUES_API && pendingFrontierFmts.length) {
+            fetch(UNIQUES_API + '/api/v2/cards?ref=' + encodeURIComponent(ref) + '&format=frontier', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    var legalRefs = {};
+                    (data.cards || []).forEach(function (c) { if (c.reference) legalRefs[c.reference] = true; });
+                    pendingFrontierFmts.forEach(function (f) {
+                        if (legalRefs[ref]) appendFormatChip(f); else appendIllegalFormatChip(f);
+                    });
+                })
+                .catch(function () {});
+        }
+
+        // BGA legality — distinct mention, not mixed into the formats list.
+        if (setData.bgalegal === false) {
+            infoEl.insertAdjacentHTML('beforeend',
+                '<div class="db-info-banner mt-2"><i class="fa-solid fa-circle-info me-1"></i>' + escHtml(txt.bga_not_legal) + '</div>');
+        }
+
         // stats
         var statsBlock   = document.getElementById('card-stats-block');
         var statsContent = document.getElementById('card-stats-content');
         var statsHtml    = '';
         var biomes = { forestPower:'F', mountainPower:'M', oceanPower:'O' };
-        if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
-        if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
+        if (tCode === 'HERO') {
+            // Heroes have no Hand/Reserve cost — instead show their fixed Reserve
+            // and Landmark size limits. The cards API has no field for either (its
+            // "permanent" field is a constant, not the real per-hero value), so
+            // these are hardcoded from the printed cards: every hero is 2/2 except
+            // Matz & Hive (Ordis, faction+number OR_85), printed at 2/3 across all
+            // its reprints and serialized variants.
+            var isMatzHive   = /_OR_85_C(_\d+)?$/.test(ref);
+            var reserveSize  = 2;
+            var landmarkSize = isMatzHive ? 3 : 2;
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-layer-group" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-chess-rook" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
+        } else {
+            if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
+            if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
+        }
         Object.keys(biomes).forEach(function (f) {
             var biomeKey = f.replace('Power', '');
             var dp = (card.displayPowers && card.displayPowers[biomeKey] !== undefined) ? card.displayPowers[biomeKey] : null;
@@ -724,6 +901,198 @@ var AlteredCard = {
         searchLink.innerHTML   = '<span style="font-size:.72rem;font-weight:600;line-height:1.3">' + escHtml(txt.search_unique) + '<br><em>' + escHtml(cardName) + '</em></span>'
             + '<img src="' + BASE + '/plugins/core-altered-cards/assets/gems/U.png" alt="Unique" style="width:22px;height:22px;object-fit:contain">';
         grid.appendChild(searchLink);
+    }
+
+    // Deck tab: user's own decks, lazy-loaded on first tab click
+    var deckTabBtn = document.getElementById('tab-deck-btn');
+    if (deckTabBtn && AlteredCard.isLoggedIn) {
+        var deckLoaded         = false;
+        var deckAllDecks       = [];
+        var deckAddedIds       = {}; // deckId -> true, once a card was successfully added — frozen permanently
+        var deckCurrentFaction = AlteredCard.deckDefaultFaction || '';
+        var deckSearchEl   = document.getElementById('deck-tab-search');
+        var deckFactionRow = document.getElementById('deck-tab-faction-row');
+        var deckListEl     = document.getElementById('deck-tab-list');
+        var deckLoadingEl  = document.getElementById('deck-tab-loading');
+        var deckErrorEl    = document.getElementById('deck-tab-error');
+        var deckEmptyEl    = document.getElementById('deck-tab-empty');
+
+        deckTabBtn.addEventListener('click', function () {
+            if (!deckLoaded) { deckLoaded = true; loadMyDecksForCard(); }
+        });
+
+        if (deckFactionRow) {
+            deckFactionRow.addEventListener('click', function (e) {
+                var btn = e.target.closest('.filter-toggle');
+                if (!btn) return;
+                deckFactionRow.querySelectorAll('.filter-toggle').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                deckCurrentFaction = btn.dataset.faction || '';
+                if (deckLoaded) loadMyDecksForCard();
+            });
+        }
+
+        if (deckSearchEl) {
+            deckSearchEl.addEventListener('input', function () { renderDeckList(); });
+        }
+
+        function loadMyDecksForCard() {
+            deckLoadingEl.style.display = '';
+            deckErrorEl.style.display   = 'none';
+            deckEmptyEl.style.display   = 'none';
+            deckListEl.innerHTML = '';
+            deckAllDecks = [];
+            fetchDeckPage(1);
+        }
+
+        function fetchDeckPage(page) {
+            var url = BASE + '/pages/decks?ajax=my&page=' + page;
+            if (deckCurrentFaction) url += '&faction=' + encodeURIComponent(deckCurrentFaction);
+
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.error) {
+                        deckLoadingEl.style.display = 'none';
+                        deckErrorEl.textContent = txt.err_connect;
+                        deckErrorEl.style.display = '';
+                        return;
+                    }
+                    var decks = data.member || data.data || (Array.isArray(data) ? data : []);
+                    deckAllDecks = deckAllDecks.concat(decks);
+                    var pagination = data.pagination || {};
+                    var total      = pagination.totalItems || data.totalItems || null;
+                    // decks.php's ?ajax=my hardcodes itemsPerPage=21 — fetch every page so the
+                    // compact list is never silently truncated. Without reliable pagination
+                    // metadata, fall back to "a full page came back, there might be more".
+                    var morePages = total !== null ? (deckAllDecks.length < total) : (decks.length === 21);
+                    if (decks.length && morePages) {
+                        fetchDeckPage(page + 1);
+                    } else {
+                        deckLoadingEl.style.display = 'none';
+                        renderDeckList();
+                    }
+                })
+                .catch(function () {
+                    deckLoadingEl.style.display = 'none';
+                    deckErrorEl.textContent = txt.err_connect;
+                    deckErrorEl.style.display = '';
+                });
+        }
+
+        // Used to render each row's faction icon (the actual filtering is done
+        // server-side via the &faction= param above).
+        function deckFactionCode(deck) {
+            var heroRef = ((deck.stats || {}).hero || {}).reference || '';
+            var m = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
+            return m ? m[1] : '';
+        }
+
+        function deckEmptyFactionHtml() {
+            var fData = (AlteredCard.factions || {})[deckCurrentFaction] || {};
+            var fName = fData[uiLang] || fData.en || deckCurrentFaction;
+            var fImg  = deckCurrentFaction ? BASE + '/plugins/core-altered-cards/assets/faction/' + deckCurrentFaction + '.png' : '';
+            return escHtml(txt.deck_no_decks)
+                + (fImg ? ' <img src="' + escAttr(fImg) + '" alt="' + escAttr(deckCurrentFaction) + '" style="width:16px;height:16px;object-fit:contain;vertical-align:text-bottom">' : '')
+                + ' ' + escHtml(fName);
+        }
+
+        function renderDeckList() {
+            var q = deckSearchEl ? deckSearchEl.value.trim().toLowerCase() : '';
+            var decks = q ? deckAllDecks.filter(function (d) { return (d.name || '').toLowerCase().indexOf(q) >= 0; }) : deckAllDecks;
+
+            deckListEl.innerHTML = '';
+            if (!deckAllDecks.length) {
+                deckEmptyEl.innerHTML = deckEmptyFactionHtml();
+                deckEmptyEl.style.display = '';
+                return;
+            }
+            if (!decks.length) {
+                deckEmptyEl.textContent = txt.deck_no_match;
+                deckEmptyEl.style.display = '';
+                return;
+            }
+            deckEmptyEl.style.display = 'none';
+            decks.forEach(function (deck) { deckListEl.insertAdjacentHTML('beforeend', renderDeckCompactRow(deck)); });
+        }
+
+        function renderDeckCompactRow(deck) {
+            var deckId    = deck.id || '';
+            var name      = deck.name || '';
+            var fmt       = (deck.format || 'standard').toLowerCase();
+            var fmtData   = (AlteredCard.formats || {})[fmt] || {};
+            var fmtLabel  = fmtData.label || fmt;
+            var fmtColor  = fmtData.color || 'var(--neutral-400)';
+            var stats     = deck.stats || {};
+            var hero      = stats.hero || {};
+            var heroName  = hero.name || '';
+            var totalCards = stats.totalCards != null ? stats.totalCards : null;
+
+            var factionCode = deckFactionCode(deck);
+            var factionImg  = factionCode ? BASE + '/plugins/core-altered-cards/assets/faction/' + factionCode + '.png' : '';
+
+            var added   = !!deckAddedIds[deckId];
+            var btnHtml = added
+                ? '<button type="button" class="deck-compact-add-btn deck-compact-add-btn--ok" data-deck-id="' + escAttr(deckId) + '" disabled>' + escHtml(txt.deck_added_ok) + '</button>'
+                : '<button type="button" class="deck-compact-add-btn" data-deck-id="' + escAttr(deckId) + '">' + escHtml(txt.deck_add_btn) + '</button>';
+
+            return '<div class="deck-compact-row">'
+                + '<a href="' + BASE + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-compact-link" aria-label="' + escAttr(name) + '"></a>'
+                + (factionImg ? '<img src="' + escAttr(factionImg) + '" alt="' + escAttr(factionCode) + '" class="deck-compact-faction">' : '<span class="deck-compact-faction"></span>')
+                + '<div class="deck-compact-body">'
+                + '<div class="deck-compact-name">' + escHtml(name) + '</div>'
+                + '<div class="deck-compact-meta">'
+                + (heroName ? escHtml(heroName) + ' · ' : '')
+                + (totalCards !== null ? totalCards + ' ' + escHtml(txt.deck_cards) + ' ' : '')
+                + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.68rem">' + escHtml(fmtLabel) + '</span>'
+                + '</div></div>'
+                + btnHtml
+                + '</div>';
+        }
+
+        if (deckListEl) {
+            deckListEl.addEventListener('click', function (e) {
+                var btn = e.target.closest('.deck-compact-add-btn');
+                if (!btn || btn.disabled) return;
+                var deckId = btn.dataset.deckId;
+                var originalText = txt.deck_add_btn;
+                btn.disabled = true;
+                btn.textContent = '…';
+                var body = new URLSearchParams();
+                body.append('deck_id',    deckId);
+                body.append('card_ref',   ref);
+                body.append('csrf_token', AlteredCard.csrf);
+                fetch(AlteredCard.deckAddUrl, { method: 'POST', body: body })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.ok) {
+                            // Frozen permanently: no revert timeout, no re-enable — the deck
+                            // is done for this card, even after the mouse leaves the row or
+                            // the list re-renders (search/faction filter).
+                            deckAddedIds[deckId] = true;
+                            btn.textContent = txt.deck_added_ok;
+                            btn.classList.add('deck-compact-add-btn--ok');
+                        } else {
+                            btn.textContent = txt.deck_add_err;
+                            btn.classList.add('deck-compact-add-btn--err');
+                            setTimeout(function () {
+                                btn.textContent = originalText;
+                                btn.classList.remove('deck-compact-add-btn--err');
+                                btn.disabled = false;
+                            }, 1500);
+                        }
+                    })
+                    .catch(function () {
+                        btn.textContent = txt.deck_add_err;
+                        btn.classList.add('deck-compact-add-btn--err');
+                        setTimeout(function () {
+                            btn.textContent = originalText;
+                            btn.classList.remove('deck-compact-add-btn--err');
+                            btn.disabled = false;
+                        }, 1500);
+                    });
+            });
+        }
     }
 
     // lightbox
