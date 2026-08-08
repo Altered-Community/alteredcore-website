@@ -2130,16 +2130,23 @@ var AlteredDB = {
         window.location.href = AlteredDB.decksUrl;
     }
 
-    // Printings keep the order the API returned them in, which follows the hero
-    // search settings (sort_1, by default newest set first) — so the artwork the
-    // grid shows is the admin's stated preference, not an arbitrary pick. Only
-    // the class below reorders: booster printings from a main set come first, so
-    // a promo or a collector-booster printing never becomes the representative
-    // artwork. Array#sort is stable, so the API order survives within a class.
+    // Booster printings from a main set come first, so a promo or a
+    // collector-booster printing never becomes the representative artwork.
     function heroPrintClass(ref) {
         var p = ref.split('_');
         return ((AlteredDB.subSets || []).indexOf(p[1] || '') !== -1 ? 2 : 0)
              + (p[2] === 'B' ? 0 : 1);
+    }
+
+    // Within a class, rank by chronological set order (AlteredDB.heroSets is
+    // already ordered oldest-to-newest) so ties honour heroDuplicateOrder
+    // instead of incidentally following the API fetch order (sort_1). Unknown
+    // sets rank last. 'asc' (the default) picks the oldest — and thus most
+    // widely format-legal — printing as the representative one.
+    function heroSetRank(ref) {
+        var sets = AlteredDB.heroSets || [];
+        var idx  = sets.indexOf(ref.split('_')[1] || '');
+        return idx === -1 ? sets.length : idx;
     }
 
     function heroPrintBgaOk(ref) {
@@ -2518,7 +2525,12 @@ var AlteredDB = {
                     return;
                 }
                 list.forEach(function(g) {
-                    g.prints.sort(function(a, b) { return heroPrintClass(a.ref) - heroPrintClass(b.ref); });
+                    g.prints.sort(function(a, b) {
+                        var byClass = heroPrintClass(a.ref) - heroPrintClass(b.ref);
+                        if (byClass !== 0) return byClass;
+                        var bySet = heroSetRank(a.ref) - heroSetRank(b.ref);
+                        return AlteredDB.heroDuplicateOrder === 'desc' ? -bySet : bySet;
+                    });
                     // Availability is a property of the hero, not of one printing: a
                     // single usable printing is enough.
                     g.bgaState = heroBgaState(g.prints);
