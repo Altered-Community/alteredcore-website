@@ -146,6 +146,7 @@ $_csLblUniqueNotAllowed = $_csTxt['unique_not_allowed'] ?? ($_csLang === 'fr' ? 
 $_csLblFormat   = $_csTxt['lbl_format'] ?? ($_csLang === 'fr' ? 'Environnement' : 'Format');
 $_csLblFormatAll = $_csTxt['format_all'] ?? ($_csLang === 'fr' ? 'Toutes les Uniques' : 'All Uniques');
 $_csLblFormatFrontier = $_csTxt['format_frontier'] ?? ($_csLang === 'fr' ? 'Frontier' : 'Frontier');
+$_csLblFormatNextFrontier = $_csTxt['format_next_frontier'] ?? ($_csLang === 'fr' ? 'Prochain Frontier' : 'Next Frontier');
 $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Effet de réserve (Support)' : 'Support effect');
 $_csLblBannedSuspended = $_csTxt['lbl_banned_suspended'] ?? ($_csLang === 'fr' ? 'Suspendus et bannis' : 'Suspended & banned');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
@@ -383,6 +384,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 </button>
                 <button type="button" class="filter-toggle" data-filter="format" data-value="frontier">
                     <?= h($_csLblFormatFrontier) ?>
+                </button>
+                <button type="button" class="filter-toggle" data-filter="format" data-value="next_frontier">
+                    <?= h($_csLblFormatNextFrontier) ?>
                 </button>
             </div>
         </div>
