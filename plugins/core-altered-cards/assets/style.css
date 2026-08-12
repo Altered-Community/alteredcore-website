@@ -723,7 +723,7 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
     box-shadow: inset 0 3px 0 var(--primary-400);
 }
 .cs-tab-soon { opacity: .45; cursor: not-allowed; }
-[data-theme="dark"] .cs-tab.active { background: var(--neutral-800, #1f2937); border-bottom-color: var(--neutral-800, #1f2937); }
+[data-theme="dark"] .cs-tab.active { background: var(--neutral-800, #1f2937); border-bottom-color: var(--neutral-800, #1f2937); color: #1f2937;}
 @media (max-width: 575px) {
     .cs-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .cs-tabs::-webkit-scrollbar { display: none; }
