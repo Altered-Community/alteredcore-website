@@ -385,9 +385,9 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <button type="button" class="filter-toggle" data-filter="format" data-value="frontier">
                     <?= h($_csLblFormatFrontier) ?>
                 </button>
-                <button type="button" class="filter-toggle" data-filter="format" data-value="next_frontier">
+                <!--<button type="button" class="filter-toggle" data-filter="format" data-value="next_frontier">
                     <?= h($_csLblFormatNextFrontier) ?>
-                </button>
+                </button>-->
             </div>
         </div>
 
