@@ -1,5 +1,5 @@
 {
-    "default_sets": ["CORE", "ALIZE", "BISE", "CYCLONE", "DUSTER"],
+    "default_sets": ["CORE", "ALIZE", "BISE", "CYCLONE", "DUSTER", "EOLE"],
     "default_rarities": ["COMMON", "RARE", "EXALTED"],
     "default_types":    [],
     "default_factions":    [],

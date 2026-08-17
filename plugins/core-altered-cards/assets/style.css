@@ -185,6 +185,10 @@
 .cards-grid { display:grid; grid-template-columns:repeat(var(--cards-cols,4),1fr); gap:10px; }
 @media (max-width:575px) { .cards-grid { grid-template-columns:repeat(var(--cards-mobile-cols,2),1fr); gap:6px; } }
 .card-img-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; }
+/* Reserves the card's height even while its <altered-card> renderer is unmounted
+   (card-search.js virtualizes unique cards outside the viewport), so the grid doesn't
+   collapse/reflow as cards mount and unmount during scroll. */
+.card-img-wrap[data-unique="1"] { aspect-ratio:63.5/88; }
 .card-img-wrap img, .card-img-wrap altered-card { display:block; width:100%; border-radius:8px; overflow:hidden; }
 .card-img-wrap img { aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .15s ease; }
 .card-img-wrap altered-card { aspect-ratio:63.5/88; }
@@ -723,7 +727,7 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
     box-shadow: inset 0 3px 0 var(--primary-400);
 }
 .cs-tab-soon { opacity: .45; cursor: not-allowed; }
-[data-theme="dark"] .cs-tab.active { background: var(--neutral-800, #1f2937); border-bottom-color: var(--neutral-800, #1f2937); }
+[data-theme="dark"] .cs-tab.active { background: var(--neutral-800, #1f2937); border-bottom-color: var(--neutral-800, #1f2937); color: #1f2937;}
 @media (max-width: 575px) {
     .cs-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .cs-tabs::-webkit-scrollbar { display: none; }

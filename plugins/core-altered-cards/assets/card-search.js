@@ -150,6 +150,10 @@ function CardSearch(cfg) {
     var _uniqueCursor      = null;
     var _abortCtrl         = null;
     var _rendererLoaded    = false;
+    // Mounts/unmounts the heavy <altered-card> renderer as unique-card wraps enter/leave
+    // the viewport, so an hours-long "load more" session on the Uniques tab doesn't pile
+    // up thousands of live renderer instances in memory.
+    var _cardVisObserver   = null;
     // Search scope: 'all' (cards API) | 'collection' (physical) | 'ownership' (digital).
     // _scopeCollection stays true for both owned-card scopes — they share the same UI
     // mechanics (single-select filters, collection field mapping); only the proxy differs.
@@ -1316,6 +1320,33 @@ function CardSearch(cfg) {
     }
 
     // render card (cards mode)
+    // Lazily mounts/unmounts the <altered-card> renderer for a unique-card wrap based on
+    // viewport proximity. rootMargin gives a buffer so cards mount just before they scroll
+    // into view and only unmount once well outside it (no pop-in on ordinary scrolling).
+    function ensureCardVisObserver() {
+        if (_cardVisObserver || typeof IntersectionObserver === 'undefined') return;
+        _cardVisObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) mountUniqueCard(entry.target);
+                else unmountUniqueCard(entry.target);
+            });
+        }, { rootMargin: '600px 0px 600px 0px' });
+    }
+
+    function mountUniqueCard(wrap) {
+        if (wrap.querySelector('altered-card')) return;
+        ensureRenderer();
+        var ac = document.createElement('altered-card');
+        ac.setAttribute('ref', wrap.dataset.ref);
+        ac.setAttribute('locale', rendererLocale());
+        wrap.insertBefore(ac, wrap.firstChild);
+    }
+
+    function unmountUniqueCard(wrap) {
+        var ac = wrap.querySelector('altered-card');
+        if (ac) wrap.removeChild(ac);
+    }
+
     function renderCard(card) {
         var ref  = card.reference || '';
         var name = cardName(card);
@@ -1338,11 +1369,17 @@ function CardSearch(cfg) {
         wrap.dataset.lang = LANG;
 
         if (uniq) {
-            ensureRenderer();
-            var ac = document.createElement('altered-card');
-            ac.setAttribute('ref', ref);
-            ac.setAttribute('locale', rendererLocale());
-            wrap.appendChild(ac);
+            ensureCardVisObserver();
+            if (_cardVisObserver) {
+                _cardVisObserver.observe(wrap);
+            } else {
+                // No IntersectionObserver support: fall back to mounting eagerly.
+                ensureRenderer();
+                var ac = document.createElement('altered-card');
+                ac.setAttribute('ref', ref);
+                ac.setAttribute('locale', rendererLocale());
+                wrap.appendChild(ac);
+            }
         } else {
             var img = document.createElement('img');
             img.src = cdnUrl(ref);
@@ -1503,7 +1540,10 @@ function CardSearch(cfg) {
                 }
 
                 if (elGrid) {
-                    if (!append) elGrid.innerHTML = '';
+                    if (!append) {
+                        if (_cardVisObserver) _cardVisObserver.disconnect();
+                        elGrid.innerHTML = '';
+                    }
                     cards.forEach(function(c) {
                         var norm = normalizeCard(c);
                         var el = (MODE === 'deck' && cfg.renderDeckCard)
@@ -1593,6 +1633,7 @@ function CardSearch(cfg) {
                 }
 
                 if (elGrid) {
+                    if (_cardVisObserver) _cardVisObserver.disconnect();
                     elGrid.innerHTML = '';
                     cards.forEach(function(c) {
                         var norm = normalizeCard(c);
