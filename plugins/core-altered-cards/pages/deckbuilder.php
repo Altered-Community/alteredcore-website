@@ -665,7 +665,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     <?php foreach (array_values($rarityGems) as $r):
                         $_gc = $_rarityGemColors[$r] ?? '';
                         $gemCountStyle = $_gc ? 'style="color:' . h($_gc) . '"' : 'class="text-muted"'; ?>
-                    <span class="d-flex align-items-center gap-1" id="db-gem-<?= $r ?>" style="display:none!important">
+                    <span class="d-flex align-items-center gap-1 d-none" id="db-gem-<?= $r ?>">
                         <img src="<?= $pluginAssetsUrl ?>/gems/<?= $r ?>.png" alt="<?= $r ?>" style="width:13px;height:13px">
                         <span id="db-gem-<?= $r ?>-count" <?= $gemCountStyle ?>>0</span>
                     </span>
@@ -1586,10 +1586,11 @@ var AlteredDB = {
             var cnt = document.getElementById('db-gem-' + r + '-count');
             if (!el || !cnt) return;
             if (gems[r] > 0) {
-                el.style.display = '';
+                el.classList.remove('d-none');
                 cnt.textContent  = gems[r];
             } else {
-                el.style.display = 'none';
+                el.classList.add('d-none');
+                cnt.textContent  = 0;
             }
         });
 
