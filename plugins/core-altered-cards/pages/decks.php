@@ -530,12 +530,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
         $token = deckApiToken();
         if ($token) $headers[] = 'Authorization: Bearer ' . $token;
     }
-    if ($pubOrder === 'upvoteCount') {
-        $apiParams['sortBy'] = 'upvotes';
-        $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams);
-    } else {
-        $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
-    }
+    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
     $ch = curl_init($pubUrl);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
     $pubResp = curl_exec($ch);
