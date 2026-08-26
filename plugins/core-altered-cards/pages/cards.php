@@ -66,10 +66,11 @@ $defaultRarities   = array_values(array_intersect((array)($_ss['default_rarities
 $defaultTypes      = array_values(array_intersect((array)($_ss['default_types']      ?? []), $validTypes));
 $defaultVariations  = array_values(array_intersect((array)($_ss['default_variations']  ?? []), array_keys($variationsData)));
 $defaultCollection  = $_ss['default_collection'] ?? 'official';
-$_raw1        = $_ss['default_sort_1'] ?? 'default';
-$_raw2        = $_ss['default_sort_2'] ?? null;
-$defaultSort1 = in_array($_raw1, $validSorts) ? $_raw1 : 'default';
-$defaultSort2 = ($_raw2 && in_array($_raw2, $validSorts)) ? $_raw2 : null;
+// default_sort_1/2 drive the internal sort even when not offered as a UI
+// option (e.g. set_date_desc isn't a selectable choice), so they're trusted
+// from local config directly rather than validated against $validSorts.
+$defaultSort1 = $_ss['default_sort_1'] ?? 'default';
+$defaultSort2 = $_ss['default_sort_2'] ?? null;
 $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 
 // parse URL filter params (passed to JS for initial state)
