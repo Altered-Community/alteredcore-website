@@ -39,10 +39,6 @@ $ownActiveTab = 'history';
 
     <?php require __DIR__ . '/../includes/subnav.php'; ?>
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-    </div>
-
     <?php if (!$ownLoggedIn): ?>
     <div class="card-altered p-4">
         <a href="<?= h(BASE_URL) ?>/pages/login" class="btn btn-sm btn-primary-altered">

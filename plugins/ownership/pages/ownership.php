@@ -59,7 +59,7 @@ $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNE
 
     <div class="row g-3">
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/cards?tab=ownership">
+            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership">
                 <i class="fa-solid fa-layer-group fa-2x mb-3"></i>
                 <div class="fw-semibold mb-1"><?= h($txt['collection']) ?></div>
                 <div class="small text-muted"><?= h($txt['collection_d']) ?></div>

@@ -8,9 +8,10 @@
     "icon":         "fa-solid fa-gift",
 
     "pages": [
-        {"slug": "ownership",         "file": "pages/ownership.php", "title_en": "Digital Ownership", "title_fr": "Propriété numérique"},
-        {"slug": "boosters",          "file": "pages/boosters.php",  "title_en": "Boosters",          "title_fr": "Boosters"},
-        {"slug": "ownership-history", "file": "pages/history.php",   "title_en": "History",           "title_fr": "Historique"}
+        {"slug": "ownership",            "file": "pages/ownership.php",  "title_en": "Digital Ownership", "title_fr": "Propriété numérique"},
+        {"slug": "ownership-collection", "file": "pages/collection.php", "title_en": "Collection",        "title_fr": "Collection"},
+        {"slug": "boosters",             "file": "pages/boosters.php",   "title_en": "Boosters",          "title_fr": "Boosters"},
+        {"slug": "ownership-history",    "file": "pages/history.php",    "title_en": "History",           "title_fr": "Historique"}
     ],
 
     "api": [

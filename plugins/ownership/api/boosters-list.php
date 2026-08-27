@@ -25,4 +25,17 @@ if ($data === false) {
     exit;
 }
 
+// Booster cover art is mirrored locally (assets/boosters/) instead of hot-linking
+// ownership.altered.re images cross-origin — rewrite the upstream relative path
+// (e.g. "/img/boosters/unique-random-lyra.webp") to our own copy by filename. Falls
+// back to null (generic icon, see js/boosters.js) if we don't have that file locally.
+foreach ($data as &$booster) {
+    $file = isset($booster['imagePath']) ? basename((string)$booster['imagePath']) : '';
+    $local = $file !== '' ? __DIR__ . '/../assets/boosters/' . $file : '';
+    $booster['imagePath'] = ($local !== '' && is_file($local))
+        ? BASE_URL . '/plugins/ownership/assets/boosters/' . $file
+        : null;
+}
+unset($booster);
+
 echo json_encode($data, JSON_UNESCAPED_UNICODE);

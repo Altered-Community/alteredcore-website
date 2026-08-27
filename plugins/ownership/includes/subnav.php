@@ -1,12 +1,13 @@
 <?php
 // Shared sub-nav for the "Digital Ownership" area — included by pages/ownership.php,
-// pages/boosters.php and pages/history.php. Set $ownActiveTab to 'boosters' or 'history'
-// before including (left unset/'' on the hub page, where nothing is active).
+// pages/collection.php, pages/boosters.php and pages/history.php. Set $ownActiveTab to
+// 'collection', 'boosters' or 'history' before including (left unset/'' on the hub page,
+// where nothing is active).
 //
 // Mirrors AlteredOwnership's own 4-link nav (Collection/Boosters/History/Import), but
-// "Collection" now points at core-altered-cards' own catalog browser in its already-built
-// "Digital Ownership" scope (?tab=ownership) instead of a page this plugin owns, and
-// "Import" stays an external link to the AlteredOwnership service (not ported here).
+// "Collection" now points at pages/collection.php, which embeds core-altered-cards' own
+// catalog browser forced to its already-built "Digital Ownership" scope, and "Import"
+// stays an external link to the AlteredOwnership service (not ported here).
 $ownActiveTab = $ownActiveTab ?? '';
 
 $ownSubnavTxt = [
@@ -23,7 +24,7 @@ $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNE
 ?>
 <nav class="own-subnav mb-4">
     <div class="own-subnav-inner">
-        <a class="own-subnav-link" href="<?= h(BASE_URL) ?>/pages/cards?tab=ownership">
+        <a class="own-subnav-link<?= $ownActiveTab === 'collection' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership">
             <i class="fa-solid fa-layer-group"></i><span><?= h($ownSubnavTxt['collection']) ?></span>
         </a>
         <a class="own-subnav-link<?= $ownActiveTab === 'boosters' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/boosters">
