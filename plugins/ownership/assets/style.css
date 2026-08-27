@@ -1,0 +1,340 @@
+/* Digital Ownership plugin — styles consume the site's own theme variables (--sand-*,
+   --primary-*) so dark mode ([data-theme="dark"] overrides in css/style.css) works with
+   no extra rules here. Ported from AlteredOwnership's wwwroot/css/app.css (.ao-* -> .own-*). */
+
+/* Sub-nav (Collection / Boosters / History / Import) */
+.own-subnav {
+    border-bottom: 1px solid var(--sand-300, #DDD0B3);
+}
+.own-subnav-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding-bottom: 0.75rem;
+}
+.own-subnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--neutral-600, #534B40);
+    text-decoration: none;
+    font-weight: 600;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid transparent;
+}
+.own-subnav-link:hover {
+    color: var(--neutral-800, #2C2416);
+}
+.own-subnav-link--active {
+    color: var(--neutral-800, #2C2416);
+    border-bottom-color: var(--primary-400, #C9A84C);
+}
+.own-subnav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--primary-400, #C9A84C);
+    color: var(--neutral-800, #2C2416);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+/* Hub tiles */
+.own-hub-tile {
+    color: inherit;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.own-hub-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+.own-hub-tile i {
+    color: var(--primary-500, #B8952F);
+}
+
+/* Booster tiles */
+.own-booster-tile {
+    cursor: pointer;
+    border: 1px solid var(--sand-300, #DDD0B3);
+    border-radius: 0.5rem;
+    background: var(--sand-50, #FDFBF6);
+    padding: 1rem;
+    text-align: center;
+}
+.own-booster-tile:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+.own-booster-cover-img {
+    max-width: 100%;
+    height: 160px;
+    object-fit: contain;
+}
+
+/* Booster-opening overlay: a static booster cover slides down on click to reveal the
+   card sitting underneath it. */
+.own-opener-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 17, 26, 0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    z-index: 1080;
+}
+
+.own-opener-stage {
+    position: relative;
+    width: min(94vw, calc(82vh * 63 / 88));
+    aspect-ratio: 63 / 88;
+    perspective: 900px;
+}
+
+.own-opener-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.own-opener-card altered-card,
+.own-tilt-card altered-card {
+    display: block;
+    width: 100%;
+}
+
+.own-card-pending {
+    transform: scale(0.8);
+}
+
+@keyframes own-card-reveal {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+}
+
+.own-card-revealing {
+    animation: own-card-reveal 500ms ease-out both;
+}
+
+.own-tilt-card altered-card,
+.own-tilt-card img {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.own-opener-cover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transform: translateY(0);
+    transition: transform 500ms ease-in;
+    transform-style: preserve-3d;
+}
+
+.own-opener-cover.own-opening {
+    transform: translateY(160vh);
+}
+
+.own-opener-cover img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.own-opener-cover .own-opener-cover-fallback {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.own-opener-cover-art {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(var(--own-tilt-y, 0deg)) rotateX(var(--own-tilt-x, 0deg));
+    transition: transform 400ms ease-out;
+    transform-style: preserve-3d;
+}
+
+.own-opener-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.own-opener-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    animation: own-spin 800ms linear infinite;
+}
+
+@keyframes own-spin {
+    to { transform: rotate(360deg); }
+}
+
+.own-opener-nav {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: rgba(10, 11, 18, 0.55);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+.own-opener-nav:hover {
+    background: rgba(10, 11, 18, 0.8);
+}
+.own-opener-nav:disabled {
+    opacity: 0;
+    pointer-events: none;
+}
+.own-opener-nav--prev {
+    left: -3.75rem;
+}
+.own-opener-nav--next {
+    right: -3.75rem;
+}
+@media (max-width: 640px) {
+    .own-opener-nav--prev {
+        left: 0.5rem;
+    }
+    .own-opener-nav--next {
+        right: 0.5rem;
+    }
+}
+
+.own-opener-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    color: #fff;
+}
+
+.own-opener-open-btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: var(--primary-400, #C9A84C);
+    color: var(--neutral-800, #2C2416);
+    font-weight: 700;
+    cursor: pointer;
+}
+.own-opener-open-btn:hover {
+    background: var(--primary-500, #B8952F);
+}
+
+/* History: ± count icons next to each event row (see renderDelta in history.js). */
+.own-delta-icon {
+    font-size: 0.85em;
+}
+
+/* History: clickable card thumbnail (detail modal) that opens the zoom overlay. */
+.own-card-thumb-btn {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+}
+
+/* Shared pointer-tilt rotator: the booster cover's inner content and the history "zoom"
+   card both rotate through this same class/timing. */
+.own-tilt-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(var(--own-tilt-y, 0deg)) rotateX(var(--own-tilt-x, 0deg));
+    transition: transform 400ms ease-out;
+    transform-style: preserve-3d;
+}
+
+/* Holo shine/glare (revealed unique cards + their history zoom). card-tilt.js writes
+   --own-tilt-px/-py (pointer position) and --own-tilt-opacity (0 at rest, 1 while
+   interacting); everything else — gradients, blend modes — lives here. */
+.own-tilt-holo {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 0 3px -1px #fff,
+        0 0 3px 1px hsl(47 100% 78% / var(--own-tilt-opacity, 0)),
+        0 0 12px 2px hsl(175 100% 90% / var(--own-tilt-opacity, 0));
+}
+
+.own-tilt-shine,
+.own-tilt-glare {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    transition: opacity 400ms ease-out;
+}
+
+.own-tilt-holo .own-tilt-glare {
+    opacity: var(--own-tilt-opacity, 0);
+    background-image: radial-gradient(
+        farthest-corner circle at var(--own-tilt-px, 50%) var(--own-tilt-py, 50%),
+        hsla(0, 0%, 100%, 0.8) 10%,
+        hsla(0, 0%, 100%, 0.4) 30%,
+        hsla(0, 0%, 0%, 0.3) 100%
+    );
+    mix-blend-mode: overlay;
+}
+
+.own-tilt-holo .own-tilt-shine {
+    background-image: repeating-linear-gradient(
+        65deg,
+        hsl(42 90% 58%) 0%,
+        hsl(42 90% 58%) 16%,
+        hsl(280 50% 55%) 20%,
+        hsl(42 90% 58%) 24%
+    );
+    background-size: 300% 300%;
+    background-position: var(--own-tilt-px, 50%) var(--own-tilt-py, 50%);
+    opacity: calc(var(--own-tilt-opacity, 0) * 0.45);
+    filter: brightness(1.05) contrast(1.05) saturate(0.8);
+    mix-blend-mode: soft-light;
+}
+
+.own-opener-cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 320px;
+    border-radius: 0.75rem;
+    background: linear-gradient(160deg, var(--primary-400, #C9A84C), var(--primary-500, #B8952F));
+    color: #fff;
+}

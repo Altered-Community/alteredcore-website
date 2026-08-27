@@ -1,0 +1,27 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "ownership",
+    "name":         "Digital Ownership",
+    "version":      "1.0.0",
+    "description":  "Opening digital boosters and viewing the ownership transaction history, backed by the AlteredOwnership service.",
+    "author":       "AlteredCore",
+    "icon":         "fa-solid fa-gift",
+
+    "pages": [
+        {"slug": "ownership",         "file": "pages/ownership.php", "title_en": "Digital Ownership", "title_fr": "Propriété numérique"},
+        {"slug": "boosters",          "file": "pages/boosters.php",  "title_en": "Boosters",          "title_fr": "Boosters"},
+        {"slug": "ownership-history", "file": "pages/history.php",   "title_en": "History",           "title_fr": "Historique"}
+    ],
+
+    "api": [
+        {"endpoint": "boosters-list",   "file": "api/boosters-list.php"},
+        {"endpoint": "boosters-open",   "file": "api/boosters-open.php"},
+        {"endpoint": "history-list",    "file": "api/history-list.php"},
+        {"endpoint": "history-detail",  "file": "api/history-detail.php"}
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js"]
+    }
+}
