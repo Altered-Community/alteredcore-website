@@ -10,9 +10,12 @@
 // stays an external link to the AlteredOwnership service (not ported here).
 $ownActiveTab = $ownActiveTab ?? '';
 
+// "Collection" is deliberately not just "Collection" — that's already the label of the
+// physical-collection tab elsewhere on the site (core-altered-cards/pages/collection.php);
+// keeping "Digital Ownership"/"Propriété numérique" here avoids the two being confused.
 $ownSubnavTxt = [
-    'en' => ['collection' => 'Collection', 'boosters' => 'Boosters', 'history' => 'History', 'import' => 'Import'],
-    'fr' => ['collection' => 'Collection', 'boosters' => 'Boosters', 'history' => 'Historique', 'import' => 'Import'],
+    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'import' => 'Equinox Import'],
+    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'import' => 'Import Equinox'],
 ][getUiLang()];
 
 $ownBoosterCount = null;
@@ -20,7 +23,9 @@ if (kcIsLoggedIn()) {
     $ownBoosterCount = ownGetBoosterCount((int)($_SESSION['user_id'] ?? 0));
 }
 
-$ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNERSHIP_WEB_URL, '/') . '/import.html' : '';
+// AlteredOwnership's own site now only has the import form at its root (the
+// collection/boosters/history pages it used to serve moved here).
+$ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNERSHIP_WEB_URL, '/') . '/' : '';
 ?>
 <nav class="own-subnav mb-4">
     <div class="own-subnav-inner">

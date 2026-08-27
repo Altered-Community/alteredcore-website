@@ -16,7 +16,7 @@ $txt = [
               'cards_plugin_missing' => 'Le plugin Cartes n\'est pas actif sur ce site.'],
 ][getUiLang()];
 
-$pageTitle = getUiLang() === 'fr' ? 'Collection' : 'Collection';
+$pageTitle = getUiLang() === 'fr' ? 'Propriété numérique' : 'Digital Ownership';
 
 $ownEnabled  = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $ownLoggedIn = kcIsLoggedIn();
@@ -205,6 +205,12 @@ $ownActiveTab = 'collection';
         'base_url'        => BASE_URL,
     ];
     ?>
+
+    <!-- core-altered-cards' own stylesheet isn't loaded automatically here — only this
+         plugin's own assets.css is (see plugin.json), since /pages/cards is what normally
+         pulls this in via ITS manifest. Without it every .cs-*/.filter-toggle/.card-altered
+         rule the widget below relies on is unstyled. -->
+    <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/style.css">
 
     <!-- This page only ever shows the "Digital Ownership" scope of the widget below
          (forced via ?tab=ownership, read by card-search.js on load) — the tab switcher

@@ -55,6 +55,16 @@
 .own-hub-tile i {
     color: var(--primary-500, #B8952F);
 }
+.own-hub-tile-count {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--sand-200, #EDE3CC);
+    color: var(--neutral-700, #3D3226);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
 
 /* Booster tiles */
 .own-booster-tile {

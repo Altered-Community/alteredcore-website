@@ -140,7 +140,10 @@
         rotatorEl.innerHTML = '';
         cardEl.innerHTML = '';
         currentIndex = -1;
-        renderGrid(boosterList);
+        // Drop any booster type just emptied out by an open in this session — the server
+        // deletes its inventory row at 0 rather than keeping a 0 (see BoosterInventory),
+        // so a tile stuck at "×0" here would be stale until the next full page load.
+        renderGrid(boosterList.filter((b) => b.quantity > 0));
     };
     backdrop?.addEventListener('click', (e) => {
         if (e.target === backdrop) closeOverlay();
