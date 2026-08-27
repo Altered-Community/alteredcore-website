@@ -178,8 +178,8 @@ function CardSearch(cfg) {
     var SORT_MAP = {
         'collector_asc':  [['collectorNumberFormatedId', 'asc']],
         'collector_desc': [['collectorNumberFormatedId', 'desc']],
-        'number_asc':     [['cardNumber',   'asc']],
-        'number_desc':    [['cardNumber',   'desc']],
+        'number_asc':     [['reference',    'asc']],
+        'number_desc':    [['reference',    'desc']],
         'mana_asc':       [['mainCost',     'asc']],
         'mana_desc':      [['mainCost',     'desc']],
         'reserve_asc':    [['recallCost',   'asc']],
@@ -195,6 +195,19 @@ function CardSearch(cfg) {
     };
     SORT_MAP['name_asc']  = [['name.' + LANG, 'asc']];
     SORT_MAP['name_desc'] = [['name.' + LANG, 'desc']];
+
+    // Sorts whose field can hold equal values across many cards (name, costs,
+    // biome powers), so ties need the default sort's own criteria (set date,
+    // then collector number) to stay deterministic. Collector No and Reference
+    // are unique per card and never tie, so they're left out on purpose.
+    var TIEBREAK_SORTS = {
+        'name_asc': 1, 'name_desc': 1,
+        'mana_asc': 1, 'mana_desc': 1,
+        'reserve_asc': 1, 'reserve_desc': 1,
+        'forest_asc': 1, 'forest_desc': 1,
+        'mountain_asc': 1, 'mountain_desc': 1,
+        'ocean_asc': 1, 'ocean_desc': 1,
+    };
 
     // collection scope field mapping
     var FIELD_MAP = {
@@ -245,8 +258,10 @@ function CardSearch(cfg) {
         if (elSortSelect) {
             elSortSelect.disabled = active;
             if (active) {
-                filters.sort      = DEFAULT_SORT_1;
-                elSortSelect.value = DEFAULT_SORT_1;
+                // 'default' (not the resolved DEFAULT_SORT_1 key) so the dropdown
+                // still matches a real <option> — set_date_desc itself isn't one.
+                filters.sort      = 'default';
+                elSortSelect.value = 'default';
             }
         }
         if (tsInst.keyword) {
@@ -823,14 +838,20 @@ function CardSearch(cfg) {
             if (sf) {
                 sf.forEach(function(s) { parts.push('order[' + s[0] + ']=' + s[1]); });
             }
-            // Always apply DEFAULT_SORT_1 as tiebreaker when it differs from primary
-            if (primary !== DEFAULT_SORT_1 && DEFAULT_SORT_1 && DEFAULT_SORT_1 !== 'default') {
-                var sf_tb = SORT_MAP[DEFAULT_SORT_1] || null;
-                if (sf_tb) sf_tb.forEach(function(s) { parts.push('order[' + s[0] + ']=' + s[1]); });
-            }
-            if (DEFAULT_SORT_2 && DEFAULT_SORT_2 !== primary && DEFAULT_SORT_2 !== DEFAULT_SORT_1) {
-                var sf2 = SORT_MAP[DEFAULT_SORT_2] || null;
-                if (sf2) sf2.forEach(function(s) { parts.push('order[' + s[0] + ']=' + s[1]); });
+            // The default sort, and any sort whose field can tie (name/costs/biome
+            // powers — see TIEBREAK_SORTS), gets the default sort's own criteria
+            // (set date, then collector number) appended to break ties
+            // deterministically. Collector No and Reference are unique per card —
+            // no ties possible — so they're sent alone, with nothing appended.
+            if (primary === DEFAULT_SORT_1 || TIEBREAK_SORTS[primary]) {
+                if (primary !== DEFAULT_SORT_1 && DEFAULT_SORT_1 && DEFAULT_SORT_1 !== 'default') {
+                    var sf_tb = SORT_MAP[DEFAULT_SORT_1] || null;
+                    if (sf_tb) sf_tb.forEach(function(s) { parts.push('order[' + s[0] + ']=' + s[1]); });
+                }
+                if (DEFAULT_SORT_2 && DEFAULT_SORT_2 !== primary && DEFAULT_SORT_2 !== DEFAULT_SORT_1) {
+                    var sf2 = SORT_MAP[DEFAULT_SORT_2] || null;
+                    if (sf2) sf2.forEach(function(s) { parts.push('order[' + s[0] + ']=' + s[1]); });
+                }
             }
         }
 
@@ -1908,10 +1929,10 @@ function CardSearch(cfg) {
         filters.format          = '';
         filters.costRelation   = '';
         filters.showPromo      = false;
-        filters.sort           = DEFAULT_SORT_1;
+        filters.sort           = 'default';
 
         if (elSearch)     elSearch.value     = '';
-        if (elSortSelect) elSortSelect.value = DEFAULT_SORT_1;
+        if (elSortSelect) elSortSelect.value = 'default';
 
         setScope('all');
         syncScopeButtons();
@@ -1981,7 +2002,7 @@ function CardSearch(cfg) {
         filters.isSuspended    = p.get('isSuspended') === 'true';
         filters.hasNoEffect    = p.get('hasNoEffect') === 'true';
         filters.showPromo      = p.get('promo')       === 'true';
-        filters.sort           = p.get('sort') || DEFAULT_SORT_1;
+        filters.sort           = p.get('sort') || 'default';
         var pg = parseInt(p.get('page') || '1', 10);
 
         if (elSearch)     elSearch.value     = filters.q;
@@ -2309,6 +2330,7 @@ function CardSearch(cfg) {
     if (elSortSelect) {
         elSortSelect.addEventListener('change', function() {
             filters.sort = this.value;
+            search(1);
         });
     }
     if (elColsSelect && elGrid) {
