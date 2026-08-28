@@ -1,0 +1,545 @@
+/* =========================================================
+   tournament-reports — Plugin stylesheet
+   ========================================================= */
+
+/* Tournament cards */
+.tr-page-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 20px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--neutral-500);
+}
+.tr-spinner-lg {
+    width: 34px;
+    height: 34px;
+    border-width: 4px;
+}
+.tr-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--sand-300, #d5cdb8);
+    border-top-color: var(--primary-500, #b8960c);
+    border-radius: 50%;
+    animation: tr-spin .7s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes tr-spin {
+    to { transform: rotate(360deg); }
+}
+.tr-tournament-description {
+    color: var(--sand-800);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.tr-game-card {
+    background: var(--sand-100);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.tr-game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.tr-game-title {
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--neutral-700);
+}
+.tr-game-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .78rem;
+    color: var(--neutral-500);
+}
+.tr-game-meta i { font-size: .7rem; }
+
+/* Player row inside a game */
+.tr-player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--neutral-100);
+}
+.tr-player-row:last-child { border-bottom: none; }
+.tr-player-winner {
+    background: rgba(34, 197, 94, .08);
+    border-radius: 6px;
+    padding: 10px;
+    margin: 0 -10px;
+}
+.tr-player-name {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--neutral-700);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tr-player-faction {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--neutral-500);
+}
+.tr-winner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .68rem;
+    font-weight: 700;
+    color: #22c55e;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Decklist grid */
+.tr-decklist-section {
+    margin-bottom: 24px;
+}
+.tr-decklist-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--sand-200);
+}
+.tr-decklist-player-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neutral-800);
+}
+.tr-decklist-faction-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: .72rem;
+    font-weight: 700;
+    background: var(--sand-200);
+    color: var(--neutral-600);
+}
+.tr-decklist-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+@media (min-width: 576px) {
+    .tr-decklist-cards { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 900px) {
+    .tr-decklist-cards { grid-template-columns: repeat(5, 1fr); }
+}
+@media (min-width: 1200px) {
+    .tr-decklist-cards { grid-template-columns: repeat(6, 1fr); }
+}
+
+.tr-card-wrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--neutral-100);
+}
+.tr-card-wrap img {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    aspect-ratio: 63.5 / 88;
+    object-fit: cover;
+}
+.tr-card-wrap altered-card {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    aspect-ratio: 63.5 / 88;
+    overflow: hidden;
+}
+.tr-card-qty {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: var(--overlay-qty-bg, rgba(0,0,0,.65));
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.25);
+    pointer-events: none;
+}
+
+/* Played cards section */
+.tr-played-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--sand-200);
+}
+.tr-played-label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--neutral-400);
+    margin-bottom: 6px;
+}
+
+/* Ranking section */
+.tr-ranking-card {
+    background: var(--sand-100);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.tr-ranking-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.tr-ranking-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neutral-800);
+}
+.tr-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+.tr-ranking-table th {
+    text-align: left;
+    padding: 6px 10px;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--neutral-400);
+    border-bottom: 2px solid var(--sand-200);
+}
+.tr-ranking-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--neutral-100);
+    color: var(--neutral-700);
+    vertical-align: middle;
+}
+.tr-ranking-table tr:hover td {
+    background: var(--sand-50);
+}
+.tr-ranking-pos {
+    font-weight: 700;
+    font-size: .9rem;
+    min-width: 30px;
+    text-align: center;
+}
+.tr-ranking-pos-1 { color: #d97706; }
+.tr-ranking-pos-2 { color: #6b7280; }
+.tr-ranking-pos-3 { color: #92400e; }
+
+/* Ranking form */
+.tr-ranking-form .form-control,
+.tr-ranking-form .form-select {
+    font-size: .85rem;
+}
+
+/* Drag handle for ranking rows */
+.tr-rank-handle {
+    cursor: grab;
+    color: var(--neutral-300);
+    font-size: .9rem;
+    padding: 0 4px;
+}
+.tr-rank-handle:hover { color: var(--neutral-500); }
+
+/* Empty state */
+.tr-empty-state {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--neutral-400);
+}
+.tr-empty-state i {
+    font-size: 2rem;
+    opacity: .3;
+    display: block;
+    margin-bottom: .75rem;
+}
+
+/* View toggle (images/list) */
+.tr-view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.tr-view-export {
+    margin-right: auto;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: .8rem;
+    border: 1px solid var(--neutral-300);
+    background: transparent;
+    color: var(--neutral-500);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+.tr-view-export:hover {
+    background: var(--neutral-100);
+    color: var(--neutral-800);
+}
+.tr-view-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: .78rem;
+    font-weight: 600;
+    border: 1px solid var(--neutral-300);
+    background: transparent;
+    color: var(--neutral-500);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+.tr-view-btn.active {
+    background: var(--primary-400);
+    border-color: var(--primary-400);
+    color: #fff;
+}
+
+/* Decklist table view */
+.tr-decklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+.tr-decklist-table th {
+    text-align: left;
+    padding: 5px 8px;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--neutral-400);
+    border-bottom: 2px solid var(--sand-200);
+}
+.tr-decklist-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--neutral-100);
+    color: var(--neutral-700);
+}
+.tr-decklist-table tr:hover td { background: var(--sand-50); }
+.tr-decklist-table td img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* Ranking drag-and-drop (public page, logged-in users) */
+.tr-drag-handle {
+    cursor: grab;
+    color: var(--neutral-300, #d1d5db);
+    font-size: .85rem;
+    padding: 0 2px;
+    user-select: none;
+}
+.tr-drag-handle:hover { color: var(--neutral-500, #6b7280); }
+.tr-rank-draggable { transition: opacity .15s ease, background .1s ease; }
+.tr-rank-draggable:active { cursor: grabbing; }
+.tr-drag-over td { border-top: 2px solid var(--primary-400, #C9A84C); }
+.tr-ranking-drag-hint {
+    font-size: .72rem;
+    color: var(--neutral-400, #9ca3af);
+    font-weight: 500;
+}
+.tr-ranking-empty-editable {
+    text-align: center;
+    padding: 24px 0;
+}
+
+/* Clickable player name in ranking */
+.tr-player-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--primary-600, #b8960c);
+    text-decoration: underline;
+    text-decoration-color: rgba(184, 150, 12, .3);
+    text-underline-offset: 2px;
+    cursor: pointer;
+    transition: color .15s, text-decoration-color .15s;
+}
+.tr-player-link:hover {
+    color: var(--primary-700, #9a7d0a);
+    text-decoration-color: var(--primary-600, #b8960c);
+}
+
+/* Hero card name beside player name */
+.tr-rank-hero {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: .8rem;
+    color: var(--sand-600, #8a7f6b);
+    background: rgba(0, 0, 0, .04);
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 20px;
+    padding: 1px 10px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.tr-rank-hero-faction {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    vertical-align: -2px;
+    display: inline-block;
+}
+
+/* ── Card lightbox (self-contained; core plugin CSS may not be loaded) ── */
+#tr-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, .82);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+#tr-lightbox-inner {
+    max-width: 420px;
+    width: 88vw;
+    cursor: default;
+    position: relative;
+}
+
+/* ── Side panel ─────────────────────────────────────────────────────────── */
+.tr-panel-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    z-index: 1050;
+}
+
+.tr-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(480px, 90vw);
+    height: 100vh;
+    background: var(--sand-50, #faf8f2);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, .15);
+    z-index: 1060;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .3s ease, visibility 0s;
+    visibility: hidden;
+}
+.tr-panel.tr-panel-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform .3s ease;
+}
+
+.tr-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--sand-200, #e8e2d4);
+    flex-shrink: 0;
+}
+.tr-panel-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--neutral-800);
+}
+.tr-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.tr-panel-close {
+    background: none;
+    border: 1px solid var(--sand-200, #e8e2d4);
+    font-size: 1rem;
+    color: var(--neutral-500);
+    cursor: pointer;
+    padding: 5px 9px;
+    border-radius: 6px;
+    transition: background .15s, color .15s;
+}
+.tr-panel-close:hover {
+    background: var(--neutral-100);
+    color: var(--neutral-800);
+}
+
+.tr-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.tr-panel-zoom {
+    position: fixed;
+    top: 50%;
+    right: min(480px, 90vw);
+    transform: translateY(-50%) translateX(-16px);
+    width: 300px;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1061;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+.tr-panel-zoom.tr-panel-zoom-visible {
+    opacity: 1;
+}
+.tr-panel-zoom img,
+.tr-panel-zoom altered-card {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+}
+
+.tr-panel-decklist .tr-view-toggle {
+    margin-bottom: 16px;
+}
+.tr-panel-decklist .tr-decklist-cards {
+    grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 400px) {
+    .tr-panel-decklist .tr-decklist-cards { grid-template-columns: repeat(4, 1fr); }
+}
+
+.tr-panel-decklist .tr-decklist-table tbody tr {
+    cursor: pointer;
+    transition: background .1s;
+}
+
+@media (max-width: 600px) {
+    .tr-panel-zoom { display: none !important; }
+}
