@@ -265,7 +265,9 @@
 
 /* History: ± count icons next to each event row (see renderDelta in history.js). */
 .own-delta-icon {
-    font-size: 0.85em;
+    width: 20px;
+    height: auto;
+    border-radius: 2px;
 }
 
 /* History: clickable card thumbnail (detail modal) that opens the zoom overlay. */
@@ -347,4 +349,89 @@
     border-radius: 0.75rem;
     background: linear-gradient(160deg, var(--primary-400, #C9A84C), var(--primary-500, #B8952F));
     color: #fff;
+}
+
+/* Alt Arts BGA — one row per multi-art family, tiles instead of a paginated grid.
+   .filter-row/.filter-toggle/.card-altered come from core-altered-cards/assets/style.css,
+   linked explicitly by pages/alt-arts.php since this plugin doesn't load it by default. */
+.own-aa-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.own-aa-faction-icon {
+    width: 20px;
+    height: 20px;
+}
+.own-aa-name {
+    flex: 1 1 auto;
+}
+.own-aa-cost {
+    background: var(--sand-100);
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-size: .8rem;
+    color: var(--neutral-600);
+}
+.own-aa-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.own-aa-tile {
+    position: relative;
+    width: 110px;
+    cursor: pointer;
+}
+.own-aa-tile img {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    aspect-ratio: 63.5/88;
+    object-fit: cover;
+    transition: transform .12s;
+    background: var(--neutral-100);
+}
+.own-aa-tile:hover img {
+    transform: scale(1.03);
+}
+.own-aa-tile--unowned {
+    cursor: not-allowed;
+}
+.own-aa-tile--unowned img {
+    opacity: .35;
+    filter: grayscale(1);
+}
+.own-aa-tile--unowned:hover img {
+    transform: none;
+}
+.own-aa-markers {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 2;
+}
+.own-aa-marker {
+    width: 20px;
+    height: auto;
+    cursor: pointer;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+}
+.own-aa-marker--active {
+    outline: 2px solid var(--primary-400, #C9A84C);
+    border-radius: 2px;
+}
+.own-aa-row-error {
+    margin-top: 4px;
+}
+.own-aa-sep {
+    border: none;
+    border-top: 1px solid var(--sand-300, #DDD0B3);
+    margin: 14px 0;
 }

@@ -67,18 +67,20 @@
                 (opts.hideCardName ? '' : '<span>' + escapeHtml(cardLabel(item)) + '</span>') +
             '</span>').join(' ');
 
+    const assetsUrl = window.OWN_ASSETS_URL || '';
+
     const renderDelta = (evt) => {
-        const badge = (count, sign, icon, colorClass) => count > 0
+        const badge = (count, sign, iconFile, colorClass) => count > 0
             ? '<span class="own-delta d-inline-flex align-items-center gap-1">' +
-                '<i class="fa-solid ' + icon + ' own-delta-icon"></i>' +
+                '<img src="' + assetsUrl + '/' + iconFile + '" alt="" class="own-delta-icon">' +
                 '<span class="' + colorClass + ' fw-semibold">' + sign + count + '</span>' +
             '</span>'
             : '';
         return [
-            badge(evt.cardsReceived, '+', 'fa-clone', 'text-success'),
-            badge(evt.boostersReceived, '+', 'fa-gift', 'text-success'),
-            badge(evt.cardsGiven, '-', 'fa-clone', 'text-danger'),
-            badge(evt.boostersGiven, '-', 'fa-gift', 'text-danger'),
+            badge(evt.cardsReceived, '+', 'card-back.webp', 'text-success'),
+            badge(evt.boostersReceived, '+', 'booster-icon.webp', 'text-success'),
+            badge(evt.cardsGiven, '-', 'card-back.webp', 'text-danger'),
+            badge(evt.boostersGiven, '-', 'booster-icon.webp', 'text-danger'),
         ].filter(Boolean).join(' ');
     };
 

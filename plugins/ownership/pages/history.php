@@ -70,7 +70,10 @@ $ownActiveTab = 'history';
         </div>
     </div>
 
-    <script>window.OWN_I18N = { <?= h(getUiLang()) ?>: <?= json_encode($txt, JSON_UNESCAPED_UNICODE) ?> };</script>
+    <script>
+    window.OWN_I18N = { <?= h(getUiLang()) ?>: <?= json_encode($txt, JSON_UNESCAPED_UNICODE) ?> };
+    window.OWN_ASSETS_URL = <?= json_encode(BASE_URL . '/plugins/ownership/assets') ?>;
+    </script>
 
     <?php endif; ?>
     <?php endif; ?>

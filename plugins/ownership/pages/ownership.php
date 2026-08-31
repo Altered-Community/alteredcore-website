@@ -12,6 +12,8 @@ $txt = [
         'boosters_remaining' => '%d remaining',
         'history'      => 'History',
         'history_d'    => 'View every transaction that changed your digital ownership.',
+        'altArts'      => 'Alt Arts BGA',
+        'altArts_d'    => 'Choose which illustration is used for each copy you play on Board Game Arena.',
         'import'       => 'Equinox Import',
         'import_d'     => 'Request and/or import your digital ownership from the Equinox site (a secure site).',
         'login_prompt' => 'Log in to manage your digital ownership.',
@@ -28,6 +30,8 @@ $txt = [
         'boosters_remaining' => '%d restant(s)',
         'history'      => 'Historique',
         'history_d'    => 'Consultez toutes les transactions qui ont modifié vos propriétés.',
+        'altArts'      => 'Alt Arts BGA',
+        'altArts_d'    => 'Choisissez l\'illustration utilisée pour chaque exemplaire joué sur Board Game Arena.',
         'import'       => 'Import Equinox',
         'import_d'     => 'Demandez et/ou importez vos propriétés numériques du site d\'Equinox (sur un site sécurisé).',
         'login_prompt' => 'Connectez-vous pour gérer votre propriété numérique.',
@@ -85,6 +89,13 @@ $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNE
                 <i class="fa-solid fa-clock-rotate-left fa-2x mb-3"></i>
                 <div class="fw-semibold mb-1"><?= h($txt['history']) ?></div>
                 <div class="small text-muted"><?= h($txt['history_d']) ?></div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts">
+                <i class="fa-solid fa-palette fa-2x mb-3"></i>
+                <div class="fw-semibold mb-1"><?= h($txt['altArts']) ?></div>
+                <div class="small text-muted"><?= h($txt['altArts_d']) ?></div>
             </a>
         </div>
         <?php if ($ownImportUrl): ?>

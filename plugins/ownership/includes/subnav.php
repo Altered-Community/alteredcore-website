@@ -1,8 +1,8 @@
 <?php
 // Shared sub-nav for the "Digital Ownership" area — included by pages/ownership.php,
 // pages/collection.php, pages/boosters.php and pages/history.php. Set $ownActiveTab to
-// 'collection', 'boosters' or 'history' before including (left unset/'' on the hub page,
-// where nothing is active).
+// 'collection', 'boosters', 'history' or 'alt-arts' before including (left unset/''
+// on the hub page, where nothing is active).
 //
 // Mirrors AlteredOwnership's own 4-link nav (Collection/Boosters/History/Import), but
 // "Collection" now points at pages/collection.php, which embeds core-altered-cards' own
@@ -14,8 +14,8 @@ $ownActiveTab = $ownActiveTab ?? '';
 // physical-collection tab elsewhere on the site (core-altered-cards/pages/collection.php);
 // keeping "Digital Ownership"/"Propriété numérique" here avoids the two being confused.
 $ownSubnavTxt = [
-    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'import' => 'Equinox Import'],
-    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'import' => 'Import Equinox'],
+    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'altArts' => 'Alt Arts BGA', 'import' => 'Equinox Import'],
+    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'altArts' => 'Alt Arts BGA', 'import' => 'Import Equinox'],
 ][getUiLang()];
 
 $ownBoosterCount = null;
@@ -38,6 +38,9 @@ $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNE
         </a>
         <a class="own-subnav-link<?= $ownActiveTab === 'history' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-history">
             <i class="fa-solid fa-clock-rotate-left"></i><span><?= h($ownSubnavTxt['history']) ?></span>
+        </a>
+        <a class="own-subnav-link<?= $ownActiveTab === 'alt-arts' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts">
+            <i class="fa-solid fa-palette"></i><span><?= h($ownSubnavTxt['altArts']) ?></span>
         </a>
         <?php if ($ownImportUrl): ?>
         <a class="own-subnav-link" href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
