@@ -31,7 +31,14 @@
     const PAGE_SIZE = 25;
 
     // ---- Filter state ----
-    const filters = { name: '', factions: new Set(), rarities: new Set(), mainCost: null };
+    const filters = { name: '', factions: new Set(), rarities: new Set(), mainCost: null, hideNonChoices: false };
+
+    const hideNonChoicesBtn = document.getElementById('own-aa-hide-non-choices');
+    hideNonChoicesBtn?.addEventListener('click', () => {
+        filters.hideNonChoices = !filters.hideNonChoices;
+        hideNonChoicesBtn.classList.toggle('active', filters.hideNonChoices);
+        runSearch();
+    });
 
     document.querySelectorAll('.filter-toggle[data-filter="faction"]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -75,6 +82,16 @@
 
     const groupKeyOf = (familyId, faction, rarity) => familyId + ':' + faction + ':' + rarity;
 
+    // "No real choice" = at most one option the player could ever pick (own >=1 copy
+    // of, or that's infinite): every marker is stuck on the same art regardless of
+    // which one currently holds it, so there's nothing to decide for this family.
+    const hasRealChoice = (family) => {
+        const optData = optionsByKey[groupKeyOf(family.familyId, family.faction, family.rarity)];
+        if (!optData || !optData.options) return false;
+        var selectable = optData.options.filter((o) => o.ownedQuantity === null || o.ownedQuantity > 0);
+        return selectable.length >= 2;
+    };
+
     const buildQuery = () => {
         const parts = [];
         if (filters.name) parts.push('name=' + encodeURIComponent(filters.name));
@@ -107,6 +124,7 @@
             const data = await res.json();
             families = (data.families || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             optionsByKey = data.options || {};
+            if (filters.hideNonChoices) families = families.filter(hasRealChoice);
 
             if (!families.length) { emptyEl.hidden = false; return; }
 
@@ -156,7 +174,7 @@
             '<img class="own-aa-faction-icon" src="' + escapeHtml(cfg.baseUrl + '/plugins/core-altered-cards/assets/faction/' + family.faction + '.png') + '" alt="' + escapeHtml(family.faction) + '">' +
             '<span class="own-aa-name">' + escapeHtml(family.name || family.reference) + '</span>' +
             (family.mainCost !== null && family.mainCost !== undefined
-                ? '<span class="own-aa-cost">' + escapeHtml(String(family.mainCost)) + '</span>' : '');
+                ? '<span class="own-aa-cost" title="' + escapeHtml(t('lbl_cost', 'Mana cost')) + '"><i class="fak fa-altered-h"></i>' + escapeHtml(String(family.mainCost)) + '</span>' : '');
         row.appendChild(header);
 
         const strip = document.createElement('div');

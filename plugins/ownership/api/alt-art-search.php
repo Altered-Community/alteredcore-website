@@ -23,6 +23,9 @@ if (!kcIsLoggedIn()) {
 $userId = (int)($_SESSION['user_id'] ?? 0);
 
 $parts = [];
+$loc = is_string($_GET['locale'] ?? null) && $_GET['locale'] !== '' ? $_GET['locale'] : getLang();
+$parts[] = 'locale=' . rawurlencode($loc);
+
 if (isset($_GET['name']) && is_string($_GET['name']) && $_GET['name'] !== '') {
     $parts[] = 'name=' . rawurlencode($_GET['name']);
 }

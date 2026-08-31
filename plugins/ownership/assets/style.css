@@ -369,21 +369,33 @@
     flex: 1 1 auto;
 }
 .own-aa-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: var(--sand-100);
     border-radius: 5px;
     padding: 1px 7px;
     font-size: .8rem;
     color: var(--neutral-600);
 }
+/* 4 tiles per row on desktop, 2 on mobile — a family's strip is its own little grid,
+   wrapping to as many rows as it needs; the <hr> after it (see js/alt-arts.js) is what
+   visually separates one family from the next. */
 .own-aa-strip {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     margin-bottom: 6px;
 }
+@media (max-width: 575px) {
+    .own-aa-strip {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+}
 .own-aa-tile {
     position: relative;
-    width: 110px;
+    min-width: 0;
     cursor: pointer;
 }
 /* Direct child only — .own-aa-tile also nests the marker <img>s one level deeper

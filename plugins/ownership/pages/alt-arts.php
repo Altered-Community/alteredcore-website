@@ -19,6 +19,7 @@ $txt = [
         'lbl_faction'   => 'Faction',
         'lbl_rarity'    => 'Rarity',
         'lbl_cost'      => 'Mana cost',
+        'hideNonChoices' => 'Hide non-choices',
         'loading'       => 'Loading…',
         'empty'         => 'No matching card has more than one illustration.',
         'loadError'     => 'Could not load alt arts.',
@@ -35,6 +36,7 @@ $txt = [
         'lbl_faction'   => 'Faction',
         'lbl_rarity'    => 'Rareté',
         'lbl_cost'      => 'Coût en mana',
+        'hideNonChoices' => 'Masquer les non-choix',
         'loading'       => 'Chargement…',
         'empty'         => 'Aucune carte correspondante n\'a plus d\'une illustration.',
         'loadError'     => 'Impossible de charger les illustrations alternatives.',
@@ -114,13 +116,18 @@ $uiLang = getUiLang();
             </button>
             <?php endforeach; ?>
         </div>
-        <div class="filter-row mb-0">
+        <div class="filter-row mb-2">
             <span class="filter-label"><?= h($txt['lbl_cost']) ?></span>
             <?php for ($c = 0; $c <= 6; $c++): ?>
             <button type="button" class="filter-toggle" data-filter="mainCost" data-value="<?= $c ?>">
                 <?= $c === 6 ? '6+' : $c ?>
             </button>
             <?php endfor; ?>
+        </div>
+        <div class="filter-row mb-0">
+            <button type="button" id="own-aa-hide-non-choices" class="filter-toggle" data-bool-filter="hideNonChoices">
+                <i class="fa-solid fa-eye-slash"></i> <?= h($txt['hideNonChoices']) ?>
+            </button>
         </div>
     </div>
 
