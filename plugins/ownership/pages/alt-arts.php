@@ -99,7 +99,7 @@ $uiLang = getUiLang();
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" class="filter-toggle" data-filter="faction" data-value="<?= h($fCode) ?>"
                     title="<?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>">
-                <img src="<?= h(BASE_URL) ?>/assets/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
+                <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
                 <?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>
             </button>
             <?php endforeach; ?>
@@ -108,7 +108,7 @@ $uiLang = getUiLang();
             <span class="filter-label"><?= h($txt['lbl_rarity']) ?></span>
             <?php foreach ($raritiesData as $rCode => $rData): ?>
             <button type="button" class="filter-toggle" data-filter="rarity" data-value="<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>">
-                <img src="<?= h(BASE_URL) ?>/assets/gems/<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>.png"
+                <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/gems/<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>.png"
                      alt="<?= h($rCode) ?>" style="width:15px;height:15px">
                 <?= h($rData[$uiLang] ?? $rData['en'] ?? $rCode) ?>
             </button>

@@ -386,7 +386,10 @@
     width: 110px;
     cursor: pointer;
 }
-.own-aa-tile img {
+/* Direct child only — .own-aa-tile also nests the marker <img>s one level deeper
+   inside .own-aa-markers, and a descendant selector here would out-specify
+   .own-aa-marker's own width and blow the markers up to the tile's full size. */
+.own-aa-tile > img {
     display: block;
     width: 100%;
     border-radius: 8px;
@@ -395,17 +398,17 @@
     transition: transform .12s;
     background: var(--neutral-100);
 }
-.own-aa-tile:hover img {
+.own-aa-tile:hover > img {
     transform: scale(1.03);
 }
 .own-aa-tile--unowned {
     cursor: not-allowed;
 }
-.own-aa-tile--unowned img {
+.own-aa-tile--unowned > img {
     opacity: .35;
     filter: grayscale(1);
 }
-.own-aa-tile--unowned:hover img {
+.own-aa-tile--unowned:hover > img {
     transform: none;
 }
 .own-aa-markers {

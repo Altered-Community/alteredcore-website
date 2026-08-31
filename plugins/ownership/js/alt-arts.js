@@ -153,7 +153,7 @@
         const header = document.createElement('div');
         header.className = 'own-aa-header';
         header.innerHTML =
-            '<img class="own-aa-faction-icon" src="' + escapeHtml(cfg.baseUrl + '/assets/faction/' + family.faction + '.png') + '" alt="' + escapeHtml(family.faction) + '">' +
+            '<img class="own-aa-faction-icon" src="' + escapeHtml(cfg.baseUrl + '/plugins/core-altered-cards/assets/faction/' + family.faction + '.png') + '" alt="' + escapeHtml(family.faction) + '">' +
             '<span class="own-aa-name">' + escapeHtml(family.name || family.reference) + '</span>' +
             (family.mainCost !== null && family.mainCost !== undefined
                 ? '<span class="own-aa-cost">' + escapeHtml(String(family.mainCost)) + '</span>' : '');
