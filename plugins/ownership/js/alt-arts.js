@@ -264,19 +264,32 @@
         throw new Error(t('saveError', 'Could not save your choice.'));
     };
 
+    // After a successful move, the active slot advances to the next one in sequence
+    // (wrapping around) so consecutive clicks on different cards spread across all the
+    // player's markers instead of always redirecting the same one. Explicitly clicking
+    // a marker still overrides this and pins that slot as the next to move.
+    const advanceActiveSlot = (state) => {
+        const idx = state.slots.findIndex((s) => s.slotIndex === state.activeSlot);
+        const next = state.slots[(idx + 1) % state.slots.length];
+        state.activeSlot = next.slotIndex;
+    };
+
     const moveActiveMarker = (groupKey, family, newRef) => {
         const state = groupStateByKey.get(groupKey);
         if (!state) return;
-        const slot = state.slots.find((s) => s.slotIndex === state.activeSlot);
+        const movedSlot = state.activeSlot;
+        const slot = state.slots.find((s) => s.slotIndex === movedSlot);
         if (!slot || slot.reference === newRef) return;
 
         const previousRef = slot.reference;
         slot.reference = newRef;
+        advanceActiveSlot(state);
         applyMarkers(groupKey);
         clearRowError(groupKey);
 
         saveGroup(groupKey, family).catch((err) => {
             slot.reference = previousRef;
+            state.activeSlot = movedSlot;
             applyMarkers(groupKey);
             showRowError(groupKey, err.message || t('saveError', 'Could not save your choice.'));
         });
