@@ -417,7 +417,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     <span><?= h($_csLblAdvanced) ?></span>
                     <span id="<?= h($_csP) ?>-adv-count" class="cs-filter-count" style="display:none"></span>
                 </button>
-                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
+                <?php if (!empty($_csPromoSets)): ?>
                 <label class="cs-switch" data-tabs="all ownership">
                     <input type="checkbox" id="<?= h($_csP) ?>-promo-toggle">
                     <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
@@ -464,7 +464,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
                 <!-- Promo options (shown when "show promo" is on; all-cards tab only).
                      Deckbuilder has no "show promo" toggle to reveal this, so skip it there. -->
-                <?php if ($_csMode !== 'deck' && !empty($_csPromoSets)): ?>
+                <?php if (!empty($_csPromoSets)): ?>
                 <div id="<?= h($_csP) ?>-promo-panel" class="cs-promo-panel mb-2" style="display:none">
                     <div class="cs-promo-variation mb-2">
                         <div class="filter-label mb-1"><?= h($_csTxt['lbl_variation'] ?? 'Variation') ?></div>
