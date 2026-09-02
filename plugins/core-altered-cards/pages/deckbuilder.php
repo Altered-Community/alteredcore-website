@@ -738,7 +738,8 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
         <button onclick="dbHeroClose()" class="db-hero-close-btn">×</button>
         <h3 class="db-hero-title"><?= h($txt['choose_hero']) ?></h3>
         <p class="db-hero-intro"><?= h($txt['wizard_hero_msg']) ?></p>
-        <div id="db-hero-factions">
+        <div class="db-hero-toolbar">
+            <div id="db-hero-factions">
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
                     class="db-faction-btn<?= $fCode === $_heroDefaultFaction ? ' active' : '' ?>"
@@ -748,6 +749,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 <span><?= h($fData[$uiLang] ?? $fData['en']) ?></span>
             </button>
             <?php endforeach; ?>
+        </div>
+        <label class="cs-switch db-hero-altarts" title="<?= h($txt['show_promo'] ?? 'Alt arts') ?>">
+            <input type="checkbox" id="db-hero-altarts-toggle">
+            <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+            <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($txt['show_promo'] ?? 'Alt arts') ?></span>
+        </label>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>
         <div id="db-hero-grid">
@@ -1016,6 +1023,8 @@ var AlteredDB = {
         'stay'           => $txt['stay'],
         'autosaved'      => $txt['autosaved'],
         'guest_saved_ok' => $txt['guest_saved_ok'],
+        'show_promo'     => $txt['show_promo'],
+        'lbl_variation'  => $txt['lbl_variation'],
     ]) ?>,
     rendererSrc: 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@main/altered-card-renderer-minified.js',
     existingDeck: <?= json_encode($existingDeck) ?>,
@@ -1055,6 +1064,9 @@ var AlteredDB = {
     subtypeOptionsJson:   <?= $subtypeOptionsJson ?>,
     keywordOptionsJson:   <?= $keywordOptionsJson ?>,
     variationOptionsJson: <?= $variationOptionsJson ?>,
+    // Flat list of every variation code, used by the hero picker's "Alt arts"
+    // toggle to broaden its fetch to all printings.
+    allVariations: <?= json_encode(array_column(json_decode($variationOptionsJson, true) ?: [], 'value')) ?>,
     defaultCollection:    <?= json_encode($defaultCollection) ?>,
 <?php
     // Promo set linking (main edition → its promo sub editions) + flat sub list.
@@ -2110,6 +2122,7 @@ var AlteredDB = {
     var _heroPrints = null;
 
     var elHeroConfirm = document.getElementById('db-hero-confirm');
+    var elHeroAltArts = document.getElementById('db-hero-altarts-toggle');
 
     // True while the creation dialog is up, from page load until the deck is
     // created or abandoned. The picker can open on top of it as a sub-dialog.
@@ -2137,6 +2150,21 @@ var AlteredDB = {
         var p = ref.split('_');
         return ((AlteredDB.subSets || []).indexOf(p[1] || '') !== -1 ? 2 : 0)
              + (p[2] === 'B' ? 0 : 1);
+    }
+
+    // Hero printing type from the card product slot (part[2]) of a reference:
+    // A = alt-art, B = booster/standard, P = promo. Serialized cards append _XXX
+    // but keep their product slot, so they fall under 'P'.
+    function heroPrinting(ref) {
+        var p = ref ? ref.split('_') : [];
+        return p[2] || '';
+    }
+
+    function heroPrintingLabel(printing) {
+        if (printing === 'A') return 'Alt art';
+        if (printing === 'B') return 'Standard';
+        if (printing === 'P') return 'Promo';
+        return 'Standard';
     }
 
     // Within a class, rank by chronological set order (AlteredDB.heroSets is
@@ -2178,6 +2206,13 @@ var AlteredDB = {
         return n === 0 ? 'ko' : (n === _bgaFormats.length ? 'ok' : 'partial');
     }
 
+    // True if a printing group (a hero's tile) contains the given reference. Used
+    // to land on the tile whose printing is already on the deck when alt-arts has
+    // split a hero into several variation tiles.
+    function groupContainsPrints(group, ref) {
+        return group.prints.some(function(pr) { return pr.ref === ref; });
+    }
+
     function heroPickSelect(group, tile) {
         _heroPick = {
             key:      group.key,
@@ -2213,6 +2248,14 @@ var AlteredDB = {
             document.getElementById('db-hero-modal').style.display = 'none';
             if (_wizardOpen) { dbNewRenderHero(); elNewModal.style.display = 'flex'; }
             else             { dbLockScroll(false); }
+        });
+    }
+
+    // "Alt arts" toggle: reloads the current faction's hero pool with the full
+    // variation set (or back to standard-only).
+    if (elHeroAltArts) {
+        elHeroAltArts.addEventListener('change', function() {
+            if (heroCurrFaction) dbLoadHeroes(heroCurrFaction);
         });
     }
 
@@ -2466,6 +2509,14 @@ var AlteredDB = {
             btn.classList.toggle('active', btn.dataset.faction === faction);
         });
 
+        // Variation pool: with "Alt arts" off (default) only the default variations
+        // (normally just standard) are returned; with it on, every variation is
+        // queried and each distinct variation printing becomes its own selectable tile.
+        var altArtsOn = elHeroAltArts.checked;
+        var activeVariations = altArtsOn
+            ? AlteredDB.allVariations
+            : AlteredDB.heroVariations.slice();
+
         // Build params for direct API call
         var heroParts = [
             'itemsPerPage=<?= CARDS_API_MAX_PER_PAGE ?>',
@@ -2473,8 +2524,17 @@ var AlteredDB = {
         ];
         AlteredDB.heroTypes.forEach(function(t)      { heroParts.push('cardType[]='       + encodeURIComponent(t)); });
         AlteredDB.heroRarities.forEach(function(r)   { heroParts.push('rarity[]='         + encodeURIComponent(r)); });
-        AlteredDB.heroSets.forEach(function(s)       { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
-        AlteredDB.heroVariations.forEach(function(v) { heroParts.push('variation[]='      + encodeURIComponent(v)); });
+        // With "Alt arts" off, only the main hero sets are queried. With it on, each
+        // of those sets also brings in its sub-editions (promo / collector booster /
+        // tournament packs), since those carry the extra alt-art and promo printings.
+        var heroSets = altArtsOn
+            ? AlteredDB.heroSets.concat(AlteredDB.heroSets.reduce(function(extra, s) {
+                  (AlteredDB.setChildren[s] || []).forEach(function(c) { if (extra.indexOf(c) === -1) extra.push(c); });
+                  return extra;
+              }, []))
+            : AlteredDB.heroSets;
+        heroSets.forEach(function(s)                 { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
+        activeVariations.forEach(function(v)         { heroParts.push('variation[]='      + encodeURIComponent(v)); });
         if (AlteredDB.heroSort1) {
             var _s1 = AlteredDB.heroSort1;
             if (_s1 === 'random') { heroParts.push('random=true'); }
@@ -2502,18 +2562,41 @@ var AlteredDB = {
                     grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
-                // Collapse printings into one entry per hero identity.
+                // Collapse printings into one entry per hero identity (stable key),
+                // or — when "Alt arts" is on — into one entry per distinct artwork so
+                // every non-standard printing is its own selectable tile. The printing
+                // is told apart by its card product (part[2]: A=alt-art, B=booster,
+                // P=promo) and its set (part[1], e.g. CORE vs DUSTERCB). Standard (B)
+                // printings are kept to a single representative tile per hero, but the
+                // set's promos/alt-arts stay separate (e.g. a DUSTERCB collector-booster
+                // promo is isolated from the same hero's CORE promo). (The cards API's
+                // `variation` field is always "standard" for these, so it can't split them.)
                 var groups = {};
+                var setLabels = {};
+                Object.keys(AlteredDB.sets || {}).forEach(function(k) {
+                    var s = AlteredDB.sets[k];
+                    setLabels[k] = (s && s[AlteredDB.lang]) || (s && s.en) || k;
+                });
                 allCards.forEach(function(card) {
                     var ref = card.reference || '';
                     if (!ref) return;
-                    var key = heroStableKey(ref);
+                    var setColon   = ref.split('_')[1] || '';
+                    var printing   = altArtsOn ? heroPrinting(ref) : '';
+                    // With "Alt arts" off, all printings share one tile per hero. With
+                    // it on, standard (B) printings also share one tile per hero, while
+                    // promo/alt-art/serialized printings are split by their set.
+                    var finalPrint = '';
+                    if (altArtsOn) finalPrint = printing === 'B' ? 'B' : (setColon + '|' + printing);
+                    var key = heroStableKey(ref) + (finalPrint ? '|' + finalPrint : '');
                     if (!groups[key]) {
+                        var setName = setLabels[setColon] || (card.set && card.set.name) || setColon;
                         groups[key] = {
-                            key:     key,
-                            name:    cardName(card),
-                            faction: (card.faction && card.faction.code) || factionFromRef(ref),
-                            prints:  [],
+                            key:       key,
+                            name:      cardName(card),
+                            faction:   (card.faction && card.faction.code) || factionFromRef(ref),
+                            printing:  printing,
+                            setName:   setName,
+                            prints:    [],
                         };
                     }
                     var known = groups[key].prints.some(function(pr) { return pr.ref === ref; });
@@ -2538,7 +2621,6 @@ var AlteredDB = {
                 });
                 list.sort(function(a, b) { return a.name.localeCompare(b.name, AlteredDB.lang) || (a.key < b.key ? -1 : 1); });
 
-                var currentKey = deck.hero ? heroStableKey(deck.hero.cardReference) : null;
                 list.forEach(function(g) {
                     var tile = document.createElement('div');
                     tile.className = 'db-hero-tile';
@@ -2556,6 +2638,18 @@ var AlteredDB = {
                     cap.textContent = g.name;
                     tile.appendChild(cap);
 
+                    // Printing badge: with "Alt arts" on, each distinct non-standard
+                    // printing is its own tile (labelled with artwork type + set); the
+                    // aggregated standard tile is labelled just "Standard".
+                    if (altArtsOn) {
+                        var vTag = document.createElement('div');
+                        vTag.className = 'db-hero-tile-variation';
+                        vTag.textContent = g.printing === 'B'
+                            ? 'Standard'
+                            : heroPrintingLabel(g.printing) + ' · ' + g.setName;
+                        tile.appendChild(vTag);
+                    }
+
                     // Heroes unusable on BGA stay pickable — theory crafting is
                     // allowed — but say so up front.
                     if (g.bgaState !== 'ok') {
@@ -2570,8 +2664,10 @@ var AlteredDB = {
                     tile.addEventListener('click', function() { heroPickSelect(g, tile); });
                     grid.appendChild(tile);
 
-                    // Re-opening the picker lands on the hero already in the deck.
-                    if (currentKey && g.key === currentKey) heroPickSelect(g, tile);
+                    // Re-opening the picker lands on the hero already in the deck —
+                    // matched by reference, since alt-arts may split one hero into
+                    // several variation tiles.
+                    if (deck.hero && groupContainsPrints(g, deck.hero.cardReference)) heroPickSelect(g, tile);
                 });
             })
             .catch(function(err) {
