@@ -230,10 +230,29 @@
         return playerDecks;
     }
 
+    /* ── Preload standard card images during page load ─────────────────── */
+    function preloadCardImages() {
+        var urls = [];
+        Object.keys(playerDecks).forEach(function (pid) {
+            (playerDecks[pid].deck || []).forEach(function (c) {
+                var ref = c.reference;
+                if (!ref) return;
+                var url = cardImgUrl(ref, TR_LANG);
+                if (urls.indexOf(url) === -1) urls.push(url);
+            });
+        });
+        urls.forEach(function (url) {
+            var img = new Image();
+            img.src = url;
+        });
+    }
+
     /* ── Render tournament ──────────────────────────────────────────────── */
     function renderTournament(data) {
         currentData = data;
         playerDecks = buildPlayerDecks(data.games || []);
+
+        preloadCardImages();
 
         document.getElementById('tr-tournament-name').textContent = data.tournamentName || ('Tournament #' + data.tournamentId);
 
@@ -356,13 +375,16 @@
                 else if (i === 2) posClass = ' tr-ranking-pos-3';
                 var hasDeck = p.player_id && playerDecks[p.player_id];
                 var deck = hasDeck ? playerDecks[p.player_id] : null;
+                // Only open the side panel when there is a real decklist
+                // (more than just the hero card).
+                var hasDecklist = hasDeck && (deck.deck || []).length > 1;
                 var hero = deck ? heroName(deck) : '';
                 var fSrc = deck ? factionImgUrl(deck.faction) : '';
                 html += '<tr class="tr-rank-row">';
                 html += '<td class="tr-ranking-pos' + posClass + '">';
                 html += '<span class="tr-rank-position">' + (i + 1) + '</span>';
                 html += '</td>';
-                html += '<td >' + (hasDeck
+                html += '<td >' + (hasDecklist
                     ? '<button type="button" class="tr-player-link" data-player-id="' + esc(p.player_id) + '">' + esc(p.player_name) + '</button>'
                     : esc(p.player_name));
                 html += '</td>';

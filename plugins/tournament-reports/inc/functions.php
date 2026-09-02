@@ -106,6 +106,115 @@ function trSaveTournament(array $apiData, int $createdBy = 0): int
 }
 
 /**
+ * Parse a paste-friendly Altered decklist (one "<qty> <reference>" per line)
+ * into a structured array.
+ *
+ * @return array{ok: bool, deck: array<int, array{reference: string, quantity: int}>, errors: array<string>}
+ */
+function parseDecklistText(string $text): array
+{
+    $deck   = [];
+    $errors = [];
+    $lines  = preg_split('/\r\n|\r|\n/', $text);
+    if ($lines === false) $lines = [];
+
+    foreach ($lines as $i => $line) {
+        $line = trim((string)$line);
+        if ($line === '') continue;
+        if (!preg_match('/^(\d+)\s+(\S+)$/', $line, $m)) {
+            $errors[] = 'Line ' . ($i + 1) . ': ' . $line;
+            continue;
+        }
+        $deck[] = ['reference' => $m[2], 'quantity' => (int)$m[1]];
+    }
+
+    return ['ok' => empty($errors), 'deck' => $deck, 'errors' => $errors];
+}
+
+/**
+ * Insert a manually-created tournament. Builds games_data in the same shape
+ * the tournament page and ranking extraction expect, then reuses the upsert.
+ *
+ * @param array $data {
+ *   tournament_name, optional tournament_id, format, optional localization,
+ *   optional description, players: array<int, array{name, optional faction, optional id, optional decklist}>
+ * }
+ */
+function trManualSaveTournament(array $data, int $createdBy = 0): int
+{
+    global $db;
+
+    $tournamentName = (string)($data['tournament_name'] ?? '');
+    $tournamentId   = (string)($data['tournament_id'] ?? '');
+    if ($tournamentId === '') {
+        $tournamentId = 'manual-' . gmdate('YmdHis') . '-' . substr((string)uniqid(), -4);
+    }
+
+    $endGamePlayers = [];
+    foreach (($data['players'] ?? []) as $p) {
+        $name = (string)($p['name'] ?? '');
+        if ($name === '') continue;
+
+        $playerId = (string)($p['id'] ?? '');
+        if ($playerId === '') {
+            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', '-', $name), '-'));
+            $playerId = $slug !== '' ? $slug : 'player-' . count($endGamePlayers);
+        }
+
+        $deck = ($p['deck'] ?? []);
+        if (!is_array($deck)) $deck = [];
+
+        $endGamePlayers[] = [
+            'id'           => $playerId,
+            'name'         => $name,
+            'faction'      => (string)($p['faction'] ?? ''),
+            'deck'         => $deck,
+            'playedCards'  => [],
+        ];
+    }
+
+    $gamesData = [
+        'tournamentId'    => $tournamentId,
+        'tournamentName'  => $tournamentName,
+        'totalGames'      => 1,
+        'localization'    => (string)($data['localization'] ?? ''),
+        'description'     => (string)($data['description'] ?? ''),
+        'games'           => [[
+            'format'          => (string)($data['format'] ?? ''),
+            'receivedAt'      => (string)($data['date'] ?? ''),
+            'endGamePlayers'  => $endGamePlayers,
+        ]],
+    ];
+
+    $localization = (string)($data['localization'] ?? '');
+    $description  = (string)($data['description'] ?? '');
+
+    $stmt = $db->prepare(qp(
+        "INSERT INTO {tournaments}
+            (tournament_id, tournament_name, total_games, games_data, localization, description, created_by)
+         VALUES (:tid, :tn, :tg, :gd, :loc, :desc, :cb)
+         ON DUPLICATE KEY UPDATE
+            tournament_name = VALUES(tournament_name),
+            total_games     = VALUES(total_games),
+            games_data      = VALUES(games_data),
+            localization    = VALUES(localization),
+            description     = VALUES(description),
+            fetched_at      = CURRENT_TIMESTAMP"
+    ));
+    $stmt->execute([
+        ':tid'  => $tournamentId,
+        ':tn'   => $tournamentName,
+        ':tg'   => 1,
+        ':gd'   => json_encode($gamesData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ':loc'  => $localization,
+        ':desc' => $description,
+        ':cb'   => $createdBy,
+    ]);
+
+    return (int)$db->lastInsertId();
+}
+
+/**
  * Delete a tournament by DB id.
  */
 function trDeleteTournament(int $id): bool

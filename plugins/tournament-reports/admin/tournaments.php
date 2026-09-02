@@ -32,6 +32,29 @@ $txt = [
         'delete'        => 'Delete',
         'delete_confirm'=> 'Delete this tournament and all its data?',
         'empty'         => 'No tournaments stored yet. Fetch one above.',
+        'create_title'      => 'Create tournament (manual)',
+        'create_subtitle'   => 'Add a tournament and its players directly, without fetching from the API.',
+        'create_toggle'     => 'Create manually',
+        'create_lbl_name'   => 'Tournament name',
+        'create_lbl_id'     => 'External ID (optional)',
+        'create_id_help'    => 'Used as the page URL key. Leave empty to auto-generate.',
+        'create_lbl_format' => 'Format',
+        'create_lbl_date'   => 'Date',
+        'create_lbl_loc'    => 'Localization',
+        'create_lbl_desc'   => 'Description',
+        'create_players'    => 'Players',
+        'create_add_player' => 'Add player',
+        'create_player_name'=> 'Player name',
+        'create_player_faction' => 'Faction',
+        'create_decklist_ph'=> '1 ALT_CORE_B_LY_03_C',
+        'create_decklist'   => 'Decklist — one "qty reference" per line',
+        'create_remove_player' => 'Remove player',
+        'create_btn'        => 'Create tournament',
+        'create_success'    => 'Tournament created successfully.',
+        'create_need_player'=> 'Please add at least one player.',
+        'create_need_name'  => 'Please enter a tournament name.',
+        'create_deck_error' => 'Invalid decklist for player "%s": %s',
+        'create_id_exists'  => 'A tournament with this ID already exists.',
     ],
     'fr' => [
         'title'         => 'Tournois',
@@ -62,6 +85,29 @@ $txt = [
         'delete'        => 'Supprimer',
         'delete_confirm'=> 'Supprimer ce tournoi et toutes ses données ?',
         'empty'         => 'Aucun tournoi enregistré. Récupérez-en un ci-dessus.',
+        'create_title'      => 'Créer un tournoi (manuel)',
+        'create_subtitle'   => 'Ajoutez un tournoi et ses joueurs directement, sans récupération via l\'API.',
+        'create_toggle'     => 'Créer manuellement',
+        'create_lbl_name'   => 'Nom du tournoi',
+        'create_lbl_id'     => 'ID externe (facultatif)',
+        'create_id_help'    => 'Utilisé comme clé d\'URL de la page. Laissez vide pour auto-générer.',
+        'create_lbl_format' => 'Format',
+        'create_lbl_date'   => 'Date',
+        'create_lbl_loc'    => 'Localisation',
+        'create_lbl_desc'   => 'Description',
+        'create_players'    => 'Joueurs',
+        'create_add_player' => 'Ajouter un joueur',
+        'create_player_name'=> 'Nom du joueur',
+        'create_player_faction' => 'Faction',
+        'create_decklist_ph'=> '1 ALT_CORE_B_LY_03_C',
+        'create_decklist'   => 'Decklist — une « quantité référence » par ligne',
+        'create_remove_player' => 'Supprimer le joueur',
+        'create_btn'        => 'Créer le tournoi',
+        'create_success'    => 'Tournoi créé avec succès.',
+        'create_need_player'=> 'Veuillez ajouter au moins un joueur.',
+        'create_need_name'  => 'Veuillez saisir un nom de tournoi.',
+        'create_deck_error' => 'Decklist invalide pour le joueur « %s » : %s',
+        'create_id_exists'  => 'Un tournoi avec cet ID existe déjà.',
     ],
 ][getUiLang()] ?? [];
 
@@ -126,6 +172,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
     }
+
+    // Create manual tournament
+    if (isset($_POST['create_manual_tournament'])) {
+        $name = trim($_POST['tournament_name'] ?? '');
+        if ($name === '') {
+            flash($txt['create_need_name'], 'error');
+            redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+        }
+
+        $playersJson = $_POST['players'] ?? '[]';
+        $players     = json_decode($playersJson, true);
+        if (!is_array($players)) $players = [];
+        $players = array_values(array_filter($players, fn($p) => trim((string)($p['name'] ?? '')) !== ''));
+
+        if (empty($players)) {
+            flash($txt['create_need_player'], 'error');
+            redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+        }
+
+        // Build players with parsed decks; collect any malformed decklist lines.
+        $builtPlayers = [];
+        foreach ($players as $p) {
+            $playerName = trim((string)($p['name'] ?? ''));
+            $deckText   = (string)($p['decklist'] ?? '');
+            $parsed     = parseDecklistText($deckText);
+            if (!$parsed['ok']) {
+                flash(sprintf($txt['create_deck_error'], $playerName, implode('; ', $parsed['errors'])), 'error');
+                redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+            }
+            $builtPlayers[] = [
+                'name'    => $playerName,
+                'faction' => trim((string)($p['faction'] ?? '')),
+                'deck'    => $parsed['deck'],
+            ];
+        }
+
+        $userId   = (int)($_SESSION['user_id'] ?? 0);
+        $manualId = trim($_POST['tournament_id'] ?? '');
+
+        // Reject duplicate manual id instead of silently overwriting.
+        if ($manualId !== '') {
+            $exists = $db->prepare(qp("SELECT id FROM {tournaments} WHERE tournament_id = :tid"));
+            $exists->execute([':tid' => $manualId]);
+            if ($exists->fetchColumn()) {
+                flash($txt['create_id_exists'], 'error');
+                redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+            }
+        }
+
+        trManualSaveTournament([
+            'tournament_name' => $name,
+            'tournament_id'   => $manualId,
+            'format'          => trim($_POST['format'] ?? ''),
+            'date'            => trim($_POST['date'] ?? ''),
+            'localization'    => trim($_POST['localization'] ?? ''),
+            'description'     => trim($_POST['description'] ?? ''),
+            'players'         => $builtPlayers,
+        ], $userId);
+
+        flash($txt['create_success']);
+        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+    }
 }
 
 // ── Fetch list ───────────────────────────────────────────────────────────────
@@ -150,6 +258,65 @@ $tournaments = trGetTournaments();
         <button type="submit" name="fetch_tournament" class="btn btn-primary-altered">
             <i class="fa-solid fa-download me-1"></i><?= h($txt['fetch_btn']) ?>
         </button>
+    </form>
+</div>
+
+<!-- Create tournament (manual) -->
+<div class="card-altered p-4 mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <h5 class="mb-0"><i class="fa-solid fa-plus me-2"></i><?= h($txt['create_title']) ?></h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="tr-manual-toggle">
+            <i class="fa-solid fa-chevron-down me-1"></i><?= h($txt['create_toggle']) ?>
+        </button>
+    </div>
+    <p class="text-muted small mb-3"><?= h($txt['create_subtitle']) ?></p>
+
+    <form method="post" id="tr-manual-form" style="display:none">
+        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+        <input type="hidden" name="players" id="tr-manual-players-json">
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_name']) ?> *</label>
+                <input type="text" name="tournament_name" class="form-control" required value="">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_id']) ?></label>
+                <input type="text" name="tournament_id" class="form-control" value="">
+                <div class="form-text"><?= $txt['create_id_help'] ?></div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_format']) ?></label>
+                <input type="text" name="format" class="form-control" value="">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_date']) ?></label>
+                <input type="datetime-local" name="date" class="form-control" value="">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_loc']) ?></label>
+                <input type="text" name="localization" class="form-control" value="">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small"><?= h($txt['create_lbl_desc']) ?></label>
+                <input type="text" name="description" class="form-control" value="">
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0"><?= h($txt['create_players']) ?></h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="tr-manual-add-player">
+                <i class="fa-solid fa-user-plus me-1"></i><?= h($txt['create_add_player']) ?>
+            </button>
+        </div>
+
+        <div id="tr-manual-players"></div>
+
+        <div class="mt-3">
+            <button type="submit" name="create_manual_tournament" class="btn btn-primary-altered">
+                <i class="fa-solid fa-check me-1"></i><?= h($txt['create_btn']) ?>
+            </button>
+        </div>
     </form>
 </div>
 
@@ -294,4 +461,85 @@ document.addEventListener('click', function(e) {
         document.getElementById('tr-desc-form-' + tid).classList.add('d-none');
     }
 });
+</script>
+
+<script>
+(function () {
+    var TXT = <?= json_encode([
+        'pname_label'  => $txt['create_player_name'],
+        'pname_ph'     => 'e.g. Alice',
+        'pfaction_label'=> $txt['create_player_faction'],
+        'pfaction_ph'  => 'e.g. LY',
+        'remove_title' => $txt['create_remove_player'],
+        'deck_label'   => $txt['create_decklist'],
+        'deck_ph'      => $txt['create_decklist_ph'],
+    ], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+
+    var form      = document.getElementById('tr-manual-form');
+    var container = document.getElementById('tr-manual-players');
+    var addBtn    = document.getElementById('tr-manual-add-player');
+    var toggleBtn = document.getElementById('tr-manual-toggle');
+    var playersJson = document.getElementById('tr-manual-players-json');
+    var playerSeq = 0;
+
+    function playerRow() {
+        var seq = playerSeq++;
+        var div = document.createElement('div');
+        div.className = 'tr-manual-player border rounded p-3 mb-3';
+        div.dataset.seq = seq;
+        div.innerHTML =
+            '<div class="row g-2 mb-2 align-items-end">' +
+                '<div class="col-md-4">' +
+                    '<label class="form-label fw-semibold small">' + TXT.pname_label + '</label>' +
+                    '<input type="text" class="form-control tr-manual-pname" placeholder="' + TXT.pname_ph + '">' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label fw-semibold small">' + TXT.pfaction_label + '</label>' +
+                    '<input type="text" class="form-control tr-manual-pfaction" placeholder="' + TXT.pfaction_ph + '">' +
+                '</div>' +
+                '<div class="col-md-3"></div>' +
+                '<div class="col-md-2 text-end">' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger tr-manual-remove" title="' + TXT.remove_title + '">' +
+                        '<i class="fa-solid fa-xmark"></i>' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="row g-2">' +
+                '<div class="col-12">' +
+                    '<label class="form-label fw-semibold small">' + TXT.deck_label + '</label>' +
+                    '<textarea class="form-control tr-manual-decklist font-monospace" rows="6" placeholder="' + TXT.deck_ph + '"></textarea>' +
+                '</div>' +
+            '</div>';
+        return div;
+    }
+
+    addBtn.addEventListener('click', function () {
+        container.appendChild(playerRow());
+    });
+
+    container.addEventListener('click', function (e) {
+        var btn = e.target.closest('.tr-manual-remove');
+        if (btn) btn.closest('.tr-manual-player').remove();
+    });
+
+    toggleBtn.addEventListener('click', function () {
+        var hidden = form.style.display === 'none';
+        form.style.display = hidden ? '' : 'none';
+        toggleBtn.querySelector('i').className = 'fa-solid me-1 ' + (hidden ? 'fa-chevron-up' : 'fa-chevron-down');
+    });
+
+    form.addEventListener('submit', function () {
+        var players = [];
+        container.querySelectorAll('.tr-manual-player').forEach(function (row) {
+            var name = row.querySelector('.tr-manual-pname').value.trim();
+            if (!name) return;
+            players.push({
+                name:     name,
+                faction:  row.querySelector('.tr-manual-pfaction').value.trim(),
+                decklist: row.querySelector('.tr-manual-decklist').value
+            });
+        });
+        playersJson.value = JSON.stringify(players);
+    });
+})();
 </script>
