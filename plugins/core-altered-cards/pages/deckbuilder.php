@@ -2524,7 +2524,16 @@ var AlteredDB = {
         ];
         AlteredDB.heroTypes.forEach(function(t)      { heroParts.push('cardType[]='       + encodeURIComponent(t)); });
         AlteredDB.heroRarities.forEach(function(r)   { heroParts.push('rarity[]='         + encodeURIComponent(r)); });
-        AlteredDB.heroSets.forEach(function(s)       { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
+        // With "Alt arts" off, only the main hero sets are queried. With it on, each
+        // of those sets also brings in its sub-editions (promo / collector booster /
+        // tournament packs), since those carry the extra alt-art and promo printings.
+        var heroSets = altArtsOn
+            ? AlteredDB.heroSets.concat(AlteredDB.heroSets.reduce(function(extra, s) {
+                  (AlteredDB.setChildren[s] || []).forEach(function(c) { if (extra.indexOf(c) === -1) extra.push(c); });
+                  return extra;
+              }, []))
+            : AlteredDB.heroSets;
+        heroSets.forEach(function(s)                 { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
         activeVariations.forEach(function(v)         { heroParts.push('variation[]='      + encodeURIComponent(v)); });
         if (AlteredDB.heroSort1) {
             var _s1 = AlteredDB.heroSort1;
@@ -2554,24 +2563,33 @@ var AlteredDB = {
                     return;
                 }
                 // Collapse printings into one entry per hero identity (stable key),
-                // or — when "Alt arts" is on — into one entry per hero identity ×
-                // printing type so each distinct artwork is its own selectable tile.
-                // Hero printings are told apart by their card product (part[2]):
-                // A = alt-art, B = booster/standard, P = promo; serialized cards
-                // carry a trailing _XXX. (The cards API's `variation` field is
-                // "standard" for all of these, so it can't be used to split them.)
+                // or — when "Alt arts" is on — into one entry per distinct printing
+                // so every artwork is its own selectable tile. The printing is told
+                // apart by its card product (part[2]: A=alt-art, B=booster, P=promo)
+                // and its set (part[1], e.g. CORE vs DUSTERCB), isolating e.g. a
+                // DUSTERCB collector-booster promo from the same hero's CORE promo.
+                // (The cards API's `variation` field is always "standard" for these,
+                // so it can't be used to split them.)
                 var groups = {};
+                var setLabels = {};
+                Object.keys(AlteredDB.sets || {}).forEach(function(k) {
+                    var s = AlteredDB.sets[k];
+                    setLabels[k] = (s && s[AlteredDB.lang]) || (s && s.en) || k;
+                });
                 allCards.forEach(function(card) {
                     var ref = card.reference || '';
                     if (!ref) return;
-                    var printing = altArtsOn ? heroPrinting(ref) : '';
-                    var key = heroStableKey(ref) + (printing ? '|' + printing : '');
+                    var setColon   = ref.split('_')[1] || '';
+                    var printing   = altArtsOn ? heroPrinting(ref) : '';
+                    var key = heroStableKey(ref) + (printing && altArtsOn ? ('|' + setColon + '|' + printing) : '');
                     if (!groups[key]) {
+                        var setName = setLabels[setColon] || (card.set && card.set.name) || setColon;
                         groups[key] = {
                             key:       key,
                             name:      cardName(card),
                             faction:   (card.faction && card.faction.code) || factionFromRef(ref),
                             printing:  printing,
+                            setName:   setName,
                             prints:    [],
                         };
                     }
@@ -2614,13 +2632,13 @@ var AlteredDB = {
                     cap.textContent = g.name;
                     tile.appendChild(cap);
 
-                    // Printing badge: with "Alt arts" on each printing type of a hero
-                    // is a separate tile, so the artwork (Standard / Alt art / Promo)
-                    // is labelled on the tile.
+                    // Printing badge: with "Alt arts" on, every distinct printing is
+                    // its own tile, labelled with the artwork type (Standard / Alt
+                    // art / Promo) and its set so the specific printing is identifiable.
                     if (altArtsOn) {
                         var vTag = document.createElement('div');
                         vTag.className = 'db-hero-tile-variation';
-                        vTag.textContent = heroPrintingLabel(g.printing);
+                        vTag.textContent = heroPrintingLabel(g.printing) + ' · ' + g.setName;
                         tile.appendChild(vTag);
                     }
 
