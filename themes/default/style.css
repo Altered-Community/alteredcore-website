@@ -215,8 +215,10 @@ a:hover { color: var(--primary-400); }
 }
 
 /* Caret-only dropdown (no icon, hidden label) glued next to the item before it,
-   so "CARDS ▾" reads as one control instead of two separated pills */
-.altered-navbar .navbar-nav .nav-item:has(+ .nav-item-caret-only) .nav-link {
+   so "CARDS ▾" reads as one control instead of two separated pills.
+   nav-item-glue-next is set on the preceding item by nav.php (not :has(),
+   for browsers that don't support the relational selector). */
+.altered-navbar .navbar-nav .nav-item-glue-next .nav-link {
     padding-right: 0.35rem;
 }
 .altered-navbar .navbar-nav .nav-item-caret-only {
