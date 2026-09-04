@@ -338,6 +338,13 @@
 .db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
 [data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
 
+/* Deckbuilder per-card illustration picker (#db-card-modal) -- reuses .db-hero-tile
+   for the tile itself, since the visual treatment (selected border, hover zoom) is
+   identical, but never disables a tile: unlike the Alt Arts BGA preference page, the
+   deckbuilder must never block picking an illustration the player doesn't own yet. */
+#db-art-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.db-art-tile--unowned { opacity:.45; }
+
 .db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
 
 /* Board Game Arena availability — an attribute of the format and of the hero */

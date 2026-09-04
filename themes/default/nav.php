@@ -88,7 +88,8 @@ if (!function_exists('__nav_active')) {
                         </li>
                         <?php endif; ?>
                     <?php elseif (!empty($__ni['children'])): ?>
-                        <li class="nav-item dropdown">
+                        <?php $__niCaretOnly = empty($__ni['icon']) && !empty($__ni['hide_label']); ?>
+                        <li class="nav-item dropdown<?= $__niCaretOnly ? ' nav-item-caret-only' : '' ?>">
                             <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                                data-bs-toggle="dropdown" aria-expanded="false"
                                <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
