@@ -3,7 +3,7 @@
 
 // External tournament API base URL.
 // Set this to the base URL of the tournament results API.
-// The endpoint pattern is: {TOURNAMENTS_API_URL}/tournaments/{tournamentId}
+// The endpoint pattern is: {TOURNAMENTS_API_URL}/api/tournament-report?tournamentId={tournamentId}
 // Change this value or override it via Admin → Tournament Settings.
 if (!defined('TOURNAMENTS_API_URL')) {
     define('TOURNAMENTS_API_URL', '');
