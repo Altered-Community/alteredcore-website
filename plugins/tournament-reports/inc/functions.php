@@ -287,7 +287,7 @@ function trFetchTournament(string $tournamentId): array
     }
 
     $userId = (int)($_SESSION['user_id'] ?? 0);
-    $token  = $userId ? kc_get_access_token($userId) : false;
+    $token  = kc_get_access_token($userId);
     if (!$token) {
         return ['ok' => false, 'error' => 'You must be logged in to fetch a tournament.'];
     }
