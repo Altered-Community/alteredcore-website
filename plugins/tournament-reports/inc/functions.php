@@ -285,11 +285,21 @@ function trFetchTournament(string $tournamentId): array
     if ($apiUrl === '') {
         return ['ok' => false, 'error' => 'Tournament API URL is not configured.'];
     }
+
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $token  = $userId ? kc_get_access_token($userId) : false;
+    if (!$token) {
+        return ['ok' => false, 'error' => 'You must be logged in to fetch a tournament.'];
+    }
+
     $url = $apiUrl . '/tournaments/' . rawurlencode($tournamentId);
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+        CURLOPT_HTTPHEADER     => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $token,
+        ],
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_FOLLOWLOCATION => true,
     ]);
