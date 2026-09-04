@@ -201,6 +201,9 @@ a:hover { color: var(--primary-400); }
 @media (min-width: 768px) {
     .altered-navbar .nav-link { flex-direction: row; gap: 0.4rem; }
     .navbar-site-name { display: inline !important; }
+    /* Cancels the navbar-nav gap-1 between a caret-only dropdown and the item before
+       it — desktop only, so it doesn't shift icons in the mobile-compact icon strip. */
+    .altered-navbar .navbar-nav .nav-item-caret-only { margin-left: -0.25rem; }
 }
 .altered-navbar .nav-link:hover,
 .altered-navbar .nav-link.active {
@@ -220,9 +223,6 @@ a:hover { color: var(--primary-400); }
    for browsers that don't support the relational selector). */
 .altered-navbar .navbar-nav .nav-item-glue-next .nav-link {
     padding-right: 0.35rem;
-}
-.altered-navbar .navbar-nav .nav-item-caret-only {
-    margin-left: -0.25rem;
 }
 .altered-navbar .navbar-nav .nav-item-caret-only .dropdown-toggle {
     padding-left: 0.15rem;

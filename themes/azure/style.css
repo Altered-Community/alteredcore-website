@@ -1326,9 +1326,6 @@ html { transition: background-color 0.25s, color 0.25s; }
 .az-nav-list .nav-item-glue-next .nav-link {
     padding-right: 0.35rem;
 }
-.az-nav-list .nav-item-caret-only {
-    margin-left: -0.25rem;
-}
 .az-nav-list .nav-item-caret-only .dropdown-toggle {
     padding-left: 0.15rem;
     padding-right: 0.75rem;
