@@ -161,7 +161,7 @@ if (!function_exists('__nav_active')) {
     <div class="az-navband<?= $__mobileCompact ? '' : ' collapse' ?>" id="azNav">
         <div class="az-navband-inner">
             <ul class="navbar-nav az-nav-list d-flex flex-row">
-                <?php foreach ($__navItems as $__ni):
+                <?php foreach ($__navItems as $__niIndex => $__ni):
                     $__niActive = empty($__ni['is_sidebar_toggle']) && __nav_active($__ni, $currentPage, $__iframeNavId);
                     if (!$__niActive && !empty($__ni['children'])) {
                         foreach ($__ni['children'] as $__nc) {
@@ -170,10 +170,16 @@ if (!function_exists('__nav_active')) {
                             }
                         }
                     }
+                    $__niNext = $__navItems[$__niIndex + 1] ?? null;
+                    $__glueNext = $__niNext !== null
+                        && !empty($__niNext['children'])
+                        && empty($__niNext['icon'])
+                        && !empty($__niNext['hide_label'])
+                        ? ' nav-item-glue-next' : '';
                 ?>
                 <?php if (!empty($__ni['is_sidebar_toggle'])): ?>
                     <?php if ($__sidebarBtnPos === 'nav'): ?>
-                    <li class="nav-item">
+                    <li class="nav-item<?= $__glueNext ?>">
                         <button type="button" data-sidebar-toggle
                                 class="nav-link"
                                 <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
@@ -185,7 +191,8 @@ if (!function_exists('__nav_active')) {
                     </li>
                     <?php endif; ?>
                 <?php elseif (!empty($__ni['children'])): ?>
-                    <li class="nav-item dropdown">
+                    <?php $__niCaretOnly = empty($__ni['icon']) && !empty($__ni['hide_label']); ?>
+                    <li class="nav-item dropdown<?= $__niCaretOnly ? ' nav-item-caret-only' : '' ?><?= $__glueNext ?>">
                         <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                            data-bs-toggle="dropdown" aria-expanded="false"
                            <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
@@ -210,7 +217,7 @@ if (!function_exists('__nav_active')) {
                         </ul>
                     </li>
                 <?php else: ?>
-                    <li class="nav-item">
+                    <li class="nav-item<?= $__glueNext ?>">
                         <a href="<?= h(__nav_href($__ni)) ?>"
                            class="nav-link <?= $__niActive ? 'active' : '' ?>"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>

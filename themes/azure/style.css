@@ -1320,6 +1320,20 @@ html { transition: background-color 0.25s, color 0.25s; }
     border-top-color: rgba(255, 255, 255, 0.75);
 }
 
+/* Caret-only dropdown (no icon, hidden label) glued next to the item before it,
+   so e.g. "CARDS ▾" reads as one control instead of two separated pills.
+   nav-item-glue-next / nav-item-caret-only are set by nav.php. */
+.az-nav-list .nav-item-glue-next .nav-link {
+    padding-right: 0.35rem;
+}
+.az-nav-list .nav-item-caret-only {
+    margin-left: -0.25rem;
+}
+.az-nav-list .nav-item-caret-only .dropdown-toggle {
+    padding-left: 0.15rem;
+    padding-right: 0.75rem;
+}
+
 /* Hide theme toggle and language selector from topbar on mobile — they appear in the footer */
 @media (max-width: 767.98px) {
     .az-topbar-controls #header-theme-toggle,
