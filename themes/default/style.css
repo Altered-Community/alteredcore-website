@@ -214,6 +214,19 @@ a:hover { color: var(--primary-400); }
     display: none;
 }
 
+/* Caret-only dropdown (no icon, hidden label) glued next to the item before it,
+   so "CARDS ▾" reads as one control instead of two separated pills */
+.altered-navbar .navbar-nav .nav-item:has(+ .nav-item-caret-only) .nav-link {
+    padding-right: 0.35rem;
+}
+.altered-navbar .navbar-nav .nav-item-caret-only {
+    margin-left: -0.25rem;
+}
+.altered-navbar .navbar-nav .nav-item-caret-only .dropdown-toggle {
+    padding-left: 0.15rem;
+    padding-right: 0.5rem;
+}
+
 .btn-lang {
     font-size: 0.8rem;
     font-weight: 600;
