@@ -15,7 +15,7 @@
 /* White reticle sits over the live camera feed; overflow:hidden on the wrap confines
    the dimming shadow to the video only, so it works on any page background. */
 #cs-reticle          { position: absolute; inset: 14%; border: 2px solid rgba(255, 255, 255, .85);
-                       border-radius: 12px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .28);
+                       box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .28);
                        pointer-events: none; transition: border-color .15s, box-shadow .15s; }
 #cs-reticle.cs-flash { border-color: #46d17a; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .28), 0 0 18px 2px rgba(70, 209, 122, .6); }
 @media (max-width: 600px) {

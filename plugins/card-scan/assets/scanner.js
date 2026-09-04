@@ -161,9 +161,11 @@
         var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
         var any = false;
         if (caps && caps.zoom && caps.zoom.max > caps.zoom.min) {
-            var cur = (track.getSettings && track.getSettings().zoom) || caps.zoom.min;
             zoom = { min: caps.zoom.min, max: caps.zoom.max,
-                     step: caps.zoom.step || (caps.zoom.max - caps.zoom.min) / 10, value: cur };
+                     step: caps.zoom.step || (caps.zoom.max - caps.zoom.min) / 10, value: caps.zoom.min };
+            // Start slightly zoomed in (rather than the native min) so the QR fills
+            // more of the frame without the user having to move the phone closer.
+            applyZoom(caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25);
             el.zoomIn.style.display = el.zoomOut.style.display = '';
             any = true;
         } else {
@@ -176,12 +178,20 @@
     }
 
     // ── Scan loop ───────────────────────────────────────────────────────
+    // Only decode the area inside the visible reticle: keeps this in sync with
+    // #cs-reticle's `inset: 14%` in scanner.css. Cropping to that region means
+    // less image for jsQR to process each frame and a proportionally bigger QR
+    // within it, instead of hunting across the full (mostly irrelevant) frame.
+    var RETICLE_INSET = 0.14;
     function tick() {
         if (!S) return;
         if (!busy && el.video.readyState === el.video.HAVE_ENOUGH_DATA) {
-            canvas.width  = el.video.videoWidth;
-            canvas.height = el.video.videoHeight;
-            ctx.drawImage(el.video, 0, 0);
+            var vw = el.video.videoWidth, vh = el.video.videoHeight;
+            var mx = vw * RETICLE_INSET, my = vh * RETICLE_INSET;
+            var cw = vw - 2 * mx, ch = vh - 2 * my;
+            canvas.width  = cw;
+            canvas.height = ch;
+            ctx.drawImage(el.video, mx, my, cw, ch, 0, 0, cw, ch);
             var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
             var code = window.jsQR ? jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' }) : null;
             if (code) { onDecode(code.data); }
@@ -239,12 +249,25 @@
             raf = requestAnimationFrame(tick);
         }, { once: true });
     }
+    // Higher capture resolution means more pixels land on the QR code at a given
+    // distance, so the user doesn't have to get close enough to trigger autofocus
+    // hunting (the blur while the camera refocuses for macro range). focusMode is
+    // an optional/advanced constraint: unsupported browsers (e.g. iOS Safari) just
+    // ignore it instead of failing the whole request.
+    var VIDEO_CONSTRAINTS = {
+        width:    { ideal: 1920 },
+        height:   { ideal: 1080 },
+        advanced: [{ focusMode: 'continuous' }],
+    };
     function startCamera() {
         loadJsQR().then(function () {
-            return navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
+            return navigator.mediaDevices.getUserMedia({
+                video: Object.assign({ facingMode: { exact: 'environment' } }, VIDEO_CONSTRAINTS),
+            });
         }).then(onStream).catch(function () {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
-                .then(onStream).catch(function () { showError(txt('errCamera')); });
+            navigator.mediaDevices.getUserMedia({
+                video: Object.assign({ facingMode: { ideal: 'environment' } }, VIDEO_CONSTRAINTS),
+            }).then(onStream).catch(function () { showError(txt('errCamera')); });
         });
     }
     function cancelRaf() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
