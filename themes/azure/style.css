@@ -1320,15 +1320,23 @@ html { transition: background-color 0.25s, color 0.25s; }
     border-top-color: rgba(255, 255, 255, 0.75);
 }
 
-/* Caret-only dropdown (no icon, hidden label) glued next to the item before it,
-   so e.g. "CARDS ▾" reads as one control instead of two separated pills.
-   nav-item-glue-next / nav-item-caret-only are set by nav.php. */
-.az-nav-list .nav-item-glue-next .nav-link {
-    padding-right: 0.35rem;
+/* Split nav item: left segment is a real link, right segment (caret only)
+   opens the dropdown. Both read as one control — nav.php puts the active
+   state on the shared <li>, so they highlight together. */
+.az-nav-list .nav-item-split .nav-link-split-main {
+    padding-right: 0.5rem;
 }
-.az-nav-list .nav-item-caret-only .dropdown-toggle {
-    padding-left: 0.15rem;
-    padding-right: 0.75rem;
+.az-nav-list .nav-item-split .nav-link-split-caret {
+    padding-left: 0.35rem;
+    padding-right: 0.85rem;
+}
+.az-nav-list .nav-item-split:hover .nav-link-split-main,
+.az-nav-list .nav-item-split:hover .nav-link-split-caret,
+.az-nav-list .nav-item-split.active .nav-link-split-main,
+.az-nav-list .nav-item-split.active .nav-link-split-caret {
+    color: #fff;
+    border-bottom-color: var(--primary-300);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 /* Hide theme toggle and language selector from topbar on mobile — they appear in the footer */
@@ -1379,6 +1387,21 @@ html { transition: background-color 0.25s, color 0.25s; }
     body:not(.az-mobile-compact) .az-nav-list .dropdown-item {
         padding-left: 2.5rem;
     }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-main {
+        flex: 1 1 auto;
+        width: auto;
+    }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-caret {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split:hover .nav-link-split-main,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split:hover .nav-link-split-caret,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split.active .nav-link-split-main,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split.active .nav-link-split-caret {
+        border-left-color: var(--primary-300);
+        border-bottom-color: transparent;
+    }
 }
 
 /* Mobile compact mode (MOBILE_HEADER_MODE = 1): icon strip, always visible, no labels */
@@ -1413,6 +1436,26 @@ html { transition: background-color 0.25s, color 0.25s; }
     }
     .az-mobile-compact .az-nav-list .nav-link span { display: none !important; }
     .az-mobile-compact .az-nav-list .dropdown-toggle::after { display: none !important; }
+    /* The split caret has no icon of its own — unlike a normal dropdown, hiding its
+       arrow would leave it with nothing visible to tap at all, so it's exempted. */
+    .az-mobile-compact .az-nav-list .nav-link-split-caret::after { display: inline-block !important; }
+    .az-mobile-compact .az-nav-list .nav-item-split { flex-direction: row; }
+    .az-mobile-compact .az-nav-list .nav-link-split-main {
+        padding-right: 0.15rem !important;
+    }
+    .az-mobile-compact .az-nav-list .nav-link-split-caret {
+        padding-left: 0.1rem !important;
+        padding-right: 0.35rem !important;
+        justify-content: center;
+    }
+    .az-mobile-compact .az-nav-list .nav-item-split:hover .nav-link-split-main,
+    .az-mobile-compact .az-nav-list .nav-item-split:hover .nav-link-split-caret,
+    .az-mobile-compact .az-nav-list .nav-item-split.active .nav-link-split-main,
+    .az-mobile-compact .az-nav-list .nav-item-split.active .nav-link-split-caret {
+        border-left-color: transparent !important;
+        border-bottom-color: var(--primary-300) !important;
+        background: rgba(255, 255, 255, 0.08);
+    }
 }
 
 /* Dark mode header adjustments */

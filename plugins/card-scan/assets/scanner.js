@@ -151,30 +151,65 @@
         el.done.textContent = txt('done') + ' (' + S.count + ')';
     }
 
-    // ── Camera controls (zoom / torch), feature-detected ────────────────
+    // ── Camera controls (zoom / torch) ───────────────────────────────────
+    // Optical/hardware zoom (track.getCapabilities().zoom) only exists on some
+    // Android/Chrome devices. Everywhere else (most PC webcams, iOS Safari) we
+    // fall back to a software zoom: CSS-scale the video (cropped by the wrap's
+    // overflow:hidden) and shrink the decode crop in tick() to match, so the
+    // zoom buttons always work regardless of device.
+    var SW_ZOOM_MIN = 1, SW_ZOOM_MAX = 3, SW_ZOOM_STEP = 0.25;
+
+    // Remember the last zoom level per device (localStorage is already scoped to
+    // this browser/device) so each phone/PC starts back where the user left it,
+    // instead of everyone re-tuning the same default every time.
+    var ZOOM_STORE_KEY = 'cs-zoom';
+    function loadStoredZoom() {
+        try {
+            var d = JSON.parse(window.localStorage.getItem(ZOOM_STORE_KEY));
+            if (d && typeof d.value === 'number' && typeof d.software === 'boolean') return d;
+        } catch (e) {}
+        return null;
+    }
+    function saveZoom() {
+        if (!zoom) return;
+        try {
+            window.localStorage.setItem(ZOOM_STORE_KEY, JSON.stringify({ software: zoom.software, value: zoom.value }));
+        } catch (e) {}
+    }
+
     function applyZoom(v) {
-        if (!track || !zoom) return;
+        if (!zoom) return;
         zoom.value = Math.min(zoom.max, Math.max(zoom.min, v));
-        track.applyConstraints({ advanced: [{ zoom: zoom.value }] }).catch(function () {});
+        if (zoom.software) {
+            el.video.style.transform = 'scale(' + zoom.value + ')';
+        } else if (track) {
+            track.applyConstraints({ advanced: [{ zoom: zoom.value }] }).catch(function () {});
+        }
+        saveZoom();
     }
     function setupControls() {
         var caps = (track && track.getCapabilities) ? track.getCapabilities() : {};
-        var any = false;
+        var stored = loadStoredZoom();
         if (caps && caps.zoom && caps.zoom.max > caps.zoom.min) {
-            zoom = { min: caps.zoom.min, max: caps.zoom.max,
+            zoom = { min: caps.zoom.min, max: caps.zoom.max, software: false,
                      step: caps.zoom.step || (caps.zoom.max - caps.zoom.min) / 10, value: caps.zoom.min };
-            // Start slightly zoomed in (rather than the native min) so the QR fills
-            // more of the frame without the user having to move the phone closer.
-            applyZoom(caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25);
-            el.zoomIn.style.display = el.zoomOut.style.display = '';
-            any = true;
+            // Default to slightly zoomed in (rather than the native min) so the QR
+            // fills more of the frame without the user having to move the phone
+            // closer — unless this device already has a remembered value.
+            var hwStart = (stored && stored.software === false)
+                ? Math.min(caps.zoom.max, Math.max(caps.zoom.min, stored.value))
+                : caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25;
+            applyZoom(hwStart);
         } else {
-            zoom = null;
-            el.zoomIn.style.display = el.zoomOut.style.display = 'none';
+            zoom = { min: SW_ZOOM_MIN, max: SW_ZOOM_MAX, software: true, step: SW_ZOOM_STEP, value: SW_ZOOM_MIN };
+            var swStart = (stored && stored.software === true)
+                ? Math.min(SW_ZOOM_MAX, Math.max(SW_ZOOM_MIN, stored.value))
+                : SW_ZOOM_MIN;
+            applyZoom(swStart);
         }
-        if (caps && caps.torch) { el.torch.style.display = ''; any = true; }
-        else { el.torch.style.display = 'none'; }
-        el.controls.style.display = any ? 'flex' : 'none';
+        el.zoomIn.style.display = el.zoomOut.style.display = '';
+        el.torch.style.display = (caps && caps.torch) ? '' : 'none';
+        el.controls.style.display = 'flex';
     }
 
     // ── Scan loop ───────────────────────────────────────────────────────
@@ -183,17 +218,37 @@
     // less image for jsQR to process each frame and a proportionally bigger QR
     // within it, instead of hunting across the full (mostly irrelevant) frame.
     var RETICLE_INSET = 0.14;
+    // When a whole card is framed (not just its QR corner), the QR itself is
+    // still small within the reticle. Retry on a tighter, centered "digital
+    // zoom" crop before giving up on a frame — this raises the QR's share of
+    // the analysed image without the user moving the phone closer, which is
+    // what triggers the autofocus-hunting blur.
+    var ZOOM_INSET = 0.30;
+
+    function decodeCrop(sx, sy, sw, sh) {
+        canvas.width  = sw;
+        canvas.height = sh;
+        ctx.drawImage(el.video, sx, sy, sw, sh, 0, 0, sw, sh);
+        var img = ctx.getImageData(0, 0, sw, sh);
+        return window.jsQR ? jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' }) : null;
+    }
+    // Software zoom (see setupControls) crops a smaller, centered region of the
+    // native frame — matches what the CSS-scaled video shows behind the reticle.
+    // Hardware zoom needs no extra crop here: the sensor itself is already zoomed.
     function tick() {
         if (!S) return;
         if (!busy && el.video.readyState === el.video.HAVE_ENOUGH_DATA) {
             var vw = el.video.videoWidth, vh = el.video.videoHeight;
-            var mx = vw * RETICLE_INSET, my = vh * RETICLE_INSET;
-            var cw = vw - 2 * mx, ch = vh - 2 * my;
-            canvas.width  = cw;
-            canvas.height = ch;
-            ctx.drawImage(el.video, mx, my, cw, ch, 0, 0, cw, ch);
-            var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            var code = window.jsQR ? jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' }) : null;
+            var z  = (zoom && zoom.software) ? zoom.value : 1;
+            var cw = (vw * (1 - 2 * RETICLE_INSET)) / z;
+            var ch = (vh * (1 - 2 * RETICLE_INSET)) / z;
+            var mx = (vw - cw) / 2, my = (vh - ch) / 2;
+            var code = decodeCrop(mx, my, cw, ch);
+            if (!code) {
+                var zx = mx + cw * ZOOM_INSET, zy = my + ch * ZOOM_INSET;
+                var zw = cw * (1 - 2 * ZOOM_INSET), zh = ch * (1 - 2 * ZOOM_INSET);
+                code = decodeCrop(zx, zy, zw, zh);
+            }
             if (code) { onDecode(code.data); }
         }
         raf = requestAnimationFrame(tick);
@@ -287,6 +342,7 @@
             hideError(); hideBusy();
             el.torch.classList.remove('cs-active');
             el.controls.style.display = 'none';
+            el.video.style.transform = '';
         }
         var wasCollect = S && S.mode === 'collect';
         var count = S ? S.count : 0;

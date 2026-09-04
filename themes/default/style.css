@@ -178,6 +178,17 @@ a:hover { color: var(--primary-400); }
     .mobile-nav-compact .altered-navbar .navbar-nav .nav-link span,
     .mobile-nav-compact .altered-navbar .navbar-nav .dropdown-toggle span { display: none !important; }
     .mobile-nav-compact .altered-navbar .navbar-nav .dropdown-toggle::after { display: none !important; }
+    /* The split caret has no icon of its own — unlike a normal dropdown, hiding its
+       arrow would leave it with nothing visible to tap at all, so it's exempted. */
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-caret::after { display: inline-block !important; }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-item-split { border-radius: 0; }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-main {
+        padding-right: 0.15rem !important;
+    }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-caret {
+        padding-left: 0.1rem !important;
+        padding-right: 0.35rem !important;
+    }
     .mobile-nav-compact .altered-navbar .navbar-right {
         border-top: none !important;
         margin-top: 0 !important;
@@ -201,9 +212,6 @@ a:hover { color: var(--primary-400); }
 @media (min-width: 768px) {
     .altered-navbar .nav-link { flex-direction: row; gap: 0.4rem; }
     .navbar-site-name { display: inline !important; }
-    /* Cancels the navbar-nav gap-1 between a caret-only dropdown and the item before
-       it — desktop only, so it doesn't shift icons in the mobile-compact icon strip. */
-    .altered-navbar .navbar-nav .nav-item-caret-only { margin-left: -0.25rem; }
 }
 .altered-navbar .nav-link:hover,
 .altered-navbar .nav-link.active {
@@ -217,16 +225,29 @@ a:hover { color: var(--primary-400); }
     display: none;
 }
 
-/* Caret-only dropdown (no icon, hidden label) glued next to the item before it,
-   so "CARDS ▾" reads as one control instead of two separated pills.
-   nav-item-glue-next is set on the preceding item by nav.php (not :has(),
-   for browsers that don't support the relational selector). */
-.altered-navbar .navbar-nav .nav-item-glue-next .nav-link {
-    padding-right: 0.35rem;
+/* Split nav item: left segment is a real link, right segment (caret only)
+   opens the dropdown. Both read as one pill — nav.php puts the active state
+   on the shared <li>, so they highlight together. */
+.altered-navbar .navbar-nav .nav-item-split {
+    display: flex;
+    border-radius: 0.5rem;
+    overflow: hidden;
 }
-.altered-navbar .navbar-nav .nav-item-caret-only .dropdown-toggle {
-    padding-left: 0.15rem;
-    padding-right: 0.5rem;
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-main {
+    padding-right: 0.35rem;
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-caret {
+    padding-left: 0.3rem;
+    padding-right: 0.6rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+.altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-main,
+.altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-caret,
+.altered-navbar .navbar-nav .nav-item-split.active .nav-link-split-main,
+.altered-navbar .navbar-nav .nav-item-split.active .nav-link-split-caret {
+    background-color: var(--primary-400);
+    color: var(--neutral-800);
 }
 
 .btn-lang {
