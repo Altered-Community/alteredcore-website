@@ -292,7 +292,7 @@ function trFetchTournament(string $tournamentId): array
         return ['ok' => false, 'error' => 'You must be logged in to fetch a tournament.'];
     }
 
-    $url = $apiUrl . '/tournaments/' . rawurlencode($tournamentId);
+    $url = $apiUrl . '/api/tournament-report?tournamentId=' . rawurlencode($tournamentId);
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
