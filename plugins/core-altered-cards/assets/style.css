@@ -507,6 +507,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
 }
 .ac-lightbox-inner {
     max-width: 420px;
@@ -516,6 +517,7 @@
     max-height: 94vh;
     max-height: 94dvh;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Hero modal panel */

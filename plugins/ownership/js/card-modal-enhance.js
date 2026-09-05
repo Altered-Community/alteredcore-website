@@ -9,9 +9,13 @@
     // hostEl: the modal-inner container to append into (not yet containing cardEl).
     // cardEl: the already-built <altered-card> or plain <img>, not yet appended anywhere.
     // ref:    card reference string.
-    // unique: whether this card is Unique-rarity (no alt-art family exists for uniques,
-    //         and only unique cards get the holo variant of the tilt effect, matching
-    //         the booster-reveal precedent in boosters.js).
+    // unique: whether this card is Unique-rarity — only affects the holo variant of the
+    //         tilt effect (matching the booster-reveal precedent in boosters.js).
+    //         The alt-art widget is NOT gated on this: Hero cards are also classified
+    //         Unique-rarity but can still belong to a real multi-art family, so whether
+    //         a family exists is left entirely to deck-alt-arts.php's response (a null
+    //         group is what hides the widget — unlike the full Alt Arts BGA page, the
+    //         modal still shows it even when the player owns only one illustration).
     // cfg:    {enabled, altArtsUrl, cdnUrl, lang, markerImg, setPreferenceUrl, csrfToken,
     //         txt} — when falsy or cfg.enabled is false, the card still gets the 3D stage
     //         wrapper (so markup stays consistent) but no tilt/widget is attached.
@@ -36,21 +40,24 @@
             window.OWN_CARD_TILT.attach(tiltCard, { holo: unique });
         });
 
-        if (!unique) {
-            // Reserved synchronously (right after the stage, before anything the caller
-            // appends afterward, e.g. a collection counter or "view detail" link) so the
-            // widget lands directly under the card once its async fetch resolves, instead
-            // of trailing behind whatever else the caller added in the meantime.
-            const widgetSlot = document.createElement('div');
-            widgetSlot.className = 'own-modal-alt-art mt-2';
-            hostEl.appendChild(widgetSlot);
+        // Reserved synchronously (right after the stage, before anything the caller
+        // appends afterward, e.g. a collection counter or "view detail" link) so the
+        // widget lands directly under the card once its async fetch resolves, instead
+        // of trailing behind whatever else the caller added in the meantime.
+        const widgetSlot = document.createElement('div');
+        widgetSlot.className = 'own-modal-alt-art mt-2';
+        hostEl.appendChild(widgetSlot);
 
-            window.OWN_ALT_ART_WIDGET.fetchSingleFamily(cfg.altArtsUrl, ref).then((res) => {
-                if (destroyed || !res || !window.OWN_ALT_ART_WIDGET.hasRealChoice(res.optData)) return;
-                widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(res.family, res.optData, cfg);
-                widgetSlot.appendChild(widgetRow.el);
-            });
-        }
+        // Unlike the full Alt Arts BGA page's "Hide non-choices" filter, the modal always
+        // shows the widget as soon as a multi-art family exists for this card — even when
+        // the player only owns one illustration (no real choice to make yet), so the tile
+        // strip itself communicates that fact (unowned prints render dimmed/unclickable)
+        // rather than silently omitting the section.
+        window.OWN_ALT_ART_WIDGET.fetchSingleFamily(cfg.altArtsUrl, ref).then((res) => {
+            if (destroyed || !res) return;
+            widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(res.family, res.optData, cfg);
+            widgetSlot.appendChild(widgetRow.el);
+        });
 
         return {
             destroy() {
