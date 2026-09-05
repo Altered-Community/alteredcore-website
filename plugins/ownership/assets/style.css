@@ -279,6 +279,14 @@
     line-height: 0;
 }
 
+/* Perspective ancestor for .own-tilt-card outside the booster opener's own fixed-size
+   stage (.own-opener-stage) — used by card-modal-enhance.js to wrap a card-detail
+   modal's card element so the 3D rotation reads correctly. */
+.own-tilt-stage {
+    position: relative;
+    perspective: 900px;
+}
+
 /* Shared pointer-tilt rotator: the booster cover's inner content and the history "zoom"
    card both rotate through this same class/timing. */
 .own-tilt-card {
@@ -354,30 +362,6 @@
 /* Alt Arts BGA — one row per multi-art family, tiles instead of a paginated grid.
    .filter-row/.filter-toggle/.card-altered come from core-altered-cards/assets/style.css,
    linked explicitly by pages/alt-arts.php since this plugin doesn't load it by default. */
-.own-aa-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-.own-aa-faction-icon {
-    width: 20px;
-    height: 20px;
-}
-.own-aa-name {
-    flex: 1 1 auto;
-}
-.own-aa-cost {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--sand-100);
-    border-radius: 5px;
-    padding: 1px 7px;
-    font-size: .8rem;
-    color: var(--neutral-600);
-}
 /* 4 tiles per row on desktop, 2 on mobile — a family's strip is its own little grid,
    wrapping to as many rows as it needs; the <hr> after it (see js/alt-arts.js) is what
    visually separates one family from the next. */

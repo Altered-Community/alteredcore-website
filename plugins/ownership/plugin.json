@@ -26,6 +26,6 @@
 
     "assets": {
         "css": ["assets/style.css"],
-        "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js", "js/alt-arts.js"]
+        "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js", "js/alt-arts.js", "js/alt-art-widget.js", "js/card-modal-enhance.js"]
     }
 }

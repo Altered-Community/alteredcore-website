@@ -21,6 +21,21 @@ $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
 // digital ownership (AlteredOwnership service)
 $_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
+// Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
+// $_ownMode above (which only drive the existing "apply my illustration preferences"
+// bulk feature): this also requires the ownership plugin itself to be active, not just
+// OWNERSHIP_API_URL configured.
+$_ownAltArtActive   = ownershipIsActive() && !$isGuest && $_dbUserId > 0;
+$ownAltArtCfg = $_ownAltArtActive ? [
+    'enabled'          => true,
+    'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+    'cdnUrl'           => CDN_URL,
+    'lang'             => $lang,
+    'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+    'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+    'csrfToken'        => csrfToken(),
+    'txt'              => ['saveError' => $uiLang === 'fr' ? 'Impossible d\'enregistrer votre choix.' : 'Could not save your choice.'],
+] : ['enabled' => false];
 $_userCollection    = []; // {ref => qty}
 $_collEntries       = []; // {ref => api_entry_id} — populated in API mode only
 if ($_collectionMode) {
@@ -952,6 +967,7 @@ var AlteredDB = {
     uniqueLocale: <?= json_encode($uniqueLocale) ?>,
     uiLang:       <?= json_encode($uiLang) ?>,
     csrfToken: <?= json_encode(csrfToken()) ?>,
+    ownAltArt: <?= json_encode($ownAltArtCfg) ?>,
     deckId:    <?= json_encode($editDeckId) ?>,
     isGuest:   <?= $isGuest ? 'true' : 'false' ?>,
     debug:     <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
@@ -3113,6 +3129,7 @@ var AlteredDB = {
     var dbCardModalInner = document.getElementById('db-card-modal-inner');
     function closeDbCardModal() {
         dbCardModal.style.display = 'none';
+        if (dbCardModalInner._ownEnhance) { dbCardModalInner._ownEnhance.destroy(); dbCardModalInner._ownEnhance = null; }
         dbCardModalInner.innerHTML = '';
         document.body.style.overflow = '';
     }
@@ -3135,7 +3152,11 @@ var AlteredDB = {
             cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
         }
         cardEl.addEventListener('click', closeDbCardModal);
-        dbCardModalInner.appendChild(cardEl);
+        if (window.OWN_CARD_MODAL_ENHANCE) {
+            dbCardModalInner._ownEnhance = window.OWN_CARD_MODAL_ENHANCE.enhance(dbCardModalInner, cardEl, ref, isUnique(ref), AlteredDB.ownAltArt);
+        } else {
+            dbCardModalInner.appendChild(cardEl);
+        }
         dbCardModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
@@ -3564,6 +3585,13 @@ var AlteredDB = {
     }
 })();
 </script>
+
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
+<?php endif; ?>
 
 <!-- Playtest card modals (mana / board / discard list + card zoom) -->
 <?php include __DIR__ . '/_card-list-modal.php'; ?>

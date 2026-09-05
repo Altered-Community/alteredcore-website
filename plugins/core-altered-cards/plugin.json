@@ -19,6 +19,7 @@
         {"slug": "deck",        "file": "pages/deck.php",        "title_en": "Deck",          "title_fr": "Deck"},
         {"slug": "decks",       "file": "pages/decks.php",       "title_en": "Decks",         "title_fr": "Decks"},
         {"slug": "collection",  "file": "pages/collection.php",  "title_en": "Collection",    "title_fr": "Collection"},
+        {"slug": "playset",     "file": "pages/playset.php",     "title_en": "Physical Playset", "title_fr": "Playset physique"},
         {"slug": "bgatester",   "file": "pages/bgatester.php",   "title_en": "Test Team",     "title_fr": "Équipe de tests"}
     ],
 

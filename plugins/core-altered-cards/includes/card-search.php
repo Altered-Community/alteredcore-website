@@ -101,7 +101,6 @@ $_csLblOwn      = $_csTxt['scope_ownership']  ?? ($_csLang === 'fr' ? 'Propriét
 // "playset" object in search_settings.json (translations.{lang}.playset); the
 // literals below are only fallbacks when a key is missing.
 $_csPs = $_csTxt['playset'] ?? [];
-$_csLblPlayset  = $_csPs['tab_playset'] ?? ($_csLang === 'fr' ? 'Playset physique'   : 'Physical playset');
 $_csPsIntro     = $_csPs['intro']       ?? ($_csLang === 'fr'
     ? 'Suivez votre progression vers 3 exemplaires de chaque carte Commune, Rare, Rare OOF et Exaltée. Les Héros, Uniques et alternatives ne sont pas comptabilisés dans cette vue.'
     : 'Track your progress toward 3 copies of each Common, Rare, Rare OOF and Exalted card. Heroes, Uniques and alternatives are not counted in this view.');
@@ -151,13 +150,9 @@ $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Ef
 $_csLblBannedSuspended = $_csTxt['lbl_banned_suspended'] ?? ($_csLang === 'fr' ? 'Suspendus et bannis' : 'Suspended & banned');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
-$_csLblManageOwn  = $_csTxt['manage_own']   ?? ($_csLang === 'fr' ? 'Gérer ma propriété numérique'   : 'Manage my digital ownership');
 
-// "Manage" link targets: physical collection → import page; digital ownership →
-// the ownership app (falls back to the collection page when no URL is configured).
+// "Manage" link target for the physical-collection tab → import page.
 $_csCollManageUrl = $_csBaseUrl . '/pages/collection';
-$_csOwnManageUrl  = !empty($_cs['ownership_url']) ? $_cs['ownership_url'] : $_csCollManageUrl;
-$_csOwnIsExternal = !empty($_cs['ownership_url']);
 $_csNumPh       = $_csLang === 'fr' ? 'ex : 3, 1-3, 4+' : 'e.g. 3, 1-3, 4+';
 $_csNumTitle    = $_csLang === 'fr'
     ? "3 (=3) · 1,3 (∈ {1, 3}) · 1-3 (1 à 3 inclus) · 4+ (≥4) · 4- (≤4) · <4 · >2 · <=4 · >=2"
@@ -203,17 +198,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 data-tab="ownership" data-scope="ownership"<?= $_csOwnMode ? '' : ' disabled' ?>>
             <i class="fa-solid fa-key"></i>
             <span><?= h($_csLblOwn) ?></span>
-            <span class="cs-tab-manage" data-href="<?= h($_csOwnManageUrl) ?>"<?= $_csOwnIsExternal ? ' data-external="1"' : '' ?> title="<?= h($_csLblManageOwn) ?>">
-                <i class="fa-solid fa-<?= $_csOwnIsExternal ? 'arrow-up-right-from-square' : 'file-import' ?>"></i><span class="cs-tab-manage-txt"><?= h($_csLblManage) ?></span>
-            </span>
         </button>
-        <?php if ($_csMode === 'cards'): ?>
-        <button type="button" class="cs-tab<?= $_csPlaysetMode ? '' : ' cs-tab-soon' ?>"
-                data-tab="playset" data-scope="all"<?= $_csPlaysetMode ? '' : ' disabled' ?>>
-            <i class="fa-solid fa-layer-group"></i>
-            <span><?= h($_csLblPlayset) ?></span>
-        </button>
-        <?php endif; ?>
         <?php if ($_csFavMode): ?>
         <button type="button" class="cs-tab" data-tab="favoris" data-scope="favoris">
             <i class="fa-solid fa-star"></i>

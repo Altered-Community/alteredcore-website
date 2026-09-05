@@ -2453,7 +2453,11 @@ function CardSearch(cfg) {
                 cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6)';
             }
             cardEl.addEventListener('click', closeModal);
-            _modalInner.appendChild(cardEl);
+            if (window.OWN_CARD_MODAL_ENHANCE) {
+                _modalInner._ownEnhance = window.OWN_CARD_MODAL_ENHANCE.enhance(_modalInner, cardEl, ref, uniq, cfg.ownAltArt);
+            } else {
+                _modalInner.appendChild(cardEl);
+            }
 
             if (cfg.onModalOpen) cfg.onModalOpen(ref, _modalInner);
 
@@ -2476,7 +2480,10 @@ function CardSearch(cfg) {
 
         function closeModal() {
             if (_modal) { _modal.style.display = 'none'; }
-            if (_modalInner) { _modalInner.innerHTML = ''; }
+            if (_modalInner) {
+                if (_modalInner._ownEnhance) { _modalInner._ownEnhance.destroy(); _modalInner._ownEnhance = null; }
+                _modalInner.innerHTML = '';
+            }
             document.body.style.overflow = '';
         }
 

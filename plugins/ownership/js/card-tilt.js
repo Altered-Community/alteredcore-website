@@ -78,5 +78,22 @@ window.OWN_CARD_TILT = (() => {
         reset(el);
     };
 
-    return { attach, detach, reset };
+    // Resolves once hostEl contains a <canvas> (the <altered-card> web component's
+    // internal render target) or timeoutMs elapses, whichever comes first — so callers
+    // can wait for a just-mounted <altered-card> to actually have something to tilt
+    // before calling attach() on it.
+    const waitForReady = (hostEl, timeoutMs = 4000) => new Promise((resolve) => {
+        const settle = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
+        if (hostEl.querySelector('canvas')) { settle(); return; }
+        const observer = new MutationObserver(() => {
+            if (!hostEl.querySelector('canvas')) return;
+            observer.disconnect();
+            clearTimeout(timer);
+            settle();
+        });
+        observer.observe(hostEl, { childList: true, subtree: true });
+        const timer = setTimeout(() => { observer.disconnect(); resolve(); }, timeoutMs);
+    });
+
+    return { attach, detach, reset, waitForReady };
 })();

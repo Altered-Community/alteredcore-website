@@ -17,6 +17,7 @@ $txt = [
         'search_ph'     => 'Search by name…',
         'search_btn'    => 'Search',
         'lbl_faction'   => 'Faction',
+        'lbl_type'      => 'Type',
         'lbl_rarity'    => 'Rarity',
         'lbl_cost'      => 'Mana cost',
         'hideNonChoices' => 'Hide non-choices',
@@ -34,6 +35,7 @@ $txt = [
         'search_ph'     => 'Rechercher par nom…',
         'search_btn'    => 'Rechercher',
         'lbl_faction'   => 'Faction',
+        'lbl_type'      => 'Type',
         'lbl_rarity'    => 'Rareté',
         'lbl_cost'      => 'Coût en mana',
         'hideNonChoices' => 'Masquer les non-choix',
@@ -57,13 +59,17 @@ if ($cacAvailable) {
     require_once $cacDir . '/includes/functions.php';
     $factionsData = loadAlteredData('factions');
     $raritiesData = loadAlteredData('rarities');
+    $typesData    = loadAlteredData('types');
 } else {
     $factionsData = [];
     $raritiesData = [];
+    $typesData    = [];
 }
 // The catalog never contains Unique-rarity prints (heroes/uniques have no alt art —
-// see AlteredOwnership's CardArtCatalog), so that rarity is never a useful filter here.
+// see AlteredOwnership's CardArtCatalog), so that rarity — and the Hero type, which is
+// always Unique-rarity — are never useful filters here.
 $raritiesData = array_filter($raritiesData, fn($r) => ($r['gem'] ?? '') !== 'U');
+unset($typesData['HERO']);
 
 $uiLang = getUiLang();
 ?>
@@ -107,6 +113,14 @@ $uiLang = getUiLang();
             <?php endforeach; ?>
         </div>
         <div class="filter-row mb-2">
+            <span class="filter-label"><?= h($txt['lbl_type']) ?></span>
+            <?php foreach ($typesData as $tCode => $tData): ?>
+            <button type="button" class="filter-toggle" data-filter="type" data-value="<?= h($tCode) ?>">
+                <?= h($tData[$uiLang] ?? $tData['en'] ?? $tCode) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <div class="filter-row mb-2">
             <span class="filter-label"><?= h($txt['lbl_rarity']) ?></span>
             <?php foreach ($raritiesData as $rCode => $rData): ?>
             <button type="button" class="filter-toggle" data-filter="rarity" data-value="<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>">
@@ -125,7 +139,7 @@ $uiLang = getUiLang();
             <?php endfor; ?>
         </div>
         <div class="filter-row mb-0">
-            <button type="button" id="own-aa-hide-non-choices" class="filter-toggle" data-bool-filter="hideNonChoices">
+            <button type="button" id="own-aa-hide-non-choices" class="filter-toggle active" data-bool-filter="hideNonChoices">
                 <i class="fa-solid fa-eye-slash"></i> <?= h($txt['hideNonChoices']) ?>
             </button>
         </div>
@@ -153,6 +167,7 @@ $uiLang = getUiLang();
         cdnUrl: <?= json_encode(CDN_URL) ?>,
         lang: <?= json_encode(getLang()) ?>,
         markerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
+        csrfToken: <?= json_encode(csrfToken()) ?>,
     };
     </script>
 

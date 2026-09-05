@@ -1,7 +1,9 @@
 <?php
 /**
  * Shared card zoom lightbox. Defines window.acOpenCardZoom(ref, unique, lang, imgSrc).
- * Expects $txt['detail_label'], BASE_URL and $lang in scope.
+ * Expects $txt['detail_label'], BASE_URL and $lang in scope, and optionally $ownAltArtCfg
+ * (the including page's ownership alt-art/tilt config array, or null to disable) — see
+ * plugins/ownership/js/card-modal-enhance.js.
  * Unique cards render via <altered-card>, so the renderer must be loaded (deck.php loads it
  * conditionally; the deck builder loads it on demand via ensureRenderer()).
  * Included by the deck detail page (deck.php) and the deck builder (deckbuilder.php).
@@ -17,9 +19,12 @@
     var detailLabel = <?= json_encode($txt['detail_label']) ?>;
     var cardDetailBase = <?= json_encode(BASE_URL . '/pages/card') ?>;
     var cardDetailLang = <?= json_encode($lang) ?>;
+    var ownAltArtCfg = <?= json_encode($ownAltArtCfg ?? null) ?>;
 
     function closeModal() {
-        modal.style.display = 'none'; inner.innerHTML = '';
+        modal.style.display = 'none';
+        if (inner._ownEnhance) { inner._ownEnhance.destroy(); inner._ownEnhance = null; }
+        inner.innerHTML = '';
         document.body.style.overflow = '';
     }
     function openModal(ref, unique, lang, imgSrc) {
@@ -35,7 +40,11 @@
             cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
         }
         cardEl.addEventListener('click', closeModal);
-        inner.appendChild(cardEl);
+        if (window.OWN_CARD_MODAL_ENHANCE) {
+            inner._ownEnhance = window.OWN_CARD_MODAL_ENHANCE.enhance(inner, cardEl, ref, unique, ownAltArtCfg);
+        } else {
+            inner.appendChild(cardEl);
+        }
         var detailBtn = document.createElement('a');
         detailBtn.href = cardDetailBase + '?ref=' + encodeURIComponent(ref) + '&card_lang=' + cardDetailLang;
         detailBtn.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>' + detailLabel;

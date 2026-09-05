@@ -32,6 +32,10 @@ if (isset($_GET['name']) && is_string($_GET['name']) && $_GET['name'] !== '') {
 foreach ((array)($_GET['faction'] ?? []) as $f) {
     if (is_string($f) && $f !== '') $parts[] = 'faction[]=' . rawurlencode($f);
 }
+$types = [];
+foreach ((array)($_GET['type'] ?? []) as $ty) {
+    if (is_string($ty) && $ty !== '') { $parts[] = 'type[]=' . rawurlencode($ty); $types[] = $ty; }
+}
 foreach ((array)($_GET['rarity'] ?? []) as $r) {
     if (is_string($r) && $r !== '') $parts[] = 'rarity[]=' . rawurlencode($r);
 }
@@ -49,6 +53,12 @@ if ($famRaw === null || $famStatus < 200 || $famStatus >= 300) {
 
 $families = json_decode($famRaw, true);
 if (!is_array($families)) $families = [];
+
+// /api/alt-arts/families already applies type[] itself (AltArtFamilyQuery.CardTypes);
+// this is just a defensive re-check against the family's own cardType field.
+if ($types) {
+    $families = array_values(array_filter($families, fn($f) => in_array($f['cardType'] ?? null, $types, true)));
+}
 
 $options = [];
 if ($families) {

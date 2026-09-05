@@ -109,19 +109,6 @@
 
     let currentIndex = -1;
 
-    const waitForCardReady = (hostEl, timeoutMs = 4000) => new Promise((resolve) => {
-        const settle = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
-        if (hostEl.querySelector('canvas')) { settle(); return; }
-        const observer = new MutationObserver(() => {
-            if (!hostEl.querySelector('canvas')) return;
-            observer.disconnect();
-            clearTimeout(timer);
-            settle();
-        });
-        observer.observe(hostEl, { childList: true, subtree: true });
-        const timer = setTimeout(() => { observer.disconnect(); resolve(); }, timeoutMs);
-    });
-
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     const updateNav = () => {
@@ -222,7 +209,7 @@
             ? '<altered-card ref="' + escapeHtml(card.cardReference) + '" locale="' + escapeHtml(locale()) + '"></altered-card>'
             : '';
         const cardArtEl = cardEl.firstElementChild;
-        if (card) await waitForCardReady(cardEl);
+        if (card) await window.OWN_CARD_TILT.waitForReady(cardEl);
         openerLoadingEl.hidden = true;
         window.OWN_CARD_TILT?.detach(rotatorEl);
         cardArtEl?.classList.add('own-card-pending');
