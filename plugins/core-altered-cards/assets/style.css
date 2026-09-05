@@ -516,8 +516,11 @@
     position: relative;
     max-height: 94vh;
     max-height: 94dvh;
-    overflow-y: auto;
-    overflow-x: hidden;
+    /* visible, not auto/hidden: the tilt effect's 3D rotation paints outside its own
+       layout box, and that ink overflow isn't part of the scrollable area an
+       auto/hidden ancestor tracks — it just gets clipped instead of reachable by
+       scrolling. .ac-lightbox-overlay (fixed, full viewport) is the real boundary. */
+    overflow: visible;
 }
 
 /* Hero modal panel */
