@@ -27,19 +27,6 @@ function loadAlteredData(string $name): array {
     return $all[$name] ?? [];
 }
 
-/**
- * Normalize a card reference for CDN image lookups. Mirrors the client-side
- * normalizeRef()/normalizeHeroRef() helpers in decks.php and deckbuilder.php:
- * promo prints (segment 2 === 'P') fall back to the base booster art ('B'),
- * and BISE-set refs (segment 1 === 'BISE') map to CORE.
- */
-function normalizeCardRef(string $ref): string {
-    $p = explode('_', $ref);
-    if (($p[2] ?? null) === 'P')    $p[2] = 'B';
-    if (($p[1] ?? null) === 'BISE') $p[1] = 'CORE';
-    return implode('_', $p);
-}
-
 function deckApiToken(): ?string {
     if (!kcIsLoggedIn()) return null;
     $userId = (int)($_SESSION['user_id'] ?? 0);
