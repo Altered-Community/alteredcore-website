@@ -285,7 +285,6 @@
 .own-tilt-stage {
     position: relative;
     perspective: 900px;
-    overflow: hidden;
 }
 
 /* Shared pointer-tilt rotator: the booster cover's inner content and the history "zoom"
