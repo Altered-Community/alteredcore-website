@@ -1327,8 +1327,19 @@ html { transition: background-color 0.25s, color 0.25s; }
     padding-right: 0.5rem;
 }
 .az-nav-list .nav-item-split .nav-link-split-caret {
+    position: relative;
     padding-left: 0.35rem;
     padding-right: 0.85rem;
+}
+.az-nav-list .nav-item-split .nav-link-split-caret::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 55%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.3);
 }
 .az-nav-list .nav-item-split:hover .nav-link-split-main,
 .az-nav-list .nav-item-split:hover .nav-link-split-caret,
@@ -1413,7 +1424,12 @@ html { transition: background-color 0.25s, color 0.25s; }
         flex-direction: row !important;
         flex-wrap: nowrap;
         justify-content: space-evenly;
-        overflow-x: auto;
+        /* No overflow-x here: per the CSS overflow spec, overflow-x:auto forces
+           overflow-y to compute as auto too, which clips any open dropdown-menu
+           against this row's own height (it "reappears" on rotation because
+           that recalculates Popper's positioning strategy, not because the
+           clipping goes away). The icon count here is small enough to never
+           need horizontal scrolling in practice. */
     }
     .az-mobile-compact .az-nav-list .nav-link {
         flex-direction: column !important;

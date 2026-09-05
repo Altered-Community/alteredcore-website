@@ -239,9 +239,12 @@
         if (!S) return;
         if (!busy && el.video.readyState === el.video.HAVE_ENOUGH_DATA) {
             var vw = el.video.videoWidth, vh = el.video.videoHeight;
-            var z  = (zoom && zoom.software) ? zoom.value : 1;
-            var cw = (vw * (1 - 2 * RETICLE_INSET)) / z;
-            var ch = (vh * (1 - 2 * RETICLE_INSET)) / z;
+            var z    = (zoom && zoom.software) ? zoom.value : 1;
+            // QR codes are square: crop a square from the frame (based on its
+            // smaller dimension) rather than a rectangle shaped like the video's
+            // aspect ratio — matches the square #cs-reticle (see layoutReticle).
+            var side = (Math.min(vw, vh) * (1 - 2 * RETICLE_INSET)) / z;
+            var cw = side, ch = side;
             var mx = (vw - cw) / 2, my = (vh - ch) / 2;
             var code = decodeCrop(mx, my, cw, ch);
             if (!code) {
@@ -294,6 +297,20 @@
         return base + encodeURIComponent(ref);
     }
 
+    // Sizes/positions the square reticle in actual pixels against the video's
+    // rendered box — CSS percentages can't express "a square sized off the
+    // smaller dimension" of a non-square container. Kept in sync with the
+    // decode crop's own min(vw, vh) math in tick().
+    function layoutReticle() {
+        var vw = el.video.offsetWidth, vh = el.video.offsetHeight;
+        if (!vw || !vh) return;
+        var side = Math.min(vw, vh) * (1 - 2 * RETICLE_INSET);
+        el.reticle.style.width  = side + 'px';
+        el.reticle.style.height = side + 'px';
+        el.reticle.style.left = (el.video.offsetLeft + (vw - side) / 2) + 'px';
+        el.reticle.style.top  = (el.video.offsetTop  + (vh - side) / 2) + 'px';
+    }
+
     // ── Camera lifecycle ────────────────────────────────────────────────
     function onStream(s) {
         stream = s;
@@ -301,6 +318,7 @@
         track = stream.getVideoTracks()[0] || null;
         el.video.addEventListener('loadedmetadata', function () {
             setupControls();
+            layoutReticle();
             raf = requestAnimationFrame(tick);
         }, { once: true });
     }
@@ -407,6 +425,9 @@
             var onClose = S && S.onClose, r = close(false);
             if (onClose) { try { onClose(r.count); } catch (e) {} }
         });
+        // Re-square the reticle if the video's rendered box changes (resize,
+        // orientation change) while the scanner is open.
+        window.addEventListener('resize', function () { if (S) layoutReticle(); });
     }
 
     // Build + wire lazily on first open so we don't touch the DOM on pages that never scan.

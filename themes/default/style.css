@@ -231,16 +231,27 @@ a:hover { color: var(--primary-400); }
 .altered-navbar .navbar-nav .nav-item-split {
     display: flex;
     border-radius: 0.5rem;
-    overflow: hidden;
 }
 .altered-navbar .navbar-nav .nav-item-split .nav-link-split-main {
     padding-right: 0.35rem;
     border-radius: 0.5rem 0 0 0.5rem;
 }
 .altered-navbar .navbar-nav .nav-item-split .nav-link-split-caret {
+    position: relative;
     padding-left: 0.3rem;
     padding-right: 0.6rem;
     border-radius: 0 0.5rem 0.5rem 0;
+}
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-caret::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 55%;
+    width: 1px;
+    background-color: var(--neutral-400);
+    opacity: 0.4;
 }
 .altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-main,
 .altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-caret,
