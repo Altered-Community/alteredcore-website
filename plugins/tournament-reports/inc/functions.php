@@ -79,7 +79,7 @@ function trSaveTournament(array $apiData, int $createdBy = 0): int
     $tournamentId   = (string)($apiData['tournamentId'] ?? '');
     $tournamentName = (string)($apiData['tournamentName'] ?? '');
     $totalGames     = (int)($apiData['totalGames'] ?? 0);
-    $gamesJson      = json_encode($apiData['games'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $gamesJson      = json_encode($apiData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     // Upsert: update if exists, insert otherwise
     $stmt = $db->prepare(qp(
@@ -275,6 +275,33 @@ function trSaveApiUrl(string $url): void
 }
 
 /**
+ * Return the API key used to authenticate with the tournament API.
+ * Falls back to the TOURNAMENTS_API_KEY constant, then to a DB setting.
+ */
+function trGetApiKey(): string
+{
+    if (defined('TOURNAMENTS_API_KEY') && TOURNAMENTS_API_KEY !== '') {
+        return TOURNAMENTS_API_KEY;
+    }
+    global $db;
+    $val = $db->query(qp("SELECT value FROM {settings} WHERE `key` = 'api_key'"))->fetchColumn();
+    return $val !== false ? (string)$val : '';
+}
+
+/**
+ * Save the API key.
+ */
+function trSaveApiKey(string $apiKey): void
+{
+    global $db;
+    $apiKey = trim($apiKey);
+    $db->prepare(qp(
+        "INSERT INTO {settings} (`key`, value) VALUES ('api_key', :v)
+         ON DUPLICATE KEY UPDATE value = :v2"
+    ))->execute([':v' => $apiKey, ':v2' => $apiKey]);
+}
+
+/**
  * Fetch tournament data from the external API.
  *
  * @return array{ok: bool, data?: array, error?: string}
@@ -286,19 +313,20 @@ function trFetchTournament(string $tournamentId): array
         return ['ok' => false, 'error' => 'Tournament API URL is not configured.'];
     }
 
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    $token  = kc_get_access_token($userId);
-    if (!$token) {
-        return ['ok' => false, 'error' => 'You must be logged in to fetch a tournament.'];
+    $apiKey = trGetApiKey();
+    if ($apiKey === '') {
+        return ['ok' => false, 'error' => 'Tournament API key is not configured.'];
     }
 
-    $url = $apiUrl . '/api/tournament-report?tournamentId=' . rawurlencode($tournamentId);
+    $url = $apiUrl . '/api/tournament-report?' . http_build_query([
+        'tournamentId' => $tournamentId,
+        'apiKey'       => $apiKey,
+    ]);
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => [
             'Accept: application/json',
-            'Authorization: Bearer ' . $token,
         ],
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_FOLLOWLOCATION => true,
@@ -307,6 +335,9 @@ function trFetchTournament(string $tournamentId): array
     $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlErr  = curl_error($ch);
     curl_close($ch);
+
+    $logUrl = preg_replace('/apiKey=[^&]+/', 'apiKey=REDACTED', $url);
+    error_log('[tournament-reports] GET ' . $logUrl . ' -> HTTP ' . $code . ($curlErr !== '' ? ' — ' . $curlErr : ''));
 
     if ($curlErr) {
         return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];

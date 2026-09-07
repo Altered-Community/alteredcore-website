@@ -9,5 +9,11 @@ if (!defined('TOURNAMENTS_API_URL')) {
     define('TOURNAMENTS_API_URL', '');
 }
 
+// API key used to authenticate with the tournament results API.
+// Change this value or override it via Admin → Tournament Settings.
+if (!defined('TOURNAMENTS_API_KEY')) {
+    define('TOURNAMENTS_API_KEY', '');
+}
+
 // Base URL for plugin assets (images, JS, CSS).
 $trPluginAssetsUrl = BASE_URL . '/plugins/tournament-reports/assets';

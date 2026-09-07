@@ -11,6 +11,7 @@
     var rankings      = TR_EXISTING_RANKINGS || [];
     var playerDecks   = {};
     var cardNames     = {};          // ref -> translated name
+    var heroRefs      = {};          // ref -> true (card is a hero)
     var cardNamesLoading = {};       // ref -> true (in-flight)
     var pendingRefs   = {};          // ref -> true (name still being resolved)
     var rendererLoaded = false;
@@ -22,18 +23,19 @@
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function normalizeRef(ref) {
-        var p = ref.split('_');
-        if (p[2] === 'P') p[2] = 'B';
-        if (p[1] === 'BISE') p[1] = 'CORE';
-        return p.join('_');
-    }
-
     function cardImgUrl(ref, lang) {
         var p   = ref.split('_');
         var set = p[1] || 'CORE';
-        var normalized = normalizeRef(ref);
-        return TR_CDN + '/cards/' + encodeURIComponent(lang) + '/' + encodeURIComponent(set) + '/' + encodeURIComponent(normalized) + '.webp';
+        return TR_CDN + '/cards/' + encodeURIComponent(lang) + '/' + encodeURIComponent(set) + '/' + encodeURIComponent(ref) + '.webp';
+    }
+
+    // Hero cover art lives under /cards/hero/{normalized}_1.webp.
+    // Mirrors normalizeCardRef in core-altered-cards/includes/functions.php.
+    function heroCardImgUrl(ref) {
+        var p = ref.split('_');
+        if (p[2] === 'P')    p[2] = 'B';
+        if (p[1] === 'BISE') p[1] = 'CORE';
+        return TR_CDN + '/cards/hero/' + encodeURIComponent(p.join('_')) + '_1.webp';
     }
 
     function factionImgUrl(f) {
@@ -52,6 +54,14 @@
             'LY': 'Lyra', 'MU': 'Muna', 'AX': 'Axiom'
         };
         return map[f] || f || '';
+    }
+
+    function factionColor(f) {
+        var map = {
+            'YZ': '#764891', 'BR': '#c32637', 'OR': '#0f6593',
+            'LY': '#cf4171', 'MU': '#3d6b42', 'AX': '#8c432a'
+        };
+        return map[f] || '';
     }
 
     function formatDate(iso) {
@@ -86,11 +96,27 @@
         return ref;
     }
 
-    // The hero is always the first card of the deck.
+    // The hero is the card whose type is HERO (API-provided); fall back to the
+    // first deck card when the type is not known yet.
     function heroName(deck) {
         var cards = (deck && deck.deck) || [];
         if (!cards.length) return '';
+        for (var i = 0; i < cards.length; i++) {
+            if (heroRefs[cards[i].reference]) {
+                return resolveCardName(cards[i].reference);
+            }
+        }
         return resolveCardName(cards[0].reference);
+    }
+
+    // The hero card object from a deck, or the first card as a fallback.
+    function heroCard(deck) {
+        var cards = (deck && deck.deck) || [];
+        if (!cards.length) return null;
+        for (var i = 0; i < cards.length; i++) {
+            if (heroRefs[cards[i].reference]) return cards[i];
+        }
+        return cards[0];
     }
 
     function collectRefs(cards) {
@@ -142,6 +168,8 @@
                         name = String(nm || '');
                     }
                     if (name) cardNames[card.reference] = name;
+                    var cardType = card.cardType && card.cardType.reference;
+                    if (cardType === 'HERO') heroRefs[card.reference] = true;
                 });
                 refreshDeckNames();
                 updateNamesLoader();
@@ -333,6 +361,36 @@
         return html;
     }
 
+    // Faction-colored banner backed by the hero card image, like deck.php's
+    // deck-hdr-banner. Clicking it opens the card lightbox.
+    function renderHeroBanner(heroCard, deck) {
+        if (!heroCard || !heroCard.reference) return '';
+        var ref = heroCard.reference;
+        var faction = deck && deck.faction;
+        var color = factionColor(faction);
+        var imgUrl = heroCardImgUrl(ref);
+        var uniq = isUnique(ref);
+        var hero = resolveCardName(ref);
+
+        var html = '<div class="tr-panel-hero-banner" data-ref="' + esc(ref) + '" data-lang="' + esc(TR_LANG) + '" data-unique="' + (uniq ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + esc(hero) + '"';
+        var gradient = color
+            ? 'linear-gradient(to right,' + color + ' 35%,' + color + '00 100%),'
+            : 'linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.05)),';
+        html += ' style="background-image:' + gradient + 'url(' + esc(imgUrl) + ');background-size:cover;background-position:left top;"';
+        html += '>';
+        html += '<div class="tr-panel-hero-info">';
+        if (faction) {
+            html += '<img src="' + esc(factionImgUrl(faction)) + '" class="tr-panel-hero-faction" alt="' + esc(faction) + '">';
+        }
+        html += '<div class="tr-panel-hero-titles">';
+        html += '<div class="tr-panel-hero-name">' + esc(hero) + '</div>';
+        html += '<div class="tr-panel-hero-label">' + esc(TR_TXT.hero_label || 'Hero') + '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        return html;
+    }
+
     function syncView(pid) {
         var mode = currentView[pid] || 'images';
         var cardsEl = document.querySelector('.tr-decklist-cards--' + CSS.escape(pid));
@@ -428,8 +486,12 @@
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'images' ? ' active' : '') + '" data-view="images" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-grip"></i> ' + esc(TR_TXT.view_images) + '</button>';
         html += '</div>';
 
-        html += renderDeckList(deck.deck, viewId);
-        html += renderDeckCards(deck.deck, viewId);
+        // Hero shown as a banner, the rest of the deck in the grid/list.
+        var hero = heroCard(deck);
+        html += renderHeroBanner(hero, deck);
+        var rest = (deck.deck || []).filter(function (c) { return c !== hero; });
+        html += renderDeckList(rest, viewId);
+        html += renderDeckCards(rest, viewId);
 
         html += '</div>';
         body.innerHTML = html;
@@ -452,16 +514,17 @@
 
     /* ── Export / copy decklist ─────────────────────────────────────────── */
     // Build a plain-text decklist that mirrors the deck.php copy format:
-    // the hero (first card) first, then "<qty> <reference>" per card.
+    // the hero (qty 1) first, then "<qty> <reference>" per card.
     function buildDecklistText(deck) {
         var cards = (deck && deck.deck) || [];
         if (!cards.length) return '';
+        var hero = heroCard(deck);
         var lines = [];
-        cards.forEach(function (c, i) {
-            var ref = c.reference;
-            if (!ref) return;
-            var qty = i === 0 ? 1 : (c.quantity || 1);
-            lines.push(qty + ' ' + ref);
+        if (hero) lines.push('1 ' + hero.reference);
+        cards.forEach(function (c) {
+            if (c === hero) return;
+            var qty = c.quantity || 1;
+            lines.push(qty + ' ' + c.reference);
         });
         return lines.join('\n');
     }
@@ -584,13 +647,7 @@
     }
 
     /* ── Lightbox ───────────────────────────────────────────────────────── */
-    document.addEventListener('click', function (e) {
-        var wrap = e.target.closest('.tr-card-wrap');
-        if (!wrap) return;
-        var ref  = wrap.dataset.ref;
-        var lang = wrap.dataset.lang || TR_LANG;
-        var uniq = wrap.dataset.unique === '1';
-
+    function openLightbox(ref, lang, uniq) {
         function showLightbox() {
             var inner;
             if (uniq) {
@@ -607,6 +664,24 @@
             loadRenderer(showLightbox);
         } else {
             showLightbox();
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var cardWrap = e.target.closest('.tr-card-wrap');
+        var banner = e.target.closest('.tr-panel-hero-banner');
+        var hit = cardWrap || banner;
+        if (!hit) return;
+        openLightbox(hit.dataset.ref, hit.dataset.lang || TR_LANG, hit.dataset.unique === '1');
+    });
+    document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if (!t || t.closest('.tr-panel-hero-banner')) {
+            var banner = t.closest && t.closest('.tr-panel-hero-banner');
+            if (banner && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                openLightbox(banner.dataset.ref, banner.dataset.lang || TR_LANG, banner.dataset.unique === '1');
+            }
         }
     });
     lightboxEl.addEventListener('click', function (e) {
