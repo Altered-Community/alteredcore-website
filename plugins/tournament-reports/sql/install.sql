@@ -40,3 +40,4 @@ CREATE TABLE IF NOT EXISTS {settings} (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO {settings} (`key`, value) VALUES ('api_url', '');
+INSERT IGNORE INTO {settings} (`key`, value) VALUES ('api_key', '');
