@@ -35,6 +35,9 @@ $txt = [
         'copy_ok'          => 'Copied!',
         'loading_tournament'    => 'Loading tournament…',
         'players_count'    => '%d players',
+        'no_data'          => 'No data',
+        'multiple_decks'   => 'Multiple decks',
+        'variant_deck'     => 'Deck %d',
     ],
     'fr' => [
         'page_title'       => 'Rapport de tournoi',
@@ -65,6 +68,9 @@ $txt = [
         'copy_ok'          => 'Copié !',
         'loading_tournament'    => 'Chargement du tournoi…',
         'players_count'    => '%d joueurs',
+        'no_data'          => 'Pas de données',
+        'multiple_decks'   => 'Plusieurs decks',
+        'variant_deck'     => 'Deck %d',
     ],
 ][$uiLang] ?? [];
 

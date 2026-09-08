@@ -7,6 +7,7 @@
 
     var currentData   = null;
     var currentView   = {};
+    var currentVariant = {};   // pid -> index of the deck variant currently shown
     var currentOpenDeck = null;
     var rankings      = TR_EXISTING_RANKINGS || [];
     var playerDecks   = {};
@@ -242,18 +243,35 @@
                 if (!playerDecks[p.id]) {
                     playerDecks[p.id] = {
                         name: p.name, faction: p.faction,
-                        deck: p.deck || [], playedCards: p.playedCards || []
+                        playedCards: p.playedCards || [],
+                        decks: [],          // distinct non-empty deck variants
+                        hasEmptyDeck: false
                     };
-                } else {
-                    var existing = playerDecks[p.id].deck.map(function(c){ return c.reference; });
-                    (p.deck || []).forEach(function (c) {
-                        if (existing.indexOf(c.reference) === -1) {
-                            playerDecks[p.id].deck.push(c);
-                            existing.push(c.reference);
-                        }
-                    });
                 }
+                var pd = playerDecks[p.id];
+                var deck = p.deck || [];
+                if (!deck.length) { pd.hasEmptyDeck = true; return; }
+
+                // Group distinct decklists: same set of card references = same deck.
+                var sig = deck.map(function (c) { return c.reference; }).sort().join('|');
+                var variant = null;
+                for (var i = 0; i < pd.decks.length; i++) {
+                    if (pd.decks[i].signature === sig) { variant = pd.decks[i]; break; }
+                }
+                if (!variant) {
+                    variant = { signature: sig, deck: deck.slice(), faction: p.faction, games: [] };
+                    pd.decks.push(variant);
+                }
+                variant.games.push(g.tableId || null);
+                if (!pd.faction && p.faction) pd.faction = p.faction;
             });
+        });
+        Object.keys(playerDecks).forEach(function (pid) {
+            var pd = playerDecks[pid];
+            // Primary "deck" = first non-empty variant (keeps legacy consumers working).
+            var primary = pd.decks[0] || { deck: [], faction: pd.faction };
+            pd.deck = primary.deck;
+            pd.faction = pd.faction || primary.faction;
         });
         return playerDecks;
     }
@@ -262,17 +280,28 @@
     function preloadCardImages() {
         var urls = [];
         Object.keys(playerDecks).forEach(function (pid) {
-            (playerDecks[pid].deck || []).forEach(function (c) {
-                var ref = c.reference;
-                if (!ref) return;
-                var url = cardImgUrl(ref, TR_LANG);
-                if (urls.indexOf(url) === -1) urls.push(url);
+            playerAllDeckLists(pid).forEach(function (deck) {
+                (deck || []).forEach(function (c) {
+                    var ref = c.reference;
+                    if (!ref) return;
+                    var url = cardImgUrl(ref, TR_LANG);
+                    if (urls.indexOf(url) === -1) urls.push(url);
+                });
             });
         });
         urls.forEach(function (url) {
             var img = new Image();
             img.src = url;
         });
+    }
+
+    // All distinct decklist arrays for a player (falls back to the merged one).
+    function playerAllDeckLists(pid) {
+        var pd = playerDecks[pid];
+        if (!pd) return [];
+        return (pd.decks && pd.decks.length)
+            ? pd.decks.map(function (v) { return v.deck; })
+            : [pd.deck || []];
     }
 
     /* ── Render tournament ──────────────────────────────────────────────── */
@@ -308,7 +337,9 @@
         // Prefetch all translated card names up front.
         var allDeckCards = [];
         Object.keys(playerDecks).forEach(function (pid) {
-            allDeckCards = allDeckCards.concat(playerDecks[pid].deck || []);
+            playerAllDeckLists(pid).forEach(function (deck) {
+                allDeckCards = allDeckCards.concat(deck || []);
+            });
         });
         fetchCardNames(allDeckCards);
 
@@ -433,11 +464,21 @@
                 else if (i === 2) posClass = ' tr-ranking-pos-3';
                 var hasDeck = p.player_id && playerDecks[p.player_id];
                 var deck = hasDeck ? playerDecks[p.player_id] : null;
+                var multipleDecks = !!(deck && deck.decks && deck.decks.length > 1);
                 // Only open the side panel when there is a real decklist
                 // (more than just the hero card).
                 var hasDecklist = hasDeck && (deck.deck || []).length > 1;
+                var noData = !deck || !deck.deck || deck.deck.length === 0;
                 var hero = deck ? heroName(deck) : '';
                 var fSrc = deck ? factionImgUrl(deck.faction) : '';
+                var badge = '';
+                if (deck) {
+                    if (multipleDecks) {
+                        badge = ' <span class="tr-badge tr-badge-multi" title="' + esc(TR_TXT.multiple_decks) + '">' + esc(TR_TXT.multiple_decks) + '</span>';
+                    } else if (noData) {
+                        badge = ' <span class="tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
+                    }
+                }
                 html += '<tr class="tr-rank-row">';
                 html += '<td class="tr-ranking-pos' + posClass + '">';
                 html += '<span class="tr-rank-position">' + (i + 1) + '</span>';
@@ -445,6 +486,7 @@
                 html += '<td >' + (hasDecklist
                     ? '<button type="button" class="tr-player-link" data-player-id="' + esc(p.player_id) + '">' + esc(p.player_name) + '</button>'
                     : esc(p.player_name));
+                html += badge;
                 html += '</td>';
                 html += '<td>'
                 if (hero) {
@@ -466,8 +508,8 @@
 
     /* ── Side panel ─────────────────────────────────────────────────────── */
     function openPlayerPanel(playerId) {
-        var deck = playerDecks[playerId];
-        if (!deck) return;
+        var pd = playerDecks[playerId];
+        if (!pd) return;
 
         var panel   = document.getElementById('tr-player-panel');
         var body    = document.getElementById('tr-player-panel-body');
@@ -475,11 +517,27 @@
         var backdrop = document.getElementById('tr-player-panel-backdrop');
         var viewId  = 'panel_' + playerId;
         currentView[viewId] = currentView[viewId] || 'images';
-        var hero = heroName(deck);
+        if (typeof currentVariant[playerId] !== 'number') currentVariant[playerId] = 0;
 
-        title.textContent = hero + " - " + deck.name;
+        var variants = (pd.decks && pd.decks.length) ? pd.decks : [{ deck: pd.deck || [], faction: pd.faction }];
+        var vi = currentVariant[playerId];
+        if (!variants[vi]) vi = 0;
+        var deck = variants[vi];
+        var hero = heroName(deck);
+        var heroCardObj = heroCard(deck);
+
+        title.textContent = (hero ? hero + " - " : "") + pd.name;
 
         var html = '<div class="tr-panel-decklist">';
+
+        if (variants.length > 1) {
+            html += '<div class="tr-deck-variants">';
+            variants.forEach(function (v, i) {
+                html += '<button type="button" class="tr-deck-variant-btn' + (i === vi ? ' active' : '') + '" data-pid="' + esc(playerId) + '" data-variant="' + i + '" title="' + esc(TR_TXT.variant_deck.replace('%d', i + 1)) + '">' + esc(TR_TXT.variant_deck.replace('%d', i + 1)) + '</button>';
+            });
+            html += '</div>';
+        }
+
         html += '<div class="tr-view-toggle">';
         html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '"><i class="fa-solid fa-clipboard-list"></i></button>';
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'list' ? ' active' : '') + '" data-view="list" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-list"></i> ' + esc(TR_TXT.view_list) + '</button>';
@@ -487,9 +545,8 @@
         html += '</div>';
 
         // Hero shown as a banner, the rest of the deck in the grid/list.
-        var hero = heroCard(deck);
-        html += renderHeroBanner(hero, deck);
-        var rest = (deck.deck || []).filter(function (c) { return c !== hero; });
+        html += renderHeroBanner(heroCardObj, deck);
+        var rest = (deck.deck || []).filter(function (c) { return c !== heroCardObj; });
         html += renderDeckList(rest, viewId);
         html += renderDeckCards(rest, viewId);
 
@@ -581,6 +638,14 @@
         if (!btn) return;
         e.preventDefault();
         openPlayerPanel(btn.dataset.playerId);
+    });
+
+    /* ── Deck variant switch (multiple decklists) ───────────────────────── */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.tr-deck-variant-btn');
+        if (!btn) return;
+        currentVariant[btn.dataset.pid] = parseInt(btn.dataset.variant, 10);
+        openPlayerPanel(btn.dataset.pid);
     });
 
     /* ── Panel close ────────────────────────────────────────────────────── */

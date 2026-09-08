@@ -391,6 +391,54 @@
     text-decoration-color: var(--primary-600, #b8960c);
 }
 
+/* Player status badges (empty deck / multiple decks) */
+.tr-badge {
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-radius: 20px;
+    padding: 1px 8px;
+    white-space: nowrap;
+}
+.tr-badge-nodata {
+    color: var(--neutral-400, #9ca3af);
+    background: rgba(0, 0, 0, .05);
+    border: 1px solid rgba(0, 0, 0, .1);
+}
+.tr-badge-multi {
+    color: #92400e;
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .4);
+}
+
+/* Deck variant tabs (multiple decklists) */
+.tr-deck-variants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+.tr-deck-variant-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: .78rem;
+    font-weight: 600;
+    border: 1px solid var(--neutral-300);
+    background: transparent;
+    color: var(--neutral-500);
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.tr-deck-variant-btn.active {
+    background: var(--primary-400, #C9A84C);
+    border-color: var(--primary-400, #C9A84C);
+    color: #fff;
+}
+
 /* Hero card name beside player name */
 .tr-rank-hero {
     display: inline-block;
