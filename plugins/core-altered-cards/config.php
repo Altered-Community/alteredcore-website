@@ -5,7 +5,7 @@
 // When false, non-logged-in users are redirected to the login page on /decks
 // and /deckbuilder. When true, guests can browse and use the deckbuilder, but
 // saving a deck still requires being logged in.
-$guestModeEnabled = false;
+$guestModeEnabled = true;
 
 // When true, cards in the deck sidebar whose quantity exceeds what the user
 // owns in their collection are marked with an amber archive badge.

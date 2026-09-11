@@ -17,6 +17,7 @@ $txt        = array_merge($_sharedTxt, [
         'btn_collection' => 'My collection',
         'lbl_effects' => 'Effects',
         'add_effect'  => 'Add effect',
+        'own_alt_art_save_error' => 'Could not save your choice.',
     ],
     'fr' => [
         'page_title'  => 'Cartes',
@@ -27,6 +28,7 @@ $txt        = array_merge($_sharedTxt, [
         'btn_collection' => 'Ma collection',
         'lbl_effects' => 'Effets',
         'add_effect'  => 'Ajouter un effet',
+        'own_alt_art_save_error' => 'Impossible d\'enregistrer votre choix.',
     ],
 ][$uiLang] ?? []);
 
@@ -66,10 +68,11 @@ $defaultRarities   = array_values(array_intersect((array)($_ss['default_rarities
 $defaultTypes      = array_values(array_intersect((array)($_ss['default_types']      ?? []), $validTypes));
 $defaultVariations  = array_values(array_intersect((array)($_ss['default_variations']  ?? []), array_keys($variationsData)));
 $defaultCollection  = $_ss['default_collection'] ?? 'official';
-$_raw1        = $_ss['default_sort_1'] ?? 'default';
-$_raw2        = $_ss['default_sort_2'] ?? null;
-$defaultSort1 = in_array($_raw1, $validSorts) ? $_raw1 : 'default';
-$defaultSort2 = ($_raw2 && in_array($_raw2, $validSorts)) ? $_raw2 : null;
+// default_sort_1/2 drive the internal sort even when not offered as a UI
+// option (e.g. set_date_desc isn't a selectable choice), so they're trusted
+// from local config directly rather than validated against $validSorts.
+$defaultSort1 = $_ss['default_sort_1'] ?? 'default';
+$defaultSort2 = $_ss['default_sort_2'] ?? null;
 $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 
 // parse URL filter params (passed to JS for initial state)
@@ -118,6 +121,10 @@ $_ownMode          = $_ownEnabled && $_csUserId > 0;
 $_ownWebBase       = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? OWNERSHIP_WEB_URL
                    : ((defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL) ? OWNERSHIP_API_URL : '');
 $_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
+// Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
+// $_ownMode above (which only drive the existing ownership-search tab): this also
+// requires the ownership plugin itself to be active, not just OWNERSHIP_API_URL configured.
+$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0;
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {
@@ -272,6 +279,12 @@ $pageTitle = $txt['page_title'];
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-playset.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search.js"></script>
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
+<?php endif; ?>
 <script>
 CardSearch({
     debug:       <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
@@ -302,6 +315,16 @@ CardSearch({
     favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
     favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
     favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
+    ownAltArt: <?= json_encode($_ownAltArtActive ? [
+        'enabled'          => true,
+        'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+        'cdnUrl'           => CDN_URL,
+        'lang'             => $lang,
+        'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+        'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+        'csrfToken'        => csrfToken(),
+        'txt'              => ['saveError' => $txt['own_alt_art_save_error']],
+    ] : ['enabled' => false]) ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,

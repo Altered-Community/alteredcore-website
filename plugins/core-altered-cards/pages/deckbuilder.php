@@ -21,6 +21,21 @@ $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
 // digital ownership (AlteredOwnership service)
 $_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
+// Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
+// $_ownMode above (which only drive the existing "apply my illustration preferences"
+// bulk feature): this also requires the ownership plugin itself to be active, not just
+// OWNERSHIP_API_URL configured.
+$_ownAltArtActive   = ownershipIsActive() && !$isGuest && $_dbUserId > 0;
+$ownAltArtCfg = $_ownAltArtActive ? [
+    'enabled'          => true,
+    'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+    'cdnUrl'           => CDN_URL,
+    'lang'             => $lang,
+    'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+    'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+    'csrfToken'        => csrfToken(),
+    'txt'              => ['saveError' => $uiLang === 'fr' ? 'Impossible d\'enregistrer votre choix.' : 'Could not save your choice.'],
+] : ['enabled' => false];
 $_userCollection    = []; // {ref => qty}
 $_collEntries       = []; // {ref => api_entry_id} — populated in API mode only
 if ($_collectionMode) {
@@ -158,7 +173,12 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Unnamed',
         'detail_label'    => 'View detail',
         'bga_sets_info'   => 'The following sets are not yet available on Board Game Arena and cannot be used in BGA games: %s.',
-        'bga_alt_art_info' => 'For now, alt arts are replaced by their base art on BGA — so art selection isn\'t available here.',
+        'bga_alt_art_info' => 'You can pick a specific illustration for any card below, even one you don\'t own yet — on Board Game Arena, illustrations you don\'t own enough copies of are automatically replaced by their base art when the deck is played.',
+        'apply_altart_btn'      => 'Apply my illustration preferences',
+        'apply_altart_done'     => 'Illustrations updated from your preferences.',
+        'choose_illustration'   => 'Choose illustration',
+        'illustration_confirm'  => 'Use this illustration',
+        'no_other_illustration' => 'No other illustration is available for this card.',
     ],
     'fr' => [
         'page_title'      => 'Deckbuilder',
@@ -279,7 +299,12 @@ $txt = array_merge($_sharedTxt, [
         'unnamed'         => 'Sans nom',
         'detail_label'    => 'Accéder au détail',
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
-        'bga_alt_art_info' => 'Pour le moment, les alt arts sont remplacés par leur version de base sur BGA — la sélection d\'art n\'est donc pas disponible ici.',
+        'bga_alt_art_info' => 'Vous pouvez choisir une illustration précise pour chaque carte ci-dessous, même une que vous ne possédez pas encore — sur Board Game Arena, les illustrations dont vous n\'avez pas assez d\'exemplaires sont automatiquement remplacées par leur art de base au moment de jouer le deck.',
+        'apply_altart_btn'      => 'Appliquer mes préférences d\'illustration',
+        'apply_altart_done'     => 'Illustrations mises à jour selon vos préférences.',
+        'choose_illustration'   => 'Choisir une illustration',
+        'illustration_confirm'  => 'Utiliser cette illustration',
+        'no_other_illustration' => 'Aucune autre illustration n\'est disponible pour cette carte.',
     ],
 ][$uiLang] ?? []);
 $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
@@ -665,7 +690,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     <?php foreach (array_values($rarityGems) as $r):
                         $_gc = $_rarityGemColors[$r] ?? '';
                         $gemCountStyle = $_gc ? 'style="color:' . h($_gc) . '"' : 'class="text-muted"'; ?>
-                    <span class="d-flex align-items-center gap-1" id="db-gem-<?= $r ?>" style="display:none!important">
+                    <span class="d-flex align-items-center gap-1 d-none" id="db-gem-<?= $r ?>">
                         <img src="<?= $pluginAssetsUrl ?>/gems/<?= $r ?>.png" alt="<?= $r ?>" style="width:13px;height:13px">
                         <span id="db-gem-<?= $r ?>-count" <?= $gemCountStyle ?>>0</span>
                     </span>
@@ -685,6 +710,13 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 <div id="db-deck-pane-stats" class="db-stats-pane" style="display:none">
                     <!-- Stats content populated by renderStatsPane() -->
                 </div>
+
+                <?php if ($_ownMode): ?>
+                <button type="button" id="db-apply-altart-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                    <i class="fa-solid fa-images me-1"></i><?= h($txt['apply_altart_btn']) ?>
+                </button>
+                <div id="db-altart-status" class="db-autosave-status mb-2" style="display:none"></div>
+                <?php endif; ?>
 
                 <!-- Save button -->
                 <div id="db-save-ok" class="alert alert-success p-2 mb-2 small" style="display:none"></div>
@@ -738,7 +770,8 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
         <button onclick="dbHeroClose()" class="db-hero-close-btn">×</button>
         <h3 class="db-hero-title"><?= h($txt['choose_hero']) ?></h3>
         <p class="db-hero-intro"><?= h($txt['wizard_hero_msg']) ?></p>
-        <div id="db-hero-factions">
+        <div class="db-hero-toolbar">
+            <div id="db-hero-factions">
             <?php foreach ($factionsData as $fCode => $fData): ?>
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
                     class="db-faction-btn<?= $fCode === $_heroDefaultFaction ? ' active' : '' ?>"
@@ -748,6 +781,12 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 <span><?= h($fData[$uiLang] ?? $fData['en']) ?></span>
             </button>
             <?php endforeach; ?>
+        </div>
+        <label class="cs-switch db-hero-altarts" title="<?= h($txt['show_promo'] ?? 'Alt arts') ?>">
+            <input type="checkbox" id="db-hero-altarts-toggle">
+            <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+            <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($txt['show_promo'] ?? 'Alt arts') ?></span>
+        </label>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>
         <div id="db-hero-grid">
@@ -928,6 +967,7 @@ var AlteredDB = {
     uniqueLocale: <?= json_encode($uniqueLocale) ?>,
     uiLang:       <?= json_encode($uiLang) ?>,
     csrfToken: <?= json_encode(csrfToken()) ?>,
+    ownAltArt: <?= json_encode($ownAltArtCfg) ?>,
     deckId:    <?= json_encode($editDeckId) ?>,
     isGuest:   <?= $isGuest ? 'true' : 'false' ?>,
     debug:     <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
@@ -977,6 +1017,11 @@ var AlteredDB = {
         'save_btn'      => $txt['save_btn'],
         'change_hero'   => $txt['change_hero'],
         'hero_confirm'  => $txt['hero_confirm'],
+        'apply_altart_btn'      => $txt['apply_altart_btn'],
+        'apply_altart_done'     => $txt['apply_altart_done'],
+        'choose_illustration'   => $txt['choose_illustration'],
+        'illustration_confirm'  => $txt['illustration_confirm'],
+        'no_other_illustration' => $txt['no_other_illustration'],
         'choose_hero'   => $txt['choose_hero'],
         'hero_slot'     => $txt['hero_slot'],
         'new_deck'      => $txt['new_deck'],
@@ -1016,6 +1061,8 @@ var AlteredDB = {
         'stay'           => $txt['stay'],
         'autosaved'      => $txt['autosaved'],
         'guest_saved_ok' => $txt['guest_saved_ok'],
+        'show_promo'     => $txt['show_promo'],
+        'lbl_variation'  => $txt['lbl_variation'],
     ]) ?>,
     rendererSrc: 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@main/altered-card-renderer-minified.js',
     existingDeck: <?= json_encode($existingDeck) ?>,
@@ -1055,6 +1102,9 @@ var AlteredDB = {
     subtypeOptionsJson:   <?= $subtypeOptionsJson ?>,
     keywordOptionsJson:   <?= $keywordOptionsJson ?>,
     variationOptionsJson: <?= $variationOptionsJson ?>,
+    // Flat list of every variation code, used by the hero picker's "Alt arts"
+    // toggle to broaden its fetch to all printings.
+    allVariations: <?= json_encode(array_column(json_decode($variationOptionsJson, true) ?: [], 'value')) ?>,
     defaultCollection:    <?= json_encode($defaultCollection) ?>,
 <?php
     // Promo set linking (main edition → its promo sub editions) + flat sub list.
@@ -1072,6 +1122,7 @@ var AlteredDB = {
     subSets:      <?= json_encode($subSets) ?>,
     noUniqueSets: <?= json_encode(array_values($noUniqueSets)) ?>,
     ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
+    altArtsUrl:      <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/deck-alt-arts' : '') ?>,
     uniquesApiBase:  <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
 };
 </script>
@@ -1255,12 +1306,6 @@ var AlteredDB = {
     function cdnUrl(ref) {
         var p = ref.split('_');
         return AlteredDB.cdnUrl + '/cards/' + AlteredDB.lang + '/' + (p[1] || '') + '/' + ref + '.webp';
-    }
-    function normalizeHeroRef(ref) {
-        var p = ref.split('_');
-        if (p[2] === 'P') p[2] = 'B';
-        if (p[1] === 'BISE') p[1] = 'CORE';
-        return p.join('_');
     }
     // Locale-keyed names: old Cards API uses short codes (en, fr); the Uniques
     // search API (rust-cards-api) uses long codes (en_US, fr_FR) — fall back
@@ -1462,7 +1507,7 @@ var AlteredDB = {
         elHeroBanner.style.cssText = '';
 
         if (ref) {
-            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + normalizeHeroRef(ref) + '_1.webp';
+            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + ref + '_1.webp';
             var fImg    = faction ? AlteredDB.pluginAssetsUrl + '/faction/' + faction + '.png' : '';
             elHeroBanner.style.cssText =
                 'background-image:linear-gradient(to right,' + fColor + 'b3 30%,' + fColor + '00 100%),url(' + heroImg + ');' +
@@ -1535,6 +1580,113 @@ var AlteredDB = {
             if (AlteredDB.isGuest) saveGuestDeck();
         }
     }
+    // Alt-art: resolve a set of card References to their multi-art family/options via
+    // the deck-alt-arts papi proxy (combines /api/alt-arts/resolve-references and
+    // /api/alt-arts/options on OWNERSHIP_API_URL). Returns a promise of
+    // {groups:{ref:{familyId,faction,rarity}}, options:{"fam:faction:rarity":{options,slots}}},
+    // or null on any failure/when the feature isn't configured for this site.
+    function fetchAltArtData(references) {
+        if (!AlteredDB.altArtsUrl || !references.length) return Promise.resolve(null);
+        var qs = references.map(function (r) { return 'ref[]=' + encodeURIComponent(r); }).join('&');
+        return fetch(AlteredDB.altArtsUrl + '?' + qs)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+    }
+
+    // Spreads `qty` copies across a group's ordered slots (1 for HERO/TOKEN, else up to
+    // 3) the same way the deck's own copies would map onto "exemplaire" slots -- copy i
+    // (0-based) takes slots[i], and any copy beyond the slot count repeats the last slot.
+    // Returns { reference: count }.
+    function distributeAcrossSlots(slots, qty) {
+        var counts = {};
+        for (var i = 0; i < qty; i++) {
+            var ref = slots[Math.min(i, slots.length - 1)].reference;
+            counts[ref] = (counts[ref] || 0) + 1;
+        }
+        return counts;
+    }
+
+    // "Apply my illustration preferences" button: rewrites every multi-art card
+    // currently in the deck (hero included) to the player's globally-configured
+    // alt-art preference (Alt Arts BGA page), including families with no explicit
+    // choice -> their default/base art. A family can already span more than one deck
+    // line (e.g. 2 copies of one art + 1 of another) -- those are aggregated by group
+    // before being redistributed, so the total copy count is preserved exactly.
+    function applyAltArtPreference() {
+        var btn = document.getElementById('db-apply-altart-btn');
+        var status = document.getElementById('db-altart-status');
+        if (!btn) return;
+
+        var refs = Object.keys(deck.cards);
+        if (deck.hero && deck.hero.cardReference) refs.push(deck.hero.cardReference);
+        if (!refs.length) return;
+
+        btn.disabled = true;
+        fetchAltArtData(refs).then(function (data) {
+            btn.disabled = false;
+            if (!data) return;
+            var changed = false;
+
+            var byGroup = {};
+            Object.keys(deck.cards).forEach(function (ref) {
+                var group = data.groups[ref];
+                if (!group) return; // not part of a multi-art family
+                var key = group.familyId + ':' + group.faction + ':' + group.rarity;
+                var opt = data.options[key];
+                if (!opt || !opt.slots || !opt.slots.length) return;
+                if (!byGroup[key]) {
+                    byGroup[key] = {
+                        slots: opt.slots.slice().sort(function (a, b) { return a.slotIndex - b.slotIndex; }),
+                        totalQty: 0, refs: [],
+                    };
+                }
+                byGroup[key].totalQty += deck.cards[ref].qty;
+                byGroup[key].refs.push(ref);
+            });
+
+            Object.keys(byGroup).forEach(function (key) {
+                var g = byGroup[key];
+                var counts = distributeAcrossSlots(g.slots, g.totalQty);
+                var newRefs = Object.keys(counts);
+                if (g.refs.length === 1 && newRefs.length === 1 && newRefs[0] === g.refs[0]) return; // no-op
+
+                changed = true;
+                var template = deck.cards[g.refs[0]];
+                g.refs.forEach(function (r) { delete deck.cards[r]; });
+                newRefs.forEach(function (newRef) {
+                    if (deck.cards[newRef]) {
+                        deck.cards[newRef].qty += counts[newRef];
+                    } else {
+                        deck.cards[newRef] = Object.assign({}, template, { qty: counts[newRef] });
+                    }
+                });
+            });
+
+            // Hero is always a single slot -- wholesale replacement, no splitting.
+            if (deck.hero && deck.hero.cardReference) {
+                var heroGroup = data.groups[deck.hero.cardReference];
+                if (heroGroup) {
+                    var heroKey = heroGroup.familyId + ':' + heroGroup.faction + ':' + heroGroup.rarity;
+                    var heroOpt = data.options[heroKey];
+                    var heroSlot = heroOpt && heroOpt.slots && heroOpt.slots[0];
+                    if (heroSlot && heroSlot.reference !== deck.hero.cardReference) {
+                        changed = true;
+                        setHero(Object.assign({}, deck.hero, { cardReference: heroSlot.reference }));
+                    }
+                }
+            }
+
+            if (!changed) return;
+            markDirty();
+            updateDeckDisplay();
+            if (status) {
+                status.textContent = AlteredDB.txt.apply_altart_done;
+                status.style.display = '';
+                setTimeout(function () { status.style.display = 'none'; }, 4000);
+            }
+        });
+    }
+
     function updateBrowserCardBadge(ref) {
         var wrap = elCards.querySelector('[data-ref="' + ref.replace(/"/g, '\\"') + '"]');
         if (!wrap) return;
@@ -1586,10 +1738,11 @@ var AlteredDB = {
             var cnt = document.getElementById('db-gem-' + r + '-count');
             if (!el || !cnt) return;
             if (gems[r] > 0) {
-                el.style.display = '';
+                el.classList.remove('d-none');
                 cnt.textContent  = gems[r];
             } else {
-                el.style.display = 'none';
+                el.classList.add('d-none');
+                cnt.textContent  = 0;
             }
         });
 
@@ -2109,6 +2262,7 @@ var AlteredDB = {
     var _heroPrints = null;
 
     var elHeroConfirm = document.getElementById('db-hero-confirm');
+    var elHeroAltArts = document.getElementById('db-hero-altarts-toggle');
 
     // True while the creation dialog is up, from page load until the deck is
     // created or abandoned. The picker can open on top of it as a sub-dialog.
@@ -2136,6 +2290,21 @@ var AlteredDB = {
         var p = ref.split('_');
         return ((AlteredDB.subSets || []).indexOf(p[1] || '') !== -1 ? 2 : 0)
              + (p[2] === 'B' ? 0 : 1);
+    }
+
+    // Hero printing type from the card product slot (part[2]) of a reference:
+    // A = alt-art, B = booster/standard, P = promo. Serialized cards append _XXX
+    // but keep their product slot, so they fall under 'P'.
+    function heroPrinting(ref) {
+        var p = ref ? ref.split('_') : [];
+        return p[2] || '';
+    }
+
+    function heroPrintingLabel(printing) {
+        if (printing === 'A') return 'Alt art';
+        if (printing === 'B') return 'Standard';
+        if (printing === 'P') return 'Promo';
+        return 'Standard';
     }
 
     // Within a class, rank by chronological set order (AlteredDB.heroSets is
@@ -2177,6 +2346,13 @@ var AlteredDB = {
         return n === 0 ? 'ko' : (n === _bgaFormats.length ? 'ok' : 'partial');
     }
 
+    // True if a printing group (a hero's tile) contains the given reference. Used
+    // to land on the tile whose printing is already on the deck when alt-arts has
+    // split a hero into several variation tiles.
+    function groupContainsPrints(group, ref) {
+        return group.prints.some(function(pr) { return pr.ref === ref; });
+    }
+
     function heroPickSelect(group, tile) {
         _heroPick = {
             key:      group.key,
@@ -2212,6 +2388,14 @@ var AlteredDB = {
             document.getElementById('db-hero-modal').style.display = 'none';
             if (_wizardOpen) { dbNewRenderHero(); elNewModal.style.display = 'flex'; }
             else             { dbLockScroll(false); }
+        });
+    }
+
+    // "Alt arts" toggle: reloads the current faction's hero pool with the full
+    // variation set (or back to standard-only).
+    if (elHeroAltArts) {
+        elHeroAltArts.addEventListener('change', function() {
+            if (heroCurrFaction) dbLoadHeroes(heroCurrFaction);
         });
     }
 
@@ -2465,6 +2649,14 @@ var AlteredDB = {
             btn.classList.toggle('active', btn.dataset.faction === faction);
         });
 
+        // Variation pool: with "Alt arts" off (default) only the default variations
+        // (normally just standard) are returned; with it on, every variation is
+        // queried and each distinct variation printing becomes its own selectable tile.
+        var altArtsOn = elHeroAltArts.checked;
+        var activeVariations = altArtsOn
+            ? AlteredDB.allVariations
+            : AlteredDB.heroVariations.slice();
+
         // Build params for direct API call
         var heroParts = [
             'itemsPerPage=<?= CARDS_API_MAX_PER_PAGE ?>',
@@ -2472,8 +2664,17 @@ var AlteredDB = {
         ];
         AlteredDB.heroTypes.forEach(function(t)      { heroParts.push('cardType[]='       + encodeURIComponent(t)); });
         AlteredDB.heroRarities.forEach(function(r)   { heroParts.push('rarity[]='         + encodeURIComponent(r)); });
-        AlteredDB.heroSets.forEach(function(s)       { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
-        AlteredDB.heroVariations.forEach(function(v) { heroParts.push('variation[]='      + encodeURIComponent(v)); });
+        // With "Alt arts" off, only the main hero sets are queried. With it on, each
+        // of those sets also brings in its sub-editions (promo / collector booster /
+        // tournament packs), since those carry the extra alt-art and promo printings.
+        var heroSets = altArtsOn
+            ? AlteredDB.heroSets.concat(AlteredDB.heroSets.reduce(function(extra, s) {
+                  (AlteredDB.setChildren[s] || []).forEach(function(c) { if (extra.indexOf(c) === -1) extra.push(c); });
+                  return extra;
+              }, []))
+            : AlteredDB.heroSets;
+        heroSets.forEach(function(s)                 { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
+        activeVariations.forEach(function(v)         { heroParts.push('variation[]='      + encodeURIComponent(v)); });
         if (AlteredDB.heroSort1) {
             var _s1 = AlteredDB.heroSort1;
             if (_s1 === 'random') { heroParts.push('random=true'); }
@@ -2501,18 +2702,41 @@ var AlteredDB = {
                     grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
-                // Collapse printings into one entry per hero identity.
+                // Collapse printings into one entry per hero identity (stable key),
+                // or — when "Alt arts" is on — into one entry per distinct artwork so
+                // every non-standard printing is its own selectable tile. The printing
+                // is told apart by its card product (part[2]: A=alt-art, B=booster,
+                // P=promo) and its set (part[1], e.g. CORE vs DUSTERCB). Standard (B)
+                // printings are kept to a single representative tile per hero, but the
+                // set's promos/alt-arts stay separate (e.g. a DUSTERCB collector-booster
+                // promo is isolated from the same hero's CORE promo). (The cards API's
+                // `variation` field is always "standard" for these, so it can't split them.)
                 var groups = {};
+                var setLabels = {};
+                Object.keys(AlteredDB.sets || {}).forEach(function(k) {
+                    var s = AlteredDB.sets[k];
+                    setLabels[k] = (s && s[AlteredDB.lang]) || (s && s.en) || k;
+                });
                 allCards.forEach(function(card) {
                     var ref = card.reference || '';
                     if (!ref) return;
-                    var key = heroStableKey(ref);
+                    var setColon   = ref.split('_')[1] || '';
+                    var printing   = altArtsOn ? heroPrinting(ref) : '';
+                    // With "Alt arts" off, all printings share one tile per hero. With
+                    // it on, standard (B) printings also share one tile per hero, while
+                    // promo/alt-art/serialized printings are split by their set.
+                    var finalPrint = '';
+                    if (altArtsOn) finalPrint = printing === 'B' ? 'B' : (setColon + '|' + printing);
+                    var key = heroStableKey(ref) + (finalPrint ? '|' + finalPrint : '');
                     if (!groups[key]) {
+                        var setName = setLabels[setColon] || (card.set && card.set.name) || setColon;
                         groups[key] = {
-                            key:     key,
-                            name:    cardName(card),
-                            faction: (card.faction && card.faction.code) || factionFromRef(ref),
-                            prints:  [],
+                            key:       key,
+                            name:      cardName(card),
+                            faction:   (card.faction && card.faction.code) || factionFromRef(ref),
+                            printing:  printing,
+                            setName:   setName,
+                            prints:    [],
                         };
                     }
                     var known = groups[key].prints.some(function(pr) { return pr.ref === ref; });
@@ -2537,7 +2761,6 @@ var AlteredDB = {
                 });
                 list.sort(function(a, b) { return a.name.localeCompare(b.name, AlteredDB.lang) || (a.key < b.key ? -1 : 1); });
 
-                var currentKey = deck.hero ? heroStableKey(deck.hero.cardReference) : null;
                 list.forEach(function(g) {
                     var tile = document.createElement('div');
                     tile.className = 'db-hero-tile';
@@ -2555,6 +2778,18 @@ var AlteredDB = {
                     cap.textContent = g.name;
                     tile.appendChild(cap);
 
+                    // Printing badge: with "Alt arts" on, each distinct non-standard
+                    // printing is its own tile (labelled with artwork type + set); the
+                    // aggregated standard tile is labelled just "Standard".
+                    if (altArtsOn) {
+                        var vTag = document.createElement('div');
+                        vTag.className = 'db-hero-tile-variation';
+                        vTag.textContent = g.printing === 'B'
+                            ? 'Standard'
+                            : heroPrintingLabel(g.printing) + ' · ' + g.setName;
+                        tile.appendChild(vTag);
+                    }
+
                     // Heroes unusable on BGA stay pickable — theory crafting is
                     // allowed — but say so up front.
                     if (g.bgaState !== 'ok') {
@@ -2569,8 +2804,10 @@ var AlteredDB = {
                     tile.addEventListener('click', function() { heroPickSelect(g, tile); });
                     grid.appendChild(tile);
 
-                    // Re-opening the picker lands on the hero already in the deck.
-                    if (currentKey && g.key === currentKey) heroPickSelect(g, tile);
+                    // Re-opening the picker lands on the hero already in the deck —
+                    // matched by reference, since alt-arts may split one hero into
+                    // several variation tiles.
+                    if (deck.hero && groupContainsPrints(g, deck.hero.cardReference)) heroPickSelect(g, tile);
                 });
             })
             .catch(function(err) {
@@ -2640,6 +2877,8 @@ var AlteredDB = {
     }
 
     elSaveBtn.addEventListener('click', function() { saveDeck(null); });
+    var elApplyAltArtBtn = document.getElementById('db-apply-altart-btn');
+    if (elApplyAltArtBtn) elApplyAltArtBtn.addEventListener('click', applyAltArtPreference);
     if (elSaveRetry) elSaveRetry.addEventListener('click', function() { saveDeck(null); });
 
     // unsaved changes guard
@@ -2884,6 +3123,7 @@ var AlteredDB = {
     var dbCardModalInner = document.getElementById('db-card-modal-inner');
     function closeDbCardModal() {
         dbCardModal.style.display = 'none';
+        if (dbCardModalInner._ownEnhance) { dbCardModalInner._ownEnhance.destroy(); dbCardModalInner._ownEnhance = null; }
         dbCardModalInner.innerHTML = '';
         document.body.style.overflow = '';
     }
@@ -2906,7 +3146,11 @@ var AlteredDB = {
             cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
         }
         cardEl.addEventListener('click', closeDbCardModal);
-        dbCardModalInner.appendChild(cardEl);
+        if (window.OWN_CARD_MODAL_ENHANCE) {
+            dbCardModalInner._ownEnhance = window.OWN_CARD_MODAL_ENHANCE.enhance(dbCardModalInner, cardEl, ref, isUnique(ref), AlteredDB.ownAltArt);
+        } else {
+            dbCardModalInner.appendChild(cardEl);
+        }
         dbCardModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
@@ -2964,6 +3208,97 @@ var AlteredDB = {
         detailBtn.className = 'btn btn-sm btn-primary-altered';
         detailBtn.style.cssText = 'display:block;width:100%;margin-top:8px;text-decoration:none';
         dbCardModalInner.appendChild(detailBtn);
+    };
+
+    // patch openDbCardModal a second time: illustration picker, only for a card
+    // already in the deck (not the browse-grid preview, which passes a cardData
+    // payload for a card that hasn't been added yet -- picking an art for it before
+    // it exists as a deck line isn't meaningful).
+    var _origOpenDbCardModal2 = window.openDbCardModal;
+    window.openDbCardModal = function (ref, cardData) {
+        _origOpenDbCardModal2(ref, cardData);
+        if (cardData || !deck.cards[ref] || !AlteredDB.altArtsUrl) return;
+
+        var chooseBtn = document.createElement('button');
+        chooseBtn.type = 'button';
+        chooseBtn.className = 'btn btn-sm btn-outline-secondary';
+        chooseBtn.style.cssText = 'display:block;width:100%;margin-top:8px';
+        chooseBtn.innerHTML = '<i class="fa-solid fa-images me-1"></i>' + AlteredDB.txt.choose_illustration;
+        dbCardModalInner.appendChild(chooseBtn);
+
+        var panel = document.createElement('div');
+        panel.style.cssText = 'margin-top:10px;display:none';
+        dbCardModalInner.appendChild(panel);
+
+        chooseBtn.addEventListener('click', function () {
+            chooseBtn.disabled = true;
+            panel.style.display = '';
+            panel.innerHTML = '<div style="color:#fff;font-size:.8rem;text-align:center">' + AlteredDB.txt.loading + '</div>';
+
+            fetchAltArtData([ref]).then(function (data) {
+                chooseBtn.disabled = false;
+                var group = data && data.groups[ref];
+                var key = group && (group.familyId + ':' + group.faction + ':' + group.rarity);
+                var opt = key && data.options[key];
+
+                if (!opt || !opt.options || !opt.options.length) {
+                    panel.innerHTML = '<div style="color:#fff;font-size:.8rem;text-align:center">'
+                        + AlteredDB.txt.no_other_illustration + '</div>';
+                    return;
+                }
+
+                panel.innerHTML = '';
+                var grid = document.createElement('div');
+                grid.id = 'db-art-grid';
+
+                var confirmBtn = document.createElement('button');
+                confirmBtn.type = 'button';
+                confirmBtn.className = 'btn btn-sm btn-primary-altered';
+                confirmBtn.style.cssText = 'display:block;width:100%;margin-top:8px';
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = AlteredDB.txt.illustration_confirm;
+
+                // Unowned illustrations stay selectable here (unlike the Alt Arts BGA
+                // preference page): the deckbuilder deliberately never blocks a choice
+                // on ownership -- BGA replaces it with the base art at play time if the
+                // player still doesn't own enough copies when the deck is fetched.
+                var selected = ref;
+                opt.options.forEach(function (o) {
+                    var tile = document.createElement('div');
+                    tile.className = 'db-hero-tile' + (o.reference === ref ? ' selected' : '')
+                        + (o.ownedQuantity === 0 ? ' db-art-tile--unowned' : '');
+                    var img = document.createElement('img');
+                    img.src = cdnUrl(o.reference);
+                    img.alt = '';
+                    tile.appendChild(img);
+                    tile.addEventListener('click', function () {
+                        selected = o.reference;
+                        grid.querySelectorAll('.db-hero-tile').forEach(function (t) { t.classList.remove('selected'); });
+                        tile.classList.add('selected');
+                        confirmBtn.disabled = selected === ref;
+                    });
+                    grid.appendChild(tile);
+                });
+
+                panel.appendChild(grid);
+                panel.appendChild(confirmBtn);
+
+                confirmBtn.addEventListener('click', function () {
+                    if (selected === ref) return;
+                    markDirty();
+                    var qty = deck.cards[ref].qty;
+                    var template = deck.cards[ref];
+                    delete deck.cards[ref];
+                    if (deck.cards[selected]) {
+                        deck.cards[selected].qty += qty;
+                    } else {
+                        deck.cards[selected] = Object.assign({}, template, { qty: qty });
+                    }
+                    updateDeckDisplay();
+                    closeDbCardModal();
+                });
+            });
+        });
     };
 
     document.addEventListener('keydown', function(e) {
@@ -3244,6 +3579,13 @@ var AlteredDB = {
     }
 })();
 </script>
+
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
+<?php endif; ?>
 
 <!-- Playtest card modals (mana / board / discard list + card zoom) -->
 <?php include __DIR__ . '/_card-list-modal.php'; ?>

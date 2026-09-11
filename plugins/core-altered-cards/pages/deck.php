@@ -483,7 +483,7 @@ $decklistText = implode("\n", $decklistLines);
 $heroCard    = $cardGroups['HERO'][0] ?? null;
 $heroRef     = $heroCard['cardReference'] ?? '';
 $heroName    = $heroCard['name'] ?? null;
-$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . normalizeCardRef($heroRef) . '_1.webp' : null;
+$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . $heroRef . '_1.webp' : null;
 $factionCode = $heroCard['factionCode'] ?? null;
 $factionsData   = loadAlteredData('factions');
 $formatsData    = loadAlteredData('formats');
@@ -1080,6 +1080,28 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 
 <?php if ($hasUniqueCards): ?>
 <script src="<?= h($rendererSrc) ?>"></script>
+<?php endif; ?>
+
+<?php
+// Alt-art marker widget + 3D tilt in the card zoom lightbox — requires the ownership
+// plugin itself to be active (not just OWNERSHIP_API_URL configured), see ownershipIsActive().
+$_ownAltArtActive = ownershipIsActive() && $isLoggedIn;
+$ownAltArtCfg = $_ownAltArtActive ? [
+    'enabled'          => true,
+    'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+    'cdnUrl'           => CDN_URL,
+    'lang'             => $lang,
+    'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+    'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+    'csrfToken'        => csrfToken(),
+    'txt'              => ['saveError' => $uiLang === 'fr' ? 'Impossible d\'enregistrer votre choix.' : 'Could not save your choice.'],
+] : ['enabled' => false];
+?>
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
 <?php endif; ?>
 
 <!-- Card zoom lightbox (shared) -->

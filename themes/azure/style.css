@@ -1320,6 +1320,36 @@ html { transition: background-color 0.25s, color 0.25s; }
     border-top-color: rgba(255, 255, 255, 0.75);
 }
 
+/* Split nav item: left segment is a real link, right segment (caret only)
+   opens the dropdown. Both read as one control — nav.php puts the active
+   state on the shared <li>, so they highlight together. */
+.az-nav-list .nav-item-split .nav-link-split-main {
+    padding-right: 0.5rem;
+}
+.az-nav-list .nav-item-split .nav-link-split-caret {
+    position: relative;
+    padding-left: 0.35rem;
+    padding-right: 0.85rem;
+}
+.az-nav-list .nav-item-split .nav-link-split-caret::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 55%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.3);
+}
+.az-nav-list .nav-item-split:hover .nav-link-split-main,
+.az-nav-list .nav-item-split:hover .nav-link-split-caret,
+.az-nav-list .nav-item-split.active .nav-link-split-main,
+.az-nav-list .nav-item-split.active .nav-link-split-caret {
+    color: #fff;
+    border-bottom-color: var(--primary-300);
+    background: rgba(255, 255, 255, 0.08);
+}
+
 /* Hide theme toggle and language selector from topbar on mobile — they appear in the footer */
 @media (max-width: 767.98px) {
     .az-topbar-controls #header-theme-toggle,
@@ -1368,6 +1398,21 @@ html { transition: background-color 0.25s, color 0.25s; }
     body:not(.az-mobile-compact) .az-nav-list .dropdown-item {
         padding-left: 2.5rem;
     }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-main {
+        flex: 1 1 auto;
+        width: auto;
+    }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-caret {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split:hover .nav-link-split-main,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split:hover .nav-link-split-caret,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split.active .nav-link-split-main,
+    body:not(.az-mobile-compact) .az-nav-list .nav-item-split.active .nav-link-split-caret {
+        border-left-color: var(--primary-300);
+        border-bottom-color: transparent;
+    }
 }
 
 /* Mobile compact mode (MOBILE_HEADER_MODE = 1): icon strip, always visible, no labels */
@@ -1379,7 +1424,12 @@ html { transition: background-color 0.25s, color 0.25s; }
         flex-direction: row !important;
         flex-wrap: nowrap;
         justify-content: space-evenly;
-        overflow-x: auto;
+        /* No overflow-x here: per the CSS overflow spec, overflow-x:auto forces
+           overflow-y to compute as auto too, which clips any open dropdown-menu
+           against this row's own height (it "reappears" on rotation because
+           that recalculates Popper's positioning strategy, not because the
+           clipping goes away). The icon count here is small enough to never
+           need horizontal scrolling in practice. */
     }
     .az-mobile-compact .az-nav-list .nav-link {
         flex-direction: column !important;
@@ -1402,6 +1452,26 @@ html { transition: background-color 0.25s, color 0.25s; }
     }
     .az-mobile-compact .az-nav-list .nav-link span { display: none !important; }
     .az-mobile-compact .az-nav-list .dropdown-toggle::after { display: none !important; }
+    /* The split caret has no icon of its own — unlike a normal dropdown, hiding its
+       arrow would leave it with nothing visible to tap at all, so it's exempted. */
+    .az-mobile-compact .az-nav-list .nav-link-split-caret::after { display: inline-block !important; }
+    .az-mobile-compact .az-nav-list .nav-item-split { flex-direction: row; }
+    .az-mobile-compact .az-nav-list .nav-link-split-main {
+        padding-right: 0.15rem !important;
+    }
+    .az-mobile-compact .az-nav-list .nav-link-split-caret {
+        padding-left: 0.1rem !important;
+        padding-right: 0.35rem !important;
+        justify-content: center;
+    }
+    .az-mobile-compact .az-nav-list .nav-item-split:hover .nav-link-split-main,
+    .az-mobile-compact .az-nav-list .nav-item-split:hover .nav-link-split-caret,
+    .az-mobile-compact .az-nav-list .nav-item-split.active .nav-link-split-main,
+    .az-mobile-compact .az-nav-list .nav-item-split.active .nav-link-split-caret {
+        border-left-color: transparent !important;
+        border-bottom-color: var(--primary-300) !important;
+        background: rgba(255, 255, 255, 0.08);
+    }
 }
 
 /* Dark mode header adjustments */

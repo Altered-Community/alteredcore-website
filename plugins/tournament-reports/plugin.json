@@ -1,0 +1,64 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "tournament-reports",
+    "name":         "Tournament Reports",
+    "version":      "1.0.0",
+    "description":  "Tournament reports with decklists and manual rankings",
+    "author":       "noobiwow",
+    "icon":        "fa-solid fa-trophy",
+    "table_prefix": "tr",
+
+    "pages": [
+        {
+            "slug":     "tournaments",
+            "file":     "pages/tournaments.php",
+            "title_en": "Tournament Reports",
+            "title_fr": "Rapports de tournois"
+        },
+        {
+            "slug":     "tournament",
+            "file":     "pages/tournament.php",
+            "title_en": "Tournament Report",
+            "title_fr": "Rapport de tournoi"
+        },
+        {
+            "slug":     "tr-card",
+            "file":     "pages/card.php",
+            "title_en": "Card",
+            "title_fr": "Carte"
+        }
+    ],
+
+    "admin": [
+        {
+            "section":  "tournament-manage",
+            "file":     "admin/tournaments.php",
+            "label_en": "Tournaments",
+            "label_fr": "Tournois",
+            "icon":     "fa-solid fa-trophy"
+        },
+        {
+            "section":  "tournament-settings",
+            "file":     "admin/settings.php",
+            "label_en": "Tournament Settings",
+            "label_fr": "Paramètres tournois",
+            "icon":     "fa-solid fa-gear"
+        },
+        {
+            "section":  "tournament-ranking",
+            "file":     "admin/ranking.php",
+            "label_en": "Rankings",
+            "label_fr": "Classements",
+            "icon":     "fa-solid fa-ranking-star",
+            "hide_in_nav": true
+        }
+    ],
+
+    "assets": {
+        "css": ["assets/style.css"],
+        "js":  ["assets/app.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["tournaments", "rankings", "ranking_players", "settings"]
+}

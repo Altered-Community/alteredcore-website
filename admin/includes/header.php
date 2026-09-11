@@ -334,6 +334,7 @@ if (canPreviewGroups()) {
             <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
             <?php foreach ($_pluginSections as $_ps):
                 if (!adminHasSection($_ps['section'])) continue;
+                if (!empty($_ps['hide_in_nav'])) continue;
                 $_pluginUrl    = BASE_URL . '/admin/plugin-page?plugin=' . urlencode($_ps['plugin_id']) . '&section=' . urlencode($_ps['section']);
                 $_pluginActive = ($currentAdmin === 'plugin-page' && ($_GET['section'] ?? '') === $_ps['section'] && ($_GET['plugin'] ?? '') === $_ps['plugin_id']);
             ?>

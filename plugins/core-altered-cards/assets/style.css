@@ -131,16 +131,6 @@
 .ac-tab-toggle .btn-toggle.active { background:var(--primary-400); border-color:var(--primary-400); color:#fff; }
 
 /* =========================================================
-   Iframe page  (iframe.php)
-   ========================================================= */
-#iframe-wrap { position:relative; width:100%; height:calc(100vh - var(--navbar-height,64px)); overflow:hidden; }
-#iframe-wrap iframe { display:block; width:100%; height:100%; border:none; }
-#iframe-bar { display:flex; align-items:center; gap:10px; padding:6px 16px; background:var(--sand-100); border-bottom:1px solid var(--sand-300); font-size:.78rem; color:var(--neutral-500); }
-#iframe-bar a { color:var(--primary-500); text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
-#iframe-bar a:hover { text-decoration:underline; }
-#iframe-loader { position:absolute; inset:0; background:var(--sand-50); display:flex; align-items:center; justify-content:center; z-index:10; flex-direction:column; gap:12px; color:var(--neutral-500); font-size:.9rem; }
-
-/* =========================================================
    Card detail page  (card.php)
    ========================================================= */
 .card-view-img-wrap { position:sticky; top:80px; text-align:center; }
@@ -333,9 +323,17 @@
 .db-hero-tile img { display:block; width:100%; border-radius:6px; aspect-ratio:63.5/88; object-fit:cover; transition:transform .12s; }
 .db-hero-tile:hover img { transform:scale(1.04); }
 .db-hero-tile-name { margin-top:6px; font-size:.86rem; font-weight:600; text-align:center; color:var(--neutral-500); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.db-hero-tile-variation { margin-top:3px; font-size:.75rem; font-weight:500; text-align:center; color:var(--primary-500); }
 .db-hero-tile.selected { border-color:var(--primary-400); background:var(--sand-100); }
 .db-hero-tile.selected .db-hero-tile-name { color:var(--primary-500); }
 [data-theme="dark"] .db-hero-tile.selected { background:rgba(201,168,76,.12); }
+
+/* Deckbuilder per-card illustration picker (#db-card-modal) -- reuses .db-hero-tile
+   for the tile itself, since the visual treatment (selected border, hover zoom) is
+   identical, but never disables a tile: unlike the Alt Arts BGA preference page, the
+   deckbuilder must never block picking an illustration the player doesn't own yet. */
+#db-art-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.db-art-tile--unowned { opacity:.45; }
 
 .db-hero-intro { margin:-4px 0 12px; font-size:.85rem; color:var(--neutral-500); }
 
@@ -499,12 +497,20 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
 }
 .ac-lightbox-inner {
     max-width: 420px;
     width: 88vw;
     cursor: default;
     position: relative;
+    max-height: 94vh;
+    max-height: 94dvh;
+    /* visible, not auto/hidden: the tilt effect's 3D rotation paints outside its own
+       layout box, and that ink overflow isn't part of the scrollable area an
+       auto/hidden ancestor tracks — it just gets clipped instead of reachable by
+       scrolling. .ac-lightbox-overlay (fixed, full viewport) is the real boundary. */
+    overflow: visible;
 }
 
 /* Hero modal panel */
@@ -546,6 +552,22 @@
     text-align: center;
     padding: 20px;
     color: var(--neutral-400);
+}
+
+/* Toolbar row: faction buttons plus the "Alt arts" toggle. Wraps so the switch
+   drops below the faction strip on narrow screens. */
+.db-hero-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+.db-hero-toolbar .db-hero-altarts { margin-left: auto; }
+.db-hero-toolbar #db-hero-factions { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.db-hero-toolbar .cs-switch-label .fa-solid { font-size: .8rem; }
+
+@media (max-width: 575px) {
+    .db-hero-toolbar .db-hero-altarts { margin-left: 0; }
 }
 
 /* Scroll lock while a deckbuilder dialog is up — see dbLockScroll(). Beats the

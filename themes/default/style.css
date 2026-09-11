@@ -178,6 +178,17 @@ a:hover { color: var(--primary-400); }
     .mobile-nav-compact .altered-navbar .navbar-nav .nav-link span,
     .mobile-nav-compact .altered-navbar .navbar-nav .dropdown-toggle span { display: none !important; }
     .mobile-nav-compact .altered-navbar .navbar-nav .dropdown-toggle::after { display: none !important; }
+    /* The split caret has no icon of its own — unlike a normal dropdown, hiding its
+       arrow would leave it with nothing visible to tap at all, so it's exempted. */
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-caret::after { display: inline-block !important; }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-item-split { border-radius: 0; }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-main {
+        padding-right: 0.15rem !important;
+    }
+    .mobile-nav-compact .altered-navbar .navbar-nav .nav-link-split-caret {
+        padding-left: 0.1rem !important;
+        padding-right: 0.35rem !important;
+    }
     .mobile-nav-compact .altered-navbar .navbar-right {
         border-top: none !important;
         margin-top: 0 !important;
@@ -212,6 +223,42 @@ a:hover { color: var(--primary-400); }
 .altered-navbar.icons-only .navbar-nav .nav-link span,
 .altered-navbar.icons-only .navbar-nav .dropdown-toggle span {
     display: none;
+}
+
+/* Split nav item: left segment is a real link, right segment (caret only)
+   opens the dropdown. Both read as one pill — nav.php puts the active state
+   on the shared <li>, so they highlight together. */
+.altered-navbar .navbar-nav .nav-item-split {
+    display: flex;
+    border-radius: 0.5rem;
+}
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-main {
+    padding-right: 0.35rem;
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-caret {
+    position: relative;
+    padding-left: 0.3rem;
+    padding-right: 0.6rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+.altered-navbar .navbar-nav .nav-item-split .nav-link-split-caret::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 55%;
+    width: 1px;
+    background-color: var(--neutral-400);
+    opacity: 0.4;
+}
+.altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-main,
+.altered-navbar .navbar-nav .nav-item-split:hover .nav-link-split-caret,
+.altered-navbar .navbar-nav .nav-item-split.active .nav-link-split-main,
+.altered-navbar .navbar-nav .nav-item-split.active .nav-link-split-caret {
+    background-color: var(--primary-400);
+    color: var(--neutral-800);
 }
 
 .btn-lang {
