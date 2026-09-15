@@ -103,7 +103,7 @@ unset($typesData['HERO']);
 // chosen per deck in the deckbuilder instead. Enforced again server-side in
 // api/alt-art-search.php; this is just what the type-filter row offers.
 if (!$isGlobalMode) {
-    $typesData = array_filter($typesData, fn($code) => str_starts_with($code, 'TOKEN'), ARRAY_FILTER_USE_KEY);
+    $typesData = array_filter($typesData, fn($code) => strpos($code, 'TOKEN') === 0, ARRAY_FILTER_USE_KEY);
 }
 
 $uiLang = getUiLang();

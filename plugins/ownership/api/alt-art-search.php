@@ -44,7 +44,7 @@ foreach ((array)($_GET['type'] ?? []) as $ty) {
 // not just by which filter buttons pages/alt-arts.php renders, so a caller can't bypass
 // it by requesting a non-token type directly.
 if (!ownIsAltArtGlobalMode($userId)) {
-    $types = array_values(array_filter($types, fn($ty) => str_starts_with($ty, 'TOKEN')));
+    $types = array_values(array_filter($types, fn($ty) => strpos($ty, 'TOKEN') === 0));
     if (!$types) {
         $types = ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA'];
     }
