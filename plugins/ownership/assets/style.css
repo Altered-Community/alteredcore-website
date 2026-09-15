@@ -411,12 +411,16 @@
     position: absolute;
     top: 5px;
     right: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
     z-index: 2;
 }
+/* Positioned by --slot (the owned copy's slotIndex, set in JS) rather than stacked in flex/DOM
+   order — that height stays the same copy's height on every tile, so a lone marker on a tile
+   shows at a glance which copy (1st/2nd/3rd, i.e. which deck slot — see distributeAcrossSlots
+   in deckbuilder.php) it is, instead of always looking like "the first one" at the top. */
 .own-aa-marker {
+    position: absolute;
+    top: calc(var(--slot, 0) * 22px);
+    right: 0;
     width: 20px;
     height: auto;
     cursor: pointer;
@@ -433,4 +437,22 @@
     border: none;
     border-top: 1px solid var(--sand-300, #DDD0B3);
     margin: 14px 0;
+}
+
+/* Per-deck vs. global alt-art mode toggle + its explanation panel (pages/alt-arts.php) */
+.own-aa-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    padding: 1rem;
+}
+.own-aa-modal {
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
 }

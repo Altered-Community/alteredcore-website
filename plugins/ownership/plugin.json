@@ -21,7 +21,8 @@
         {"endpoint": "history-list",        "file": "api/history-list.php"},
         {"endpoint": "history-detail",      "file": "api/history-detail.php"},
         {"endpoint": "alt-art-search",      "file": "api/alt-art-search.php"},
-        {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"}
+        {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"},
+        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php"}
     ],
 
     "assets": {

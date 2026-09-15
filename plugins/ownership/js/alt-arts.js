@@ -27,8 +27,6 @@
     const searchInput = document.getElementById('own-aa-search');
     const searchBtn = document.getElementById('own-aa-search-btn');
 
-    const PAGE_SIZE = 25;
-
     // ---- Filter state ----
     // hideNonChoices defaults on — the marker-assignment page is only useful for families
     // that actually offer a choice, and the button starts with the matching "active" class
@@ -84,24 +82,33 @@
     });
 
     // ---- Search ----
+    // families/optionsByKey accumulate across "load more" pages; the server does the
+    // filtering (including "hide non-choices", which needs ownership data this page
+    // doesn't have) and the pagination, returning only the page actually rendered next —
+    // never the whole matching catalog just to have most of it discarded here.
     let families = [];
     let optionsByKey = {};
-    let visibleCount = 0;
+    let hasMore = false;
     let searchToken = 0; // guards against a stale in-flight fetch rendering after a newer one
 
     const groupKeyOf = (familyId, faction, rarity) => familyId + ':' + faction + ':' + rarity;
 
-    const hasRealChoice = (family) =>
-        window.OWN_ALT_ART_WIDGET.hasRealChoice(optionsByKey[groupKeyOf(family.familyId, family.faction, family.rarity)]);
-
-    const buildQuery = () => {
+    const buildQuery = (skip) => {
         const parts = [];
         if (filters.name) parts.push('name=' + encodeURIComponent(filters.name));
         filters.factions.forEach((f) => parts.push('faction[]=' + encodeURIComponent(f)));
         filters.types.forEach((ty) => parts.push('type[]=' + encodeURIComponent(ty)));
         filters.rarities.forEach((r) => parts.push('rarity[]=' + encodeURIComponent(r)));
         if (filters.mainCost !== null) parts.push('mainCost=' + encodeURIComponent(filters.mainCost));
+        parts.push('hideNonChoices=' + (filters.hideNonChoices ? 'true' : 'false'));
+        parts.push('skip=' + skip);
         return parts.join('&');
+    };
+
+    const fetchPage = async (skip) => {
+        const res = await fetch(cfg.searchUrl + '?' + buildQuery(skip), { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('load failed');
+        return res.json();
     };
 
     const runSearch = async () => {
@@ -113,25 +120,18 @@
         loadMoreBtn.hidden = true;
 
         try {
-            const res = await fetch(cfg.searchUrl + '?' + buildQuery(), { credentials: 'same-origin' });
+            const data = await fetchPage(0);
             if (myToken !== searchToken) return;
             loadingEl.hidden = true;
 
-            if (!res.ok) {
-                errorEl.hidden = false;
-                errorEl.textContent = t('loadError', 'Could not load alt arts.');
-                return;
-            }
-
-            const data = await res.json();
-            families = (data.families || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            families = data.families || [];
             optionsByKey = data.options || {};
-            if (filters.hideNonChoices) families = families.filter(hasRealChoice);
+            hasMore = !!data.hasMore;
 
             if (!families.length) { emptyEl.hidden = false; return; }
 
-            visibleCount = 0;
-            renderMore();
+            families.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
+            loadMoreBtn.hidden = !hasMore;
         } catch {
             if (myToken !== searchToken) return;
             loadingEl.hidden = true;
@@ -140,11 +140,27 @@
         }
     };
 
-    const renderMore = () => {
-        const slice = families.slice(visibleCount, visibleCount + PAGE_SIZE);
-        slice.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
-        visibleCount += slice.length;
-        loadMoreBtn.hidden = visibleCount >= families.length;
+    const renderMore = async () => {
+        const myToken = searchToken;
+        loadMoreBtn.disabled = true;
+        try {
+            const data = await fetchPage(families.length);
+            if (myToken !== searchToken) return;
+
+            const page = data.families || [];
+            Object.assign(optionsByKey, data.options || {});
+            families = families.concat(page);
+            hasMore = !!data.hasMore;
+
+            page.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
+            loadMoreBtn.hidden = !hasMore;
+        } catch {
+            if (myToken !== searchToken) return;
+            errorEl.hidden = false;
+            errorEl.textContent = t('networkError', 'Network error.');
+        } finally {
+            if (myToken === searchToken) loadMoreBtn.disabled = false;
+        }
     };
     loadMoreBtn?.addEventListener('click', renderMore);
 

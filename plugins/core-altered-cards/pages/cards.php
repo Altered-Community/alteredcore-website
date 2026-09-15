@@ -124,7 +124,9 @@ $_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
 // Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
 // $_ownMode above (which only drive the existing ownership-search tab): this also
 // requires the ownership plugin itself to be active, not just OWNERSHIP_API_URL configured.
-$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0;
+// Only shown in Global preference mode — in PerDeck mode (the default), a card's
+// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
+$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0 && cacIsAltArtGlobalMode($_csUserId);
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {

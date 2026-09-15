@@ -21,11 +21,16 @@ $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
 // digital ownership (AlteredOwnership service)
 $_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
-// Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
-// $_ownMode above (which only drive the existing "apply my illustration preferences"
-// bulk feature): this also requires the ownership plugin itself to be active, not just
-// OWNERSHIP_API_URL configured.
-$_ownAltArtActive   = ownershipIsActive() && !$isGuest && $_dbUserId > 0;
+// Whether this player's alt-art choices for regular cards are Global (auto-applied
+// everywhere, see AltArtPreferenceMode) or PerDeck (the default — chosen individually
+// per card/hero right here in the deckbuilder, unchanged from the pre-existing
+// behavior). Drives which of the two mutually-exclusive UIs below is shown.
+$_altArtGlobalMode  = $_ownMode && cacIsAltArtGlobalMode($_dbUserId);
+// Alt-art marker widget + 3D tilt in the card modal — the Global-mode UI for setting a
+// card's preferred illustration. Requires the ownership plugin itself to be active, not
+// just OWNERSHIP_API_URL configured. Never shown in PerDeck mode — see
+// $_altArtGlobalMode and the per-card "Choose illustration" picker below instead.
+$_ownAltArtActive   = ownershipIsActive() && $_altArtGlobalMode;
 $ownAltArtCfg = $_ownAltArtActive ? [
     'enabled'          => true,
     'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
@@ -174,8 +179,12 @@ $txt = array_merge($_sharedTxt, [
         'detail_label'    => 'View detail',
         'bga_sets_info'   => 'The following sets are not yet available on Board Game Arena and cannot be used in BGA games: %s.',
         'bga_alt_art_info' => 'You can pick a specific illustration for any card below, even one you don\'t own yet — on Board Game Arena, illustrations you don\'t own enough copies of are automatically replaced by their base art when the deck is played.',
-        'apply_altart_btn'      => 'Apply my illustration preferences',
-        'apply_altart_done'     => 'Illustrations updated from your preferences.',
+        'choose_token_arts_btn' => 'Choose token illustrations',
+        'token_arts_title'      => 'Token illustrations',
+        'token_arts_warning'    => 'Token illustration preferences are shared across every deck — they aren\'t part of this deck\'s own card list.',
+        'token_arts_empty'      => 'No token has more than one illustration.',
+        'token_arts_close'      => 'Close',
+        'token_save_error'      => 'Could not save your choice.',
         'choose_illustration'   => 'Choose illustration',
         'illustration_confirm'  => 'Use this illustration',
         'no_other_illustration' => 'No other illustration is available for this card.',
@@ -300,8 +309,12 @@ $txt = array_merge($_sharedTxt, [
         'detail_label'    => 'Accéder au détail',
         'bga_sets_info'   => 'Les sets suivants ne sont pas encore disponibles sur Board Game Arena et ne sont donc pas légaux en partie BGA : %s.',
         'bga_alt_art_info' => 'Vous pouvez choisir une illustration précise pour chaque carte ci-dessous, même une que vous ne possédez pas encore — sur Board Game Arena, les illustrations dont vous n\'avez pas assez d\'exemplaires sont automatiquement remplacées par leur art de base au moment de jouer le deck.',
-        'apply_altart_btn'      => 'Appliquer mes préférences d\'illustration',
-        'apply_altart_done'     => 'Illustrations mises à jour selon vos préférences.',
+        'choose_token_arts_btn' => 'Choisir les arts des jetons',
+        'token_arts_title'      => 'Illustrations des jetons',
+        'token_arts_warning'    => 'Les préférences d\'illustration des jetons sont communes à tous les decks — elles ne font pas partie de la liste de cartes de ce deck.',
+        'token_arts_empty'      => 'Aucun jeton n\'a plus d\'une illustration.',
+        'token_arts_close'      => 'Fermer',
+        'token_save_error'      => 'Impossible d\'enregistrer votre choix.',
         'choose_illustration'   => 'Choisir une illustration',
         'illustration_confirm'  => 'Utiliser cette illustration',
         'no_other_illustration' => 'Aucune autre illustration n\'est disponible pour cette carte.',
@@ -711,11 +724,10 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                     <!-- Stats content populated by renderStatsPane() -->
                 </div>
 
-                <?php if ($_ownMode): ?>
-                <button type="button" id="db-apply-altart-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                    <i class="fa-solid fa-images me-1"></i><?= h($txt['apply_altart_btn']) ?>
+                <?php if ($_ownMode && !$_altArtGlobalMode): ?>
+                <button type="button" id="db-choose-tokens-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                    <i class="fa-solid fa-images me-1"></i><?= h($txt['choose_token_arts_btn']) ?>
                 </button>
-                <div id="db-altart-status" class="db-autosave-status mb-2" style="display:none"></div>
                 <?php endif; ?>
 
                 <!-- Save button -->
@@ -744,12 +756,14 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 </div>
             </div>
             <?php endif; ?>
+            <?php if ($_ownMode && !$_altArtGlobalMode): ?>
             <div class="card-altered p-3 mt-2 db-info-banner">
                 <div class="d-flex align-items-start gap-2">
                     <i class="fa-solid fa-circle-info flex-shrink-0 text-secondary" style="margin-top:.15em"></i>
                     <span><?= h($txt['bga_alt_art_info']) ?></span>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
 
     </div>
@@ -782,11 +796,13 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
             </button>
             <?php endforeach; ?>
         </div>
+        <?php if (!$_altArtGlobalMode): ?>
         <label class="cs-switch db-hero-altarts" title="<?= h($txt['show_promo'] ?? 'Alt arts') ?>">
             <input type="checkbox" id="db-hero-altarts-toggle">
             <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
             <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($txt['show_promo'] ?? 'Alt arts') ?></span>
         </label>
+        <?php endif; ?>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>
         <div id="db-hero-grid">
@@ -1017,8 +1033,12 @@ var AlteredDB = {
         'save_btn'      => $txt['save_btn'],
         'change_hero'   => $txt['change_hero'],
         'hero_confirm'  => $txt['hero_confirm'],
-        'apply_altart_btn'      => $txt['apply_altart_btn'],
-        'apply_altart_done'     => $txt['apply_altart_done'],
+        'choose_token_arts_btn' => $txt['choose_token_arts_btn'],
+        'token_arts_title'      => $txt['token_arts_title'],
+        'token_arts_warning'    => $txt['token_arts_warning'],
+        'token_arts_empty'      => $txt['token_arts_empty'],
+        'token_arts_close'      => $txt['token_arts_close'],
+        'token_save_error'      => $txt['token_save_error'],
         'choose_illustration'   => $txt['choose_illustration'],
         'illustration_confirm'  => $txt['illustration_confirm'],
         'no_other_illustration' => $txt['no_other_illustration'],
@@ -1123,6 +1143,11 @@ var AlteredDB = {
     noUniqueSets: <?= json_encode(array_values($noUniqueSets)) ?>,
     ownershipApiUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
     altArtsUrl:      <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/deck-alt-arts' : '') ?>,
+    altArtGlobalMode: <?= json_encode($_altArtGlobalMode) ?>,
+    altArtSearchUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/ownership/alt-art-search' : '') ?>,
+    altArtCdnUrl:    <?= json_encode(CDN_URL) ?>,
+    altArtMarkerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
+    altArtSetPreferenceUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/ownership/alt-art-set-preference' : '') ?>,
     uniquesApiBase:  <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
 };
 </script>
@@ -1569,6 +1594,7 @@ var AlteredDB = {
         updateDeckDisplay();
         updateBrowserCardBadge(ref);
         if (AlteredDB.isGuest) saveGuestDeck();
+        autoApplyAltArtPreferences();
     }
     function removeCard(ref) {
         markDirty();
@@ -1578,6 +1604,7 @@ var AlteredDB = {
             updateDeckDisplay();
             updateBrowserCardBadge(ref);
             if (AlteredDB.isGuest) saveGuestDeck();
+            autoApplyAltArtPreferences();
         }
     }
     // Alt-art: resolve a set of card References to their multi-art family/options via
@@ -1606,24 +1633,27 @@ var AlteredDB = {
         return counts;
     }
 
-    // "Apply my illustration preferences" button: rewrites every multi-art card
-    // currently in the deck (hero included) to the player's globally-configured
-    // alt-art preference (Alt Arts BGA page), including families with no explicit
-    // choice -> their default/base art. A family can already span more than one deck
-    // line (e.g. 2 copies of one art + 1 of another) -- those are aggregated by group
-    // before being redistributed, so the total copy count is preserved exactly.
-    function applyAltArtPreference() {
-        var btn = document.getElementById('db-apply-altart-btn');
-        var status = document.getElementById('db-altart-status');
-        if (!btn) return;
+    // Global mode: rewrites every multi-art card currently in the deck (hero included)
+    // to the player's globally-configured alt-art preference (Alt Arts BGA page),
+    // including families with no explicit choice -> their default/base art. A family can
+    // already span more than one deck line (e.g. 2 copies of one art + 1 of another) --
+    // those are aggregated by group before being redistributed, so the total copy count
+    // is preserved exactly. Called automatically (never via a button, which only exists
+    // in PerDeck mode -- see "Choisir les arts des jetons") whenever the deck's card list
+    // might have changed: after loading an existing deck for edit, and after every
+    // addCard()/removeCard(). A monotonic token guards against a slower, earlier call's
+    // response clobbering a newer one after several quick successive quantity changes.
+    var _autoApplyAltArtToken = 0;
+    function autoApplyAltArtPreferences() {
+        if (!AlteredDB.altArtGlobalMode) return;
 
         var refs = Object.keys(deck.cards);
         if (deck.hero && deck.hero.cardReference) refs.push(deck.hero.cardReference);
         if (!refs.length) return;
 
-        btn.disabled = true;
+        var myToken = ++_autoApplyAltArtToken;
         fetchAltArtData(refs).then(function (data) {
-            btn.disabled = false;
+            if (myToken !== _autoApplyAltArtToken) return;
             if (!data) return;
             var changed = false;
 
@@ -1679,11 +1709,6 @@ var AlteredDB = {
             if (!changed) return;
             markDirty();
             updateDeckDisplay();
-            if (status) {
-                status.textContent = AlteredDB.txt.apply_altart_done;
-                status.style.display = '';
-                setTimeout(function () { status.style.display = 'none'; }, 4000);
-            }
         });
     }
 
@@ -2652,7 +2677,7 @@ var AlteredDB = {
         // Variation pool: with "Alt arts" off (default) only the default variations
         // (normally just standard) are returned; with it on, every variation is
         // queried and each distinct variation printing becomes its own selectable tile.
-        var altArtsOn = elHeroAltArts.checked;
+        var altArtsOn = !!(elHeroAltArts && elHeroAltArts.checked);
         var activeVariations = altArtsOn
             ? AlteredDB.allVariations
             : AlteredDB.heroVariations.slice();
@@ -2877,9 +2902,82 @@ var AlteredDB = {
     }
 
     elSaveBtn.addEventListener('click', function() { saveDeck(null); });
-    var elApplyAltArtBtn = document.getElementById('db-apply-altart-btn');
-    if (elApplyAltArtBtn) elApplyAltArtBtn.addEventListener('click', applyAltArtPreference);
+    var elChooseTokensBtn = document.getElementById('db-choose-tokens-btn');
+    if (elChooseTokensBtn) elChooseTokensBtn.addEventListener('click', openTokenArtsPicker);
     if (elSaveRetry) elSaveRetry.addEventListener('click', function() { saveDeck(null); });
+
+    // PerDeck mode: "Choisir les arts des jetons" pop-in, filtered to token families —
+    // reuses the same createFamilyRow() widget as the Alt Arts BGA page and the
+    // card-detail modal (see plugins/ownership/js/alt-art-widget.js), since token
+    // illustration preferences are always global (see AltArtPreferenceMode) even when
+    // this deckbuilder is otherwise in PerDeck mode.
+    var _tokenArtsOverlay = null;
+    function openTokenArtsPicker() {
+        if (!AlteredDB.altArtSearchUrl) return;
+        if (!_tokenArtsOverlay) {
+            _tokenArtsOverlay = document.createElement('div');
+            _tokenArtsOverlay.className = 'own-aa-modal-overlay';
+            _tokenArtsOverlay.hidden = true;
+            _tokenArtsOverlay.innerHTML =
+                '<div class="own-aa-modal card-altered p-3">' +
+                    '<h5 class="mb-2"></h5>' +
+                    '<p class="text-muted small mb-3"></p>' +
+                    '<div class="db-token-arts-loading text-muted"></div>' +
+                    '<div class="db-token-arts-empty text-muted" hidden></div>' +
+                    '<div class="db-token-arts-rows"></div>' +
+                    '<div class="text-end mt-2"><button type="button" class="btn btn-sm btn-primary-altered db-token-arts-close"></button></div>' +
+                '</div>';
+            _tokenArtsOverlay.querySelector('h5').textContent = AlteredDB.txt.token_arts_title;
+            _tokenArtsOverlay.querySelector('p').textContent = AlteredDB.txt.token_arts_warning;
+            _tokenArtsOverlay.querySelector('.db-token-arts-empty').textContent = AlteredDB.txt.token_arts_empty;
+            _tokenArtsOverlay.querySelector('.db-token-arts-close').textContent = AlteredDB.txt.token_arts_close;
+            _tokenArtsOverlay.querySelector('.db-token-arts-close').addEventListener('click', function () {
+                _tokenArtsOverlay.hidden = true;
+            });
+            _tokenArtsOverlay.addEventListener('click', function (e) {
+                if (e.target === _tokenArtsOverlay) _tokenArtsOverlay.hidden = true;
+            });
+            document.body.appendChild(_tokenArtsOverlay);
+        }
+
+        _tokenArtsOverlay.hidden = false;
+        var loadingEl = _tokenArtsOverlay.querySelector('.db-token-arts-loading');
+        var emptyEl = _tokenArtsOverlay.querySelector('.db-token-arts-empty');
+        var rowsEl = _tokenArtsOverlay.querySelector('.db-token-arts-rows');
+        loadingEl.textContent = AlteredDB.txt.loading;
+        loadingEl.hidden = false;
+        emptyEl.hidden = true;
+        rowsEl.innerHTML = '';
+
+        var widgetCfg = {
+            cdnUrl: AlteredDB.altArtCdnUrl,
+            lang: AlteredDB.lang,
+            markerImg: AlteredDB.altArtMarkerImg,
+            setPreferenceUrl: AlteredDB.altArtSetPreferenceUrl,
+            csrfToken: AlteredDB.csrfToken,
+            txt: { saveError: AlteredDB.txt.token_save_error },
+        };
+
+        var qs = ['type[]=TOKEN', 'type[]=TOKEN_LANDMARK_PERMANENT', 'type[]=TOKEN_MANA', 'hideNonChoices=false'].join('&');
+        fetch(AlteredDB.altArtSearchUrl + '?' + qs, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                loadingEl.hidden = true;
+                var families = (data && data.families) || [];
+                if (!families.length) { emptyEl.hidden = false; return; }
+                families.forEach(function (family) {
+                    var key = family.familyId + ':' + family.faction + ':' + family.rarity;
+                    var optData = data.options && data.options[key];
+                    if (!optData || !optData.options || !optData.options.length) return;
+                    var widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, widgetCfg);
+                    rowsEl.appendChild(widgetRow.el);
+                });
+            })
+            .catch(function () {
+                loadingEl.hidden = true;
+                emptyEl.hidden = false;
+            });
+    }
 
     // unsaved changes guard
     // On tab/window close: sendBeacon for existing decks (fire-and-forget), browser
@@ -3217,7 +3315,7 @@ var AlteredDB = {
     var _origOpenDbCardModal2 = window.openDbCardModal;
     window.openDbCardModal = function (ref, cardData) {
         _origOpenDbCardModal2(ref, cardData);
-        if (cardData || !deck.cards[ref] || !AlteredDB.altArtsUrl) return;
+        if (cardData || !deck.cards[ref] || !AlteredDB.altArtsUrl || AlteredDB.altArtGlobalMode) return;
 
         var chooseBtn = document.createElement('button');
         chooseBtn.type = 'button';
@@ -3362,6 +3460,7 @@ var AlteredDB = {
         initFromExisting();
         updateDeckDisplay();
         enrichDeckCardStatus();
+        autoApplyAltArtPreferences();
     }
 
     // A brand-new deck opens on the creation dialog. Guard on deck.hero as well: a
@@ -3580,10 +3679,12 @@ var AlteredDB = {
 })();
 </script>
 
-<?php if ($_ownAltArtActive): ?>
+<?php if ($_ownMode): ?>
 <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
-<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<?php endif; ?>
+<?php if ($_ownAltArtActive): ?>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
 <?php endif; ?>
 

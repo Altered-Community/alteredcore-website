@@ -495,9 +495,17 @@
     z-index: 9999;
     background: var(--card-lightbox-bg, rgba(0,0,0,.82));
     align-items: center;
+    /* "safe center": when the modal content (card + alt-art picker + detail
+       button) is taller than the viewport, plain "center" would let the
+       overflow scroll into unreachable negative space, hiding whatever
+       trails past the fold (e.g. the detail button) with no way to scroll
+       to it. "safe" falls back to start-alignment instead once it overflows. */
+    align-items: safe center;
     justify-content: center;
     cursor: pointer;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-block: 24px;
 }
 .ac-lightbox-inner {
     max-width: 420px;

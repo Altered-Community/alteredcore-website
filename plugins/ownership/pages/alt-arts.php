@@ -28,6 +28,18 @@ $txt = [
         'saveError'     => 'Could not save your choice.',
         'loadMore'      => 'Load more',
         'markerHint'    => 'Click a marker, then click a card to move it there.',
+        'modePerDeck'   => 'Set per deck',
+        'modeGlobal'    => 'Set globally',
+        'modeInfoBtn'   => 'What\'s the difference?',
+        'modeInfoTitle' => 'Per deck vs. global illustrations',
+        'modePerDeckTitle' => 'Per deck (default)',
+        'modePerDeckDesc'  => "Clicking a card no longer shows the illustration preference. Only tokens can be changed on this page. In the deckbuilder, you choose each card's and the hero's illustration individually while building the deck.",
+        'modeGlobalTitle'  => 'Global',
+        'modeGlobalDesc'   => 'Your illustration preferences are set here or by clicking a card, and apply automatically everywhere: opening a deck to edit it, duplicating it, importing it, retrieving it from BGA, and whenever you change a card\'s quantity. The deckbuilder no longer lets you change illustrations card by card, and there is no "apply preferences" button — it always applies.',
+        'modeClose'     => 'Close',
+        'modeSaving'    => 'Saving…',
+        'modeSaveError' => 'Could not save your setting.',
+        'perDeckNotice' => 'Per-deck mode is on: only token illustrations are managed here. Regular cards\' illustrations are chosen individually in each deck, in the deckbuilder.',
     ],
     'fr' => [
         'unavailable'   => 'Le service de propriété numérique n\'est pas configuré sur ce site.',
@@ -46,12 +58,28 @@ $txt = [
         'saveError'     => 'Impossible d\'enregistrer votre choix.',
         'loadMore'      => 'Charger plus',
         'markerHint'    => 'Cliquez un marqueur, puis une carte pour l\'y déplacer.',
+        'modePerDeck'   => 'Définir par deck',
+        'modeGlobal'    => 'Définir au global',
+        'modeInfoBtn'   => 'Quelle est la différence ?',
+        'modeInfoTitle' => 'Illustrations par deck ou au global',
+        'modePerDeckTitle' => 'Par deck (par défaut)',
+        'modePerDeckDesc'  => "Le changement des préférences d'une carte n'est pas visible lorsque l'on clique sur une carte. Seuls les jetons sont modifiables sur cette page. Dans le deckbuilder, vous choisissez l'illustration de chaque carte et du héros individuellement pendant la construction du deck.",
+        'modeGlobalTitle'  => 'Global',
+        'modeGlobalDesc'   => "Vos préférences d'illustration sont modifiables ici ou en cliquant sur une carte, et s'appliquent automatiquement partout : à l'ouverture d'un deck pour le modifier, à sa duplication, à son import, à sa récupération depuis BGA, et à chaque changement du nombre d'exemplaires d'une carte. Le deckbuilder ne permet plus de changer les illustrations carte par carte, et il n'y a plus de bouton \"appliquer mes préférences\" — c'est toujours appliqué.",
+        'modeClose'     => 'Fermer',
+        'modeSaving'    => 'Enregistrement…',
+        'modeSaveError' => 'Impossible d\'enregistrer votre choix.',
+        'perDeckNotice' => 'Le mode par deck est actif : seuls les jetons sont gérés ici. Les illustrations des cartes normales se choisissent individuellement dans chaque deck, dans le deckbuilder.',
     ],
 ][getUiLang()];
 
 $ownEnabled  = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $ownLoggedIn = kcIsLoggedIn();
 $ownActiveTab = 'alt-arts';
+
+$userId = (int)($_SESSION['user_id'] ?? 0);
+$altArtMode = ($ownEnabled && $ownLoggedIn) ? ownGetAltArtPreferenceMode($userId) : 'PerDeck';
+$isGlobalMode = $altArtMode === 'Global';
 
 $cacDir = dirname(__DIR__, 2) . '/core-altered-cards';
 $cacAvailable = is_file($cacDir . '/includes/functions.php');
@@ -70,6 +98,13 @@ if ($cacAvailable) {
 // always Unique-rarity — are never useful filters here.
 $raritiesData = array_filter($raritiesData, fn($r) => ($r['gem'] ?? '') !== 'U');
 unset($typesData['HERO']);
+
+// Per-deck mode: this page only manages token illustrations — regular card alt-arts are
+// chosen per deck in the deckbuilder instead. Enforced again server-side in
+// api/alt-art-search.php; this is just what the type-filter row offers.
+if (!$isGlobalMode) {
+    $typesData = array_filter($typesData, fn($code) => str_starts_with($code, 'TOKEN'), ARRAY_FILTER_USE_KEY);
+}
 
 $uiLang = getUiLang();
 ?>
@@ -93,6 +128,39 @@ $uiLang = getUiLang();
          only this plugin's assets/style.css is (see plugin.json) — but .filter-row/
          .filter-toggle/.card-altered below all come from it. -->
     <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/style.css">
+
+    <div class="card-altered p-3 mb-3 d-flex flex-wrap align-items-center gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="alt-art mode">
+            <button type="button" id="own-aa-mode-perdeck" class="btn btn-outline-secondary<?= $isGlobalMode ? '' : ' active' ?>">
+                <?= h($txt['modePerDeck']) ?>
+            </button>
+            <button type="button" id="own-aa-mode-global" class="btn btn-outline-secondary<?= $isGlobalMode ? ' active' : '' ?>">
+                <?= h($txt['modeGlobal']) ?>
+            </button>
+        </div>
+        <button type="button" id="own-aa-mode-info-btn" class="btn btn-sm btn-link text-decoration-none">
+            <i class="fa-solid fa-circle-info me-1"></i><?= h($txt['modeInfoBtn']) ?>
+        </button>
+    </div>
+
+    <?php if (!$isGlobalMode): ?>
+    <div class="alert alert-secondary py-2 small"><?= h($txt['perDeckNotice']) ?></div>
+    <?php endif; ?>
+
+    <div id="own-aa-mode-info-modal" class="own-aa-modal-overlay" hidden>
+        <div class="own-aa-modal card-altered p-3">
+            <h5 class="mb-3"><?= h($txt['modeInfoTitle']) ?></h5>
+            <p class="mb-1"><strong><?= h($txt['modePerDeckTitle']) ?></strong></p>
+            <p class="text-muted small mb-3"><?= h($txt['modePerDeckDesc']) ?></p>
+            <p class="mb-1"><strong><?= h($txt['modeGlobalTitle']) ?></strong></p>
+            <p class="text-muted small mb-3"><?= h($txt['modeGlobalDesc']) ?></p>
+            <div class="text-end">
+                <button type="button" id="own-aa-mode-info-close" class="btn btn-sm btn-primary-altered">
+                    <?= h($txt['modeClose']) ?>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div class="card-altered p-3 mb-3">
         <div class="filter-row mb-2">
@@ -163,12 +231,49 @@ $uiLang = getUiLang();
     window.OWN_AA_CONFIG = {
         searchUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-search') ?>,
         setPreferenceUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-set-preference') ?>,
+        preferenceModeUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-preference-mode') ?>,
         baseUrl: <?= json_encode(BASE_URL) ?>,
         cdnUrl: <?= json_encode(CDN_URL) ?>,
         lang: <?= json_encode(getLang()) ?>,
         markerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
         csrfToken: <?= json_encode(csrfToken()) ?>,
+        isGlobalMode: <?= json_encode($isGlobalMode) ?>,
     };
+    (function () {
+        var cfg = window.OWN_AA_CONFIG;
+        var t = function (key, fallback) {
+            var dict = (window.OWN_I18N || {})[document.documentElement.lang] || {};
+            return dict[key] || fallback;
+        };
+
+        var infoBtn = document.getElementById('own-aa-mode-info-btn');
+        var infoModal = document.getElementById('own-aa-mode-info-modal');
+        var infoClose = document.getElementById('own-aa-mode-info-close');
+        infoBtn?.addEventListener('click', function () { infoModal.hidden = false; });
+        infoClose?.addEventListener('click', function () { infoModal.hidden = true; });
+        infoModal?.addEventListener('click', function (e) { if (e.target === infoModal) infoModal.hidden = true; });
+
+        var perDeckBtn = document.getElementById('own-aa-mode-perdeck');
+        var globalBtn = document.getElementById('own-aa-mode-global');
+        var setMode = function (mode) {
+            if ((mode === 'Global') === cfg.isGlobalMode) return;
+            [perDeckBtn, globalBtn].forEach(function (b) { b && (b.disabled = true); });
+            fetch(cfg.preferenceModeUrl, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: mode, csrf_token: cfg.csrfToken }),
+            }).then(function (res) {
+                if (!res.ok) throw new Error('save failed');
+                location.reload();
+            }).catch(function () {
+                [perDeckBtn, globalBtn].forEach(function (b) { b && (b.disabled = false); });
+                alert(t('modeSaveError', 'Could not save your setting.'));
+            });
+        };
+        perDeckBtn?.addEventListener('click', function () { setMode('PerDeck'); });
+        globalBtn?.addEventListener('click', function () { setMode('Global'); });
+    })();
     </script>
 
     <?php endif; ?>

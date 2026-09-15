@@ -101,6 +101,7 @@
                 marker.src = cfg.markerImg;
                 marker.dataset.slot = String(slot.slotIndex);
                 marker.dataset.group = groupKey;
+                marker.style.setProperty('--slot', slot.slotIndex);
                 marker.alt = '';
                 tile.querySelector('.own-aa-markers').appendChild(marker);
             });
@@ -144,19 +145,32 @@
         };
 
         const moveActiveMarker = (newRef) => {
-            const movedSlot = state.activeSlot;
-            const slot = state.slots.find((s) => s.slotIndex === movedSlot);
-            if (!slot || slot.reference === newRef) return;
+            // The active slot is only a preferred starting point, not a hard requirement: if
+            // it's already on the clicked tile (e.g. a 2/1 split where the active marker sits
+            // on the minority tile the player just clicked), moving it would be a no-op even
+            // though another marker elsewhere clearly isn't on this tile yet. So walk the
+            // rotation from the active slot and grab the first marker that isn't already here.
+            const startIdx = state.slots.findIndex((s) => s.slotIndex === state.activeSlot);
+            let slot = null;
+            for (let i = 0; i < state.slots.length; i++) {
+                const candidate = state.slots[(startIdx + i) % state.slots.length];
+                if (candidate.reference !== newRef) { slot = candidate; break; }
+            }
+            if (!slot) return; // every marker is already on this tile — nothing to move
 
+            const movedSlot = slot.slotIndex;
+            const previousActiveSlot = state.activeSlot;
             const previousRef = slot.reference;
+
             slot.reference = newRef;
+            state.activeSlot = movedSlot;
             advanceActiveSlot();
             applyMarkers();
             clearError();
 
             saveGroup().catch((err) => {
                 slot.reference = previousRef;
-                state.activeSlot = movedSlot;
+                state.activeSlot = previousActiveSlot;
                 applyMarkers();
                 showError(err.message);
             });

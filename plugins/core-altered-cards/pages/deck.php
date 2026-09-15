@@ -294,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         if ($newName === '') {
             $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
         }
-        $payload = cacBuildDuplicateDeckPayload($source, $newName);
+        $payload = cacBuildDuplicateDeckPayload($source, $newName, (int)($_SESSION['user_id'] ?? 0) ?: null);
 
         $ch = curl_init(DECKS_API_URL . '/api/decks');
         curl_setopt_array($ch, [
@@ -1085,7 +1085,9 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 <?php
 // Alt-art marker widget + 3D tilt in the card zoom lightbox — requires the ownership
 // plugin itself to be active (not just OWNERSHIP_API_URL configured), see ownershipIsActive().
-$_ownAltArtActive = ownershipIsActive() && $isLoggedIn;
+// Only shown in Global preference mode — in PerDeck mode (the default), a card's
+// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
+$_ownAltArtActive = ownershipIsActive() && $isLoggedIn && cacIsAltArtGlobalMode((int)($_SESSION['user_id'] ?? 0));
 $ownAltArtCfg = $_ownAltArtActive ? [
     'enabled'          => true,
     'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',

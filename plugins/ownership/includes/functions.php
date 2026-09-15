@@ -61,6 +61,39 @@ function ownApiRequestRaw(string $method, string $path, int $userId, $body = nul
 }
 
 /**
+ * The player's alt-art preference mode ("PerDeck", the default, or "Global") — see
+ * AltArtPreferenceMode on the ownership service. Cached in the session for
+ * ALT_ART_MODE_CACHE_TTL seconds so pages that need it (alt-arts.php, the deckbuilder,
+ * the card-detail modal on every page) don't each cost a round trip; refreshed
+ * immediately whenever the mode is changed (see api/alt-art-preference-mode.php) rather
+ * than waiting out the TTL.
+ */
+const ALT_ART_MODE_CACHE_TTL = 300;
+
+function ownGetAltArtPreferenceMode(int $userId): string {
+    if (isset($_SESSION['alt_art_mode'], $_SESSION['alt_art_mode_at'])
+        && (time() - $_SESSION['alt_art_mode_at']) < ALT_ART_MODE_CACHE_TTL) {
+        return $_SESSION['alt_art_mode'];
+    }
+
+    $mode = 'PerDeck';
+    if ($userId > 0) {
+        $data = ownApiRequest('GET', '/api/alt-arts/preference-mode', $userId);
+        if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
+            $mode = $data['mode'];
+        }
+    }
+
+    $_SESSION['alt_art_mode'] = $mode;
+    $_SESSION['alt_art_mode_at'] = time();
+    return $mode;
+}
+
+function ownIsAltArtGlobalMode(int $userId): bool {
+    return ownGetAltArtPreferenceMode($userId) === 'Global';
+}
+
+/**
  * Total unopened-booster count for the sub-nav badge. Returns null when the API is
  * unreachable/unconfigured so callers can hide the badge instead of showing "0".
  */
