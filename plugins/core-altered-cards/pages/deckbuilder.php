@@ -188,6 +188,7 @@ $txt = array_merge($_sharedTxt, [
         'choose_illustration'   => 'Choose illustration',
         'illustration_confirm'  => 'Use this illustration',
         'no_other_illustration' => 'No other illustration is available for this card.',
+        'alt_art_stock_warn'    => 'Only %owned% of the %needed% copies used in this deck are owned for this illustration — on Board Game Arena, the rest will be shown with the base art.',
     ],
     'fr' => [
         'page_title'      => 'Deckbuilder',
@@ -318,6 +319,7 @@ $txt = array_merge($_sharedTxt, [
         'choose_illustration'   => 'Choisir une illustration',
         'illustration_confirm'  => 'Utiliser cette illustration',
         'no_other_illustration' => 'Aucune autre illustration n\'est disponible pour cette carte.',
+        'alt_art_stock_warn'    => 'Seuls %owned% des %needed% exemplaires utilisés dans ce deck sont possédés pour cette illustration — sur Board Game Arena, le reste sera affiché avec l\'art de base.',
     ],
 ][$uiLang] ?? []);
 $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
@@ -1042,6 +1044,7 @@ var AlteredDB = {
         'choose_illustration'   => $txt['choose_illustration'],
         'illustration_confirm'  => $txt['illustration_confirm'],
         'no_other_illustration' => $txt['no_other_illustration'],
+        'alt_art_stock_warn'    => $txt['alt_art_stock_warn'],
         'choose_hero'   => $txt['choose_hero'],
         'hero_slot'     => $txt['hero_slot'],
         'new_deck'      => $txt['new_deck'],
@@ -1620,6 +1623,35 @@ var AlteredDB = {
             .catch(function () { return null; });
     }
 
+    // PerDeck mode only (Global mode already blocks picking an unowned illustration
+    // in its own preference widget, so the deck can't end up in this state there):
+    // caches, per reference currently in the deck, how many copies of that specific
+    // illustration are owned -- null means "not part of a multi-art family", absent
+    // means "not fetched yet". Keyed by the deck's own ref set so an unchanged deck
+    // never re-fetches; updateDeckDisplay() re-renders once fresh data lands.
+    var altArtOwnCache = {};
+    var _altArtOwnCacheKey = null;
+    var _altArtOwnToken = 0;
+    function refreshAltArtOwnership() {
+        if (!AlteredDB.altArtsUrl || AlteredDB.altArtGlobalMode) return;
+        var refs = Object.keys(deck.cards);
+        if (!refs.length) return;
+        var key = refs.slice().sort().join(',');
+        if (key === _altArtOwnCacheKey) return;
+        _altArtOwnCacheKey = key;
+        var myToken = ++_altArtOwnToken;
+        fetchAltArtData(refs).then(function (data) {
+            if (myToken !== _altArtOwnToken || !data) return;
+            refs.forEach(function (ref) {
+                var group = data.groups[ref];
+                var opt = group && data.options[group.familyId + ':' + group.faction + ':' + group.rarity];
+                var match = opt && opt.options && opt.options.filter(function (o) { return o.reference === ref; })[0];
+                altArtOwnCache[ref] = match ? match.ownedQuantity : null;
+            });
+            updateDeckDisplay();
+        });
+    }
+
     // Spreads `qty` copies across a group's ordered slots (1 for HERO/TOKEN, else up to
     // 3) the same way the deck's own copies would map onto "exemplaire" slots -- copy i
     // (0-based) takes slots[i], and any copy beyond the slot count repeats the last slot.
@@ -1746,6 +1778,8 @@ var AlteredDB = {
     TYPE_ORDER.push('OTHER'); // catch-all for cards with unrecognized types
 
     function updateDeckDisplay() {
+        refreshAltArtOwnership();
+
         // Card count + gems
         var total = 0, gems = {};
         Object.keys(AlteredDB.rarities).forEach(function(k) { var g = AlteredDB.rarities[k].gem; if (g) gems[g] = 0; });
@@ -2025,6 +2059,9 @@ var AlteredDB = {
                     + (violatingRefs[c.ref] ? '<span class="deck-list-violation" title="' + escAttr(violatingRefs[c.ref]) + '">!</span>' : '')
                     + (AlteredDB.showStockWarn && AlteredDB.collectionMode && c.qty > (AlteredDB.collection[c.ref] || 0)
                         ? '<span class="deck-list-stockwarn" title="' + <?= json_encode($txt['stock_warn']) ?> + '"><i class="fa-solid fa-box-archive" style="font-size:.6rem"></i></span>'
+                        : '')
+                    + (altArtOwnCache[c.ref] != null && c.qty > altArtOwnCache[c.ref]
+                        ? '<span class="deck-list-altartwarn" title="' + escAttr(AlteredDB.txt.alt_art_stock_warn.replace('%owned%', altArtOwnCache[c.ref]).replace('%needed%', c.qty)) + '"><i class="fa-solid fa-triangle-exclamation" style="font-size:.6rem"></i></span>'
                         : '');
                 elCardList.appendChild(item);
             });
