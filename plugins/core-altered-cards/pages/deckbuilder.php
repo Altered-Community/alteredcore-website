@@ -1625,16 +1625,18 @@ var AlteredDB = {
 
     // PerDeck mode only (Global mode already blocks picking an unowned illustration
     // in its own preference widget, so the deck can't end up in this state there):
-    // caches, per reference currently in the deck, how many copies of that specific
-    // illustration are owned -- null means "not part of a multi-art family", absent
-    // means "not fetched yet". Keyed by the deck's own ref set so an unchanged deck
-    // never re-fetches; updateDeckDisplay() re-renders once fresh data lands.
+    // caches, per reference currently in the deck (cards and hero alike), how many
+    // copies of that specific illustration are owned -- null means "not part of a
+    // multi-art family", absent means "not fetched yet". Keyed by the deck's own ref
+    // set so an unchanged deck never re-fetches; updateDeckDisplay() re-renders once
+    // fresh data lands.
     var altArtOwnCache = {};
     var _altArtOwnCacheKey = null;
     var _altArtOwnToken = 0;
     function refreshAltArtOwnership() {
         if (!AlteredDB.altArtsUrl || AlteredDB.altArtGlobalMode) return;
         var refs = Object.keys(deck.cards);
+        if (deck.hero && deck.hero.cardReference) refs.push(deck.hero.cardReference);
         if (!refs.length) return;
         var key = refs.slice().sort().join(',');
         if (key === _altArtOwnCacheKey) return;
@@ -1855,6 +1857,25 @@ var AlteredDB = {
                 }
             } else if (heroWarn) {
                 heroWarn.remove();
+            }
+
+            // Same alt-art shortfall warning as the card list, but a hero only ever
+            // needs 1 copy -- "short" here just means the current hero illustration
+            // isn't owned at all.
+            var heroRef  = deck.hero ? deck.hero.cardReference : null;
+            var heroOwned = heroRef ? altArtOwnCache[heroRef] : null;
+            var heroArtWarn = elHeroBanner.querySelector('.db-hero-altart-warn');
+            if (heroOwned != null && heroOwned < 1) {
+                if (!heroArtWarn) {
+                    heroArtWarn = document.createElement('span');
+                    heroArtWarn.className = 'db-hero-altart-warn';
+                    heroArtWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:#f59e0b;font-size:.9rem;cursor:help';
+                    heroArtWarn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    elHeroBanner.appendChild(heroArtWarn);
+                }
+                heroArtWarn.title = AlteredDB.txt.alt_art_stock_warn.replace('%owned%', heroOwned).replace('%needed%', 1);
+            } else if (heroArtWarn) {
+                heroArtWarn.remove();
             }
         }
 
