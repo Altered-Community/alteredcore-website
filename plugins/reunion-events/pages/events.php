@@ -6,8 +6,16 @@ $lang = getUiLang();
 $txt = [
     'en' => [
         'page_title'        => 'Events',
+        'tab_calendar'      => 'Calendar',
         'tab_physical'      => 'Physical',
         'tab_bga'           => 'Online (BGA)',
+        'source_physical'   => 'Physical',
+        'source_bga'        => 'Online',
+        'cal_no_events'     => 'No events on this day.',
+        'cal_filter_all'    => 'All',
+        'cal_legend'        => 'Physical and online events',
+        'frontier_legend'   => 'Frontier seasons',
+        'frontier_range'    => 'Pool duration',
         'bga_no_data'       => 'No BGA tournaments loaded. An admin can import bga-tournaments.json in Events Settings.',
         'bga_updated'       => 'Data from Board Game Arena',
         'bga_open_bga'      => 'Browse on BGA',
@@ -57,8 +65,16 @@ $txt = [
     ],
     'fr' => [
         'page_title'        => 'Événements',
+        'tab_calendar'      => 'Calendrier',
         'tab_physical'      => 'Physique',
         'tab_bga'           => 'En ligne (BGA)',
+        'source_physical'   => 'Physique',
+        'source_bga'        => 'En ligne',
+        'cal_no_events'     => 'Aucun événement ce jour.',
+        'cal_filter_all'    => 'Tous',
+        'cal_legend'        => 'Événements physiques et en ligne',
+        'frontier_legend'   => 'Saisons Frontier',
+        'frontier_range'    => 'Durée du pool',
         'bga_no_data'       => 'Aucun tournoi BGA chargé. Un admin peut importer bga-tournaments.json dans Paramètres Événements.',
         'bga_updated'       => 'Données Board Game Arena',
         'bga_open_bga'      => 'Voir sur BGA',
@@ -108,8 +124,16 @@ $txt = [
     ],
     'de' => [
         'page_title'        => 'Events',
+        'tab_calendar'      => 'Kalender',
         'tab_physical'      => 'Präsenz',
         'tab_bga'           => 'Online (BGA)',
+        'source_physical'   => 'Präsenz',
+        'source_bga'        => 'Online',
+        'cal_no_events'     => 'Keine Events an diesem Tag.',
+        'cal_filter_all'    => 'Alle',
+        'cal_legend'        => 'Präsenz- und Online-Events',
+        'frontier_legend'   => 'Frontier-Saisons',
+        'frontier_range'    => 'Pool-Dauer',
         'bga_no_data'       => 'Keine BGA-Turniere geladen.',
         'bga_updated'       => 'Daten von Board Game Arena',
         'bga_open_bga'      => 'Auf BGA ansehen',
@@ -159,8 +183,16 @@ $txt = [
     ],
     'es' => [
         'page_title'        => 'Eventos',
+        'tab_calendar'      => 'Calendario',
         'tab_physical'      => 'Presencial',
         'tab_bga'           => 'En línea (BGA)',
+        'source_physical'   => 'Presencial',
+        'source_bga'        => 'En línea',
+        'cal_no_events'     => 'No hay eventos este día.',
+        'cal_filter_all'    => 'Todos',
+        'cal_legend'        => 'Eventos presenciales y en línea',
+        'frontier_legend'   => 'Temporadas Frontier',
+        'frontier_range'    => 'Duración del pool',
         'bga_no_data'       => 'No hay torneos BGA cargados.',
         'bga_updated'       => 'Datos de Board Game Arena',
         'bga_open_bga'      => 'Ver en BGA',
@@ -210,8 +242,16 @@ $txt = [
     ],
     'it' => [
         'page_title'        => 'Eventi',
+        'tab_calendar'      => 'Calendario',
         'tab_physical'      => 'In presenza',
         'tab_bga'           => 'Online (BGA)',
+        'source_physical'   => 'In presenza',
+        'source_bga'        => 'Online',
+        'cal_no_events'     => 'Nessun evento in questo giorno.',
+        'cal_filter_all'    => 'Tutti',
+        'cal_legend'        => 'Eventi in presenza e online',
+        'frontier_legend'   => 'Stagioni Frontier',
+        'frontier_range'    => 'Durata del pool',
         'bga_no_data'       => 'Nessun torneo BGA caricato.',
         'bga_updated'       => 'Dati da Board Game Arena',
         'bga_open_bga'      => 'Vedi su BGA',
@@ -321,6 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 $physicalCount = $error ? 0 : count($tournaments);
+$calendarDefault = !$isSearch;
 
 $bgaData        = reLoadBgaTournamentsJson();
 $bgaTournaments = reFilterBgaUpcomingTournaments($bgaData['tournaments']);
@@ -353,19 +394,38 @@ $bgaForJs       = array_values(array_map(function ($b) use ($lang, $txt) {
         'max_players'       => !empty($b['max_players']) ? (int)$b['max_players'] : null,
         'max_players_label' => $txt['bga_max_players'] ?? 'Max players',
         'url'               => $b['url'] ?? '',
+        'source'            => 'bga',
+        'source_label'      => $txt['source_bga'] ?? 'Online',
     ];
 }, $bgaTournaments));
 $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
+$frontierSeasons = reLoadFrontierSeasons();
+$eventBrandsForJs = reEventBrandsForJs();
 ?>
 <div class="container py-4">
 
     <div class="section-title mb-4"><span><?= h($pageTitle) ?></span></div>
 
+    <?php
+    $unifiedCount = $physicalCount + $bgaCount;
+    ?>
     <div class="re-events-tabs-sticky">
         <ul class="nav nav-tabs re-events-tabs" id="reEventsTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="re-tab-physical-btn" data-bs-toggle="tab"
-                        data-bs-target="#re-tab-physical" type="button" role="tab" aria-controls="re-tab-physical" aria-selected="true">
+                <button class="nav-link<?= $calendarDefault ? ' active' : '' ?>" id="re-tab-calendar-btn" data-bs-toggle="tab"
+                        data-bs-target="#re-tab-calendar" type="button" role="tab" aria-controls="re-tab-calendar"
+                        aria-selected="<?= $calendarDefault ? 'true' : 'false' ?>">
+                    <i class="fa-solid fa-calendar-days re-events-tab-icon" aria-hidden="true"></i>
+                    <span class="re-events-tab-label"><?= h($txt['tab_calendar']) ?></span>
+                    <?php if ($unifiedCount > 0): ?>
+                    <span class="badge re-events-tab-badge"><?= h($unifiedCount) ?></span>
+                    <?php endif; ?>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link<?= !$calendarDefault ? ' active' : '' ?>" id="re-tab-physical-btn" data-bs-toggle="tab"
+                        data-bs-target="#re-tab-physical" type="button" role="tab" aria-controls="re-tab-physical"
+                        aria-selected="<?= !$calendarDefault ? 'true' : 'false' ?>">
                     <i class="fa-solid fa-location-dot re-events-tab-icon" aria-hidden="true"></i>
                     <span class="re-events-tab-label"><?= h($txt['tab_physical']) ?></span>
                     <?php if ($physicalCount > 0): ?>
@@ -387,7 +447,45 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
     </div>
 
     <div class="tab-content">
-    <div class="tab-pane fade show active" id="re-tab-physical" role="tabpanel">
+    <div class="tab-pane fade<?= $calendarDefault ? ' show active' : '' ?>" id="re-tab-calendar" role="tabpanel">
+        <p class="text-muted small mb-3">
+            <i class="fa-solid fa-info-circle me-1" aria-hidden="true"></i><?= h($txt['cal_legend']) ?>
+        </p>
+        <div class="re-cal-source-filters mb-3" id="re-cal-source-filters" role="group" aria-label="<?= h($txt['cal_legend']) ?>">
+            <button type="button" class="re-cal-source-btn active" data-source="all"><?= h($txt['cal_filter_all']) ?></button>
+            <button type="button" class="re-cal-source-btn" data-source="physical">
+                <span class="re-cal-dot re-cal-dot-physical" aria-hidden="true"></span><?= h($txt['source_physical']) ?>
+            </button>
+            <button type="button" class="re-cal-source-btn" data-source="bga">
+                <span class="re-cal-dot re-cal-dot-bga" aria-hidden="true"></span><?= h($txt['source_bga']) ?>
+            </button>
+        </div>
+        <?php if ($frontierSeasons !== []): ?>
+        <div class="re-cal-frontier-legend mb-3" id="re-cal-frontier-legend">
+            <span class="re-cal-frontier-legend-title">
+                <?php $frontierLogoUrl = reFrontierLogoUrl(); ?>
+                <?php if ($frontierLogoUrl !== ''): ?>
+                <img class="re-cal-frontier-logo"
+                     src="<?= h($frontierLogoUrl) ?>"
+                     alt="Frontier"
+                     width="64"
+                     height="64"
+                     loading="lazy">
+                <?php endif; ?>
+                <?= h($txt['frontier_legend']) ?>:
+            </span>
+            <?php foreach ($frontierSeasons as $fs): ?>
+            <span class="re-cal-frontier-legend-item" title="<?= h($fs['start_date'] . ' → ' . $fs['end_date']) ?>">
+                <span class="re-cal-frontier-swatch" style="background:<?= h($fs['color']) ?>"></span>
+                <?= h($fs['name']) ?>
+            </span>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <div id="view-unified-calendar"></div>
+    </div><!-- /re-tab-calendar -->
+
+    <div class="tab-pane fade<?= !$calendarDefault ? ' show active' : '' ?>" id="re-tab-physical" role="tabpanel">
 
     <div class="d-flex align-items-center justify-content-end mb-4">
         <a href="https://altered-tournament-tools.com/tournaments/create"
@@ -403,6 +501,7 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
         <i class="fa-solid fa-circle-xmark me-2"></i>
         <?= h($txt['error_loading']) ?>
     </div>
+    <script>window._reEvents = [];</script>
 
     <?php else: ?>
 
@@ -482,16 +581,6 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
         </form>
     </div>
 
-    <!-- View toggle -->
-    <div class="view-toggle mb-3">
-        <button type="button" class="view-toggle-btn active" id="btn-view-list">
-            <i class="fa-solid fa-list"></i> <?= h($txt['view_list']) ?>
-        </button>
-        <button type="button" class="view-toggle-btn" id="btn-view-calendar">
-            <i class="fa-solid fa-calendar-days"></i> <?= h($txt['view_calendar']) ?>
-        </button>
-    </div>
-
     <?php if ($isSearch): ?>
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="mb-0">
@@ -512,7 +601,10 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
         <?php else: ?>
         <div class="events-list">
             <?php foreach ($tournaments as $event): ?>
-            <?php $eventUrl = RE_TOURNAMENT_BASE_URL . ($event['id'] ?? ''); ?>
+            <?php
+                $eventUrl = RE_TOURNAMENT_BASE_URL . ($event['id'] ?? '');
+                $physDateRaw = $event['date'] ?? $event['startDate'] ?? '';
+            ?>
             <a href="<?= h($eventUrl) ?>" class="event-card card-altered p-4" target="_blank" rel="noopener">
                 <div class="event-card-inner">
                     <div class="event-info">
@@ -523,7 +615,6 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
 
                         <div class="event-details">
                             <?php
-                            $physDateRaw  = $event['date'] ?? $event['startDate'] ?? '';
                             $physLocation = $event['location'] ?? $event['venue'] ?? '';
                             $physInstant  = $physDateRaw !== '' ? rePhysStartInstantIso($physDateRaw, $physLocation) : null;
                             $physHasTime  = (bool) preg_match('/T\d{2}:\d{2}/', $physDateRaw);
@@ -579,22 +670,21 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
         <?php endif; ?>
     </div>
 
-    <!-- Calendrier -->
-    <div id="view-calendar" style="display:none"></div>
-
     <?php
-    $eventsForJs = array_values(array_map(function ($e) use ($lang) {
+    $eventsForJs = array_values(array_map(function ($e) use ($lang, $txt) {
         return [
-            'id'       => $e['id'] ?? '',
-            'name'     => $e['name'] ?? '',
-            'date'     => $e['date'] ?? $e['startDate'] ?? '',
-            'location' => $e['location'] ?? $e['venue'] ?? '',
-            'format'   => reFormatTournamentFormat($e['format'] ?? '', $lang),
-            'players'  => isset($e['playerCount'])
+            'id'           => $e['id'] ?? '',
+            'name'         => $e['name'] ?? '',
+            'date'         => $e['date'] ?? $e['startDate'] ?? '',
+            'location'     => $e['location'] ?? $e['venue'] ?? '',
+            'format'       => reFormatTournamentFormat($e['format'] ?? '', $lang),
+            'players'      => isset($e['playerCount'])
                 ? ($e['playerCount'] . (!empty($e['maxPlayers']) ? ' / ' . $e['maxPlayers'] : ''))
                 : '',
-            'distance' => !empty($e['distance']) ? round($e['distance'], 1) : null,
-            'url'      => RE_TOURNAMENT_BASE_URL . ($e['id'] ?? ''),
+            'distance'     => !empty($e['distance']) ? round($e['distance'], 1) : null,
+            'url'          => RE_TOURNAMENT_BASE_URL . ($e['id'] ?? ''),
+            'source'       => 'physical',
+            'source_label' => $txt['source_physical'] ?? 'Physical',
         ];
     }, $tournaments));
     ?>
@@ -679,15 +769,6 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
             </form>
         </div>
 
-        <div class="view-toggle mb-3">
-            <button type="button" class="view-toggle-btn active" id="btn-bga-view-list">
-                <i class="fa-solid fa-list"></i> <?= h($txt['view_list']) ?>
-            </button>
-            <button type="button" class="view-toggle-btn" id="btn-bga-view-calendar">
-                <i class="fa-solid fa-calendar-days"></i> <?= h($txt['view_calendar']) ?>
-            </button>
-        </div>
-
         <div id="bga-view-list">
         <div class="card-altered p-4 text-center d-none mb-3" id="bga-filter-empty">
             <i class="fa-solid fa-filter-circle-xmark fa-2x text-muted mb-2"></i>
@@ -698,9 +779,17 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
             <?php
                 $bgaStartDisplay = $bga['start_datetime'] ?? $bga['start_date'] ?? '';
                 $bgaDeckLabel = reBgaDeckFormatLabel($bga['deck_format'] ?? null);
+                $bgaDateKey = $bga['start_date'] ?? '';
+                if ($bgaDateKey === '' && $bgaStartDisplay !== '') {
+                    $bgaDateKey = substr((string)$bgaStartDisplay, 0, 10);
+                }
+                $bgaSeason = reIsBgaFrontierFormat($bga['deck_format'] ?? null)
+                    ? reFrontierSeasonForDate($bgaDateKey, $frontierSeasons)
+                    : null;
             ?>
             <a href="<?= h($bga['url']) ?>"
-               class="event-card card-altered p-4 bga-event-card"
+               class="event-card card-altered p-4 bga-event-card<?= $bgaSeason ? ' re-event-card-frontier' : '' ?>"
+               <?php if ($bgaSeason): ?>style="--re-frontier-color: <?= h($bgaSeason['color']) ?>"<?php endif; ?>
                target="_blank"
                rel="noopener"
                data-bga-format="<?= h($bga['format'] ?? '') ?>"
@@ -766,8 +855,6 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
             <?php endforeach; ?>
         </div>
         </div>
-
-        <div id="bga-view-calendar" style="display:none"></div>
         <?php endif; ?>
     </div><!-- /re-tab-bga -->
 
@@ -783,4 +870,16 @@ window._reBgaEvents = <?= json_encode($bgaForJs, $bgaJsonFlags) ?>;
 window._reBgaStrings = <?= json_encode([
     'no_results' => $txt['bga_no_results'] ?? '',
 ], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+window._reCalStrings = <?= json_encode([
+    'no_events'       => $txt['cal_no_events'] ?? '',
+    'source_physical' => $txt['source_physical'] ?? 'Physical',
+    'source_bga'      => $txt['source_bga'] ?? 'Online',
+    'frontier_legend' => $txt['frontier_legend'] ?? 'Frontier seasons',
+    'frontier_range'  => $txt['frontier_range'] ?? 'Pool duration',
+], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+window._reCalAssets = <?= json_encode([
+    'frontierLogo' => reFrontierLogoUrl(),
+], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+window._reEventBrands = <?= json_encode($eventBrandsForJs, $bgaJsonFlags) ?>;
+window._reFrontierSeasons = <?= json_encode($frontierSeasons, $bgaJsonFlags) ?>;
 </script>

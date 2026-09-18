@@ -131,8 +131,6 @@
                 "mountain_desc": "Mountain ↓",
                 "ocean_asc":     "Ocean ↑",
                 "ocean_desc":    "Ocean ↓",
-                "set_date_asc":  "Set Date ↑",
-                "set_date_desc": "Set Date ↓",
                 "random":        "Random"
             }
         },
@@ -242,8 +240,6 @@
                 "mountain_desc": "Montagne ↓",
                 "ocean_asc":     "Océan ↑",
                 "ocean_desc":    "Océan ↓",
-                "set_date_asc":  "Date set ↑",
-                "set_date_desc": "Date set ↓",
                 "random":        "Aléatoire"
             }
         }

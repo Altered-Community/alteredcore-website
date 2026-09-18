@@ -27,19 +27,6 @@ function loadAlteredData(string $name): array {
     return $all[$name] ?? [];
 }
 
-/**
- * Normalize a card reference for CDN image lookups. Mirrors the client-side
- * normalizeRef()/normalizeHeroRef() helpers in decks.php and deckbuilder.php:
- * promo prints (segment 2 === 'P') fall back to the base booster art ('B'),
- * and BISE-set refs (segment 1 === 'BISE') map to CORE.
- */
-function normalizeCardRef(string $ref): string {
-    $p = explode('_', $ref);
-    if (($p[2] ?? null) === 'P')    $p[2] = 'B';
-    if (($p[1] ?? null) === 'BISE') $p[1] = 'CORE';
-    return implode('_', $p);
-}
-
 function deckApiToken(): ?string {
     if (!kcIsLoggedIn()) return null;
     $userId = (int)($_SESSION['user_id'] ?? 0);
@@ -223,11 +210,16 @@ function formatApiViolations(array $violations): string {
  * mirrors the source draft flag (falling back to sandbox => draft), and
  * only carries a description when the source has a non-empty one.
  *
- * @param array  $sourceDeck Deck as returned by GET /api/decks/{id}.
- * @param string $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @param array    $sourceDeck Deck as returned by GET /api/decks/{id}.
+ * @param string   $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @param int|null $userId     The copy's new owner. When given and their alt-art mode is
+ *                             Global, every card is rewritten through
+ *                             cacApplyAltArtPreferencesToCards() before being copied —
+ *                             the source deck's own chosen illustrations are irrelevant
+ *                             to a Global-mode player, whose preferred art always wins.
  * @return array Payload ready for json_encode().
  */
-function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
+function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName, ?int $userId = null): array
 {
     $deckCards = [];
     foreach ($sourceDeck['cards'] ?? [] as $card) {
@@ -238,6 +230,10 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
             'cardReference' => $card['cardReference'],
             'quantity'      => (int)($card['quantity'] ?? 1),
         ];
+    }
+
+    if ($userId !== null && cacIsAltArtGlobalMode($userId)) {
+        $deckCards = cacApplyAltArtPreferencesToCards($deckCards, $userId);
     }
 
     $format  = $sourceDeck['format'] ?? 'standard';
@@ -257,6 +253,82 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
     }
 
     return $payload;
+}
+
+/**
+ * The player's alt-art preference mode ("PerDeck", the default, or "Global") — see
+ * AltArtPreferenceMode on the ownership service, and ownGetAltArtPreferenceMode() in
+ * plugins/ownership/includes/functions.php (this is a self-contained duplicate, same
+ * reasoning as collApiRequest() vs ownApiRequestRaw() — this plugin doesn't assume the
+ * ownership plugin is active). Shares the same $_SESSION keys so both stay consistent
+ * within one session regardless of which plugin's copy last refreshed them.
+ */
+const CAC_ALT_ART_MODE_CACHE_TTL = 300;
+
+function cacGetAltArtPreferenceMode(int $userId): string {
+    if (isset($_SESSION['alt_art_mode'], $_SESSION['alt_art_mode_at'])
+        && (time() - $_SESSION['alt_art_mode_at']) < CAC_ALT_ART_MODE_CACHE_TTL) {
+        return $_SESSION['alt_art_mode'];
+    }
+
+    $mode = 'PerDeck';
+    if (defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL && $userId > 0) {
+        $data = collApiRequest(rtrim(OWNERSHIP_API_URL, '/'), 'GET', '/api/alt-arts/preference-mode', $userId);
+        if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
+            $mode = $data['mode'];
+        }
+    }
+
+    $_SESSION['alt_art_mode'] = $mode;
+    $_SESSION['alt_art_mode_at'] = time();
+    return $mode;
+}
+
+function cacIsAltArtGlobalMode(int $userId): bool {
+    return cacGetAltArtPreferenceMode($userId) === 'Global';
+}
+
+/**
+ * Rewrites a flat list of {cardReference, quantity} deck lines through the ownership
+ * service's POST /api/alt-arts/apply-to-deck (global alt-art preferences applied,
+ * falling back to the default print for anything not owned enough) — for server-side
+ * callers building or editing a deck (duplicate, Equinox import, quantity changes) while
+ * the owning player's mode is Global. Callers must check cacIsAltArtGlobalMode()
+ * themselves first; in PerDeck mode a deck's own chosen references are the source of
+ * truth and must never be rewritten. Falls back to the input unchanged on any API error,
+ * same failure mode as the rest of this plugin's ownership calls.
+ */
+function cacApplyAltArtPreferencesToCards(array $deckCards, int $userId): array {
+    if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL || $userId <= 0) return $deckCards;
+
+    $checkItems = [];
+    foreach ($deckCards as $c) {
+        if (empty($c['cardReference'])) continue;
+        $checkItems[] = ['reference' => (string)$c['cardReference'], 'quantity' => (int)($c['quantity'] ?? 1)];
+    }
+    if (!$checkItems) return $deckCards;
+
+    $result = collApiRequest(rtrim(OWNERSHIP_API_URL, '/'), 'POST', '/api/alt-arts/apply-to-deck', $userId, $checkItems);
+    if (!is_array($result) || !isset($result['lines']) || !is_array($result['lines'])) return $deckCards;
+
+    // Lines[i] is itself a list (a shortfall/preference spread can turn one input line
+    // into several) — flatten, then merge references that ended up repeated across
+    // different input lines (e.g. two printings of the same card both falling back to
+    // the same default art).
+    $merged = [];
+    foreach ($result['lines'] as $lines) {
+        foreach ((array)$lines as $line) {
+            if (!isset($line['reference'], $line['quantity'])) continue;
+            $ref = (string)$line['reference'];
+            $merged[$ref] = ($merged[$ref] ?? 0) + (int)$line['quantity'];
+        }
+    }
+
+    $out = [];
+    foreach ($merged as $ref => $qty) {
+        $out[] = ['cardReference' => $ref, 'quantity' => $qty];
+    }
+    return $out;
 }
 
 /**
