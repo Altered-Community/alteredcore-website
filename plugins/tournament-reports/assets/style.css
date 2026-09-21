@@ -254,6 +254,19 @@
 .tr-ranking-pos-2 { color: #6b7280; }
 .tr-ranking-pos-3 { color: #92400e; }
 
+/* Win/loss (W-L) column */
+.tr-rank-wl {
+    width: 64px;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--neutral-600);
+}
+.tr-standings-card {
+    border-left: 3px solid var(--primary-400, #C9A84C);
+}
+
 /* Ranking form */
 .tr-ranking-form .form-control,
 .tr-ranking-form .form-select {

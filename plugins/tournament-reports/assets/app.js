@@ -10,6 +10,9 @@
     var currentVariant = {};   // pid -> index of the deck variant currently shown
     var currentOpenDeck = null;
     var rankings      = TR_EXISTING_RANKINGS || [];
+    var standings     = (typeof TR_STANDINGS !== 'undefined' && TR_STANDINGS) ? TR_STANDINGS : [];
+    var standingsMap  = {};
+    standings.forEach(function (s) { standingsMap[s.id] = s; });
     var playerDecks   = {};
     var cardNames     = {};          // ref -> translated name
     var heroRefs      = {};          // ref -> true (card is a hero)
@@ -431,18 +434,92 @@
     }
 
     /* ── Rankings ──────────────────────────────────────────────────────── */
+    // Shared player row (Pos / Player / Hero) used by both the auto standings
+    // and the manually saved rankings.
+    function rankRowHtml(p, i) {
+        var posClass = '';
+        if (i === 0) posClass = ' tr-ranking-pos-1';
+        else if (i === 1) posClass = ' tr-ranking-pos-2';
+        else if (i === 2) posClass = ' tr-ranking-pos-3';
+        var hasDeck = p.player_id && playerDecks[p.player_id];
+        var deck = hasDeck ? playerDecks[p.player_id] : null;
+        var multipleDecks = !!(deck && deck.decks && deck.decks.length > 1);
+        // Only open the side panel when there is a real decklist
+        // (more than just the hero card).
+        var hasDecklist = hasDeck && (deck.deck || []).length > 1;
+        var noData = !deck || !deck.deck || deck.deck.length === 0;
+        var hero = deck ? heroName(deck) : '';
+        var fSrc = deck ? factionImgUrl(deck.faction) : '';
+        var badge = '';
+        if (deck) {
+            if (multipleDecks) {
+                badge = ' <span class="tr-badge tr-badge-multi" title="' + esc(TR_TXT.multiple_decks) + '">' + esc(TR_TXT.multiple_decks) + '</span>';
+            } else if (noData) {
+                badge = ' <span class="tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
+            }
+        }
+        var html = '<tr class="tr-rank-row">';
+        html += '<td class="tr-ranking-pos' + posClass + '">';
+        html += '<span class="tr-rank-position">' + (i + 1) + '</span>';
+        html += '</td>';
+        html += '<td>' + (hasDecklist
+            ? '<button type="button" class="tr-player-link" data-player-id="' + esc(p.player_id) + '">' + esc(p.player_name) + '</button>'
+            : esc(p.player_name));
+        html += badge;
+        html += '</td>';
+        html += '<td>';
+        if (hero) {
+            html += ' <span class="tr-rank-hero">';
+            if (fSrc) html += '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ';
+            html += esc(hero) + '</span>';
+        }
+        html += '</td>';
+        return html;
+    }
+
+    function wlCellHtml(playerId) {
+        var s = standingsMap[playerId];
+        return '<td class="tr-rank-wl">' + (s ? esc(s.wins + '-' + s.losses) : '<span class="text-muted">&mdash;</span>') + '</td>';
+    }
+
+    function standingsHeaderHtml() {
+        return '<th style="width:50px">' + esc(TR_TXT.ranking_position) + '</th>'
+            + '<th>' + esc(TR_TXT.ranking_player) + '</th>'
+            + '<th>' + esc(TR_TXT.hero_label || 'Hero') + '</th>'
+            + '<th class="tr-rank-wl">' + esc(TR_TXT.wl_header || 'W-L') + '</th>';
+    }
+
+    // Auto standings computed from the recorded match results (win/loss).
+    function renderStandings(suppressEmpty) {
+        if (!standings.length) {
+            return suppressEmpty ? '' : '<div class="tr-empty-state"><i class="fa-solid fa-trophy"></i><p>' + esc(TR_TXT.standings_empty || TR_TXT.ranking_empty) + '</p></div>';
+        }
+        var html = '<div class="tr-ranking-card tr-standings-card">';
+        html += '<div class="tr-ranking-header"><span class="tr-ranking-title">' + esc(TR_TXT.standings_title || 'Standings') + '</span></div>';
+        html += '<table class="tr-ranking-table"><thead><tr>' + standingsHeaderHtml() + '</tr></thead><tbody>';
+        standings.forEach(function (s, i) {
+            html += rankRowHtml({ player_id: s.id, player_name: s.name }, i);
+            html += wlCellHtml(s.id);
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        return html;
+    }
+
     function renderRankings() {
         var el = document.getElementById('tr-ranking-section');
+        if (!el) return;
 
-        if (!rankings.length) {
-            el.innerHTML = '<div class="tr-empty-state"><i class="fa-solid fa-trophy"></i><p>' + esc(TR_TXT.ranking_empty) + '</p></div>';
-            return;
+        var html = renderStandings(rankings.length > 0);
+
+        if (rankings.length) {
+            rankings.forEach(function (r) {
+                html += renderRankingCard(r);
+            });
+        } else if (standings.length) {
+            html += '<div class="tr-empty-state"><i class="fa-solid fa-ranking-star"></i><p>' + esc(TR_TXT.ranking_empty) + '</p></div>';
         }
 
-        var html = '';
-        rankings.forEach(function (r) {
-            html += renderRankingCard(r);
-        });
         el.innerHTML = html;
     }
 
@@ -453,48 +530,10 @@
         html += '</div>';
 
         if (r.players && r.players.length) {
-            html += '<table class="tr-ranking-table"><thead><tr>';
-            html += '<th style="width:50px">' + esc(TR_TXT.ranking_position) + '</th>';
-            html += '<th>' + esc(TR_TXT.ranking_player) + '</th>';
-            html += '</tr></thead><tbody>';
+            html += '<table class="tr-ranking-table"><thead><tr>' + standingsHeaderHtml() + '</tr></thead><tbody>';
             r.players.forEach(function (p, i) {
-                var posClass = '';
-                if (i === 0) posClass = ' tr-ranking-pos-1';
-                else if (i === 1) posClass = ' tr-ranking-pos-2';
-                else if (i === 2) posClass = ' tr-ranking-pos-3';
-                var hasDeck = p.player_id && playerDecks[p.player_id];
-                var deck = hasDeck ? playerDecks[p.player_id] : null;
-                var multipleDecks = !!(deck && deck.decks && deck.decks.length > 1);
-                // Only open the side panel when there is a real decklist
-                // (more than just the hero card).
-                var hasDecklist = hasDeck && (deck.deck || []).length > 1;
-                var noData = !deck || !deck.deck || deck.deck.length === 0;
-                var hero = deck ? heroName(deck) : '';
-                var fSrc = deck ? factionImgUrl(deck.faction) : '';
-                var badge = '';
-                if (deck) {
-                    if (multipleDecks) {
-                        badge = ' <span class="tr-badge tr-badge-multi" title="' + esc(TR_TXT.multiple_decks) + '">' + esc(TR_TXT.multiple_decks) + '</span>';
-                    } else if (noData) {
-                        badge = ' <span class="tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
-                    }
-                }
-                html += '<tr class="tr-rank-row">';
-                html += '<td class="tr-ranking-pos' + posClass + '">';
-                html += '<span class="tr-rank-position">' + (i + 1) + '</span>';
-                html += '</td>';
-                html += '<td >' + (hasDecklist
-                    ? '<button type="button" class="tr-player-link" data-player-id="' + esc(p.player_id) + '">' + esc(p.player_name) + '</button>'
-                    : esc(p.player_name));
-                html += badge;
-                html += '</td>';
-                html += '<td>'
-                if (hero) {
-                    html += ' <span class="tr-rank-hero">';
-                    if (fSrc) html += '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ';
-                    html += esc(hero) + '</span>';
-                }
-                html += '</td>';
+                html += rankRowHtml(p, i);
+                html += wlCellHtml(p.player_id);
                 html += '</tr>';
             });
             html += '</tbody></table>';

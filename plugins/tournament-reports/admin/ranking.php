@@ -14,7 +14,22 @@ if (!$tournament) {
     redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
 }
 
-$players  = trExtractPlayers(json_encode($tournament['games_data']));
+// Players pooled from the match results, ordered by win/loss standings so the
+// create-mode ranking is prefilled in the right order.
+$standings    = trComputeStandings($tournament['games_data']);
+$players      = [];
+$standingsMap = [];
+foreach ($standings as $s) {
+    $standingsMap[$s['id']] = $s;
+    $players[] = [
+        'id'           => $s['id'],
+        'name'         => $s['name'],
+        'faction'      => $s['faction'],
+        'games_played' => $s['games_played'],
+        'wins'         => $s['wins'],
+        'losses'       => $s['losses'],
+    ];
+}
 
 // Single ranking per tournament
 $ranking  = null;
@@ -54,6 +69,9 @@ $txt = [
         'player_ph'         => 'Select player…',
         'drag_hint'         => 'Drag to reorder',
         'ranking_position'  => 'Position',
+        'wl_header'         => 'W-L',
+        'prefill_btn'       => 'Prefill by results',
+        'prefill_hint'      => 'Reorder all players by their recorded win/loss.',
     ],
     'fr' => [
         'back'              => '← Retour aux tournois',
@@ -82,6 +100,9 @@ $txt = [
         'player_ph'         => 'Sélectionner un joueur…',
         'drag_hint'         => 'Glissez pour réordonner',
         'ranking_position'  => 'Position',
+        'wl_header'         => 'V-D',
+        'prefill_btn'       => 'Pré-remplir par les résultats',
+        'prefill_hint'      => 'Réordonner tous les joueurs selon leurs victoires / défaites.',
     ],
 ][getUiLang()] ?? [];
 
@@ -162,6 +183,15 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
     </div>
     <p class="text-muted small mb-3"><?= h($formHint) ?></p>
 
+    <?php if (!empty($standings)): ?>
+    <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="tr-rank-prefill">
+            <i class="fa-solid fa-arrow-up-1-9 me-1"></i><?= h($txt['prefill_btn']) ?>
+        </button>
+        <span class="text-muted small ms-2"><?= h($txt['prefill_hint']) ?></span>
+    </div>
+    <?php endif; ?>
+
     <form method="post" id="tr-ranking-form">
         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
         <input type="hidden" name="ranking_id" value="<?= $isEditing ? $ranking['id'] : '' ?>">
@@ -181,9 +211,11 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
                         <th style="width:50px"><?= h($txt['ranking_pos']) ?></th>
                         <?php if ($isEditing): ?>
                         <th><?= h($txt['ranking_player']) ?></th>
+                        <th style="width:64px" class="tr-wl-col"><?= h($txt['wl_header']) ?></th>
                         <?php else: ?>
                         <th><?= h($txt['players_name']) ?></th>
                         <th><?= h($txt['players_faction']) ?></th>
+                        <th style="width:64px" class="tr-wl-col"><?= h($txt['wl_header']) ?></th>
                         <?php endif; ?>
                         <?php if ($isEditing): ?>
                         <th style="width:40px"></th>
@@ -212,6 +244,7 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
                                 <?php endforeach; ?>
                             </select>
                         </td>
+                        <td class="tr-wl"></td>
                         <td>
                             <button type="button" class="btn btn-sm btn-outline-danger tr-remove-row">
                                 <i class="fa-solid fa-xmark"></i>
@@ -224,7 +257,9 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
                     <tr class="tr-rank-row" draggable="true"
                         data-player-id="<?= h($p['id']) ?>"
                         data-player-name="<?= h($p['name']) ?>"
-                        data-faction="<?= h($p['faction']) ?>">
+                        data-faction="<?= h($p['faction']) ?>"
+                        data-wins="<?= (int)$p['wins'] ?>"
+                        data-losses="<?= (int)$p['losses'] ?>">
                         <td>
                             <span class="tr-drag-handle" style="cursor:grab;color:var(--neutral-400,#9ca3af);font-size:1.1em" title="<?= h($txt['drag_hint']) ?>">
                                 <i class="fa-solid fa-grip-vertical"></i>
@@ -233,6 +268,7 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
                         <td class="tr-pos"><?= $pi + 1 ?></td>
                         <td><strong><?= h($p['name']) ?></strong></td>
                         <td><?= h($p['faction']) ?></td>
+                        <td class="tr-wl"><?= h($standingsMap[$p['id']]['ratio'] ?? '—') ?></td>
                     </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -254,6 +290,7 @@ $formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
 var TR_PLAYERS  = <?= json_encode($players, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_TXT      = <?= json_encode($txt, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_IS_EDIT  = <?= $isEditing ? 'true' : 'false' ?>;
+var TR_STANDINGS_MAP = <?= json_encode($standingsMap, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_DRAG_SRC = null;
 
 /* ── Drag & drop for any .tr-rank-row ───────────────────────────────────── */
@@ -310,6 +347,56 @@ function renumberRows(tbody) {
 
 document.querySelectorAll('.tr-rank-row[draggable]').forEach(initRowDrag);
 
+/* ── Win/loss helpers ──────────────────────────────────────────────────── */
+function wlScore(row) {
+    var wins = 0, losses = 0;
+    if (TR_IS_EDIT) {
+        var sel = row.querySelector('.tr-player-select');
+        var val = sel ? sel.value : '';
+        var s = TR_STANDINGS_MAP[val];
+        if (s) { wins = s.wins; losses = s.losses; }
+    } else {
+        wins = parseInt(row.dataset.wins || '0', 10);
+        losses = parseInt(row.dataset.losses || '0', 10);
+    }
+    var ratio = (wins + losses) > 0 ? wins / (wins + losses) : -1;
+    return { wins: wins, ratio: ratio };
+}
+
+function updateWlCells(tbody) {
+    if (!TR_IS_EDIT || !tbody) return;
+    tbody.querySelectorAll('.tr-rank-row').forEach(function (row) {
+        var sel = row.querySelector('.tr-player-select');
+        var val = sel ? sel.value : '';
+        var cell = row.querySelector('.tr-wl');
+        if (!cell) return;
+        var s = TR_STANDINGS_MAP[val];
+        cell.textContent = s ? (s.wins + '-' + s.losses) : '—';
+    });
+}
+
+function prefillByResults() {
+    var tbody = document.getElementById('tr-ranking-body');
+    if (!tbody) return;
+    var rows = [].slice.call(tbody.querySelectorAll('.tr-rank-row'));
+    rows.sort(function (a, b) {
+        var sa = wlScore(a), sb = wlScore(b);
+        if (sb.wins !== sa.wins) return sb.wins - sa.wins;
+        if (sb.ratio !== sa.ratio) return sb.ratio - sa.ratio;
+        var na = a.dataset.playerName || '';
+        var nb = b.dataset.playerName || '';
+        return na.localeCompare(nb);
+    });
+    rows.forEach(function (row) { tbody.appendChild(row); });
+    renumberRows(tbody);
+    updateWlCells(tbody);
+}
+
+var prefillBtn = document.getElementById('tr-rank-prefill');
+if (prefillBtn) prefillBtn.addEventListener('click', prefillByResults);
+
+updateWlCells(document.getElementById('tr-ranking-body'));
+
 /* ── Form: serialize before submit ─────────────────────────────────────── */
 document.getElementById('tr-ranking-form').addEventListener('submit', function() {
     var rows = document.querySelectorAll('#tr-ranking-body .tr-rank-row');
@@ -355,6 +442,7 @@ document.addEventListener('change', function(e) {
         row.dataset.playerId   = '';
         row.dataset.playerName = '';
     }
+    updateWlCells(row.parentElement);
 });
 
 /* ── Remove row ─────────────────────────────────────────────────────────── */
@@ -372,4 +460,12 @@ document.addEventListener('click', function(e) {
 .tr-drag-over > td { border-top: 2px solid var(--primary-400, #C9A84C); }
 .tr-rank-row { transition: opacity .15s ease; }
 .tr-rank-row[draggable="true"]:active { cursor: grabbing; }
+.tr-wl-col { text-align: center; }
+.tr-wl {
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--neutral-600, #4b5563);
+}
 </style>
