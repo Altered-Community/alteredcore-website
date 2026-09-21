@@ -12,6 +12,8 @@ $txt = [
         'fetch_help'    => 'Fetches tournament data from the external API and stores it in the database.',
         'fetch_success' => 'Tournament fetched and stored successfully.',
         'fetch_error'   => 'Failed to fetch tournament: %s',
+        'refresh_title' => 'Re-fetch this tournament from the API to update the report',
+        'refresh_success' => 'Tournament report updated.',
         'not_configured'=> 'Tournament API is not configured. Set it in Tournament Settings.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournament',
@@ -26,6 +28,9 @@ $txt = [
         'loc_ph'        => 'e.g. Paris, France',
         'loc_save'      => 'Save',
         'loc_saved'     => 'Localization saved.',
+        'edit_name'     => 'Edit name',
+        'name_ph'       => 'Tournament name…',
+        'name_saved'    => 'Name saved.',
         'edit_desc'     => 'Edit description',
         'desc_ph'       => 'Tournament description…',
         'desc_saved'    => 'Description saved.',
@@ -65,6 +70,8 @@ $txt = [
         'fetch_help'    => 'Récupère les données du tournoi depuis l\'API externe et les enregistre en base.',
         'fetch_success' => 'Tournoi récupéré et enregistré avec succès.',
         'fetch_error'   => 'Échec de la récupération du tournoi : %s',
+        'refresh_title' => 'Récupérer ce tournoi depuis l\'API pour mettre à jour le rapport',
+        'refresh_success' => 'Rapport de tournoi mis à jour.',
         'not_configured'=> 'L\'API de tournoi n\'est pas configurée. Réglez-la dans les paramètres tournois.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournoi',
@@ -79,6 +86,9 @@ $txt = [
         'loc_ph'        => 'ex. Paris, France',
         'loc_save'      => 'Enregistrer',
         'loc_saved'     => 'Localisation enregistrée.',
+        'edit_name'     => 'Modifier le nom',
+        'name_ph'       => 'Nom du tournoi…',
+        'name_saved'    => 'Nom enregistré.',
         'edit_desc'     => 'Modifier la description',
         'desc_ph'       => 'Description du tournoi…',
         'desc_saved'    => 'Description enregistrée.',
@@ -128,11 +138,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($tournamentId === '') {
                 flash('Please enter a tournament ID.', 'error');
             } else {
-                $result = trFetchTournament($tournamentId);
-                if ($result['ok'] && isset($result['data'])) {
-                    $userId = (int)($_SESSION['user_id'] ?? 0);
-                    trSaveTournament($result['data'], $userId);
+                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
+                if ($result['ok']) {
                     flash($txt['fetch_success']);
+                } else {
+                    flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
+                }
+            }
+        }
+        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+    }
+
+    // Re-fetch & update an existing tournament report
+    if (isset($_POST['refresh_tournament'])) {
+        $apiUrl = trGetApiUrl();
+        if ($apiUrl === '') {
+            flash($txt['not_configured'], 'error');
+        } else {
+            $tournamentId = trim($_POST['tournament_id'] ?? '');
+            if ($tournamentId === '') {
+                flash('Please enter a tournament ID.', 'error');
+            } else {
+                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
+                if ($result['ok']) {
+                    flash($txt['refresh_success']);
                 } else {
                     flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
                 }
@@ -169,6 +198,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($tid !== '') {
             trUpdateTournamentDescription($tid, $desc);
             flash($txt['desc_saved']);
+        }
+        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+    }
+
+    // Save tournament name
+    if (isset($_POST['save_tournament_name'])) {
+        $tid  = trim($_POST['tournament_id'] ?? '');
+        $name = trim($_POST['tournament_name'] ?? '');
+        if ($tid !== '' && $name !== '') {
+            trUpdateTournamentName($tid, $name);
+            flash($txt['name_saved']);
         }
         redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
     }
@@ -343,8 +383,30 @@ $tournaments = trGetTournaments();
                 <tr>
                     <td><?= $t['id'] ?></td>
                     <td>
-                        <strong><?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?></strong>
+                        <div class="d-flex align-items-center gap-1" id="tr-name-wrap-<?= h($t['tournament_id']) ?>">
+                            <strong class="tr-name-display" id="tr-name-display-<?= h($t['tournament_id']) ?>"><?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?></strong>
+                            <button type="button" class="btn btn-link btn-sm p-0 tr-name-edit" style="text-decoration:none;font-size:.85rem"
+                                    data-tid="<?= h($t['tournament_id']) ?>" title="<?= h($txt['edit_name']) ?>">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>
                         <div class="text-muted small">External ID: <?= h($t['tournament_id']) ?></div>
+                        <form method="post" class="tr-name-form d-none" id="tr-name-form-<?= h($t['tournament_id']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="tournament_id" value="<?= h($t['tournament_id']) ?>">
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="tournament_name" class="form-control"
+                                       placeholder="<?= h($txt['name_ph']) ?>"
+                                       value="<?= h($t['tournament_name']) ?>" style="max-width:240px">
+                                <button type="submit" name="save_tournament_name" class="btn btn-primary-altered btn-sm">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm tr-name-cancel"
+                                        data-tid="<?= h($t['tournament_id']) ?>">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </form>
                     </td>
                     <td><?= $t['total_games'] ?></td>
                     <td style="min-width:220px">
@@ -410,6 +472,14 @@ $tournaments = trGetTournaments();
                            title="<?= h($txt['rankings']) ?>">
                             <i class="fa-solid fa-ranking-star"></i>
                         </a>
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="tournament_id" value="<?= h($t['tournament_id']) ?>">
+                            <button type="submit" name="refresh_tournament" class="btn btn-sm btn-outline-secondary"
+                                    title="<?= h($txt['refresh_title']) ?>">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                        </form>
                         <?php if (adminCanDelete()): ?>
                         <form method="post" class="d-inline" onsubmit="return confirm('<?= h($txt['delete_confirm']) ?>')">
                             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
@@ -431,6 +501,21 @@ $tournaments = trGetTournaments();
 
 <script>
 document.addEventListener('click', function(e) {
+    var nameEditBtn = e.target.closest('.tr-name-edit');
+    if (nameEditBtn) {
+        var tid = nameEditBtn.dataset.tid;
+        document.getElementById('tr-name-wrap-' + tid).classList.add('d-none');
+        document.getElementById('tr-name-form-' + tid).classList.remove('d-none');
+        document.getElementById('tr-name-form-' + tid).querySelector('input[name="tournament_name"]').focus();
+        return;
+    }
+    var nameCancelBtn = e.target.closest('.tr-name-cancel');
+    if (nameCancelBtn) {
+        var tid = nameCancelBtn.dataset.tid;
+        document.getElementById('tr-name-wrap-' + tid).classList.remove('d-none');
+        document.getElementById('tr-name-form-' + tid).classList.add('d-none');
+        return;
+    }
     var editBtn = e.target.closest('.tr-loc-edit');
     if (editBtn) {
         var tid = editBtn.dataset.tid;

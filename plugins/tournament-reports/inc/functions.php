@@ -106,6 +106,21 @@ function trSaveTournament(array $apiData, int $createdBy = 0): int
 }
 
 /**
+ * Fetch a tournament from the external API and store (create or update) it.
+ *
+ * @return array{ok: bool, error?: string}
+ */
+function trFetchAndStoreTournament(string $tournamentId, int $createdBy = 0): array
+{
+    $result = trFetchTournament($tournamentId);
+    if (!$result['ok'] || !isset($result['data'])) {
+        return ['ok' => false, 'error' => $result['error'] ?? 'Unknown error'];
+    }
+    trSaveTournament($result['data'], $createdBy);
+    return ['ok' => true];
+}
+
+/**
  * Parse a paste-friendly Altered decklist (one "<qty> <reference>" per line)
  * into a structured array.
  *
@@ -243,6 +258,16 @@ function trUpdateTournamentDescription(string $tournamentExtId, string $descript
     global $db;
     $stmt = $db->prepare(qp("UPDATE {tournaments} SET description = :desc WHERE tournament_id = :tid"));
     $stmt->execute([':desc' => $description, ':tid' => $tournamentExtId]);
+}
+
+/**
+ * Update the display name of a tournament.
+ */
+function trUpdateTournamentName(string $tournamentExtId, string $name): void
+{
+    global $db;
+    $stmt = $db->prepare(qp("UPDATE {tournaments} SET tournament_name = :tn WHERE tournament_id = :tid"));
+    $stmt->execute([':tn' => $name, ':tid' => $tournamentExtId]);
 }
 
 /* ── Settings ─────────────────────────────────────────────────────────────── */
@@ -455,6 +480,62 @@ function trExtractPlayers(string $gamesJson): array
 
     usort($players, fn($a, $b) => $b['games_played'] <=> $a['games_played'] || strcmp($a['name'], $b['name']));
     return array_values($players);
+}
+
+/**
+ * Compute win/loss standings from tournament games_data.
+ *
+ * A game's winner is read from `game['winner']['userId']`. A game without a
+ * recorded winner counts toward `games_played` but neither as a win nor a loss.
+ *
+ * @param array $gamesData Decoded tournament payload (or its `games` list).
+ * @return array<int, array{id: string, name: string, faction: string, games_played: int, wins: int, losses: int, ratio: string}>
+ */
+function trComputeStandings(array $gamesData): array
+{
+    $games = $gamesData['games'] ?? $gamesData ?? [];
+    if (!is_array($games)) $games = [];
+
+    $players = [];
+    foreach ($games as $game) {
+        $winnerId = (string)($game['winner']['userId'] ?? '');
+        foreach (($game['endGamePlayers'] ?? []) as $p) {
+            $pid = (string)($p['id'] ?? '');
+            if ($pid === '') continue;
+            if (!isset($players[$pid])) {
+                $players[$pid] = [
+                    'id'           => $pid,
+                    'name'         => (string)($p['name'] ?? $pid),
+                    'faction'      => (string)($p['faction'] ?? ''),
+                    'games_played' => 0,
+                    'wins'         => 0,
+                    'losses'       => 0,
+                ];
+            }
+            $players[$pid]['games_played']++;
+            if ($winnerId !== '' && $winnerId === $pid) {
+                $players[$pid]['wins']++;
+            } elseif ($winnerId !== '') {
+                $players[$pid]['losses']++;
+            }
+        }
+    }
+
+    $standings = [];
+    foreach ($players as $p) {
+        $p['ratio'] = $p['wins'] . '-' . $p['losses'];
+        $standings[] = $p;
+    }
+
+    usort($standings, function ($a, $b) {
+        if ($b['wins'] !== $a['wins']) return $b['wins'] <=> $a['wins'];
+        $ra = $a['wins'] + $a['losses'] > 0 ? $a['wins'] / ($a['wins'] + $a['losses']) : 1;
+        $rb = $b['wins'] + $b['losses'] > 0 ? $b['wins'] / ($b['wins'] + $b['losses']) : 1;
+        if ($rb !== $ra) return $rb <=> $ra;
+        return strcmp($a['name'], $b['name']);
+    });
+
+    return array_values($standings);
 }
 
 /**

@@ -24,6 +24,9 @@ $txt = [
         'ranking_position' => 'Pos.',
         'ranking_player'   => 'Player',
         'ranking_no_players' => 'No players in this ranking.',
+        'standings_title'  => 'Standings',
+        'standings_empty'  => 'No standings available.',
+        'wl_header'        => 'W-L',
         'no_decklist'      => 'No decklist available.',
         'view_images'      => 'Cards',
         'view_list'        => 'List',
@@ -57,6 +60,9 @@ $txt = [
         'ranking_position' => 'Pos.',
         'ranking_player'   => 'Joueur',
         'ranking_no_players' => 'Aucun joueur dans ce classement.',
+        'standings_title'  => 'Classement',
+        'standings_empty'  => 'Aucun classement disponible.',
+        'wl_header'        => 'V-D',
         'no_decklist'      => 'Aucune decklist disponible.',
         'view_images'      => 'Cartes',
         'view_list'        => 'Liste',
@@ -95,6 +101,14 @@ unset($er);
 if (!$tournamentData) {
     redirect(BASE_URL . '/pages/tournaments');
 }
+
+// The admin-editable display name (DB column) wins over the API payload name.
+if (!empty($tournament['tournament_name'])) {
+    $tournamentData['tournamentName'] = $tournament['tournament_name'];
+}
+
+// Win/loss standings computed from the recorded match results.
+$standings = trComputeStandings($tournamentData);
 
 ?>
 <div class="container py-4" id="tr-page">
@@ -165,6 +179,7 @@ var TR_CSRF    = <?= json_encode(h(csrfToken())) ?>;
 var TR_LOGGED_IN = <?= json_encode(kcIsLoggedIn()) ?>;
 var TR_TXT     = <?= json_encode($txt, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_EXISTING_RANKINGS = <?= json_encode($existingRankings, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+var TR_STANDINGS       = <?= json_encode($standings, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_TOURNAMENT_DATA = <?= json_encode($tournamentData, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_TOURNAMENT_ID = <?= json_encode(h($tournamentId)) ?>;
 var TR_LOCALIZATION  = <?= json_encode(h($tournament['localization'] ?? '')) ?>;
