@@ -106,6 +106,21 @@ function trSaveTournament(array $apiData, int $createdBy = 0): int
 }
 
 /**
+ * Fetch a tournament from the external API and store (create or update) it.
+ *
+ * @return array{ok: bool, error?: string}
+ */
+function trFetchAndStoreTournament(string $tournamentId, int $createdBy = 0): array
+{
+    $result = trFetchTournament($tournamentId);
+    if (!$result['ok'] || !isset($result['data'])) {
+        return ['ok' => false, 'error' => $result['error'] ?? 'Unknown error'];
+    }
+    trSaveTournament($result['data'], $createdBy);
+    return ['ok' => true];
+}
+
+/**
  * Parse a paste-friendly Altered decklist (one "<qty> <reference>" per line)
  * into a structured array.
  *

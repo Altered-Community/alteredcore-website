@@ -491,9 +491,6 @@
 
     // Auto standings computed from the recorded match results (win/loss).
     function renderStandings(suppressEmpty) {
-        if (!standings.length) {
-            return suppressEmpty ? '' : '<div class="tr-empty-state"><i class="fa-solid fa-trophy"></i><p>' + esc(TR_TXT.standings_empty || TR_TXT.ranking_empty) + '</p></div>';
-        }
         var html = '<div class="tr-ranking-card tr-standings-card">';
         html += '<div class="tr-ranking-header"><span class="tr-ranking-title">' + esc(TR_TXT.standings_title || 'Standings') + '</span></div>';
         html += '<table class="tr-ranking-table"><thead><tr>' + standingsHeaderHtml() + '</tr></thead><tbody>';
@@ -516,8 +513,6 @@
             rankings.forEach(function (r) {
                 html += renderRankingCard(r);
             });
-        } else if (standings.length) {
-            html += '<div class="tr-empty-state"><i class="fa-solid fa-ranking-star"></i><p>' + esc(TR_TXT.ranking_empty) + '</p></div>';
         }
 
         el.innerHTML = html;

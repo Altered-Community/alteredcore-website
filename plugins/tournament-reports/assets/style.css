@@ -282,19 +282,6 @@
 }
 .tr-rank-handle:hover { color: var(--neutral-500); }
 
-/* Empty state */
-.tr-empty-state {
-    text-align: center;
-    padding: 32px 0;
-    color: var(--neutral-400);
-}
-.tr-empty-state i {
-    font-size: 2rem;
-    opacity: .3;
-    display: block;
-    margin-bottom: .75rem;
-}
-
 /* View toggle (images/list) */
 .tr-view-toggle {
     display: flex;

@@ -12,6 +12,8 @@ $txt = [
         'fetch_help'    => 'Fetches tournament data from the external API and stores it in the database.',
         'fetch_success' => 'Tournament fetched and stored successfully.',
         'fetch_error'   => 'Failed to fetch tournament: %s',
+        'refresh_title' => 'Re-fetch this tournament from the API to update the report',
+        'refresh_success' => 'Tournament report updated.',
         'not_configured'=> 'Tournament API is not configured. Set it in Tournament Settings.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournament',
@@ -68,6 +70,8 @@ $txt = [
         'fetch_help'    => 'Récupère les données du tournoi depuis l\'API externe et les enregistre en base.',
         'fetch_success' => 'Tournoi récupéré et enregistré avec succès.',
         'fetch_error'   => 'Échec de la récupération du tournoi : %s',
+        'refresh_title' => 'Récupérer ce tournoi depuis l\'API pour mettre à jour le rapport',
+        'refresh_success' => 'Rapport de tournoi mis à jour.',
         'not_configured'=> 'L\'API de tournoi n\'est pas configurée. Réglez-la dans les paramètres tournois.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournoi',
@@ -134,11 +138,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($tournamentId === '') {
                 flash('Please enter a tournament ID.', 'error');
             } else {
-                $result = trFetchTournament($tournamentId);
-                if ($result['ok'] && isset($result['data'])) {
-                    $userId = (int)($_SESSION['user_id'] ?? 0);
-                    trSaveTournament($result['data'], $userId);
+                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
+                if ($result['ok']) {
                     flash($txt['fetch_success']);
+                } else {
+                    flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
+                }
+            }
+        }
+        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+    }
+
+    // Re-fetch & update an existing tournament report
+    if (isset($_POST['refresh_tournament'])) {
+        $apiUrl = trGetApiUrl();
+        if ($apiUrl === '') {
+            flash($txt['not_configured'], 'error');
+        } else {
+            $tournamentId = trim($_POST['tournament_id'] ?? '');
+            if ($tournamentId === '') {
+                flash('Please enter a tournament ID.', 'error');
+            } else {
+                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
+                if ($result['ok']) {
+                    flash($txt['refresh_success']);
                 } else {
                     flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
                 }
@@ -449,6 +472,14 @@ $tournaments = trGetTournaments();
                            title="<?= h($txt['rankings']) ?>">
                             <i class="fa-solid fa-ranking-star"></i>
                         </a>
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="tournament_id" value="<?= h($t['tournament_id']) ?>">
+                            <button type="submit" name="refresh_tournament" class="btn btn-sm btn-outline-secondary"
+                                    title="<?= h($txt['refresh_title']) ?>">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                        </form>
                         <?php if (adminCanDelete()): ?>
                         <form method="post" class="d-inline" onsubmit="return confirm('<?= h($txt['delete_confirm']) ?>')">
                             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
