@@ -7,7 +7,7 @@ description: Drive the production Altered deckbuilder (core-altered-cards plugin
 
 This skill is for agents. The product is the website plugin `core-altered-cards` (`plugins/core-altered-cards/pages/deckbuilder.php`), hosted by the Aspire stack at `http://localhost:18181`. It is **not** `altered-deckbuilder-poc-v2`.
 
-Read `features/README.md` before driving. Drive one mapped feature at a time. Use real user paths (browser), not AJAX save endpoints as a shortcut.
+Read `features/README.md` before driving. The **default proven scenario** is `frontier-save` (login → New Deck → hero → **Frontier** → 2–3 cards → Save → My decks list). Isolated features are optional. Use real user paths (browser), not AJAX save endpoints as a shortcut.
 
 ## Interview facts (do not invent a second surface)
 
@@ -23,7 +23,8 @@ Helpers live next to this file. From the website checkout:
 SKILL=".cursor/skills/verify-deckbuilder"
 "$SKILL/bin/verify-deckbuilder" doctor
 "$SKILL/bin/verify-deckbuilder" launch
-"$SKILL/bin/verify-deckbuilder" drive create-deck --evidence "$EVIDENCE_DIR"
+"$SKILL/bin/verify-deckbuilder" drive --evidence "$EVIDENCE_DIR"
+"$SKILL/bin/verify-deckbuilder" drive frontier-save --evidence "$EVIDENCE_DIR"
 "$SKILL/bin/verify-deckbuilder" cleanup
 ```
 
@@ -44,6 +45,7 @@ Browser isolation (created by `drive`):
 - `VERIFY_RUN_ID` — default `$$-timestamp`
 - profile dir: `/tmp/verify-deckbuilder-$VERIFY_RUN_ID`
 - headed vs headless: `VERIFY_HEADED=1` for a visible window
+- `VERIFY_SLOWMO` — milliseconds between Playwright actions (use `400` when recording a headed video)
 
 ## Doctor
 
@@ -73,7 +75,8 @@ Playwright via `helpers/playwright-drive.mjs`. Prefer IDs and roles from this pl
 | `#db-hero-banner` | Applied hero (label node is replaced by `setHero()`) |
 | `.db-faction-btn[data-faction]` | Faction chips (default Axiom `AX`) |
 | `#db-new-name` | Deck name |
-| `input[name="db-new-format"]` | Format radios |
+| `input[name="db-new-format"]` | Format radios (`value="frontier"` for Frontier) |
+| `label.db-new-format .db-new-format-name` | Visible format name (`Frontier`, not Next Frontier) |
 | `#db-new-submit` | Create deck |
 | `#db-search`, `#db-apply-btn`, `#db-grid` | Card search |
 | `.db-card-wrap .db-card-btn-group .btn-primary-altered` | Add copy (`+`) |
@@ -81,7 +84,7 @@ Playwright via `helpers/playwright-drive.mjs`. Prefer IDs and roles from this pl
 | `#db-save-btn`, `#db-save-ok`, `#db-autosave-status` | Save |
 | `#guest-banner` | Guest mode |
 | `/pages/login` → `/auth/keycloak-login` | `#username`, `#password`, submit |
-| `/pages/decks` | `#my-deck-search`, New Deck link |
+| `/pages/decks` | `#my-deck-search`, `#my-deck-grid .my-deck-item`, `.news-card-title`, `.deck-card-link-overlay` |
 
 Login (when a feature needs a server deck):
 
@@ -93,8 +96,9 @@ Login (when a feature needs a server deck):
 Proof standards:
 
 - Exercise the real UI path. Do not POST `/pages/deckbuilder?ajax=1` as the proof of create/save.
-- Capture the user action **and** the resulting state (wizard filled → builder with hero + name).
+- Capture the user action **and** the resulting state (wizard Frontier → adds → `#db-save-ok` → list hit).
 - After create, URL should include `id=` for logged-in users; guests stay without `id=` and persist in `localStorage`.
+- Default `frontier-save` **must** use Keycloak (`alice` / `TestPassword1234`) so `/pages/decks` My decks can show the saved list.
 - After `setHero()`, assert `#db-hero-banner` (not `#db-hero-label`).
 - Mocks only at the cards CDN boundary if it is already down — prefer live `cards.alteredcore.org`.
 
@@ -113,7 +117,7 @@ Minimum per drive:
 - `*-before.png` — page at the start of the feature
 - `*-after.png` — observable end state
 - `*-after.html` — HTML snapshot of the builder (hero name, deck name, card count)
-- `drive.log` — commands, URLs, assertions
+- `drive.log` and `<feature-id>-drive.log` — commands, URLs, assertions
 
 Record the feature ID from `features/` on every artifact filename.
 
@@ -133,7 +137,7 @@ After cleanup, confirm evidence files still exist at the named directory.
 | --- | --- |
 | `bin/verify-deckbuilder doctor` | Read-only health |
 | `bin/verify-deckbuilder launch` | Wait for site; print start command if down |
-| `bin/verify-deckbuilder drive <feature-id> [--evidence DIR] [--user alice]` | Playwright the mapped feature |
+| `bin/verify-deckbuilder drive [feature-id] [--evidence DIR] [--user alice]` | Playwright. Default feature is `frontier-save` |
 | `bin/verify-deckbuilder cleanup` | Remove this run's browser profile |
 
 Scripts are executable. `drive` installs Chromium via `npx playwright install chromium` if missing.
