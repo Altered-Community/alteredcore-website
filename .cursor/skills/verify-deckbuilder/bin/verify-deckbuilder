@@ -19,7 +19,7 @@ Usage: $(basename "$0") <doctor|launch|drive|cleanup> [feature-id] [--evidence D
 
   doctor    Read-only: website, cards API, Keycloak
   launch    Wait until the website answers; print cloud-start.sh if not
-  drive     Playwright one mapped feature (see features/)
+  drive     Playwright one mapped feature (default: frontier-save)
   cleanup   Remove /tmp/verify-deckbuilder-\$VERIFY_RUN_ID (not evidence, not Aspire)
 EOF
 }
@@ -90,21 +90,29 @@ cmd_launch() {
 }
 
 cmd_drive() {
-  local feature="${1:-}"
-  shift || true
+  local feature=""
   local evidence="$EVIDENCE_DEFAULT"
   local user="alice"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --evidence) evidence="${2:-}"; shift 2 ;;
       --user) user="${2:-}"; shift 2 ;;
-      *) echo "unknown arg: $1" >&2; return 2 ;;
+      --*) echo "unknown arg: $1" >&2; return 2 ;;
+      *)
+        if [[ -n "$feature" ]]; then
+          echo "unexpected arg: $1" >&2
+          return 2
+        fi
+        feature="$1"
+        shift
+        ;;
     esac
   done
-  if [[ -z "$feature" ]]; then
-    echo "drive requires a feature id (create-deck, search-add-cards, save-deck, browse-decks, view-stats-hand)" >&2
-    return 2
-  fi
+  feature="${feature:-frontier-save}"
+  case "$feature" in
+    frontier-save|create-deck|search-add-cards|save-deck|browse-decks|view-stats-hand) ;;
+    *) echo "unknown feature: $feature (frontier-save, create-deck, search-add-cards, save-deck, browse-decks, view-stats-hand)" >&2; return 2 ;;
+  esac
   cmd_doctor
   mkdir -p "$evidence"
   export VERIFY_SITE_URL="$SITE"
