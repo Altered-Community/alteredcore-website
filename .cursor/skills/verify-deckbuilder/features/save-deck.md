@@ -24,7 +24,7 @@ Preconditions:
 - For server save: signed in as `alice` or `bob`.
 
 - **Guest save.** Confirm `#guest-banner`. Click `#db-save-btn`. `#db-save-ok` contains `Deck saved locally!`. Reload `/pages/deckbuilder` in the **same** profile: wizard does not open; hero is restored.
-- **Auth save.** After Keycloak login, click `#db-save-btn`. `#db-save-ok` contains `Deck saved!`. URL has `id=`. Open `/pages/decks`, type the name in `#my-deck-search`, the card appears.
+- **Auth save.** After Keycloak login, click `#db-save-btn`. `#db-save-ok` contains `Deck saved!`. URL has `id=`. Open `/pages/decks`, type the name in `#my-deck-search`; a `.my-deck-item` whose `.news-card-title` matches appears. The default proven path does this after Frontier + 2–3 adds — [Frontier save](./frontier-save.md).
 - **Error.** If `#db-save-error` shows, capture `#db-save-error-msg` and do not call save verified. `#db-save-retry` is the user retry.
 - **Proof.** Screenshot of `#db-save-ok` plus either guest restore or decks-list hit. Do not treat a 200 on `POST /pages/deckbuilder?ajax=1` alone as proof.
 

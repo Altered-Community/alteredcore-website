@@ -26,7 +26,7 @@ Preconditions:
 - **Open wizard.** Go to `/pages/deckbuilder`. `#db-new-modal` is `display:flex` and heading text is `New Deck`.
 - **Pick hero.** Click `#db-new-hero`. `#db-hero-modal` is visible. Click `.db-faction-btn[data-faction="AX"]` if needed. Wait for `#db-hero-grid .db-hero-tile` (network to `cards.alteredcore.org`). Click the first tile, then `#db-hero-confirm` (`Choose this hero`). Modal hides; `#db-new-hero-name` is no longer `Select a hero`.
 - **Name.** Fill `#db-new-name` with `verify-create-$VERIFY_RUN_ID`.
-- **Format.** Check the radio inside `label.db-new-format` whose name starts with `Standard All Uniques`. Do not use `/Standard/i` — `Standard No Unique` is a different radio (`value="nuc"`). Dismiss CookieYes (`.cky-btn-accept` / Accept) if it covers the page.
+- **Format (this isolated feature).** Check `label.db-new-format` whose `.db-new-format-name` starts with `Standard All Uniques`. Do not use `/Standard/i` — `Standard No Unique` is `value="nuc"`. The **default proven path** instead checks `input[name="db-new-format"][value="frontier"]` — see [Frontier save](./frontier-save.md). Dismiss CookieYes (`.cky-btn-accept` / Accept) if it covers the page.
 - **Create.** Click `#db-new-submit` (`Create deck`). `#db-new-modal` hides. `#db-hero-banner` shows the chosen hero name (the original `#db-hero-label` node is replaced by `setHero()`). `#db-deck-name` matches the typed name.
 - **Logged-in extra.** URL contains `id=`. Optional: open `/pages/decks` and find the name in the list.
 - **Cancel path (optional).** Reload `/pages/deckbuilder` in a fresh profile, open wizard, click the × (`.db-hero-close-btn` on `#db-new-modal`) or Cancel. Location is `/pages/decks`.

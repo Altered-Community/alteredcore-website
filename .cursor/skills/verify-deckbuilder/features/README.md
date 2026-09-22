@@ -13,6 +13,7 @@ Do not use `altered-deckbuilder-poc-v2`.
 - Guest mode is on (`$guestModeEnabled = true`). Unauthenticated `/pages/deckbuilder` opens the new-deck wizard.
 - Logged-in tests use Keycloak users `alice` or `bob` / `TestPassword1234`.
 - Name verification decks with a `verify-` prefix and the run id so they are obvious in `/pages/decks`.
+- **Default proven scenario** is [Frontier save](./frontier-save.md) (`drive` with no feature id, or `drive frontier-save`): login → New Deck → hero → **Frontier** → 2–3 cards → Save → `/pages/decks` list hit. Isolated features below are optional slices, not the baseline.
 
 ## Driving conventions
 
@@ -35,6 +36,7 @@ Each feature file: H1, one paragraph, then exactly `Sub-features`, `How to get t
 
 ## Features
 
+- [Frontier save](./frontier-save.md) — **default.** Login, wizard, Frontier, add 2–3 cards, save, confirm My decks.
 - [Create a deck](./create-deck.md) — wizard: hero, name, format, Create deck.
 - [Search and add cards](./search-add-cards.md) — filters, search, `+` on a card, sidebar count.
 - [Save a deck](./save-deck.md) — Save deck / autosave, guest local vs server.
