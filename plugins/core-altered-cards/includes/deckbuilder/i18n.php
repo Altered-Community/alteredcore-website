@@ -133,6 +133,14 @@ $txt = array_merge($_sharedTxt, [
         'illustration_confirm' => 'Use this illustration',
         'no_other_illustration' => 'No other illustration is available for this card.',
         'alt_art_stock_warn' => 'Only %owned% of the %needed% copies used in this deck are owned for this illustration — on Board Game Arena, the rest will be shown with the base art.',
+        'strip_unsaved' => 'Unsaved changes',
+        'strip_saved' => 'Saved',
+        'strip_save_failed' => 'Save failed',
+        'strip_max' => 'max %d',
+        'toast_undo' => 'Undo',
+        'any_trigger' => 'Any trigger',
+        'any_condition' => 'Any condition',
+        'any_effect' => 'Any effect',
     ],
     'fr' => [
         'page_title' => 'Deckbuilder',
@@ -264,7 +272,14 @@ $txt = array_merge($_sharedTxt, [
         'illustration_confirm' => 'Utiliser cette illustration',
         'no_other_illustration' => 'Aucune autre illustration n\'est disponible pour cette carte.',
         'alt_art_stock_warn' => 'Seuls %owned% des %needed% exemplaires utilisés dans ce deck sont possédés pour cette illustration — sur Board Game Arena, le reste sera affiché avec l\'art de base.',
+        'strip_unsaved' => 'Modifications non enregistrées',
+        'strip_saved' => 'Enregistré',
+        'strip_save_failed' => 'Échec de l\'enregistrement',
+        'strip_max' => 'max %d',
+        'toast_undo' => 'Annuler',
+        'any_trigger' => 'Tous les déclencheurs',
+        'any_condition' => 'Toutes les conditions',
+        'any_effect' => 'Tous les effets',
     ],
 ][$uiLang] ?? []);
 $txt += cacStartingHandStatsTxt($uiLang);
-

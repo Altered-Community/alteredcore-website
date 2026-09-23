@@ -62,6 +62,9 @@
     }
 
     // deck card management
+    function emitCardDelta(ref, name, qty, change) {
+        document.dispatchEvent(new CustomEvent('db:card-delta', { detail: { ref: ref, name: name, qty: qty, change: change } }));
+    }
     function addCard(card) {
         var _td = AlteredDB.types[card.cardTypeReference];
         if (_td && _td.allowedInDeckbuilder === false) return;
@@ -80,16 +83,19 @@
         deck.cards[ref].qty++;
         updateDeckDisplay();
         updateBrowserCardBadge(ref);
+        emitCardDelta(ref, deck.cards[ref].name, deck.cards[ref].qty, 1);
         if (AlteredDB.isGuest) saveGuestDeck();
         autoApplyAltArtPreferences();
     }
     function removeCard(ref) {
         markDirty();
         if (deck.cards[ref]) {
+            var name = deck.cards[ref].name;
             deck.cards[ref].qty--;
             if (deck.cards[ref].qty <= 0) delete deck.cards[ref];
             updateDeckDisplay();
             updateBrowserCardBadge(ref);
+            emitCardDelta(ref, name, deck.cards[ref] ? deck.cards[ref].qty : 0, -1);
             if (AlteredDB.isGuest) saveGuestDeck();
             autoApplyAltArtPreferences();
         }

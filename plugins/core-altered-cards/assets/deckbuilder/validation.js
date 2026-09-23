@@ -220,6 +220,29 @@
 
         deck._valid = ruleResults.every(function(r) { return r.ok; });
 
+        function nn(v) { return v === undefined ? null : v; }
+        function rarityLabel(gem) {
+            var rarities = AlteredDB.rarities || {};
+            var keys = Object.keys(rarities);
+            for (var i = 0; i < keys.length; i++) {
+                var entry = rarities[keys[i]];
+                if (entry && entry.gem === gem) return entry[AlteredDB.lang] || entry.en || gem;
+            }
+            return gem;
+        }
+        deck.summary = {
+            total: total,
+            min: rules.minCards || 0,
+            max: nn(rules.maxCards),
+            valid: !!deck._valid,
+            rarities: [
+                { gem: 'C', label: rarityLabel('C'), count: gems.C || 0, limit: null },
+                { gem: 'R', label: rarityLabel('R'), count: gems.R || 0, limit: nn(rules.maxRare) },
+                { gem: 'E', label: rarityLabel('E'), count: gems.E || 0, limit: nn(rules.maxExalted) },
+                { gem: 'U', label: rarityLabel('U'), count: gems.U || 0, limit: nn(uLimit) },
+            ],
+        };
+
         if (!deck._valid) {
             var badge = document.createElement('span');
             badge.className = 'badge';
@@ -259,6 +282,7 @@
             group.forEach(function(c) {
                 var item = document.createElement('div');
                 item.className = 'deck-list-item';
+                item.dataset.ref = c.ref;
                 var rGem    = {C:'C',R:'R',U:'U',E:'E'}[c.rarity] || 'C';
                 var faction = c.faction || null;
                 var dName   = typeof c.name === 'object' ? (c.name[AlteredDB.lang] || c.name.en || '') : (c.name || '');
@@ -291,6 +315,7 @@
         renderStatsPane();
         renderGridPane();
         renderHandPane();
+        document.dispatchEvent(new CustomEvent('db:deck-updated', { detail: deck.summary }));
     }
 
     function openValidationModal(results, fmtKey) {

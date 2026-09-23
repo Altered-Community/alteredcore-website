@@ -18,5 +18,9 @@ Load order is defined in `pages/deckbuilder.php`:
 10. `token-arts.js` — token illustration picker
 11. `lightbox.js` — card lightbox + qty + art swap
 12. `ui.js` — tabs and boot
-13. `search-bind.js` — CardSearch wiring (after `card-search.js`)
-14. `hand-i18n.js` — playtest strings (after hand-odds scripts)
+13. `status-strip.js` — sticky status strip, add toast with undo, Deck tab badge (styles in `status-strip.css`)
+14. `search-bind.js` — CardSearch wiring (after `card-search.js`)
+15. `hand-i18n.js` — playtest strings (after hand-odds scripts)
+
+UI feedback events on `document`: `db:card-delta` (`{ref, name, qty, change}`),
+`db:deck-updated`, `db:save-state` (`{state: 'dirty'|'saving'|'saved'|'error'}`).

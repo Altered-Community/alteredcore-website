@@ -20,7 +20,12 @@
     var _autoSaveFadeT  = null;
     var elAutoSaveStatus = document.getElementById('db-autosave-status');
 
-    function markDirty() { dirty = true; scheduleAutoSave(); }
+    // Save lifecycle for UI feedback: 'dirty' | 'saving' | 'saved' | 'error'.
+    function emitSaveState(state) {
+        document.dispatchEvent(new CustomEvent('db:save-state', { detail: { state: state } }));
+    }
+
+    function markDirty() { dirty = true; scheduleAutoSave(); emitSaveState('dirty'); }
     function markClean() {
         dirty = false;
         if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); _autoSaveTimer = null; }
@@ -83,12 +88,14 @@
         if (AlteredDB.isGuest) {
             saveGuestDeck(); markClean();
             _setAutoStatus('✓ ' + AlteredDB.txt.autosaved, true);
+            emitSaveState('saved');
             if (onDone) onDone(true);
             return;
         }
 
         _autoSaving = true;
         _setAutoStatus(AlteredDB.txt.saving, false);
+        emitSaveState('saving');
 
         fetch(AlteredDB.baseUrl + '/pages/deckbuilder?ajax=1', { method: 'POST', body: _buildSaveFormData() })
             .then(function(r) { return r.json(); })
@@ -99,15 +106,18 @@
                     deck.id = data.id; AlteredDB.deckId = data.id;
                     if (history.replaceState) history.replaceState(null, '', '?id=' + data.id);
                     _setAutoStatus('✓ ' + AlteredDB.txt.autosaved, true);
+                    emitSaveState('saved');
                     if (onDone) onDone(true);
                 } else {
                     _setAutoStatus('', false);
+                    emitSaveState('error');
                     if (onDone) onDone(false, data.error || '');
                 }
             })
             .catch(function() {
                 _autoSaving = false;
                 _setAutoStatus('', false);
+                emitSaveState('error');
                 if (onDone) onDone(false, AlteredDB.txt.err_api);
             });
     }

@@ -1,0 +1,34 @@
+/* Card-search effect filter rows (Uniques tab): wrap instead of overflowing on narrow screens. */
+
+/* card-search.js sets flex:1;min-width:160px inline on each effect select wrapper,
+   which forces a ~530px row; !important is the only way to override it from here. */
+.effect-row { flex-wrap: wrap; }
+.effect-row > div { flex: 1 1 160px !important; min-width: 0 !important; }
+.effect-row > div .ts-wrapper,
+.effect-row > div .ts-control { max-width: 100%; }
+.effect-row > div .ts-wrapper { width: 100%; }
+.effect-row > div .ts-control { overflow: hidden; }
+.effect-row > div .ts-control .item { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 575px) {
+    .effect-row {
+        position: relative;
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid var(--panel-border, var(--sand-200));
+    }
+    .effect-row > div { flex-basis: 100% !important; }
+    .effect-row:has(> .effect-rm-btn:not([style*="none"])) > div:first-child { padding-right: 40px; }
+    .effect-row .effect-rm-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
