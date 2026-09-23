@@ -180,13 +180,15 @@
                     <?php endif; ?>
                 </div>
 
+                <div id="db-ss-sidebar-host"></div>
+
                 <!-- Card list -->
-                <div class="d-flex align-items-center justify-content-between mb-1 mt-3">
+                <div class="d-flex align-items-center justify-content-between mb-1 mt-3 db-ss-sidebar-hide">
                     <span class="filter-label"><?= h($txt['cards_in_deck']) ?></span>
                     <span id="db-card-count" class="db-card-count">0 <?= h($txt['deck_cards']) ?></span>
                 </div>
                 <!-- Rarity gems row -->
-                <div id="db-rarity-row" class="d-flex gap-2 mb-2 db-rarity-row">
+                <div id="db-rarity-row" class="d-flex gap-2 mb-2 db-rarity-row db-ss-sidebar-hide">
                     <?php foreach (array_values($rarityGems) as $r):
                         $_gc = $_rarityGemColors[$r] ?? '';
                         $gemCountStyle = $_gc ? 'style="color:' . h($_gc) . '"' : 'class="text-muted"'; ?>
@@ -197,7 +199,7 @@
                     <?php endforeach; ?>
                 </div>
                 <!-- Validation status -->
-                <div id="db-validation" class="mb-2"></div>
+                <div id="db-validation" class="mb-2 db-ss-sidebar-hide"></div>
 
                 <!-- Tabs: Cards / Stats -->
                 <div class="db-tabs-row">
@@ -257,4 +259,3 @@
 
     <?php endif; ?>
 </div>
-
