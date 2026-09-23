@@ -15,6 +15,14 @@ $txt = [
         'refresh_title' => 'Re-fetch this tournament from the API to update the report',
         'refresh_success' => 'Tournament report updated.',
         'not_configured'=> 'Tournament API is not configured. Set it in Tournament Settings.',
+        'sync_title'    => 'Sync with the API',
+        'sync_btn'      => 'Sync now',
+        'sync_help'     => 'Lists every tournament the API knows about and re-downloads the reports that changed. Runs by itself every hour; this forces it now.',
+        'sync_success'  => 'Sync complete: %s',
+        'sync_error'    => 'Sync failed: %s',
+        'sync_last'     => 'Last sync: %s',
+        'sync_never'    => 'never',
+        'col_version'   => 'Version',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournament',
         'col_games'     => 'Games',
@@ -73,6 +81,14 @@ $txt = [
         'refresh_title' => 'Récupérer ce tournoi depuis l\'API pour mettre à jour le rapport',
         'refresh_success' => 'Rapport de tournoi mis à jour.',
         'not_configured'=> 'L\'API de tournoi n\'est pas configurée. Réglez-la dans les paramètres tournois.',
+        'sync_title'    => 'Synchroniser avec l\'API',
+        'sync_btn'      => 'Synchroniser maintenant',
+        'sync_help'     => 'Liste tous les tournois connus de l\'API et retélécharge les rapports qui ont changé. S\'exécute tout seul toutes les heures ; ceci le force immédiatement.',
+        'sync_success'  => 'Synchronisation terminée : %s',
+        'sync_error'    => 'Échec de la synchronisation : %s',
+        'sync_last'     => 'Dernière synchronisation : %s',
+        'sync_never'    => 'jamais',
+        'col_version'   => 'Version',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournoi',
         'col_games'     => 'Matchs',
@@ -125,6 +141,23 @@ $txt = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         flash('Invalid token.', 'error');
+        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
+    }
+
+    // Sync everything against the API index now, instead of waiting for the
+    // next visitor-triggered run.
+    if (isset($_POST['sync_tournaments'])) {
+        if (trGetApiUrl() === '') {
+            flash($txt['not_configured'], 'error');
+        } else {
+            // No per-run document cap here: an admin who asked for a sync is
+            // waiting for it, unlike a visitor who just wanted to see a page.
+            $result = trSyncTournaments((int)($_SESSION['user_id'] ?? 0), PHP_INT_MAX, 0.0);
+            flash(
+                sprintf($txt[$result['ok'] ? 'sync_success' : 'sync_error'], trSyncSummary($result)),
+                $result['ok'] ? 'success' : 'error'
+            );
+        }
         redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
     }
 
@@ -278,10 +311,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── Fetch list ───────────────────────────────────────────────────────────────
 $tournaments = trGetTournaments();
+$lastSync    = trGetSetting('last_sync_at', '');
+
+/**
+ * Format a stored UTC DATETIME for display, or hand back whatever was stored
+ * when it can't be parsed.
+ */
+function trFormatAdminDate(string $stored): string
+{
+    $timestamp = strtotime($stored . ' UTC');
+    return $timestamp === false ? $stored : date('d/m/Y H:i', $timestamp);
+}
 ?>
 
 <div class="admin-header-bar">
     <h1><i class="fa-solid fa-trophy me-2"></i><?= h($txt['title']) ?></h1>
+</div>
+
+<!-- Sync with the API -->
+<div class="card-altered p-4 mb-4">
+    <h5 class="mb-3"><?= h($txt['sync_title']) ?></h5>
+    <form method="post" class="d-flex align-items-center gap-3 flex-wrap">
+        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+        <button type="submit" name="sync_tournaments" class="btn btn-primary-altered">
+            <i class="fa-solid fa-rotate me-1"></i><?= h($txt['sync_btn']) ?>
+        </button>
+        <span class="text-muted small">
+            <?= h(sprintf($txt['sync_last'], $lastSync !== '' ? trFormatAdminDate($lastSync) : $txt['sync_never'])) ?>
+        </span>
+    </form>
+    <div class="form-text mt-2"><?= $txt['sync_help'] ?></div>
 </div>
 
 <!-- Fetch form -->

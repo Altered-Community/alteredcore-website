@@ -2,7 +2,7 @@
     "$schema":      "../plugin.schema.json",
     "id":           "tournament-reports",
     "name":         "Tournament Reports",
-    "version":      "1.0.0",
+    "version":      "1.1.0",
     "description":  "Tournament reports with decklists and manual rankings",
     "author":       "noobiwow",
     "icon":        "fa-solid fa-trophy",

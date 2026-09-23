@@ -2,6 +2,11 @@
 require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../config.php';
 
+// Same throttled sync the listing page runs: a visitor landing straight on a
+// report from a shared link should still be able to trigger the hourly
+// refresh. It is a no-op unless the interval has elapsed.
+trAutoSyncTournaments();
+
 $lang   = getLang();
 $uiLang = getUiLang();
 

@@ -4,6 +4,27 @@
 // Copy config.local.php.example to config.local.php and fill in real values.
 require_once __DIR__ . '/config.local.php';
 
+// Fallback: reproduces the path every deployment already logged to before
+// ERROR_LOG_TARGET existed, so a config.local.php that doesn't define it yet
+// (i.e. every deployment right now) keeps behaving exactly as before. Set
+// ERROR_LOG_TARGET explicitly (e.g. to 'php://stderr' for Docker) to opt in to
+// something else — see config.local.php.example.
+if (!defined('ERROR_LOG_TARGET')) define('ERROR_LOG_TARGET', __DIR__ . '/logs/php_errors.log');
+
+if (ERROR_LOG_TARGET !== '') {
+    // A plain file path (no stream wrapper like php:// or syslog) needs its
+    // directory to exist first: if it doesn't, ini_set('error_log') and every
+    // error_log() call silently no-op, so errors leave no trace anywhere.
+    if (strpos(ERROR_LOG_TARGET, '://') === false) {
+        $_errorLogDir = dirname(ERROR_LOG_TARGET);
+        if (!is_dir($_errorLogDir)) {
+            @mkdir($_errorLogDir, 0775, true);
+        }
+    }
+    ini_set('log_errors', '1');
+    ini_set('error_log', ERROR_LOG_TARGET);
+}
+
 // ─── Site ─────────────────────────────────────────────────────────────────────
 define('DEFAULT_LANG',          'en'); // Default language when nothing else is detected
 define('NEWS_PER_PAGE',         9);    // News articles per page on the news list

@@ -16,7 +16,14 @@
 function trGetTournaments(): array
 {
     global $db;
-    return $db->query(qp("SELECT id, tournament_id, tournament_name, total_games, localization, description, fetched_at, created_by FROM {tournaments} ORDER BY fetched_at DESC"))->fetchAll(PDO::FETCH_ASSOC);
+    // Everything the listing needs and nothing more -- games_data is a
+    // LONGTEXT per row and is deliberately left out.
+    return $db->query(qp(
+        "SELECT id, tournament_id, tournament_name, total_games, total_players, format, first_game_at,
+                api_version, api_hash, localization, description, fetched_at, synced_at, created_by
+         FROM {tournaments}
+         ORDER BY first_game_at IS NULL, first_game_at DESC, fetched_at DESC"
+    ))->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**
@@ -70,31 +77,84 @@ function trGetTournamentByExternalId(string $tournamentId): ?array
 }
 
 /**
- * Save (upsert) a tournament from external API data.
+ * ON DUPLICATE KEY UPDATE expression for `tournament_name`.
+ *
+ * The sync now runs by itself every hour, so a plain overwrite would silently
+ * undo an admin's rename over and over. A name edited by hand
+ * (name_overridden = 1) wins, and an empty name from the API never replaces
+ * one we already have.
+ */
+const TR_KEEP_NAME_SQL =
+    "IF(name_overridden = 1 OR VALUES(tournament_name) = '', tournament_name, VALUES(tournament_name))";
+
+/**
+ * Convert an ISO-8601 instant to the 'Y-m-d H:i:s' UTC form MySQL DATETIME
+ * wants, or null when it is missing or unparseable.
+ */
+function trToDateTime(string $iso): ?string
+{
+    if (trim($iso) === '') return null;
+    $timestamp = strtotime($iso);
+    return $timestamp === false ? null : gmdate('Y-m-d H:i:s', $timestamp);
+}
+
+/**
+ * Save (upsert) a tournament from a full API report document.
  * Returns the DB id.
+ *
+ * `api_version` is written here and only here, so it always means "the version
+ * of the document we actually hold". trSaveTournamentIndexEntry() below
+ * deliberately leaves it alone, which is what lets the sync tell a tournament
+ * it has merely listed from one it has downloaded.
  */
 function trSaveTournament(array $apiData, int $createdBy = 0): int
 {
     global $db;
-    $tournamentId   = (string)($apiData['tournamentId'] ?? '');
+    // The report is keyed by the parent tournament; `tournamentId` is the
+    // deprecated alias the API still sends alongside it.
+    $tournamentId   = (string)($apiData['tournamentParentId'] ?? $apiData['tournamentId'] ?? '');
     $tournamentName = (string)($apiData['tournamentName'] ?? '');
     $totalGames     = (int)($apiData['totalGames'] ?? 0);
+    $totalPlayers   = (int)($apiData['totalPlayers'] ?? 0);
+    $apiVersion     = (int)($apiData['version'] ?? 0);
+    $apiHash        = (string)($apiData['hash'] ?? '');
     $gamesJson      = json_encode($apiData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    // Denormalized off the first game so the listing page never has to decode
+    // a games_data blob per row just to show a format and a date. The API
+    // orders games oldest-first, so the first one carries both.
+    $games     = (array)($apiData['games'] ?? []);
+    $firstGame = $games[0] ?? [];
+    $format    = (string)($firstGame['format'] ?? '');
+    $firstAt   = trToDateTime((string)($firstGame['receivedAt'] ?? ''));
 
     // Upsert: update if exists, insert otherwise
     $stmt = $db->prepare(qp(
-        "INSERT INTO {tournaments} (tournament_id, tournament_name, total_games, games_data, created_by)
-         VALUES (:tid, :tn, :tg, :gd, :cb)
+        "INSERT INTO {tournaments}
+            (tournament_id, tournament_name, total_games, total_players,
+             format, first_game_at, api_version, api_hash, games_data, synced_at, created_by)
+         VALUES (:tid, :tn, :tg, :tp, :fmt, :fga, :av, :ah, :gd, CURRENT_TIMESTAMP, :cb)
          ON DUPLICATE KEY UPDATE
-            tournament_name = VALUES(tournament_name),
+            tournament_name = " . TR_KEEP_NAME_SQL . ",
             total_games     = VALUES(total_games),
+            total_players   = VALUES(total_players),
+            format          = VALUES(format),
+            first_game_at   = VALUES(first_game_at),
+            api_version     = VALUES(api_version),
+            api_hash        = VALUES(api_hash),
             games_data      = VALUES(games_data),
-            fetched_at      = CURRENT_TIMESTAMP"
+            fetched_at      = CURRENT_TIMESTAMP,
+            synced_at       = CURRENT_TIMESTAMP"
     ));
     $stmt->execute([
         ':tid' => $tournamentId,
         ':tn' => $tournamentName,
         ':tg' => $totalGames,
+        ':tp' => $totalPlayers,
+        ':fmt' => $format,
+        ':fga' => $firstAt,
+        ':av' => $apiVersion,
+        ':ah' => $apiHash,
         ':gd' => $gamesJson,
         ':cb' => $createdBy,
     ]);
@@ -103,6 +163,38 @@ function trSaveTournament(array $apiData, int $createdBy = 0): int
     $sel = $db->prepare(qp("SELECT id FROM {tournaments} WHERE tournament_id = :tid"));
     $sel->execute([':tid' => $tournamentId]);
     return (int)$sel->fetchColumn();
+}
+
+/**
+ * Save (upsert) just the listing metadata for one entry of
+ * GET /api/tournament-reports — name, game count, participant count. Never
+ * touches games_data or api_version.
+ *
+ * This is what makes a tournament appear in the list as soon as the API knows
+ * about it, instead of only once its (much larger) report document has been
+ * downloaded. The sync fills those in afterwards, a few per run.
+ */
+function trSaveTournamentIndexEntry(array $entry, int $createdBy = 0): void
+{
+    global $db;
+    $tournamentId = (string)($entry['tournamentParentId'] ?? '');
+    if ($tournamentId === '') return;
+
+    $db->prepare(qp(
+        "INSERT INTO {tournaments}
+            (tournament_id, tournament_name, total_games, total_players, created_by)
+         VALUES (:tid, :tn, :tg, :tp, :cb)
+         ON DUPLICATE KEY UPDATE
+            tournament_name = " . TR_KEEP_NAME_SQL . ",
+            total_games     = VALUES(total_games),
+            total_players   = VALUES(total_players)"
+    ))->execute([
+        ':tid' => $tournamentId,
+        ':tn'  => (string)($entry['tournamentName'] ?? ''),
+        ':tg'  => (int)($entry['totalGames'] ?? 0),
+        ':tp'  => (int)($entry['totalPlayers'] ?? 0),
+        ':cb'  => $createdBy,
+    ]);
 }
 
 /**
@@ -204,13 +296,22 @@ function trManualSaveTournament(array $data, int $createdBy = 0): int
     $localization = (string)($data['localization'] ?? '');
     $description  = (string)($data['description'] ?? '');
 
+    // A manual tournament is never in the API index, so the sync leaves it
+    // alone -- but it lands in the same list, so it fills the same
+    // denormalized columns the listing page reads. name_overridden is set for
+    // the same reason: this name came from a human, not from BGA.
     $stmt = $db->prepare(qp(
         "INSERT INTO {tournaments}
-            (tournament_id, tournament_name, total_games, games_data, localization, description, created_by)
-         VALUES (:tid, :tn, :tg, :gd, :loc, :desc, :cb)
+            (tournament_id, tournament_name, name_overridden, total_games, total_players,
+             format, first_game_at, games_data, localization, description, created_by)
+         VALUES (:tid, :tn, 1, :tg, :tp, :fmt, :fga, :gd, :loc, :desc, :cb)
          ON DUPLICATE KEY UPDATE
             tournament_name = VALUES(tournament_name),
+            name_overridden = 1,
             total_games     = VALUES(total_games),
+            total_players   = VALUES(total_players),
+            format          = VALUES(format),
+            first_game_at   = VALUES(first_game_at),
             games_data      = VALUES(games_data),
             localization    = VALUES(localization),
             description     = VALUES(description),
@@ -220,6 +321,9 @@ function trManualSaveTournament(array $data, int $createdBy = 0): int
         ':tid'  => $tournamentId,
         ':tn'   => $tournamentName,
         ':tg'   => 1,
+        ':tp'   => count($endGamePlayers),
+        ':fmt'  => (string)($data['format'] ?? ''),
+        ':fga'  => trToDateTime((string)($data['date'] ?? '')),
         ':gd'   => json_encode($gamesData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ':loc'  => $localization,
         ':desc' => $description,
@@ -266,11 +370,43 @@ function trUpdateTournamentDescription(string $tournamentExtId, string $descript
 function trUpdateTournamentName(string $tournamentExtId, string $name): void
 {
     global $db;
-    $stmt = $db->prepare(qp("UPDATE {tournaments} SET tournament_name = :tn WHERE tournament_id = :tid"));
-    $stmt->execute([':tn' => $name, ':tid' => $tournamentExtId]);
+    // Flagged as overridden so the hourly sync stops overwriting it — see
+    // TR_KEEP_NAME_SQL. Clearing the name hands control back to the API.
+    $stmt = $db->prepare(qp(
+        "UPDATE {tournaments} SET tournament_name = :tn, name_overridden = :ov WHERE tournament_id = :tid"
+    ));
+    $stmt->execute([
+        ':tn'  => $name,
+        ':ov'  => trim($name) === '' ? 0 : 1,
+        ':tid' => $tournamentExtId,
+    ]);
 }
 
 /* ── Settings ─────────────────────────────────────────────────────────────── */
+
+/**
+ * Read one plugin setting, or $default when it has never been written.
+ */
+function trGetSetting(string $key, string $default = ''): string
+{
+    global $db;
+    $stmt = $db->prepare(qp("SELECT value FROM {settings} WHERE `key` = :k"));
+    $stmt->execute([':k' => $key]);
+    $value = $stmt->fetchColumn();
+    return $value === false || $value === null ? $default : (string)$value;
+}
+
+/**
+ * Write one plugin setting.
+ */
+function trSaveSetting(string $key, string $value): void
+{
+    global $db;
+    $db->prepare(qp(
+        "INSERT INTO {settings} (`key`, value) VALUES (:k, :v)
+         ON DUPLICATE KEY UPDATE value = :v2"
+    ))->execute([':k' => $key, ':v' => $value, ':v2' => $value]);
+}
 
 /**
  * Return the external tournament API base URL.
@@ -333,6 +469,34 @@ function trSaveApiKey(string $apiKey): void
  */
 function trFetchTournament(string $tournamentId): array
 {
+    // The API resolves whichever id it is given to its parent tournament and
+    // answers with every stage, so passing a stage id here is harmless.
+    return trApiGet('/api/tournament-report', ['tournamentParentId' => $tournamentId]);
+}
+
+/**
+ * Fetch the tournament index: every tournament the API holds a report for,
+ * with its name, counts and version — and none of its games.
+ *
+ * Cheap enough to call on a schedule; it is what tells us which tournaments
+ * exist and which of our stored copies have gone stale.
+ *
+ * @return array{ok: bool, data?: array, error?: string}
+ */
+function trFetchTournamentIndex(): array
+{
+    return trApiGet('/api/tournament-reports');
+}
+
+/**
+ * GET a JSON document from the tournament API.
+ *
+ * @param string $path  Path starting with '/'.
+ * @param array<string, string|int> $query  Query params; the API key is added here.
+ * @return array{ok: bool, data?: array, error?: string}
+ */
+function trApiGet(string $path, array $query = []): array
+{
     $apiUrl = trGetApiUrl();
     if ($apiUrl === '') {
         return ['ok' => false, 'error' => 'Tournament API URL is not configured.'];
@@ -343,10 +507,7 @@ function trFetchTournament(string $tournamentId): array
         return ['ok' => false, 'error' => 'Tournament API key is not configured.'];
     }
 
-    $url = $apiUrl . '/api/tournament-report?' . http_build_query([
-        'tournamentId' => $tournamentId,
-        'apiKey'       => $apiKey,
-    ]);
+    $url = $apiUrl . $path . '?' . http_build_query($query + ['apiKey' => $apiKey]);
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -375,6 +536,146 @@ function trFetchTournament(string $tournamentId): array
         return ['ok' => false, 'error' => 'Invalid API response.'];
     }
     return ['ok' => true, 'data' => $data];
+}
+
+/* ── Sync ─────────────────────────────────────────────────────────────────── */
+
+/** Documents downloaded in one sync run, so a first sync over a long history can't hang a page render. */
+const TR_SYNC_MAX_DOCUMENTS = 5;
+
+/** Wall-clock budget (seconds) for downloading documents in one run — the same guard from the other side. */
+const TR_SYNC_TIME_BUDGET = 8.0;
+
+/** How soon to come back when a run left work behind, instead of waiting a full interval. */
+const TR_SYNC_RETRY_SECONDS = 60;
+
+/**
+ * Bring the local tournament list and reports in line with the API.
+ *
+ * One cheap call to the index gives every tournament with its version; a
+ * tournament whose stored `api_version` already matches is left completely
+ * alone, so a steady state costs exactly one HTTP request. Only the ones that
+ * moved (and the ones never downloaded) have their document re-fetched, a few
+ * per run.
+ *
+ * @return array{ok: bool, error?: string, listed?: int, fetched?: int, pending?: int, errors?: array<string>}
+ */
+function trSyncTournaments(
+    int $createdBy = 0,
+    int $maxDocuments = TR_SYNC_MAX_DOCUMENTS,
+    float $timeBudget = TR_SYNC_TIME_BUDGET
+): array {
+    global $db;
+
+    // Stamped before anything is fetched: a slow or failing run must not leave
+    // every subsequent page render starting a sync of its own.
+    trSaveSetting('last_sync_at', gmdate('Y-m-d H:i:s'));
+    trSaveSetting('sync_pending', '0');
+
+    $index = trFetchTournamentIndex();
+    if (!$index['ok']) {
+        return ['ok' => false, 'error' => $index['error'] ?? 'Unknown error'];
+    }
+
+    $stored = [];
+    foreach ($db->query(qp("SELECT tournament_id, api_version FROM {tournaments}"))->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $stored[(string)$row['tournament_id']] = (int)$row['api_version'];
+    }
+
+    // A non-positive budget means "take as long as it takes" — what an
+    // admin-triggered or cron-triggered run wants.
+    $deadline = $timeBudget > 0 ? microtime(true) + $timeBudget : INF;
+    $listed = 0;
+    $fetched = 0;
+    $pending = 0;
+    $errors = [];
+
+    foreach ((array)($index['data']['tournaments'] ?? []) as $entry) {
+        $tournamentId = (string)($entry['tournamentParentId'] ?? '');
+        if ($tournamentId === '') continue;
+
+        trSaveTournamentIndexEntry($entry, $createdBy);
+        $listed++;
+
+        // api_version is only ever written by trSaveTournament, so equality
+        // here means we hold that exact document — nothing to download.
+        if (($stored[$tournamentId] ?? -1) === (int)($entry['version'] ?? 0)) {
+            continue;
+        }
+
+        if ($fetched >= $maxDocuments || microtime(true) > $deadline) {
+            $pending++;
+            continue;
+        }
+
+        $result = trFetchAndStoreTournament($tournamentId, $createdBy);
+        if ($result['ok']) {
+            $fetched++;
+        } else {
+            $errors[] = $tournamentId . ': ' . ($result['error'] ?? 'unknown error');
+        }
+    }
+
+    if ($pending > 0) {
+        trSaveSetting('sync_pending', '1');
+    }
+
+    return [
+        'ok'      => true,
+        'listed'  => $listed,
+        'fetched' => $fetched,
+        'pending' => $pending,
+        'errors'  => $errors,
+    ];
+}
+
+/**
+ * Run a sync if one is due. Safe to call at the top of any page.
+ *
+ * There is no job runner on this site, so the schedule rides on visitor
+ * traffic: the first render after the interval has elapsed pays for a sync,
+ * every other render pays nothing. `bin/sync.php` does the same thing from a
+ * real cron if one is ever wired up, and the two can coexist — whichever runs
+ * first pushes the next one out.
+ */
+function trAutoSyncTournaments(int $createdBy = 0): void
+{
+    $interval = (int)trGetSetting('sync_interval', '3600');
+    if ($interval <= 0) return;
+
+    $last = strtotime((string)trGetSetting('last_sync_at', '') . ' UTC');
+    if ($last === false) $last = 0;
+
+    // A run that hit its per-run cap left work behind: come back for it in a
+    // minute rather than in an hour, so a first sync over a long history
+    // drains in minutes instead of days.
+    $due = trGetSetting('sync_pending', '0') === '1' ? TR_SYNC_RETRY_SECONDS : $interval;
+    if (time() - $last < $due) return;
+
+    trSyncTournaments($createdBy);
+}
+
+/**
+ * Human-readable summary of a trSyncTournaments() result, for flash messages.
+ */
+function trSyncSummary(array $result): string
+{
+    if (!($result['ok'] ?? false)) {
+        return (string)($result['error'] ?? 'Unknown error');
+    }
+
+    $summary = sprintf(
+        '%d tournament(s) listed, %d report(s) updated',
+        (int)($result['listed'] ?? 0),
+        (int)($result['fetched'] ?? 0)
+    );
+    if (!empty($result['pending'])) {
+        $summary .= sprintf(', %d still queued', (int)$result['pending']);
+    }
+    if (!empty($result['errors'])) {
+        $summary .= ' — ' . implode(' · ', $result['errors']);
+    }
+    return $summary;
 }
 
 /**

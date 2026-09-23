@@ -25,38 +25,18 @@ $txt = [
     ],
 ][$uiLang] ?? [];
 
-$allTournaments = trGetTournamentsWithGames();
+// Pull anything new from the API before rendering, at most once per interval.
+// With no job runner on this site, the schedule rides on visitor traffic --
+// see trAutoSyncTournaments().
+trAutoSyncTournaments();
 
-// Build display metadata per tournament, mirroring the tournament page header:
-// format (first game), date (earliest receivedAt), player count (unique players).
-$metaByTournament = [];
-foreach ($allTournaments as $tr) {
-    $games = (array)($tr['games'] ?? []);
-    $meta = ['format' => '', 'date' => '', 'players' => 0];
-
-    if (!empty($games)) {
-        $meta['format'] = $games[0]['format'] ?? '';
-        $dates = [];
-        foreach ($games as $g) {
-            if (!empty($g['receivedAt'])) $dates[] = $g['receivedAt'];
-        }
-        sort($dates);
-        $meta['date'] = !empty($dates) ? trFormatDate($dates[0]) : '';
-
-        $players = [];
-        foreach ($games as $g) {
-            foreach (($g['endGamePlayers'] ?? []) as $p) {
-                if (!empty($p['id'])) $players[$p['id']] = true;
-            }
-        }
-        $meta['players'] = count($players);
-    }
-
-    $metaByTournament[$tr['tournament_id']] = $meta;
-}
+// One row per parent tournament. Name, participant count, format and date used
+// to be recomputed here by decoding every tournament's games_data on every
+// render; they are stored columns now, so this page reads no blobs at all.
+$allTournaments = trGetTournaments();
 
 /**
- * Format an ISO date the same way the tournament page does (dd/mm/yyyy HH:MM).
+ * Format a stored DATETIME the same way the tournament page does.
  */
 function trFormatDate(string $iso): string
 {
@@ -77,23 +57,26 @@ function trFormatDate(string $iso): string
             </div>
         <?php else: ?>
             <div class="list-group">
-                <?php foreach ($allTournaments as $t): $m = $metaByTournament[$t['tournament_id']] ?? []; ?>
+                <?php foreach ($allTournaments as $t): ?>
                 <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($t['tournament_id'])) ?>"
                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                     <div>
                         <h5 class="mb-1"><?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?></h5>
                         <small class="text-muted d-flex flex-wrap gap-3">
-                            <?php if (!empty($m['format'])): ?>
-                            <span><i class="fa-solid fa-shield me-1"></i><?= h($m['format']) ?></span>
+                            <?php if (!empty($t['format'])): ?>
+                            <span><i class="fa-solid fa-shield me-1"></i><?= h($t['format']) ?></span>
                             <?php endif; ?>
-                            <?php if (!empty($m['date'])): ?>
-                            <span><i class="fa-regular fa-calendar me-1"></i><?= h($m['date']) ?></span>
+                            <?php if (!empty($t['first_game_at'])): ?>
+                            <span><i class="fa-regular fa-calendar me-1"></i><?= h(trFormatDate($t['first_game_at'])) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($t['localization'])): ?>
                             <span><i class="fa-solid fa-location-dot me-1"></i><?= h($t['localization']) ?></span>
                             <?php endif; ?>
-                            <?php if (!empty($m['players'])): ?>
-                            <span><i class="fa-solid fa-users me-1"></i><?= sprintf($txt['players'], $m['players']) ?></span>
+                            <?php if (!empty($t['total_players'])): ?>
+                            <span><i class="fa-solid fa-users me-1"></i><?= sprintf($txt['players'], (int)$t['total_players']) ?></span>
+                            <?php endif; ?>
+                            <?php if (!empty($t['total_games'])): ?>
+                            <span><i class="fa-solid fa-chess-board me-1"></i><?= sprintf($txt['total_games'], (int)$t['total_games']) ?></span>
                             <?php endif; ?>
                         </small>
                     </div>
