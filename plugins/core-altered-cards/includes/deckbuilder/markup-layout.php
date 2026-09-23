@@ -146,6 +146,8 @@
                     </div>
                 </div>
 
+                <div id="db-ss-sidebar-host"></div>
+
                 <!-- Deck meta -->
                 <div class="mb-2">
                     <label class="filter-label mb-1"><?= h($txt['deck_name']) ?></label>
@@ -179,8 +181,6 @@
                     </select>
                     <?php endif; ?>
                 </div>
-
-                <div id="db-ss-sidebar-host"></div>
 
                 <!-- Card list -->
                 <div class="d-flex align-items-center justify-content-between mb-1 mt-3 db-ss-sidebar-hide">
