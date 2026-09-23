@@ -65,7 +65,18 @@ button.db-ss-chip { cursor:pointer; }
 .cards-grid-db { padding:3px; }
 
 @media (min-width:992px) {
-    .db-panel-right { top:calc(var(--db-ss-header, 0px) + var(--db-ss-strip, 96px) + 20px); height:calc(100vh - var(--db-ss-header, 0px) - var(--db-ss-strip, 96px) - 20px); }
+    .db-ss-sidebar-hide { display:none !important; }
+    .db-panel-right { top:calc(var(--db-ss-header, 0px) + 20px); height:calc(100vh - var(--db-ss-header, 0px) - 20px); }
+    .db-ss-strip.in-panel { position:sticky; top:0; z-index:auto; margin:0 0 8px; padding:6px 8px; border-radius:10px; box-shadow:none; gap:6px; }
+    .db-ss-strip.in-panel .db-ss-strip-id { display:none; }
+    .db-ss-strip.in-panel .db-ss-strip-hero { width:36px; height:36px; }
+    .db-ss-strip.in-panel .db-ss-strip-main { gap:8px; }
+    .db-ss-strip.in-panel .db-ss-strip-progress { flex:1 1 80px; min-width:64px; max-width:none; }
+    .db-ss-strip.in-panel .db-ss-chip span { display:none; }
+    .db-ss-strip.in-panel .db-ss-chip { padding:6px 9px; }
+    .db-ss-strip.in-panel .db-ss-strip-save { margin-left:auto; }
+    .db-ss-strip.in-panel .db-ss-strip-savebtn span { display:none !important; }
+    .db-ss-strip.in-panel .db-ss-strip-chips { flex-wrap:wrap; }
 }
 @media (min-width:768px) and (max-width:991px) {
     .db-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:12px; padding-bottom:0; }
