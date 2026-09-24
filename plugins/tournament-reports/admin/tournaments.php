@@ -1,28 +1,14 @@
 <?php
-// Admin page for managing tournaments.
+// Admin page for managing tournaments: manual tournaments (fully local) and
+// GameApi tournaments (fetched live below, no local mirror — see
+// inc/functions.php's module docblock).
 require_once __DIR__ . '/../inc/functions.php';
 
 $txt = [
     'en' => [
         'title'         => 'Tournaments',
-        'fetch_title'   => 'Fetch Tournament',
-        'fetch_label'   => 'Tournament ID',
-        'fetch_ph'      => 'Enter tournament ID…',
-        'fetch_btn'     => 'Fetch & Store',
-        'fetch_help'    => 'Fetches tournament data from the external API and stores it in the database.',
-        'fetch_success' => 'Tournament fetched and stored successfully.',
-        'fetch_error'   => 'Failed to fetch tournament: %s',
-        'refresh_title' => 'Re-fetch this tournament from the API to update the report',
-        'refresh_success' => 'Tournament report updated.',
-        'not_configured'=> 'Tournament API is not configured. Set it in Tournament Settings.',
-        'sync_title'    => 'Sync with the API',
-        'sync_btn'      => 'Sync now',
-        'sync_help'     => 'Lists every tournament the API knows about and re-downloads the reports that changed. Runs by itself every hour; this forces it now.',
-        'sync_success'  => 'Sync complete: %s',
-        'sync_error'    => 'Sync failed: %s',
-        'sync_last'     => 'Last sync: %s',
-        'sync_never'    => 'never',
-        'col_version'   => 'Version',
+        'live_error'    => 'Could not load GameApi\'s tournament list: %s',
+        'not_configured'=> 'GameApi is not configured. Set it in Tournament Settings.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournament',
         'col_games'     => 'Games',
@@ -31,7 +17,7 @@ $txt = [
         'col_fetched'   => 'Fetched',
         'col_actions'   => 'Actions',
         'view_page'     => 'View on site',
-        'rankings'      => 'Rankings',
+        'players'       => 'Players & corrections',
         'edit_loc'      => 'Edit localization',
         'loc_ph'        => 'e.g. Paris, France',
         'loc_save'      => 'Save',
@@ -44,9 +30,13 @@ $txt = [
         'desc_saved'    => 'Description saved.',
         'delete'        => 'Delete',
         'delete_confirm'=> 'Delete this tournament and all its data?',
-        'empty'         => 'No tournaments stored yet. Fetch one above.',
+        'reset'         => 'Reset',
+        'reset_confirm' => 'Clear the local name/localization/description override for this tournament?',
+        'empty'         => 'No tournaments yet.',
+        'source_manual' => 'Manual',
+        'source_gameapi'=> 'GameApi',
         'create_title'      => 'Create tournament (manual)',
-        'create_subtitle'   => 'Add a tournament and its players directly, without fetching from the API.',
+        'create_subtitle'   => 'Add a tournament and its players directly.',
         'create_toggle'     => 'Create manually',
         'create_lbl_name'   => 'Tournament name',
         'create_lbl_id'     => 'External ID (optional)',
@@ -71,24 +61,8 @@ $txt = [
     ],
     'fr' => [
         'title'         => 'Tournois',
-        'fetch_title'   => 'Récupérer un tournoi',
-        'fetch_label'   => 'ID du tournoi',
-        'fetch_ph'      => 'Entrez l\'ID du tournoi…',
-        'fetch_btn'     => 'Récupérer et enregistrer',
-        'fetch_help'    => 'Récupère les données du tournoi depuis l\'API externe et les enregistre en base.',
-        'fetch_success' => 'Tournoi récupéré et enregistré avec succès.',
-        'fetch_error'   => 'Échec de la récupération du tournoi : %s',
-        'refresh_title' => 'Récupérer ce tournoi depuis l\'API pour mettre à jour le rapport',
-        'refresh_success' => 'Rapport de tournoi mis à jour.',
-        'not_configured'=> 'L\'API de tournoi n\'est pas configurée. Réglez-la dans les paramètres tournois.',
-        'sync_title'    => 'Synchroniser avec l\'API',
-        'sync_btn'      => 'Synchroniser maintenant',
-        'sync_help'     => 'Liste tous les tournois connus de l\'API et retélécharge les rapports qui ont changé. S\'exécute tout seul toutes les heures ; ceci le force immédiatement.',
-        'sync_success'  => 'Synchronisation terminée : %s',
-        'sync_error'    => 'Échec de la synchronisation : %s',
-        'sync_last'     => 'Dernière synchronisation : %s',
-        'sync_never'    => 'jamais',
-        'col_version'   => 'Version',
+        'live_error'    => 'Impossible de charger la liste des tournois GameApi : %s',
+        'not_configured'=> 'GameApi n\'est pas configuré. Réglez-le dans les paramètres tournois.',
         'col_id'        => 'ID',
         'col_tournament'=> 'Tournoi',
         'col_games'     => 'Matchs',
@@ -97,7 +71,7 @@ $txt = [
         'col_fetched'   => 'Récupéré',
         'col_actions'   => 'Actions',
         'view_page'     => 'Voir sur le site',
-        'rankings'      => 'Classements',
+        'players'       => 'Joueurs et corrections',
         'edit_loc'      => 'Modifier la localisation',
         'loc_ph'        => 'ex. Paris, France',
         'loc_save'      => 'Enregistrer',
@@ -110,9 +84,13 @@ $txt = [
         'desc_saved'    => 'Description enregistrée.',
         'delete'        => 'Supprimer',
         'delete_confirm'=> 'Supprimer ce tournoi et toutes ses données ?',
-        'empty'         => 'Aucun tournoi enregistré. Récupérez-en un ci-dessus.',
+        'reset'         => 'Réinitialiser',
+        'reset_confirm' => 'Effacer la surcharge locale (nom/localisation/description) de ce tournoi ?',
+        'empty'         => 'Aucun tournoi pour le moment.',
+        'source_manual' => 'Manuel',
+        'source_gameapi'=> 'GameApi',
         'create_title'      => 'Créer un tournoi (manuel)',
-        'create_subtitle'   => 'Ajoutez un tournoi et ses joueurs directement, sans récupération via l\'API.',
+        'create_subtitle'   => 'Ajoutez un tournoi et ses joueurs directement.',
         'create_toggle'     => 'Créer manuellement',
         'create_lbl_name'   => 'Nom du tournoi',
         'create_lbl_id'     => 'ID externe (facultatif)',
@@ -144,66 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
     }
 
-    // Sync everything against the API index now, instead of waiting for the
-    // next visitor-triggered run.
-    if (isset($_POST['sync_tournaments'])) {
-        if (trGetApiUrl() === '') {
-            flash($txt['not_configured'], 'error');
-        } else {
-            // No per-run document cap here: an admin who asked for a sync is
-            // waiting for it, unlike a visitor who just wanted to see a page.
-            $result = trSyncTournaments((int)($_SESSION['user_id'] ?? 0), PHP_INT_MAX, 0.0);
-            flash(
-                sprintf($txt[$result['ok'] ? 'sync_success' : 'sync_error'], trSyncSummary($result)),
-                $result['ok'] ? 'success' : 'error'
-            );
-        }
-        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
-    }
-
-    // Fetch & store tournament
-    if (isset($_POST['fetch_tournament'])) {
-        $apiUrl = trGetApiUrl();
-        if ($apiUrl === '') {
-            flash($txt['not_configured'], 'error');
-        } else {
-            $tournamentId = trim($_POST['tournament_id'] ?? '');
-            if ($tournamentId === '') {
-                flash('Please enter a tournament ID.', 'error');
-            } else {
-                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
-                if ($result['ok']) {
-                    flash($txt['fetch_success']);
-                } else {
-                    flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
-                }
-            }
-        }
-        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
-    }
-
-    // Re-fetch & update an existing tournament report
-    if (isset($_POST['refresh_tournament'])) {
-        $apiUrl = trGetApiUrl();
-        if ($apiUrl === '') {
-            flash($txt['not_configured'], 'error');
-        } else {
-            $tournamentId = trim($_POST['tournament_id'] ?? '');
-            if ($tournamentId === '') {
-                flash('Please enter a tournament ID.', 'error');
-            } else {
-                $result = trFetchAndStoreTournament($tournamentId, (int)($_SESSION['user_id'] ?? 0));
-                if ($result['ok']) {
-                    flash($txt['refresh_success']);
-                } else {
-                    flash(sprintf($txt['fetch_error'], $result['error'] ?? 'Unknown error'), 'error');
-                }
-            }
-        }
-        redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
-    }
-
-    // Delete tournament
+    // Delete tournament (manual: full delete; GameApi overlay: clears the override)
     if (isset($_POST['delete_tournament'])) {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
@@ -309,16 +228,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── Fetch list ───────────────────────────────────────────────────────────────
-$tournaments = trGetTournaments();
-$lastSync    = trGetSetting('last_sync_at', '');
+// ── Build the merged list: manual tournaments + GameApi's live index ───────
+$manualRows = trGetManualTournaments();
+$rows = [];
+foreach ($manualRows as $t) {
+    $decoded = json_decode($t['games_data'] ?? '', true);
+    $rows[] = [
+        'id'            => $t['id'],
+        'tournament_id' => $t['tournament_id'],
+        'tournament_name' => $t['tournament_name'],
+        'total_games'   => (int)($decoded['totalGames'] ?? 0),
+        'localization'  => $t['localization'],
+        'description'   => $t['description'],
+        'fetched_at'    => $t['fetched_at'],
+        'source'        => 'manual',
+        'has_local_row' => true,
+    ];
+}
+
+$userId = (int)($_SESSION['user_id'] ?? 0);
+$liveError = null;
+if (trGetApiUrl() === '') {
+    $liveError = $txt['not_configured'];
+} else {
+    $index = trFetchLiveTournamentIndex($userId);
+    if (!$index['ok']) {
+        $liveError = sprintf($txt['live_error'], $index['error'] ?? 'Unknown error');
+    } else {
+        $overrides = trGetTournamentOverridesMap();
+        foreach ((array)($index['data']['tournaments'] ?? []) as $entry) {
+            $tid      = (string)($entry['tournamentParentId'] ?? '');
+            if ($tid === '') continue;
+            $override = $overrides[$tid] ?? null;
+            $overrideName = trim((string)($override['tournament_name'] ?? ''));
+            $rows[] = [
+                'id'            => null, // no local row unless an override exists
+                'local_id'      => $override['id'] ?? null,
+                'tournament_id' => $tid,
+                'tournament_name' => $overrideName !== '' ? $overrideName : (string)($entry['tournamentParentName'] ?? ''),
+                'total_games'   => (int)($entry['totalGames'] ?? 0),
+                'localization'  => (string)($override['localization'] ?? ''),
+                'description'   => (string)($override['description'] ?? ''),
+                'fetched_at'    => null,
+                'source'        => 'gameapi',
+                'has_local_row' => $override !== null,
+            ];
+        }
+    }
+}
 
 /**
  * Format a stored UTC DATETIME for display, or hand back whatever was stored
  * when it can't be parsed.
  */
-function trFormatAdminDate(string $stored): string
+function trFormatAdminDate(?string $stored): string
 {
+    if (!$stored) return '—';
     $timestamp = strtotime($stored . ' UTC');
     return $timestamp === false ? $stored : date('d/m/Y H:i', $timestamp);
 }
@@ -328,37 +293,9 @@ function trFormatAdminDate(string $stored): string
     <h1><i class="fa-solid fa-trophy me-2"></i><?= h($txt['title']) ?></h1>
 </div>
 
-<!-- Sync with the API -->
-<div class="card-altered p-4 mb-4">
-    <h5 class="mb-3"><?= h($txt['sync_title']) ?></h5>
-    <form method="post" class="d-flex align-items-center gap-3 flex-wrap">
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <button type="submit" name="sync_tournaments" class="btn btn-primary-altered">
-            <i class="fa-solid fa-rotate me-1"></i><?= h($txt['sync_btn']) ?>
-        </button>
-        <span class="text-muted small">
-            <?= h(sprintf($txt['sync_last'], $lastSync !== '' ? trFormatAdminDate($lastSync) : $txt['sync_never'])) ?>
-        </span>
-    </form>
-    <div class="form-text mt-2"><?= $txt['sync_help'] ?></div>
-</div>
-
-<!-- Fetch form -->
-<div class="card-altered p-4 mb-4">
-    <h5 class="mb-3"><?= h($txt['fetch_title']) ?></h5>
-    <form method="post" class="d-flex align-items-end gap-3 flex-wrap">
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <div class="flex-grow-1" style="min-width:200px">
-            <label class="form-label fw-semibold small"><?= h($txt['fetch_label']) ?></label>
-            <input type="text" name="tournament_id" class="form-control"
-                   placeholder="<?= h($txt['fetch_ph']) ?>" required>
-            <div class="form-text"><?= $txt['fetch_help'] ?></div>
-        </div>
-        <button type="submit" name="fetch_tournament" class="btn btn-primary-altered">
-            <i class="fa-solid fa-download me-1"></i><?= h($txt['fetch_btn']) ?>
-        </button>
-    </form>
-</div>
+<?php if ($liveError): ?>
+<div class="alert alert-warning"><?= h($liveError) ?></div>
+<?php endif; ?>
 
 <!-- Create tournament (manual) -->
 <div class="card-altered p-4 mb-4">
@@ -430,17 +367,20 @@ function trFormatAdminDate(string $stored): string
                     <th><?= h($txt['col_games']) ?></th>
                     <th><?= h($txt['col_localization']) ?></th>
                     <th><?= h($txt['col_description']) ?></th>
-                    <th><?= h($txt['col_fetched']) ?></th>
                     <th class="text-end"><?= h($txt['col_actions']) ?></th>
                 </tr>
             </thead>
             <tbody>
-            <?php if (empty($tournaments)): ?>
-                <tr><td colspan="7" class="text-center text-muted py-4"><?= $txt['empty'] ?></td></tr>
+            <?php if (empty($rows)): ?>
+                <tr><td colspan="6" class="text-center text-muted py-4"><?= $txt['empty'] ?></td></tr>
             <?php else: ?>
-                <?php foreach ($tournaments as $t): ?>
+                <?php foreach ($rows as $t): ?>
                 <tr>
-                    <td><?= $t['id'] ?></td>
+                    <td>
+                        <span class="badge <?= $t['source'] === 'manual' ? 'bg-secondary' : 'bg-primary-altered' ?>">
+                            <?= h($t['source'] === 'manual' ? $txt['source_manual'] : $txt['source_gameapi']) ?>
+                        </span>
+                    </td>
                     <td>
                         <div class="d-flex align-items-center gap-1" id="tr-name-wrap-<?= h($t['tournament_id']) ?>">
                             <strong class="tr-name-display" id="tr-name-display-<?= h($t['tournament_id']) ?>"><?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?></strong>
@@ -514,13 +454,7 @@ function trFormatAdminDate(string $stored): string
                             </div>
                         </form>
                     </td>
-                    <td class="text-muted small"><?= h($t['fetched_at']) ?></td>
                     <td class="text-end" style="white-space:nowrap">
-                        <button type="button" class="btn btn-sm btn-outline-secondary tr-loc-edit"
-                                data-tid="<?= h($t['tournament_id']) ?>"
-                                title="<?= h($txt['edit_loc']) ?>">
-                            <i class="fa-solid fa-location-dot"></i>
-                        </button>
                         <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($t['tournament_id'])) ?>"
                            class="btn btn-sm btn-outline-primary" target="_blank"
                            title="<?= h($txt['view_page']) ?>">
@@ -528,24 +462,25 @@ function trFormatAdminDate(string $stored): string
                         </a>
                         <a href="<?= BASE_URL ?>/admin/plugin-page?plugin=tournament-reports&section=tournament-ranking&tournament=<?= h(urlencode($t['tournament_id'])) ?>"
                            class="btn btn-sm btn-outline-secondary"
-                           title="<?= h($txt['rankings']) ?>">
+                           title="<?= h($txt['players']) ?>">
                             <i class="fa-solid fa-ranking-star"></i>
                         </a>
-                        <form method="post" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-                            <input type="hidden" name="tournament_id" value="<?= h($t['tournament_id']) ?>">
-                            <button type="submit" name="refresh_tournament" class="btn btn-sm btn-outline-secondary"
-                                    title="<?= h($txt['refresh_title']) ?>">
-                                <i class="fa-solid fa-rotate"></i>
-                            </button>
-                        </form>
-                        <?php if (adminCanDelete()): ?>
+                        <?php if ($t['source'] === 'manual' && adminCanDelete()): ?>
                         <form method="post" class="d-inline" onsubmit="return confirm('<?= h($txt['delete_confirm']) ?>')">
                             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                             <input type="hidden" name="id" value="<?= $t['id'] ?>">
                             <button type="submit" name="delete_tournament" class="btn btn-sm btn-outline-danger"
                                     title="<?= h($txt['delete']) ?>">
                                 <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                        <?php elseif ($t['source'] === 'gameapi' && $t['has_local_row']): ?>
+                        <form method="post" class="d-inline" onsubmit="return confirm('<?= h($txt['reset_confirm']) ?>')">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="id" value="<?= (int)$t['local_id'] ?>">
+                            <button type="submit" name="delete_tournament" class="btn btn-sm btn-outline-secondary"
+                                    title="<?= h($txt['reset']) ?>">
+                                <i class="fa-solid fa-rotate-left"></i>
                             </button>
                         </form>
                         <?php endif; ?>

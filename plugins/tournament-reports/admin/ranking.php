@@ -1,5 +1,9 @@
 <?php
-// Admin page for managing rankings of a specific tournament.
+// Admin page: a tournament's players, standings (wins/games/losses desc — the
+// only ranking now, see inc/functions.php), and, for GameApi tournaments, the
+// "correct a result" action (GameApi's adjustment endpoint). Manual
+// tournaments have no bga_user_id/adjustment concept, so they're read-only
+// here.
 require_once __DIR__ . '/../inc/functions.php';
 
 $tournamentExtId = trim($_GET['tournament'] ?? '');
@@ -8,464 +12,198 @@ if ($tournamentExtId === '') {
     redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
 }
 
-$tournament = trGetTournamentByExternalId($tournamentExtId);
-if (!$tournament) {
-    flash('Tournament not found.', 'error');
-    redirect(BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage');
-}
-
-// Players pooled from the match results, ordered by win/loss standings so the
-// create-mode ranking is prefilled in the right order.
-$standings    = trComputeStandings($tournament['games_data']);
-$players      = [];
-$standingsMap = [];
-foreach ($standings as $s) {
-    $standingsMap[$s['id']] = $s;
-    $players[] = [
-        'id'           => $s['id'],
-        'name'         => $s['name'],
-        'faction'      => $s['faction'],
-        'games_played' => $s['games_played'],
-        'wins'         => $s['wins'],
-        'losses'       => $s['losses'],
-    ];
-}
-
-// Single ranking per tournament
-$ranking  = null;
-$existing = trGetRankings($tournamentExtId);
-if (!empty($existing)) {
-    $ranking = trGetRanking((int)$existing[0]['id']);
-}
-
 $backUrl = BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-manage';
-$rankingPageUrl = BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-ranking&tournament=' . urlencode($tournamentExtId);
+$selfUrl = BASE_URL . '/admin/plugin-page?plugin=tournament-reports&section=tournament-ranking&tournament=' . urlencode($tournamentExtId);
 
 $txt = [
     'en' => [
         'back'              => '← Back to tournaments',
-        'title'             => 'Rankings: %s',
-        'create_title'      => 'Create Ranking',
-        'create_name_ph'    => 'Ranking name…',
-        'create_btn'        => 'Save ranking',
-        'create_hint'       => 'Drag rows to reorder players, then save.',
-        'players_title'     => 'All players in this tournament',
-        'players_empty'     => 'No players found in tournament data.',
-        'players_id'        => 'ID',
-        'players_name'      => 'Name',
-        'players_faction'   => 'Faction',
+        'title'             => 'Players: %s',
+        'players_empty'     => 'No players found for this tournament.',
+        'players_name'      => 'Player',
+        'players_hero'      => 'Hero',
         'players_games'     => 'Games',
-        'edit_title'        => 'Edit Ranking',
-        'edit_hint'         => 'Drag rows to reorder players, then save.',
-        'ranking_pos'       => 'Pos.',
-        'ranking_player'    => 'Player',
-        'ranking_save'      => 'Save',
-        'ranking_delete'    => 'Delete ranking',
-        'ranking_delete_confirm' => 'Delete this ranking?',
-        'ranking_no_players'=> 'No players in this ranking.',
-        'ranking_add_player'=> 'Add player',
-        'saved'             => 'Ranking saved.',
-        'deleted'           => 'Ranking deleted.',
-        'player_ph'         => 'Select player…',
-        'drag_hint'         => 'Drag to reorder',
-        'ranking_position'  => 'Position',
         'wl_header'         => 'W-L',
-        'prefill_btn'       => 'Prefill by results',
-        'prefill_hint'      => 'Reorder all players by their recorded win/loss.',
+        'correct'           => 'Correct',
+        'correct_title'     => 'Correct this player\'s result',
+        'wins_adj_label'    => 'Wins adjustment',
+        'losses_adj_label'  => 'Losses adjustment',
+        'note_label'        => 'Note (required)',
+        'note_ph'           => 'Reason for this correction…',
+        'save'              => 'Save',
+        'cancel'            => 'Cancel',
+        'saved'             => 'Correction saved.',
+        'note_required'     => 'A note is required.',
+        'existing_note'     => 'Current correction: %+d/%+d — %s',
+        'manual_note'       => 'This is a manual tournament — results are entered directly and cannot be corrected here.',
+        'live_error'        => 'Could not load this tournament from GameApi: %s',
     ],
     'fr' => [
         'back'              => '← Retour aux tournois',
-        'title'             => 'Classements : %s',
-        'create_title'      => 'Créer un classement',
-        'create_name_ph'    => 'Nom du classement…',
-        'create_btn'        => 'Enregistrer le classement',
-        'create_hint'       => 'Glissez les lignes pour réordonner les joueurs, puis enregistrez.',
-        'players_title'     => 'Tous les joueurs de ce tournoi',
-        'players_empty'     => 'Aucun joueur trouvé dans les données du tournoi.',
-        'players_id'        => 'ID',
-        'players_name'      => 'Nom',
-        'players_faction'   => 'Faction',
+        'title'             => 'Joueurs : %s',
+        'players_empty'     => 'Aucun joueur trouvé pour ce tournoi.',
+        'players_name'      => 'Joueur',
+        'players_hero'      => 'Héros',
         'players_games'     => 'Matchs',
-        'edit_title'        => 'Modifier le classement',
-        'edit_hint'         => 'Glissez les lignes pour réordonner les joueurs, puis enregistrez.',
-        'ranking_pos'       => 'Pos.',
-        'ranking_player'    => 'Joueur',
-        'ranking_save'      => 'Enregistrer',
-        'ranking_delete'    => 'Supprimer le classement',
-        'ranking_delete_confirm' => 'Supprimer ce classement ?',
-        'ranking_no_players'=> 'Aucun joueur dans ce classement.',
-        'ranking_add_player'=> 'Ajouter un joueur',
-        'saved'             => 'Classement enregistré.',
-        'deleted'           => 'Classement supprimé.',
-        'player_ph'         => 'Sélectionner un joueur…',
-        'drag_hint'         => 'Glissez pour réordonner',
-        'ranking_position'  => 'Position',
         'wl_header'         => 'V-D',
-        'prefill_btn'       => 'Pré-remplir par les résultats',
-        'prefill_hint'      => 'Réordonner tous les joueurs selon leurs victoires / défaites.',
+        'correct'           => 'Corriger',
+        'correct_title'     => 'Corriger le résultat de ce joueur',
+        'wins_adj_label'    => 'Ajustement victoires',
+        'losses_adj_label'  => 'Ajustement défaites',
+        'note_label'        => 'Note (obligatoire)',
+        'note_ph'           => 'Raison de cette correction…',
+        'save'              => 'Enregistrer',
+        'cancel'            => 'Annuler',
+        'saved'             => 'Correction enregistrée.',
+        'note_required'     => 'Une note est obligatoire.',
+        'existing_note'     => 'Correction actuelle : %+d/%+d — %s',
+        'manual_note'       => 'Ce tournoi est manuel — les résultats sont saisis directement et ne peuvent pas être corrigés ici.',
+        'live_error'        => 'Impossible de charger ce tournoi depuis GameApi : %s',
     ],
 ][getUiLang()] ?? [];
 
-// ── Handle POST ────────────────────────────────────────────────────────────────
+// ── Handle POST ──────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         flash('Invalid token.', 'error');
-        redirect($rankingPageUrl);
+        redirect($selfUrl);
     }
 
-    // Save ranking (create or update — always one per tournament)
-    if (isset($_POST['save_ranking'])) {
-        $rankingId   = (int)($_POST['ranking_id'] ?? 0);
-        $rankingName = trim($_POST['ranking_name'] ?? '');
-        $playersJson = $_POST['ranking_players'] ?? '[]';
-        $playersData = json_decode($playersJson, true);
-        if (!is_array($playersData)) $playersData = [];
+    if (isset($_POST['save_adjustment'])) {
+        $bgaUserId = trim($_POST['bga_user_id'] ?? '');
+        $winsAdj   = (int)($_POST['wins_adjustment'] ?? 0);
+        $lossesAdj = (int)($_POST['losses_adjustment'] ?? 0);
+        $note      = trim($_POST['adjustment_note'] ?? '');
 
-        if ($rankingId) {
-            $existingRanking = trGetRanking($rankingId);
-            if ($existingRanking) {
-                global $db;
-                $db->prepare(qp("UPDATE {rankings} SET tournament_name = :tn WHERE id = :id"))
-                   ->execute([':tn' => $rankingName, ':id' => $rankingId]);
-                trUpdateRankingPlayers($rankingId, $playersData);
-            }
-        } else {
-            $userId = (int)($_SESSION['user_id'] ?? 0);
-            $newId  = trCreateRanking($tournamentExtId, $rankingName, $userId);
-            trUpdateRankingPlayers($newId, $playersData);
+        if ($note === '') {
+            flash($txt['note_required'], 'error');
+            redirect($selfUrl);
         }
-        flash($txt['saved']);
-        redirect($rankingPageUrl);
-    }
 
-    // Delete ranking
-    if (isset($_POST['delete_ranking'])) {
-        $rankingId = (int)($_POST['ranking_id'] ?? 0);
-        if ($rankingId) {
-            trDeleteRanking($rankingId);
-            flash($txt['deleted']);
-        }
-        redirect($rankingPageUrl);
+        $result = trSubmitAdjustment($tournamentExtId, $bgaUserId, $winsAdj, $lossesAdj, $note);
+        flash($result['ok'] ? $txt['saved'] : ($result['error'] ?? 'Error'), $result['ok'] ? 'success' : 'error');
+        redirect($selfUrl);
     }
 }
 
-$isEditing = ($ranking !== null);
-$formTitle = $isEditing ? $txt['edit_title'] : $txt['create_title'];
-$formHint  = $isEditing ? $txt['edit_hint']  : $txt['create_hint'];
+// ── Load standings ───────────────────────────────────────────────────────────
+$local = trGetTournamentByExternalId($tournamentExtId);
+$isManual = trIsManualTournament($local);
+
+if ($isManual) {
+    $tournamentName = $local['tournament_name'] ?: $tournamentExtId;
+    $standings = trComputeManualStandings($local['games_data']);
+} else {
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $live = trFetchLiveTournament($tournamentExtId, $userId);
+    if (!$live['ok']) {
+        flash(sprintf($txt['live_error'], $live['error'] ?? 'Unknown error'), 'error');
+        redirect($backUrl);
+    }
+    $tournamentName = $live['tournament_name'] ?: $tournamentExtId;
+    $standings = $live['standings'];
+}
 ?>
 
 <div class="d-flex align-items-center mb-4">
     <a href="<?= $backUrl ?>" class="text-decoration-none me-3">
         <i class="fa-solid fa-arrow-left"></i>
     </a>
-    <h1 class="mb-0"><i class="fa-solid fa-ranking-star me-2"></i><?= sprintf($txt['title'], h($tournament['tournament_name'] ?: $tournament['tournament_id'])) ?></h1>
+    <h1 class="mb-0"><i class="fa-solid fa-ranking-star me-2"></i><?= sprintf($txt['title'], h($tournamentName)) ?></h1>
 </div>
 
-<?php if (empty($players)): ?>
-<div class="card-altered p-4 mb-4">
-    <p class="text-muted mb-0"><?= $txt['players_empty'] ?></p>
-</div>
-<?php else: ?>
-
-<!-- ── Ranking form (create or edit) ───────────────────────────────────────── -->
-<div class="card-altered p-4 mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0"><?= h($formTitle) ?></h5>
-        <?php if ($isEditing): ?>
-        <form method="post" class="d-inline" onsubmit="return confirm('<?= h($txt['ranking_delete_confirm']) ?>')">
-            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-            <input type="hidden" name="ranking_id" value="<?= $ranking['id'] ?>">
-            <button type="submit" name="delete_ranking" class="btn btn-sm btn-outline-danger">
-                <i class="fa-solid fa-trash me-1"></i><?= h($txt['ranking_delete']) ?>
-            </button>
-        </form>
-        <?php endif; ?>
-    </div>
-    <p class="text-muted small mb-3"><?= h($formHint) ?></p>
-
-    <?php if (!empty($standings)): ?>
-    <div class="mb-3">
-        <button type="button" class="btn btn-sm btn-outline-primary" id="tr-rank-prefill">
-            <i class="fa-solid fa-arrow-up-1-9 me-1"></i><?= h($txt['prefill_btn']) ?>
-        </button>
-        <span class="text-muted small ms-2"><?= h($txt['prefill_hint']) ?></span>
-    </div>
-    <?php endif; ?>
-
-    <form method="post" id="tr-ranking-form">
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <input type="hidden" name="ranking_id" value="<?= $isEditing ? $ranking['id'] : '' ?>">
-        <input type="hidden" name="ranking_players" id="tr-ranking-players-json">
-
-        <div class="mb-3">
-            <input type="text" name="ranking_name" class="form-control form-control-sm"
-                   style="max-width:300px" placeholder="<?= h($txt['create_name_ph']) ?>"
-                   value="<?= h($isEditing ? $ranking['tournament_name'] : $tournament['tournament_name']) ?>">
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-sm table-altered mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:40px"></th>
-                        <th style="width:50px"><?= h($txt['ranking_pos']) ?></th>
-                        <?php if ($isEditing): ?>
-                        <th><?= h($txt['ranking_player']) ?></th>
-                        <th style="width:64px" class="tr-wl-col"><?= h($txt['wl_header']) ?></th>
-                        <?php else: ?>
-                        <th><?= h($txt['players_name']) ?></th>
-                        <th><?= h($txt['players_faction']) ?></th>
-                        <th style="width:64px" class="tr-wl-col"><?= h($txt['wl_header']) ?></th>
-                        <?php endif; ?>
-                        <?php if ($isEditing): ?>
-                        <th style="width:40px"></th>
-                        <?php endif; ?>
-                    </tr>
-                </thead>
-                <tbody id="tr-ranking-body">
-                <?php if ($isEditing): ?>
-                    <?php foreach ($ranking['players'] as $pi => $p): ?>
-                    <tr class="tr-rank-row" draggable="true"
-                        data-player-id="<?= h($p['player_id'] ?? '') ?>">
-                        <td>
-                            <span class="tr-drag-handle" style="cursor:grab;color:var(--neutral-400,#9ca3af);font-size:1.1em" title="<?= h($txt['drag_hint']) ?>">
-                                <i class="fa-solid fa-grip-vertical"></i>
-                            </span>
-                        </td>
-                        <td class="tr-pos"><?= $pi + 1 ?></td>
-                        <td>
-                            <select class="form-select form-select-sm tr-player-select" style="max-width:220px">
-                                <option value=""><?= h($txt['player_ph']) ?></option>
-                                <?php foreach ($players as $ap): ?>
-                                <option value="<?= h($ap['id']) ?>" data-name="<?= h($ap['name']) ?>"
-                                        <?= ($ap['id'] ?? '') === ($p['player_id'] ?? '') ? 'selected' : '' ?>>
-                                    <?= h($ap['name']) ?> (<?= h($ap['faction']) ?>)
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                        <td class="tr-wl"></td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger tr-remove-row">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <?php foreach ($players as $pi => $p): ?>
-                    <tr class="tr-rank-row" draggable="true"
-                        data-player-id="<?= h($p['id']) ?>"
-                        data-player-name="<?= h($p['name']) ?>"
-                        data-faction="<?= h($p['faction']) ?>"
-                        data-wins="<?= (int)$p['wins'] ?>"
-                        data-losses="<?= (int)$p['losses'] ?>">
-                        <td>
-                            <span class="tr-drag-handle" style="cursor:grab;color:var(--neutral-400,#9ca3af);font-size:1.1em" title="<?= h($txt['drag_hint']) ?>">
-                                <i class="fa-solid fa-grip-vertical"></i>
-                            </span>
-                        </td>
-                        <td class="tr-pos"><?= $pi + 1 ?></td>
-                        <td><strong><?= h($p['name']) ?></strong></td>
-                        <td><?= h($p['faction']) ?></td>
-                        <td class="tr-wl"><?= h($standingsMap[$p['id']]['ratio'] ?? '—') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-3">
-            <button type="submit" name="save_ranking" class="btn btn-sm btn-primary-altered">
-                <i class="fa-solid fa-check me-1"></i><?= h($txt['create_btn']) ?>
-            </button>
-        </div>
-    </form>
-</div>
-
+<?php if ($isManual): ?>
+<div class="alert alert-info"><?= h($txt['manual_note']) ?></div>
 <?php endif; ?>
 
+<div class="card-altered p-4 mb-4">
+    <?php if (empty($standings)): ?>
+    <p class="text-muted mb-0"><?= h($txt['players_empty']) ?></p>
+    <?php else: ?>
+    <div class="table-responsive">
+        <table class="table table-sm table-altered mb-0">
+            <thead>
+                <tr>
+                    <th><?= h($txt['players_name']) ?></th>
+                    <th><?= h($txt['players_hero']) ?></th>
+                    <th style="width:64px" class="text-center"><?= h($txt['wl_header']) ?></th>
+                    <th style="width:64px" class="text-center"><?= h($txt['players_games']) ?></th>
+                    <?php if (!$isManual): ?>
+                    <th style="width:120px"></th>
+                    <?php endif; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($standings as $p): ?>
+                <tr>
+                    <td><strong><?= h($p['name']) ?></strong></td>
+                    <td><?= h($p['hero'] ?? $p['faction'] ?? '') ?></td>
+                    <td class="text-center"><?= h($p['wins']) ?>-<?= h($p['losses']) ?></td>
+                    <td class="text-center"><?= h($p['games_played']) ?></td>
+                    <?php if (!$isManual): ?>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-secondary tr-correct-toggle" data-pid="<?= h($p['id']) ?>">
+                            <i class="fa-solid fa-pen"></i> <?= h($txt['correct']) ?>
+                        </button>
+                    </td>
+                    <?php endif; ?>
+                </tr>
+                <?php if (!$isManual): ?>
+                <tr class="tr-correct-row d-none" id="tr-correct-row-<?= h($p['id']) ?>">
+                    <td colspan="5">
+                        <?php if (!empty($p['admin_adjustment_note'])): ?>
+                        <div class="text-muted small mb-2">
+                            <?= h(sprintf($txt['existing_note'], (int)$p['admin_wins_adjustment'], (int)$p['admin_losses_adjustment'], $p['admin_adjustment_note'])) ?>
+                        </div>
+                        <?php endif; ?>
+                        <form method="post" class="row g-2 align-items-end">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="bga_user_id" value="<?= h($p['id']) ?>">
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold"><?= h($txt['wins_adj_label']) ?></label>
+                                <input type="number" name="wins_adjustment" class="form-control form-control-sm"
+                                       value="<?= (int)$p['admin_wins_adjustment'] ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold"><?= h($txt['losses_adj_label']) ?></label>
+                                <input type="number" name="losses_adjustment" class="form-control form-control-sm"
+                                       value="<?= (int)$p['admin_losses_adjustment'] ?>">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold"><?= h($txt['note_label']) ?></label>
+                                <input type="text" name="adjustment_note" class="form-control form-control-sm"
+                                       placeholder="<?= h($txt['note_ph']) ?>" required
+                                       value="<?= h($p['admin_adjustment_note'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-3 d-flex gap-2">
+                                <button type="submit" name="save_adjustment" class="btn btn-sm btn-primary-altered">
+                                    <?= h($txt['save']) ?>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary tr-correct-cancel" data-pid="<?= h($p['id']) ?>">
+                                    <?= h($txt['cancel']) ?>
+                                </button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                <?php endif; ?>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+
 <script>
-var TR_PLAYERS  = <?= json_encode($players, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-var TR_TXT      = <?= json_encode($txt, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-var TR_IS_EDIT  = <?= $isEditing ? 'true' : 'false' ?>;
-var TR_STANDINGS_MAP = <?= json_encode($standingsMap, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-var TR_DRAG_SRC = null;
-
-/* ── Drag & drop for any .tr-rank-row ───────────────────────────────────── */
-function initRowDrag(row) {
-    row.addEventListener('dragstart', function(e) {
-        TR_DRAG_SRC = this;
-        this.style.opacity = '0.4';
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', '');
-    });
-    row.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    });
-    row.addEventListener('dragenter', function(e) {
-        e.preventDefault();
-        this.classList.add('tr-drag-over');
-    });
-    row.addEventListener('dragleave', function() {
-        this.classList.remove('tr-drag-over');
-    });
-    row.addEventListener('drop', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        this.classList.remove('tr-drag-over');
-        if (TR_DRAG_SRC && TR_DRAG_SRC !== this) {
-            var tbody = this.closest('tbody');
-            var allRows = Array.from(tbody.querySelectorAll('.tr-rank-row'));
-            var fromIdx = allRows.indexOf(TR_DRAG_SRC);
-            var toIdx   = allRows.indexOf(this);
-            if (fromIdx < toIdx) {
-                tbody.insertBefore(TR_DRAG_SRC, this.nextSibling);
-            } else {
-                tbody.insertBefore(TR_DRAG_SRC, this);
-            }
-            renumberRows(tbody);
-        }
-    });
-    row.addEventListener('dragend', function() {
-        this.style.opacity = '';
-        document.querySelectorAll('.tr-drag-over').forEach(function(el) {
-            el.classList.remove('tr-drag-over');
-        });
-        TR_DRAG_SRC = null;
-    });
-}
-
-function renumberRows(tbody) {
-    tbody.querySelectorAll('.tr-rank-row').forEach(function(row, i) {
-        var pos = row.querySelector('.tr-pos');
-        if (pos) pos.textContent = i + 1;
-    });
-}
-
-document.querySelectorAll('.tr-rank-row[draggable]').forEach(initRowDrag);
-
-/* ── Win/loss helpers ──────────────────────────────────────────────────── */
-function wlScore(row) {
-    var wins = 0, losses = 0;
-    if (TR_IS_EDIT) {
-        var sel = row.querySelector('.tr-player-select');
-        var val = sel ? sel.value : '';
-        var s = TR_STANDINGS_MAP[val];
-        if (s) { wins = s.wins; losses = s.losses; }
-    } else {
-        wins = parseInt(row.dataset.wins || '0', 10);
-        losses = parseInt(row.dataset.losses || '0', 10);
+document.addEventListener('click', function (e) {
+    var toggle = e.target.closest('.tr-correct-toggle');
+    if (toggle) {
+        document.getElementById('tr-correct-row-' + toggle.dataset.pid).classList.toggle('d-none');
+        return;
     }
-    var ratio = (wins + losses) > 0 ? wins / (wins + losses) : -1;
-    return { wins: wins, ratio: ratio };
-}
-
-function updateWlCells(tbody) {
-    if (!TR_IS_EDIT || !tbody) return;
-    tbody.querySelectorAll('.tr-rank-row').forEach(function (row) {
-        var sel = row.querySelector('.tr-player-select');
-        var val = sel ? sel.value : '';
-        var cell = row.querySelector('.tr-wl');
-        if (!cell) return;
-        var s = TR_STANDINGS_MAP[val];
-        cell.textContent = s ? (s.wins + '-' + s.losses) : '—';
-    });
-}
-
-function prefillByResults() {
-    var tbody = document.getElementById('tr-ranking-body');
-    if (!tbody) return;
-    var rows = [].slice.call(tbody.querySelectorAll('.tr-rank-row'));
-    rows.sort(function (a, b) {
-        var sa = wlScore(a), sb = wlScore(b);
-        if (sb.wins !== sa.wins) return sb.wins - sa.wins;
-        if (sb.ratio !== sa.ratio) return sb.ratio - sa.ratio;
-        var na = a.dataset.playerName || '';
-        var nb = b.dataset.playerName || '';
-        return na.localeCompare(nb);
-    });
-    rows.forEach(function (row) { tbody.appendChild(row); });
-    renumberRows(tbody);
-    updateWlCells(tbody);
-}
-
-var prefillBtn = document.getElementById('tr-rank-prefill');
-if (prefillBtn) prefillBtn.addEventListener('click', prefillByResults);
-
-updateWlCells(document.getElementById('tr-ranking-body'));
-
-/* ── Form: serialize before submit ─────────────────────────────────────── */
-document.getElementById('tr-ranking-form').addEventListener('submit', function() {
-    var rows = document.querySelectorAll('#tr-ranking-body .tr-rank-row');
-    var players = [];
-    rows.forEach(function(row, i) {
-        if (TR_IS_EDIT) {
-            var sel  = row.querySelector('.tr-player-select');
-            var val  = sel ? sel.value : '';
-            var name = '';
-            if (sel && sel.selectedIndex > 0) {
-                name = sel.options[sel.selectedIndex].dataset.name || sel.options[sel.selectedIndex].textContent.trim();
-            }
-            if (!name) return;
-            players.push({
-                position:    i + 1,
-                player_id:   (val && val !== '_custom') ? val : '',
-                player_name: name
-            });
-        } else {
-            var name = row.dataset.playerName || '';
-            if (!name) return;
-            players.push({
-                position:    i + 1,
-                player_id:   row.dataset.playerId || '',
-                player_name: name
-            });
-        }
-    });
-    document.getElementById('tr-ranking-players-json').value = JSON.stringify(players);
-});
-
-/* ── Player select → auto-fill name (edit mode) ─────────────────────────── */
-document.addEventListener('change', function(e) {
-    if (!e.target.classList.contains('tr-player-select')) return;
-    var sel  = e.target;
-    var row  = sel.closest('.tr-rank-row');
-    if (!row) return;
-    var val  = sel.value;
-    if (val && sel.selectedIndex > 0) {
-        row.dataset.playerId   = val;
-        row.dataset.playerName = sel.options[sel.selectedIndex].dataset.name || '';
-    } else {
-        row.dataset.playerId   = '';
-        row.dataset.playerName = '';
+    var cancel = e.target.closest('.tr-correct-cancel');
+    if (cancel) {
+        document.getElementById('tr-correct-row-' + cancel.dataset.pid).classList.add('d-none');
     }
-    updateWlCells(row.parentElement);
-});
-
-/* ── Remove row ─────────────────────────────────────────────────────────── */
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.tr-remove-row');
-    if (!btn) return;
-    var row = btn.closest('.tr-rank-row');
-    var tbody = row.parentElement;
-    row.remove();
-    renumberRows(tbody);
 });
 </script>
-
-<style>
-.tr-drag-over > td { border-top: 2px solid var(--primary-400, #C9A84C); }
-.tr-rank-row { transition: opacity .15s ease; }
-.tr-rank-row[draggable="true"]:active { cursor: grabbing; }
-.tr-wl-col { text-align: center; }
-.tr-wl {
-    text-align: center;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    color: var(--neutral-600, #4b5563);
-}
-</style>

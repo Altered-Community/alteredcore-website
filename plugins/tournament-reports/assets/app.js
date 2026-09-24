@@ -9,8 +9,10 @@
     var currentView   = {};
     var currentVariant = {};   // pid -> index of the deck variant currently shown
     var currentOpenDeck = null;
-    var rankings      = TR_EXISTING_RANKINGS || [];
+    var currentOpenDeckPlayerId = null;
+    var isGameApi     = (typeof TR_IS_GAMEAPI !== 'undefined') && !!TR_IS_GAMEAPI;
     var standings     = (typeof TR_STANDINGS !== 'undefined' && TR_STANDINGS) ? TR_STANDINGS : [];
+    var filteredStandings = standings;
     var standingsMap  = {};
     standings.forEach(function (s) { standingsMap[s.id] = s; });
     var playerDecks   = {};
@@ -220,6 +222,12 @@
                 }
             });
         });
+        // Re-render the currently shown deck too, so its hero banner picks
+        // up the resolved name instead of staying on the raw reference from
+        // before the Cards API batch came back.
+        if (isGameApi && currentOpenDeckPlayerId) {
+            renderInlineDeck(currentOpenDeckPlayerId);
+        }
     }
 
     /* ── Load altered-card renderer on demand ────────────────────────────── */
@@ -433,23 +441,23 @@
         if (listEl)  listEl.style.display  = mode === 'list' ? '' : 'none';
     }
 
-    /* ── Rankings ──────────────────────────────────────────────────────── */
-    // Shared player row (Pos / Player / Hero) used by both the auto standings
-    // and the manually saved rankings.
-    function rankRowHtml(p, i) {
-        var posClass = '';
-        if (i === 0) posClass = ' tr-ranking-pos-1';
-        else if (i === 1) posClass = ' tr-ranking-pos-2';
-        else if (i === 2) posClass = ' tr-ranking-pos-3';
-        var hasDeck = p.player_id && playerDecks[p.player_id];
-        var deck = hasDeck ? playerDecks[p.player_id] : null;
+    /* ── Standings ─────────────────────────────────────────────────────── */
+    // wins/games played/losses desc is the only ranking now — no manual
+    // reordering, no separate "Pos." column (it implied an order that could
+    // be dragged, which is no longer true).
+    function rankRowHtml(s) {
+        var hasDeck = s.id && playerDecks[s.id];
+        var deck = hasDeck ? playerDecks[s.id] : null;
         var multipleDecks = !!(deck && deck.decks && deck.decks.length > 1);
-        // Only open the side panel when there is a real decklist
-        // (more than just the hero card).
         var hasDecklist = hasDeck && (deck.deck || []).length > 1;
         var noData = !deck || !deck.deck || deck.deck.length === 0;
-        var hero = deck ? heroName(deck) : '';
-        var fSrc = deck ? factionImgUrl(deck.faction) : '';
+        // Prefer the card-name-resolved hero once the Cards API batch has
+        // loaded; fall back to GameApi's own already-resolved hero/faction
+        // (s.hero/s.faction) otherwise — those are always available even
+        // before card names resolve, or when there's no deck to decode.
+        var hero = (deck && heroName(deck)) || s.hero || '';
+        var faction = s.faction || (deck && deck.faction) || '';
+        var fSrc = factionImgUrl(faction);
         var badge = '';
         if (deck) {
             if (multipleDecks) {
@@ -458,13 +466,11 @@
                 badge = ' <span class="tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
             }
         }
-        var html = '<tr class="tr-rank-row">';
-        html += '<td class="tr-ranking-pos' + posClass + '">';
-        html += '<span class="tr-rank-position">' + (i + 1) + '</span>';
-        html += '</td>';
-        html += '<td>' + (hasDecklist
-            ? '<button type="button" class="tr-player-link" data-player-id="' + esc(p.player_id) + '">' + esc(p.player_name) + '</button>'
-            : esc(p.player_name));
+        var clickable = isGameApi ? !!hero || hasDecklist : hasDecklist;
+        var html = '<tr class="tr-rank-row" data-faction="' + esc(faction || '') + '" data-hero="' + esc(hero || '') + '" data-name="' + esc((s.name || '').toLowerCase()) + '">';
+        html += '<td>' + (clickable
+            ? '<button type="button" class="tr-player-link" data-player-id="' + esc(s.id) + '">' + esc(s.name) + '</button>'
+            : esc(s.name));
         html += badge;
         html += '</td>';
         html += '<td>';
@@ -474,30 +480,26 @@
             html += esc(hero) + '</span>';
         }
         html += '</td>';
+        html += '<td class="tr-rank-wl">' + esc(s.wins + '-' + s.losses) + '</td>';
+        html += '</tr>';
         return html;
     }
 
-    function wlCellHtml(playerId) {
-        var s = standingsMap[playerId];
-        return '<td class="tr-rank-wl">' + (s ? esc(s.wins + '-' + s.losses) : '<span class="text-muted">&mdash;</span>') + '</td>';
-    }
-
     function standingsHeaderHtml() {
-        return '<th style="width:50px">' + esc(TR_TXT.ranking_position) + '</th>'
-            + '<th>' + esc(TR_TXT.ranking_player) + '</th>'
+        return '<th>' + esc(TR_TXT.ranking_player) + '</th>'
             + '<th>' + esc(TR_TXT.hero_label || 'Hero') + '</th>'
             + '<th class="tr-rank-wl">' + esc(TR_TXT.wl_header || 'W-L') + '</th>';
     }
 
-    // Auto standings computed from the recorded match results (win/loss).
-    function renderStandings(suppressEmpty) {
+    // Standings, computed server-side from wins/games played/losses (see
+    // trStandingsFromGameApiPlayers()/trComputeManualStandings() — this is
+    // the only ranking now, filterable client-side, never reordered.
+    function renderStandings() {
         var html = '<div class="tr-ranking-card tr-standings-card">';
         html += '<div class="tr-ranking-header"><span class="tr-ranking-title">' + esc(TR_TXT.standings_title || 'Standings') + '</span></div>';
         html += '<table class="tr-ranking-table"><thead><tr>' + standingsHeaderHtml() + '</tr></thead><tbody>';
-        standings.forEach(function (s, i) {
-            html += rankRowHtml({ player_id: s.id, player_name: s.name }, i);
-            html += wlCellHtml(s.id);
-            html += '</tr>';
+        filteredStandings.forEach(function (s) {
+            html += rankRowHtml(s);
         });
         html += '</tbody></table></div>';
         return html;
@@ -506,50 +508,20 @@
     function renderRankings() {
         var el = document.getElementById('tr-ranking-section');
         if (!el) return;
-
-        var html = renderStandings(rankings.length > 0);
-
-        if (rankings.length) {
-            rankings.forEach(function (r) {
-                html += renderRankingCard(r);
-            });
-        }
-
-        el.innerHTML = html;
+        el.innerHTML = renderStandings();
     }
 
-    function renderRankingCard(r) {
-        var html = '<div class="tr-ranking-card" data-ranking-id="' + r.id + '">';
-        html += '<div class="tr-ranking-header">';
-        html += '<span class="tr-ranking-title">' + esc(r.tournament_name || ('Ranking #' + r.id)) + '</span>';
-        html += '</div>';
-
-        if (r.players && r.players.length) {
-            html += '<table class="tr-ranking-table"><thead><tr>' + standingsHeaderHtml() + '</tr></thead><tbody>';
-            r.players.forEach(function (p, i) {
-                html += rankRowHtml(p, i);
-                html += wlCellHtml(p.player_id);
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-        } else {
-            html += '<div class="text-muted small">' + esc(TR_TXT.ranking_no_players) + '</div>';
-        }
-
-        html += '</div>';
-        return html;
-    }
-
-    /* ── Side panel ─────────────────────────────────────────────────────── */
-    function openPlayerPanel(playerId) {
+    /* ── Deck view (shared by the off-canvas panel and the inline viewer) ── */
+    // Builds the decklist markup for one player — variant switcher, view
+    // toggle, hero banner, cards — and sets currentOpenDeck/currentView as a
+    // side effect. Returns {html, title} for the caller to place wherever it
+    // renders (the off-canvas panel for manual tournaments, the always-visible
+    // inline viewer for GameApi tournaments — see renderInlineDeck()).
+    function buildDeckViewHtml(playerId, viewIdPrefix) {
         var pd = playerDecks[playerId];
-        if (!pd) return;
+        if (!pd) return null;
 
-        var panel   = document.getElementById('tr-player-panel');
-        var body    = document.getElementById('tr-player-panel-body');
-        var title   = document.getElementById('tr-player-panel-title');
-        var backdrop = document.getElementById('tr-player-panel-backdrop');
-        var viewId  = 'panel_' + playerId;
+        var viewId = viewIdPrefix + '_' + playerId;
         currentView[viewId] = currentView[viewId] || 'images';
         if (typeof currentVariant[playerId] !== 'number') currentVariant[playerId] = 0;
 
@@ -559,8 +531,6 @@
         var deck = variants[vi];
         var hero = heroName(deck);
         var heroCardObj = heroCard(deck);
-
-        title.textContent = (hero ? hero + " - " : "") + pd.name;
 
         var html = '<div class="tr-panel-decklist">';
 
@@ -573,6 +543,9 @@
         }
 
         html += '<div class="tr-view-toggle">';
+        if (TR_LOGGED_IN) {
+            html += '<button type="button" class="tr-view-export" id="tr-deck-duplicate" title="' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '"><i class="fa-solid fa-copy"></i></button>';
+        }
         html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '"><i class="fa-solid fa-clipboard-list"></i></button>';
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'list' ? ' active' : '') + '" data-view="list" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-list"></i> ' + esc(TR_TXT.view_list) + '</button>';
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'images' ? ' active' : '') + '" data-view="images" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-grip"></i> ' + esc(TR_TXT.view_images) + '</button>';
@@ -585,13 +558,29 @@
         html += renderDeckCards(rest, viewId);
 
         html += '</div>';
-        body.innerHTML = html;
 
-        syncView(viewId);
+        currentOpenDeck = deck;
+        currentOpenDeckPlayerId = playerId;
+
+        return { html: html, title: (hero ? hero + ' - ' : '') + pd.name, viewId: viewId };
+    }
+
+    /* ── Off-canvas side panel (manual tournaments) ───────────────────────── */
+    function openPlayerPanel(playerId) {
+        var built = buildDeckViewHtml(playerId, 'panel');
+        if (!built) return;
+
+        var panel    = document.getElementById('tr-player-panel');
+        var body     = document.getElementById('tr-player-panel-body');
+        var title    = document.getElementById('tr-player-panel-title');
+        var backdrop = document.getElementById('tr-player-panel-backdrop');
+
+        title.textContent = built.title;
+        body.innerHTML = built.html;
+        syncView(built.viewId);
         backdrop.style.display = 'block';
         panel.classList.add('tr-panel-open');
         document.body.style.overflow = 'hidden';
-        currentOpenDeck = deck;
     }
 
     function closePlayerPanel() {
@@ -601,6 +590,39 @@
         backdrop.style.display = 'none';
         document.body.style.overflow = '';
         currentOpenDeck = null;
+        currentOpenDeckPlayerId = null;
+    }
+
+    /* ── Inline deck viewer (GameApi tournaments) ─────────────────────────── */
+    // Always-visible section below the faction/hero charts, defaulting to the
+    // top-standing player and switching on any standings row click — see the
+    // "Deck viewer" plan section. Reuses buildDeckViewHtml() exactly like the
+    // off-canvas panel does for manual tournaments.
+    function renderInlineDeck(playerId) {
+        var wrap  = document.getElementById('tr-deck-viewer');
+        var body  = document.getElementById('tr-deck-viewer-body');
+        var title = document.getElementById('tr-deck-viewer-title');
+        if (!wrap || !body) return;
+
+        var built = buildDeckViewHtml(playerId, 'inline');
+        if (!built) {
+            wrap.style.display = 'none';
+            return;
+        }
+
+        wrap.style.display = '';
+        if (title) title.textContent = built.title;
+        body.innerHTML = built.html;
+        syncView(built.viewId);
+
+        document.querySelectorAll('.tr-rank-row').forEach(function (row) {
+            row.classList.remove('tr-rank-row-active');
+        });
+        var activeBtn = document.querySelector('.tr-player-link[data-player-id="' + CSS.escape(playerId) + '"]');
+        if (activeBtn) {
+            var row = activeBtn.closest('tr');
+            if (row) row.classList.add('tr-rank-row-active');
+        }
     }
 
     /* ── Export / copy decklist ─────────────────────────────────────────── */
@@ -666,12 +688,21 @@
         syncView(pid);
     });
 
-    /* ── Player name → open side panel ──────────────────────────────────── */
+    /* ── Player name → show their deck (inline viewer, or off-canvas panel
+       for manual tournaments) ────────────────────────────────────────────── */
+    function showPlayerDeck(playerId) {
+        if (isGameApi) {
+            renderInlineDeck(playerId);
+        } else {
+            openPlayerPanel(playerId);
+        }
+    }
+
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('.tr-player-link');
         if (!btn) return;
         e.preventDefault();
-        openPlayerPanel(btn.dataset.playerId);
+        showPlayerDeck(btn.dataset.playerId);
     });
 
     /* ── Deck variant switch (multiple decklists) ───────────────────────── */
@@ -679,7 +710,7 @@
         var btn = e.target.closest('.tr-deck-variant-btn');
         if (!btn) return;
         currentVariant[btn.dataset.pid] = parseInt(btn.dataset.variant, 10);
-        openPlayerPanel(btn.dataset.pid);
+        showPlayerDeck(btn.dataset.pid);
     });
 
     /* ── Panel close ────────────────────────────────────────────────────── */
@@ -687,6 +718,49 @@
     document.getElementById('tr-player-panel-backdrop').addEventListener('click', closePlayerPanel);
     document.addEventListener('click', function (e) {
         if (e.target.closest('#tr-player-panel-export')) copyDecklist();
+    });
+
+    /* ── Duplicate deck onto the logged-in user's own account — same
+       interaction as core-altered-cards' deck.php "Dupliquer" button. ────── */
+    function duplicateCurrentDeck() {
+        if (!currentOpenDeck || !currentOpenDeckPlayerId) return;
+        var cards = currentOpenDeck.deck || [];
+        if (!cards.length) return;
+
+        var defaultName = (standingsMap[currentOpenDeckPlayerId] ? standingsMap[currentOpenDeckPlayerId].name : '') + ' - ' + (TR_TOURNAMENT_NAME || '');
+        var name = window.prompt(TR_TXT.duplicate_prompt || 'Deck name', defaultName.trim());
+        if (name === null) return;
+
+        var btn = document.getElementById('tr-deck-duplicate');
+        var originalHtml = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+
+        var body = 'csrf_token=' + encodeURIComponent(TR_CSRF)
+            + '&name=' + encodeURIComponent(name)
+            + '&cards=' + encodeURIComponent(JSON.stringify(cards));
+
+        fetch(TR_BASE + '/pages/tournament?id=' + encodeURIComponent(TR_TOURNAMENT_ID) + '&ajax=duplicate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+                if (res && res.ok) {
+                    window.alert(TR_TXT.duplicate_ok || 'Deck duplicated.');
+                } else {
+                    window.alert((TR_TXT.duplicate_err || 'Could not duplicate this deck: %s').replace('%s', (res && res.error) || ''));
+                }
+            })
+            .catch(function () {
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+                window.alert(TR_TXT.duplicate_err || 'Could not duplicate this deck.');
+            });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('#tr-deck-duplicate')) duplicateCurrentDeck();
     });
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && document.getElementById('tr-player-panel').classList.contains('tr-panel-open')) {
@@ -796,8 +870,147 @@
         }
     });
 
+    /* ── Faction / hero distribution charts (GameApi tournaments only) ────
+       One vote per player, straight from the standings' own faction/hero
+       fields (already resolved server-side by GameApi — no deck decoding
+       needed for this). Plain conic-gradient donuts + a legend list: the
+       legend carries color+icon+label+count so identity is never
+       color-alone (this site's faction palette isn't fully CVD-safe by
+       hue alone — see the icon+label pairing here and everywhere else
+       faction color is used on this site). ──────────────────────────────── */
+    var CHART_OTHER_COLOR = '#9ca3af';
+    // Validated categorical palette (dataviz skill, references/palette.md) —
+    // heroes have no site-wide brand color the way factions do, so unlike
+    // the faction chart this one is free to use a CVD-checked palette.
+    var CHART_HERO_PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300'];
+
+    function computeDistribution(key) {
+        var counts = {};
+        var total = 0;
+        standings.forEach(function (s) {
+            var v = (s[key] || '').trim();
+            if (!v) return;
+            counts[v] = (counts[v] || 0) + 1;
+            total++;
+        });
+        var entries = Object.keys(counts).map(function (k) { return { key: k, count: counts[k] }; });
+        entries.sort(function (a, b) { return b.count - a.count; });
+        return { entries: entries, total: total };
+    }
+
+    function donutBackground(segments) {
+        var acc = 0;
+        var stops = [];
+        segments.forEach(function (seg) {
+            var start = acc;
+            acc += seg.pct;
+            stops.push(seg.color + ' ' + start + '% ' + acc + '%');
+        });
+        return 'conic-gradient(' + stops.join(', ') + ')';
+    }
+
+    function renderDonutHtml(segments, title) {
+        var html = '<div class="tr-chart"><div class="tr-chart-title">' + esc(title) + '</div>';
+        html += '<div class="tr-chart-body">';
+        html += '<div class="tr-donut" style="background:' + donutBackground(segments) + '"><div class="tr-donut-hole"></div></div>';
+        html += '<ul class="tr-chart-legend">';
+        segments.forEach(function (s) {
+            html += '<li><span class="tr-chart-swatch" style="background:' + esc(s.color) + '"></span>';
+            if (s.icon) html += '<img class="tr-chart-icon" src="' + esc(s.icon) + '" alt="">';
+            html += '<span class="tr-chart-label">' + esc(s.label) + '</span>';
+            html += '<span class="tr-chart-count">' + s.count + ' (' + s.pct + '%)</span></li>';
+        });
+        html += '</ul></div></div>';
+        return html;
+    }
+
+    function renderFactionChart() {
+        var el = document.getElementById('tr-chart-faction');
+        if (!el) return;
+        var dist = computeDistribution('faction');
+        if (!dist.total) { el.innerHTML = ''; return; }
+        var segments = dist.entries.map(function (e) {
+            return {
+                color: factionColor(e.key) || CHART_OTHER_COLOR,
+                pct: Math.round(e.count / dist.total * 1000) / 10,
+                label: factionLabel(e.key), count: e.count, icon: factionImgUrl(e.key)
+            };
+        });
+        el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_faction_title || 'Factions');
+    }
+
+    function renderHeroChart() {
+        var el = document.getElementById('tr-chart-hero');
+        if (!el) return;
+        var dist = computeDistribution('hero');
+        if (!dist.total) { el.innerHTML = ''; return; }
+        var top = dist.entries.slice(0, 6);
+        var otherCount = dist.entries.slice(6).reduce(function (sum, e) { return sum + e.count; }, 0);
+        var segments = top.map(function (e, i) {
+            return { color: CHART_HERO_PALETTE[i % CHART_HERO_PALETTE.length], pct: Math.round(e.count / dist.total * 1000) / 10, label: e.key, count: e.count };
+        });
+        if (otherCount > 0) {
+            segments.push({ color: CHART_OTHER_COLOR, pct: Math.round(otherCount / dist.total * 1000) / 10, label: TR_TXT.chart_other || 'Other', count: otherCount });
+        }
+        el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_hero_title || 'Heroes');
+    }
+
+    /* ── Filters (GameApi tournaments only) ───────────────────────────────── */
+    function populateFilterOptions() {
+        var factionSel = document.getElementById('tr-filter-faction');
+        var heroSel    = document.getElementById('tr-filter-hero');
+        if (!factionSel || !heroSel) return;
+
+        var factions = {}, heroes = {};
+        standings.forEach(function (s) {
+            if (s.faction) factions[s.faction] = true;
+            if (s.hero) heroes[s.hero] = true;
+        });
+        Object.keys(factions).sort().forEach(function (f) {
+            var opt = document.createElement('option');
+            opt.value = f; opt.textContent = factionLabel(f);
+            factionSel.appendChild(opt);
+        });
+        Object.keys(heroes).sort().forEach(function (h) {
+            var opt = document.createElement('option');
+            opt.value = h; opt.textContent = h;
+            heroSel.appendChild(opt);
+        });
+    }
+
+    function applyFilters() {
+        var factionSel = document.getElementById('tr-filter-faction');
+        var heroSel    = document.getElementById('tr-filter-hero');
+        var searchEl   = document.getElementById('tr-filter-search');
+        var faction = factionSel ? factionSel.value : '';
+        var hero    = heroSel ? heroSel.value : '';
+        var search  = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+        filteredStandings = standings.filter(function (s) {
+            if (faction && s.faction !== faction) return false;
+            if (hero && s.hero !== hero) return false;
+            if (search && (s.name || '').toLowerCase().indexOf(search) === -1) return false;
+            return true;
+        });
+        renderRankings();
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.id === 'tr-filter-search') applyFilters();
+    });
+    document.addEventListener('change', function (e) {
+        if (e.target.id === 'tr-filter-faction' || e.target.id === 'tr-filter-hero') applyFilters();
+    });
+
     /* ── Init ───────────────────────────────────────────────────────────── */
     if (typeof TR_TOURNAMENT_DATA !== 'undefined' && TR_TOURNAMENT_DATA) {
         renderTournament(TR_TOURNAMENT_DATA);
+    }
+
+    if (isGameApi) {
+        renderFactionChart();
+        renderHeroChart();
+        populateFilterOptions();
+        if (standings.length) showPlayerDeck(standings[0].id);
     }
 })();
