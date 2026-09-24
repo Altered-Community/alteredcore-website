@@ -247,6 +247,10 @@
 .tr-rank-row-clickable {
     cursor: pointer;
 }
+/* Hero column — the banner fills the cell edge to edge */
+.tr-rank-hero-cell {
+    padding: 0 !important;
+}
 /* Win/loss (W-L) column */
 .tr-rank-wl {
     width: 64px;
@@ -514,16 +518,32 @@
     display: inline-block;
 }
 
-/* Hero card art beside player name (replaces the name pastille once the
-   card's reference is known) */
-.tr-rank-hero-img {
-    width: 32px;
+/* Hero banner filling the standings row's Hero column (replaces the name
+   pastille once the card's reference is known) — same faction-gradient +
+   card art treatment as the deck panel's banner, scaled down for a row. */
+.tr-rank-hero-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     height: 44px;
-    object-fit: cover;
-    object-position: top;
-    border-radius: 4px;
-    vertical-align: middle;
-    margin-left: 8px;
+    padding: 0 12px;
+    color: #fff;
+    background-color: var(--neutral-700, #374151);
+}
+.tr-rank-hero-banner-faction {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.tr-rank-hero-banner-name {
+    font-size: .88rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,.35);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ── Card lightbox (self-contained; core plugin CSS may not be loaded) ── */

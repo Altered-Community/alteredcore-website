@@ -213,16 +213,15 @@
             var hero = heroName(deck);
             if (!hero) return;
             var heroObj = heroCard(deck);
-            var heroImgSrc = heroObj && heroObj.reference ? heroCardImgUrl(heroObj.reference) : '';
-            var fSrc = factionImgUrl(deck.faction);
+            var faction = deck.faction;
+            var fSrc = factionImgUrl(faction);
             document.querySelectorAll('.tr-player-link[data-player-id="' + CSS.escape(pid) + '"]').forEach(function (btn) {
                 var row = btn.closest('tr');
                 if (!row) return;
-                var cell = row.querySelector('.tr-rank-hero, .tr-rank-hero-img');
-                var td = cell ? cell.closest('td') : null;
+                var td = row.querySelector('.tr-rank-hero-cell');
                 if (!td) return;
-                td.innerHTML = heroImgSrc
-                    ? '<img class="tr-rank-hero-img" src="' + esc(heroImgSrc) + '" alt="' + esc(hero) + '" title="' + esc(hero) + '">'
+                td.innerHTML = (heroObj && heroObj.reference)
+                    ? renderRankHeroBanner(heroObj.reference, faction, hero)
                     : ' <span class="tr-rank-hero">' + (fSrc ? '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ' : '') + esc(hero) + '</span>';
             });
         });
@@ -231,6 +230,12 @@
         // before the Cards API batch came back.
         if (currentOpenDeckPlayerId) {
             openPlayerPanel(currentOpenDeckPlayerId);
+        }
+        // Same for the hero chart's and hero filter's labels — both show
+        // resolved card names, which aren't known until this batch resolves.
+        if (isGameApi) {
+            renderHeroChart();
+            populateFilterOptions();
         }
     }
 
@@ -407,22 +412,27 @@
         return html;
     }
 
+    // Faction-colored gradient over the hero card art, shared by the full
+    // deck-panel banner and the compact one in the standings row.
+    function heroBannerBackground(ref, faction) {
+        var color = factionColor(faction);
+        var gradient = color
+            ? 'linear-gradient(to right,' + color + ' 35%,' + color + '00 100%),'
+            : 'linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.05)),';
+        return 'background-image:' + gradient + 'url(' + esc(heroCardImgUrl(ref)) + ');background-size:cover;background-position:left top;';
+    }
+
     // Faction-colored banner backed by the hero card image, like deck.php's
     // deck-hdr-banner. Clicking it opens the card lightbox.
     function renderHeroBanner(heroCard, deck) {
         if (!heroCard || !heroCard.reference) return '';
         var ref = heroCard.reference;
         var faction = deck && deck.faction;
-        var color = factionColor(faction);
-        var imgUrl = heroCardImgUrl(ref);
         var uniq = isUnique(ref);
         var hero = resolveCardName(ref);
 
         var html = '<div class="tr-panel-hero-banner" data-ref="' + esc(ref) + '" data-lang="' + esc(TR_LANG) + '" data-unique="' + (uniq ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + esc(hero) + '"';
-        var gradient = color
-            ? 'linear-gradient(to right,' + color + ' 35%,' + color + '00 100%),'
-            : 'linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.05)),';
-        html += ' style="background-image:' + gradient + 'url(' + esc(imgUrl) + ');background-size:cover;background-position:left top;"';
+        html += ' style="' + heroBannerBackground(ref, faction) + '"';
         html += '>';
         html += '<div class="tr-panel-hero-info">';
         if (faction) {
@@ -433,6 +443,21 @@
         html += '<div class="tr-panel-hero-label">' + esc(TR_TXT.hero_label || 'Hero') + '</div>';
         html += '</div>';
         html += '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    // Compact version of the same banner for the standings table's Hero
+    // column — full column width, name + faction overlaid on the art. The
+    // whole row already opens the player's deck panel, so this isn't a
+    // separate click target (no lightbox, unlike the deck-panel banner).
+    function renderRankHeroBanner(ref, faction, hero) {
+        if (!ref) return '';
+        var html = '<div class="tr-rank-hero-banner" style="' + heroBannerBackground(ref, faction) + '">';
+        if (faction) {
+            html += '<img src="' + esc(factionImgUrl(faction)) + '" class="tr-rank-hero-banner-faction" alt="' + esc(faction) + '">';
+        }
+        html += '<span class="tr-rank-hero-banner-name">' + esc(hero) + '</span>';
         html += '</div>';
         return html;
     }
@@ -463,7 +488,6 @@
         var faction = s.faction || (deck && deck.faction) || '';
         var fSrc = factionImgUrl(faction);
         var heroObj = deck ? heroCard(deck) : null;
-        var heroImgSrc = heroObj && heroObj.reference ? heroCardImgUrl(heroObj.reference) : '';
         var badge = '';
         if (deck) {
             if (multipleDecks) {
@@ -479,9 +503,9 @@
             : esc(s.name));
         html += badge;
         html += '</td>';
-        html += '<td>';
-        if (heroImgSrc) {
-            html += '<img class="tr-rank-hero-img" src="' + esc(heroImgSrc) + '" alt="' + esc(hero) + '" title="' + esc(hero) + '">';
+        html += '<td class="tr-rank-hero-cell">';
+        if (heroObj && heroObj.reference) {
+            html += renderRankHeroBanner(heroObj.reference, faction, hero);
         } else if (hero) {
             html += ' <span class="tr-rank-hero">';
             if (fSrc) html += '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ';
@@ -551,9 +575,9 @@
 
         html += '<div class="tr-view-toggle">';
         if (TR_LOGGED_IN) {
-            html += '<button type="button" class="tr-view-export" id="tr-deck-duplicate" title="' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '"><i class="fa-solid fa-copy"></i></button>';
+            html += '<button type="button" class="tr-view-export" id="tr-deck-duplicate" title="' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '"><i class="fa-solid fa-copy"></i> ' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '</button>';
         }
-        html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '"><i class="fa-solid fa-clipboard-list"></i></button>';
+        html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '"><i class="fa-solid fa-clipboard-list"></i> ' + esc(TR_TXT.copy_btn || 'Copy decklist') + '</button>';
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'list' ? ' active' : '') + '" data-view="list" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-list"></i> ' + esc(TR_TXT.view_list) + '</button>';
         html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'images' ? ' active' : '') + '" data-view="images" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-grip"></i> ' + esc(TR_TXT.view_images) + '</button>';
         html += '</div>';
@@ -644,12 +668,12 @@
         var copiedLabel = TR_TXT.copy_ok || 'Copied!';
         function restore() {
             if (!btn) return;
-            btn.innerHTML = '<i class="fa-solid fa-clipboard-list"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-clipboard-list"></i> ' + esc(copyLabel);
             btn.title = copyLabel;
         }
         function success() {
             if (!btn) return;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + esc(copiedLabel);
             btn.title = copiedLabel;
             setTimeout(restore, 2000);
         }
@@ -733,12 +757,16 @@
         })
             .then(function (r) { return r.json(); })
             .then(function (res) {
-                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
-                if (res && res.ok) {
-                    window.alert(TR_TXT.duplicate_ok || 'Deck duplicated.');
-                } else {
-                    window.alert((TR_TXT.duplicate_err || 'Could not duplicate this deck: %s').replace('%s', (res && res.error) || ''));
+                // Navigate straight to the new deck by id, same as core-altered-cards'
+                // own "Dupliquer" button — the "My decks" list can lag behind a
+                // just-created deck, so fetching it directly by id is the only
+                // reliably immediate way to show the result.
+                if (res && res.ok && res.id) {
+                    window.location.href = TR_BASE + '/pages/deck?id=' + encodeURIComponent(res.id);
+                    return;
                 }
+                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+                window.alert((TR_TXT.duplicate_err || 'Could not duplicate this deck: %s').replace('%s', (res && res.error) || ''));
             })
             .catch(function () {
                 if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
@@ -866,10 +894,30 @@
        hue alone — see the icon+label pairing here and everywhere else
        faction color is used on this site). ──────────────────────────────── */
     var CHART_OTHER_COLOR = '#9ca3af';
-    // Validated categorical palette (dataviz skill, references/palette.md) —
-    // heroes have no site-wide brand color the way factions do, so unlike
-    // the faction chart this one is free to use a CVD-checked palette.
-    var CHART_HERO_PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300'];
+
+    // Lighten (positive percent) or darken (negative) a hex color toward
+    // white/black — used to give each hero a shade of its own faction's
+    // color instead of an unrelated hue, per the user's request.
+    function shadeColor(hex, percent) {
+        var num = parseInt(hex.replace('#', ''), 16);
+        var target = percent < 0 ? 0 : 255;
+        var p = Math.abs(percent) / 100;
+        var r = (num >> 16) & 0xFF, g = (num >> 8) & 0xFF, b = num & 0xFF;
+        r = Math.round((target - r) * p) + r;
+        g = Math.round((target - g) * p) + g;
+        b = Math.round((target - b) * p) + b;
+        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    }
+
+    // Every hero belongs to exactly one faction — use whichever player row
+    // names it first.
+    function heroFactionMap() {
+        var map = {};
+        standings.forEach(function (s) {
+            if (s.hero && s.faction && !map[s.hero]) map[s.hero] = s.faction;
+        });
+        return map;
+    }
 
     function computeDistribution(key) {
         var counts = {};
@@ -926,6 +974,12 @@
         el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_faction_title || 'Factions');
     }
 
+    // Heroes sharing a faction get progressively lighter/darker shades of
+    // that faction's own color, instead of an unrelated hue per hero — so
+    // the family is visible at a glance while the legend's resolved name
+    // (not the color) is what actually identifies each slice.
+    var HERO_SHADE_STEPS = [0, -25, 25, -45, 45, -60];
+
     function renderHeroChart() {
         var el = document.getElementById('tr-chart-hero');
         if (!el) return;
@@ -933,8 +987,15 @@
         if (!dist.total) { el.innerHTML = ''; return; }
         var top = dist.entries.slice(0, 6);
         var otherCount = dist.entries.slice(6).reduce(function (sum, e) { return sum + e.count; }, 0);
-        var segments = top.map(function (e, i) {
-            return { color: CHART_HERO_PALETTE[i % CHART_HERO_PALETTE.length], pct: Math.round(e.count / dist.total * 1000) / 10, label: e.key, count: e.count };
+        var heroFactions = heroFactionMap();
+        var seenPerFaction = {};
+        var segments = top.map(function (e) {
+            var faction = heroFactions[e.key] || '';
+            var base = factionColor(faction) || CHART_OTHER_COLOR;
+            var seen = seenPerFaction[faction] || 0;
+            seenPerFaction[faction] = seen + 1;
+            var color = seen === 0 ? base : shadeColor(base, HERO_SHADE_STEPS[seen % HERO_SHADE_STEPS.length]);
+            return { color: color, pct: Math.round(e.count / dist.total * 1000) / 10, label: resolveCardName(e.key), count: e.count };
         });
         if (otherCount > 0) {
             segments.push({ color: CHART_OTHER_COLOR, pct: Math.round(otherCount / dist.total * 1000) / 10, label: TR_TXT.chart_other || 'Other', count: otherCount });
@@ -948,6 +1009,16 @@
         var heroSel    = document.getElementById('tr-filter-hero');
         if (!factionSel || !heroSel) return;
 
+        // Idempotent (drops everything but the first "All ..." option) so
+        // this can be re-run from refreshDeckNames() once card names
+        // resolve, to upgrade hero labels from raw refs to real names —
+        // preserving whatever was selected, if anything.
+        var prevFaction = factionSel.value;
+        var prevHero    = heroSel.value;
+        [factionSel, heroSel].forEach(function (sel) {
+            while (sel.options.length > 1) sel.remove(1);
+        });
+
         var factions = {}, heroes = {};
         standings.forEach(function (s) {
             if (s.faction) factions[s.faction] = true;
@@ -958,11 +1029,16 @@
             opt.value = f; opt.textContent = factionLabel(f);
             factionSel.appendChild(opt);
         });
-        Object.keys(heroes).sort().forEach(function (h) {
+        Object.keys(heroes).sort(function (a, b) {
+            return resolveCardName(a).localeCompare(resolveCardName(b));
+        }).forEach(function (h) {
             var opt = document.createElement('option');
-            opt.value = h; opt.textContent = h;
+            opt.value = h; opt.textContent = resolveCardName(h);
             heroSel.appendChild(opt);
         });
+
+        factionSel.value = prevFaction;
+        heroSel.value = prevHero;
     }
 
     function applyFilters() {
