@@ -212,21 +212,25 @@
             var deck = playerDecks[pid];
             var hero = heroName(deck);
             if (!hero) return;
+            var heroObj = heroCard(deck);
+            var heroImgSrc = heroObj && heroObj.reference ? heroCardImgUrl(heroObj.reference) : '';
             var fSrc = factionImgUrl(deck.faction);
             document.querySelectorAll('.tr-player-link[data-player-id="' + CSS.escape(pid) + '"]').forEach(function (btn) {
                 var row = btn.closest('tr');
                 if (!row) return;
-                var badge = row.querySelector('.tr-rank-hero');
-                if (badge) {
-                    badge.innerHTML = (fSrc ? '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ' : '') + esc(hero);
-                }
+                var cell = row.querySelector('.tr-rank-hero, .tr-rank-hero-img');
+                var td = cell ? cell.closest('td') : null;
+                if (!td) return;
+                td.innerHTML = heroImgSrc
+                    ? '<img class="tr-rank-hero-img" src="' + esc(heroImgSrc) + '" alt="' + esc(hero) + '" title="' + esc(hero) + '">'
+                    : ' <span class="tr-rank-hero">' + (fSrc ? '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ' : '') + esc(hero) + '</span>';
             });
         });
-        // Re-render the currently shown deck too, so its hero banner picks
+        // Re-render the currently open panel too, so its hero banner picks
         // up the resolved name instead of staying on the raw reference from
         // before the Cards API batch came back.
-        if (isGameApi && currentOpenDeckPlayerId) {
-            renderInlineDeck(currentOpenDeckPlayerId);
+        if (currentOpenDeckPlayerId) {
+            openPlayerPanel(currentOpenDeckPlayerId);
         }
     }
 
@@ -458,6 +462,8 @@
         var hero = (deck && heroName(deck)) || s.hero || '';
         var faction = s.faction || (deck && deck.faction) || '';
         var fSrc = factionImgUrl(faction);
+        var heroObj = deck ? heroCard(deck) : null;
+        var heroImgSrc = heroObj && heroObj.reference ? heroCardImgUrl(heroObj.reference) : '';
         var badge = '';
         if (deck) {
             if (multipleDecks) {
@@ -467,14 +473,16 @@
             }
         }
         var clickable = isGameApi ? !!hero || hasDecklist : hasDecklist;
-        var html = '<tr class="tr-rank-row" data-faction="' + esc(faction || '') + '" data-hero="' + esc(hero || '') + '" data-name="' + esc((s.name || '').toLowerCase()) + '">';
+        var html = '<tr class="tr-rank-row' + (clickable ? ' tr-rank-row-clickable' : '') + '" data-faction="' + esc(faction || '') + '" data-hero="' + esc(hero || '') + '" data-name="' + esc((s.name || '').toLowerCase()) + '"' + (clickable ? ' data-player-id="' + esc(s.id) + '"' : '') + '>';
         html += '<td>' + (clickable
             ? '<button type="button" class="tr-player-link" data-player-id="' + esc(s.id) + '">' + esc(s.name) + '</button>'
             : esc(s.name));
         html += badge;
         html += '</td>';
         html += '<td>';
-        if (hero) {
+        if (heroImgSrc) {
+            html += '<img class="tr-rank-hero-img" src="' + esc(heroImgSrc) + '" alt="' + esc(hero) + '" title="' + esc(hero) + '">';
+        } else if (hero) {
             html += ' <span class="tr-rank-hero">';
             if (fSrc) html += '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ';
             html += esc(hero) + '</span>';
@@ -486,14 +494,14 @@
     }
 
     function standingsHeaderHtml() {
-        return '<th>' + esc(TR_TXT.ranking_player) + '</th>'
+        return '<th>' + esc(TR_TXT.ranking_player || 'Player') + '</th>'
             + '<th>' + esc(TR_TXT.hero_label || 'Hero') + '</th>'
             + '<th class="tr-rank-wl">' + esc(TR_TXT.wl_header || 'W-L') + '</th>';
     }
 
     // Standings, computed server-side from wins/games played/losses (see
-    // trStandingsFromGameApiPlayers()/trComputeManualStandings() — this is
-    // the only ranking now, filterable client-side, never reordered.
+    // trStandingsFromGameApiPlayers()) — this is the only ranking now,
+    // filterable client-side, never reordered.
     function renderStandings() {
         var html = '<div class="tr-ranking-card tr-standings-card">';
         html += '<div class="tr-ranking-header"><span class="tr-ranking-title">' + esc(TR_TXT.standings_title || 'Standings') + '</span></div>';
@@ -511,12 +519,11 @@
         el.innerHTML = renderStandings();
     }
 
-    /* ── Deck view (shared by the off-canvas panel and the inline viewer) ── */
+    /* ── Deck view (rendered into the side panel) ─────────────────────────── */
     // Builds the decklist markup for one player — variant switcher, view
     // toggle, hero banner, cards — and sets currentOpenDeck/currentView as a
-    // side effect. Returns {html, title} for the caller to place wherever it
-    // renders (the off-canvas panel for manual tournaments, the always-visible
-    // inline viewer for GameApi tournaments — see renderInlineDeck()).
+    // side effect. Returns {html, title} for openPlayerPanel() to place in
+    // the panel body.
     function buildDeckViewHtml(playerId, viewIdPrefix) {
         var pd = playerDecks[playerId];
         if (!pd) return null;
@@ -565,7 +572,21 @@
         return { html: html, title: (hero ? hero + ' - ' : '') + pd.name, viewId: viewId };
     }
 
-    /* ── Off-canvas side panel (manual tournaments) ───────────────────────── */
+    /* ── Side panel — a fixed column pinned to the right of the page on wide
+       screens (so it never covers the standings table), and a classic
+       off-canvas modal with a dimming backdrop on narrow ones. ───────────── */
+    function isPanelPinned() {
+        return window.matchMedia('(min-width: 992px)').matches;
+    }
+
+    function markActiveRow(playerId) {
+        document.querySelectorAll('.tr-rank-row').forEach(function (row) {
+            row.classList.remove('tr-rank-row-active');
+        });
+        var row = document.querySelector('.tr-rank-row[data-player-id="' + CSS.escape(playerId) + '"]');
+        if (row) row.classList.add('tr-rank-row-active');
+    }
+
     function openPlayerPanel(playerId) {
         var built = buildDeckViewHtml(playerId, 'panel');
         if (!built) return;
@@ -574,13 +595,16 @@
         var body     = document.getElementById('tr-player-panel-body');
         var title    = document.getElementById('tr-player-panel-title');
         var backdrop = document.getElementById('tr-player-panel-backdrop');
+        var pinned   = isPanelPinned();
 
         title.textContent = built.title;
         body.innerHTML = built.html;
         syncView(built.viewId);
-        backdrop.style.display = 'block';
+        backdrop.style.display = pinned ? 'none' : 'block';
         panel.classList.add('tr-panel-open');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.toggle('tr-panel-pinned-open', pinned);
+        document.body.style.overflow = pinned ? '' : 'hidden';
+        markActiveRow(playerId);
     }
 
     function closePlayerPanel() {
@@ -588,41 +612,10 @@
         var backdrop = document.getElementById('tr-player-panel-backdrop');
         panel.classList.remove('tr-panel-open');
         backdrop.style.display = 'none';
+        document.body.classList.remove('tr-panel-pinned-open');
         document.body.style.overflow = '';
         currentOpenDeck = null;
         currentOpenDeckPlayerId = null;
-    }
-
-    /* ── Inline deck viewer (GameApi tournaments) ─────────────────────────── */
-    // Always-visible section below the faction/hero charts, defaulting to the
-    // top-standing player and switching on any standings row click — see the
-    // "Deck viewer" plan section. Reuses buildDeckViewHtml() exactly like the
-    // off-canvas panel does for manual tournaments.
-    function renderInlineDeck(playerId) {
-        var wrap  = document.getElementById('tr-deck-viewer');
-        var body  = document.getElementById('tr-deck-viewer-body');
-        var title = document.getElementById('tr-deck-viewer-title');
-        if (!wrap || !body) return;
-
-        var built = buildDeckViewHtml(playerId, 'inline');
-        if (!built) {
-            wrap.style.display = 'none';
-            return;
-        }
-
-        wrap.style.display = '';
-        if (title) title.textContent = built.title;
-        body.innerHTML = built.html;
-        syncView(built.viewId);
-
-        document.querySelectorAll('.tr-rank-row').forEach(function (row) {
-            row.classList.remove('tr-rank-row-active');
-        });
-        var activeBtn = document.querySelector('.tr-player-link[data-player-id="' + CSS.escape(playerId) + '"]');
-        if (activeBtn) {
-            var row = activeBtn.closest('tr');
-            if (row) row.classList.add('tr-rank-row-active');
-        }
     }
 
     /* ── Export / copy decklist ─────────────────────────────────────────── */
@@ -688,21 +681,15 @@
         syncView(pid);
     });
 
-    /* ── Player name → show their deck (inline viewer, or off-canvas panel
-       for manual tournaments) ────────────────────────────────────────────── */
+    /* ── Standings row → show that player's deck in the side panel ───────── */
     function showPlayerDeck(playerId) {
-        if (isGameApi) {
-            renderInlineDeck(playerId);
-        } else {
-            openPlayerPanel(playerId);
-        }
+        openPlayerPanel(playerId);
     }
 
     document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.tr-player-link');
-        if (!btn) return;
-        e.preventDefault();
-        showPlayerDeck(btn.dataset.playerId);
+        var row = e.target.closest('.tr-rank-row[data-player-id]');
+        if (!row) return;
+        showPlayerDeck(row.dataset.playerId);
     });
 
     /* ── Deck variant switch (multiple decklists) ───────────────────────── */
@@ -1011,6 +998,9 @@
         renderFactionChart();
         renderHeroChart();
         populateFilterOptions();
-        if (standings.length) showPlayerDeck(standings[0].id);
+        // Only auto-open the pinned side panel on screens wide enough for it
+        // not to cover the standings; on narrow screens it stays closed
+        // until a row is clicked (opening as an off-canvas modal instead).
+        if (standings.length && isPanelPinned()) showPlayerDeck(standings[0].id);
     }
 })();

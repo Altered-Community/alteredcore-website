@@ -1,9 +1,7 @@
 <?php
 // Admin page: a tournament's players, standings (wins/games/losses desc — the
-// only ranking now, see inc/functions.php), and, for GameApi tournaments, the
-// "correct a result" action (GameApi's adjustment endpoint). Manual
-// tournaments have no bga_user_id/adjustment concept, so they're read-only
-// here.
+// only ranking now, see inc/functions.php), and the "correct a result" action
+// (GameApi's adjustment endpoint).
 require_once __DIR__ . '/../inc/functions.php';
 
 $tournamentExtId = trim($_GET['tournament'] ?? '');
@@ -35,7 +33,6 @@ $txt = [
         'saved'             => 'Correction saved.',
         'note_required'     => 'A note is required.',
         'existing_note'     => 'Current correction: %+d/%+d — %s',
-        'manual_note'       => 'This is a manual tournament — results are entered directly and cannot be corrected here.',
         'live_error'        => 'Could not load this tournament from GameApi: %s',
     ],
     'fr' => [
@@ -57,7 +54,6 @@ $txt = [
         'saved'             => 'Correction enregistrée.',
         'note_required'     => 'Une note est obligatoire.',
         'existing_note'     => 'Correction actuelle : %+d/%+d — %s',
-        'manual_note'       => 'Ce tournoi est manuel — les résultats sont saisis directement et ne peuvent pas être corrigés ici.',
         'live_error'        => 'Impossible de charger ce tournoi depuis GameApi : %s',
     ],
 ][getUiLang()] ?? [];
@@ -87,22 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── Load standings ───────────────────────────────────────────────────────────
-$local = trGetTournamentByExternalId($tournamentExtId);
-$isManual = trIsManualTournament($local);
-
-if ($isManual) {
-    $tournamentName = $local['tournament_name'] ?: $tournamentExtId;
-    $standings = trComputeManualStandings($local['games_data']);
-} else {
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    $live = trFetchLiveTournament($tournamentExtId, $userId);
-    if (!$live['ok']) {
-        flash(sprintf($txt['live_error'], $live['error'] ?? 'Unknown error'), 'error');
-        redirect($backUrl);
-    }
-    $tournamentName = $live['tournament_name'] ?: $tournamentExtId;
-    $standings = $live['standings'];
+$userId = (int)($_SESSION['user_id'] ?? 0);
+$live = trFetchLiveTournament($tournamentExtId, $userId);
+if (!$live['ok']) {
+    flash(sprintf($txt['live_error'], $live['error'] ?? 'Unknown error'), 'error');
+    redirect($backUrl);
 }
+$tournamentName = $live['tournament_name'] ?: $tournamentExtId;
+$standings = $live['standings'];
 ?>
 
 <div class="d-flex align-items-center mb-4">
@@ -111,10 +99,6 @@ if ($isManual) {
     </a>
     <h1 class="mb-0"><i class="fa-solid fa-ranking-star me-2"></i><?= sprintf($txt['title'], h($tournamentName)) ?></h1>
 </div>
-
-<?php if ($isManual): ?>
-<div class="alert alert-info"><?= h($txt['manual_note']) ?></div>
-<?php endif; ?>
 
 <div class="card-altered p-4 mb-4">
     <?php if (empty($standings)): ?>
@@ -128,9 +112,7 @@ if ($isManual) {
                     <th><?= h($txt['players_hero']) ?></th>
                     <th style="width:64px" class="text-center"><?= h($txt['wl_header']) ?></th>
                     <th style="width:64px" class="text-center"><?= h($txt['players_games']) ?></th>
-                    <?php if (!$isManual): ?>
                     <th style="width:120px"></th>
-                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -140,15 +122,12 @@ if ($isManual) {
                     <td><?= h($p['hero'] ?? $p['faction'] ?? '') ?></td>
                     <td class="text-center"><?= h($p['wins']) ?>-<?= h($p['losses']) ?></td>
                     <td class="text-center"><?= h($p['games_played']) ?></td>
-                    <?php if (!$isManual): ?>
                     <td class="text-end">
                         <button type="button" class="btn btn-sm btn-outline-secondary tr-correct-toggle" data-pid="<?= h($p['id']) ?>">
                             <i class="fa-solid fa-pen"></i> <?= h($txt['correct']) ?>
                         </button>
                     </td>
-                    <?php endif; ?>
                 </tr>
-                <?php if (!$isManual): ?>
                 <tr class="tr-correct-row d-none" id="tr-correct-row-<?= h($p['id']) ?>">
                     <td colspan="5">
                         <?php if (!empty($p['admin_adjustment_note'])): ?>
@@ -186,7 +165,6 @@ if ($isManual) {
                         </form>
                     </td>
                 </tr>
-                <?php endif; ?>
                 <?php endforeach; ?>
             </tbody>
         </table>

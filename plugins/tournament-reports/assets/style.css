@@ -244,6 +244,9 @@
 .tr-ranking-table tr:hover td {
     background: var(--sand-50);
 }
+.tr-rank-row-clickable {
+    cursor: pointer;
+}
 /* Win/loss (W-L) column */
 .tr-rank-wl {
     width: 64px;
@@ -353,20 +356,6 @@
 .tr-filter-bar select,
 .tr-filter-bar input {
     font-size: .85rem;
-}
-
-/* Inline deck viewer (GameApi tournaments) */
-.tr-deck-viewer {
-    background: var(--sand-100);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 16px;
-}
-.tr-deck-viewer-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--neutral-800);
-    margin-bottom: 12px;
 }
 
 /* View toggle (images/list) */
@@ -525,6 +514,18 @@
     display: inline-block;
 }
 
+/* Hero card art beside player name (replaces the name pastille once the
+   card's reference is known) */
+.tr-rank-hero-img {
+    width: 32px;
+    height: 44px;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
 /* ── Card lightbox (self-contained; core plugin CSS may not be loaded) ── */
 #tr-lightbox {
     position: fixed;
@@ -570,6 +571,19 @@
     transform: translateX(0);
     visibility: visible;
     transition: transform .3s ease;
+}
+
+/* On wide screens the panel is pinned beside the page instead of overlaid
+   as a modal: no dimming backdrop, and the page content makes room for it
+   so the standings (W-L column included) stay visible underneath. */
+@media (min-width: 992px) {
+    .tr-panel-backdrop {
+        display: none !important;
+    }
+    body.tr-panel-pinned-open #tr-page {
+        padding-right: min(480px, 90vw);
+        transition: padding-right .3s ease;
+    }
 }
 
 .tr-panel-header {

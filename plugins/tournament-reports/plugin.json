@@ -2,7 +2,7 @@
     "$schema":      "../plugin.schema.json",
     "id":           "tournament-reports",
     "name":         "Tournament Reports",
-    "version":      "2.0.0",
+    "version":      "2.1.0",
     "description":  "Tournament reports backed live by GameApi, with decklist decoding",
     "author":       "noobiwow",
     "icon":        "fa-solid fa-trophy",
@@ -60,5 +60,5 @@
     },
 
     "sql":    "sql/install.sql",
-    "tables": ["tournaments", "settings"]
+    "tables": ["settings"]
 }

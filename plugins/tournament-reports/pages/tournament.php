@@ -9,6 +9,7 @@ $txt = [
     'en' => [
         'page_title'       => 'Tournament Report',
         'players'          => 'Players',
+        'ranking_player'   => 'Player',
         'hero_label'       => 'Hero',
         'ranking_section'  => 'Ranking',
         'standings_title'  => 'Standings',
@@ -40,7 +41,6 @@ $txt = [
         'chart_faction_title' => 'Factions',
         'chart_hero_title' => 'Heroes',
         'chart_other'      => 'Other',
-        'deck_viewer_title'=> 'Deck',
         'filter_faction'   => 'All factions',
         'filter_hero'      => 'All heroes',
         'filter_search_ph' => 'Search a player…',
@@ -48,6 +48,7 @@ $txt = [
     'fr' => [
         'page_title'       => 'Rapport de tournoi',
         'players'          => 'Joueurs',
+        'ranking_player'   => 'Joueur',
         'hero_label'       => 'Héros',
         'ranking_section'  => 'Classement',
         'standings_title'  => 'Classement',
@@ -79,7 +80,6 @@ $txt = [
         'chart_faction_title' => 'Factions',
         'chart_hero_title' => 'Héros',
         'chart_other'      => 'Autres',
-        'deck_viewer_title'=> 'Deck',
         'filter_faction'   => 'Toutes les factions',
         'filter_hero'      => 'Tous les héros',
         'filter_search_ph' => 'Rechercher un joueur…',
@@ -108,9 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'duplicat
     exit;
 }
 
-$local    = trGetTournamentByExternalId($tournamentId);
-$isManual = trIsManualTournament($local);
-
 $tournamentData = null;   // synthetic single-game structure feeding the JS decklist pipeline
 $standings      = [];
 $tournamentName = '';
@@ -119,55 +116,43 @@ $description    = '';
 $notFoundError  = null;
 $loginRequired  = false;
 
-if ($isManual) {
-    $tournamentData = $local['games_data'];
-    if (!empty($local['tournament_name'])) {
-        $tournamentData['tournamentName'] = $local['tournament_name'];
-    }
-    $tournamentName = $tournamentData['tournamentName'] ?? '';
-    $localization   = $local['localization'] ?? '';
-    $description    = $local['description'] ?? '';
-    $standings      = trComputeManualStandings($tournamentData);
+$userId = (int)($_SESSION['user_id'] ?? 0);
+if (!$userId) {
+    $loginRequired = true;
 } else {
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    if (!$userId) {
-        $loginRequired = true;
+    $live = trFetchLiveTournament($tournamentId, $userId);
+    if (!$live['ok']) {
+        $notFoundError = $live['error'] ?? 'Unknown error';
     } else {
-        $live = trFetchLiveTournament($tournamentId, $userId);
-        if (!$live['ok']) {
-            $notFoundError = $live['error'] ?? 'Unknown error';
-        } else {
-            $tournamentName = $live['tournament_name'];
-            $localization   = $live['localization'];
-            $description    = $live['description'];
-            $standings      = $live['standings'];
+        $tournamentName = $live['tournament_name'];
+        $localization   = $live['localization'];
+        $description    = $live['description'];
+        $standings      = $live['standings'];
 
-            // Decode every shown player's deck and shape it into the same
-            // single-synthetic-game structure manual tournaments already use,
-            // so the existing decklist rendering pipeline (buildPlayerDecks()
-            // et al. in app.js) works completely unchanged.
-            $endGamePlayers = [];
-            foreach ($standings as $s) {
-                $decoded = trDecodeMainDeck($s['main_deck'] ?? null);
-                $endGamePlayers[] = [
-                    'id'          => $s['id'],
-                    'name'        => $s['name'],
-                    'faction'     => $s['faction'],
-                    'deck'        => $decoded['ok'] ? $decoded['cards'] : [],
-                    'playedCards' => [],
-                ];
-            }
-            $tournamentData = [
-                'tournamentId'   => $tournamentId,
-                'tournamentName' => $tournamentName,
-                'totalGames'     => (int)($live['total_games'] ?? 0),
-                'games'          => [[
-                    'format'         => '',
-                    'receivedAt'     => '',
-                    'endGamePlayers' => $endGamePlayers,
-                ]],
+        // Decode every shown player's deck and shape it into the same
+        // single-synthetic-game structure the decklist rendering pipeline
+        // (buildPlayerDecks() et al. in app.js) expects.
+        $endGamePlayers = [];
+        foreach ($standings as $s) {
+            $decoded = trDecodeMainDeck($s['main_deck'] ?? null);
+            $endGamePlayers[] = [
+                'id'          => $s['id'],
+                'name'        => $s['name'],
+                'faction'     => $s['faction'],
+                'deck'        => $decoded['ok'] ? $decoded['cards'] : [],
+                'playedCards' => [],
             ];
         }
+        $tournamentData = [
+            'tournamentId'   => $tournamentId,
+            'tournamentName' => $tournamentName,
+            'totalGames'     => (int)($live['total_games'] ?? 0),
+            'games'          => [[
+                'format'         => '',
+                'receivedAt'     => '',
+                'endGamePlayers' => $endGamePlayers,
+            ]],
+        ];
     }
 }
 
@@ -210,11 +195,9 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
     <div class="card-altered p-4 mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
             <h4 class="fw-bold mb-0" id="tr-tournament-name"></h4>
-            <?php if (!$isManual): ?>
             <a href="<?= h($bgaUrl) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
                 <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['bga_link']) ?>
             </a>
-            <?php endif; ?>
         </div>
         <div class="d-flex flex-wrap gap-3 text-muted small" id="tr-tournament-meta">
             <span id="tr-tournament-format"></span>
@@ -227,7 +210,6 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
         <?php endif; ?>
     </div>
 
-    <?php if (!$isManual): ?>
     <!-- Faction / hero distribution -->
     <div class="tr-charts-row">
         <div id="tr-chart-faction"></div>
@@ -245,13 +227,6 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
         <input type="search" id="tr-filter-search" class="form-control form-control-sm" style="max-width:220px" placeholder="<?= h($txt['filter_search_ph']) ?>">
     </div>
 
-    <!-- Inline deck viewer, defaults to the top-standing player -->
-    <div class="tr-deck-viewer" id="tr-deck-viewer" style="display:none">
-        <div class="tr-deck-viewer-title" id="tr-deck-viewer-title"><?= h($txt['deck_viewer_title']) ?></div>
-        <div id="tr-deck-viewer-body"></div>
-    </div>
-    <?php endif; ?>
-
     <!-- Standings -->
     <div id="tr-ranking-section"></div>
 
@@ -265,7 +240,7 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
     <div class="ac-lightbox-inner" id="tr-lightbox-inner"></div>
 </div>
 
-<!-- Player decklist side panel (manual tournaments only) -->
+<!-- Player decklist side panel -->
 <div id="tr-player-panel-backdrop" class="tr-panel-backdrop"></div>
 <div id="tr-panel-zoom" class="tr-panel-zoom"></div>
 <div id="tr-player-panel" class="tr-panel">
@@ -287,7 +262,7 @@ var TR_UI_LANG = <?= json_encode(h($uiLang)) ?>;
 var TR_CDN     = <?= json_encode(h(CDN_URL)) ?>;
 var TR_CSRF    = <?= json_encode(h(csrfToken())) ?>;
 var TR_LOGGED_IN = <?= json_encode(kcIsLoggedIn()) ?>;
-var TR_IS_GAMEAPI = <?= json_encode(!$isManual) ?>;
+var TR_IS_GAMEAPI = true;
 var TR_TXT     = <?= json_encode($txt, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_STANDINGS       = <?= json_encode($standings, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_TOURNAMENT_DATA = <?= json_encode($tournamentData, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
