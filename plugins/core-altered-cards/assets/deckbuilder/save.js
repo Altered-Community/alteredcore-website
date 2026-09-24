@@ -14,6 +14,7 @@
         if (elSaveErrMsg) elSaveErrMsg.innerHTML = html;
         else elSaveErr.innerHTML = html;
         elSaveErr.style.display = '';
+        emitSaveState('error');
     }
 
     function saveDeck(onDone) {
@@ -22,6 +23,7 @@
         if (AlteredDB.isGuest) {
             saveGuestDeck();
             markClean();
+            emitSaveState('saved');
             elSaveOk.innerHTML = '<i class="fa-solid fa-check me-1"></i>' + escHtml(AlteredDB.txt.guest_saved_ok);
             elSaveOk.style.display = '';
             setTimeout(function() { elSaveOk.style.display = 'none'; }, 4000);
@@ -31,6 +33,7 @@
 
         elSaveBtn.disabled = true;
         elSaveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>' + escHtml(AlteredDB.txt.saving);
+        emitSaveState('saving');
 
         fetch(AlteredDB.baseUrl + '/pages/deckbuilder?ajax=1', { method: 'POST', body: _buildSaveFormData() })
             .then(function(r) { return r.json(); })
@@ -40,6 +43,7 @@
                 elSaveBtn.disabled = false;
                 if (data.ok) {
                     markClean();
+                    emitSaveState('saved');
                     deck.id = data.id;
                     AlteredDB.deckId = data.id;
                     if (history.replaceState) history.replaceState(null, '', '?id=' + data.id);

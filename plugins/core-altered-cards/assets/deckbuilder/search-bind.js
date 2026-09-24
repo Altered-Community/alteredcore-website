@@ -45,7 +45,7 @@
         typesMerged: AlteredDB.typesMerged,
         renderDeckCard: window.renderBrowserCard,
         formatCount: function(n) { return n + ' ' + AlteredDB.txt.deck_cards; },
-        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel },
+        txt: { prev: AlteredDB.txt.prev, next: AlteredDB.txt.next, favorite: AlteredDB.favoriteLabel, any_trigger: AlteredDB.txt.any_trigger, any_condition: AlteredDB.txt.any_condition, any_effect: AlteredDB.txt.any_effect },
         getFormatLegality: function() { return window.getDeckFormatLegality ? window.getDeckFormatLegality() : null; },
     });
     window.updateFilterCount = engine.updateFilterCount;
