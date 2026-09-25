@@ -4,6 +4,9 @@
  */
     var elHeroConfirm = document.getElementById('db-hero-confirm');
     var elHeroAltArts = document.getElementById('db-hero-altarts-toggle');
+    var elHeroSerialized = document.getElementById('db-hero-serialized-toggle');
+    var elHeroSerializedWrap = document.getElementById('db-hero-serialized-wrap');
+    var _heroOwnToken = 0;
 
     window.dbHeroClose = function() {
         document.getElementById('db-hero-modal').style.display = 'none';
@@ -33,6 +36,22 @@
         if (printing === 'B') return 'Standard';
         if (printing === 'P') return 'Promo';
         return 'Standard';
+    }
+
+    // The trailing "_XXX" segment is an API placeholder for a serialized print's
+    // "any copy" slot, not a real card -- never a valid pick, toggle or no toggle.
+    function heroIsPlaceholderRef(ref) {
+        var p = ref.split('_');
+        return p.length > 6 && p[p.length - 1] === 'XXX';
+    }
+
+    // World Championship trophy prints (WCF25) and any ref carrying an extra
+    // per-copy serial segment (e.g. ALT_DUSTERCB_P_MU_85_C_012) are individually
+    // numbered collector copies, not a distinct illustration choice -- kept out of
+    // the hero grid unless the serialized toggle is explicitly turned on.
+    function heroIsSerializedRef(ref) {
+        var p = ref.split('_');
+        return p[1] === 'WCF25' || p.length > 6;
     }
 
     function heroSetRank(ref) {
@@ -105,6 +124,14 @@
 
     if (elHeroAltArts) {
         elHeroAltArts.addEventListener('change', function() {
+            if (elHeroSerializedWrap) elHeroSerializedWrap.style.display = elHeroAltArts.checked ? '' : 'none';
+            if (!elHeroAltArts.checked && elHeroSerialized) elHeroSerialized.checked = false;
+            if (heroCurrFaction) dbLoadHeroes(heroCurrFaction);
+        });
+    }
+
+    if (elHeroSerialized) {
+        elHeroSerialized.addEventListener('change', function() {
             if (heroCurrFaction) dbLoadHeroes(heroCurrFaction);
         });
     }
@@ -131,6 +158,7 @@
         });
 
         var altArtsOn = !!(elHeroAltArts && elHeroAltArts.checked);
+        var serializedOn = altArtsOn && !!(elHeroSerialized && elHeroSerialized.checked);
         var activeVariations = altArtsOn
             ? AlteredDB.allVariations
             : AlteredDB.heroVariations.slice();
@@ -185,10 +213,18 @@
                 allCards.forEach(function(card) {
                     var ref = card.reference || '';
                     if (!ref) return;
+                    var isSerialized = heroIsSerializedRef(ref);
+                    if (altArtsOn) {
+                        if (heroIsPlaceholderRef(ref)) return;
+                        if (!serializedOn && isSerialized) return;
+                    }
                     var setColon   = ref.split('_')[1] || '';
                     var printing   = altArtsOn ? heroPrinting(ref) : '';
-                    var finalPrint = '';
-                    if (altArtsOn) finalPrint = printing === 'B' ? 'B' : (setColon + '|' + printing);
+                    // Standard prints merge into one tile across every reprint set. Every other
+                    // printing -- including serialized copies, which differ in ownership from one
+                    // numbered copy to the next -- keys on its own full reference so no two distinct
+                    // illustrations (or distinct numbered copies) ever collapse into the same tile.
+                    var finalPrint = !altArtsOn ? '' : (printing === 'B' ? 'B' : ref);
                     var key = heroStableKey(ref) + (finalPrint ? '|' + finalPrint : '');
                     if (!groups[key]) {
                         var setName = setLabels[setColon] || (card.set && card.set.name) || setColon;
@@ -225,6 +261,7 @@
                     var tile = document.createElement('div');
                     tile.className = 'db-hero-tile';
                     tile.dataset.key = g.key;
+                    tile.dataset.ref = g.prints[0].ref;
 
                     var img = document.createElement('img');
                     img.src = cdnUrl(g.prints[0].ref);
@@ -261,6 +298,28 @@
 
                     if (deck.hero && groupContainsPrints(g, deck.hero.cardReference)) heroPickSelect(g, tile);
                 });
+
+                // Dim (never disable) each tile whose displayed illustration the player owns
+                // zero copies of, same convention as the deck list's own ownership warnings
+                // (validation.js) and the per-card illustration picker (lightbox.js) -- reuses
+                // their exact .db-art-tile--unowned styling. A ref with no alt-art family (the
+                // common case for a hero with a single printing) reports no ownedQuantity at
+                // all and is left alone, same as everywhere else this data is used.
+                if (typeof fetchAltArtData === 'function' && AlteredDB.altArtsUrl) {
+                    var repRefs = list.map(function(g) { return g.prints[0].ref; });
+                    var myOwnToken = ++_heroOwnToken;
+                    fetchAltArtData(repRefs).then(function(data) {
+                        if (myOwnToken !== _heroOwnToken || !data) return;
+                        repRefs.forEach(function(ref) {
+                            var group = data.groups[ref];
+                            var opt = group && data.options[group.familyId + ':' + group.faction + ':' + group.rarity];
+                            var match = opt && opt.options && opt.options.filter(function(o) { return o.reference === ref; })[0];
+                            if (!match || match.ownedQuantity !== 0) return;
+                            var t = grid.querySelector('.db-hero-tile[data-ref="' + ref.replace(/"/g, '\\"') + '"]');
+                            if (t) t.classList.add('db-art-tile--unowned');
+                        });
+                    });
+                }
             })
             .catch(function(err) {
                 loading.style.display = 'none';

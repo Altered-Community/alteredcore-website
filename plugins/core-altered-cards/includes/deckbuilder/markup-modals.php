@@ -32,6 +32,11 @@
             <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
             <span class="cs-switch-label"><i class="fa-solid fa-star me-1"></i><?= h($txt['show_promo'] ?? 'Alt arts') ?></span>
         </label>
+        <label class="cs-switch db-hero-serialized" id="db-hero-serialized-wrap" style="display:none" title="<?= h($txt['show_serialized'] ?? 'Serialized') ?>">
+            <input type="checkbox" id="db-hero-serialized-toggle">
+            <span class="cs-switch-track"><span class="cs-switch-thumb"></span></span>
+            <span class="cs-switch-label"><i class="fa-solid fa-hashtag me-1"></i><?= h($txt['show_serialized'] ?? 'Serialized') ?></span>
+        </label>
         <?php endif; ?>
         </div>
         <div id="db-hero-loading" class="db-hero-loading"><?= h($txt['loading']) ?></div>

@@ -107,6 +107,7 @@ var AlteredDB = {
         'autosaved'      => $txt['autosaved'],
         'guest_saved_ok' => $txt['guest_saved_ok'],
         'show_promo'     => $txt['show_promo'],
+        'show_serialized' => $txt['show_serialized'],
         'lbl_variation'  => $txt['lbl_variation'],
         'unnamed'        => $txt['unnamed'],
         'stock_warn'     => $txt['stock_warn'],
