@@ -2,6 +2,18 @@
  * Set hero, faction filter, add/remove copies.
  * Loaded as a classic script (shared global scope with sibling modules).
  */
+    // The Collector Booster's individually-serialized hero prints (ALT_DUSTERCB_P_<FACTION>_
+    // <NUM>_<RARITY>_<001-030|XXX>, 6 heroes x 31 serials) have no per-serial portrait crop
+    // under /cards/hero/ -- every one of them is a numbered copy of the set's regular DUSTER
+    // alt-art hero print, so resolve through this first instead of needing 186 distinct images.
+    function heroPortraitRef(ref) {
+        var p = ref.split('_');
+        if (p[1] === 'DUSTERCB' && p.length > 6) {
+            return 'ALT_DUSTER_A_' + (p[3] || '') + '_' + (p[4] || '') + '_' + (p[5] || '');
+        }
+        return ref;
+    }
+
     // hero
     function setHero(heroData) {
         deck.hero = heroData;
@@ -19,7 +31,7 @@
         elHeroBanner.style.cssText = '';
 
         if (ref) {
-            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + ref + '_1.webp';
+            var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + heroPortraitRef(ref) + '_1.webp';
             var fImg    = faction ? AlteredDB.pluginAssetsUrl + '/faction/' + faction + '.png' : '';
             elHeroBanner.style.cssText =
                 'background-image:linear-gradient(to right,' + fColor + 'b3 30%,' + fColor + '00 100%),url(' + heroImg + ');' +
