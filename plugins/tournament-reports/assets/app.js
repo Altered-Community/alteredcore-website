@@ -944,11 +944,14 @@
         return 'conic-gradient(' + stops.join(', ') + ')';
     }
 
-    function renderDonutHtml(segments, title) {
-        var html = '<div class="tr-chart"><div class="tr-chart-title">' + esc(title) + '</div>';
+    function renderDonutHtml(segments, title, opts) {
+        opts = opts || {};
+        var chartClass = 'tr-chart' + (opts.chartClass ? ' ' + opts.chartClass : '');
+        var legendClass = 'tr-chart-legend' + (opts.legendClass ? ' ' + opts.legendClass : '');
+        var html = '<div class="' + chartClass + '"><div class="tr-chart-title">' + esc(title) + '</div>';
         html += '<div class="tr-chart-body">';
         html += '<div class="tr-donut" style="background:' + donutBackground(segments) + '"><div class="tr-donut-hole"></div></div>';
-        html += '<ul class="tr-chart-legend">';
+        html += '<ul class="' + legendClass + '">';
         segments.forEach(function (s) {
             html += '<li><span class="tr-chart-swatch" style="background:' + esc(s.color) + '"></span>';
             if (s.icon) html += '<img class="tr-chart-icon" src="' + esc(s.icon) + '" alt="">';
@@ -985,8 +988,9 @@
         if (!el) return;
         var dist = computeDistribution('hero');
         if (!dist.total) { el.innerHTML = ''; return; }
-        var top = dist.entries.slice(0, 6);
-        var otherCount = dist.entries.slice(6).reduce(function (sum, e) { return sum + e.count; }, 0);
+        var HERO_TOP_COUNT = 12;
+        var top = dist.entries.slice(0, HERO_TOP_COUNT);
+        var otherCount = dist.entries.slice(HERO_TOP_COUNT).reduce(function (sum, e) { return sum + e.count; }, 0);
         var heroFactions = heroFactionMap();
         var seenPerFaction = {};
         var segments = top.map(function (e) {
@@ -1000,7 +1004,10 @@
         if (otherCount > 0) {
             segments.push({ color: CHART_OTHER_COLOR, pct: Math.round(otherCount / dist.total * 1000) / 10, label: TR_TXT.chart_other || 'Other', count: otherCount });
         }
-        el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_hero_title || 'Heroes');
+        el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_hero_title || 'Heroes', {
+            chartClass: 'tr-chart--wide',
+            legendClass: 'tr-chart-legend--cols2'
+        });
     }
 
     /* ── Filters (GameApi tournaments only) ───────────────────────────────── */

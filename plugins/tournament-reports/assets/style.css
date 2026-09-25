@@ -349,6 +349,17 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+.tr-chart--wide {
+    flex-basis: 420px;
+}
+.tr-chart-legend--cols2 {
+    flex-basis: 280px;
+    column-count: 2;
+    column-gap: 20px;
+}
+.tr-chart-legend--cols2 li {
+    break-inside: avoid;
+}
 
 /* Standings filters */
 .tr-filter-bar {
