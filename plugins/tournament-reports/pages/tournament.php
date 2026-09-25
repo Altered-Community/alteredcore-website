@@ -40,6 +40,8 @@ $txt = [
         'chart_faction_title' => 'Factions',
         'chart_hero_title' => 'Heroes',
         'chart_other'      => 'Other',
+        'chart_detail_btn' => 'Details',
+        'chart_hero_modal_title' => 'All heroes',
         'filter_faction'   => 'All factions',
         'filter_hero'      => 'All heroes',
         'filter_search_ph' => 'Search a player…',
@@ -78,6 +80,8 @@ $txt = [
         'chart_faction_title' => 'Factions',
         'chart_hero_title' => 'Héros',
         'chart_other'      => 'Autres',
+        'chart_detail_btn' => 'Détail',
+        'chart_hero_modal_title' => 'Tous les héros',
         'filter_faction'   => 'Toutes les factions',
         'filter_hero'      => 'Tous les héros',
         'filter_search_ph' => 'Rechercher un joueur…',
@@ -236,6 +240,14 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
 <!-- Card lightbox overlay -->
 <div id="tr-lightbox" class="ac-lightbox-overlay" style="display:none">
     <div class="ac-lightbox-inner" id="tr-lightbox-inner"></div>
+</div>
+
+<!-- Chart detail modal (full faction / hero breakdown) -->
+<div id="tr-chart-modal" class="tr-modal-overlay" style="display:none">
+    <div class="tr-modal-panel">
+        <button type="button" class="tr-modal-close-btn" id="tr-chart-modal-close" aria-label="Close">&times;</button>
+        <div id="tr-chart-modal-body"></div>
+    </div>
 </div>
 
 <!-- Player decklist side panel -->

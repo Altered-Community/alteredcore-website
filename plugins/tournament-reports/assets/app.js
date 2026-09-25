@@ -4,6 +4,8 @@
     /* ── References ─────────────────────────────────────────────────────── */
     var lightboxEl    = document.getElementById('tr-lightbox');
     var lightboxInner = document.getElementById('tr-lightbox-inner');
+    var chartModalEl   = document.getElementById('tr-chart-modal');
+    var chartModalBody = document.getElementById('tr-chart-modal-body');
 
     var currentData   = null;
     var currentView   = {};
@@ -885,6 +887,17 @@
         }
     });
 
+    if (chartModalEl) {
+        var chartModalCloseBtn = document.getElementById('tr-chart-modal-close');
+        chartModalEl.addEventListener('click', function (e) {
+            if (e.target === chartModalEl) closeChartModal();
+        });
+        if (chartModalCloseBtn) chartModalCloseBtn.addEventListener('click', closeChartModal);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && chartModalEl.style.display !== 'none') closeChartModal();
+        });
+    }
+
     /* ── Faction / hero distribution charts (GameApi tournaments only) ────
        One vote per player, straight from the standings' own faction/hero
        fields (already resolved server-side by GameApi — no deck decoding
@@ -958,8 +971,28 @@
             html += '<span class="tr-chart-label">' + esc(s.label) + '</span>';
             html += '<span class="tr-chart-count">' + s.count + ' (' + s.pct + '%)</span></li>';
         });
-        html += '</ul></div></div>';
+        html += '</ul></div>';
+        if (opts.footer) html += opts.footer;
+        html += '</div>';
         return html;
+    }
+
+    // Full-breakdown popin, reached from a chart's "Details" button — same
+    // segments as the compact chart, just without the top-N cutoff / "Other"
+    // bucket, laid out in two columns since the full hero list runs long.
+    function openChartModal(segments, title) {
+        if (!chartModalEl || !chartModalBody) return;
+        chartModalBody.innerHTML = renderDonutHtml(segments, title, {
+            chartClass: 'tr-chart--wide',
+            legendClass: 'tr-chart-legend--cols2'
+        });
+        chartModalEl.style.display = 'flex';
+    }
+
+    function closeChartModal() {
+        if (!chartModalEl) return;
+        chartModalEl.style.display = 'none';
+        if (chartModalBody) chartModalBody.innerHTML = '';
     }
 
     function renderFactionChart() {
@@ -983,31 +1016,45 @@
     // (not the color) is what actually identifies each slice.
     var HERO_SHADE_STEPS = [0, -25, 25, -45, 45, -60];
 
-    function renderHeroChart() {
-        var el = document.getElementById('tr-chart-hero');
-        if (!el) return;
-        var dist = computeDistribution('hero');
-        if (!dist.total) { el.innerHTML = ''; return; }
-        var HERO_TOP_COUNT = 12;
-        var top = dist.entries.slice(0, HERO_TOP_COUNT);
-        var otherCount = dist.entries.slice(HERO_TOP_COUNT).reduce(function (sum, e) { return sum + e.count; }, 0);
+    var HERO_TOP_COUNT = 6;
+
+    // Colors are assigned across the *full* sorted list (not just the top N)
+    // so a hero keeps the same shade whether it shows in the compact chart
+    // or in the "all heroes" detail popin.
+    function buildHeroSegments(entries, total) {
         var heroFactions = heroFactionMap();
         var seenPerFaction = {};
-        var segments = top.map(function (e) {
+        return entries.map(function (e) {
             var faction = heroFactions[e.key] || '';
             var base = factionColor(faction) || CHART_OTHER_COLOR;
             var seen = seenPerFaction[faction] || 0;
             seenPerFaction[faction] = seen + 1;
             var color = seen === 0 ? base : shadeColor(base, HERO_SHADE_STEPS[seen % HERO_SHADE_STEPS.length]);
-            return { color: color, pct: Math.round(e.count / dist.total * 1000) / 10, label: resolveCardName(e.key), count: e.count };
+            return { color: color, pct: Math.round(e.count / total * 1000) / 10, label: resolveCardName(e.key), count: e.count };
         });
-        if (otherCount > 0) {
+    }
+
+    function renderHeroChart() {
+        var el = document.getElementById('tr-chart-hero');
+        if (!el) return;
+        var dist = computeDistribution('hero');
+        if (!dist.total) { el.innerHTML = ''; return; }
+        var allSegments = buildHeroSegments(dist.entries, dist.total);
+        var top  = allSegments.slice(0, HERO_TOP_COUNT);
+        var rest = allSegments.slice(HERO_TOP_COUNT);
+        var segments = top.slice();
+        if (rest.length) {
+            var otherCount = rest.reduce(function (sum, s) { return sum + s.count; }, 0);
             segments.push({ color: CHART_OTHER_COLOR, pct: Math.round(otherCount / dist.total * 1000) / 10, label: TR_TXT.chart_other || 'Other', count: otherCount });
         }
-        el.innerHTML = renderDonutHtml(segments, TR_TXT.chart_hero_title || 'Heroes', {
-            chartClass: 'tr-chart--wide',
-            legendClass: 'tr-chart-legend--cols2'
-        });
+        var title = TR_TXT.chart_hero_title || 'Heroes';
+        var footer = rest.length
+            ? '<button type="button" class="btn btn-sm btn-outline-secondary tr-chart-detail-btn">' + esc(TR_TXT.chart_detail_btn || 'Details') + '</button>'
+            : '';
+        el.innerHTML = renderDonutHtml(segments, title, { footer: footer });
+        var btn = el.querySelector('.tr-chart-detail-btn');
+        var modalTitle = TR_TXT.chart_hero_modal_title || title;
+        if (btn) btn.addEventListener('click', function () { openChartModal(allSegments, modalTitle); });
     }
 
     /* ── Filters (GameApi tournaments only) ───────────────────────────────── */
