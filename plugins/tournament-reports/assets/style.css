@@ -349,6 +349,11 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+.tr-chart-legend-ellipsis {
+    justify-content: center;
+    color: var(--neutral-400);
+    letter-spacing: .15em;
+}
 .tr-chart--wide {
     flex-basis: 420px;
 }

@@ -957,20 +957,26 @@
         return 'conic-gradient(' + stops.join(', ') + ')';
     }
 
+    // `segments` drives the donut itself (every slice, so the pie always
+    // reflects true proportions); `opts.legendSegments` lets the legend list
+    // show only a subset of those, with an ellipsis row standing in for the
+    // rest instead of lumping them into a grey "Other" slice.
     function renderDonutHtml(segments, title, opts) {
         opts = opts || {};
+        var legendSegments = opts.legendSegments || segments;
         var chartClass = 'tr-chart' + (opts.chartClass ? ' ' + opts.chartClass : '');
         var legendClass = 'tr-chart-legend' + (opts.legendClass ? ' ' + opts.legendClass : '');
         var html = '<div class="' + chartClass + '"><div class="tr-chart-title">' + esc(title) + '</div>';
         html += '<div class="tr-chart-body">';
         html += '<div class="tr-donut" style="background:' + donutBackground(segments) + '"><div class="tr-donut-hole"></div></div>';
         html += '<ul class="' + legendClass + '">';
-        segments.forEach(function (s) {
+        legendSegments.forEach(function (s) {
             html += '<li><span class="tr-chart-swatch" style="background:' + esc(s.color) + '"></span>';
             if (s.icon) html += '<img class="tr-chart-icon" src="' + esc(s.icon) + '" alt="">';
             html += '<span class="tr-chart-label">' + esc(s.label) + '</span>';
             html += '<span class="tr-chart-count">' + s.count + ' (' + s.pct + '%)</span></li>';
         });
+        if (opts.legendEllipsis) html += '<li class="tr-chart-legend-ellipsis" aria-hidden="true">&hellip;</li>';
         html += '</ul></div>';
         if (opts.footer) html += opts.footer;
         html += '</div>';
@@ -1042,16 +1048,15 @@
         var allSegments = buildHeroSegments(dist.entries, dist.total);
         var top  = allSegments.slice(0, HERO_TOP_COUNT);
         var rest = allSegments.slice(HERO_TOP_COUNT);
-        var segments = top.slice();
-        if (rest.length) {
-            var otherCount = rest.reduce(function (sum, s) { return sum + s.count; }, 0);
-            segments.push({ color: CHART_OTHER_COLOR, pct: Math.round(otherCount / dist.total * 1000) / 10, label: TR_TXT.chart_other || 'Other', count: otherCount });
-        }
         var title = TR_TXT.chart_hero_title || 'Heroes';
         var footer = rest.length
             ? '<button type="button" class="btn btn-sm btn-outline-secondary tr-chart-detail-btn">' + esc(TR_TXT.chart_detail_btn || 'Details') + '</button>'
             : '';
-        el.innerHTML = renderDonutHtml(segments, title, { footer: footer });
+        el.innerHTML = renderDonutHtml(allSegments, title, {
+            legendSegments: top,
+            legendEllipsis: rest.length > 0,
+            footer: footer
+        });
         var btn = el.querySelector('.tr-chart-detail-btn');
         var modalTitle = TR_TXT.chart_hero_modal_title || title;
         if (btn) btn.addEventListener('click', function () { openChartModal(allSegments, modalTitle); });
