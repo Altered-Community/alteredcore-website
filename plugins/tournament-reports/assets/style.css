@@ -571,6 +571,10 @@
     border-color: var(--primary-400, #C9A84C);
     color: #fff;
 }
+.tr-deck-variant-count {
+    opacity: .7;
+    font-weight: 500;
+}
 
 /* Hero card name beside player name */
 .tr-rank-hero {

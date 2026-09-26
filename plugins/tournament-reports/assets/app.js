@@ -261,64 +261,27 @@
         document.head.appendChild(s);
     }
 
-    /* ── Build player decks lookup from games ───────────────────────────── */
-    function buildPlayerDecks(games) {
+    /* ── Build player decks lookup from GameApi's per-player deck list ──── */
+    // GameApi already groups a player's games by distinct decklist and gives
+    // the exact games-played count for each (see ConsolidationPass on the
+    // backend) -- no need to re-derive that grouping from raw per-game data
+    // here, we just take the list as given.
+    function buildPlayerDecks(players) {
         var playerDecks = {};
-        (games || []).forEach(function (g) {
-            (g.endGamePlayers || []).forEach(function (p) {
-                if (!playerDecks[p.id]) {
-                    playerDecks[p.id] = {
-                        name: p.name, faction: p.faction,
-                        playedCards: p.playedCards || [],
-                        decks: [],          // distinct non-empty deck variants
-                        hasEmptyDeck: false
-                    };
-                }
-                var pd = playerDecks[p.id];
-                var deck = p.deck || [];
-                if (!deck.length) { pd.hasEmptyDeck = true; return; }
-
-                // Group distinct decklists: same set of card references = same deck.
-                var sig = deck.map(function (c) { return c.reference; }).sort().join('|');
-                var variant = null;
-                for (var i = 0; i < pd.decks.length; i++) {
-                    if (pd.decks[i].signature === sig) { variant = pd.decks[i]; break; }
-                }
-                if (!variant) {
-                    variant = { signature: sig, deck: deck.slice(), faction: p.faction, games: [] };
-                    pd.decks.push(variant);
-                }
-                variant.games.push(g.tableId || null);
-                if (!pd.faction && p.faction) pd.faction = p.faction;
+        (players || []).forEach(function (p) {
+            var variants = (p.decks || []).map(function (v) {
+                return { deck: v.cards || [], faction: p.faction, gamesCount: v.games || 0 };
             });
-        });
-        Object.keys(playerDecks).forEach(function (pid) {
-            var pd = playerDecks[pid];
-            // Primary "deck" = first non-empty variant (keeps legacy consumers working).
-            var primary = pd.decks[0] || { deck: [], faction: pd.faction };
-            pd.deck = primary.deck;
-            pd.faction = pd.faction || primary.faction;
+            playerDecks[p.id] = {
+                name: p.name, faction: p.faction,
+                playedCards: p.playedCards || [],
+                decks: variants,          // distinct non-empty deck variants, most-played first
+                hasEmptyDeck: variants.length === 0
+            };
+            var primary = variants[0] || { deck: [], faction: p.faction };
+            playerDecks[p.id].deck = primary.deck;
         });
         return playerDecks;
-    }
-
-    /* ── Preload standard card images during page load ─────────────────── */
-    function preloadCardImages() {
-        var urls = [];
-        Object.keys(playerDecks).forEach(function (pid) {
-            playerAllDeckLists(pid).forEach(function (deck) {
-                (deck || []).forEach(function (c) {
-                    var ref = c.reference;
-                    if (!ref) return;
-                    var url = cardImgUrl(ref, TR_LANG);
-                    if (urls.indexOf(url) === -1) urls.push(url);
-                });
-            });
-        });
-        urls.forEach(function (url) {
-            var img = new Image();
-            img.src = url;
-        });
     }
 
     // All distinct decklist arrays for a player (falls back to the merged one).
@@ -333,22 +296,20 @@
     /* ── Render tournament ──────────────────────────────────────────────── */
     function renderTournament(data) {
         currentData = data;
-        playerDecks = buildPlayerDecks(data.games || []);
+        playerDecks = buildPlayerDecks(data.players || []);
 
-        preloadCardImages();
+        // Card images are no longer preloaded for every player up front --
+        // renderDeckCards() already emits <img loading="lazy"> tags, so a
+        // player's images only start fetching once their panel is opened
+        // and that markup lands in the DOM. Lighter on mobile.
 
         document.getElementById('tr-tournament-name').textContent = data.tournamentName || ('Tournament #' + data.tournamentId);
 
-        var games = data.games || [];
-        if (games.length) {
-            var fmt = games[0].format;
-            if (fmt) {
-                document.getElementById('tr-tournament-format').innerHTML = '<i class="fa-solid fa-shield me-1"></i>' + esc(fmt);
-            }
-            var dates = games.map(function(g) { return g.receivedAt; }).filter(Boolean).sort();
-            if (dates.length) {
-                document.getElementById('tr-tournament-date').innerHTML = '<i class="fa-regular fa-calendar me-1"></i>' + esc(formatDate(dates[0]));
-            }
+        if (data.format) {
+            document.getElementById('tr-tournament-format').innerHTML = '<i class="fa-solid fa-shield me-1"></i>' + esc(data.format);
+        }
+        if (data.receivedAt) {
+            document.getElementById('tr-tournament-date').innerHTML = '<i class="fa-regular fa-calendar me-1"></i>' + esc(formatDate(data.receivedAt));
         }
 
         if (TR_LOCALIZATION) {
@@ -589,7 +550,12 @@
         if (variants.length > 1) {
             html += '<div class="tr-deck-variants">';
             variants.forEach(function (v, i) {
-                html += '<button type="button" class="tr-deck-variant-btn' + (i === vi ? ' active' : '') + '" data-pid="' + esc(playerId) + '" data-variant="' + i + '" title="' + esc(TR_TXT.variant_deck.replace('%d', i + 1)) + '">' + esc(TR_TXT.variant_deck.replace('%d', i + 1)) + '</button>';
+                var label = TR_TXT.variant_deck.replace('%d', i + 1);
+                html += '<button type="button" class="tr-deck-variant-btn' + (i === vi ? ' active' : '') + '" data-pid="' + esc(playerId) + '" data-variant="' + i + '" title="' + esc(label) + '">' + esc(label);
+                if (v.gamesCount) {
+                    html += ' <span class="tr-deck-variant-count">×' + v.gamesCount + '</span>';
+                }
+                html += '</button>';
             });
             html += '</div>';
         }

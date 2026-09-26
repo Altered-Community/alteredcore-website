@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'duplicat
     exit;
 }
 
-$tournamentData = null;   // synthetic single-game structure feeding the JS decklist pipeline
+$tournamentData = null;   // per-player deck data feeding the JS decklist pipeline (see buildPlayerDecks() in app.js)
 $standings      = [];
 $tournamentName = '';
 $localization   = '';
@@ -131,29 +131,33 @@ if (!$userId) {
         $description    = $live['description'];
         $standings      = $live['standings'];
 
-        // Decode every shown player's deck and shape it into the same
-        // single-synthetic-game structure the decklist rendering pipeline
-        // (buildPlayerDecks() et al. in app.js) expects.
-        $endGamePlayers = [];
+        // Decode every distinct deck each shown player used this tournament
+        // (not just the main one) for the decklist rendering pipeline
+        // (buildPlayerDecks() et al. in app.js).
+        $players = [];
         foreach ($standings as $s) {
-            $decoded = trDecodeMainDeck($s['main_deck'] ?? null);
-            $endGamePlayers[] = [
+            $decks = [];
+            foreach ($s['decks'] ?? [] as $v) {
+                $decoded = trDecodeMainDeck($v['deck'] ?? null);
+                if ($decoded['ok'] && !empty($decoded['cards'])) {
+                    $decks[] = ['cards' => $decoded['cards'], 'games' => (int)($v['games'] ?? 0)];
+                }
+            }
+            $players[] = [
                 'id'          => $s['id'],
                 'name'        => $s['name'],
                 'faction'     => $s['faction'],
-                'deck'        => $decoded['ok'] ? $decoded['cards'] : [],
                 'playedCards' => [],
+                'decks'       => $decks,
             ];
         }
         $tournamentData = [
             'tournamentId'   => $tournamentId,
             'tournamentName' => $tournamentName,
             'totalGames'     => (int)($live['total_games'] ?? 0),
-            'games'          => [[
-                'format'         => '',
-                'receivedAt'     => '',
-                'endGamePlayers' => $endGamePlayers,
-            ]],
+            'format'         => '',
+            'receivedAt'     => '',
+            'players'        => $players,
         ];
     }
 }

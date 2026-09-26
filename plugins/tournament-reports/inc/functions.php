@@ -138,13 +138,30 @@ function trGameApiGet(string $path, int $userId): array
 }
 
 /**
- * GET /api/tournaments — every tournament GameApi knows about, live.
+ * GET /api/tournaments — a page of tournaments GameApi knows about, live.
  *
- * @return array{ok: bool, data?: array, error?: string}
+ * @param array{mode?: string, minPlayers?: int, page?: int, pageSize?: int, tournamentParentId?: string} $params
+ * @return array{ok: bool, data?: array{tournaments: array, totalCount: int, page: int, pageSize: int}, error?: string}
  */
-function trFetchLiveTournamentIndex(int $userId): array
+function trFetchLiveTournamentIndex(int $userId, array $params = []): array
 {
-    return trGameApiGet('/api/tournaments', $userId);
+    $query = http_build_query(array_filter(
+        $params,
+        fn($v) => $v !== null && $v !== ''
+    ));
+    $path = '/api/tournaments' . ($query !== '' ? '?' . $query : '');
+    return trGameApiGet($path, $userId);
+}
+
+/**
+ * GET /api/tournaments/modes — every distinct tournament mode GameApi has
+ * on record (Frontier, Sealed, All Uniques, ...), for populating a filter.
+ *
+ * @return array{ok: bool, data?: array{modes: string[]}, error?: string}
+ */
+function trFetchLiveTournamentModes(int $userId): array
+{
+    return trGameApiGet('/api/tournaments/modes', $userId);
 }
 
 /**
@@ -158,28 +175,23 @@ function trFetchLiveTournamentPlayers(string $tournamentId, int $userId): array
 }
 
 /**
- * Fetch one GameApi tournament's header (name/counts, from the index) and
- * its player standings in one call. This is what a single tournament report
- * page needs — GameApi has no single-tournament-detail route, only the full
- * index + a players sub-resource.
+ * Fetch one GameApi tournament's header (name/counts/mode/date, from the
+ * index) and its player standings in one call. This is what a single
+ * tournament report page needs — GameApi has no single-tournament-detail
+ * route, only the index (filterable down to one id) + a players sub-resource.
  *
  * @return array{ok: bool, tournament_name?: string, total_games?: int, total_players?: int,
- *               standings?: array, error?: string}
+ *               mode?: ?string, last_game_at?: ?string, standings?: array, error?: string}
  */
 function trFetchLiveTournament(string $tournamentId, int $userId): array
 {
-    $index = trFetchLiveTournamentIndex($userId);
+    $index = trFetchLiveTournamentIndex($userId, ['tournamentParentId' => $tournamentId, 'pageSize' => 1]);
     if (!$index['ok']) {
         return ['ok' => false, 'error' => $index['error'] ?? 'Unknown error'];
     }
 
-    $entry = null;
-    foreach ((array)($index['data']['tournaments'] ?? []) as $t) {
-        if ((string)($t['tournamentParentId'] ?? '') === $tournamentId) {
-            $entry = $t;
-            break;
-        }
-    }
+    $tournaments = (array)($index['data']['tournaments'] ?? []);
+    $entry = $tournaments[0] ?? null;
     if ($entry === null) {
         return ['ok' => false, 'error' => 'Tournament not found.'];
     }
@@ -194,6 +206,8 @@ function trFetchLiveTournament(string $tournamentId, int $userId): array
         'tournament_name'=> (string)($entry['tournamentParentName'] ?? ''),
         'total_games'    => (int)($entry['totalGames'] ?? 0),
         'total_players'  => (int)($entry['totalPlayers'] ?? 0),
+        'mode'           => $entry['mode'] ?? null,
+        'last_game_at'   => $entry['lastGameAt'] ?? null,
         'localization'   => '',
         'description'    => '',
         'standings'      => trStandingsFromGameApiPlayers((array)($playersResult['data']['players'] ?? [])),
@@ -209,7 +223,8 @@ function trFetchLiveTournament(string $tournamentId, int $userId): array
  * win/loss "adjustment" GameApi exposes (see trSubmitAdjustment()).
  *
  * @return array<int, array{id: string, name: string, faction: string, hero: string,
- *   main_deck: ?string, games_played: int, wins: int, losses: int, ratio: string,
+ *   main_deck: ?string, decks: array<int, array{deck: string, games: int}>, games_played: int,
+ *   wins: int, losses: int, ratio: string,
  *   admin_wins_adjustment: int, admin_losses_adjustment: int, admin_adjustment_note: ?string}>
  */
 function trStandingsFromGameApiPlayers(array $players): array
@@ -220,13 +235,18 @@ function trStandingsFromGameApiPlayers(array $players): array
         $lossesAdj = (int)($p['adminLossesAdjustment'] ?? 0);
         $wins      = (int)($p['wins'] ?? 0) + $winsAdj;
         $losses    = (int)($p['losses'] ?? 0) + $lossesAdj;
+        $decks     = (array)($p['decks'] ?? []);
         $standings[] = [
             'id'                       => (string)($p['bgaUserId'] ?? ''),
             'name'                     => (string)($p['bgaName'] ?? '') ?: (string)($p['bgaUserId'] ?? ''),
             'faction'                  => (string)($p['faction'] ?? ''),
             'hero'                     => (string)($p['hero'] ?? ''),
             'main_deck'                => $p['mainDeck'] ?? null,
-            'games_played'             => (int)($p['decksPlayed'] ?? 0),
+            'decks'                    => $decks,
+            // Actual total games across every deck, not the distinct-deck
+            // count GameApi's decksPlayed field holds — this is what the
+            // "games played desc" sort below is meant to compare on.
+            'games_played'             => array_sum(array_column($decks, 'games')),
             'wins'                     => $wins,
             'losses'                   => $losses,
             'ratio'                    => $wins . '-' . $losses,
