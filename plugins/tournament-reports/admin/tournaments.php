@@ -100,7 +100,7 @@ if (trGetApiUrl() === '') {
                 'tournament_id'   => $tid,
                 'tournament_name' => (string)($entry['tournamentParentName'] ?? ''),
                 'total_games'     => (int)($entry['totalGames'] ?? 0),
-                'mode'            => $entry['mode'] ?? null,
+                'mode'            => trModeDisplay($entry['mode'] ?? null, getUiLang()),
                 'last_game_at'    => $lastGameAt ? date($dateFormat, strtotime($lastGameAt)) : null,
             ];
         }
@@ -122,9 +122,13 @@ if (trGetApiUrl() === '') {
     <div class="cat-filter">
         <a href="<?= h(trAdminTournamentsListUrl('', $selectedMinPlayers, 1)) ?>"
            class="<?= $selectedMode === '' ? 'active' : '' ?>"><?= h($txt['filter_all_modes']) ?></a>
-        <?php foreach ($modes as $mode): ?>
+        <?php foreach ($modes as $mode):
+            $modeDisplay = trModeDisplay((string)$mode, getUiLang());
+        ?>
         <a href="<?= h(trAdminTournamentsListUrl((string)$mode, $selectedMinPlayers, 1)) ?>"
-           class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>"><?= h((string)$mode) ?></a>
+           class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>">
+            <span style="width:8px;height:8px;border-radius:50%;background:<?= h($modeDisplay['color']) ?>;flex-shrink:0;display:inline-block;margin-right:.35rem"></span><?= h($modeDisplay['label']) ?>
+        </a>
         <?php endforeach; ?>
     </div>
 </div>
@@ -167,7 +171,13 @@ if (trGetApiUrl() === '') {
                         <strong><?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?></strong>
                         <div class="text-muted small">External ID: <?= h($t['tournament_id']) ?></div>
                     </td>
-                    <td><?= $t['mode'] ? h($t['mode']) : '—' ?></td>
+                    <td>
+                        <?php if ($t['mode']['label'] !== ''): ?>
+                        <span class="badge" style="background:<?= h($t['mode']['color']) ?>;color:#fff"><?= h($t['mode']['label']) ?></span>
+                        <?php else: ?>
+                        —
+                        <?php endif; ?>
+                    </td>
                     <td><?= $t['last_game_at'] ? h($t['last_game_at']) : '—' ?></td>
                     <td><?= $t['total_games'] ?></td>
                     <td class="text-end" style="white-space:nowrap">

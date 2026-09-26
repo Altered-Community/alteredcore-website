@@ -88,7 +88,7 @@ if ($userId) {
                 'tournament_name' => (string)($entry['tournamentParentName'] ?? ''),
                 'total_players'   => (int)($entry['totalPlayers'] ?? 0),
                 'total_games'     => (int)($entry['totalGames'] ?? 0),
-                'mode'            => $entry['mode'] ?? null,
+                'mode'            => trModeDisplay($entry['mode'] ?? null, $uiLang),
                 'last_game_at'    => $lastGameAt ? date($dateFormat, strtotime($lastGameAt)) : null,
             ];
         }
@@ -118,9 +118,13 @@ if ($userId) {
                 <div class="cat-filter">
                     <a href="<?= h(trTournamentsListUrl('', $selectedMinPlayers, 1)) ?>"
                        class="<?= $selectedMode === '' ? 'active' : '' ?>"><?= h($txt['filter_all_modes']) ?></a>
-                    <?php foreach ($modes as $mode): ?>
+                    <?php foreach ($modes as $mode):
+                        $modeDisplay = trModeDisplay((string)$mode, $uiLang);
+                    ?>
                     <a href="<?= h(trTournamentsListUrl((string)$mode, $selectedMinPlayers, 1)) ?>"
-                       class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>"><?= h((string)$mode) ?></a>
+                       class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>">
+                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($modeDisplay['color']) ?>;flex-shrink:0;display:inline-block;margin-right:.35rem"></span><?= h($modeDisplay['label']) ?>
+                    </a>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -151,8 +155,8 @@ if ($userId) {
                     <div>
                         <h5 class="mb-1">
                             <?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?>
-                            <?php if (!empty($t['mode'])): ?>
-                            <span class="badge bg-secondary ms-1"><?= h($t['mode']) ?></span>
+                            <?php if ($t['mode']['label'] !== ''): ?>
+                            <span class="badge ms-1" style="background:<?= h($t['mode']['color']) ?>;color:#fff"><?= h($t['mode']['label']) ?></span>
                             <?php endif; ?>
                         </h5>
                         <small class="text-muted d-flex flex-wrap gap-3">
