@@ -156,7 +156,7 @@ if ($userId) {
                         <h5 class="mb-1">
                             <?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?>
                             <?php if ($t['mode']['label'] !== ''): ?>
-                            <span class="badge ms-1" style="background:<?= h($t['mode']['color']) ?>;color:#fff"><?= h($t['mode']['label']) ?></span>
+                            <span class="badge ms-1" style="background:<?= h($t['mode']['color']) ?>;color:#fff;font-size:.72rem"><?= h($t['mode']['label']) ?></span>
                             <?php endif; ?>
                         </h5>
                         <small class="text-muted d-flex flex-wrap gap-3">

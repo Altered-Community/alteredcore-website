@@ -218,17 +218,23 @@ function trFetchLiveTournament(string $tournamentId, int $userId): array
 
 /**
  * Raw GameApi tournament mode (Game.Format, as BGA sends it) -> display label
- * + badge color. Reuses core-altered-cards' deckbuilder colors/labels for the
- * codes it shares (standard/no-unique) so a mode reads the same way across
- * the site; Demo/Sealed aren't deckbuilder formats, so they get colors of
- * their own here. Keyed uppercase since BGA's own casing isn't consistent
- * ("No_UNIQUE", "Standard", "DEMO", "SEALED").
+ * + badge color. Reuses core-altered-cards' deckbuilder colors/labels
+ * verbatim (see plugins/core-altered-cards/data/altered.json's "formats")
+ * for every code that exists there, so a mode reads the same way across the
+ * site; Demo/Sealed aren't deckbuilder formats, so they get colors of their
+ * own here. Keyed uppercase since BGA's own casing isn't consistent
+ * ("No_UNIQUE", "Standard", "FRONTIER", "SANDBOX", "DEMO", "SEALED").
  */
 define('TR_MODE_DISPLAY', [
-    'STANDARD'  => ['en' => 'Standard All Uniques', 'fr' => 'Standard All Uniques', 'color' => 'var(--primary-400)'],
-    'NO_UNIQUE' => ['en' => 'Standard No Unique',    'fr' => 'Standard No Unique',    'color' => '#5b8cef'],
-    'SEALED'    => ['en' => 'Sealed',                'fr' => 'Scellé',                'color' => '#e8a33d'],
-    'DEMO'      => ['en' => 'Demo',                  'fr' => 'Démo',                  'color' => '#8a8f98'],
+    'STANDARD'             => ['en' => 'Standard All Uniques',  'fr' => 'Standard All Uniques',  'color' => 'var(--primary-400)'],
+    'FRONTIER'             => ['en' => 'Frontier',               'fr' => 'Frontier',               'color' => '#2ec4b6'],
+    'NO_UNIQUE'            => ['en' => 'Standard No Unique',    'fr' => 'Standard No Unique',    'color' => '#5b8cef'],
+    'SINGLETON'            => ['en' => 'Singleton',              'fr' => 'Singleton',              'color' => '#9b6edb'],
+    'SINGLETON_NO_UNIQUE'  => ['en' => 'Singleton No Unique',   'fr' => 'Singleton No Unique',   'color' => '#9b6edb'],
+    'SANDBOX'              => ['en' => 'Sandbox',                'fr' => 'Sandbox',                'color' => '#e0cda9'],
+    'TEST'                 => ['en' => 'Test',                   'fr' => 'Test',                   'color' => '#e0cda9'],
+    'SEALED'               => ['en' => 'Sealed',                 'fr' => 'Scellé',                 'color' => '#e8a33d'],
+    'DEMO'                 => ['en' => 'Demo',                   'fr' => 'Démo',                   'color' => '#8a8f98'],
 ]);
 
 /**

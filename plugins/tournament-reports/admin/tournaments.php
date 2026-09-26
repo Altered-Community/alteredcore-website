@@ -173,7 +173,7 @@ if (trGetApiUrl() === '') {
                     </td>
                     <td>
                         <?php if ($t['mode']['label'] !== ''): ?>
-                        <span class="badge" style="background:<?= h($t['mode']['color']) ?>;color:#fff"><?= h($t['mode']['label']) ?></span>
+                        <span class="badge" style="background:<?= h($t['mode']['color']) ?>;color:#fff;font-size:.72rem"><?= h($t['mode']['label']) ?></span>
                         <?php else: ?>
                         —
                         <?php endif; ?>
