@@ -247,6 +247,23 @@
 .tr-rank-row-clickable {
     cursor: pointer;
 }
+/* Hero art is painted on the <tr> itself (inline background-image), so it
+   spans every column. The tints below stay translucent, otherwise the
+   opaque cell backgrounds would hide the art. */
+.tr-rank-row-hero {
+    height: 75px;
+}
+.tr-ranking-table tr.tr-rank-row-hero td {
+    color: #fff;
+    border-bottom-color: rgba(255, 255, 255, .18);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .45);
+}
+.tr-ranking-table tr.tr-rank-row-hero:hover td {
+    background-color: rgba(0, 0, 0, .12);
+}
+.tr-ranking-table tr.tr-rank-row-hero.tr-rank-row-active td {
+    background-color: rgba(0, 0, 0, .22);
+}
 /* Hero column — the banner fills the cell edge to edge */
 .tr-rank-hero-cell {
     padding: 0 !important;
@@ -499,16 +516,12 @@
     border: none;
     padding: 0;
     font: inherit;
-    color: var(--primary-600, #b8960c);
+    color: var(--primary-600, #ffffff);
     text-decoration: underline;
     text-decoration-color: rgba(184, 150, 12, .3);
     text-underline-offset: 2px;
     cursor: pointer;
     transition: color .15s, text-decoration-color .15s;
-}
-.tr-player-link:hover {
-    color: var(--primary-700, #9a7d0a);
-    text-decoration-color: var(--primary-600, #b8960c);
 }
 
 /* Player status badges (empty deck / multiple decks) */
@@ -580,17 +593,18 @@
     display: inline-block;
 }
 
-/* Hero banner filling the standings row's Hero column (replaces the name
-   pastille once the card's reference is known) — same faction-gradient +
-   card art treatment as the deck panel's banner, scaled down for a row. */
+/* Hero banner in the standings row's Hero column — the art behind it comes
+   from the <tr> (see .tr-rank-row-hero), so this only lays out the faction
+   icon + name on top of it. */
 .tr-rank-hero-banner {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 44px;
+    height: 100%;
+    min-height: 44px;
     padding: 0 12px;
     color: #fff;
-    background-color: var(--neutral-700, #374151);
+    background: transparent;
 }
 .tr-rank-hero-banner-faction {
     width: 20px;

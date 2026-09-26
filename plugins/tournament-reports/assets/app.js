@@ -225,6 +225,10 @@
                 td.innerHTML = (heroObj && heroObj.reference)
                     ? renderRankHeroBanner(heroObj.reference, faction, hero)
                     : ' <span class="tr-rank-hero">' + (fSrc ? '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ' : '') + esc(hero) + '</span>';
+                if (heroObj && heroObj.reference) {
+                    row.classList.add('tr-rank-row-hero');
+                    row.setAttribute('style', rankRowBackground(heroObj.reference, faction));
+                }
             });
         });
         // Re-render the currently open panel too, so its hero banner picks
@@ -416,12 +420,23 @@
 
     // Faction-colored gradient over the hero card art, shared by the full
     // deck-panel banner and the compact one in the standings row.
-    function heroBannerBackground(ref, faction) {
+    function heroBannerGradient(faction) {
         var color = factionColor(faction);
-        var gradient = color
-            ? 'linear-gradient(to right,' + color + ' 35%,' + color + '00 100%),'
+        return color
+            ? 'linear-gradient(to right,' + color + ' 5%,' + color + '00 100%),'
             : 'linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.05)),';
-        return 'background-image:' + gradient + 'url(' + esc(heroCardImgUrl(ref)) + ');background-size:cover;background-position:left top;';
+    }
+
+    function heroBannerBackground(ref, faction) {
+        return 'background-image:' + heroBannerGradient(faction) + 'url(' + esc(heroCardImgUrl(ref)) + ');background-size:cover;background-position:left top;';
+    }
+
+    // Same gradient + card art, but stretched over the whole standings row
+    // (painted on the <tr> itself, so every column sits on the art). The
+    // gradient is sized to the full row width, the art covers it so it isn't
+    // distorted by the row's aspect ratio.
+    function rankRowBackground(ref, faction) {
+        return 'background-image:' + heroBannerGradient(faction) + 'url(' + esc(heroCardImgUrl(ref)) + ');background-size:100%,cover;background-position-y:25%;';
     }
 
     // Faction-colored banner backed by the hero card image, like deck.php's
@@ -450,12 +465,13 @@
     }
 
     // Compact version of the same banner for the standings table's Hero
-    // column — full column width, name + faction overlaid on the art. The
-    // whole row already opens the player's deck panel, so this isn't a
-    // separate click target (no lightbox, unlike the deck-panel banner).
+    // column — just the faction icon + name, laid over the art that the
+    // <tr> itself carries (see rankRowBackground()). The whole row already
+    // opens the player's deck panel, so this isn't a separate click target
+    // (no lightbox, unlike the deck-panel banner).
     function renderRankHeroBanner(ref, faction, hero) {
         if (!ref) return '';
-        var html = '<div class="tr-rank-hero-banner" style="' + heroBannerBackground(ref, faction) + '">';
+        var html = '<div class="tr-rank-hero-banner">';
         if (faction) {
             html += '<img src="' + esc(factionImgUrl(faction)) + '" class="tr-rank-hero-banner-faction" alt="' + esc(faction) + '">';
         }
@@ -499,15 +515,18 @@
             }
         }
         var clickable = isGameApi ? !!hero || hasDecklist : hasDecklist;
-        var html = '<tr class="tr-rank-row' + (clickable ? ' tr-rank-row-clickable' : '') + '" data-faction="' + esc(faction || '') + '" data-hero="' + esc(hero || '') + '" data-name="' + esc((s.name || '').toLowerCase()) + '"' + (clickable ? ' data-player-id="' + esc(s.id) + '"' : '') + '>';
+        var heroRef = (heroObj && heroObj.reference) || '';
+        var html = '<tr class="tr-rank-row' + (clickable ? ' tr-rank-row-clickable' : '') + (heroRef ? ' tr-rank-row-hero' : '') + '"'
+            + (heroRef ? ' style="' + rankRowBackground(heroRef, faction) + '"' : '')
+            + ' data-faction="' + esc(faction || '') + '" data-hero="' + esc(hero || '') + '" data-name="' + esc((s.name || '').toLowerCase()) + '"' + (clickable ? ' data-player-id="' + esc(s.id) + '"' : '') + '>';
         html += '<td>' + (clickable
             ? '<button type="button" class="tr-player-link" data-player-id="' + esc(s.id) + '">' + esc(s.name) + '</button>'
             : esc(s.name));
         html += badge;
         html += '</td>';
         html += '<td class="tr-rank-hero-cell">';
-        if (heroObj && heroObj.reference) {
-            html += renderRankHeroBanner(heroObj.reference, faction, hero);
+        if (heroRef) {
+            html += renderRankHeroBanner(heroRef, faction, hero);
         } else if (hero) {
             html += ' <span class="tr-rank-hero">';
             if (fSrc) html += '<img class="tr-rank-hero-faction" src="' + esc(fSrc) + '" alt=""> ';
@@ -1133,9 +1152,5 @@
         renderFactionChart();
         renderHeroChart();
         populateFilterOptions();
-        // Only auto-open the pinned side panel on screens wide enough for it
-        // not to cover the standings; on narrow screens it stays closed
-        // until a row is clicked (opening as an off-canvas modal instead).
-        if (standings.length && isPanelPinned()) showPlayerDeck(standings[0].id);
     }
 })();
