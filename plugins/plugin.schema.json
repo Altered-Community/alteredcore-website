@@ -34,11 +34,12 @@
         "required": ["section", "file", "label_en", "label_fr"],
         "additionalProperties": false,
         "properties": {
-          "section":  { "type": "string" },
-          "file":     { "type": "string" },
-          "label_en": { "type": "string" },
-          "label_fr": { "type": "string" },
-          "icon":     { "type": "string" }
+          "section":    { "type": "string" },
+          "file":       { "type": "string" },
+          "label_en":   { "type": "string" },
+          "label_fr":   { "type": "string" },
+          "icon":       { "type": "string" },
+          "hide_in_nav": { "type": "boolean" }
         }
       }
     },

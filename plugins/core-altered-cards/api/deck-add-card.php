@@ -77,6 +77,13 @@ if (!$found) {
     $deckCards[] = ['cardReference' => $cardRef, 'quantity' => 1];
 }
 
+// Global mode: re-resolve every card's illustration against the player's preferences
+// whenever a quantity changes, same as the deckbuilder's own addCard()/removeCard().
+$userId = (int)($_SESSION['user_id'] ?? 0);
+if (cacIsAltArtGlobalMode($userId)) {
+    $deckCards = cacApplyAltArtPreferencesToCards($deckCards, $userId);
+}
+
 $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,

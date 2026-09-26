@@ -74,6 +74,16 @@ function initPlugins(): void {
     }
 }
 
+// True only when the digital-ownership integration is both configured (OWNERSHIP_API_URL,
+// used already throughout plugins/ownership and plugins/core-altered-cards' alt-art papi
+// proxies) AND the "ownership" plugin is actually active in this installation's plugin
+// registry. Uses the already-populated $GLOBALS['_ac_active_plugins'] (see initPlugins())
+// rather than calling pluginsGetActiveIds() again, avoiding a redundant DB query.
+function ownershipIsActive(): bool {
+    return defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL
+        && isset($GLOBALS['_ac_active_plugins']['ownership']);
+}
+
 function pluginFindPage(string $slug): ?array {
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
         foreach ($plugin['pages'] ?? [] as $page) {

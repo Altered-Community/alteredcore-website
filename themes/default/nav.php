@@ -18,6 +18,7 @@ if (!function_exists('__nav_href')) {
 }
 if (!function_exists('__nav_active')) {
     function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
+        if (!empty($item['is_separator']) || !empty($item['is_section_header'])) return false;
         if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
         $__parsed = parse_url($item['url'] ?? '');
         if (!empty($__parsed['host'])) return false;
@@ -73,6 +74,9 @@ if (!function_exists('__nav_active')) {
                                 }
                             }
                         }
+                        // A parent with both a real URL and children renders as a split
+                        // button: left side navigates, right side opens the dropdown.
+                        $__niSplit = !empty($__ni['children']) && !empty($__ni['url']) && $__ni['url'] !== '#';
                     ?>
                     <?php if (!empty($__ni['is_sidebar_toggle'])): ?>
                         <?php if ($__sidebarBtnPos === 'nav'): ?>
@@ -88,7 +92,21 @@ if (!function_exists('__nav_active')) {
                         </li>
                         <?php endif; ?>
                     <?php elseif (!empty($__ni['children'])): ?>
-                        <li class="nav-item dropdown">
+                        <li class="nav-item dropdown<?= $__niSplit ? ' nav-item-split' : '' ?><?= ($__niSplit && $__niActive) ? ' active' : '' ?>">
+                            <?php if ($__niSplit): ?>
+                            <a href="<?= h(__nav_href($__ni)) ?>"
+                               class="nav-link nav-link-split-main"
+                               <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
+                               <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                                <i class="<?= h($__ni['icon']) ?>"></i>
+                                <?php if (empty($__ni['hide_label'])): ?>
+                                <span><?= h($__ni['label']) ?></span>
+                                <?php endif; ?>
+                            </a>
+                            <a href="#" class="nav-link dropdown-toggle nav-link-split-caret"
+                               data-bs-toggle="dropdown" aria-expanded="false"
+                               title="<?= h($__ni['label']) ?>"></a>
+                            <?php else: ?>
                             <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                                data-bs-toggle="dropdown" aria-expanded="false"
                                <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
@@ -97,6 +115,7 @@ if (!function_exists('__nav_active')) {
                                 <span><?= h($__ni['label']) ?></span>
                                 <?php endif; ?>
                             </a>
+                            <?php endif; ?>
                             <ul class="dropdown-menu">
                                 <?php foreach ($__ni['children'] as $__nc): ?>
                                 <?php if (!empty($__nc['is_separator'])): ?>
