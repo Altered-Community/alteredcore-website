@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/includes/functions.php';
+require_once dirname(__DIR__) . '/includes/listmonk.php';
 initLang();
 
 // translations
@@ -26,6 +27,16 @@ $txt = [
         'account_delete_cancel'    => 'Cancel',
         'account_delete_confirm_btn' => 'Yes, delete my account',
         'error_invalid_token'      => 'Invalid form token.',
+        'newsletter_title'         => 'Newsletter',
+        'newsletter_on'            => 'You receive the Altered Re:Union newsletter at %s.',
+        'newsletter_off'           => 'You do not receive the Altered Re:Union newsletter.',
+        'newsletter_blocked'       => 'This address can no longer receive the newsletter. Contact us if this is a mistake.',
+        'newsletter_unavailable'   => 'Your newsletter subscription cannot be displayed right now. Please try again later.',
+        'newsletter_subscribe'     => 'Subscribe',
+        'newsletter_unsubscribe'   => 'Unsubscribe',
+        'newsletter_subscribed'    => 'You are now subscribed to the newsletter.',
+        'newsletter_unsubscribed'  => 'You are unsubscribed from the newsletter.',
+        'newsletter_error'         => 'The newsletter service did not answer. Please try again later.',
     ],
     'fr' => [
         'account_title'            => 'Mon compte',
@@ -49,6 +60,16 @@ $txt = [
         'account_delete_cancel'    => 'Annuler',
         'account_delete_confirm_btn' => 'Oui, supprimer mon compte',
         'error_invalid_token'      => 'Jeton de formulaire invalide.',
+        'newsletter_title'         => 'Newsletter',
+        'newsletter_on'            => 'Vous recevez la newsletter d\'Altered Re:Union à l\'adresse %s.',
+        'newsletter_off'           => 'Vous ne recevez pas la newsletter d\'Altered Re:Union.',
+        'newsletter_blocked'       => 'Cette adresse ne peut plus recevoir la newsletter. Contactez-nous s\'il s\'agit d\'une erreur.',
+        'newsletter_unavailable'   => 'Votre inscription à la newsletter ne peut pas être affichée pour le moment. Réessayez plus tard.',
+        'newsletter_subscribe'     => 'M\'inscrire',
+        'newsletter_unsubscribe'   => 'Me désinscrire',
+        'newsletter_subscribed'    => 'Vous êtes inscrit à la newsletter.',
+        'newsletter_unsubscribed'  => 'Vous êtes désinscrit de la newsletter.',
+        'newsletter_error'         => 'Le service de newsletter n\'a pas répondu. Réessayez plus tard.',
     ],
 ][getUiLang()] ?? [];
 
@@ -63,6 +84,16 @@ $userId = (int)($_SESSION['user_id'] ?? 0);
 $saved  = false;
 $errors = [];
 
+// E-mail the newsletter block works on: the Keycloak session one, else the
+// local DB copy (STORE_KC_USER_DATA / local accounts).
+$accountEmail = $kcU['email'] ?? '';
+if ($accountEmail === '' && $userId) {
+    $stmt = $db->prepare(q("SELECT email FROM {users} WHERE id = :id"));
+    $stmt->execute([':id' => $userId]);
+    $accountEmail = (string)$stmt->fetchColumn();
+}
+$newsletterOn = listmonkEnabled() && filter_var($accountEmail, FILTER_VALIDATE_EMAIL);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         $errors[] = $txt['error_invalid_token'];
@@ -74,6 +105,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Clear all session data and redirect to homepage
         session_destroy();
         redirect(BASE_URL . '/');
+    } elseif (in_array($_POST['action'] ?? '', ['newsletter_subscribe', 'newsletter_unsubscribe'], true)) {
+        if ($newsletterOn) {
+            if ($_POST['action'] === 'newsletter_subscribe') {
+                $stmt = $db->prepare(q("SELECT lang_pref FROM {users} WHERE id = :id"));
+                $stmt->execute([':id' => $userId]);
+                $nlLang = ($stmt->fetchColumn() ?: getUiLang()) === 'fr' ? 'fr' : 'en';
+                $ok = listmonkSubscribe($accountEmail, $kcU['username'] ?? '', $nlLang, array_filter([
+                    'lang'          => $nlLang,
+                    'lang_source'   => 'website',
+                    'source'        => 'website_account',
+                    'keycloak_id'   => $kcU['sub'] ?? '',
+                    'subscribed_at' => gmdate('Y-m-d'),
+                ]));
+                flash($ok ? $txt['newsletter_subscribed'] : $txt['newsletter_error'], $ok ? 'success' : 'error');
+            } else {
+                $ok = listmonkUnsubscribe($accountEmail);
+                flash($ok ? $txt['newsletter_unsubscribed'] : $txt['newsletter_error'], $ok ? 'success' : 'error');
+            }
+        }
+        redirect(BASE_URL . '/pages/account');
     } else {
         $langPref = in_array($_POST['lang_pref'] ?? '', ['en', 'fr', 'es', 'it', 'de'], true) ? $_POST['lang_pref'] : null;
         if ($userId) {
@@ -84,6 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $saved = true;
     }
 }
+
+// Newsletter state: null = Listmonk unreachable, [] = no subscriber yet.
+$newsletterSub = $newsletterOn ? listmonkFindSubscriber($accountEmail) : null;
 
 // Load full user row for display
 $userRow = null;
@@ -185,6 +239,35 @@ include dirname(__DIR__) . '/includes/header.php';
             </button>
         </form>
     </div>
+
+    <?php if ($newsletterOn): ?>
+    <!-- Newsletter -->
+    <div class="card-altered p-4 mb-4">
+        <h6 class="fw-bold mb-3"><i class="fa-solid fa-envelope me-1" style="color:var(--primary-500)"></i> <?= $txt['newsletter_title'] ?></h6>
+        <?php if ($newsletterSub === null): ?>
+            <p class="small mb-0" style="color:var(--neutral-500)"><?= $txt['newsletter_unavailable'] ?></p>
+        <?php elseif (($newsletterSub['status'] ?? '') === 'blocklisted'): ?>
+            <p class="small mb-0" style="color:var(--neutral-500)"><?= $txt['newsletter_blocked'] ?></p>
+        <?php else: ?>
+            <?php $nlSubscribed = !empty($newsletterSub['subscribed']); ?>
+            <p class="small mb-3"><?= $nlSubscribed ? sprintf($txt['newsletter_on'], '<strong>' . h($accountEmail) . '</strong>') : $txt['newsletter_off'] ?></p>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                <?php if ($nlSubscribed): ?>
+                    <input type="hidden" name="action" value="newsletter_unsubscribe">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-bell-slash me-1"></i> <?= $txt['newsletter_unsubscribe'] ?>
+                    </button>
+                <?php else: ?>
+                    <input type="hidden" name="action" value="newsletter_subscribe">
+                    <button type="submit" class="btn btn-primary-altered btn-sm">
+                        <i class="fa-solid fa-bell me-1"></i> <?= $txt['newsletter_subscribe'] ?>
+                    </button>
+                <?php endif; ?>
+            </form>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <!-- Delete account -->
     <div class="card-altered p-4" style="border-color:var(--sand-300)">
