@@ -111,13 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $db->prepare(q("SELECT lang_pref FROM {users} WHERE id = :id"));
                 $stmt->execute([':id' => $userId]);
                 $nlLang = ($stmt->fetchColumn() ?: getUiLang()) === 'fr' ? 'fr' : 'en';
-                $ok = listmonkSubscribe($accountEmail, $kcU['username'] ?? '', $nlLang, array_filter([
+                $ok = in_array(listmonkSubscribe($accountEmail, $kcU['username'] ?? '', $nlLang, array_filter([
                     'lang'          => $nlLang,
                     'lang_source'   => 'website',
                     'source'        => 'website_account',
                     'keycloak_id'   => $kcU['sub'] ?? '',
                     'subscribed_at' => gmdate('Y-m-d'),
-                ]));
+                ])), ['subscribed', 'already'], true);
                 flash($ok ? $txt['newsletter_subscribed'] : $txt['newsletter_error'], $ok ? 'success' : 'error');
             } else {
                 $ok = listmonkUnsubscribe($accountEmail);

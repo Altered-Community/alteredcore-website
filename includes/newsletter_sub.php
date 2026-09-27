@@ -2,13 +2,18 @@
 // Newsletter subscription — self-contained module included from pages/index.php.
 //
 // Phase 1 (runs at include time, before any HTML output):
-//   Handles POST submission and redirects.
+//   Handles POST submission and redirects. When Listmonk is configured
+//   (LISTMONK_URL, see includes/listmonk.php) the address is subscribed there,
+//   confirmed, to the list of the language the visitor is reading in; the
+//   local newsletter_sub table is only the fallback without Listmonk.
 //
 // Phase 2 (called explicitly in the HTML section):
 //   renderNewsletterBlock() outputs the signup form.
 //
 // To remove the newsletter entirely: delete this file and the two lines in
 // index.php that reference it (the require_once and the renderNewsletterBlock call).
+
+require_once __DIR__ . '/listmonk.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nl_subscribe'])) {
     $nlLang = getUiLang();
@@ -20,6 +25,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nl_subscribe'])) {
             flash($nlLang === 'fr'
                 ? 'Veuillez saisir une adresse e-mail valide.'
                 : 'Please enter a valid email address.', 'error');
+        } elseif (listmonkEnabled()) {
+            $nlUser = kcIsLoggedIn() ? kcUser() : [];
+            $nlResult = listmonkSubscribe($nlEmail,
+                ($nlUser['username'] ?? '') ?: strstr($nlEmail, '@', true), $nlLang, array_filter([
+                    'lang'          => $nlLang,
+                    'lang_source'   => 'website',
+                    'source'        => 'website_home',
+                    'keycloak_id'   => $nlUser['sub'] ?? '',
+                    'subscribed_at' => gmdate('Y-m-d'),
+                ]));
+            if ($nlResult === 'subscribed') {
+                flash($nlLang === 'fr' ? 'Inscription confirmée, merci !' : 'Subscription confirmed, thank you!');
+            } elseif ($nlResult === 'already') {
+                flash($nlLang === 'fr' ? 'Cette adresse est déjà inscrite.' : 'This email is already subscribed.');
+            } elseif ($nlResult === 'blocklisted') {
+                flash($nlLang === 'fr'
+                    ? 'Cette adresse ne peut pas être inscrite. Contactez-nous s\'il s\'agit d\'une erreur.'
+                    : 'This address cannot be subscribed. Contact us if this is a mistake.', 'error');
+            } else {
+                flash($nlLang === 'fr'
+                    ? 'Le service de newsletter n\'a pas répondu. Réessayez plus tard.'
+                    : 'The newsletter service did not answer. Please try again later.', 'error');
+            }
         } else {
             $nlStmt = getDB()->prepare(q("INSERT IGNORE INTO {newsletter_sub} (email) VALUES (:email)"));
             $nlStmt->execute([':email' => $nlEmail]);

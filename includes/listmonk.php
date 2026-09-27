@@ -1,10 +1,12 @@
 <?php
 // Listmonk (newsletter.altered.re) client for the "Newsletter" block of the
-// account page: reads and changes the subscription of ONE e-mail address to the
-// two language lists (LISTMONK_LIST_EN / LISTMONK_LIST_FR).
+// account page and the homepage "Stay informed" form: reads and changes the
+// subscription of ONE e-mail address to the two language lists
+// (LISTMONK_LIST_EN / LISTMONK_LIST_FR, the numeric list ids -- not the UUIDs).
 //
 // Disabled when LISTMONK_URL is empty or undefined: the account page then shows
-// no newsletter block at all. The API user needs a Listmonk role with
+// no newsletter block, and the homepage form falls back to the local
+// newsletter_sub table. The API user needs a Listmonk role with
 // subscribers:get_all, subscribers:manage, subscribers:sql_query (the lookup by
 // e-mail is an SQL expression) and lists:get_all / lists:manage_all.
 //
@@ -81,16 +83,24 @@ function listmonkFindSubscriber(string $email)
 /**
  * Subscribes $email to the list of $lang ('fr' -> FR, anything else -> EN),
  * confirmed straight away (single opt-in). Creates the subscriber if needed.
+ * Returns 'subscribed', 'already' (already on one of the two lists),
+ * 'blocklisted' or 'error'.
  */
-function listmonkSubscribe(string $email, string $name, string $lang, array $attribs): bool
+function listmonkSubscribe(string $email, string $name, string $lang, array $attribs): string
 {
     $listId = $lang === 'fr' ? (int)LISTMONK_LIST_FR : (int)LISTMONK_LIST_EN;
     $sub = listmonkFindSubscriber($email);
-    if ($sub === null || ($sub['status'] ?? '') === 'blocklisted') {
-        return false;
+    if ($sub === null) {
+        return 'error';
+    }
+    if (($sub['status'] ?? '') === 'blocklisted') {
+        return 'blocklisted';
+    }
+    if (!empty($sub['subscribed'])) {
+        return 'already';
     }
     if (!$sub) {
-        return listmonkRequest('POST', '/api/subscribers', [
+        $ok = listmonkRequest('POST', '/api/subscribers', [
             'email'                    => strtolower($email),
             'name'                     => $name,
             'status'                   => 'enabled',
@@ -98,13 +108,15 @@ function listmonkSubscribe(string $email, string $name, string $lang, array $att
             'attribs'                  => $attribs,
             'preconfirm_subscriptions' => true,
         ]) !== null;
+    } else {
+        $ok = listmonkRequest('PUT', '/api/subscribers/lists', [
+            'ids'             => [$sub['id']],
+            'action'          => 'add',
+            'target_list_ids' => [$listId],
+            'status'          => 'confirmed',
+        ]) !== null;
     }
-    return listmonkRequest('PUT', '/api/subscribers/lists', [
-        'ids'             => [$sub['id']],
-        'action'          => 'add',
-        'target_list_ids' => [$listId],
-        'status'          => 'confirmed',
-    ]) !== null;
+    return $ok ? 'subscribed' : 'error';
 }
 
 /** Unsubscribes $email from both lists; true when there was nothing to do. */
