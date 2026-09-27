@@ -57,6 +57,7 @@
             "scope_ownership":  "Digital ownership",
             "tab_unique":       "Uniques",
             "show_promo":       "Alt arts",
+            "show_serialized":  "Serialized",
             "promo_editions":   "Promo editions",
             "advanced":         "Advanced search",
             "sort_by":          "Sort by",
@@ -131,8 +132,6 @@
                 "mountain_desc": "Mountain ↓",
                 "ocean_asc":     "Ocean ↑",
                 "ocean_desc":    "Ocean ↓",
-                "set_date_asc":  "Set Date ↑",
-                "set_date_desc": "Set Date ↓",
                 "random":        "Random"
             }
         },
@@ -168,6 +167,7 @@
             "scope_ownership":  "Propriété numérique",
             "tab_unique":       "Uniques",
             "show_promo":       "Alt arts",
+            "show_serialized":  "Sérialisées",
             "promo_editions":   "Éditions promo",
             "advanced":         "Recherche avancée",
             "sort_by":          "Trier par",
@@ -242,8 +242,6 @@
                 "mountain_desc": "Montagne ↓",
                 "ocean_asc":     "Océan ↑",
                 "ocean_desc":    "Océan ↓",
-                "set_date_asc":  "Date set ↑",
-                "set_date_desc": "Date set ↓",
                 "random":        "Aléatoire"
             }
         }

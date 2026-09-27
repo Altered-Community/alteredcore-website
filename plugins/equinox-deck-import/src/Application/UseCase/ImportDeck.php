@@ -5,6 +5,7 @@ namespace AlteredCore\EquinoxDeckImport\Application\UseCase;
 use AlteredCore\EquinoxDeckImport\Application\Dto\ImportResult;
 use AlteredCore\EquinoxDeckImport\Domain\Card;
 use AlteredCore\EquinoxDeckImport\Domain\Deck;
+use AlteredCore\EquinoxDeckImport\Port\AltArtPreferenceInterface;
 use AlteredCore\EquinoxDeckImport\Port\DeckApiClientInterface;
 use AlteredCore\EquinoxDeckImport\Port\TokenProviderInterface;
 use DomainException;
@@ -18,11 +19,13 @@ final class ImportDeck
 {
     private DeckApiClientInterface $api;
     private TokenProviderInterface $tokens;
+    private AltArtPreferenceInterface $altArts;
 
-    public function __construct(DeckApiClientInterface $api, TokenProviderInterface $tokens)
+    public function __construct(DeckApiClientInterface $api, TokenProviderInterface $tokens, AltArtPreferenceInterface $altArts)
     {
         $this->api = $api;
         $this->tokens = $tokens;
+        $this->altArts = $altArts;
     }
 
     /**
@@ -40,6 +43,18 @@ final class ImportDeck
         $cards = $this->toCards($cardsRaw);
         if ($cards === null) {
             return ImportResult::rejected(400, 'invalid_card', $messages['invalid_card']);
+        }
+
+        // Global mode: the importing player's own alt-art preferences replace whatever
+        // illustration Equinox happened to export — same auto-apply the deckbuilder
+        // performs on open/duplicate. PerDeck mode (the default) leaves the exported
+        // references untouched.
+        if ($this->altArts->isGlobalMode()) {
+            $rewritten = $this->altArts->applyPreferences(array_map(
+                static fn(Card $c): array => $c->toApiArray(),
+                $cards
+            ));
+            $cards = $this->toCards($rewritten) ?? $cards;
         }
 
         if ($this->tokens->accessToken() === '') {
