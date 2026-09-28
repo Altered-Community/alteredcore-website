@@ -566,7 +566,7 @@ status and body unchanged. The client secret, the refresh token and the access t
 services no longer need CORS for the site.</p>
 <ul>
   <li>Services: <code>decks</code> (<code>DECKS_API_URL</code>), <code>collection</code> (<code>COLLECTION_API_URL</code>), when configured. Others: 404.</li>
-  <li>Paths under <code>api/</code> only; <code>..</code>, <code>//</code> and backslashes are refused (400). Query strings are forwarded, cookies are not.</li>
+  <li>Paths under <code>api/</code> only, made of <code>[A-Za-z0-9._~-]</code> segments (no <code>.</code>/<code>..</code>, no percent-encoding); anything else is refused (400). Query strings are forwarded, cookies are not.</li>
   <li>Writes (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>) need the header <code>X-CSRF-Token: AlteredCore.csrf</code> (403 otherwise). Body limit 1 MB.</li>
   <li>Guests are relayed without a token: public endpoints answer, the others return the service's 401.</li>
   <li>A 401 with a token (revoked, clock skew) makes the relay renew the token once and retry.</li>

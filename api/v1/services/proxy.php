@@ -10,7 +10,7 @@
 //   GET    /api/v1/services/decks/api/decks?itemsPerPage=10   → {DECKS_API_URL}/api/decks?itemsPerPage=10
 //   PATCH  /api/v1/services/decks/api/decks/{id}               (header X-CSRF-Token required)
 //
-// Rules: only listed services; paths under `api/`; no `..`, `//` or backslash; writes need the
+// Rules: only listed services; paths under `api/` made of [A-Za-z0-9._~-] segments; writes need the
 // session's CSRF token; cookies are never forwarded; a guest is relayed without a token (public
 // endpoints still answer). 404 unknown service · 400 bad path · 403 csrf · 413 body too large ·
 // 502 service unreachable. Otherwise the service's status and body are returned as is.
@@ -34,10 +34,14 @@ $path     = (string)($_GET['_path'] ?? '');
 $services = spaProxyServices();
 if (!isset($services[$service])) serviceProxyReply(404, ['error' => 'unknown_service']);
 
-if (strpos($path, 'api/') !== 0 || strpos($path, '..') !== false || strpos($path, '//') !== false
-    || strpos($path, '\\') !== false || preg_match('/[\x00-\x1f\x7f]/', $path)) {
-    serviceProxyReply(400, ['error' => 'bad_path']);
+// Strict segments: letters, digits, `._~-` only, never `.` / `..`. No `%` either, so an
+// (double-)encoded `..` or `/` cannot reach the service and be decoded there.
+$segments = explode('/', $path);
+$pathOk = $segments[0] === 'api' && count($segments) > 1;
+foreach ($segments as $seg) {
+    if (!preg_match('/^[A-Za-z0-9._~-]+$/', $seg) || $seg === '.' || $seg === '..') { $pathOk = false; break; }
 }
+if (!$pathOk) serviceProxyReply(400, ['error' => 'bad_path']);
 
 $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], true)) {
