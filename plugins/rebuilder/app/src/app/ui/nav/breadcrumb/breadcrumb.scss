@@ -1,0 +1,12 @@
+nav {
+  display: flex;
+  gap: var(--ar-space-1-5);
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+}
+a {
+  color: var(--ar-color-text-muted);
+}
+a:hover {
+  color: var(--ar-color-text);
+}

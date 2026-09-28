@@ -1,0 +1,66 @@
+@if (search.source() === 'owned' || search.source() === 'favorites') {
+  <div class="state">
+    <strong>{{ search.source() === 'owned' ? 'Propriété numérique' : 'Favoris' }}</strong>
+    <p>Connectez-vous pour retrouver {{ search.source() === 'owned' ? 'les cartes de votre collection numérique' : 'vos cartes favorites' }}.</p>
+    <a arButton variant="secondary" routerLink="/login">Se connecter</a>
+  </div>
+} @else {
+  @if (layout() === 'grid') {
+    <div class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()">
+      @for (c of search.cards(); track c.reference; let i = $index) {
+        <ar-card-tile
+          role="listitem"
+          [card]="c"
+          [eager]="i < 6"
+          [plain]="browse()"
+          [quantity]="deck.quantities().get(c.reference) ?? 0"
+          [max]="deck.maxFor(c)"
+          (quantityChange)="deck.setQuantity(c, $event)"
+        />
+      }
+      @if (search.loading()) {
+        @for (s of skeletons(); track $index) {
+          <span class="skeleton" aria-hidden="true"></span>
+        }
+      }
+    </div>
+  } @else {
+    <div class="list" role="list" aria-label="Cartes">
+      @for (c of search.cards(); track c.reference) {
+        <ar-deck-row
+          role="listitem"
+          appearance="panel"
+          [plain]="browse()"
+          [card]="c"
+          [quantity]="deck.quantities().get(c.reference) ?? 0"
+          [max]="deck.maxFor(c)"
+          (quantityChange)="deck.setQuantity(c, $event)"
+        />
+      }
+    </div>
+  }
+
+  @if (search.loading() && search.slow()) {
+    <p class="slow" role="status">
+      Recherche en cours…
+      @if (search.source() === 'uniques' && search.filters().environment === 'frontier') {
+        La première recherche Frontier prend une dizaine de secondes.
+      }
+    </p>
+  }
+  @if (search.error(); as e) {
+    <div class="state" role="alert">
+      <p>{{ e }}</p>
+      <button arButton variant="secondary" (click)="search.retry()">Réessayer</button>
+    </div>
+  } @else if (!search.loading() && search.total() === 0) {
+    <div class="state">
+      <strong>Aucune carte</strong>
+      <p>Aucune carte ne correspond à ces filtres.</p>
+      <button arButton variant="secondary" (click)="search.reset()">Réinitialiser les filtres</button>
+    </div>
+  } @else if (!search.hasMore() && search.cards().length) {
+    <p class="end">{{ search.cards().length }} cartes affichées · fin des résultats</p>
+  }
+  <div class="sentinel" arInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
+}

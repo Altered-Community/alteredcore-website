@@ -1,0 +1,81 @@
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { catchError, of } from 'rxjs';
+import { CardsApiService } from '../../../core/cards-api.service';
+import { typeOf } from '../../../core/deck-rules';
+import { cardToLine, factionFromReference } from '../../../core/deck-view';
+import { GuestDeckService } from '../../../core/guest-deck.service';
+import type { Card, DeckCardLine, DeckHero } from '../../../core/models';
+import { localizedText } from '../../../core/models';
+import { ArButton } from '../../../ui/buttons';
+import { ArInput } from '../../../ui/fields';
+import { ArBreakpointService } from '../../../ui/layout.services';
+import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+
+/** Parses "3 ALT_CORE_B_AX_04_C" / "ALT_… x3" lines into reference → quantity. */
+export function parseDecklist(text: string): { reference: string; quantity: number }[] {
+  const out = new Map<string, number>();
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const m = /^(\d{1,3})\s*[x×]?\s+(ALT_[A-Z0-9_]+)$/i.exec(line) ?? /^(ALT_[A-Z0-9_]+)\s*[x×]?\s*(\d{1,3})$/i.exec(line);
+    if (!m) continue;
+    const [qty, ref] = /^\d/.test(m[1]) ? [Number(m[1]), m[2]] : [Number(m[2]), m[1]];
+    const key = ref.toUpperCase();
+    out.set(key, (out.get(key) ?? 0) + qty);
+  }
+  return [...out].map(([reference, quantity]) => ({ reference, quantity }));
+}
+
+@Component({
+  selector: 'app-import-deck',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ArButton, ArInput],
+  host: { class: 'ar-overlay-content' },
+  templateUrl: './import-deck.overlay.html',
+  styleUrl: './import-deck.overlay.scss',
+})
+export class ImportDeckOverlay {
+  protected readonly ref = inject<ArOverlayRef<string>>(ArOverlayRef);
+  private readonly api = inject(CardsApiService);
+  private readonly guests = inject(GuestDeckService);
+  protected readonly bp = inject(ArBreakpointService);
+  protected readonly name = signal('');
+  protected readonly text = signal('');
+  protected readonly busy = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  run(): void {
+    const rows = parseDecklist(this.text());
+    if (!rows.length) {
+      this.error.set('Aucune ligne reconnue. Format attendu : « quantité référence ».');
+      return;
+    }
+    this.busy.set(true);
+    this.error.set(null);
+    this.api
+      .batch(rows.map((r) => r.reference), 'fr')
+      .pipe(catchError(() => of([] as Card[])))
+      .subscribe((cards) => {
+        const byRef = new Map(cards.map((c) => [c.reference, c]));
+        let hero: DeckHero | null = null;
+        const lines: DeckCardLine[] = rows.map((r) => {
+          const card = byRef.get(r.reference) ?? ({ reference: r.reference } as Card);
+          if (typeOf(card) === 'HERO' && !hero) {
+            hero = {
+              reference: card.reference,
+              name: localizedText(card.name, 'fr') || card.reference,
+              faction: card.faction?.code ?? factionFromReference(card.reference),
+            };
+          }
+          return cardToLine(card, typeOf(card) === 'HERO' ? 1 : r.quantity);
+        });
+        const deck = this.guests.create({ name: this.name().trim() || 'Deck importé', hero, deckCards: lines });
+        this.busy.set(false);
+        this.ref.close(deck.id);
+      });
+  }
+}
+
+export function openImportDeck(overlay: ArOverlayService) {
+  return overlay.open<ImportDeckOverlay, string>(ImportDeckOverlay, { title: 'Importer un deck', width: 560 });
+}

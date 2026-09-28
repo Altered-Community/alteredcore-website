@@ -1,0 +1,87 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-5);
+}
+:host(.sheet) {
+  gap: 22px;
+}
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ar-space-2);
+}
+:host(.sheet) .two {
+  gap: var(--ar-space-2-5);
+}
+.two ::ng-deep .label {
+  font-weight: 600;
+}
+.sets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ar-space-1-5);
+}
+:host(.sheet) .sets {
+  gap: var(--ar-space-2);
+}
+.types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ar-space-1-5);
+}
+.adv {
+  margin-top: var(--ar-space-2);
+}
+.fold {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: var(--ar-control-md);
+  padding: 0 var(--ar-space-3);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-color-bg-subtle);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fold-l {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+}
+.pill {
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-primary-soft);
+  color: var(--ar-color-primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+.chev {
+  display: flex;
+  transition: transform 0.15s;
+}
+.chev.open {
+  transform: rotate(180deg);
+}
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ar-color-primary);
+  cursor: pointer;
+  min-height: 32px;
+}
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-2);
+}

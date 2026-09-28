@@ -1,0 +1,33 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+}
+.pill {
+  height: var(--ar-control-md);
+  padding: 0 var(--ar-space-3);
+  border-radius: var(--ar-radius-control);
+  border: 1px solid var(--ar-color-border);
+  background: var(--ar-color-surface);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ar-color-text-2);
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+}
+.pill:disabled {
+  cursor: default;
+}
+.user {
+  padding: 0 var(--ar-space-3) 0 6px;
+  font-size: 14px;
+  color: var(--ar-color-text);
+}
+.user:has(ar-icon:first-child) {
+  padding-left: var(--ar-space-2-5);
+}
+.user:hover {
+  background: var(--ar-color-bg-subtle);
+  color: var(--ar-color-text);
+}

@@ -1,0 +1,87 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Secrets / local env (.env.example is the only committed sample)
+.env*
+!.env.example
+auth-bff.env
+config.local.php
+
+# Local keys and machine paths
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ed25519
+id_ecdsa
+android/local.properties
+
+# Tunnel configs (hostnames and credentials stay on the machine)
+.cloudflared/
+cloudflared.yml
+ngrok.yml
+*.ngrok.yml
+*.trapdoor.yml
+
+# Capacitor / native
+/ios/App/Pods
+/ios/App/build
+/android/.gradle
+/android/app/build
+/android/build
+/android/captures
+*.apk
+*.aab
+*.ipa
+
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/artifacts/

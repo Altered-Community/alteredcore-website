@@ -1,0 +1,122 @@
+@if (bp.compact()) {
+  <ar-app-bar appearance="compact" title="Deck">
+    <ar-back-button leading fallback="/decks" />
+    <button actions class="edit" arIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" [iconSize]="22" (click)="edit()"></button>
+    <button actions arIconButton="share" variant="ghost" ariaLabel="Partager" [iconSize]="22" (click)="share()"></button>
+    <button actions arIconButton="more" variant="ghost" ariaLabel="Plus d’actions (copier la liste, dupliquer, supprimer)" [iconSize]="22" (click)="more()"></button>
+  </ar-app-bar>
+}
+
+@if (deck.error(); as err) {
+  <div class="state">
+    <p>{{ err }}</p>
+    <a arButton variant="secondary" routerLink="/decks">Retour à mes decks</a>
+  </div>
+} @else if (deck.loading()) {
+  <div class="state" aria-busy="true"><p>Chargement du deck…</p></div>
+} @else {
+  <div class="page">
+    <main class="main">
+      @if (!bp.compact()) {
+        <a class="back" routerLink="/decks"><ar-icon name="chevron-left" [size]="16" />Mes decks</a>
+        <ar-tabs ariaLabel="Vues du deck" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
+      } @else {
+        <section class="m-summary" aria-label="Résumé du deck">
+          <div class="m-top">
+            <span class="m-thumb">
+              @if (deck.hero(); as h) {
+                <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+              }
+            </span>
+            <div class="m-meta">
+              <h1>{{ deck.name() }}</h1>
+              <span>{{ deck.hero()?.name }}</span>
+            </div>
+          </div>
+          <div class="badges">
+            <ar-badge [tone]="info().badgeTone">{{ info().label }}</ar-badge>
+            @if (legal()) {
+              <ar-badge tone="green" icon="check">Légal</ar-badge>
+            } @else {
+              <ar-badge tone="orange" icon="alert">Non légal</ar-badge>
+            }
+            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? 'Public' : 'Privé' }}</ar-badge>
+          </div>
+          <div class="m-counts">
+            <span><strong>{{ deck.total() }}</strong> cartes</span>
+            <span class="sep" aria-hidden="true"></span>
+            <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="12" />
+          </div>
+        </section>
+      }
+
+      @if (tab() === 'decklist') {
+        @if (bp.compact()) {
+          <app-deck-list-view [readonly]="true" />
+        } @else {
+          <div class="grouping">
+            <ar-segmented ariaLabel="Regrouper par" [options]="groupingOptions" [(value)]="grouping" />
+          </div>
+          <div class="tables">
+            @for (g of groups(); track g.label) {
+              <app-decklist-table [group]="g" />
+            } @empty {
+              <p class="empty">Ce deck ne contient encore aucune carte.</p>
+            }
+          </div>
+        }
+      } @else {
+        @if (bp.compact()) {
+          <ar-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
+            <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+          </ar-collapsible>
+        }
+        <app-deck-preview [readonly]="true" [dense]="true" />
+      }
+    </main>
+
+    @if (!bp.compact()) {
+      <aside class="aside" aria-label="Résumé du deck">
+        <div class="banner">
+          @if (deck.hero(); as h) {
+            <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" position="center 18%" [eager]="true" />
+          }
+        </div>
+        <div class="aside-body">
+          <div class="titles">
+            <h1>{{ deck.name() }}</h1>
+            <span>{{ deck.hero()?.name }}@if (created()) { · créé le {{ created() }}}</span>
+          </div>
+          <div class="badges">
+            <ar-badge [tone]="info().badgeTone">{{ info().label }}</ar-badge>
+            @if (legal()) {
+              <ar-badge tone="green" icon="check">Légal</ar-badge>
+            } @else {
+              <ar-badge tone="orange" icon="alert">Non légal</ar-badge>
+            }
+            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? 'Public' : 'Privé' }}</ar-badge>
+          </div>
+          <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
+          <ar-collapsible title="Stats" [(open)]="statsOpen">
+            <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+          </ar-collapsible>
+          <button arButton icon="pencil" [fullWidth]="true" (click)="edit()">Modifier le deck</button>
+          <div class="actions">
+            <button arButton variant="secondary" icon="copy" (click)="copyList()">Copier la liste</button>
+            <button arButton variant="secondary" icon="share" (click)="share()">Partager</button>
+            <button arButton variant="secondary" icon="duplicate" (click)="duplicate()">Dupliquer</button>
+            <button arButton variant="danger" icon="trash" (click)="remove()">Supprimer</button>
+          </div>
+        </div>
+      </aside>
+    }
+  </div>
+
+  @if (bp.compact()) {
+    <ar-bottom-nav ariaLabel="Consultation du deck" [items]="navItems()" />
+  }
+}
+
+@if (toast(); as t) {
+  <div class="toast" role="status">{{ t }}</div>
+}

@@ -1,0 +1,66 @@
+@if (bp.compact()) {
+  <ar-app-bar appearance="compact" [title]="view() === 'deck' ? 'Mon deck' : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
+    <ar-back-button leading fallback="/decks" />
+    <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? 'Compte' : 'Se connecter'">
+      @if (auth.isLoggedIn()) {
+        <ar-avatar [size]="32" [name]="auth.username() || '?'" />
+      } @else {
+        <span class="guest-avatar"><ar-icon name="user" [size]="18" /></span>
+      }
+    </a>
+  </ar-app-bar>
+}
+
+@if (deck.error(); as err) {
+  <div class="page state">
+    <p>{{ err }}</p>
+    <a arButton variant="secondary" routerLink="/decks">Retour à mes decks</a>
+  </div>
+} @else {
+  <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
+    <main class="main">
+      @if (!bp.compact()) {
+        <div class="head">
+          <div class="title-block">
+            <ar-breadcrumb [items]="[{ label: 'Mes decks', route: '/decks' }, { label: 'Modifier' }]" />
+            <ar-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+          </div>
+          <ar-segmented
+            size="lg"
+            ariaLabel="Mode d’affichage"
+            [options]="modeOptions"
+            [value]="effectiveView() === 'apercu' ? 'apercu' : 'search'"
+            (valueChange)="setMode($event)"
+          />
+        </div>
+      }
+
+      @if (readonlyServerDeck()) {
+        <div class="banner" role="status">
+          <span>Ce deck appartient à un compte : il est en lecture seule sans connexion.</span>
+          <button arButton variant="secondary" size="sm" icon="duplicate" (click)="duplicateToGuest()">Dupliquer en local</button>
+        </div>
+      }
+
+      @switch (effectiveView()) {
+        @case ('search') {
+          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [ready]="!deck.loading()" />
+        }
+        @case ('apercu') {
+          <app-deck-preview />
+        }
+        @case ('deck') {
+          <app-deck-list-view (openSettings)="openSettings()" />
+        }
+      }
+    </main>
+
+    @if (!bp.compact()) {
+      <app-deck-panel class="panel" (openSettings)="openSettings()" />
+    }
+  </div>
+
+  @if (bp.compact()) {
+    <ar-bottom-nav ariaLabel="Éditeur de deck" [items]="navItems()" />
+  }
+}

@@ -1,0 +1,14 @@
+<span class="label">{{ label() }}</span>
+<div class="bars">
+  @for (v of values(); track $index) {
+    <div class="col" [title]="v + ' carte(s) de coût ' + axis[$index]">
+      <span class="n" [class.zero]="v === 0">{{ v }}</span>
+      <span class="bar" [style.height.px]="height(v)"></span>
+    </div>
+  }
+</div>
+<div class="axis">
+  @for (a of axis; track a) {
+    <span>{{ a }}</span>
+  }
+</div>

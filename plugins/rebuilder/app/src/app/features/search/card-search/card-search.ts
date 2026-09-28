@@ -1,0 +1,195 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
+import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { CardsApiService } from '../../../core/cards-api.service';
+import type { CardOrder } from '../../../core/models';
+import { ArButton, ArIconButton } from '../../../ui/buttons';
+import { ArCount, ArFilterBar } from '../../../ui/chips';
+import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
+import { ArBreakpointService } from '../../../ui/layout.services';
+import { ArTabs } from '../../../ui/nav';
+import { ArOverlayService } from '../../../ui/overlay';
+import { CardSearchStore } from '../card-search.store';
+import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
+import { FiltersPanel } from '../filters-panel/filters-panel';
+import { openFiltersSheet } from '../filters-sheet/filters-sheet.overlay';
+import { SearchResults } from '../search-results/search-results';
+
+export interface CardSourceTab {
+  id: CardSource;
+  label: string;
+}
+
+export const CARD_SOURCES: CardSourceTab[] = [
+  { id: 'all', label: 'Toutes les cartes' },
+  { id: 'uniques', label: 'Uniques' },
+  { id: 'owned', label: 'Propriété numérique' },
+  { id: 'favorites', label: 'Favoris' },
+];
+
+/**
+ * Card search shared by the deck editor and the card browser: source tabs (`?source=`), filters
+ * (aside ≥ 1200 px, sheet below), active-filter chips, sort, grid / list results.
+ * The host provides `CardSearchStore`; `faction` locks the search to one faction (the deck's hero).
+ */
+@Component({
+  selector: 'app-card-search',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ArTabs, ArSegmented, ArSelect, ArInput, ArIconButton, ArButton, ArCount, ArFilterBar, FiltersPanel, SearchResults],
+  host: { '[class.compact]': 'bp.compact()' },
+  templateUrl: './card-search.html',
+  styleUrl: './card-search.scss',
+})
+export class CardSearch {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly overlay = inject(ArOverlayService);
+  private readonly cardsApi = inject(CardsApiService);
+  protected readonly bp = inject(ArBreakpointService);
+  protected readonly search = inject(CardSearchStore);
+
+  readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
+  readonly faction = input<string | null>(null);
+  /** False while the host is still loading what `faction` depends on. */
+  readonly ready = input(true);
+  /** Card browser: faction filter, no quantity controls on the cards. */
+  readonly browse = input(false);
+
+  protected readonly source = toSignal(
+    this.route.queryParamMap.pipe(map((q) => (q.get('source') as CardSource) || 'all')),
+    { initialValue: 'all' as CardSource },
+  );
+
+  protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+  protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: `Tri : ${o.label}` }));
+  protected readonly layoutOptions = [
+    { value: 'grid' as const, icon: 'grid' as const, ariaLabel: 'Grille' },
+    { value: 'list' as const, icon: 'list' as const, ariaLabel: 'Liste' },
+  ];
+  protected readonly resultsLayout = signal<'grid' | 'list'>('grid');
+  protected readonly condensed = signal(false);
+
+  /** Desktop filters apply live; the draft mirrors the store and debounces text inputs. */
+  protected readonly draft = signal<SearchFilters>(this.search.filters());
+  private applyTimer?: ReturnType<typeof setTimeout>;
+
+  protected readonly activeCount = computed(() => activeFilterCount(this.search.filters(), this.search.source()));
+  protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
+  protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
+  protected readonly totalLabel = computed(() => {
+    const t = this.search.total();
+    return t === null ? '…' : `${t.toLocaleString('fr-FR')} carte${t > 1 ? 's' : ''}`;
+  });
+
+  constructor() {
+    effect(() => {
+      const source = this.source();
+      const faction = this.faction();
+      if (!this.ready()) return;
+      untracked(() => {
+        if (source !== this.search.source() || faction !== this.search.faction() || (this.search.page() === 0 && !this.search.loading())) {
+          this.search.configure(source, faction);
+          this.draft.set(this.search.filters());
+        }
+      });
+    });
+
+    effect(() => {
+      if (this.source() !== 'uniques') return;
+      untracked(() => this.prefetchAbilities());
+    });
+
+    const onScroll = () => {
+      const next = window.scrollY > 170;
+      if (next !== this.condensed()) this.condensed.set(next);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(this.applyTimer);
+    });
+  }
+
+  /** The effect editor needs ~40 KB of vocabularies; fetch them while the user reads the uniques. */
+  private prefetchAbilities(): void {
+    const run = () => (['triggers', 'conditions', 'effects'] as const).forEach((k) => this.cardsApi.abilities(k).subscribe({ error: () => undefined }));
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
+    else setTimeout(run, 300);
+  }
+
+  protected setSource(id: string): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { source: id === 'all' ? null : id }, replaceUrl: true });
+  }
+
+  protected onDraft(next: SearchFilters): void {
+    const prev = this.draft();
+    this.draft.set(next);
+    clearTimeout(this.applyTimer);
+    const textChanged = prev.q !== next.q || prev.mainCost !== next.mainCost || prev.recallCost !== next.recallCost;
+    if (textChanged) this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
+    else this.search.apply(next);
+  }
+
+  protected applyNow(): void {
+    clearTimeout(this.applyTimer);
+    this.search.apply(this.draft());
+    window.scrollTo({ top: 0 });
+  }
+
+  protected resetFilters(): void {
+    this.search.reset();
+    this.draft.set(this.search.filters());
+  }
+
+  protected removeChip(id: string): void {
+    this.search.removeChip(id);
+    this.draft.set(this.search.filters());
+  }
+
+  protected clearAll(): void {
+    this.search.clearAll();
+    this.draft.set(this.search.filters());
+  }
+
+  protected setOrder(order: string): void {
+    this.search.patch({ order: order as CardOrder });
+    this.draft.set(this.search.filters());
+  }
+
+  protected setQuery(q: string): void {
+    this.draft.update((d) => ({ ...d, q }));
+    clearTimeout(this.applyTimer);
+    this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
+  }
+
+  protected openFilters(): void {
+    openFiltersSheet(this.overlay, {
+      source: this.search.source(),
+      faction: this.search.faction(),
+      filters: this.search.filters(),
+      factionFilter: this.browse(),
+    }).afterClosed.subscribe((f) => {
+      if (!f) return;
+      this.search.apply(f);
+      this.draft.set(f);
+      window.scrollTo({ top: 0 });
+    });
+  }
+
+  protected editEffect(index: number): void {
+    const effect = this.draft().effects[index];
+    if (!effect) return;
+    openEffectEditor(this.overlay, { effect, index }).afterClosed.subscribe((next) => {
+      const effects = next
+        ? this.draft().effects.map((e, i) => (i === index ? next : e))
+        : this.draft().effects.filter((e, i) => i !== index || e.triggers.length || e.conditions.length || e.effects.length);
+      this.onDraft({ ...this.draft(), effects });
+    });
+  }
+
+  protected scrollTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}

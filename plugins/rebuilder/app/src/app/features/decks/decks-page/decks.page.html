@@ -1,0 +1,105 @@
+@if (bp.compact()) {
+  <ar-app-bar appearance="compact" title="Decks">
+    <button leading arIconButton="menu" variant="ghost" ariaLabel="Menu du site" [iconSize]="22" (click)="menu.open()"></button>
+    <button actions class="new-compact" arIconButton="plus" variant="primary" ariaLabel="Nouveau deck" [iconSize]="22" (click)="newDeck()"></button>
+  </ar-app-bar>
+}
+
+<main class="page">
+  @if (!bp.compact()) {
+    <div class="head">
+      <h1>Decks</h1>
+      <div class="actions">
+        <button arButton variant="secondary" icon="upload" (click)="importDeck()">Importer</button>
+        <button arButton icon="plus" (click)="newDeck()">Nouveau deck</button>
+      </div>
+    </div>
+  }
+
+  <ar-tabs ariaLabel="Decks" [appearance]="bp.compact() ? 'pill' : 'underline'" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
+
+  @if (bp.compact()) {
+    <div class="search-row">
+      <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" placeholder="Rechercher un deck…" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
+      <button arIconButton="sliders" [ariaLabel]="'Filtres' + (activeFilters() ? ', ' + activeFilters() + ' actifs' : '')" [iconSize]="20" class="filters-btn" (click)="openFilters()">
+        @if (activeFilters()) {
+          <span class="badge"><ar-count [value]="activeFilters()" /></span>
+        }
+      </button>
+    </div>
+    <div class="count-row">
+      <strong>{{ countLabel() }}</strong>
+      <ar-select ariaLabel="Trier par" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+    </div>
+  } @else {
+    <div class="filters">
+      <div class="row">
+        <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" placeholder="Rechercher un deck…" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
+        <ar-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
+        @if (tab() === 'mine') {
+          <ar-select ariaLabel="Héros" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
+          <ar-segmented ariaLabel="Visibilité" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+        }
+        <span class="grow"></span>
+        <ar-select label="Trier par" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+      </div>
+      <div class="row factions" role="group" aria-label="Faction">
+        <span class="overline">Faction</span>
+        @for (f of factions; track f.code) {
+          <ar-chip [label]="f.name" [dot]="f.color" [selected]="filters().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
+        }
+      </div>
+    </div>
+  }
+
+  @if (tab() === 'mine' && (serverError() || auth.sessionNotice())) {
+    <p class="notice" role="status">{{ serverError() || auth.sessionNotice() }}</p>
+  }
+  @if (tab() === 'mine' && !auth.isLoggedIn() && !auth.sessionRestoring()) {
+    <p class="notice guest" role="note">
+      <ar-icon name="lock" [size]="14" />
+      Mode invité : vos decks sont enregistrés sur cet appareil. <a routerLink="/login">Se connecter</a>
+    </p>
+  }
+
+  <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="tab() === 'mine' ? 'Mes decks' : 'Decks de la communauté'">
+    @for (d of list(); track d.id) {
+      <ar-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" />
+    }
+    @if (tab() === 'mine' && !bp.compact()) {
+      <button type="button" class="new-tile" (click)="newDeck()">
+        <span class="plus"><ar-icon name="plus" [size]="22" [strokeWidth]="2.4" /></span>
+        Nouveau deck
+      </button>
+    }
+    @if (tab() === 'community' && communityLoading()) {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <span class="skeleton" aria-hidden="true"></span>
+      }
+    }
+  </div>
+
+  @if (tab() === 'mine' && !list().length) {
+    <div class="empty">
+      @if (mine().length) {
+        <p>Aucun deck ne correspond à ces filtres.</p>
+      } @else {
+        <strong>Aucun deck pour l’instant</strong>
+        <p>Créez votre premier deck : choisissez un héros, un nom et un format.</p>
+        @if (bp.compact()) {
+          <button arButton icon="plus" (click)="newDeck()">Nouveau deck</button>
+        }
+      }
+    </div>
+  }
+  @if (tab() === 'community') {
+    @if (communityError(); as e) {
+      <p class="notice" role="alert">{{ e }}</p>
+    }
+    <div #listSentinel arInfiniteSentinel class="sentinel" (visible)="onSentinel($event)"></div>
+  }
+
+  @if (bp.compact() && tab() === 'mine') {
+    <button arButton variant="secondary" size="lg" icon="upload" [fullWidth]="true" (click)="importDeck()">Importer un deck</button>
+  }
+</main>

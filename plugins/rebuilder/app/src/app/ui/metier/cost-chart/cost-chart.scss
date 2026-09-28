@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-1);
+  min-width: 0;
+  --bar: var(--ar-color-chart-main);
+}
+:host(.reserve) {
+  --bar: var(--ar-color-chart-reserve);
+}
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+.bars,
+.axis {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.bars {
+  border-bottom: 1px solid var(--ar-color-chart-axis);
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 50px;
+}
+.n {
+  font-size: 10px;
+  font-weight: 700;
+}
+.n.zero {
+  color: var(--ar-color-text-disabled);
+}
+.bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: var(--bar);
+}
+.axis span {
+  text-align: center;
+  font-size: 10px;
+  color: var(--ar-color-text-muted);
+}

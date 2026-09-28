@@ -1,0 +1,27 @@
+<div class="intro">
+  @if (bp.compact()) {
+    <p>Le héros détermine votre faction et les cartes disponibles.</p>
+  }
+  <ar-faction-tabs size="sm" [layout]="bp.compact() ? 'scroll' : 'grid'" controls="hero-picker-panel" [(active)]="faction" />
+</div>
+<div class="ar-overlay-body">
+  <ar-hero-selector
+    panelId="hero-picker-panel"
+    [heroes]="heroes()"
+    [error]="error()"
+    [faction]="faction()"
+    [columns]="bp.compact() ? 3 : 4"
+    [(selected)]="picked"
+  />
+</div>
+<div class="ar-overlay-footer">
+  <span class="note">
+    @if (picked(); as p) {
+      Sélection : <strong>{{ p.name }}</strong> · {{ factionLabel(p.faction) }}
+    } @else {
+      Aucun héros sélectionné
+    }
+  </span>
+  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!picked()" (click)="confirm()">Choisir ce héros</button>
+</div>

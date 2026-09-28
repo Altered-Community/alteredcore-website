@@ -1,0 +1,65 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-3);
+  min-height: 51px;
+  padding: 0 var(--ar-space-1);
+  border-bottom: 1px solid var(--ar-color-divider);
+}
+:host(.panel) {
+  gap: var(--ar-space-2-5);
+  min-height: 36px;
+  border-bottom: none;
+  border-radius: var(--ar-radius-md);
+}
+:host(.panel:hover) {
+  background: var(--ar-color-bg-subtle);
+}
+:host(:last-child) {
+  border-bottom: none;
+}
+.qty {
+  font-size: 15px;
+  font-weight: 800;
+  min-width: 26px;
+}
+.rarity {
+  height: 14px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+.name {
+  flex-grow: 1;
+  min-width: 0;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:host(.panel) .name {
+  font-size: 14px;
+}
+.costs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.c {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.c.main {
+  background: var(--ar-color-text);
+  color: var(--ar-color-on-primary);
+}
+.c.res {
+  border: 1.5px solid var(--ar-color-text);
+  color: var(--ar-color-text);
+}

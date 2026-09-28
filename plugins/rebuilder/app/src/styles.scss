@@ -1,0 +1,225 @@
+/*
+ * Global base. Design tokens come from design/tokens/tokens.css (angular.json → styles).
+ * Mobile-first: base rules target compact screens, media queries widen from there.
+ * Breakpoints (literal values, CSS cannot read variables): 768px medium, 1200px expanded.
+ */
+
+@use '@angular/cdk/overlay-prebuilt.css';
+
+/* Printed card fonts of ar-unique-card (public/assets/unique-card/fonts, see its README). Only downloaded when used. */
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/unique-card/fonts/HapticPro-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 800;
+  font-display: swap;
+  src: url('/assets/unique-card/fonts/HapticPro-Extrabold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Icons';
+  font-display: block;
+  src: url('/assets/unique-card/fonts/alteredicons.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Circled';
+  font-display: block;
+  src: url('/assets/unique-card/fonts/NotoSansSymbols-circled.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: light;
+  font-family: var(--ar-font-family);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--ar-color-bg-app);
+  color: var(--ar-color-text);
+  font: var(--ar-font-body);
+  font-weight: 400;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
+a {
+  color: var(--ar-color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ar-color-primary-strong);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+img {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}
+
+.ar-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Placeholder hatching for card / hero / extension visuals while art loads. */
+.ar-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.08) 0 2px,
+    transparent 2px 11px
+  );
+}
+
+/* CDK overlay: scrim + panel classes used by ArOverlayService. */
+.ar-overlay-backdrop {
+  background: var(--ar-color-scrim);
+}
+
+.cdk-overlay-pane.ar-overlay-pane--sheet {
+  align-self: flex-end;
+}
+
+/* Left drawer: full height, scrim stays visible on the right. */
+.cdk-overlay-pane.ar-overlay-pane--drawer {
+  height: 100dvh;
+  max-height: 100dvh;
+  box-shadow: var(--ar-shadow-drawer);
+  animation: ar-drawer-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ar-overlay-pane--drawer .cdk-dialog-container {
+  height: 100%;
+  max-height: 100dvh;
+}
+
+@keyframes ar-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdk-overlay-pane.ar-overlay-pane--drawer {
+    animation: none;
+  }
+}
+
+/* Touch density: large buttons get a rounder, bigger label (DS-Boutons, mobile column). */
+html[data-density='touch'] .ar-button.ar-button--lg {
+  border-radius: 14px;
+  font-size: 16px;
+}
+
+/* ArOverlayService panes (CDK dialog container wraps ar-overlay-container). */
+.ar-overlay-pane .cdk-dialog-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: inherit;
+  outline: none;
+}
+
+.ar-overlay-pane--dialog {
+  max-height: min(90vh, 900px);
+}
+
+.ar-overlay-pane--dialog.ar-overlay-pane--fill {
+  max-height: none;
+}
+
+.ar-overlay-pane--sheet {
+  max-height: calc(100dvh - 48px);
+}
+
+.ar-overlay-pane ar-overlay-container {
+  flex: 1 1 auto;
+}
+
+/* Content components: host + scrolling body + footer, identical in window and sheet. */
+.ar-overlay-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.ar-overlay-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ar-space-4) var(--ar-space-5);
+}
+
+.ar-overlay-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ar-space-2);
+  padding: var(--ar-space-3) var(--ar-space-5);
+  border-top: 1px solid var(--ar-color-border);
+}
+
+.ar-overlay-footer .note {
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+  margin-right: auto;
+}
+
+.ar-overlay--sheet .ar-overlay-footer,
+.ar-overlay--fullscreen .ar-overlay-footer {
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--ar-space-3) var(--ar-space-4) var(--ar-space-5);
+}
+
+.ar-overlay--sheet .ar-overlay-footer .note,
+.ar-overlay--fullscreen .ar-overlay-footer .note {
+  margin: 0;
+  text-align: center;
+}
+
+.ar-overlay--sheet .ar-overlay-footer .secondary-action,
+.ar-overlay--fullscreen .ar-overlay-footer .secondary-action {
+  display: none;
+}

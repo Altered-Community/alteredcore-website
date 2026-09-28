@@ -1,0 +1,46 @@
+:host {
+  position: relative;
+  width: var(--ar-control-md);
+  height: var(--ar-control-md);
+  border-radius: var(--ar-radius-control);
+  border: 1px solid var(--ar-color-border);
+  background: var(--ar-color-surface);
+  color: var(--ar-color-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+:host(.ar-icon-button--sm) {
+  width: var(--ar-control-sm);
+  height: var(--ar-control-sm);
+  border-radius: var(--ar-radius-md);
+}
+:host(.ar-icon-button--lg) {
+  width: var(--ar-control-lg);
+  height: var(--ar-control-lg);
+}
+:host(.ar-icon-button--secondary:hover) {
+  background: var(--ar-color-bg-subtle);
+}
+:host(.ar-icon-button--ghost) {
+  border-color: transparent;
+  background: none;
+}
+:host(.ar-icon-button--ghost:hover) {
+  background: var(--ar-color-bg-subtle);
+}
+:host(.ar-icon-button--primary) {
+  border-color: transparent;
+  background: var(--ar-color-primary);
+  color: var(--ar-color-on-primary);
+}
+:host(.ar-icon-button--primary:hover) {
+  background: var(--ar-color-primary-strong);
+}
+:host(:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

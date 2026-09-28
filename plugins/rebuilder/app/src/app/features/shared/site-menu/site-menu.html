@@ -1,0 +1,16 @@
+<nav class="ar-overlay-body" aria-label="Navigation principale">
+  @for (l of links; track l.route) {
+    <a
+      class="item"
+      [href]="l.route"
+      [class.active]="isActive(l)"
+      [attr.aria-current]="isActive(l) ? 'page' : null"
+      (click)="go($event, l.route)"
+      >{{ l.label }}</a
+    >
+  }
+  <a href="/login" class="item account" (click)="go($event, '/login')">
+    <ar-icon name="user" [size]="20" />
+    {{ auth.sessionRestoring() ? 'Connexion…' : auth.isLoggedIn() ? 'Mon compte' : 'Se connecter' }}
+  </a>
+</nav>

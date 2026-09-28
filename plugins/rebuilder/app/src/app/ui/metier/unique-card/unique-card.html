@@ -1,0 +1,35 @@
+<ar-card-art [reference]="card().reference" [faction]="card().faction?.code" [sources]="sources()" [eager]="eager()" placeholder="" />
+@if (hasStats()) {
+  @for (b of biomes(); track b.key) {
+    <img class="badge" [class]="b.row" [src]="b.badge" alt="" />
+  }
+}
+<img class="frame" [src]="frameSrc()" alt="" />
+<img class="set" [src]="setLogo()" alt="" />
+
+<span class="name">{{ name() }}</span>
+<span class="type">{{ type() }}</span>
+@if (hasStats()) {
+  <span class="cost main" [attr.aria-label]="'Coût de main ' + card().mainCost">{{ card().mainCost }}</span>
+  <span class="cost recall" [attr.aria-label]="'Coût de réserve ' + card().recallCost">{{ card().recallCost }}</span>
+  <ul class="powers" aria-label="Puissances">
+    @for (b of biomes(); track b.key) {
+      <li [class]="b.row" [attr.aria-label]="b.label + ' ' + b.value">{{ b.value }}</li>
+    }
+  </ul>
+}
+
+@if (effects().main.length) {
+  <div class="text main-text" [class.narrow]="narrow()" [innerHTML]="mainHtml()"></div>
+}
+@if (showSupport()) {
+  <div class="text support" [innerHTML]="supportHtml()"></div>
+}
+
+<svg class="qr" [attr.viewBox]="'0 0 ' + qr().size + ' ' + qr().size" shape-rendering="crispEdges" aria-hidden="true">
+  <rect class="qr-light" [attr.width]="qr().size" [attr.height]="qr().size" />
+  <path class="qr-dark" [attr.d]="qr().path" />
+</svg>
+<span class="qr-logo" aria-hidden="true"><img [src]="'assets/unique-card/logos/Altered-Swirl.svg'" alt="" /></span>
+
+<span class="foot">{{ foot().before }}@if (foot().artist) {<span class="glyph" aria-hidden="true">{{ pen }}</span>{{ foot().artist }}}{{ foot().after }}</span>

@@ -1,0 +1,76 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+  background: var(--ar-color-surface);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-card);
+  padding: var(--ar-space-3);
+}
+@media (min-width: 768px) {
+  :host {
+    padding: var(--ar-space-4);
+  }
+}
+:host(.flat) {
+  gap: 0;
+}
+.flat-head {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--ar-space-1) var(--ar-space-1) var(--ar-space-2);
+}
+.overline {
+  font: var(--ar-font-overline);
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  min-height: var(--ar-hit-min);
+}
+.chev {
+  display: flex;
+  color: var(--ar-color-text-2);
+  transition: transform 0.15s;
+}
+.chev.closed {
+  transform: rotate(-90deg);
+}
+.title {
+  font: var(--ar-font-heading);
+}
+:host-context([data-density='touch']) .title {
+  font-size: 19px;
+}
+.count {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-track);
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.distinct {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ar-color-text-muted);
+  text-align: right;
+}

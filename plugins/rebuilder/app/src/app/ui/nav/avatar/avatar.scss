@@ -1,0 +1,18 @@
+:host {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ar-color-primary-soft);
+  color: var(--ar-color-primary-strong);
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+:host(.lg) {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}

@@ -1,0 +1,12 @@
+<button type="button" [attr.aria-pressed]="selected()" (click)="choose.emit()">
+  <span class="visual">
+    <ar-card-art [reference]="hero().reference" [faction]="hero().faction" placeholder="Visuel du héros" />
+    @if (selected()) {
+      <span class="check"><ar-icon name="check" [size]="15" [strokeWidth]="3" /></span>
+    }
+  </span>
+  <span class="name">{{ hero().name }}</span>
+  @if (unavailableOnBga()) {
+    <span class="bga" title="Indisponible sur BGA">Indispo. BGA</span>
+  }
+</button>

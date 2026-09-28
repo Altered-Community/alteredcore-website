@@ -1,0 +1,34 @@
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { rarityOf, typeOf } from '../../../core/deck-rules';
+import type { DeckGroup } from '../../../core/deck-view';
+import type { HydratedLine } from '../../../core/models';
+import { localizedText } from '../../../core/models';
+import { rarityIcon } from '../../../ui/chips';
+
+/** Desktop decklist card: Qté · Carte · Coût · Forêt / Montagne / Océan. */
+@Component({
+  selector: 'app-decklist-table',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './decklist-table.html',
+  styleUrl: './decklist-table.scss',
+})
+export class DecklistTable {
+  readonly group = input.required<DeckGroup>();
+  protected readonly rows = computed(() => this.group().lines.map(toRow));
+}
+
+function toRow(l: HydratedLine) {
+  const character = typeOf(l.card) === 'CHARACTER';
+  const power = (v: number | null | undefined) => (character ? String(v ?? 0) : '—');
+  return {
+    ref: l.card.reference,
+    qty: l.quantity,
+    name: localizedText(l.card.name, 'fr') || l.card.reference,
+    icon: rarityIcon(rarityOf(l.card)),
+    main: l.card.mainCost ?? '–',
+    res: l.card.recallCost ?? '–',
+    f: power(l.card.forestPower),
+    m: power(l.card.mountainPower),
+    o: power(l.card.oceanPower),
+  };
+}

@@ -1,0 +1,33 @@
+<div class="bar">
+  <p class="count"><strong>{{ deck.total() }} cartes</strong> · {{ deck.distinct() }} différentes</p>
+  @if (deck.groups().length) {
+    <button arButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? 'Tout déplier' : 'Tout replier' }}</button>
+  }
+</div>
+@for (g of deck.groups(); track g.id) {
+  <ar-deck-section
+    [title]="g.label"
+    [count]="g.count"
+    [distinct]="g.distinct"
+    [collapsible]="true"
+    [open]="!closed().has(g.id)"
+    (openChange)="setOpen(g.id, $event)"
+  >
+    <div class="grid" [class.dense]="dense()">
+      @for (l of g.lines; track l.card.reference) {
+        <ar-card-tile
+          [card]="l.card"
+          [quantity]="l.quantity"
+          [max]="deck.maxFor(l.card)"
+          [readonly]="readonly() || !deck.editable()"
+          (quantityChange)="deck.setQuantity(l.card, $event)"
+        />
+      }
+    </div>
+  </ar-deck-section>
+} @empty {
+  <div class="empty">
+    <strong>Deck vide</strong>
+    <p>Ajoutez des cartes depuis la recherche.</p>
+  </div>
+}

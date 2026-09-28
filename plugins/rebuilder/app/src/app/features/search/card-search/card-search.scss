@@ -1,0 +1,225 @@
+/* The host page pads the content with `var(--ar-space-3) var(--ar-page-padding)` on compact screens;
+   the sticky search head bleeds into that padding. `--app-search-bottom-inset` lifts the « back to top »
+   button above a bottom navigation. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+
+.search-head {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  margin: calc(-1 * var(--ar-space-3)) calc(-1 * var(--ar-page-padding)) 0;
+  padding: var(--ar-space-3) var(--ar-page-padding) 0;
+  background: var(--ar-color-bg-app);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-head.condensed {
+  padding: var(--ar-space-2) var(--ar-page-padding) 6px;
+  background: var(--ar-color-surface);
+  border-bottom: 1px solid var(--ar-color-border);
+  box-shadow: var(--ar-shadow-e2);
+  padding-top: calc(var(--ar-space-2) + env(safe-area-inset-top));
+}
+
+.search-row {
+  display: flex;
+  gap: var(--ar-space-2);
+}
+
+.search-row .q {
+  flex-grow: 1;
+}
+
+.search-row .q ::ng-deep input {
+  border-radius: var(--ar-radius-lg);
+  height: 44px;
+}
+
+.filters-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ar-radius-lg);
+}
+
+.filters-btn .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  border: 2px solid var(--ar-color-bg-app);
+  border-radius: var(--ar-radius-pill);
+}
+
+.summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  font-size: 13px;
+  color: var(--ar-color-text-2);
+}
+
+.summary-line strong {
+  color: var(--ar-color-text);
+}
+
+.search-body {
+  display: flex;
+  gap: var(--ar-space-6);
+  align-items: flex-start;
+}
+
+.results {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+
+.chips {
+  margin: 0 calc(-1 * var(--ar-page-padding));
+}
+
+:host(.compact) .chips ::ng-deep .scroller {
+  padding-left: var(--ar-page-padding);
+}
+
+:host(.compact) .chips ::ng-deep .clear {
+  padding-right: var(--ar-page-padding);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ar-space-2);
+}
+
+.total {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-1);
+  flex-shrink: 0;
+}
+
+.tools ar-select ::ng-deep select {
+  height: 36px;
+}
+
+.to-top {
+  position: fixed;
+  right: var(--ar-space-4);
+  bottom: calc(var(--app-search-bottom-inset, env(safe-area-inset-bottom)) + var(--ar-space-3));
+  z-index: 18;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: var(--ar-shadow-e2);
+  color: var(--ar-color-text);
+}
+
+/* ---------- medium and up ---------- */
+@media (min-width: 768px) {
+  :host {
+    gap: var(--ar-space-4);
+  }
+
+  .chips {
+    margin: 0;
+    --ar-filter-bar-bg: var(--ar-color-bg-app);
+  }
+
+  .toolbar {
+    gap: var(--ar-space-3) var(--ar-space-4);
+    flex-wrap: wrap;
+  }
+
+  .toolbar .chips {
+    order: 10;
+    flex-basis: 100%;
+  }
+
+  .toolbar .total {
+    font-size: 16px;
+    margin-right: 6px;
+  }
+
+  .tools {
+    gap: var(--ar-space-2);
+  }
+
+  .tools ar-select ::ng-deep select {
+    height: var(--ar-control-md);
+  }
+
+  .results {
+    gap: var(--ar-space-4);
+  }
+}
+
+@media (min-width: 1200px) {
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+
+  .toolbar .chips {
+    order: 0;
+    flex-basis: auto;
+  }
+
+  .filters {
+    /* Wider than the 264px token so « Réinitialiser » and « Rechercher »
+       (label, padding, and the filter-count badge) both fit without clipping. */
+    width: calc(var(--ar-filter-panel-width) + var(--ar-space-8) + var(--ar-space-6));
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ar-app-bar-height) + var(--ar-space-6));
+    /* Stay inside the viewport under the page header. The footer is a flex
+       sibling of the scroller, so the action row is never scrolled away. */
+    height: calc(100dvh - var(--ar-app-bar-height) - 2 * var(--ar-space-6) - 60px - var(--ar-space-4) * 2 - 44px);
+    max-height: calc(100dvh - var(--ar-app-bar-height) - 2 * var(--ar-space-6));
+    background: var(--ar-color-surface);
+    border: 1px solid var(--ar-color-border);
+    border-radius: var(--ar-radius-card);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .filters-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--ar-space-4);
+  }
+
+  .filters-foot {
+    flex-shrink: 0;
+    padding: var(--ar-space-3) var(--ar-space-4);
+    border-top: 1px solid var(--ar-color-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ar-space-2);
+  }
+
+  .filters-foot .go {
+    flex: 1 1 auto;
+    min-width: max-content;
+    max-width: 100%;
+  }
+}

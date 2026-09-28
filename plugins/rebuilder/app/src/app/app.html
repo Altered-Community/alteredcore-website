@@ -1,0 +1,7 @@
+@if (!bp.compact()) {
+  <ar-app-bar appearance="expanded" [links]="links">
+    <button leading class="menu" arIconButton="menu" variant="ghost" ariaLabel="Menu du site" (click)="menu.open()"></button>
+    <app-account-actions actions />
+  </ar-app-bar>
+}
+<router-outlet />

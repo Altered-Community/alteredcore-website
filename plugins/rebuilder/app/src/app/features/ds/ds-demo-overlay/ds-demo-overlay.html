@@ -1,0 +1,12 @@
+<div class="ar-overlay-body">
+  @if (ref.isStep) {
+    Étape affichée dans la même fenêtre ; la flèche retour ramène au contenu précédent.
+  } @else {
+    Contenu défilant
+    <p><button arButton variant="secondary" size="sm" (click)="step()">Ouvrir une étape</button></p>
+  }
+</div>
+<div class="ar-overlay-footer">
+  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button arButton (click)="ref.close()">Appliquer</button>
+</div>

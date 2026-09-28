@@ -1,0 +1,21 @@
+<nav [attr.aria-label]="ariaLabel()" [style.--cols]="items().length">
+  @for (it of items(); track it.route) {
+    <a
+      [routerLink]="it.route"
+      routerLinkActive="active"
+      #rla="routerLinkActive"
+      [routerLinkActiveOptions]="{ exact: it.exact ?? true }"
+      [attr.aria-current]="rla.isActive ? 'page' : null"
+      queryParamsHandling="preserve"
+      replaceUrl
+    >
+      <span class="ico">
+        <ar-icon [name]="it.icon" [size]="22" />
+        @if (it.badge !== undefined) {
+          <span class="badge"><ar-count [value]="it.badge" [tone]="it.badgeTone ?? 'success'" /></span>
+        }
+      </span>
+      {{ it.label }}
+    </a>
+  }
+</nav>

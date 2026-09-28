@@ -1,0 +1,37 @@
+<div class="ar-overlay-body">
+  <div class="hero">
+    <span class="thumb">
+      @if (hero(); as h) {
+        <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+      }
+    </span>
+    <span class="meta">
+      <span class="overline">Héros</span>
+      <span class="name">{{ hero()?.name || 'Aucun héros' }}</span>
+    </span>
+    <button arButton variant="secondary" size="sm" (click)="changeHero()">Changer</button>
+  </div>
+  <div class="field">
+    <span class="label">Visibilité</span>
+    <ar-segmented ariaLabel="Visibilité" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
+  </div>
+  <fieldset>
+    <legend>Format</legend>
+    <div class="formats" role="radiogroup" aria-label="Format">
+      @for (f of formats; track f.value) {
+        <ar-radio-card
+          name="deck-settings-format"
+          [title]="f.label"
+          [description]="f.short"
+          [tag]="{ label: bga[f.bga].short, tone: bga[f.bga].tone }"
+          [checked]="format() === f.value"
+          (choose)="format.set(f.value)"
+        />
+      }
+    </div>
+  </fieldset>
+</div>
+<div class="ar-overlay-footer">
+  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()">Enregistrer</button>
+</div>

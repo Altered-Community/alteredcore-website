@@ -1,0 +1,130 @@
+:host {
+  display: block;
+  background: var(--ar-color-surface);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-card);
+  overflow: hidden;
+  align-self: flex-start;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 10px;
+}
+h2 {
+  margin: 0;
+  font: var(--ar-font-overline);
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+.count {
+  height: 22px;
+  padding: 0 var(--ar-space-2);
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-track);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2-5);
+  height: 40px;
+  padding: 0 var(--ar-space-3);
+  border-bottom: 1px solid var(--ar-color-divider);
+}
+.row:last-child {
+  border-bottom: none;
+}
+.row.cols {
+  height: 32px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ar-color-text-muted);
+  border-bottom-color: var(--ar-color-border);
+}
+.q {
+  width: 28px;
+  flex-shrink: 0;
+}
+.qty {
+  font-size: 14px;
+  font-weight: 800;
+}
+.n {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+  font-size: 14px;
+}
+.n img {
+  height: 14px;
+  width: auto;
+  flex-shrink: 0;
+}
+.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.c {
+  width: 54px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+}
+.main {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ar-color-text);
+  color: var(--ar-color-on-primary);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.res {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ar-color-text);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.p {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+.val {
+  font-size: 14px;
+  font-weight: 700;
+}
+.sq {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.foret {
+  background: var(--ar-terrain-foret);
+}
+.montagne {
+  background: var(--ar-terrain-montagne);
+}
+.ocean {
+  background: var(--ar-terrain-ocean);
+}

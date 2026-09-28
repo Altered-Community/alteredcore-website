@@ -1,0 +1,23 @@
+<div class="visual">
+  @if (unique()) {
+    <ar-unique-card [card]="card()" [eager]="eager()" />
+  } @else {
+    <ar-card-art [reference]="card().reference" [faction]="card().faction?.code" [eager]="eager()" />
+  }
+</div>
+@if (plain()) {
+  <!-- Card browser: no quantity control. -->
+} @else if (readonly()) {
+  <span class="qty" [attr.aria-label]="quantity() + ' exemplaire(s)'">×{{ quantity() }}</span>
+} @else if (quantity() === 0) {
+  <ar-card-add class="action" [label]="'Ajouter ' + name() + ' au deck'" [disabled]="max() === 0" (add)="quantityChange.emit(1)" />
+} @else {
+  <ar-stepper
+    class="action"
+    appearance="overlay"
+    [label]="'Exemplaires de ' + name() + ' dans le deck'"
+    [value]="quantity()"
+    [max]="max()"
+    (valueChange)="quantityChange.emit($event)"
+  />
+}

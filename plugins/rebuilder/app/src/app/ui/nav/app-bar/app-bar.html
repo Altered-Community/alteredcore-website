@@ -1,0 +1,30 @@
+<header>
+  <ng-content select="[leading]" />
+  @if (appearance() === 'expanded') {
+    <a class="brand" routerLink="/" aria-label="Altered Re:Builder, accueil">
+      <span class="logo" aria-hidden="true">AR</span>
+      <span class="name">Altered Re:Builder</span>
+    </a>
+    <nav class="links" aria-label="Navigation principale">
+      @for (l of links(); track l.route) {
+        <a
+          [routerLink]="l.route"
+          routerLinkActive
+          #rla="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: l.exact ?? false }"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          >{{ l.label }}</a
+        >
+      }
+    </nav>
+    <span class="grow"></span>
+  } @else {
+    <div class="titles">
+      <span class="title">{{ title() }}</span>
+      @if (subtitle()) {
+        <span class="subtitle">{{ subtitle() }}</span>
+      }
+    </div>
+  }
+  <div class="actions"><ng-content select="[actions]" /></div>
+</header>

@@ -1,0 +1,32 @@
+<div class="top">
+  <span class="thumb">
+    @if (hero(); as h) {
+      <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+    }
+  </span>
+  <div class="meta">
+    @if (appearance() === 'embedded') {
+      <span class="overline">Héros</span>
+      <span class="hero-name">{{ hero()?.name || 'Aucun héros' }}</span>
+    } @else {
+      <span class="deck-name">{{ name() }}</span>
+      <span class="sub">Héros : {{ hero()?.name || '—' }}</span>
+    }
+    <span class="sub fmt">
+      {{ formatLabel() }}<span aria-hidden="true">·</span>
+      <ar-icon [name]="isPublic() ? 'eye' : 'lock'" [size]="14" [strokeWidth]="2.2" />{{ isPublic() ? 'Public' : 'Privé' }}
+    </span>
+  </div>
+  @if (editable()) {
+    <button arIconButton="sliders" ariaLabel="Réglages du deck : héros, format, visibilité" [iconSize]="20" (click)="openSettings.emit()"></button>
+  }
+</div>
+<div class="counts">
+  <span class="total"><strong>{{ total() }}</strong><span>cartes</span></span>
+  @if (legal()) {
+    <ar-badge tone="green" icon="check">Valide</ar-badge>
+  } @else {
+    <ar-badge tone="orange" icon="alert">{{ issueLabel() }}</ar-badge>
+  }
+  <ar-rarity-summary [counts]="rarity()" />
+</div>

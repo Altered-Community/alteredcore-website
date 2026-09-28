@@ -1,0 +1,22 @@
+<div class="ar-overlay-body">
+  <p class="intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+  <div class="crit">
+    <span class="label">Quand <span class="muted">· déclencheur</span></span>
+    <ar-combobox [options]="triggers()" [(values)]="pickedTriggers" placeholder="Ajouter un déclencheur…" />
+  </div>
+  <div class="crit">
+    <span class="label">Si <span class="muted">· condition</span></span>
+    <ar-combobox [options]="conditions()" [(values)]="pickedConditions" placeholder="Ajouter une condition…" emptyPlaceholder="Toutes · ajouter une condition…" />
+  </div>
+  <div class="crit">
+    <span class="label">Alors <span class="muted">· effet</span></span>
+    <ar-combobox [options]="effects()" [(values)]="pickedEffects" placeholder="Ajouter un effet…" />
+  </div>
+  @if (loadError()) {
+    <p class="error" role="alert">Impossible de charger les capacités depuis l’API des cartes.</p>
+  }
+</div>
+<div class="ar-overlay-footer">
+  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="apply()">Appliquer</button>
+</div>

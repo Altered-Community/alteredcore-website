@@ -1,0 +1,91 @@
+@if (bp.compact()) {
+  <div class="search-head" [class.condensed]="condensed()">
+    <div class="search-row">
+      <ar-input
+        class="q"
+        icon="search"
+        ariaLabel="Rechercher par nom"
+        placeholder="Rechercher une carte…"
+        enterkeyhint="search"
+        [clearable]="true"
+        [value]="draft().q"
+        (valueChange)="setQuery($event)"
+      />
+      <button class="filters-btn" arIconButton="sliders" variant="primary" [ariaLabel]="'Filtres, ' + activeCount() + ' actifs'" [iconSize]="20" (click)="openFilters()">
+        @if (activeCount()) {
+          <span class="badge"><ar-count [value]="activeCount()" /></span>
+        }
+      </button>
+    </div>
+    @if (condensed()) {
+      <div class="summary-line">
+        <span><strong>{{ totalLabel() }}</strong> · {{ sourceLabel() }}</span>
+        <span>{{ orderLabel() }}</span>
+      </div>
+    }
+  </div>
+}
+
+<ar-tabs
+  ariaLabel="Source des cartes"
+  [appearance]="bp.compact() ? 'pill' : 'underline'"
+  [tabs]="sources()"
+  [active]="search.source()"
+  (activeChange)="setSource($event)"
+/>
+
+<div class="search-body">
+  @if (bp.expanded()) {
+    <aside class="filters" aria-label="Filtres">
+      <div class="filters-scroll">
+        <app-filters-panel [source]="search.source()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+      </div>
+      <div class="filters-foot">
+        <button arButton variant="secondary" (click)="resetFilters()">Réinitialiser</button>
+        <button arButton class="go" (click)="applyNow()">Rechercher</button>
+      </div>
+    </aside>
+  }
+
+  <section class="results" aria-label="Résultats">
+    @if (bp.compact()) {
+      <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        <span class="tools">
+          <ar-select ariaLabel="Trier par" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          <button
+            arIconButton="grid"
+            variant="ghost"
+            size="sm"
+            [ariaLabel]="resultsLayout() === 'grid' ? 'Afficher en liste' : 'Afficher en grille'"
+            [iconSize]="18"
+            (click)="resultsLayout.set(resultsLayout() === 'grid' ? 'list' : 'grid')"
+          ></button>
+        </span>
+      </div>
+    } @else {
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        @if (!bp.expanded()) {
+          <button arButton variant="secondary" icon="sliders" (click)="openFilters()">
+            Filtres
+            @if (activeCount()) {
+              <ar-count [value]="activeCount()" />
+            }
+          </button>
+        }
+        <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+        <span class="tools">
+          <ar-select label="Trier par" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          <ar-segmented ariaLabel="Affichage des résultats" [options]="layoutOptions" [(value)]="resultsLayout" />
+        </span>
+      </div>
+    }
+    <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+  </section>
+</div>
+
+@if (bp.compact() && condensed()) {
+  <button class="to-top" arIconButton="chevron-up" ariaLabel="Revenir en haut" [iconSize]="22" (click)="scrollTop()"></button>
+}

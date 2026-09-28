@@ -1,0 +1,97 @@
+@if (mode() === 'aside') {
+  <ar-input
+    icon="search"
+    appearance="subtle"
+    ariaLabel="Rechercher par nom"
+    placeholder="Rechercher par nom…"
+    [clearable]="true"
+    enterkeyhint="search"
+    [value]="value().q"
+    (valueChange)="set({ q: $event })"
+  />
+}
+
+@if (factionFilter()) {
+  <ar-filter-section title="Faction" [count]="value().factions.length">
+    <div class="types" role="group" aria-label="Faction">
+      @for (f of factions; track f.code) {
+        <ar-chip [label]="f.name" [dot]="f.color" [selected]="value().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
+      }
+    </div>
+  </ar-filter-section>
+}
+
+<ar-filter-section title="Coût">
+  <div class="two">
+    <ar-input label="Main" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="mainInvalid()" [value]="value().mainCost" (valueChange)="set({ mainCost: $event })" />
+    <ar-input label="Réserve" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="recallInvalid()" [value]="value().recallCost" (valueChange)="set({ recallCost: $event })" />
+  </div>
+</ar-filter-section>
+
+@if (source() === 'uniques' && mode() === 'aside') {
+  <button type="button" class="fold" [attr.aria-expanded]="setsOpen()" (click)="setsOpen.set(!setsOpen())">
+    <span class="fold-l">Extensions <span class="pill">{{ value().sets.length }}</span></span>
+    <span class="chev" [class.open]="setsOpen()"><ar-icon name="chevron-down" [size]="16" /></span>
+  </button>
+}
+@if (source() !== 'uniques' || mode() === 'sheet' || setsOpen()) {
+  <ar-filter-section title="Extensions" [count]="value().sets.length">
+    @if (mode() === 'sheet') {
+      <button action type="button" class="link" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? 'Aucune' : 'Toutes' }}</button>
+    }
+    <div class="sets" role="group" aria-label="Extensions">
+      @for (s of sets(); track s.reference) {
+        <ar-extension-tile [extension]="s" [selected]="value().sets.includes(s.reference)" (selectedChange)="toggleSet(s.reference, $event)" />
+      }
+    </div>
+  </ar-filter-section>
+}
+
+@if (source() === 'uniques') {
+  <ar-filter-section title="Environnement">
+    <ar-segmented
+      ariaLabel="Environnement"
+      [fullWidth]="true"
+      [options]="environments"
+      [value]="value().environment"
+      (valueChange)="set({ environment: $event ?? 'all' })"
+    />
+  </ar-filter-section>
+
+  <ar-filter-section title="Effets">
+    <div class="effects">
+      @for (e of value().effects; track e.id; let i = $index; let last = $last) {
+        <ar-effect-summary [effect]="e" [title]="'Effet ' + (i + 1)" (edit)="editEffect.emit(i)" (remove)="removeEffect(i)" />
+        @if (!last) {
+          <ar-logic-divider />
+        }
+      }
+      <button arButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()">Ajouter un effet</button>
+    </div>
+  </ar-filter-section>
+} @else {
+  <ar-filter-section title="Rareté">
+    <ar-icon-toggle-group ariaLabel="Rareté" [options]="rarities" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
+  </ar-filter-section>
+
+  <ar-filter-section title="Type">
+    <div class="types" role="group" aria-label="Type de carte">
+      @for (t of types; track t.value) {
+        <ar-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
+      }
+    </div>
+  </ar-filter-section>
+
+  <div class="advanced">
+    <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
+      <span class="fold-l">Recherche avancée</span>
+      <span class="chev" [class.open]="advancedOpen()"><ar-icon name="chevron-down" [size]="16" /></span>
+    </button>
+    @if (advancedOpen()) {
+      <div class="types adv" role="group" aria-label="Recherche avancée">
+        <ar-chip shape="square" label="Sans effet" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
+        <ar-chip shape="square" label="Effet d’écho" [selected]="value().echo" (selectedChange)="set({ echo: $event })" />
+      </div>
+    }
+  </div>
+}

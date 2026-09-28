@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  background: var(--ar-color-surface);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-card);
+  padding: var(--ar-space-3);
+}
+@media (min-width: 768px) {
+  :host {
+    padding: var(--ar-space-4);
+  }
+}
+:host(.sm) {
+  padding: var(--ar-space-3);
+}
+:host(.none) {
+  padding: 0;
+}

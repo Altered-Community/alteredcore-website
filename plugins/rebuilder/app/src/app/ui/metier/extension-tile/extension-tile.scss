@@ -1,0 +1,50 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+button {
+  width: 100%;
+  min-height: 64px;
+  height: 100%;
+  padding: var(--ar-space-2) var(--ar-space-1-5);
+  border-radius: var(--ar-radius-control);
+  border: 1px solid var(--ar-color-border-control);
+  background: var(--ar-color-surface);
+  color: var(--ar-color-text-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ar-space-1);
+  cursor: pointer;
+  text-align: center;
+}
+:host-context([data-density='touch']) button {
+  min-height: 76px;
+}
+button[aria-pressed='true'] {
+  border: 1.5px solid var(--ar-color-primary);
+  background: var(--ar-color-primary-soft);
+  color: var(--ar-color-primary-strong);
+}
+.logo {
+  width: 40px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+:host-context([data-density='touch']) .logo {
+  width: 44px;
+  height: 26px;
+}
+.name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+:host-context([data-density='touch']) .name {
+  font-size: 13px;
+  font-weight: 700;
+}

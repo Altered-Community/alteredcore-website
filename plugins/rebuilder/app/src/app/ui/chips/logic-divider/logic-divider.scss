@@ -1,0 +1,15 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ar-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ar-letter-spacing-overline);
+}
+.line {
+  flex-grow: 1;
+  height: 1px;
+  background: var(--ar-color-border);
+}

@@ -1,0 +1,72 @@
+@if (bp.compact()) {
+  <ar-app-bar appearance="compact" title="Altered Re:Builder">
+    <button leading arIconButton="menu" variant="ghost" ariaLabel="Menu du site" [iconSize]="22" (click)="menu.open()"></button>
+  </ar-app-bar>
+}
+
+<main class="page">
+  <section class="hero" aria-labelledby="home-title">
+    <div class="intro">
+      <span class="overline">Éditeur de decks pour Altered</span>
+      <h1 id="home-title">Construisez vos decks Altered, sur ordinateur comme sur téléphone.</h1>
+      <p class="lead">
+        Altered Re:Builder réunit la recherche de cartes, l’édition et la consultation de decks dans une seule
+        interface, sur le web et dans l’app mobile.
+      </p>
+      <div class="ctas">
+        <a arButton size="lg" icon="plus" routerLink="/decks/new">Créer un deck</a>
+        <a arButton size="lg" variant="secondary" icon="search" routerLink="/cartes">Parcourir les cartes</a>
+      </div>
+      <p class="note">
+        <ar-icon name="lock" [size]="14" />
+        Sans compte, vos decks sont enregistrés sur cet appareil.
+      </p>
+    </div>
+    <div class="fan" aria-hidden="true">
+      @for (c of showcase; track c.reference) {
+        <span class="fan-card"><ar-card-art [reference]="c.reference" [faction]="c.faction" [eager]="true" /></span>
+      }
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="features-title">
+    <h2 id="features-title" class="section-title">Ce que vous pouvez faire</h2>
+    <div class="feature-grid">
+      @for (f of features; track f.title) {
+        <ar-card class="feature">
+          <span class="feature-icon"><ar-icon [name]="f.icon" [size]="20" /></span>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.text }}</p>
+          <a class="feature-link" [routerLink]="f.link.route">
+            {{ f.link.label }}
+            <ar-icon name="chevron-right" [size]="16" />
+          </a>
+        </ar-card>
+      }
+    </div>
+  </section>
+
+  <section class="steps" aria-labelledby="steps-title">
+    <h2 id="steps-title" class="section-title">Un deck en trois étapes</h2>
+    <ol>
+      @for (s of steps; track s.title; let i = $index) {
+        <li>
+          <span class="step-n" aria-hidden="true">{{ i + 1 }}</span>
+          <span class="step-text">
+            <strong>{{ s.title }}</strong>
+            <span>{{ s.text }}</span>
+          </span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <h2 id="closing-title">Prêt à construire ?</h2>
+    <div class="ctas">
+      <a arButton size="lg" icon="plus" routerLink="/decks/new">Créer un deck</a>
+      <a arButton size="lg" variant="secondary" routerLink="/decks">Mes decks</a>
+    </div>
+  </section>
+</main>
+<ar-site-footer />
