@@ -213,20 +213,50 @@ if (!function_exists('__nav_active')) {
                             <?php endif; ?>
                         </a>
                         <?php endif; ?>
-                        <ul class="dropdown-menu">
-                            <?php foreach ($__ni['children'] as $__nc): ?>
-                            <li>
-                                <a class="dropdown-item <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
-                                   href="<?= h(__nav_href($__nc)) ?>"
-                                   <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                                    <?php if (!empty($__nc['icon'])): ?>
-                                        <i class="<?= h($__nc['icon']) ?> me-1"></i>
+                        <?php
+                        // Children grouped into columns: a section header (or a separator)
+                        // starts a new column. Desktop shows them as a full-width mega menu,
+                        // mobile as a plain list (style.css).
+                        $__cols = [['title' => '', 'items' => []]];
+                        foreach ($__ni['children'] as $__nc) {
+                            if (!empty($__nc['is_section_header']) || !empty($__nc['is_separator'])) {
+                                $__title = !empty($__nc['is_section_header']) ? $__nc['label'] : '';
+                                if (empty(end($__cols)['items']) && end($__cols)['title'] === '') {
+                                    $__cols[count($__cols) - 1]['title'] = $__title;
+                                } else {
+                                    $__cols[] = ['title' => $__title, 'items' => []];
+                                }
+                                continue;
+                            }
+                            $__cols[count($__cols) - 1]['items'][] = $__nc;
+                        }
+                        ?>
+                        <div class="dropdown-menu az-mega">
+                            <div class="az-mega-inner">
+                                <?php foreach ($__cols as $__col): if (!$__col['items'] && $__col['title'] === '') continue; ?>
+                                <div class="az-mega-col">
+                                    <?php if ($__col['title'] !== ''): ?>
+                                    <div class="az-mega-title"><?= h($__col['title']) ?></div>
                                     <?php endif; ?>
-                                    <?= h($__nc['label']) ?>
-                                </a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
+                                    <?php foreach ($__col['items'] as $__nc): ?>
+                                    <a class="dropdown-item az-mega-link <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
+                                       href="<?= h(__nav_href($__nc)) ?>"
+                                       <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                                        <?php if (!empty($__nc['icon'])): ?>
+                                        <span class="az-mega-icon"><i class="<?= h($__nc['icon']) ?>"></i></span>
+                                        <?php endif; ?>
+                                        <span class="az-mega-text">
+                                            <span class="az-mega-label"><?= h($__nc['label']) ?></span>
+                                            <?php if (($__nc['description'] ?? '') !== ''): ?>
+                                            <span class="az-mega-desc"><?= h($__nc['description']) ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </a>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
