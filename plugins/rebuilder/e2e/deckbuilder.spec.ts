@@ -133,6 +133,38 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await evidence(page, testInfo, '07-light-fr');
   });
 
+  test('keeps private deck notes in the site database, per user', async ({ page, browser, compact }, testInfo) => {
+    test.skip(compact, 'the notes live in the desktop deck panel');
+    await login(page, 'alice', '/pages/deckbuilder?lang=fr');
+    await createDeck(page, `E2E notes ${testInfo.project.name} ${Date.now()}`);
+    await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
+    const deckId = new URL(page.url()).pathname.split('/').at(-2)!;
+
+    const notes = page.locator('app-deck-notes');
+    await notes.getByRole('button', { name: 'Notes privées' }).click();
+    const text = `Mulligan : garder les personnages à 2. ${Date.now()}`;
+    await notes.getByRole('textbox', { name: 'Notes privées' }).fill(text);
+    const saved = page.waitForResponse((r) => r.request().method() === 'PUT' && new URL(r.url()).pathname === '/papi/rebuilder/notes');
+    await notes.getByRole('button', { name: 'Enregistrer' }).click();
+    const res = await saved;
+    expect(res.status()).toBe(200);
+    expect(res.request().headers()['x-csrf-token']).toBeTruthy();
+    await expect(notes.getByRole('status')).toHaveText('Enregistré');
+    await evidence(page, testInfo, '09-private-notes');
+
+    // Back from the database after a reload, open because it has content.
+    await page.reload();
+    await expect(page.locator('app-deck-notes').getByRole('textbox', { name: 'Notes privées' })).toHaveValue(text);
+
+    // Another user never sees it.
+    const other = await browser.newContext();
+    const bob = await other.newPage();
+    await login(bob, 'bob', '/pages/deckbuilder');
+    const body = await bob.evaluate(async (id) => (await fetch(`/papi/rebuilder/notes?deck=${id}`)).json(), deckId);
+    expect(body).toMatchObject({ deck: deckId, body: '' });
+    await other.close();
+  });
+
   test('highlights its menu entry in the site navigation', async ({ page }, testInfo) => {
     await login(page, 'alice', '/pages/deckbuilder?lang=en');
     await createDeck(page, `E2E menu ${testInfo.project.name} ${Date.now()}`, 'en');

@@ -19,6 +19,18 @@
         }
     ],
 
+    "api": [
+        { "endpoint": "notes",       "file": "api/notes.php",       "methods": ["GET", "PUT"], "auth": "user" },
+        { "endpoint": "notes-stats", "file": "api/notes-stats.php", "methods": ["GET"],        "auth": "admin" }
+    ],
+
+    "admin": [
+        { "section": "rebuilder-notes", "file": "admin/notes.php", "label_en": "Deck notes", "label_fr": "Notes de deck", "icon": "fa-solid fa-note-sticky" }
+    ],
+
+    "sql":    "sql/install.sql",
+    "tables": ["deck_notes"],
+
     "menu": [
         { "page": "deckbuilder", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler", "sort_order": 45 }
     ],

@@ -26,12 +26,12 @@ test.describe('Shell · SPA pages', () => {
         lang: ac['lang'],
         user: ac['user'],
         basePath: ac.page['basePath'],
-        methods: ['login', 'setTitle', 'getMount', 'on'].filter((m) => typeof ac[m] === 'function'),
+        methods: ['fetch', 'login', 'setTitle', 'getMount', 'on'].filter((m) => typeof ac[m] === 'function'),
         shadow: !!el.shadowRoot,
       };
     });
     expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/deckbuilder/', shadow: true });
-    expect(host.methods).toHaveLength(4);
+    expect(host.methods).toHaveLength(5);
     // No token API: authenticated services are reached through the site's relay.
     expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);
     expect(await page.evaluate(() => (window as unknown as { AlteredCore: { services: Record<string, string> } }).AlteredCore.services['decks'])).toBe('/api/v1/services/decks');
@@ -74,6 +74,39 @@ test.describe('Shell · SPA pages', () => {
     const csrf = await csrfOf(page);
     const guestWrite = await page.request.post('/api/v1/services/decks/api/decks', { headers: { 'X-CSRF-Token': csrf }, data: {} });
     expect(guestWrite.status()).toBe(401);
+  });
+
+  test('plugin endpoints: the router applies the manifest rules (methods, auth, CSRF)', async ({ page, request }) => {
+    const notes = '/papi/rebuilder/notes';
+    expect((await request.get(`${notes}?deck=abc`)).status()).toBe(401);
+    const del = await request.delete(notes);
+    expect(del.status()).toBe(405);
+    expect(del.headers()['allow']).toBe('GET, PUT');
+    expect((await request.put(notes, { data: { deck: 'abc', body: 'x' } })).status()).toBe(403);
+    expect((await request.get('/papi/rebuilder/notes-stats')).status()).toBe(401);
+    expect((await request.get('/papi/rebuilder/nope')).status()).toBe(404);
+
+    await login(page, 'alice', '/pages/deckbuilder');
+    const csrf = await csrfOf(page);
+    const call = (url: string, init: { method?: string; headers?: Record<string, string>; body?: string } = {}) =>
+      page.evaluate(async ([u, i]) => {
+        const r = await fetch(u, i);
+        return { status: r.status, body: (await r.json()) as Record<string, unknown> };
+      }, [url, init] as const);
+    const json = { 'Content-Type': 'application/json' };
+    expect((await call(notes, { method: 'PUT', headers: json, body: JSON.stringify({ deck: 'shell-e2e', body: 'x' }) })).status).toBe(403);
+    // The token as a header, as a JSON field (existing PHP plugins), or added by AlteredCore.fetch.
+    expect((await call(notes, { method: 'PUT', headers: { ...json, 'X-CSRF-Token': csrf }, body: JSON.stringify({ deck: 'shell-e2e', body: 'one' }) })).body).toMatchObject({ body: 'one' });
+    expect((await call(notes, { method: 'PUT', headers: json, body: JSON.stringify({ deck: 'shell-e2e', body: 'two', csrf_token: csrf }) })).body).toMatchObject({ body: 'two' });
+    const viaHost = await page.evaluate(async () => {
+      const ac = (window as unknown as { AlteredCore: { page: { apiUrl: string }; fetch: typeof fetch } }).AlteredCore;
+      const r = await ac.fetch(ac.page.apiUrl + 'notes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck: 'shell-e2e', body: '' }) });
+      return { apiUrl: ac.page.apiUrl, status: r.status, body: await r.json() };
+    });
+    expect(viaHost).toMatchObject({ apiUrl: '/papi/rebuilder/', status: 200, body: { body: '' } });
+    expect((await call(`${notes}?deck=../x`)).status).toBe(400);
+    // Signed in but not a site admin.
+    expect((await call('/papi/rebuilder/notes-stats')).status).toBe(403);
   });
 
   test('a signed-in session reaches the decks API through the relay, without a token in the browser', async ({ page }) => {

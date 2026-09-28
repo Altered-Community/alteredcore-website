@@ -164,6 +164,21 @@
           },
           "file": {
             "type": "string"
+          },
+          "methods": {
+            "type": "array",
+            "description": "HTTP methods the endpoint accepts; others get 405. Default: any method.",
+            "items": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "auth": {
+            "enum": ["user", "admin"],
+            "description": "user: a signed-in user (else 401). admin: a site admin (else 401 / 403). Default: public."
+          },
+          "csrf": {
+            "type": "boolean",
+            "description": "false opts out of the router's CSRF check on writes (e.g. a webhook with its own signature). Default: true."
           }
         }
       }

@@ -551,7 +551,8 @@ they follow the light / dark switch and the active theme without any code:</p>
   <tr><td>theme</td><td></td><td><code>light</code> or <code>dark</code>, kept up to date.</td></tr>
   <tr><td>baseUrl, siteName, csrf</td><td></td><td>Install prefix, site name, CSRF token of the session.</td></tr>
   <tr><td>services</td><td></td><td>Where to call the Altered services from the browser. <code>cards</code>, <code>cdn</code>: public, called directly (<code>CARDS_API_PUBLIC_URL</code> overrides <code>CARDS_API_URL</code> if the server uses an internal host). <code>decks</code>, <code>collection</code>: the site's relay, <code>/api/v1/services/decks</code> etc. (see below).</td></tr>
-  <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL.</td></tr>
+  <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL. <code>apiUrl</code> is the plugin's own PHP endpoints, <code>/papi/{plugin-id}/</code> (see <a href="#api">HTTP API endpoints</a>).</td></tr>
+  <tr><td>fetch(url, init?)</td><td></td><td><code>window.fetch</code> for calls to the site: sends the session cookie, <code>Accept: application/json</code> by default, and <code>X-CSRF-Token</code> on same-origin writes (the relay and <code>page.apiUrl</code>).</td></tr>
   <tr><td>login(returnTo?)</td><td></td><td>Sends the user to the site's sign-in, then back to <code>returnTo</code> (default: current URL).</td></tr>
   <tr><td>setTitle(title)</td><td></td><td>Sets <code>document.title</code> to “title — site name”.</td></tr>
   <tr><td>getMount(pluginId)</td><td></td><td><code>{ host, root, container }</code>: the element the shell rendered, its shadow root (or itself), and the element to render into.</td></tr>
@@ -574,6 +575,12 @@ services no longer need CORS for the site.</p>
 <p>The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
 <code>main-site</code> token is accepted. A plugin's own <code>papi</code> endpoints can do the same server-side with
 <code>kc_get_access_token($_SESSION['user_id'])</code>.</p>
+
+<h3>What an SPA plugin can declare</h3>
+<p>Besides its SPA pages, a v2 plugin uses the same manifest keys as a PHP plugin: <code>api</code> (its own endpoints, <code>/papi/{id}/…</code>),
+<code>admin</code> (PHP admin sections), <code>sql</code> / <code>tables</code> (its tables, prefixed), <code>assets.global_*</code>. The rebuilder plugin keeps
+private deck notes this way: table <code>deck_notes</code>, endpoints <code>notes</code> (<code>auth: user</code>) and <code>notes-stats</code> (<code>auth: admin</code>),
+admin section <em>Deck notes</em>, and the Angular editor calling <code>page.apiUrl + 'notes'</code>.</p>
 
 <h2 id="admin">Admin pages</h2>
 
@@ -917,7 +924,15 @@ ALTER TABLE {messages}
   <tr><th>Key</th><th></th><th>Description</th></tr>
   <tr><td>endpoint</td><td><span class="req">required</span></td><td>URL slug for this endpoint. Lowercase letters, digits, hyphens and underscores only.</td></tr>
   <tr><td>file</td><td><span class="req">required</span></td><td>Path to the PHP handler file, relative to the plugin root.</td></tr>
+  <tr><td>methods</td><td><span class="opt">optional</span></td><td>HTTP methods accepted, e.g. <code>["GET", "PUT"]</code>. Others get <strong>405</strong> with an <code>Allow</code> header. Default: any method.</td></tr>
+  <tr><td>auth</td><td><span class="opt">optional</span></td><td><code>user</code>: a signed-in user, else <strong>401</strong>. <code>admin</code>: a site admin, else 401 (guest) or <strong>403</strong>. Default: public.</td></tr>
+  <tr><td>csrf</td><td><span class="opt">optional</span></td><td><code>false</code> turns off the router's CSRF check (below), for a caller that cannot hold the session token, e.g. a webhook that checks its own signature. Default: <code>true</code>.</td></tr>
 </table>
+
+<pre><code>"api": [
+    { "endpoint": "notes",       "file": "api/notes.php",       "methods": ["GET", "PUT"], "auth": "user" },
+    { "endpoint": "notes-stats", "file": "api/notes-stats.php", "methods": ["GET"],        "auth": "admin" }
+]</code></pre>
 
 <h3>URL pattern</h3>
 
@@ -930,7 +945,7 @@ ALTER TABLE {messages}
 
 <h3>Writing the handler file</h3>
 
-<p>The handler is a plain PHP file. All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
+<p>The handler is a plain PHP file, run only once the router's checks pass (see <a href="#api-auth">Auth, CSRF and methods</a>). All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
 
 <pre><code>&lt;?php
 // Reached via GET /papi/hello-world/data
@@ -962,16 +977,32 @@ fetch(SITE_BASE + '/papi/hello-world/data')
 $data = json_decode($raw, true);
 echo $data['greeting'];</code></pre>
 
-<h3>Auth and authorization</h3>
-<p>The router does <strong>not</strong> enforce any authentication — API endpoints are public by default. If an endpoint should be restricted, add a session check at the top of the handler file:</p>
+<h3 id="api-auth">Auth, CSRF and methods</h3>
+<p>The router (<code>includes/_plugin_router.php</code>, <code>pluginApiGuard()</code>) checks each request against the endpoint's
+manifest entry before the handler runs, and answers <code>{"error": "…"}</code> itself when a check fails:</p>
+<ol>
+  <li><strong>Method</strong> not in <code>methods</code> → 405 <code>method_not_allowed</code>.</li>
+  <li><strong>CSRF</strong>: every request other than <code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code> needs the session's CSRF token → else 403 <code>csrf</code>.
+      The router accepts it as the header <code>X-CSRF-Token</code>, a <code>csrf_token</code> form field, or a <code>csrf_token</code> field of a JSON body.
+      This applies to all plugins; existing PHP plugins already send <code>csrf_token</code>, and their own <code>csrfValid()</code> checks still pass.</li>
+  <li><strong>Auth</strong>: <code>"auth": "user"</code> → 401 <code>unauthenticated</code> for a guest; <code>"auth": "admin"</code> → 401 for a guest, 403 <code>forbidden</code> for a user who is not a site admin.</li>
+</ol>
+<p>An endpoint without <code>auth</code> is public: check the session in the handler if only part of it is restricted.
+<code>GET</code> handlers must not change data, since they are not CSRF-checked. In the handler, <code>$_SESSION['user_id']</code> is the site user
+and <code>pluginApiBody()</code> returns the decoded JSON body (the router has already read it).</p>
 
-<pre><code>&lt;?php
-// Require login
-if (!kcIsLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}</code></pre>
+<h3>Calling from an SPA plugin</h3>
+<p><code>AlteredCore.page.apiUrl</code> is the plugin's endpoint base (<code>/papi/{plugin-id}/</code>). <code>AlteredCore.fetch()</code> is
+<code>window.fetch</code> with the session cookie, <code>Accept: application/json</code> and, on writes to the site, the CSRF header:</p>
+<pre><code>const ac = window.AlteredCore;
+const note = await ac.fetch(ac.page.apiUrl + 'notes?deck=' + id).then((r) =&gt; r.json());
+await ac.fetch(ac.page.apiUrl + 'notes', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ deck: id, body: 'Mulligan: keep 2-cost characters' }),
+});</code></pre>
+<p>A framework HTTP client can add the header itself instead (the rebuilder plugin uses an Angular interceptor,
+<code>site-csrf.interceptor.ts</code>). The endpoint is the same one a PHP plugin would write: same database, tables, session and helpers.</p>
 
 
 <h2 id="helpers">Helper functions</h2>
@@ -1317,7 +1348,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 
 <ul>
   <li><strong>Trust</strong> — plugins execute arbitrary PHP on the server. Only install plugins from sources you control or fully trust.</li>
-  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>.</li>
+  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>. Plugin API endpoints and the service relay check it for every write (<a href="#api-auth">see above</a>); keep <code>GET</code> handlers read-only.</li>
   <li><strong>Output escaping</strong> — always use <code>h()</code> to escape user-supplied data before rendering HTML.</li>
   <li><strong>SQL injection</strong> — always use PDO prepared statements (<code>$db-&gt;prepare()</code> + <code>execute()</code>) for any query involving user input.</li>
   <li><strong>Direct PHP access</strong> — PHP files in <code>plugins/</code> are not directly accessible via URL. Only static assets (CSS, JS, images) in <code>assets/</code> are served publicly.</li>

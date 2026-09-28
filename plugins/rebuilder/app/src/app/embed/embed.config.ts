@@ -4,15 +4,17 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST } from '@angular/core';
 import { TitleStrategy, provideRouter } from '@angular/router';
 import { AuthSession } from '../core/auth-session';
+import { DECK_NOTES } from '../core/deck-notes';
 import { DECK_CREATE_TARGET } from '../core/deck-store';
 import { AR_DENSITY_TARGET } from '../ui/layout.services';
 import { embedRoutes } from './embed.routes';
 import { EmbedTitleStrategy } from './embed-title.strategy';
 import { ALTERED_CORE, EMBED_MOUNT, type AlteredCoreHost, type AlteredCoreMount } from './host';
 import { HostAuthSession } from './host-auth.session';
-import { relayCsrfInterceptor } from './relay-csrf.interceptor';
+import { siteCsrfInterceptor } from './site-csrf.interceptor';
 import { ShadowOverlayContainer } from './shadow-overlay-container';
 import { ShadowStylesHost } from './shadow-styles.host';
+import { SiteDeckNotes } from './site-deck-notes';
 
 export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): ApplicationConfig {
   return {
@@ -23,9 +25,10 @@ export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): App
       { provide: APP_BASE_HREF, useValue: host.page.basePath },
       provideRouter(embedRoutes),
       { provide: TitleStrategy, useClass: EmbedTitleStrategy },
-      provideHttpClient(withFetch(), withInterceptors([relayCsrfInterceptor])),
+      provideHttpClient(withFetch(), withInterceptors([siteCsrfInterceptor])),
       { provide: AuthSession, useClass: HostAuthSession },
       { provide: DECK_CREATE_TARGET, useValue: 'account' },
+      { provide: DECK_NOTES, useClass: SiteDeckNotes },
       { provide: OverlayContainer, useClass: ShadowOverlayContainer },
       { provide: AR_DENSITY_TARGET, useValue: mount.container },
       { provide: SHARED_STYLES_HOST, useClass: ShadowStylesHost },

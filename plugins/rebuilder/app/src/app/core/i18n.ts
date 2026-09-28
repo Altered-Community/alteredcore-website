@@ -37,6 +37,12 @@ const MESSAGES = {
   'newDeck.pickHero': { fr: 'Choisissez un héros pour continuer.', en: 'Pick a hero to continue.' },
   'newDeck.selection': { fr: 'Sélection :', en: 'Selected:' },
   'panel.stats': { fr: 'Stats', en: 'Stats' },
+  'notes.title': { fr: 'Notes privées', en: 'Private notes' },
+  'notes.hint': { fr: 'Visibles par vous seul, enregistrées sur le site.', en: 'Only you can see them, saved on the site.' },
+  'notes.placeholder': { fr: 'Plan de jeu, mulligan, cartes à tester…', en: 'Game plan, mulligan, cards to try…' },
+  'notes.save': { fr: 'Enregistrer', en: 'Save' },
+  'notes.saved': { fr: 'Enregistré', en: 'Saved' },
+  'notes.error': { fr: 'Échec de l’enregistrement', en: 'Could not save' },
   'panel.empty': { fr: 'Ajoutez des cartes depuis la recherche avec le bouton « + ».', en: 'Add cards from the search with the “+” button.' },
 } satisfies Record<string, Record<Locale, string>>;
 

@@ -6,10 +6,13 @@
  * window.AlteredCore (version 1)
  *   version, baseUrl, siteName, lang ('en' | 'fr'), theme ('light' | 'dark'),
  *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, decks, collection }),
- *   page ({ plugin, slug, basePath, subPath, assetsUrl, mount })
+ *   page ({ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount })
  *   services.cards / .cdn are public and called directly; services.decks / .collection are
  *   the site's relay (/api/v1/services/…), which adds the session's Keycloak token server-side:
- *   the browser never holds a token. Writes to the relay send the header X-CSRF-Token: csrf.
+ *   the browser never holds a token. page.apiUrl is the plugin's own PHP endpoints
+ *   (/papi/{plugin}/, manifest "api"). Writes to both send the header X-CSRF-Token: csrf.
+ *   fetch(url, init)   window.fetch for same-origin calls: sends the session cookie, adds
+ *                      X-CSRF-Token on writes and Accept: application/json by default
  *   login(returnTo?)   sends the user to the shell's login, then back to returnTo
  *   setTitle(title)    document title, suffixed with the site name
  *   getMount(pluginId) { host, root, container } — the element the plugin renders into
@@ -55,6 +58,17 @@
             var url = auth.loginUrl || (host.baseUrl + '/pages/login');
             if (auth.provider === 'keycloak') url += '?return=' + encodeURIComponent(target);
             location.assign(url);
+        },
+
+        fetch: function (url, init) {
+            init = Object.assign({ credentials: 'same-origin' }, init || {});
+            var headers = new Headers(init.headers || {});
+            var method = String(init.method || 'GET').toUpperCase();
+            var sameOrigin = new URL(url, location.href).origin === location.origin;
+            if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+            if (sameOrigin && ['GET', 'HEAD', 'OPTIONS'].indexOf(method) < 0) headers.set('X-CSRF-Token', host.csrf);
+            init.headers = headers;
+            return window.fetch(url, init);
         },
 
         setTitle: function (title) {

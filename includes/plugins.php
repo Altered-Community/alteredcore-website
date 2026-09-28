@@ -150,8 +150,50 @@ function pluginFindApi(string $pluginId, string $endpoint): ?array {
         if (($entry['endpoint'] ?? '') !== $endpoint) continue;
         $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $entry['file']), DIRECTORY_SEPARATOR);
         if (!file_exists($abs)) continue;
-        return ['plugin_id' => $pluginId, 'endpoint' => $endpoint, 'abs_file' => $abs, '_table_prefix' => $plugin['_table_prefix'] ?? ''];
+        return [
+            'plugin_id' => $pluginId, 'endpoint' => $endpoint, 'abs_file' => $abs, '_table_prefix' => $plugin['_table_prefix'] ?? '',
+            'methods'   => isset($entry['methods']) ? array_map('strtoupper', (array)$entry['methods']) : null,
+            'auth'      => in_array($entry['auth'] ?? null, ['user', 'admin'], true) ? $entry['auth'] : null,
+            'csrf'      => ($entry['csrf'] ?? true) !== false,
+        ];
     }
+    return null;
+}
+
+/**
+ * Decoded JSON body of the current plugin API request ([] when absent or not JSON). Read once:
+ * the router uses it for the CSRF check, endpoints call it instead of reading php://input.
+ */
+function pluginApiBody(): array {
+    static $body = null;
+    if ($body === null) {
+        $type = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+        $data = strpos($type, 'json') !== false ? json_decode((string)file_get_contents('php://input'), true) : null;
+        $body = is_array($data) ? $data : [];
+    }
+    return $body;
+}
+
+/**
+ * Checks the router applies before a plugin API endpoint runs, from its manifest entry:
+ *   "methods": ["GET", "POST"]   other methods → 405 (default: any method)
+ *   "auth": "user" | "admin"     signed-in user → else 401; site admin → else 403 (default: public)
+ *   "csrf": false                opt out of the CSRF check (e.g. a webhook with its own signature)
+ * Every request other than GET / HEAD / OPTIONS needs the session's CSRF token, sent as the
+ * X-CSRF-Token header or as a csrf_token field (form or JSON body) → else 403.
+ * Returns null when the request may proceed, else [status, error code, extra headers].
+ */
+function pluginApiGuard(array $api): ?array {
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if ($api['methods'] !== null && !in_array($method, $api['methods'], true)) {
+        return [405, 'method_not_allowed', ['Allow: ' . implode(', ', $api['methods'])]];
+    }
+    if (!in_array($method, ['GET', 'HEAD', 'OPTIONS'], true) && $api['csrf']) {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? pluginApiBody()['csrf_token'] ?? null;
+        if (!csrfValid(is_string($token) ? $token : null)) return [403, 'csrf', []];
+    }
+    if ($api['auth'] === 'user' && !kcIsLoggedIn()) return [401, 'unauthenticated', []];
+    if ($api['auth'] === 'admin' && !isAdminUser()) return [kcIsLoggedIn() ? 403 : 401, kcIsLoggedIn() ? 'forbidden' : 'unauthenticated', []];
     return null;
 }
 

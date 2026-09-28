@@ -15,7 +15,10 @@ export interface AlteredCoreHost {
   readonly csrf: string;
   /** cards / cdn: public, called directly. decks / collection: the site's relay, which adds the token. */
   readonly services: { cards?: string; cdn?: string; decks?: string; collection?: string };
-  readonly page: { plugin: string; slug: string; basePath: string; subPath: string; assetsUrl: string; mount: 'shadow' | 'light' };
+  /** apiUrl: the plugin's own PHP endpoints (`/papi/rebuilder/`, manifest "api"). */
+  readonly page: { plugin: string; slug: string; basePath: string; subPath: string; assetsUrl: string; apiUrl: string; mount: 'shadow' | 'light' };
+  /** window.fetch for same-origin calls, with the session cookie and X-CSRF-Token on writes. */
+  fetch(url: string, init?: RequestInit): Promise<Response>;
   login(returnTo?: string): void;
   setTitle(title: string): void;
   getMount(pluginId: string): AlteredCoreMount;

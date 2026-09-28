@@ -147,6 +147,8 @@ function spaHostConfig(array $page): array {
             'basePath'  => $basePath,
             'subPath'   => $page['sub_path'] ?? '',
             'assetsUrl' => $page['spa']['assets_url'],
+            // The plugin's own PHP endpoints (manifest "api"): {apiUrl}{endpoint}.
+            'apiUrl'    => BASE_URL . '/papi/' . $page['plugin_id'] . '/',
             'mount'     => $page['spa']['mount'],
             'css'       => $page['spa']['css'],
         ],

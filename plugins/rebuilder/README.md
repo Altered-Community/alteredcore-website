@@ -38,10 +38,28 @@ Keycloak token of the PHP session server-side: the browser never holds a token. 
 guest they stay in `localStorage` (`arb.guest-decks`). Deck lists, deck pages and sign-in are the
 site's: the editor links to them.
 
+## Site backend (private deck notes)
+
+The plugin also has its own PHP side, declared in `plugin.json` like a PHP plugin's:
+
+- `sql/install.sql` creates the table `deck_notes` (one note per user and deck), run on activation.
+- `api/notes.php` — `GET /papi/rebuilder/notes?deck={id}`, `PUT /papi/rebuilder/notes {deck, body}`;
+  manifest rules `"methods": ["GET", "PUT"], "auth": "user"`, so the router refuses guests, other
+  methods and writes without the CSRF token before the file runs.
+- `api/notes-stats.php` — counts for site admins (`"auth": "admin"`); `admin/notes.php` shows them
+  in Admin → Deck notes.
+
+In the editor, the desktop deck panel shows a « Notes privées » section for account decks
+(`features/editor/deck-notes`). It only exists in the site build: `embed.config.ts` provides
+`DECK_NOTES` (`embed/site-deck-notes.ts`, calling `AlteredCore.page.apiUrl + 'notes'`), the
+standalone app provides nothing and shows no notes. `embed/site-csrf.interceptor.ts` adds the
+CSRF header to writes on the relay and on `page.apiUrl`.
+
 ## Known gaps
 
 - Only the editor's main labels follow `AlteredCore.lang`; filters, formats and messages are French.
   Card data (names, effects, images) follows the site language.
+- Deck notes are on the desktop panel only, not on the mobile deck view.
 - Guest decks of the legacy builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours
   keep ReBuilder's values.
