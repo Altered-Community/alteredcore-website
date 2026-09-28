@@ -73,12 +73,6 @@ $_csHasCollFilter = !empty($_csCollOpts);
 
 // Main (standard) editions shown in the quick-filter bar.
 $_csOfficialSets = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'main');
-// Deckbuilder only: COREKS is CORE with a handful of alt arts BGA doesn't even
-// render, so it'd be a confusing near-duplicate on the regular tabs — but its
-// *uniques* are genuinely different cards, not just alt arts. Restrict it to
-// the Uniques tab instead of dropping it (dropping it left an invisible,
-// unremovable filter there: deselecting CORE still showed its COREKS twins).
-$_csUniquesOnlySets = ($_csMode === 'deck') ? ['COREKS'] : [];
 // Promotional / sub editions — revealed under the "show promo" toggle. Standard
 // sets never appear here.
 $_csPromoSets    = array_filter($_csSets, fn($s) => ($s['subtype'] ?? '') === 'sub');
@@ -252,16 +246,12 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach (array_reverse($_csOfficialSets, true) as $_sk => $_sv): ?>
             <?php
-                // Which tabs this set's quick-filter shows on:
-                //  - Uniques-only sets (see $_csUniquesOnlySets above).
-                //  - Sets the uniques API doesn't know about yet
-                //    ("uniques": false) must NOT appear on the Uniques tab:
-                //    sending one makes it reject the whole query (HTTP 400
-                //    "invalid set value"), so the search fails outright
-                //    instead of just returning nothing for that set.
-                if (in_array($_sk, $_csUniquesOnlySets, true)) {
-                    $_sTabs = 'unique';
-                } elseif ($_sv['uniques'] ?? true) {
+                // Which tabs this set's quick-filter shows on: sets the
+                // uniques API doesn't know about yet ("uniques": false) must
+                // NOT appear on the Uniques tab — sending one makes it reject
+                // the whole query (HTTP 400 "invalid set value"), so the search
+                // fails outright instead of just returning nothing for that set.
+                if ($_sv['uniques'] ?? true) {
                     $_sTabs = 'all unique collection ownership favoris';
                 } else {
                     $_sTabs = 'all collection ownership favoris';
