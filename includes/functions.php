@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/url.php';
 
 /**
  * True when the *original* request is HTTPS, honouring a TLS-terminating reverse
