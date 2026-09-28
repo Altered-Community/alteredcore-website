@@ -16,6 +16,8 @@ test.describe('Shell · SPA pages', () => {
 
   test('publishes window.AlteredCore v1 and isolates the plugin in a shadow root', async ({ page }) => {
     await page.goto('/pages/deckbuilder?lang=fr');
+    // The plugin asks for its mount (and the shell attaches the shadow root) once its modules load.
+    await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     const host = await page.evaluate(() => {
       const ac = (window as unknown as { AlteredCore: Record<string, unknown> & { page: Record<string, string> } }).AlteredCore;
       const el = document.querySelector('[data-ac-plugin="rebuilder"]') as HTMLElement;
@@ -35,7 +37,6 @@ test.describe('Shell · SPA pages', () => {
     expect(await page.evaluate(() => (window as unknown as { AlteredCore: { services: Record<string, string> } }).AlteredCore.services['decks'])).toBe('/api/v1/services/decks');
 
     // The plugin renders inside its shadow root; none of its styles land in the site's <head>.
-    await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     const styles = await page.evaluate(() => ({
       head: [...document.head.querySelectorAll('style')].filter((s) => /_ng(host|content)-/.test(s.textContent ?? '')).length,
       shadow: document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelectorAll('style').length,
