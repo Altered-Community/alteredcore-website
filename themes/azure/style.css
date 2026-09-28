@@ -1321,22 +1321,11 @@ html { transition: background-color 0.25s, color 0.25s; }
    opens the dropdown. Both read as one control — nav.php puts the active
    state on the shared <li>, so they highlight together. */
 .az-nav-list .nav-item-split .nav-link-split-main {
-    padding-right: 0.5rem;
+    padding-right: 0.25rem;
 }
 .az-nav-list .nav-item-split .nav-link-split-caret {
-    position: relative;
-    padding-left: 0.35rem;
+    padding-left: 0.1rem;
     padding-right: 0.85rem;
-}
-.az-nav-list .nav-item-split .nav-link-split-caret::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 55%;
-    width: 1px;
-    background: rgba(255, 255, 255, 0.3);
 }
 .az-nav-list .nav-item-split:hover .nav-link-split-main,
 .az-nav-list .nav-item-split:hover .nav-link-split-caret,
@@ -1696,6 +1685,8 @@ html { transition: background-color 0.25s, color 0.25s; }
     html body .az-site-header.site-header.az-nav-tight,
     .az-nav-tight .az-navband { gap: 1rem; }
     .az-nav-tight .az-nav-list .nav-link { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .az-nav-tight .az-nav-list .nav-link-split-main { padding-right: 0.25rem; }
+    .az-nav-tight .az-nav-list .nav-link-split-caret { padding-left: 0.1rem; }
     .az-nav-no-name .az-brand-name,
     .az-nav-list .az-nav-item-icon .nav-link > span {
         position: absolute;
