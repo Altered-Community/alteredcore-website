@@ -199,22 +199,53 @@ function pluginApiGuard(array $api): ?array {
 
 // Suggested menu entries (manifest v2 "menu"). Adds each entry to {nav_items} unless an
 // item with the same URL already exists, so admins keep control of labels, order and
-// visibility after the first activation. Returns the number of items inserted.
+// visibility after the first activation. An entry with `children` becomes a dropdown
+// (URL "#", matched on its English label); its missing children are added under it.
+// Returns the number of items inserted.
+function pluginMenuEntryUrl(array $entry): string {
+    if (empty($entry['page'])) return (string)($entry['url'] ?? '');
+    $url  = '/pages/' . preg_replace('/[^a-z0-9_-]/', '', $entry['page']);
+    $path = trim(preg_replace('#[^a-z0-9_/-]#', '', (string)($entry['path'] ?? '')), '/');
+    return $path !== '' ? $url . '/' . $path : $url;
+}
+
 function pluginApplyMenuSuggestions(array $manifest): int {
-    $added = 0;
-    $db    = getDB();
+    $added  = 0;
+    $db     = getDB();
+    $insert = $db->prepare(q("INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible) VALUES (:parent, :en, :fr, :url, :icon, :sort, 1)"));
+    $exists = $db->prepare(q("SELECT COUNT(*) FROM {nav_items} WHERE url = :url"));
     foreach ($manifest['menu'] ?? [] as $entry) {
         if (!is_array($entry) || empty($entry['label_en']) || empty($entry['label_fr'])) continue;
-        $url = !empty($entry['page']) ? '/pages/' . preg_replace('/[^a-z0-9_-]/', '', $entry['page']) : (string)($entry['url'] ?? '');
-        if ($url === '' || $url === '/pages/') continue;
-        $exists = $db->prepare(q("SELECT COUNT(*) FROM {nav_items} WHERE url = :url"));
-        $exists->execute([':url' => $url]);
-        if ((int)$exists->fetchColumn() > 0) continue;
+        $children = array_values(array_filter((array)($entry['children'] ?? []), 'is_array'));
         $sort = isset($entry['sort_order']) ? (int)$entry['sort_order']
               : (int)$db->query(q("SELECT COALESCE(MAX(sort_order), 0) FROM {nav_items} WHERE parent_id IS NULL AND sort_order < 900"))->fetchColumn() + 5;
-        $db->prepare(q("INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible) VALUES (NULL, :en, :fr, :url, :icon, :sort, 1)"))
-           ->execute([':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
-        $added++;
+
+        if ($children === []) {
+            $url = pluginMenuEntryUrl($entry);
+            if ($url === '' || $url === '/pages/') continue;
+            $exists->execute([':url' => $url]);
+            if ((int)$exists->fetchColumn() > 0) continue;
+            $insert->execute([':parent' => null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+            $added++;
+            continue;
+        }
+
+        $find = $db->prepare(q("SELECT id FROM {nav_items} WHERE parent_id IS NULL AND url = '#' AND label_en = :en ORDER BY id LIMIT 1"));
+        $find->execute([':en' => $entry['label_en']]);
+        $parentId = $find->fetchColumn();
+        if ($parentId === false) {
+            $insert->execute([':parent' => null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => '#', ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+            $parentId = $db->lastInsertId();
+            $added++;
+        }
+        foreach ($children as $i => $child) {
+            $url = pluginMenuEntryUrl($child);
+            if (empty($child['label_en']) || empty($child['label_fr']) || $url === '' || $url === '/pages/') continue;
+            $exists->execute([':url' => $url]);
+            if ((int)$exists->fetchColumn() > 0) continue;
+            $insert->execute([':parent' => (int)$parentId, ':en' => $child['label_en'], ':fr' => $child['label_fr'], ':url' => $url, ':icon' => $child['icon'] ?? null, ':sort' => isset($child['sort_order']) ? (int)$child['sort_order'] : ($i + 1) * 10]);
+            $added++;
+        }
     }
     return $added;
 }

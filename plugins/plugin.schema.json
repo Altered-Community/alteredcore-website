@@ -251,6 +251,11 @@
             "type": "string",
             "description": "Slug of one of this plugin's pages (URL /pages/{page})."
           },
+          "path": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+            "description": "Client route under a SPA page (URL /pages/{page}/{path})."
+          },
           "url": {
             "type": "string",
             "description": "Explicit URL when the entry is not one of the plugin's pages."
@@ -266,6 +271,27 @@
           },
           "sort_order": {
             "type": "integer"
+          },
+          "children": {
+            "type": "array",
+            "description": "Dropdown entries (same fields, no nesting). The parent then needs no page or URL.",
+            "items": {
+              "type": "object",
+              "required": [
+                "label_en",
+                "label_fr"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "page": { "type": "string" },
+                "path": { "type": "string", "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$" },
+                "url": { "type": "string" },
+                "label_en": { "type": "string" },
+                "label_fr": { "type": "string" },
+                "icon": { "type": "string" },
+                "sort_order": { "type": "integer" }
+              }
+            }
           }
         }
       }

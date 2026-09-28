@@ -1,18 +1,10 @@
 import { inject } from '@angular/core';
-import { Router, type ActivatedRouteSnapshot, type CanActivateFn, type Routes } from '@angular/router';
+import { Router, type CanActivateFn, type Routes } from '@angular/router';
 import { t } from '../core/i18n';
 import { ALTERED_CORE } from './host';
 
 const editor = () => import('../features/editor/editor-page/editor.page').then((m) => m.EditorPage);
-
-/** Screens that belong to the site, not to the embedded editor: leave the SPA for the site page. */
-function leaveTo(path: (route: ActivatedRouteSnapshot) => string): CanActivateFn {
-  return (route) => {
-    const host = inject(ALTERED_CORE);
-    location.assign(host.baseUrl + path(route));
-    return false;
-  };
-}
+const deck = () => import('../features/deck/deck-page/deck.page').then((m) => m.DeckPage);
 
 const signIn: CanActivateFn = () => {
   inject(ALTERED_CORE).login();
@@ -20,9 +12,10 @@ const signIn: CanActivateFn = () => {
 };
 
 /**
- * Only the editor is embedded (new deck, edit, preview, deck list on mobile). Paths stay the
- * standalone ones so the shared screens navigate unchanged; the base href is the site page
- * (`/pages/deckbuilder/`). `?id=` is the old deckbuilder's link format, still used by the site.
+ * Re:Builder's decks section on the site page `/pages/rebuilder/` (the base href): decks list
+ * (mine / community), deck page, new deck and editor. Paths are the standalone app's, so the
+ * shared screens navigate unchanged. The site's own decks pages and deck builder stay as they are.
+ * `?id=` opens a deck in the editor, like the site's deck builder links.
  */
 export const embedRoutes: Routes = [
   {
@@ -30,8 +23,13 @@ export const embedRoutes: Routes = [
     pathMatch: 'full',
     redirectTo: ({ queryParams }) => {
       const id = queryParams['id'];
-      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}/edit` : '/decks/new');
+      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}/edit` : '/decks');
     },
+  },
+  {
+    path: 'decks',
+    title: t('title.decks'),
+    loadComponent: () => import('../features/decks/decks-page/decks.page').then((m) => m.DecksPage),
   },
   {
     path: 'decks/new',
@@ -41,9 +39,9 @@ export const embedRoutes: Routes = [
   { path: 'decks/:id/edit', title: t('title.editor'), loadComponent: editor, data: { view: 'search' } },
   { path: 'decks/:id/edit/apercu', title: t('title.preview'), loadComponent: editor, data: { view: 'apercu' } },
   { path: 'decks/:id/edit/deck', title: t('title.myDeck'), loadComponent: editor, data: { view: 'deck' } },
-  { path: 'decks/:id', canActivate: [leaveTo((r) => `/pages/deck?id=${encodeURIComponent(r.params['id'])}`)], children: [] },
-  { path: 'decks/:id/deck', canActivate: [leaveTo((r) => `/pages/deck?id=${encodeURIComponent(r.params['id'])}`)], children: [] },
-  { path: 'decks', canActivate: [leaveTo(() => '/pages/decks')], children: [] },
+  { path: 'decks/:id/deck', title: t('title.decklist'), loadComponent: deck, data: { tab: 'decklist' } },
+  { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
+  { path: 'decks/:id', title: t('title.deck'), loadComponent: deck, data: { tab: 'cartes' } },
   { path: 'login', canActivate: [signIn], children: [] },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'decks' },
 ];

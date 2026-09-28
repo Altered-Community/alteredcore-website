@@ -18,6 +18,7 @@ export class HostAuthSession extends AuthSession {
   readonly isLoggedIn = computed(() => !!this.user());
   readonly username = computed(() => this.user()?.username || null);
   readonly sessionRestoring = signal(false).asReadonly();
+  readonly sessionNotice = signal<string | null>(null).asReadonly();
 
   constructor() {
     super();

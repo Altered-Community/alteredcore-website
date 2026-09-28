@@ -3,19 +3,23 @@ import { csrfOf, expect, login, test } from './fixtures';
 /** The shell's side of manifest v2: routing, host contract, session token. Plugin-agnostic. */
 test.describe('Shell · SPA pages', () => {
   test('deep links reach SPA pages only; PHP pages keep a single URL', async ({ request }) => {
-    for (const path of ['/pages/deckbuilder', '/pages/deckbuilder/decks/new', '/pages/deckbuilder/any/deep/path']) {
+    for (const path of ['/pages/rebuilder', '/pages/rebuilder/decks', '/pages/rebuilder/decks/new', '/pages/rebuilder/any/deep/path']) {
       const res = await request.get(path);
       expect(res.status(), path).toBe(200);
       expect(await res.text()).toContain('data-ac-plugin="rebuilder"');
     }
     expect((await request.get('/pages/decks/anything')).status()).toBe(404);
     expect((await request.get('/pages/news/anything')).status()).toBe(404);
-    expect((await request.get('/pages/decks')).status()).toBe(200);
-    expect((await request.get('/pages/deckbuilder-legacy')).status()).toBe(200);
+    // The site's own decks pages and deck builder are still there, next to Re:Builder.
+    for (const path of ['/pages/decks', '/pages/deckbuilder']) {
+      const res = await request.get(path);
+      expect(res.status(), path).toBe(200);
+      expect(await res.text(), path).not.toContain('data-ac-plugin="rebuilder"');
+    }
   });
 
   test('publishes window.AlteredCore v1 and isolates the plugin in a shadow root', async ({ page }) => {
-    await page.goto('/pages/deckbuilder?lang=fr');
+    await page.goto('/pages/rebuilder?lang=fr');
     // The plugin asks for its mount (and the shell attaches the shadow root) once its modules load.
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     const host = await page.evaluate(() => {
@@ -30,7 +34,7 @@ test.describe('Shell · SPA pages', () => {
         shadow: !!el.shadowRoot,
       };
     });
-    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/deckbuilder/', shadow: true });
+    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/rebuilder/', shadow: true });
     expect(host.methods).toHaveLength(5);
     // No token API: authenticated services are reached through the site's relay.
     expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);
@@ -70,47 +74,32 @@ test.describe('Shell · SPA pages', () => {
     expect((await request.post('/api/v1/services/decks/api/decks', { data: {} })).status()).toBe(403);
     expect((await request.get('/api/v1/session/token')).status()).toBe(404);
 
-    await page.goto('/pages/deckbuilder');
+    await page.goto('/pages/rebuilder');
     const csrf = await csrfOf(page);
     const guestWrite = await page.request.post('/api/v1/services/decks/api/decks', { headers: { 'X-CSRF-Token': csrf }, data: {} });
     expect(guestWrite.status()).toBe(401);
   });
 
-  test('plugin endpoints: the router applies the manifest rules (methods, auth, CSRF)', async ({ page, request }) => {
-    const notes = '/papi/rebuilder/notes';
-    expect((await request.get(`${notes}?deck=abc`)).status()).toBe(401);
-    const del = await request.delete(notes);
-    expect(del.status()).toBe(405);
-    expect(del.headers()['allow']).toBe('GET, PUT');
-    expect((await request.put(notes, { data: { deck: 'abc', body: 'x' } })).status()).toBe(403);
-    expect((await request.get('/papi/rebuilder/notes-stats')).status()).toBe(401);
+  test('plugin endpoints: the router requires the CSRF token on writes', async ({ page, request }) => {
+    const toggle = '/papi/core-altered-cards/favorites-toggle';
+    expect((await request.post(toggle, { form: { card_ref: 'x' } })).status()).toBe(403);
     expect((await request.get('/papi/rebuilder/nope')).status()).toBe(404);
 
-    await login(page, 'alice', '/pages/deckbuilder');
+    await login(page, 'alice', '/pages/rebuilder');
     const csrf = await csrfOf(page);
-    const call = (url: string, init: { method?: string; headers?: Record<string, string>; body?: string } = {}) =>
-      page.evaluate(async ([u, i]) => {
-        const r = await fetch(u, i);
+    const post = (headers: Record<string, string>, form: Record<string, string>) =>
+      page.evaluate(async ([u, h, f]) => {
+        const r = await fetch(u, { method: 'POST', headers: h, body: new URLSearchParams(f) });
         return { status: r.status, body: (await r.json()) as Record<string, unknown> };
-      }, [url, init] as const);
-    const json = { 'Content-Type': 'application/json' };
-    expect((await call(notes, { method: 'PUT', headers: json, body: JSON.stringify({ deck: 'shell-e2e', body: 'x' }) })).status).toBe(403);
-    // The token as a header, as a JSON field (existing PHP plugins), or added by AlteredCore.fetch.
-    expect((await call(notes, { method: 'PUT', headers: { ...json, 'X-CSRF-Token': csrf }, body: JSON.stringify({ deck: 'shell-e2e', body: 'one' }) })).body).toMatchObject({ body: 'one' });
-    expect((await call(notes, { method: 'PUT', headers: json, body: JSON.stringify({ deck: 'shell-e2e', body: 'two', csrf_token: csrf }) })).body).toMatchObject({ body: 'two' });
-    const viaHost = await page.evaluate(async () => {
-      const ac = (window as unknown as { AlteredCore: { page: { apiUrl: string }; fetch: typeof fetch } }).AlteredCore;
-      const r = await ac.fetch(ac.page.apiUrl + 'notes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck: 'shell-e2e', body: '' }) });
-      return { apiUrl: ac.page.apiUrl, status: r.status, body: await r.json() };
-    });
-    expect(viaHost).toMatchObject({ apiUrl: '/papi/rebuilder/', status: 200, body: { body: '' } });
-    expect((await call(`${notes}?deck=../x`)).status).toBe(400);
-    // Signed in but not a site admin.
-    expect((await call('/papi/rebuilder/notes-stats')).status).toBe(403);
+      }, [toggle, headers, form] as const);
+    expect(await post({}, {})).toMatchObject({ status: 403, body: { error: 'csrf' } });
+    // Past the router, the endpoint answers itself (no card reference: its own 400).
+    expect(await post({}, { csrf_token: csrf })).toMatchObject({ status: 400, body: { code: 'FT03' } });
+    expect((await post({ 'X-CSRF-Token': csrf }, {})).body).not.toMatchObject({ error: 'csrf' });
   });
 
   test('a signed-in session reaches the decks API through the relay, without a token in the browser', async ({ page }) => {
-    await login(page, 'alice', '/pages/deckbuilder');
+    await login(page, 'alice', '/pages/rebuilder');
     const res = await page.evaluate(async () => {
       const r = await fetch('/api/v1/services/decks/api/decks?itemsPerPage=1', { headers: { Accept: 'application/json' } });
       return { status: r.status, body: await r.text() };

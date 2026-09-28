@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, e
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
 import { finalize, map, switchMap, timer } from 'rxjs';
-import { AuthService } from '../../../core/auth.service';
+import { AuthSession } from '../../../core/auth-session';
 import { toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage, type PublicDeckQuery } from '../../../core/decks-api.service';
 import { DECK_FORMATS } from '../../../core/formats';
@@ -18,7 +18,7 @@ import { ArDeckCard, FACTIONS } from '../../../ui/metier';
 import { ArAppBar, ArTabs } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
-import { SiteMenuService } from '../../shared/site-menu/site-menu';
+import { SITE_MENU_ENABLED, SiteMenuService } from '../../shared/site-menu/site-menu';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks } from '../deck-filters';
@@ -70,18 +70,22 @@ export class DecksPage {
   private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly menu = inject(SiteMenuService);
+  protected readonly siteMenu = inject(SITE_MENU_ENABLED);
 
   protected readonly tab = toSignal(this.route.queryParamMap.pipe(map((q) => (q.get('tab') === 'community' ? 'community' : 'mine') as Tab)), {
     initialValue: 'mine' as Tab,
   });
   protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);
 
-  /** Account decks; follows the token, so logging in or out reloads them. */
+  /**
+   * Account decks; follows the session, so logging in or out reloads them. Embedded in the site
+   * there is no token in the browser (the relay adds it), hence the user name as the key.
+   */
   private readonly serverRes = rxResource({
-    params: () => this.auth.token() ?? undefined,
+    params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
     stream: () => this.decksApi.listMine(1, 60).pipe(map((body) => (Array.isArray(body) ? body : body.member ?? []))),
   });
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
@@ -154,7 +158,10 @@ export class DecksPage {
   private readonly listSentinel = viewChild<ElementRef<HTMLElement>>('listSentinel');
 
   /** Likes toggled on this page, over what the API listed; dropped when the account changes. */
-  private readonly likes = linkedSignal<string | null, Record<string, LikeState>>({ source: this.auth.token, computation: () => ({}) });
+  private readonly likes = linkedSignal<string | null, Record<string, LikeState>>({
+    source: () => this.auth.token() ?? this.auth.username(),
+    computation: () => ({}),
+  });
   private readonly pendingLikes = new Set<string>();
 
   protected readonly list = computed(() => {
@@ -255,8 +262,7 @@ export class DecksPage {
   protected newDeck(): void {
     openNewDeck(this.overlay).afterClosed.subscribe((res) => {
       if (!res) return;
-      const deck = this.store.create(res);
-      void this.router.navigate(['/decks', deck.id, 'edit']);
+      this.store.createDeck(res).subscribe((deck) => void this.router.navigate(['/decks', deck.id, 'edit']));
     });
   }
 

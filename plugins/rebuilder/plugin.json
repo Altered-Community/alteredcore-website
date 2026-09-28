@@ -2,37 +2,31 @@
     "$schema":          "../plugin.schema.json",
     "manifest_version": 2,
     "id":               "rebuilder",
-    "name":             "Re:Builder deck editor",
-    "version":          "0.1.0",
-    "description":      "Deck editor (Angular, from Altered Re:Builder) mounted as a SPA page. Replaces the deck builder of core-altered-cards on /pages/deckbuilder.",
+    "name":             "Re:Builder",
+    "version":          "0.2.0",
+    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular), mounted as a SPA page on /pages/rebuilder, next to the site's own decks pages and deck builder.",
     "author":           "Yutsa",
     "icon":             "fa-solid fa-pen-ruler",
 
     "pages": [
         {
-            "slug":     "deckbuilder",
+            "slug":     "rebuilder",
             "type":     "spa",
             "entry":    "dist/embed-manifest.json",
             "mount":    "shadow",
-            "title_en": "Deck Builder",
-            "title_fr": "Créateur de deck"
+            "title_en": "Re:Builder",
+            "title_fr": "Re:Builder"
         }
     ],
 
-    "api": [
-        { "endpoint": "notes",       "file": "api/notes.php",       "methods": ["GET", "PUT"], "auth": "user" },
-        { "endpoint": "notes-stats", "file": "api/notes-stats.php", "methods": ["GET"],        "auth": "admin" }
-    ],
-
-    "admin": [
-        { "section": "rebuilder-notes", "file": "admin/notes.php", "label_en": "Deck notes", "label_fr": "Notes de deck", "icon": "fa-solid fa-note-sticky" }
-    ],
-
-    "sql":    "sql/install.sql",
-    "tables": ["deck_notes"],
-
     "menu": [
-        { "page": "deckbuilder", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler", "sort_order": 45 }
+        {
+            "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler", "sort_order": 45,
+            "children": [
+                { "page": "rebuilder", "path": "decks",     "label_en": "Decks",        "label_fr": "Decks",            "icon": "fa-solid fa-layer-group" },
+                { "page": "rebuilder", "path": "decks/new", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler" }
+            ]
+        }
     ],
 
     "build": {

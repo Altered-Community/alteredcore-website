@@ -15,9 +15,6 @@
 <ar-collapsible class="stats" [title]="t('panel.stats')" [bare]="true" [(open)]="statsOpen">
   <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ar-collapsible>
-@if (notesDeckId(); as id) {
-  <app-deck-notes class="notes" [deckId]="id" />
-}
 <div class="rows">
   @for (g of deck.groups(); track g.id) {
     <div class="group">

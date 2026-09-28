@@ -46,7 +46,7 @@ if ((empty($_SESSION['admin_logged_in']) || saIsPreviewingGroup()) && !($GLOBALS
                         $__pageAllowed = true; break;
                     }
                 } else {
-                    if ($currentPage === basename(parse_url($__nr['url'], PHP_URL_PATH) ?: '', '.php')) {
+                    if ($currentPage === navUrlPage((string)$__nr['url'])) {
                         $__pageAllowed = true; break;
                     }
                 }
@@ -343,12 +343,12 @@ if (!$_pageFullwidth) {
     foreach ($__navItems as $__fni) {
         $__match = !empty($__fni['is_iframe'])
             ? ($__iframeNavId === (int)$__fni['id'])
-            : ($__isCurrent === basename(parse_url($__fni['url'], PHP_URL_PATH) ?: '', '.php'));
+            : ($__isCurrent === navUrlPage((string)$__fni['url']));
         if ($__match && !empty($__fni['is_fullwidth'])) { $_pageFullwidth = true; break; }
         foreach ($__fni['children'] as $__fnc) {
             $__match = !empty($__fnc['is_iframe'])
                 ? ($__iframeNavId === (int)$__fnc['id'])
-                : ($__isCurrent === basename(parse_url($__fnc['url'], PHP_URL_PATH) ?: '', '.php'));
+                : ($__isCurrent === navUrlPage((string)$__fnc['url']));
             if ($__match && !empty($__fnc['is_fullwidth'])) { $_pageFullwidth = true; break 2; }
         }
     }

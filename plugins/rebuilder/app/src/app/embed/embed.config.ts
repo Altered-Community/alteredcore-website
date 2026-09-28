@@ -2,10 +2,11 @@ import { APP_BASE_HREF } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST } from '@angular/core';
-import { TitleStrategy, provideRouter } from '@angular/router';
+import { RouteReuseStrategy, TitleStrategy, provideRouter } from '@angular/router';
 import { AuthSession } from '../core/auth-session';
-import { DECK_NOTES } from '../core/deck-notes';
 import { DECK_CREATE_TARGET } from '../core/deck-store';
+import { DecksListReuseStrategy } from '../features/decks/decks-list-reuse';
+import { SITE_MENU_ENABLED } from '../features/shared/site-menu/site-menu';
 import { AR_DENSITY_TARGET } from '../ui/layout.services';
 import { embedRoutes } from './embed.routes';
 import { EmbedTitleStrategy } from './embed-title.strategy';
@@ -14,7 +15,6 @@ import { HostAuthSession } from './host-auth.session';
 import { siteCsrfInterceptor } from './site-csrf.interceptor';
 import { ShadowOverlayContainer } from './shadow-overlay-container';
 import { ShadowStylesHost } from './shadow-styles.host';
-import { SiteDeckNotes } from './site-deck-notes';
 
 export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): ApplicationConfig {
   return {
@@ -23,12 +23,13 @@ export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): App
       { provide: ALTERED_CORE, useValue: host },
       { provide: EMBED_MOUNT, useValue: mount },
       { provide: APP_BASE_HREF, useValue: host.page.basePath },
+      { provide: RouteReuseStrategy, useClass: DecksListReuseStrategy },
       provideRouter(embedRoutes),
       { provide: TitleStrategy, useClass: EmbedTitleStrategy },
       provideHttpClient(withFetch(), withInterceptors([siteCsrfInterceptor])),
       { provide: AuthSession, useClass: HostAuthSession },
       { provide: DECK_CREATE_TARGET, useValue: 'account' },
-      { provide: DECK_NOTES, useClass: SiteDeckNotes },
+      { provide: SITE_MENU_ENABLED, useValue: false },
       { provide: OverlayContainer, useClass: ShadowOverlayContainer },
       { provide: AR_DENSITY_TARGET, useValue: mount.container },
       { provide: SHARED_STYLES_HOST, useClass: ShadowStylesHost },

@@ -16,6 +16,8 @@ export abstract class AuthSession {
   abstract readonly username: Signal<string | null>;
   /** True while a previous session is being restored (avoids flashing the guest UI). */
   abstract readonly sessionRestoring: Signal<boolean>;
+  /** Message to show when the session expired and could not be renewed. */
+  abstract readonly sessionNotice: Signal<string | null>;
   /** Resolves once the token is fresh enough for a request (no HTTP when it already is). */
   abstract ensureFresh(): Observable<void>;
   /** Gets a new access token after a 401; false when the session is gone. */

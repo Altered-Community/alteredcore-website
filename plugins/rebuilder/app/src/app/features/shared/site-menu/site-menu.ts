@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, InjectionToken, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
 import { ArIcon } from '../../../ui/icon';
@@ -48,6 +48,9 @@ export class SiteMenu {
     if (this.overlays.isOpen(this.ref)) this.ref.close();
   }
 }
+
+/** False when the app is embedded in a site that draws its own navigation (no ☰ button). */
+export const SITE_MENU_ENABLED = new InjectionToken<boolean>('SITE_MENU_ENABLED', { factory: () => true });
 
 @Injectable({ providedIn: 'root' })
 export class SiteMenuService {

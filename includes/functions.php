@@ -266,6 +266,16 @@ function getLangUrl(string $targetLang): string {
     return '?' . http_build_query($params);
 }
 
+/**
+ * Page slug a menu URL points at, compared with the current page for highlighting:
+ * `/pages/{slug}/…` gives `{slug}` (deep links of SPA pages), otherwise the file name.
+ */
+function navUrlPage(string $url): string {
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?: '');
+    if (preg_match('#/pages/([a-z0-9_-]+)/#', $path . '/', $m)) return $m[1];
+    return basename($path, '.php');
+}
+
 function resolveUrlLang(string $url): string {
     $lang     = getLang();
     $fullMap  = ['en' => 'en-us', 'fr' => 'fr-fr', 'es' => 'es-es', 'it' => 'it-it', 'de' => 'de-de'];
