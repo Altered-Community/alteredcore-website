@@ -1,4 +1,4 @@
-import { DECKS_API, csrfOf, expect, login, test } from './fixtures';
+import { csrfOf, expect, login, test } from './fixtures';
 
 /** The shell's side of manifest v2: routing, host contract, session token. Plugin-agnostic. */
 test.describe('Shell · SPA pages', () => {
@@ -24,12 +24,15 @@ test.describe('Shell · SPA pages', () => {
         lang: ac['lang'],
         user: ac['user'],
         basePath: ac.page['basePath'],
-        methods: ['getAccessToken', 'login', 'setTitle', 'getMount', 'on'].filter((m) => typeof ac[m] === 'function'),
+        methods: ['login', 'setTitle', 'getMount', 'on'].filter((m) => typeof ac[m] === 'function'),
         shadow: !!el.shadowRoot,
       };
     });
     expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/deckbuilder/', shadow: true });
-    expect(host.methods).toHaveLength(5);
+    expect(host.methods).toHaveLength(4);
+    // No token API: authenticated services are reached through the site's relay.
+    expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);
+    expect(await page.evaluate(() => (window as unknown as { AlteredCore: { services: Record<string, string> } }).AlteredCore.services['decks'])).toBe('/api/v1/services/decks');
 
     // The plugin renders inside its shadow root; none of its styles land in the site's <head>.
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
@@ -52,32 +55,31 @@ test.describe('Shell · SPA pages', () => {
     expect(probe.primary).toBe(probe.site);
   });
 
-  test('session token endpoint: POST + CSRF only, 401 for guests', async ({ page, request }) => {
-    expect((await request.get('/api/v1/session/token')).status()).toBe(405);
-    expect((await request.post('/api/v1/session/token')).status()).toBe(403);
+  test('service relay: listed services, api/ paths, CSRF on writes', async ({ page, request }) => {
+    expect((await request.get('/api/v1/services/nope/api/decks')).status()).toBe(404);
+    expect((await request.get('/api/v1/services/decks/admin/login')).status()).toBe(400);
+    expect((await request.get('/api/v1/services/decks/api/../admin')).status()).toBe(400);
+    // Guests are relayed without a token: public reads answer, private ones are refused upstream.
+    expect((await request.get('/api/v1/services/decks/api/decks/public?itemsPerPage=1')).status()).toBe(200);
+    expect((await request.get('/api/v1/services/decks/api/decks?itemsPerPage=1')).status()).toBe(401);
+    expect((await request.post('/api/v1/services/decks/api/decks', { data: {} })).status()).toBe(403);
+    expect((await request.get('/api/v1/session/token')).status()).toBe(404);
 
     await page.goto('/pages/deckbuilder');
     const csrf = await csrfOf(page);
-    const guest = await page.request.post('/api/v1/session/token', { headers: { 'X-CSRF-Token': csrf } });
-    expect(guest.status()).toBe(401);
-    expect(await page.evaluate(() => (window as unknown as { AlteredCore: { getAccessToken(): Promise<string | null> } }).AlteredCore.getAccessToken())).toBeNull();
+    const guestWrite = await page.request.post('/api/v1/services/decks/api/decks', { headers: { 'X-CSRF-Token': csrf }, data: {} });
+    expect(guestWrite.status()).toBe(401);
   });
 
-  test('a signed-in session yields a Keycloak token the decks API accepts', async ({ page }) => {
+  test('a signed-in session reaches the decks API through the relay, without a token in the browser', async ({ page }) => {
     await login(page, 'alice', '/pages/deckbuilder');
-    const token = await page.evaluate(() =>
-      (window as unknown as { AlteredCore: { getAccessToken(): Promise<string | null> } }).AlteredCore.getAccessToken(),
-    );
-    expect(token).toBeTruthy();
-    const claims = JSON.parse(Buffer.from(token!.split('.')[1], 'base64url').toString('utf8')) as Record<string, unknown>;
-    expect(claims['azp']).toBe('main-site');
-    expect(claims['sub']).toBe('11111111-1111-1111-1111-111111111111');
-
-    // Same token straight to the decks API, as a plugin does from the browser (Bearer, CORS).
-    const mine = await page.evaluate(async ([api, bearer]) => {
-      const res = await fetch(`${api}/api/decks?itemsPerPage=1`, { headers: { Authorization: `Bearer ${bearer}`, Accept: 'application/json' } });
-      return res.status;
-    }, [DECKS_API, token!] as const);
-    expect(mine).toBe(200);
+    const res = await page.evaluate(async () => {
+      const r = await fetch('/api/v1/services/decks/api/decks?itemsPerPage=1', { headers: { Accept: 'application/json' } });
+      return { status: r.status, body: await r.text() };
+    });
+    expect(res.status).toBe(200);
+    const html = await page.content();
+    expect(html).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\./); // no JWT in the page or its config
+    expect(res.body).not.toContain('access_token');
   });
 });

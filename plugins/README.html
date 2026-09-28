@@ -550,21 +550,30 @@ they follow the light / dark switch and the active theme without any code:</p>
   <tr><td>lang</td><td></td><td><code>en</code> or <code>fr</code> (site UI language). A language change reloads the page.</td></tr>
   <tr><td>theme</td><td></td><td><code>light</code> or <code>dark</code>, kept up to date.</td></tr>
   <tr><td>baseUrl, siteName, csrf</td><td></td><td>Install prefix, site name, CSRF token of the session.</td></tr>
-  <tr><td>services</td><td></td><td>Browser URLs of the Altered services: <code>{ cards, decks, cdn }</code>. <code>DECKS_API_PUBLIC_URL</code> (etc.) in <code>config.local.php</code> overrides <code>DECKS_API_URL</code> when the server uses an internal host.</td></tr>
+  <tr><td>services</td><td></td><td>Where to call the Altered services from the browser. <code>cards</code>, <code>cdn</code>: public, called directly (<code>CARDS_API_PUBLIC_URL</code> overrides <code>CARDS_API_URL</code> if the server uses an internal host). <code>decks</code>, <code>collection</code>: the site's relay, <code>/api/v1/services/decks</code> etc. (see below).</td></tr>
   <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL.</td></tr>
-  <tr><td>getAccessToken()</td><td></td><td><code>Promise&lt;string|null&gt;</code>: the Keycloak access token of the PHP session, to call the services directly (<code>Authorization: Bearer</code>). Cached until 30 s before expiry; refreshed server-side. <code>null</code> for guests and local-auth sites.</td></tr>
   <tr><td>login(returnTo?)</td><td></td><td>Sends the user to the site's sign-in, then back to <code>returnTo</code> (default: current URL).</td></tr>
   <tr><td>setTitle(title)</td><td></td><td>Sets <code>document.title</code> to “title — site name”.</td></tr>
   <tr><td>getMount(pluginId)</td><td></td><td><code>{ host, root, container }</code>: the element the shell rendered, its shadow root (or itself), and the element to render into.</td></tr>
-  <tr><td>on(type, fn)</td><td></td><td><code>theme</code> <code>{theme}</code>, <code>auth</code> <code>{user}</code> (session lost), <code>lang</code> <code>{lang}</code>. Returns an unsubscribe function. Also dispatched on <code>window</code> as <code>alteredcore:&lt;type&gt;</code>.</td></tr>
+  <tr><td>on(type, fn)</td><td></td><td><code>theme</code> <code>{theme}</code>; <code>auth</code> <code>{user}</code> and <code>lang</code> <code>{lang}</code> are reserved (a sign-in or a language change reloads the page today). Returns an unsubscribe function. Also dispatched on <code>window</code> as <code>alteredcore:&lt;type&gt;</code>.</td></tr>
 </table>
 
-<h3>Session token endpoint</h3>
-<p><code>POST /api/v1/session/token</code> with header <code>X-CSRF-Token</code>, same origin only. The shell remains the only holder
-of the Keycloak client secret and the refresh token; the endpoint returns <code>{access_token, token_type, expires_at}</code>,
-<code>401</code> for a guest or an expired session, <code>{access_token: null, reason: "local_auth"}</code> without Keycloak.
-The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
-<code>main-site</code> token is accepted.</p>
+<h3>Service relay — <code>/api/v1/services/{service}/{path}</code></h3>
+<p>The browser never holds a Keycloak token. A plugin calls <code>AlteredCore.services.decks + '/api/decks…'</code> on the
+site's own origin; the relay (<code>api/v1/services/proxy.php</code>) reads the access token from the PHP session, renews it
+when needed, adds <code>Authorization: Bearer</code> and forwards the request to <code>DECKS_API_URL</code>. It returns the service's
+status and body unchanged. The client secret, the refresh token and the access token all stay on the server, and the
+services no longer need CORS for the site.</p>
+<ul>
+  <li>Services: <code>decks</code> (<code>DECKS_API_URL</code>), <code>collection</code> (<code>COLLECTION_API_URL</code>), when configured. Others: 404.</li>
+  <li>Paths under <code>api/</code> only; <code>..</code>, <code>//</code> and backslashes are refused (400). Query strings are forwarded, cookies are not.</li>
+  <li>Writes (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>) need the header <code>X-CSRF-Token: AlteredCore.csrf</code> (403 otherwise). Body limit 1 MB.</li>
+  <li>Guests are relayed without a token: public endpoints answer, the others return the service's 401.</li>
+  <li>A 401 with a token (revoked, clock skew) makes the relay renew the token once and retry.</li>
+</ul>
+<p>The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
+<code>main-site</code> token is accepted. A plugin's own <code>papi</code> endpoints can do the same server-side with
+<code>kc_get_access_token($_SESSION['user_id'])</code>.</p>
 
 <h2 id="admin">Admin pages</h2>
 

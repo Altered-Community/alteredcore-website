@@ -56,13 +56,19 @@ async function expectDeckCount(page: Page, compact: boolean, count: number): Pro
 test.describe('ReBuilder in the shell · signed in', () => {
   test('creates a deck on the account, adds cards, saves, and finds it again after a reload', async ({ page, compact }, testInfo) => {
     const name = `E2E ${testInfo.project.name} ${Date.now()}`;
+    // The browser talks to the site only (relay) for decks, and never sends a bearer token.
+    const leaks: string[] = [];
+    page.on('request', (req) => {
+      if (req.headers()['authorization']) leaks.push(`Authorization on ${req.url()}`);
+      if (/\/api\/decks/.test(req.url()) && !req.url().includes('/api/v1/services/decks/')) leaks.push(`direct call ${req.url()}`);
+    });
     await login(page, 'alice', '/pages/deckbuilder?lang=fr');
     await expect(page).toHaveURL(/\/pages\/deckbuilder\/decks\/new$/);
     await expect(page.getByRole('dialog', { name: FR.newDeck })).toBeVisible();
     await expect(page.locator('ar-hero-tile').first()).toBeVisible();
     await evidence(page, testInfo, '01-new-deck');
 
-    const created = page.waitForResponse((r) => r.request().method() === 'POST' && /\/api\/decks$/.test(new URL(r.url()).pathname));
+    const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
     await createDeck(page, name);
     const res = await created;
     expect(res.status()).toBe(201);
@@ -94,6 +100,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.goto(`/pages/deckbuilder?id=${deck.id}`);
     await expect(page).toHaveURL(new RegExp(`/pages/deckbuilder/decks/${deck.id}/edit$`));
     await expectDeckCount(page, compact, 2);
+    expect(leaks).toEqual([]);
   });
 
   test('follows the site theme live and the site language', async ({ page, compact }, testInfo) => {

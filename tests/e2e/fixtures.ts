@@ -11,7 +11,6 @@ export const USERS = {
   bob: { username: 'bob', password: 'TestPassword1234', pseudo: 'Bob' },
 } as const;
 
-export const DECKS_API = process.env['E2E_DECKS_API'] ?? 'http://localhost:8001';
 
 export const test = base.extend<{ compact: boolean }>({
   // The cookie banner (Bootstrap modal) would cover the page on the first visit.

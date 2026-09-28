@@ -33,7 +33,8 @@ mockups stayed in the ReBuilder repository.
 
 New deck (hero, format, visibility), editor (card search and filters, deck list, validation,
 statistics, deck settings), preview, and the mobile deck view. Signed in, decks are created and
-saved on the decks API with the site's Keycloak session (`AlteredCore.getAccessToken()`); as a
+saved on the decks API through the site's relay (`/api/v1/services/decks`), which adds the
+Keycloak token of the PHP session server-side: the browser never holds a token. As a
 guest they stay in `localStorage` (`arb.guest-decks`). Deck lists, deck pages and sign-in are the
 site's: the editor links to them.
 

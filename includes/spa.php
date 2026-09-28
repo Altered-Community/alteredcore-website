@@ -88,14 +88,26 @@ function spaResolvePage(array $plugin, array $page): ?array {
 }
 
 /**
- * Browser-reachable URL of a service: `{NAME}_PUBLIC_URL` when set (the server may use an
- * internal host, e.g. a container name), else `{NAME}_URL`. spaPublicServiceUrl('DECKS_API').
+ * Browser-reachable URL of a public service: `{NAME}_PUBLIC_URL` when set (the server may use
+ * an internal host, e.g. a container name), else `{NAME}_URL`. spaPublicServiceUrl('CARDS_API').
  */
 function spaPublicServiceUrl(string $name): string {
     foreach ([$name . '_PUBLIC_URL', $name . '_URL'] as $const) {
         if (defined($const) && (string)constant($const) !== '') return rtrim((string)constant($const), '/');
     }
     return '';
+}
+
+/**
+ * Services relayed by /api/v1/services/{name}/… (api/v1/services/proxy.php): the ones that need
+ * the user's Keycloak token. Server-side URLs, never sent to the browser.
+ */
+function spaProxyServices(): array {
+    $out = [];
+    foreach (['decks' => 'DECKS_API_URL', 'collection' => 'COLLECTION_API_URL'] as $name => $const) {
+        if (defined($const) && (string)constant($const) !== '') $out[$name] = rtrim((string)constant($const), '/');
+    }
+    return $out;
 }
 
 /** The data half of window.AlteredCore (the methods live in js/altered-core-host.js). */
@@ -112,6 +124,8 @@ function spaHostConfig(array $page): array {
         ];
     }
     $basePath = BASE_URL . '/pages/' . $page['slug'] . '/';
+    $services = ['cards' => spaPublicServiceUrl('CARDS_API'), 'cdn' => spaPublicServiceUrl('CDN')];
+    foreach (array_keys(spaProxyServices()) as $name) $services[$name] = BASE_URL . '/api/v1/services/' . $name;
 
     return [
         'version'  => SPA_HOST_CONTRACT_VERSION,
@@ -122,14 +136,11 @@ function spaHostConfig(array $page): array {
         'csrf'     => csrfToken(),
         'auth'     => [
             'provider' => $kcMode ? 'keycloak' : 'local',
-            'tokenUrl' => BASE_URL . '/api/v1/session/token',
             'loginUrl' => $kcMode ? BASE_URL . '/auth/keycloak-login' : BASE_URL . '/pages/login',
         ],
-        'services' => [
-            'cards' => spaPublicServiceUrl('CARDS_API'),
-            'decks' => spaPublicServiceUrl('DECKS_API'),
-            'cdn'   => spaPublicServiceUrl('CDN'),
-        ],
+        // Public services are called directly; authenticated ones through the same-origin relay,
+        // which adds the session's token server-side (the browser never sees it).
+        'services' => $services,
         'page'     => [
             'plugin'    => $page['plugin_id'],
             'slug'      => $page['slug'],

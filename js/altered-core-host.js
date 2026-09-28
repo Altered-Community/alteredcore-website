@@ -5,9 +5,11 @@
  *
  * window.AlteredCore (version 1)
  *   version, baseUrl, siteName, lang ('en' | 'fr'), theme ('light' | 'dark'),
- *   user ({ id, username, sub } | null), csrf, services ({ cards, decks, cdn }),
+ *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, decks, collection }),
  *   page ({ plugin, slug, basePath, subPath, assetsUrl, mount })
- *   getAccessToken()   Promise<string | null> — Keycloak access token of the PHP session
+ *   services.cards / .cdn are public and called directly; services.decks / .collection are
+ *   the site's relay (/api/v1/services/…), which adds the session's Keycloak token server-side:
+ *   the browser never holds a token. Writes to the relay send the header X-CSRF-Token: csrf.
  *   login(returnTo?)   sends the user to the shell's login, then back to returnTo
  *   setTitle(title)    document title, suffixed with the site name
  *   getMount(pluginId) { host, root, container } — the element the plugin renders into
@@ -24,8 +26,6 @@
     var root = document.documentElement;
     var listeners = { theme: [], lang: [], auth: [] };
     var mounts = {};
-    var token = null;      // { value, expiresAt }
-    var tokenRequest = null;
 
     function currentTheme() {
         return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
@@ -38,33 +38,6 @@
         window.dispatchEvent(new CustomEvent('alteredcore:' + type, { detail: detail }));
     }
 
-    function setUser(user) {
-        if (host.user === user) return;
-        host.user = user;
-        emit('auth', { user: user });
-    }
-
-    function fetchToken() {
-        var auth = config.auth || {};
-        return fetch(auth.tokenUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json', 'X-CSRF-Token': config.csrf || '' },
-        }).then(function (res) {
-            if (res.status === 401) {
-                token = null;
-                setUser(null);
-                return null;
-            }
-            if (!res.ok) throw new Error('token endpoint answered ' + res.status);
-            return res.json().then(function (body) {
-                if (!body || !body.access_token) { token = null; return null; }
-                token = { value: body.access_token, expiresAt: Number(body.expires_at) || 0 };
-                return token.value;
-            });
-        });
-    }
-
     var host = {
         version: 1,
         baseUrl: config.baseUrl || '',
@@ -75,22 +48,6 @@
         csrf: config.csrf || '',
         services: config.services || {},
         page: config.page || {},
-
-        getAccessToken: function () {
-            if (!host.user) return Promise.resolve(null);
-            var now = Math.floor(Date.now() / 1000);
-            if (token && token.expiresAt - 30 > now) return Promise.resolve(token.value);
-            if (!tokenRequest) {
-                tokenRequest = fetchToken().then(function (value) {
-                    tokenRequest = null;
-                    return value;
-                }, function (err) {
-                    tokenRequest = null;
-                    throw err;
-                });
-            }
-            return tokenRequest;
-        },
 
         login: function (returnTo) {
             var target = returnTo || (location.pathname + location.search + location.hash);

@@ -13,9 +13,9 @@ export interface AlteredCoreHost {
   readonly theme: 'light' | 'dark';
   readonly user: AlteredCoreUser | null;
   readonly csrf: string;
-  readonly services: { cards?: string; decks?: string; cdn?: string };
+  /** cards / cdn: public, called directly. decks / collection: the site's relay, which adds the token. */
+  readonly services: { cards?: string; cdn?: string; decks?: string; collection?: string };
   readonly page: { plugin: string; slug: string; basePath: string; subPath: string; assetsUrl: string; mount: 'shadow' | 'light' };
-  getAccessToken(): Promise<string | null>;
   login(returnTo?: string): void;
   setTitle(title: string): void;
   getMount(pluginId: string): AlteredCoreMount;
