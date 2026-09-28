@@ -119,12 +119,19 @@ test.describe('ReBuilder in the shell · signed in', () => {
 
   test('lists community decks from the public API, through the relay', async ({ page }, testInfo) => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
+    // The list goes through the relay. The app may cancel a request and send a new one (query
+    // change), so its response body is not read here: the expected page is fetched separately.
     const listed = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/services/decks/api/decks/public' && r.ok());
     await page.getByRole('tab', { name: 'Communauté' }).click();
-    const body = (await (await listed).json()) as { member: { legal: boolean }[] };
+    await listed;
     await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\?(.*&)?tab=community/);
-    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones.
-    const legal = body.member.filter((d) => d.legal).length;
+    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1.
+    const res = await page.request.get('/api/v1/services/decks/api/decks/public', {
+      params: { page: 1, itemsPerPage: 24, 'order[updatedAt]': 'desc' },
+      headers: { Accept: 'application/json' },
+    });
+    expect(res.status()).toBe(200);
+    const legal = ((await res.json()) as { member: { legal: boolean }[] }).member.filter((d) => d.legal).length;
     expect(legal).toBeGreaterThan(0);
     const list = page.getByRole('list', { name: 'Decks de la communauté' });
     await expect(list.locator('ar-deck-card')).toHaveCount(legal);
