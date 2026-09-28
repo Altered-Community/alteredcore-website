@@ -1482,6 +1482,143 @@ html { transition: background-color 0.25s, color 0.25s; }
     color: #fff;
 }
 
+/* ---- Mobile header (below 768px): blue bar with the burger, full-screen menu ---- */
+.az-mobile-menu { display: none; }
+@media (max-width: 767.98px) {
+    .az-site-header .az-topbar {
+        background: #1A6FD9;
+        border-bottom: 0;
+    }
+    [data-theme="dark"] .az-site-header .az-topbar { background: #0D3A8A !important; }
+    .az-site-header .az-brand-name { color: #fff; }
+    .az-site-header .az-brand svg path { fill: #fff; }
+    /* Controls and menu live in the panel on mobile */
+    .az-site-header .az-topbar-controls,
+    .az-site-header .az-navband { display: none !important; }
+    .az-site-header .az-burger {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-left: auto;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: transparent;
+        color: #fff;
+        font-size: 1.05rem;
+    }
+    .az-site-header .az-burger:hover { background: rgba(255, 255, 255, 0.12); }
+
+    .az-mobile-menu:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--sand-50);
+        padding: 0.5rem 1rem 1.25rem;
+    }
+    html.az-mm-open { overflow: hidden; }
+
+    .az-mm-nav { display: flex; flex-direction: column; }
+    .az-mm-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 52px;
+        padding: 0 0.25rem;
+        border-bottom: 1px solid var(--sand-200);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--neutral-800);
+        text-decoration: none;
+        cursor: pointer;
+        list-style: none;
+    }
+    .az-mm-row::-webkit-details-marker { display: none; }
+    .az-mm-row:hover { color: #1A6FD9; }
+    .az-mm-row.active { color: #1A6FD9; }
+    .az-mm-chevron { font-size: 0.8rem; transition: transform 0.15s; }
+    .az-mm-section[open] > .az-mm-row { border-bottom-color: transparent; }
+    .az-mm-section[open] .az-mm-chevron { transform: rotate(180deg); }
+    .az-mm-children {
+        display: flex;
+        flex-direction: column;
+        padding: 0 0 0.75rem 1rem;
+        border-bottom: 1px solid var(--sand-200);
+    }
+    .az-mm-group {
+        margin-top: 0.6rem;
+        padding: 0.25rem 0;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1A6FD9;
+    }
+    .az-mm-divider { height: 1px; margin: 0.5rem 0; background: var(--sand-200); }
+    .az-mm-link {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 40px;
+        font-size: 0.95rem;
+        color: var(--neutral-700);
+        text-decoration: none;
+    }
+    .az-mm-link:hover,
+    .az-mm-link.active { color: #1A6FD9; }
+    .az-mm-link.active { font-weight: 700; }
+
+    .az-mm-footer { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; }
+    .az-mm-prefs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; align-items: start; }
+    .az-mm-pref {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 44px;
+        border: 1px solid var(--sand-300);
+        border-radius: 0.6rem;
+        background: transparent;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--neutral-800);
+        cursor: pointer;
+        list-style: none;
+    }
+    .az-mm-pref::-webkit-details-marker { display: none; }
+    .az-mm-lang-list { display: flex; flex-direction: column; padding: 0.25rem 0.75rem; }
+    .az-mm-signin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        border-radius: 0.6rem;
+        background: var(--neutral-800);
+        color: var(--sand-50);
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .az-mm-signin:hover { color: var(--sand-50); opacity: 0.92; }
+    .az-mm-account { display: flex; flex-direction: column; padding: 0.25rem 0.25rem 0; border-top: 1px solid var(--sand-200); }
+    .az-mm-user { padding: 0.6rem 0 0.25rem; font-weight: 700; color: var(--neutral-800); }
+    /* Beat the generic "[data-theme=dark] a" link colour */
+    [data-theme="dark"] .az-mobile-menu a.az-mm-row { color: var(--neutral-800); }
+    [data-theme="dark"] .az-mobile-menu a.az-mm-link { color: var(--neutral-700); }
+    [data-theme="dark"] .az-mobile-menu a.az-mm-link.text-danger { color: #f08080; }
+    [data-theme="dark"] .az-mm-group,
+    [data-theme="dark"] .az-mobile-menu .az-mm-row:hover,
+    [data-theme="dark"] .az-mobile-menu .az-mm-row.active,
+    [data-theme="dark"] .az-mobile-menu .az-mm-link:hover,
+    [data-theme="dark"] .az-mobile-menu .az-mm-link.active { color: #72B4F6; }
+}
+
 /* ---- Dropdown menus as columns (nav.php .az-mega) ----
    Mobile: a plain list, columns stacked with a divider, descriptions hidden.
    Desktop (below): a full-width mega menu under the bar. */

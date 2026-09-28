@@ -146,14 +146,13 @@ if (!function_exists('__nav_active')) {
                 <?php endif; ?>
             </div><!-- /.az-topbar-controls -->
 
-            <!-- Burger button — mobile only, hidden in compact mode -->
-            <?php if (!$__mobileCompact): ?>
-            <button class="az-burger d-md-none" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#azNav"
-                    aria-controls="azNav" aria-expanded="false" aria-label="Menu">
+            <!-- Burger button — mobile only, opens #azMobileMenu (script below) -->
+            <button class="az-burger d-md-none" type="button" id="azBurger"
+                    aria-controls="azMobileMenu" aria-expanded="false"
+                    aria-label="<?= h($_hTxt['menu']) ?>"
+                    data-label-open="<?= h($_hTxt['menu']) ?>" data-label-close="<?= h($_hTxt['close_menu']) ?>">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <?php endif; ?>
 
         </div><!-- /.az-topbar-inner -->
     </div><!-- /.az-topbar -->
@@ -277,6 +276,106 @@ if (!function_exists('__nav_active')) {
     </div><!-- /.az-navband -->
 
 </header>
+
+<!-- Mobile menu (below 768px): sections as an accordion, then theme, language and account -->
+<div id="azMobileMenu" class="az-mobile-menu" hidden>
+    <nav class="az-mm-nav" aria-label="<?= h($_hTxt['menu']) ?>">
+        <?php foreach ($__navItems as $__ni):
+            if (!empty($__ni['is_sidebar_toggle'])) continue;
+            $__mmActive = __nav_active($__ni, $currentPage, $__iframeNavId);
+            foreach ($__ni['children'] as $__nc) {
+                if (__nav_active($__nc, $currentPage, $__iframeNavId)) { $__mmActive = true; break; }
+            }
+        ?>
+        <?php if (!empty($__ni['children'])): ?>
+        <details class="az-mm-section"<?= $__mmActive ? ' open' : '' ?>>
+            <summary class="az-mm-row<?= $__mmActive ? ' active' : '' ?>">
+                <span><?= h($__ni['label']) ?></span>
+                <i class="fa-solid fa-chevron-down az-mm-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="az-mm-children">
+                <?php foreach ($__ni['children'] as $__nc): ?>
+                    <?php if (!empty($__nc['is_section_header'])): ?>
+                    <div class="az-mm-group"><?= h($__nc['label']) ?></div>
+                    <?php elseif (!empty($__nc['is_separator'])): ?>
+                    <div class="az-mm-divider"></div>
+                    <?php else: ?>
+                    <a class="az-mm-link<?= __nav_active($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
+                       href="<?= h(__nav_href($__nc)) ?>"
+                       <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                        <?= h($__nc['label']) ?>
+                    </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        </details>
+        <?php else: ?>
+        <a class="az-mm-row<?= $__mmActive ? ' active' : '' ?>" href="<?= h(__nav_href($__ni)) ?>"
+           <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+            <span><?= h($__ni['label']) ?></span>
+        </a>
+        <?php endif; ?>
+        <?php endforeach; ?>
+    </nav>
+
+    <div class="az-mm-footer">
+        <div class="az-mm-prefs">
+            <button type="button" class="az-mm-pref" data-az-theme-toggle>
+                <i class="fa-solid fa-moon" aria-hidden="true"></i> <?= h($_hTxt['theme']) ?>
+            </button>
+            <details class="az-mm-lang">
+                <summary class="az-mm-pref"><?= $_langFlags[$lang] ?? '' ?> <?= h($_langNames[$lang] ?? $lang) ?></summary>
+                <div class="az-mm-lang-list">
+                    <?php foreach ($_langFlags as $_l => $_flag): if ($_l === $lang) continue; ?>
+                    <a class="az-mm-link" href="<?= h($_langUrls[$_l]) ?>" hreflang="<?= h($_l) ?>"><?= $_flag ?> <?= h($_langNames[$_l]) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+        </div>
+        <?php if (kcIsLoggedIn()): $kcU = kcUser(); ?>
+        <div class="az-mm-account">
+            <?php if (($kcU['username'] ?? '') !== ''): ?>
+            <span class="az-mm-user"><i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($kcU['username']) ?></span>
+            <?php endif; ?>
+            <a class="az-mm-link" href="<?= BASE_URL ?>/pages/account"><?= h($_hTxt['my_account']) ?></a>
+            <?php if (canViewAdminPanel()): ?>
+            <a class="az-mm-link" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">Admin</a>
+            <?php endif; ?>
+            <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
+            <a class="az-mm-link text-danger" href="<?= $_logoutUrl ?>"><?= h($_hTxt['sign_out']) ?></a>
+        </div>
+        <?php else: ?>
+        <a class="az-mm-signin" href="<?= BASE_URL ?>/pages/login"><?= h($_hTxt['sign_in']) ?></a>
+        <?php endif; ?>
+    </div>
+</div>
+<script>
+// Mobile menu: the burger opens a full-screen panel under the header
+(function () {
+    var btn   = document.getElementById('azBurger');
+    var menu  = document.getElementById('azMobileMenu');
+    var hdr   = document.querySelector('.az-site-header');
+    if (!btn || !menu || !hdr) return;
+    var icon  = btn.querySelector('i');
+
+    function setOpen(open) {
+        if (open) menu.style.top = Math.round(hdr.getBoundingClientRect().bottom) + 'px';
+        menu.hidden = !open;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? btn.dataset.labelClose : btn.dataset.labelOpen);
+        icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        document.documentElement.classList.toggle('az-mm-open', open);
+    }
+    btn.addEventListener('click', function () { setOpen(menu.hidden); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) { if (e.matches) setOpen(false); });
+
+    // Theme button reuses the header toggle (hidden on mobile)
+    var themeBtn = menu.querySelector('[data-az-theme-toggle]');
+    var headerToggle = document.getElementById('header-theme-toggle');
+    if (themeBtn && headerToggle) themeBtn.addEventListener('click', function () { headerToggle.click(); });
+}());
+</script>
 <script>
 // Desktop single bar: shrink the header step by step, only as far as needed
 // for the menu to fit between the brand and the controls: tighter spacing,

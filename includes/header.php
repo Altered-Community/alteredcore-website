@@ -80,6 +80,9 @@ $_hTxt = [
         'my_account' => 'My account',
         'sign_out'   => 'Sign out',
         'sign_in'    => 'Sign in',
+        'menu'       => 'Menu',
+        'close_menu' => 'Close menu',
+        'theme'      => 'Theme',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -87,6 +90,9 @@ $_hTxt = [
         'my_account' => 'Mon compte',
         'sign_out'   => 'Déconnexion',
         'sign_in'    => 'Connexion',
+        'menu'       => 'Menu',
+        'close_menu' => 'Fermer le menu',
+        'theme'      => 'Thème',
     ],
 ][getUiLang()];
 
