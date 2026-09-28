@@ -81,7 +81,31 @@ export class DeckStore {
   readonly total = computed(() => this.status().total);
   readonly distinct = computed(() => this.lines().filter((l) => l.quantity > 0).length);
   readonly quantities = computed(() => new Map(this.lines().map((l) => [l.card.reference, l.quantity])));
-  readonly editable = computed(() => this.isGuest() || this.auth.isLoggedIn());
+  /**
+   * Account decks of the signed-in user, to tell whether the open deck is theirs: the decks API
+   * does not say who owns a deck (`user` is `[]`), but `GET /api/decks` only lists the caller's.
+   * Refetched when the open server deck or the account changes.
+   */
+  private readonly mineIds = rxResource({
+    params: () => {
+      const id = this.deckId();
+      return id && !this.isGuest() && this.auth.isLoggedIn() ? { id, user: this.auth.username(), token: this.auth.token() } : undefined;
+    },
+    stream: () =>
+      this.decksApi.listMine(1, 1000).pipe(map((body) => new Set((Array.isArray(body) ? body : (body.member ?? [])).map((d) => d.id)))),
+  });
+  /** Decks created on the account from this tab: theirs before the account list is refetched. */
+  private readonly createdIds = signal<ReadonlySet<string>>(new Set());
+  /** The open deck belongs to the user: `true` for guest decks, `null` while the account list loads. */
+  readonly owned = computed<boolean | null>(() => {
+    if (this.isGuest()) return true;
+    const id = this.deckId();
+    if (!id || !this.auth.isLoggedIn()) return false;
+    if (this.createdIds().has(id)) return true;
+    if (this.mineIds.error()) return false;
+    return this.mineIds.hasValue() ? this.mineIds.value().has(id) : null;
+  });
+  readonly editable = computed(() => this.owned() === true);
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -141,6 +165,7 @@ export class DeckStore {
       map((created) => {
         this.saving.set(false);
         const deck: Deck = { ...created, hero: created.hero ?? input.hero, deckCards: created.deckCards ?? [heroLine(input.hero)], guest: false };
+        this.createdIds.update((ids) => new Set([...ids, deck.id]));
         this.serverId.set(null);
         this.apply(deck);
         return deck;

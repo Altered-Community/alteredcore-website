@@ -76,7 +76,7 @@ export class EditorPage {
       badgeTone: this.deck.status().legal ? 'success' : 'dark',
     },
   ]);
-  protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.error() && !this.deck.editable());
+  protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.error() && this.deck.owned() === false);
 
   constructor() {
     effect(() => {

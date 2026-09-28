@@ -95,14 +95,9 @@ export class DeckPage {
     void this.router.navigate(id === 'decklist' ? ['/decks', this.id(), 'deck'] : ['/decks', this.id()], { replaceUrl: true });
   }
 
+  /** Only shown for the user's own decks; someone else's deck can be duplicated instead. */
   protected edit(): void {
-    if (this.deck.editable()) {
-      void this.router.navigate(['/decks', this.id(), 'edit']);
-      return;
-    }
-    const copy = this.deck.duplicate('');
-    this.flash('Copie locale créée : vous pouvez la modifier en mode invité.');
-    void this.router.navigate(['/decks', copy, 'edit']);
+    if (this.deck.editable()) void this.router.navigate(['/decks', this.id(), 'edit']);
   }
 
   protected async copyList(): Promise<void> {
@@ -152,11 +147,13 @@ export class DeckPage {
   }
 
   protected more(): void {
-    this.overlay.open<DeckActionsSheet, 'copy' | 'duplicate' | 'delete'>(DeckActionsSheet, { title: 'Actions', width: 400 }).afterClosed.subscribe((a) => {
-      if (a === 'copy') void this.copyList();
-      if (a === 'duplicate') this.duplicate();
-      if (a === 'delete') this.remove();
-    });
+    this.overlay
+      .open<DeckActionsSheet, 'copy' | 'duplicate' | 'delete'>(DeckActionsSheet, { title: 'Actions', width: 400, data: { canDelete: this.deck.owned() === true } })
+      .afterClosed.subscribe((a) => {
+        if (a === 'copy') void this.copyList();
+        if (a === 'duplicate') this.duplicate();
+        if (a === 'delete') this.remove();
+      });
   }
 
   private flash(message: string): void {

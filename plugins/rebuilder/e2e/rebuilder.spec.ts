@@ -103,6 +103,9 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}$`));
     await expect(page.locator('app-deck-page')).toContainText(name);
     await evidence(page, testInfo, '04-deck-page');
+    // Alice's own deck: she can edit it.
+    const deckPage = page.locator('app-deck-page');
+    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
 
     // Same decks API: the site's own list sees the deck too, and still links to the site's builder.
     await page.goto('/pages/decks');
@@ -126,6 +129,16 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const list = page.getByRole('list', { name: 'Decks de la communauté' });
     await expect(list.locator('ar-deck-card')).toHaveCount(legal);
     await evidence(page, testInfo, '05-community');
+
+    // Someone else's deck (seeded as bob): no « Modifier » nor « Supprimer », « Dupliquer » stays.
+    await list.locator('ar-deck-card').first().getByRole('link').first().click();
+    await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\/[0-9a-f-]{36}$/);
+    const deckPage = page.locator('app-deck-page');
+    await expect(deckPage.locator('ar-card-art').first()).toBeVisible();
+    await expect(deckPage.getByRole('button', { name: /Plus d’actions|Dupliquer/ }).first()).toBeVisible();
+    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toHaveCount(0);
+    await expect(deckPage.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
+    await evidence(page, testInfo, '05b-community-deck');
   });
 
   test('follows the site theme live and the site language', async ({ page, compact }, testInfo) => {
