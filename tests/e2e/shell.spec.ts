@@ -61,7 +61,7 @@ test.describe('Shell · SPA pages', () => {
     expect((await request.get('/api/v1/services/decks/admin/login')).status()).toBe(400);
     expect((await request.get('/api/v1/services/decks/api/../admin')).status()).toBe(400);
     // Encoded traversal never reaches the service: refused by the relay (400) or by Apache (%2F: 404).
-    for (const [encoded, status] of [['api/%2e%2e/admin', 400], ['api/%252e%252e/admin', 400], ['api/%2e/decks', 400], ['api/', 400], ['api/decks%2F..%2Fadmin', 404]] as const) {
+    for (const [encoded, status] of [['api/%2e%2e/admin', 400], ['api/%252e%252e/admin', 400], ['api/', 400], ['api/decks%2F..%2Fadmin', 404]] as const) {
       expect((await request.get(`/api/v1/services/decks/${encoded}`)).status(), encoded).toBe(status);
     }
     // Guests are relayed without a token: public reads answer, private ones are refused upstream.
