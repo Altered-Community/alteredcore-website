@@ -1521,7 +1521,7 @@ html { transition: background-color 0.25s, color 0.25s; }
         overflow-y: auto;
         overscroll-behavior: contain;
         background: var(--sand-50);
-        padding: 0.5rem 1rem 1.25rem;
+        padding: 0.5rem 1rem 0;
     }
     html.az-mm-open { overflow: hidden; }
 
@@ -1575,7 +1575,19 @@ html { transition: background-color 0.25s, color 0.25s; }
     .az-mm-link.active { color: #1A6FD9; }
     .az-mm-link.active { font-weight: 700; }
 
-    .az-mm-footer { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; }
+    /* Pinned to the bottom of the panel, and stays visible while a long menu scrolls */
+    .az-mm-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: auto;
+        position: sticky;
+        bottom: 0;
+        padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0px));
+        background: var(--sand-50);
+        box-shadow: 0 -1px 0 var(--sand-200);
+    }
+    .az-mm-nav { margin-bottom: 1rem; }
     .az-mm-prefs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; align-items: start; }
     .az-mm-pref {
         display: flex;
