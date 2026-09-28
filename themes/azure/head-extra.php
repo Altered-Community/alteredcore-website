@@ -3,16 +3,16 @@
 // Use this file to add theme-specific styles, scripts, or meta tags.
 // Variables from includes/header.php are available here.
 
-// Navbar width: overrides the azure-specific .az-topbar-inner and .az-navband-inner widths
+// Navbar width: --az-nav-max-width sets the header's content width (both header layouts)
 $_navbarWidth = getSetting('navbar_width');
 if ($_navbarWidth === 'full'):
 ?>
 <style>
-.az-site-header{width:100vw;margin-left:calc(50% - 50vw);}
+:root{--az-nav-max-width:100vw;}
 </style>
 <?php elseif (is_numeric($_navbarWidth) && (int)$_navbarWidth > 0): ?>
 <style>
-.az-topbar-inner,.az-navband-inner{max-width:<?= (int)$_navbarWidth ?>px;margin-left:auto;margin-right:auto;}
+:root{--az-nav-max-width:<?= (int)$_navbarWidth ?>px;}
 </style>
 <?php endif; ?>
 <?php

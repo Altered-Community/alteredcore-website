@@ -180,7 +180,7 @@ if (!function_exists('__nav_active')) {
                     <li class="nav-item">
                         <button type="button" data-sidebar-toggle
                                 class="nav-link"
-                                <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                                title="<?= h($__ni['label']) ?>">
                             <i class="<?= h($__ni['icon']) ?>"></i>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -194,7 +194,7 @@ if (!function_exists('__nav_active')) {
                         <a href="<?= h(__nav_href($__ni)) ?>"
                            class="nav-link nav-link-split-main"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <i class="<?= h($__ni['icon']) ?>"></i>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -206,7 +206,7 @@ if (!function_exists('__nav_active')) {
                         <?php else: ?>
                         <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                            data-bs-toggle="dropdown" aria-expanded="false"
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <i class="<?= h($__ni['icon']) ?>"></i>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -233,7 +233,7 @@ if (!function_exists('__nav_active')) {
                         <a href="<?= h(__nav_href($__ni)) ?>"
                            class="nav-link <?= $__niActive ? 'active' : '' ?>"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <i class="<?= h($__ni['icon']) ?>"></i>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
