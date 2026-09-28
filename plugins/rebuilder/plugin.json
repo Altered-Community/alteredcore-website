@@ -14,6 +14,7 @@
             "type":     "spa",
             "entry":    "dist/embed-manifest.json",
             "mount":    "shadow",
+            "fullwidth": false,
             "title_en": "Re:Builder",
             "title_fr": "Re:Builder"
         }

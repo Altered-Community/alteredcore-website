@@ -13,9 +13,11 @@ if ! php /var/www/html/sql/migrate.php; then
     echo "[entrypoint] WARNING: migrations did not complete cleanly; starting Apache anyway." >&2
 fi
 
-# Local / CI stack only: production menu, site name and logo (once), before plugins add theirs.
+# Local / CI stack only: production menu, site name and logo (once), before plugins add theirs,
+# and public decks for the community lists.
 if [ "${AC_STACK_SEED:-}" = "1" ]; then
     php /var/www/html/docker/stack/seed.php || echo "[entrypoint] WARNING: stack seed failed." >&2
+    php /var/www/html/docker/stack/seed-decks.php || echo "[entrypoint] WARNING: community decks seed failed." >&2
 fi
 
 # Optional (local / CI stack): activate plugins listed in AC_ACTIVATE_PLUGINS, like the admin

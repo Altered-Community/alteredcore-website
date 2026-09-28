@@ -76,6 +76,7 @@
 }
 
 .results {
+  container: results / inline-size;
   flex-grow: 1;
   min-width: 0;
   display: flex;
@@ -221,5 +222,18 @@
     flex: 1 1 auto;
     min-width: max-content;
     max-width: 100%;
+  }
+}
+
+/* A narrow results column (e.g. embedded in a site layout narrower than the window): the active
+   filters go to their own row instead of being squeezed between the count and the tools. */
+@container results (max-width: 640px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar .chips {
+    order: 10;
+    flex-basis: 100%;
   }
 }

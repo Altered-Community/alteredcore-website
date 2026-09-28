@@ -22,9 +22,7 @@ if (!function_exists('__nav_active')) {
         if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
         $__parsed = parse_url($item['url'] ?? '');
         if (!empty($__parsed['host'])) return false;
-        $__p = navUrlPage($__parsed['path'] ?? '');
-        if ($__p === '') $__p = 'index';
-        return $currentPage === $__p;
+        return navUrlIsCurrent($__parsed['path'] ?? '', $currentPage);
     }
 }
 ?>

@@ -343,12 +343,12 @@ if (!$_pageFullwidth) {
     foreach ($__navItems as $__fni) {
         $__match = !empty($__fni['is_iframe'])
             ? ($__iframeNavId === (int)$__fni['id'])
-            : ($__isCurrent === navUrlPage((string)$__fni['url']));
+            : navUrlIsCurrent((string)$__fni['url'], $__isCurrent);
         if ($__match && !empty($__fni['is_fullwidth'])) { $_pageFullwidth = true; break; }
         foreach ($__fni['children'] as $__fnc) {
             $__match = !empty($__fnc['is_iframe'])
                 ? ($__iframeNavId === (int)$__fnc['id'])
-                : ($__isCurrent === navUrlPage((string)$__fnc['url']));
+                : navUrlIsCurrent((string)$__fnc['url'], $__isCurrent);
             if ($__match && !empty($__fnc['is_fullwidth'])) { $_pageFullwidth = true; break 2; }
         }
     }

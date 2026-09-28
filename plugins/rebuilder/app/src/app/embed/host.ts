@@ -21,6 +21,8 @@ export interface AlteredCoreHost {
   fetch(url: string, init?: RequestInit): Promise<Response>;
   login(returnTo?: string): void;
   setTitle(title: string): void;
+  /** Marks the site menu entry of a client route as current (shells from September 2026 on). */
+  setActiveNav?(path: string | null): void;
   getMount(pluginId: string): AlteredCoreMount;
   on(type: 'theme', fn: (e: { theme: 'light' | 'dark' }) => void): () => void;
   on(type: 'lang', fn: (e: { lang: 'en' | 'fr' }) => void): () => void;

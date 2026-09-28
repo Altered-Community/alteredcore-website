@@ -120,10 +120,11 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.getByRole('tab', { name: 'Communauté' }).click();
     const body = (await (await listed).json()) as { member: { legal: boolean }[] };
     await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\?(.*&)?tab=community/);
-    // The local stack may have no public deck: the list is there, with the legal ones of the page.
+    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones.
+    const legal = body.member.filter((d) => d.legal).length;
+    expect(legal).toBeGreaterThan(0);
     const list = page.getByRole('list', { name: 'Decks de la communauté' });
-    await expect(list).toBeAttached();
-    await expect(list.locator('ar-deck-card')).toHaveCount(body.member.filter((d) => d.legal).length);
+    await expect(list.locator('ar-deck-card')).toHaveCount(legal);
     await evidence(page, testInfo, '05-community');
   });
 
@@ -163,9 +164,23 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(menu.locator('a.dropdown-toggle')).toHaveClass(/\bactive\b/);
     await expect(page.locator('header a.nav-link[href$="/pages/decks"]').first()).not.toHaveClass(/\bactive\b/);
     await menu.locator('a.dropdown-toggle').click();
-    await expect(menu.locator('a.dropdown-item[href$="/pages/rebuilder/decks"]')).toBeVisible();
-    await expect(menu.locator('a.dropdown-item[href$="/pages/rebuilder/decks/new"]')).toBeVisible();
+    const decks = menu.locator('a.dropdown-item[href$="/pages/rebuilder/decks"]');
+    const builder = menu.locator('a.dropdown-item[href$="/pages/rebuilder/decks/new"]');
+    await expect(decks).toBeVisible();
+    await expect(builder).toBeVisible();
+    // One entry is current: Decks here, Deck Builder once the client route is the new deck / editor.
+    await expect(decks).toHaveClass(/\bactive\b/);
+    await expect(builder).not.toHaveClass(/\bactive\b/);
     await evidence(page, testInfo, '08-menu');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E menu ${testInfo.project.name} ${Date.now()}`, 'en');
+    await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
+    await expect(builder).toHaveClass(/\bactive\b/);
+    await expect(decks).not.toHaveClass(/\bactive\b/);
+    await page.goto('/pages/rebuilder/decks/new');
+    await expect(builder).toHaveClass(/\bactive\b/);
+    await expect(decks).not.toHaveClass(/\bactive\b/);
 
     // On the site's own decks page, the Re:Builder entry is not the active one.
     await page.goto('/pages/decks');

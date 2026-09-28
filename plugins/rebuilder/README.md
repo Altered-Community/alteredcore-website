@@ -46,7 +46,12 @@ Signed in, decks are listed, created and saved on the decks API through the site
 (`/api/v1/services/decks`), which adds the Keycloak token of the PHP session server-side: the browser
 never holds a token. They are the same decks as the site's (`/pages/decks` lists them too). As a guest
 they stay in `localStorage` (`arb.guest-decks`). Sign-in is the site's (`AlteredCore.login()`), and the
-site draws the navigation: the app's own menu button is hidden.
+site draws the navigation: the app's own menu button is hidden. The page keeps the site's content
+width (`"fullwidth": false`), and each route tells the shell which menu entry is current
+(route data `nav`, `AlteredCore.setActiveNav()`).
+
+On the local / CI stack, `docker/stack/seed-decks.php` creates 16 public decks (copies of legal
+production decks, `docker/stack/community-decks.json`) so the *Communauté* tab has content.
 
 ## Known gaps
 

@@ -277,6 +277,39 @@ function navUrlPage(string $url): string {
     return basename($path, '.php');
 }
 
+/**
+ * Whether a menu URL is the current page. `/pages/{slug}/{sub}` entries (client routes of an
+ * SPA page) are compared on the request path: among those of the current page, only the one
+ * with the longest matching prefix is current (…/decks/new rather than …/decks). The SPA can
+ * change it afterwards with AlteredCore.setActiveNav().
+ */
+function navUrlIsCurrent(string $url, string $currentPage): bool {
+    $page = navUrlPage($url);
+    if ($page === '') $page = 'index';
+    if ($page !== $currentPage) return false;
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?: '');
+    if (!preg_match('#^/pages/[a-z0-9_-]+/.+#', $path)) return true;
+    return $path === navSpaCurrentUrl($currentPage);
+}
+
+/** Longest `/pages/{slug}/…` menu path that prefixes the request path (see navUrlIsCurrent). */
+function navSpaCurrentUrl(string $currentPage): ?string {
+    static $cache = [];
+    if (array_key_exists($currentPage, $cache)) return $cache[$currentPage];
+    $request = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+    if (BASE_URL !== '' && strpos($request, BASE_URL) === 0) $request = substr($request, strlen(BASE_URL));
+    $best = null;
+    $items = $GLOBALS['__navItems'] ?? [];
+    foreach ($items as $item) $items = array_merge($items, $item['children'] ?? []);
+    foreach ($items as $item) {
+        $path = rtrim((string)(parse_url((string)($item['url'] ?? ''), PHP_URL_PATH) ?: ''), '/');
+        if (!preg_match('#^/pages/' . preg_quote($currentPage, '#') . '/.+#', $path)) continue;
+        if ($request !== $path && strpos($request, $path . '/') !== 0) continue;
+        if ($best === null || strlen($path) > strlen($best)) $best = $path;
+    }
+    return $cache[$currentPage] = $best;
+}
+
 function resolveUrlLang(string $url): string {
     $lang     = getLang();
     $fullMap  = ['en' => 'en-us', 'fr' => 'fr-fr', 'es' => 'es-es', 'it' => 'it-it', 'de' => 'de-de'];
