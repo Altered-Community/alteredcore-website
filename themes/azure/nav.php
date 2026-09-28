@@ -332,18 +332,19 @@ if (!function_exists('__nav_active')) {
                 </div>
             </details>
         </div>
-        <?php if (kcIsLoggedIn()): $kcU = kcUser(); ?>
-        <div class="az-mm-account">
-            <?php if (($kcU['username'] ?? '') !== ''): ?>
-            <span class="az-mm-user"><i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($kcU['username']) ?></span>
-            <?php endif; ?>
-            <a class="az-mm-link" href="<?= BASE_URL ?>/pages/account"><?= h($_hTxt['my_account']) ?></a>
+        <?php if (kcIsLoggedIn()): ?>
+        <div class="az-mm-prefs">
+            <a class="az-mm-pref<?= canViewAdminPanel() ? '' : ' az-mm-wide' ?>" href="<?= BASE_URL ?>/pages/account">
+                <i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($_hTxt['my_account']) ?>
+            </a>
             <?php if (canViewAdminPanel()): ?>
-            <a class="az-mm-link" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">Admin</a>
+            <a class="az-mm-pref" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">
+                <i class="fa-solid fa-gauge" aria-hidden="true"></i> Admin
+            </a>
             <?php endif; ?>
-            <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
-            <a class="az-mm-link text-danger" href="<?= $_logoutUrl ?>"><?= h($_hTxt['sign_out']) ?></a>
         </div>
+        <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
+        <a class="az-mm-signin" href="<?= $_logoutUrl ?>"><?= h($_hTxt['sign_out']) ?></a>
         <?php else: ?>
         <a class="az-mm-signin" href="<?= BASE_URL ?>/pages/login"><?= h($_hTxt['sign_in']) ?></a>
         <?php endif; ?>
