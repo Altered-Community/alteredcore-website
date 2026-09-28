@@ -1,7 +1,7 @@
 <?php
 // /api/v1/services/{service}/{path} — same-origin relay from front-end plugins to the
 // authenticated Altered services (decks, collection). Rewritten by .htaccess with
-// ?_service=&_path=.
+// ?_service=&_path= (the client's query string is read from REQUEST_URI).
 //
 // The browser never holds a Keycloak token: the relay reads the access token from the PHP
 // session (kc_get_access_token refreshes it server-side) and adds `Authorization: Bearer`.
@@ -68,9 +68,10 @@ function serviceProxyToken(int $userId, bool $renew = false) {
     return kc_get_access_token($userId) ?: null;
 }
 
-$query = $_GET;
-unset($query['_service'], $query['_path']);
-$url = rtrim($services[$service], '/') . '/' . $path . ($query ? '?' . http_build_query($query) : '');
+// The client's query string, untouched: rebuilding it from $_GET would rename top-level keys
+// with dots or spaces (a.b → a_b) and keep only the last of repeated keys.
+$query = (string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
+$url = rtrim($services[$service], '/') . '/' . $path . ($query !== '' ? '?' . $query : '');
 
 $forward = [];
 foreach (['HTTP_ACCEPT' => 'Accept', 'CONTENT_TYPE' => 'Content-Type', 'HTTP_ACCEPT_LANGUAGE' => 'Accept-Language'] as $key => $name) {

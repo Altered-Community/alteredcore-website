@@ -15,7 +15,8 @@
     RewriteRule ^pages/([a-z0-9_-]+)/(.+)$ pages/_router.php [QSA,L]
 
     # Authenticated service relay for front-end plugins: /api/v1/services/{service}/{path}
-    RewriteRule ^api/v1/services/([a-z0-9-]+)/(.*)$ api/v1/services/proxy.php?_service=$1&_path=$2 [B,QSA,L]
+    # No QSA: the relay forwards the client's query string as is, from REQUEST_URI.
+    RewriteRule ^api/v1/services/([a-z0-9-]+)/(.*)$ api/v1/services/proxy.php?_service=$1&_path=$2 [B,L]
 
     # Plugin API endpoints: /papi/{plugin-id}/{endpoint}
     RewriteCond %{REQUEST_FILENAME} !-f

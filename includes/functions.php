@@ -287,7 +287,7 @@ function navUrlIsCurrent(string $url, string $currentPage): bool {
     $page = navUrlPage($url);
     if ($page === '') $page = 'index';
     if ($page !== $currentPage) return false;
-    $path = (string)(parse_url($url, PHP_URL_PATH) ?: '');
+    $path = rtrim((string)(parse_url($url, PHP_URL_PATH) ?: ''), '/');
     if (!preg_match('#^/pages/[a-z0-9_-]+/.+#', $path)) return true;
     return $path === navSpaCurrentUrl($currentPage);
 }
