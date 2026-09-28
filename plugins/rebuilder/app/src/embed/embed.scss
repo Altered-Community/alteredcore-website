@@ -1,0 +1,26 @@
+/*
+ * Embedded build (AlteredCore site, plugin `rebuilder`): loaded inside the plugin's shadow root,
+ * so the site's Bootstrap and css/style.css never reach these rules, and these never reach the site.
+ * `.ar-embed` is the plugin root (`AlteredCore.getMount().container`): it carries the tokens,
+ * `data-density` and `data-theme` that `:root` / `<html>` carry in the standalone app.
+ */
+
+@use '../../design/tokens/tokens';
+@use '../styles/base';
+
+/* Inherited properties (font, color, line-height…) cross the shadow boundary: reset them. */
+:host {
+  all: initial;
+  display: block;
+}
+
+.ar-embed {
+  display: block;
+  min-height: calc(100dvh - var(--ar-page-top));
+  background: var(--ar-color-bg-app);
+  color: var(--ar-color-text);
+  font: var(--ar-font-body);
+  font-weight: 400;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}

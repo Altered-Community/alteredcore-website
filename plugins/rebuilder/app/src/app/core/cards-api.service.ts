@@ -6,6 +6,7 @@ import type { AbilityRef } from './card-filters';
 import { ICONS } from './card-text';
 import type { Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
 import { localizedText } from './models';
+import { contentLocale } from './locale';
 
 export type AbilityKind = 'triggers' | 'conditions' | 'effects';
 
@@ -136,7 +137,7 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
   const out: AbilityRef[] = [];
   let empty: AbilityRef | undefined;
   for (const row of rows) {
-    const raw = localizedText(row.text, 'fr').trim();
+    const raw = localizedText(row.text, contentLocale()).trim();
     if (raw === '[]') {
       if (emptyLabel && !empty) empty = { id: row.alteredId, text: emptyLabel };
       continue;
@@ -153,7 +154,7 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
     seen.add(text);
     out.push({ id: row.alteredId, text });
   }
-  out.sort((a, b) => a.text.localeCompare(b.text, 'fr'));
+  out.sort((a, b) => a.text.localeCompare(b.text, contentLocale()));
   return empty ? [empty, ...out] : out;
 }
 
@@ -172,7 +173,7 @@ function toHeroGroup(g: RawCardGroup): HeroGroup | null {
   const standard = (g.cards ?? []).filter((c) => c.variation === 'standard' && /_B_/.test(c.reference));
   const reference = standard[0]?.reference ?? g.cards?.[0]?.reference;
   if (!faction || !reference) return null;
-  return { slug: g.slug, name: localizedText(g.name, 'fr') || reference, faction, reference };
+  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference };
 }
 
 /** Many cards share a set date: without a unique tie-breaker, pages overlap and cards go missing. */

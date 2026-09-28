@@ -39,7 +39,7 @@ button:focus-visible {
 button[aria-selected='true'] {
   background: var(--fc);
   border-color: var(--fc);
-  color: var(--ar-color-on-primary);
+  color: var(--ar-color-on-strong);
 }
 button[aria-selected='true'] .dot {
   background: var(--ar-color-surface);

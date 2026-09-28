@@ -20,6 +20,10 @@
     --neutral-200:  #C0D4EC;
     --neutral-100:  #E4EEFA;
 }
+/* Public plugin token (css/style.css): white text on the azure blue; the dark theme keeps
+   the base value (dark text on the lighter blue). */
+:root:not([data-theme="dark"]) { --ac-color-on-primary: #ffffff; }
+
 
 /* Prevent horizontal scrollbar caused by width:100vw on fullwidth pages (scrollbar width on Windows) */
 html { overflow-x: clip; }

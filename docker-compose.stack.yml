@@ -1,0 +1,95 @@
+# Full local / CI stack: the site wired to a local Keycloak and a local decks API, with the
+# SPA plugins active. Used by the Playwright tests (tests/e2e) and the plugins CI workflow.
+#
+#   (cd plugins/rebuilder/app && npm ci && npm run build:embed)   # SPA bundles are not committed
+#   docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
+#
+# Site http://localhost:${WEB_PORT:-8080} · Keycloak http://auth.altered.local.gd:18080 (admin/admin,
+# users alice / bob, password TestPassword1234) · decks API http://localhost:8001
+# Cards and CDN are production (read-only).
+services:
+  web:
+    volumes:
+      - .:/var/www/html
+      - ./docker/stack/config.stack.php:/var/www/html/config.local.php:ro
+    environment:
+      AC_ACTIVATE_PLUGINS: "core-altered-cards rebuilder"
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      decks-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost/pages/index"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm", "--http-port=18080", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://auth.altered.local.gd:18080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "false"
+      KC_HTTP_ENABLED: "true"
+      # JDK 21 dies with SIGILL on recent Apple Silicon (SVE/SME): disable SVE, ignored on x86.
+      JAVA_OPTS_APPEND: "-XX:+IgnoreUnrecognizedVMOptions -XX:UseSVE=0"
+    ports:
+      - "18080:18080"
+    volumes:
+      - ./docker/stack/players-realm.json:/opt/keycloak/data/import/players-realm.json:ro
+    networks:
+      default:
+        aliases:
+          - auth.altered.local.gd
+    healthcheck:
+      # The image has no curl: talk HTTP to the management port with bash.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  decks-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: decks
+      POSTGRES_PASSWORD: decks
+      POSTGRES_DB: altered_deck
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U decks -d altered_deck"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  decks-api:
+    # Altered-Community/altered-core-decks-api, pinned: bump the commit to follow the API.
+    build:
+      context: https://github.com/Altered-Community/altered-core-decks-api.git#156d6e83e50d14b2ccf4da449b026ccdc38407c3
+      target: frankenphp_prod
+    environment:
+      APP_ENV: prod
+      APP_SECRET: c869928bd9fb7963519fc0d4bdb1501d80707aa1f4947d583e4e6d0cd06bbcb8
+      SERVER_NAME: ":80"
+      DEFAULT_URI: http://localhost:8001
+      DATABASE_URL: postgresql://decks:decks@decks-db:5432/altered_deck?serverVersion=16&charset=utf8
+      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+      KEYCLOAK_BASE_URL: http://auth.altered.local.gd:18080
+      KEYCLOAK_REALM: players
+      KEYCLOAK_CLIENT_ID: main-site
+      KEYCLOAK_CLIENT_SECRET: dev-main-site-secret
+      DEV_AUTH_ENABLED: "false"
+      ALTERED_CORE_URL: https://cards.alteredcore.org
+      CARD_DATA_PROVIDER: altered_core
+      MERCURE_PUBLISHER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
+      MERCURE_SUBSCRIBER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
+      MERCURE_PUBLISHER_JWT_ALG: HS256
+      MERCURE_SUBSCRIBER_JWT_ALG: HS256
+    ports:
+      - "8001:80"
+    depends_on:
+      decks-db:
+        condition: service_healthy

@@ -113,8 +113,8 @@ ar-app-bar.static {
     width: 300px;
     flex-shrink: 0;
     position: sticky;
-    top: calc(var(--ar-app-bar-height) + var(--ar-space-6));
-    height: calc(100dvh - var(--ar-app-bar-height) - 2 * var(--ar-space-6));
+    top: calc(var(--ar-sticky-top) + var(--ar-space-6));
+    height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6));
   }
 }
 

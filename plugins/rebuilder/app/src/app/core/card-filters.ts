@@ -1,4 +1,6 @@
 import type { CardOrder, CardSearchParams, EffectSlot } from './models';
+import { assetUrl } from './asset-url';
+import { contentLocale } from './locale';
 
 export type CardSource = 'all' | 'uniques' | 'owned' | 'favorites';
 
@@ -54,9 +56,9 @@ export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'AL
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 
 export const RARITY_OPTIONS = [
-  { value: 'COMMON', short: 'C', label: 'Commune', icon: 'assets/icons/rarete-commune.png' },
-  { value: 'RARE', short: 'R', label: 'Rare', icon: 'assets/icons/rarete-rare.png' },
-  { value: 'EXALTED', short: 'E', label: 'Exaltée', icon: 'assets/icons/rarete-exaltee.png' },
+  { value: 'COMMON', short: 'C', label: 'Commune', icon: assetUrl('assets/icons/rarete-commune.png') },
+  { value: 'RARE', short: 'R', label: 'Rare', icon: assetUrl('assets/icons/rarete-rare.png') },
+  { value: 'EXALTED', short: 'E', label: 'Exaltée', icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
 
 export const TYPE_OPTIONS = [
@@ -165,7 +167,7 @@ export function toSearchParams(
     itemsPerPage,
     // `locale` is not a Meilisearch filter: with it the cards API falls back to SQL, 6–45 s for
     // uniques instead of ~0.5 s. Without it, text fields come back as locale maps.
-    locale: source === 'uniques' ? undefined : 'fr',
+    locale: source === 'uniques' ? undefined : contentLocale(),
     q: filters.q.trim() || undefined,
     factions: faction ? [faction] : filters.factions,
     sets: filters.sets,

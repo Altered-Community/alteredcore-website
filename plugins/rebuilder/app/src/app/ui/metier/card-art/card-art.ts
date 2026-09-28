@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, Injectable, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
 import { cardImageSources } from '../../../core/card-art';
 import { factionColor } from '../factions';
+import { contentLocale } from '../../../core/locale';
 
 /** Card / hero visual with lazy loading and a fallback chain; hatch placeholder in the faction colour. */
 @Component({
@@ -28,7 +29,7 @@ export class ArCardArt implements OnDestroy {
   readonly sources = input<string[] | null>(null);
 
   protected readonly loaded = signal(false);
-  private readonly chain = computed(() => this.sources() ?? cardImageSources(this.reference(), 'fr'));
+  private readonly chain = computed(() => this.sources() ?? cardImageSources(this.reference(), contentLocale()));
   private readonly attempt = linkedSignal({ source: this.chain, computation: () => 0 });
   protected readonly src = computed(() => this.chain()[this.attempt()] ?? null);
   protected readonly tint = computed(() => factionColor(this.faction()));

@@ -4,6 +4,7 @@ import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArStepper } from '../../buttons';
 import { rarityIcon } from '../../chips';
+import { contentLocale } from '../../../core/locale';
 
 /** Deck row: rarity icon, name, stepper (edit) or ×n + costs (read-only). */
 @Component({
@@ -23,6 +24,6 @@ export class ArDeckRow {
   readonly plain = input(false);
   readonly appearance = input<'list' | 'panel'>('list');
   readonly quantityChange = output<number>();
-  protected readonly name = computed(() => localizedText(this.card().name, 'fr') || this.card().reference);
+  protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
   protected readonly rarity = computed(() => rarityIcon(rarityOf(this.card())));
 }

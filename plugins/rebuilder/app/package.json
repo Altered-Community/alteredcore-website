@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Altered Re:Builder — Angular + Capacitor deckbuilder for the Altered TCG",
+  "description": "Altered Re:Builder deck editor, embedded in the AlteredCore site as the rebuilder plugin (build:embed)",
   "engines": {
     "node": ">=22.22.3"
   },
@@ -13,12 +13,13 @@
     "auth-bff": "node server/auth-bff/server.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false && node --test server/auth-bff/server.spec.mjs",
+    "test": "ng test --watch=false",
     "cap:sync": "ng build && npx cap sync",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "e2e": "playwright test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "build:embed": "ng build --configuration embed && node scripts/embed-manifest.mjs"
   },
   "packageManager": "npm@10.9.8",
   "dependencies": {

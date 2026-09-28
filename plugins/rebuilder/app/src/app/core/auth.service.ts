@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, share, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import type { AuthSession } from './auth-session';
 import { createPkcePair, randomUrlToken } from './pkce';
 
 export const ACCESS_TOKEN_KEY = 'arb.access_token';
@@ -35,7 +36,7 @@ interface TokenResponse {
  * the document; the HttpOnly refresh cookie is what logs the user back in.
  */
 @Injectable({ providedIn: 'root' })
-export class AuthService {
+export class AuthService implements AuthSession {
   private readonly http = inject(HttpClient);
   private readonly stored = signal<string | null>(readStorage(ACCESS_TOKEN_KEY));
   private readonly idTokenSig = signal<string | null>(readStorage(ID_TOKEN_KEY));

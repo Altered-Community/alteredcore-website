@@ -1,7 +1,7 @@
 :host {
   display: block;
   position: sticky;
-  top: 0;
+  top: var(--ar-page-top);
   z-index: 20;
 }
 header {

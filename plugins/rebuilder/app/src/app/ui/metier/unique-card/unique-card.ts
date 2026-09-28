@@ -6,8 +6,10 @@ import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { EFFECT_Y, biomeVariants, collectorNumber, cqw, effectFontPx, qrModules, supportFontPx, typeLine, uniqueFrame } from '../../../core/unique-layout';
 import { ArCardArt } from '../card-art/card-art';
+import { assetUrl } from '../../../core/asset-url';
+import { contentLocale } from '../../../core/locale';
 
-const ASSETS = 'assets/unique-card';
+const ASSETS = assetUrl('assets/unique-card');
 const FACTIONS = ['AX', 'BR', 'LY', 'MU', 'OR', 'YZ'];
 const SET_LOGOS = ['ALIZE', 'BISE', 'CORE', 'COREKS', 'CYCLONE', 'DUSTER', 'EOLE'];
 const BIOMES = [
@@ -46,13 +48,14 @@ export class ArUniqueCard {
     const code = this.card().faction?.code ?? this.card().reference.split('_')[3];
     return FACTIONS.includes(code) ? code : 'AX';
   });
+  protected readonly swirlSrc = `${ASSETS}/logos/Altered-Swirl.svg`;
   protected readonly frameSrc = computed(() => `${ASSETS}/frames/${this.faction()}_${this.frame()}.webp`);
   protected readonly sources = computed(() => uniqueArtSources(this.card().reference, this.frame()));
   protected readonly setLogo = computed(() => {
     const set = setOfReference(this.card().reference);
     return `${ASSETS}/logos/${SET_LOGOS.includes(set) ? set : 'Altered-Swirl'}.svg`;
   });
-  protected readonly name = computed(() => localizedText(this.card().name, 'fr') || this.card().reference);
+  protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
   protected readonly type = computed(() => typeLine(this.card()));
   protected readonly hasStats = computed(() => this.card().mainCost != null);
   protected readonly biomes = computed(() => {

@@ -4,13 +4,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
+import { t } from '../../../core/i18n';
 import { ArButton } from '../../../ui/buttons';
 import { ArEditableTitle, ArSegmented } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArAppBar, ArAvatar, ArBackButton, ArBottomNav, ArBreadcrumb, type ArBottomNavItem } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
-import { AuthService } from '../../../core/auth.service';
+import { AuthSession } from '../../../core/auth-session';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { CardSearchStore } from '../../search/card-search.store';
 import { CardSearch } from '../../search/card-search/card-search';
@@ -49,27 +50,28 @@ export class EditorPage {
   private readonly overlay = inject(ArOverlayService);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly deck = inject(DeckStore);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthSession);
 
   protected readonly id = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly view = toSignal(this.route.data.pipe(map((d) => (d['view'] as EditorView) ?? 'search')), {
     initialValue: 'search' as EditorView,
   });
+  protected readonly t = t;
   protected readonly modeOptions = [
-    { value: 'search' as const, label: 'Recherche', icon: 'search' as const },
-    { value: 'apercu' as const, label: 'Voir le deck', icon: 'eye' as const },
+    { value: 'search' as const, label: t('editor.search'), icon: 'search' as const },
+    { value: 'apercu' as const, label: t('editor.viewDeck'), icon: 'eye' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? 'Public' : 'Privé'}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
   protected readonly navItems = computed<ArBottomNavItem[]>(() => [
-    { route: this.base(), icon: 'search', label: 'Recherche' },
-    { route: `${this.base()}/apercu`, icon: 'eye', label: 'Aperçu' },
+    { route: this.base(), icon: 'search', label: t('editor.search') },
+    { route: `${this.base()}/apercu`, icon: 'eye', label: t('editor.preview') },
     {
       route: `${this.base()}/deck`,
       icon: 'layers',
-      label: 'Deck',
+      label: t('editor.deck'),
       badge: this.deck.total(),
       badgeTone: this.deck.status().legal ? 'success' : 'dark',
     },

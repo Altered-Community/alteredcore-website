@@ -4,7 +4,9 @@
   "cli": {
     "packageManager": "npm",
     "analytics": false,
-    "schematicCollections": ["angular-eslint"]
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -31,7 +33,10 @@
                 "input": "public"
               }
             ],
-            "styles": ["design/tokens/tokens.css", "src/styles.scss"]
+            "styles": [
+              "design/tokens/tokens.css",
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -59,6 +64,40 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "embed": {
+              "browser": "src/main.embed.ts",
+              "outputPath": {
+                "base": "../dist",
+                "browser": "browser"
+              },
+              "index": false,
+              "styles": [
+                {
+                  "input": "src/embed/embed.scss",
+                  "bundleName": "embed",
+                  "inject": false
+                },
+                {
+                  "input": "src/embed/document.scss",
+                  "bundleName": "document",
+                  "inject": false
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "12kB",
+                  "maximumError": "20kB"
+                }
+              ],
+              "outputHashing": "all",
+              "extractLicenses": true
             }
           },
           "defaultConfiguration": "production"
@@ -84,7 +123,10 @@
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         }
       }

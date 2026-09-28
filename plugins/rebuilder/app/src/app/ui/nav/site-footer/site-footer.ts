@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArIcon } from '../../icon';
 import { type ArNavLink } from '../app-bar/app-bar';
+import { assetUrl } from '../../../core/asset-url';
 
 export interface ArExternalLink {
   label: string;
@@ -12,7 +13,7 @@ export interface ArExternalLink {
 export const AR_SITE_FOOTER_DISCLAIMER =
   "Altered Re:Builder est un site communautaire non officiel et n'est pas affilié à Equinox.";
 
-export const AR_SITE_FOOTER_LOGO = 'assets/img/altered-fan-content.png';
+export const AR_SITE_FOOTER_LOGO = assetUrl('assets/img/altered-fan-content.png');
 
 /** Internal destinations. Actualités is linked before that screen exists. */
 export const AR_SITE_FOOTER_LINKS: ArNavLink[] = [

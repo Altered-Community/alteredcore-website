@@ -87,11 +87,15 @@ function spaResolvePage(array $plugin, array $page): ?array {
     ];
 }
 
-/** Browser-reachable service URL: `{NAME}_PUBLIC_URL` when the server uses an internal host. */
+/**
+ * Browser-reachable URL of a service: `{NAME}_PUBLIC_URL` when set (the server may use an
+ * internal host, e.g. a container name), else `{NAME}_URL`. spaPublicServiceUrl('DECKS_API').
+ */
 function spaPublicServiceUrl(string $name): string {
-    $public = $name . '_PUBLIC_URL';
-    if (defined($public) && constant($public) !== '') return rtrim(constant($public), '/');
-    return defined($name) ? rtrim((string)constant($name), '/') : '';
+    foreach ([$name . '_PUBLIC_URL', $name . '_URL'] as $const) {
+        if (defined($const) && (string)constant($const) !== '') return rtrim((string)constant($const), '/');
+    }
+    return '';
 }
 
 /** The data half of window.AlteredCore (the methods live in js/altered-core-host.js). */
@@ -122,9 +126,9 @@ function spaHostConfig(array $page): array {
             'loginUrl' => $kcMode ? BASE_URL . '/auth/keycloak-login' : BASE_URL . '/pages/login',
         ],
         'services' => [
-            'cards' => spaPublicServiceUrl('CARDS_API_URL'),
-            'decks' => spaPublicServiceUrl('DECKS_API_URL'),
-            'cdn'   => spaPublicServiceUrl('CDN_URL'),
+            'cards' => spaPublicServiceUrl('CARDS_API'),
+            'decks' => spaPublicServiceUrl('DECKS_API'),
+            'cdn'   => spaPublicServiceUrl('CDN'),
         ],
         'page'     => [
             'plugin'    => $page['plugin_id'],

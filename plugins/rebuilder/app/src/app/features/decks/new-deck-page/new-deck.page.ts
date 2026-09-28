@@ -29,8 +29,9 @@ export class NewDeckPage {
           else void this.router.navigateByUrl('/decks', { replaceUrl: true });
           return;
         }
-        const deck = this.store.create(res);
-        void this.router.navigate(['/decks', deck.id, 'edit'], { replaceUrl: true });
+        this.store.createDeck(res).subscribe((deck) => {
+          void this.router.navigate(['/decks', deck.id, 'edit'], { replaceUrl: true });
+        });
       });
     });
   }

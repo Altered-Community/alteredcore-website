@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AuthService } from './auth.service';
+import { AuthSession } from './auth-session';
 import type { Deck, DeckWrite } from './models';
 
 export interface PublicDeckQuery {
@@ -39,7 +39,7 @@ export function decksApiBaseUrl(hostname = typeof window === 'undefined' ? '' : 
 @Injectable({ providedIn: 'root' })
 export class DecksApiService {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
+  private readonly auth = inject(AuthSession);
   readonly baseUrl = decksApiBaseUrl();
 
   listMine(page = 1, itemsPerPage = 30): Observable<Deck[] | { member: Deck[] }> {

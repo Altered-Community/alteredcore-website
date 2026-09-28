@@ -1,10 +1,12 @@
 import { environment } from '../../environments/environment';
+import { assetUrl } from './asset-url';
+import { contentLocale } from './locale';
 import type { Locale } from './models';
 
 const CDN = environment.cdnUrl.replace(/\/$/, '');
 
 /** Local fallback from alteredcore-website `plugins/core-altered-cards/assets/img`. */
-export const CARD_BACK = 'assets/img/cardback.webp';
+export const CARD_BACK = assetUrl('assets/img/cardback.webp');
 
 export function setOfReference(ref: string): string {
   return ref.split('_')[1] ?? '';
@@ -22,7 +24,7 @@ export function uniqueCardId(ref: string): string | null {
 }
 
 /** CDN card image, `{CDN_URL}/cards/{lang}/{SET}/{REFERENCE}.webp` (docs/backend-api.md). */
-export function cardImageUrl(ref: string, locale: Locale = 'fr'): string {
+export function cardImageUrl(ref: string, locale: Locale = contentLocale()): string {
   return `${CDN}/cards/${locale}/${setOfReference(ref)}/${ref}.webp`;
 }
 
@@ -44,7 +46,7 @@ export function uniqueArtSources(ref: string, frame = 'T1'): string[] {
 }
 
 /** Ordered sources for an <img>: the card image (the unique illustration for uniques), then the card back. */
-export function cardImageSources(ref: string, locale: Locale = 'fr'): string[] {
+export function cardImageSources(ref: string, locale: Locale = contentLocale()): string[] {
   return isUniqueReference(ref) ? uniqueArtSources(ref) : [cardImageUrl(ref, locale), CARD_BACK];
 }
 
@@ -54,5 +56,5 @@ export function cardImageSources(ref: string, locale: Locale = 'fr'): string[] {
  * in `plugins/core-altered-cards/assets/set/small_bg`.
  */
 export function setImageUrl(setRef: string): string {
-  return `assets/set-logos/${setRef}.svg`;
+  return assetUrl(`assets/set-logos/${setRef}.svg`);
 }

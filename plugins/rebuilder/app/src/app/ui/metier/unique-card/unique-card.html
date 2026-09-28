@@ -30,6 +30,6 @@
   <rect class="qr-light" [attr.width]="qr().size" [attr.height]="qr().size" />
   <path class="qr-dark" [attr.d]="qr().path" />
 </svg>
-<span class="qr-logo" aria-hidden="true"><img [src]="'assets/unique-card/logos/Altered-Swirl.svg'" alt="" /></span>
+<span class="qr-logo" aria-hidden="true"><img [src]="swirlSrc" alt="" /></span>
 
 <span class="foot">{{ foot().before }}@if (foot().artist) {<span class="glyph" aria-hidden="true">{{ pen }}</span>{{ foot().artist }}}{{ foot().after }}</span>

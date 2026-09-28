@@ -1,0 +1,30 @@
+/*
+ * Embedded build: the part that must live in the site's <head>. Browsers ignore @font-face
+ * declared in a shadow root, so the fonts are declared here (Figtree for the UI, the printed-card
+ * fonts of ar-unique-card). Only downloaded when used.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
+
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../public/assets/unique-card/fonts/HapticPro-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 800;
+  font-display: swap;
+  src: url('../../public/assets/unique-card/fonts/HapticPro-Extrabold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Icons';
+  font-display: block;
+  src: url('../../public/assets/unique-card/fonts/alteredicons.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Circled';
+  font-display: block;
+  src: url('../../public/assets/unique-card/fonts/NotoSansSymbols-circled.woff2') format('woff2');
+}

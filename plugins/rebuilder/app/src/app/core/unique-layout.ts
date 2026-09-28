@@ -2,6 +2,7 @@ import qrcode from 'qrcode-generator';
 import { echoText } from './card-text';
 import type { Card } from './models';
 import { localizedText } from './models';
+import { contentLocale } from './locale';
 
 /**
  * Layout of a unique character card, from the Altered-Card-Renderer configuration
@@ -27,7 +28,7 @@ export function rawEffectLength(text: string): number {
 
 /** T1/T2 carry a support ability box, T2/T4 leave room for 200+ characters of main text. */
 export function uniqueFrame(card: Card): UniqueFrame {
-  const long = rawEffectLength(localizedText(card.mainEffect, 'fr')) >= 200;
+  const long = rawEffectLength(localizedText(card.mainEffect, contentLocale())) >= 200;
   const support = !!echoText(card.echoEffect);
   if (support) return long ? 'T2' : 'T1';
   return long ? 'T4' : 'T3';
@@ -118,8 +119,8 @@ export function qrModules(reference: string): QrModules {
 
 /** « Personnage - Soldat, Animal » (`cardType` value of the renderer mapping). */
 export function typeLine(card: Card): string {
-  const type = localizedText(card.cardType?.name, 'fr');
-  const subs = (card.cardSubTypes ?? []).map((s) => localizedText(s.name, 'fr')).filter(Boolean).join(', ');
+  const type = localizedText(card.cardType?.name, contentLocale());
+  const subs = (card.cardSubTypes ?? []).map((s) => localizedText(s.name, contentLocale())).filter(Boolean).join(', ');
   return subs ? `${type} - ${subs}` : type;
 }
 

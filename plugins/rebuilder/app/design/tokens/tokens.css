@@ -7,9 +7,14 @@
  *   - touch  : (pointer: coarse) OU largeur < 768 px  → mobile / Capacitor
  *   - pointer: sinon                                   → desktop
  * Les composants n'utilisent que --ar-control-sm | md | lg, jamais une hauteur en dur.
+ *
+ * Embarqué dans le site AlteredCore (plugin rebuilder, Shadow DOM) : `:root` n'existe pas dans
+ * le shadow root, les mêmes jetons sont posés sur `.ar-embed` (racine du plugin), puis la section
+ * « Embarqué » en fin de fichier les branche sur les jetons publics du site (--ac-*).
  */
 
-:root {
+:root,
+.ar-embed {
   /* ---------- Couleurs · neutres ---------- */
   --ar-color-text: #14171f;
   --ar-color-text-2: #4a5263;
@@ -24,6 +29,9 @@
   --ar-color-bg-app: #f3f5f9;
   --ar-color-bg-subtle: #f8f9fb;
   --ar-color-surface: #ffffff;
+  --ar-color-inverse: #14171f;        /* fond inversé : compteurs, onglet pilule actif, pastille de coût */
+  --ar-color-on-inverse: #ffffff;
+  --ar-color-on-strong: #ffffff;      /* texte sur visuel, couleur de faction, commande sombre posée sur une carte */
 
   /* ---------- Couleurs · marque ---------- */
   --ar-color-primary: #1463d6;
@@ -134,6 +142,8 @@
 
   /* ---------- Mise en page ---------- */
   --ar-app-bar-height: 60px;       /* 56px en compact */
+  --ar-page-top: 0px;              /* haut de la page sous l'habillage de l'hôte (en-tête du site si embarqué) */
+  --ar-sticky-top: var(--ar-app-bar-height); /* bord haut des panneaux collants (≥ 768 px) */
   --ar-bottom-nav-height: 68px;    /* + env(safe-area-inset-bottom) */
   --ar-filter-panel-width: 264px;
   --ar-deck-panel-width: 340px;
@@ -141,7 +151,8 @@
   --ar-page-padding: 24px;         /* 16px en compact */
 }
 
-:root[data-density='touch'] {
+:root[data-density='touch'],
+.ar-embed[data-density='touch'] {
   --ar-control-sm: 36px;
   --ar-control-md: 44px;
   --ar-control-lg: 52px;
@@ -157,3 +168,45 @@
  *   expanded : ≥ 1200px    → densité pointer, 3 colonnes filtres · résultats · deck
  * Les media queries CSS ne peuvent pas lire de variables : utiliser ces valeurs littérales.
  */
+
+/*
+ * ---------- Embarqué dans le site AlteredCore ----------
+ * Le site publie ses couleurs en --ac-* (css/style.css du site, thèmes clair et sombre) ; les
+ * propriétés personnalisées traversent le Shadow DOM, donc le plugin suit le thème sans code.
+ * Neutres et marque suivent le site ; sémantiques, factions, terrains et carte imprimée gardent
+ * les valeurs Re:Builder. Pas d'app bar globale : l'en-tête collant du site en tient lieu.
+ */
+.ar-embed {
+  --ar-color-bg-app: var(--ac-color-bg);
+  --ar-color-surface: var(--ac-color-surface);
+  --ar-color-bg-subtle: color-mix(in srgb, var(--ac-color-surface) 55%, var(--ac-color-bg));
+  --ar-color-text: var(--ac-color-text);
+  --ar-color-text-2: color-mix(in srgb, var(--ac-color-text) 72%, var(--ac-color-text-muted));
+  --ar-color-text-muted: var(--ac-color-text-muted);
+  --ar-color-text-disabled: color-mix(in srgb, var(--ac-color-text-muted) 55%, var(--ac-color-surface));
+  --ar-color-border: var(--ac-color-border);
+  --ar-color-border-control: color-mix(in srgb, var(--ac-color-border) 75%, var(--ac-color-text-muted));
+  --ar-color-border-dashed: color-mix(in srgb, var(--ac-color-border) 55%, var(--ac-color-text-muted));
+  --ar-color-divider: color-mix(in srgb, var(--ac-color-border) 55%, var(--ac-color-surface));
+  --ar-color-track: var(--ac-color-surface-2);
+  --ar-color-chart-axis: var(--ac-color-border);
+  --ar-color-primary: var(--ac-color-primary);
+  --ar-color-primary-strong: color-mix(in srgb, var(--ac-color-primary) 70%, var(--ac-color-text));
+  --ar-color-primary-border: color-mix(in srgb, var(--ac-color-primary) 45%, var(--ac-color-surface));
+  --ar-color-primary-soft: color-mix(in srgb, var(--ac-color-primary) 18%, var(--ac-color-surface));
+  --ar-color-primary-tint: color-mix(in srgb, var(--ac-color-primary) 8%, var(--ac-color-surface));
+  --ar-color-on-primary: var(--ac-color-on-primary);
+  --ar-color-inverse: var(--ac-color-text);
+  --ar-color-on-inverse: var(--ac-color-surface);
+  --ar-color-chart-main: var(--ac-color-primary);
+  --ar-ring-selected: 0 0 0 3px var(--ac-color-surface), 0 0 0 6px var(--ac-color-primary);
+  --ar-page-top: var(--ac-header-height, 0px);
+  --ar-sticky-top: var(--ac-header-height, 0px);
+  color-scheme: light;
+}
+
+.ar-embed[data-theme='dark'] {
+  --ar-color-scrim: rgba(0, 0, 0, 0.6);
+  --ar-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}

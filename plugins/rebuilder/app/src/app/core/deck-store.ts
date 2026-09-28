@@ -1,8 +1,8 @@
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, InjectionToken, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, Subscription, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AuthService } from './auth.service';
+import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
@@ -18,6 +18,7 @@ import {
   deckLines,
   localizedText,
 } from './models';
+import { contentLocale } from './locale';
 
 export interface NewDeckInput {
   name: string;
@@ -29,6 +30,15 @@ export interface NewDeckInput {
 const SAVE_DELAY_MS = 400;
 
 /**
+ * Where « Créer le deck » stores a new deck. `guest` (default): localStorage, copied to the account
+ * from the login page. `account`: straight to the decks API when a token is present (embedded in the
+ * AlteredCore site, where the deck then shows up in the site's deck list).
+ */
+export const DECK_CREATE_TARGET = new InjectionToken<'guest' | 'account'>('DECK_CREATE_TARGET', {
+  factory: () => 'guest',
+});
+
+/**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
  * with a token, changes are PATCHed to decks.alteredcore.org.
  */
@@ -37,7 +47,8 @@ export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
   private readonly cardsApi = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
-  private readonly auth = inject(AuthService);
+  private readonly auth = inject(AuthSession);
+  private readonly createTarget = inject(DECK_CREATE_TARGET);
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -46,7 +57,7 @@ export class DeckStore {
   /** Switching id cancels the in-flight request, so a late response never overwrites the current deck. */
   private readonly serverDeck = rxResource({
     params: () => this.serverId() ?? undefined,
-    stream: ({ params: id }) => this.decksApi.get(id, 'fr'),
+    stream: ({ params: id }) => this.decksApi.get(id, contentLocale()),
   });
 
   readonly loading = computed(() => this.serverDeck.isLoading());
@@ -111,6 +122,35 @@ export class DeckStore {
     this.serverId.set(null);
     this.apply(deck);
     return deck;
+  }
+
+  /**
+   * `create()` on the decks API when `DECK_CREATE_TARGET` is `account` and the user is signed in;
+   * a guest deck otherwise, or when the API refuses (the deck is not lost).
+   */
+  createDeck(input: NewDeckInput): Observable<Deck> {
+    if (this.createTarget !== 'account' || !this.auth.isLoggedIn()) return of(this.create(input));
+    const body: DeckWrite = {
+      name: input.name.trim() || 'Nouveau deck',
+      format: input.format,
+      isPublic: input.isPublic,
+      deckCards: [{ cardReference: input.hero.reference, quantity: 1 }],
+    };
+    this.saving.set(true);
+    return this.decksApi.create(body).pipe(
+      map((created) => {
+        this.saving.set(false);
+        const deck: Deck = { ...created, hero: created.hero ?? input.hero, deckCards: created.deckCards ?? [heroLine(input.hero)], guest: false };
+        this.serverId.set(null);
+        this.apply(deck);
+        return deck;
+      }),
+      catchError((err: unknown) => {
+        this.saving.set(false);
+        console.warn('Re:Builder: server deck creation failed, keeping a local deck', err);
+        return of(this.create(input));
+      }),
+    );
   }
 
   /** Loads a guest deck synchronously, or a server deck (public decks need no token). */
@@ -317,7 +357,7 @@ export class DeckStore {
       return;
     }
     this.uniqueFaces = this.cardsApi
-      .batch(refs, 'fr')
+      .batch(refs, contentLocale())
       .pipe(catchError(() => of([] as Card[])))
       .subscribe((cards) => {
         if (this.deckId() !== deckId || !cards.length) return;
@@ -343,5 +383,5 @@ function heroLine(hero: DeckHero) {
 }
 
 export function displayName(card: Card): string {
-  return localizedText(card.name, 'fr') || card.reference;
+  return localizedText(card.name, contentLocale()) || card.reference;
 }

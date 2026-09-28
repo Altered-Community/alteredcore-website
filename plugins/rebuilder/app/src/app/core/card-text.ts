@@ -1,5 +1,6 @@
 import type { Card } from './models';
 import { localizedText } from './models';
+import { contentLocale } from './locale';
 
 export interface TextStyle {
   bold?: boolean;
@@ -120,7 +121,7 @@ export function printedLength(lines: EffectLine[]): number {
 }
 
 /** `echoEffect` is a string, a locale map, or a list of either depending on the endpoint. */
-export function echoText(value: Card['echoEffect'], locale: 'fr' | 'en' = 'fr'): string {
+export function echoText(value: Card['echoEffect'], locale: 'fr' | 'en' = contentLocale()): string {
   if (!value) return '';
   const list = Array.isArray(value) ? value : [value];
   return list.map((v) => localizedText(v, locale)).filter(Boolean).join('  ');
@@ -128,7 +129,7 @@ export function echoText(value: Card['echoEffect'], locale: 'fr' | 'en' = 'fr'):
 
 export function cardEffects(card: Card): { main: EffectLine[]; echo: EffectLine[] } {
   return {
-    main: effectLines(localizedText(card.mainEffect, 'fr')),
+    main: effectLines(localizedText(card.mainEffect, contentLocale())),
     echo: effectLines(echoText(card.echoEffect)),
   };
 }

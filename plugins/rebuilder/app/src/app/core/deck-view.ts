@@ -4,12 +4,13 @@ import { computeDeckStatus, rarityCountsFromRefs, rarityOf, typeOf, type RarityC
 import { formatInfo } from './formats';
 import type { Card, Deck, DeckCardLine, DeckFormat, DeckHero, HydratedLine } from './models';
 import { deckLines, localizedText } from './models';
+import { contentLocale } from './locale';
 
 /** Rich line → Card (decks API detail lines and guest lines carry name, type, costs, powers). */
 export function lineToCard(line: DeckCardLine): Card {
   return {
     reference: line.cardReference,
-    name: typeof line.name === 'string' ? line.name : localizedText(line.name, 'fr') || line.cardReference,
+    name: typeof line.name === 'string' ? line.name : localizedText(line.name, contentLocale()) || line.cardReference,
     cardType: line.cardTypeReference ? { reference: line.cardTypeReference } : undefined,
     faction: line.factionCode ? { code: line.factionCode, name: line.factionCode } : undefined,
     mainCost: line.mainCost ?? null,
@@ -24,7 +25,7 @@ export function lineToCard(line: DeckCardLine): Card {
 
 /** A unique whose deck line has no printed effect yet (guest reload, or a decks API line). */
 export function uniqueNeedsPrintedEffect(card: Card): boolean {
-  return isUniqueReference(card.reference) && !localizedText(card.mainEffect, 'fr') && !echoText(card.echoEffect);
+  return isUniqueReference(card.reference) && !localizedText(card.mainEffect, contentLocale()) && !echoText(card.echoEffect);
 }
 
 /**
@@ -34,17 +35,17 @@ export function uniqueNeedsPrintedEffect(card: Card): boolean {
 export function mergeUniqueFace(current: Card, full: Card): Card {
   return {
     ...current,
-    name: localizedText(current.name, 'fr') ? current.name : full.name ?? current.name,
+    name: localizedText(current.name, contentLocale()) ? current.name : full.name ?? current.name,
     faction: current.faction ?? full.faction,
     rarity: current.rarity ?? full.rarity,
-    cardType: localizedText(current.cardType?.name, 'fr') ? current.cardType : full.cardType ?? current.cardType,
+    cardType: localizedText(current.cardType?.name, contentLocale()) ? current.cardType : full.cardType ?? current.cardType,
     cardSubTypes: current.cardSubTypes?.length ? current.cardSubTypes : full.cardSubTypes,
     mainCost: current.mainCost ?? full.mainCost,
     recallCost: current.recallCost ?? full.recallCost,
     forestPower: current.forestPower ?? full.forestPower,
     mountainPower: current.mountainPower ?? full.mountainPower,
     oceanPower: current.oceanPower ?? full.oceanPower,
-    mainEffect: localizedText(current.mainEffect, 'fr') ? current.mainEffect : full.mainEffect,
+    mainEffect: localizedText(current.mainEffect, contentLocale()) ? current.mainEffect : full.mainEffect,
     echoEffect: echoText(current.echoEffect) ? current.echoEffect : full.echoEffect,
     collectorNumberFormatedId: current.collectorNumberFormatedId || full.collectorNumberFormatedId,
     artists: current.artists?.length ? current.artists : full.artists,
@@ -57,7 +58,7 @@ export function cardToLine(card: Card, quantity: number): DeckCardLine {
   return {
     cardReference: card.reference,
     quantity,
-    name: localizedText(card.name, 'fr') || card.reference,
+    name: localizedText(card.name, contentLocale()) || card.reference,
     factionCode: card.faction?.code ?? null,
     cardTypeReference: card.cardType?.reference ?? null,
     mainCost: card.mainCost ?? null,
@@ -81,7 +82,7 @@ export function heroOf(deck: Deck): DeckHero | null {
   if (line) {
     return {
       reference: line.cardReference,
-      name: typeof line.name === 'string' ? line.name : localizedText(line.name, 'fr'),
+      name: typeof line.name === 'string' ? line.name : localizedText(line.name, contentLocale()),
       faction: line.factionCode || factionFromReference(line.cardReference),
     };
   }
@@ -209,7 +210,7 @@ export function groupLines(lines: HydratedLine[]): DeckGroup[] {
       const rows = [...(buckets.get(id) ?? [])].sort(
         (a, b) =>
           (a.card.mainCost ?? 99) - (b.card.mainCost ?? 99) ||
-          localizedText(a.card.name, 'fr').localeCompare(localizedText(b.card.name, 'fr'), 'fr'),
+          localizedText(a.card.name, contentLocale()).localeCompare(localizedText(b.card.name, contentLocale()), contentLocale()),
       );
       return {
         id,

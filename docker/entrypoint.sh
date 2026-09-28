@@ -13,4 +13,13 @@ if ! php /var/www/html/sql/migrate.php; then
     echo "[entrypoint] WARNING: migrations did not complete cleanly; starting Apache anyway." >&2
 fi
 
+# Optional (local / CI stack): activate plugins listed in AC_ACTIVATE_PLUGINS, like the admin
+# "Activate" button (idempotent; also adds their suggested menu entries once).
+if [ -n "${AC_ACTIVATE_PLUGINS:-}" ]; then
+    echo "[entrypoint] activating plugins: ${AC_ACTIVATE_PLUGINS}"
+    # shellcheck disable=SC2086
+    php /var/www/html/bin/plugins.php activate ${AC_ACTIVATE_PLUGINS} \
+        || echo "[entrypoint] WARNING: plugin activation failed." >&2
+fi
+
 exec apache2-foreground

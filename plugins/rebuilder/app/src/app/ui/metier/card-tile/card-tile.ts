@@ -5,6 +5,7 @@ import { localizedText } from '../../../core/models';
 import { ArCardAdd, ArStepper } from '../../buttons';
 import { ArCardArt } from '../card-art/card-art';
 import { ArUniqueCard } from '../unique-card/unique-card';
+import { contentLocale } from '../../../core/locale';
 
 /** Search / preview / consultation tile — ar-card-tile (DS-Metier). */
 @Component({
@@ -25,6 +26,6 @@ export class ArCardTile {
   readonly eager = input(false);
   readonly quantityChange = output<number>();
 
-  protected readonly name = computed(() => localizedText(this.card().name, 'fr') || this.card().reference);
+  protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
   protected readonly unique = computed(() => isUniqueReference(this.card().reference));
 }

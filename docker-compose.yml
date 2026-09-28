@@ -2,7 +2,7 @@ services:
   web:
     build: .
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8080}:80"
     volumes:
       - .:/var/www/html
     depends_on:
@@ -33,7 +33,7 @@ services:
   pma:
     image: phpmyadmin:latest
     ports:
-      - "8081:80"
+      - "${PMA_PORT:-8081}:80"
     environment:
       PMA_HOST: db
       PMA_USER: alteredcore

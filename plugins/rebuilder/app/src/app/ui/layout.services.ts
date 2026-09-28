@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, InjectionToken, computed, effect, inject, signal } from '@angular/core';
 import { densityFor, windowSizeFor, type WindowSize } from '../core/breakpoints';
 
 function readWidth(): number {
@@ -37,11 +37,18 @@ export class ArBreakpointService {
   }
 }
 
+/**
+ * Element that carries `data-density`: `<html>` by default. When the app is embedded in a
+ * Shadow DOM, selectors cannot see `<html>`, so the plugin root carries it instead.
+ */
+export const AR_DENSITY_TARGET = new InjectionToken<HTMLElement>('AR_DENSITY_TARGET');
+
 /** Sets `data-density="pointer|touch"` on <html>; control heights follow via tokens. */
 @Injectable({ providedIn: 'root' })
 export class ArDensityService {
   private readonly breakpoints = inject(ArBreakpointService);
   private readonly doc = inject(DOCUMENT);
+  private readonly target = inject(AR_DENSITY_TARGET, { optional: true });
   private readonly coarsePointer = signal(coarse());
 
   readonly density = computed(() => densityFor(this.breakpoints.width(), this.coarsePointer()));
@@ -53,7 +60,7 @@ export class ArDensityService {
       );
     }
     effect(() => {
-      this.doc.documentElement.setAttribute('data-density', this.density());
+      (this.target ?? this.doc.documentElement).setAttribute('data-density', this.density());
     });
   }
 }

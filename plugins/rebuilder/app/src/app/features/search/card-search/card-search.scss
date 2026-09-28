@@ -9,7 +9,7 @@
 
 .search-head {
   position: sticky;
-  top: 0;
+  top: var(--ar-page-top);
   z-index: 15;
   margin: calc(-1 * var(--ar-space-3)) calc(-1 * var(--ar-page-padding)) 0;
   padding: var(--ar-space-3) var(--ar-page-padding) 0;
@@ -187,11 +187,11 @@
     width: calc(var(--ar-filter-panel-width) + var(--ar-space-8) + var(--ar-space-6));
     flex-shrink: 0;
     position: sticky;
-    top: calc(var(--ar-app-bar-height) + var(--ar-space-6));
+    top: calc(var(--ar-sticky-top) + var(--ar-space-6));
     /* Stay inside the viewport under the page header. The footer is a flex
        sibling of the scroller, so the action row is never scrolled away. */
-    height: calc(100dvh - var(--ar-app-bar-height) - 2 * var(--ar-space-6) - 60px - var(--ar-space-4) * 2 - 44px);
-    max-height: calc(100dvh - var(--ar-app-bar-height) - 2 * var(--ar-space-6));
+    height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6) - 60px - var(--ar-space-4) * 2 - 44px);
+    max-height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6));
     background: var(--ar-color-surface);
     border: 1px solid var(--ar-color-border);
     border-radius: var(--ar-radius-card);
