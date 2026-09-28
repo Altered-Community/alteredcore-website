@@ -1,0 +1,166 @@
+<?php
+// SPA plugin pages (plugin manifest v2) — loaded by functions.php.
+//
+// A page declared `"type": "spa"` ships a front-end that was built beforehand (CI or
+// `npm run build`). The shell renders its own header/footer, publishes the host contract
+// (window.AlteredCore, see js/altered-core-host.js) and mounts the bundle in a Shadow DOM
+// so Bootstrap and css/style.css do not leak into it. Every URL under /pages/{slug}/… is
+// served by the same page, so the plugin can use client-side routing with deep links.
+//
+// The page's `entry` points at a build manifest written by the plugin's build:
+//   {
+//     "version": 1,
+//     "base": "browser/",            directory of the files below, relative to the manifest
+//     "js": ["main-HASH.js"],        ES modules, loaded in order
+//     "css": ["embed-HASH.css"],     loaded inside the shadow root
+//     "documentCss": ["doc-HASH.css"] loaded in <head> (@font-face does not work in a shadow root)
+//   }
+
+const SPA_HOST_CONTRACT_VERSION = 1;
+
+/** Joins a plugin-relative path and rejects anything that escapes the plugin directory. */
+function spaSafeRelPath(string $path): ?string {
+    $path = str_replace('\\', '/', $path);
+    if ($path === '' || $path[0] === '/' || strpos($path, '..') !== false || strpos($path, "\0") !== false) return null;
+    return $path;
+}
+
+/** Reads and validates a build manifest. Returns null (and sets $error) when unusable. */
+function spaReadBuildManifest(string $pluginDir, string $entry, ?string &$error = null): ?array {
+    $rel = spaSafeRelPath($entry);
+    if ($rel === null) { $error = 'invalid entry path'; return null; }
+    $file = $pluginDir . '/' . $rel;
+    if (!is_file($file)) { $error = "build manifest not found ({$rel}) — build the plugin first"; return null; }
+    $m = json_decode((string)file_get_contents($file), true);
+    if (!is_array($m) || empty($m['js']) || !is_array($m['js'])) { $error = "invalid build manifest ({$rel})"; return null; }
+
+    $base = trim(str_replace('\\', '/', (string)($m['base'] ?? '')), '/');
+    $dir  = trim(dirname($rel), '/.');
+    $baseRel = trim(($dir !== '' ? $dir . '/' : '') . ($base !== '' ? $base . '/' : ''), '/');
+    if ($baseRel !== '' && spaSafeRelPath($baseRel) === null) { $error = 'invalid base path'; return null; }
+
+    $files = [];
+    foreach (['js', 'css', 'documentCss'] as $key) {
+        $files[$key] = [];
+        foreach ((array)($m[$key] ?? []) as $f) {
+            $f = is_string($f) ? spaSafeRelPath($f) : null;
+            if ($f === null) { $error = "invalid file in build manifest ({$key})"; return null; }
+            $files[$key][] = $f;
+        }
+    }
+    return ['base' => $baseRel, 'files' => $files];
+}
+
+/**
+ * pluginFindPage() result for a `type: spa` page. Always returns an entry for a declared page:
+ * a missing build shows an explanatory error in the shell instead of a 404.
+ */
+function spaResolvePage(array $plugin, array $page): ?array {
+    $id    = $plugin['id'];
+    $slug  = $page['slug'];
+    $error = null;
+    $build = !empty($page['entry']) ? spaReadBuildManifest($plugin['_dir'], (string)$page['entry'], $error) : null;
+    if (empty($page['entry'])) $error = 'missing "entry" in plugin.json';
+
+    $spa = ['mount' => ($page['mount'] ?? 'shadow') === 'light' ? 'light' : 'shadow', 'error' => $error,
+            'assets_url' => '', 'js' => [], 'css' => [], 'document_css' => []];
+    if ($build !== null) {
+        $assets = BASE_URL . '/plugins/' . rawurlencode($id) . '/' . ($build['base'] !== '' ? $build['base'] . '/' : '');
+        $spa['assets_url']   = $assets;
+        $spa['js']           = array_map(fn($f) => $assets . $f, $build['files']['js']);
+        $spa['css']          = array_map(fn($f) => $assets . $f, $build['files']['css']);
+        $spa['document_css'] = array_map(fn($f) => $assets . $f, $build['files']['documentCss']);
+    }
+
+    return [
+        'slug'          => $slug,
+        'type'          => 'spa',
+        'plugin_id'     => $id,
+        'abs_file'      => null,
+        'plugin_css'    => $spa['document_css'],
+        'plugin_js'     => [],
+        '_table_prefix' => $plugin['_table_prefix'] ?? '',
+        'title_en'      => $page['title_en'] ?? '',
+        'title_fr'      => $page['title_fr'] ?? '',
+        'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
+        'spa'           => $spa,
+    ];
+}
+
+/** Browser-reachable service URL: `{NAME}_PUBLIC_URL` when the server uses an internal host. */
+function spaPublicServiceUrl(string $name): string {
+    $public = $name . '_PUBLIC_URL';
+    if (defined($public) && constant($public) !== '') return rtrim(constant($public), '/');
+    return defined($name) ? rtrim((string)constant($name), '/') : '';
+}
+
+/** The data half of window.AlteredCore (the methods live in js/altered-core-host.js). */
+function spaHostConfig(array $page): array {
+    $kcMode   = defined('KC_URL') && KC_URL !== '';
+    $loggedIn = kcIsLoggedIn();
+    $user     = null;
+    if ($loggedIn) {
+        $u    = kcUser();
+        $user = [
+            'id'       => (int)($_SESSION['user_id'] ?? 0),
+            'username' => (string)($u['username'] ?? ''),
+            'sub'      => ($u['sub'] ?? '') !== '' ? $u['sub'] : null,
+        ];
+    }
+    $basePath = BASE_URL . '/pages/' . $page['slug'] . '/';
+
+    return [
+        'version'  => SPA_HOST_CONTRACT_VERSION,
+        'baseUrl'  => BASE_URL,
+        'siteName' => getSiteName(),
+        'lang'     => getUiLang(),
+        'user'     => $user,
+        'csrf'     => csrfToken(),
+        'auth'     => [
+            'provider' => $kcMode ? 'keycloak' : 'local',
+            'tokenUrl' => BASE_URL . '/api/v1/session/token',
+            'loginUrl' => $kcMode ? BASE_URL . '/auth/keycloak-login' : BASE_URL . '/pages/login',
+        ],
+        'services' => [
+            'cards' => spaPublicServiceUrl('CARDS_API_URL'),
+            'decks' => spaPublicServiceUrl('DECKS_API_URL'),
+            'cdn'   => spaPublicServiceUrl('CDN_URL'),
+        ],
+        'page'     => [
+            'plugin'    => $page['plugin_id'],
+            'slug'      => $page['slug'],
+            'basePath'  => $basePath,
+            'subPath'   => $page['sub_path'] ?? '',
+            'assetsUrl' => $page['spa']['assets_url'],
+            'mount'     => $page['spa']['mount'],
+            'css'       => $page['spa']['css'],
+        ],
+    ];
+}
+
+/** Body of an SPA page: mount point, host contract, runtime and plugin modules. */
+function spaRenderPage(array $page): void {
+    $spa   = $page['spa'];
+    $lang  = getUiLang();
+    $id    = $page['plugin_id'];
+    if ($spa['error'] !== null) {
+        $msg = $lang === 'fr' ? 'Cette page n’est pas disponible pour le moment.' : 'This page is not available right now.';
+        echo '<div class="container py-5"><div class="alert alert-warning" role="alert">' . h($msg);
+        if (!empty($_SESSION['admin_logged_in'])) echo '<br><small class="text-muted">' . h($id . ': ' . $spa['error']) . '</small>';
+        echo '</div></div>';
+        return;
+    }
+    $json = json_encode(spaHostConfig($page), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $runtime = dirname(__DIR__) . '/js/altered-core-host.js';
+    $noscript = $lang === 'fr' ? 'Cette page nécessite JavaScript.' : 'This page requires JavaScript.';
+    ?>
+<div class="ac-spa-page" data-ac-page="<?= h($page['slug']) ?>">
+    <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"></div>
+    <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
+</div>
+<script type="application/json" id="ac-host-config"><?= $json ?></script>
+<script src="<?= h(BASE_URL) ?>/js/altered-core-host.js?v=<?= is_file($runtime) ? filemtime($runtime) : 0 ?>"></script>
+<?php foreach ($spa['js'] as $src): ?>
+<script type="module" src="<?= h($src) ?>"></script>
+<?php endforeach;
+}

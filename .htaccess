@@ -8,6 +8,12 @@
     # Route all /pages/{slug} through the central router (core + plugin pages)
     RewriteRule ^pages/([a-z0-9_-]+)/?$ pages/_router.php [QSA,L]
 
+    # Deep links inside SPA plugin pages: /pages/{slug}/{rest…}. The router serves
+    # them only for pages declared "type": "spa" (client-side routing) and 404s the rest.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^pages/([a-z0-9_-]+)/(.+)$ pages/_router.php [QSA,L]
+
     # Plugin API endpoints: /papi/{plugin-id}/{endpoint}
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,0 +1,38 @@
+{
+    "$schema":          "../plugin.schema.json",
+    "manifest_version": 2,
+    "id":               "rebuilder",
+    "name":             "Re:Builder deck editor",
+    "version":          "0.1.0",
+    "description":      "Deck editor (Angular, from Altered Re:Builder) mounted as a SPA page. Replaces the deck builder of core-altered-cards on /pages/deckbuilder.",
+    "author":           "Yutsa",
+    "icon":             "fa-solid fa-pen-ruler",
+
+    "pages": [
+        {
+            "slug":     "deckbuilder",
+            "type":     "spa",
+            "entry":    "dist/embed-manifest.json",
+            "mount":    "shadow",
+            "title_en": "Deck Builder",
+            "title_fr": "Créateur de deck"
+        }
+    ],
+
+    "menu": [
+        { "page": "deckbuilder", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler", "sort_order": 45 }
+    ],
+
+    "build": {
+        "workdir": "app",
+        "install": "npm ci --no-audit --no-fund",
+        "lint":    "npm run lint",
+        "test":    "npm test",
+        "build":   "npm run build:embed",
+        "output":  "dist"
+    },
+
+    "tests": {
+        "e2e": "e2e"
+    }
+}

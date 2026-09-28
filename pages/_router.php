@@ -23,8 +23,14 @@ register_shutdown_function(function () use ($_logFile) {
 
 require_once dirname(__DIR__) . '/includes/functions.php';
 
-$_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-$_slug = preg_replace('/[^a-z0-9_-]/', '', basename(rtrim($_path ?? '', '/')));
+// /pages/{slug} or, for SPA plugin pages only, /pages/{slug}/{sub/path} (client-side routes).
+$_path    = (string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$_slug    = '';
+$_subPath = '';
+if (preg_match('#/pages/([a-z0-9_-]+)(?:/(.*))?$#', $_path, $_m)) {
+    $_slug    = $_m[1];
+    $_subPath = trim($_m[2] ?? '', '/');
+}
 
 if ($_slug === '') {
     include __DIR__ . '/404.php';
@@ -36,7 +42,7 @@ $_SERVER['PHP_SELF'] = '/pages/' . $_slug . '.php';
 
 // Core page
 $_corePath = __DIR__ . '/' . $_slug . '.php';
-if (file_exists($_corePath)) {
+if ($_subPath === '' && file_exists($_corePath)) {
     include $_corePath;
     exit;
 }
@@ -44,6 +50,9 @@ if (file_exists($_corePath)) {
 // Plugin page
 initPlugins();
 $_pluginPage = pluginFindPage($_slug);
+if ($_pluginPage !== null && $_subPath !== '' && $_pluginPage['type'] !== 'spa') {
+    $_pluginPage = null; // deep paths exist only for client-routed pages
+}
 if ($_pluginPage !== null) {
     // Respect visibility setting (set in Admin → Pages)
     $_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
@@ -67,7 +76,13 @@ if ($_pluginPage !== null) {
     // Buffer output so requireLogin() / redirect() still work inside the plugin
     // (ob_start only buffers output — headers are not affected).
     ob_start();
-    include $_pluginPage['abs_file'];
+    if ($_pluginPage['type'] === 'spa') {
+        $_pluginPage['sub_path'] = $_subPath;
+        $pageFullwidth = $_pluginPage['fullwidth'];
+        spaRenderPage($_pluginPage);
+    } else {
+        include $_pluginPage['abs_file'];
+    }
     $_pluginOutput = ob_get_clean();
 
     require_once dirname(__DIR__) . '/includes/header.php';

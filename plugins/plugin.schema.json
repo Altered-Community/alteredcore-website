@@ -2,44 +2,150 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AlteredCore Plugin Manifest",
   "type": "object",
-  "required": ["id", "name", "version", "description", "author"],
+  "required": [
+    "id",
+    "name",
+    "version",
+    "description",
+    "author"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema":      { "type": "string" },
-    "id":           { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "name":         { "type": "string", "minLength": 1 },
-    "version":      { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" },
-    "description":  { "type": "string" },
-    "author":       { "type": "string" },
-    "icon":         { "type": "string" },
-    "table_prefix": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+"
+    },
+    "description": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "table_prefix": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
     "pages": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["slug", "file", "title_en", "title_fr"],
+        "required": [
+          "slug",
+          "title_en",
+          "title_fr"
+        ],
         "additionalProperties": false,
         "properties": {
-          "slug":     { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-          "file":     { "type": "string" },
-          "title_en": { "type": "string" },
-          "title_fr": { "type": "string" }
-        }
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "file": {
+            "type": "string"
+          },
+          "title_en": {
+            "type": "string"
+          },
+          "title_fr": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "php",
+              "spa"
+            ],
+            "default": "php",
+            "description": "php: server-rendered file (default). spa: prebuilt front-end mounted by the shell, with client-side routes under /pages/{slug}/…"
+          },
+          "entry": {
+            "type": "string",
+            "description": "spa: build manifest written by the plugin build, relative to the plugin (e.g. dist/embed-manifest.json)."
+          },
+          "mount": {
+            "type": "string",
+            "enum": [
+              "shadow",
+              "light"
+            ],
+            "default": "shadow",
+            "description": "spa: render inside a Shadow DOM (isolated from Bootstrap / css/style.css) or in the page."
+          },
+          "fullwidth": {
+            "type": "boolean",
+            "description": "Full-width layout (default true for spa pages, false for php pages)."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "spa"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "entry"
+              ]
+            },
+            "else": {
+              "required": [
+                "file"
+              ]
+            }
+          }
+        ]
       }
     },
     "admin": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["section", "file", "label_en", "label_fr"],
+        "required": [
+          "section",
+          "file",
+          "label_en",
+          "label_fr"
+        ],
         "additionalProperties": false,
         "properties": {
-          "section":    { "type": "string" },
-          "file":       { "type": "string" },
-          "label_en":   { "type": "string" },
-          "label_fr":   { "type": "string" },
-          "icon":       { "type": "string" },
-          "hide_in_nav": { "type": "boolean" }
+          "section": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "label_en": {
+            "type": "string"
+          },
+          "label_fr": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "hide_in_nav": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -47,11 +153,18 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["endpoint", "file"],
+        "required": [
+          "endpoint",
+          "file"
+        ],
         "additionalProperties": false,
         "properties": {
-          "endpoint": { "type": "string" },
-          "file":     { "type": "string" }
+          "endpoint": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -59,14 +172,144 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "css":        { "type": "array", "items": { "type": "string" } },
-        "js":         { "type": "array", "items": { "type": "string" } },
-        "global_css": { "type": "array", "items": { "type": "string" } },
-        "global_js":  { "type": "array", "items": { "type": "string" } },
-        "global_php": { "type": "array", "items": { "type": "string" } }
+        "css": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "js": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "global_css": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "global_js": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "global_php": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-    "sql":    { "type": "string" },
-    "tables": { "type": "array", "items": { "type": "string" } }
+    "sql": {
+      "type": "string"
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manifest_version": {
+      "type": "integer",
+      "enum": [
+        1,
+        2
+      ],
+      "description": "2 enables SPA pages, menu suggestions and build/test declarations. Omitted = 1."
+    },
+    "menu": {
+      "type": "array",
+      "description": "Suggested navigation entries, added to the site menu when the plugin is activated (if no item has the same URL). Admins can edit or hide them afterwards.",
+      "items": {
+        "type": "object",
+        "required": [
+          "label_en",
+          "label_fr"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "string",
+            "description": "Slug of one of this plugin's pages (URL /pages/{page})."
+          },
+          "url": {
+            "type": "string",
+            "description": "Explicit URL when the entry is not one of the plugin's pages."
+          },
+          "label_en": {
+            "type": "string"
+          },
+          "label_fr": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "sort_order": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "description": "Front-end build run by CI and by `php bin/plugins.php build`. Commands run in `workdir`.",
+      "additionalProperties": false,
+      "required": [
+        "workdir",
+        "build"
+      ],
+      "properties": {
+        "workdir": {
+          "type": "string"
+        },
+        "install": {
+          "type": "string",
+          "default": "npm ci"
+        },
+        "lint": {
+          "type": "string"
+        },
+        "test": {
+          "type": "string"
+        },
+        "build": {
+          "type": "string"
+        },
+        "output": {
+          "type": "string",
+          "description": "Directory the build writes (relative to the plugin), not committed."
+        }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "description": "Test entry points. Without this block CI looks for tests/run.php, **/*.test.mjs and e2e/*.spec.* by convention.",
+      "additionalProperties": false,
+      "properties": {
+        "php": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "PHP scripts that exit non-zero on failure."
+        },
+        "node": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Files run with node --test."
+        },
+        "e2e": {
+          "type": "string",
+          "description": "Directory of Playwright specs run against the full stack."
+        }
+      }
+    }
   }
 }

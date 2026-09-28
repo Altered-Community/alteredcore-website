@@ -626,7 +626,7 @@ $_siteLogo = getSetting('logo_path');
 $factionsData = loadAlteredData('factions');
 $formatsData  = loadAlteredData('formats');
 
-$newDeckHref    = $enableNewDeck ? BASE_URL . '/pages/deckbuilder' : $newDeckUrl;
+$newDeckHref    = $enableNewDeck ? $deckbuilderUrl : $newDeckUrl;
 $showNewDeckBtn = $enableNewDeck || $newDeckUrl !== '';
 
 $showImportBtnVisible = $showImportBtn || $importDeckUrl !== '';
@@ -698,7 +698,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             </div>
             <?php elseif ($guestModeEnabled): ?>
             <div class="ms-auto">
-                <a href="<?= h(BASE_URL) ?>/pages/deckbuilder" class="btn btn-sm" style="background:#f59e0b;color:#fff;border:none">
+                <a href="<?= h($deckbuilderUrl) ?>" class="btn btn-sm" style="background:#f59e0b;color:#fff;border:none">
                     <i class="fa-solid fa-plus me-1"></i><?= h($txt['guest_new_btn']) ?>
                 </a>
             </div>
@@ -948,6 +948,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     }
 
     var baseUrl         = <?= json_encode(BASE_URL) ?>;
+    var deckbuilderUrl  = <?= json_encode($deckbuilderUrl) ?>;
     var pluginAssetsUrl = <?= json_encode($pluginAssetsUrl) ?>;
     var apiDebug        = <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>;
     var showPublic = <?= json_encode($showPublicTab) ?>;
@@ -1185,7 +1186,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     function buildMyDeckEditHtml(deckId) {
         var theme    = localStorage.getItem('acTheme') === 'dark' ? 'dark' : 'light';
         var editHref = myShowEditBtn
-            ? baseUrl + '/pages/deckbuilder?id=' + encodeURIComponent(deckId) + '&theme=' + theme
+            ? deckbuilderUrl + '?id=' + encodeURIComponent(deckId) + '&theme=' + theme
             : myEditDeckUrl.replace('{deck_id}', encodeURIComponent(deckId)) + (myEditDeckUrl.indexOf('?') >= 0 ? '&' : '?') + 'theme=' + theme;
         var showEdit    = myShowEditBtn || myEditDeckUrl !== '';
         var useDropdown = myDeckBuilders.length > 0;
@@ -2132,7 +2133,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         body.append('deck_id',    '');
         body.append('payload',    JSON.stringify(payload));
 
-        fetch(baseUrl + '/pages/deckbuilder?ajax=1', { method: 'POST', body: body })
+        fetch(<?= json_encode($legacyDeckbuilderUrl) ?> + '?ajax=1', { method: 'POST', body: body })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.ok) {
@@ -2245,7 +2246,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             + '<button type="button" onclick="guestDeckDelete()" class="btn btn-sm" style="background:rgba(255,255,255,.85);border:1px solid rgba(200,50,50,.4);color:#c0392b">'
             + '<i class="fa-solid fa-trash"></i>'
             + '</button>'
-            + '<a href="' + escHtml(baseUrl) + '/pages/deckbuilder" class="btn btn-primary-altered btn-sm">'
+            + '<a href="' + escHtml(<?= json_encode($deckbuilderUrl) ?>) + '" class="btn btn-primary-altered btn-sm">'
             + '<i class="fa-solid fa-pen me-1"></i>' + escHtml(txtGuest.edit)
             + '</a>'
             + '</div></div>'

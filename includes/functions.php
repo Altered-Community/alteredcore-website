@@ -1212,3 +1212,4 @@ function getUserMenuItems(): array {
 }
 require_once __DIR__ . '/func.keycloak.php';
 require_once __DIR__ . '/plugins.php';
+require_once __DIR__ . '/spa.php';

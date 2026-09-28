@@ -55,7 +55,7 @@ $pageTitle = $txt['page_title'];
                             <i class="fa-solid fa-circle-check me-1"></i><?= h($txt['active_msg']) ?>
                         </div>
                         <div class="d-flex flex-column align-items-center gap-2">
-                            <a href="<?= h(BASE_URL) ?>/pages/deckbuilder" class="btn btn-primary-altered">
+                            <a href="<?= h(BASE_URL) ?>/pages/deckbuilder-legacy" class="btn btn-primary-altered">
                                 <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['open_db']) ?>
                             </a>
                             <button type="button" id="bga-deactivate" class="btn btn-sm btn-outline-secondary">

@@ -15,7 +15,7 @@
     "pages": [
         {"slug": "cards",       "file": "pages/cards.php",       "title_en": "Cards",         "title_fr": "Cartes"},
         {"slug": "card",        "file": "pages/card.php",        "title_en": "Card",          "title_fr": "Carte"},
-        {"slug": "deckbuilder", "file": "pages/deckbuilder.php", "title_en": "Deck Builder",  "title_fr": "Créateur de deck"},
+        {"slug": "deckbuilder-legacy", "file": "pages/deckbuilder.php", "title_en": "Deck Builder (legacy)", "title_fr": "Créateur de deck (ancien)"},
         {"slug": "deck",        "file": "pages/deck.php",        "title_en": "Deck",          "title_fr": "Deck"},
         {"slug": "decks",       "file": "pages/decks.php",       "title_en": "Decks",         "title_fr": "Decks"},
         {"slug": "collection",  "file": "pages/collection.php",  "title_en": "Collection",    "title_fr": "Collection"},

@@ -88,8 +88,14 @@ function pluginFindPage(string $slug): ?array {
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
         foreach ($plugin['pages'] ?? [] as $page) {
             if (($page['slug'] ?? '') !== $slug) continue;
-            $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $page['file']), DIRECTORY_SEPARATOR);
-            if (!file_exists($abs)) continue;
+            // Manifest v2: a prebuilt front-end mounted by the shell (see includes/spa.php).
+            if (($page['type'] ?? 'php') === 'spa') {
+                $spa = spaResolvePage($plugin, $page);
+                if ($spa === null) continue;
+                return $spa;
+            }
+            $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $page['file'] ?? ''), DIRECTORY_SEPARATOR);
+            if (!is_file($abs)) continue;
             $css = [];
             $js  = [];
             foreach ($plugin['assets']['css'] ?? [] as $f) {
@@ -98,7 +104,7 @@ function pluginFindPage(string $slug): ?array {
             foreach ($plugin['assets']['js'] ?? [] as $f) {
                 $js[] = BASE_URL . '/plugins/' . $id . '/' . ltrim($f, '/');
             }
-            return ['slug' => $slug, 'plugin_id' => $id, 'abs_file' => $abs, 'plugin_css' => $css, 'plugin_js' => $js, '_table_prefix' => $plugin['_table_prefix'] ?? '', 'title_en' => $page['title_en'] ?? '', 'title_fr' => $page['title_fr'] ?? ''];
+            return ['slug' => $slug, 'type' => 'php', 'plugin_id' => $id, 'abs_file' => $abs, 'plugin_css' => $css, 'plugin_js' => $js, '_table_prefix' => $plugin['_table_prefix'] ?? '', 'title_en' => $page['title_en'] ?? '', 'title_fr' => $page['title_fr'] ?? '', 'fullwidth' => !empty($page['fullwidth'])];
         }
     }
     return null;
@@ -147,6 +153,64 @@ function pluginFindApi(string $pluginId, string $endpoint): ?array {
         return ['plugin_id' => $pluginId, 'endpoint' => $endpoint, 'abs_file' => $abs, '_table_prefix' => $plugin['_table_prefix'] ?? ''];
     }
     return null;
+}
+
+// Suggested menu entries (manifest v2 "menu"). Adds each entry to {nav_items} unless an
+// item with the same URL already exists, so admins keep control of labels, order and
+// visibility after the first activation. Returns the number of items inserted.
+function pluginApplyMenuSuggestions(array $manifest): int {
+    $added = 0;
+    $db    = getDB();
+    foreach ($manifest['menu'] ?? [] as $entry) {
+        if (!is_array($entry) || empty($entry['label_en']) || empty($entry['label_fr'])) continue;
+        $url = !empty($entry['page']) ? '/pages/' . preg_replace('/[^a-z0-9_-]/', '', $entry['page']) : (string)($entry['url'] ?? '');
+        if ($url === '' || $url === '/pages/') continue;
+        $exists = $db->prepare(q("SELECT COUNT(*) FROM {nav_items} WHERE url = :url"));
+        $exists->execute([':url' => $url]);
+        if ((int)$exists->fetchColumn() > 0) continue;
+        $sort = isset($entry['sort_order']) ? (int)$entry['sort_order']
+              : (int)$db->query(q("SELECT COALESCE(MAX(sort_order), 0) FROM {nav_items} WHERE parent_id IS NULL AND sort_order < 900"))->fetchColumn() + 5;
+        $db->prepare(q("INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible) VALUES (NULL, :en, :fr, :url, :icon, :sort, 1)"))
+           ->execute([':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+        $added++;
+    }
+    return $added;
+}
+
+// Activation shared by admin/plugins.php and bin/plugins.php: conflict check, DB row,
+// install SQL on first activation, menu suggestions. Returns a list of error strings.
+function pluginActivate(string $pluginId): array {
+    $all = pluginsGetAll();
+    if (!isset($all[$pluginId])) return ['Plugin not found.'];
+    $m = $all[$pluginId];
+    $conflictErrors = pluginCheckConflicts($m, $pluginId);
+    if (!empty($conflictErrors)) return array_map(fn($e) => 'Slug conflict: ' . $e, $conflictErrors);
+
+    $db = getDB();
+    // Ensure a DB row exists (covers plugins present on disk but not uploaded via ZIP)
+    $db->prepare(q("INSERT IGNORE INTO {plugins} (id, version) VALUES (:id, :v)"))
+       ->execute([':id' => $pluginId, ':v' => $m['version'] ?? null]);
+    // Run SQL on first activation
+    $row = $db->prepare(q("SELECT sql_installed_at FROM {plugins} WHERE id = :id"));
+    $row->execute([':id' => $pluginId]);
+    $existing = $row->fetch();
+    if ($existing && $existing['sql_installed_at'] === null && !empty($m['sql'])) {
+        $sqlFile = $m['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $m['sql']), DIRECTORY_SEPARATOR);
+        if (file_exists($sqlFile)) {
+            try {
+                $GLOBALS['_ac_current_plugin_prefix'] = $m['_table_prefix'] ?? '';
+                $db->exec(qp(file_get_contents($sqlFile)));
+                unset($GLOBALS['_ac_current_plugin_prefix']);
+                $db->prepare(q("UPDATE {plugins} SET sql_installed_at = NOW() WHERE id = :id"))->execute([':id' => $pluginId]);
+            } catch (Exception $e) {
+                return ['SQL install error: ' . $e->getMessage()];
+            }
+        }
+    }
+    $db->prepare(q("UPDATE {plugins} SET is_active = 1, version = :v, activated_at = NOW() WHERE id = :id"))
+       ->execute([':v' => $m['version'] ?? null, ':id' => $pluginId]);
+    try { pluginApplyMenuSuggestions($m); } catch (Exception $e) { /* menu is a convenience */ }
+    return [];
 }
 
 // conflict detection
@@ -246,7 +310,14 @@ function pluginValidateZip(ZipArchive $zip, array $manifest, string $prefix): ar
                 } elseif (!preg_match('/^[a-z0-9][a-z0-9_-]*$/', $page['slug'])) {
                     $errors[] = "pages[$n]: invalid slug '{$page['slug']}'.";
                 }
-                if (empty($page['file'])) {
+                if (($page['type'] ?? 'php') === 'spa') {
+                    // The build output must be inside the ZIP: the shell never builds plugins.
+                    if (empty($page['entry'])) {
+                        $errors[] = "pages[$n]: SPA page needs an 'entry' (build manifest).";
+                    } elseif (!$zipHasFile($page['entry'])) {
+                        $errors[] = "pages[$n]: build manifest '{$page['entry']}' not found in ZIP (build the plugin before zipping it).";
+                    }
+                } elseif (empty($page['file'])) {
                     $errors[] = "pages[$n]: missing required field 'file'.";
                 } elseif (!$zipHasFile($page['file'])) {
                     $errors[] = "pages[$n]: file '{$page['file']}' not found in ZIP.";

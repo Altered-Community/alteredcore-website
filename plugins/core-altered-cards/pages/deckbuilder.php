@@ -646,7 +646,7 @@ $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
                 <i class="fa-solid fa-circle-info me-1"></i>
                 <?= h($txt['guest_banner']) ?>
                 <br>
-                <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? '/pages/deckbuilder')) ?>" class="db-guest-link"><?= h($txt['guest_login']) ?></a>
+                <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? '/pages/deckbuilder-legacy')) ?>" class="db-guest-link"><?= h($txt['guest_login']) ?></a>
                 <?= h($txt['guest_login_why']) ?>
             </div>
             <?php endif; ?>
@@ -1244,7 +1244,7 @@ var AlteredDB = {
         _autoSaving = true;
         _setAutoStatus(AlteredDB.txt.saving, false);
 
-        fetch(AlteredDB.baseUrl + '/pages/deckbuilder?ajax=1', { method: 'POST', body: _buildSaveFormData() })
+        fetch(AlteredDB.baseUrl + '/pages/deckbuilder-legacy?ajax=1', { method: 'POST', body: _buildSaveFormData() })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 _autoSaving = false;
@@ -2929,7 +2929,7 @@ var AlteredDB = {
         elSaveBtn.disabled = true;
         elSaveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>' + escHtml(AlteredDB.txt.saving);
 
-        fetch(AlteredDB.baseUrl + '/pages/deckbuilder?ajax=1', { method: 'POST', body: _buildSaveFormData() })
+        fetch(AlteredDB.baseUrl + '/pages/deckbuilder-legacy?ajax=1', { method: 'POST', body: _buildSaveFormData() })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (AlteredDB.debug) console.log('[deckbuilder] save deck API response:', data);
@@ -3043,7 +3043,7 @@ var AlteredDB = {
     window.addEventListener('beforeunload', function(e) {
         if (!dirty) return;
         if (deck.id && navigator.sendBeacon) {
-            navigator.sendBeacon(AlteredDB.baseUrl + '/pages/deckbuilder?ajax=1', _buildSaveFormData());
+            navigator.sendBeacon(AlteredDB.baseUrl + '/pages/deckbuilder-legacy?ajax=1', _buildSaveFormData());
             return;
         }
         e.preventDefault();

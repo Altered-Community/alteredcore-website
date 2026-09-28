@@ -161,40 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // activate
     if ($action === 'activate' && $pluginId) {
-        $all = pluginsGetAll();
-        if (!isset($all[$pluginId])) {
-            flash('Plugin not found.', 'error');
+        $activateErrors = pluginActivate($pluginId);
+        if (!empty($activateErrors)) {
+            flash('Plugin cannot be activated — ' . implode(' · ', $activateErrors), 'error');
             redirect(BASE_URL . '/admin/plugins');
         }
-        $m = $all[$pluginId];
-        $conflictErrors = pluginCheckConflicts($m, $pluginId);
-        if (!empty($conflictErrors)) {
-            flash('Plugin cannot be activated — slug conflict(s): ' . implode(' · ', $conflictErrors), 'error');
-            redirect(BASE_URL . '/admin/plugins');
-        }
-        // Ensure a DB row exists (covers plugins present on disk but not uploaded via ZIP)
-        $db->prepare(q("INSERT IGNORE INTO {plugins} (id, version) VALUES (:id, :v)"))
-           ->execute([':id' => $pluginId, ':v' => $m['version'] ?? null]);
-        // Run SQL on first activation
-        $row = $db->prepare(q("SELECT sql_installed_at FROM {plugins} WHERE id = :id"));
-        $row->execute([':id' => $pluginId]);
-        $existing = $row->fetch();
-        if ($existing && $existing['sql_installed_at'] === null && !empty($m['sql'])) {
-            $sqlFile = $m['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $m['sql']), DIRECTORY_SEPARATOR);
-            if (file_exists($sqlFile)) {
-                try {
-                    $GLOBALS['_ac_current_plugin_prefix'] = $m['_table_prefix'] ?? '';
-                    $db->exec(qp(file_get_contents($sqlFile)));
-                    unset($GLOBALS['_ac_current_plugin_prefix']);
-                    $db->prepare(q("UPDATE {plugins} SET sql_installed_at = NOW() WHERE id = :id"))->execute([':id' => $pluginId]);
-                } catch (Exception $e) {
-                    flash('SQL install error: ' . $e->getMessage(), 'error');
-                    redirect(BASE_URL . '/admin/plugins');
-                }
-            }
-        }
-        $db->prepare(q("UPDATE {plugins} SET is_active = 1, version = :v, activated_at = NOW() WHERE id = :id"))
-           ->execute([':v' => $m['version'] ?? null, ':id' => $pluginId]);
         flash('Plugin activated.');
         redirect(BASE_URL . '/admin/plugins');
     }
