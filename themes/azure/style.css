@@ -1534,6 +1534,9 @@ html { transition: background-color 0.25s, color 0.25s; }
     }
     .az-nav-list .nav-link { padding-top: 0; padding-bottom: 0; }
     .az-topbar-controls { order: 2; }
+    .az-site-header .az-brand,
+    .az-site-header .az-navband,
+    .az-topbar-controls { flex-shrink: 0; }
     .az-burger { order: 3; }
 
     .az-brand-name { color: #fff; }
@@ -1574,23 +1577,16 @@ html { transition: background-color 0.25s, color 0.25s; }
     }
 }
 
-/* Narrower desktops: logo without the site name below 1360px, icon-only menu
-   below 1100px (labels stay available to screen readers). */
-@media (min-width: 768px) and (max-width: 1359.98px) {
-    html body .az-site-header.site-header,
-    .az-navband { gap: 1rem; }
-    .az-nav-list .nav-link { padding-left: 0.6rem; padding-right: 0.6rem; }
-    .az-brand-name {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
-    }
-}
-@media (min-width: 768px) and (max-width: 1099.98px) {
-    .az-nav-list .nav-link > span {
+/* Not enough room for the full bar: nav.php's fit script adds these classes
+   one after the other until the menu fits — tighter spacing, then the logo
+   without the site name, then icon-only menu items from the last one (labels
+   stay available to screen readers and as title tooltips). */
+@media (min-width: 768px) {
+    html body .az-site-header.site-header.az-nav-tight,
+    .az-nav-tight .az-navband { gap: 1rem; }
+    .az-nav-tight .az-nav-list .nav-link { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .az-nav-no-name .az-brand-name,
+    .az-nav-list .az-nav-item-icon .nav-link > span {
         position: absolute;
         width: 1px;
         height: 1px;

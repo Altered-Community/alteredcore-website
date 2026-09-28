@@ -247,6 +247,41 @@ if (!function_exists('__nav_active')) {
     </div><!-- /.az-navband -->
 
 </header>
+<script>
+// Desktop single bar: shrink the header step by step, only as far as needed
+// for the menu to fit between the brand and the controls: tighter spacing,
+// then the logo without the site name, then icon-only menu items starting
+// from the last one (classes styled in style.css).
+(function () {
+    var header = document.querySelector('.az-site-header');
+    if (!header || !window.matchMedia) return;
+    var desktop = window.matchMedia('(min-width: 768px)');
+    var steps   = ['az-nav-tight', 'az-nav-no-name'];
+    var nav     = header.querySelector('.az-nav-list');
+    var ctrls   = header.querySelector('.az-topbar-controls');
+    if (!nav || !ctrls) return;
+    var items   = Array.prototype.slice.call(nav.children).reverse();
+
+    function overflows() {
+        // Bar items do not shrink (style.css), so a menu that is too wide
+        // pushes the controls out of the header.
+        return header.scrollWidth > header.clientWidth
+            || nav.getBoundingClientRect().right > ctrls.getBoundingClientRect().left - 16;
+    }
+    function fit() {
+        steps.forEach(function (c) { header.classList.remove(c); });
+        items.forEach(function (li) { li.classList.remove('az-nav-item-icon'); });
+        if (!desktop.matches) return;
+        for (var i = 0; i < steps.length && overflows(); i++) header.classList.add(steps[i]);
+        for (var j = 0; j < items.length && overflows(); j++) items[j].classList.add('az-nav-item-icon');
+    }
+
+    fit();
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit); // icon font and logo change widths
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+}());
+</script>
 
 <?php
 $__sidebarItems = getSidebarItems();
