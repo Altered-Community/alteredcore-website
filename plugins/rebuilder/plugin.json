@@ -21,7 +21,7 @@
     ],
 
     "menu": [
-        { "page": "rebuilder", "path": "decks", "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler", "sort_order": 35 }
+        { "page": "rebuilder", "path": "decks", "parent_url": "/pages/decks", "label_en": "Re:Builder (beta)", "label_fr": "Re:Builder (bêta)", "icon": "fa-solid fa-pen-ruler" }
     ],
 
     "build": {

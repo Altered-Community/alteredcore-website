@@ -176,18 +176,24 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(root).toHaveAttribute('data-theme', 'light');
   });
 
-  test('has its own menu entry, next to the site entries', async ({ page, compact }, testInfo) => {
+  test('has a beta entry in the site\'s Decks menu', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the menu is checked on the desktop header');
     await login(page, 'alice', `${DECKS}?lang=en`);
     await expect(page.getByRole('list', { name: 'Mes decks' })).toBeVisible();
-    // One entry, on the decks list (a new deck is created from the list).
-    const entry = page.locator('header a.nav-link[href$="/pages/rebuilder/decks"]');
+    // One entry, on the decks list (a new deck is created from the list), inside the Decks menu.
+    const decksMenu = page.locator('header li.dropdown').filter({ has: page.locator('a.nav-link-split-main[href$="/pages/decks"]') });
+    const entry = decksMenu.locator('a.dropdown-item[href$="/pages/rebuilder/decks"]');
     await expect(entry).toHaveCount(1);
-    await expect(entry).toContainText('Re:Builder');
-    await expect(page.locator('header a[href$="/pages/rebuilder/decks/new"]')).toHaveCount(0);
+    await expect(entry).toContainText('Re:Builder (beta)');
+    await expect(page.locator('header a[href*="/pages/rebuilder/"]')).toHaveCount(1);
     await expect(entry).toHaveClass(/\bactive\b/);
-    await expect(page.locator('header a.nav-link[href$="/pages/decks"]').first()).not.toHaveClass(/\bactive\b/);
+    // The Decks menu is the current section; its « Decks » item (the site's list) is not current.
+    await expect(decksMenu).toHaveClass(/\bactive\b/);
+    await expect(decksMenu.locator('a.dropdown-item[href$="/pages/decks"]')).not.toHaveClass(/\bactive\b/);
+    await decksMenu.locator('.nav-link-split-caret').click();
+    await expect(entry).toBeVisible();
     await evidence(page, testInfo, '08-menu');
+    await page.keyboard.press('Escape');
 
     // Still current in the editor, after a client navigation and after a reload.
     await page.getByRole('button', { name: FR.newDeck }).first().click();
@@ -197,9 +203,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.reload();
     await expect(entry).toHaveClass(/\bactive\b/);
 
-    // On the site's own decks page, the Re:Builder entry is not the current one.
+    // On the site's own decks page, the site's item is current, not Re:Builder's.
     await page.goto('/pages/decks');
     await expect(entry).not.toHaveClass(/\bactive\b/);
+    await expect(decksMenu.locator('a.dropdown-item[href$="/pages/decks"]')).toHaveClass(/\bactive\b/);
   });
 });
 

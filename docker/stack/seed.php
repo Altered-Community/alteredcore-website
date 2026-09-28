@@ -61,7 +61,7 @@ $add = function (?int $parent, array $item, int $sort, array $flags = []) use ($
     ]);
     return (int)$db->lastInsertId();
 };
-// Top-level entries every 10 (Decks = 30): plugins slot their entries in between (rebuilder: 35).
+// Entries every 10: plugins slot their entries in between, or last in a menu (rebuilder: in Decks).
 foreach ($menu as $i => $top) {
     $id = $add(null, $top, ($i + 1) * 10, $top[5] ?? []);
     foreach ($top[4] as $j => $child) {

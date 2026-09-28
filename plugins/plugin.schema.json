@@ -272,6 +272,10 @@
           "sort_order": {
             "type": "integer"
           },
+          "parent_url": {
+            "type": "string",
+            "description": "URL of an existing top-level menu (e.g. /pages/decks): the entry is added inside it, last unless sort_order is set. Top level when the site has no such menu. Not with children."
+          },
           "children": {
             "type": "array",
             "description": "Dropdown entries (same fields, no nesting). The parent then needs no page or URL.",

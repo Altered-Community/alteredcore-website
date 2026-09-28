@@ -3,8 +3,8 @@
 The decks section of [Altered Re:Builder](https://github.com/Yutsa/altered-re-builder) (Angular 22),
 mounted by the shell on `/pages/rebuilder` (manifest v2, `"type": "spa"`, Shadow DOM). It sits next to
 the site's own pages: `/pages/decks` and `/pages/deckbuilder` (plugin `core-altered-cards`) are
-unchanged, and the plugin adds a **Re:Builder** menu entry (`/pages/rebuilder/decks`); new decks
-are created from that list.
+unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Decks** menu
+(`/pages/rebuilder/decks`, manifest `parent_url`); new decks are created from that list.
 
 | Path | Content |
 |---|---|

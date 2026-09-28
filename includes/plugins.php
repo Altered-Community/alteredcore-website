@@ -200,7 +200,8 @@ function pluginApiGuard(array $api): ?array {
 // Suggested menu entries (manifest v2 "menu"). Adds each entry to {nav_items} unless an
 // item with the same URL already exists, so admins keep control of labels, order and
 // visibility after the first activation. An entry with `children` becomes a dropdown
-// (URL "#", matched on its English label); its missing children are added under it.
+// (URL "#", matched on its English label); its missing children are added under it. An entry
+// with `parent_url` goes inside the existing top-level menu that has this URL.
 // Returns the number of items inserted.
 function pluginMenuEntryUrl(array $entry): string {
     if (empty($entry['page'])) return (string)($entry['url'] ?? '');
@@ -225,7 +226,20 @@ function pluginApplyMenuSuggestions(array $manifest): int {
             if ($url === '' || $url === '/pages/') continue;
             $exists->execute([':url' => $url]);
             if ((int)$exists->fetchColumn() > 0) continue;
-            $insert->execute([':parent' => null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+            // "parent_url": inside an existing top-level menu (last, unless sort_order says
+            // otherwise); top level when the site has no such menu.
+            $parentId = null;
+            if (!empty($entry['parent_url'])) {
+                $find = $db->prepare(q("SELECT id FROM {nav_items} WHERE parent_id IS NULL AND url = :url ORDER BY id LIMIT 1"));
+                $find->execute([':url' => (string)$entry['parent_url']]);
+                $parentId = $find->fetchColumn() ?: null;
+            }
+            if ($parentId !== null && !isset($entry['sort_order'])) {
+                $last = $db->prepare(q("SELECT COALESCE(MAX(sort_order), 0) FROM {nav_items} WHERE parent_id = :p"));
+                $last->execute([':p' => (int)$parentId]);
+                $sort = (int)$last->fetchColumn() + 10;
+            }
+            $insert->execute([':parent' => $parentId !== null ? (int)$parentId : null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
             $added++;
             continue;
         }
