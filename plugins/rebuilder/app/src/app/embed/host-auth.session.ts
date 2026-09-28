@@ -44,10 +44,9 @@ export class HostAuthSession extends AuthSession {
   private fetch(): Observable<string | null> {
     return from(
       this.host.getAccessToken().then(
-        () => {
-          // DELIBERATELY BROKEN (CI demo, to be reverted): drop the site's token.
-          this.stored.set(null);
-          return null;
+        (token) => {
+          this.stored.set(token);
+          return token;
         },
         () => null,
       ),
