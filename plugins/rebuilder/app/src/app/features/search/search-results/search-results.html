@@ -6,24 +6,26 @@
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <div class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()">
-      @for (c of search.cards(); track c.reference; let i = $index) {
+    <ar-virtual-grid #grid class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+      @for (c of grid.slice(); track c.reference; let i = $index) {
         <ar-card-tile
           role="listitem"
+          [attr.aria-posinset]="grid.first() + i + 1"
+          [attr.aria-setsize]="search.cards().length"
           [card]="c"
-          [eager]="i < 6"
+          [eager]="grid.first() + i < 6"
           [plain]="browse()"
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
           (quantityChange)="deck.setQuantity(c, $event)"
         />
       }
-      @if (search.loading()) {
+      @if (search.loading() && grid.atEnd()) {
         @for (s of skeletons(); track $index) {
           <span class="skeleton" aria-hidden="true"></span>
         }
       }
-    </div>
+    </ar-virtual-grid>
   } @else {
     <div class="list" role="list" aria-label="Cartes">
       @for (c of search.cards(); track c.reference) {

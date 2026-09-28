@@ -5,7 +5,7 @@ import type { DeckListItem } from '../../../core/deck-view';
 import type { Card } from '../../../core/models';
 import { ArButton, ArCardAdd, ArIconButton, ArLikeButton, ArStepper } from '../../../ui/buttons';
 import { ArBadge, ArChip, ArCount, ArFilterBar, ArIconToggleGroup, ArLogicDivider, ArRaritySummary, ArTag, ArTerrainTotals } from '../../../ui/chips';
-import { ArCardSurface, ArCollapsible, ArFilterSection } from '../../../ui/containers';
+import { ArCardSurface, ArCollapsible, ArFilterSection, ArVirtualGrid } from '../../../ui/containers';
 import { ArCombobox, ArEditableTitle, ArInput, ArRadioCard, ArSegmented, ArSelect, type ComboOption } from '../../../ui/fields';
 import { ArCardTile, ArCostChart, ArDeckCard, ArDeckRow, ArDeckSummary, ArEffectSummary, ArExtensionTile, ArFactionTabs, ArHeroSelector, ArHeroTile, ArUniqueCard, type ArHeroOption } from '../../../ui/metier';
 import { ArAppBar, ArAvatar, ArBackButton, ArBreadcrumb, ArSiteFooter, ArTabs } from '../../../ui/nav';
@@ -59,7 +59,7 @@ const SAMPLE_UNIQUE: Card = {
   imports: [
     ArButton, ArIconButton, ArLikeButton, ArCardAdd, ArStepper, ArInput, ArSelect, ArSegmented, ArRadioCard, ArCombobox, ArEditableTitle,
     ArChip, ArFilterBar, ArIconToggleGroup, ArBadge, ArTag, ArCount, ArRaritySummary, ArTerrainTotals, ArLogicDivider,
-    ArAppBar, ArBackButton, ArTabs, ArBreadcrumb, ArAvatar, ArSiteFooter, ArCardSurface, ArCollapsible, ArFilterSection,
+    ArAppBar, ArBackButton, ArTabs, ArBreadcrumb, ArAvatar, ArSiteFooter, ArCardSurface, ArCollapsible, ArFilterSection, ArVirtualGrid,
     ArCardTile, ArDeckRow, ArCostChart, ArDeckSummary, ArEffectSummary, ArExtensionTile, ArHeroTile, ArHeroSelector, ArFactionTabs, ArDeckCard,
     ArUniqueCard,
   ],
@@ -88,6 +88,8 @@ export class DsPage {
     { id: 'owned', label: 'Propriété numérique' },
     { id: 'fav', label: 'Favoris' },
   ];
+  /** ar-virtual-grid demo: 2 000 cells, only the rows near the screen are in the DOM. */
+  protected readonly cells = Array.from({ length: 2000 }, (_, i) => i + 1);
   protected readonly qty = signal(2);
   protected readonly rarities = signal(['COMMON', 'RARE']);
   protected readonly comboValues = signal<ComboOption[]>([{ id: 1, text: 'Joué depuis la Main', glyph: '\ue023' }]);

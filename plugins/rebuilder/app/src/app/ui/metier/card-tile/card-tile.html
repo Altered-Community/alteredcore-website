@@ -2,7 +2,7 @@
   @if (unique()) {
     <ar-unique-card [card]="card()" [eager]="eager()" />
   } @else {
-    <ar-card-art [reference]="card().reference" [faction]="card().faction?.code" [eager]="eager()" />
+    <ar-card-art [reference]="card().reference" [eager]="eager()" [neutral]="true" />
   }
 </div>
 @if (plain()) {

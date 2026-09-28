@@ -1,4 +1,4 @@
-<ar-card-art [reference]="card().reference" [faction]="card().faction?.code" [sources]="sources()" [eager]="eager()" placeholder="" />
+<ar-card-art [reference]="card().reference" [sources]="sources()" [eager]="eager()" [neutral]="true" />
 @if (hasStats()) {
   @for (b of biomes(); track b.key) {
     <img class="badge" [class]="b.row" [src]="b.badge" alt="" />

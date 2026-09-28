@@ -24,7 +24,7 @@
     </div>
     <div class="fan" aria-hidden="true">
       @for (c of showcase; track c.reference) {
-        <span class="fan-card"><ar-card-art [reference]="c.reference" [faction]="c.faction" [eager]="true" /></span>
+        <span class="fan-card"><ar-card-art [reference]="c.reference" [eager]="true" [neutral]="true" /></span>
       }
     </div>
   </section>

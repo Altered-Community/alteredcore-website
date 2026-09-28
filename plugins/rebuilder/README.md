@@ -3,13 +3,13 @@
 The decks section of [Altered Re:Builder](https://github.com/Yutsa/altered-re-builder) (Angular 22),
 mounted by the shell on `/pages/rebuilder` (manifest v2, `"type": "spa"`, Shadow DOM). It sits next to
 the site's own pages: `/pages/decks` and `/pages/deckbuilder` (plugin `core-altered-cards`) are
-unchanged, and the plugin adds a **Re:Builder** menu with two entries, *Decks*
-(`/pages/rebuilder/decks`) and *Deck Builder* (`/pages/rebuilder/decks/new`).
+unchanged, and the plugin adds a **Re:Builder** menu entry (`/pages/rebuilder/decks`); new decks
+are created from that list.
 
 | Path | Content |
 |---|---|
-| `plugin.json` | Manifest v2: SPA page, menu (dropdown), build and e2e declarations |
-| `app/` | Angular sources, imported from Yutsa/altered-re-builder@4e613c6 (see `app/CLAUDE.md` for the code rules) |
+| `plugin.json` | Manifest v2: SPA page, menu entry, build and e2e declarations |
+| `app/` | Angular sources, imported from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
 | `app/src/main.embed.ts`, `app/src/app/embed/` | Embedded mode: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Styles of the embedded build (shadow root, and `<head>` for fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |

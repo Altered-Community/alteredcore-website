@@ -21,13 +21,7 @@
     ],
 
     "menu": [
-        {
-            "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler", "sort_order": 35,
-            "children": [
-                { "page": "rebuilder", "path": "decks",     "label_en": "Decks",        "label_fr": "Decks",            "icon": "fa-solid fa-layer-group" },
-                { "page": "rebuilder", "path": "decks/new", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler" }
-            ]
-        }
+        { "page": "rebuilder", "path": "decks", "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler", "sort_order": 35 }
     ],
 
     "build": {

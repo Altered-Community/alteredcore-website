@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DeckStore } from '../../../core/deck-store';
-import type { Card } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
+import { ArVirtualGrid } from '../../../ui/containers';
 import { ArInfiniteSentinel } from '../../../ui/infinite';
 import { ArCardTile, ArDeckRow } from '../../../ui/metier';
 import { CardSearchStore } from '../card-search.store';
@@ -10,7 +10,7 @@ import { CardSearchStore } from '../card-search.store';
 @Component({
   selector: 'app-search-results',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ArCardTile, ArDeckRow, ArInfiniteSentinel, ArButton, RouterLink],
+  imports: [ArCardTile, ArDeckRow, ArInfiniteSentinel, ArButton, RouterLink, ArVirtualGrid],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
 })
@@ -22,7 +22,4 @@ export class SearchResults {
   readonly browse = input(false);
   protected readonly skeletons = computed(() => Array.from({ length: this.search.cards().length ? 3 : 6 }));
 
-  trackCard(_: number, c: Card): string {
-    return c.reference;
-  }
 }

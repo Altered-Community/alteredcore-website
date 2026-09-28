@@ -5,7 +5,7 @@
 
 require_once dirname(__DIR__, 2) . '/includes/functions.php';
 
-const SEED_VERSION = '1';
+const SEED_VERSION = '2';
 
 if (getSetting('stack_seed_version') === SEED_VERSION) {
     echo "[seed] already applied\n";

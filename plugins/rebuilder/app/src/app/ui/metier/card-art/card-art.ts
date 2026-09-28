@@ -3,13 +3,19 @@ import { cardImageSources } from '../../../core/card-art';
 import { factionColor } from '../factions';
 import { contentLocale } from '../../../core/locale';
 
-/** Card / hero visual with lazy loading and a fallback chain; hatch placeholder in the faction colour. */
+/**
+ * Card / hero visual with lazy loading and a fallback chain; hatch placeholder in the faction colour,
+ * or a plain light grey one without text when `neutral` (card tiles: it flashes less while scrolling).
+ * No `decoding="async"`: with ~30 images on screen, Chrome rasters some tiles before their image is
+ * decoded and never redraws them, so a loaded card stays blank until it is scrolled away and back.
+ */
 @Component({
   selector: 'ar-card-art',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'ar-hatch',
-    '[style.background-color]': 'tint()',
+    '[class.ar-hatch]': '!neutral()',
+    '[class.neutral]': 'neutral()',
+    '[style.background-color]': 'neutral() ? null : tint()',
     '[class.loaded]': 'loaded()',
   },
   templateUrl: './card-art.html',
@@ -24,6 +30,8 @@ export class ArCardArt implements OnDestroy {
   readonly faction = input<string | null | undefined>(null);
   readonly placeholder = input('Visuel de la carte');
   readonly eager = input(false);
+  /** Light grey placeholder, no hatch, no faction colour, no text. */
+  readonly neutral = input(false);
   readonly position = input('center');
   /** Replaces the fallback chain derived from `reference`. */
   readonly sources = input<string[] | null>(null);

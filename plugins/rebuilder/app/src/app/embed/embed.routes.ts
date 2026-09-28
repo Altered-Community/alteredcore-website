@@ -6,9 +6,8 @@ import { ALTERED_CORE } from './host';
 const editor = () => import('../features/editor/editor-page/editor.page').then((m) => m.EditorPage);
 const deck = () => import('../features/deck/deck-page/deck.page').then((m) => m.DeckPage);
 
-/** Site menu entries of the plugin (plugin.json "menu"), relative to the base href: route data `nav`. */
+/** Site menu entry of the plugin (plugin.json "menu"), relative to the base href: route data `nav`. */
 const NAV_DECKS = 'decks';
-const NAV_BUILDER = 'decks/new';
 
 const signIn: CanActivateFn = () => {
   inject(ALTERED_CORE).login();
@@ -39,12 +38,12 @@ export const embedRoutes: Routes = [
   {
     path: 'decks/new',
     title: t('title.newDeck'),
-    data: { nav: NAV_BUILDER },
+    data: { nav: NAV_DECKS },
     loadComponent: () => import('../features/decks/new-deck-page/new-deck.page').then((m) => m.NewDeckPage),
   },
-  { path: 'decks/:id/edit', title: t('title.editor'), loadComponent: editor, data: { view: 'search', nav: NAV_BUILDER } },
-  { path: 'decks/:id/edit/apercu', title: t('title.preview'), loadComponent: editor, data: { view: 'apercu', nav: NAV_BUILDER } },
-  { path: 'decks/:id/edit/deck', title: t('title.myDeck'), loadComponent: editor, data: { view: 'deck', nav: NAV_BUILDER } },
+  { path: 'decks/:id/edit', title: t('title.editor'), loadComponent: editor, data: { view: 'search', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit/apercu', title: t('title.preview'), loadComponent: editor, data: { view: 'apercu', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit/deck', title: t('title.myDeck'), loadComponent: editor, data: { view: 'deck', nav: NAV_DECKS } },
   { path: 'decks/:id/deck', title: t('title.decklist'), loadComponent: deck, data: { tab: 'decklist', nav: NAV_DECKS } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
   { path: 'decks/:id', title: t('title.deck'), loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },

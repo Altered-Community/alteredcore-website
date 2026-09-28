@@ -1,4 +1,4 @@
-@if (!loaded()) {
+@if (!loaded() && !neutral()) {
   <span class="ph" aria-hidden="true">{{ placeholder() }}</span>
 }
 @if (visible() && src(); as s) {
@@ -6,7 +6,6 @@
     [src]="s"
     alt=""
     [attr.fetchpriority]="eager() ? 'high' : null"
-    decoding="async"
     [style.object-position]="position()"
     (load)="loaded.set(true)"
     (error)="next()"

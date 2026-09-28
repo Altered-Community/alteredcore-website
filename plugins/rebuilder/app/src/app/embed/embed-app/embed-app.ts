@@ -17,7 +17,7 @@ export class EmbedApp {
   constructor() {
     inject(ArDensityService);
     inject(ArNavigationHistory);
-    // The site menu has one entry per section (Decks, Deck Builder): follow the client route.
+    // The site menu entry of the plugin stays current on every client route that declares it.
     const host = inject(ALTERED_CORE);
     const route = inject(ActivatedRoute);
     inject(Router)

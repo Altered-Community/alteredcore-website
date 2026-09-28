@@ -125,7 +125,7 @@
   </section>
 
   <section id="conteneurs">
-    <h2>Conteneurs <code>ar-card · ar-collapsible · ar-filter-section · ArOverlayService</code></h2>
+    <h2>Conteneurs <code>ar-card · ar-collapsible · ar-filter-section · ar-virtual-grid · ArOverlayService</code></h2>
     <div class="grid3">
       <ar-card><span class="overline">Personnages</span><p>Surface blanche, bordure, rayon 14, padding 16 (12 en compact).</p></ar-card>
       <ar-collapsible title="Stats" [open]="true"><ar-terrain-totals [totals]="{ foret: 30, montagne: 29, ocean: 33 }" /></ar-collapsible>
@@ -135,6 +135,12 @@
       <button arButton variant="secondary" (click)="openDemo()">Ouvrir ar-overlay</button>
       <button arButton variant="secondary" (click)="openDrawer()">Ouvrir le tiroir</button>
     </div>
+    <h3>Grille virtuelle (<code>ar-virtual-grid</code>, 2 000 cellules)</h3>
+    <ar-virtual-grid #vgrid class="vgrid" role="list" aria-label="Cellules" [items]="cells">
+      @for (n of vgrid.slice(); track n; let i = $index) {
+        <span class="vcell" role="listitem" [attr.aria-posinset]="vgrid.first() + i + 1" [attr.aria-setsize]="cells.length">{{ n }}</span>
+      }
+    </ar-virtual-grid>
   </section>
 
   <section id="metier">

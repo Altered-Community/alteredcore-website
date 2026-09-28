@@ -512,12 +512,7 @@ its header, menu and footer, and mounts the plugin's bundle in the page. Everyth
     { "slug": "rebuilder", "type": "spa", "entry": "dist/embed-manifest.json", "mount": "shadow",
       "title_en": "Re:Builder", "title_fr": "Re:Builder" }
   ],
-  "menu": [
-    { "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler", "children": [
-      { "page": "rebuilder", "path": "decks",     "label_en": "Decks",        "label_fr": "Decks" },
-      { "page": "rebuilder", "path": "decks/new", "label_en": "Deck Builder", "label_fr": "Créateur de deck" }
-    ] }
-  ],
+  "menu": [ { "page": "rebuilder", "path": "decks", "label_en": "Re:Builder", "label_fr": "Re:Builder", "icon": "fa-solid fa-pen-ruler" } ],
   "build": { "workdir": "app", "install": "npm ci", "lint": "npm run lint", "test": "npm test", "build": "npm run build:embed", "output": "dist" },
   "tests": { "e2e": "e2e" }
 }</code></pre>

@@ -13,6 +13,9 @@ img {
   opacity: 0;
   transition: opacity 0.2s;
 }
+:host(.neutral) {
+  background: var(--ar-color-track);
+}
 :host(.loaded) img {
   opacity: 1;
 }
