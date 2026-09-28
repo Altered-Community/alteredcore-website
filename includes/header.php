@@ -353,9 +353,12 @@ if (!$_pageFullwidth) {
         }
     }
 }
+// Pages created in Admin → Pages (neither core nor plugin pages) keep a reading-width column
+$_pageCms = !isset($__corePages[$currentPage]) && !($GLOBALS['_ac_is_plugin_page'] ?? false);
 $__bodyClass = array_filter([
     'has-bg'         => $_hasBg,
     'page-fullwidth' => $_pageFullwidth,
+    'page-cms'       => $_pageCms && !$_pageFullwidth,
 ]);
 // Themes may add body classes via $__extraBodyClasses (set in head-extra.php)
 if (!empty($__extraBodyClasses) && is_array($__extraBodyClasses)) {

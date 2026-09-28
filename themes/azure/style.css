@@ -31,10 +31,6 @@ body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.site-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-}
 body.page-fullwidth main {
     width: 100vw;
     margin-left: calc(50% - 50vw);
@@ -1210,13 +1206,14 @@ html { transition: background-color 0.25s, color 0.25s; }
 
 /* Row 1: topbar */
 .az-topbar {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--sand-200);
     background: var(--sand-50);
 }
 .az-topbar-inner {
-    max-width: 1200px;
+    max-width: var(--site-max-width);
     margin: auto;
+    padding: 0 max(1rem, var(--site-gutter));
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1258,9 +1255,9 @@ html { transition: background-color 0.25s, color 0.25s; }
 }
 
 .az-navband-inner {
-    max-width: 1200px;
+    max-width: var(--site-max-width);
     margin: auto;
-    padding: 0 1rem;
+    padding: 0 max(1rem, var(--site-gutter));
 }
 
 /* Nav list */
