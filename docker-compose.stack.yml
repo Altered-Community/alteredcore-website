@@ -9,6 +9,9 @@
 # Cards and CDN are production (read-only).
 services:
   web:
+    # Named images: the CI builds them first (docker buildx bake, with a cache), then starts the
+    # stack without building.
+    image: alteredcore-stack-web
     volumes:
       - .:/var/www/html
       - ./docker/stack/config.stack.php:/var/www/html/config.local.php:ro
@@ -68,6 +71,7 @@ services:
 
   decks-api:
     # Altered-Community/altered-core-decks-api, pinned: bump the commit to follow the API.
+    image: alteredcore-stack-decks-api
     build:
       context: https://github.com/Altered-Community/altered-core-decks-api.git#156d6e83e50d14b2ccf4da449b026ccdc38407c3
       target: frankenphp_prod

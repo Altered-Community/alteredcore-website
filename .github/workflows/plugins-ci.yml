@@ -102,43 +102,74 @@ jobs:
       - name: Unit tests
         run: php bin/plugins.php run test ${{ matrix.plugin.id }}
       - name: Build
-        run: |
-          php bin/plugins.php run build ${{ matrix.plugin.id }}
-          tar czf build-${{ matrix.plugin.id }}.tgz ${{ matrix.plugin.dir }}/${{ matrix.plugin.output }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ matrix.plugin.id }}
-          path: build-${{ matrix.plugin.id }}.tgz
-          retention-days: 7
+        run: php bin/plugins.php run build ${{ matrix.plugin.id }}
 
   e2e:
     name: Playwright (shell and plugins)
-    needs: [plan, php, frontend]
-    # Also runs when no plugin has a front-end build (frontend skipped).
-    if: always() && needs.php.result == 'success' && (needs.frontend.result == 'success' || needs.frontend.result == 'skipped')
+    # Does not wait for the front-end jobs: it builds the bundles itself, while the stack starts.
+    needs: [plan, php]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
       E2E_BASE_URL: http://localhost:8080
       E2E_EVIDENCE_DIR: ${{ github.workspace }}/tests/e2e/evidence
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.stack.yml
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: build-*
-          merge-multiple: true
-      - name: Unpack front-end builds
-        run: for f in build-*.tgz; do [ -e "$f" ] || continue; tar xzf "$f"; done
       - name: Resolve the local Keycloak host
         # *.local.gd is public DNS for 127.0.0.1; pin it so the job does not depend on it.
         run: echo "127.0.0.1 auth.altered.local.gd" | sudo tee -a /etc/hosts
-      - name: Start the stack
-        run: docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait --wait-timeout 600
+      - name: Start Keycloak and the databases
+        # Plain images: they boot (Keycloak ~30 s) while the steps below build the rest.
+        run: $COMPOSE up -d keycloak db decks-db
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: tests/e2e/package-lock.json
+          cache-dependency-path: |
+            plugins/*/*/package-lock.json
+            tests/e2e/package-lock.json
+      - name: Build front-end plugins (background)
+        # The web container mounts the checkout: the bundles only have to exist before the tests.
+        env:
+          FRONTENDS: ${{ needs.plan.outputs.frontends }}
+        run: |
+          cat > "$RUNNER_TEMP/frontends.sh" <<'EOF'
+          set -euo pipefail
+          for id in $(jq -r '.[].id' <<< "$FRONTENDS"); do
+            php bin/plugins.php run install "$id"
+            php bin/plugins.php run build "$id"
+          done
+          EOF
+          # shellcheck disable=SC2016 # expanded by the inner bash
+          nohup bash -c 'bash "$RUNNER_TEMP/frontends.sh"; echo $? > "$RUNNER_TEMP/frontends.exit"' > "$RUNNER_TEMP/frontends.log" 2>&1 &
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the stack images
+        # From the GitHub Actions cache (one scope per image): rebuilt only when the Dockerfile or
+        # the pinned decks API commit changes.
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          files: |
+            docker-compose.yml
+            docker-compose.stack.yml
+          load: true
+          set: |
+            web.cache-from=type=gha,scope=stack-web
+            web.cache-to=type=gha,scope=stack-web,mode=max
+            decks-api.cache-from=type=gha,scope=stack-decks-api
+            decks-api.cache-to=type=gha,scope=stack-decks-api,mode=max
+      - name: Start the stack
+        run: $COMPOSE up -d --no-build --wait --wait-timeout 600
+      - name: Wait for the front-end builds
+        run: |
+          while [ ! -f "$RUNNER_TEMP/frontends.exit" ]; do sleep 2; done
+          cat "$RUNNER_TEMP/frontends.log"
+          exit "$(cat "$RUNNER_TEMP/frontends.exit")"
       - name: Install Playwright
         working-directory: tests/e2e
         run: npm ci && npx playwright install --with-deps chromium
@@ -147,7 +178,7 @@ jobs:
         run: npx playwright test
       - name: Stack logs
         if: failure()
-        run: docker compose -f docker-compose.yml -f docker-compose.stack.yml logs --no-color --tail=200
+        run: $COMPOSE logs --no-color --tail=200
       - uses: actions/upload-artifact@v4
         if: always()
         with:
