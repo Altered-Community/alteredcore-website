@@ -14,6 +14,7 @@ services:
       - ./docker/stack/config.stack.php:/var/www/html/config.local.php:ro
     environment:
       AC_ACTIVATE_PLUGINS: "core-altered-cards rebuilder"
+      AC_STACK_SEED: "1"
     depends_on:
       db:
         condition: service_healthy
