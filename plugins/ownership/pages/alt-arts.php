@@ -93,11 +93,12 @@ if ($cacAvailable) {
     $raritiesData = [];
     $typesData    = [];
 }
-// The catalog never contains Unique-rarity prints (heroes/uniques have no alt art —
-// see AlteredOwnership's CardArtCatalog), so that rarity — and the Hero type, which is
-// always Unique-rarity — are never useful filters here.
+// The catalog never contains Unique-rarity prints (the 1-of-1 Hero card itself has no alt
+// art), so that rarity is never a useful filter here. The HERO card type does have alt
+// arts though: it's the Common-rarity companion print bundled with boosters (e.g. "Kauri
+// & Puff"), not the unique Hero — see AlteredOwnership's CardArtCatalog — so it stays in
+// the type filter.
 $raritiesData = array_filter($raritiesData, fn($r) => ($r['gem'] ?? '') !== 'U');
-unset($typesData['HERO']);
 
 // Per-deck mode: this page only manages token illustrations — regular card alt-arts are
 // chosen per deck in the deckbuilder instead. Enforced again server-side in

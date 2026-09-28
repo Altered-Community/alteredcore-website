@@ -577,6 +577,7 @@
 
 @media (max-width: 575px) {
     .db-hero-toolbar .db-hero-altarts { margin-left: 0; }
+    .db-hero-toolbar .db-hero-serialized { margin-left: 0; }
 }
 
 /* Scroll lock while a deckbuilder dialog is up — see dbLockScroll(). Beats the

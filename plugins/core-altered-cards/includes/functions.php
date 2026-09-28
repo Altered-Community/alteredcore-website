@@ -289,6 +289,21 @@ function cacIsAltArtGlobalMode(int $userId): bool {
 }
 
 /**
+ * The Collector Booster's individually-serialized hero prints (ALT_DUSTERCB_P_<FACTION>_
+ * <NUM>_<RARITY>_<001-030|XXX>, 6 heroes x 31 serials = 186 refs) have no per-serial
+ * portrait crop generated under /cards/hero/ -- every one of them is a numbered copy of
+ * the set's regular DUSTER alt-art hero print, so callers building a hero portrait URL
+ * resolve through this first instead of requesting (and needing) 186 distinct images.
+ */
+function cacHeroPortraitRef(string $ref): string {
+    $p = explode('_', $ref);
+    if (($p[1] ?? '') === 'DUSTERCB' && count($p) > 6) {
+        return 'ALT_DUSTER_A_' . ($p[3] ?? '') . '_' . ($p[4] ?? '') . '_' . ($p[5] ?? '');
+    }
+    return $ref;
+}
+
+/**
  * Rewrites a flat list of {cardReference, quantity} deck lines through the ownership
  * service's POST /api/alt-arts/apply-to-deck (global alt-art preferences applied,
  * falling back to the default print for anything not owned enough) — for server-side

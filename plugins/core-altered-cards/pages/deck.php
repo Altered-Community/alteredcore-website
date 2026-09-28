@@ -483,7 +483,7 @@ $decklistText = implode("\n", $decklistLines);
 $heroCard    = $cardGroups['HERO'][0] ?? null;
 $heroRef     = $heroCard['cardReference'] ?? '';
 $heroName    = $heroCard['name'] ?? null;
-$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . $heroRef . '_1.webp' : null;
+$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . cacHeroPortraitRef($heroRef) . '_1.webp' : null;
 $factionCode = $heroCard['factionCode'] ?? null;
 $factionsData   = loadAlteredData('factions');
 $formatsData    = loadAlteredData('formats');
@@ -540,7 +540,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <?php if ($isOwner): ?>
             <?php
             $_editHref = $showEditBtn
-                ? $deckbuilderUrl . '?id=' . rawurlencode($deckId)
+                ? BASE_URL . '/pages/deckbuilder?id=' . rawurlencode($deckId)
                 : str_replace('{deck_id}', rawurlencode($deckId), $editDeckUrl);
             $_showEdit = $showEditBtn || $editDeckUrl !== '';
             ?>

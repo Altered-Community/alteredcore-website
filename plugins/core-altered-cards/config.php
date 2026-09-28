@@ -14,7 +14,7 @@ $showStockWarn = false;
 
 // deck buttons (/decks list and /deck detail)
 // Edit button — only visible to the deck owner.
-//   true  : links to the internal deckbuilder ($deckbuilderUrl?id={deck_id})
+//   true  : links to the internal deckbuilder (/pages/deckbuilder?id={deck_id})
 //   false : links to $editDeckUrl (with {deck_id} replaced); hidden if $editDeckUrl is empty
 $showEditBtn = true;
 $editDeckUrl = 'https://deckbuilder.alteredcore.org/decks/{deck_id}';
@@ -24,7 +24,7 @@ $showDeleteBtn = true;
 
 // deck list only (/decks)
 // New Deck button.
-//   true  : links to the internal deckbuilder ($deckbuilderUrl)
+//   true  : links to the internal deckbuilder (/pages/deckbuilder)
 //   false : links to $newDeckUrl; hidden if $newDeckUrl is also empty
 $enableNewDeck = true;
 $newDeckUrl    = 'https://deckbuilder.alteredcore.org/';
@@ -32,12 +32,6 @@ $newDeckUrl    = 'https://deckbuilder.alteredcore.org/';
 // Import button — shown if $showImportBtn is true OR $importDeckUrl is non-empty.
 $showImportBtn = false;
 $importDeckUrl = '';
-
-// Deck builder page. The `deckbuilder` slug belongs to the ReBuilder SPA plugin when it is
-// active; this plugin's own builder stays reachable as `deckbuilder-legacy` (its AJAX save
-// endpoint is always the legacy page).
-$deckbuilderUrl       = BASE_URL . '/pages/' . (pluginFindPage('deckbuilder') !== null ? 'deckbuilder' : 'deckbuilder-legacy');
-$legacyDeckbuilderUrl = BASE_URL . '/pages/deckbuilder-legacy';
 
 // Base URL for plugin assets (images, JS, CSS).
 // Change this only if the plugin directory is moved or renamed.

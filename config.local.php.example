@@ -93,6 +93,16 @@ define('COLLECTION_USE_API', true);
 // define('TRANSLATE_URL',     'https://libretranslate.com/translate');
 // define('TRANSLATE_API_KEY', 'your-api-key-here');
 
+// ─── Logging ──────────────────────────────────────────────────────────────────
+// Destination for PHP's error_log() (used across the app and every plugin).
+// Leave empty (default) to use the server's own error_log setting — e.g. the
+// shared-hosting Apache error log, unchanged.
+// In a Docker environment (local dev, preprod), set to 'php://stderr' so errors
+// surface in `docker logs` / `docker compose logs` instead of a file no one tails.
+// A plain file path also works (e.g. '/var/www/html/logs/php_errors.log') — its
+// directory is created automatically if missing.
+define('ERROR_LOG_TARGET', 'php://stderr');
+
 // ─── Deployment ───────────────────────────────────────────────────────────────
 define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
 define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)

@@ -18,6 +18,7 @@ if (!function_exists('__nav_href')) {
 }
 if (!function_exists('__nav_active')) {
     function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
+        if (!empty($item['is_separator']) || !empty($item['is_section_header'])) return false;
         if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
         $__parsed = parse_url($item['url'] ?? '');
         if (!empty($__parsed['host'])) return false;

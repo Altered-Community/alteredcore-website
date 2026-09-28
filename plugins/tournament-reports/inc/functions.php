@@ -4,277 +4,21 @@
  *
  * Usage — include at the top of any page / admin file:
  *   require_once __DIR__ . '/../inc/functions.php';   // from pages/ or admin/
- */
-
-/* ── Tournament CRUD ──────────────────────────────────────────────────────── */
-
-/**
- * Return all tournaments, ordered by most recently fetched.
  *
- * @return array<int, array<string, mixed>>
+ * Tournament data lives entirely on GameApi and is fetched live on every read
+ * (GET /api/tournaments, GET /api/tournaments/{id}/players) — nothing about
+ * it is cached or overridden locally.
  */
-function trGetTournaments(): array
-{
-    global $db;
-    return $db->query(qp("SELECT id, tournament_id, tournament_name, total_games, localization, description, fetched_at, created_by FROM {tournaments} ORDER BY fetched_at DESC"))->fetchAll(PDO::FETCH_ASSOC);
-}
 
-/**
- * Return all tournaments (same projection as trGetTournaments) with their
- * games_data decoded, fetched in a single query. Useful when the caller needs
- * game-level metadata (format, date, players) for every tournament.
- *
- * @return array<int, array<string, mixed>>
- */
-function trGetTournamentsWithGames(): array
-{
-    global $db;
-    $rows = $db->query(qp(
-        "SELECT id, tournament_id, tournament_name, total_games, localization, description, fetched_at, created_by, games_data
-         FROM {tournaments} ORDER BY fetched_at DESC"
-    ))->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/Deckfmt/Deckfmt.php';
 
-    foreach ($rows as &$row) {
-        $row['games'] = json_decode($row['games_data'] ?? '{}', true)['games'] ?? [];
-        unset($row['games_data']);
-    }
-    return $rows;
-}
-
-/**
- * Return a single tournament by DB id, with games_data decoded.
- */
-function trGetTournament(int $id): ?array
-{
-    global $db;
-    $stmt = $db->prepare(qp("SELECT * FROM {tournaments} WHERE id = :id"));
-    $stmt->execute([':id' => $id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) return null;
-    $row['games_data'] = json_decode($row['games_data'] ?? '{}', true);
-    return $row;
-}
-
-/**
- * Return a single tournament by its external tournament_id.
- */
-function trGetTournamentByExternalId(string $tournamentId): ?array
-{
-    global $db;
-    $stmt = $db->prepare(qp("SELECT * FROM {tournaments} WHERE tournament_id = :tid"));
-    $stmt->execute([':tid' => $tournamentId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) return null;
-    $row['games_data'] = json_decode($row['games_data'] ?? '{}', true);
-    return $row;
-}
-
-/**
- * Save (upsert) a tournament from external API data.
- * Returns the DB id.
- */
-function trSaveTournament(array $apiData, int $createdBy = 0): int
-{
-    global $db;
-    $tournamentId   = (string)($apiData['tournamentId'] ?? '');
-    $tournamentName = (string)($apiData['tournamentName'] ?? '');
-    $totalGames     = (int)($apiData['totalGames'] ?? 0);
-    $gamesJson      = json_encode($apiData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-    // Upsert: update if exists, insert otherwise
-    $stmt = $db->prepare(qp(
-        "INSERT INTO {tournaments} (tournament_id, tournament_name, total_games, games_data, created_by)
-         VALUES (:tid, :tn, :tg, :gd, :cb)
-         ON DUPLICATE KEY UPDATE
-            tournament_name = VALUES(tournament_name),
-            total_games     = VALUES(total_games),
-            games_data      = VALUES(games_data),
-            fetched_at      = CURRENT_TIMESTAMP"
-    ));
-    $stmt->execute([
-        ':tid' => $tournamentId,
-        ':tn' => $tournamentName,
-        ':tg' => $totalGames,
-        ':gd' => $gamesJson,
-        ':cb' => $createdBy,
-    ]);
-
-    // Return the id (new or existing)
-    $sel = $db->prepare(qp("SELECT id FROM {tournaments} WHERE tournament_id = :tid"));
-    $sel->execute([':tid' => $tournamentId]);
-    return (int)$sel->fetchColumn();
-}
-
-/**
- * Fetch a tournament from the external API and store (create or update) it.
- *
- * @return array{ok: bool, error?: string}
- */
-function trFetchAndStoreTournament(string $tournamentId, int $createdBy = 0): array
-{
-    $result = trFetchTournament($tournamentId);
-    if (!$result['ok'] || !isset($result['data'])) {
-        return ['ok' => false, 'error' => $result['error'] ?? 'Unknown error'];
-    }
-    trSaveTournament($result['data'], $createdBy);
-    return ['ok' => true];
-}
-
-/**
- * Parse a paste-friendly Altered decklist (one "<qty> <reference>" per line)
- * into a structured array.
- *
- * @return array{ok: bool, deck: array<int, array{reference: string, quantity: int}>, errors: array<string>}
- */
-function parseDecklistText(string $text): array
-{
-    $deck   = [];
-    $errors = [];
-    $lines  = preg_split('/\r\n|\r|\n/', $text);
-    if ($lines === false) $lines = [];
-
-    foreach ($lines as $i => $line) {
-        $line = trim((string)$line);
-        if ($line === '') continue;
-        if (!preg_match('/^(\d+)\s+(\S+)$/', $line, $m)) {
-            $errors[] = 'Line ' . ($i + 1) . ': ' . $line;
-            continue;
-        }
-        $deck[] = ['reference' => $m[2], 'quantity' => (int)$m[1]];
-    }
-
-    return ['ok' => empty($errors), 'deck' => $deck, 'errors' => $errors];
-}
-
-/**
- * Insert a manually-created tournament. Builds games_data in the same shape
- * the tournament page and ranking extraction expect, then reuses the upsert.
- *
- * @param array $data {
- *   tournament_name, optional tournament_id, format, optional localization,
- *   optional description, players: array<int, array{name, optional faction, optional id, optional decklist}>
- * }
- */
-function trManualSaveTournament(array $data, int $createdBy = 0): int
-{
-    global $db;
-
-    $tournamentName = (string)($data['tournament_name'] ?? '');
-    $tournamentId   = (string)($data['tournament_id'] ?? '');
-    if ($tournamentId === '') {
-        $tournamentId = 'manual-' . gmdate('YmdHis') . '-' . substr((string)uniqid(), -4);
-    }
-
-    $endGamePlayers = [];
-    foreach (($data['players'] ?? []) as $p) {
-        $name = (string)($p['name'] ?? '');
-        if ($name === '') continue;
-
-        $playerId = (string)($p['id'] ?? '');
-        if ($playerId === '') {
-            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', '-', $name), '-'));
-            $playerId = $slug !== '' ? $slug : 'player-' . count($endGamePlayers);
-        }
-
-        $deck = ($p['deck'] ?? []);
-        if (!is_array($deck)) $deck = [];
-
-        $endGamePlayers[] = [
-            'id'           => $playerId,
-            'name'         => $name,
-            'faction'      => (string)($p['faction'] ?? ''),
-            'deck'         => $deck,
-            'playedCards'  => [],
-        ];
-    }
-
-    $gamesData = [
-        'tournamentId'    => $tournamentId,
-        'tournamentName'  => $tournamentName,
-        'totalGames'      => 1,
-        'localization'    => (string)($data['localization'] ?? ''),
-        'description'     => (string)($data['description'] ?? ''),
-        'games'           => [[
-            'format'          => (string)($data['format'] ?? ''),
-            'receivedAt'      => (string)($data['date'] ?? ''),
-            'endGamePlayers'  => $endGamePlayers,
-        ]],
-    ];
-
-    $localization = (string)($data['localization'] ?? '');
-    $description  = (string)($data['description'] ?? '');
-
-    $stmt = $db->prepare(qp(
-        "INSERT INTO {tournaments}
-            (tournament_id, tournament_name, total_games, games_data, localization, description, created_by)
-         VALUES (:tid, :tn, :tg, :gd, :loc, :desc, :cb)
-         ON DUPLICATE KEY UPDATE
-            tournament_name = VALUES(tournament_name),
-            total_games     = VALUES(total_games),
-            games_data      = VALUES(games_data),
-            localization    = VALUES(localization),
-            description     = VALUES(description),
-            fetched_at      = CURRENT_TIMESTAMP"
-    ));
-    $stmt->execute([
-        ':tid'  => $tournamentId,
-        ':tn'   => $tournamentName,
-        ':tg'   => 1,
-        ':gd'   => json_encode($gamesData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ':loc'  => $localization,
-        ':desc' => $description,
-        ':cb'   => $createdBy,
-    ]);
-
-    return (int)$db->lastInsertId();
-}
-
-/**
- * Delete a tournament by DB id.
- */
-function trDeleteTournament(int $id): bool
-{
-    global $db;
-    $stmt = $db->prepare(qp("DELETE FROM {tournaments} WHERE id = :id"));
-    $stmt->execute([':id' => $id]);
-    return $stmt->rowCount() > 0;
-}
-
-/**
- * Update the localization field of a tournament.
- */
-function trUpdateTournamentLocalization(string $tournamentExtId, string $localization): void
-{
-    global $db;
-    $stmt = $db->prepare(qp("UPDATE {tournaments} SET localization = :loc WHERE tournament_id = :tid"));
-    $stmt->execute([':loc' => $localization, ':tid' => $tournamentExtId]);
-}
-
-/**
- * Update the description field of a tournament.
- */
-function trUpdateTournamentDescription(string $tournamentExtId, string $description): void
-{
-    global $db;
-    $stmt = $db->prepare(qp("UPDATE {tournaments} SET description = :desc WHERE tournament_id = :tid"));
-    $stmt->execute([':desc' => $description, ':tid' => $tournamentExtId]);
-}
-
-/**
- * Update the display name of a tournament.
- */
-function trUpdateTournamentName(string $tournamentExtId, string $name): void
-{
-    global $db;
-    $stmt = $db->prepare(qp("UPDATE {tournaments} SET tournament_name = :tn WHERE tournament_id = :tid"));
-    $stmt->execute([':tn' => $name, ':tid' => $tournamentExtId]);
-}
+use TournamentReports\Deckfmt\Deckfmt;
 
 /* ── Settings ─────────────────────────────────────────────────────────────── */
 
 /**
- * Return the external tournament API base URL.
- * Falls back to the TOURNAMENTS_API_URL constant, then to a DB setting.
+ * Return GameApi's base URL. Falls back to the TOURNAMENTS_API_URL constant,
+ * then to a DB setting.
  */
 function trGetApiUrl(): string
 {
@@ -287,7 +31,7 @@ function trGetApiUrl(): string
 }
 
 /**
- * Save the external tournament API base URL.
+ * Save GameApi's base URL.
  */
 function trSaveApiUrl(string $url): void
 {
@@ -300,7 +44,8 @@ function trSaveApiUrl(string $url): void
 }
 
 /**
- * Return the API key used to authenticate with the tournament API.
+ * Return GameApi's adjustment API key (the only thing this key is used for —
+ * reads use the logged-in admin's own Keycloak session, not this key).
  * Falls back to the TOURNAMENTS_API_KEY constant, then to a DB setting.
  */
 function trGetApiKey(): string
@@ -314,7 +59,7 @@ function trGetApiKey(): string
 }
 
 /**
- * Save the API key.
+ * Save the adjustment API key.
  */
 function trSaveApiKey(string $apiKey): void
 {
@@ -326,33 +71,49 @@ function trSaveApiKey(string $apiKey): void
     ))->execute([':v' => $apiKey, ':v2' => $apiKey]);
 }
 
+/* ── GameApi — live reads (no local storage) ─────────────────────────────── */
+
 /**
- * Fetch tournament data from the external API.
+ * Bearer header for a GameApi read, using the given user's own Keycloak
+ * session (GameApi's read routes are gated on the "bga-game-history" scope
+ * carried by that token — no service-account/client_credentials flow here).
+ *
+ * @return array{ok: bool, header?: string, error?: string}
+ */
+function trGameApiAuthHeader(int $userId): array
+{
+    if (!$userId) {
+        return ['ok' => false, 'error' => 'You must be logged in to view tournament reports.'];
+    }
+    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
+    $token = kc_get_access_token($userId);
+    if (!$token) {
+        return ['ok' => false, 'error' => 'Unable to obtain an access token for your session.'];
+    }
+    return ['ok' => true, 'header' => 'Authorization: Bearer ' . $token];
+}
+
+/**
+ * GET a JSON document from GameApi, authenticated as the given user.
  *
  * @return array{ok: bool, data?: array, error?: string}
  */
-function trFetchTournament(string $tournamentId): array
+function trGameApiGet(string $path, int $userId): array
 {
     $apiUrl = trGetApiUrl();
     if ($apiUrl === '') {
-        return ['ok' => false, 'error' => 'Tournament API URL is not configured.'];
+        return ['ok' => false, 'error' => 'GameApi URL is not configured.'];
     }
 
-    $apiKey = trGetApiKey();
-    if ($apiKey === '') {
-        return ['ok' => false, 'error' => 'Tournament API key is not configured.'];
+    $auth = trGameApiAuthHeader($userId);
+    if (!$auth['ok']) {
+        return ['ok' => false, 'error' => $auth['error']];
     }
 
-    $url = $apiUrl . '/api/tournament-report?' . http_build_query([
-        'tournamentId' => $tournamentId,
-        'apiKey'       => $apiKey,
-    ]);
-    $ch  = curl_init($url);
+    $ch = curl_init($apiUrl . $path);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => [
-            'Accept: application/json',
-        ],
+        CURLOPT_HTTPHEADER     => ['Accept: application/json', $auth['header']],
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_FOLLOWLOCATION => true,
     ]);
@@ -361,190 +122,335 @@ function trFetchTournament(string $tournamentId): array
     $curlErr  = curl_error($ch);
     curl_close($ch);
 
-    $logUrl = preg_replace('/apiKey=[^&]+/', 'apiKey=REDACTED', $url);
-    error_log('[tournament-reports] GET ' . $logUrl . ' -> HTTP ' . $code . ($curlErr !== '' ? ' — ' . $curlErr : ''));
+    error_log('[tournament-reports] GET ' . $apiUrl . $path . ' -> HTTP ' . $code . ($curlErr !== '' ? ' — ' . $curlErr : ''));
 
     if ($curlErr) {
         return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
     }
     if ($code < 200 || $code >= 300) {
-        return ['ok' => false, 'error' => 'API error (HTTP ' . $code . ').'];
+        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $code . ').'];
     }
     $data = json_decode($response, true);
     if (!is_array($data)) {
-        return ['ok' => false, 'error' => 'Invalid API response.'];
+        return ['ok' => false, 'error' => 'Invalid GameApi response.'];
     }
     return ['ok' => true, 'data' => $data];
 }
 
 /**
- * Return all rankings, optionally filtered by tournament ID.
+ * GET /api/tournaments — a page of tournaments GameApi knows about, live.
  *
- * @return array<int, array<string, mixed>>
+ * @param array{mode?: string, minPlayers?: int, page?: int, pageSize?: int, tournamentParentId?: string} $params
+ * @return array{ok: bool, data?: array{tournaments: array, totalCount: int, page: int, pageSize: int}, error?: string}
  */
-function trGetRankings(?string $tournamentId = null): array
+function trFetchLiveTournamentIndex(int $userId, array $params = []): array
 {
-    global $db;
-    if ($tournamentId !== null) {
-        $stmt = $db->prepare(qp(
-            "SELECT * FROM {rankings} WHERE tournament_id = :tid ORDER BY created_at DESC"
-        ));
-        $stmt->execute([':tid' => $tournamentId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    return $db->query(qp("SELECT * FROM {rankings} ORDER BY created_at DESC"))->fetchAll(PDO::FETCH_ASSOC);
-}
-
-/**
- * Return a single ranking by ID with its players.
- */
-function trGetRanking(int $id): ?array
-{
-    global $db;
-    $stmt = $db->prepare(qp("SELECT * FROM {rankings} WHERE id = :id"));
-    $stmt->execute([':id' => $id]);
-    $ranking = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$ranking) return null;
-
-    $stmt2 = $db->prepare(qp(
-        "SELECT * FROM {ranking_players} WHERE ranking_id = :rid ORDER BY position ASC, id ASC"
+    $query = http_build_query(array_filter(
+        $params,
+        fn($v) => $v !== null && $v !== ''
     ));
-    $stmt2->execute([':rid' => $id]);
-    $ranking['players'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-    return $ranking;
+    $path = '/api/tournaments' . ($query !== '' ? '?' . $query : '');
+    return trGameApiGet($path, $userId);
 }
 
 /**
- * Create a new ranking. Returns the new ranking ID.
- */
-function trCreateRanking(string $tournamentId, string $tournamentName, int $createdBy): int
-{
-    global $db;
-    $stmt = $db->prepare(qp(
-        "INSERT INTO {rankings} (tournament_id, tournament_name, created_by) VALUES (:tid, :tn, :cb)"
-    ));
-    $stmt->execute([':tid' => $tournamentId, ':tn' => $tournamentName, ':cb' => $createdBy]);
-    return (int)$db->lastInsertId();
-}
-
-/**
- * Update ranking players (replace all entries).
- */
-function trUpdateRankingPlayers(int $rankingId, array $players): void
-{
-    global $db;
-    $del = $db->prepare(qp("DELETE FROM {ranking_players} WHERE ranking_id = :rid"));
-    $del->execute([':rid' => $rankingId]);
-
-    if (empty($players)) return;
-    $ins = $db->prepare(qp(
-        "INSERT INTO {ranking_players} (ranking_id, position, player_id, player_name)
-         VALUES (:rid, :pos, :pid, :pn)"
-    ));
-    foreach ($players as $i => $p) {
-        $ins->execute([
-            ':rid' => $rankingId,
-            ':pos' => (int)($p['position'] ?? ($i + 1)),
-            ':pid' => (string)($p['player_id'] ?? ''),
-            ':pn'  => (string)($p['player_name'] ?? ''),
-        ]);
-    }
-}
-
-/**
- * Extract unique players from tournament games_data.
+ * GET /api/tournaments/modes — every distinct tournament mode GameApi has
+ * on record (Frontier, Sealed, All Uniques, ...), for populating a filter.
  *
- * @return array<int, array{id: string, name: string, faction: string, games_played: int}>
+ * @return array{ok: bool, data?: array{modes: string[]}, error?: string}
  */
-function trExtractPlayers(string $gamesJson): array
+function trFetchLiveTournamentModes(int $userId): array
 {
-    $data    = json_decode($gamesJson, true);
-    $games   = $data['games'] ?? [];
-    $players = [];
+    return trGameApiGet('/api/tournaments/modes', $userId);
+}
 
-    foreach ($games as $game) {
-        foreach (($game['endGamePlayers'] ?? []) as $p) {
-            $pid = (string)($p['id'] ?? '');
-            if ($pid === '') continue;
-            if (!isset($players[$pid])) {
-                $players[$pid] = [
-                    'id'           => $pid,
-                    'name'         => (string)($p['name'] ?? $pid),
-                    'faction'      => (string)($p['faction'] ?? ''),
-                    'games_played' => 0,
-                ];
-            }
-            $players[$pid]['games_played']++;
-        }
+/**
+ * GET /api/tournaments/{id}/players — one tournament's player standings, live.
+ *
+ * @return array{ok: bool, data?: array, error?: string}
+ */
+function trFetchLiveTournamentPlayers(string $tournamentId, int $userId): array
+{
+    return trGameApiGet('/api/tournaments/' . rawurlencode($tournamentId) . '/players', $userId);
+}
+
+/**
+ * Fetch one GameApi tournament's header (name/counts/mode/date, from the
+ * index) and its player standings in one call. This is what a single
+ * tournament report page needs — GameApi has no single-tournament-detail
+ * route, only the index (filterable down to one id) + a players sub-resource.
+ *
+ * @return array{ok: bool, tournament_name?: string, total_games?: int, total_players?: int,
+ *               mode?: ?string, last_game_at?: ?string, standings?: array, error?: string}
+ */
+function trFetchLiveTournament(string $tournamentId, int $userId): array
+{
+    $index = trFetchLiveTournamentIndex($userId, ['tournamentParentId' => $tournamentId, 'pageSize' => 1]);
+    if (!$index['ok']) {
+        return ['ok' => false, 'error' => $index['error'] ?? 'Unknown error'];
     }
 
-    usort($players, fn($a, $b) => $b['games_played'] <=> $a['games_played'] || strcmp($a['name'], $b['name']));
-    return array_values($players);
-}
-
-/**
- * Compute win/loss standings from tournament games_data.
- *
- * A game's winner is read from `game['winner']['userId']`. A game without a
- * recorded winner counts toward `games_played` but neither as a win nor a loss.
- *
- * @param array $gamesData Decoded tournament payload (or its `games` list).
- * @return array<int, array{id: string, name: string, faction: string, games_played: int, wins: int, losses: int, ratio: string}>
- */
-function trComputeStandings(array $gamesData): array
-{
-    $games = $gamesData['games'] ?? $gamesData ?? [];
-    if (!is_array($games)) $games = [];
-
-    $players = [];
-    foreach ($games as $game) {
-        $winnerId = (string)($game['winner']['userId'] ?? '');
-        foreach (($game['endGamePlayers'] ?? []) as $p) {
-            $pid = (string)($p['id'] ?? '');
-            if ($pid === '') continue;
-            if (!isset($players[$pid])) {
-                $players[$pid] = [
-                    'id'           => $pid,
-                    'name'         => (string)($p['name'] ?? $pid),
-                    'faction'      => (string)($p['faction'] ?? ''),
-                    'games_played' => 0,
-                    'wins'         => 0,
-                    'losses'       => 0,
-                ];
-            }
-            $players[$pid]['games_played']++;
-            if ($winnerId !== '' && $winnerId === $pid) {
-                $players[$pid]['wins']++;
-            } elseif ($winnerId !== '') {
-                $players[$pid]['losses']++;
-            }
-        }
+    $tournaments = (array)($index['data']['tournaments'] ?? []);
+    $entry = $tournaments[0] ?? null;
+    if ($entry === null) {
+        return ['ok' => false, 'error' => 'Tournament not found.'];
     }
 
+    $playersResult = trFetchLiveTournamentPlayers($tournamentId, $userId);
+    if (!$playersResult['ok']) {
+        return ['ok' => false, 'error' => $playersResult['error'] ?? 'Unknown error'];
+    }
+
+    return [
+        'ok'             => true,
+        'tournament_name'=> (string)($entry['tournamentParentName'] ?? ''),
+        'total_games'    => (int)($entry['totalGames'] ?? 0),
+        'total_players'  => (int)($entry['totalPlayers'] ?? 0),
+        'mode'           => $entry['mode'] ?? null,
+        'last_game_at'   => $entry['lastGameAt'] ?? null,
+        'localization'   => '',
+        'description'    => '',
+        'standings'      => trStandingsFromGameApiPlayers((array)($playersResult['data']['players'] ?? [])),
+    ];
+}
+
+/* ── Mode display ─────────────────────────────────────────────────────────── */
+
+/**
+ * Raw GameApi tournament mode (Game.Format, as BGA sends it) -> display label
+ * + badge color. Reuses core-altered-cards' deckbuilder colors/labels
+ * verbatim (see plugins/core-altered-cards/data/altered.json's "formats")
+ * for every code that exists there, so a mode reads the same way across the
+ * site; Demo/Sealed aren't deckbuilder formats, so they get colors of their
+ * own here. Keyed uppercase since BGA's own casing isn't consistent
+ * ("No_UNIQUE", "Standard", "FRONTIER", "SANDBOX", "DEMO", "SEALED").
+ */
+define('TR_MODE_DISPLAY', [
+    'STANDARD'             => ['en' => 'Standard All Uniques',  'fr' => 'Standard All Uniques',  'color' => 'var(--primary-400)'],
+    'FRONTIER'             => ['en' => 'Frontier',               'fr' => 'Frontier',               'color' => '#2ec4b6'],
+    'NO_UNIQUE'            => ['en' => 'Standard No Unique',    'fr' => 'Standard No Unique',    'color' => '#5b8cef'],
+    'SINGLETON'            => ['en' => 'Singleton',              'fr' => 'Singleton',              'color' => '#9b6edb'],
+    'SINGLETON_NO_UNIQUE'  => ['en' => 'Singleton No Unique',   'fr' => 'Singleton No Unique',   'color' => '#9b6edb'],
+    'SANDBOX'              => ['en' => 'Sandbox',                'fr' => 'Sandbox',                'color' => '#e0cda9'],
+    'TEST'                 => ['en' => 'Test',                   'fr' => 'Test',                   'color' => '#e0cda9'],
+    'SEALED'               => ['en' => 'Sealed',                 'fr' => 'Scellé',                 'color' => '#e8a33d'],
+    'DEMO'                 => ['en' => 'Demo',                   'fr' => 'Démo',                   'color' => '#8a8f98'],
+]);
+
+/**
+ * @return array{label: string, color: string}
+ */
+function trModeDisplay(?string $mode, string $uiLang): array
+{
+    if ($mode === null || trim($mode) === '') {
+        return ['label' => '', 'color' => 'var(--neutral-400)'];
+    }
+
+    $entry = TR_MODE_DISPLAY[strtoupper($mode)] ?? null;
+    if ($entry === null) {
+        return ['label' => $mode, 'color' => 'var(--neutral-400)'];
+    }
+
+    return ['label' => $entry[$uiLang] ?? $entry['en'], 'color' => $entry['color']];
+}
+
+/* ── Standings ────────────────────────────────────────────────────────────── */
+
+/**
+ * Map GameApi's player summaries to the standings render contract, sorted
+ * wins desc, games played desc, losses desc. This is now the only ranking —
+ * there is no manual reordering anymore; the only way to change it is the
+ * win/loss "adjustment" GameApi exposes (see trSubmitAdjustment()).
+ *
+ * @return array<int, array{id: string, name: string, faction: string, hero: string,
+ *   main_deck: ?string, decks: array<int, array{deck: string, games: int}>, games_played: int,
+ *   wins: int, losses: int, ratio: string,
+ *   admin_wins_adjustment: int, admin_losses_adjustment: int, admin_adjustment_note: ?string}>
+ */
+function trStandingsFromGameApiPlayers(array $players): array
+{
     $standings = [];
     foreach ($players as $p) {
-        $p['ratio'] = $p['wins'] . '-' . $p['losses'];
-        $standings[] = $p;
+        $winsAdj   = (int)($p['adminWinsAdjustment'] ?? 0);
+        $lossesAdj = (int)($p['adminLossesAdjustment'] ?? 0);
+        $wins      = (int)($p['wins'] ?? 0) + $winsAdj;
+        $losses    = (int)($p['losses'] ?? 0) + $lossesAdj;
+        $decks     = (array)($p['decks'] ?? []);
+        $standings[] = [
+            'id'                       => (string)($p['bgaUserId'] ?? ''),
+            'name'                     => (string)($p['bgaName'] ?? '') ?: (string)($p['bgaUserId'] ?? ''),
+            'faction'                  => (string)($p['faction'] ?? ''),
+            'hero'                     => (string)($p['hero'] ?? ''),
+            'main_deck'                => $p['mainDeck'] ?? null,
+            'decks'                    => $decks,
+            // Actual total games across every deck, not the distinct-deck
+            // count GameApi's decksPlayed field holds — this is what the
+            // "games played desc" sort below is meant to compare on.
+            'games_played'             => array_sum(array_column($decks, 'games')),
+            'wins'                     => $wins,
+            'losses'                   => $losses,
+            'ratio'                    => $wins . '-' . $losses,
+            'admin_wins_adjustment'    => $winsAdj,
+            'admin_losses_adjustment'  => $lossesAdj,
+            'admin_adjustment_note'    => $p['adminAdjustmentNote'] ?? null,
+        ];
     }
 
     usort($standings, function ($a, $b) {
         if ($b['wins'] !== $a['wins']) return $b['wins'] <=> $a['wins'];
-        $ra = $a['wins'] + $a['losses'] > 0 ? $a['wins'] / ($a['wins'] + $a['losses']) : 1;
-        $rb = $b['wins'] + $b['losses'] > 0 ? $b['wins'] / ($b['wins'] + $b['losses']) : 1;
-        if ($rb !== $ra) return $rb <=> $ra;
-        return strcmp($a['name'], $b['name']);
+        if ($b['games_played'] !== $a['games_played']) return $b['games_played'] <=> $a['games_played'];
+        return $b['losses'] <=> $a['losses'];
     });
 
-    return array_values($standings);
+    return $standings;
+}
+
+/* ── GameApi — result correction (the one write) ─────────────────────────── */
+
+/**
+ * POST a win/loss correction for one player of a GameApi tournament.
+ * Additive on top of GameApi's computed wins/losses; GameApi requires a
+ * non-empty note (it's the whole point of the field — an unexplained
+ * correction isn't auditable).
+ *
+ * @return array{ok: bool, data?: array, error?: string}
+ */
+function trSubmitAdjustment(string $tournamentId, string $bgaUserId, int $winsAdjustment, int $lossesAdjustment, string $note): array
+{
+    $note = trim($note);
+    if ($note === '') {
+        return ['ok' => false, 'error' => 'A note is required.'];
+    }
+
+    $apiUrl = trGetApiUrl();
+    if ($apiUrl === '') {
+        return ['ok' => false, 'error' => 'GameApi URL is not configured.'];
+    }
+    $apiKey = trGetApiKey();
+    if ($apiKey === '') {
+        return ['ok' => false, 'error' => 'GameApi adjustment key is not configured.'];
+    }
+
+    $url  = $apiUrl . '/api/tournaments/' . rawurlencode($tournamentId) . '/players/' . rawurlencode($bgaUserId) . '/adjustment';
+    $body = json_encode([
+        'winsAdjustment'   => $winsAdjustment,
+        'lossesAdjustment' => $lossesAdjustment,
+        'note'             => $note,
+    ], JSON_UNESCAPED_UNICODE);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => 'POST',
+        CURLOPT_POSTFIELDS     => $body,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $response = curl_exec($ch);
+    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) {
+        return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
+    }
+    if ($code < 200 || $code >= 300) {
+        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $code . ').'];
+    }
+    $data = json_decode($response, true);
+    if (!is_array($data)) {
+        return ['ok' => false, 'error' => 'Invalid GameApi response.'];
+    }
+    return ['ok' => true, 'data' => $data];
+}
+
+/* ── Decklist decoding & duplication ─────────────────────────────────────── */
+
+/**
+ * Decode a GameApi player's Deckfmt-compressed main_deck into a card list.
+ *
+ * @return array{ok: bool, cards?: array<int, array{reference: string, quantity: int}>, error?: string}
+ */
+function trDecodeMainDeck(?string $mainDeck): array
+{
+    if ($mainDeck === null || trim($mainDeck) === '') {
+        return ['ok' => false, 'error' => 'No deck recorded.'];
+    }
+    return Deckfmt::decode($mainDeck);
 }
 
 /**
- * Delete a ranking and its players.
+ * Access token for the currently logged-in user, for calling the Decks API.
+ * Mirrors core-altered-cards' deckApiToken() exactly (each plugin keeps its
+ * own copy of this small helper — the established convention in this
+ * codebase; see ownership/core-altered-cards/equinox-deck-import).
  */
-function trDeleteRanking(int $id): bool
+function trUserApiToken(): ?string
 {
-    global $db;
-    $stmt = $db->prepare(qp("DELETE FROM {rankings} WHERE id = :id"));
-    $stmt->execute([':id' => $id]);
-    return $stmt->rowCount() > 0;
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    if (!$userId) return null;
+    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
+    $token = kc_get_access_token($userId);
+    return $token ?: null;
 }
+
+/**
+ * Duplicate a decoded decklist onto the logged-in user's own account, the
+ * same way core-altered-cards' "Dupliquer" action does for an existing deck
+ * (plugins/core-altered-cards/pages/deck.php) — a private, non-draft standard
+ * deck with the same cards.
+ *
+ * @param array<int, array{reference: string, quantity: int}> $cards
+ * @return array{ok: bool, id?: string, error?: string}
+ */
+function trDuplicateDeckToAccount(array $cards, string $name): array
+{
+    $token = trUserApiToken();
+    if (!$token) {
+        return ['ok' => false, 'error' => 'You must be logged in to duplicate a deck.'];
+    }
+    if (empty($cards)) {
+        return ['ok' => false, 'error' => 'No cards to duplicate.'];
+    }
+
+    $deckCards = [];
+    foreach ($cards as $c) {
+        if (empty($c['reference'])) continue;
+        $deckCards[] = ['cardReference' => $c['reference'], 'quantity' => (int)($c['quantity'] ?? 1)];
+    }
+
+    $payload = [
+        'name'      => trim($name) !== '' ? trim($name) : 'Deck',
+        'format'    => 'standard',
+        'isPublic'  => false,
+        'isDraft'   => false,
+        'deckCards' => $deckCards,
+    ];
+
+    $ch = curl_init(DECKS_API_URL . '/api/decks');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => 'POST',
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $response = curl_exec($ch);
+    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) {
+        return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
+    }
+    if ($code < 200 || $code >= 300) {
+        return ['ok' => false, 'error' => 'Decks API error (HTTP ' . $code . ').'];
+    }
+    $data = json_decode($response, true);
+    return ['ok' => true, 'id' => (string)($data['id'] ?? '')];
+}
+
