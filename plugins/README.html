@@ -78,6 +78,8 @@
   <a href="#pages">Front-end pages</a>
   <a href="#linking">Linking to pages</a>
   <a href="#assets">CSS &amp; JS assets (incl. global)</a>
+  <a href="#spa">SPA plugins (manifest v2)</a>
+  <a href="#host">Host contract (window.AlteredCore)</a>
   <div class="nav-section">Back-end</div>
   <a href="#admin">Admin pages</a>
   <a href="#tinymce">TinyMCE rich-text editor</a>
@@ -88,6 +90,7 @@
   <a href="#variables">Variables &amp; constants</a>
   <div class="nav-section">Development</div>
   <a href="#dev">Local development</a>
+  <a href="#tests">Tests &amp; CI</a>
   <div class="nav-section">Deployment</div>
   <a href="#zip">Creating the ZIP</a>
   <a href="#install">Installing, updating &amp; activating</a>
@@ -491,6 +494,77 @@ $pages  = array_values((array)($config['pages'] ?? []));
   PHP files inside <code>plugins/</code> are blocked from direct HTTP access by the <code>.htaccess</code> at the root of the plugins directory. CSS, JS, images and fonts are served normally.
 </div>
 
+
+
+<h2 id="spa">SPA plugins (manifest v2)</h2>
+<p>A page can ship a front-end built with any framework instead of a PHP file. The shell keeps
+its header, menu and footer, and mounts the plugin's bundle in the page. Everything under
+<code>/pages/{slug}/…</code> is served by that page, so the plugin can route on the client with deep links
+(its base path is <code>/pages/{slug}/</code>). Plugins without <code>"type"</code> stay PHP plugins, unchanged.</p>
+
+<pre><code>{
+  "$schema": "../plugin.schema.json",
+  "manifest_version": 2,
+  "id": "rebuilder",
+  "name": "Re:Builder deck editor",
+  "version": "0.1.0",
+  "pages": [
+    { "slug": "deckbuilder", "type": "spa", "entry": "dist/embed-manifest.json", "mount": "shadow",
+      "title_en": "Deck Builder", "title_fr": "Créateur de deck" }
+  ],
+  "menu":  [ { "page": "deckbuilder", "label_en": "Deck Builder", "label_fr": "Créateur de deck", "icon": "fa-solid fa-pen-ruler" } ],
+  "build": { "workdir": "app", "install": "npm ci", "lint": "npm run lint", "test": "npm test", "build": "npm run build:embed", "output": "dist" },
+  "tests": { "e2e": "e2e" }
+}</code></pre>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>pages[].type</td><td><span class="opt">optional</span></td><td><code>php</code> (default) or <code>spa</code>. An SPA page has no <code>file</code>.</td></tr>
+  <tr><td>pages[].entry</td><td><span class="req">spa</span></td><td>Build manifest written by the plugin's build (relative to the plugin): <code>{"version":1, "base":"browser/", "js":["main-HASH.js"], "css":["embed.css?v=…"], "documentCss":["document.css?v=…"]}</code>. <code>js</code>: ES modules, in order. <code>css</code>: loaded inside the shadow root. <code>documentCss</code>: loaded in <code>&lt;head&gt;</code> (<code>@font-face</code> is ignored in a shadow root).</td></tr>
+  <tr><td>pages[].mount</td><td><span class="opt">optional</span></td><td><code>shadow</code> (default): the plugin renders in a Shadow DOM, so Bootstrap and <code>css/style.css</code> do not reach it and its styles do not reach the site. <code>light</code>: rendered in the page.</td></tr>
+  <tr><td>pages[].fullwidth</td><td><span class="opt">optional</span></td><td>Full-width layout. Default <code>true</code> for SPA pages.</td></tr>
+  <tr><td>menu</td><td><span class="opt">optional</span></td><td>Suggested navigation entries, inserted on activation when no item has the same URL. Admins edit or hide them afterwards (Admin → Navigation).</td></tr>
+  <tr><td>build</td><td><span class="opt">optional</span></td><td>Commands run in <code>workdir</code> by CI and <code>php bin/plugins.php run &lt;stage&gt; &lt;id&gt;</code>. The output (<code>dist/</code>) is not committed.</td></tr>
+  <tr><td>tests</td><td><span class="opt">optional</span></td><td>Test entry points. See <a href="#tests">Tests &amp; CI</a>.</td></tr>
+</table>
+
+<div class="warn">The shell never builds a plugin. Deploying an SPA plugin means deploying its build output:
+build it before packaging the ZIP (the ZIP check requires the <code>entry</code> file), and in the Git deployment
+the workflow builds it before the upload. Until it is built, the page shows “not available” (admins see why).</div>
+
+<h3>Styling and theme</h3>
+<p>Custom properties cross the Shadow DOM. The shell publishes theme tokens a plugin maps its own design tokens onto;
+they follow the light / dark switch and the active theme without any code:</p>
+<pre><code>--ac-color-bg  --ac-color-surface  --ac-color-surface-2  --ac-color-border
+--ac-color-text  --ac-color-text-muted  --ac-color-primary  --ac-color-on-primary  --ac-color-link
+--ac-font-family  --ac-radius  --ac-header-height (height of the sticky site header, set by the runtime)</code></pre>
+<p>Inherited properties (font, colour, line height) also cross the boundary: reset them on <code>:host</code>
+(<code>all: initial</code>). The plugin root also carries <code>data-theme="light|dark"</code> and <code>lang</code>.</p>
+
+<h2 id="host">Host contract — <code>window.AlteredCore</code> (version 1)</h2>
+<p>Published by <code>js/altered-core-host.js</code> before the plugin's modules run. A plugin checks <code>version</code> and refuses a contract it does not know.</p>
+<table class="kv">
+  <tr><th>Member</th><th></th><th>Description</th></tr>
+  <tr><td>version</td><td></td><td><code>1</code></td></tr>
+  <tr><td>user</td><td></td><td><code>{ id, username, sub }</code> or <code>null</code> for a guest. No e-mail.</td></tr>
+  <tr><td>lang</td><td></td><td><code>en</code> or <code>fr</code> (site UI language). A language change reloads the page.</td></tr>
+  <tr><td>theme</td><td></td><td><code>light</code> or <code>dark</code>, kept up to date.</td></tr>
+  <tr><td>baseUrl, siteName, csrf</td><td></td><td>Install prefix, site name, CSRF token of the session.</td></tr>
+  <tr><td>services</td><td></td><td>Browser URLs of the Altered services: <code>{ cards, decks, cdn }</code>. <code>DECKS_API_PUBLIC_URL</code> (etc.) in <code>config.local.php</code> overrides <code>DECKS_API_URL</code> when the server uses an internal host.</td></tr>
+  <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL.</td></tr>
+  <tr><td>getAccessToken()</td><td></td><td><code>Promise&lt;string|null&gt;</code>: the Keycloak access token of the PHP session, to call the services directly (<code>Authorization: Bearer</code>). Cached until 30 s before expiry; refreshed server-side. <code>null</code> for guests and local-auth sites.</td></tr>
+  <tr><td>login(returnTo?)</td><td></td><td>Sends the user to the site's sign-in, then back to <code>returnTo</code> (default: current URL).</td></tr>
+  <tr><td>setTitle(title)</td><td></td><td>Sets <code>document.title</code> to “title — site name”.</td></tr>
+  <tr><td>getMount(pluginId)</td><td></td><td><code>{ host, root, container }</code>: the element the shell rendered, its shadow root (or itself), and the element to render into.</td></tr>
+  <tr><td>on(type, fn)</td><td></td><td><code>theme</code> <code>{theme}</code>, <code>auth</code> <code>{user}</code> (session lost), <code>lang</code> <code>{lang}</code>. Returns an unsubscribe function. Also dispatched on <code>window</code> as <code>alteredcore:&lt;type&gt;</code>.</td></tr>
+</table>
+
+<h3>Session token endpoint</h3>
+<p><code>POST /api/v1/session/token</code> with header <code>X-CSRF-Token</code>, same origin only. The shell remains the only holder
+of the Keycloak client secret and the refresh token; the endpoint returns <code>{access_token, token_type, expires_at}</code>,
+<code>401</code> for a guest or an expired session, <code>{access_token: null, reason: "local_auth"}</code> without Keycloak.
+The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
+<code>main-site</code> token is accepted.</p>
 
 <h2 id="admin">Admin pages</h2>
 
@@ -1101,6 +1175,24 @@ fetch('/papi/my-plugin/data')
 
 <p>See the repository <code>README.md</code> for full Docker setup instructions including creating the first admin account and resetting the database.</p>
 
+
+
+<h2 id="tests">Tests &amp; CI</h2>
+<p>Pull requests to <code>preprod</code> and <code>main</code> run <code>.github/workflows/plugins-ci.yml</code>. It knows no plugin by name:
+<code>php bin/plugins.php plan</code> lists what each plugin declares, or what it finds by convention.</p>
+<table class="kv">
+  <tr><th>What</th><th>Declared in plugin.json</th><th>Convention</th></tr>
+  <tr><td>PHP tests</td><td><code>"tests": {"php": ["tests/run.php"]}</code></td><td><code>tests/run.php</code>, exit code ≠ 0 on failure</td></tr>
+  <tr><td>Node tests</td><td><code>"tests": {"node": ["…test.mjs"]}</code></td><td><code>**/*.test.mjs</code>, run with <code>node --test</code> from the repo root</td></tr>
+  <tr><td>Front-end</td><td><code>"build": {…}</code></td><td>install → lint → test → build, per plugin</td></tr>
+  <tr><td>End-to-end</td><td><code>"tests": {"e2e": "e2e"}</code></td><td><code>e2e/*.spec.ts</code> (Playwright), importing <code>test</code> from <code>tests/e2e/fixtures.ts</code></td></tr>
+</table>
+<p>Every PHP file also goes through <code>php -l</code> (PHP 7.4). The end-to-end job starts <code>docker-compose.stack.yml</code>
+(site, Keycloak, decks API) with the built plugins and runs <code>tests/e2e</code> plus every plugin's <code>e2e/</code>,
+at 1440×900 and 390×844. The check to require is <strong>Plugins CI</strong>.</p>
+<pre><code>php bin/plugins.php plan
+php bin/plugins.php run php-tests           # or node-tests, install, lint, test, build [plugin-id…]
+(cd tests/e2e &amp;&amp; npm ci &amp;&amp; E2E_BASE_URL=http://localhost:8080 npx playwright test)</code></pre>
 
 <h2 id="zip">Packaging a ZIP</h2>
 

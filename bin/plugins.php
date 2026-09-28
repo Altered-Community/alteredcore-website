@@ -70,6 +70,8 @@ function cliPlan(array $m): array {
             'lint'    => $build['lint'] ?? null,
             'test'    => $build['test'] ?? null,
             'build'   => $build['build'],
+            'output'  => trim($build['output'] ?? 'dist', '/'),
+            'nvmrc'   => is_file($dir . '/' . trim($build['workdir'], '/') . '/.nvmrc') ? trim($build['workdir'], '/') . '/.nvmrc' : null,
         ] : null,
         'spa_pages'  => array_values(array_map(fn($p) => $p['slug'], array_filter($m['pages'] ?? [], fn($p) => ($p['type'] ?? 'php') === 'spa'))),
     ];

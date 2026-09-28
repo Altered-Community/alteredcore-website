@@ -85,6 +85,17 @@ define('BASE_URL', '/alteredcore'); // leave empty if at domain root
 
 Drop a plugin folder into `plugins/` and activate it from the admin panel. See `plugins/hello-world/` for a minimal example and `plugins/README.html` for full documentation.
 
+The core stays build-free. Front-end plugins (manifest v2, `"type": "spa"`, e.g. `plugins/rebuilder`) are the exception: their bundle is built by CI and by the deploy workflow (`php bin/plugins.php`), never committed.
+
+### Full stack (Keycloak, decks API, SPA plugins)
+
+```bash
+(cd plugins/rebuilder/app && nvm use && npm ci && npm run build:embed)
+docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
+```
+
+Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
+
 ---
 
 ## Contributing
