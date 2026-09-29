@@ -1,4 +1,4 @@
-<nav aria-label="Fil d’Ariane">
+<nav aria-label="Fil d’Ariane" i18n-aria-label="@@ui.breadcrumb.label">
   @for (it of items(); track it.label) {
     @if (it.route && !$last) {
       <a [routerLink]="it.route">{{ it.label }}</a>

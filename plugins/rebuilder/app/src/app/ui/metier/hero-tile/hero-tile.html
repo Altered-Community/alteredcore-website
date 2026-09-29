@@ -1,12 +1,12 @@
 <button type="button" [attr.aria-pressed]="selected()" (click)="choose.emit()">
   <span class="visual">
-    <ar-card-art [reference]="hero().reference" [faction]="hero().faction" placeholder="Visuel du héros" />
+    <ar-card-art [reference]="hero().reference" [faction]="hero().faction" placeholder="Visuel du héros" i18n-placeholder="@@ui.heroTile.placeholder" />
     @if (selected()) {
       <span class="check"><ar-icon name="check" [size]="15" [strokeWidth]="3" /></span>
     }
   </span>
   <span class="name">{{ hero().name }}</span>
   @if (unavailableOnBga()) {
-    <span class="bga" title="Indisponible sur BGA">Indispo. BGA</span>
+    <span class="bga" title="Indisponible sur BGA" i18n-title="@@ui.heroTile.unavailableTitle" i18n="@@ui.heroTile.unavailable">Indispo. BGA</span>
   }
 </button>

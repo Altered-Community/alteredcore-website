@@ -13,9 +13,9 @@ const ASSETS = assetUrl('assets/unique-card');
 const FACTIONS = ['AX', 'BR', 'LY', 'MU', 'OR', 'YZ'];
 const SET_LOGOS = ['ALIZE', 'BISE', 'CORE', 'COREKS', 'CYCLONE', 'DUSTER', 'EOLE'];
 const BIOMES = [
-  { key: 'forest', file: 'FOREST', label: 'Forêt', row: 'f' },
-  { key: 'mountain', file: 'MOUNTAIN', label: 'Montagne', row: 'm' },
-  { key: 'ocean', file: 'OCEAN', label: 'Océan', row: 'o' },
+  { key: 'forest', file: 'FOREST', label: $localize`:@@ui.terrain.forest:Forêt`, row: 'f' },
+  { key: 'mountain', file: 'MOUNTAIN', label: $localize`:@@ui.terrain.mountain:Montagne`, row: 'm' },
+  { key: 'ocean', file: 'OCEAN', label: $localize`:@@ui.terrain.ocean:Océan`, row: 'o' },
 ] as const;
 const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } as const;
 
@@ -56,6 +56,8 @@ export class ArUniqueCard {
   });
   protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
   protected readonly type = computed(() => typeLine(this.card()));
+  protected readonly mainCostLabel = computed(() => $localize`:@@ui.uniqueCard.mainCost:Coût de main ${this.card().mainCost}:cost:`);
+  protected readonly reserveCostLabel = computed(() => $localize`:@@ui.uniqueCard.reserveCost:Coût de réserve ${this.card().recallCost}:cost:`);
   protected readonly hasStats = computed(() => this.card().mainCost != null);
   protected readonly biomes = computed(() => {
     const c = this.card();

@@ -36,9 +36,9 @@ export class EffectEditorOverlay {
   protected readonly pickedEffects = signal<AbilityRef[]>(this.ref.data.effect.effects);
 
   constructor() {
-    this.ref.title.set(`Effet ${this.ref.data.index + 1}`);
+    this.ref.title.set(effectTitle(this.ref.data.index));
     this.ref.headerAction.set({
-      label: 'Effacer',
+      label: $localize`:@@search.effect.clear:Effacer`,
       run: () => {
         this.pickedTriggers.set([]);
         this.pickedConditions.set([]);
@@ -69,9 +69,14 @@ export class EffectEditorOverlay {
   }
 }
 
+/** « Effet n », 1-based. */
+export function effectTitle(index: number): string {
+  return $localize`:@@search.effect.title:Effet ${index + 1}:n:`;
+}
+
 export function openEffectEditor(overlay: ArOverlayService, data: EffectEditorData) {
   return overlay.open<EffectEditorOverlay, EffectBlock, EffectEditorData>(EffectEditorOverlay, {
-    title: `Effet ${data.index + 1}`,
+    title: effectTitle(data.index),
     data,
     width: 520,
     sheetHeight: 'full',
@@ -81,7 +86,7 @@ export function openEffectEditor(overlay: ArOverlayService, data: EffectEditorDa
 /** « Effet n » in place of the content of `parent` (mobile « Filtres » sheet), with a back arrow. */
 export function openEffectEditorStep(parent: Pick<ArOverlayRef, 'openStep'>, data: EffectEditorData) {
   return parent.openStep<EffectEditorOverlay, EffectBlock, EffectEditorData>(EffectEditorOverlay, {
-    title: `Effet ${data.index + 1}`,
+    title: effectTitle(data.index),
     data,
   });
 }

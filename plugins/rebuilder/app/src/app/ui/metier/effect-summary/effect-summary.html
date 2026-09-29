@@ -1,7 +1,7 @@
 <div class="head">
   <span class="title">{{ title() }}</span>
-  <button type="button" class="icon" [attr.aria-label]="'Modifier ' + title()" (click)="edit.emit()"><ar-icon name="pencil" [size]="14" /></button>
-  <button type="button" class="icon" [attr.aria-label]="'Supprimer ' + title()" (click)="remove.emit()"><ar-icon name="x" [size]="14" /></button>
+  <button type="button" class="icon" [attr.aria-label]="editLabel()" (click)="edit.emit()"><ar-icon name="pencil" [size]="14" /></button>
+  <button type="button" class="icon" [attr.aria-label]="removeLabel()" (click)="remove.emit()"><ar-icon name="x" [size]="14" /></button>
 </div>
 @for (row of rows(); track row.label) {
   <p>
@@ -9,11 +9,11 @@
     @for (v of row.values; track v.id; let last = $last) {
       <span class="val">@if (v.glyph) {<span class="glyph" aria-hidden="true">{{ v.glyph }}</span>}{{ v.text }}</span>
       @if (!last) {
-        <span class="or">ou</span>
+        <span class="or" i18n="@@ui.effectSummary.or">ou</span>
       }
     }
   </p>
 }
 @empty {
-  <p class="empty">Aucun critère</p>
+  <p class="empty" i18n="@@ui.effectSummary.empty">Aucun critère</p>
 }

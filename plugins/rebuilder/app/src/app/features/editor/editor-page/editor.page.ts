@@ -58,6 +58,8 @@ export class EditorPage {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
     account: $localize`:@@editor.account:Compte`,
     signIn: $localize`:@@editor.signIn:Se connecter`,
+    public: $localize`:@@editor.public:Public`,
+    private: $localize`:@@editor.private:Privé`,
     breadcrumb: [{ label: $localize`:@@editor.myDecks:Mes decks`, route: '/decks' }, { label: $localize`:@@editor.edit:Modifier` }],
   };
   protected readonly modeOptions = [
@@ -65,7 +67,7 @@ export class EditorPage {
     { value: 'apercu' as const, label: $localize`:@@editor.viewDeck:Voir le deck`, icon: 'eye' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
-  protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? 'Public' : 'Privé'}`);
+  protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
   protected readonly navItems = computed<ArBottomNavItem[]>(() => [

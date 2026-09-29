@@ -123,7 +123,7 @@ export class CardsApiService {
 }
 
 /** Label of the conditions' `[]` row: the API matches it on abilities printed without a condition. */
-export const NO_CONDITION = 'Sans condition';
+export const NO_CONDITION = $localize`:@@rules.ability.noCondition:Sans condition`;
 
 /** Symbol-only triggers shown with their glyph: played from hand, from reserve, from anywhere. */
 const PLAY_TRIGGERS = ['H', 'R', 'J'];
@@ -160,8 +160,8 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
 
 function cleanAbilityText(text: string): string {
   return text
-    .replace(/^\{T\}$/, 'Épuisez-moi')
-    .replace(/^\{D\}[\s\u00a0]*:?$/, 'Défaussez-moi de la Réserve')
+    .replace(/^\{T\}$/, $localize`:@@rules.icon.exhaustMe:Épuisez-moi`)
+    .replace(/^\{D\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.discardMeFromReserve:Défaussez-moi de la Réserve`)
     .replace(/^\{I\}[\s\u00a0]*/, '')
     .replace(/[\s\u00a0:]+$/g, '')
     .replace(/[\s\u00a0]+/g, ' ')

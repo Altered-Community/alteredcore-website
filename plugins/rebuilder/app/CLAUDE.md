@@ -46,6 +46,11 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   (`templateUrl`) + `<nom>.scss` (`styleUrl`, seulement s'il y a des styles). Les fonctions `open…()` d'un overlay
   restent dans le `.ts` du composant ; types et helpers partagés entre plusieurs composants vont dans un fichier
   à part au niveau du groupe (ex. `ui/chips/rarity.ts`, `features/decks/deck-filters.ts`).
+- Textes : sources en français, tout texte affiché (y compris `aria-label`, `title`, placeholders, messages d'erreur,
+  titres d'overlay) marqué `i18n="@@zone.cle"` / `` $localize`:@@zone.cle:Texte` `` avec un id explicite, et sa
+  traduction ajoutée à `src/locale/messages.en.json` (`npm run i18n:check`, lancé par `npm run lint`). Pluriels : ICU
+  dans les templates, deux messages en TypeScript. `Intl` et `toLocale…` avec `uiLocale()` ; données de cartes avec
+  `contentLocale()`.
 - Design system sous le préfixe `ar-`. Un écran n'utilise que des composants `ar-*` et du layout ; s'il manque un
   composant, l'ajouter au design system (et à la page `/_ds`) avant de l'utiliser.
 - Tout composant `ar-*` ajouté ou modifié met à jour `design/COMPONENTS.md` et la page `/_ds`

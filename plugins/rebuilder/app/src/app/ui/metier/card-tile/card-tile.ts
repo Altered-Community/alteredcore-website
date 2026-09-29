@@ -26,5 +26,11 @@ export class ArCardTile {
   readonly quantityChange = output<number>();
 
   protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
+  protected readonly addLabel = computed(() => $localize`:@@ui.cardTile.add:Ajouter ${this.name()}:name: au deck`);
+  protected readonly copiesLabel = computed(() => $localize`:@@ui.cardTile.copiesInDeck:Exemplaires de ${this.name()}:name: dans le deck`);
+  protected readonly quantityLabel = computed(() => {
+    const n = this.quantity();
+    return n === 1 ? $localize`:@@ui.cardTile.quantityOne:${n}:count: exemplaire(s)` : $localize`:@@ui.cardTile.quantity:${n}:count: exemplaire(s)`;
+  });
   protected readonly unique = computed(() => isUniqueReference(this.card().reference));
 }

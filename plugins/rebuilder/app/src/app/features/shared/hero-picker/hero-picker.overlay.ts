@@ -24,6 +24,10 @@ export function injectHeroes(): { heroes: Signal<HeroGroup[] | null>; error: Sig
   return { heroes, error: error.asReadonly() };
 }
 
+function heroPickerTitle(): string {
+  return $localize`:@@shared.heroPicker.title:Choisir un héros`;
+}
+
 export interface HeroPickerData {
   selected?: DeckHero | null;
 }
@@ -46,8 +50,8 @@ export class HeroPickerOverlay {
   protected readonly faction = signal(this.ref.data?.selected?.faction || 'AX');
 
   constructor() {
-    this.ref.title.set('Choisir un héros');
-    this.ref.description.set('Le héros détermine votre faction et les cartes disponibles.');
+    this.ref.title.set(heroPickerTitle());
+    this.ref.description.set($localize`:@@shared.heroPicker.description:Le héros détermine votre faction et les cartes disponibles.`);
   }
 
   protected factionLabel(code: string): string {
@@ -63,7 +67,7 @@ export class HeroPickerOverlay {
 /** Shows « Choisir un héros » in place of the content of `parent` (no second window). */
 export function openHeroPickerStep(parent: Pick<ArOverlayRef, 'openStep'>, selected?: DeckHero | null): ArOverlayRef<DeckHero, HeroPickerData> {
   return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, {
-    title: 'Choisir un héros',
+    title: heroPickerTitle(),
     data: { selected },
   });
 }

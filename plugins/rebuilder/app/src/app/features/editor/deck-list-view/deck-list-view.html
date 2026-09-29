@@ -13,7 +13,7 @@
     (openSettings)="openSettings.emit()"
   />
 }
-<ar-collapsible class="stats" title="Stats" [(open)]="statsOpen">
+<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
   <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ar-collapsible>
 @for (g of deck.groups(); track g.id) {
@@ -29,5 +29,5 @@
     }
   </ar-deck-section>
 } @empty {
-  <p class="empty">Aucune carte pour l’instant.</p>
+  <p class="empty" i18n="@@editor.list.empty">Aucune carte pour l’instant.</p>
 }

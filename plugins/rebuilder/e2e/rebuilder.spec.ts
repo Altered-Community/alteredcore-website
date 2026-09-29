@@ -7,13 +7,21 @@ import { evidence, expect, login, test, type Page } from '../../../tests/e2e/fix
  * Playwright locators pierce the open shadow root, so the plugin is driven like any page.
  */
 
-/** Main labels in both site languages (the editor follows AlteredCore.lang). */
+/** Labels in both site languages (the interface follows AlteredCore.lang). */
 const LABELS = {
-  fr: { newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler' },
-  en: { newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel' },
+  fr: {
+    newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler',
+    deckNav: 'Éditeur de deck', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
+    sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
+  },
+  en: {
+    newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel',
+    deckNav: 'Deck editor', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
+    sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
+  },
 };
 type Lang = keyof typeof LABELS;
-const FR = { ...LABELS.fr, deckNav: 'Éditeur de deck' };
+const FR = LABELS.fr;
 
 /** Opens the new-deck window, picks the first hero, names the deck and creates it. */
 async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<void> {
@@ -29,7 +37,7 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
 /** « Recherche / Voir le deck » switch (desktop) or bottom navigation (mobile), in `lang`. */
 async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Promise<void> {
   const l = LABELS[lang];
-  if (compact) await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
+  if (compact) await expect(page.getByRole('navigation', { name: l.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
   else await expect(page.locator('ar-segmented').getByText(l.viewDeck, { exact: true })).toBeVisible();
 }
 
@@ -179,7 +187,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
   test('has a beta entry in the site\'s Decks menu', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the menu is checked on the desktop header');
     await login(page, 'alice', `${DECKS}?lang=en`);
-    await expect(page.getByRole('list', { name: 'Mes decks' })).toBeVisible();
+    await expect(page.getByRole('list', { name: LABELS.en.myDecks })).toBeVisible();
     // One entry, on the decks list (a new deck is created from the list), inside the Decks menu.
     const decksMenu = page.locator('header li.dropdown').filter({ has: page.locator('a.nav-link-split-main[href$="/pages/decks"]') });
     const entry = decksMenu.locator('a.dropdown-item[href$="/pages/rebuilder/decks"]');
@@ -196,7 +204,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.keyboard.press('Escape');
 
     // Still current in the editor, after a client navigation and after a reload.
-    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await page.getByRole('button', { name: LABELS.en.newDeck }).first().click();
     await createDeck(page, `E2E menu ${testInfo.project.name} ${Date.now()}`, 'en');
     await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
     await expect(entry).toHaveClass(/\bactive\b/);
@@ -208,6 +216,40 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(entry).not.toHaveClass(/\bactive\b/);
     await expect(decksMenu.locator('a.dropdown-item[href$="/pages/decks"]')).toHaveClass(/\bactive\b/);
   });
+});
+
+test.describe('ReBuilder in the shell · languages', () => {
+  // Decks list, community tab, editor search and deck summary, in each site language; the switch
+  // goes through the site's ?lang= (a change reloads the page, translations load before the app).
+  for (const lang of ['en', 'fr'] as const) {
+    test(`shows its interface in the site language (${lang})`, async ({ page, compact }, testInfo) => {
+      const l = LABELS[lang];
+      const other = LABELS[lang === 'en' ? 'fr' : 'en'];
+      await page.goto(`${DECKS}?lang=${lang}`);
+      await expect(page.locator('.ar-embed')).toBeVisible();
+      // A guest without decks: the list is empty (hidden on mobile), the guest notice is shown.
+      await expect(page.getByRole('list', { name: l.myDecks })).toBeAttached();
+      await expect(page.getByText(l.guest)).toBeVisible();
+      if (!compact) await expect(page.getByText(l.sortBy, { exact: true })).toBeVisible();
+      await expect(page.getByText(other.guest)).toHaveCount(0);
+
+      await page.getByRole('tab', { name: l.community }).click();
+      await expect(page.getByRole('list', { name: l.communityDecks }).locator('ar-deck-card').first()).toBeVisible();
+      await evidence(page, testInfo, `09-community-${lang}`);
+
+      await page.goto(NEW_DECK);
+      await createDeck(page, `E2E ${lang} ${testInfo.project.name} ${Date.now()}`, lang);
+      await expect(page.locator('ar-card-tile').first()).toBeVisible();
+      await expectEditorLabels(page, compact, lang);
+      if (!compact) {
+        await expect(page.getByText(l.rarity, { exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: l.advanced })).toBeVisible();
+        await expect(page.getByRole('button', { name: l.clearAll })).toBeVisible();
+      }
+      await expect(page.getByText(other.advanced)).toHaveCount(0);
+      await evidence(page, testInfo, `10-editor-${lang}`);
+    });
+  }
 });
 
 test.describe('ReBuilder in the shell · guest', () => {

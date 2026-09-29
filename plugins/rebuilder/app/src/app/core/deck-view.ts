@@ -138,7 +138,7 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     : false);
   return {
     id: deck.id,
-    name: deck.name || 'Sans nom',
+    name: deck.name || $localize`:@@core.deck.untitled:Sans nom`,
     hero,
     format: info.value,
     formatLabel: info.label,
@@ -173,10 +173,10 @@ function authorOf(deck: Deck): string | null {
 export type DeckGroupId = 'characters' | 'spells' | 'permanents' | 'other';
 
 export const GROUP_LABELS: Record<DeckGroupId, { label: string; type: string }> = {
-  characters: { label: 'Personnages', type: 'Personnage' },
-  spells: { label: 'Sorts', type: 'Sort' },
-  permanents: { label: 'Permanents', type: 'Permanent' },
-  other: { label: 'Autres', type: 'Carte' },
+  characters: { label: $localize`:@@core.deckGroup.characters:Personnages`, type: $localize`:@@core.deckGroup.character:Personnage` },
+  spells: { label: $localize`:@@core.deckGroup.spells:Sorts`, type: $localize`:@@core.deckGroup.spell:Sort` },
+  permanents: { label: $localize`:@@core.deckGroup.permanents:Permanents`, type: $localize`:@@core.deckGroup.permanent:Permanent` },
+  other: { label: $localize`:@@core.deckGroup.other:Autres`, type: $localize`:@@core.deckGroup.card:Carte` },
 };
 
 export interface DeckGroup {
@@ -236,7 +236,7 @@ export function groupByCost(lines: HydratedLine[]): DeckGroup[] {
       const rows = buckets.get(c) ?? [];
       return {
         id: 'other' as DeckGroupId,
-        label: c >= 7 ? 'Coût 7+' : `Coût ${c}`,
+        label: c >= 7 ? $localize`:@@core.deckGroup.cost7Plus:Coût 7+` : $localize`:@@core.deckGroup.cost:Coût ${c}:cost:`,
         count: rows.reduce((n, l) => n + l.quantity, 0),
         distinct: rows.length,
         lines: rows,

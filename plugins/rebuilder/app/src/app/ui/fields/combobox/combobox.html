@@ -1,9 +1,9 @@
 @for (v of values(); track v.id) {
   <div class="picked">
     <span>@if (v.glyph) {<span class="glyph" aria-hidden="true">{{ v.glyph }}</span>}{{ v.text }}</span>
-    <button type="button" [attr.aria-label]="'Retirer ' + v.text" (click)="remove(v)"><ar-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
+    <button type="button" [attr.aria-label]="removeLabel(v)" (click)="remove(v)"><ar-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
   </div>
-  <span class="or" aria-hidden="true">ou</span>
+  <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
 }
 <div class="field">
   <button
@@ -55,7 +55,7 @@
         }
       </div>
     } @else {
-      <div class="empty" [id]="listId">{{ query() ? 'Aucun résultat' : 'Aucune valeur disponible' }}</div>
+      <div class="empty" [id]="listId">{{ query() ? noResults : noValues }}</div>
     }
   </div>
 }

@@ -1,9 +1,9 @@
-<button arIconButton="moon" ariaLabel="Thème sombre (bientôt disponible)" [iconSize]="18" disabled></button>
-<button type="button" class="pill" aria-label="Langue : français" disabled>FR</button>
+<button arIconButton="moon" ariaLabel="Thème sombre (bientôt disponible)" i18n-ariaLabel="@@shared.account.darkTheme" [iconSize]="18" disabled></button>
+<button type="button" class="pill" aria-label="Langue : français" i18n-aria-label="@@shared.account.language" disabled i18n="@@shared.account.languageCode">FR</button>
 @if (auth.sessionRestoring()) {
-  <span class="pill user" aria-live="polite">Connexion…</span>
+  <span class="pill user" aria-live="polite" i18n="@@shared.account.connecting">Connexion…</span>
 } @else if (auth.isLoggedIn()) {
-  <a class="pill user" routerLink="/login" [attr.aria-label]="'Compte ' + name()">
+  <a class="pill user" routerLink="/login" [attr.aria-label]="accountLabel()">
     <ar-avatar [name]="name()" />
     <span>{{ name() }}</span>
     <ar-icon name="chevron-down" [size]="16" />
@@ -11,6 +11,6 @@
 } @else {
   <a class="pill user" routerLink="/login">
     <ar-icon name="user" [size]="18" />
-    <span>Se connecter</span>
+    <span i18n="@@shared.account.signIn">Se connecter</span>
   </a>
 }

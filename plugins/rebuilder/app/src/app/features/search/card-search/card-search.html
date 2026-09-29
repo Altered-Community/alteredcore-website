@@ -4,14 +4,14 @@
       <ar-input
         class="q"
         icon="search"
-        ariaLabel="Rechercher par nom"
-        placeholder="Rechercher une carte…"
+        ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+        placeholder="Rechercher une carte…" i18n-placeholder="@@search.card.placeholder"
         enterkeyhint="search"
         [clearable]="true"
         [value]="draft().q"
         (valueChange)="setQuery($event)"
       />
-      <button class="filters-btn" arIconButton="sliders" variant="primary" [ariaLabel]="'Filtres, ' + activeCount() + ' actifs'" [iconSize]="20" (click)="openFilters()">
+      <button class="filters-btn" arIconButton="sliders" variant="primary" [ariaLabel]="filtersLabel()" [iconSize]="20" (click)="openFilters()">
         @if (activeCount()) {
           <span class="badge"><ar-count [value]="activeCount()" /></span>
         }
@@ -27,7 +27,7 @@
 }
 
 <ar-tabs
-  ariaLabel="Source des cartes"
+  ariaLabel="Source des cartes" i18n-ariaLabel="@@search.card.sources"
   [appearance]="bp.compact() ? 'pill' : 'underline'"
   [tabs]="sources()"
   [active]="search.source()"
@@ -36,29 +36,29 @@
 
 <div class="search-body">
   @if (bp.expanded()) {
-    <aside class="filters" aria-label="Filtres">
+    <aside class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
       <div class="filters-scroll">
         <app-filters-panel [source]="search.source()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
       </div>
       <div class="filters-foot">
-        <button arButton variant="secondary" (click)="resetFilters()">Réinitialiser</button>
-        <button arButton class="go" (click)="applyNow()">Rechercher</button>
+        <button arButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
+        <button arButton class="go" (click)="applyNow()" i18n="@@search.card.submit">Rechercher</button>
       </div>
     </aside>
   }
 
-  <section class="results" aria-label="Résultats">
+  <section class="results" aria-label="Résultats" i18n-aria-label="@@search.card.results">
     @if (bp.compact()) {
       <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
       <div class="toolbar">
         <span class="total">{{ totalLabel() }}</span>
         <span class="tools">
-          <ar-select ariaLabel="Trier par" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           <button
             arIconButton="grid"
             variant="ghost"
             size="sm"
-            [ariaLabel]="resultsLayout() === 'grid' ? 'Afficher en liste' : 'Afficher en grille'"
+            [ariaLabel]="resultsLayout() === 'grid' ? labels.showList : labels.showGrid"
             [iconSize]="18"
             (click)="resultsLayout.set(resultsLayout() === 'grid' ? 'list' : 'grid')"
           ></button>
@@ -69,7 +69,7 @@
         <span class="total">{{ totalLabel() }}</span>
         @if (!bp.expanded()) {
           <button arButton variant="secondary" icon="sliders" (click)="openFilters()">
-            Filtres
+            <ng-container i18n="@@search.card.filters">Filtres</ng-container>
             @if (activeCount()) {
               <ar-count [value]="activeCount()" />
             }
@@ -77,8 +77,8 @@
         }
         <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
         <span class="tools">
-          <ar-select label="Trier par" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
-          <ar-segmented ariaLabel="Affichage des résultats" [options]="layoutOptions" [(value)]="resultsLayout" />
+          <ar-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          <ar-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
         </span>
       </div>
     }
@@ -87,5 +87,5 @@
 </div>
 
 @if (bp.compact() && condensed()) {
-  <button class="to-top" arIconButton="chevron-up" ariaLabel="Revenir en haut" [iconSize]="22" (click)="scrollTop()"></button>
+  <button class="to-top" arIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
 }

@@ -1,7 +1,8 @@
 import { Component, computed, input } from '@angular/core';
+import { uiLocale } from '../../../core/i18n';
 import { ArIcon } from '../../icon';
 
-const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
+const compact = new Intl.NumberFormat(uiLocale(), { notation: 'compact', maximumFractionDigits: 1 });
 
 /** Like count pill laid over a visual (deck card): heart + count, filled when `liked`; `ariaLabel` is required. */
 @Component({

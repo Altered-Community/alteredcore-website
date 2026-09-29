@@ -29,7 +29,7 @@ export class GuestDeckService {
     const now = new Date().toISOString();
     const deck: Deck = {
       id: `guest-${newId()}`,
-      name: partial.name || 'Nouveau deck',
+      name: partial.name || $localize`:@@core.deck.defaultName:Nouveau deck`,
       description: '',
       format: partial.format ?? 'standard',
       isPublic: partial.isPublic ?? false,

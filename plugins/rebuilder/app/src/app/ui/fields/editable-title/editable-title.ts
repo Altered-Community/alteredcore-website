@@ -11,7 +11,7 @@ import { nextId } from '../value-accessor';
 })
 export class ArEditableTitle {
   readonly value = model('');
-  readonly ariaLabel = input('Nom du deck');
+  readonly ariaLabel = input($localize`:@@ui.editableTitle.label:Nom du deck`);
   readonly commit = output<string>();
   protected readonly id = nextId('ar-title');
   protected readonly width = computed(() => Math.min(44, Math.max(8, Math.ceil(this.value().length * 1.2) + 2)));

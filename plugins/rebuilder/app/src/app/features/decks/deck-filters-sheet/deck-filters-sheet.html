@@ -1,10 +1,10 @@
 <div class="ar-overlay-body">
   <ar-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
-  <ar-select label="Héros" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+  <ar-select label="Héros" i18n-label="@@decks.filters.hero" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
   @if (ref.data.showVisibility) {
     <div class="field">
-      <span class="label">Visibilité</span>
-      <ar-segmented ariaLabel="Visibilité" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+      <span class="label" i18n="@@decks.filters.visibility">Visibilité</span>
+      <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
   }
   <div class="field">
@@ -17,6 +17,6 @@
   </div>
 </div>
 <div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="draft.set(empty)">Réinitialiser</button>
-  <button arButton size="lg" [fullWidth]="true" (click)="ref.close(draft())">Appliquer</button>
+  <button arButton variant="secondary" class="secondary-action" (click)="draft.set(empty)" i18n="@@decks.filters.reset">Réinitialiser</button>
+  <button arButton size="lg" [fullWidth]="true" (click)="ref.close(draft())" i18n="@@decks.filters.apply">Appliquer</button>
 </div>

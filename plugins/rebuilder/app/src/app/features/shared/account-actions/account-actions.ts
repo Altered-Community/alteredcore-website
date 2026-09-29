@@ -15,4 +15,5 @@ import { ArAvatar } from '../../../ui/nav';
 export class AccountActions {
   protected readonly auth = inject(AuthService);
   protected readonly name = computed(() => this.auth.username() ?? '');
+  protected readonly accountLabel = computed(() => $localize`:@@shared.account.account:Compte ${this.name()}:name:`);
 }

@@ -13,11 +13,13 @@ export interface FiltersSheetData {
 }
 
 const SOURCE_LABEL: Record<CardSource, string> = {
-  all: 'Toutes les cartes',
-  uniques: 'Uniques',
-  owned: 'Propriété numérique',
-  favorites: 'Favoris',
+  all: $localize`:@@search.source.all:Toutes les cartes`,
+  uniques: $localize`:@@search.source.uniques:Uniques`,
+  owned: $localize`:@@search.source.owned:Propriété numérique`,
+  favorites: $localize`:@@search.source.favorites:Favoris`,
 };
+
+const FILTERS_TITLE = $localize`:@@search.card.filters:Filtres`;
 
 /** Mobile « Filtres » sheet: edits a draft and applies it when the user searches. */
 @Component({
@@ -31,9 +33,9 @@ export class FiltersSheetOverlay {
   protected readonly draft = signal<SearchFilters>(this.ref.data.filters);
 
   constructor() {
-    this.ref.title.set('Filtres');
+    this.ref.title.set(FILTERS_TITLE);
     this.ref.subtitle.set(SOURCE_LABEL[this.ref.data.source]);
-    this.ref.headerAction.set({ label: 'Réinitialiser', run: () => this.draft.set(defaultFilters(this.ref.data.source)) });
+    this.ref.headerAction.set({ label: $localize`:@@search.card.reset:Réinitialiser`, run: () => this.draft.set(defaultFilters(this.ref.data.source)) });
   }
 
   editEffect(index: number): void {
@@ -52,7 +54,7 @@ export class FiltersSheetOverlay {
 
 export function openFiltersSheet(overlay: ArOverlayService, data: FiltersSheetData) {
   return overlay.open<FiltersSheetOverlay, SearchFilters, FiltersSheetData>(FiltersSheetOverlay, {
-    title: 'Filtres',
+    title: FILTERS_TITLE,
     data,
     width: 560,
     sheetHeight: 'full',

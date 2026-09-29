@@ -53,10 +53,18 @@ width (`"fullwidth": false`), and each route tells the shell which menu entry is
 On the local / CI stack, `docker/stack/seed-decks.php` creates 16 public decks (copies of legal
 production decks, `docker/stack/community-decks.json`) so the *Communauté* tab has content.
 
+## Languages
+
+The interface and the card data (names, effects, images) follow the site language (`AlteredCore.lang`,
+`en` or `fr`; a change reloads the page). Sources are in French, marked with `@angular/localize`
+(`i18n="@@area.key"` in templates, `` $localize`:@@area.key:Texte` `` in TypeScript); the English
+translations are in `app/src/locale/messages.en.json`, loaded before the app modules when the site is in
+English. `npm run lint` runs `npm run i18n:check`, which fails on a message without a custom id or an
+English translation, and on a translation left over. Vocabulary: the site's deck builder
+(`plugins/core-altered-cards/includes/deckbuilder/i18n.php`, `data/search_settings.json`).
+
 ## Known gaps
 
-- Only the editor's main labels and the page titles follow `AlteredCore.lang`; the decks list, filters,
-  formats and messages are French. Card data (names, effects, images) follows the site language.
 - Not ported from the site's decks page: the Starter Deck Contest tab, the community deckbuilders
   window, the Equinox ZIP import. « Importer » (decklist) creates a guest deck, as in the standalone app.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.

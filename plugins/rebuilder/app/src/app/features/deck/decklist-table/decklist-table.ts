@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { rarityOf, typeOf } from '../../../core/deck-rules';
 import type { DeckGroup } from '../../../core/deck-view';
 import type { HydratedLine } from '../../../core/models';
+import { contentLocale } from '../../../core/locale';
 import { localizedText } from '../../../core/models';
 import { rarityIcon } from '../../../ui/chips';
 
@@ -22,7 +23,7 @@ function toRow(l: HydratedLine) {
   return {
     ref: l.card.reference,
     qty: l.quantity,
-    name: localizedText(l.card.name, 'fr') || l.card.reference,
+    name: localizedText(l.card.name, contentLocale()) || l.card.reference,
     icon: rarityIcon(rarityOf(l.card)),
     main: l.card.mainCost ?? '–',
     res: l.card.recallCost ?? '–',

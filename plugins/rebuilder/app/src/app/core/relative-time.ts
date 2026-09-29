@@ -1,5 +1,7 @@
-const short = new Intl.RelativeTimeFormat('fr', { numeric: 'auto', style: 'short' });
-const long = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
+import { uiLocale } from './i18n';
+
+const short = new Intl.RelativeTimeFormat(uiLocale(), { numeric: 'auto', style: 'short' });
+const long = new Intl.RelativeTimeFormat(uiLocale(), { numeric: 'auto' });
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -13,7 +15,7 @@ export function relativeTime(iso: string, now = Date.now()): string {
   const t = Date.parse(iso);
   if (!iso || Number.isNaN(t)) return '';
   const ago = Math.max(0, now - t);
-  if (ago < MINUTE) return 'à l’instant';
+  if (ago < MINUTE) return $localize`:@@time.justNow:à l’instant`;
   if (ago < HOUR) return short.format(-Math.floor(ago / MINUTE), 'minute');
   if (ago < DAY) return short.format(-Math.floor(ago / HOUR), 'hour');
   const days = Math.floor(ago / DAY);

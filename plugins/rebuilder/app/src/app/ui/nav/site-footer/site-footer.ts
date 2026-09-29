@@ -11,14 +11,14 @@ export interface ArExternalLink {
 
 /** Exact legal line from `design/features/actualites-pied-de-page.md`. */
 export const AR_SITE_FOOTER_DISCLAIMER =
-  "Altered Re:Builder est un site communautaire non officiel et n'est pas affilié à Equinox.";
+  $localize`:@@ui.siteFooter.disclaimer:Altered Re:Builder est un site communautaire non officiel et n'est pas affilié à Equinox.`;
 
 export const AR_SITE_FOOTER_LOGO = assetUrl('assets/img/altered-fan-content.png');
 
 /** Internal destinations. Actualités is linked before that screen exists. */
 export const AR_SITE_FOOTER_LINKS: ArNavLink[] = [
-  { label: 'Actualités', route: '/actualites' },
-  { label: 'Cartes', route: '/cartes' },
+  { label: $localize`:@@ui.siteFooter.news:Actualités`, route: '/actualites' },
+  { label: $localize`:@@ui.siteFooter.cards:Cartes`, route: '/cartes' },
   { label: 'Decks', route: '/decks' },
 ];
 

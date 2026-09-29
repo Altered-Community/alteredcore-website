@@ -116,7 +116,7 @@ export class DeckStore {
         const status = (err as { status?: number }).status;
         untracked(() =>
           this.error.set(
-            status === 401 || status === 403 ? 'Ce deck est privé : connexion requise.' : 'Impossible de charger le deck.',
+            status === 401 || status === 403 ? $localize`:@@core.deckStore.private:Ce deck est privé : connexion requise.` : $localize`:@@core.deckStore.loadFailed:Impossible de charger le deck.`,
           ),
         );
         return;
@@ -137,7 +137,7 @@ export class DeckStore {
 
   create(input: NewDeckInput): Deck {
     const deck = this.guests.create({
-      name: input.name.trim() || 'Nouveau deck',
+      name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: input.format,
       isPublic: input.isPublic,
       hero: input.hero,
@@ -155,7 +155,7 @@ export class DeckStore {
   createDeck(input: NewDeckInput): Observable<Deck> {
     if (this.createTarget !== 'account' || !this.auth.isLoggedIn()) return of(this.create(input));
     const body: DeckWrite = {
-      name: input.name.trim() || 'Nouveau deck',
+      name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: input.format,
       isPublic: input.isPublic,
       deckCards: [{ cardReference: input.hero.reference, quantity: 1 }],
@@ -190,7 +190,7 @@ export class DeckStore {
       if (!guest) {
         this.reset();
         this.deckId.set(id);
-        this.error.set('Deck introuvable sur cet appareil.');
+        this.error.set($localize`:@@core.deckStore.notOnDevice:Deck introuvable sur cet appareil.`);
         return;
       }
       this.apply(guest);
@@ -265,7 +265,7 @@ export class DeckStore {
         return true;
       }),
       catchError(() => {
-        this.error.set('Suppression refusée : connexion requise.');
+        this.error.set($localize`:@@core.deckStore.deleteRefused:Suppression refusée : connexion requise.`);
         return of(false);
       }),
     );
@@ -320,7 +320,7 @@ export class DeckStore {
       this.guests.save({
         ...(existing ?? { id }),
         id,
-        name: this.name() || 'Nouveau deck',
+        name: this.name() || $localize`:@@core.deck.defaultName:Nouveau deck`,
         format: this.format(),
         isPublic: this.isPublic(),
         hero: this.hero(),
@@ -346,7 +346,7 @@ export class DeckStore {
       },
       error: (err: { status?: number }) => {
         this.saving.set(false);
-        this.error.set(err.status === 401 ? 'Enregistrement serveur refusé (401).' : 'Échec de la sauvegarde.');
+        this.error.set(err.status === 401 ? $localize`:@@core.deckStore.saveRefused:Enregistrement serveur refusé (401).` : $localize`:@@core.deckStore.saveFailed:Échec de la sauvegarde.`);
       },
     });
   }
@@ -354,7 +354,7 @@ export class DeckStore {
   private apply(deck: Deck): void {
     const hero = heroOf(deck);
     this.deckId.set(deck.id);
-    this.name.set(deck.name || 'Sans nom');
+    this.name.set(deck.name || $localize`:@@core.deck.untitled:Sans nom`);
     this.format.set((deck.format as DeckFormat) || 'standard');
     this.isPublic.set(!!deck.isPublic);
     this.hero.set(hero);

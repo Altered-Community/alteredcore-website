@@ -1,12 +1,17 @@
 @if (search.source() === 'owned' || search.source() === 'favorites') {
   <div class="state">
-    <strong>{{ search.source() === 'owned' ? 'Propriété numérique' : 'Favoris' }}</strong>
-    <p>Connectez-vous pour retrouver {{ search.source() === 'owned' ? 'les cartes de votre collection numérique' : 'vos cartes favorites' }}.</p>
-    <a arButton variant="secondary" routerLink="/login">Se connecter</a>
+    @if (search.source() === 'owned') {
+      <strong i18n="@@search.source.owned">Propriété numérique</strong>
+      <p i18n="@@search.results.ownedLogin">Connectez-vous pour retrouver les cartes de votre collection numérique.</p>
+    } @else {
+      <strong i18n="@@search.source.favorites">Favoris</strong>
+      <p i18n="@@search.results.favoritesLogin">Connectez-vous pour retrouver vos cartes favorites.</p>
+    }
+    <a arButton variant="secondary" routerLink="/login" i18n="@@search.results.signIn">Se connecter</a>
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ar-virtual-grid #grid class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+    <ar-virtual-grid #grid class="grid" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
       @for (c of grid.slice(); track c.reference) {
         <ar-card-tile
           role="listitem"
@@ -27,7 +32,7 @@
       }
     </ar-virtual-grid>
   } @else {
-    <div class="list" role="list" aria-label="Cartes">
+    <div class="list" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards">
       @for (c of search.cards(); track c.reference) {
         <ar-deck-row
           role="listitem"
@@ -44,25 +49,26 @@
 
   @if (search.loading() && search.slow()) {
     <p class="slow" role="status">
-      Recherche en cours…
       @if (search.source() === 'uniques' && search.filters().environment === 'frontier') {
-        La première recherche Frontier prend une dizaine de secondes.
+        <ng-container i18n="@@search.results.slowFrontier">Recherche en cours… La première recherche Frontier prend une dizaine de secondes.</ng-container>
+      } @else {
+        <ng-container i18n="@@search.results.slow">Recherche en cours…</ng-container>
       }
     </p>
   }
   @if (search.error(); as e) {
     <div class="state" role="alert">
       <p>{{ e }}</p>
-      <button arButton variant="secondary" (click)="search.retry()">Réessayer</button>
+      <button arButton variant="secondary" (click)="search.retry()" i18n="@@search.results.retry">Réessayer</button>
     </div>
   } @else if (!search.loading() && search.total() === 0) {
     <div class="state">
-      <strong>Aucune carte</strong>
-      <p>Aucune carte ne correspond à ces filtres.</p>
-      <button arButton variant="secondary" (click)="search.reset()">Réinitialiser les filtres</button>
+      <strong i18n="@@search.results.emptyTitle">Aucune carte</strong>
+      <p i18n="@@search.results.empty">Aucune carte ne correspond à ces filtres.</p>
+      <button arButton variant="secondary" (click)="search.reset()" i18n="@@search.results.resetFilters">Réinitialiser les filtres</button>
     </div>
   } @else if (!search.hasMore() && search.cards().length) {
-    <p class="end">{{ search.cards().length }} cartes affichées · fin des résultats</p>
+    <p class="end" i18n="@@search.results.end">{search.cards().length, plural, =1 {1 carte affichée · fin des résultats} other {{{ search.cards().length }} cartes affichées · fin des résultats}}</p>
   }
   <div class="sentinel" arInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
 }

@@ -30,9 +30,17 @@ export class ArDeckCard {
   protected readonly factionLogo = computed(() => factionSrc(this.deck().hero?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck().hero?.faction));
   protected readonly updatedLabel = computed(() => relativeTime(this.deck().updatedAt));
-  protected readonly likeLabel = computed(() => `J’aime ${this.deck().name}, ${this.deck().likes} j’aime`);
+  protected readonly publicLabel = $localize`:@@ui.deckCard.public:Public`;
+  protected readonly privateLabel = $localize`:@@ui.deckCard.private:Privé`;
+  protected readonly noHero = $localize`:@@ui.deckCard.noHero:Sans héros`;
+  protected readonly likeLabel = computed(() => {
+    const { name, likes } = this.deck();
+    return likes === 1
+      ? $localize`:@@ui.deckCard.likeOne:J’aime ${name}:name:, ${likes}:likes: j’aime`
+      : $localize`:@@ui.deckCard.like:J’aime ${name}:name:, ${likes}:likes: j’aime`;
+  });
   protected readonly ariaLabel = computed(() => {
     const d = this.deck();
-    return [d.name, d.formatLabel, this.variant() === 'community' && d.author ? `par ${d.author}` : null].filter(Boolean).join(', ');
+    return [d.name, d.formatLabel, this.variant() === 'community' && d.author ? $localize`:@@ui.deckCard.by:par ${d.author}:author:` : null].filter(Boolean).join(', ');
   });
 }

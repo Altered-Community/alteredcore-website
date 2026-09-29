@@ -10,9 +10,9 @@
 <span class="name">{{ name() }}</span>
 <span class="type">{{ type() }}</span>
 @if (hasStats()) {
-  <span class="cost main" [attr.aria-label]="'Coût de main ' + card().mainCost">{{ card().mainCost }}</span>
-  <span class="cost recall" [attr.aria-label]="'Coût de réserve ' + card().recallCost">{{ card().recallCost }}</span>
-  <ul class="powers" aria-label="Puissances">
+  <span class="cost main" [attr.aria-label]="mainCostLabel()">{{ card().mainCost }}</span>
+  <span class="cost recall" [attr.aria-label]="reserveCostLabel()">{{ card().recallCost }}</span>
+  <ul class="powers" aria-label="Puissances" i18n-aria-label="@@ui.uniqueCard.powers">
     @for (b of biomes(); track b.key) {
       <li [class]="b.row" [attr.aria-label]="b.label + ' ' + b.value">{{ b.value }}</li>
     }

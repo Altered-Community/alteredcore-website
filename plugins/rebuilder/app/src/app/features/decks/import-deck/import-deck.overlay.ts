@@ -7,6 +7,7 @@ import { GuestDeckService } from '../../../core/guest-deck.service';
 import type { Card, DeckCardLine, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
+import { contentLocale } from '../../../core/locale';
 import { ArInput } from '../../../ui/fields';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
@@ -46,13 +47,13 @@ export class ImportDeckOverlay {
   run(): void {
     const rows = parseDecklist(this.text());
     if (!rows.length) {
-      this.error.set('Aucune ligne reconnue. Format attendu : « quantité référence ».');
+      this.error.set($localize`:@@decks.import.noLines:Aucune ligne reconnue. Format attendu : « quantité référence ».`);
       return;
     }
     this.busy.set(true);
     this.error.set(null);
     this.api
-      .batch(rows.map((r) => r.reference), 'fr')
+      .batch(rows.map((r) => r.reference), contentLocale())
       .pipe(catchError(() => of([] as Card[])))
       .subscribe((cards) => {
         const byRef = new Map(cards.map((c) => [c.reference, c]));
@@ -62,13 +63,13 @@ export class ImportDeckOverlay {
           if (typeOf(card) === 'HERO' && !hero) {
             hero = {
               reference: card.reference,
-              name: localizedText(card.name, 'fr') || card.reference,
+              name: localizedText(card.name, contentLocale()) || card.reference,
               faction: card.faction?.code ?? factionFromReference(card.reference),
             };
           }
           return cardToLine(card, typeOf(card) === 'HERO' ? 1 : r.quantity);
         });
-        const deck = this.guests.create({ name: this.name().trim() || 'Deck importé', hero, deckCards: lines });
+        const deck = this.guests.create({ name: this.name().trim() || $localize`:@@decks.import.defaultName:Deck importé`, hero, deckCards: lines });
         this.busy.set(false);
         this.ref.close(deck.id);
       });
@@ -76,5 +77,5 @@ export class ImportDeckOverlay {
 }
 
 export function openImportDeck(overlay: ArOverlayService) {
-  return overlay.open<ImportDeckOverlay, string>(ImportDeckOverlay, { title: 'Importer un deck', width: 560 });
+  return overlay.open<ImportDeckOverlay, string>(ImportDeckOverlay, { title: $localize`:@@decks.import.title:Importer un deck`, width: 560 });
 }

@@ -15,6 +15,10 @@ export class DeckPreview {
   readonly readonly = input(false);
   /** Three columns on compact (consultation « Cartes »). */
   readonly dense = input(false);
+  protected readonly labels = {
+    expandAll: $localize`:@@editor.preview.expandAll:Tout déplier`,
+    collapseAll: $localize`:@@editor.preview.collapseAll:Tout replier`,
+  };
   protected readonly closed = signal(new Set<string>());
   protected readonly allClosed = computed(() => this.deck.groups().length > 0 && this.deck.groups().every((g) => this.closed().has(g.id)));
 

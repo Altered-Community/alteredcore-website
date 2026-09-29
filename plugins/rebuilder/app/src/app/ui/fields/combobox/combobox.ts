@@ -29,15 +29,20 @@ export class ArCombobox {
   private readonly injector = inject(Injector);
   readonly options = input<ComboOption[]>([]);
   readonly values = model<ComboOption[]>([]);
-  readonly placeholder = input('Ajouter…');
+  readonly placeholder = input($localize`:@@ui.combobox.add:Ajouter…`);
   readonly emptyPlaceholder = input('');
-  readonly searchPlaceholder = input('Rechercher…');
+  readonly searchPlaceholder = input($localize`:@@ui.combobox.search:Rechercher…`);
   readonly searchChange = output<string>();
 
   private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
   private readonly search = viewChild<ElementRef<HTMLInputElement>>('search');
 
   protected readonly listId = nextId('ar-combo');
+  protected removeLabel(v: ComboOption): string {
+    return $localize`:@@ui.combobox.remove:Retirer ${v.text}:value:`;
+  }
+  protected readonly noResults = $localize`:@@ui.combobox.noResults:Aucun résultat`;
+  protected readonly noValues = $localize`:@@ui.combobox.noValues:Aucune valeur disponible`;
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly active = signal(-1);

@@ -2,28 +2,28 @@
   <ar-app-bar appearance="compact" title="Deck">
     <ar-back-button leading fallback="/decks" />
     @if (deck.owned()) {
-      <button actions class="edit" arIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" [iconSize]="22" (click)="edit()"></button>
+      <button actions class="edit" arIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" i18n-ariaLabel="@@deck.page.edit" [iconSize]="22" (click)="edit()"></button>
     }
-    <button actions arIconButton="share" variant="ghost" ariaLabel="Partager" [iconSize]="22" (click)="share()"></button>
-    <button actions arIconButton="more" variant="ghost" [ariaLabel]="deck.owned() ? 'Plus d’actions (copier la liste, dupliquer, supprimer)' : 'Plus d’actions (copier la liste, dupliquer)'" [iconSize]="22" (click)="more()"></button>
+    <button actions arIconButton="share" variant="ghost" ariaLabel="Partager" i18n-ariaLabel="@@deck.page.share" [iconSize]="22" (click)="share()"></button>
+    <button actions arIconButton="more" variant="ghost" [ariaLabel]="moreLabel()" [iconSize]="22" (click)="more()"></button>
   </ar-app-bar>
 }
 
 @if (deck.error(); as err) {
   <div class="state">
     <p>{{ err }}</p>
-    <a arButton variant="secondary" routerLink="/decks">Retour à mes decks</a>
+    <a arButton variant="secondary" routerLink="/decks" i18n="@@deck.page.backToDecks">Retour à mes decks</a>
   </div>
 } @else if (deck.loading()) {
-  <div class="state" aria-busy="true"><p>Chargement du deck…</p></div>
+  <div class="state" aria-busy="true"><p i18n="@@deck.page.loading">Chargement du deck…</p></div>
 } @else {
   <div class="page">
     <main class="main">
       @if (!bp.compact()) {
-        <a class="back" routerLink="/decks"><ar-icon name="chevron-left" [size]="16" />Mes decks</a>
-        <ar-tabs ariaLabel="Vues du deck" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
+        <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ar-icon name="chevron-left" [size]="16" />Mes decks</a>
+        <ar-tabs ariaLabel="Vues du deck" i18n-ariaLabel="@@deck.page.views" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
       } @else {
-        <section class="m-summary" aria-label="Résumé du deck">
+        <section class="m-summary" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
           <div class="m-top">
             <span class="m-thumb">
               @if (deck.hero(); as h) {
@@ -38,14 +38,14 @@
           <div class="badges">
             <ar-badge [tone]="info().badgeTone">{{ info().label }}</ar-badge>
             @if (legal()) {
-              <ar-badge tone="green" icon="check">Légal</ar-badge>
+              <ar-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ar-badge>
             } @else {
-              <ar-badge tone="orange" icon="alert">Non légal</ar-badge>
+              <ar-badge tone="orange" icon="alert" i18n="@@deck.page.illegal">Non légal</ar-badge>
             }
-            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? 'Public' : 'Privé' }}</ar-badge>
+            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ar-badge>
           </div>
           <div class="m-counts">
-            <span><strong>{{ deck.total() }}</strong> cartes</span>
+            <span i18n="@@deck.page.cardCount"><strong>{{ deck.total() }}</strong> cartes</span>
             <span class="sep" aria-hidden="true"></span>
             <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="12" />
           </div>
@@ -57,13 +57,13 @@
           <app-deck-list-view [readonly]="true" />
         } @else {
           <div class="grouping">
-            <ar-segmented ariaLabel="Regrouper par" [options]="groupingOptions" [(value)]="grouping" />
+            <ar-segmented ariaLabel="Regrouper par" i18n-ariaLabel="@@deck.page.groupBy" [options]="groupingOptions" [(value)]="grouping" />
           </div>
           <div class="tables">
             @for (g of groups(); track g.label) {
               <app-decklist-table [group]="g" />
             } @empty {
-              <p class="empty">Ce deck ne contient encore aucune carte.</p>
+              <p class="empty" i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
             }
           </div>
         }
@@ -78,39 +78,39 @@
     </main>
 
     @if (!bp.compact()) {
-      <aside class="aside" aria-label="Résumé du deck">
+      <aside class="aside" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
         <div class="banner">
           @if (deck.hero(); as h) {
-            <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" position="center 18%" [eager]="true" />
+            <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" i18n-placeholder="@@deck.page.heroArt" position="center 18%" [eager]="true" />
           }
         </div>
         <div class="aside-body">
           <div class="titles">
             <h1>{{ deck.name() }}</h1>
-            <span>{{ deck.hero()?.name }}@if (created()) { · créé le {{ created() }}}</span>
+            <span>{{ deck.hero()?.name }}@if (created()) { · <ng-container i18n="@@deck.page.createdOn">créé le {{ created() }}</ng-container>}</span>
           </div>
           <div class="badges">
             <ar-badge [tone]="info().badgeTone">{{ info().label }}</ar-badge>
             @if (legal()) {
-              <ar-badge tone="green" icon="check">Légal</ar-badge>
+              <ar-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ar-badge>
             } @else {
-              <ar-badge tone="orange" icon="alert">Non légal</ar-badge>
+              <ar-badge tone="orange" icon="alert" i18n="@@deck.page.illegal">Non légal</ar-badge>
             }
-            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? 'Public' : 'Privé' }}</ar-badge>
+            <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ar-badge>
           </div>
           <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
           <ar-collapsible title="Stats" [(open)]="statsOpen">
             <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
           </ar-collapsible>
           @if (deck.owned()) {
-            <button arButton icon="pencil" [fullWidth]="true" (click)="edit()">Modifier le deck</button>
+            <button arButton icon="pencil" [fullWidth]="true" (click)="edit()" i18n="@@deck.page.edit">Modifier le deck</button>
           }
           <div class="actions">
-            <button arButton variant="secondary" icon="copy" (click)="copyList()">Copier la liste</button>
-            <button arButton variant="secondary" icon="share" (click)="share()">Partager</button>
-            <button arButton variant="secondary" icon="duplicate" (click)="duplicate()">Dupliquer</button>
+            <button arButton variant="secondary" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
+            <button arButton variant="secondary" icon="share" (click)="share()" i18n="@@deck.page.share">Partager</button>
+            <button arButton variant="secondary" icon="duplicate" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
             @if (deck.owned()) {
-              <button arButton variant="danger" icon="trash" (click)="remove()">Supprimer</button>
+              <button arButton variant="danger" icon="trash" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
             }
           </div>
         </div>
@@ -119,7 +119,7 @@
   </div>
 
   @if (bp.compact()) {
-    <ar-bottom-nav ariaLabel="Consultation du deck" [items]="navItems()" />
+    <ar-bottom-nav ariaLabel="Consultation du deck" i18n-ariaLabel="@@deck.page.bottomNav" [items]="navItems()" />
   }
 }
 

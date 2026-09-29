@@ -110,8 +110,8 @@ export class CardSearchStore {
     if (!err) return null;
     const status = (err as { status?: number }).status;
     return status === 504 || status === 0
-      ? 'La recherche a pris trop de temps. Affinez les filtres (extension, coût, effet) et réessayez.'
-      : 'Impossible de charger les cartes.';
+      ? $localize`:@@search.store.timeout:La recherche a pris trop de temps. Affinez les filtres (extension, coût, effet) et réessayez.`
+      : $localize`:@@search.store.error:Impossible de charger les cartes.`;
   });
   readonly hasMore = computed(() => this.page() < this.lastPage());
   readonly chips = computed(() => filterChips(this.filters(), this.source()));

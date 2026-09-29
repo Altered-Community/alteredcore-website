@@ -1,7 +1,7 @@
 <div class="bar">
-  <p class="count"><strong>{{ deck.total() }} cartes</strong> · {{ deck.distinct() }} différentes</p>
+  <p class="count"><strong i18n="@@editor.preview.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong> · <ng-container i18n="@@editor.preview.distinct">{deck.distinct(), plural, =1 {1 différente} other {{{ deck.distinct() }} différentes}}</ng-container></p>
   @if (deck.groups().length) {
-    <button arButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? 'Tout déplier' : 'Tout replier' }}</button>
+    <button arButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? labels.expandAll : labels.collapseAll }}</button>
   }
 </div>
 @for (g of deck.groups(); track g.id) {
@@ -27,7 +27,7 @@
   </ar-deck-section>
 } @empty {
   <div class="empty">
-    <strong>Deck vide</strong>
-    <p>Ajoutez des cartes depuis la recherche.</p>
+    <strong i18n="@@editor.preview.emptyTitle">Deck vide</strong>
+    <p i18n="@@editor.preview.empty">Ajoutez des cartes depuis la recherche.</p>
   </div>
 }

@@ -1,11 +1,11 @@
 <header>
   <ng-content select="[leading]" />
   @if (appearance() === 'expanded') {
-    <a class="brand" routerLink="/" aria-label="Altered Re:Builder, accueil">
+    <a class="brand" routerLink="/" aria-label="Altered Re:Builder, accueil" i18n-aria-label="@@ui.appBar.home">
       <span class="logo" aria-hidden="true">AR</span>
       <span class="name">Altered Re:Builder</span>
     </a>
-    <nav class="links" aria-label="Navigation principale">
+    <nav class="links" aria-label="Navigation principale" i18n-aria-label="@@ui.appBar.mainNav">
       @for (l of links(); track l.route) {
         <a
           [routerLink]="l.route"

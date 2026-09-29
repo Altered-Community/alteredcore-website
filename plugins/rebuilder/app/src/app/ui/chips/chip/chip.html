@@ -3,7 +3,7 @@
   [class.on]="selected() || removable()"
   [class.square]="shape() === 'square'"
   [attr.aria-pressed]="removable() ? null : selected()"
-  [attr.aria-label]="removable() ? 'Retirer le filtre ' + label() : null"
+  [attr.aria-label]="removable() ? removeLabel() : null"
   (click)="removable() ? remove.emit() : selected.set(!selected())"
 >
   @if (dot()) {

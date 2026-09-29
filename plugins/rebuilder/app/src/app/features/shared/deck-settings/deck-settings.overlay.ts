@@ -29,6 +29,7 @@ export class DeckSettingsOverlay {
   protected readonly formats = DECK_FORMATS;
   protected readonly bga = BGA_LABEL;
   protected readonly visibility = VISIBILITY_OPTIONS;
+  protected readonly noHero = $localize`:@@shared.deckSettings.noHero:Aucun héros`;
 
   protected readonly hero = signal<DeckHero | null>(this.ref.data.hero);
   protected readonly format = signal<DeckFormat>(this.ref.data.format);
@@ -47,7 +48,7 @@ export class DeckSettingsOverlay {
 
 export function openDeckSettings(overlay: ArOverlayService, current: DeckSettings): ArOverlayRef<DeckSettings, DeckSettings> {
   return overlay.open<DeckSettingsOverlay, DeckSettings, DeckSettings>(DeckSettingsOverlay, {
-    title: 'Réglages du deck',
+    title: $localize`:@@shared.deckSettings.title:Réglages du deck`,
     data: current,
     width: 520,
   });

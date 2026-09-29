@@ -1,7 +1,7 @@
 <footer>
   <img class="logo" [src]="logoSrc()" [alt]="logoAlt()" width="1127" height="371" />
   <p class="disclaimer">{{ disclaimer() }}</p>
-  <nav aria-label="Liens du pied de page">
+  <nav aria-label="Liens du pied de page" i18n-aria-label="@@ui.siteFooter.links">
     @for (link of links(); track link.route) {
       <a [routerLink]="link.route">{{ link.label }}</a>
     }
@@ -9,7 +9,7 @@
       <a class="external" [href]="link.href" target="_blank" rel="noopener">
         {{ link.label }}
         <ar-icon name="external-link" [size]="13" />
-        <span class="ar-sr-only">(nouvel onglet)</span>
+        <span class="ar-sr-only" i18n="@@ui.siteFooter.newTab">(nouvel onglet)</span>
       </a>
     }
   </nav>

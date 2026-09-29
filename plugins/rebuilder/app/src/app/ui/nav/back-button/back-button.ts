@@ -15,7 +15,7 @@ export class ArBackButton {
   private readonly location = inject(Location);
   private readonly router = inject(Router);
   readonly fallback = input.required<string>();
-  readonly label = input('Retour');
+  readonly label = input($localize`:@@ui.backButton.label:Retour`);
 
   protected back(): void {
     if (this.history.canGoBack) this.location.back();

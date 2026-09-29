@@ -62,7 +62,7 @@ export class AuthService implements AuthSession {
   readonly username = computed(() => {
     const name = pseudoOf(this.stored()) ?? pseudoOf(this.idTokenSig());
     if (name) return name;
-    return this.stored() ? 'Compte' : null;
+    return this.stored() ? $localize`:@@core.auth.account:Compte` : null;
   });
 
   readonly keycloakConfigured = !!(
@@ -136,7 +136,7 @@ export class AuthService implements AuthSession {
     const redirectUri = readStorage(REDIRECT_KEY);
     if (!callback.code || !callback.state || !expected || callback.state !== expected || !verifier || !redirectUri) {
       this.clearPkce();
-      this.loginError.set('Connexion interrompue (état invalide). Vos decks invité restent sur cet appareil.');
+      this.loginError.set($localize`:@@core.auth.interrupted:Connexion interrompue (état invalide). Vos decks invité restent sur cet appareil.`);
       return;
     }
     this.loginPending.set(true);
@@ -264,7 +264,7 @@ export class AuthService implements AuthSession {
   private clearExpiredSession(): void {
     this.setAccessToken(null);
     this.clearPkce();
-    this.sessionNotice.set('Session expirée. Vos decks invités restent sur cet appareil.');
+    this.sessionNotice.set($localize`:@@core.auth.sessionExpired:Session expirée. Vos decks invités restent sur cet appareil.`);
   }
 
   private clearPkce(): void {
@@ -311,9 +311,9 @@ function pseudoOf(token: string | null): string | null {
 }
 
 function loginErrorMessage(error: string, description: string | null): string {
-  if (error === 'access_denied') return 'Connexion annulée. Vos decks invité restent sur cet appareil.';
+  if (error === 'access_denied') return $localize`:@@core.auth.cancelled:Connexion annulée. Vos decks invité restent sur cet appareil.`;
   if (description?.trim()) return description.trim().slice(0, 300);
-  return 'La connexion a échoué. Vos decks invité restent sur cet appareil.';
+  return $localize`:@@core.auth.failed:La connexion a échoué. Vos decks invité restent sur cet appareil.`;
 }
 
 function httpErrorMessage(err: unknown): string {
@@ -321,7 +321,7 @@ function httpErrorMessage(err: unknown): string {
     const description = err.error?.error_description;
     if (typeof description === 'string' && description.trim()) return description.trim().slice(0, 300);
   }
-  return 'La connexion a échoué. Vos decks invité restent sur cet appareil.';
+  return $localize`:@@core.auth.failed:La connexion a échoué. Vos decks invité restent sur cet appareil.`;
 }
 
 function readLocal(key: string): string | null {

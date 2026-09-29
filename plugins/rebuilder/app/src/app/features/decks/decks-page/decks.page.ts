@@ -7,6 +7,7 @@ import { toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage, type PublicDeckQuery } from '../../../core/decks-api.service';
 import { DECK_FORMATS } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
+import { uiLocale } from '../../../core/i18n';
 import { DeckStore } from '../../../core/deck-store';
 import { ArButton, ArIconButton } from '../../../ui/buttons';
 import { ArChip, ArCount } from '../../../ui/chips';
@@ -41,10 +42,10 @@ interface CommunityState {
 const EMPTY_COMMUNITY: CommunityState = { items: [], total: null, dropped: 0, page: 0, lastPage: 1 };
 
 const SORTS: { value: DeckSort; label: string }[] = [
-  { value: 'updated', label: 'Récemment modifié' },
-  { value: 'created', label: 'Récemment créé' },
-  { value: 'likes', label: 'Les plus aimés' },
-  { value: 'name', label: 'Nom' },
+  { value: 'updated', label: $localize`:@@decks.page.sortUpdated:Récemment modifié` },
+  { value: 'created', label: $localize`:@@decks.page.sortCreated:Récemment créé` },
+  { value: 'likes', label: $localize`:@@decks.page.sortLikes:Les plus aimés` },
+  { value: 'name', label: $localize`:@@decks.page.sortName:Nom` },
 ];
 
 const API_ORDER: Record<DeckSort, NonNullable<PublicDeckQuery['order']>> = {
@@ -92,8 +93,8 @@ export class DecksPage {
     const err = this.serverRes.error();
     if (!err) return null;
     return (err as { status?: number }).status === 401
-      ? 'Session expirée : les decks du compte ne peuvent pas être chargés (401).'
-      : 'Decks du compte indisponibles.';
+      ? $localize`:@@decks.page.sessionExpired:Session expirée : les decks du compte ne peuvent pas être chargés (401).`
+      : $localize`:@@decks.page.accountDecksUnavailable:Decks du compte indisponibles.`;
   });
   protected readonly mine = computed(() => [...this.guests.decks(), ...this.serverDecks()].map(toDeckListItem));
   protected readonly mineFiltered = computed(() => filterDecks(this.mine(), this.filters()));
@@ -147,7 +148,7 @@ export class DecksPage {
   protected readonly community = computed(() => this.communityState().items);
   protected readonly communityTotal = computed(() => this.communityState().total);
   protected readonly communityLoading = computed(() => this.communityRes.isLoading());
-  protected readonly communityError = computed(() => (this.communityRes.error() ? 'Impossible de charger les decks publics.' : null));
+  protected readonly communityError = computed(() => (this.communityRes.error() ? $localize`:@@decks.page.communityError:Impossible de charger les decks publics.` : null));
   /** The infinite-scroll sentinel is on screen. */
   private readonly wantMore = signal(false);
   /** Window scroll of this list. Kept while a deck is open so Back can return to the same offset. */
@@ -168,18 +169,18 @@ export class DecksPage {
     return (this.tab() === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
   });
   protected readonly tabs = computed(() => [
-    { id: 'mine', label: `Mes decks · ${this.mine().length}` },
-    { id: 'community', label: 'Communauté' },
+    { id: 'mine', label: $localize`:@@decks.page.tabMine:Mes decks · ${this.mine().length}:count:` },
+    { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
   ]);
-  protected readonly formats = [{ value: '', label: 'Tous les formats' }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
+  protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
   protected readonly heroes = computed(() => {
     const names = [...new Set(this.mine().map((d) => d.hero?.name).filter((n): n is string => !!n))].sort();
-    return [{ value: '', label: 'Tous les héros' }, ...names.map((n) => ({ value: n, label: n }))];
+    return [{ value: '', label: $localize`:@@decks.page.allHeroes:Tous les héros` }, ...names.map((n) => ({ value: n, label: n }))];
   });
   protected readonly visibilities = [
-    { value: 'all' as Visibility, label: 'Tous' },
-    { value: 'public' as Visibility, label: 'Publics' },
-    { value: 'private' as Visibility, label: 'Privés' },
+    { value: 'all' as Visibility, label: $localize`:@@decks.page.visibilityAll:Tous` },
+    { value: 'public' as Visibility, label: $localize`:@@decks.page.visibilityPublic:Publics` },
+    { value: 'private' as Visibility, label: $localize`:@@decks.page.visibilityPrivate:Privés` },
   ];
   protected readonly sorts = SORTS;
   protected readonly factions = FACTIONS;
@@ -189,8 +190,18 @@ export class DecksPage {
   });
   protected readonly countLabel = computed(() => {
     const n = this.tab() === 'mine' ? this.list().length : this.communityTotal() ?? this.list().length;
-    return `${n.toLocaleString('fr-FR')} deck${n > 1 ? 's' : ''}`;
+    const count = n.toLocaleString(uiLocale());
+    // French puts 0 in the singular, English in the plural.
+    const plural = uiLocale() === 'fr' ? n > 1 : n !== 1;
+    return plural ? $localize`:@@decks.page.countMany:${count}:count: decks` : $localize`:@@decks.page.countOne:${count}:count: deck`;
   });
+  protected readonly filtersLabel = computed(() => {
+    const active = this.activeFilters();
+    return active ? $localize`:@@decks.page.filtersActive:Filtres, ${active}:count: actifs` : $localize`:@@decks.page.filters:Filtres`;
+  });
+  protected readonly listLabel = computed(() =>
+    this.tab() === 'mine' ? $localize`:@@decks.page.mineList:Mes decks` : $localize`:@@decks.page.communityList:Decks de la communauté`,
+  );
 
   constructor() {
     this.guests.reload();
@@ -274,7 +285,7 @@ export class DecksPage {
   protected openFilters(): void {
     this.overlay
       .open<DeckFiltersSheet, DeckFilters>(DeckFiltersSheet, {
-        title: 'Filtres',
+        title: $localize`:@@decks.page.filters:Filtres`,
         data: {
           filters: this.filters(),
           formats: this.formats,
