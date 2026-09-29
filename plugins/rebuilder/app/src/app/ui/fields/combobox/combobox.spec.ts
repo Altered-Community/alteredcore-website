@@ -96,6 +96,28 @@ describe('ArCombobox picker', () => {
     el.remove();
   });
 
+  it('in a shadow root (the plugin), a press on an option keeps the list open until the click picks it', () => {
+    const { fixture, el, open } = setup([MAIN, EXPEDITION]);
+    const shadowHost = document.createElement('div');
+    document.body.appendChild(shadowHost);
+    shadowHost.attachShadow({ mode: 'open' }).appendChild(el);
+    open();
+    const option = el.querySelector<HTMLButtonElement>('[role=option]')!;
+    // Seen from `document`, the target of this event is `shadowHost`, not the option.
+    option.dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }));
+    fixture.detectChanges();
+    expect(el.querySelector('.panel')).not.toBeNull();
+    option.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.values()).toEqual([MAIN]);
+
+    open();
+    shadowHost.shadowRoot!.appendChild(document.createElement('p')).dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }));
+    fixture.detectChanges();
+    expect(el.querySelector('.panel')).toBeNull();
+    shadowHost.remove();
+  });
+
   it('shows the glyph in the option and on the chip', () => {
     const { fixture, el, open } = setup([HAND]);
     open();

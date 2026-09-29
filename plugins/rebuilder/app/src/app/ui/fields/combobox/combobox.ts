@@ -142,8 +142,12 @@ export class ArCombobox {
     if (next && !this.host.nativeElement.contains(next)) this.dismiss();
   }
 
+  /**
+   * Closes on a press outside. In the plugin's shadow root, `e.target` seen from `document` is the
+   * shadow host, never an element of the list: the composed path tells where the press really landed.
+   */
   protected onDocumentPointerDown(e: Event): void {
-    if (this.open() && !this.host.nativeElement.contains(e.target as Node)) this.dismiss();
+    if (this.open() && !e.composedPath().includes(this.host.nativeElement)) this.dismiss();
   }
 
   /** Opens the list; no option is highlighted until an arrow key or a search picks one. */
