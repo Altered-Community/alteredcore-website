@@ -30,10 +30,6 @@ body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.site-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-}
 body.page-fullwidth main {
     width: 100vw;
     margin-left: calc(50% - 50vw);
@@ -56,13 +52,15 @@ a:hover { color: var(--primary-400); }
 /* ---- Header / Navbar ---- */
 .site-header {
     background: var(--sand-100);
-    padding: 0.5rem 0;
+    padding: 0.5rem var(--site-gutter);
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
 .altered-navbar {
+    max-width: calc(var(--site-max-width) - 2 * var(--site-gutter));
+    margin: 0 auto;
     background-color: var(--sand-100);
     border: 4px solid var(--sand-200);
     border-radius: 1.5rem;

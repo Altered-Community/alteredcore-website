@@ -29,7 +29,8 @@
 .db-ss-tab-badge.ok { background:#22c55e; }
 .db-mobile-tab { position:relative; }
 
-.db-ss-strip { display:flex; flex-direction:column; align-items:stretch; gap:8px; position:sticky; top:calc(var(--db-ss-header, 0px) + 6px); z-index:1020; margin-bottom:14px; padding:8px 12px;
+/* z-index 10: above card overlays (≤4) and below dropdown menus (Tom Select, Bootstrap: 1000) and the sticky header. */
+.db-ss-strip { display:flex; flex-direction:column; align-items:stretch; gap:8px; position:sticky; top:calc(var(--db-ss-header, 0px) + 6px); z-index:10; margin-bottom:14px; padding:8px 12px;
     border:1px solid var(--panel-border, var(--sand-200)); border-radius:14px; background:var(--card-bg, var(--panel-bg, #fff));
     box-shadow:0 6px 20px rgba(15,23,42,.08); }
 .db-ss-strip-main { display:flex; align-items:center; gap:12px; min-width:0; }

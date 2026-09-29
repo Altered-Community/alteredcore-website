@@ -89,7 +89,7 @@ if ($_ftCss): ?>
 <?php endif; ?>
 
 <footer class="az-footer site-footer">
-    <div class="container" style="max-width:1200px">
+    <div class="container site-footer-inner">
 
         <!-- 4 columns -->
         <div class="row g-4 mb-4">
