@@ -196,7 +196,12 @@ export class DecksPage {
   protected readonly contestLoading = computed(() => this.contestRes.isLoading());
   protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
   protected readonly heroes = computed(() => {
-    const decks = this.tab() === 'contest' ? this.contestInSet() : this.mine();
+    // On the contest tab, the heroes of the selected factions only (as on the site's decks page).
+    const factions = this.filters().factions;
+    const decks =
+      this.tab() === 'contest'
+        ? this.contestInSet().filter((d) => !factions.length || (!!d.hero && factions.includes(d.hero.faction)))
+        : this.mine();
     const names = [...new Set(decks.map((d) => d.hero?.name).filter((n): n is string => !!n))].sort((a, b) => a.localeCompare(b, uiLocale()));
     return [{ value: '', label: $localize`:@@decks.page.allHeroes:Tous les héros` }, ...names.map((n) => ({ value: n, label: n }))];
   });
@@ -231,6 +236,26 @@ export class DecksPage {
 
   constructor() {
     this.guests.reload();
+    // Contest tab: its filters come from the URL (`set`, `faction`, `hero`, `q`) and are kept there,
+    // so a filtered list can be shared, as on the site's decks page.
+    const initial = this.route.snapshot.queryParamMap;
+    if (initial.get('tab') === 'contest') {
+      if (initial.get('set') === 'all') this.contestSet.set('all');
+      const factions = (initial.get('faction') ?? '').split(',').filter((c) => FACTIONS.some((f) => f.code === c));
+      this.filters.update((f) => ({ ...f, factions, hero: initial.get('hero') ?? '', q: initial.get('q') ?? '' }));
+    }
+    effect(() => {
+      if (this.tab() !== 'contest') return;
+      const f = this.filters();
+      const queryParams = {
+        tab: 'contest',
+        set: this.contestSet() === 'all' ? 'all' : null,
+        faction: f.factions.join(',') || null,
+        hero: f.hero || null,
+        q: f.q.trim() || null,
+      };
+      untracked(() => void this.router.navigate([], { queryParams, replaceUrl: true }));
+    });
     // Keeps loading pages while the sentinel stays visible (fast scroll, tall screens).
     effect(() => {
       const { page, lastPage } = this.communityState();
@@ -285,6 +310,7 @@ export class DecksPage {
 
   protected setTab(id: string): void {
     const tab = TABS.find((t) => t === id) ?? 'mine';
+    // Only `tab` is kept: the contest filters of the URL do not follow to the other tabs.
     void this.router.navigate([], { queryParams: { tab: tab === 'mine' ? null : tab }, replaceUrl: true });
   }
 
@@ -300,7 +326,9 @@ export class DecksPage {
   }
 
   protected toggleFaction(code: string, on: boolean): void {
-    this.filters.update((f) => ({ ...f, factions: on ? [...f.factions, code] : f.factions.filter((c) => c !== code) }));
+    // On the contest tab the hero list follows the factions, so the hero is cleared (as on the site).
+    const hero = this.tab() === 'contest' ? '' : undefined;
+    this.filters.update((f) => ({ ...f, ...(hero === undefined ? {} : { hero }), factions: on ? [...f.factions, code] : f.factions.filter((c) => c !== code) }));
   }
 
   protected newDeck(): void {

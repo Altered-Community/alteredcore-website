@@ -41,12 +41,14 @@ test.describe('Shell · SPA pages', () => {
     expect(await page.evaluate(() => (window as unknown as { AlteredCore: { services: Record<string, string> } }).AlteredCore.services['decks'])).toBe('/api/v1/services/decks');
 
     // The plugin renders inside its shadow root; none of its styles land in the site's <head>.
-    const styles = await page.evaluate(() => ({
-      head: [...document.head.querySelectorAll('style')].filter((s) => /_ng(host|content)-/.test(s.textContent ?? '')).length,
-      shadow: document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelectorAll('style').length,
-    }));
-    expect(styles.head).toBe(0);
-    expect(styles.shadow).toBeGreaterThan(0);
+    // Component styles arrive with the first route's components: wait for them.
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelectorAll('style').length))
+      .toBeGreaterThan(0);
+    const headStyles = await page.evaluate(
+      () => [...document.head.querySelectorAll('style')].filter((s) => /_ng(host|content)-/.test(s.textContent ?? '')).length,
+    );
+    expect(headStyles).toBe(0);
 
     // Bootstrap (site) does not style the plugin's buttons, the site theme tokens do reach it.
     const probe = await page.evaluate(() => {

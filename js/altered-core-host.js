@@ -5,9 +5,9 @@
  *
  * window.AlteredCore (version 1)
  *   version, baseUrl, siteName, lang ('en' | 'fr'), theme ('light' | 'dark'),
- *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, uniques, decks, collection }),
+ *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, uniques, decks, collection, ownership }),
  *   page ({ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount })
- *   services.cards / .cdn / .uniques are public and called directly; services.decks / .collection are
+ *   services.cards / .cdn / .uniques are public and called directly; services.decks / .collection / .ownership are
  *   the site's relay (/api/v1/services/…), which adds the session's Keycloak token server-side:
  *   the browser never holds a token. page.apiUrl is the plugin's own PHP endpoints
  *   (/papi/{plugin}/, manifest "api"). Writes to both send the header X-CSRF-Token: csrf.

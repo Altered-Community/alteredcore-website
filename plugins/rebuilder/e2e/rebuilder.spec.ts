@@ -320,6 +320,12 @@ test.describe('ReBuilder in the shell · Starter Deck Contest', () => {
     await page.getByRole('textbox', { name: 'Rechercher un deck' }).first().fill('Akesha');
     await expect(list.locator('ar-deck-card').first()).toContainText('Akesha');
     await expect(list.locator('ar-deck-card').filter({ hasNotText: 'Akesha' })).toHaveCount(0);
+    // The filters stay in the URL, and a shared URL opens the same list.
+    await expect(page).toHaveURL(/tab=contest/);
+    await expect(page).toHaveURL(/set=all/);
+    await expect(page).toHaveURL(/q=Akesha/);
+    await page.goto(`${DECKS}?tab=contest&set=all&faction=YZ&lang=fr`);
+    await expect(list.locator('ar-deck-card')).toHaveCount(26);
     // A contest deck is a public deck of the decks API, opened like any other.
     await expect(list.locator('ar-deck-card').first().getByRole('link').first()).toHaveAttribute('href', /\/decks\/[0-9a-f-]{36}$/);
   });

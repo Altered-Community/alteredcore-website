@@ -104,7 +104,7 @@ function spaPublicServiceUrl(string $name): string {
  */
 function spaProxyServices(): array {
     $out = [];
-    foreach (['decks' => 'DECKS_API_URL', 'collection' => 'COLLECTION_API_URL'] as $name => $const) {
+    foreach (['decks' => 'DECKS_API_URL', 'collection' => 'COLLECTION_API_URL', 'ownership' => 'OWNERSHIP_API_URL'] as $name => $const) {
         if (defined($const) && (string)constant($const) !== '') $out[$name] = rtrim((string)constant($const), '/');
     }
     return $out;

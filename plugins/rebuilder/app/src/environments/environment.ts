@@ -5,4 +5,6 @@ export const environment = {
   uniquesApiUrl: 'https://search.altered.re',
   decksApiUrl: 'https://decks.alteredcore.org',
   cdnUrl: 'https://cdn.alteredcore.org',
+  /** Digital ownership (alt-art preferences), through the site's relay only: empty outside the site. */
+  ownershipApiUrl: '',
 };

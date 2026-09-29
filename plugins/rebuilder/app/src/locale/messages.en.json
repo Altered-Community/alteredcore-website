@@ -386,7 +386,6 @@
     "decks.equinox.fileLabel": "altered.gg export (.zip)",
     "decks.equinox.dedupWarn": "Your decks could not be listed: duplicates are not detected, every deck is imported.",
     "decks.equinox.rows": "Decks of the export",
-    "decks.equinox.stop": "Stop",
     "decks.equinox.retry": "Retry",
     "decks.equinox.reading": "Reading the file…",
     "decks.equinox.pending": "Pending",
@@ -415,6 +414,22 @@
     "decks.equinox.sumCancelledOne": "1 cancelled",
     "decks.equinox.sumCancelled": "{$count} cancelled",
     "decks.equinox.done": "Done",
-    "decks.equinox.sumImportedNone": "No deck imported"
+    "decks.equinox.sumImportedNone": "No deck imported",
+    "decks.equinox.paused": "Paused",
+    "decks.equinox.attemptsLeft": "{VAR_PLURAL, plural, =1 {1 attempt left} other {{INTERPOLATION} attempts left}}",
+    "decks.equinox.cancelConfirm": "Cancel the import? Decks already imported are kept.",
+    "decks.equinox.keepGoing": "Continue",
+    "decks.equinox.cancelYes": "Cancel the import",
+    "decks.equinox.cancel": "Cancel",
+    "decks.equinox.resume": "Resume",
+    "decks.equinox.pause": "Pause",
+    "decks.equinox.another": "Import another file",
+    "decks.equinox.failedFinal": "Final failure",
+    "decks.equinox.etaSec": "~{$secs} s left",
+    "decks.equinox.etaMinSec": "~{$mins} min {$secs} s left",
+    "decks.equinox.etaMin": "~{$mins} min left",
+    "decks.equinox.titleCancelled": "Import cancelled",
+    "decks.equinox.titleDone": "Import complete",
+    "decks.equinox.invalidDeck": "This deck has no valid card and cannot be imported."
   }
 }

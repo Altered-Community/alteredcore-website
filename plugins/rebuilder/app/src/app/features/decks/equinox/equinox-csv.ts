@@ -14,7 +14,7 @@ export interface EquinoxDeck {
   /** As exported, lowercased; `standard` when empty. */
   format: string;
   hero: string;
-  /** Hero first (quantity 1) when the export lists it apart. */
+  /** The exported cards (the hero is usually not among them: see `withHero`). */
   cards: DeckCardRef[];
 }
 
@@ -71,9 +71,14 @@ export function parseEquinoxCsv(raw: string): EquinoxDeck[] {
   }
   return [...decks.values()].map((d) => {
     const cards = [...d.cards].filter(([, q]) => q <= MAX_QUANTITY).map(([cardReference, quantity]) => ({ cardReference, quantity }));
-    if (REFERENCE.test(d.hero) && !d.cards.has(d.hero)) cards.unshift({ cardReference: d.hero, quantity: 1 });
     return { name: d.name, format: d.format, hero: d.hero, cards };
   });
+}
+
+/** The deck's cards with its hero first (quantity 1), unless the export already lists it. */
+export function withHero(hero: string, cards: DeckCardRef[]): DeckCardRef[] {
+  if (!REFERENCE.test(hero) || cards.some((c) => c.cardReference === hero)) return cards;
+  return [{ cardReference: hero, quantity: 1 }, ...cards];
 }
 
 /** Same name (case and spaces aside) and same cards: the deck is already in the account. */

@@ -21,14 +21,22 @@
       <p class="notice warn" role="status" i18n="@@decks.equinox.dedupWarn">Vos decks n’ont pas pu être listés : les doublons ne sont pas détectés, tous les decks sont importés.</p>
     }
     <div class="progress" role="status">
-      @if (phase() === 'importing') {
-        <span>{{ progressLabel() }}</span>
+      @if (phase() === 'done') {
+        <strong>{{ doneTitle() }}</strong>
+        <span>{{ summary() }}</span>
       } @else {
-        <strong>{{ summary() }}</strong>
+        <span class="progress-line">
+          <strong>{{ progressLabel() }}</strong>
+          @if (phase() === 'paused') {
+            <span class="muted" i18n="@@decks.equinox.paused">En pause</span>
+          } @else if (eta(); as t) {
+            <span class="muted">{{ t }}</span>
+          }
+        </span>
       }
       <ar-progress-bar [value]="progress()" [ariaLabel]="progressLabel()" />
     </div>
-    <ul class="rows" aria-label="Decks de l’export" i18n-aria-label="@@decks.equinox.rows">
+    <ul #list class="rows" aria-label="Decks de l’export" i18n-aria-label="@@decks.equinox.rows">
       @for (r of rows(); track $index) {
         <li [class.current]="r.status === 'current'">
           <span class="name">{{ r.deck.name }}</span>
@@ -36,18 +44,37 @@
           @if (r.error; as e) {
             <span class="row-error">{{ e }}</span>
           }
+          @if (r.status === 'failed' && isRunning()) {
+            <span class="row-retry">
+              <button arButton variant="secondary" size="sm" (click)="retry($index)" i18n="@@decks.equinox.retry">Réessayer</button>
+              <span class="muted" i18n="@@decks.equinox.attemptsLeft">{maxAttempts - r.attempts, plural, =1 {1 essai restant} other {{{ maxAttempts - r.attempts }} essais restants}}</span>
+            </span>
+          }
         </li>
       }
     </ul>
+    @if (confirmCancel()) {
+      <p class="notice warn" role="alert" i18n="@@decks.equinox.cancelConfirm">Annuler l’import ? Les decks déjà importés sont conservés.</p>
+    }
   }
 </div>
 <div class="ar-overlay-footer">
-  @if (phase() === 'importing') {
-    <button arButton variant="secondary" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="cancel()" i18n="@@decks.equinox.stop">Arrêter</button>
-  } @else if (phase() === 'done') {
-    @if (counts().failed || counts().cancelled) {
-      <button arButton variant="secondary" class="secondary-action" (click)="retryFailed()" i18n="@@decks.equinox.retry">Réessayer</button>
+  @if (isRunning()) {
+    @if (confirmCancel()) {
+      <button arButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(false)" i18n="@@decks.equinox.keepGoing">Continuer</button>
+      <button arButton variant="danger" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="cancel()" i18n="@@decks.equinox.cancelYes">Annuler l’import</button>
+    } @else {
+      <button arButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(true)" i18n="@@decks.equinox.cancel">Annuler</button>
+      <button arButton variant="secondary" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="togglePause()">
+        @if (phase() === 'paused') {
+          <ng-container i18n="@@decks.equinox.resume">Reprendre</ng-container>
+        } @else {
+          <ng-container i18n="@@decks.equinox.pause">Pause</ng-container>
+        }
+      </button>
     }
+  } @else if (phase() === 'done') {
+    <button arButton variant="secondary" class="secondary-action" (click)="reset()" i18n="@@decks.equinox.another">Importer un autre fichier</button>
     <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="close()" i18n="@@decks.equinox.done">Terminer</button>
   } @else {
     <button arButton variant="secondary" class="secondary-action" (click)="close()" i18n="@@decks.import.cancel">Annuler</button>

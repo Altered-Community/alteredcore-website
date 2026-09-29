@@ -1,9 +1,9 @@
-import { parseEquinoxCsv, sameDeck, splitCsvLine } from './equinox-csv';
+import { parseEquinoxCsv, sameDeck, splitCsvLine, withHero } from './equinox-csv';
 
 const HEADER = 'id;name;format;hero;col;ref;col;qty';
 
 describe('parseEquinoxCsv', () => {
-  it('groups rows by deck id, sums duplicate cards and puts the hero first', () => {
+  it('groups rows by deck id and sums duplicate cards', () => {
     const decks = parseEquinoxCsv(
       [HEADER, 'D1;My Deck;Standard;alt_core_b_ax_01_c;x;ALT_CARD_A;y;2', 'D1;My Deck;standard;ALT_CORE_B_AX_01_C;x;ALT_CARD_A;y;1', 'D1;My Deck;standard;ALT_CORE_B_AX_01_C;x;alt_card_b;y;3', 'D2;Other;;ALT_HERO;x;ALT_CARD_C;y;1'].join('\n'),
     );
@@ -13,12 +13,11 @@ describe('parseEquinoxCsv', () => {
         format: 'standard',
         hero: 'ALT_CORE_B_AX_01_C',
         cards: [
-          { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
           { cardReference: 'ALT_CARD_A', quantity: 3 },
           { cardReference: 'ALT_CARD_B', quantity: 3 },
         ],
       },
-      { name: 'Other', format: 'standard', hero: 'ALT_HERO', cards: [{ cardReference: 'ALT_HERO', quantity: 1 }, { cardReference: 'ALT_CARD_C', quantity: 1 }] },
+      { name: 'Other', format: 'standard', hero: 'ALT_HERO', cards: [{ cardReference: 'ALT_CARD_C', quantity: 1 }] },
     ]);
   });
 
@@ -30,11 +29,20 @@ describe('parseEquinoxCsv', () => {
 
   it('skips short rows, rows without id, invalid references and quantities', () => {
     const decks = parseEquinoxCsv([HEADER, 'D1;A;standard;ALT_HERO;x;ALT_CARD_A', ';A;standard;ALT_HERO;x;ALT_CARD_A;y;1', 'D1;A;standard;ALT_HERO;x;NOT_A_CARD;y;1', 'D1;A;standard;ALT_HERO;x;ALT_CARD_B;y;0', 'D1;A;standard;ALT_HERO;x;ALT_CARD_C;y;100'].join('\n'));
-    expect(decks).toEqual([{ name: 'A', format: 'standard', hero: 'ALT_HERO', cards: [{ cardReference: 'ALT_HERO', quantity: 1 }] }]);
+    expect(decks).toEqual([{ name: 'A', format: 'standard', hero: 'ALT_HERO', cards: [] }]);
   });
 
   it('splits on semicolons outside quotes only', () => {
     expect(splitCsvLine('a;"b;c";;d')).toEqual(['a', 'b;c', '', 'd']);
+  });
+});
+
+describe('withHero', () => {
+  it('puts the hero first, once', () => {
+    const cards = [{ cardReference: 'ALT_CARD_A', quantity: 3 }];
+    expect(withHero('ALT_HERO', cards)).toEqual([{ cardReference: 'ALT_HERO', quantity: 1 }, ...cards]);
+    expect(withHero('ALT_CARD_A', cards)).toBe(cards);
+    expect(withHero('', cards)).toBe(cards);
   });
 });
 
