@@ -87,7 +87,7 @@ export class DecksPage {
    */
   private readonly serverRes = rxResource({
     params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
-    stream: () => this.decksApi.listMine(1, 60).pipe(map((body) => (Array.isArray(body) ? body : body.member ?? []))),
+    stream: () => this.decksApi.listAllMine(),
   });
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {

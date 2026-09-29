@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, expand, map, reduce, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthSession } from './auth-session';
 import type { Deck, DeckWrite } from './models';
@@ -42,6 +42,20 @@ export class DecksApiService {
           'order[updatedAt]': 'desc',
         },
       }),
+    );
+  }
+
+  /**
+   * Every deck of the caller: `listMine` page after page until a page comes back shorter than
+   * `itemsPerPage` (or empty), at most `maxPages` requests.
+   */
+  listAllMine(itemsPerPage = 100, maxPages = 50): Observable<Deck[]> {
+    const fetch = (page: number) =>
+      this.listMine(page, itemsPerPage).pipe(map((body) => ({ page, decks: Array.isArray(body) ? body : body.member ?? [] })));
+    return fetch(1).pipe(
+      expand(({ page, decks }) => (decks.length < itemsPerPage || page >= maxPages ? EMPTY : fetch(page + 1))),
+      reduce((all: Deck[], { decks }) => [...all, ...decks], []),
+      map((all) => [...new Map(all.map((d) => [d.id, d])).values()]),
     );
   }
 
