@@ -1,19 +1,19 @@
 :host {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
   min-height: 51px;
-  padding: 0 var(--ar-space-1);
-  border-bottom: 1px solid var(--ar-color-divider);
+  padding: 0 var(--ac-space-1);
+  border-bottom: 1px solid var(--ac-color-divider);
 }
 :host(.panel) {
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
   min-height: 36px;
   border-bottom: none;
-  border-radius: var(--ar-radius-md);
+  border-radius: var(--ac-radius-md);
 }
 :host(.panel:hover) {
-  background: var(--ar-color-bg-subtle);
+  background: var(--ac-color-bg-subtle);
 }
 :host(:last-child) {
   border-bottom: none;
@@ -56,10 +56,10 @@
   justify-content: center;
 }
 .c.main {
-  background: var(--ar-color-inverse);
-  color: var(--ar-color-on-inverse);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
 }
 .c.res {
-  border: 1.5px solid var(--ar-color-text);
-  color: var(--ar-color-text);
+  border: 1.5px solid var(--ac-color-text);
+  color: var(--ac-color-text);
 }

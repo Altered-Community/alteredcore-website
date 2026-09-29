@@ -1,23 +1,19 @@
 button {
-  width: 40px;
-  height: 40px;
+  width: var(--ac-control-md);
+  height: var(--ac-control-md);
   border-radius: 50%;
   border: none;
-  background: var(--ar-color-primary);
-  color: var(--ar-color-on-primary);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--ar-shadow-fab);
+  box-shadow: var(--ac-shadow-fab);
   cursor: pointer;
   padding: 0;
 }
-:host-context([data-density='touch']) button {
-  width: 48px;
-  height: 48px;
-}
 button:hover {
-  background: var(--ar-color-primary-strong);
+  background: var(--ac-color-primary-strong);
 }
 button:disabled {
   opacity: 0.45;

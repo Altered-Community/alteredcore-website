@@ -46,7 +46,6 @@ Thumbs.db
 # Secrets / local env (.env.example is the only committed sample)
 .env*
 !.env.example
-auth-bff.env
 config.local.php
 
 # Local keys and machine paths
@@ -58,7 +57,6 @@ config.local.php
 id_rsa
 id_ed25519
 id_ecdsa
-android/local.properties
 
 # Tunnel configs (hostnames and credentials stay on the machine)
 .cloudflared/
@@ -67,21 +65,5 @@ ngrok.yml
 *.ngrok.yml
 *.trapdoor.yml
 
-# Capacitor / native
-/ios/App/Pods
-/ios/App/build
-/android/.gradle
-/android/app/build
-/android/build
-/android/captures
-*.apk
-*.aab
-*.ipa
 
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/artifacts/

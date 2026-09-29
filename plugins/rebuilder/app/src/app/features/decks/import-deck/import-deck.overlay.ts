@@ -6,10 +6,10 @@ import { cardToLine, factionFromReference } from '../../../core/deck-view';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import type { Card, DeckCardLine, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
-import { ArInput } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcInput } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 /** Parses "3 ALT_CORE_B_AX_04_C" / "ALT_… x3" lines into reference → quantity. */
 export function parseDecklist(text: string): { reference: string; quantity: number }[] {
@@ -28,16 +28,16 @@ export function parseDecklist(text: string): { reference: string; quantity: numb
 
 @Component({
   selector: 'app-import-deck',
-  imports: [ArButton, ArInput],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './import-deck.overlay.html',
   styleUrl: './import-deck.overlay.scss',
 })
 export class ImportDeckOverlay {
-  protected readonly ref = inject<ArOverlayRef<string>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<string>>(AcOverlayRef);
   private readonly api = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly name = signal('');
   protected readonly text = signal('');
   protected readonly busy = signal(false);
@@ -75,6 +75,6 @@ export class ImportDeckOverlay {
   }
 }
 
-export function openImportDeck(overlay: ArOverlayService) {
+export function openImportDeck(overlay: AcOverlayService) {
   return overlay.open<ImportDeckOverlay, string>(ImportDeckOverlay, { title: 'Importer un deck', width: 560 });
 }

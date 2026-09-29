@@ -1,5 +1,5 @@
 import { Component, ElementRef, afterRenderEffect, inject, input, model, viewChildren } from '@angular/core';
-import { ArDensityService } from '../../layout.services';
+import { AcDensityService } from '../../layout.services';
 import { FACTIONS } from '../factions';
 import { scrollIntoViewInline } from '../scroll';
 
@@ -8,21 +8,21 @@ import { scrollIntoViewInline } from '../scroll';
  * horizontally and keeps the active tab in view. Arrow keys / Home / End move between tabs (roving tabindex).
  */
 @Component({
-  selector: 'ar-faction-tabs',
+  selector: 'ac-faction-tabs',
   host: {
     role: 'tablist',
     'aria-label': 'Faction',
     '[class.sm]': "size() === 'sm'",
     '[class.grid]': "layout() === 'grid'",
     '[class.touch]': "density.density() === 'touch'",
-    '[style.--ar-faction-cols]': 'columns()',
+    '[style.--ac-faction-cols]': 'columns()',
     '(keydown)': 'onKeydown($event)',
   },
   templateUrl: './faction-tabs.html',
   styleUrl: './faction-tabs.scss',
 })
-export class ArFactionTabs {
-  protected readonly density = inject(ArDensityService);
+export class AcFactionTabs {
+  protected readonly density = inject(AcDensityService);
   readonly active = model<string>('AX');
   readonly size = input<'sm' | 'md'>('md');
   readonly layout = input<'scroll' | 'grid'>('scroll');

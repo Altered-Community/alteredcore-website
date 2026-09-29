@@ -10,9 +10,9 @@ import { contentLocale } from '../../../core/locale';
  * decoded and never redraws them, so a loaded card stays blank until it is scrolled away and back.
  */
 @Component({
-  selector: 'ar-card-art',
+  selector: 'ac-card-art',
   host: {
-    '[class.ar-hatch]': '!neutral()',
+    '[class.ac-hatch]': '!neutral()',
     '[class.neutral]': 'neutral()',
     '[style.background-color]': 'neutral() ? null : tint()',
     '[class.loaded]': 'loaded()',
@@ -20,9 +20,9 @@ import { contentLocale } from '../../../core/locale';
   templateUrl: './card-art.html',
   styleUrl: './card-art.scss',
 })
-export class ArCardArt implements OnDestroy {
+export class AcCardArt implements OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
-  private readonly viewport = inject(ArViewportLoader);
+  private readonly viewport = inject(AcViewportLoader);
   /** Art starts downloading once the tile is ~1.5 screens from the viewport (or immediately when eager). */
   protected readonly visible = signal(false);
   readonly reference = input.required<string>();
@@ -64,7 +64,7 @@ export class ArCardArt implements OnDestroy {
 const DWELL_MS = 150;
 
 @Service()
-export class ArViewportLoader {
+export class AcViewportLoader {
   private readonly callbacks = new Map<Element, () => void>();
   private readonly timers = new Map<Element, ReturnType<typeof setTimeout>>();
   private observer?: IntersectionObserver;

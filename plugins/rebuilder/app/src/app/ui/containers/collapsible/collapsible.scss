@@ -1,8 +1,8 @@
 :host {
   display: block;
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-lg);
-  background: var(--ar-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-surface);
 }
 :host(.bare) {
   border: none;
@@ -11,26 +11,22 @@
 }
 .head {
   width: 100%;
-  height: 44px;
-  padding: 0 var(--ar-space-3);
+  height: calc(var(--ac-control-md) + 4px);
+  padding: 0 var(--ac-space-3);
   border: none;
   background: none;
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   cursor: pointer;
   text-align: left;
 }
-:host-context([data-density='touch']) .head {
-  height: 52px;
-  padding: 0 var(--ar-space-4);
-}
 :host(.bare) .head {
-  padding: 0 var(--ar-space-4);
+  padding: 0 var(--ac-space-4);
 }
 .chev {
   display: flex;
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
   transform: rotate(-90deg);
   transition: transform 0.15s;
 }
@@ -38,19 +34,16 @@
   transform: rotate(0deg);
 }
 .title {
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   font-weight: 800;
   flex-grow: 1;
 }
-:host-context([data-density='touch']) .title {
-  font-size: 16px;
-}
 .body {
-  padding: 0 var(--ar-space-3) var(--ar-space-3);
+  padding: 0 var(--ac-space-3) var(--ac-space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
 }
 :host(.bare) .body {
-  padding: 0 var(--ar-space-4) var(--ar-space-4);
+  padding: 0 var(--ac-space-4) var(--ac-space-4);
 }

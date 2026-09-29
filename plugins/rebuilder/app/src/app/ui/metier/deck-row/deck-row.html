@@ -9,7 +9,7 @@
     <span class="c res" title="Coût réserve">{{ card().recallCost ?? '–' }}</span>
   </span>
 } @else {
-  <ar-stepper
+  <ac-stepper
     [appearance]="appearance() === 'panel' ? 'box' : 'inline'"
     [itemName]="name()"
     [value]="quantity()"

@@ -2,12 +2,12 @@ import { Component, computed, input } from '@angular/core';
 
 /** Cost histogram 1…7+ (main or reserve). */
 @Component({
-  selector: 'ar-cost-chart',
+  selector: 'ac-cost-chart',
   host: { '[class.reserve]': "tone() === 'reserve'" },
   templateUrl: './cost-chart.html',
   styleUrl: './cost-chart.scss',
 })
-export class ArCostChart {
+export class AcCostChart {
   readonly values = input.required<number[]>();
   readonly tone = input<'main' | 'reserve'>('main');
   readonly label = input('Coût main');

@@ -1,16 +1,24 @@
 import { Component, input } from '@angular/core';
-import { ArIcon, type ArIconName } from '../../icon';
-import type { ArTone } from '../../fields';
+import { AcIcon, type AcIconName } from '../../icon';
+import type { AcTone } from '../../fields';
 
+/** Status or category pill: `ac-badge` (design-system/css/components/chips.css). */
 @Component({
-  selector: 'ar-badge',
-  imports: [ArIcon],
-  host: { '[class]': "'tone-' + tone() + (size() === 28 ? ' lg' : '')" },
+  selector: 'ac-badge',
+  imports: [AcIcon],
+  host: {
+    class: 'ac-badge',
+    '[class.ac-badge--blue]': "tone() === 'blue'",
+    '[class.ac-badge--green]': "tone() === 'green'",
+    '[class.ac-badge--violet]': "tone() === 'violet'",
+    '[class.ac-badge--red]': "tone() === 'red'",
+    '[class.ac-badge--orange]': "tone() === 'orange'",
+    '[class.ac-badge--lg]': 'size() === 28',
+  },
   templateUrl: './badge.html',
-  styleUrl: './badge.scss',
 })
-export class ArBadge {
-  readonly tone = input<ArTone>('blue');
-  readonly icon = input<ArIconName | undefined>(undefined);
+export class AcBadge {
+  readonly tone = input<AcTone>('blue');
+  readonly icon = input<AcIconName | undefined>(undefined);
   readonly size = input<24 | 28>(24);
 }

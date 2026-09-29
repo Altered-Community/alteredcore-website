@@ -3,10 +3,10 @@ import { Overlay } from '@angular/cdk/overlay';
 import { Service, InjectionToken, Injector, inject, signal, type Type } from '@angular/core';
 import { NavigationStart, Router } from '@angular/router';
 import { Subject, filter, type Observable } from 'rxjs';
-import { ArBreakpointService } from '../layout.services';
-import { ArOverlayContainer } from './overlay-container/overlay-container';
+import { AcBreakpointService } from '../layout.services';
+import { AcOverlayContainer } from './overlay-container/overlay-container';
 
-export interface ArOverlayConfig<D = unknown> {
+export interface AcOverlayConfig<D = unknown> {
   title: string;
   subtitle?: string;
   data?: D;
@@ -14,8 +14,8 @@ export interface ArOverlayConfig<D = unknown> {
   width?: number;
   /** Window height at ≥ 768 px: fit content (default, max 90vh / 900 px) or fill the viewport minus 40 px margins. */
   height?: 'auto' | 'fill';
-  /** Compact presentation: bottom sheet (default), left drawer, or full screen page. */
-  compact?: 'sheet' | 'drawer' | 'fullscreen';
+  /** Compact presentation: bottom sheet (default) or full screen page. */
+  compact?: 'sheet' | 'fullscreen';
   /** Leading control in compact full-screen / nested views. */
   leading?: 'close' | 'back';
   /** Sheet height: fit content (default) or full (top at 48 px). */
@@ -24,31 +24,31 @@ export interface ArOverlayConfig<D = unknown> {
 }
 
 /** A step shown in place of the current content, in the same window / sheet (no stacked overlay). */
-export interface ArStepConfig<D = unknown> {
+export interface AcStepConfig<D = unknown> {
   title: string;
   subtitle?: string;
   data?: D;
 }
 
 /** One view of an overlay window: the root content, then any steps opened on top of it. */
-export interface ArOverlayView {
+export interface AcOverlayView {
   component: Type<unknown>;
-  ref: ArOverlayRef;
+  ref: AcOverlayRef;
   injector: Injector;
 }
 
-export interface ArHeaderAction {
+export interface AcHeaderAction {
   label: string;
   run: () => void;
 }
 
-/** Handle given to overlay content (inject `ArOverlayRef`). */
-export class ArOverlayRef<R = unknown, D = unknown> {
+/** Handle given to overlay content (inject `AcOverlayRef`). */
+export class AcOverlayRef<R = unknown, D = unknown> {
   readonly title = signal('');
   readonly subtitle = signal('');
   /** Line under the title (e.g. « Le héros détermine votre faction… »). */
   readonly description = signal('');
-  readonly headerAction = signal<ArHeaderAction | null>(null);
+  readonly headerAction = signal<AcHeaderAction | null>(null);
   readonly leading = signal<'close' | 'back'>('close');
   /** When set, the leading back arrow calls this instead of closing. */
   readonly back = signal<(() => void) | null>(null);
@@ -56,11 +56,11 @@ export class ArOverlayRef<R = unknown, D = unknown> {
   readonly afterClosed: Observable<R | undefined> = this.closed$.asObservable();
   dialogRef?: { close(result?: unknown): void };
   /** Root window only: its views, the last one being displayed. */
-  readonly views = signal<ArOverlayView[]>([]);
+  readonly views = signal<AcOverlayView[]>([]);
   /** Set on steps: the window they are shown in. */
-  root: ArOverlayRef | null = null;
-  /** Internal: provided by ArOverlayService on the root. */
-  stepOpener?: (component: Type<unknown>, config: ArStepConfig<unknown>) => ArOverlayRef;
+  root: AcOverlayRef | null = null;
+  /** Internal: provided by AcOverlayService on the root. */
+  stepOpener?: (component: Type<unknown>, config: AcStepConfig<unknown>) => AcOverlayRef;
 
   constructor(readonly data: D) {}
 
@@ -73,9 +73,9 @@ export class ArOverlayRef<R = unknown, D = unknown> {
    * Replaces the content with `component` in the same window; the leading back arrow (or `close()` from the
    * step) returns to the previous view, which keeps its state. The step result arrives on its `afterClosed`.
    */
-  openStep<C, R = unknown, SD = unknown>(component: Type<C>, config: ArStepConfig<SD>): ArOverlayRef<R, SD> {
+  openStep<C, R = unknown, SD = unknown>(component: Type<C>, config: AcStepConfig<SD>): AcOverlayRef<R, SD> {
     const root = this.root ?? this;
-    return root.stepOpener!(component, config as ArStepConfig<unknown>) as ArOverlayRef<R, SD>;
+    return root.stepOpener!(component, config as AcStepConfig<unknown>) as AcOverlayRef<R, SD>;
   }
 
   close(result?: R): void {
@@ -89,20 +89,20 @@ export class ArOverlayRef<R = unknown, D = unknown> {
   }
 }
 
-export const AR_OVERLAY_CONTENT = new InjectionToken<{ ref: ArOverlayRef; mode: string; fill?: boolean; titleId: string }>(
-  'AR_OVERLAY_CONTENT',
+export const AC_OVERLAY_CONTENT = new InjectionToken<{ ref: AcOverlayRef; mode: string; fill?: boolean; titleId: string }>(
+  'AC_OVERLAY_CONTENT',
 );
 
 /**
  * Responsive overlay: CDK Dialog as a centered window (≥ 768 px) or, below that, a bottom sheet,
- * a left drawer, or a full screen page. The same content component is used in every presentation.
+ * or a full screen page. The same content component is used in every presentation.
  */
 @Service()
-export class ArOverlayService {
+export class AcOverlayService {
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
-  private readonly breakpoints = inject(ArBreakpointService);
-  private readonly stack: ArOverlayRef[] = [];
+  private readonly breakpoints = inject(AcBreakpointService);
+  private readonly stack: AcOverlayRef[] = [];
   /** Resolves a programmatic close once the history entry pushed on open has been popped. */
   private pendingBack: (() => void) | null = null;
   /**
@@ -127,7 +127,7 @@ export class ArOverlayService {
           return;
         }
         const top = this.stack[this.stack.length - 1];
-        if (top && history.state?.arOverlay !== this.stack.length) top.close();
+        if (top && history.state?.acOverlay !== this.stack.length) top.close();
       });
     }
   }
@@ -145,27 +145,27 @@ export class ArOverlayService {
     this.yieldHistory = true;
   }
 
-  isOpen(ref: ArOverlayRef): boolean {
+  isOpen(ref: AcOverlayRef): boolean {
     return this.stack.includes(ref);
   }
 
-  open<C, R = unknown, D = unknown>(component: Type<C>, config: ArOverlayConfig<D>): ArOverlayRef<R, D> {
+  open<C, R = unknown, D = unknown>(component: Type<C>, config: AcOverlayConfig<D>): AcOverlayRef<R, D> {
     const compact = this.breakpoints.compact();
     const mode = compact ? (config.compact ?? 'sheet') : 'dialog';
     const fill = mode === 'dialog' && config.height === 'fill';
-    const ref = new ArOverlayRef<R, D>(config.data as D);
+    const ref = new AcOverlayRef<R, D>(config.data as D);
     ref.title.set(config.title);
     ref.subtitle.set(config.subtitle ?? '');
     ref.leading.set(config.leading ?? 'close');
 
-    const titleId = `ar-ov-${Math.random().toString(36).slice(2, 8)}`;
+    const titleId = `ac-ov-${Math.random().toString(36).slice(2, 8)}`;
     const injector = Injector.create({
       providers: [
-        { provide: ArOverlayRef, useValue: ref },
-        { provide: AR_OVERLAY_CONTENT, useValue: { ref, mode, fill, titleId } },
+        { provide: AcOverlayRef, useValue: ref },
+        { provide: AC_OVERLAY_CONTENT, useValue: { ref, mode, fill, titleId } },
       ],
     });
-    ref.views.set([{ component, ref: ref as ArOverlayRef, injector }]);
+    ref.views.set([{ component, ref: ref as AcOverlayRef, injector }]);
 
     const position =
       mode === 'dialog'
@@ -174,24 +174,22 @@ export class ArOverlayService {
           ? this.overlay.position().global().bottom('0').centerHorizontally()
           : this.overlay.position().global().top('0').left('0');
 
-    const dialogRef = this.dialog.open(ArOverlayContainer, {
+    const dialogRef = this.dialog.open(AcOverlayContainer, {
       injector,
       width:
         mode === 'dialog'
           ? `min(${config.width ?? 520}px, calc(100vw - 32px))`
-          : mode === 'drawer'
-            ? 'min(var(--ar-drawer-width), calc(100vw - var(--ar-space-10)))'
-            : '100vw',
-      maxWidth: mode === 'drawer' ? 'min(var(--ar-drawer-width), calc(100vw - var(--ar-space-10)))' : '100vw',
+          : '100vw',
+      maxWidth: '100vw',
       height:
-        mode === 'fullscreen' || mode === 'drawer'
+        mode === 'fullscreen'
           ? '100dvh'
           : mode === 'sheet' && config.sheetHeight === 'full'
             ? 'calc(100dvh - 48px)'
             : undefined,
       positionStrategy: position,
-      panelClass: ['ar-overlay-pane', `ar-overlay-pane--${mode}`, ...(fill ? ['ar-overlay-pane--fill'] : [])],
-      backdropClass: 'ar-overlay-backdrop',
+      panelClass: ['ac-overlay-pane', `ac-overlay-pane--${mode}`, ...(fill ? ['ac-overlay-pane--fill'] : [])],
+      backdropClass: 'ac-overlay-backdrop',
       hasBackdrop: true,
       // Accessible name follows the visible title, which changes with steps.
       ariaLabel: config.ariaLabel,
@@ -203,33 +201,33 @@ export class ArOverlayService {
       disableClose: true,
     });
     ref.dialogRef = dialogRef;
-    ref.stepOpener = (c, cfg) => this.openStep(ref as ArOverlayRef, c, cfg, () => dialogRef.componentInstance);
+    ref.stepOpener = (c, cfg) => this.openStep(ref as AcOverlayRef, c, cfg, () => dialogRef.componentInstance);
     dialogRef.backdropClick.subscribe(() => ref.close());
     dialogRef.keydownEvents.subscribe((e) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       e.preventDefault();
       ref.views().at(-1)!.ref.close();
     });
-    this.register(ref as ArOverlayRef);
+    this.register(ref as AcOverlayRef);
 
     dialogRef.closed.subscribe((result) => {
-      this.release(ref as ArOverlayRef, () => ref.notifyClosed(result as R | undefined));
+      this.release(ref as AcOverlayRef, () => ref.notifyClosed(result as R | undefined));
     });
     return ref;
   }
 
   private openStep(
-    root: ArOverlayRef,
+    root: AcOverlayRef,
     component: Type<unknown>,
-    config: ArStepConfig<unknown>,
-    container: () => ArOverlayContainer | null,
-  ): ArOverlayRef {
-    const step = new ArOverlayRef(config.data);
+    config: AcStepConfig<unknown>,
+    container: () => AcOverlayContainer | null,
+  ): AcOverlayRef {
+    const step = new AcOverlayRef(config.data);
     step.root = root;
     step.title.set(config.title);
     step.subtitle.set(config.subtitle ?? '');
     step.leading.set('back');
-    const injector = Injector.create({ providers: [{ provide: ArOverlayRef, useValue: step }], parent: this.injectorOf(root) });
+    const injector = Injector.create({ providers: [{ provide: AcOverlayRef, useValue: step }], parent: this.injectorOf(root) });
     step.dialogRef = {
       close: (result?: unknown) => {
         const i = root.views().findIndex((v) => v.ref === step);
@@ -244,20 +242,20 @@ export class ArOverlayService {
     return step;
   }
 
-  private injectorOf(root: ArOverlayRef): Injector {
+  private injectorOf(root: AcOverlayRef): Injector {
     return root.views()[0].injector;
   }
 
   /** Each open window and step gets a history entry, so the back button (Android / browser) closes the top one first. */
-  private register(ref: ArOverlayRef): void {
+  private register(ref: AcOverlayRef): void {
     this.stack.push(ref);
     if (typeof history !== 'undefined') {
-      history.pushState({ ...(history.state ?? {}), arOverlay: this.stack.length }, '');
+      history.pushState({ ...(history.state ?? {}), acOverlay: this.stack.length }, '');
     }
   }
 
   /** Drops `ref` and the steps above it, rewinds their history entries, then notifies. */
-  private release(ref: ArOverlayRef, notify: () => void): void {
+  private release(ref: AcOverlayRef, notify: () => void): void {
     const i = this.stack.indexOf(ref);
     if (i === -1) {
       notify();
@@ -265,7 +263,7 @@ export class ArOverlayService {
     }
     const removed = this.stack.splice(i);
     removed.slice(1).forEach((r) => r.notifyClosed(undefined));
-    const ownsEntry = typeof history !== 'undefined' && history.state?.arOverlay === i + removed.length;
+    const ownsEntry = typeof history !== 'undefined' && history.state?.acOverlay === i + removed.length;
     if (ownsEntry && this.yieldHistory) {
       this.yieldHistory = false;
       notify();

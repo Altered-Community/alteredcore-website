@@ -1,14 +1,14 @@
-<div class="ar-overlay-body">
-  <ar-input label="Nom du deck" placeholder="Deck importé" [(value)]="name" />
+<div class="ac-overlay-body">
+  <ac-input label="Nom du deck" placeholder="Deck importé" [(value)]="name" />
   <label class="label" for="import-text">Liste (une carte par ligne : « 3 ALT_CORE_B_AX_04_C »)</label>
   <textarea id="import-text" rows="10" [value]="text()" (input)="text.set($any($event.target).value)" placeholder="1 ALT_CORE_B_AX_01_C&#10;3 ALT_CORE_B_AX_04_C"></textarea>
   @if (error()) {
     <p class="error" role="alert">{{ error() }}</p>
   }
 </div>
-<div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
-  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="busy() || !text().trim()" (click)="run()">
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="busy() || !text().trim()" (click)="run()">
     {{ busy() ? 'Import…' : 'Importer' }}
   </button>
 </div>

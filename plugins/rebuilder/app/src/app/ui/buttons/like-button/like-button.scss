@@ -1,13 +1,14 @@
 :host {
   position: relative;
-  height: 28px;
-  padding: 0 var(--ar-space-2-5) 0 var(--ar-space-2);
+  height: calc(var(--ac-control-sm) - 4px); /* 28 px, 32 px in touch */
+  padding: 0 var(--ac-space-2-5) 0 var(--ac-space-2);
   border: none;
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-overlay-chip);
-  color: var(--ar-color-on-strong);
-  box-shadow: var(--ar-shadow-e1);
-  font: var(--ar-font-caption);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
+  box-shadow: var(--ac-shadow-e1);
+  font: var(--ac-font-caption);
+  font-size: calc(var(--ac-segment-font-size) - 1px); /* 12 px, 13 px in touch */
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -18,32 +19,28 @@
     color 0.15s,
     transform 0.1s;
 }
-/* Hit area of at least --ar-hit-min around the pill. */
+/* Hit area of at least --ac-hit-min around the pill. */
 :host::before {
   content: '';
   position: absolute;
   left: 50%;
   top: 50%;
-  width: max(100%, var(--ar-hit-min));
-  height: max(100%, var(--ar-hit-min));
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
   transform: translate(-50%, -50%);
 }
 :host(:hover) {
-  background: var(--ar-color-overlay-control);
+  background: var(--ac-color-overlay-control);
 }
 :host(:active) {
   transform: scale(0.94);
 }
-:host(.ar-like-button--liked) {
-  background: var(--ar-color-surface);
-  color: var(--ar-color-like);
+:host(.ac-like-button--liked) {
+  background: var(--ac-color-surface);
+  color: var(--ac-color-like);
 }
-:host(.ar-like-button--liked) ar-icon ::ng-deep svg {
+:host(.ac-like-button--liked) ac-icon ::ng-deep svg {
   fill: currentColor;
-}
-:host-context([data-density='touch']) {
-  height: 32px;
-  font-size: 13px;
 }
 .count {
   font-variant-numeric: tabular-nums;

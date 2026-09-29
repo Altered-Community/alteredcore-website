@@ -1,6 +1,6 @@
-import { BREAKPOINTS, belowQuery, densityFor, minWidthQuery, windowSizeFor } from './breakpoints';
+import { BREAKPOINTS, belowQuery, minWidthQuery, windowSizeFor } from './breakpoints';
 
-describe('breakpoints (design tokens)', () => {
+describe('breakpoints (design system)', () => {
   it('uses the design pack thresholds 768 / 1200', () => {
     expect(BREAKPOINTS.medium).toBe(768);
     expect(BREAKPOINTS.expanded).toBe(1200);
@@ -14,11 +14,5 @@ describe('breakpoints (design tokens)', () => {
     expect(windowSizeFor(768)).toBe('medium');
     expect(windowSizeFor(1199)).toBe('medium');
     expect(windowSizeFor(1440)).toBe('expanded');
-  });
-
-  it('switches to touch density on coarse pointers or compact widths', () => {
-    expect(densityFor(390, false)).toBe('touch');
-    expect(densityFor(1440, false)).toBe('pointer');
-    expect(densityFor(1440, true)).toBe('touch');
   });
 });

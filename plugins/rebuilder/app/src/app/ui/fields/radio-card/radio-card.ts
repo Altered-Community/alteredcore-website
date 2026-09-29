@@ -6,7 +6,7 @@ import { Component, input, output } from '@angular/core';
  * ellipsis and the tag vertically centred on the right (Nouveau deck).
  */
 @Component({
-  selector: 'ar-radio-card',
+  selector: 'ac-radio-card',
   host: {
     '[class.selected]': 'checked()',
     '[class.stacked]': "layout() === 'stacked'",
@@ -14,8 +14,8 @@ import { Component, input, output } from '@angular/core';
   templateUrl: './radio-card.html',
   styleUrl: './radio-card.scss',
 })
-export class ArRadioCard {
-  readonly name = input('ar-radio');
+export class AcRadioCard {
+  readonly name = input('ac-radio');
   readonly title = input.required<string>();
   readonly description = input('');
   readonly tag = input<{ label: string; tone: 'green' | 'violet' | 'red' } | null>(null);

@@ -1,31 +1,29 @@
 import { Component, computed, input, model } from '@angular/core';
-import { ArIcon, type ArIconName } from '../../icon';
+import { AcIcon, type AcIconName } from '../../icon';
 
-export interface ArSegment<T = string> {
+export interface AcSegment<T = string> {
   value: T;
   label?: string;
-  icon?: ArIconName;
+  icon?: AcIconName;
   ariaLabel?: string;
 }
 
-/** Segmented control — DS-Champs / DS-Navigation. */
+/** Segmented control: `ac-segmented` (design-system/css/components/segmented.css). */
 @Component({
-  selector: 'ar-segmented',
-  imports: [ArIcon],
+  selector: 'ac-segmented',
+  imports: [AcIcon],
   host: {
     role: 'group',
+    class: 'ac-segmented',
     '[attr.aria-label]': 'ariaLabel()',
-    '[class.full]': 'fullWidth()',
-    '[class.sm]': "size() === 'sm'",
-    '[class.lg]': "size() === 'lg'",
-    '[class.icons]': 'iconOnly()',
-    '[style.--ar-seg-cols]': 'options().length',
+    '[class.ac-segmented--full]': 'fullWidth()',
+    '[class.ac-segmented--lg]': "size() === 'lg'",
   },
   templateUrl: './segmented.html',
   styleUrl: './segmented.scss',
 })
-export class ArSegmented<T = string> {
-  readonly options = input<ArSegment<T>[]>([]);
+export class AcSegmented<T = string> {
+  readonly options = input<AcSegment<T>[]>([]);
   readonly value = model<T>();
   readonly ariaLabel = input('');
   readonly fullWidth = input(false);

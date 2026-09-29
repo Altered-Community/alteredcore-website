@@ -1,15 +1,15 @@
 import { Component, computed, input, output } from '@angular/core';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
 /** "Quand … ou … / Si … / Alors … ou …" summary of one effect block. */
 @Component({
-  selector: 'ar-effect-summary',
-  imports: [ArIcon],
+  selector: 'ac-effect-summary',
+  imports: [AcIcon],
   templateUrl: './effect-summary.html',
   styleUrl: './effect-summary.scss',
 })
-export class ArEffectSummary {
+export class AcEffectSummary {
   readonly effect = input.required<EffectBlock>();
   readonly title = input('Effet 1');
   readonly edit = output<void>();

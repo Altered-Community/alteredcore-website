@@ -1,13 +1,13 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
-import { ArCollapsible } from '../../../ui/containers';
-import { ArDeckRow, ArDeckSection, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
+import { AcCollapsible } from '../../../ui/containers';
+import { AcDeckRow, AcDeckSection, AcDeckStats, AcDeckSummary } from '../../../ui/metier';
 
 /** Mobile « Mon deck »: summary card, Stats card, flat grouped lists (steppers or read-only). */
 @Component({
   selector: 'app-deck-list-view',
-  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow, ArDeckSection],
+  imports: [AcDeckSummary, AcCollapsible, AcDeckStats, AcDeckRow, AcDeckSection],
   templateUrl: './deck-list-view.html',
   styleUrl: './deck-list-view.scss',
 })

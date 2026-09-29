@@ -20,7 +20,7 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
   const l = LABELS[lang];
   const dialog = page.getByRole('dialog', { name: l.newDeck });
   await expect(dialog).toBeVisible();
-  await dialog.locator('ar-hero-tile button').first().click();
+  await dialog.locator('ac-hero-tile button').first().click();
   await dialog.getByRole('textbox', { name: l.deckName }).fill(name);
   await dialog.getByRole('button', { name: l.create }).click();
   await expect(dialog).toBeHidden();
@@ -30,14 +30,14 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
 async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Promise<void> {
   const l = LABELS[lang];
   if (compact) await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
-  else await expect(page.locator('ar-segmented').getByText(l.viewDeck, { exact: true })).toBeVisible();
+  else await expect(page.locator('ac-segmented').getByText(l.viewDeck, { exact: true })).toBeVisible();
 }
 
 /** Adds one copy of the first two cards of the search results; returns their names. */
 async function addTwoCards(page: Page): Promise<string[]> {
   const names: string[] = [];
   for (const i of [0, 1]) {
-    const tile = page.locator('ar-card-tile').nth(i);
+    const tile = page.locator('ac-card-tile').nth(i);
     await expect(tile).toBeVisible();
     names.push((await tile.getAttribute('aria-label')) ?? '');
     await tile.getByRole('button', { name: /^Ajouter .* au deck$/ }).click();
@@ -50,7 +50,7 @@ async function expectDeckCount(page: Page, compact: boolean, count: number): Pro
   if (compact) {
     await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ })).toContainText(String(count));
   } else {
-    await expect(page.locator('app-deck-panel ar-deck-summary')).toContainText(String(count));
+    await expect(page.locator('app-deck-panel ac-deck-summary')).toContainText(String(count));
   }
 }
 
@@ -90,13 +90,13 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(page).toHaveURL(new RegExp(`/decks/${deck.id}/edit$`));
     await expectDeckCount(page, compact, 2);
     if (!compact) {
-      await expect(page.locator('ar-editable-title input')).toHaveValue(name);
+      await expect(page.locator('ac-editable-title input')).toHaveValue(name);
       for (const card of cards) await expect(page.locator('app-deck-panel')).toContainText(card.replace(/ ×.*$/, ''));
     }
 
     // Re:Builder's list shows it (account decks through the relay); its card opens the deck page.
     await page.goto(DECKS);
-    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ar-deck-card').filter({ hasText: name });
+    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
     await expect(item).toBeVisible();
     await evidence(page, testInfo, '03-listed');
     await item.getByRole('link').first().click();
@@ -134,14 +134,14 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const legal = ((await res.json()) as { member: { legal: boolean }[] }).member.filter((d) => d.legal).length;
     expect(legal).toBeGreaterThan(0);
     const list = page.getByRole('list', { name: 'Decks de la communauté' });
-    await expect(list.locator('ar-deck-card')).toHaveCount(legal);
+    await expect(list.locator('ac-deck-card')).toHaveCount(legal);
     await evidence(page, testInfo, '05-community');
 
     // Someone else's deck (seeded as bob): no « Modifier » nor « Supprimer », « Dupliquer » stays.
-    await list.locator('ar-deck-card').first().getByRole('link').first().click();
+    await list.locator('ac-deck-card').first().getByRole('link').first().click();
     await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\/[0-9a-f-]{36}$/);
     const deckPage = page.locator('app-deck-page');
-    await expect(deckPage.locator('ar-card-art').first()).toBeVisible();
+    await expect(deckPage.locator('ac-card-art').first()).toBeVisible();
     await expect(deckPage.getByRole('button', { name: /Plus d’actions|Dupliquer/ }).first()).toBeVisible();
     await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toHaveCount(0);
     await expect(deckPage.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
@@ -152,11 +152,11 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await login(page, 'alice', `${NEW_DECK}?lang=en&theme=light`);
     await createDeck(page, `E2E theme ${testInfo.project.name} ${Date.now()}`, 'en');
     await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
-    await expect(page.locator('ar-card-tile').first()).toBeVisible();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await expectEditorLabels(page, compact, 'en');
     await evidence(page, testInfo, '06-light-en');
 
-    const root = page.locator('.ar-embed');
+    const root = page.locator('.ac-plugin-root');
     await expect(root).toHaveAttribute('data-theme', 'light');
     const lightBg = await root.evaluate((el) => getComputedStyle(el).backgroundColor);
     const editor = new URL(page.url()).pathname;
@@ -166,11 +166,11 @@ test.describe('ReBuilder in the shell · signed in', () => {
     else await page.goto(`${editor}?theme=dark`);
     await expect(root).toHaveAttribute('data-theme', 'dark');
     await expect.poll(() => root.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(lightBg);
-    await expect(page.locator('ar-card-tile').first()).toBeVisible();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await evidence(page, testInfo, '07-dark-en');
 
     await page.goto(`${editor}?lang=fr`);
-    await expect(page.locator('ar-card-tile').first()).toBeVisible();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await expectEditorLabels(page, compact, 'fr');
     await page.goto(`${editor}?theme=light`);
     await expect(root).toHaveAttribute('data-theme', 'light');
@@ -221,6 +221,6 @@ test.describe('ReBuilder in the shell · guest', () => {
     await page.reload();
     await expectDeckCount(page, compact, 2);
     await page.goto(DECKS);
-    await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ar-deck-card').filter({ hasText: 'Deck invité' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: 'Deck invité' })).toBeVisible();
   });
 });

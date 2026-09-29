@@ -1,16 +1,16 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
-import { ArButton } from '../../../ui/buttons';
-import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
-import { ArFilterSection } from '../../../ui/containers';
-import { ArInput, ArSegmented } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArEffectSummary, ArExtensionTile, FACTIONS } from '../../../ui/metier';
+import { AcButton } from '../../../ui/buttons';
+import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
+import { AcFilterSection } from '../../../ui/containers';
+import { AcInput, AcSegmented } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
 
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  imports: [ArInput, ArFilterSection, ArExtensionTile, ArIconToggleGroup, ArChip, ArSegmented, ArEffectSummary, ArLogicDivider, ArButton, ArIcon],
+  imports: [AcInput, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',
   styleUrl: './filters-panel.scss',

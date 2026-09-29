@@ -1,15 +1,15 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton } from '../../../ui/buttons';
-import { ArVirtualGrid } from '../../../ui/containers';
-import { ArInfiniteSentinel } from '../../../ui/infinite';
-import { ArCardTile, ArDeckRow } from '../../../ui/metier';
+import { AcButton } from '../../../ui/buttons';
+import { AcVirtualGrid } from '../../../ui/containers';
+import { AcInfiniteSentinel } from '../../../ui/infinite';
+import { AcCardTile, AcDeckRow } from '../../../ui/metier';
 import { CardSearchStore } from '../card-search.store';
 
 @Component({
   selector: 'app-search-results',
-  imports: [ArCardTile, ArDeckRow, ArInfiniteSentinel, ArButton, RouterLink, ArVirtualGrid],
+  imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
 })

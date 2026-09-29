@@ -1,6 +1,6 @@
 <ng-content select="[summary]" />
 @if (!readonly()) {
-  <ar-deck-summary
+  <ac-deck-summary
     [name]="deck.name()"
     [hero]="deck.hero()"
     [formatLabel]="formatLabel()"
@@ -13,13 +13,13 @@
     (openSettings)="openSettings.emit()"
   />
 }
-<ar-collapsible class="stats" title="Stats" [(open)]="statsOpen">
-  <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-</ar-collapsible>
+<ac-collapsible class="stats" title="Stats" [(open)]="statsOpen">
+  <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+</ac-collapsible>
 @for (g of deck.groups(); track g.id) {
-  <ar-deck-section appearance="flat" [title]="g.label" [count]="g.count">
+  <ac-deck-section appearance="flat" [title]="g.label" [count]="g.count">
     @for (l of g.lines; track l.card.reference) {
-      <ar-deck-row
+      <ac-deck-row
         [card]="l.card"
         [quantity]="l.quantity"
         [max]="deck.maxFor(l.card)"
@@ -27,7 +27,7 @@
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />
     }
-  </ar-deck-section>
+  </ac-deck-section>
 } @empty {
   <p class="empty">Aucune carte pour l’instant.</p>
 }

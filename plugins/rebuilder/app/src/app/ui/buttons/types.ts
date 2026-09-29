@@ -1,3 +1,3 @@
-export type ArButtonVariant = 'primary' | 'secondary' | 'ghost' | 'add' | 'danger';
+export type AcButtonVariant = 'primary' | 'secondary' | 'ghost' | 'add' | 'danger';
 
-export type ArSize = 'sm' | 'md' | 'lg';
+export type AcSize = 'sm' | 'md' | 'lg';

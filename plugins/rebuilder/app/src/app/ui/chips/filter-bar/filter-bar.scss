@@ -4,11 +4,11 @@
   align-items: center;
   min-width: 0;
   flex-grow: 1;
-  --ar-filter-bar-bg: var(--ar-color-bg-app);
+  --ac-filter-bar-bg: var(--ac-color-bg-app);
 }
 .scroller {
   display: flex;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   overflow-x: auto;
   min-width: 0;
   flex-grow: 1;
@@ -27,16 +27,16 @@
   display: flex;
   align-items: center;
   padding-left: 36px;
-  background: linear-gradient(to right, transparent, var(--ar-filter-bar-bg) 36px);
+  background: linear-gradient(to right, transparent, var(--ac-filter-bar-bg) 36px);
 }
 .clear button {
-  height: var(--ar-control-sm);
-  padding: 0 var(--ar-space-1);
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-1);
   border: none;
   background: none;
   font-size: 13px;
   font-weight: 700;
-  color: var(--ar-color-primary);
+  color: var(--ac-color-primary);
   white-space: nowrap;
   cursor: pointer;
 }

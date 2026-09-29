@@ -1,19 +1,19 @@
 .intro {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
-  padding: var(--ar-space-3) var(--ar-space-5) 0;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-3) var(--ac-space-5) 0;
   flex-shrink: 0;
 }
-:host-context(.ar-overlay--sheet) .intro {
-  padding: var(--ar-space-2) 0 var(--ar-space-3) var(--ar-space-4);
-  border-bottom: 1px solid var(--ar-color-border);
+:host-context(.ac-overlay--sheet) .intro {
+  padding: var(--ac-space-2) 0 var(--ac-space-3) var(--ac-space-4);
+  border-bottom: 1px solid var(--ac-color-border);
 }
 p {
   margin: 0;
   font-size: 13px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .note strong {
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }

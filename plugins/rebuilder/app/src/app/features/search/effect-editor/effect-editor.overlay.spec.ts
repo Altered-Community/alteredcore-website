@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, type Observable } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
 import { CardsApiService, NO_CONDITION, toAbilityRefs, type AbilityKind } from '../../../core/cards-api.service';
-import { ArOverlayRef } from '../../../ui/overlay';
+import { AcOverlayRef } from '../../../ui/overlay';
 import { EffectEditorOverlay, type EffectEditorData } from './effect-editor.overlay';
 
 const MAIN: AbilityRef = { id: 1, text: 'Joué depuis la Main' };
@@ -36,11 +36,11 @@ const ROWS: Record<AbilityKind, { alteredId: number; text: { fr: string } }[]> =
 };
 
 function setup(effect: EffectBlock, abilities: (kind: AbilityKind) => Observable<AbilityRef[]> = () => of([])) {
-  const ref = new ArOverlayRef<EffectBlock, EffectEditorData>({ effect, index: 0 });
+  const ref = new AcOverlayRef<EffectBlock, EffectEditorData>({ effect, index: 0 });
   TestBed.configureTestingModule({
     imports: [EffectEditorOverlay],
     providers: [
-      { provide: ArOverlayRef, useValue: ref },
+      { provide: AcOverlayRef, useValue: ref },
       { provide: CardsApiService, useValue: { abilities } },
     ],
   });
@@ -61,7 +61,7 @@ describe('EffectEditorOverlay « ou »', () => {
       conditions: [MAIN],
       effects: [RAVITAILLEZ, SABOTEZ],
     });
-    const combos = [...el.querySelectorAll('ar-combobox')];
+    const combos = [...el.querySelectorAll('ac-combobox')];
     expect(combos).toHaveLength(3);
     expect(sequence(combos[0])).toEqual(['field']);
     expect(sequence(combos[1])).toEqual([`chip:${MAIN.text}`, 'ou', 'field']);
@@ -77,7 +77,7 @@ describe('EffectEditorOverlay « ou »', () => {
       conditions: [MAIN, EXPEDITION],
       effects: [RAVITAILLEZ, SABOTEZ],
     });
-    for (const combo of el.querySelectorAll('ar-combobox')) {
+    for (const combo of el.querySelectorAll('ac-combobox')) {
       const parts = sequence(combo);
       expect(parts.at(-2)).toBe('ou');
       expect(parts.at(-1)).toBe('field');
@@ -94,12 +94,12 @@ describe('EffectEditorOverlay pickers', () => {
     const toggle = el.querySelector<HTMLButtonElement>(`[role=combobox][aria-label="${name}"]`)!;
     toggle.click();
     fixture.detectChanges();
-    return toggle.closest('ar-combobox') as HTMLElement;
+    return toggle.closest('ac-combobox') as HTMLElement;
   }
 
   it('opens each criterion on a button, not on a focused text field', () => {
     const { el } = setup(empty, api);
-    for (const combo of el.querySelectorAll('ar-combobox')) {
+    for (const combo of el.querySelectorAll('ac-combobox')) {
       const first = combo.querySelector('.field')!.firstElementChild!;
       expect(first.tagName).toBe('BUTTON');
       expect(first.getAttribute('role')).toBe('combobox');
@@ -132,7 +132,7 @@ describe('EffectEditorOverlay pickers', () => {
 
     let applied: EffectBlock | undefined;
     ref.dialogRef = { close: (v) => (applied = v as EffectBlock) };
-    el.querySelector<HTMLButtonElement>('.ar-overlay-footer button:last-child')!.click();
+    el.querySelector<HTMLButtonElement>('.ac-overlay-footer button:last-child')!.click();
     expect(applied?.conditions).toEqual([{ id: 191, text: 'Sans condition' }]);
   });
 
@@ -146,7 +146,7 @@ describe('EffectEditorOverlay pickers', () => {
       },
       api,
     );
-    const combos = [...el.querySelectorAll('ar-combobox')];
+    const combos = [...el.querySelectorAll('ac-combobox')];
     expect(combos.map(sequence)).toEqual([
       ['chip:Au Crépuscule', 'ou', 'field'],
       ['chip:Sans condition', 'ou', 'field'],
@@ -161,6 +161,6 @@ describe('EffectEditorOverlay pickers', () => {
     fixture.detectChanges();
     expect([...el.querySelectorAll('[role=combobox]')].map((t) => t.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'false']);
     expect(el.querySelectorAll('.panel')).toHaveLength(0);
-    expect(el.querySelector('ar-combobox')!.contains(document.activeElement)).toBe(false);
+    expect(el.querySelector('ac-combobox')!.contains(document.activeElement)).toBe(false);
   });
 });

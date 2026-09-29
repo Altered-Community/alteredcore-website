@@ -46,7 +46,7 @@ dans un canvas avec [Altered-Card-Renderer](https://github.com/PolluxTroy0/Alter
 propriétaire aujourd’hui, alors que le fork Altered-Community d’août 2026 était en GPL-3.0 ; 200 cartes par page au
 maximum, trop peu pour un défilement infini).
 
-**Contournement.** `ar-unique-card` dessine la face à partir des données de l’Unique (coûts, puissances, texte,
+**Contournement.** `ac-unique-card` dessine la face à partir des données de l’Unique (coûts, puissances, texte,
 numéro de collection) sur l’illustration Unique du CDN.
 
 **À faire côté backend.** Soit publier une image rendue par Unique sur le CDN, soit renvoyer dans `imagePath` l’URL

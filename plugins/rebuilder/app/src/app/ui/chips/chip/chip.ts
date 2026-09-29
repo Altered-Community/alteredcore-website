@@ -1,14 +1,17 @@
 import { Component, input, model, output } from '@angular/core';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
-/** Selectable or removable pill — DS-Puces. `dot` takes a faction CSS colour variable. */
+/**
+ * Selectable or removable pill: `<button class="ac-chip">` (design-system/css/components/chips.css).
+ * `dot` takes a faction CSS colour variable.
+ */
 @Component({
-  selector: 'ar-chip',
-  imports: [ArIcon],
+  selector: 'ac-chip',
+  imports: [AcIcon],
   templateUrl: './chip.html',
   styleUrl: './chip.scss',
 })
-export class ArChip {
+export class AcChip {
   readonly label = input.required<string>();
   readonly dot = input<string | null>(null);
   readonly removable = input(false);

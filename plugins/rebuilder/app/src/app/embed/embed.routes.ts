@@ -16,8 +16,8 @@ const signIn: CanActivateFn = () => {
 
 /**
  * Re:Builder's decks section on the site page `/pages/rebuilder/` (the base href): decks list
- * (mine / community), deck page, new deck and editor. Paths are the standalone app's, so the
- * shared screens navigate unchanged. The site's own decks pages and deck builder stay as they are.
+ * (mine / community), deck page, new deck and editor. The site's own decks pages and deck builder
+ * stay as they are.
  * `?id=` opens a deck in the editor, like the site's deck builder links.
  */
 export const embedRoutes: Routes = [

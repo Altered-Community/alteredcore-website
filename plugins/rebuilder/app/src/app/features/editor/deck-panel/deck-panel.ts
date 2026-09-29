@@ -2,13 +2,13 @@ import { Component, computed, inject, output, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { t } from '../../../core/i18n';
-import { ArCollapsible } from '../../../ui/containers';
-import { ArDeckRow, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
+import { AcCollapsible } from '../../../ui/containers';
+import { AcDeckRow, AcDeckStats, AcDeckSummary } from '../../../ui/metier';
 
 /** Desktop right-hand panel: embedded summary, Stats, grouped rows with steppers. */
 @Component({
   selector: 'app-deck-panel',
-  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow],
+  imports: [AcDeckSummary, AcCollapsible, AcDeckStats, AcDeckRow],
   templateUrl: './deck-panel.html',
   styleUrl: './deck-panel.scss',
 })

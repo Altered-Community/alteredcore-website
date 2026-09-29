@@ -1,26 +1,26 @@
 :host {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   min-width: 0;
 }
 .pen {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border-radius: var(--ar-radius-md);
-  background: var(--ar-color-track);
-  color: var(--ar-color-text-2);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-track);
+  color: var(--ac-color-text-2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 input {
-  font: var(--ar-font-display);
-  letter-spacing: var(--ar-letter-spacing-display);
+  font: var(--ac-font-display);
+  letter-spacing: var(--ac-letter-spacing-display);
   border: 1px solid transparent;
-  border-radius: var(--ar-radius-md);
+  border-radius: var(--ac-radius-md);
   padding: 2px 6px;
   margin-left: -4px;
   background: transparent;
@@ -29,9 +29,9 @@ input {
   outline: none;
 }
 input:hover {
-  border-color: var(--ar-color-border);
+  border-color: var(--ac-color-border);
 }
 input:focus {
-  border-color: var(--ar-color-primary);
-  background: var(--ar-color-surface);
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
 }

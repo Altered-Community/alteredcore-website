@@ -3,22 +3,22 @@
 }
 
 .edit {
-  color: var(--ar-color-primary);
+  color: var(--ac-color-primary);
 }
 
 .state {
-  padding: var(--ar-space-10) var(--ar-page-padding);
+  padding: var(--ac-space-10) var(--ac-page-padding);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 
 .page {
   display: flex;
-  gap: var(--ar-space-6);
-  padding: var(--ar-space-3) var(--ar-page-padding) calc(var(--ar-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ar-space-4));
+  gap: var(--ac-space-6);
+  padding: var(--ac-space-3) var(--ac-page-padding) calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ac-space-4));
 }
 
 .main {
@@ -26,33 +26,33 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 
 .m-summary {
-  background: var(--ar-color-surface);
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-card);
-  padding: var(--ar-space-3);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
 }
 
 .m-top {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
 }
 
 .m-thumb {
   position: relative;
   width: 44px;
   height: 44px;
-  border-radius: var(--ar-radius-control);
+  border-radius: var(--ac-radius-control);
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--ar-color-track);
+  background: var(--ac-color-track);
 }
 
 .m-meta {
@@ -61,13 +61,13 @@
   gap: 1px;
   min-width: 0;
   font-size: 13px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 
 .m-meta h1 {
   margin: 0;
-  font: var(--ar-font-heading);
-  color: var(--ar-color-text);
+  font: var(--ac-font-heading);
+  color: var(--ac-color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -75,139 +75,139 @@
 
 .badges {
   display: flex;
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
   flex-wrap: wrap;
 }
 
 .m-counts {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
   font-size: 13px;
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
   flex-wrap: wrap;
 }
 
 .m-counts strong {
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }
 
 .sep {
   width: 1px;
   height: 14px;
-  background: var(--ar-color-border-control);
+  background: var(--ac-color-border-control);
 }
 
 .m-stats {
-  border-radius: var(--ar-radius-card);
+  border-radius: var(--ac-radius-card);
 }
 
 .empty {
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--ar-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ar-space-4));
+  bottom: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ac-space-4));
   transform: translateX(-50%);
   z-index: 30;
   max-width: calc(100vw - 32px);
-  padding: var(--ar-space-2-5) var(--ar-space-4);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-inverse);
-  color: var(--ar-color-on-inverse);
+  padding: var(--ac-space-2-5) var(--ac-space-4);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
   font-size: 14px;
   font-weight: 600;
-  box-shadow: var(--ar-shadow-e2);
+  box-shadow: var(--ac-shadow-e2);
 }
 
 @media (min-width: 768px) {
   .page {
-    padding: var(--ar-space-6);
+    padding: var(--ac-space-6);
     align-items: flex-start;
   }
 
   .main {
-    gap: var(--ar-space-5);
+    gap: var(--ac-space-5);
   }
 
   .back {
     display: inline-flex;
     align-items: center;
-    gap: var(--ar-space-1);
+    gap: var(--ac-space-1);
     font-size: 14px;
     font-weight: 700;
-    color: var(--ar-color-text-2);
-    margin-bottom: calc(-1 * var(--ar-space-2));
+    color: var(--ac-color-text-2);
+    margin-bottom: calc(-1 * var(--ac-space-2));
   }
 
   .grouping {
     display: flex;
     justify-content: flex-end;
-    margin-top: calc(-1 * var(--ar-space-2));
+    margin-top: calc(-1 * var(--ac-space-2));
   }
 
   .tables {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--ar-space-5);
+    gap: var(--ac-space-5);
     align-items: start;
   }
 
   .toast {
-    bottom: var(--ar-space-6);
+    bottom: var(--ac-space-6);
   }
 
   .aside {
     width: 300px;
     flex-shrink: 0;
-    background: var(--ar-color-surface);
-    border: 1px solid var(--ar-color-border);
-    border-radius: var(--ar-radius-card);
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
     overflow: hidden;
     position: sticky;
-    top: calc(var(--ar-app-bar-height) + var(--ar-space-6));
+    top: calc(var(--ac-app-bar-height) + var(--ac-space-6));
   }
 
   .banner {
     position: relative;
     height: 170px;
-    background: var(--ar-color-text-2);
+    background: var(--ac-color-text-2);
   }
 
   .aside-body {
     padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: var(--ar-space-4);
+    gap: var(--ac-space-4);
   }
 
   .titles {
     display: flex;
     flex-direction: column;
-    gap: var(--ar-space-1);
+    gap: var(--ac-space-1);
     font-size: 14px;
-    color: var(--ar-color-text-muted);
+    color: var(--ac-color-text-muted);
   }
 
   .titles h1 {
     margin: 0;
     font-size: 24px;
     font-weight: 800;
-    letter-spacing: var(--ar-letter-spacing-display);
-    color: var(--ar-color-text);
+    letter-spacing: var(--ac-letter-spacing-display);
+    color: var(--ac-color-text);
   }
 
   .actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ar-space-2);
-    margin-top: calc(-1 * var(--ar-space-2));
+    gap: var(--ac-space-2);
+    margin-top: calc(-1 * var(--ac-space-2));
   }
 
   .actions button {
-    padding: 0 var(--ar-space-2);
+    padding: 0 var(--ac-space-2);
   }
 }
 

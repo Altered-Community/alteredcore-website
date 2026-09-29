@@ -1,14 +1,13 @@
 @if (label() && !inlineLabel()) {
-  <label [for]="id" class="label">{{ label() }}</label>
+  <label [for]="id" class="ac-field__label">{{ label() }}</label>
 }
 <div class="wrap">
   @if (label() && inlineLabel()) {
     <label [for]="id" class="inline-label">{{ label() }}</label>
   }
-  <select #sel [id]="id" [attr.aria-label]="label() ? null : ariaLabel()" (change)="pick(sel.value)">
+  <select #sel class="ac-select" [id]="id" [attr.aria-label]="label() ? null : ariaLabel()" (change)="pick(sel.value)">
     @for (o of options(); track o.value) {
       <option [value]="o.value" [selected]="o.value === value()">{{ o.label }}</option>
     }
   </select>
-  <span class="chev"><ar-icon name="chevron-down" [size]="16" /></span>
 </div>

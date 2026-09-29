@@ -2,13 +2,13 @@
   <div class="state">
     <strong>{{ search.source() === 'owned' ? 'Propriété numérique' : 'Favoris' }}</strong>
     <p>Connectez-vous pour retrouver {{ search.source() === 'owned' ? 'les cartes de votre collection numérique' : 'vos cartes favorites' }}.</p>
-    <a arButton variant="secondary" routerLink="/login">Se connecter</a>
+    <a acButton variant="secondary" routerLink="/login">Se connecter</a>
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ar-virtual-grid #grid class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+    <ac-virtual-grid #grid class="grid" role="list" aria-label="Cartes" [attr.aria-busy]="search.loading()" [items]="search.cards()">
       @for (c of grid.slice(); track c.reference) {
-        <ar-card-tile
+        <ac-card-tile
           role="listitem"
           [attr.aria-posinset]="grid.first() + $index + 1"
           [attr.aria-setsize]="search.cards().length"
@@ -25,11 +25,11 @@
           <span class="skeleton" aria-hidden="true"></span>
         }
       }
-    </ar-virtual-grid>
+    </ac-virtual-grid>
   } @else {
     <div class="list" role="list" aria-label="Cartes">
       @for (c of search.cards(); track c.reference) {
-        <ar-deck-row
+        <ac-deck-row
           role="listitem"
           appearance="panel"
           [plain]="browse()"
@@ -53,16 +53,16 @@
   @if (search.error(); as e) {
     <div class="state" role="alert">
       <p>{{ e }}</p>
-      <button arButton variant="secondary" (click)="search.retry()">Réessayer</button>
+      <button acButton variant="secondary" (click)="search.retry()">Réessayer</button>
     </div>
   } @else if (!search.loading() && search.total() === 0) {
     <div class="state">
       <strong>Aucune carte</strong>
       <p>Aucune carte ne correspond à ces filtres.</p>
-      <button arButton variant="secondary" (click)="search.reset()">Réinitialiser les filtres</button>
+      <button acButton variant="secondary" (click)="search.reset()">Réinitialiser les filtres</button>
     </div>
   } @else if (!search.hasMore() && search.cards().length) {
     <p class="end">{{ search.cards().length }} cartes affichées · fin des résultats</p>
   }
-  <div class="sentinel" arInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
+  <div class="sentinel" acInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
 }

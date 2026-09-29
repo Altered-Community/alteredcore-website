@@ -5,12 +5,12 @@ import { map } from 'rxjs';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { CardsApiService } from '../../../core/cards-api.service';
 import type { CardOrder } from '../../../core/models';
-import { ArButton, ArIconButton } from '../../../ui/buttons';
-import { ArCount, ArFilterBar } from '../../../ui/chips';
-import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArTabs } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcCount, AcFilterBar } from '../../../ui/chips';
+import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcTabs } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { CardSearchStore } from '../card-search.store';
 import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
 import { FiltersPanel } from '../filters-panel/filters-panel';
@@ -36,7 +36,7 @@ export const CARD_SOURCES: CardSourceTab[] = [
  */
 @Component({
   selector: 'app-card-search',
-  imports: [ArTabs, ArSegmented, ArSelect, ArInput, ArIconButton, ArButton, ArCount, ArFilterBar, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
@@ -44,9 +44,9 @@ export const CARD_SOURCES: CardSourceTab[] = [
 export class CardSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly cardsApi = inject(CardsApiService);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
@@ -64,7 +64,7 @@ export class CardSearch {
   protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: `Tri : ${o.label}` }));
   protected readonly layoutOptions = [
-    { value: 'grid' as const, icon: 'grid' as const, ariaLabel: 'Grille' },
+    { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: 'Grille' },
     { value: 'list' as const, icon: 'list' as const, ariaLabel: 'Liste' },
   ];
   protected readonly resultsLayout = signal<'grid' | 'list'>('grid');

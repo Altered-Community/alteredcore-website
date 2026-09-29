@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ArCombobox, type ComboOption } from './combobox';
+import { AcCombobox, type ComboOption } from './combobox';
 
 const MAIN: ComboOption = { id: 1, text: 'Joué depuis la Main' };
 const EXPEDITION: ComboOption = { id: 2, text: 'Quitte la zone d’Expédition' };
@@ -15,9 +15,9 @@ function sequence(host: HTMLElement): string[] {
     });
 }
 
-describe('ArCombobox « ou »', () => {
+describe('AcCombobox « ou »', () => {
   function render(values: ComboOption[]): HTMLElement {
-    const fixture = TestBed.createComponent(ArCombobox);
+    const fixture = TestBed.createComponent(AcCombobox);
     fixture.componentRef.setInput('options', [MAIN, EXPEDITION]);
     fixture.componentRef.setInput('values', values);
     fixture.componentRef.setInput('placeholder', 'Ajouter un déclencheur…');
@@ -43,12 +43,12 @@ describe('ArCombobox « ou »', () => {
   });
 });
 
-describe('ArCombobox picker', () => {
+describe('AcCombobox picker', () => {
   const HAND: ComboOption = { id: 22, text: 'Joué depuis la Main', glyph: '\ue023' };
   const NONE: ComboOption = { id: 191, text: 'Sans condition' };
 
   function setup(options: ComboOption[], values: ComboOption[] = []) {
-    const fixture = TestBed.createComponent(ArCombobox);
+    const fixture = TestBed.createComponent(AcCombobox);
     fixture.componentRef.setInput('options', options);
     fixture.componentRef.setInput('values', values);
     fixture.detectChanges();

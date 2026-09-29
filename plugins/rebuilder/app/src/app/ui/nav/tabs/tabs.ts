@@ -1,20 +1,26 @@
 import { Component, input, model } from '@angular/core';
 
-export interface ArTab {
+export interface AcTab {
   id: string;
   label: string;
   count?: number;
 }
 
-/** Tabs: underline (≥ medium) or scrolling pills (compact). */
+/** Tabs: underline (≥ medium) or scrolling pills (compact), `ac-tabs` (design-system/css/components/navigation.css). */
 @Component({
-  selector: 'ar-tabs',
-  host: { role: 'tablist', '[attr.aria-label]': 'ariaLabel()', '[class]': "'ar-tabs--' + appearance()" },
+  selector: 'ac-tabs',
+  host: {
+    role: 'tablist',
+    class: 'ac-tabs',
+    '[attr.aria-label]': 'ariaLabel()',
+    '[class.ac-tabs--underline]': "appearance() === 'underline'",
+    '[class.ac-tabs--pill]': "appearance() === 'pill'",
+  },
   templateUrl: './tabs.html',
   styleUrl: './tabs.scss',
 })
-export class ArTabs {
-  readonly tabs = input<ArTab[]>([]);
+export class AcTabs {
+  readonly tabs = input<AcTab[]>([]);
   readonly active = model<string>('');
   readonly appearance = input<'underline' | 'pill'>('underline');
   readonly ariaLabel = input('');

@@ -1,8 +1,8 @@
 import type { Locale } from './models';
 
 /**
- * Interface strings translated for the embedded editor (the site is EN/FR). The standalone app is
- * French only; this covers the editor's main labels, the rest of the UI stays in French for now.
+ * Interface strings that follow the site language (EN/FR, `AlteredCore.lang`): the editor's main
+ * labels and the page titles. The rest of the UI stays in French for now.
  */
 const MESSAGES = {
   'title.newDeck': { fr: 'Nouveau deck', en: 'New deck' },

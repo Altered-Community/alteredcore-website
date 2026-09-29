@@ -7,11 +7,11 @@
 .visual {
   position: relative;
   aspect-ratio: 5 / 7;
-  max-height: var(--ar-card-tile-max-h, none);
-  border-radius: var(--ar-radius-lg);
+  max-height: var(--ac-card-tile-max-h, none);
+  border-radius: var(--ac-radius-lg);
   overflow: hidden;
-  box-shadow: var(--ar-shadow-card);
-  background: var(--ar-color-text-2);
+  box-shadow: var(--ac-shadow-card);
+  background: var(--ac-color-text-2);
 }
 .action {
   position: absolute;
@@ -24,16 +24,16 @@
   bottom: 10px;
   min-width: 32px;
   height: 30px;
-  padding: 0 var(--ar-space-2);
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-overlay-control);
-  color: var(--ar-color-on-strong);
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
   font-size: 14px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--ar-shadow-fab);
+  box-shadow: var(--ac-shadow-fab);
 }
 /* Narrow tiles (5-column deck views, compact 3-column grids). */
 @container (max-width: 150px) {

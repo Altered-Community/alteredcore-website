@@ -1,39 +1,32 @@
 :host {
   display: flex;
   flex-direction: column;
-  background: var(--ar-color-surface);
+  background: var(--ac-color-surface);
   min-height: 0;
   max-height: inherit;
   overflow: hidden;
   outline: none;
 }
-:host(.ar-overlay--dialog) {
-  border-radius: var(--ar-radius-dialog);
-  box-shadow: var(--ar-shadow-dialog);
+:host(.ac-overlay--dialog) {
+  border-radius: var(--ac-radius-dialog);
+  box-shadow: var(--ac-shadow-dialog);
   max-height: min(90vh, 900px);
 }
-:host(.ar-overlay--dialog.ar-overlay--fill) {
-  height: calc(100dvh - 2 * var(--ar-space-10));
+:host(.ac-overlay--dialog.ac-overlay--fill) {
+  height: calc(100dvh - 2 * var(--ac-space-10));
   max-height: none;
 }
-:host(.ar-overlay--sheet) {
-  border-radius: var(--ar-radius-sheet) var(--ar-radius-sheet) 0 0;
-  box-shadow: var(--ar-shadow-sheet);
+:host(.ac-overlay--sheet) {
+  border-radius: var(--ac-radius-sheet) var(--ac-radius-sheet) 0 0;
+  box-shadow: var(--ac-shadow-sheet);
   max-height: calc(100dvh - 48px - env(safe-area-inset-top));
   padding-bottom: env(safe-area-inset-bottom);
 }
-:host(.ar-overlay--fullscreen) {
+:host(.ac-overlay--fullscreen) {
   height: 100dvh;
   max-height: 100dvh;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-}
-:host(.ar-overlay--drawer) {
-  height: 100%;
-  max-height: 100dvh;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
 }
 .view {
   display: flex;
@@ -50,35 +43,31 @@
 .handle {
   display: flex;
   justify-content: center;
-  padding-top: var(--ar-space-2);
+  padding-top: var(--ac-space-2);
 }
 .handle span {
   width: 40px;
   height: 4px;
   border-radius: 2px;
-  background: var(--ar-color-chart-axis);
+  background: var(--ac-color-chart-axis);
 }
 .head {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   padding: 14px 12px 14px 20px;
-  border-bottom: 1px solid var(--ar-color-border);
+  border-bottom: 1px solid var(--ac-color-border);
   flex-shrink: 0;
 }
-:host(.ar-overlay--sheet) .head {
+:host(.ac-overlay--sheet) .head {
   padding: 4px 8px 8px 20px;
 }
-:host(.ar-overlay--fullscreen) .head {
+:host(.ac-overlay--fullscreen) .head {
   height: 56px;
   padding: 0 12px 0 6px;
-  gap: var(--ar-space-1);
+  gap: var(--ac-space-1);
 }
-:host(.ar-overlay--drawer) .head {
-  min-height: var(--ar-app-bar-height);
-  padding: 0 var(--ar-space-2) 0 var(--ar-space-5);
-}
-:host(.ar-overlay--sheet) .head:has(.icon-btn:first-child) {
+:host(.ac-overlay--sheet) .head:has(.icon-btn:first-child) {
   padding-left: 8px;
 }
 .titles {
@@ -88,7 +77,7 @@
 .desc {
   margin: 2px 0 0;
   font-size: 14px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .head:has(.desc) {
   border-bottom: none;
@@ -96,28 +85,25 @@
 }
 .title {
   margin: 0;
-  font: var(--ar-font-title);
+  font: var(--ac-font-title);
   font-size: 18px;
   min-width: 0;
 }
-:host(.ar-overlay--sheet) .title {
+:host(.ac-overlay--sheet) .title {
   font-size: 20px;
-}
-:host(.ar-overlay--drawer) .title {
-  font: var(--ar-font-title);
 }
 .sub {
   font-size: 14px;
   font-weight: 700;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .icon-btn {
-  width: var(--ar-control-md);
-  height: var(--ar-control-md);
-  border-radius: var(--ar-radius-control);
+  width: var(--ac-control-md);
+  height: var(--ac-control-md);
+  border-radius: var(--ac-radius-control);
   border: none;
   background: none;
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,22 +111,18 @@
   flex-shrink: 0;
 }
 .icon-btn.close {
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
 }
-:host(.ar-overlay--sheet) .icon-btn.close,
-:host(.ar-overlay--drawer) .icon-btn.close {
-  color: var(--ar-color-text);
+:host(.ac-overlay--sheet) .icon-btn.close {
+  color: var(--ac-color-text);
 }
 .head-action {
   border: none;
   background: none;
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   font-weight: 700;
-  color: var(--ar-color-primary);
+  color: var(--ac-color-primary);
   cursor: pointer;
-  padding: var(--ar-space-2);
+  padding: var(--ac-space-2);
   white-space: nowrap;
-}
-:host-context([data-density='touch']) .head-action {
-  font-size: 16px;
 }

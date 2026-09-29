@@ -3,8 +3,8 @@ import type { Locale } from './models';
 let current: Locale = 'fr';
 
 /**
- * Language of the card data (names, effects, card images). French in the standalone app;
- * embedded, it follows the site language (`AlteredCore.lang`), set once at startup.
+ * Language of the card data (names, effects, card images): the site language
+ * (`AlteredCore.lang`), set once at startup.
  */
 export function contentLocale(): Locale {
   return current;

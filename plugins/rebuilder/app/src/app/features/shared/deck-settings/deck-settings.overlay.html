@@ -1,25 +1,25 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   <div class="hero">
     <span class="thumb">
       @if (hero(); as h) {
-        <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+        <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
       }
     </span>
     <span class="meta">
       <span class="overline">Héros</span>
       <span class="name">{{ hero()?.name || 'Aucun héros' }}</span>
     </span>
-    <button arButton variant="secondary" size="sm" (click)="changeHero()">Changer</button>
+    <button acButton variant="secondary" size="sm" (click)="changeHero()">Changer</button>
   </div>
   <div class="field">
     <span class="label">Visibilité</span>
-    <ar-segmented ariaLabel="Visibilité" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
+    <ac-segmented ariaLabel="Visibilité" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
   </div>
   <fieldset>
     <legend>Format</legend>
     <div class="formats" role="radiogroup" aria-label="Format">
       @for (f of formats; track f.value) {
-        <ar-radio-card
+        <ac-radio-card
           name="deck-settings-format"
           [title]="f.label"
           [description]="f.short"
@@ -31,7 +31,7 @@
     </div>
   </fieldset>
 </div>
-<div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
-  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()">Enregistrer</button>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()">Enregistrer</button>
 </div>

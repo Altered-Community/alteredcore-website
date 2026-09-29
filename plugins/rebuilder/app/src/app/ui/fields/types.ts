@@ -1,1 +1,1 @@
-export type ArTone = 'blue' | 'green' | 'violet' | 'red' | 'orange' | 'neutral';
+export type AcTone = 'blue' | 'green' | 'violet' | 'red' | 'orange' | 'neutral';

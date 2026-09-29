@@ -3,16 +3,22 @@
 ## Produit
 
 Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), montée par le site sur
-`/pages/rebuilder/` (build `embed`, Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources
-importées de [Yutsa/altered-re-builder](https://github.com/Yutsa/altered-re-builder), qui garde l'app autonome
-(Capacitor, BFF d'authentification, maquettes, e2e autonomes). Les mêmes composants s'adaptent à la taille
-d'écran et à la densité : pas d'écrans « mobile » et « desktop » séparés.
+`/pages/rebuilder/` (Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Re:Builder n'existe plus
+que comme plugin du site : pas d'app autonome, pas de `index.html`, pas d'authentification propre (session du
+site). Les mêmes composants s'adaptent à la taille d'écran et à la densité : pas d'écrans « mobile » et
+« desktop » séparés.
 
 ## Références de conception
 
-- `design/COMPONENTS.md` : inventaire des composants `ar-*` et API attendue.
-- `design/tokens/tokens.css` : seules valeurs autorisées pour couleurs, espacements, rayons, ombres, typo, hauteurs.
-- Maquettes et captures de référence : dans le repo Re:Builder (`design/mockups/`, `design/screenshots/`).
+- Design system du site : `design-system/` à la racine du repo. Lire
+  [README](../../../design-system/README.md) et [WORKFLOW](../../../design-system/WORKFLOW.md) avant de toucher
+  à l'interface.
+- `design-system/tokens/tokens.css` : tokens `--ac-*`, seules valeurs autorisées pour couleurs, espacements,
+  rayons, ombres, typo, hauteurs. Une valeur propre au plugin qu'aucun token ne couvre va dans la section
+  `/* rebuilder */` de ce fichier (`--ac-rebuilder-<rôle>`, avec sa valeur sombre).
+- `design-system/css/components/` : styles des composants génériques `ac-*` (bouton, champ, puce, badge,
+  onglets…), injectés par le shell dans le shadow root avant les styles du plugin.
+- `design/COMPONENTS.md` : inventaire des composants Angular `ac-*` du plugin et de leur API.
 
 ## Règles de code
 
@@ -46,49 +52,59 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   (`templateUrl`) + `<nom>.scss` (`styleUrl`, seulement s'il y a des styles). Les fonctions `open…()` d'un overlay
   restent dans le `.ts` du composant ; types et helpers partagés entre plusieurs composants vont dans un fichier
   à part au niveau du groupe (ex. `ui/chips/rarity.ts`, `features/decks/deck-filters.ts`).
-- Design system sous le préfixe `ar-`. Un écran n'utilise que des composants `ar-*` et du layout ; s'il manque un
-  composant, l'ajouter au design system (et à la page `/_ds`) avant de l'utiliser.
-- Tout composant `ar-*` ajouté ou modifié met à jour `design/COMPONENTS.md` et la page `/_ds`
-  (`src/app/features/ds/`).
-- Styles : aucune valeur en dur. Couleurs, rayons, ombres, espacements via `var(--ar-*)` ; hauteurs de contrôle
-  via `--ar-control-sm|md|lg` (elles changent avec `data-density`).
-- Responsive : `ArBreakpointService` (compact < 768, medium 768–1199, expanded ≥ 1200) et `ArDensityService`
-  (`data-density="pointer|touch"` sur `<html>`). Overlays via `ArOverlayService` (fenêtre ≥ 768 px, feuille en dessous).
+- Préfixe `ac-` partout (sélecteurs, classes CSS, classes `Ac*`, tokens `--ac-*`), comme le design system du
+  site. Un écran n'utilise que des composants `ac-*` et du layout.
+- Composant générique (il a une classe dans `design-system/css/components/`) : le composant Angular pose le
+  balisage et les classes du design system (`ac-button ac-button--secondary`, `<button class="ac-chip">`…) et
+  n'a pas de SCSS pour ce que le design system dessine. Pour le changer ou en ajouter un, modifier d'abord le
+  design system (CSS, `design-system/docs/components/`, page `/pages/design-system`), puis le composant Angular.
+  Le SCSS du composant ne garde que ce que le design system ne couvre pas (ex. bouton Effacer de `ac-input`).
+  Pas de règle `:host` qui redessine une classe du design system : le SCSS du composant passe après et l'écrase.
+- Composant métier (`ui/metier/`, overlays, combobox, radio-card, stepper…) : SCSS propre, en tokens.
+- Tout composant `ac-*` ajouté ou modifié met à jour `design/COMPONENTS.md`.
+- Styles : aucune valeur en dur (pas de couleur hex / `rgb()` / `hsl()`, vérifié par `php tests/run.php`).
+  Couleurs, rayons, ombres, espacements via `var(--ac-*)` ; hauteurs de contrôle via `--ac-control-sm|md|lg`.
+  Jamais de sélecteur `data-theme` ni `data-density` (ni `:host-context`) : une valeur qui change avec la
+  densité est un token (`--ac-control-*`, `--ac-hit-min`, `--ac-field-font-size`, `--ac-select-font-size`,
+  `--ac-segment-height`, `--ac-segment-font-size`, `--ac-icon-button-segment`, `--ac-page-padding`).
+- Responsive : `AcBreakpointService` (compact < 768, medium 768–1199, expanded ≥ 1200 ; `BREAKPOINTS` importé de
+  `design-system/tokens/breakpoints.ts`) et `AcDensityService` (lecture seule de `data-density`, que le shell pose
+  sur `<html>`). Overlays via `AcOverlayService` (fenêtre ≥ 768 px, feuille en dessous).
   Jamais une fenêtre ouverte par-dessus une autre : depuis un contenu d'overlay, ouvrir l'écran suivant comme étape
   (`ref.openStep(...)`, même fenêtre, flèche retour).
 - Accessibilité : passer les contrôles AXE et les minimums WCAG AA (focus, contrastes, ARIA). Vrais
   `<button>`/`<a>`/`<input>` avec label, `aria-label` sur les boutons icône, cibles ≥ 44 px en touch, focus visible.
-- Icônes au trait : `ar-icon` (`src/app/ui/icon/icon.ts`, SVG Lucide en ligne : `lucide-angular` ne supporte pas encore
-  Angular 22). Icônes de rareté et de terrain : `public/assets/icons/` (servies sous `assets/icons/`) ; gemmes, factions, terrains et logos d'extension : `public/assets/` (voir son `README.md`).
+- Icônes : `ac-icon` (`src/app/ui/icon/icon.ts`), noms Lucide (les mêmes que `ac_icon()` / `acIcon()` sur le site :
+  `trash-2`, `ellipsis`, `sliders-horizontal`, `brand-discord`…), balisage copié de
+  `design-system/icons/node_modules/lucide-static` (`lucide-angular` ne supporte pas encore Angular 22) ; rend
+  `<svg class="ac-icon">`. Icônes de rareté et de terrain : `public/assets/icons/` (servies sous `assets/icons/`) ; gemmes, factions, terrains et logos d'extension : `public/assets/` (voir son `README.md`).
 - Backend : **réutiliser les services, modèles et intercepteurs existants** pour les appels API. Ne pas dupliquer
   un client ; si un modèle ne correspond pas à l'UI, écrire un mapper plutôt que de modifier le contrat.
-- Embarqué : pas d'accès direct au token Keycloak (session du site, appels decks par le relais
-  `AlteredCore.services.decks`), styles et overlays dans le shadow root, menu du site à la place de `site-menu`.
-- App autonome (Capacitor) : `env(safe-area-inset-*)` pour les zones sûres, `@capacitor/keyboard`, `@capacitor/status-bar`,
-  bouton retour Android via `@capacitor/app` (ferme d'abord l'overlay ouvert).
+- Session : pas d'accès au token Keycloak (session du site, appels decks par le relais
+  `AlteredCore.services.decks`, `HostAuthSession`), connexion par `AlteredCore.login()`. Styles et overlays dans le
+  shadow root ; en-tête, menu et pied de page sont ceux du site.
 
 ## Vérification avant de terminer une tâche
 
-1. `npm run build`, `npm run build:embed` et `ng lint` sans erreur, `npm test` vert.
+1. `npm run build:embed` et `npm run lint` sans erreur, `npm test` vert ; `php tests/run.php` à la racine du repo
+   (couleurs en dur, points de rupture).
 2. E2E dans le site (`tests/e2e` + `plugins/rebuilder/e2e`) sur la stack `docker-compose.stack.yml` : voir
    `../README.md`.
 3. Capture Playwright de l'écran embarqué à 1440×900 et 390×844.
-4. Recherche de valeurs en dur (`#[0-9a-f]{3,6}`, `px` de hauteur de contrôle) hors `design/tokens/tokens.css`.
+4. Recherche de valeurs en dur (`#[0-9a-f]{3,6}`, `px` de hauteur de contrôle) hors `design-system/tokens/tokens.css`.
 
 ## Structure du repo
 
 | Emplacement | Contenu |
 |---|---|
-| `design/` | `COMPONENTS.md` et tokens. |
-| `design/tokens/tokens.css` | Tokens `--ar-*`, chargés globalement via `angular.json` → `styles`. |
-| `src/styles.scss` | Base globale (reset, classes `ar-overlay-*` partagées par les contenus d'overlay). |
-| `src/app/ui/` | Design system `ar-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ar-radio-card`), `chips/`, `containers/`, `nav/` (dont `ar-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`ArOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`ArBreakpointService`, `ArDensityService`). |
-| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `home/` (accueil `/`), `cards/` (onglet Cartes `/cartes`), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `login/`, `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck ; menu du site `site-menu/`, `account-actions/`, `site-links.ts`), `ds/` (page `/_ds`). |
-| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth.service.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
-| `src/app/app.routes.ts` | Routes de l'app autonome, dont `/_ds` : catalogue vivant du design system (`src/app/features/ds/`). |
-| `src/main.embed.ts`, `src/app/embed/` | Mode embarqué : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
-| `src/embed/` | Styles du build embarqué (shadow root, et `<head>` pour les polices). |
-| `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build --configuration embed`. |
+| `design/COMPONENTS.md` | Inventaire des composants Angular `ac-*`. |
+| `src/app/ui/` | Composants Angular `ac-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ac-radio-card`), `chips/`, `containers/`, `nav/` (dont `ac-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`AcOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`AcBreakpointService`, `AcDensityService`). |
+| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `search/` (recherche de cartes de l'éditeur : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck). |
+| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth-session.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
+| `src/main.embed.ts`, `src/app/embed/` | Point d'entrée : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
+| `src/embed/` | Styles globaux : `embed.scss` (shadow root, après le design system), `document.scss` (`<head>` : polices des cartes imprimées). |
+| `src/testing/` | Aides des tests unitaires (`provideGuestSession()`). |
+| `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build`. |
 | `../e2e/` | Scénarios Playwright du plugin, lancés par le site sur la stack complète (desktop 1440×900 et mobile 390×844). |
 | `docs/backend-api.md` | Contrat des API consommées. |
 | `docs/api-limitations/` | Manques des API, contournements côté front et corrections backend à faire (un fichier par API). |
@@ -97,11 +113,9 @@ Commandes npm :
 
 | Commande | Rôle |
 |---|---|
-| `npm start` | `ng serve` sur `0.0.0.0:4200`. |
-| `npm run build` | Build de production de l'app autonome. |
-| `npm run build:embed` | Build embarqué → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert). |
+| `npm run build:embed` | Build → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert ; appelé par `plugin.json`). |
 | `npm test` | Tests unitaires (Vitest via `@angular/build:unit-test`, fichiers `*.spec.ts`). |
-| `ng lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`). |
+| `npm run lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`). |
 
 
 ## Comportement

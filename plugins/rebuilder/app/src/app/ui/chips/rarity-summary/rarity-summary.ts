@@ -4,12 +4,12 @@ import { RARITY_ICONS } from '../rarity';
 
 /** C / R / U / E counters; never wraps inside, wraps as a whole. */
 @Component({
-  selector: 'ar-rarity-summary',
+  selector: 'ac-rarity-summary',
   host: { '[style.gap.px]': 'gap()', role: 'group', 'aria-label': 'Répartition par rareté' },
   templateUrl: './rarity-summary.html',
   styleUrl: './rarity-summary.scss',
 })
-export class ArRaritySummary {
+export class AcRaritySummary {
   readonly counts = input.required<RarityCounts>();
   readonly gap = input(8);
   protected readonly icons = RARITY_ICONS;

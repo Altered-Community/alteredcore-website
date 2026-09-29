@@ -1,4 +1,4 @@
-<div class="ar-overlay-body new-deck-body">
+<div class="ac-overlay-body new-deck-body">
   <section #heroesCol class="heroes" [class.narrow]="narrow()" aria-labelledby="new-deck-hero-label">
     <div class="heroes-head">
       <span class="label" id="new-deck-hero-label">{{ t('newDeck.hero') }} <span class="req" aria-hidden="true">*</span></span>
@@ -6,14 +6,14 @@
         <span class="hint">{{ t('newDeck.heroHint') }}</span>
       }
     </div>
-    <ar-faction-tabs
+    <ac-faction-tabs
       size="sm"
       [layout]="bp.compact() ? 'scroll' : 'grid'"
       [columns]="narrow() ? 3 : 6"
       controls="new-deck-heroes"
       [(active)]="faction"
     />
-    <ar-hero-selector
+    <ac-hero-selector
       panelId="new-deck-heroes"
       [layout]="bp.compact() ? 'carousel' : 'grid'"
       [columns]="narrow() ? 3 : 4"
@@ -25,7 +25,7 @@
     />
   </section>
   <div class="side">
-    <ar-input
+    <ac-input
       [label]="t('newDeck.name')"
       [required]="true"
       [placeholder]="t('newDeck.namePlaceholder')"
@@ -36,13 +36,13 @@
     />
     <div class="field">
       <span class="label">{{ t('newDeck.visibility') }}</span>
-      <ar-segmented [ariaLabel]="t('newDeck.visibility')" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
+      <ac-segmented [ariaLabel]="t('newDeck.visibility')" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
     </div>
     <fieldset>
       <legend class="label">{{ t('newDeck.format') }} <span class="req" aria-hidden="true">*</span></legend>
       <div class="formats" role="radiogroup" [attr.aria-label]="t('newDeck.format')">
         @for (f of formats; track f.value) {
-          <ar-radio-card
+          <ac-radio-card
             name="new-deck-format"
             layout="compact"
             [title]="f.label"
@@ -56,7 +56,7 @@
     </fieldset>
   </div>
 </div>
-<div class="ar-overlay-footer new-deck-footer">
+<div class="ac-overlay-footer new-deck-footer">
   @if (!bp.compact()) {
     <span class="note" aria-live="polite">
       @if (form.hero(); as h) {
@@ -66,8 +66,8 @@
       }
     </span>
   }
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()">{{ t('newDeck.cancel') }}</button>
-  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">{{ t('newDeck.cancel') }}</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()">
     {{ t('newDeck.create') }}
   </button>
 </div>

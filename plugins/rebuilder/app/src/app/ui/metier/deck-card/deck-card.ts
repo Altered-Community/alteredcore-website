@@ -3,10 +3,10 @@ import { RouterLink } from '@angular/router';
 import { factionSrc } from '../../../core/assets';
 import { relativeTime } from '../../../core/relative-time';
 import type { DeckListItem } from '../../../core/deck-view';
-import { ArLikeButton } from '../../buttons';
-import { ArBadge, ArRaritySummary } from '../../chips';
-import { ArIcon } from '../../icon';
-import { ArCardArt } from '../card-art/card-art';
+import { AcLikeButton } from '../../buttons';
+import { AcBadge, AcRaritySummary } from '../../chips';
+import { AcIcon } from '../../icon';
+import { AcCardArt } from '../card-art/card-art';
 import { factionName } from '../factions';
 
 /**
@@ -15,13 +15,13 @@ import { factionName } from '../factions';
  * and legal); the like button sits outside the link and emits `likeToggle`.
  */
 @Component({
-  selector: 'ar-deck-card',
-  imports: [RouterLink, ArCardArt, ArBadge, ArIcon, ArRaritySummary, ArLikeButton],
-  host: { '[class]': "'ar-deck-card--' + layout()" },
+  selector: 'ac-deck-card',
+  imports: [RouterLink, AcCardArt, AcBadge, AcIcon, AcRaritySummary, AcLikeButton],
+  host: { '[class]': "'ac-deck-card--' + layout()" },
   templateUrl: './deck-card.html',
   styleUrl: './deck-card.scss',
 })
-export class ArDeckCard {
+export class AcDeckCard {
   readonly deck = input.required<DeckListItem>();
   readonly layout = input<'grid' | 'row'>('grid');
   readonly variant = input<'mine' | 'community'>('mine');

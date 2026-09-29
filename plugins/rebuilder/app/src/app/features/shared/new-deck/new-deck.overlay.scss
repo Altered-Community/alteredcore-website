@@ -2,26 +2,26 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: var(--ar-space-4);
+  padding: var(--ac-space-4);
 }
 .heroes {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
   min-width: 0;
   /* Faction row and carousel run to the screen edges. */
-  --ar-hero-selector-bleed: var(--ar-space-4);
+  --ac-hero-selector-bleed: var(--ac-space-4);
 }
-.heroes ar-faction-tabs {
-  margin-inline: calc(-1 * var(--ar-space-4));
-  padding-inline: var(--ar-space-4);
-  --ar-faction-tabs-bleed: var(--ar-space-4);
+.heroes ac-faction-tabs {
+  margin-inline: calc(-1 * var(--ac-space-4));
+  padding-inline: var(--ac-space-4);
+  --ac-faction-tabs-bleed: var(--ac-space-4);
 }
 .heroes-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 .heroes-head .label {
   flex-shrink: 0;
@@ -29,13 +29,13 @@
 }
 .hint {
   font-size: 13px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   text-align: right;
 }
 .heroes.narrow .heroes-head {
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--ar-space-0-5);
+  gap: var(--ac-space-0-5);
 }
 .heroes.narrow .hint {
   text-align: left;
@@ -49,16 +49,16 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
 }
 .label,
-.side ::ng-deep ar-input .label {
+.side ::ng-deep ac-input .ac-field__label {
   font-size: 16px;
   font-weight: 700;
 }
 .req,
-.side ::ng-deep ar-input .req {
-  color: var(--ar-color-required);
+.side ::ng-deep ac-input .ac-field__required {
+  color: var(--ac-color-required);
 }
 fieldset {
   border: none;
@@ -68,18 +68,18 @@ fieldset {
 }
 legend {
   padding: 0;
-  margin-bottom: var(--ar-space-1-5);
+  margin-bottom: var(--ac-space-1-5);
 }
 .formats {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
 }
 .note strong {
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }
-:host-context(.ar-overlay--fullscreen) .new-deck-footer {
-  padding: var(--ar-space-2-5) var(--ar-space-4) var(--ar-space-5);
+:host-context(.ac-overlay--fullscreen) .new-deck-footer {
+  padding: var(--ac-space-2-5) var(--ac-space-4) var(--ac-space-5);
 }
 
 @media (min-width: 768px) {
@@ -93,32 +93,32 @@ legend {
   .side {
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: var(--ar-space-5) var(--ar-space-6);
+    padding: var(--ac-space-5) var(--ac-space-6);
   }
   .heroes {
     flex: 1 1 auto;
     gap: 14px;
-    border-right: 1px solid var(--ar-color-border);
-    --ar-hero-selector-bleed: 0px;
+    border-right: 1px solid var(--ac-color-border);
+    --ac-hero-selector-bleed: 0px;
   }
-  .heroes ar-faction-tabs {
+  .heroes ac-faction-tabs {
     margin-inline: 0;
     padding-inline: 0;
   }
   /* 360 px of content (Heros-A-Desktop), plus the column padding. */
   .side {
-    flex: 0 0 calc(360px + 2 * var(--ar-space-6));
-    gap: var(--ar-space-4);
+    flex: 0 0 calc(360px + 2 * var(--ac-space-6));
+    gap: var(--ac-space-4);
   }
   .label,
-  .side ::ng-deep ar-input .label {
+  .side ::ng-deep ac-input .ac-field__label {
     font-size: 14px;
   }
   .new-deck-footer {
-    background: var(--ar-color-bg-subtle);
-    padding: 14px var(--ar-space-6);
+    background: var(--ac-color-bg-subtle);
+    padding: 14px var(--ac-space-6);
   }
   .new-deck-footer .note {
-    color: var(--ar-color-text-2);
+    color: var(--ac-color-text-2);
   }
 }

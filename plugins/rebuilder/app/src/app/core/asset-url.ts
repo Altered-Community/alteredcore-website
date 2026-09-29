@@ -1,9 +1,8 @@
 let base = '';
 
 /**
- * URL of a file from `public/` (`assets/…`). The standalone app serves them from its own root,
- * so the path stays relative. Embedded in the AlteredCore site, the page URL is the site's
- * (`/pages/rebuilder/…`), so files come from the plugin's build directory instead.
+ * URL of a file from `public/` (`assets/…`). The page URL is the site's (`/pages/rebuilder/…`),
+ * so files come from the plugin's build directory (`AlteredCore.page.assetsUrl`).
  */
 export function assetUrl(path: string): string {
   return base + path;

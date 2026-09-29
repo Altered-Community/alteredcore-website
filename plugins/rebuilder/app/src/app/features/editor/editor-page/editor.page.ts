@@ -5,12 +5,12 @@ import { map } from 'rxjs';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { t } from '../../../core/i18n';
-import { ArButton } from '../../../ui/buttons';
-import { ArEditableTitle, ArSegmented } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArAppBar, ArAvatar, ArBackButton, ArBottomNav, ArBreadcrumb, type ArBottomNavItem } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcAppBar, AcAvatar, AcBackButton, AcBottomNav, AcBreadcrumb, type AcBottomNavItem } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { AuthSession } from '../../../core/auth-session';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { CardSearchStore } from '../../search/card-search.store';
@@ -26,15 +26,15 @@ export type EditorView = 'search' | 'apercu' | 'deck';
   providers: [CardSearchStore],
   imports: [
     RouterLink,
-    ArAppBar,
-    ArAvatar,
-    ArBackButton,
-    ArBottomNav,
-    ArBreadcrumb,
-    ArEditableTitle,
-    ArSegmented,
-    ArButton,
-    ArIcon,
+    AcAppBar,
+    AcAvatar,
+    AcBackButton,
+    AcBottomNav,
+    AcBreadcrumb,
+    AcEditableTitle,
+    AcSegmented,
+    AcButton,
+    AcIcon,
     CardSearch,
     DeckPanel,
     DeckPreview,
@@ -46,8 +46,8 @@ export type EditorView = 'search' | 'apercu' | 'deck';
 export class EditorPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
-  protected readonly bp = inject(ArBreakpointService);
+  private readonly overlay = inject(AcOverlayService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
 
@@ -64,7 +64,7 @@ export class EditorPage {
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? 'Public' : 'Privé'}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
-  protected readonly navItems = computed<ArBottomNavItem[]>(() => [
+  protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: this.base(), icon: 'search', label: t('editor.search') },
     { route: `${this.base()}/apercu`, icon: 'eye', label: t('editor.preview') },
     {

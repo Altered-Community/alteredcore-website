@@ -3,12 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { AuthService, decodeJwtPayload } from './auth.service';
 import { CardsApiService } from './cards-api.service';
 import { DeckStore } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
 import type { Card, Deck } from './models';
 import { localizedText } from './models';
+import { provideGuestSession } from '../../testing/guest-session';
 
 const hero = { reference: 'ALT_CORE_B_YZ_01_C', name: 'Moyo & Silk', faction: 'YZ' };
 const zou: Card = { reference: 'ALT_CORE_B_YZ_10_C', name: 'Zou !', cardType: { reference: 'SPELL' }, mainCost: 2, recallCost: 4 };
@@ -30,9 +30,8 @@ describe('DeckStore (guest mode)', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('arb.can_refresh', '0');
     sessionStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideGuestSession()] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
   });
@@ -234,31 +233,5 @@ describe('GuestDeckService', () => {
     expect(svc.decks().map((d) => d.id)).toEqual(['guest-a']);
     expect(GuestDeckService.isGuestId('guest-a')).toBe(true);
     expect(GuestDeckService.isGuestId('01a0')).toBe(false);
-  });
-});
-
-describe('AuthService', () => {
-  beforeEach(() => {
-    sessionStorage.clear();
-    localStorage.setItem('arb.can_refresh', '0');
-  });
-
-  const jwt = (payload: object) => `h.${btoa(JSON.stringify(payload)).replace(/=+$/, '')}.s`;
-
-  it('shows the Keycloak pseudo and never preferred_username', () => {
-    const auth = TestBed.inject(AuthService);
-    auth.setAccessToken(jwt({ pseudo: 'Yutsa', preferred_username: 'player@example.test' }));
-    expect(auth.username()).toBe('Yutsa');
-    auth.setAccessToken(jwt({ preferred_username: 'player@example.test', email: 'player@example.test' }));
-    expect(auth.username()).toBe('Compte');
-  });
-});
-
-describe('decodeJwtPayload', () => {
-  it('reads preferred_username from a JWT and ignores garbage', () => {
-    const payload = btoa(JSON.stringify({ preferred_username: 'Yutsa' })).replace(/=+$/, '');
-    expect(decodeJwtPayload(`h.${payload}.s`)?.['preferred_username']).toBe('Yutsa');
-    expect(decodeJwtPayload('not-a-jwt')).toBeNull();
-    expect(decodeJwtPayload(null)).toBeNull();
   });
 });

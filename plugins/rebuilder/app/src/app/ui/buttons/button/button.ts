@@ -1,22 +1,30 @@
 import { Component, input } from '@angular/core';
-import { ArIcon, type ArIconName } from '../../icon';
-import { type ArButtonVariant, type ArSize } from '../types';
+import { AcIcon, type AcIconName } from '../../icon';
+import { type AcButtonVariant, type AcSize } from '../types';
 
-/** `<button arButton>` / `<a arButton>` — DS-Boutons. */
+/**
+ * `<button acButton>` / `<a acButton>`: sets the `ac-button` classes of the design system
+ * (design-system/css/components/button.css), which draws it.
+ */
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector -- styles native <button>/<a> so they keep their semantics
-  selector: 'button[arButton], a[arButton]',
-  imports: [ArIcon],
+  selector: 'button[acButton], a[acButton]',
+  imports: [AcIcon],
   host: {
-    class: 'ar-button',
-    '[class]': "'ar-button ar-button--' + variant() + ' ar-button--' + size() + (fullWidth() ? ' ar-button--full' : '')",
+    class: 'ac-button',
+    '[class.ac-button--secondary]': "variant() === 'secondary'",
+    '[class.ac-button--ghost]': "variant() === 'ghost'",
+    '[class.ac-button--add]': "variant() === 'add'",
+    '[class.ac-button--danger]': "variant() === 'danger'",
+    '[class.ac-button--sm]': "size() === 'sm'",
+    '[class.ac-button--lg]': "size() === 'lg'",
+    '[class.ac-button--full]': 'fullWidth()',
   },
   templateUrl: './button.html',
-  styleUrl: './button.scss',
 })
-export class ArButton {
-  readonly variant = input<ArButtonVariant>('primary');
-  readonly size = input<ArSize>('md');
-  readonly icon = input<ArIconName | undefined>(undefined);
+export class AcButton {
+  readonly variant = input<AcButtonVariant>('primary');
+  readonly size = input<AcSize>('md');
+  readonly icon = input<AcIconName | undefined>(undefined);
   readonly fullWidth = input(false);
 }

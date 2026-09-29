@@ -1,8 +1,8 @@
 :host {
   display: block;
-  background: var(--ar-color-surface);
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-card);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
   overflow: hidden;
   align-self: flex-start;
 }
@@ -14,16 +14,16 @@
 }
 h2 {
   margin: 0;
-  font: var(--ar-font-overline);
-  letter-spacing: var(--ar-letter-spacing-overline);
+  font: var(--ac-font-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .count {
   height: 22px;
-  padding: 0 var(--ar-space-2);
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-track);
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-track);
   font-size: 12px;
   font-weight: 800;
   display: flex;
@@ -32,10 +32,10 @@ h2 {
 .row {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
   height: 40px;
-  padding: 0 var(--ar-space-3);
-  border-bottom: 1px solid var(--ar-color-divider);
+  padding: 0 var(--ac-space-3);
+  border-bottom: 1px solid var(--ac-color-divider);
 }
 .row:last-child {
   border-bottom: none;
@@ -44,8 +44,8 @@ h2 {
   height: 32px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--ar-color-text-muted);
-  border-bottom-color: var(--ar-color-border);
+  color: var(--ac-color-text-muted);
+  border-bottom-color: var(--ac-color-border);
 }
 .q {
   width: 28px;
@@ -60,7 +60,7 @@ h2 {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   font-size: 14px;
 }
 .n img {
@@ -85,8 +85,8 @@ h2 {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--ar-color-inverse);
-  color: var(--ar-color-on-inverse);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
   font-size: 12px;
   font-weight: 800;
   display: flex;
@@ -97,7 +97,7 @@ h2 {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1.5px solid var(--ar-color-text);
+  border: 1.5px solid var(--ac-color-text);
   font-size: 11px;
   font-weight: 800;
   display: flex;
@@ -120,11 +120,11 @@ h2 {
   border-radius: 3px;
 }
 .foret {
-  background: var(--ar-terrain-foret);
+  background: var(--ac-terrain-forest);
 }
 .montagne {
-  background: var(--ar-terrain-montagne);
+  background: var(--ac-terrain-mountain);
 }
 .ocean {
-  background: var(--ar-terrain-ocean);
+  background: var(--ac-terrain-ocean);
 }

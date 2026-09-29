@@ -19,14 +19,19 @@
       },
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
+      "prefix": "ac",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.ts",
+            "browser": "src/main.embed.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "outputPath": {
+              "base": "../dist",
+              "browser": "browser"
+            },
+            "index": false,
             "assets": [
               {
                 "glob": "**/*",
@@ -34,8 +39,16 @@
               }
             ],
             "styles": [
-              "design/tokens/tokens.css",
-              "src/styles.scss"
+              {
+                "input": "src/embed/embed.scss",
+                "bundleName": "embed",
+                "inject": false
+              },
+              {
+                "input": "src/embed/document.scss",
+                "bundleName": "document",
+                "inject": false
+              }
             ]
           },
           "configurations": {
@@ -52,73 +65,22 @@
                   "maximumError": "20kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "extractLicenses": true
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true,
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.development.ts"
-                }
-              ]
-            },
-            "embed": {
-              "browser": "src/main.embed.ts",
-              "outputPath": {
-                "base": "../dist",
-                "browser": "browser"
-              },
-              "index": false,
-              "styles": [
-                {
-                  "input": "src/embed/embed.scss",
-                  "bundleName": "embed",
-                  "inject": false
-                },
-                {
-                  "input": "src/embed/document.scss",
-                  "bundleName": "document",
-                  "inject": false
-                }
-              ],
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "12kB",
-                  "maximumError": "20kB"
-                }
-              ],
-              "outputHashing": "all",
-              "extractLicenses": true
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
         },
-        "serve": {
-          "builder": "@angular/build:dev-server",
-          "options": {
-            "proxyConfig": "proxy.conf.json"
-          },
-          "configurations": {
-            "production": {
-              "buildTarget": "rebuilder:build:production"
-            },
-            "development": {
-              "buildTarget": "rebuilder:build:development"
-            }
-          },
-          "defaultConfiguration": "development"
-        },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "::development"
+          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

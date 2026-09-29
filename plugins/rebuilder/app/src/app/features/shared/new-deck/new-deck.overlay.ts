@@ -1,11 +1,11 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
 import { t } from '../../../core/i18n';
-import { ArButton } from '../../../ui/buttons';
-import { ArInput, ArRadioCard, ArSegmented } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArFactionTabs, ArHeroSelector, factionName } from '../../../ui/metier';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcInput, AcRadioCard, AcSegmented } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcFactionTabs, AcHeroSelector, factionName } from '../../../ui/metier';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { injectHeroes } from '../hero-picker/hero-picker.overlay';
 import { NewDeckForm, type NewDeckResult } from '../new-deck.form';
 
@@ -26,15 +26,15 @@ export const VISIBILITY_OPTIONS = [
  */
 @Component({
   selector: 'app-new-deck',
-  imports: [ArButton, ArInput, ArRadioCard, ArSegmented, ArFactionTabs, ArHeroSelector],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput, AcRadioCard, AcSegmented, AcFactionTabs, AcHeroSelector],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './new-deck.overlay.html',
   styleUrl: './new-deck.overlay.scss',
 })
 export class NewDeckOverlay {
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly ref = inject<ArOverlayRef<NewDeckResult>>(ArOverlayRef);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly ref = inject<AcOverlayRef<NewDeckResult>>(AcOverlayRef);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly formats = DECK_FORMATS;
   protected readonly bga = BGA_LABEL;
   protected readonly visibility = VISIBILITY_OPTIONS;
@@ -78,7 +78,7 @@ export class NewDeckOverlay {
   }
 }
 
-export function openNewDeck(overlay: ArOverlayService): ArOverlayRef<NewDeckResult> {
+export function openNewDeck(overlay: AcOverlayService): AcOverlayRef<NewDeckResult> {
   return overlay.open<NewDeckOverlay, NewDeckResult>(NewDeckOverlay, {
     title: t('title.newDeck'),
     width: 1080,

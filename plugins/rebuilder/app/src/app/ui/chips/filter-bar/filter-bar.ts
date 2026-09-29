@@ -1,14 +1,14 @@
 import { Component, input, output } from '@angular/core';
-import { ArChip } from '../chip/chip';
+import { AcChip } from '../chip/chip';
 
 /** Active filters on one scrolling line, "Tout effacer" pinned right over a fade. */
 @Component({
-  selector: 'ar-filter-bar',
-  imports: [ArChip],
+  selector: 'ac-filter-bar',
+  imports: [AcChip],
   templateUrl: './filter-bar.html',
   styleUrl: './filter-bar.scss',
 })
-export class ArFilterBar {
+export class AcFilterBar {
   readonly chips = input<{ id: string; label: string }[]>([]);
   readonly remove = output<string>();
   readonly clearAll = output<void>();

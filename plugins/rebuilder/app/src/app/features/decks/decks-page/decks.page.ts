@@ -8,17 +8,16 @@ import { DecksApiService, type PublicDeckPage, type PublicDeckQuery } from '../.
 import { DECK_FORMATS } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton, ArIconButton } from '../../../ui/buttons';
-import { ArChip, ArCount } from '../../../ui/chips';
-import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArInfiniteSentinel } from '../../../ui/infinite';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArDeckCard, FACTIONS } from '../../../ui/metier';
-import { ArAppBar, ArTabs } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcChip, AcCount } from '../../../ui/chips';
+import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcInfiniteSentinel } from '../../../ui/infinite';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcDeckCard, FACTIONS } from '../../../ui/metier';
+import { AcAppBar, AcTabs } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
-import { SITE_MENU_ENABLED, SiteMenuService } from '../../shared/site-menu/site-menu';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks } from '../deck-filters';
@@ -58,21 +57,19 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, ArAppBar, ArTabs, ArButton, ArIconButton, ArInput, ArSelect, ArSegmented, ArChip, ArDeckCard, ArIcon, ArCount, ArInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
 export class DecksPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
-  protected readonly bp = inject(ArBreakpointService);
-  protected readonly menu = inject(SiteMenuService);
-  protected readonly siteMenu = inject(SITE_MENU_ENABLED);
+  protected readonly bp = inject(AcBreakpointService);
 
   protected readonly tab = toSignal(this.route.queryParamMap.pipe(map((q) => (q.get('tab') === 'community' ? 'community' : 'mine') as Tab)), {
     initialValue: 'mine' as Tab,

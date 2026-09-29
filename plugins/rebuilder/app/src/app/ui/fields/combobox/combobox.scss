@@ -7,24 +7,20 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   padding: 7px 8px 7px 10px;
-  border: 1px solid var(--ar-color-primary-border);
-  background: var(--ar-color-primary-soft);
-  color: var(--ar-color-primary-strong);
-  border-radius: var(--ar-radius-control);
-  font-size: 13px;
+  border: 1px solid var(--ac-color-primary-border);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  border-radius: var(--ac-radius-control);
+  font-size: var(--ac-select-font-size);
   font-weight: 700;
   line-height: 1.35;
-}
-:host-context([data-density='touch']) .picked {
-  font-size: 15px;
-  padding: 9px 8px 9px 12px;
 }
 .picked button {
   border: none;
   background: none;
-  color: var(--ar-color-primary-strong);
+  color: var(--ac-color-primary-strong);
   display: flex;
   padding: 2px;
   cursor: pointer;
@@ -33,7 +29,7 @@
 .or {
   font-size: 11px;
   font-weight: 800;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   text-transform: uppercase;
   padding: 5px 8px;
 }
@@ -42,25 +38,22 @@
 }
 .toggle {
   width: 100%;
-  height: var(--ar-control-md);
+  height: var(--ac-control-md);
   padding: 0 34px 0 12px;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  color: var(--ar-color-text-muted);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-muted);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   outline: none;
 }
-:host-context([data-density='touch']) .toggle {
-  font-size: 16px;
-}
 .toggle:focus-visible,
 .toggle[aria-expanded='true'] {
-  border: 2px solid var(--ar-color-primary);
+  border: 2px solid var(--ac-color-primary);
   padding-left: 11px;
 }
 .label {
@@ -74,7 +67,7 @@
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   display: flex;
   pointer-events: none;
 }
@@ -84,13 +77,13 @@
 .glyph {
   display: inline-block;
   width: 1.4em;
-  font-family: var(--ar-card-icons);
+  font-family: var(--ac-card-icons);
   font-style: normal;
   font-weight: 400;
   font-size: 1.15em;
   line-height: 1;
   text-align: center;
-  margin-right: var(--ar-space-1-5);
+  margin-right: var(--ac-space-1-5);
   vertical-align: -0.12em;
 }
 .panel {
@@ -99,46 +92,43 @@
   left: 0;
   right: 0;
   z-index: 5;
-  margin-top: var(--ar-space-1);
+  margin-top: var(--ac-space-1);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  box-shadow: var(--ar-shadow-e2);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e2);
   overflow: hidden;
 }
 .search {
   position: relative;
-  padding: var(--ar-space-2);
-  border-bottom: 1px solid var(--ar-color-border);
+  padding: var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-color-border);
 }
 .search-icon {
   position: absolute;
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   display: flex;
   pointer-events: none;
 }
 .search input {
   width: 100%;
-  height: var(--ar-control-sm);
+  height: var(--ac-control-sm);
   padding: 0 10px 0 32px;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-sm);
-  background: var(--ar-color-bg-app);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-bg-app);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   outline: none;
 }
-:host-context([data-density='touch']) .search input {
-  font-size: 16px;
-}
 .search input:focus {
-  border-color: var(--ar-color-primary);
-  background: var(--ar-color-surface);
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
 }
 .list {
   display: flex;
@@ -150,23 +140,19 @@
 .empty {
   padding: 10px 12px;
   font-size: 13px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .list button {
-  min-height: 36px;
+  min-height: max(36px, var(--ac-hit-min));
   padding: 8px 12px;
   border: none;
-  background: var(--ar-color-surface);
-  font-size: 14px;
+  background: var(--ac-color-surface);
+  font-size: var(--ac-field-font-size);
   text-align: left;
   cursor: pointer;
   flex-shrink: 0;
 }
-:host-context([data-density='touch']) .list button {
-  min-height: 44px;
-  font-size: 15px;
-}
 .list button.active,
 .list button:hover {
-  background: var(--ar-color-bg-app);
+  background: var(--ac-color-bg-app);
 }

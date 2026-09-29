@@ -1,16 +1,17 @@
 <button
   type="button"
-  [class.on]="selected() || removable()"
-  [class.square]="shape() === 'square'"
+  class="ac-chip"
+  [class.ac-chip--square]="shape() === 'square'"
+  [class.is-on]="selected() || removable()"
   [attr.aria-pressed]="removable() ? null : selected()"
   [attr.aria-label]="removable() ? 'Retirer le filtre ' + label() : null"
   (click)="removable() ? remove.emit() : selected.set(!selected())"
 >
   @if (dot()) {
-    <span class="dot" [style.background]="dot()"></span>
+    <span class="ac-chip__dot" [style.--ac-chip-dot]="dot()"></span>
   }
   {{ label() }}
   @if (removable()) {
-    <ar-icon name="x" [size]="14" [strokeWidth]="2.4" />
+    <span class="ac-chip__remove"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></span>
   }
 </button>

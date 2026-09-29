@@ -14,7 +14,7 @@ img {
   transition: opacity 0.2s;
 }
 :host(.neutral) {
-  background: var(--ar-color-track);
+  background: var(--ac-color-track);
 }
 :host(.loaded) img {
   opacity: 1;
@@ -28,6 +28,6 @@ img {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.7);
+  color: color-mix(in srgb, var(--ac-color-on-strong) 70%, transparent);
   white-space: nowrap;
 }

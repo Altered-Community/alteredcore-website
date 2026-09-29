@@ -1,5 +1,5 @@
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 import { nextId } from '../value-accessor';
 
 export interface ComboOption {
@@ -15,8 +15,8 @@ export interface ComboOption {
  * Typing on the button moves the key into the search field. Selected values render above as chips.
  */
 @Component({
-  selector: 'ar-combobox',
-  imports: [ArIcon],
+  selector: 'ac-combobox',
+  imports: [AcIcon],
   host: {
     '(focusout)': 'onFocusOut($event)',
     '(document:pointerdown)': 'onDocumentPointerDown($event)',
@@ -24,7 +24,7 @@ export interface ComboOption {
   templateUrl: './combobox.html',
   styleUrl: './combobox.scss',
 })
-export class ArCombobox {
+export class AcCombobox {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   readonly options = input<ComboOption[]>([]);
@@ -37,7 +37,7 @@ export class ArCombobox {
   private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
   private readonly search = viewChild<ElementRef<HTMLInputElement>>('search');
 
-  protected readonly listId = nextId('ar-combo');
+  protected readonly listId = nextId('ac-combo');
   protected readonly query = signal('');
   protected readonly open = signal(false);
   protected readonly active = signal(-1);

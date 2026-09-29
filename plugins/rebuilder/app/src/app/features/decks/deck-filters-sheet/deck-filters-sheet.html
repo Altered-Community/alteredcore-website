@@ -1,22 +1,22 @@
-<div class="ar-overlay-body">
-  <ar-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
-  <ar-select label="Héros" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+<div class="ac-overlay-body">
+  <ac-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
+  <ac-select label="Héros" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
   @if (ref.data.showVisibility) {
     <div class="field">
       <span class="label">Visibilité</span>
-      <ar-segmented ariaLabel="Visibilité" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+      <ac-segmented ariaLabel="Visibilité" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
   }
   <div class="field">
     <span class="label">Faction</span>
     <div class="chips">
       @for (f of factions; track f.code) {
-        <ar-chip [label]="f.name" [dot]="f.color" [selected]="draft().factions.includes(f.code)" (selectedChange)="toggle(f.code, $event)" />
+        <ac-chip [label]="f.name" [dot]="f.color" [selected]="draft().factions.includes(f.code)" (selectedChange)="toggle(f.code, $event)" />
       }
     </div>
   </div>
 </div>
-<div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="draft.set(empty)">Réinitialiser</button>
-  <button arButton size="lg" [fullWidth]="true" (click)="ref.close(draft())">Appliquer</button>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="draft.set(empty)">Réinitialiser</button>
+  <button acButton size="lg" [fullWidth]="true" (click)="ref.close(draft())">Appliquer</button>
 </div>

@@ -1,27 +1,27 @@
 :host {
   display: flex;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   overflow-x: auto;
   scrollbar-width: none;
-  scroll-padding-inline: var(--ar-faction-tabs-bleed, 0);
+  scroll-padding-inline: var(--ac-faction-tabs-bleed, 0);
 }
 :host::-webkit-scrollbar {
   display: none;
 }
 button {
   flex: 1 0 auto;
-  height: var(--ar-control-md);
-  padding: 0 var(--ar-space-4);
-  border-radius: var(--ar-radius-control);
-  border: 1px solid var(--ar-color-border-control);
-  background: var(--ar-color-surface);
-  color: var(--ar-color-text);
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-4);
+  border-radius: var(--ac-radius-control);
+  border: 1px solid var(--ac-color-border-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
   font-size: 14px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   cursor: pointer;
   white-space: nowrap;
   position: relative;
@@ -32,40 +32,40 @@ button:focus-visible {
 .dot {
   width: 10px;
   height: 10px;
-  border-radius: var(--ar-radius-pill);
+  border-radius: var(--ac-radius-pill);
   background: var(--fc);
   flex-shrink: 0;
 }
 button[aria-selected='true'] {
   background: var(--fc);
   border-color: var(--fc);
-  color: var(--ar-color-on-strong);
+  color: var(--ac-color-on-strong);
 }
 button[aria-selected='true'] .dot {
-  background: var(--ar-color-surface);
+  background: var(--ac-color-surface);
 }
-:host-context([data-density='touch']) button {
+:host(.touch) button {
   flex: 0 0 auto;
-  border-radius: var(--ar-radius-pill);
+  border-radius: var(--ac-radius-pill);
   font-size: 16px;
-  height: var(--ar-control-md);
+  height: var(--ac-control-md);
 }
 
 /* sm: 36 px pills (DS-Metier, Nouveau deck). */
 :host(.sm) {
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
 }
 :host(.sm) button,
 :host(.sm.touch) button {
   flex: 0 0 auto;
-  height: calc(var(--ar-control-sm) + var(--ar-space-1));
-  padding: 0 var(--ar-space-3);
-  border-radius: var(--ar-radius-pill);
+  height: calc(var(--ac-control-sm) + var(--ac-space-1));
+  padding: 0 var(--ac-space-3);
+  border-radius: var(--ac-radius-pill);
   font-size: 13px;
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
 }
 :host(.sm.touch) button {
-  height: var(--ar-control-sm);
+  height: var(--ac-control-sm);
 }
 :host(.sm) .dot {
   width: 9px;
@@ -74,26 +74,26 @@ button[aria-selected='true'] .dot {
 :host(.sm) button[aria-selected='true'] {
   font-weight: 800;
 }
-/* Touch: 36 px pill, 44 px hit area (--ar-hit-min); the host pads so the extension is not clipped. */
+/* Touch: 36 px pill, 44 px hit area (--ac-hit-min); the host pads so the extension is not clipped. */
 :host(.sm.touch) {
-  padding-block: calc((var(--ar-hit-min) - var(--ar-control-sm)) / 2);
-  margin-block: calc((var(--ar-control-sm) - var(--ar-hit-min)) / 2);
+  padding-block: calc((var(--ac-hit-min) - var(--ac-control-sm)) / 2);
+  margin-block: calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2);
 }
 :host(.sm.touch) button::after {
   content: '';
   position: absolute;
-  inset: calc((var(--ar-control-sm) - var(--ar-hit-min)) / 2) 0;
+  inset: calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2) 0;
 }
 
 /* grid: equal columns, no horizontal scroll. */
 :host(.grid) {
   display: grid;
-  grid-template-columns: repeat(var(--ar-faction-cols, 6), minmax(0, 1fr));
-  gap: var(--ar-space-2);
+  grid-template-columns: repeat(var(--ac-faction-cols, 6), minmax(0, 1fr));
+  gap: var(--ac-space-2);
   overflow: visible;
 }
 :host(.grid) button,
 :host(.grid.touch) button {
   min-width: 0;
-  padding: 0 var(--ar-space-2);
+  padding: 0 var(--ac-space-2);
 }

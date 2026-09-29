@@ -1,13 +1,11 @@
-import { Service, inject, type Signal } from '@angular/core';
+import type { Signal } from '@angular/core';
 import type { Observable } from 'rxjs';
-import { AuthService } from './auth.service';
 
 /**
- * Who supplies the Keycloak access token sent to the decks API.
- * Standalone and Capacitor: `AuthService` (PKCE login + auth BFF, the default).
- * Embedded in the AlteredCore site: `HostAuthSession` (the shell's PHP session, `src/app/embed/`).
+ * The user's session, as seen by the decks API client. Provided by `embed.config.ts`:
+ * `HostAuthSession` (the site's PHP session, `src/app/embed/`). Tests use `GuestSession`
+ * (`src/testing/guest-session.ts`).
  */
-@Service({ factory: () => inject(AuthService) })
 export abstract class AuthSession {
   /** Current access token, `null` for a guest. */
   abstract readonly token: Signal<string | null>;

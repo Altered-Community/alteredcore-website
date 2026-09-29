@@ -1,45 +1,11 @@
-:host {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ar-space-1-5);
-  min-width: 0;
-}
-.label {
-  font: var(--ar-font-small);
-  font-weight: 700;
-}
+/* Field, label and select are drawn by .ac-field / .ac-select (design-system/css/components/field.css). */
 .wrap {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 .inline-label {
-  font-size: 13px;
-  color: var(--ar-color-text-muted);
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
   white-space: nowrap;
-}
-select {
-  width: 100%;
-  height: var(--ar-control-md);
-  padding: 0 32px 0 var(--ar-space-2-5);
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ar-color-text);
-  appearance: none;
-  cursor: pointer;
-}
-:host-context([data-density='touch']) select {
-  font-size: 15px;
-}
-.chev {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  display: flex;
 }

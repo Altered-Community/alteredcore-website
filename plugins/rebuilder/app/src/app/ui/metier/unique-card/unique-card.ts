@@ -5,7 +5,7 @@ import { PEN_GLYPH, cardEffects, linesHtml, printedLength } from '../../../core/
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { EFFECT_Y, biomeVariants, collectorNumber, cqw, effectFontPx, qrModules, supportFontPx, typeLine, uniqueFrame } from '../../../core/unique-layout';
-import { ArCardArt } from '../card-art/card-art';
+import { AcCardArt } from '../card-art/card-art';
 import { assetUrl } from '../../../core/asset-url';
 import { contentLocale } from '../../../core/locale';
 
@@ -25,8 +25,8 @@ const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } 
  * the illustration shared by every unique of a printed card: the stats and effects differ.
  */
 @Component({
-  selector: 'ar-unique-card',
-  imports: [ArCardArt],
+  selector: 'ac-unique-card',
+  imports: [AcCardArt],
   host: {
     '[class.bravos]': "faction() === 'BR'",
     '[style.--main-fs]': 'mainSize()',
@@ -36,7 +36,7 @@ const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } 
   templateUrl: './unique-card.html',
   styleUrl: './unique-card.scss',
 })
-export class ArUniqueCard {
+export class AcUniqueCard {
   private readonly sanitizer = inject(DomSanitizer);
   readonly card = input.required<Card>();
   readonly eager = input(false);

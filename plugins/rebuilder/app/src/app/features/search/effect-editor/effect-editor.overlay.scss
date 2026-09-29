@@ -1,35 +1,29 @@
-.ar-overlay-body {
+.ac-overlay-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-4);
+  gap: var(--ac-space-4);
   min-height: 420px;
 }
 .intro {
   margin: 0;
-  font-size: 12px;
-  color: var(--ar-color-text-2);
+  font-size: calc(var(--ac-field-font-size) - 2px);
+  color: var(--ac-color-text-2);
   line-height: 1.4;
-}
-:host-context([data-density='touch']) .intro {
-  font-size: 14px;
 }
 .crit {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1-5);
+  gap: var(--ac-space-1-5);
 }
 .label {
-  font-size: 13px;
+  font-size: var(--ac-select-font-size);
   font-weight: 800;
-}
-:host-context([data-density='touch']) .label {
-  font-size: 16px;
 }
 .muted {
   font-weight: 600;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .error {
-  color: var(--ar-color-danger);
+  color: var(--ac-color-danger);
   font-size: 13px;
 }

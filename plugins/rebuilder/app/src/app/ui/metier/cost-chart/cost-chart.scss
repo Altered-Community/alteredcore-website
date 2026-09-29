@@ -1,19 +1,19 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1);
+  gap: var(--ac-space-1);
   min-width: 0;
-  --bar: var(--ar-color-chart-main);
+  --bar: var(--ac-color-chart-main);
 }
 :host(.reserve) {
-  --bar: var(--ar-color-chart-reserve);
+  --bar: var(--ac-color-chart-reserve);
 }
 .label {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: var(--ar-letter-spacing-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .bars,
 .axis {
@@ -22,7 +22,7 @@
   gap: 3px;
 }
 .bars {
-  border-bottom: 1px solid var(--ar-color-chart-axis);
+  border-bottom: 1px solid var(--ac-color-chart-axis);
 }
 .col {
   display: flex;
@@ -37,7 +37,7 @@
   font-weight: 700;
 }
 .n.zero {
-  color: var(--ar-color-text-disabled);
+  color: var(--ac-color-text-disabled);
 }
 .bar {
   width: 100%;
@@ -47,5 +47,5 @@
 .axis span {
   text-align: center;
   font-size: 10px;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }

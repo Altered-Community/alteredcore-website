@@ -1,4 +1,4 @@
-import { Service, InjectionToken, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, Subscription, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -30,15 +30,6 @@ export interface NewDeckInput {
 const SAVE_DELAY_MS = 400;
 
 /**
- * Where « Créer le deck » stores a new deck. `guest` (default): localStorage, copied to the account
- * from the login page. `account`: straight to the decks API when a token is present (embedded in the
- * AlteredCore site, where the deck then shows up in the site's deck list).
- */
-export const DECK_CREATE_TARGET = new InjectionToken<'guest' | 'account'>('DECK_CREATE_TARGET', {
-  factory: () => 'guest',
-});
-
-/**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
  * with a token, changes are PATCHed to decks.alteredcore.org.
  */
@@ -48,7 +39,6 @@ export class DeckStore {
   private readonly cardsApi = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
-  private readonly createTarget = inject(DECK_CREATE_TARGET);
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -149,11 +139,11 @@ export class DeckStore {
   }
 
   /**
-   * `create()` on the decks API when `DECK_CREATE_TARGET` is `account` and the user is signed in;
-   * a guest deck otherwise, or when the API refuses (the deck is not lost).
+   * `create()` on the decks API when the user is signed in (the deck then shows up in the site's
+   * deck list); a guest deck otherwise, or when the API refuses (the deck is not lost).
    */
   createDeck(input: NewDeckInput): Observable<Deck> {
-    if (this.createTarget !== 'account' || !this.auth.isLoggedIn()) return of(this.create(input));
+    if (!this.auth.isLoggedIn()) return of(this.create(input));
     const body: DeckWrite = {
       name: input.name.trim() || 'Nouveau deck',
       format: input.format,
@@ -372,7 +362,7 @@ export class DeckStore {
   /**
    * Deck lines from the decks API (and guest lines saved before effects were kept) have costs and
    * powers but not the printed effect. Commons carry that text in their image; a unique is drawn
-   * by `ar-unique-card`, so the face is fetched from the cards API.
+   * by `ac-unique-card`, so the face is fetched from the cards API.
    */
   private fillUniqueFaces(deckId: string): void {
     this.uniqueFaces?.unsubscribe();

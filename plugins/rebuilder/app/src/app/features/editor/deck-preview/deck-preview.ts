@@ -1,12 +1,12 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton } from '../../../ui/buttons';
-import { ArCardTile, ArDeckSection } from '../../../ui/metier';
+import { AcButton } from '../../../ui/buttons';
+import { AcCardTile, AcDeckSection } from '../../../ui/metier';
 
 /** « Aperçu » / « Cartes »: count line, « Tout replier », one section per type with tiles. */
 @Component({
   selector: 'app-deck-preview',
-  imports: [ArDeckSection, ArCardTile, ArButton],
+  imports: [AcDeckSection, AcCardTile, AcButton],
   templateUrl: './deck-preview.html',
   styleUrl: './deck-preview.scss',
 })

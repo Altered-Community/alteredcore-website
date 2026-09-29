@@ -4,8 +4,8 @@ import { Directive, ElementRef, afterNextRender, inject, input, output, type OnD
  * Emits `visible` while the host sits within `lookahead` viewports below the fold.
  * Place it after the last result; 3 viewports of lookahead covers a fast mobile flick.
  */
-@Directive({ selector: '[arInfiniteSentinel]' })
-export class ArInfiniteSentinel implements OnDestroy {
+@Directive({ selector: '[acInfiniteSentinel]' })
+export class AcInfiniteSentinel implements OnDestroy {
   private readonly el = inject(ElementRef<HTMLElement>);
   readonly lookahead = input(3);
   readonly visible = output<boolean>();

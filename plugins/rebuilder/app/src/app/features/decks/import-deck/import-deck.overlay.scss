@@ -1,7 +1,7 @@
-.ar-overlay-body {
+.ac-overlay-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 .label {
   font-size: 13px;
@@ -9,15 +9,15 @@
 }
 textarea {
   width: 100%;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  padding: var(--ar-space-3);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  padding: var(--ac-space-3);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
   resize: vertical;
 }
 .error {
   margin: 0;
-  color: var(--ar-color-danger);
+  color: var(--ac-color-danger);
   font-size: 13px;
 }

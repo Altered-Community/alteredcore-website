@@ -2,7 +2,7 @@
 
 This SPA talks to the **same HTTP APIs** the community PHP deckbuilder uses. It does **not** vendor or fork [Yutsa/alteredcore-website](https://github.com/Yutsa/alteredcore-website). Endpoints below were read from that repo (`plugins/core-altered-cards/`, `auth/`, `config.local.php.example`) plus the live OpenAPI docs.
 
-Configure bases in `src/environments/environment.ts` (production build) and `environment.development.ts` (`ng serve`). See `.env.example`.
+The app runs only as the site's `rebuilder` plugin: `main.embed.ts` takes the service URLs from `window.AlteredCore.services` (cards, CDN, and the site's decks relay); `src/environments/environment.ts` only holds fallbacks.
 
 ## Hosts (production / preprod)
 
@@ -31,17 +31,7 @@ The PHP site supports:
 1. **Keycloak SSO** — `GET /auth/keycloak-login.php` → authorization code → `/auth/keycloak-callback.php`. Access token is stored server-side (encrypted in session). `deckApiToken()` returns `kc_get_access_token($userId)` and is sent as `Authorization: Bearer` to `DECKS_API_URL`.
 2. **Local email/password** — `/auth/local-login.php` when `KC_URL` is empty. That path **does not** produce a decks-API JWT; deck save then fails unless Keycloak is configured.
 
-This Angular app **does not** reuse the PHP session cookie (different origin, HttpOnly). Deck writes need a **Keycloak access token** for client `deckbuilder.yutsa.fr` on realm `players` (`https://auth.altered.re`).
-
-The client is confidential (the token endpoint rejects a code exchange without client authentication) and requires PKCE S256. An SPA cannot hold the secret, so:
-
-1. The browser starts **authorization code + PKCE** (`scope=openid profile`) and returns to `{origin}/login`. Username/password and Discord are the Keycloak login page, not a form in this app.
-2. `server/auth-bff` (`npm run auth-bff`, proxied at `/auth`) exchanges the code. It reads **`KEYCLOAK_CLIENT_SECRET`** from the environment. That value must never be committed or bundled. The refresh token is an HttpOnly cookie on `Path=/auth` (`arb_refresh`, `SameSite=Lax`, `Secure` on https, `Max-Age` from Keycloak). The BFF does not keep a session in memory, so a process restart does not log the user out. The SPA stores the access token in `sessionStorage` (`arb.access_token`) for the open tab and a non-secret flag in `localStorage` (`arb.can_refresh`) so a new document after a deploy calls `POST /auth/refresh` and sends that cookie. The access token is sent as `Authorization: Bearer`.
-3. Display name is the `pseudo` claim (access token, else id token). Email and `preferred_username` are not shown.
-
-`/login` still accepts a pasted access token for local experiments. Guest decks stay in `localStorage` (`arb.guest-decks`) across login, logout, and an expired session. Copying them onto the account is optional and does not delete the local copies.
-
-Redirect URIs Keycloak must allow: `https://deckbuilder.yutsa.fr/login`, `http://localhost:4200/login`, and any preview origin. Today only `https://deckbuilder.yutsa.fr/*` is accepted.
+The plugin holds no token. Deck calls go to the site's relay (`AlteredCore.services.decks`, `/api/v1/services/decks`), which adds the Keycloak access token of the PHP session server-side and renews it; writes carry the session's `X-CSRF-Token` (`siteCsrfInterceptor`). Signing in is the site's (`AlteredCore.login()`). Guest decks stay in `localStorage` (`arb.guest-decks`).
 
 ## CORS (probed 2026-09-23)
 
@@ -51,7 +41,7 @@ Both `cards.alteredcore.org` and `decks.alteredcore.org` answer CORS preflight w
 - `Access-Control-Allow-Headers: content-type, authorization`
 - `Access-Control-Allow-Methods: GET, OPTIONS, POST, PUT, PATCH, DELETE`
 
-Native Capacitor WebViews often send a `capacitor://` / `http://localhost` origin — if a host is missing from the API CORS allow-list, use the Angular `proxy.conf.json` during `ng serve`, or a small BFF. `cdn.alteredcore.org` returns `Access-Control-Allow-Origin: *`.
+The plugin calls the cards API and the CDN directly from the site's origin; decks go through the same-origin relay. `cdn.alteredcore.org` returns `Access-Control-Allow-Origin: *`.
 
 ## Cards API (`CARDS_API_URL`)
 
@@ -93,7 +83,7 @@ CDN art URL used by `card-search.js`:
 Uniques have no image of their own: `cards/{lang}/{SET}/ALT_…_U_374.webp` is 404 and the API `imagePath` (Equinox S3)
 is 403. Every unique of a printed card shares one unique illustration, `{CDN_URL}/cards/assets/{SET}/{CARD}_U.webp`
 (`CARD` = reference without `_U_n`), or `{CDN_URL}/illustrations/{SET}/{CARD}_U_FRAMELESS_T1.webp`. The PHP site draws
-the card (frame, costs, powers, text) in a canvas with Altered-Card-Renderer; this app draws it with `ar-unique-card`.
+the card (frame, costs, powers, text) in a canvas with Altered-Card-Renderer; this app draws it with `ac-unique-card`.
 
 ## Uniques API (`UNIQUES_API_URL`)
 
@@ -146,17 +136,6 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 
 Ownership plugin (when enabled): `/papi/ownership/alt-art-search`, `alt-art-set-preference`.
 
-## Local Aspire / docker
+## Local stack
 
-The PHP example comments describe a local Aspire stack: website in Docker (`docker compose up` → http://localhost:8080), cards/decks/ownership as `*.local.gd` hosts, uniques API on port **8005**.
-
-Point this app at that stack by editing `environment.development.ts`, or by using `proxy.conf.json` and setting the environment URLs to `/cards-api` and `/decks-api`.
-
-This repository does not vendor those services.
-
-## Blockers for a first run
-
-1. **Deck list / save** — 401 without a Keycloak access token. Guest decks still work locally.
-2. **Card search / detail** — works against production with CORS from `http://localhost:4200`.
-3. **Keycloak** — client `deckbuilder.yutsa.fr` is confidential and PKCE S256. Run the auth BFF with `KEYCLOAK_CLIENT_SECRET` in the environment. Do not put that secret in this repo or in the Angular bundle.
-4. **Capacitor** — confirm API CORS includes the WebView origin, or proxy through a backend.
+The plugin runs in the site's local stack (`docker-compose.stack.yml`, see `../../README.md`): the shell passes the local service URLs through `window.AlteredCore.services`, so nothing is configured in the app.

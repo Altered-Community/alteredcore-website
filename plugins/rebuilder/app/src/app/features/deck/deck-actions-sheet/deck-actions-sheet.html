@@ -1,7 +1,7 @@
-<div class="ar-overlay-body" role="menu">
-  <button role="menuitem" type="button" (click)="ref.close('copy')"><ar-icon name="copy" [size]="20" />Copier la liste</button>
-  <button role="menuitem" type="button" (click)="ref.close('duplicate')"><ar-icon name="duplicate" [size]="20" />Dupliquer</button>
+<div class="ac-overlay-body" role="menu">
+  <button role="menuitem" type="button" (click)="ref.close('copy')"><ac-icon name="copy" [size]="20" />Copier la liste</button>
+  <button role="menuitem" type="button" (click)="ref.close('duplicate')"><ac-icon name="copy-plus" [size]="20" />Dupliquer</button>
   @if (canDelete) {
-    <button role="menuitem" type="button" class="danger" (click)="ref.close('delete')"><ar-icon name="trash" [size]="20" />Supprimer</button>
+    <button role="menuitem" type="button" class="danger" (click)="ref.close('delete')"><ac-icon name="trash-2" [size]="20" />Supprimer</button>
   }
 </div>

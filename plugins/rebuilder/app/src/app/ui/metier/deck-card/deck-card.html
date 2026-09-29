@@ -1,19 +1,19 @@
 <a [routerLink]="link()" [attr.aria-label]="ariaLabel()">
   <span class="visual">
     @if (deck().hero; as h) {
-      <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" position="center 22%" />
+      <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" position="center 22%" />
     } @else {
-      <span class="ph ar-hatch"></span>
+      <span class="ph ac-hatch"></span>
     }
     @if (layout() === 'grid') {
       <span class="badges">
-        <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
+        <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
         @if (variant() === 'mine' && deck().legal) {
-          <ar-badge tone="green" icon="check">Légal</ar-badge>
+          <ac-badge tone="green" icon="check">Légal</ac-badge>
         }
       </span>
       @if (variant() === 'mine') {
-        <span class="vis" [title]="deck().isPublic ? 'Public' : 'Privé'"><ar-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
+        <span class="vis" [title]="deck().isPublic ? 'Public' : 'Privé'"><ac-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
       }
     }
   </span>
@@ -21,7 +21,7 @@
     <span class="name-row">
       <span class="name">{{ deck().name }}</span>
       @if (layout() === 'row' && variant() === 'mine') {
-        <span class="vis-inline"><ar-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
+        <span class="vis-inline"><ac-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
       }
     </span>
     <span class="hero">
@@ -32,20 +32,20 @@
     </span>
     @if (layout() === 'row') {
       <span class="badges-inline">
-        <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
+        <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
         @if (variant() === 'mine' && deck().legal) {
-          <ar-badge tone="green" icon="check">Légal</ar-badge>
+          <ac-badge tone="green" icon="check">Légal</ac-badge>
         }
       </span>
     }
     @if (variant() === 'mine') {
       <span class="foot">
         <span class="total">{{ deck().total }} cartes</span>
-        <ar-rarity-summary [counts]="deck().rarity" [gap]="layout() === 'row' ? 14 : 10" />
+        <ac-rarity-summary [counts]="deck().rarity" [gap]="layout() === 'row' ? 14 : 10" />
       </span>
     } @else {
       @if (deck().author; as author) {
-        <span class="author"><ar-icon name="user" [size]="14" />{{ author }}</span>
+        <span class="author"><ac-icon name="user" [size]="14" />{{ author }}</span>
       }
       @if (updatedLabel(); as updated) {
         <span class="updated"><time [attr.datetime]="deck().updatedAt">Modifié {{ updated }}</time></span>
@@ -54,5 +54,5 @@
   </span>
 </a>
 @if (variant() === 'community') {
-  <button arLikeButton class="like" [count]="deck().likes" [liked]="deck().liked" [ariaLabel]="likeLabel()" (click)="likeToggle.emit()"></button>
+  <button acLikeButton class="like" [count]="deck().likes" [liked]="deck().liked" [ariaLabel]="likeLabel()" (click)="likeToggle.emit()"></button>
 }

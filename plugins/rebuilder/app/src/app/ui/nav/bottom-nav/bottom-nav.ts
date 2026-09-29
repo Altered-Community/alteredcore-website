@@ -1,11 +1,11 @@
 import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ArCount } from '../../chips';
-import { ArIcon, type ArIconName } from '../../icon';
+import { AcCount } from '../../chips';
+import { AcIcon, type AcIconName } from '../../icon';
 
-export interface ArBottomNavItem {
+export interface AcBottomNavItem {
   route: string;
-  icon: ArIconName;
+  icon: AcIconName;
   label: string;
   badge?: number;
   badgeTone?: 'success' | 'dark';
@@ -14,12 +14,12 @@ export interface ArBottomNavItem {
 
 /** Bottom navigation (compact only), above the gesture area. */
 @Component({
-  selector: 'ar-bottom-nav',
-  imports: [RouterLink, RouterLinkActive, ArIcon, ArCount],
+  selector: 'ac-bottom-nav',
+  imports: [RouterLink, RouterLinkActive, AcIcon, AcCount],
   templateUrl: './bottom-nav.html',
   styleUrl: './bottom-nav.scss',
 })
-export class ArBottomNav {
-  readonly items = input<ArBottomNavItem[]>([]);
+export class AcBottomNav {
+  readonly items = input<AcBottomNavItem[]>([]);
   readonly ariaLabel = input('Navigation');
 }
