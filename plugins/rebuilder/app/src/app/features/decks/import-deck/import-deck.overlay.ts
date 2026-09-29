@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { CardsApiService } from '../../../core/cards-api.service';
 import { typeOf } from '../../../core/deck-rules';
@@ -8,7 +9,8 @@ import type { Card, DeckCardLine, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { contentLocale } from '../../../core/locale';
-import { ArInput } from '../../../ui/fields';
+import { ArInput, ArSegmented } from '../../../ui/fields';
+import { EquinoxImport } from '../equinox/equinox-import';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
 
@@ -27,15 +29,24 @@ export function parseDecklist(text: string): { reference: string; quantity: numb
   return [...out].map(([reference, quantity]) => ({ reference, quantity }));
 }
 
+export type ImportMode = 'list' | 'equinox';
+
+/** `deckId`: the guest deck made from a list. */
+export interface ImportResult {
+  deckId?: string;
+}
+
+/** Import window: a decklist into a guest deck, or the altered.gg export (Equinox ZIP) into the account. */
 @Component({
   selector: 'app-import-deck',
-  imports: [ArButton, ArInput],
+  imports: [ArButton, ArInput, ArSegmented, EquinoxImport],
   host: { class: 'ar-overlay-content' },
   templateUrl: './import-deck.overlay.html',
   styleUrl: './import-deck.overlay.scss',
 })
 export class ImportDeckOverlay {
-  protected readonly ref = inject<ArOverlayRef<string>>(ArOverlayRef);
+  protected readonly ref = inject<ArOverlayRef<ImportResult, { mode: ImportMode }>>(ArOverlayRef);
+  private readonly router = inject(Router);
   private readonly api = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
   protected readonly bp = inject(ArBreakpointService);
@@ -43,6 +54,16 @@ export class ImportDeckOverlay {
   protected readonly text = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly mode = signal<ImportMode>(this.ref.data.mode);
+  protected readonly modes = [
+    { value: 'list' as ImportMode, label: $localize`:@@decks.import.modeList:Liste de cartes` },
+    { value: 'equinox' as ImportMode, label: $localize`:@@decks.import.modeEquinox:Export altered.gg` },
+  ];
+
+  protected signIn(): void {
+    this.ref.close();
+    void this.router.navigateByUrl('/login');
+  }
 
   run(): void {
     const rows = parseDecklist(this.text());
@@ -71,11 +92,15 @@ export class ImportDeckOverlay {
         });
         const deck = this.guests.create({ name: this.name().trim() || $localize`:@@decks.import.defaultName:Deck importé`, hero, deckCards: lines });
         this.busy.set(false);
-        this.ref.close(deck.id);
+        this.ref.close({ deckId: deck.id });
       });
   }
 }
 
-export function openImportDeck(overlay: ArOverlayService) {
-  return overlay.open<ImportDeckOverlay, string>(ImportDeckOverlay, { title: $localize`:@@decks.import.title:Importer un deck`, width: 560 });
+export function openImportDeck(overlay: ArOverlayService, mode: ImportMode = 'list') {
+  return overlay.open<ImportDeckOverlay, ImportResult>(ImportDeckOverlay, {
+    title: $localize`:@@decks.import.titleDecks:Importer des decks`,
+    width: 560,
+    data: { mode },
+  });
 }

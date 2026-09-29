@@ -120,6 +120,8 @@ export interface DeckListItem {
   /** `upvoteCount` / `hasUpvoted` of the decks API. */
   likes: number;
   liked: boolean;
+  /** Starter Deck Contest winner (contest tab only). */
+  winner?: boolean;
 }
 
 export function toDeckListItem(deck: Deck): DeckListItem {

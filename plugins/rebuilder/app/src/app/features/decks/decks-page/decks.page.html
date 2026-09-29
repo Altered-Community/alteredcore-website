@@ -17,6 +17,13 @@
 
   <ar-tabs ariaLabel="Decks" [appearance]="bp.compact() ? 'pill' : 'underline'" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
 
+  @if (tab() === 'contest') {
+    <div class="contest-head">
+      <p class="contest-intro" i18n="@@decks.contest.intro">Les decks Standard No Unique du concours de deck de démarrage : les gagnants, ou toutes les decklists proposées.</p>
+      <ar-segmented ariaLabel="Decks du concours" i18n-ariaLabel="@@decks.contest.set" [fullWidth]="bp.compact()" [options]="contestSets" [value]="contestSet()" (valueChange)="setContestSet($event)" />
+    </div>
+  }
+
   @if (bp.compact()) {
     <div class="search-row">
       <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
@@ -28,19 +35,27 @@
     </div>
     <div class="count-row">
       <strong>{{ countLabel() }}</strong>
-      <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@decks.page.sortBy" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+      @if (tab() !== 'contest') {
+        <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@decks.page.sortBy" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+      }
     </div>
   } @else {
     <div class="filters">
       <div class="row">
         <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
-        <ar-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
-        @if (tab() === 'mine') {
+        @if (tab() !== 'contest') {
+          <ar-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
+        }
+        @if (tab() !== 'community') {
           <ar-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
+        }
+        @if (tab() === 'mine') {
           <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
         }
         <span class="grow"></span>
-        <ar-select label="Trier par" i18n-label="@@decks.page.sortBy" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+        @if (tab() !== 'contest') {
+          <ar-select label="Trier par" i18n-label="@@decks.page.sortBy" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+        }
       </div>
       <div class="row factions" role="group" aria-label="Faction">
         <span class="overline">Faction</span>
@@ -71,7 +86,7 @@
         Nouveau deck
       </button>
     }
-    @if (tab() === 'community' && communityLoading()) {
+    @if ((tab() === 'community' && communityLoading()) || (tab() === 'contest' && contestLoading())) {
       @for (i of [1, 2, 3, 4]; track i) {
         <span class="skeleton" aria-hidden="true"></span>
       }
@@ -89,6 +104,11 @@
           <button arButton icon="plus" (click)="newDeck()" i18n="@@decks.page.newDeck">Nouveau deck</button>
         }
       }
+    </div>
+  }
+  @if (tab() === 'contest' && !contestLoading() && !list().length) {
+    <div class="empty">
+      <p i18n="@@decks.page.noMatch">Aucun deck ne correspond à ces filtres.</p>
     </div>
   }
   @if (tab() === 'community') {

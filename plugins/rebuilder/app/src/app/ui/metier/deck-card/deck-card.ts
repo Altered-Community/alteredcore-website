@@ -12,7 +12,8 @@ import { factionName } from '../factions';
 /**
  * Deck in the deck list: grid card (expanded) or row (compact).
  * `mine`: visibility, legality, card count and rarities. `community`: author, last update and like count instead (every listed deck is public
- * and legal); the like button sits outside the link and emits `likeToggle`.
+ * and legal); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
+ * on the winners of the Starter Deck Contest.
  */
 @Component({
   selector: 'ar-deck-card',
@@ -24,7 +25,7 @@ import { factionName } from '../factions';
 export class ArDeckCard {
   readonly deck = input.required<DeckListItem>();
   readonly layout = input<'grid' | 'row'>('grid');
-  readonly variant = input<'mine' | 'community'>('mine');
+  readonly variant = input<'mine' | 'community' | 'contest'>('mine');
   readonly likeToggle = output<void>();
   protected readonly link = computed(() => ['/decks', this.deck().id]);
   protected readonly factionLogo = computed(() => factionSrc(this.deck().hero?.faction));

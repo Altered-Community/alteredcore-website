@@ -55,6 +55,21 @@
   height: 36px;
 }
 
+.contest-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ar-space-2) var(--ar-space-4);
+}
+
+.contest-intro {
+  margin: 0;
+  flex: 1 1 280px;
+  font-size: 13px;
+  color: var(--ar-color-text-2);
+}
+
 .notice {
   margin: 0;
   font-size: 13px;

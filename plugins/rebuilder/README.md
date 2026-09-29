@@ -49,6 +49,17 @@ width (`"fullwidth": false`), and each route tells the shell which menu entry is
 On the local / CI stack, `docker/stack/seed-decks.php` creates 16 public decks (copies of legal
 production decks, `docker/stack/community-decks.json`) so the *Communauté* tab has content.
 
+The *Concours deck de démarrage* tab lists the Starter Deck Contest entries (winners by default, or every
+entry) from a snapshot bundled with the plugin (`app/src/app/features/decks/contest/starter-deck-contest.json`,
+copy of `core-altered-cards/data/starter-deck-contest-collection.json`); each entry is a public deck of the
+decks API, opened by id. The local stack's decks API does not have them: their page is empty locally.
+
+« Importer » › *Export altered.gg* imports the decks of an altered.gg personal-data export (the Equinox
+ZIP) into the account, like the site's `equinox-deck-import` plugin: the ZIP is read in the browser
+(`decks.csv`, `DecompressionStream`), each deck is created private with `POST /api/decks` through the
+relay (one per second), and a deck already in the account (same name, same cards) is skipped. Not done:
+the alt-art « Global » preference of the ownership API, which is not behind the relay.
+
 ## Languages
 
 The interface and the card data (names, effects, images) follow the site language (`AlteredCore.lang`,
@@ -61,8 +72,8 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 
 ## Known gaps
 
-- Not ported from the site's decks page: the Starter Deck Contest tab, the community deckbuilders
-  window, the Equinox ZIP import. « Importer » (decklist) creates a guest deck.
+- Not ported from the site's decks page: the community deckbuilders window. « Importer » › *Liste de
+  cartes* creates a guest deck.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
 - Guest decks of the site's builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours

@@ -11,6 +11,9 @@
         @if (variant() === 'mine' && deck().legal) {
           <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
         }
+        @if (deck().winner) {
+          <ar-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ar-badge>
+        }
       </span>
       @if (variant() === 'mine') {
         <span class="vis" [title]="deck().isPublic ? publicLabel : privateLabel"><ar-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
@@ -36,9 +39,12 @@
         @if (variant() === 'mine' && deck().legal) {
           <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
         }
+        @if (deck().winner) {
+          <ar-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ar-badge>
+        }
       </span>
     }
-    @if (variant() === 'mine') {
+    @if (variant() !== 'community') {
       <span class="foot">
         <span class="total" i18n="@@ui.deckCard.total">{deck().total, plural, =1 {1 carte} other {{{ deck().total }} cartes}}</span>
         <ar-rarity-summary [counts]="deck().rarity" [gap]="layout() === 'row' ? 14 : 10" />

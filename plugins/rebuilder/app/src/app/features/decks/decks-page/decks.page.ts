@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
-import { finalize, map, switchMap, timer } from 'rxjs';
+import { finalize, from, map, switchMap, timer } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage, type PublicDeckQuery } from '../../../core/decks-api.service';
@@ -23,8 +23,11 @@ import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks } from '../deck-filters';
 import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
+import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
 
-type Tab = 'mine' | 'community';
+type Tab = 'mine' | 'community' | 'contest';
+
+const TABS: readonly Tab[] = ['mine', 'community', 'contest'];
 
 const COMMUNITY_PAGE_SIZE = 24;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -72,9 +75,10 @@ export class DecksPage {
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
 
-  protected readonly tab = toSignal(this.route.queryParamMap.pipe(map((q) => (q.get('tab') === 'community' ? 'community' : 'mine') as Tab)), {
-    initialValue: 'mine' as Tab,
-  });
+  protected readonly tab = toSignal(
+    this.route.queryParamMap.pipe(map((q) => TABS.find((t) => t === q.get('tab')) ?? 'mine')),
+    { initialValue: 'mine' as Tab },
+  );
   protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);
 
   /**
@@ -95,6 +99,22 @@ export class DecksPage {
   });
   protected readonly mine = computed(() => [...this.guests.decks(), ...this.serverDecks()].map(toDeckListItem));
   protected readonly mineFiltered = computed(() => filterDecks(this.mine(), this.filters()));
+
+  /** Starter Deck Contest snapshot, loaded the first time the tab opens. */
+  private readonly contestRes = rxResource({
+    params: () => (this.tab() === 'contest' ? true : undefined),
+    stream: () => from(loadContestDecks()),
+  });
+  private readonly contestAll = linkedSignal<DeckListItem[] | undefined, DeckListItem[]>({
+    source: () => (this.contestRes.hasValue() ? this.contestRes.value() : undefined),
+    computation: (items, prev) => items ?? prev?.value ?? [],
+  });
+  protected readonly contestSet = signal<ContestSet>('winners');
+  private readonly contestInSet = computed(() => contestDecksFor(this.contestAll(), this.contestSet()));
+  protected readonly contestSets = [
+    { value: 'winners' as ContestSet, label: $localize`:@@decks.contest.winners:Gagnants` },
+    { value: 'all' as ContestSet, label: $localize`:@@decks.contest.all:Toutes les decklists` },
+  ];
 
   /** API query for the community tab; `undefined` on « Mes decks » (resource idle). Hero and visibility do not reach the API. */
   private readonly communityQuery = computed(
@@ -163,15 +183,21 @@ export class DecksPage {
 
   protected readonly list = computed(() => {
     const likes = this.likes();
-    return (this.tab() === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
+    const tab = this.tab();
+    // The contest keeps the order of the snapshot, whatever the sort chosen on the other tabs.
+    if (tab === 'contest') return filterDecks(this.contestInSet(), { ...this.filters(), format: '', visibility: 'all', sort: 'created' });
+    return (tab === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
   });
   protected readonly tabs = computed(() => [
     { id: 'mine', label: $localize`:@@decks.page.tabMine:Mes decks · ${this.mine().length}:count:` },
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
+    { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
+  protected readonly contestLoading = computed(() => this.contestRes.isLoading());
   protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
   protected readonly heroes = computed(() => {
-    const names = [...new Set(this.mine().map((d) => d.hero?.name).filter((n): n is string => !!n))].sort();
+    const decks = this.tab() === 'contest' ? this.contestInSet() : this.mine();
+    const names = [...new Set(decks.map((d) => d.hero?.name).filter((n): n is string => !!n))].sort((a, b) => a.localeCompare(b, uiLocale()));
     return [{ value: '', label: $localize`:@@decks.page.allHeroes:Tous les héros` }, ...names.map((n) => ({ value: n, label: n }))];
   });
   protected readonly visibilities = [
@@ -183,10 +209,11 @@ export class DecksPage {
   protected readonly factions = FACTIONS;
   protected readonly activeFilters = computed(() => {
     const f = this.filters();
-    return (f.format ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' ? 1 : 0) + f.factions.length;
+    const tab = this.tab();
+    return (f.format && tab !== 'contest' ? 1 : 0) + (f.hero && tab !== 'community' ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + f.factions.length;
   });
   protected readonly countLabel = computed(() => {
-    const n = this.tab() === 'mine' ? this.list().length : this.communityTotal() ?? this.list().length;
+    const n = this.tab() === 'community' ? this.communityTotal() ?? this.list().length : this.list().length;
     const count = n.toLocaleString(uiLocale());
     // French puts 0 in the singular, English in the plural.
     const plural = uiLocale() === 'fr' ? n > 1 : n !== 1;
@@ -196,9 +223,11 @@ export class DecksPage {
     const active = this.activeFilters();
     return active ? $localize`:@@decks.page.filtersActive:Filtres, ${active}:count: actifs` : $localize`:@@decks.page.filters:Filtres`;
   });
-  protected readonly listLabel = computed(() =>
-    this.tab() === 'mine' ? $localize`:@@decks.page.mineList:Mes decks` : $localize`:@@decks.page.communityList:Decks de la communauté`,
-  );
+  protected readonly listLabel = computed(() => {
+    const tab = this.tab();
+    if (tab === 'contest') return $localize`:@@decks.page.contestList:Decks du concours deck de démarrage`;
+    return tab === 'mine' ? $localize`:@@decks.page.mineList:Mes decks` : $localize`:@@decks.page.communityList:Decks de la communauté`;
+  });
 
   constructor() {
     this.guests.reload();
@@ -255,11 +284,19 @@ export class DecksPage {
   }
 
   protected setTab(id: string): void {
-    void this.router.navigate([], { queryParams: { tab: id === 'community' ? 'community' : null }, replaceUrl: true });
+    const tab = TABS.find((t) => t === id) ?? 'mine';
+    void this.router.navigate([], { queryParams: { tab: tab === 'mine' ? null : tab }, replaceUrl: true });
   }
 
   protected patch(p: Partial<DeckFilters>): void {
     this.filters.update((f) => ({ ...f, ...p }));
+  }
+
+  /** The hero filter is dropped when the other set has no deck with that hero. */
+  protected setContestSet(set: ContestSet | undefined): void {
+    this.contestSet.set(set ?? 'winners');
+    const hero = this.filters().hero;
+    if (hero && !this.contestInSet().some((d) => d.hero?.name === hero)) this.patch({ hero: '' });
   }
 
   protected toggleFaction(code: string, on: boolean): void {
@@ -274,8 +311,10 @@ export class DecksPage {
   }
 
   protected importDeck(): void {
-    openImportDeck(this.overlay).afterClosed.subscribe((id) => {
-      if (id) void this.router.navigate(['/decks', id]);
+    openImportDeck(this.overlay).afterClosed.subscribe((res) => {
+      if (res?.deckId) void this.router.navigate(['/decks', res.deckId]);
+      // The export import creates account decks, even when the window is closed with its cross mid-import.
+      else if (this.auth.isLoggedIn()) this.serverRes.reload();
     });
   }
 
@@ -288,6 +327,8 @@ export class DecksPage {
           formats: this.formats,
           heroes: this.heroes(),
           visibilities: this.visibilities,
+          showFormat: this.tab() !== 'contest',
+          showHero: this.tab() !== 'community',
           showVisibility: this.tab() === 'mine',
         },
       })

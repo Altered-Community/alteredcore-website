@@ -1,3 +1,4 @@
+import { deflateRawSync } from 'node:zlib';
 import { evidence, expect, login, test, type Page } from '../../../tests/e2e/fixtures';
 
 /**
@@ -304,6 +305,83 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The count shown is the API's for that request.
     await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
+  });
+});
+
+test.describe('ReBuilder in the shell · Starter Deck Contest', () => {
+  test('lists the contest winners, then every entry, with the site filters', async ({ page }, testInfo) => {
+    await page.goto(`${DECKS}?tab=contest&lang=fr`);
+    const list = page.getByRole('list', { name: 'Decks du concours deck de démarrage' });
+    await expect(list.locator('ar-deck-card')).toHaveCount(27);
+    await expect(list.locator('ar-deck-card').first()).toContainText('Gagnant');
+    await evidence(page, testInfo, '12-contest');
+    await page.getByText('Toutes les decklists', { exact: true }).click();
+    await expect(list.locator('ar-deck-card')).toHaveCount(186);
+    await page.getByRole('textbox', { name: 'Rechercher un deck' }).first().fill('Akesha');
+    await expect(list.locator('ar-deck-card').first()).toContainText('Akesha');
+    await expect(list.locator('ar-deck-card').filter({ hasNotText: 'Akesha' })).toHaveCount(0);
+    // A contest deck is a public deck of the decks API, opened like any other.
+    await expect(list.locator('ar-deck-card').first().getByRole('link').first()).toHaveAttribute('href', /\/decks\/[0-9a-f-]{36}$/);
+  });
+});
+
+/** A ZIP with the given entries, deflated: an altered.gg personal-data export in miniature. */
+function zipOf(entries: Record<string, string>): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let offset = 0;
+  for (const [name, text] of Object.entries(entries)) {
+    const nameBuf = Buffer.from(name);
+    const raw = Buffer.from(text);
+    const data = deflateRawSync(raw);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(8, 8);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(raw.length, 22);
+    local.writeUInt16LE(nameBuf.length, 26);
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(8, 10);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(raw.length, 24);
+    central.writeUInt16LE(nameBuf.length, 28);
+    central.writeUInt32LE(offset, 42);
+    locals.push(local, nameBuf, data);
+    centrals.push(central, nameBuf);
+    offset += 30 + nameBuf.length + data.length;
+  }
+  const cd = Buffer.concat(centrals);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(Object.keys(entries).length, 8);
+  end.writeUInt16LE(Object.keys(entries).length, 10);
+  end.writeUInt32LE(cd.length, 12);
+  end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, cd, end]);
+}
+
+test.describe('ReBuilder in the shell · altered.gg export', () => {
+  test('imports the decks of the export into the account, and skips them the second time', async ({ page, compact }, testInfo) => {
+    const name = `Equinox ${testInfo.project.name} ${Date.now()}`;
+    const rows = ['ALT_CORE_B_AX_04_C', 'ALT_CORE_B_AX_05_C', 'ALT_CORE_B_AX_06_C'].map((ref) => `d1;${name};standard;ALT_CORE_B_AX_01_C;x;${ref};C;3`);
+    const zip = zipOf({ 'export/profile.json': '{}', 'export/decks.csv': `﻿id;name;format;hero;card;reference;rarity;quantity\n${rows.join('\n')}\n` });
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    for (const expected of ['1 deck importé', 'Aucun deck importé, 1 déjà existant']) {
+      await page.getByRole('button', { name: compact ? 'Importer un deck' : 'Importer', exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: 'Importer des decks' });
+      await dialog.getByText('Export altered.gg', { exact: true }).click();
+      await dialog.locator('input[type=file]').setInputFiles({ name: 'altered-export.zip', mimeType: 'application/zip', buffer: zip });
+      await dialog.getByRole('button', { name: 'Importer', exact: true }).click();
+      await expect(dialog.getByText(expected, { exact: true })).toBeVisible({ timeout: 30_000 });
+      await dialog.getByRole('button', { name: 'Terminer' }).click();
+    }
+    // One deck in the account, with the hero and the 9 cards of the export.
+    const deck = page.getByRole('list', { name: 'Mes decks' }).locator('ar-deck-card').filter({ hasText: name });
+    await expect(deck).toHaveCount(1);
+    await expect(deck).toContainText('9 cartes');
+    await expect(deck).toContainText('Sierra & Oddball');
+    await evidence(page, testInfo, '13-equinox-import');
   });
 });
 
