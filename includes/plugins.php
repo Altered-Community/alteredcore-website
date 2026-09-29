@@ -90,9 +90,7 @@ function pluginFindPage(string $slug): ?array {
             if (($page['slug'] ?? '') !== $slug) continue;
             // Manifest v2: a prebuilt front-end mounted by the shell (see includes/spa.php).
             if (($page['type'] ?? 'php') === 'spa') {
-                $spa = spaResolvePage($plugin, $page);
-                if ($spa === null) continue;
-                return $spa;
+                return spaResolvePage($plugin, $page);
             }
             $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $page['file'] ?? ''), DIRECTORY_SEPARATOR);
             if (!is_file($abs)) continue;

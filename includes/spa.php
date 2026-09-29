@@ -55,7 +55,7 @@ function spaReadBuildManifest(string $pluginDir, string $entry, ?string &$error 
  * pluginFindPage() result for a `type: spa` page. Always returns an entry for a declared page:
  * a missing build shows an explanatory error in the shell instead of a 404.
  */
-function spaResolvePage(array $plugin, array $page): ?array {
+function spaResolvePage(array $plugin, array $page): array {
     $id    = $plugin['id'];
     $slug  = $page['slug'];
     $error = null;
@@ -167,7 +167,7 @@ function spaRenderPage(array $page): void {
         echo '</div></div>';
         return;
     }
-    $json = json_encode(spaHostConfig($page), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $json = json_encode(spaHostConfig($page), JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     $runtime = dirname(__DIR__) . '/js/altered-core-host.js';
     $noscript = $lang === 'fr' ? 'Cette page nécessite JavaScript.' : 'This page requires JavaScript.';
     ?>
