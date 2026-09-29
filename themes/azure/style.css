@@ -31,10 +31,6 @@ body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.site-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-}
 body.page-fullwidth main {
     width: 100vw;
     margin-left: calc(50% - 50vw);
@@ -858,40 +854,41 @@ a:hover { color: var(--primary-400); }
    ========================================================= */
 
 [data-theme="dark"] {
-    --sand-50:     #06101e;
-    --sand-100:    #0c1a2e;
-    --sand-200:    #14253f;
-    --sand-300:    #1e3254;
-    --neutral-800: #deeaf8;
-    --neutral-700: #b0c8e8;
-    --neutral-600: #7aa0cc;
-    --neutral-500: #5880aa;
-    --neutral-400: #3e5e88;
-    --neutral-300: #2d4870;
-    --neutral-200: #1e3254;
-    --neutral-100: #14253f;
+    /* Each level is lighter than the one below it: page, card, raised surface, border */
+    --sand-50:     #1a2d4c;
+    --sand-100:    #111f36;
+    --sand-200:    #243a5e;
+    --sand-300:    #34507e;
+    --neutral-800: #f2f7ff;
+    --neutral-700: #c6d6ee;
+    --neutral-600: #97aed3;
+    --neutral-500: #7f98c0;
+    --neutral-400: #5e7aa6;
+    --neutral-300: #4a6796;
+    --neutral-200: #34507e;
+    --neutral-100: #243a5e;
 
-    --bs-body-color:          #deeaf8;
-    --bs-body-color-rgb:      222, 234, 248;
-    --bs-body-bg:             #0c1a2e;
-    --bs-secondary-color:     #7aa0cc;
-    --bs-secondary-color-rgb: 122, 160, 204;
-    --bs-tertiary-color:      #3e5e88;
-    --bs-emphasis-color:      #eef5ff;
-    --bs-heading-color:       #deeaf8;
-    --bs-link-color:          #72B4F6;
-    --bs-link-hover-color:    #9ACBFA;
-    --bs-border-color:        #1e3254;
-    --bs-secondary-bg:        #14253f;
-    --bs-tertiary-bg:         #0c1a2e;
+    --bs-body-color:          #f2f7ff;
+    --bs-body-color-rgb:      242, 247, 255;
+    --bs-body-bg:             #111f36;
+    --bs-secondary-color:     #97aed3;
+    --bs-secondary-color-rgb: 151, 174, 211;
+    --bs-tertiary-color:      #5e7aa6;
+    --bs-emphasis-color:      #ffffff;
+    --bs-heading-color:       #f2f7ff;
+    --bs-link-color:          #7BBBFF;
+    --bs-link-hover-color:    #A8D2FF;
+    --bs-border-color:        #34507e;
+    --bs-secondary-bg:        #243a5e;
+    --bs-tertiary-bg:         #111f36;
 }
 
 html { transition: background-color 0.25s, color 0.25s; }
 
 [data-theme="dark"] body {
-    background-color: #0c1a2e !important;
+    background-color: #111f36 !important;
     background-image: none !important;
-    color: #deeaf8;
+    color: #f2f7ff;
 }
 
 [data-theme="dark"] h1,[data-theme="dark"] h2,[data-theme="dark"] h3,
@@ -900,8 +897,8 @@ html { transition: background-color 0.25s, color 0.25s; }
 
 [data-theme="dark"] .card-altered { color: var(--neutral-700); }
 
-[data-theme="dark"] a { color: #72B4F6; }
-[data-theme="dark"] a:hover { color: #9ACBFA; }
+[data-theme="dark"] a { color: #7BBBFF; }
+[data-theme="dark"] a:hover { color: #A8D2FF; }
 
 /* Header: transparent so only the navbar pill shows, not a full-width band */
 [data-theme="dark"] body.has-bg .site-header,
@@ -912,16 +909,16 @@ html { transition: background-color 0.25s, color 0.25s; }
 }
 [data-theme="dark"] body.has-bg .site-footer,
 [data-theme="dark"] .site-footer {
-    background: #14253f !important;
-    border-top-color: #1e3254 !important;
+    background: #0c172a !important;
+    border-top-color: #34507e !important;
     backdrop-filter: none;
 }
 
 [data-theme="dark"] .hero {
-    background: linear-gradient(135deg, #071C3E 0%, #0A2A5C 50%, #0D3478 100%);
+    background: linear-gradient(135deg, #173E86 0%, #1C4A9A 50%, #2256AE 100%);
 }
-[data-theme="dark"] .hero h1 { color: #eef5ff; }
-[data-theme="dark"] .hero p  { color: #b0c8e8; }
+[data-theme="dark"] .hero h1 { color: #ffffff; }
+[data-theme="dark"] .hero p  { color: #d3e2f8; }
 
 [data-theme="dark"] .dropdown-menu {
     background-color: var(--sand-200);
@@ -1210,13 +1207,14 @@ html { transition: background-color 0.25s, color 0.25s; }
 
 /* Row 1: topbar */
 .az-topbar {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--sand-200);
     background: var(--sand-50);
 }
 .az-topbar-inner {
-    max-width: 1200px;
+    max-width: var(--az-nav-max-width, var(--site-max-width));
     margin: auto;
+    padding: 0 max(1rem, var(--site-gutter));
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1258,9 +1256,9 @@ html { transition: background-color 0.25s, color 0.25s; }
 }
 
 .az-navband-inner {
-    max-width: 1200px;
+    max-width: var(--az-nav-max-width, var(--site-max-width));
     margin: auto;
-    padding: 0 1rem;
+    padding: 0 max(1rem, var(--site-gutter));
 }
 
 /* Nav list */
@@ -1324,22 +1322,11 @@ html { transition: background-color 0.25s, color 0.25s; }
    opens the dropdown. Both read as one control — nav.php puts the active
    state on the shared <li>, so they highlight together. */
 .az-nav-list .nav-item-split .nav-link-split-main {
-    padding-right: 0.5rem;
+    padding-right: 0.25rem;
 }
 .az-nav-list .nav-item-split .nav-link-split-caret {
-    position: relative;
-    padding-left: 0.35rem;
+    padding-left: 0.1rem;
     padding-right: 0.85rem;
-}
-.az-nav-list .nav-item-split .nav-link-split-caret::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 55%;
-    width: 1px;
-    background: rgba(255, 255, 255, 0.3);
 }
 .az-nav-list .nav-item-split:hover .nav-link-split-main,
 .az-nav-list .nav-item-split:hover .nav-link-split-caret,
@@ -1480,11 +1467,11 @@ html { transition: background-color 0.25s, color 0.25s; }
     border-bottom-color: var(--sand-300);
 }
 [data-theme="dark"] .az-navband {
-    background: #0D3A8A;
+    background: #1A5FC8;
 }
 [data-theme="dark"] .az-nav-list .dropdown-menu {
-    background: #0c1a2e;
-    border-color: #1e3254;
+    background: var(--sand-50);
+    border-color: var(--sand-300);
 }
 [data-theme="dark"] .az-nav-list .dropdown-item {
     color: rgba(255, 255, 255, 0.75);
@@ -1494,6 +1481,531 @@ html { transition: background-color 0.25s, color 0.25s; }
 [data-theme="dark"] .az-nav-list .dropdown-item.active {
     background: #1A6FD9;
     color: #fff;
+}
+
+/* ---- Mobile header (below 768px): blue bar with the burger, full-screen menu ---- */
+.az-mobile-menu,
+.az-account-menu,
+.az-am-backdrop { display: none; }
+@media (max-width: 767.98px) {
+    .az-site-header .az-topbar {
+        background: #1A6FD9;
+        border-bottom: 0;
+    }
+    [data-theme="dark"] .az-site-header .az-topbar { background: #1A5FC8 !important; }
+    .az-site-header .az-brand-name { color: #fff; }
+    .az-site-header .az-brand svg path { fill: #fff; }
+    /* Controls and menu live in the panel on mobile */
+    .az-site-header .az-topbar-controls,
+    .az-site-header .az-navband { display: none !important; }
+    .az-site-header .az-burger {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: transparent;
+        color: #fff;
+        font-size: 1.05rem;
+    }
+    .az-site-header .az-burger:hover { background: rgba(255, 255, 255, 0.12); }
+
+    /* Account button, left of the burger: a person icon, or the user's initial */
+    .az-site-header .az-account-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-left: auto;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: transparent;
+        color: #fff;
+        font-size: 1.05rem;
+    }
+    .az-site-header .az-account-btn:hover { background: rgba(255, 255, 255, 0.12); }
+    .az-site-header .az-account-btn[aria-expanded="true"] { background: #fff; border-color: #fff; color: #1A6FD9; }
+    .az-account-initial {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #fff;
+        color: #1A6FD9;
+        font-size: 0.875rem;
+        font-weight: 800;
+    }
+    .az-account-btn[aria-expanded="true"] .az-account-initial { background: #1A6FD9; color: #fff; }
+
+    /* Account popover: a card under the button, the page dimmed behind it */
+    .az-am-backdrop:not([hidden]) {
+        display: block;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 998;
+        background: rgba(12, 26, 50, 0.5);
+    }
+    html:has(.az-account-menu:not([hidden])) { overflow: hidden; }
+    .az-account-menu:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        right: 12px;
+        z-index: 999;
+        width: min(318px, calc(100vw - 24px));
+        max-height: calc(100dvh - 80px);
+        overflow-y: auto;
+        border-radius: 14px;
+        background: var(--sand-50);
+        box-shadow: 0 16px 40px rgba(12, 26, 50, 0.28);
+    }
+    .az-account-menu::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        right: var(--az-am-caret, 62px);
+        width: 12px;
+        height: 12px;
+        background: var(--sand-50);
+        transform: rotate(45deg);
+    }
+    .az-am-head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-bottom: 1px solid var(--sand-200);
+    }
+    .az-am-head-guest { flex-direction: column; align-items: stretch; gap: 0.875rem; }
+    .az-am-guest { display: flex; align-items: center; gap: 0.75rem; }
+    .az-am-avatar {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--neutral-100);
+        color: #1A6FD9;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+    .az-am-avatar.is-user { background: #1A6FD9; color: #fff; }
+    .az-am-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .az-am-name { font-size: 1rem; font-weight: 700; color: var(--neutral-800); }
+    .az-am-sub { font-size: 0.8125rem; color: var(--neutral-600); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .az-am-signin {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 44px;
+        border-radius: 10px;
+        background: var(--neutral-800);
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .az-account-menu a.az-am-signin,
+    .az-account-menu a.az-am-signin:hover { color: var(--sand-50); }
+    .az-am-signin:hover { opacity: 0.92; }
+    .az-am-links { display: flex; flex-direction: column; padding: 0.375rem 0; border-bottom: 1px solid var(--sand-200); }
+    .az-am-links:empty { display: none; }
+    .az-am-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 48px;
+        padding: 0 1rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .az-account-menu a.az-am-link { color: var(--neutral-800); }
+    .az-account-menu a.az-am-link:hover { background: var(--sand-100); }
+    .az-am-link > i:first-child { width: 20px; text-align: center; color: #1A6FD9; }
+    .az-am-link span { flex-grow: 1; }
+    .az-am-chevron { font-size: 0.75rem; color: var(--neutral-400); }
+    .az-am-section { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.875rem 1rem 0; }
+    .az-am-section:last-child,
+    .az-am-section:has(+ .az-am-signout) { padding-bottom: 1rem; }
+    .az-am-section:has(+ .az-am-signout) { border-bottom: 1px solid var(--sand-200); }
+    .az-am-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--neutral-600);
+    }
+    .az-am-segmented {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid var(--sand-200);
+        border-radius: 10px;
+        background: var(--sand-100);
+    }
+    .az-am-segmented button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        min-height: 40px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--neutral-600);
+        cursor: pointer;
+    }
+    .az-am-segmented button[aria-pressed="true"] {
+        background: var(--sand-50);
+        box-shadow: 0 1px 3px rgba(12, 26, 50, 0.15);
+        font-weight: 700;
+        color: var(--neutral-800);
+    }
+    .az-am-langs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .az-am-lang {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        border: 1px solid var(--sand-200);
+        border-radius: 8px;
+        background: var(--sand-50);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .az-account-menu a.az-am-lang { color: var(--neutral-700); }
+    .az-account-menu a.az-am-lang:hover { border-color: #1A6FD9; }
+    .az-account-menu a.az-am-lang.active { border-color: #1A6FD9; background: #1A6FD9; color: #fff; font-weight: 700; }
+    .az-am-signout {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 52px;
+        padding: 0 1rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .az-account-menu a.az-am-signout { color: #B42318; }
+    [data-theme="dark"] .az-account-menu a.az-am-signout { color: #F97066; }
+    .az-account-menu a.az-am-signout:hover { background: var(--sand-100); }
+
+    .az-mobile-menu:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--sand-50);
+        padding: 0.5rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+    html.az-mm-open { overflow: hidden; }
+
+    /* Every link is visible when the menu opens: no section to expand */
+    .az-mm-nav { display: flex; flex-direction: column; gap: 0.9rem; padding-top: 0.4rem; margin-bottom: 1rem; }
+    .az-mm-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.5rem; }
+    .az-mm-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-height: 44px;
+        padding: 0 0.75rem;
+        border: 1px solid var(--sand-200);
+        border-radius: 0.6rem;
+        background: #fff;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--neutral-800);
+        text-decoration: none;
+    }
+    .az-mm-pill i { color: #1A6FD9; }
+    .az-mm-section { display: flex; flex-direction: column; gap: 0.4rem; }
+    .az-mm-title {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1A6FD9;
+    }
+    .az-mm-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    .az-mm-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        min-height: 64px;
+        padding: 0.5rem 0.25rem;
+        border: 1px solid var(--sand-200);
+        border-radius: 0.75rem;
+        background: #fff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.15;
+        text-align: center;
+        color: var(--neutral-700);
+        text-decoration: none;
+    }
+    .az-mm-tile i { font-size: 1.1rem; color: #1A6FD9; }
+    .az-mm-pill:hover,
+    .az-mm-tile:hover { border-color: #1A6FD9; color: #1A6FD9; }
+    .az-mm-pill.active,
+    .az-mm-tile.active { background: #1A6FD9; border-color: #1A6FD9; color: #fff; }
+    .az-mm-pill.active i,
+    .az-mm-tile.active i { color: #fff; }
+    /* Beat the generic "[data-theme=dark] a" link colour */
+    /* Page-coloured panel, card-coloured tiles */
+    [data-theme="dark"] .az-mobile-menu:not([hidden]) { background: var(--sand-100); }
+    [data-theme="dark"] .az-mm-pill,
+    [data-theme="dark"] .az-mm-tile { background: var(--sand-50); border-color: var(--sand-300); }
+    [data-theme="dark"] .az-mm-pill.active,
+    [data-theme="dark"] .az-mm-tile.active { background: #1A6FD9; }
+    [data-theme="dark"] .az-mobile-menu a.az-mm-pill { color: var(--neutral-800); }
+    [data-theme="dark"] .az-mobile-menu a.az-mm-tile { color: var(--neutral-700); }
+    [data-theme="dark"] .az-mm-title,
+    [data-theme="dark"] .az-mm-pill i,
+    [data-theme="dark"] .az-mm-tile i,
+    [data-theme="dark"] .az-mobile-menu .az-mm-pill:hover,
+    [data-theme="dark"] .az-mobile-menu .az-mm-tile:hover { color: #7BBBFF; }
+    [data-theme="dark"] .az-mobile-menu a.az-mm-pill.active,
+    [data-theme="dark"] .az-mobile-menu a.az-mm-tile.active,
+    [data-theme="dark"] .az-mm-pill.active i,
+    [data-theme="dark"] .az-mm-tile.active i { color: #fff; }
+}
+
+/* ---- Dropdown menus as columns (nav.php .az-mega) ----
+   Mobile: a plain list, columns stacked with a divider, descriptions hidden.
+   Desktop (below): a full-width mega menu under the bar. */
+.az-mega-inner { display: flex; flex-direction: column; }
+.az-mega-col + .az-mega-col {
+    border-top: 1px solid var(--sand-200);
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+}
+.az-mega-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neutral-500);
+    padding: 0.35rem 1rem 0.15rem;
+}
+.az-mega-link { display: flex; align-items: center; gap: 0.5rem; }
+.az-mega-icon { width: 1.1em; text-align: center; flex-shrink: 0; }
+.az-mega-desc { display: none; }
+
+/* ---- Desktop: one blue bar (brand, menu, then controls on the right) ----
+   Same markup as the mobile two-row header: the topbar wrappers become
+   display:contents so the brand, the navband and the controls are laid out
+   as items of one flex row. Below 768px the mobile header is unchanged. */
+@media (min-width: 768px) {
+    /* html body …: beats the "body.has-bg .site-header{background:transparent}"
+       rule header.php inlines for custom page backgrounds. */
+    html body .az-site-header.site-header {
+        display: flex;
+        align-items: center;
+        gap: 1.75rem;
+        min-height: 60px;
+        padding: 0 max(1rem, var(--site-gutter), (100% - var(--az-nav-max-width, var(--site-max-width))) / 2 + var(--site-gutter));
+        background: #1A6FD9;
+        box-shadow: 0 2px 10px rgba(12, 26, 50, 0.18);
+    }
+    .az-topbar,
+    .az-topbar-inner,
+    .az-navband-inner { display: contents; }
+
+    .az-site-header .az-navband {
+        order: 1;
+        display: flex !important;
+        align-items: center;
+        align-self: stretch;
+        gap: 1.75rem;
+        background: transparent;
+    }
+    /* Divider between the brand and the menu */
+    .az-navband::before {
+        content: "";
+        width: 1px;
+        height: 28px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+    .az-nav-list {
+        flex-wrap: nowrap;
+        align-self: stretch;
+    }
+    .az-nav-list .nav-link { padding-top: 0; padding-bottom: 0; }
+    .az-topbar-controls { order: 2; }
+    .az-site-header .az-brand,
+    .az-site-header .az-navband,
+    .az-topbar-controls { flex-shrink: 0; }
+    .az-burger { order: 3; }
+
+    .az-brand-name { color: #fff; }
+    .az-brand svg path { fill: #fff; } /* default logo (no custom logo uploaded) */
+    .az-site-header .btn-theme-toggle-ac,
+    .az-site-header [data-sidebar-toggle] { color: rgba(255, 255, 255, 0.85); }
+    .az-site-header .btn-theme-toggle-ac:hover,
+    .az-site-header [data-sidebar-toggle]:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+    .az-site-header .btn-login,
+    .az-site-header .btn-user-badge {
+        background: #fff;
+        border-color: #fff;
+        color: #1A6FD9;
+    }
+    .az-site-header .btn-user-badge span {
+        display: inline-block;
+        max-width: 10rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+    .az-site-header .btn-login:hover,
+    .az-site-header .btn-user-badge:hover,
+    .az-site-header .btn-user-badge:focus {
+        background: var(--sand-100);
+        border-color: var(--sand-100);
+        color: #1A6FD9;
+    }
+
+    /* !important: the shared dark-mode rule makes .site-header transparent !important */
+    [data-theme="dark"] body .az-site-header.site-header { background: #1A5FC8 !important; }
+    [data-theme="dark"] .az-site-header .btn-theme-toggle-ac { color: rgba(255, 255, 255, 0.85); }
+    [data-theme="dark"] .az-site-header .btn-login,
+    [data-theme="dark"] .az-site-header .btn-user-badge {
+        background: #eef5ff;
+        border-color: #eef5ff;
+        color: #1A5FC8;
+    }
+}
+
+/* Desktop mega menu: full width under the bar, sections as columns */
+@media (min-width: 768px) {
+    .az-site-header .az-nav-list .dropdown { position: static; }
+    /* !important: overrides the inline position Popper sets on dropdowns */
+    .az-site-header .az-mega {
+        position: absolute !important;
+        inset: 100% 0 auto 0 !important;
+        transform: none !important;
+        margin: 0 !important;
+        padding: 0;
+        border: 0;
+        border-top: 1px solid var(--sand-200);
+        border-bottom: 1px solid var(--sand-200);
+        border-radius: 0;
+        background: #fff;
+        box-shadow: 0 24px 48px rgba(12, 26, 50, 0.16);
+    }
+    .az-mega-inner {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.75rem;
+        max-width: var(--az-nav-max-width, var(--site-max-width));
+        margin: 0 auto;
+        padding: 1.75rem max(1rem, var(--site-gutter)) 2rem;
+        box-sizing: border-box;
+    }
+    .az-mega-col + .az-mega-col { border-top: 0; margin-top: 0; padding-top: 0; }
+    .az-mega-col { display: flex; flex-direction: column; gap: 0.25rem; }
+    .az-mega-title {
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        color: #1A6FD9;
+        padding: 0 0.75rem 0.5rem;
+    }
+    .az-site-header .az-mega-link {
+        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 0.6rem;
+        white-space: normal;
+        color: var(--neutral-800);
+    }
+    .az-site-header .az-mega-link:hover,
+    .az-site-header .az-mega-link:focus,
+    .az-site-header .az-mega-link.active {
+        background: var(--sand-100);
+        color: var(--neutral-800);
+    }
+    .az-mega-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--sand-100);
+        color: #1A6FD9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+    .az-mega-link:hover .az-mega-icon,
+    .az-mega-link.active .az-mega-icon { background: #fff; }
+    .az-mega-text { display: flex; flex-direction: column; gap: 2px; }
+    .az-mega-label { font-size: 0.95rem; font-weight: 700; }
+    .az-mega-desc { display: block; font-size: 0.8rem; line-height: 1.35; color: var(--neutral-500); }
+
+    /* Menu item whose panel is open */
+    .az-site-header .az-nav-list .dropdown-toggle.show,
+    .az-site-header .az-nav-list .nav-item-split:has(.dropdown-toggle.show) .nav-link {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+        border-bottom-color: var(--primary-300);
+    }
+
+    [data-theme="dark"] .az-site-header .az-mega {
+        background: var(--sand-50);
+        border-color: var(--sand-300);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    }
+    [data-theme="dark"] .az-mega-title { color: #7BBBFF; }
+    [data-theme="dark"] .az-site-header .az-mega-link:hover,
+    [data-theme="dark"] .az-site-header .az-mega-link:focus,
+    [data-theme="dark"] .az-site-header .az-mega-link.active { background: var(--sand-200); }
+    [data-theme="dark"] .az-mega-icon { background: var(--sand-200); color: #7BBBFF; }
+    [data-theme="dark"] .az-mega-link:hover .az-mega-icon,
+    [data-theme="dark"] .az-mega-link.active .az-mega-icon { background: var(--sand-300); }
+    [data-theme="dark"] .az-mega-desc { color: var(--neutral-600); }
+}
+@media (min-width: 768px) and (max-width: 1099.98px) {
+    .az-mega-inner { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Not enough room for the full bar: nav.php's fit script adds these classes
+   one after the other until the menu fits — tighter spacing, then the logo
+   without the site name, then icon-only menu items from the last one (labels
+   stay available to screen readers and as title tooltips). */
+@media (min-width: 768px) {
+    html body .az-site-header.site-header.az-nav-tight,
+    .az-nav-tight .az-navband { gap: 1rem; }
+    .az-nav-tight .az-nav-list .nav-link { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .az-nav-tight .az-nav-list .nav-link-split-main { padding-right: 0.25rem; }
+    .az-nav-tight .az-nav-list .nav-link-split-caret { padding-left: 0.1rem; }
+    .az-nav-no-name .az-brand-name,
+    .az-nav-list .az-nav-item-icon .nav-link > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
 }
 
 /* ---- Section titles: Azure variant (left border accent instead of bottom underline) ---- */
@@ -1548,7 +2060,7 @@ body.has-bg .az-footer.site-footer {
 
 /* Dark mode: restore a dark footer */
 [data-theme="dark"] .az-footer.site-footer {
-    background: #0C1E36 !important;
+    background: #0c172a !important;
     color: rgba(255, 255, 255, 0.65) !important;
     border-top-color: rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: none !important;
@@ -1575,6 +2087,6 @@ body.has-bg .az-footer.site-footer {
     color: rgba(255, 255, 255, 0.7);
 }
 [data-theme="dark"] .az-footer.site-footer .footer-fan-badge { color: rgba(255, 255, 255, 0.3) !important; }
-[data-theme="dark"] body.has-bg .az-footer.site-footer { background: #0C1E36 !important; }
+[data-theme="dark"] body.has-bg .az-footer.site-footer { background: #0c172a !important; }
 
 .db-card-btn-group .btn { border-radius: 0.4rem !important; }

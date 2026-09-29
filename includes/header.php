@@ -80,6 +80,14 @@ $_hTxt = [
         'my_account' => 'My account',
         'sign_out'   => 'Sign out',
         'sign_in'    => 'Sign in',
+        'menu'       => 'Menu',
+        'close_menu' => 'Close menu',
+        'theme'      => 'Theme',
+        'account'    => 'Account and settings',
+        'not_signed_in' => 'You are not signed in',
+        'light'      => 'Light',
+        'dark'       => 'Dark',
+        'language'   => 'Language',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -87,6 +95,14 @@ $_hTxt = [
         'my_account' => 'Mon compte',
         'sign_out'   => 'Déconnexion',
         'sign_in'    => 'Connexion',
+        'menu'       => 'Menu',
+        'close_menu' => 'Fermer le menu',
+        'theme'      => 'Thème',
+        'account'    => 'Compte et réglages',
+        'not_signed_in' => 'Vous n\'êtes pas connecté',
+        'light'      => 'Clair',
+        'dark'       => 'Sombre',
+        'language'   => 'Langue',
     ],
 ][getUiLang()];
 
@@ -355,9 +371,12 @@ if (!$_pageFullwidth) {
         }
     }
 }
+// Pages created in Admin → Pages (neither core nor plugin pages) keep a reading-width column
+$_pageCms = !isset($__corePages[$currentPage]) && !($GLOBALS['_ac_is_plugin_page'] ?? false);
 $__bodyClass = array_filter([
     'has-bg'         => $_hasBg,
     'page-fullwidth' => $_pageFullwidth,
+    'page-cms'       => $_pageCms && !$_pageFullwidth,
 ]);
 // Themes may add body classes via $__extraBodyClasses (set in head-extra.php)
 if (!empty($__extraBodyClasses) && is_array($__extraBodyClasses)) {
