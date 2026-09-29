@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ArChip } from '../chip/chip';
 
 /** Active filters on one scrolling line, "Tout effacer" pinned right over a fade. */
 @Component({
   selector: 'ar-filter-bar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArChip],
   templateUrl: './filter-bar.html',
   styleUrl: './filter-bar.scss',

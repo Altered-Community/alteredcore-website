@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { factionSrc } from '../../../core/assets';
 import { relativeTime } from '../../../core/relative-time';
@@ -16,7 +16,6 @@ import { factionName } from '../factions';
  */
 @Component({
   selector: 'ar-deck-card',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArCardArt, ArBadge, ArIcon, ArRaritySummary, ArLikeButton],
   host: { '[class]': "'ar-deck-card--' + layout()" },
   templateUrl: './deck-card.html',

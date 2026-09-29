@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -23,7 +23,6 @@ export type EditorView = 'search' | 'apercu' | 'deck';
 
 @Component({
   selector: 'app-editor-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CardSearchStore],
   imports: [
     RouterLink,

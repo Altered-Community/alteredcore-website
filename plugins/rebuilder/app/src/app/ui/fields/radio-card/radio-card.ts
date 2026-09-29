@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 /**
  * Rich radio choice (formats). Wrap several in a `role=radiogroup` container.
@@ -7,7 +7,6 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
  */
 @Component({
   selector: 'ar-radio-card',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.selected]': 'checked()',
     '[class.stacked]': "layout() === 'stacked'",

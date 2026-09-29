@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
 import { ArIcon } from '../../icon';
 
 /** "Quand … ou … / Si … / Alors … ou …" summary of one effect block. */
 @Component({
   selector: 'ar-effect-summary',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   templateUrl: './effect-summary.html',
   styleUrl: './effect-summary.scss',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
 import { t } from '../../../core/i18n';
 import { ArButton } from '../../../ui/buttons';
@@ -26,7 +26,6 @@ export const VISIBILITY_OPTIONS = [
  */
 @Component({
   selector: 'app-new-deck',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArButton, ArInput, ArRadioCard, ArSegmented, ArFactionTabs, ArHeroSelector],
   host: { class: 'ar-overlay-content' },
   templateUrl: './new-deck.overlay.html',

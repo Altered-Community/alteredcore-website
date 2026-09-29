@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { Component, input, model } from '@angular/core';
 import { ArIcon } from '../../icon';
 
 /** Section that folds (closed by default; the Stats sections open it). */
 @Component({
   selector: 'ar-collapsible',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: { '[class.bare]': 'bare()', '[class.open]': 'open()' },
   templateUrl: './collapsible.html',

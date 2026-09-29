@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { type RarityCounts } from '../../../core/deck-rules';
 import type { DeckHero } from '../../../core/models';
 import { ArIconButton } from '../../buttons';
@@ -9,7 +9,6 @@ import { ArCardArt } from '../card-art/card-art';
 /** Hero thumbnail + deck meta + counters; the settings button opens « Réglages du deck ». */
 @Component({
   selector: 'ar-deck-summary',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCardArt, ArIcon, ArIconButton, ArRaritySummary, ArBadge],
   host: { '[class]': "'ar-deck-summary--' + appearance()" },
   templateUrl: './deck-summary.html',

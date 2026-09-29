@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -36,7 +36,6 @@ export const CARD_SOURCES: CardSourceTab[] = [
  */
 @Component({
   selector: 'app-card-search',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArTabs, ArSegmented, ArSelect, ArInput, ArIconButton, ArButton, ArCount, ArFilterBar, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',

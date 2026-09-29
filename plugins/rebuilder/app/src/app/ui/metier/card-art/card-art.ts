@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injectable, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
+import { Component, ElementRef, Injectable, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
 import { cardImageSources } from '../../../core/card-art';
 import { factionColor } from '../factions';
 import { contentLocale } from '../../../core/locale';
@@ -11,7 +11,6 @@ import { contentLocale } from '../../../core/locale';
  */
 @Component({
   selector: 'ar-card-art',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.ar-hatch]': '!neutral()',
     '[class.neutral]': 'neutral()',

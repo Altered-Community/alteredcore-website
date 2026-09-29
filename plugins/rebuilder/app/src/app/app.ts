@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AccountActions } from './features/shared/account-actions/account-actions';
 import { SiteMenuService } from './features/shared/site-menu/site-menu';
@@ -13,7 +13,6 @@ import { ArAppBar, ArNavigationHistory } from './ui/nav';
  */
 @Component({
   selector: 'app-root',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, ArAppBar, AccountActions, ArIconButton],
   templateUrl: './app.html',
   styleUrl: './app.scss',

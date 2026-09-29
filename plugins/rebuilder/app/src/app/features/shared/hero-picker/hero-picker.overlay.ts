@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, type Signal } from '@angular/core';
+import { Component, inject, signal, type Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
@@ -31,7 +31,6 @@ export interface HeroPickerData {
 /** « Choisir un héros » — a step of « Réglages du deck », shown in the same window / sheet. */
 @Component({
   selector: 'app-hero-picker',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArFactionTabs, ArHeroSelector, ArButton],
   host: { class: 'ar-overlay-content' },
   templateUrl: './hero-picker.overlay.html',

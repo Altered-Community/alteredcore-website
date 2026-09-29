@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 export interface ArNavLink {
@@ -14,7 +14,6 @@ export interface ArNavLink {
  */
 @Component({
   selector: 'ar-app-bar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive],
   host: { '[class]': "'ar-app-bar--' + appearance()" },
   templateUrl: './app-bar.html',

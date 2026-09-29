@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { Component, input, model } from '@angular/core';
 
 export interface ArTab {
   id: string;
@@ -9,7 +9,6 @@ export interface ArTab {
 /** Tabs: underline (≥ medium) or scrolling pills (compact). */
 @Component({
   selector: 'ar-tabs',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { role: 'tablist', '[attr.aria-label]': 'ariaLabel()', '[class]': "'ar-tabs--' + appearance()" },
   templateUrl: './tabs.html',
   styleUrl: './tabs.scss',

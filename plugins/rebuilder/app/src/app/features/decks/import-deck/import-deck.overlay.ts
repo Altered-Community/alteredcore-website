@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { CardsApiService } from '../../../core/cards-api.service';
 import { typeOf } from '../../../core/deck-rules';
@@ -28,7 +28,6 @@ export function parseDecklist(text: string): { reference: string; quantity: numb
 
 @Component({
   selector: 'app-import-deck',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArButton, ArInput],
   host: { class: 'ar-overlay-content' },
   templateUrl: './import-deck.overlay.html',

@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 /** Filter panel section: overline title, optional count and a projected `[action]`. */
 @Component({
   selector: 'ar-filter-section',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './filter-section.html',
   styleUrl: './filter-section.scss',
 })

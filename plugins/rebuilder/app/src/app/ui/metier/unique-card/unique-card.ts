@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { setOfReference, uniqueArtSources } from '../../../core/card-art';
 import { PEN_GLYPH, cardEffects, linesHtml, printedLength } from '../../../core/card-text';
@@ -26,7 +26,6 @@ const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } 
  */
 @Component({
   selector: 'ar-unique-card',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCardArt],
   host: {
     '[class.bravos]': "faction() === 'BR'",

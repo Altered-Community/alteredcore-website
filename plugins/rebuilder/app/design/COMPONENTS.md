@@ -4,7 +4,7 @@ Référence visuelle : `mockups/DS-*.dc.html` et `screenshots/DS-*.png`. Tokens 
 
 Principes communs :
 
-- Composants **standalone**, `ChangeDetectionStrategy.OnPush`, entrées/sorties en **signals** (`input()`, `output()`, `model()`).
+- Composants standalone et `OnPush` par défaut (Angular 22, rien à déclarer), entrées/sorties en **signals** (`input()`, `output()`, `model()`).
 - Les champs de formulaire implémentent `ControlValueAccessor` (utilisables avec Reactive Forms).
 - **Une taille logique** (`size: 'sm' | 'md' | 'lg'`), jamais une hauteur en pixels : la hauteur vient de
   `--ar-control-*`, qui change avec `data-density` (pointer 32/40/48, touch 36/44/52).

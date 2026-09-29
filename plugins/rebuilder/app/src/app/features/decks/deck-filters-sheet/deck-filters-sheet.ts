@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ArButton } from '../../../ui/buttons';
 import { ArChip } from '../../../ui/chips';
 import { ArSegmented, ArSelect } from '../../../ui/fields';
@@ -9,7 +9,6 @@ import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-f
 /** Mobile filter sheet for Mes decks (format, héros, visibilité, faction). */
 @Component({
   selector: 'app-deck-filters-sheet',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArSelect, ArSegmented, ArChip, ArButton],
   host: { class: 'ar-overlay-content' },
   templateUrl: './deck-filters-sheet.html',

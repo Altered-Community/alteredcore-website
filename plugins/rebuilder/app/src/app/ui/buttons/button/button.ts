@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ArIcon, type ArIconName } from '../../icon';
 import { type ArButtonVariant, type ArSize } from '../types';
 
@@ -6,7 +6,6 @@ import { type ArButtonVariant, type ArSize } from '../types';
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector -- styles native <button>/<a> so they keep their semantics
   selector: 'button[arButton], a[arButton]',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: {
     class: 'ar-button',

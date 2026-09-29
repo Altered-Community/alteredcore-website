@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, forwardRef, input, model, output, viewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, input, model, output, viewChild } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ArIcon, type ArIconName } from '../../icon';
 import { nextId, ValueAccessor } from '../value-accessor';
@@ -6,7 +6,6 @@ import { nextId, ValueAccessor } from '../value-accessor';
 /** Text field with optional label and leading icon — DS-Champs. */
 @Component({
   selector: 'ar-input',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ArInput), multi: true }],
   templateUrl: './input.html',

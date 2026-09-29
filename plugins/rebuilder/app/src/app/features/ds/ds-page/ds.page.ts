@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { newEffectBlock, setsFor } from '../../../core/card-filters';
 import type { DeckListItem } from '../../../core/deck-view';
 import type { Card } from '../../../core/models';
@@ -55,7 +55,6 @@ const SAMPLE_UNIQUE: Card = {
 /** `/_ds` — every ar-* component in its variants, in pointer and touch density. */
 @Component({
   selector: 'app-ds-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ArButton, ArIconButton, ArLikeButton, ArCardAdd, ArStepper, ArInput, ArSelect, ArSegmented, ArRadioCard, ArCombobox, ArEditableTitle,
     ArChip, ArFilterBar, ArIconToggleGroup, ArBadge, ArTag, ArCount, ArRaritySummary, ArTerrainTotals, ArLogicDivider,

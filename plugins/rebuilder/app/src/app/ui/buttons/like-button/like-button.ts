@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { ArIcon } from '../../icon';
 
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
@@ -7,7 +7,6 @@ const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFra
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector -- styles a native <button> so it keeps its semantics
   selector: 'button[arLikeButton]',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: {
     type: 'button',

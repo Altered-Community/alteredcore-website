@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArButton, ArIconButton } from '../../../ui/buttons';
 import { ArCardSurface } from '../../../ui/containers';
@@ -18,7 +18,6 @@ interface Feature {
 /** Landing page: what the project is, and the way into the card browser and the deck editor. */
 @Component({
   selector: 'app-home-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArAppBar, ArButton, ArIconButton, ArCardSurface, ArIcon, ArCardArt, ArSiteFooter],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',

@@ -1,25 +1,40 @@
-# Altered Re:Builder — éditeur de deck (Angular + Capacitor)
+# Altered Re:Builder — plugin `rebuilder` du site AlteredCore (Angular)
 
 ## Produit
 
-Éditeur et consultation de decks pour le jeu de cartes Altered. **Une seule codebase** : web desktop, web mobile
-et app mobile via Capacitor. Pas d'écrans « mobile » et « desktop » séparés : les mêmes composants s'adaptent
-selon la taille d'écran et la densité.
+Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), montée par le site sur
+`/pages/rebuilder/` (build `embed`, Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources
+importées de [Yutsa/altered-re-builder](https://github.com/Yutsa/altered-re-builder), qui garde l'app autonome
+(Capacitor, BFF d'authentification, maquettes, e2e autonomes). Les mêmes composants s'adaptent à la taille
+d'écran et à la densité : pas d'écrans « mobile » et « desktop » séparés.
 
 ## Références de conception
 
-- `design/README.md` : index des écrans, navigation, décisions de conception à respecter.
-- `design/mockups/*.dc.html` : source de vérité des mesures (HTML + styles en ligne). Toujours lire la maquette
-  de l'écran concerné avant de l'implémenter, et comparer le rendu à `design/screenshots/<écran>.png`.
 - `design/COMPONENTS.md` : inventaire des composants `ar-*` et API attendue.
 - `design/tokens/tokens.css` : seules valeurs autorisées pour couleurs, espacements, rayons, ombres, typo, hauteurs.
-- `design/IMPLEMENTATION-PLAN.md` : ordre des étapes.
+- Maquettes et captures de référence : dans le repo Re:Builder (`design/mockups/`, `design/screenshots/`).
 
 ## Règles de code
 
-- Angular moderne : composants standalone, `OnPush`, signals (`input()`, `output()`, `model()`, `computed()`),
-  nouveau control flow (`@if`, `@for`). S'aligner sur la version et les conventions déjà présentes dans le repo.
-- Un composant par dossier, jamais de `template:` ni de `styles:` en ligne : `<nom>/<nom>.ts` + `<nom>.html`
+- Angular 22, zoneless (pas de `zone.js`), selon les bonnes pratiques officielles
+  (https://angular.dev/assets/context/best-practices.md) :
+  - Standalone et `OnPush` sont les défauts : ne jamais écrire `standalone: true` ni
+    `changeDetection: ChangeDetectionStrategy.OnPush`. L'état change par signals, jamais en comptant sur une
+    détection de changements globale.
+  - Signals : `input()`, `output()`, `model()` pour le two-way binding, `computed()` pour l'état dérivé,
+    `linkedSignal()` pour un état dérivé qui reste modifiable ; `set()` / `update()`. Observables dans les
+    templates via le pipe `async`.
+  - `inject()` plutôt que l'injection par constructeur. Nouveau service singleton : `@Service` (Angular 22) plutôt
+    que `@Injectable({ providedIn: 'root' })`.
+  - Pas de `@HostBinding` / `@HostListener` : objet `host` du décorateur. Pas de `ngClass` / `ngStyle` : bindings
+    `[class.x]` / `[style.x]`. Pas de `CommonModule` : importer seulement les directives et pipes utilisés.
+  - Control flow natif (`@if`, `@for`, `@switch`), templates simples, routes chargées à la demande
+    (`loadComponent`).
+  - Nouveaux formulaires : Signal Forms (`@angular/forms/signals`), sinon Reactive Forms.
+  - Images statiques : `NgOptimizedImage` (`ngSrc`), sauf images en base64.
+  - TypeScript strict, inférence quand le type est évident, `unknown` plutôt que `any`.
+- Un composant par dossier, jamais de `template:` ni de `styles:` en ligne, même pour un petit composant (choix du
+  projet, là où Angular suggère le template en ligne) : `<nom>/<nom>.ts` + `<nom>.html`
   (`templateUrl`) + `<nom>.scss` (`styleUrl`, seulement s'il y a des styles). Les fonctions `open…()` d'un overlay
   restent dans le `.ts` du composant ; types et helpers partagés entre plusieurs composants vont dans un fichier
   à part au niveau du groupe (ex. `ui/chips/rarity.ts`, `features/decks/deck-filters.ts`).
@@ -33,35 +48,40 @@ selon la taille d'écran et la densité.
   (`data-density="pointer|touch"` sur `<html>`). Overlays via `ArOverlayService` (fenêtre ≥ 768 px, feuille en dessous).
   Jamais une fenêtre ouverte par-dessus une autre : depuis un contenu d'overlay, ouvrir l'écran suivant comme étape
   (`ref.openStep(...)`, même fenêtre, flèche retour).
-- Accessibilité : vrais `<button>`/`<a>`/`<input>` avec label, `aria-label` sur les boutons icône, cibles ≥ 44 px en touch,
-  focus visible.
+- Accessibilité : passer les contrôles AXE et les minimums WCAG AA (focus, contrastes, ARIA). Vrais
+  `<button>`/`<a>`/`<input>` avec label, `aria-label` sur les boutons icône, cibles ≥ 44 px en touch, focus visible.
 - Icônes au trait : `ar-icon` (`src/app/ui/icon/icon.ts`, SVG Lucide en ligne : `lucide-angular` ne supporte pas encore
-  Angular 22). Icônes de rareté et de terrain : `public/assets/icons/` (servies sous `assets/icons/`, copiées depuis
-  `design/assets/icons/`) ; gemmes, factions, terrains et logos d'extension : `public/assets/` (voir son `README.md`).
+  Angular 22). Icônes de rareté et de terrain : `public/assets/icons/` (servies sous `assets/icons/`) ; gemmes, factions, terrains et logos d'extension : `public/assets/` (voir son `README.md`).
 - Backend : **réutiliser les services, modèles et intercepteurs existants** pour les appels API. Ne pas dupliquer
   un client ; si un modèle ne correspond pas à l'UI, écrire un mapper plutôt que de modifier le contrat.
-- Capacitor : `env(safe-area-inset-*)` pour les zones sûres, `@capacitor/keyboard`, `@capacitor/status-bar`,
+- Embarqué : pas d'accès direct au token Keycloak (session du site, appels decks par le relais
+  `AlteredCore.services.decks`), styles et overlays dans le shadow root, menu du site à la place de `site-menu`.
+- App autonome (Capacitor) : `env(safe-area-inset-*)` pour les zones sûres, `@capacitor/keyboard`, `@capacitor/status-bar`,
   bouton retour Android via `@capacitor/app` (ferme d'abord l'overlay ouvert).
 
 ## Vérification avant de terminer une tâche
 
-1. `npm run build` et `ng lint` sans erreur, `npm test` et `npm run e2e` verts.
-2. Capture Playwright de l'écran à 1440×900 et 390×844, comparée à la capture de `design/screenshots/`.
-3. Recherche de valeurs en dur (`#[0-9a-f]{3,6}`, `px` de hauteur de contrôle) hors `design/tokens/tokens.css`.
+1. `npm run build`, `npm run build:embed` et `ng lint` sans erreur, `npm test` vert.
+2. E2E dans le site (`tests/e2e` + `plugins/rebuilder/e2e`) sur la stack `docker-compose.stack.yml` : voir
+   `../README.md`.
+3. Capture Playwright de l'écran embarqué à 1440×900 et 390×844.
+4. Recherche de valeurs en dur (`#[0-9a-f]{3,6}`, `px` de hauteur de contrôle) hors `design/tokens/tokens.css`.
 
 ## Structure du repo
 
 | Emplacement | Contenu |
 |---|---|
-| `design/` | Référence visuelle : maquettes, captures, tokens, `COMPONENTS.md`, `features/` (évolutions validées). |
+| `design/` | `COMPONENTS.md` et tokens. |
 | `design/tokens/tokens.css` | Tokens `--ar-*`, chargés globalement via `angular.json` → `styles`. |
 | `src/styles.scss` | Base globale (reset, classes `ar-overlay-*` partagées par les contenus d'overlay). |
 | `src/app/ui/` | Design system `ar-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ar-radio-card`), `chips/`, `containers/`, `nav/` (dont `ar-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`ArOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`ArBreakpointService`, `ArDensityService`). |
 | `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `home/` (accueil `/`), `cards/` (onglet Cartes `/cartes`), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `login/`, `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck ; menu du site `site-menu/`, `account-actions/`, `site-links.ts`), `ds/` (page `/_ds`). |
 | `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth.service.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
-| `src/app/app.routes.ts` | Routes, dont `/_ds` : catalogue vivant du design system (`src/app/features/ds/`). |
-| `e2e/` | Scénarios Playwright (`playwright.config.ts` : projets `desktop` 1440×900 et `mobile` 390×844), contre les API de production. |
-| `android/` | Projet Capacitor Android (`capacitor.config.ts`). |
+| `src/app/app.routes.ts` | Routes de l'app autonome, dont `/_ds` : catalogue vivant du design system (`src/app/features/ds/`). |
+| `src/main.embed.ts`, `src/app/embed/` | Mode embarqué : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
+| `src/embed/` | Styles du build embarqué (shadow root, et `<head>` pour les polices). |
+| `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build --configuration embed`. |
+| `../e2e/` | Scénarios Playwright du plugin, lancés par le site sur la stack complète (desktop 1440×900 et mobile 390×844). |
 | `docs/backend-api.md` | Contrat des API consommées. |
 | `docs/api-limitations/` | Manques des API, contournements côté front et corrections backend à faire (un fichier par API). |
 
@@ -70,10 +90,9 @@ Commandes npm :
 | Commande | Rôle |
 |---|---|
 | `npm start` | `ng serve` sur `0.0.0.0:4200`. |
-| `npm run build` | Build de production (`dist/`). |
+| `npm run build` | Build de production de l'app autonome. |
+| `npm run build:embed` | Build embarqué → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert). |
 | `npm test` | Tests unitaires (Vitest via `@angular/build:unit-test`, fichiers `*.spec.ts`). |
-| `npm run e2e` | Playwright (démarre `ng serve` si aucun serveur ne tourne sur le port 4200 ; `E2E_PORT` pour en changer). |
-| `npm run cap:sync` | Build puis `npx cap sync` vers `android/`. |
 | `ng lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`). |
 
 

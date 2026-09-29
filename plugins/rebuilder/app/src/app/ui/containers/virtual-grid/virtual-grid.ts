@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, input, signal } from '@angular/core';
 
 /** Rows `[start, end)` to render: those within `overscan` viewports of the visible part of the grid. */
 export function visibleRows(opts: { top: number; viewport: number; rowHeight: number; overscan: number; rowCount: number }): {
@@ -21,7 +21,6 @@ export function visibleRows(opts: { top: number; viewport: number; rowHeight: nu
  */
 @Component({
   selector: 'ar-virtual-grid',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.padding-top.px]': 'padTop()',
     '[style.padding-bottom.px]': 'padBottom()',

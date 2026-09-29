@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ArCount } from '../../chips';
 import { ArIcon, type ArIconName } from '../../icon';
@@ -15,7 +15,6 @@ export interface ArBottomNavItem {
 /** Bottom navigation (compact only), above the gesture area. */
 @Component({
   selector: 'ar-bottom-nav',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, ArIcon, ArCount],
   templateUrl: './bottom-nav.html',
   styleUrl: './bottom-nav.scss',

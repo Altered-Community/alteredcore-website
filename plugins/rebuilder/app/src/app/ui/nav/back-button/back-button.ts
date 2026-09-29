@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { ArIconButton } from '../../buttons';
@@ -7,7 +7,6 @@ import { ArNavigationHistory } from '../navigation-history';
 /** « Retour » for compact app bars: previous page of the app, or `fallback` when the page was opened directly. */
 @Component({
   selector: 'ar-back-button',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIconButton],
   templateUrl: './back-button.html',
 })

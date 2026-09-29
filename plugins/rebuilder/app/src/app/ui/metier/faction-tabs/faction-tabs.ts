@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, inject, input, model, viewChildren } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, inject, input, model, viewChildren } from '@angular/core';
 import { ArDensityService } from '../../layout.services';
 import { FACTIONS } from '../factions';
 import { scrollIntoViewInline } from '../scroll';
@@ -9,7 +9,6 @@ import { scrollIntoViewInline } from '../scroll';
  */
 @Component({
   selector: 'ar-faction-tabs',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'tablist',
     'aria-label': 'Faction',

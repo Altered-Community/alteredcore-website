@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ArIcon } from '../../icon';
 import { ArCardArt } from '../card-art/card-art';
 
 /** Hero visual + name. Fills its container: a grid cell, or a fixed-width carousel slot (`size="sm"`). */
 @Component({
   selector: 'ar-hero-tile',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCardArt, ArIcon],
   host: { '[class.sm]': "size() === 'sm'" },
   templateUrl: './hero-tile.html',

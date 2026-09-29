@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { ArIcon } from '../../icon';
 import { nextId } from '../value-accessor';
 
@@ -16,7 +16,6 @@ export interface ComboOption {
  */
 @Component({
   selector: 'ar-combobox',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: {
     '(focusout)': 'onFocusOut($event)',

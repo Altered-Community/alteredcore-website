@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, inject } from '@angular/core';
+import { Component, afterNextRender, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { DeckStore } from '../../../core/deck-store';
@@ -9,7 +9,6 @@ import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 /** `/decks/new`: skeleton backdrop + « Nouveau deck » overlay (full screen on mobile). */
 @Component({
   selector: 'app-new-deck-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './new-deck.page.html',
   styleUrl: './new-deck.page.scss',
 })

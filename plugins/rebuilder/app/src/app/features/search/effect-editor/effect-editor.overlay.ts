@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
@@ -16,7 +16,6 @@ export interface EffectEditorData {
 /** ar-effect-editor — one combobox per criterion; values OR-ed, criteria AND-ed. */
 @Component({
   selector: 'ar-effect-editor',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCombobox, ArButton],
   host: { class: 'ar-overlay-content' },
   templateUrl: './effect-editor.overlay.html',

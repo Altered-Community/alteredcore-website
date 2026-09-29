@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -25,7 +25,6 @@ type DeckTab = 'cartes' | 'decklist';
 /** Consultation: Cartes / Decklist tabs, read-only, summary aside with actions. */
 @Component({
   selector: 'app-deck-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ArBackButton,
     RouterLink,

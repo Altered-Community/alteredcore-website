@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { Component, computed, input, model } from '@angular/core';
 import { ArIcon } from '../../icon';
 
 /** Copy counter: `overlay` sits on card tiles, `inline` in deck rows. */
 @Component({
   selector: 'ar-stepper',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   templateUrl: './stepper.html',
   styleUrl: './stepper.scss',

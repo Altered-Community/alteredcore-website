@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Injectable, InjectionToken, inject } from '@angular/core';
+import { Component, Injectable, InjectionToken, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
 import { ArIcon } from '../../../ui/icon';
@@ -10,7 +10,6 @@ import { siteLinks } from '../site-links';
 /** Compact site menu (left drawer opened by the ☰ button). */
 @Component({
   selector: 'app-site-menu',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: { class: 'ar-overlay-content' },
   templateUrl: './site-menu.html',

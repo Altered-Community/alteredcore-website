@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { Component, input, model, output } from '@angular/core';
 import { ArIcon } from '../../icon';
 
 /** Selectable or removable pill — DS-Puces. `dot` takes a faction CSS colour variable. */
 @Component({
   selector: 'ar-chip',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   templateUrl: './chip.html',
   styleUrl: './chip.scss',

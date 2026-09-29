@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { assetUrl } from '../../../core/asset-url';
 
 @Component({
   selector: 'ar-terrain-totals',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './terrain-totals.html',
   styleUrl: './terrain-totals.scss',
 })

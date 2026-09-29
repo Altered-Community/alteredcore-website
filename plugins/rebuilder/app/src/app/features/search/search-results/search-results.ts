@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DeckStore } from '../../../core/deck-store';
 import { ArButton } from '../../../ui/buttons';
@@ -9,7 +9,6 @@ import { CardSearchStore } from '../card-search.store';
 
 @Component({
   selector: 'app-search-results',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCardTile, ArDeckRow, ArInfiniteSentinel, ArButton, RouterLink, ArVirtualGrid],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { rarityOf, typeOf } from '../../../core/deck-rules';
 import type { DeckGroup } from '../../../core/deck-view';
 import type { HydratedLine } from '../../../core/models';
@@ -8,7 +8,6 @@ import { rarityIcon } from '../../../ui/chips';
 /** Desktop decklist card: Qté · Carte · Coût · Forêt / Montagne / Océan. */
 @Component({
   selector: 'app-decklist-table',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './decklist-table.html',
   styleUrl: './decklist-table.scss',
 })

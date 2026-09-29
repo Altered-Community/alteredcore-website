@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ArIcon } from '../../../ui/icon';
 import { ArOverlayRef } from '../../../ui/overlay';
 
 /** « Plus d'actions » sheet on mobile. */
 @Component({
   selector: 'app-deck-actions',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: { class: 'ar-overlay-content' },
   templateUrl: './deck-actions-sheet.html',

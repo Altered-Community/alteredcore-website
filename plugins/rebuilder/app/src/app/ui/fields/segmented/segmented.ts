@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { Component, computed, input, model } from '@angular/core';
 import { ArIcon, type ArIconName } from '../../icon';
 
 export interface ArSegment<T = string> {
@@ -11,7 +11,6 @@ export interface ArSegment<T = string> {
 /** Segmented control — DS-Champs / DS-Navigation. */
 @Component({
   selector: 'ar-segmented',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   host: {
     role: 'group',

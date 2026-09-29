@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 
 /**
@@ -53,7 +53,6 @@ const cache = new Map<string, SafeHtml>();
 
 @Component({
   selector: 'ar-icon',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'aria-hidden': 'true',
     '[style.width.px]': 'size()',

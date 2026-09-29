@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 /** Avatar initial used in app bars. */
 @Component({
   selector: 'ar-avatar',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.lg]': "size() === 32" },
   templateUrl: './avatar.html',
   styleUrl: './avatar.scss',

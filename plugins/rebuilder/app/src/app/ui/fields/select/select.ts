@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, forwardRef, input, model } from '@angular/core';
+import { Component, forwardRef, input, model } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ArIcon } from '../../icon';
 import { nextId, ValueAccessor } from '../value-accessor';
@@ -11,7 +11,6 @@ export interface ArOption<T = string> {
 /** Native select, styled — DS-Champs. */
 @Component({
   selector: 'ar-select',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ArSelect), multi: true }],
   templateUrl: './select.html',

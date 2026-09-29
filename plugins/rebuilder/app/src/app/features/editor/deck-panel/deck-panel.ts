@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { t } from '../../../core/i18n';
@@ -8,7 +8,6 @@ import { ArDeckRow, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
 /** Desktop right-hand panel: embedded summary, Stats, grouped rows with steppers. */
 @Component({
   selector: 'app-deck-panel',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow],
   templateUrl: './deck-panel.html',
   styleUrl: './deck-panel.scss',

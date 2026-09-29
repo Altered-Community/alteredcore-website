@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, output, signal } from '@angular/core';
+import { Component, computed, input, model, output, signal } from '@angular/core';
 import { RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { ArButton } from '../../../ui/buttons';
 import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
@@ -10,7 +10,6 @@ import { ArEffectSummary, ArExtensionTile, FACTIONS } from '../../../ui/metier';
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArInput, ArFilterSection, ArExtensionTile, ArIconToggleGroup, ArChip, ArSegmented, ArEffectSummary, ArLogicDivider, ArButton, ArIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',

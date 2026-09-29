@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, input, model, viewChild } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, computed, input, model, viewChild } from '@angular/core';
 import { ArHeroTile } from '../hero-tile/hero-tile';
 import { scrollIntoViewInline } from '../scroll';
 
@@ -16,7 +16,6 @@ export interface ArHeroOption {
  */
 @Component({
   selector: 'ar-hero-selector',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArHeroTile],
   host: {
     '[class]': "'layout-' + layout()",

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ArIcon } from '../../icon';
 import { type ArNavLink } from '../app-bar/app-bar';
@@ -32,7 +32,6 @@ export const AR_SITE_FOOTER_EXTERNAL: ArExternalLink[] = [
  */
 @Component({
   selector: 'ar-site-footer',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArIcon],
   templateUrl: './site-footer.html',
   styleUrl: './site-footer.scss',

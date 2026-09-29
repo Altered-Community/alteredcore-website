@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { isUniqueReference } from '../../../core/card-art';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
@@ -10,7 +10,6 @@ import { contentLocale } from '../../../core/locale';
 /** Search / preview / consultation tile — ar-card-tile (DS-Metier). */
 @Component({
   selector: 'ar-card-tile',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArCardArt, ArCardAdd, ArStepper, ArUniqueCard],
   host: { role: 'article', '[attr.aria-label]': 'name()' },
   templateUrl: './card-tile.html',

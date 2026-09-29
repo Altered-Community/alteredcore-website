@@ -1,11 +1,10 @@
 import { NgComponentOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
 import { ArIcon } from '../../icon';
 import { AR_OVERLAY_CONTENT } from '../overlay';
 
 @Component({
   selector: 'ar-overlay-container',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgComponentOutlet, ArIcon],
   host: {
     '[class]': "'ar-overlay ar-overlay--' + content.mode + (content.fill ? ' ar-overlay--fill' : '')",

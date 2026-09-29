@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
 import { finalize, map, switchMap, timer } from 'rxjs';
@@ -58,7 +58,6 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArAppBar, ArTabs, ArButton, ArIconButton, ArInput, ArSelect, ArSegmented, ArChip, ArDeckCard, ArIcon, ArCount, ArInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',

@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ArIcon } from '../../icon';
 
 /** Round "+" posed on a card tile. */
 @Component({
   selector: 'ar-card-add',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArIcon],
   templateUrl: './card-add.html',
   styleUrl: './card-add.scss',

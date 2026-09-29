@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { Component, computed, input, model } from '@angular/core';
 import { setImageUrl } from '../../../core/card-art';
 import type { SetInfo } from '../../../core/card-filters';
 
 @Component({
   selector: 'ar-extension-tile',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './extension-tile.html',
   styleUrl: './extension-tile.scss',
 })

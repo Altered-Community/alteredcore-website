@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { defaultFilters, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { ArButton } from '../../../ui/buttons';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
@@ -22,7 +22,6 @@ const SOURCE_LABEL: Record<CardSource, string> = {
 /** Mobile « Filtres » sheet: edits a draft and applies it when the user searches. */
 @Component({
   selector: 'app-filters-sheet',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FiltersPanel, ArButton],
   host: { class: 'ar-overlay-content' },
   templateUrl: './filters-sheet.overlay.html',

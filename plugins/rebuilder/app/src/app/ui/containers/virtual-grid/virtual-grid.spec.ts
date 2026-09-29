@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ArVirtualGrid, visibleRows } from './virtual-grid';
 
@@ -21,7 +21,6 @@ describe('visibleRows', () => {
 });
 
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArVirtualGrid],
   template: `
     <ar-virtual-grid #grid [items]="items()" [initial]="4">

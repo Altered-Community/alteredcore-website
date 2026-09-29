@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
 import type { DeckFormat, DeckHero } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
@@ -18,7 +18,6 @@ export interface DeckSettings {
 /** ar-deck-settings — « Réglages du deck » (héros, visibilité, format), same content in window and sheet. */
 @Component({
   selector: 'ar-deck-settings',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArButton, ArRadioCard, ArSegmented, ArCardArt],
   host: { class: 'ar-overlay-content' },
   templateUrl: './deck-settings.overlay.html',

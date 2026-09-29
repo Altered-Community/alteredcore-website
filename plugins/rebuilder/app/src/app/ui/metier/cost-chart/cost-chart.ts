@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 /** Cost histogram 1…7+ (main or reserve). */
 @Component({
   selector: 'ar-cost-chart',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.reserve]': "tone() === 'reserve'" },
   templateUrl: './cost-chart.html',
   styleUrl: './cost-chart.scss',

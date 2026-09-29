@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { rarityOf } from '../../../core/deck-rules';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
@@ -9,7 +9,6 @@ import { contentLocale } from '../../../core/locale';
 /** Deck row: rarity icon, name, stepper (edit) or ×n + costs (read-only). */
 @Component({
   selector: 'ar-deck-row',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArStepper],
   host: { '[class.readonly]': 'readonly() || plain()', '[class.panel]': "appearance() === 'panel'" },
   templateUrl: './deck-row.html',

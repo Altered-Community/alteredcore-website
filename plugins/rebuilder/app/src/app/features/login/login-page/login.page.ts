@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AuthService } from '../../../core/auth.service';
@@ -16,7 +16,6 @@ import { ArAppBar, ArAvatar, ArBackButton, ArSiteFooter } from '../../../ui/nav'
  */
 @Component({
   selector: 'app-login-page',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArAppBar, ArBackButton, ArButton, ArIcon, ArAvatar, ArSiteFooter],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',

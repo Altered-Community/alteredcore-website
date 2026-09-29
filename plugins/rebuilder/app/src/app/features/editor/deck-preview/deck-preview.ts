@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { ArButton } from '../../../ui/buttons';
 import { ArCardTile, ArDeckSection } from '../../../ui/metier';
@@ -6,7 +6,6 @@ import { ArCardTile, ArDeckSection } from '../../../ui/metier';
 /** « Aperçu » / « Cartes »: count line, « Tout replier », one section per type with tiles. */
 @Component({
   selector: 'app-deck-preview',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArDeckSection, ArCardTile, ArButton],
   templateUrl: './deck-preview.html',
   styleUrl: './deck-preview.scss',
