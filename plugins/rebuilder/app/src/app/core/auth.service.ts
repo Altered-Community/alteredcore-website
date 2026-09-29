@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Service, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, share, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AuthSession } from './auth-session';
@@ -35,7 +35,7 @@ interface TokenResponse {
  * refresh token stay on the same-origin auth BFF (`environment.authBffUrl`). A deploy replaces
  * the document; the HttpOnly refresh cookie is what logs the user back in.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AuthService implements AuthSession {
   private readonly http = inject(HttpClient);
   private readonly stored = signal<string | null>(readStorage(ACCESS_TOKEN_KEY));

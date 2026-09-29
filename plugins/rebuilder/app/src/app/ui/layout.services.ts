@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, InjectionToken, computed, effect, inject, signal } from '@angular/core';
+import { Service, InjectionToken, computed, effect, inject, signal } from '@angular/core';
 import { densityFor, windowSizeFor, type WindowSize } from '../core/breakpoints';
 
 function readWidth(): number {
@@ -11,7 +11,7 @@ function coarse(): boolean {
 }
 
 /** Logical window size: compact < 768, medium 768–1199, expanded ≥ 1200. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ArBreakpointService {
   readonly width = signal(readWidth());
   readonly size = computed<WindowSize>(() => windowSizeFor(this.width()));
@@ -44,7 +44,7 @@ export class ArBreakpointService {
 export const AR_DENSITY_TARGET = new InjectionToken<HTMLElement>('AR_DENSITY_TARGET');
 
 /** Sets `data-density="pointer|touch"` on <html>; control heights follow via tokens. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ArDensityService {
   private readonly breakpoints = inject(ArBreakpointService);
   private readonly doc = inject(DOCUMENT);

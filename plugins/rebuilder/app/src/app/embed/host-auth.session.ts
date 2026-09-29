@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Service, computed, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { AuthSession } from '../core/auth-session';
 import { ALTERED_CORE } from './host';
@@ -9,7 +9,7 @@ import { ALTERED_CORE } from './host';
  * renews it. So `token` stays null and requests carry no Authorization header; signing in is the
  * site's `AlteredCore.login()`.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class HostAuthSession extends AuthSession {
   private readonly host = inject(ALTERED_CORE);
   private readonly user = signal(this.host.user);

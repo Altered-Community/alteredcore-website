@@ -15,6 +15,8 @@ module.exports = defineConfig([
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // Singleton services: @Service() (Angular 22), not @Injectable({ providedIn: 'root' }).
+      '@angular-eslint/prefer-service-decorator': 'error',
       '@angular-eslint/directive-selector': [
         'error',
         {

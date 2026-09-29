@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { type PreloadingStrategy, type Route } from '@angular/router';
 import { Observable, firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -11,7 +11,7 @@ import { catchError } from 'rxjs/operators';
  */
 const PRELOAD_PATHS = new Set(['', 'cartes', 'decks', 'login']);
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SiteNavPreloading implements PreloadingStrategy {
   /** Serial so the router’s parallel `preload()` calls don’t fetch every graph at once. */
   private tail: Promise<void> = Promise.resolve();

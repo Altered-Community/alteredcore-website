@@ -1,4 +1,4 @@
-import { Injectable, inject, type Signal } from '@angular/core';
+import { Service, inject, type Signal } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 
@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
  * Standalone and Capacitor: `AuthService` (PKCE login + auth BFF, the default).
  * Embedded in the AlteredCore site: `HostAuthSession` (the shell's PHP session, `src/app/embed/`).
  */
-@Injectable({ providedIn: 'root', useFactory: () => inject(AuthService) })
+@Service({ factory: () => inject(AuthService) })
 export abstract class AuthSession {
   /** Current access token, `null` for a guest. */
   abstract readonly token: Signal<string | null>;

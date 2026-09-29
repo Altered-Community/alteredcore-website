@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthSession } from './auth-session';
@@ -36,7 +36,7 @@ export function decksApiBaseUrl(hostname = typeof window === 'undefined' ? '' : 
   return environment.decksApiUrl.replace(/\/$/, '');
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DecksApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthSession);

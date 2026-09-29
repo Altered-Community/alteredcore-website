@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of, shareReplay, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
@@ -34,7 +34,7 @@ interface RawCardGroup {
   cards?: { reference: string; variation?: string }[];
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class CardsApiService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.cardsApiUrl.replace(/\/$/, '');

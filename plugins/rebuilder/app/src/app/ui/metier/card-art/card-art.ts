@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injectable, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
+import { Component, ElementRef, Service, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
 import { cardImageSources } from '../../../core/card-art';
 import { factionColor } from '../factions';
 import { contentLocale } from '../../../core/locale';
@@ -63,7 +63,7 @@ export class ArCardArt implements OnDestroy {
  */
 const DWELL_MS = 150;
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ArViewportLoader {
   private readonly callbacks = new Map<Element, () => void>();
   private readonly timers = new Map<Element, ReturnType<typeof setTimeout>>();

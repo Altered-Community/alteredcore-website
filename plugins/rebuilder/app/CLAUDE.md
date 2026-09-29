@@ -24,8 +24,12 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   - Signals : `input()`, `output()`, `model()` pour le two-way binding, `computed()` pour l'état dérivé,
     `linkedSignal()` pour un état dérivé qui reste modifiable ; `set()` / `update()`. Observables dans les
     templates via le pipe `async`.
-  - `inject()` plutôt que l'injection par constructeur. Nouveau service singleton : `@Service` (Angular 22) plutôt
-    que `@Injectable({ providedIn: 'root' })`.
+  - Services : `@Service()` (Angular 22), jamais `@Injectable({ providedIn: 'root' })` (ESLint
+    `prefer-service-decorator`). Service fourni explicitement (`providers` d'un composant, `useClass`) :
+    `@Service({ autoProvided: false })`. Classe abstraite avec implémentation par défaut :
+    `@Service({ factory: () => inject(Impl) })`. `@Injectable` seulement quand la classe de base prend ses
+    dépendances par constructeur (erreur NG2028, ex. `ShadowStylesHost`), avec un commentaire.
+  - Dépendances par `inject()`, jamais par le constructeur (ESLint `prefer-inject`).
   - Pas de `@HostBinding` / `@HostListener` : objet `host` du décorateur. Pas de `ngClass` / `ngStyle` : bindings
     `[class.x]` / `[style.x]`. Pas de `CommonModule` : importer seulement les directives et pipes utilisés.
   - Control flow natif (`@if`, `@for`, `@switch`), templates simples, routes chargées à la demande

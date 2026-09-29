@@ -1,12 +1,12 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { EMBED_MOUNT } from './host';
 
 /**
  * CDK overlays (dialogs, sheets, menus) render in the plugin's shadow root instead of
  * `document.body`: the plugin styles apply to them and the site's Bootstrap does not.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class ShadowOverlayContainer extends OverlayContainer {
   private readonly mount = inject(EMBED_MOUNT);
 

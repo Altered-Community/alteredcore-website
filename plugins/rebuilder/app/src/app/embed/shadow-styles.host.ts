@@ -6,7 +6,8 @@ import { EMBED_MOUNT } from './host';
  * Keeps every component style inside the plugin's shadow root. Angular already targets the
  * shadow root for the app root, but components created before they are attached (CDK dialog
  * panes) resolve to `document.head`, which would then receive a copy of all the styles.
- * Private Angular API (`ɵSharedStylesHost`), checked by the embed e2e test.
+ * Private Angular API (`ɵSharedStylesHost`), checked by the embed e2e test. `@Injectable` rather than
+ * `@Service`: the base class takes its dependencies through its constructor.
  */
 @Injectable()
 export class ShadowStylesHost extends SharedStylesHost {

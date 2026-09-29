@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Service, InjectionToken, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, Subscription, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -42,7 +42,7 @@ export const DECK_CREATE_TARGET = new InjectionToken<'guest' | 'account'>('DECK_
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
  * with a token, changes are PATCHed to decks.alteredcore.org.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
   private readonly cardsApi = inject(CardsApiService);

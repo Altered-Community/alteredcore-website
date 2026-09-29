@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { Service, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
@@ -53,7 +53,7 @@ function emptyState(source: CardSource): SearchState {
  * Infinite card search. `wantMore` is driven by an IntersectionObserver sentinel placed ~3 viewports
  * ahead; while it stays true, pages are chained back-to-back so a fast flick never shows an empty tail.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class CardSearchStore {
   private readonly api = inject(CardsApiService);
 

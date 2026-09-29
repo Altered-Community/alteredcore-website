@@ -1,4 +1,4 @@
-import { Component, Injectable, InjectionToken, inject } from '@angular/core';
+import { Component, Service, InjectionToken, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
 import { ArIcon } from '../../../ui/icon';
@@ -51,7 +51,7 @@ export class SiteMenu {
 /** False when the app is embedded in a site that draws its own navigation (no ☰ button). */
 export const SITE_MENU_ENABLED = new InjectionToken<boolean>('SITE_MENU_ENABLED', { factory: () => true });
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SiteMenuService {
   private readonly overlay = inject(ArOverlayService);
   private readonly router = inject(Router);

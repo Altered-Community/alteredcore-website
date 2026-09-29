@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 
@@ -17,7 +17,7 @@ function countsReplaceAsPush(info: unknown): boolean {
  * Counts the history entries the app pushed since it booted, so that « Retour » can go back
  * within the app, or fall back to a parent route on a deep link. Inject it at startup (`App`).
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ArNavigationHistory {
   private readonly router = inject(Router);
   private depth = 0;

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import {
   BaseRouteReuseStrategy,
   destroyDetachedRouteHandle,
@@ -12,7 +12,7 @@ import {
  * onto that short skeleton list and the viewport sits on the gray placeholders.
  * Same tab (`?tab=`) reattaches the stored list; a different tab starts clean.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DecksListReuseStrategy extends BaseRouteReuseStrategy {
   private stored: { key: string; handle: DetachedRouteHandle } | null = null;
 

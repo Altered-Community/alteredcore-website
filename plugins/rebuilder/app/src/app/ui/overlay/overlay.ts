@@ -1,6 +1,6 @@
 import { Dialog, DIALOG_DATA } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
-import { Injectable, InjectionToken, Injector, inject, signal, type Type } from '@angular/core';
+import { Service, InjectionToken, Injector, inject, signal, type Type } from '@angular/core';
 import { NavigationStart, Router } from '@angular/router';
 import { Subject, filter, type Observable } from 'rxjs';
 import { ArBreakpointService } from '../layout.services';
@@ -97,7 +97,7 @@ export const AR_OVERLAY_CONTENT = new InjectionToken<{ ref: ArOverlayRef; mode: 
  * Responsive overlay: CDK Dialog as a centered window (≥ 768 px) or, below that, a bottom sheet,
  * a left drawer, or a full screen page. The same content component is used in every presentation.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ArOverlayService {
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);

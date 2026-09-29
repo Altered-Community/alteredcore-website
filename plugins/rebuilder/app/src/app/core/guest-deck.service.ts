@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Service, computed, signal } from '@angular/core';
 import type { Deck, DeckCardLine, DeckFormat, DeckHero } from './models';
 
 export const GUEST_DECKS_KEY = 'arb.guest-decks';
@@ -12,7 +12,7 @@ export interface GuestDeckInput {
 }
 
 /** Logged-out decks, persisted in localStorage (same idea as the PHP site's guest mode). */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class GuestDeckService {
   private readonly decksSig = signal<Deck[]>(this.read());
   readonly decks = computed(() => this.decksSig());
