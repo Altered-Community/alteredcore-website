@@ -1,7 +1,7 @@
 @if (bp.compact()) {
-  <ar-app-bar appearance="compact" [title]="view() === 'deck' ? t('title.myDeck') : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
+  <ar-app-bar appearance="compact" [title]="view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
     <ar-back-button leading fallback="/decks" />
-    <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? t('editor.account') : t('editor.signIn')">
+    <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? labels.account : labels.signIn">
       @if (auth.isLoggedIn()) {
         <ar-avatar [size]="32" [name]="auth.username() || '?'" />
       } @else {
@@ -14,7 +14,7 @@
 @if (deck.error(); as err) {
   <div class="page state">
     <p>{{ err }}</p>
-    <a arButton variant="secondary" routerLink="/decks">{{ t('editor.backToDecks') }}</a>
+    <a arButton variant="secondary" routerLink="/decks" i18n="@@editor.backToDecks">Retour à mes decks</a>
   </div>
 } @else {
   <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
@@ -22,12 +22,12 @@
       @if (!bp.compact()) {
         <div class="head">
           <div class="title-block">
-            <ar-breadcrumb [items]="[{ label: t('editor.myDecks'), route: '/decks' }, { label: t('editor.edit') }]" />
+            <ar-breadcrumb [items]="labels.breadcrumb" />
             <ar-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
           </div>
           <ar-segmented
             size="lg"
-            [ariaLabel]="t('editor.displayMode')"
+            ariaLabel="Mode d’affichage" i18n-ariaLabel="@@editor.displayMode"
             [options]="modeOptions"
             [value]="effectiveView() === 'apercu' ? 'apercu' : 'search'"
             (valueChange)="setMode($event)"
@@ -37,8 +37,8 @@
 
       @if (readonlyServerDeck()) {
         <div class="banner" role="status">
-          <span>{{ t('editor.readonly') }}</span>
-          <button arButton variant="secondary" size="sm" icon="duplicate" (click)="duplicateToGuest()">{{ t('editor.duplicate') }}</button>
+          <span i18n="@@editor.readonly">Ce deck appartient à un compte : il est en lecture seule sans connexion.</span>
+          <button arButton variant="secondary" size="sm" icon="duplicate" (click)="duplicateToGuest()" i18n="@@editor.duplicate">Dupliquer en local</button>
         </div>
       }
 

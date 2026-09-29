@@ -1,6 +1,5 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
-import { t } from '../../../core/i18n';
 import { ArButton } from '../../../ui/buttons';
 import { ArInput, ArRadioCard, ArSegmented } from '../../../ui/fields';
 import { ArBreakpointService } from '../../../ui/layout.services';
@@ -15,8 +14,8 @@ export type { NewDeckResult } from '../new-deck.form';
 const NARROW_HEROES_COLUMN = 500;
 
 export const VISIBILITY_OPTIONS = [
-  { value: false, label: t('newDeck.private'), icon: 'lock' as const },
-  { value: true, label: t('newDeck.public'), icon: 'eye' as const },
+  { value: false, label: $localize`:@@newDeck.private:Privé`, icon: 'lock' as const },
+  { value: true, label: $localize`:@@newDeck.public:Public`, icon: 'eye' as const },
 ];
 
 /**
@@ -38,7 +37,6 @@ export class NewDeckOverlay {
   protected readonly formats = DECK_FORMATS;
   protected readonly bga = BGA_LABEL;
   protected readonly visibility = VISIBILITY_OPTIONS;
-  protected readonly t = t;
   private readonly load = injectHeroes();
   protected readonly heroes = this.load.heroes;
   protected readonly error = this.load.error;
@@ -80,7 +78,7 @@ export class NewDeckOverlay {
 
 export function openNewDeck(overlay: ArOverlayService): ArOverlayRef<NewDeckResult> {
   return overlay.open<NewDeckOverlay, NewDeckResult>(NewDeckOverlay, {
-    title: t('title.newDeck'),
+    title: $localize`:@@title.newDeck:Nouveau deck`,
     width: 1080,
     height: 'fill',
     compact: 'fullscreen',

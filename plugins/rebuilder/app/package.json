@@ -18,8 +18,10 @@
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "e2e": "playwright test",
-    "lint": "ng lint",
-    "build:embed": "ng build --configuration embed && node scripts/embed-manifest.mjs"
+    "lint": "ng lint && npm run i18n:check",
+    "build:embed": "ng build --configuration embed && node scripts/embed-manifest.mjs",
+    "i18n:extract": "ng extract-i18n",
+    "i18n:check": "ng extract-i18n && node scripts/check-i18n.mjs"
   },
   "packageManager": "npm@10.9.8",
   "dependencies": {
@@ -41,6 +43,7 @@
     "@angular/build": "^22.1.8",
     "@angular/cli": "^22.1.8",
     "@angular/compiler-cli": "^22.1.0",
+    "@angular/localize": "^22.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "angular-eslint": "22.5.0",

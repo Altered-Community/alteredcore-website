@@ -12,7 +12,7 @@
     (openSettings)="openSettings.emit()"
   />
 </div>
-<ar-collapsible class="stats" [title]="t('panel.stats')" [bare]="true" [(open)]="statsOpen">
+<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
   <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ar-collapsible>
 <div class="rows">
@@ -31,6 +31,6 @@
       }
     </div>
   } @empty {
-    <p class="empty">{{ t('panel.empty') }}</p>
+    <p class="empty" i18n="@@panel.empty">Ajoutez des cartes depuis la recherche avec le bouton « + ».</p>
   }
 </div>

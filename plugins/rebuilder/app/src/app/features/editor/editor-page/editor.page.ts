@@ -4,7 +4,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
-import { t } from '../../../core/i18n';
 import { ArButton } from '../../../ui/buttons';
 import { ArEditableTitle, ArSegmented } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
@@ -55,22 +54,27 @@ export class EditorPage {
   protected readonly view = toSignal(this.route.data.pipe(map((d) => (d['view'] as EditorView) ?? 'search')), {
     initialValue: 'search' as EditorView,
   });
-  protected readonly t = t;
+  protected readonly labels = {
+    myDeck: $localize`:@@title.myDeck:Mon deck`,
+    account: $localize`:@@editor.account:Compte`,
+    signIn: $localize`:@@editor.signIn:Se connecter`,
+    breadcrumb: [{ label: $localize`:@@editor.myDecks:Mes decks`, route: '/decks' }, { label: $localize`:@@editor.edit:Modifier` }],
+  };
   protected readonly modeOptions = [
-    { value: 'search' as const, label: t('editor.search'), icon: 'search' as const },
-    { value: 'apercu' as const, label: t('editor.viewDeck'), icon: 'eye' as const },
+    { value: 'search' as const, label: $localize`:@@editor.search:Recherche`, icon: 'search' as const },
+    { value: 'apercu' as const, label: $localize`:@@editor.viewDeck:Voir le deck`, icon: 'eye' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? 'Public' : 'Privé'}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
   protected readonly navItems = computed<ArBottomNavItem[]>(() => [
-    { route: this.base(), icon: 'search', label: t('editor.search') },
-    { route: `${this.base()}/apercu`, icon: 'eye', label: t('editor.preview') },
+    { route: this.base(), icon: 'search', label: $localize`:@@editor.search:Recherche` },
+    { route: `${this.base()}/apercu`, icon: 'eye', label: $localize`:@@editor.preview:Aperçu` },
     {
       route: `${this.base()}/deck`,
       icon: 'layers',
-      label: t('editor.deck'),
+      label: $localize`:@@editor.deck:Deck`,
       badge: this.deck.total(),
       badgeTone: this.deck.status().legal ? 'success' : 'dark',
     },

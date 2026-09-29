@@ -1,6 +1,5 @@
 import { inject } from '@angular/core';
 import { Router, type CanActivateFn, type Routes } from '@angular/router';
-import { t } from '../core/i18n';
 import { ALTERED_CORE } from './host';
 
 const editor = () => import('../features/editor/editor-page/editor.page').then((m) => m.EditorPage);
@@ -31,22 +30,22 @@ export const embedRoutes: Routes = [
   },
   {
     path: 'decks',
-    title: t('title.decks'),
+    title: $localize`:@@title.decks:Decks`,
     data: { nav: NAV_DECKS },
     loadComponent: () => import('../features/decks/decks-page/decks.page').then((m) => m.DecksPage),
   },
   {
     path: 'decks/new',
-    title: t('title.newDeck'),
+    title: $localize`:@@title.newDeck:Nouveau deck`,
     data: { nav: NAV_DECKS },
     loadComponent: () => import('../features/decks/new-deck-page/new-deck.page').then((m) => m.NewDeckPage),
   },
-  { path: 'decks/:id/edit', title: t('title.editor'), loadComponent: editor, data: { view: 'search', nav: NAV_DECKS } },
-  { path: 'decks/:id/edit/apercu', title: t('title.preview'), loadComponent: editor, data: { view: 'apercu', nav: NAV_DECKS } },
-  { path: 'decks/:id/edit/deck', title: t('title.myDeck'), loadComponent: editor, data: { view: 'deck', nav: NAV_DECKS } },
-  { path: 'decks/:id/deck', title: t('title.decklist'), loadComponent: deck, data: { tab: 'decklist', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit', title: $localize`:@@title.editor:Modifier le deck`, loadComponent: editor, data: { view: 'search', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit/apercu', title: $localize`:@@title.preview:Aperçu du deck`, loadComponent: editor, data: { view: 'apercu', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit/deck', title: $localize`:@@title.myDeck:Mon deck`, loadComponent: editor, data: { view: 'deck', nav: NAV_DECKS } },
+  { path: 'decks/:id/deck', title: $localize`:@@title.decklist:Deck — Decklist`, loadComponent: deck, data: { tab: 'decklist', nav: NAV_DECKS } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
-  { path: 'decks/:id', title: t('title.deck'), loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },
+  { path: 'decks/:id', title: $localize`:@@title.deck:Deck`, loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },
   { path: 'login', canActivate: [signIn], children: [] },
   { path: '**', redirectTo: 'decks' },
 ];
