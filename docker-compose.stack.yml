@@ -77,7 +77,7 @@ services:
       target: frankenphp_prod
     environment:
       APP_ENV: prod
-      APP_SECRET: c869928bd9fb7963519fc0d4bdb1501d80707aa1f4947d583e4e6d0cd06bbcb8
+      APP_SECRET: stack-dev-app-secret-not-secret
       SERVER_NAME: ":80"
       DEFAULT_URI: http://localhost:8001
       DATABASE_URL: postgresql://decks:decks@decks-db:5432/altered_deck?serverVersion=16&charset=utf8

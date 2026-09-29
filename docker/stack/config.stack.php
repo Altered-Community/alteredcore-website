@@ -15,7 +15,7 @@ define('KC_REALM',         'players');
 define('KC_CLIENT_ID',     'main-site');
 define('KC_CLIENT_SECRET', 'dev-main-site-secret');
 define('KC_SCOPES',        'openid profile email');
-define('ENCRYPTION_KEY',   '4f3c2a1b0d9e8f70615243342536271809a1b2c3d4e5f60718293a4b5c6d7e8f');
+define('ENCRYPTION_KEY',   'stack-dev-encryption-key-not-secret');
 
 define('SHOW_NEWSLETTER', false);
 define('COLLECTION_MODE', true);
