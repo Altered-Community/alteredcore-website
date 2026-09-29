@@ -1,0 +1,26 @@
+<div class="ar-overlay-body">
+  <section>
+    <h3 i18n="@@deck.legality.format">Format du deck</h3>
+    <p>{{ format }}</p>
+  </section>
+  @if (rules.length) {
+    <section>
+      <h3 i18n="@@deck.legality.rules">Erreurs de légalité</h3>
+      <ul>
+        @for (r of rules; track r) {
+          <li>{{ r }}</li>
+        }
+      </ul>
+    </section>
+  }
+  @if (errors.length) {
+    <section>
+      <h3 i18n="@@deck.legality.errors">Erreurs de format</h3>
+      <ul>
+        @for (e of errors; track $index) {
+          <li>{{ e }}</li>
+        }
+      </ul>
+    </section>
+  }
+</div>

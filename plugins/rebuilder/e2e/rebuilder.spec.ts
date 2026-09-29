@@ -391,6 +391,120 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · deck page', () => {
+  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why). */
+  async function createServerDeck(page: Page, name: string): Promise<string> {
+    return page.evaluate(async (deckName) => {
+      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
+        body: JSON.stringify({
+          name: deckName,
+          description: 'Première ligne\nDeuxième ligne',
+          format: 'standard',
+          isPublic: false,
+          deckCards: [
+            { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
+            { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
+            { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
+            { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
+          ],
+        }),
+      });
+      if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
+      return ((await res.json()) as { id: string }).id;
+    }, name);
+  }
+
+  /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
+  async function openView(page: Page, compact: boolean, tab: string, nav: string): Promise<void> {
+    if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
+    else await page.getByRole('tab', { name: tab }).click();
+  }
+
+  test('shows the API legality, description, stats and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
+    // navigator.share is recorded, so the shared link can be checked on every device.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (data: ShareData) => void ((window as unknown as { __shared: ShareData }).__shared = data),
+      });
+    });
+    const name = `E2E page ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(`${DECKS}/${id}`);
+    const deckPage = page.locator('app-deck-page');
+    await expect(deckPage).toContainText(name);
+
+    // Legality from the decks API, with its details.
+    await deckPage.getByRole('button', { name: 'Non légal : voir le détail' }).first().click();
+    const legality = page.getByRole('dialog', { name: 'Légalité du deck' });
+    await expect(legality).toContainText('Standard');
+    await expect(legality).toContainText('Nombre de cartes invalide');
+    await expect(legality).toContainText('Deck must contain between 39 and 59 cards');
+    await evidence(page, testInfo, '20-deck-legality');
+    await page.keyboard.press('Escape');
+    await expect(legality).toBeHidden();
+
+    await openView(page, compact, 'Description', 'Infos');
+    await expect(page).toHaveURL(new RegExp(`/decks/${id}/description$`));
+    await expect(deckPage).toContainText('Première ligne');
+    await expect(deckPage).toContainText('Deuxième ligne');
+    await evidence(page, testInfo, '21-deck-description');
+
+    await openView(page, compact, 'Stats', 'Stats');
+    await expect(page).toHaveURL(new RegExp(`/decks/${id}/stats$`));
+    await expect(deckPage.locator('app-deck-stats-view')).toContainText('Types de cartes');
+    await expect(deckPage.locator('app-deck-stats-view')).toContainText('Puissances moyennes');
+    await evidence(page, testInfo, '22-deck-stats');
+
+    await openView(page, compact, 'Main de départ', 'Main');
+    await expect(page).toHaveURL(new RegExp(`/decks/${id}/main$`));
+    const hand = deckPage.getByRole('list', { name: 'Main de départ' });
+    await expect(hand.locator('ar-card-tile')).toHaveCount(6);
+    await expect(deckPage).toContainText('3 cartes dans le deck');
+    await deckPage.getByRole('button', { name: 'Piocher une carte' }).click();
+    await expect(hand.locator('ar-card-tile')).toHaveCount(7);
+    await evidence(page, testInfo, '23-deck-test-hand');
+
+    // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
+    await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared?.url)).toBe(`${baseURL}${DECKS}/${id}`);
+
+    // Duplicate: named copy, private deck of the account.
+    if (compact) {
+      await page.getByRole('button', { name: /Plus d’actions/ }).click();
+      await page.getByRole('menuitem', { name: 'Dupliquer' }).click();
+    } else {
+      await deckPage.getByRole('button', { name: 'Dupliquer', exact: true }).click();
+    }
+    const dialog = page.getByRole('dialog', { name: 'Dupliquer le deck' });
+    const field = dialog.getByRole('textbox', { name: 'Nom du nouveau deck' });
+    await expect(field).toHaveValue(`${name} (copie)`);
+    await field.fill(`${name} bis`);
+    await evidence(page, testInfo, '24-deck-duplicate');
+    const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
+    await dialog.getByRole('button', { name: 'Dupliquer', exact: true }).click();
+    const res = await created;
+    expect(res.status()).toBe(201);
+    const copy = (await res.json()) as { id: string; isPublic: boolean };
+    expect(copy.isPublic).toBe(false);
+    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${copy.id}$`));
+    await expect(deckPage).toContainText(`${name} bis`);
+    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
+    await page.goto(DECKS);
+    await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ar-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
+  });
+
+  test('tells an unknown deck apart', async ({ page }, testInfo) => {
+    await page.goto(`${DECKS}/00000000-0000-0000-0000-000000000000?lang=fr`);
+    await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
+    await evidence(page, testInfo, '25-deck-not-found');
+  });
+});
+
 test.describe('ReBuilder in the shell · guest', () => {
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {
     await page.goto(`${NEW_DECK}?lang=fr`);

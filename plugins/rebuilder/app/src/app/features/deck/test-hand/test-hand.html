@@ -1,0 +1,21 @@
+<div class="toolbar">
+  <button arButton icon="rotate" (click)="newHand()" [disabled]="!lines().length" i18n="@@deck.hand.new">Nouvelle main</button>
+  <button arButton variant="secondary" icon="plus" (click)="draw()" [disabled]="!remaining()" i18n="@@deck.hand.draw">Piocher une carte</button>
+  <span class="left" i18n="@@deck.hand.remaining">{remaining(), plural, =0 {Deck vide} =1 {1 carte dans le deck} other {{{ remaining() }} cartes dans le deck}}</span>
+</div>
+
+@if (hand().length) {
+  <p class="summary" aria-live="polite">
+    <span i18n="@@deck.hand.characters">Personnages <strong>{{ summary().characters }}</strong></span>
+    <span i18n="@@deck.hand.spells">Sorts <strong>{{ summary().spells }}</strong></span>
+    <span i18n="@@deck.hand.permanents">Permanents <strong>{{ summary().permanents }}</strong></span>
+    <span i18n="@@deck.hand.averageCost">Coût moyen <strong>{{ averageCost() }}</strong></span>
+  </p>
+  <ul class="grid" aria-label="Main de départ" i18n-aria-label="@@deck.hand.title">
+    @for (c of hand(); track c.id) {
+      <li><ar-card-tile [card]="c.card" [plain]="true" [eager]="true" /></li>
+    }
+  </ul>
+} @else {
+  <p class="empty" i18n="@@deck.hand.empty">Aucune carte à piocher.</p>
+}

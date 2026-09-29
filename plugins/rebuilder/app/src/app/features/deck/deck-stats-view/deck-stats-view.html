@@ -1,0 +1,12 @@
+<ar-card>
+  <ar-cost-chart [values]="stats().main" label="Courbe coût main" i18n-label="@@deck.stats.mainCurve" />
+</ar-card>
+<ar-card>
+  <ar-cost-chart [values]="stats().reserve" tone="reserve" label="Courbe coût réserve" i18n-label="@@deck.stats.reserveCurve" />
+</ar-card>
+<ar-card>
+  <ar-stat-bars [rows]="types()" label="Types de cartes" i18n-label="@@deck.stats.types" />
+</ar-card>
+<ar-card>
+  <ar-stat-bars [rows]="powers()" label="Puissances moyennes" i18n-label="@@deck.stats.powers" />
+</ar-card>

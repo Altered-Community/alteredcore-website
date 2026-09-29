@@ -107,7 +107,7 @@ export class EditorPage {
   }
 
   protected duplicateToGuest(): void {
-    const id = this.deck.duplicate('');
+    const id = this.deck.duplicateToGuest(this.deck.name());
     void this.router.navigate(['/decks', id, 'edit']);
   }
 }

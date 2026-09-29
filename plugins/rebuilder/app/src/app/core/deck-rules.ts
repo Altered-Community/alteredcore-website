@@ -29,7 +29,22 @@ export interface DeckStatus {
   exalted: number;
   legal: boolean;
   issues: string[];
+  /** Failed rules, keyed like the decks API `legalityDetail` (see `deck-legality.ts`). */
+  rules: LegalityRule[];
 }
+
+/** Keys of the decks API `legalityDetail` (`false` = rule failed). */
+export type LegalityRule =
+  | 'hero'
+  | 'deckSize'
+  | 'faction'
+  | 'sets'
+  | 'bannedCards'
+  | 'suspendedCards'
+  | 'copies'
+  | 'uniqueQuantity'
+  | 'rareQuantity'
+  | 'exaltedQuantity';
 
 export function rarityOf(card: Card): 'COMMON' | 'RARE' | 'UNIQUE' | 'EXALTED' {
   const r = (card.rarity?.reference || rarityFromReference(card.reference)).toUpperCase();
@@ -45,7 +60,7 @@ function nameKey(card: Card): string {
 }
 
 export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 'standard'): DeckStatus {
-  const rules = formatInfo(format);
+  const limits = formatInfo(format);
   const sandbox = format === 'sandbox';
   let total = 0;
   let characters = 0;
@@ -54,6 +69,7 @@ export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 's
   let unique = 0;
   let exalted = 0;
   const issues: string[] = [];
+  const rules = new Set<LegalityRule>();
   const byName = new Map<string, number>();
   const byNameRarity = new Map<string, number>();
 
@@ -67,7 +83,10 @@ export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 's
     if (r === 'RARE') rare += qty;
     if (r === 'UNIQUE') unique += qty;
     if (r === 'EXALTED') exalted += qty;
-    if (r === 'UNIQUE' && qty > 1) issues.push(`${line.card.reference}: ${qty}/1`);
+    if (r === 'UNIQUE' && qty > 1) {
+      issues.push(`${line.card.reference}: ${qty}/1`);
+      rules.add('copies');
+    }
     const key = nameKey(line.card);
     byName.set(key, (byName.get(key) ?? 0) + qty);
     byNameRarity.set(`${key}|${r}`, (byNameRarity.get(`${key}|${r}`) ?? 0) + qty);
@@ -75,23 +94,39 @@ export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 's
 
   if (!sandbox) {
     for (const [name, qty] of byName) {
-      if (qty > COPY_MAX) issues.push(`copies ${name}: ${qty}/${COPY_MAX}`);
+      if (qty > COPY_MAX) {
+        issues.push(`copies ${name}: ${qty}/${COPY_MAX}`);
+        rules.add('copies');
+      }
     }
-    if (rules.copyMax === 1) {
+    if (limits.copyMax === 1) {
       for (const [key, qty] of byNameRarity) {
-        if (qty > 1) issues.push(`singleton ${key}: ${qty}/1`);
+        if (qty > 1) {
+          issues.push(`singleton ${key}: ${qty}/1`);
+          rules.add('copies');
+        }
       }
     }
   }
 
-  if (total < rules.min || total > rules.max) {
-    issues.push(`size ${total}/${rules.min}-${rules.max}`);
+  if (total < limits.min || total > limits.max) {
+    issues.push(`size ${total}/${limits.min}-${limits.max}`);
+    rules.add('deckSize');
   }
-  if (!sandbox && rules.copyMax > 1 && rare > RARE_MAX) issues.push(`rare ${rare}/${RARE_MAX}`);
-  if (!sandbox && unique > rules.uniqueMax) issues.push(`unique ${unique}/${rules.uniqueMax}`);
-  if (!sandbox && rules.copyMax > 1 && exalted > EXALTED_MAX) issues.push(`exalted ${exalted}/${EXALTED_MAX}`);
+  if (!sandbox && limits.copyMax > 1 && rare > RARE_MAX) {
+    issues.push(`rare ${rare}/${RARE_MAX}`);
+    rules.add('rareQuantity');
+  }
+  if (!sandbox && unique > limits.uniqueMax) {
+    issues.push(`unique ${unique}/${limits.uniqueMax}`);
+    rules.add('uniqueQuantity');
+  }
+  if (!sandbox && limits.copyMax > 1 && exalted > EXALTED_MAX) {
+    issues.push(`exalted ${exalted}/${EXALTED_MAX}`);
+    rules.add('exaltedQuantity');
+  }
 
-  return { total, characters, common, rare, unique, exalted, legal: issues.length === 0, issues };
+  return { total, characters, common, rare, unique, exalted, legal: issues.length === 0, issues, rules: [...rules] };
 }
 
 /** Max copies of one reference the editor lets the user add. */

@@ -13,4 +13,5 @@ export * from './factions';
 export * from './hero-selector/hero-selector';
 export * from './hero-tile/hero-tile';
 export * from './scroll';
+export * from './stat-bars/stat-bars';
 export * from './unique-card/unique-card';

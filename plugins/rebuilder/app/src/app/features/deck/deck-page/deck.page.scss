@@ -15,6 +15,67 @@
   gap: var(--ar-space-3);
 }
 
+.state p {
+  margin: 0;
+}
+
+.state-icon {
+  color: var(--ar-color-text-muted);
+}
+
+.state-title {
+  font-weight: 600;
+}
+
+.state-hint {
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+}
+
+.state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ar-space-2);
+}
+
+.legal-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ar-color-text-muted);
+  cursor: pointer;
+  border-radius: var(--ar-radius-pill);
+}
+
+.legal-details:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}
+
+.description {
+  background: var(--ar-color-surface);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-card);
+  padding: var(--ar-space-4);
+}
+
+.description-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ar-color-text-2);
+}
+
+.description .empty {
+  margin: 0;
+}
+
 .page {
   display: flex;
   gap: var(--ar-space-6);

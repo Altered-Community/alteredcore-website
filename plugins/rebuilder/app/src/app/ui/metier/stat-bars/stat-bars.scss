@@ -1,0 +1,65 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-2);
+  min-width: 0;
+}
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-2);
+}
+li {
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: var(--ar-space-2-5);
+  font-size: 13px;
+  --bar: var(--ar-color-chart-main);
+}
+li.tone-foret {
+  --bar: var(--ar-terrain-foret);
+}
+li.tone-montagne {
+  --bar: var(--ar-terrain-montagne);
+}
+li.tone-ocean {
+  --bar: var(--ar-terrain-ocean);
+}
+.name {
+  color: var(--ar-color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+img.name {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.track {
+  height: 8px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-track);
+  overflow: hidden;
+}
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bar);
+}
+strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

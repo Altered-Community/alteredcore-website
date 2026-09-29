@@ -1,0 +1,25 @@
+.ar-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-4);
+  padding-bottom: var(--ar-space-5);
+}
+h3 {
+  margin: 0 0 var(--ar-space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+p,
+ul {
+  margin: 0;
+  font-size: 14px;
+}
+ul {
+  padding-left: var(--ar-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-1);
+}

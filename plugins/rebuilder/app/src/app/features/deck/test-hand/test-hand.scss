@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ar-space-2);
+}
+.left {
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+}
+.summary {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ar-space-2) var(--ar-space-4);
+  font-size: 13px;
+  color: var(--ar-color-text-2);
+}
+.summary strong {
+  color: var(--ar-color-text);
+}
+.grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  /* 3 columns on a phone, 150 px cards and up on larger screens. */
+  grid-template-columns: repeat(auto-fill, minmax(clamp(100px, 28vw, 150px), 1fr));
+  gap: var(--ar-space-3);
+}
+.empty {
+  color: var(--ar-color-text-muted);
+}

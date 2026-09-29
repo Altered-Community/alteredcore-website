@@ -1,9 +1,11 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable, Subscription, of } from 'rxjs';
+import { Observable, Subscription, of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
+import { legalityFromApi, legalityFromStatus, type DeckLegality } from './deck-legality';
 import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
@@ -29,6 +31,9 @@ export interface NewDeckInput {
 
 const SAVE_DELAY_MS = 400;
 
+/** Why a deck could not be opened: private (401/403), unknown id (404), unreachable API, other HTTP error. */
+export type DeckLoadError = 'private' | 'notFound' | 'network' | 'server';
+
 /**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
  * with a token, changes are PATCHed to decks.alteredcore.org.
@@ -53,10 +58,14 @@ export class DeckStore {
   readonly loading = computed(() => this.serverDeck.isLoading());
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+  /** Set with `error` when the deck could not be opened. */
+  readonly loadError = signal<DeckLoadError | null>(null);
   readonly dirty = signal(false);
 
   readonly deckId = signal<string | null>(null);
   readonly name = signal('');
+  readonly description = signal('');
+  readonly isDraft = signal<boolean | null>(null);
   readonly format = signal<DeckFormat>('standard');
   readonly isPublic = signal(false);
   readonly hero = signal<DeckHero | null>(null);
@@ -66,6 +75,10 @@ export class DeckStore {
   readonly lines = signal<HydratedLine[]>([]);
 
   readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format()));
+  /** `legal` / `legalityDetail` / `formatErrors` of the decks API, until the deck is changed here. */
+  private readonly apiLegality = signal<DeckLegality | null>(null);
+  /** The decks API's verdict for a server deck; the editor's own checks for a guest or edited deck. */
+  readonly legality = computed<DeckLegality>(() => this.apiLegality() ?? legalityFromStatus(this.status(), !!this.hero()));
   readonly groups = computed(() => groupLines(this.lines()));
   readonly stats = computed(() => deckStats(this.lines()));
   readonly total = computed(() => this.status().total);
@@ -103,12 +116,12 @@ export class DeckStore {
     effect(() => {
       const err = this.serverDeck.error();
       if (err) {
-        const status = (err as { status?: number }).status;
-        untracked(() =>
-          this.error.set(
-            status === 401 || status === 403 ? $localize`:@@core.deckStore.private:Ce deck est privé : connexion requise.` : $localize`:@@core.deckStore.loadFailed:Impossible de charger le deck.`,
-          ),
-        );
+        const status = (err as { status?: number }).status ?? 0;
+        const kind: DeckLoadError = status === 401 || status === 403 ? 'private' : status === 404 ? 'notFound' : status === 0 ? 'network' : 'server';
+        untracked(() => {
+          this.loadError.set(kind);
+          this.error.set(loadErrorMessage(kind, status));
+        });
         return;
       }
       if (!this.serverDeck.hasValue()) return;
@@ -174,12 +187,14 @@ export class DeckStore {
     if (this.serverId() === id && this.loading()) return;
     this.flush();
     this.error.set(null);
+    this.loadError.set(null);
     if (GuestDeckService.isGuestId(id)) {
       this.serverId.set(null);
       const guest = this.guests.get(id);
       if (!guest) {
         this.reset();
         this.deckId.set(id);
+        this.loadError.set('notFound');
         this.error.set($localize`:@@core.deckStore.notOnDevice:Deck introuvable sur cet appareil.`);
         return;
       }
@@ -229,16 +244,40 @@ export class DeckStore {
     this.touch();
   }
 
-  /** Copies the current deck into a new guest deck and returns its id. */
-  duplicate(nameSuffix = ' (copie)'): string {
-    const copy = this.guests.create({
-      name: `${this.name() || 'Deck'}${nameSuffix}`,
+  /** Default name of a copy: « <name> (copie) ». */
+  duplicateName(): string {
+    return $localize`:@@core.deckStore.copyName:${this.name() || 'Deck'}:name: (copie)`;
+  }
+
+  /** Copies the open deck into a new private guest deck (this browser) and returns its id. */
+  duplicateToGuest(name: string): string {
+    const description = this.description().trim();
+    return this.guests.create({ name, description, format: this.format(), isPublic: false, hero: this.hero(), deckCards: this.serializeLines() }).id;
+  }
+
+  /**
+   * Copies the open deck, private, and emits the copy's id: on the account when the user is signed
+   * in (like the site's « Dupliquer »), in this browser otherwise. Fails with a displayable message.
+   */
+  duplicate(name: string): Observable<string> {
+    const deckName = name.trim() || this.duplicateName();
+    const description = this.description().trim();
+    if (!this.auth.isLoggedIn()) return of(this.duplicateToGuest(deckName));
+    const body: DeckWrite = {
+      name: deckName,
       format: this.format(),
       isPublic: false,
-      hero: this.hero(),
-      deckCards: this.serializeLines(),
-    });
-    return copy.id;
+      isDraft: this.isDraft() ?? this.format() === 'sandbox',
+      ...(description ? { description } : {}),
+      deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+    };
+    return this.decksApi.create(body).pipe(
+      map((created) => {
+        this.createdIds.update((ids) => new Set([...ids, created.id]));
+        return created.id;
+      }),
+      catchError((err: unknown) => throwError(() => new Error(duplicateErrorMessage(err)))),
+    );
   }
 
   delete(): Observable<boolean> {
@@ -273,6 +312,9 @@ export class DeckStore {
   reset(): void {
     this.deckId.set(null);
     this.name.set('');
+    this.description.set('');
+    this.isDraft.set(null);
+    this.apiLegality.set(null);
     this.format.set('standard');
     this.isPublic.set(false);
     this.hero.set(null);
@@ -290,6 +332,7 @@ export class DeckStore {
 
   private touch(): void {
     this.dirty.set(true);
+    this.apiLegality.set(null);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
@@ -330,9 +373,10 @@ export class DeckStore {
     };
     this.saving.set(true);
     this.decksApi.patch(id, payload).subscribe({
-      next: () => {
+      next: (saved) => {
         this.saving.set(false);
         this.dirty.set(false);
+        if (this.deckId() === id && !this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
       },
       error: (err: { status?: number }) => {
         this.saving.set(false);
@@ -345,11 +389,14 @@ export class DeckStore {
     const hero = heroOf(deck);
     this.deckId.set(deck.id);
     this.name.set(deck.name || $localize`:@@core.deck.untitled:Sans nom`);
+    this.description.set(deck.description ?? '');
+    this.isDraft.set(typeof deck.isDraft === 'boolean' ? deck.isDraft : null);
     this.format.set((deck.format as DeckFormat) || 'standard');
     this.isPublic.set(!!deck.isPublic);
     this.hero.set(hero);
     this.createdAt.set(deck.createdAt ?? deck.updatedAt ?? null);
     this.isGuest.set(!!deck.guest || GuestDeckService.isGuestId(deck.id));
+    this.apiLegality.set(this.isGuest() ? null : legalityFromApi(deck));
     this.lines.set(
       deckLines(deck)
         .filter((l) => !isHeroLine(l, hero))
@@ -395,6 +442,31 @@ function heroLine(hero: DeckHero) {
     factionCode: hero.faction,
     cardTypeReference: 'HERO',
   };
+}
+
+function loadErrorMessage(kind: DeckLoadError, status: number): string {
+  switch (kind) {
+    case 'private':
+      return $localize`:@@core.deckStore.private:Ce deck est privé : connexion requise.`;
+    case 'notFound':
+      return $localize`:@@core.deckStore.notFound:Deck introuvable.`;
+    case 'network':
+      return $localize`:@@core.deckStore.network:Erreur de connexion.`;
+    case 'server':
+      return $localize`:@@core.deckStore.loadFailedHttp:Impossible de charger le deck (HTTP ${status}:status:).`;
+  }
+}
+
+/** « Impossible de dupliquer ce deck (HTTP n). », then the API's violations or detail, as on the site. */
+function duplicateErrorMessage(err: unknown): string {
+  if (!(err instanceof HttpErrorResponse) || err.status === 0) return $localize`:@@core.deckStore.network:Erreur de connexion.`;
+  const head = $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${err.status}:status:).`;
+  const body = (err.error ?? {}) as { violations?: { propertyPath?: string; message?: string }[]; detail?: string; title?: string };
+  const violations = Array.isArray(body.violations)
+    ? body.violations.map((v) => [v.propertyPath, v.message].filter(Boolean).join(' : ')).filter(Boolean).join('\n')
+    : '';
+  const extra = violations || body.detail || body.title || '';
+  return extra ? `${head}\n${extra}` : head;
 }
 
 export function displayName(card: Card): string {

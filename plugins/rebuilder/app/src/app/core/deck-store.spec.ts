@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, type Observable } from 'rxjs';
+import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckStore } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
@@ -75,8 +76,9 @@ describe('DeckStore (guest mode)', () => {
     store.flush();
     expect(stored()[0]).toMatchObject({ name: 'Nouveau nom', format: 'singleton', isPublic: true });
 
-    const copyId = store.duplicate();
-    expect(stored().find((d) => d.id === copyId)?.name).toBe('Nouveau nom (copie)');
+    let copyId = '';
+    store.duplicate(store.duplicateName()).subscribe((id) => (copyId = id));
+    expect(stored().find((d) => d.id === copyId)).toMatchObject({ name: 'Nouveau nom (copie)', isPublic: false, guest: true });
 
     store.load(deck.id);
     let ok = false;
@@ -204,6 +206,37 @@ describe('DeckStore (guest mode)', () => {
     expect(store.name()).toBe('B');
   });
 
+  it('tells an unknown deck (404) and an unreachable API apart', async () => {
+    store.load('missing');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/missing')).flush({}, { status: 404, statusText: 'Not Found' });
+    await settle();
+    expect(store.loadError()).toBe('notFound');
+    expect(store.error()).toBe('Deck introuvable.');
+    store.load('down');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/down')).flush({}, { status: 502, statusText: 'Bad Gateway' });
+    await settle();
+    expect(store.loadError()).toBe('server');
+    expect(store.error()).toContain('HTTP 502');
+  });
+
+  it('takes the legality of a server deck from the decks API', async () => {
+    store.load('illegal');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/illegal')).flush({
+      id: 'illegal',
+      name: 'Illégal',
+      format: 'standard',
+      legal: false,
+      formatErrors: ['Card ALT_X is banned'],
+      legalityDetail: { global: false, hero: true, bannedCards: false },
+      cards: [{ cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1, name: 'Fen & Crowbar', factionCode: 'LY', cardTypeReference: 'HERO' }],
+    });
+    await settle();
+    expect(store.legality()).toEqual({ state: 'illegal', rules: ['bannedCards'], errors: ['Card ALT_X is banned'] });
+  });
+
   it('refetches the same deck after an error', async () => {
     store.load('flaky');
     TestBed.tick();
@@ -216,6 +249,84 @@ describe('DeckStore (guest mode)', () => {
     await settle();
     expect(store.error()).toBeNull();
     expect(store.name()).toBe('Retour');
+  });
+});
+
+/** Given with `useValue`: `useClass` would go through the factory `AuthSession` declares (a guest). */
+class SignedIn extends AuthSession {
+  readonly token = signal<string | null>(null).asReadonly();
+  readonly isLoggedIn = signal(true).asReadonly();
+  readonly username = signal<string | null>('alice').asReadonly();
+  readonly sessionRestoring = signal(false).asReadonly();
+  readonly sessionNotice = signal<string | null>(null).asReadonly();
+  ensureFresh(): Observable<void> {
+    return of(undefined);
+  }
+  refresh(): Observable<boolean> {
+    return of(false);
+  }
+}
+
+describe('DeckStore (signed in)', () => {
+  let store: DeckStore;
+  let http: HttpTestingController;
+
+  beforeEach(async () => {
+    localStorage.clear();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: new SignedIn() }] });
+    store = TestBed.inject(DeckStore);
+    http = TestBed.inject(HttpTestingController);
+    store.load('source');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/source')).flush({
+      id: 'source',
+      name: 'Kojo Havre',
+      description: 'Aggro',
+      format: 'nuc',
+      isPublic: true,
+      isDraft: false,
+      cards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1, name: 'Fen & Crowbar', factionCode: 'LY', cardTypeReference: 'HERO' },
+        { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2, name: 'Martengale', factionCode: 'LY', cardTypeReference: 'CHARACTER' },
+      ],
+    });
+    // The account list (ownership) is fetched once the deck is applied; answer it before settling.
+    await Promise.resolve();
+    TestBed.tick();
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    await settle();
+  });
+
+  afterEach(() => http.verify());
+
+  it('duplicates the deck on the account, private, under the chosen name', () => {
+    expect(store.duplicateName()).toBe('Kojo Havre (copie)');
+    let copyId = '';
+    store.duplicate('Ma copie').subscribe((id) => (copyId = id));
+    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
+    expect(req.request.body).toEqual({
+      name: 'Ma copie',
+      format: 'nuc',
+      isPublic: false,
+      isDraft: false,
+      description: 'Aggro',
+      deckCards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+        { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2 },
+      ],
+    });
+    req.flush({ id: 'copy', name: 'Ma copie' });
+    expect(copyId).toBe('copy');
+    expect(stored()).toEqual([]);
+  });
+
+  it('reports a refused copy with the API violations', () => {
+    let message = '';
+    store.duplicate('').subscribe({ error: (e: Error) => (message = e.message) });
+    http
+      .expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'))
+      .flush({ violations: [{ propertyPath: 'name', message: 'Trop long' }] }, { status: 422, statusText: 'Unprocessable' });
+    expect(message).toBe('Impossible de dupliquer ce deck (HTTP 422).\nname : Trop long');
   });
 });
 

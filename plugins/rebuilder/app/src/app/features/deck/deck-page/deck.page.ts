@@ -1,7 +1,9 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { LocationStrategy, NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
+import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
@@ -20,13 +22,22 @@ import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
 import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
+import { DeckStatsView } from '../deck-stats-view/deck-stats-view';
+import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
+import { openLegalityDetails } from '../legality-details/legality-details.overlay';
+import { TestHand } from '../test-hand/test-hand';
+import { deckShareUrl } from './share-url';
 
-type DeckTab = 'cartes' | 'decklist';
+type DeckTab = 'cartes' | 'decklist' | 'description' | 'stats' | 'main';
 
-/** Consultation: Cartes / Decklist tabs, read-only, summary aside with actions. */
+/** Path of each tab under `/decks/:id` (`cartes` is the deck page itself). */
+const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'deck', description: 'description', stats: 'stats', main: 'main' };
+
+/** Consultation: Cartes / Decklist / Description / Stats / Main de départ tabs, read-only, summary aside with actions. */
 @Component({
   selector: 'app-deck-page',
   imports: [
+    NgTemplateOutlet,
     ArBackButton,
     RouterLink,
     ArAppBar,
@@ -44,6 +55,8 @@ type DeckTab = 'cartes' | 'decklist';
     DeckPreview,
     DeckListView,
     DecklistTable,
+    DeckStatsView,
+    TestHand,
   ],
   templateUrl: './deck.page.html',
   styleUrl: './deck.page.scss',
@@ -52,6 +65,8 @@ export class DeckPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(ArOverlayService);
+  private readonly locationStrategy = inject(LocationStrategy);
+  protected readonly auth = inject(AuthSession);
   protected readonly deck = inject(DeckStore);
   protected readonly bp = inject(ArBreakpointService);
 
@@ -67,6 +82,9 @@ export class DeckPage {
   protected readonly tabs = [
     { id: 'cartes', label: $localize`:@@deck.page.tabCards:Cartes` },
     { id: 'decklist', label: 'Decklist' },
+    { id: 'description', label: $localize`:@@deck.page.tabDescription:Description` },
+    { id: 'stats', label: 'Stats' },
+    { id: 'main', label: $localize`:@@deck.page.tabHand:Main de départ` },
   ];
   protected readonly groupingOptions = [
     { value: 'type' as const, label: $localize`:@@deck.page.byType:Par type` },
@@ -82,7 +100,8 @@ export class DeckPage {
       : $localize`:@@deck.page.more:Plus d’actions (copier la liste, dupliquer)`,
   );
   protected readonly info = computed(() => formatInfo(this.deck.format()));
-  protected readonly legal = computed(() => this.deck.status().legal && !!this.deck.hero());
+  protected readonly legality = this.deck.legality;
+  protected readonly legal = computed(() => this.legality().state === 'legal');
   protected readonly groups = computed(() => (this.grouping() === 'type' ? this.deck.groups() : groupByCost(this.deck.lines())));
   protected readonly created = computed(() => {
     const d = this.deck.createdAt();
@@ -91,6 +110,9 @@ export class DeckPage {
   protected readonly navItems = computed<ArBottomNavItem[]>(() => [
     { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
     { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
+    { route: `/decks/${this.id()}/description`, icon: 'text', label: $localize`:@@deck.page.navDescription:Infos` },
+    { route: `/decks/${this.id()}/stats`, icon: 'chart', label: 'Stats' },
+    { route: `/decks/${this.id()}/main`, icon: 'hand', label: $localize`:@@deck.page.navHand:Main` },
   ]);
 
   constructor() {
@@ -101,7 +123,13 @@ export class DeckPage {
   }
 
   protected setTab(id: string): void {
-    void this.router.navigate(id === 'decklist' ? ['/decks', this.id(), 'deck'] : ['/decks', this.id()], { replaceUrl: true });
+    const path = TAB_PATHS[id as DeckTab] ?? null;
+    void this.router.navigate(path ? ['/decks', this.id(), path] : ['/decks', this.id()], { replaceUrl: true });
+  }
+
+  /** Illegal badge: failed rules and format errors. */
+  protected showLegality(): void {
+    openLegalityDetails(this.overlay, { format: this.info().label, legality: this.legality() });
   }
 
   /** Only shown for the user's own decks; someone else's deck can be duplicated instead. */
@@ -120,7 +148,7 @@ export class DeckPage {
   }
 
   protected async share(): Promise<void> {
-    const url = GuestDeckService.isGuestId(this.id()) ? '' : `${location.origin}/decks/${this.id()}`;
+    const url = GuestDeckService.isGuestId(this.id()) ? '' : deckShareUrl(this.router, this.locationStrategy, this.id());
     if (!url) {
       this.flash($localize`:@@deck.page.guestShare:Deck invité : enregistré sur cet appareil uniquement. Copiez la liste pour le partager.`);
       return;
@@ -142,9 +170,11 @@ export class DeckPage {
   }
 
   protected duplicate(): void {
-    const id = this.deck.duplicate();
-    this.flash($localize`:@@deck.page.duplicated:Deck dupliqué.`);
-    void this.router.navigate(['/decks', id]);
+    openDuplicateDeck(this.overlay).afterClosed.subscribe((id) => {
+      if (!id) return;
+      this.flash($localize`:@@deck.page.duplicated:Deck dupliqué.`);
+      void this.router.navigate(['/decks', id]);
+    });
   }
 
   protected remove(): void {

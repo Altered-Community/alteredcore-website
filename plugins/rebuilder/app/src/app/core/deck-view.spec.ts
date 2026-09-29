@@ -1,6 +1,6 @@
 import { cardImageSources, isUniqueReference, setImageUrl, uniqueArtSources, uniqueCardId } from './card-art';
 import { CARD_SETS } from './card-filters';
-import { cardToLine, deckStats, decklistText, groupByCost, groupLines, heroOf, lastModified, lineToCard, mergeUniqueFace, toDeckListItem, uniqueNeedsPrintedEffect } from './deck-view';
+import { cardToLine, deckComposition, deckStats, decklistText, groupByCost, groupLines, heroOf, lastModified, lineToCard, mergeUniqueFace, toDeckListItem, uniqueNeedsPrintedEffect } from './deck-view';
 import type { Card, Deck, HydratedLine } from './models';
 import { localizedText } from './models';
 
@@ -170,5 +170,18 @@ describe('card art', () => {
     for (const set of CARD_SETS) {
       expect(setImageUrl(set.reference)).toBe(`assets/set-logos/${set.reference}.svg`);
     }
+  });
+});
+
+describe('deckComposition', () => {
+  it('counts cards per type and averages powers over every non-hero card', () => {
+    const c = deckComposition(rows);
+    expect(c.types).toEqual([
+      { id: 'characters', label: 'Personnages', count: 3 },
+      { id: 'spells', label: 'Sorts', count: 4 },
+    ]);
+    // Forest: 3×2 + 1×1 = 7 over 7 cards; mountain: 2×2 = 4 / 7; ocean: 4 / 7.
+    expect(c.powers).toEqual({ foret: 1, montagne: 0.6, ocean: 0.6 });
+    expect(deckComposition([]).powers).toEqual({ foret: 0, montagne: 0, ocean: 0 });
   });
 });
