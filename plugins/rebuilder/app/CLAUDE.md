@@ -52,9 +52,8 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   dans les templates, deux messages en TypeScript. `Intl` et `toLocale…` avec `uiLocale()` ; données de cartes avec
   `contentLocale()`.
 - Design system sous le préfixe `ar-`. Un écran n'utilise que des composants `ar-*` et du layout ; s'il manque un
-  composant, l'ajouter au design system (et à la page `/_ds`) avant de l'utiliser.
-- Tout composant `ar-*` ajouté ou modifié met à jour `design/COMPONENTS.md` et la page `/_ds`
-  (`src/app/features/ds/`).
+  composant, l'ajouter au design system avant de l'utiliser.
+- Tout composant `ar-*` ajouté ou modifié met à jour `design/COMPONENTS.md`.
 - Styles : aucune valeur en dur. Couleurs, rayons, ombres, espacements via `var(--ar-*)` ; hauteurs de contrôle
   via `--ar-control-sm|md|lg` (elles changent avec `data-density`).
 - Responsive : `ArBreakpointService` (compact < 768, medium 768–1199, expanded ≥ 1200) et `ArDensityService`
@@ -88,9 +87,9 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
 | `design/tokens/tokens.css` | Tokens `--ar-*`, chargés globalement via `angular.json` → `styles`. |
 | `src/styles.scss` | Base globale (reset, classes `ar-overlay-*` partagées par les contenus d'overlay). |
 | `src/app/ui/` | Design system `ar-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ar-radio-card`), `chips/`, `containers/`, `nav/` (dont `ar-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`ArOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`ArBreakpointService`, `ArDensityService`). |
-| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `home/` (accueil `/`), `cards/` (onglet Cartes `/cartes`), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `login/`, `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck ; menu du site `site-menu/`, `account-actions/`, `site-links.ts`), `ds/` (page `/_ds`). |
+| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `cards/` (onglet Cartes `/cartes`), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck ; menu du site `site-menu/`, `account-actions/`, `site-links.ts`). |
 | `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth.service.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
-| `src/app/app.routes.ts` | Routes de l'app autonome, dont `/_ds` : catalogue vivant du design system (`src/app/features/ds/`). |
+| `src/app/app.routes.ts` | Routes de l'app autonome (Cartes, decks, éditeur). |
 | `src/main.embed.ts`, `src/app/embed/` | Mode embarqué : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
 | `src/embed/` | Styles du build embarqué (shadow root, et `<head>` pour les polices). |
 | `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build --configuration embed`. |

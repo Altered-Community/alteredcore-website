@@ -3,7 +3,7 @@ import { SiteNavPreloading } from './site-nav-preloading';
 
 describe('SiteNavPreloading', () => {
   it('preloads the menu destinations', async () => {
-    for (const path of ['', 'cartes', 'decks', 'login']) {
+    for (const path of ['cartes', 'decks']) {
       const strategy = new SiteNavPreloading();
       const load = vi.fn(() => of(path));
       await firstValueFrom(strategy.preload({ path }, load));
@@ -11,9 +11,9 @@ describe('SiteNavPreloading', () => {
     }
   });
 
-  it('leaves the editor, a deck and the design system lazy', async () => {
+  it('leaves the editor and a deck lazy', async () => {
     const strategy = new SiteNavPreloading();
-    for (const path of ['decks/new', 'decks/:id', 'decks/:id/edit', '_ds', '**']) {
+    for (const path of ['decks/new', 'decks/:id', 'decks/:id/edit', '**']) {
       const load = vi.fn(() => of(path));
       await firstValueFrom(strategy.preload({ path }, load));
       expect(load).not.toHaveBeenCalled();

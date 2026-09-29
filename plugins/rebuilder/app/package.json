@@ -20,8 +20,8 @@
     "e2e": "playwright test",
     "lint": "ng lint && npm run i18n:check",
     "build:embed": "ng build --configuration embed && node scripts/embed-manifest.mjs",
-    "i18n:extract": "ng extract-i18n",
-    "i18n:check": "ng extract-i18n && node scripts/check-i18n.mjs"
+    "i18n:extract": "ng extract-i18n && ng extract-i18n --build-target rebuilder:build:production --output-path ../dist/i18n-app",
+    "i18n:check": "npm run i18n:extract && node scripts/check-i18n.mjs"
   },
   "packageManager": "npm@10.9.8",
   "dependencies": {

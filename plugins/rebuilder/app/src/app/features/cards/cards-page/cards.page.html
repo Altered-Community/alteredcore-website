@@ -1,14 +1,14 @@
 @if (bp.compact()) {
-  <ar-app-bar class="static" appearance="compact" title="Cartes">
-    <button leading arIconButton="menu" variant="ghost" ariaLabel="Menu du site" [iconSize]="22" (click)="menu.open()"></button>
+  <ar-app-bar class="static" appearance="compact" title="Cartes" i18n-title="@@cards.page.title">
+    <button leading arIconButton="menu" variant="ghost" ariaLabel="Menu du site" i18n-ariaLabel="@@cards.page.siteMenu" [iconSize]="22" (click)="menu.open()"></button>
   </ar-app-bar>
 }
 
 <main class="page">
   @if (!bp.compact()) {
     <div class="head">
-      <h1>Cartes</h1>
-      <p>Toutes les cartes d’Altered et les Uniques, par faction, extension, rareté, type, coût ou effet.</p>
+      <h1 i18n="@@cards.page.title">Cartes</h1>
+      <p i18n="@@cards.page.intro">Toutes les cartes d’Altered et les Uniques, par faction, extension, rareté, type, coût ou effet.</p>
     </div>
   }
   <app-card-search [sources]="sources" [browse]="true" />

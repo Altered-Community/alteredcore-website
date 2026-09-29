@@ -4,12 +4,7 @@ const editor = () => import('./features/editor/editor-page/editor.page').then((m
 const deck = () => import('./features/deck/deck-page/deck.page').then((m) => m.DeckPage);
 
 export const routes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    title: 'Altered Re:Builder — éditeur de decks Altered',
-    loadComponent: () => import('./features/home/home-page/home.page').then((m) => m.HomePage),
-  },
+  { path: '', pathMatch: 'full', redirectTo: 'decks' },
   {
     path: 'cartes',
     title: 'Cartes — Altered Re:Builder',
@@ -31,15 +26,5 @@ export const routes: Routes = [
   { path: 'decks/:id/deck', title: 'Deck — Decklist', loadComponent: deck, data: { tab: 'decklist' } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
   { path: 'decks/:id', title: 'Deck — Aperçu', loadComponent: deck, data: { tab: 'cartes' } },
-  {
-    path: 'login',
-    title: 'Connexion — Altered Re:Builder',
-    loadComponent: () => import('./features/login/login-page/login.page').then((m) => m.LoginPage),
-  },
-  {
-    path: '_ds',
-    title: 'Design system',
-    loadComponent: () => import('./features/ds/ds-page/ds.page').then((m) => m.DsPage),
-  },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'decks' },
 ];

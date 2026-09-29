@@ -6,10 +6,10 @@ import { catchError } from 'rxjs/operators';
 /**
  * ☰ destinations. Loaded after the first navigation so a tap does not pay a
  * lazy-chunk waterfall (route chunk, then its static imports, one round trip each).
- * Cartes, Decks and Connexion run one after another: a tap to Cartes must not
- * wait behind the Decks graph. Editor, deck consultation and the design system stay lazy.
+ * Cartes and Decks run one after another: a tap to Cartes must not wait behind the
+ * Decks graph. Editor and deck consultation stay lazy.
  */
-const PRELOAD_PATHS = new Set(['', 'cartes', 'decks', 'login']);
+const PRELOAD_PATHS = new Set(['cartes', 'decks']);
 
 @Service()
 export class SiteNavPreloading implements PreloadingStrategy {

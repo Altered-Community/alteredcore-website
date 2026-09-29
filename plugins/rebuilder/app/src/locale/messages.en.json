@@ -380,6 +380,15 @@
     "ui.siteFooter.news": "News",
     "ui.siteFooter.cards": "Cards",
     "ui.overlay.back": "Back",
-    "ui.overlay.close": "Close"
+    "ui.overlay.close": "Close",
+    "cards.page.title": "Cards",
+    "cards.page.siteMenu": "Site menu",
+    "cards.page.intro": "Every Altered card and the Uniques, by faction, set, rarity, type, cost or effect.",
+    "shared.account.darkTheme": "Dark theme (coming soon)",
+    "shared.account.language": "Language: English",
+    "shared.account.languageCode": "EN",
+    "shared.account.connecting": "Signing in…",
+    "shared.account.account": "Account {$name}",
+    "shared.account.signIn": "Sign in"
   }
 }
