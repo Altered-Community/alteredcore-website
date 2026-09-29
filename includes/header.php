@@ -115,7 +115,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
                      ? $pageKeywords
                      : (getSetting('meta_keywords') ?: '');
     $_robots      = isset($pageRobots) && $pageRobots !== '' ? $pageRobots : 'index, follow';
-    $_themeColor  = getSetting('theme_color') ?: '#1463d6'; // --ac-color-primary
+    $_themeColor  = dsToken('--ac-color-primary'); // browser UI colour: the design system's primary
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
     $_scheme      = request_scheme();
@@ -239,35 +239,6 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <!-- Active theme stylesheet (theme-specific overrides only) -->
     <link rel="stylesheet" href="<?= themeUrl('style.css') ?>?v=<?= filemtime(themeFile('style.css')) ?>">
 
-    <?php
-    // Background color / image from admin settings
-    $_bgColor = getSetting('bg_color');
-    // Only allow CSS hex colors — reject anything else to prevent CSS injection
-    if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $_bgColor)) $_bgColor = '';
-    $_bgImage = getSetting('bg_image');
-    $_hasBg   = ($_bgColor !== '' || $_bgImage !== '');
-    if ($_hasBg):
-        $_bgCss  = 'body{';
-        if ($_bgColor !== '') $_bgCss .= 'background-color:' . $_bgColor . ';';
-        if ($_bgImage !== '') {
-            $_bgMode = getSetting('bg_image_mode') ?: 'cover';
-            $_bgCss .= 'background-image:url("' . addslashes(BASE_URL . '/' . $_bgImage) . '");';
-            if ($_bgMode === 'repeat') {
-                $_bgCss .= 'background-size:auto;background-repeat:repeat;background-attachment:scroll;';
-            } else {
-                $_bgCss .= 'background-size:cover;background-position:center top;background-repeat:no-repeat;background-attachment:fixed;';
-            }
-        }
-        $_bgCss .= '}';
-        // Fixed attachment causes resize/jump on iOS/Android — disable on mobile
-        if ($_bgImage !== '' && (getSetting('bg_image_mode') ?: 'cover') === 'cover') {
-            $_bgCss .= '@media(max-width:767.98px){body{background-attachment:scroll;}}';
-        }
-        // body.has-bg prefix gives higher specificity than .site-header alone in style.css
-        $_bgCss .= 'body.has-bg .site-header{background:transparent;}';
-    ?>
-    <style><?= $_bgCss ?></style>
-    <?php endif; ?>
 
 
     <?php if (isset($pageBodyBg) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $pageBodyBg)): ?>
@@ -324,7 +295,6 @@ if (!$_pageFullwidth) {
     }
 }
 $__bodyClass = array_filter([
-    'has-bg'         => $_hasBg,
     'page-fullwidth' => $_pageFullwidth,
 ]);
 // Themes may add body classes via $__extraBodyClasses (set in head-extra.php)
@@ -339,7 +309,7 @@ if (!empty($__extraBodyClasses) && is_array($__extraBodyClasses)) {
 <?php
 // Theme navigation: the visible <header> and <main> opening tag.
 // Available variables: $lang, $currentPage, $__navItems, $__iframeNavId,
-// $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact, $_hasBg, $_pageFullwidth
+// $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact, $_pageFullwidth
 require themeFile('nav.php');
 $__flash = getFlash();
 if ($__flash): ?>

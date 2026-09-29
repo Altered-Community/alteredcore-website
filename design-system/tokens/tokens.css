@@ -96,6 +96,7 @@
   --ac-color-hero-to: #1463d6;
   --ac-color-on-hero: #ffffff;
   --ac-color-on-hero-muted: rgba(255, 255, 255, 0.84);
+  --ac-color-hero-scrim: rgba(0, 0, 0, 0.25);      /* veil over the banner image, under the text */
   --ac-shadow-on-image: 0 1px 3px rgba(0, 0, 0, 0.6);  /* text-shadow for text on artwork */
 
   /* ---------- Overlays ---------- */

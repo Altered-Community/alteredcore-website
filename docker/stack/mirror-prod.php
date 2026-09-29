@@ -10,7 +10,7 @@
 //
 // Also run by docker/entrypoint.sh when AC_STACK_MIRROR=1.
 //
-// Copied: site settings (description, logo, theme colour, footer columns and images, home
+// Copied: site settings (description, logo, footer columns, home
 // page text, privacy policy), home banner, news categories and articles, content pages (the admin
 // "Pages" of type content, e.g. /pages/faq-like pages that no PHP file provides), side menu,
 // footer links. Images under /uploads/ are downloaded into uploads/ (ignored by git). Content pages
@@ -110,12 +110,12 @@ foreach ($langs as $l) {
 }
 $settings = [];
 
-// Head: description, keywords, author, theme colour, og image (fonts are the design system's).
+// Head: description, keywords, author, og image (colours and fonts are the design system's).
 foreach ($langs as $l) {
     $d = one($home[$l], '//meta[@name="description"]');
     if ($d) $settings['meta_description_' . $l] = $d->getAttribute('content');
 }
-foreach (['keywords' => 'meta_keywords', 'author' => 'meta_author', 'theme-color' => 'theme_color', 'twitter:site' => 'twitter_handle'] as $meta => $key) {
+foreach (['keywords' => 'meta_keywords', 'author' => 'meta_author', 'twitter:site' => 'twitter_handle'] as $meta => $key) {
     $m = one($home['en'], '//meta[@name="' . $meta . '"]');
     if ($m && $m->getAttribute('content') !== '') $settings[$key] = $m->getAttribute('content');
 }
@@ -137,11 +137,6 @@ foreach ($langs as $l) {
     $banner['btn_label_' . $l] = text($btn);
     $banner['btn_url']         = $btn ? $btn->getAttribute('href') : '';
     $banner['bg_image']        = preg_match('#url\(([^)]+)\)#', $hero->getAttribute('style'), $m) ? uploadPath($m[1]) : null;
-    $ov = one($home[$l], './/div[' . cls('hero-overlay') . ']', $hero);
-    if ($ov && preg_match('#background-color:(\#[0-9a-fA-F]{3,8});opacity:([0-9.]+)#', $ov->getAttribute('style'), $m)) {
-        $banner['overlay_color']   = $m[1];
-        $banner['overlay_opacity'] = (int)round((float)$m[2] * 100);
-    }
 }
 
 // Home page text: the last section of <main> (pages/home.php), when it is not the news block.
@@ -155,7 +150,7 @@ foreach ($langs as $l) {
     }
 }
 
-// Footer: column titles and contents, links, decoration images.
+// Footer: column titles and contents, links.
 $footerLinks = [];
 foreach ($langs as $l) {
     $footer = one($home[$l], '//footer');
@@ -178,17 +173,6 @@ foreach ($langs as $l) {
             ];
         }
     }
-}
-foreach ($home['en']->query('//style') as $style) {
-    $css = $style->textContent;
-    if (strpos($css, '.site-footer') === false) continue;
-    foreach (['before' => 'left', 'after' => 'right'] as $pseudo => $side) {
-        if (preg_match('#\.site-footer::' . $pseudo . '\{[^}]*background-image:url\("([^"]+)"\)[^}]*opacity:([0-9.]+)#', $css, $m)) {
-            $settings['footer_deco_' . $side]              = uploadPath($m[1]);
-            $settings['footer_deco_' . $side . '_opacity'] = (string)(int)round((float)$m[2] * 100);
-        }
-    }
-    if (preg_match('#\.site-footer\{[^}]*background-image:url\("([^"]+)"\)#', $css, $m)) $settings['footer_bg_image'] = uploadPath($m[1]);
 }
 
 // Side menu.
@@ -225,17 +209,19 @@ foreach ($langs as $l) {
         $categories[(int)$m[1]]['name_' . $l] = text($a);
     }
 }
-for ($p = 1; $p <= 50; $p++) {
-    $list = page('/pages/news?p=' . $p, 'en');
-    $new  = 0;
-    foreach ($list ? $list->query('//div[' . cls('news-card-title') . ']/a') : [] as $a) {
-        $href = $a->getAttribute('href');
-        if (!preg_match('/news-detail\?slug=([^&]+)/', $href, $m) || isset($news[$m[1]])) continue;
-        $card = $a->parentNode->parentNode;
-        $news[$m[1]] = ['excerpt_en' => text(one($list, './/div[' . cls('news-card-excerpt') . ']', $card))];
-        $new++;
+foreach ($langs as $l) {
+    for ($p = 1; $p <= 50; $p++) {
+        $list = page('/pages/news?p=' . $p, $l);
+        $new  = 0;
+        foreach ($list ? $list->query('//div[' . cls('news-card-title') . ']/a') : [] as $a) {
+            $href = $a->getAttribute('href');
+            if (!preg_match('/news-detail\?slug=([^&]+)/', $href, $m) || isset($news[$m[1]]['excerpt_' . $l])) continue;
+            $card = $a->parentNode->parentNode;
+            $news[$m[1]]['excerpt_' . $l] = text(one($list, './/div[' . cls('news-card-excerpt') . ']', $card));
+            $new++;
+        }
+        if ($new === 0) break;
     }
-    if ($new === 0) break;
 }
 $dates = [];  // RSS: exact publication times
 $rss = fetchPage($source . '/pages/rss?lang=en');
@@ -320,9 +306,9 @@ foreach ($settings as $k => $v) saveSetting($k, $v);
 if ($banner) {
     $db->exec(q('DELETE FROM {banner}'));
     $b = $banner + ['title_en' => '', 'title_fr' => '', 'subtitle_en' => '', 'subtitle_fr' => '', 'btn_label_en' => '', 'btn_label_fr' => '',
-                    'btn_url' => '', 'bg_image' => null, 'overlay_color' => '#000000', 'overlay_opacity' => 0];
-    $db->prepare(q('INSERT INTO {banner} (id, title_en, title_fr, subtitle_en, subtitle_fr, btn_label_en, btn_label_fr, btn_url, bg_image, overlay_color, overlay_opacity)
-                    VALUES (1, :title_en, :title_fr, :subtitle_en, :subtitle_fr, :btn_label_en, :btn_label_fr, :btn_url, :bg_image, :overlay_color, :overlay_opacity)'))
+                    'btn_url' => '', 'bg_image' => null];
+    $db->prepare(q('INSERT INTO {banner} (id, title_en, title_fr, subtitle_en, subtitle_fr, btn_label_en, btn_label_fr, btn_url, bg_image)
+                    VALUES (1, :title_en, :title_fr, :subtitle_en, :subtitle_fr, :btn_label_en, :btn_label_fr, :btn_url, :bg_image)'))
        ->execute($b);
 }
 
@@ -341,9 +327,9 @@ if ($news) {
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)'));
     foreach ($news as $slug => $n) {
         // The list shortens long excerpts on display: drop its ellipsis, the site adds it back.
-        $excerpt = trim(preg_replace('/(…|\.\.\.)$/u', '', $n['excerpt_en'] ?? '')) ?: null;
+        $excerpt = function (string $l) use ($n) { return trim(preg_replace('/(…|\.\.\.)$/u', '', $n['excerpt_' . $l] ?? '')) ?: null; };
         $ins->execute([$n['category_id'] ?? null, $slug, $n['title_en'] ?? $slug, $n['title_fr'] ?? ($n['title_en'] ?? $slug),
-                       $n['content_en'] ?? '', $n['content_fr'] ?? ($n['content_en'] ?? ''), $excerpt, null,
+                       $n['content_en'] ?? '', $n['content_fr'] ?? ($n['content_en'] ?? ''), $excerpt('en'), $excerpt('fr'),
                        $n['image'] ?? null, $n['youtube_url'] ?? null, $n['published_at'] ?? date('Y-m-d H:i:s')]);
     }
 }

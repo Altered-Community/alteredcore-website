@@ -102,3 +102,18 @@ foreach (dsComponentFiles() as $rel) {
     $doc = $ds . '/docs/components/' . basename($rel, '.css') . '.md';
     assertSame(true, is_file($doc), 'design-system/docs/components/' . basename($doc) . ' documents ' . $rel);
 }
+
+// ---- The look has no admin setting: nothing reads a colour, background, font or layout setting ----
+$lookKeys = '/getSetting\(\s*[\'"](theme_color|bg_color|bg_image|bg_image_mode|footer_bg_image|footer_bg_mode|footer_deco_[a-z_]+|font_[a-z_]+|active_theme|navbar_width|sidebar_side|sidebar_btn_position)[\'"]/';
+$reads = [];
+$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($it as $file) {
+    $path = str_replace('\\', '/', $file->getPathname());
+    if (substr($path, -4) !== '.php' || preg_match('#/(node_modules|dist|\.angular|\.claude|tests)/#', $path)) continue;
+    foreach (file($path) ?: [] as $n => $line) {
+        if (preg_match($lookKeys, $line)) $reads[] = substr($path, strlen($root) + 1) . ':' . ($n + 1);
+    }
+}
+assertSame([], $reads, 'no look setting is read (theme and look come from the design system only)');
+assertSame('#1463d6', dsToken('--ac-color-primary'), "dsToken() reads tokens.css (:root)");
+assertSame(true, dsToken('--ac-color-primary', 'dark') !== null && dsToken('--ac-color-primary', 'dark') !== dsToken('--ac-color-primary'), "dsToken() reads the dark theme block");

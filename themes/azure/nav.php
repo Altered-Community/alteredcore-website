@@ -5,9 +5,6 @@
 //   $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact
 
 $__iframeNavId    = ($currentPage === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
-$__sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
-$__sidebarToggle  = null;
-foreach ($__navItems as $__n) { if (!empty($__n['is_sidebar_toggle'])) { $__sidebarToggle = $__n; break; } }
 if (!function_exists('__nav_href')) {
     function __nav_href(array $item): string {
         if (!empty($item['is_iframe'])) {
@@ -45,15 +42,6 @@ if (!function_exists('__nav_active')) {
                 <?php endif; ?>
                 <span class="az-brand-name"><?= h(getSiteName()) ?></span>
             </a>
-            <?php if ($__sidebarBtnPos === 'brand' && $__sidebarToggle !== null): ?>
-            <button type="button" data-sidebar-toggle class="nav-link"
-                    <?= !empty($__sidebarToggle['hide_label']) ? 'title="' . h($__sidebarToggle['label']) . '"' : '' ?>>
-                <?= ac_icon((string)$__sidebarToggle['icon']) ?>
-                <?php if (empty($__sidebarToggle['hide_label'])): ?>
-                <span><?= h($__sidebarToggle['label']) ?></span>
-                <?php endif; ?>
-            </button>
-            <?php endif; ?>
 
             <!-- Controls: dark mode toggle, language dropdown, user menu / login -->
             <div class="az-topbar-controls">
@@ -172,7 +160,6 @@ if (!function_exists('__nav_active')) {
                     $__niSplit = !empty($__ni['children']) && !empty($__ni['url']) && $__ni['url'] !== '#';
                 ?>
                 <?php if (!empty($__ni['is_sidebar_toggle'])): ?>
-                    <?php if ($__sidebarBtnPos === 'nav'): ?>
                     <li class="nav-item">
                         <button type="button" data-sidebar-toggle
                                 class="nav-link"
@@ -183,7 +170,6 @@ if (!function_exists('__nav_active')) {
                             <?php endif; ?>
                         </button>
                     </li>
-                    <?php endif; ?>
                 <?php elseif (!empty($__ni['children'])): ?>
                     <li class="nav-item dropdown<?= $__niSplit ? ' nav-item-split' : '' ?><?= ($__niSplit && $__niActive) ? ' active' : '' ?>">
                         <?php if ($__niSplit): ?>
@@ -244,13 +230,12 @@ if (!function_exists('__nav_active')) {
 
 <?php
 $__sidebarItems = getSidebarItems();
-$__sidebarSide  = getSetting('sidebar_side', 'left');
 $__hasSidebarBtn = false;
 foreach ($__navItems as $__sni) { if (!empty($__sni['is_sidebar_toggle'])) { $__hasSidebarBtn = true; break; } }
 if ($__hasSidebarBtn || !empty($__sidebarItems)):
 ?>
 <div id="site-sidebar-backdrop" class="sidebar-backdrop"></div>
-<aside id="site-sidebar" class="site-sidebar site-sidebar--<?= h($__sidebarSide) ?>" aria-hidden="true">
+<aside id="site-sidebar" class="site-sidebar site-sidebar--left" aria-hidden="true">
     <div class="sidebar-header">
         <a href="<?= BASE_URL ?>/" class="sidebar-brand">
             <?php $__sbLogo = getSetting('logo_path'); if ($__sbLogo): ?>

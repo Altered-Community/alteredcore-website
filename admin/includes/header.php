@@ -205,23 +205,16 @@ if (canPreviewGroups()) {
             </a>
             <?php endif; ?>
 
-            <?php $__showSettings = (bool) array_filter(['settings','themes','banner','announcement','background','logo','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
+            <?php $__showSettings = (bool) array_filter(['settings','banner','announcement','logo','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
             <?php if ($__showSettings): ?>
             <hr class="admin-sidebar-divider">
             <?php endif; ?>
 
             <?php if ($__showSettings): ?>
             <a href="<?= BASE_URL ?>/admin/settings"
-               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','background','logo','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit','themes']) ? 'active' : '' ?>">
+               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','logo','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit']) ? 'active' : '' ?>">
                 <i class="fa-solid fa-gear"></i> Settings
             </a>
-            <?php if (adminHasSection('themes')): ?>
-            <a href="<?= BASE_URL ?>/admin/themes"
-               class="nav-link <?= $currentAdmin === 'themes' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-palette"></i> Themes
-            </a>
-            <?php endif; ?>
             <?php if (adminHasSection('banner')): ?>
             <a href="<?= BASE_URL ?>/admin/banner"
                class="nav-link <?= $currentAdmin === 'banner' ? 'active' : '' ?>"
@@ -234,13 +227,6 @@ if (canPreviewGroups()) {
                class="nav-link <?= in_array($currentAdmin, ['announcements','announcement-edit']) ? 'active' : '' ?>"
                style="padding-left:2rem;font-size:.9em">
                 <i class="fa-solid fa-bullhorn"></i> Announcements
-            </a>
-            <?php endif; ?>
-            <?php if (adminHasSection('background')): ?>
-            <a href="<?= BASE_URL ?>/admin/background"
-               class="nav-link <?= $currentAdmin === 'background' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-fill-drip"></i> Background
             </a>
             <?php endif; ?>
             <?php if (adminHasSection('logo')): ?>

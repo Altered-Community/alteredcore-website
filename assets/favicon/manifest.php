@@ -6,7 +6,7 @@ header('Content-Type: application/manifest+json');
 header('Cache-Control: public, max-age=86400');
 
 $name       = getSiteName();
-$themeColor = getSetting('theme_color') ?: '#C49A2A';
+$themeColor = dsToken('--ac-color-primary');
 
 echo json_encode([
     'name'             => $name,
@@ -16,7 +16,7 @@ echo json_encode([
     'display'          => 'standalone',
     'orientation'      => 'portrait-primary',
     'theme_color'      => $themeColor,
-    'background_color' => '#FAF5E8',
+    'background_color' => dsToken('--ac-color-bg-app'),
     'icons'            => [
         [
             'src'     => BASE_URL . '/assets/favicon/web-app-manifest-192x192.png',

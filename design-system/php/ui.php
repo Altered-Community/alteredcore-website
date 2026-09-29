@@ -43,6 +43,22 @@ function dsShadowStylesheets(): array {
     return array_merge(['css/base.css'], dsComponentFiles());
 }
 
+/**
+ * Value of a colour token in tokens.css, for the places CSS cannot reach (theme-color meta, web app
+ * manifest): 'light' reads `:root`, 'dark' reads `:root[data-theme='dark']`. null if missing.
+ */
+function dsToken(string $name, string $theme = 'light'): ?string {
+    static $blocks = null;
+    if ($blocks === null) {
+        $css = (string)file_get_contents(dsDir() . '/tokens/tokens.css');
+        $blocks = ['light' => '', 'dark' => ''];
+        if (preg_match('/^:root \{(.*?)^\}/ms', $css, $m)) $blocks['light'] = $m[1];
+        if (preg_match("/^:root\[data-theme='dark'\] \{(.*?)^\}/ms", $css, $m)) $blocks['dark'] = $m[1];
+    }
+    $block = $blocks[$theme] ?? '';
+    return preg_match('/' . preg_quote($name, '/') . ':\s*([^;]+);/', $block, $m) ? trim($m[1]) : null;
+}
+
 /** Inline script for <head>: sets data-density before the first paint (see tokens.css). */
 function dsDensityScript(): string {
     return "(function(){var r=document.documentElement,c=matchMedia('(pointer: coarse)'),w=matchMedia('(max-width: 767.98px)');"

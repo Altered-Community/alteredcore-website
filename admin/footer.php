@@ -37,46 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         flash('Column content updated.');
         redirect(BASE_URL . '/admin/footer');
-    } elseif (($_POST['action'] ?? '') === 'save_deco') {
-        // Images via picker
-        $validatePicker = function (string $picked): ?string {
-            $picked = trim($picked);
-            if ($picked === '' || !preg_match('#^uploads/[a-zA-Z0-9/_.-]+$#', $picked)) return null;
-            return $picked;
-        };
-
-        $ftBg    = $validatePicker($_POST['footer_bg_image_picker'] ?? '');
-        $ftDecoL = $validatePicker($_POST['footer_deco_left_picker'] ?? '');
-        $ftDecoR = $validatePicker($_POST['footer_deco_right_picker'] ?? '');
-
-        $deletingAny = false;
-        foreach (['footer_bg_image' => $ftBg, 'footer_deco_left' => $ftDecoL, 'footer_deco_right' => $ftDecoR] as $settingKey => $newPath) {
-            $old = getSetting($settingKey);
-            if ($old && $newPath === null) $deletingAny = true;
-        }
-        if ($deletingAny && !adminCanDelete()) {
-            $errors[] = 'You do not have permission to delete images.';
-        }
-        if (empty($errors)) {
-            foreach ([
-                'footer_bg_image' => $ftBg,
-                'footer_deco_left' => $ftDecoL,
-                'footer_deco_right' => $ftDecoR,
-            ] as $settingKey => $newPath) {
-                $old = getSetting($settingKey); // kept for reference, no auto-delete
-            }
-        }
-
-        if (empty($errors)) {
-            saveSetting('footer_bg_image',          $ftBg);
-            saveSetting('footer_bg_mode',           in_array($_POST['footer_bg_mode'] ?? '', ['cover','repeat']) ? $_POST['footer_bg_mode'] : 'cover');
-            saveSetting('footer_deco_left',         $ftDecoL);
-            saveSetting('footer_deco_left_opacity', (string)max(0, min(100, (int)($_POST['footer_deco_left_opacity'] ?? 100))));
-            saveSetting('footer_deco_right',        $ftDecoR);
-            saveSetting('footer_deco_right_opacity',(string)max(0, min(100, (int)($_POST['footer_deco_right_opacity'] ?? 100))));
-            flash('Footer images updated.');
-            redirect(BASE_URL . '/admin/footer');
-        }
     } elseif (($_POST['action'] ?? '') === 'delete_link') {
         if (!adminCanDelete()) {
             flash('You do not have permission to delete.', 'error');
@@ -166,9 +126,6 @@ for ($__c = 1; $__c <= 4; $__c++) {
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ftab-columns" type="button" role="tab">Columns</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ftab-deco" type="button" role="tab">Decoration</button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ftab-links" type="button" role="tab">Links</button>
@@ -327,146 +284,6 @@ for ($__c = 1; $__c <= 4; $__c++) {
     </div>
 
 </div><!-- /ftab-columns -->
-
-<!-- ── Tab: Decoration ── -->
-<div class="tab-pane fade pt-3" id="ftab-deco" role="tabpanel">
-
-<?php
-$_ftBgNow    = getSetting('footer_bg_image');
-$_ftBgMode   = getSetting('footer_bg_mode') ?: 'cover';
-$_ftDecoLNow = getSetting('footer_deco_left');
-$_ftDecoLOp  = getSetting('footer_deco_left_opacity') !== '' ? (int)getSetting('footer_deco_left_opacity') : 100;
-$_ftDecoRNow = getSetting('footer_deco_right');
-$_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting('footer_deco_right_opacity') : 100;
-?>
-<div class="card-altered p-3 mb-4">
-    <h6 class="fw-bold mb-1"><i class="fa-solid fa-image me-1 text-muted"></i>Decoration images</h6>
-    <p class="text-muted small mb-3">
-        Optional images displayed in the footer background and on its left/right sides. Use PNG with transparency for best results.
-    </p>
-    <form method="post" novalidate>
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <input type="hidden" name="action" value="save_deco">
-
-        <div class="row g-4">
-
-            <!-- Background -->
-            <div class="col-12">
-                <div class="fw-semibold mb-2" style="font-size:.85rem">Background image</div>
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-6">
-                        <div class="img-picker-widget"
-                             data-input="ft_bg_inp"
-                             data-preview="ft_bg_prev"
-                             data-folder="footer"
-                             data-base-url="<?= BASE_URL ?>"
-                             data-csrf="<?= h(csrfToken()) ?>"
-                             data-original="<?= h($_ftBgNow ?? '') ?>"
-                             data-can-delete="<?= adminCanDelete() ? '1' : '0' ?>">
-                            <div id="ft_bg_prev" class="mb-2" style="<?= $_ftBgNow ? '' : 'display:none' ?>">
-                                <div style="position:relative;display:inline-block">
-                                    <img src="<?= $_ftBgNow ? h(BASE_URL . '/' . $_ftBgNow) : '' ?>" alt=""
-                                         style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
-                                    <button type="button" class="btn btn-sm btn-danger img-picker-clear"
-                                            style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
-                                </div>
-                            </div>
-                            <input type="hidden" name="footer_bg_image_picker" id="ft_bg_inp" value="<?= h($_ftBgNow ?? '') ?>">
-                            <button type="button" class="btn btn-outline-secondary btn-sm img-picker-btn">
-                                <i class="fa-solid fa-images me-1"></i> Choose image
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Mode</label>
-                        <select name="footer_bg_mode" class="form-select form-select-sm">
-                            <option value="cover"<?= $_ftBgMode === 'cover' ? ' selected' : '' ?>>Cover</option>
-                            <option value="repeat"<?= $_ftBgMode === 'repeat' ? ' selected' : '' ?>>Repeat (tile)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Deco left -->
-            <div class="col-md-6" style="border-top:1px solid var(--ac-color-divider);padding-top:1.25rem">
-                <div class="fw-semibold mb-2" style="font-size:.85rem">Left decoration</div>
-                <div class="mb-3 img-picker-widget"
-                     data-input="ft_dl_inp"
-                     data-preview="ft_dl_prev"
-                     data-folder="footer"
-                     data-base-url="<?= BASE_URL ?>"
-                     data-csrf="<?= h(csrfToken()) ?>"
-                     data-original="<?= h($_ftDecoLNow ?? '') ?>"
-                     data-can-delete="<?= adminCanDelete() ? '1' : '0' ?>">
-                    <div id="ft_dl_prev" class="mb-2" style="<?= $_ftDecoLNow ? '' : 'display:none' ?>">
-                        <div style="position:relative;display:inline-block">
-                            <img src="<?= $_ftDecoLNow ? h(BASE_URL . '/' . $_ftDecoLNow) : '' ?>" alt=""
-                                 style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
-                            <button type="button" class="btn btn-sm btn-danger img-picker-clear"
-                                    style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
-                        </div>
-                    </div>
-                    <input type="hidden" name="footer_deco_left_picker" id="ft_dl_inp" value="<?= h($_ftDecoLNow ?? '') ?>">
-                    <button type="button" class="btn btn-outline-secondary btn-sm img-picker-btn">
-                        <i class="fa-solid fa-images me-1"></i> Choose image
-                    </button>
-                </div>
-                <label class="form-label small">
-                    Opacity: <span id="deco-l-pct"><?= $_ftDecoLOp ?></span>%
-                </label>
-                <input type="range" name="footer_deco_left_opacity" id="deco-l-range"
-                       class="form-range" min="0" max="100" step="5" value="<?= $_ftDecoLOp ?>">
-            </div>
-
-            <!-- Deco right -->
-            <div class="col-md-6" style="border-top:1px solid var(--ac-color-divider);padding-top:1.25rem">
-                <div class="fw-semibold mb-2" style="font-size:.85rem">Right decoration</div>
-                <div class="mb-3 img-picker-widget"
-                     data-input="ft_dr_inp"
-                     data-preview="ft_dr_prev"
-                     data-folder="footer"
-                     data-base-url="<?= BASE_URL ?>"
-                     data-csrf="<?= h(csrfToken()) ?>"
-                     data-original="<?= h($_ftDecoRNow ?? '') ?>"
-                     data-can-delete="<?= adminCanDelete() ? '1' : '0' ?>">
-                    <div id="ft_dr_prev" class="mb-2" style="<?= $_ftDecoRNow ? '' : 'display:none' ?>">
-                        <div style="position:relative;display:inline-block">
-                            <img src="<?= $_ftDecoRNow ? h(BASE_URL . '/' . $_ftDecoRNow) : '' ?>" alt=""
-                                 style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
-                            <button type="button" class="btn btn-sm btn-danger img-picker-clear"
-                                    style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
-                        </div>
-                    </div>
-                    <input type="hidden" name="footer_deco_right_picker" id="ft_dr_inp" value="<?= h($_ftDecoRNow ?? '') ?>">
-                    <button type="button" class="btn btn-outline-secondary btn-sm img-picker-btn">
-                        <i class="fa-solid fa-images me-1"></i> Choose image
-                    </button>
-                </div>
-                <label class="form-label small">
-                    Opacity: <span id="deco-r-pct"><?= $_ftDecoROp ?></span>%
-                </label>
-                <input type="range" name="footer_deco_right_opacity" id="deco-r-range"
-                       class="form-range" min="0" max="100" step="5" value="<?= $_ftDecoROp ?>">
-            </div>
-
-        </div>
-
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary-altered btn-sm">
-                <i class="fa-solid fa-floppy-disk me-1"></i> Save
-            </button>
-        </div>
-    </form>
-</div>
-<script>
-['deco-l','deco-r'].forEach(function(id) {
-    var range = document.getElementById(id + '-range');
-    var pct   = document.getElementById(id + '-pct');
-    if (range && pct) range.addEventListener('input', function() { pct.textContent = this.value; });
-});
-</script>
-
-</div><!-- /ftab-deco -->
 
 <!-- ── Tab: Links ── -->
 <div class="tab-pane fade pt-3" id="ftab-links" role="tabpanel">

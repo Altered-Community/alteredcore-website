@@ -40,11 +40,7 @@ function request_scheme(): string {
 // Legacy: THEME_SETTING_KEYS was removed — all settings now live in site_settings.
 // Left as empty const so any third-party code that references it does not fatal.
 const THEME_SETTING_KEYS = [
-    'theme_color', 'bg_color', 'bg_image', 'bg_image_mode',
-    'navbar_width', 'logo_path',
-    'footer_bg_image', 'footer_bg_mode',
-    'footer_deco_left', 'footer_deco_right',
-    'footer_deco_left_opacity', 'footer_deco_right_opacity',
+    'logo_path',
     'footer_rights_en', 'footer_rights_fr',
     'footer_col1_title_en', 'footer_col1_title_fr', 'footer_col1_content_en', 'footer_col1_content_fr',
     'footer_col2_title_en', 'footer_col2_title_fr', 'footer_col2_content_en', 'footer_col2_content_fr',
@@ -571,7 +567,6 @@ function adminSections(): array {
         'rss'         => 'RSS Feeds',
         'banner'      => 'Banner',
         'announcement' => 'Announcement',
-        'background'  => 'Background',
         'logo'        => 'Logo',
         'footer'      => 'Footer',
         'privacy'     => 'Privacy',
@@ -589,7 +584,6 @@ function adminSections(): array {
         'homepage'     => 'Homepage',
         'pages'        => 'Pages',
         'media'        => 'Media Library',
-        'themes'       => 'Themes',
         'plugins'      => 'Plugins',
     ];
 }
@@ -992,19 +986,7 @@ function assetUrl(string $path): string {
 const SITE_THEME_FALLBACK = 'azure';
 
 function getActiveTheme(): string {
-    static $theme = null;
-    if ($theme !== null) return $theme;
-    $slug = getSetting('active_theme');
-    if ($slug === '') $slug = SITE_THEME_FALLBACK;
-    // Sanitize: only alphanumeric, hyphen, underscore allowed
-    $slug = preg_replace('/[^a-zA-Z0-9_-]/', '', $slug);
-    if ($slug === '') $slug = SITE_THEME_FALLBACK;
-    // Validate that the theme directory actually exists on disk
-    if (!is_dir(dirname(__DIR__) . '/themes/' . $slug)) {
-        $slug = SITE_THEME_FALLBACK;
-    }
-    $theme = $slug;
-    return $theme;
+    return SITE_THEME_FALLBACK;
 }
 
 function themeFile(string $file): string {

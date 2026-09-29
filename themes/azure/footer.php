@@ -48,46 +48,6 @@ for ($_fc = 1; $_fc <= 4; $_fc++) {
     $_footerColContents[$_fc] = getSetting('footer_col' . $_fc . '_content_' . getUiLang()) ?: '';
 }
 ?>
-<?php
-// Footer background & deco images
-$_ftBgImage    = getSetting('footer_bg_image');
-$_ftBgMode     = getSetting('footer_bg_mode') ?: 'cover';
-$_ftDecoLeft   = getSetting('footer_deco_left');
-$_ftDecoLeftOp = getSetting('footer_deco_left_opacity') !== '' ? (int)getSetting('footer_deco_left_opacity') : 100;
-$_ftDecoRight  = getSetting('footer_deco_right');
-$_ftDecoRightOp= getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting('footer_deco_right_opacity') : 100;
-
-$_ftCss = '';
-if ($_ftBgImage) {
-    $_ftCss .= '.site-footer{';
-    if ($_ftBgMode === 'repeat') {
-        $_ftCss .= 'background-image:url("' . addslashes(BASE_URL . '/' . $_ftBgImage) . '");background-size:auto;background-repeat:repeat;';
-    } else {
-        $_ftCss .= 'background-image:url("' . addslashes(BASE_URL . '/' . $_ftBgImage) . '");background-size:cover;background-position:center;background-repeat:no-repeat;';
-    }
-    $_ftCss .= '}';
-}
-if ($_ftDecoLeft || $_ftDecoRight) {
-    $_ftCss .= '.site-footer{position:relative;overflow:hidden;}';
-    // Keep content above pseudo-elements
-    $_ftCss .= '.site-footer>.container{position:relative;z-index:1;}';
-}
-if ($_ftDecoLeft) {
-    $_ftCss .= '.site-footer::before{content:"";position:absolute;bottom:0;left:0;width:35%;max-width:400px;height:100%;'
-             . 'background-image:url("' . addslashes(BASE_URL . '/' . $_ftDecoLeft) . '");'
-             . 'background-size:contain;background-repeat:no-repeat;background-position:bottom left;'
-             . 'opacity:' . round($_ftDecoLeftOp / 100, 2) . ';pointer-events:none;z-index:0;}';
-}
-if ($_ftDecoRight) {
-    $_ftCss .= '.site-footer::after{content:"";position:absolute;bottom:0;right:0;width:35%;max-width:400px;height:100%;'
-             . 'background-image:url("' . addslashes(BASE_URL . '/' . $_ftDecoRight) . '");'
-             . 'background-size:contain;background-repeat:no-repeat;background-position:bottom right;'
-             . 'opacity:' . round($_ftDecoRightOp / 100, 2) . ';pointer-events:none;z-index:0;}';
-}
-if ($_ftCss): ?>
-<style><?= $_ftCss ?></style>
-<?php endif; ?>
-
 <footer class="az-footer site-footer">
     <div class="container site-footer-inner">
 
