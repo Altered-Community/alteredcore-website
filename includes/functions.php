@@ -41,7 +41,6 @@ function request_scheme(): string {
 // Left as empty const so any third-party code that references it does not fatal.
 const THEME_SETTING_KEYS = [
     'theme_color', 'bg_color', 'bg_image', 'bg_image_mode',
-    'font_body', 'font_titles', 'font_nav', 'font_user_menu', 'font_footer',
     'navbar_width', 'logo_path',
     'footer_bg_image', 'footer_bg_mode',
     'footer_deco_left', 'footer_deco_right',
@@ -149,12 +148,6 @@ function validateImageUpload(array $file): ?string {
         return 'Unsupported format (JPG, PNG, WebP, GIF).';
     }
     return null;
-}
-
-function fontCssFormat(string $filename): string {
-    static $map = ['woff2' => 'woff2', 'woff' => 'woff', 'ttf' => 'truetype', 'otf' => 'opentype'];
-    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    return $map[$ext] ?? 'woff2';
 }
 
 function imageExtFromMime(string $tmpPath): string {
@@ -580,7 +573,6 @@ function adminSections(): array {
         'announcement' => 'Announcement',
         'background'  => 'Background',
         'logo'        => 'Logo',
-        'font'        => 'Font',
         'footer'      => 'Footer',
         'privacy'     => 'Privacy',
         'shortcodes'  => 'Shortcodes',

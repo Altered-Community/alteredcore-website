@@ -205,14 +205,14 @@ if (canPreviewGroups()) {
             </a>
             <?php endif; ?>
 
-            <?php $__showSettings = (bool) array_filter(['settings','themes','banner','announcement','background','logo','font','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
+            <?php $__showSettings = (bool) array_filter(['settings','themes','banner','announcement','background','logo','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
             <?php if ($__showSettings): ?>
             <hr class="admin-sidebar-divider">
             <?php endif; ?>
 
             <?php if ($__showSettings): ?>
             <a href="<?= BASE_URL ?>/admin/settings"
-               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','background','logo','font','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit','themes']) ? 'active' : '' ?>">
+               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','background','logo','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit','themes']) ? 'active' : '' ?>">
                 <i class="fa-solid fa-gear"></i> Settings
             </a>
             <?php if (adminHasSection('themes')): ?>
@@ -248,13 +248,6 @@ if (canPreviewGroups()) {
                class="nav-link <?= $currentAdmin === 'logo' ? 'active' : '' ?>"
                style="padding-left:2rem;font-size:.9em">
                 <i class="fa-solid fa-circle-half-stroke"></i> Logo
-            </a>
-            <?php endif; ?>
-            <?php if (adminHasSection('font')): ?>
-            <a href="<?= BASE_URL ?>/admin/font"
-               class="nav-link <?= $currentAdmin === 'font' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-font"></i> Font
             </a>
             <?php endif; ?>
             <?php if (adminHasSection('nav')): ?>

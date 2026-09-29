@@ -380,7 +380,6 @@ INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (5, 1, 'categories'),
 (6, 1, 'community-builders'),
 (7, 1, 'dashboard'),
-(8, 1, 'font'),
 (9, 1, 'footer'),
 (10, 1, 'groups'),
 (11, 1, 'homepage'),

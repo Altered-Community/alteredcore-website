@@ -269,39 +269,6 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <style><?= $_bgCss ?></style>
     <?php endif; ?>
 
-    <?php
-    // Custom fonts from admin settings.
-    // Selectors use class names common to all themes (.site-header, .site-footer, etc.).
-    // Themes may override per-element font targeting via head-extra.php.
-    $_fontSlots = [
-        'font_body'      => 'body',
-        'font_titles'    => 'h1, h2, h3, h4, h5, h6, .section-title span',
-        'font_nav'       => '.site-header',
-        'font_user_menu' => '.site-header .dropdown-menu',
-        'font_footer'    => '.site-footer',
-    ];
-    $_fontCss = '';
-    foreach ($_fontSlots as $_fKey => $_fSel) {
-        $_fFile = getSetting($_fKey);
-        if (!$_fFile) continue;
-        $_fFamily = 'SiteFont_' . $_fKey;
-        $_fUrl    = BASE_URL . '/assets/font/' . $_fFile;
-        $_fFmt    = fontCssFormat($_fFile);
-        // addslashes() not h(): inside a CSS <style> block, HTML entities break url() syntax
-        $_fontCss .= "@font-face{font-family:'{$_fFamily}';src:url('" . addslashes($_fUrl) . "')format('{$_fFmt}');font-display:swap;}";
-        $_fontCss .= "{$_fSel}{font-family:'{$_fFamily}',sans-serif;}";
-    }
-    foreach ($_fontSlots as $_fPreloadKey => $_) {
-        $_fPreloadFile = getSetting($_fPreloadKey);
-        if (!$_fPreloadFile) continue;
-        $_fPreloadExt = strtolower(pathinfo($_fPreloadFile, PATHINFO_EXTENSION));
-        if (!in_array($_fPreloadExt, ['woff2', 'woff'], true)) continue;
-        echo '    <link rel="preload" href="' . h(BASE_URL . '/assets/font/' . $_fPreloadFile)
-           . '" as="font" type="font/' . $_fPreloadExt . '" crossorigin>' . "\n";
-    }
-    if ($_fontCss): ?>
-    <style><?= $_fontCss ?></style>
-    <?php endif; ?>
 
     <?php if (isset($pageBodyBg) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $pageBodyBg)): ?>
     <style>body{background:<?= $pageBodyBg ?> !important;background-image:none !important;}</style>

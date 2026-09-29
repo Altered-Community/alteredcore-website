@@ -17,7 +17,7 @@ the site has a light and a dark theme and two densities, nothing else to choose.
 |---|---|
 | `tokens/tokens.css` | **Every raw value**: colours (light and dark), typography, spacing, radii, shadows, control heights (pointer and touch), layout sizes. The only file with hex colours. |
 | `tokens/breakpoints.scss`, `tokens/breakpoints.ts` | The two breakpoints (768, 1200) for media queries and code. CSS cannot read variables in `@media`. |
-| `fonts/` | Figtree, self-hosted (OFL). |
+| `fonts/` | Figtree, self-hosted (OFL). The only site font: the admin has no font setting. |
 | `css/base.css` | Document defaults, text styles (`ac-text-*`, `ac-prose`), `ac-sr-only`, root of SPA plugins. |
 | `css/components/*.css` | The `ac-*` components, one file per family. |
 | `css/bridges/bootstrap.css` | Bootstrap 5 components (`.btn`, `.form-control`, `.card`, `.dropdown-menu`…) drawn with the tokens, for existing pages. |

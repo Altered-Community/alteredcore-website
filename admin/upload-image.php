@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 // Only admins with at least one appearance-related section can upload
 $_canUpload = false;
-foreach (['banner','background','logo','font','footer','privacy'] as $_s) {
+foreach (['banner','background','logo','footer','privacy'] as $_s) {
     if (adminHasSection($_s)) { $_canUpload = true; break; }
 }
 if (!$_canUpload) {

@@ -10,7 +10,7 @@
 //
 // Also run by docker/entrypoint.sh when AC_STACK_MIRROR=1.
 //
-// Copied: site settings (description, fonts, logo, theme colour, footer columns and images, home
+// Copied: site settings (description, logo, theme colour, footer columns and images, home
 // page text, privacy policy), home banner, news categories and articles, content pages (the admin
 // "Pages" of type content, e.g. /pages/faq-like pages that no PHP file provides), side menu,
 // footer links. Images under /uploads/ are downloaded into uploads/ (ignored by git). Content pages
@@ -110,7 +110,7 @@ foreach ($langs as $l) {
 }
 $settings = [];
 
-// Head: description, keywords, author, theme colour, og image, fonts.
+// Head: description, keywords, author, theme colour, og image (fonts are the design system's).
 foreach ($langs as $l) {
     $d = one($home[$l], '//meta[@name="description"]');
     if ($d) $settings['meta_description_' . $l] = $d->getAttribute('content');
@@ -121,11 +121,6 @@ foreach (['keywords' => 'meta_keywords', 'author' => 'meta_author', 'theme-color
 }
 $og = one($home['en'], '//meta[@property="og:image"]');
 if ($og && ($p = uploadPath($og->getAttribute('content')))) $settings['og_image'] = $p;
-foreach ($home['en']->query('//head/style') as $style) {
-    if (preg_match_all("#font-family:'SiteFont_(font_[a-z_]+)';src:url\('/assets/font/([^']+)'\)#", $style->textContent, $m, PREG_SET_ORDER)) {
-        foreach ($m as [, $key, $file]) $settings[$key] = stripslashes($file);
-    }
-}
 
 // Logo.
 $logo = one($home['en'], '//img[' . cls('navbar-logo-custom') . ']');
