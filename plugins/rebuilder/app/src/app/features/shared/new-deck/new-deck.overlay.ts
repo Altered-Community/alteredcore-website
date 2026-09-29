@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
 import { ArButton } from '../../../ui/buttons';
-import { ArInput, ArRadioCard, ArSegmented } from '../../../ui/fields';
+import { ArInput, ArRadioCard, ArSegmented, ArTextarea } from '../../../ui/fields';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArFactionTabs, ArHeroSelector, factionName } from '../../../ui/metier';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
@@ -25,7 +25,7 @@ export const VISIBILITY_OPTIONS = [
  */
 @Component({
   selector: 'app-new-deck',
-  imports: [ArButton, ArInput, ArRadioCard, ArSegmented, ArFactionTabs, ArHeroSelector],
+  imports: [ArButton, ArInput, ArRadioCard, ArSegmented, ArTextarea, ArFactionTabs, ArHeroSelector],
   host: { class: 'ar-overlay-content' },
   templateUrl: './new-deck.overlay.html',
   styleUrl: './new-deck.overlay.scss',

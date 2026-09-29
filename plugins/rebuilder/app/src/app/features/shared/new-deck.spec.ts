@@ -72,7 +72,9 @@ describe('NewDeckForm (Nouveau deck)', () => {
     form.editName('  Moyo Embrasement ');
     form.format.set('frontier');
     form.isPublic.set(true);
-    expect(form.result()).toEqual({ name: 'Moyo Embrasement', hero: MOYO, format: 'frontier', isPublic: true });
+    expect(form.result()).toEqual({ name: 'Moyo Embrasement', hero: MOYO, format: 'frontier', isPublic: true, description: '' });
+    form.description.set('  Contrôle ');
+    expect(form.result()?.description).toBe('Contrôle');
   });
 });
 
@@ -128,6 +130,6 @@ describe('NewDeckOverlay', () => {
     input.value = 'Mon deck';
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    expect(closed).toEqual([{ name: 'Mon deck', hero: TREYST, format: 'standard', isPublic: false }]);
+    expect(closed).toEqual([{ name: 'Mon deck', hero: TREYST, format: 'standard', isPublic: false, description: '' }]);
   });
 });

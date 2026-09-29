@@ -1,6 +1,9 @@
 @if (bp.compact()) {
   <ar-app-bar [title]="view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
     <ar-back-button leading fallback="/decks" />
+    @if (deck.editable()) {
+      <ar-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
+    }
     <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? labels.account : labels.signIn">
       @if (auth.isLoggedIn()) {
         <ar-avatar [size]="32" [name]="auth.username() || '?'" />
@@ -11,9 +14,9 @@
   </ar-app-bar>
 }
 
-@if (deck.error(); as err) {
+@if (deck.loadError()) {
   <div class="page state">
-    <p>{{ err }}</p>
+    <p>{{ deck.error() }}</p>
     <a arButton variant="secondary" routerLink="/decks" i18n="@@editor.backToDecks">Retour à mes decks</a>
   </div>
 } @else {
@@ -23,7 +26,12 @@
         <div class="head">
           <div class="title-block">
             <ar-breadcrumb [items]="labels.breadcrumb" />
-            <ar-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+            <div class="title-row">
+              <ar-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+              @if (deck.editable()) {
+                <ar-save-status [state]="deck.saveState()" />
+              }
+            </div>
           </div>
           <ar-segmented
             size="lg"
@@ -32,6 +40,13 @@
             [value]="effectiveView() === 'apercu' ? 'apercu' : 'search'"
             (valueChange)="setMode($event)"
           />
+        </div>
+      }
+
+      @if (deck.saveError(); as saveError) {
+        <div class="banner error" role="alert">
+          <span class="message">{{ saveError }}</span>
+          <button arButton variant="secondary" size="sm" icon="rotate" [disabled]="deck.saving()" (click)="deck.retrySave()" i18n="@@editor.retrySave">Réessayer</button>
         </div>
       }
 

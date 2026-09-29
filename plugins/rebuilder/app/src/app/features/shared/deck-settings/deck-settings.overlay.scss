@@ -48,12 +48,16 @@
   gap: var(--ar-space-1-5);
 }
 .label,
-legend {
+legend,
+ar-input ::ng-deep .label,
+ar-textarea ::ng-deep .label {
   font-size: 14px;
   font-weight: 700;
 }
 :host-context([data-density='touch']) .label,
-:host-context([data-density='touch']) legend {
+:host-context([data-density='touch']) legend,
+:host-context([data-density='touch']) ar-input ::ng-deep .label,
+:host-context([data-density='touch']) ar-textarea ::ng-deep .label {
   font-size: 16px;
 }
 fieldset {

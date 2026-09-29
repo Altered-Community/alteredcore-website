@@ -52,7 +52,8 @@
   gap: var(--ar-space-1-5);
 }
 .label,
-.side ::ng-deep ar-input .label {
+.side ::ng-deep ar-input .label,
+.side ::ng-deep ar-textarea .label {
   font-size: 16px;
   font-weight: 700;
 }
@@ -111,7 +112,8 @@ legend {
     gap: var(--ar-space-4);
   }
   .label,
-  .side ::ng-deep ar-input .label {
+  .side ::ng-deep ar-input .label,
+  .side ::ng-deep ar-textarea .label {
     font-size: 14px;
   }
   .new-deck-footer {

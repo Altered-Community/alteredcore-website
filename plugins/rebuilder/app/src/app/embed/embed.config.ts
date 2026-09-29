@@ -4,7 +4,9 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST } from '@angular/core';
 import { RouteReuseStrategy, TitleStrategy, provideRouter } from '@angular/router';
 import { AuthSession } from '../core/auth-session';
+import { DeckCreateFailurePrompt } from '../core/deck-create-failure';
 import { DecksListReuseStrategy } from '../features/decks/decks-list-reuse';
+import { OverlayDeckCreateFailurePrompt } from '../features/shared/create-deck-failed/create-deck-failed.overlay';
 import { AR_DENSITY_TARGET } from '../ui/layout.services';
 import { embedRoutes } from './embed.routes';
 import { EmbedTitleStrategy } from './embed-title.strategy';
@@ -26,6 +28,7 @@ export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): App
       { provide: TitleStrategy, useClass: EmbedTitleStrategy },
       provideHttpClient(withFetch(), withInterceptors([siteCsrfInterceptor])),
       { provide: AuthSession, useClass: HostAuthSession },
+      { provide: DeckCreateFailurePrompt, useClass: OverlayDeckCreateFailurePrompt },
       { provide: OverlayContainer, useClass: ShadowOverlayContainer },
       { provide: AR_DENSITY_TARGET, useValue: mount.container },
       { provide: SHARED_STYLES_HOST, useClass: ShadowStylesHost },

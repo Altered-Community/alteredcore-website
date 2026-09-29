@@ -68,6 +68,17 @@ ar-app-bar.static {
   font-weight: 600;
 }
 
+.banner.error {
+  align-items: flex-start;
+  background: var(--ar-color-danger-soft);
+  color: var(--ar-color-danger);
+}
+
+.banner .message {
+  flex: 1 1 16rem;
+  white-space: pre-line;
+}
+
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
   .editor {
@@ -107,6 +118,21 @@ ar-app-bar.static {
     flex-direction: column;
     gap: var(--ar-space-1);
     min-width: 0;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ar-space-3);
+    min-width: 0;
+  }
+
+  .title-row ar-editable-title {
+    min-width: 0;
+  }
+
+  .title-row ar-save-status {
+    flex-shrink: 0;
   }
 
   .panel {
