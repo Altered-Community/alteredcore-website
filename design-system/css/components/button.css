@@ -1,0 +1,138 @@
+/*
+ * Button and icon button.
+ * <button class="ac-button">, <a class="ac-button ac-button--secondary">, <button class="ac-icon-button" aria-label="…">
+ * Docs: design-system/docs/components/button.md
+ */
+.ac-button {
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  font: var(--ac-font-body);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background-color var(--ac-duration-fast), border-color var(--ac-duration-fast);
+}
+.ac-button:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: var(--ac-color-primary-strong);
+  color: var(--ac-color-on-primary);
+  text-decoration: none;
+}
+.ac-button--sm {
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-3);
+  font-size: 13px;
+}
+.ac-button--lg { height: var(--ac-control-lg); }
+.ac-button--full { width: 100%; }
+
+.ac-button--secondary,
+.ac-button--danger {
+  border-color: var(--ac-color-border-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  font-weight: 600;
+}
+.ac-button--secondary:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text);
+}
+.ac-button--danger { color: var(--ac-color-required); }
+.ac-button--danger:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: var(--ac-color-danger-soft);
+  color: var(--ac-color-required);
+}
+.ac-button--ghost {
+  background: transparent;
+  color: var(--ac-color-primary);
+}
+.ac-button--ghost:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+}
+.ac-button--add {
+  border: 1px dashed var(--ac-color-border-dashed);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary);
+  font-weight: 600;
+}
+.ac-button--add:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary-strong);
+}
+.ac-button:disabled,
+.ac-button[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* Brand icon colour (Discord…): set --ac-button-icon-color on the button. */
+.ac-button .ac-icon { color: var(--ac-button-icon-color, currentColor); }
+
+/* ---- Icon button ---- */
+.ac-icon-button {
+  position: relative;
+  width: var(--ac-control-md);
+  height: var(--ac-control-md);
+  padding: 0;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.ac-icon-button:is(:hover, :focus-visible) {
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text);
+}
+.ac-icon-button--sm {
+  width: var(--ac-control-sm);
+  height: var(--ac-control-sm);
+  border-radius: var(--ac-radius-md);
+}
+.ac-icon-button--lg {
+  width: var(--ac-control-lg);
+  height: var(--ac-control-lg);
+}
+.ac-icon-button--ghost {
+  border-color: transparent;
+  background: none;
+}
+.ac-icon-button--primary {
+  border-color: transparent;
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+}
+.ac-icon-button--primary:is(:hover, :focus-visible) {
+  background: var(--ac-color-primary-strong);
+  color: var(--ac-color-on-primary);
+}
+.ac-icon-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* Small dot on an icon button (unread, active filter). */
+.ac-icon-button__dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ac-color-primary);
+  box-shadow: 0 0 0 2px var(--ac-color-surface);
+}

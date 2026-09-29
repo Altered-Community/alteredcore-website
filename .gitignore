@@ -7,3 +7,5 @@ data/tinymce_shortcodes.json.dist
 .idea/
 # Angular build cache (plugin front-ends built from the repo root)
 .angular/
+# Design system icon generator (dev only, outputs are committed)
+design-system/icons/node_modules/

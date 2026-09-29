@@ -92,7 +92,7 @@ jobs:
           echo "lftp → protocol=$PROTO port=$PORT path=$RP parallel=$PARALLEL"
 
           # ── Liste blanche ────────────────────────────────────────────────────
-          MIRROR_DIRS=(admin api assets auth css includes js sql themes)
+          MIRROR_DIRS=(admin api assets auth css design-system includes js sql themes)
           PUSH_DIRS=(pages)
           ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example)
           PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)

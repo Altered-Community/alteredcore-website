@@ -1,0 +1,129 @@
+/*
+ * Feedback — notice (inline message), dialog, scrim, spinner, loader, progress, table.
+ * Docs: design-system/docs/components/feedback.md
+ */
+
+/* ---- Notice: <div class="ac-notice ac-notice--warning" role="status">{icon}<div>…</div></div> ---- */
+.ac-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ac-space-2-5);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-info-soft);
+  color: var(--ac-color-info);
+  font: var(--ac-font-body);
+}
+.ac-notice .ac-icon { --ac-icon-size: 18px; margin-top: 1px; }
+.ac-notice__title { font-weight: 800; margin: 0 0 var(--ac-space-0-5); }
+.ac-notice :is(p:last-child, ul:last-child) { margin-bottom: 0; }
+.ac-notice a { color: inherit; text-decoration: underline; }
+.ac-notice--success { background: var(--ac-color-success-soft); color: var(--ac-color-success); }
+.ac-notice--warning { background: var(--ac-color-warning-soft); color: var(--ac-color-warning); }
+.ac-notice--danger { background: var(--ac-color-danger-soft); color: var(--ac-color-danger); }
+.ac-notice--neutral { background: var(--ac-color-track); color: var(--ac-color-text-2); }
+
+/* ---- Scrim and dialog (native <dialog class="ac-dialog"> or a positioned element) ---- */
+.ac-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--ac-color-scrim);
+  z-index: var(--ac-z-overlay);
+}
+.ac-dialog {
+  width: min(560px, calc(100vw - 2 * var(--ac-space-4)));
+  max-height: calc(100dvh - 2 * var(--ac-space-8));
+  padding: 0;
+  border: none;
+  border-radius: var(--ac-radius-dialog);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  box-shadow: var(--ac-shadow-dialog);
+  overflow: auto;
+}
+.ac-dialog::backdrop { background: var(--ac-color-scrim); }
+.ac-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-2);
+}
+.ac-dialog__title { font: var(--ac-font-title); font-size: 18px; margin: 0; }
+.ac-dialog__body { padding: var(--ac-space-2) var(--ac-space-5) var(--ac-space-4); }
+.ac-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-3) var(--ac-space-5) var(--ac-space-5);
+}
+@media (max-width: 767.98px) {
+  /* Compact screens: the dialog becomes a bottom sheet. */
+  .ac-dialog {
+    width: 100vw;
+    max-width: none;
+    margin: auto 0 0;
+    border-radius: var(--ac-radius-sheet) var(--ac-radius-sheet) 0 0;
+    box-shadow: var(--ac-shadow-sheet);
+  }
+}
+
+/* ---- Spinner ---- */
+.ac-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ac-color-track);
+  border-top-color: var(--ac-color-primary);
+  border-radius: 50%;
+  animation: ac-icon-spin 0.8s linear infinite;
+}
+
+/* ---- Blocking loader: scrim + panel with spinner, label and optional progress ---- */
+.ac-loader { display: flex; align-items: center; justify-content: center; z-index: var(--ac-z-toast); }
+.ac-loader__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2-5);
+  min-width: 240px;
+  padding: var(--ac-space-5) var(--ac-space-6);
+  background: var(--ac-color-surface);
+  border-radius: var(--ac-radius-card);
+  box-shadow: var(--ac-shadow-dialog);
+}
+.ac-loader__row { display: flex; align-items: center; gap: var(--ac-space-3); }
+.ac-loader__label { font: var(--ac-font-body); color: var(--ac-color-text); }
+
+/* ---- Progress bar ---- */
+.ac-progress { height: 6px; border-radius: var(--ac-radius-pill); background: var(--ac-color-track); overflow: hidden; }
+.ac-progress__bar { height: 100%; width: 0%; border-radius: var(--ac-radius-pill); background: var(--ac-color-primary); transition: width 0.3s ease; }
+
+/* ---- Table ---- */
+.ac-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  background: var(--ac-color-surface);
+}
+.ac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--ac-font-body);
+  color: var(--ac-color-text);
+}
+.ac-table :is(th, td) {
+  padding: var(--ac-space-2-5) var(--ac-space-4);
+  border-bottom: 1px solid var(--ac-color-divider);
+  text-align: left;
+  vertical-align: middle;
+}
+.ac-table th {
+  font: var(--ac-font-overline);
+  text-transform: uppercase;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  color: var(--ac-color-text-muted);
+  background: var(--ac-color-bg-subtle);
+}
+.ac-table tbody tr:last-child td { border-bottom: none; }
+.ac-table tbody tr:hover td { background: var(--ac-color-bg-subtle); }
+.ac-table .ac-table__num { text-align: right; font-variant-numeric: tabular-nums; }

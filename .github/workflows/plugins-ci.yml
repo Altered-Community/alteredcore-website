@@ -57,6 +57,8 @@ jobs:
           find . -name '*.php' -not -path '*/node_modules/*' -not -path './.git/*' -print0 \
             | xargs -0 -n1 -P4 php -l > /tmp/lint.log 2>&1 || { grep -v '^No syntax errors' /tmp/lint.log; exit 1; }
           echo "$(grep -c '^No syntax errors' /tmp/lint.log) files OK"
+      - name: Core PHP tests (helpers, design system)
+        run: php tests/run.php
       - name: Plugin PHP tests
         run: php bin/plugins.php run php-tests
 

@@ -1,0 +1,339 @@
+/*
+ * AlteredCore design system — tokens.
+ *
+ * The only file that holds raw values (colours, sizes, radii, shadows, fonts). Everything else —
+ * css/components, the site's CSS, PHP plugins, SPA plugins — reads these variables.
+ *
+ * Loaded by the shell in <head> (includes/header.php). Custom properties inherit through the
+ * Shadow DOM, so SPA plugins mounted in a shadow root get the same values without importing
+ * anything.
+ *
+ * Modes, both set on <html> by the shell:
+ *   data-theme="dark"      dark palette (light when absent)
+ *   data-density="touch"   larger controls for coarse pointers or windows < 768 px
+ *                          (pointer when absent or "pointer")
+ * Components never test these attributes: every value that changes with a mode is a token.
+ *
+ * Breakpoints: CSS cannot read variables in media queries. The values are fixed in
+ * tokens/breakpoints.scss and tokens/breakpoints.ts (compact < 768, medium 768–1199,
+ * expanded ≥ 1200); tests/DesignSystemTest.php checks that both files agree.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---------- Colours · neutrals ---------- */
+  --ac-color-text: #14171f;
+  --ac-color-text-2: #4a5263;
+  --ac-color-text-muted: #5b6475;
+  --ac-color-text-disabled: #9aa3b2;
+  --ac-color-border-dashed: #b9c2d0;
+  --ac-color-border-control: #d5dbe5;
+  --ac-color-border: #e3e7ee;
+  --ac-color-divider: #eef1f5;
+  --ac-color-chart-axis: #cfd5df;
+  --ac-color-track: #e6eaf1;          /* segmented control track, neutral fills */
+  --ac-color-bg-app: #f3f5f9;         /* page background */
+  --ac-color-bg-subtle: #f8f9fb;      /* hovered row, subtle field */
+  --ac-color-surface: #ffffff;        /* cards, panels, menus, dialogs */
+  --ac-color-inverse: #14171f;        /* counters, active pill tab, cost badge */
+  --ac-color-on-inverse: #ffffff;
+  --ac-color-on-strong: #ffffff;      /* text on artwork, faction colour, dark control on a card */
+
+  /* ---------- Colours · brand ---------- */
+  --ac-color-primary: #1463d6;
+  --ac-color-primary-strong: #0f4fb0;  /* hover, text on primary-soft, active tab */
+  --ac-color-primary-border: #b8cdf3;
+  --ac-color-primary-soft: #e8f0fd;
+  --ac-color-primary-tint: #f4f8ff;    /* selected radio card */
+  --ac-color-on-primary: #ffffff;
+  --ac-color-link: var(--ac-color-primary);
+  --ac-color-link-hover: var(--ac-color-primary-strong);
+  --ac-color-focus: var(--ac-color-primary);
+
+  /* ---------- Colours · semantic ---------- */
+  --ac-color-success: #166534;
+  --ac-color-success-soft: #e3f4e8;
+  --ac-color-danger: #9f2b1f;
+  --ac-color-danger-soft: #fdecea;
+  --ac-color-required: #b42318;        /* asterisk, danger button */
+  --ac-color-accent: #5b2ea6;          /* Frontier / BGA badges */
+  --ac-color-accent-soft: #efe7fb;
+  --ac-color-warning: #8a4b0c;
+  --ac-color-warning-soft: #fdf0e1;
+  --ac-color-info: var(--ac-color-primary-strong);
+  --ac-color-info-soft: var(--ac-color-primary-soft);
+  --ac-color-like: #b42318;            /* active "like" heart */
+  --ac-color-discord: #5865f2;         /* Discord logo only, never text */
+
+  /* ---------- Colours · data ---------- */
+  --ac-color-chart-main: #1463d6;      /* hand cost histogram */
+  --ac-color-chart-reserve: #6f45a6;   /* reserve cost histogram */
+
+  /* ---------- Colours · factions ---------- */
+  --ac-faction-axiom: #8a3a24;
+  --ac-faction-bravos: #c0302a;
+  --ac-faction-lyra: #c23f7c;
+  --ac-faction-muna: #2f7a4a;
+  --ac-faction-ordis: #1f6f9a;
+  --ac-faction-yzmir: #6f45a6;
+
+  /* ---------- Colours · terrains ---------- */
+  --ac-terrain-forest: #2f7a24;
+  --ac-terrain-mountain: #a0571a;
+  --ac-terrain-ocean: #2566a8;
+
+  /* ---------- Printed Unique card (Re:Builder unique-card) ---------- */
+  --ac-card-ink: #000000;
+  --ac-card-paper: #ffffff;
+  --ac-card-gold: #c37424;
+  --ac-card-font: 'Altered Haptic', Roboto, Arial, sans-serif;
+  --ac-card-icons: 'Altered Icons';
+  --ac-card-circled: 'Altered Circled';
+
+  /* ---------- Shell: home hero banner (text sits on the gradient or on the admin's banner image) ---------- */
+  --ac-color-hero-from: #0f4fb0;
+  --ac-color-hero-to: #1463d6;
+  --ac-color-on-hero: #ffffff;
+  --ac-color-on-hero-muted: rgba(255, 255, 255, 0.84);
+  --ac-shadow-on-image: 0 1px 3px rgba(0, 0, 0, 0.6);  /* text-shadow for text on artwork */
+
+  /* ---------- Overlays ---------- */
+  --ac-color-scrim: rgba(12, 16, 24, 0.45);
+  /* chevron of .ac-select, muted text colour */
+  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6475' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --ac-color-overlay-control: #14171f;             /* dark counter on a card */
+  --ac-color-overlay-chip: rgba(10, 12, 18, 0.72); /* cost chips on artwork */
+  --ac-color-overlay-label: rgba(10, 12, 18, 0.55);
+  --ac-color-overlay-strong: rgba(0, 0, 0, 0.8);        /* lightbox behind a card, quantity badge */
+  --ac-color-overlay-light: rgba(255, 255, 255, 0.18);  /* light control on artwork */
+
+  /* ---------- Typography ---------- */
+  --ac-font-family: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ac-font-display: 800 28px/1.2 var(--ac-font-family);   /* page title, letter-spacing display */
+  --ac-font-title: 800 20px/1.25 var(--ac-font-family);    /* sheet / dialog title */
+  --ac-font-heading: 800 17px/1.3 var(--ac-font-family);
+  --ac-font-body-strong: 700 15px/1.35 var(--ac-font-family);
+  --ac-font-body: 600 14px/1.4 var(--ac-font-family);      /* UI text: controls, lists, cards */
+  --ac-font-prose: 400 16px/1.6 var(--ac-font-family);     /* long text: news, rules, pages */
+  --ac-font-small: 600 13px/1.4 var(--ac-font-family);
+  --ac-font-caption: 700 12px/1.3 var(--ac-font-family);
+  --ac-font-micro: 700 11px/1.2 var(--ac-font-family);     /* axes, counters */
+  --ac-font-overline: 700 12px/1.3 var(--ac-font-family);  /* + uppercase + letter-spacing overline */
+  --ac-letter-spacing-display: -0.02em;
+  --ac-letter-spacing-overline: 0.06em;
+
+  /* ---------- Spacing ---------- */
+  --ac-space-0-5: 2px;
+  --ac-space-1: 4px;
+  --ac-space-1-5: 6px;
+  --ac-space-2: 8px;
+  --ac-space-2-5: 10px;
+  --ac-space-3: 12px;
+  --ac-space-4: 16px;
+  --ac-space-5: 20px;
+  --ac-space-6: 24px;
+  --ac-space-8: 32px;
+  --ac-space-10: 40px;
+  --ac-space-12: 48px;
+
+  /* ---------- Radii ---------- */
+  --ac-radius-xs: 4px;
+  --ac-radius-sm: 6px;       /* tag */
+  --ac-radius-md: 8px;       /* segment, small square button */
+  --ac-radius-control: 10px; /* field, button */
+  --ac-radius-lg: 12px;      /* segmented track, card artwork, radio card */
+  --ac-radius-card: 14px;    /* card, panel */
+  --ac-radius-dialog: 16px;
+  --ac-radius-sheet: 20px;   /* top corners of a bottom sheet */
+  --ac-radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --ac-shadow-e1: 0 1px 2px rgba(20, 23, 31, 0.12);                 /* active segment */
+  --ac-shadow-card: 0 1px 2px rgba(20, 23, 31, 0.1), 0 6px 16px rgba(20, 23, 31, 0.08);
+  --ac-shadow-e2: 0 6px 16px rgba(20, 23, 31, 0.12);                /* dropdown menu */
+  --ac-shadow-e3: 0 2px 10px rgba(10, 12, 18, 0.4);                 /* counter on a card */
+  --ac-shadow-fab: 0 2px 8px rgba(10, 12, 18, 0.35);
+  --ac-shadow-sheet: 0 -8px 30px rgba(12, 16, 24, 0.25);
+  --ac-shadow-drawer: 8px 0 30px rgba(12, 16, 24, 0.25);
+  --ac-shadow-dialog: 0 24px 60px rgba(12, 16, 24, 0.35);
+  --ac-ring-selected: 0 0 0 3px var(--ac-color-surface), 0 0 0 6px var(--ac-color-primary);
+
+  /* ---------- Motion ---------- */
+  --ac-duration-fast: 0.12s;
+  --ac-duration-base: 0.2s;
+
+  /* ---------- Density: pointer (default) ---------- */
+  --ac-control-sm: 32px;
+  --ac-control-md: 40px;
+  --ac-control-lg: 48px;
+  --ac-hit-min: 32px;              /* minimum clickable area */
+  --ac-field-font-size: 14px;      /* 16px in touch: iOS zooms on smaller inputs */
+  --ac-select-font-size: 13px;
+  --ac-segment-height: var(--ac-control-sm);
+  --ac-segment-font-size: 13px;
+  --ac-icon-button-segment: 32px;
+  --ac-page-padding: 24px;         /* horizontal page gutter */
+
+  /* ---------- Layout ---------- */
+  --ac-header-height: 0px;         /* sticky site header, measured by js/altered-core-host.js */
+  --ac-page-max-width: 1200px;     /* content column of regular pages */
+  --ac-page-max-width-wide: 1600px;
+  --ac-app-bar-height: 60px;
+  --ac-bottom-nav-height: 68px;    /* + env(safe-area-inset-bottom) */
+  --ac-filter-panel-width: 264px;
+  --ac-deck-panel-width: 340px;
+  --ac-drawer-width: 320px;
+  --ac-page-top: var(--ac-header-height);   /* top of the page content, under the site header */
+  --ac-sticky-top: var(--ac-header-height); /* top edge of sticky panels */
+
+  /* ---------- Plugin-specific values (game data, artwork overlays…) ----------
+   * Only for values no semantic token covers. Name them --ac-<plugin>-<role> and give a dark
+   * value below when the value depends on the theme. */
+  /* core-altered-cards */
+  --ac-cards-unique: #8f6310;               /* Unique accent (gem icon, nudge banner) on a surface */
+  --ac-cards-favorite: #f5c518;             /* favourite star, drawn on a dark chip over artwork */
+  --ac-cards-favorite-hover: #ffd634;
+  --ac-cards-mana: #2f7d57;                 /* mana chip of the playtest board (white text) */
+  --ac-cards-type-character: #2f7d57;       /* starting-hand composition donut */
+  --ac-cards-type-spell: #c9a84c;
+  --ac-cards-type-other: #5b7aa8;
+  --ac-cards-status-complete: #3aa856;      /* playset: 3/3 (fills with white text) */
+  --ac-cards-status-extra: #1e7a3a;         /* playset: 4+ */
+  --ac-cards-status-progress: #d18a22;      /* playset: 1–2 */
+  --ac-cards-status-missing: #d64545;       /* playset: 0 */
+  --ac-cards-heatmap-0: #f1f2f4;            /* playset heatmap stops, blended in JS */
+  --ac-cards-heatmap-50: #e2ba8d;
+  --ac-cards-heatmap-100: #87c998;
+  --ac-cards-heatmap-text: #243042;
+  --ac-cards-heatmap-line: rgba(255, 255, 255, 0.55);
+  --ac-cards-partial: #71570a;              /* "partially available on BGA" pill */
+  --ac-cards-partial-soft: #fdf1bd;
+  /* other PHP plugins */
+  /* card-scan: reticle drawn on the live camera feed (same in both themes) */
+  --ac-card-scan-reticle: rgba(255, 255, 255, 0.85);
+  --ac-card-scan-dim: rgba(0, 0, 0, 0.28);          /* dims the feed around the reticle */
+  --ac-card-scan-accept: #46d17a;                   /* reticle flash on an accepted QR code */
+  --ac-card-scan-accept-glow: rgba(70, 209, 122, 0.6);
+  /* ownership: holo shine / glare on revealed Unique cards (artwork effect, same in both themes) */
+  --ac-ownership-holo-gold: #f4ba34;
+  --ac-ownership-holo-violet: #9f53c6;
+  --ac-ownership-holo-glow-gold: #ffe78f;
+  --ac-ownership-holo-glow-cyan: #ccfffb;
+  --ac-ownership-glare-light: rgba(255, 255, 255, 0.8);
+  --ac-ownership-glare-mid: rgba(255, 255, 255, 0.4);
+  --ac-ownership-glare-shade: rgba(0, 0, 0, 0.3);
+  /* tournament-reports: game-mode dots (Standard uses --ac-color-primary) */
+  --ac-tournament-reports-mode-frontier: #2ec4b6;
+  --ac-tournament-reports-mode-no-unique: #5b8cef;
+  --ac-tournament-reports-mode-singleton: #9b6edb;
+  --ac-tournament-reports-mode-sandbox: #e0cda9;
+  --ac-tournament-reports-mode-sealed: #e8a33d;
+  --ac-tournament-reports-mode-demo: #8a8f98;
+  /* tournament-reports: tint of a standings row painted with hero art */
+  --ac-tournament-reports-row-hover: rgba(0, 0, 0, 0.12);
+  --ac-tournament-reports-row-active: rgba(0, 0, 0, 0.22);
+  /* reunion-events: event source colours (white text), Frontier default, series logo plate */
+  --ac-reunion-events-physical: #8a6a1a;
+  --ac-reunion-events-physical-border: #6e5414;
+  --ac-reunion-events-online: #2563eb;
+  --ac-reunion-events-online-border: #1d4ed8;
+  --ac-reunion-events-frontier: #2f6fed;            /* season without a colour (RE_FRONTIER_DEFAULT_COLOR) */
+  --ac-reunion-events-logo-plate: rgba(6, 9, 16, 0.92); /* series logos are drawn for a dark plate */
+  --ac-reunion-events-branded: #1e3a5f;             /* left border of a branded series card */
+  /* rebuilder */
+  --ac-rebuilder-logo-filter: none;          /* dark set logos (extension tiles) */
+
+  /* ---------- Z-index ---------- */
+  --ac-z-sticky: 100;
+  --ac-z-header: 1000;
+  --ac-z-overlay: 1050;
+  --ac-z-toast: 1100;
+}
+
+:root[data-density='touch'] {
+  --ac-control-sm: 36px;
+  --ac-control-md: 44px;
+  --ac-control-lg: 52px;
+  --ac-hit-min: 44px;
+  --ac-field-font-size: 16px;
+  --ac-select-font-size: 15px;
+  --ac-segment-height: var(--ac-control-md);
+  --ac-segment-font-size: 14px;
+  --ac-icon-button-segment: 36px;
+  --ac-app-bar-height: 56px;
+  --ac-page-padding: 16px;
+}
+
+/* ---------- Dark theme ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ac-color-text: #e8ebf2;
+  --ac-color-text-2: #c3c9d6;
+  --ac-color-text-muted: #98a1b3;
+  --ac-color-text-disabled: #636c7e;
+  --ac-color-border-dashed: #4a5468;
+  --ac-color-border-control: #3a4356;
+  --ac-color-border: #2b3240;
+  --ac-color-divider: #222834;
+  --ac-color-chart-axis: #3a4356;
+  --ac-color-track: #232935;
+  --ac-color-bg-app: #0f1218;
+  --ac-color-bg-subtle: #1c212b;
+  --ac-color-surface: #171b23;
+  --ac-color-inverse: #e8ebf2;
+  --ac-color-on-inverse: #0f1218;
+  --ac-color-on-strong: #ffffff;
+
+  --ac-color-primary: #5b9bff;
+  --ac-color-primary-strong: #8ab8ff;
+  --ac-color-primary-border: #2f4c7c;
+  --ac-color-primary-soft: #1b2b47;
+  --ac-color-primary-tint: #151f31;
+  --ac-color-on-primary: #0b1220;
+
+  --ac-color-success: #6cc990;
+  --ac-color-success-soft: #15301f;
+  --ac-color-danger: #f08a7e;
+  --ac-color-danger-soft: #3a1b18;
+  --ac-color-required: #f27a6c;
+  --ac-color-accent: #b793f0;
+  --ac-color-accent-soft: #2a1f40;
+  --ac-color-warning: #e7a95c;
+  --ac-color-warning-soft: #36260f;
+  --ac-color-like: #f27a6c;
+
+  --ac-color-chart-main: #5b9bff;
+  --ac-color-chart-reserve: #a07ddb;
+
+  --ac-color-scrim: rgba(0, 0, 0, 0.6);
+  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a1b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  --ac-color-hero-from: #13244a;
+  --ac-color-hero-to: #1b3a6b;
+  --ac-color-on-hero: #e8ebf2;
+  --ac-color-on-hero-muted: rgba(232, 235, 242, 0.8);
+
+  /* Plugin-specific dark values (see the light block) */
+  /* core-altered-cards */
+  --ac-cards-unique: #e0b23c;
+  --ac-cards-heatmap-0: #2a303c;
+  --ac-cards-heatmap-50: #7b5932;
+  --ac-cards-heatmap-100: #376c45;
+  --ac-cards-heatmap-text: #e7e9f3;
+  --ac-cards-heatmap-line: rgba(255, 255, 255, 0.12);
+  --ac-cards-partial: #e6cf6a;
+  --ac-cards-partial-soft: #332d10;
+  /* other PHP plugins */
+  --ac-reunion-events-branded: #5b86bd;
+  /* rebuilder */
+  --ac-rebuilder-logo-filter: invert(1) brightness(1.1);
+
+  --ac-shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --ac-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
+  --ac-shadow-e2: 0 6px 16px rgba(0, 0, 0, 0.5);
+  --ac-shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  --ac-shadow-drawer: 8px 0 30px rgba(0, 0, 0, 0.5);
+  --ac-shadow-dialog: 0 24px 60px rgba(0, 0, 0, 0.6);
+}

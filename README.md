@@ -81,6 +81,16 @@ define('BASE_URL', '/alteredcore'); // leave empty if at domain root
 
 ---
 
+## Design system
+
+One look for the shell, the core pages and every plugin (PHP or SPA): `design-system/` holds the
+tokens (light and dark themes, pointer and touch densities), the `ac-*` components, Lucide icons,
+the Bootstrap bridge and the docs. Plain CSS, no build. Reference page: `/pages/design-system`.
+Start with [design-system/README.md](design-system/README.md); designing with Claude Code and
+Claude Design: [design-system/WORKFLOW.md](design-system/WORKFLOW.md).
+
+---
+
 ## Plugins
 
 Drop a plugin folder into `plugins/` and activate it from the admin panel. See `plugins/hello-world/` for a minimal example and `plugins/README.html` for full documentation.

@@ -1,0 +1,90 @@
+/*
+ * Card and list — surfaces that group content.
+ * Docs: design-system/docs/components/card.md
+ */
+.ac-card {
+  display: block;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-3);
+  color: var(--ac-color-text);
+}
+@media (min-width: 768px) {
+  .ac-card { padding: var(--ac-space-4); }
+}
+.ac-card--sm { padding: var(--ac-space-3); }
+.ac-card--flush { padding: 0; overflow: hidden; }
+.ac-card--raised { border-color: transparent; box-shadow: var(--ac-shadow-card); }
+/* Whole card is a link or a button. */
+.ac-card--interactive {
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--ac-duration-fast), box-shadow var(--ac-duration-fast);
+}
+.ac-card--interactive:is(:hover, :focus-visible) {
+  border-color: var(--ac-color-border-control);
+  box-shadow: var(--ac-shadow-card);
+  color: var(--ac-color-text);
+  text-decoration: none;
+}
+.ac-card__media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--ac-color-track);
+}
+.ac-card__body { padding: var(--ac-space-3) var(--ac-space-4) var(--ac-space-4); }
+.ac-card__title {
+  font: var(--ac-font-body-strong);
+  margin: 0 0 var(--ac-space-1);
+  color: var(--ac-color-text);
+}
+.ac-card__meta {
+  font: var(--ac-font-small);
+  font-weight: 500;
+  color: var(--ac-color-text-muted);
+}
+.ac-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-2);
+  margin-top: var(--ac-space-3);
+}
+
+/* List: rows separated by dividers, inside a card or alone. */
+.ac-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ac-list > li,
+.ac-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  min-height: var(--ac-control-lg);
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border-top: 1px solid var(--ac-color-divider);
+  color: var(--ac-color-text);
+  text-decoration: none;
+}
+.ac-list > li:first-child,
+.ac-list__item:first-child { border-top: none; }
+a.ac-list__item:is(:hover, :focus-visible) { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); }
+
+/* Empty state. */
+.ac-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-10) var(--ac-space-4);
+  text-align: center;
+  color: var(--ac-color-text-muted);
+  font: var(--ac-font-body);
+}
+.ac-empty > .ac-icon, .ac-empty > ac-icon > .ac-icon { --ac-icon-size: 32px; color: var(--ac-color-text-disabled); }
+.ac-empty__title { font: var(--ac-font-body-strong); color: var(--ac-color-text); margin: 0; }

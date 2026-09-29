@@ -1,0 +1,104 @@
+<?php
+// Design system checks (design-system/README.md): breakpoints, icons, hard-coded colours, docs.
+if (!defined('BASE_URL')) define('BASE_URL', '');
+require_once __DIR__ . '/../design-system/php/ui.php';
+
+$root = dirname(__DIR__);
+$ds   = $root . '/design-system';
+
+// ---- Breakpoints: the SCSS and TS copies (and the Re:Builder copy) agree ----
+$scss = (string)file_get_contents($ds . '/tokens/breakpoints.scss');
+$ts   = (string)file_get_contents($ds . '/tokens/breakpoints.ts');
+preg_match('/\$medium:\s*(\d+)px/', $scss, $sm);
+preg_match('/\$expanded:\s*(\d+)px/', $scss, $se);
+preg_match('/medium:\s*(\d+)/', $ts, $tm);
+preg_match('/expanded:\s*(\d+)/', $ts, $te);
+assertSame('768', $sm[1] ?? null, 'breakpoints.scss: medium is 768px');
+assertSame('1200', $se[1] ?? null, 'breakpoints.scss: expanded is 1200px');
+assertSame([$sm[1] ?? null, $se[1] ?? null], [$tm[1] ?? null, $te[1] ?? null], 'breakpoints.ts matches breakpoints.scss');
+foreach (glob($root . '/plugins/*/app/src/app/core/breakpoints.ts') ?: [] as $copy) {
+    $c = (string)file_get_contents($copy);
+    if (strpos($c, "design-system/tokens/breakpoints'") !== false) { assertSame(true, true, substr($copy, strlen($root) + 1) . ' imports the design system breakpoints'); continue; }
+    preg_match('/medium:\s*(\d+)/', $c, $cm);
+    preg_match('/expanded:\s*(\d+)/', $c, $ce);
+    assertSame([$tm[1] ?? null, $te[1] ?? null], [$cm[1] ?? null, $ce[1] ?? null], substr($copy, strlen($root) + 1) . ' matches the design system breakpoints');
+}
+
+// ---- Stylesheets loaded by the shell exist ----
+foreach (array_unique(array_merge(dsDocumentStylesheets(), dsShadowStylesheets(), ['js/ac.js', 'icons/sprite.svg'])) as $rel) {
+    assertSame(true, is_file($ds . '/' . $rel), "design-system/{$rel} exists");
+}
+
+// ---- Icons ----
+$svg = ac_icon('house');
+assertSame(true, strpos($svg, '<svg class="ac-icon"') === 0 && strpos($svg, 'aria-hidden="true"') !== false, 'ac_icon() renders a decorative inline SVG');
+assertSame(true, strpos(ac_icon('trash-2', '', 'Delete'), 'aria-label="Delete"') !== false, 'ac_icon() with a label is announced');
+$fromFa = ac_icon('fa-solid fa-house me-1');
+assertSame(true, strpos($fromFa, 'class="ac-icon me-1"') !== false && strpos($fromFa, dsIcons()['house']) !== false, 'ac_icon() maps a Font Awesome class list and keeps the other classes');
+assertSame(true, strpos(ac_icon('fa-solid fa-xmark'), dsIcons()['x']) !== false, 'ac_icon() maps renamed Font Awesome icons (xmark → x)');
+assertSame(true, strpos(ac_icon('fa-solid fa-spinner fa-spin'), 'ac-icon--spin') !== false, 'ac_icon() maps fa-spin');
+assertSame(true, strpos(ac_icon('brand-github'), 'fill="currentColor"') !== false, 'ac_icon() renders brand logos filled');
+assertSame('', ac_icon('no-such-icon'), 'ac_icon() renders nothing for an unknown name');
+assertSame('<i class="fak fa-collection" aria-hidden="true"></i>', ac_icon('fak fa-collection'), 'ac_icon() leaves Altered glyphs to the glyph font');
+assertSame(true, strpos(ac_icon('"><script>'), '<script>') === false, 'ac_icon() never echoes its input');
+
+foreach (dsFaMap() as $fa => $target) {
+    if (!isset(dsIcons()[$target])) assertSame(true, false, "fa-map.json: {$fa} → {$target} is an icon");
+}
+
+// Every Font Awesome name used in the repo is drawn by fa-shim.css (else the icon disappears).
+$shim = (string)file_get_contents($ds . '/icons/fa-shim.css');
+$modifiers = '/^(solid|regular|brands|kit|spin|pulse|fw|xs|sm|lg|[0-9]+x|beat|fade|flip|shake|bounce|inverse|border|pull-left|pull-right|stack|stack-1x|stack-2x|ul|li)$/';
+$missing = [];
+$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+foreach ($it as $file) {
+    $path = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+    if (preg_match('#(^|/)(node_modules|dist|\.angular|tinymce|uploads|vendor|\.git)(/|$)#', $path) || strpos($path, 'design-system/icons') === 0) continue;
+    if (!preg_match('/\.(php|js|json|sql|html|ts)$/', $path)) continue;
+    $text = (string)file_get_contents($file->getPathname());
+    if (!preg_match_all('/\b(?:fa-solid|fa-regular|fa-brands|fas|far|fab)\b((?:\s+[\w-]+)+)|((?:[\w-]+\s+)+)(?:fa-solid|fa-regular)\b/', $text, $m, PREG_SET_ORDER)) continue;
+    foreach ($m as $match) {
+        $list = trim(($match[1] ?? '') !== '' ? $match[1] : ($match[2] ?? ''));
+        foreach (preg_split('/\s+/', $list) as $cls) {
+            if (strpos($cls, 'fa-') !== 0) continue;
+            $name = substr($cls, 3);
+            if ($name === '' || preg_match($modifiers, $name)) continue;
+            if (strpos($shim, '.fa-' . $name . ':is(') === false) $missing[$name][] = $path;
+        }
+    }
+}
+$report = [];
+foreach ($missing as $name => $paths) $report[] = $name . ' (' . implode(', ', array_unique($paths)) . ')';
+assertSame([], $report, 'every Font Awesome name used in the repo is in icons/fa-shim.css (add it to fa-map.json and run icons/build.mjs)');
+
+// ---- No hard-coded colour outside the tokens ----
+$colour = '/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/';
+$cssFiles = array_merge(
+    [$root . '/css/style.css'],
+    glob($root . '/themes/*/style.css') ?: [],
+    glob($ds . '/css/*.css') ?: [],
+    glob($ds . '/css/components/*.css') ?: [],
+    glob($ds . '/css/bridges/*.css') ?: []
+);
+$pluginStyles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/plugins', FilesystemIterator::SKIP_DOTS));
+foreach ($pluginStyles as $file) {
+    $path = str_replace('\\', '/', $file->getPathname());
+    if (preg_match('#/(node_modules|dist|\.angular)/#', $path)) continue;
+    if (preg_match('/\.(css|scss)$/', $path)) $cssFiles[] = $path;
+}
+$found = [];
+foreach ($cssFiles as $f) {
+    $lines = file($f) ?: [];
+    foreach ($lines as $n => $line) {
+        $code = preg_replace('#/\*.*?\*/#', '', $line);           // same-line comments
+        $code = preg_replace('/url\((["\']?)data:[^)]*\)/', '', $code); // data URIs (SVG masks)
+        if (preg_match($colour, $code)) $found[] = substr($f, strlen($root) + 1) . ':' . ($n + 1);
+    }
+}
+assertSame([], $found, 'no hex / rgb() / hsl() colour in page, theme, plugin or component CSS (use --ac-* tokens)');
+
+// ---- Components are documented ----
+foreach (dsComponentFiles() as $rel) {
+    $doc = $ds . '/docs/components/' . basename($rel, '.css') . '.md';
+    assertSame(true, is_file($doc), 'design-system/docs/components/' . basename($doc) . ' documents ' . $rel);
+}
