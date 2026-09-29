@@ -1,3 +1,6 @@
+import { CdkListbox, CdkOption, type ListboxValueChangeEvent } from '@angular/cdk/listbox';
+import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, type ConnectedPosition } from '@angular/cdk/overlay';
+import { _getEventTarget } from '@angular/cdk/platform';
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { ArIcon } from '../../icon';
 import { nextId } from '../value-accessor';
@@ -9,23 +12,26 @@ export interface ComboOption {
   glyph?: string;
 }
 
+/** Below the button, above it when there is no room. */
+const POSITIONS: ConnectedPosition[] = [
+  { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+  { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
+];
+
 /**
- * Multi-select picker (effect editor). The add control is a button: opening it shows the list
- * with a search field that is not focused, so touch keyboards stay closed until the user taps it.
- * Typing on the button moves the key into the search field. Selected values render above as chips.
+ * Multi-select picker (effect editor): selected values as chips, then a button that opens the list.
+ * The list is a CDK connected overlay (outside press, keyboard events, position, scroll) holding a search
+ * field and a CDK listbox (arrows, Home / End, Enter, typeahead, ARIA). Opening does not focus the
+ * search field, so touch keyboards stay closed until the user taps it; typing on the button moves
+ * the key into it.
  */
 @Component({
   selector: 'ar-combobox',
-  imports: [ArIcon],
-  host: {
-    '(focusout)': 'onFocusOut($event)',
-    '(document:pointerdown)': 'onDocumentPointerDown($event)',
-  },
+  imports: [ArIcon, CdkOverlayOrigin, CdkConnectedOverlay, CdkListbox, CdkOption],
   templateUrl: './combobox.html',
   styleUrl: './combobox.scss',
 })
 export class ArCombobox {
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   readonly options = input<ComboOption[]>([]);
   readonly values = model<ComboOption[]>([]);
@@ -34,9 +40,14 @@ export class ArCombobox {
   readonly searchPlaceholder = input($localize`:@@ui.combobox.search:Rechercher…`);
   readonly searchChange = output<string>();
 
-  private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
+  private readonly toggle = viewChild.required<ElementRef<HTMLButtonElement>>('toggle');
   private readonly search = viewChild<ElementRef<HTMLInputElement>>('search');
+  private readonly listbox = viewChild(CdkListbox);
 
+  protected readonly positions = POSITIONS;
+  /** Picked options leave the list, so the listbox itself never keeps a selection. */
+  protected readonly noSelection: readonly ComboOption[] = [];
+  protected readonly scrollStrategy = createRepositionScrollStrategy(this.injector);
   protected readonly listId = nextId('ar-combo');
   protected removeLabel(v: ComboOption): string {
     return $localize`:@@ui.combobox.remove:Retirer ${v.text}:value:`;
@@ -45,7 +56,6 @@ export class ArCombobox {
   protected readonly noValues = $localize`:@@ui.combobox.noValues:Aucune valeur disponible`;
   protected readonly query = signal('');
   protected readonly open = signal(false);
-  protected readonly active = signal(-1);
 
   protected readonly label = computed(() => (this.values().length ? this.placeholder() : this.emptyPlaceholder() || this.placeholder()));
 
@@ -62,108 +72,96 @@ export class ArCombobox {
     return out;
   });
 
-  /**
-   * Adds `o` and closes the list. After a tap or click nothing keeps the focus, so no control looks
-   * selected and the touch keyboard closes; after Enter the focus returns to the button.
-   */
-  pick(o: ComboOption, fromKeyboard = false): void {
+  /** Adds `o`, closes the list and gives the focus back to the button. */
+  pick(o: ComboOption): void {
     this.values.update((v) => [...v, o]);
-    this.dismiss();
-    if (fromKeyboard) this.toggle()?.nativeElement.focus();
-    else {
-      const focused = this.host.nativeElement.ownerDocument.activeElement as HTMLElement | null;
-      if (focused && this.host.nativeElement.contains(focused)) focused.blur();
-    }
+    this.close();
   }
 
   remove(o: ComboOption): void {
     this.values.update((v) => v.filter((x) => x.id !== o.id));
   }
 
-  protected toggleOpen(): void {
-    if (this.open()) this.dismiss();
-    else this.show();
+  protected onSelect(e: ListboxValueChangeEvent<ComboOption>): void {
+    const o = e.value[0];
+    if (o) this.pick(o);
   }
 
-  /** Keys on the closed or open button: arrows / Enter / Space open and move, a letter starts a search. */
+  protected toggleOpen(): void {
+    if (this.open()) this.close();
+    else this.open.set(true);
+  }
+
+  /** On the button: arrows open the list and move into it, a letter starts a search. */
   protected onToggleKey(e: KeyboardEvent): void {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      if (!this.open()) {
-        e.preventDefault();
-        this.show(0);
-      } else this.move(e.key === 'ArrowDown' ? 1 : -1, e);
-    } else if ((e.key === 'Enter' || e.key === ' ') && this.open() && this.active() >= 0) {
-      this.pickActive(e);
-    } else if (e.key === 'Escape') {
-      this.close(e);
+      e.preventDefault();
+      this.open.set(true);
+      this.focusList();
     } else if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
-      this.show();
+      this.open.set(true);
       this.setQuery(this.query() + e.key);
-      queueMicrotask(() => this.search()?.nativeElement.focus());
+      afterNextRender(() => this.search()?.nativeElement.focus(), { injector: this.injector });
+    }
+  }
+
+  /** In the search field: arrows go to the list, Enter picks the first match. */
+  protected onSearchKey(e: KeyboardEvent): void {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.focusList();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const first = this.filtered()[0];
+      if (first && this.query()) this.pick(first);
     }
   }
 
   protected setQuery(q: string): void {
     this.query.set(q);
-    this.active.set(q ? 0 : -1);
     this.searchChange.emit(q);
   }
 
-  protected move(delta: number, e: Event): void {
-    e.preventDefault();
-    this.open.set(true);
-    const n = this.filtered().length;
-    const i = this.active();
-    if (n) this.active.set(i < 0 ? (delta > 0 ? 0 : n - 1) : (i + delta + n) % n);
+  /** A press outside the list closes it; on the button, the button's own click does. */
+  protected onOutsideClick(e: MouseEvent): void {
+    if (!this.toggle().nativeElement.contains(_getEventTarget(e) as Node | null)) this.dismiss();
   }
 
-  protected pickActive(e: Event): void {
-    e.preventDefault();
-    const o = this.filtered()[this.active()];
-    if (o) this.pick(o, true);
+  /** Tab out of the button or of the list, to anything else, closes it. */
+  protected onFocusOut(e: FocusEvent): void {
+    const next = e.relatedTarget as Node | null;
+    const panel = this.search()?.nativeElement.closest('.panel');
+    if (next && !this.toggle().nativeElement.contains(next) && !panel?.contains(next)) this.dismiss();
   }
 
-  protected close(e: Event): void {
-    if (this.open()) {
-      e.stopPropagation();
-      this.dismiss();
-      this.toggle()?.nativeElement.focus();
+  /** Escape anywhere in the list, or on the button while it is open. */
+  protected onOverlayKey(e: KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      this.close();
     }
   }
 
-  /** Keeps focus where it is when the press lands on the panel outside the search field. */
-  protected keepFocus(e: Event): void {
-    if (e.target !== this.search()?.nativeElement) e.preventDefault();
+  /** The overlay went away on its own (navigation): keep the state in step. */
+  protected onDetach(): void {
+    if (this.open()) this.dismiss();
   }
 
-  protected onFocusOut(e: FocusEvent): void {
-    const next = e.relatedTarget as Node | null;
-    if (next && !this.host.nativeElement.contains(next)) this.dismiss();
+  /** After Escape or a pick: back to the button. */
+  protected close(): void {
+    this.dismiss();
+    this.toggle().nativeElement.focus();
   }
 
-  /**
-   * Closes on a press outside. In the plugin's shadow root, `e.target` seen from `document` is the
-   * shadow host, never an element of the list: the composed path tells where the press really landed.
-   */
-  protected onDocumentPointerDown(e: Event): void {
-    if (this.open() && !e.composedPath().includes(this.host.nativeElement)) this.dismiss();
-  }
-
-  /** Opens the list; no option is highlighted until an arrow key or a search picks one. */
-  private show(active = -1): void {
-    this.open.set(true);
-    this.active.set(active);
-    // Near the bottom of a sheet the list would open under the footer: bring it into view.
-    afterNextRender(() => this.host.nativeElement.querySelector('.panel')?.scrollIntoView?.({ block: 'nearest' }), {
-      injector: this.injector,
-    });
+  /** The listbox puts the focus on its first option; its key manager takes the arrows from there. */
+  private focusList(): void {
+    afterNextRender(() => this.listbox()?.focus(), { injector: this.injector });
   }
 
   private dismiss(): void {
     this.open.set(false);
     this.query.set('');
-    this.active.set(-1);
   }
 }
 

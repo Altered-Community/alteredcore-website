@@ -52,6 +52,11 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   `contentLocale()`.
 - Design system sous le préfixe `ar-`. Un écran n'utilise que des composants `ar-*` et du layout ; s'il manque un
   composant, l'ajouter au design system avant de l'utiliser.
+- Composants `ar-*` interactifs : partir du CDK Angular (`@angular/cdk`) plutôt que de réécrire le comportement à la
+  main : `overlay` (listes déroulantes, popovers : position, clic extérieur, Échap, scroll), `listbox` / `menu`
+  (clavier, option active, ARIA), `dialog`, `a11y` (focus, `FocusTrap`, `LiveAnnouncer`). Le code du composant se
+  limite alors au rendu et à ce qui lui est propre. Le plugin monte les overlays du CDK dans son shadow root
+  (`ShadowOverlayContainer`).
 - Tout composant `ar-*` ajouté ou modifié met à jour `design/COMPONENTS.md`.
 - Styles : aucune valeur en dur. Couleurs, rayons, ombres, espacements via `var(--ar-*)` ; hauteurs de contrôle
   via `--ar-control-sm|md|lg` (elles changent avec `data-density`).
