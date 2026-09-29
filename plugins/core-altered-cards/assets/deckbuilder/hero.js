@@ -25,7 +25,7 @@
         var faction = heroData.factionCode || factionFromRef(ref);
         deck.hero.factionCode = faction; // resolved once here so later reads (e.g. reset) don't need to recompute
         var fData   = AlteredDB.factions[faction] || {};
-        var fColor  = fData.color || '#fff';
+        var fColor  = fData.color || 'var(--ac-color-overlay-control)';
 
         elHeroBanner.innerHTML = '';
         elHeroBanner.style.cssText = '';
@@ -34,7 +34,7 @@
             var heroImg = AlteredDB.cdnUrl + '/cards/hero/' + heroPortraitRef(ref) + '_1.webp';
             var fImg    = faction ? AlteredDB.pluginAssetsUrl + '/faction/' + faction + '.png' : '';
             elHeroBanner.style.cssText =
-                'background-image:linear-gradient(to right,' + fColor + 'b3 30%,' + fColor + '00 100%),url(' + heroImg + ');' +
+                'background-image:linear-gradient(to right,color-mix(in srgb, ' + fColor + ' 70%, transparent) 30%,transparent 100%),url(' + heroImg + ');' +
                 'background-size:cover;background-position:left top;';
         }
 

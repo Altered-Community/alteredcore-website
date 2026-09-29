@@ -37,6 +37,14 @@ $txt = [
         'page_title'      => 'Decks',
         'page_desc'       => 'Altered TCG decks.',
         'section_title'   => 'Decks',
+        'section_subtitle'=> 'Build, import and share your Altered decks.',
+        'filters_toggle'  => 'Show filters',
+        'tabs_label'      => 'Deck lists',
+        'views_label'     => 'Views',
+        'upvote_label'    => 'Upvote this deck',
+        'delete_btn'      => 'Delete',
+        'pagination_label'=> 'Pages',
+        'page_go'         => 'Go',
         'tab_my'          => 'My Decks',
         'tab_public'      => 'Community',
         'tab_contest'     => 'Starter Deck Contest',
@@ -141,6 +149,14 @@ $txt = [
         'page_title'      => 'Decks',
         'page_desc'       => 'Decks Altered TCG.',
         'section_title'   => 'Decks',
+        'section_subtitle'=> 'Créez, importez et partagez vos decks Altered.',
+        'filters_toggle'  => 'Afficher les filtres',
+        'tabs_label'      => 'Listes de decks',
+        'views_label'     => 'Vues',
+        'upvote_label'    => 'Voter pour ce deck',
+        'delete_btn'      => 'Supprimer',
+        'pagination_label'=> 'Pages',
+        'page_go'         => 'OK',
         'tab_my'          => 'Mes decks',
         'tab_public'      => 'Communauté',
         'tab_contest'     => 'Concours deck de démarrage',
@@ -635,300 +651,312 @@ $showPublicTab = $publicDecksApiPath !== '';
 
 ?>
 
-<div class="container py-4 decks-page">
+<?php
+// Faction accent of the deck tiles: the design-system faction tokens (both themes).
+$_factionTokens = ['AX' => 'axiom', 'BR' => 'bravos', 'LY' => 'lyra', 'MU' => 'muna', 'OR' => 'ordis', 'YZ' => 'yzmir'];
+$_factionColorVars = [];
+foreach ($factionsData as $_fc => $_fd) {
+    $_factionColorVars[$_fc] = isset($_factionTokens[$_fc]) ? 'var(--ac-faction-' . $_factionTokens[$_fc] . ')' : 'var(--ac-color-overlay-control)';
+}
+// Renders the chip rows + selects of one tab's filter panel.
+$_deckFilterChip = function (string $attr, string $value, string $label, string $lead = '', bool $hidden = false): string {
+    return '<button type="button" class="ac-chip" aria-pressed="false" data-' . $attr . '="' . h($value) . '"'
+         . ($hidden ? ' data-hidden="1" hidden' : '') . '>' . $lead . h($label) . '</button>';
+};
+?>
 
-    <div class="section-title mb-3"><span><?= h($txt['section_title']) ?></span></div>
+<div class="ac-page ac-page--wide decks-page">
+
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($txt['section_title']) ?></h1>
+            <p class="ac-page-header__subtitle"><?= h($txt['section_subtitle']) ?></p>
+        </div>
+        <?php if ($isLoggedIn): ?>
+        <div class="ac-page-header__actions">
+            <button type="button" class="ac-button ac-button--secondary"
+                    data-bs-toggle="modal" data-bs-target="#importDeckModal">
+                <?= ac_icon('file-input') ?><?= h($txt['import_btn']) ?>
+            </button>
+            <a href="<?= h(BASE_URL) ?>/pages/equinox-deck-import" class="ac-button ac-button--secondary">
+                <?= ac_icon('file-archive') ?><?= h($txt['import_bulk_btn']) ?>
+            </a>
+            <?php if ($showNewDeckBtn): ?>
+            <a href="<?= h($newDeckHref) ?>" class="ac-button">
+                <?= ac_icon('plus') ?><?= h($txt['create_btn']) ?>
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php elseif ($guestModeEnabled): ?>
+        <div class="ac-page-header__actions">
+            <a href="<?= h(BASE_URL) ?>/pages/deckbuilder" class="ac-button">
+                <?= ac_icon('plus') ?><?= h($txt['guest_new_btn']) ?>
+            </a>
+        </div>
+        <?php endif; ?>
+    </header>
 
     <?php if (!empty($communityBuilders)): ?>
-    <div class="d-none d-lg-flex" style="background:var(--sand-100);border:1px solid var(--sand-300);border-left:3px solid var(--primary-400);border-radius:.5rem;padding:.8rem 1rem;margin-bottom:1.25rem;font-size:.875rem;color:var(--neutral-700);align-items:center;gap:1rem">
-        <span style="flex:1"><i class="fa-solid fa-circle-info me-2" style="color:var(--primary-400)"></i><?= h($txt['community_info']) ?></span>
-        <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0"
+    <div class="ac-notice deck-community" role="note">
+        <?= ac_icon('info') ?>
+        <p><?= h($txt['community_info']) ?></p>
+        <button type="button" class="ac-button ac-button--secondary ac-button--sm"
                 data-bs-toggle="modal" data-bs-target="#communityBuildersModal">
-            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['community_btn']) ?>
+            <?= ac_icon('external-link') ?><?= h($txt['community_btn']) ?>
         </button>
     </div>
     <?php endif; ?>
 
     <?php if ($showPublicTab): ?>
-    <div class="decks-tabs mb-4">
-        <button class="decks-tab <?= ($isLoggedIn || !$showPublicTab) ? 'active' : '' ?>" data-tab="my">
-            <i class="fa-solid fa-user"></i>
-            <span><?= h($txt['tab_my']) ?></span>
+    <?php $_myActive = ($isLoggedIn || !$showPublicTab); ?>
+    <div class="ac-tabs ac-tabs--underline decks-list-tabs" role="tablist" aria-label="<?= h($txt['tabs_label']) ?>">
+        <button type="button" role="tab" id="decks-tab-my" aria-controls="tab-my"
+                class="decks-list-tab<?= $_myActive ? ' is-active active' : '' ?>"
+                aria-selected="<?= $_myActive ? 'true' : 'false' ?>" data-tab="my">
+            <?= ac_icon('user') ?><span><?= h($txt['tab_my']) ?></span>
         </button>
-        <button class="decks-tab <?= (!$isLoggedIn && $showPublicTab) ? 'active' : '' ?>" data-tab="public">
-            <i class="fa-solid fa-globe"></i>
-            <span><?= h($txt['tab_public']) ?></span>
+        <button type="button" role="tab" id="decks-tab-public" aria-controls="tab-public"
+                class="decks-list-tab<?= !$_myActive ? ' is-active active' : '' ?>"
+                aria-selected="<?= !$_myActive ? 'true' : 'false' ?>" data-tab="public">
+            <?= ac_icon('globe') ?><span><?= h($txt['tab_public']) ?></span>
         </button>
-        <button class="decks-tab" data-tab="contest">
-            <i class="fa-solid fa-trophy"></i>
-            <span><?= h($txt['tab_contest']) ?></span>
+        <button type="button" role="tab" id="decks-tab-contest" aria-controls="tab-contest"
+                class="decks-list-tab" aria-selected="false" data-tab="contest">
+            <?= ac_icon('trophy') ?><span><?= h($txt['tab_contest']) ?></span>
         </button>
     </div>
-    <?php else: ?>
-    <div class="mb-4"></div>
     <?php endif; ?>
 
     <?php if ($flash = getFlash()): ?>
-    <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : 'success' ?> mb-3">
-        <?= h($flash['msg']) ?>
+    <div class="ac-notice ac-notice--<?= $flash['type'] === 'error' ? 'danger' : 'success' ?> deck-local" role="status">
+        <?= ac_icon($flash['type'] === 'error' ? 'triangle-alert' : 'check') ?>
+        <div><?= h($flash['msg']) ?></div>
     </div>
     <?php endif; ?>
 
     <!-- ── My Decks tab ────────────────────────────────────────────────────── -->
-    <div id="tab-my" class="decks-tab-pane"<?= (!$isLoggedIn && $showPublicTab) ? ' style="display:none"' : '' ?>>
-
-        <div class="d-flex align-items-center mb-4 flex-wrap gap-3">
-            <?php if ($isLoggedIn): ?>
-            <span id="my-deck-count" class="text-muted small" style="display:none"></span>
-            <div class="d-flex align-items-center gap-2 ms-auto">
-                <button type="button" class="btn btn-outline-secondary btn-sm"
-                        data-bs-toggle="modal" data-bs-target="#importDeckModal"
-                        title="<?= h($txt['import_btn']) ?>">
-                    <i class="fa-solid fa-file-import me-1"></i><?= h($txt['import_btn']) ?>
-                </button>
-                <a href="<?= h(BASE_URL) ?>/pages/equinox-deck-import" class="btn btn-outline-secondary btn-sm"
-                   title="<?= h($txt['import_bulk_btn']) ?>">
-                    <i class="fa-solid fa-file-zipper me-1"></i><?= h($txt['import_bulk_btn']) ?>
-                </a>
-                <?php if ($showNewDeckBtn): ?>
-                <a href="<?= h($newDeckHref) ?>" class="btn btn-primary-altered btn-sm" title="<?= h($txt['create_btn']) ?>">
-                    <i class="fa-solid fa-plus me-1"></i><?= h($txt['create_btn']) ?>
-                </a>
-                <?php endif; ?>
-            </div>
-            <?php elseif ($guestModeEnabled): ?>
-            <div class="ms-auto">
-                <a href="<?= h(BASE_URL) ?>/pages/deckbuilder" class="btn btn-sm" style="background:#f59e0b;color:#fff;border:none">
-                    <i class="fa-solid fa-plus me-1"></i><?= h($txt['guest_new_btn']) ?>
-                </a>
-            </div>
-            <?php endif; ?>
-        </div>
+    <div id="tab-my" class="decks-tab-pane"<?= $showPublicTab ? ' role="tabpanel" aria-labelledby="decks-tab-my"' : '' ?><?= (!$isLoggedIn && $showPublicTab) ? ' style="display:none"' : '' ?>>
 
         <!-- Local deck import zone for logged-in users (populated by JS) -->
-        <div id="local-deck-import" style="display:none;margin-bottom:1.25rem"></div>
+        <div id="local-deck-import" class="deck-local" style="display:none"></div>
 
         <?php if (!$isLoggedIn && !$guestModeEnabled): ?>
         <!-- Login CTA (no guest mode) -->
-        <div class="text-center py-5">
-            <i class="fa-solid fa-layer-group" style="font-size:3rem;color:var(--neutral-200);margin-bottom:1rem;display:block"></i>
-            <p class="text-muted mb-3"><?= h($txt['login_msg']) ?></p>
-            <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode(BASE_URL . '/pages/decks')) ?>" class="btn btn-primary-altered">
-                <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['login_btn']) ?>
+        <div class="ac-empty deck-login">
+            <?= ac_icon('layers') ?>
+            <p><?= h($txt['login_msg']) ?></p>
+            <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode(BASE_URL . '/pages/decks')) ?>" class="ac-button">
+                <?= ac_icon('log-in') ?><?= h($txt['login_btn']) ?>
             </a>
         </div>
 
         <?php elseif (!$isLoggedIn): ?>
         <!-- Guest banner -->
-        <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:1.25rem;font-size:.85rem;color:#92400e">
-            <i class="fa-solid fa-circle-info me-1"></i><?= h($txt['guest_banner']) ?>
+        <div class="ac-notice ac-notice--warning deck-local" role="note">
+            <?= ac_icon('info') ?>
+            <div><?= h($txt['guest_banner']) ?></div>
         </div>
 
         <!-- Local deck (rendered by JS) -->
-        <div id="guest-deck-wrap" style="display:none" class="mb-4">
-            <div class="row g-3" id="guest-deck-grid"></div>
+        <div id="guest-deck-wrap" style="display:none">
+            <div class="ac-grid deck-grid" id="guest-deck-grid"></div>
         </div>
-        <div id="guest-no-deck" class="text-center py-3 text-muted small mb-3">
-            <?= h($txt['guest_no_deck']) ?>
+        <div id="guest-no-deck" class="ac-empty">
+            <?= ac_icon('layers') ?>
+            <p class="ac-empty__title"><?= h($txt['guest_no_deck']) ?></p>
         </div>
 
         <!-- Login CTA -->
-        <div class="text-center py-4" style="border-top:1px solid var(--sand-200)">
-            <p class="text-muted mb-3"><?= h($txt['guest_login_cta']) ?></p>
-            <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? '/pages/decks')) ?>" class="btn btn-primary-altered">
-                <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['login_btn']) ?>
+        <div class="ac-empty deck-login deck-guest-cta">
+            <p><?= h($txt['guest_login_cta']) ?></p>
+            <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? '/pages/decks')) ?>" class="ac-button">
+                <?= ac_icon('log-in') ?><?= h($txt['login_btn']) ?>
             </a>
         </div>
 
         <?php else: ?>
-        <!-- Filter form — always shown for logged-in users, JS triggers reload on change -->
-        <div class="card-altered p-3 mb-4">
-            <div class="filter-row mb-0">
-                <div class="deck-search-wrap">
-                    <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
-                    <input type="text" id="my-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
-                           class="form-control form-control-sm" style="width:220px" autocomplete="off">
+        <!-- Filter panel — JS reloads the list on every change -->
+        <div class="ac-card deck-filters">
+            <div class="deck-filters__top">
+                <div class="ac-input-icon deck-filters__search">
+                    <?= ac_icon('search') ?>
+                    <input type="search" id="my-deck-search" class="ac-input" autocomplete="off"
+                           placeholder="<?= h($txt['search_ph']) ?>" aria-label="<?= h($txt['search_ph']) ?>">
                 </div>
-                <button type="button" class="deck-filter-toggle d-lg-none ms-auto" aria-expanded="false">
-                    <i class="fa-solid fa-chevron-down"></i>
-                </button>
+                <button type="button" class="ac-icon-button deck-filter-toggle" aria-expanded="false"
+                        aria-label="<?= h($txt['filters_toggle']) ?>"><?= ac_icon('chevron-down') ?></button>
             </div>
-            <div class="deck-filter-collapsible">
-                <div class="filter-row filter-row--scroll mb-2 mt-2">
+            <div class="deck-filters__body deck-filter-collapsible">
+                <div class="deck-filters__chips filter-row--scroll">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                    <button type="button" class="filter-toggle" data-my-format="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>>
-                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
-                        <?= h($fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey)) ?>
-                    </button>
+                    <?= $_deckFilterChip('my-format', (string)$fmtKey, $fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey),
+                            '<span class="deck-dot" style="--deck-dot:' . h($fmtData['color'] ?? 'var(--ac-color-text-muted)') . '"></span>',
+                            !empty($fmtData['hidden'])) ?>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row filter-row--scroll mb-2">
+                <div class="deck-filters__chips filter-row--scroll">
                     <?php foreach ($factionsData as $fCode => $fData): ?>
-                    <button type="button" class="filter-toggle" data-my-faction="<?= h($fCode) ?>">
-                        <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
-                        <?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>
-                    </button>
+                    <?= $_deckFilterChip('my-faction', (string)$fCode, $fData[$uiLang] ?? $fData['en'] ?? $fCode,
+                            '<img class="deck-chip-img" src="' . h($pluginAssetsUrl) . '/faction/' . h($fCode) . '.png" alt="">') ?>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_hero']) ?></span>
-                    <select id="my-hero" class="form-select form-select-sm" style="width:auto;max-width:260px">
-                        <option value=""><?= h($txt['hero_all']) ?></option>
-                    </select>
+                <div class="deck-filters__chips filter-row--scroll">
+                    <?= $_deckFilterChip('my-visibility', '1', $txt['public'], ac_icon('globe')) ?>
+                    <?= $_deckFilterChip('my-visibility', '0', $txt['private'], ac_icon('lock')) ?>
                 </div>
-                <div class="filter-row filter-row--scroll mb-2">
-                    <button type="button" class="filter-toggle" data-my-visibility="1">
-                        <i class="fa-solid fa-globe me-1"></i><?= h($txt['public']) ?>
-                    </button>
-                    <button type="button" class="filter-toggle" data-my-visibility="0">
-                        <i class="fa-solid fa-lock me-1"></i><?= h($txt['private']) ?>
-                    </button>
-                </div>
-                <div class="filter-row mb-0">
-                    <span class="filter-label"><?= h($txt['lbl_sort']) ?></span>
-                    <select id="my-sort" class="form-select form-select-sm" style="width:auto">
-                        <option value="updatedAt:desc"><?= h($txt['sort_updated_desc']) ?></option>
-                        <option value="updatedAt:asc"><?= h($txt['sort_updated_asc']) ?></option>
-                        <option value="createdAt:desc"><?= h($txt['sort_created_desc']) ?></option>
-                        <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
-                        <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
-                        <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
-                    </select>
+                <div class="deck-filters__selects">
+                    <div class="ac-field">
+                        <label class="ac-field__label" for="my-hero"><?= h($txt['lbl_hero']) ?></label>
+                        <select id="my-hero" class="ac-select">
+                            <option value=""><?= h($txt['hero_all']) ?></option>
+                        </select>
+                    </div>
+                    <div class="ac-field">
+                        <label class="ac-field__label" for="my-sort"><?= h($txt['lbl_sort']) ?></label>
+                        <select id="my-sort" class="ac-select">
+                            <option value="updatedAt:desc"><?= h($txt['sort_updated_desc']) ?></option>
+                            <option value="updatedAt:asc"><?= h($txt['sort_updated_asc']) ?></option>
+                            <option value="createdAt:desc"><?= h($txt['sort_created_desc']) ?></option>
+                            <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
+                            <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
+                            <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-        <div id="my-loading" class="text-center py-4 text-muted" style="display:none">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div><?= h($txt['loading']) ?>
+        <p id="my-deck-count" class="deck-count ac-text-small ac-text-muted" style="display:none"></p>
+        <div id="my-loading" class="deck-state" role="status" style="display:none">
+            <span class="ac-spinner" aria-hidden="true"></span><?= h($txt['loading']) ?>
         </div>
-        <div id="my-error" class="text-center py-5" style="display:none"></div>
-        <div id="my-empty" class="text-center py-5" style="display:none">
-            <i class="fa-solid fa-layer-group" style="font-size:3rem;color:var(--neutral-200);margin-bottom:1rem;display:block"></i>
-            <p class="text-muted mb-3"><?= h($txt['no_decks']) ?></p>
+        <div id="my-error" class="ac-empty" style="display:none"></div>
+        <div id="my-empty" class="ac-empty" style="display:none">
+            <?= ac_icon('layers') ?>
+            <p class="ac-empty__title"><?= h($txt['no_decks']) ?></p>
+            <?php if ($showNewDeckBtn): ?>
+            <a href="<?= h($newDeckHref) ?>" class="ac-button ac-button--secondary ac-button--sm"><?= ac_icon('plus') ?><?= h($txt['create_btn']) ?></a>
+            <?php endif; ?>
         </div>
-        <div id="my-deck-grid" class="row g-3"></div>
-        <nav id="my-pagination" class="mt-4 d-flex justify-content-center gap-2" style="display:none!important"></nav>
+        <div id="my-deck-grid" class="ac-grid deck-grid"></div>
+        <nav id="my-pagination" class="deck-pagination" aria-label="<?= h($txt['pagination_label']) ?>" style="display:none!important"></nav>
 
         <?php endif; ?>
     </div><!-- /#tab-my -->
 
     <?php if ($showPublicTab): ?>
     <!-- ── Public Decks tab ───────────────────────────────────────────────── -->
-    <div id="tab-public" class="decks-tab-pane"<?= (!$isLoggedIn && $showPublicTab) ? '' : ' style="display:none"' ?>>
+    <div id="tab-public" class="decks-tab-pane" role="tabpanel" aria-labelledby="decks-tab-public"<?= (!$isLoggedIn && $showPublicTab) ? '' : ' style="display:none"' ?>>
 
-        <div class="card-altered p-3 mb-4">
-            <div class="filter-row mb-0">
-                <div class="deck-search-wrap">
-                    <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
-                    <input type="text" id="pub-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
-                           class="form-control form-control-sm" style="width:220px" autocomplete="off">
+        <div class="ac-card deck-filters">
+            <div class="deck-filters__top">
+                <div class="ac-input-icon deck-filters__search">
+                    <?= ac_icon('search') ?>
+                    <input type="search" id="pub-deck-search" class="ac-input" autocomplete="off"
+                           placeholder="<?= h($txt['search_ph']) ?>" aria-label="<?= h($txt['search_ph']) ?>">
                 </div>
-                <button type="button" class="deck-filter-toggle d-lg-none ms-auto" aria-expanded="false">
-                    <i class="fa-solid fa-chevron-down"></i>
-                </button>
+                <button type="button" class="ac-icon-button deck-filter-toggle" aria-expanded="false"
+                        aria-label="<?= h($txt['filters_toggle']) ?>"><?= ac_icon('chevron-down') ?></button>
             </div>
-            <div class="deck-filter-collapsible">
-                <div class="filter-row filter-row--scroll mb-2 mt-2">
+            <div class="deck-filters__body deck-filter-collapsible">
+                <div class="deck-filters__chips filter-row--scroll">
                     <?php foreach ($formatsData as $fmtKey => $fmtData): ?>
-                    <button type="button" class="filter-toggle" data-pub-format="<?= h($fmtKey) ?>"<?= !empty($fmtData['hidden']) ? ' data-hidden="1" hidden' : '' ?>>
-                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($fmtData['color'] ?? 'var(--neutral-400)') ?>;flex-shrink:0;display:inline-block"></span>
-                        <?= h($fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey)) ?>
-                    </button>
+                    <?= $_deckFilterChip('pub-format', (string)$fmtKey, $fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmtKey),
+                            '<span class="deck-dot" style="--deck-dot:' . h($fmtData['color'] ?? 'var(--ac-color-text-muted)') . '"></span>',
+                            !empty($fmtData['hidden'])) ?>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row filter-row--scroll mb-2">
+                <div class="deck-filters__chips filter-row--scroll">
                     <?php foreach ($factionsData as $fCode => $fData): ?>
-                    <button type="button" class="filter-toggle" data-pub-faction="<?= h($fCode) ?>">
-                        <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
-                        <?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>
-                    </button>
+                    <?= $_deckFilterChip('pub-faction', (string)$fCode, $fData[$uiLang] ?? $fData['en'] ?? $fCode,
+                            '<img class="deck-chip-img" src="' . h($pluginAssetsUrl) . '/faction/' . h($fCode) . '.png" alt="">') ?>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_hero']) ?></span>
-                    <select id="pub-hero" class="form-select form-select-sm" style="width:auto;max-width:260px">
-                        <option value=""><?= h($txt['hero_all']) ?></option>
-                    </select>
-                </div>
-                <div class="filter-row mb-0">
-                    <span class="filter-label"><?= h($txt['lbl_sort']) ?></span>
-                    <select id="pub-sort" class="form-select form-select-sm" style="width:auto">
-                        <option value="updatedAt:desc"><?= h($txt['sort_updated_desc']) ?></option>
-                        <option value="updatedAt:asc"><?= h($txt['sort_updated_asc']) ?></option>
-                        <option value="createdAt:desc"><?= h($txt['sort_created_desc']) ?></option>
-                        <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
-                        <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
-                        <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
-                        <option value="upvoteCount:desc"><?= h($txt['sort_upvotes_desc']) ?></option>
-                    </select>
+                <div class="deck-filters__selects">
+                    <div class="ac-field">
+                        <label class="ac-field__label" for="pub-hero"><?= h($txt['lbl_hero']) ?></label>
+                        <select id="pub-hero" class="ac-select">
+                            <option value=""><?= h($txt['hero_all']) ?></option>
+                        </select>
+                    </div>
+                    <div class="ac-field">
+                        <label class="ac-field__label" for="pub-sort"><?= h($txt['lbl_sort']) ?></label>
+                        <select id="pub-sort" class="ac-select">
+                            <option value="updatedAt:desc"><?= h($txt['sort_updated_desc']) ?></option>
+                            <option value="updatedAt:asc"><?= h($txt['sort_updated_asc']) ?></option>
+                            <option value="createdAt:desc"><?= h($txt['sort_created_desc']) ?></option>
+                            <option value="createdAt:asc"><?= h($txt['sort_created_asc']) ?></option>
+                            <option value="name:asc"><?= h($txt['sort_name_asc']) ?></option>
+                            <option value="name:desc"><?= h($txt['sort_name_desc']) ?></option>
+                            <option value="upvoteCount:desc"><?= h($txt['sort_upvotes_desc']) ?></option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="pub-loading" class="text-center py-4 text-muted" style="display:none">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div><?= h($txt['loading']) ?>
+        <div id="pub-loading" class="deck-state" role="status" style="display:none">
+            <span class="ac-spinner" aria-hidden="true"></span><?= h($txt['loading']) ?>
         </div>
-        <div id="pub-error" class="text-center py-5" style="display:none"></div>
-        <div id="pub-empty" class="text-center py-5" style="display:none">
-            <i class="fa-solid fa-layer-group" style="font-size:3rem;color:var(--neutral-200);margin-bottom:1rem;display:block"></i>
-            <p class="text-muted"><?= h($txt['no_public_decks']) ?></p>
+        <div id="pub-error" class="ac-empty" style="display:none"></div>
+        <div id="pub-empty" class="ac-empty" style="display:none">
+            <?= ac_icon('layers') ?>
+            <p class="ac-empty__title"><?= h($txt['no_public_decks']) ?></p>
         </div>
-        <div id="pub-no-match" class="text-center py-4 text-muted" style="display:none">
-            <?= h($txt['no_match']) ?>
+        <div id="pub-no-match" class="ac-empty" style="display:none">
+            <?= ac_icon('search') ?>
+            <p class="ac-empty__title"><?= h($txt['no_match']) ?></p>
         </div>
-        <div id="pub-grid" class="row g-3"></div>
-        <nav id="pub-pagination" class="mt-4 d-flex justify-content-center gap-2" style="display:none!important"></nav>
+        <div id="pub-grid" class="ac-grid deck-grid"></div>
+        <nav id="pub-pagination" class="deck-pagination" aria-label="<?= h($txt['pagination_label']) ?>" style="display:none!important"></nav>
 
     </div><!-- /#tab-public -->
     <?php endif; ?>
 
     <!-- Starter Deck Contest tab (JSON snapshot, no Decks API) -->
-    <div id="tab-contest" class="decks-tab-pane" style="display:none">
+    <div id="tab-contest" class="decks-tab-pane"<?= $showPublicTab ? ' role="tabpanel" aria-labelledby="decks-tab-contest"' : '' ?> style="display:none">
 
-        <div class="card-altered p-3 mb-4">
-            <div class="filter-row mb-0">
-                <div class="deck-search-wrap">
-                    <i class="fa-solid fa-magnifying-glass deck-search-icon"></i>
-                    <input type="text" id="contest-deck-search" placeholder="<?= h($txt['search_ph']) ?>"
-                           class="form-control form-control-sm" style="width:220px" autocomplete="off">
+        <div class="ac-card deck-filters">
+            <div class="deck-filters__top">
+                <div class="ac-input-icon deck-filters__search">
+                    <?= ac_icon('search') ?>
+                    <input type="search" id="contest-deck-search" class="ac-input" autocomplete="off"
+                           placeholder="<?= h($txt['search_ph']) ?>" aria-label="<?= h($txt['search_ph']) ?>">
                 </div>
-                <button type="button" class="deck-filter-toggle d-lg-none ms-auto" aria-expanded="false">
-                    <i class="fa-solid fa-chevron-down"></i>
-                </button>
+                <button type="button" class="ac-icon-button deck-filter-toggle" aria-expanded="false"
+                        aria-label="<?= h($txt['filters_toggle']) ?>"><?= ac_icon('chevron-down') ?></button>
             </div>
-            <div class="deck-filter-collapsible">
-                <div class="filter-row filter-row--scroll mb-2 mt-2">
-                    <button type="button" class="filter-toggle" data-contest-set="collection" title="<?= h($txt['filter_curated_collection']) ?>">
-                        <i class="fa-solid fa-layer-group me-1"></i><?= h($txt['filter_curated_collection']) ?>
+            <div class="deck-filters__body deck-filter-collapsible">
+                <div class="deck-filters__chips filter-row--scroll">
+                    <button type="button" class="ac-chip" aria-pressed="false" data-contest-set="collection" title="<?= h($txt['filter_curated_collection']) ?>">
+                        <?= ac_icon('layers') ?><?= h($txt['filter_curated_collection']) ?>
                     </button>
-                    <button type="button" class="filter-toggle active" data-contest-set="winners" title="<?= h($txt['filter_curated']) ?>">
-                        <i class="fa-solid fa-star me-1"></i><?= h($txt['filter_curated']) ?>
+                    <button type="button" class="ac-chip active" aria-pressed="true" data-contest-set="winners" title="<?= h($txt['filter_curated']) ?>">
+                        <?= ac_icon('star') ?><?= h($txt['filter_curated']) ?>
                     </button>
-                </div>
-                <div class="filter-row filter-row--scroll mb-2">
                     <?php $contestFmt = $formatsData['nuc'] ?? []; ?>
-                    <button type="button" class="filter-toggle active" style="cursor:default;pointer-events:none" aria-disabled="true">
-                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($contestFmt['color'] ?? '#5b8cef') ?>;flex-shrink:0;display:inline-block"></span>
+                    <span class="ac-chip" aria-pressed="true" aria-disabled="true">
+                        <span class="deck-dot" style="--deck-dot:<?= h($contestFmt['color'] ?? 'var(--ac-color-primary)') ?>"></span>
                         <?= h($contestFmt[$uiLang] ?? $contestFmt['en'] ?? 'Standard No Unique') ?>
-                    </button>
+                    </span>
                 </div>
-                <div class="filter-row filter-row--scroll mb-2">
+                <div class="deck-filters__chips filter-row--scroll">
                     <?php foreach ($factionsData as $fCode => $fData): ?>
-                    <button type="button" class="filter-toggle" data-contest-faction="<?= h($fCode) ?>">
-                        <img src="<?= $pluginAssetsUrl ?>/faction/<?= h($fCode) ?>.png" alt="<?= h($fCode) ?>">
-                        <?= h($fData[$uiLang] ?? $fData['en'] ?? $fCode) ?>
-                    </button>
+                    <?= $_deckFilterChip('contest-faction', (string)$fCode, $fData[$uiLang] ?? $fData['en'] ?? $fCode,
+                            '<img class="deck-chip-img" src="' . h($pluginAssetsUrl) . '/faction/' . h($fCode) . '.png" alt="">') ?>
                     <?php endforeach; ?>
                 </div>
-                <div class="filter-row mb-2">
-                    <span class="filter-label"><?= h($txt['lbl_hero']) ?></span>
-                    <select id="contest-hero" class="form-select form-select-sm" style="width:auto;max-width:260px">
-                        <option value=""><?= h($txt['hero_all']) ?></option>
-                    </select>
+                <div class="deck-filters__selects">
+                    <div class="ac-field">
+                        <label class="ac-field__label" for="contest-hero"><?= h($txt['lbl_hero']) ?></label>
+                        <select id="contest-hero" class="ac-select">
+                            <option value=""><?= h($txt['hero_all']) ?></option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="contest-grid" class="row g-3"></div>
+        <div id="contest-grid" class="ac-grid deck-grid"></div>
 
     </div><!-- /#tab-contest -->
 
@@ -976,16 +1004,35 @@ $showPublicTab = $publicDecksApiPath !== '';
         'legalityErrorsSection' => $txt['legality_errors_section'],
         'legalityKeys'          => $txt['legality_keys'],
         'hero_all'              => $txt['hero_all'],
+        'views_label'           => $txt['views_label'],
+        'upvote_label'          => $txt['upvote_label'],
+        'delete_btn'            => $txt['delete_btn'],
+        'pagination_label'      => $txt['pagination_label'],
+        'page_go'               => $txt['page_go'],
     ]) ?>;
     var formats = <?= json_encode(array_map(fn($d) => [
         'label' => $d[$uiLang] ?? $d['en'] ?? '',
-        'color' => $d['color'] ?? 'var(--neutral-400)',
+        'color' => $d['color'] ?? 'var(--ac-color-text-muted)',
     ], $formatsData)) ?>;
-    var factions = <?= json_encode(array_map(fn($d) => [
-        'color' => $d['color'] ?? '#ffffff',
+    var factions = <?= json_encode(array_combine(array_keys($factionsData), array_map(fn($code, $d) => [
+        'color' => $_factionColorVars[$code],
         'name'  => $d[$uiLang] ?? $d['en'] ?? '',
-    ], $factionsData)) ?>;
+    ], array_keys($factionsData), $factionsData))) ?>;
     var cdnUrl = <?= json_encode(CDN_URL) ?>;
+    // Icons rendered by PHP (ac_icon): this script runs before the deferred ac.js.
+    var ICONS = <?= json_encode([
+        'alert'    => ac_icon('triangle-alert'),
+        'check'    => ac_icon('check'),
+        'globe'    => ac_icon('globe'),
+        'lock'     => ac_icon('lock'),
+        'eye'      => ac_icon('eye'),
+        'heart'    => ac_icon('heart'),
+        'pencil'   => ac_icon('pencil'),
+        'trash'    => ac_icon('trash-2'),
+        'external' => ac_icon('external-link'),
+        'prev'     => ac_icon('chevron-left'),
+        'next'     => ac_icon('chevron-right'),
+    ]) ?>;
 
     // The Collector Booster's individually-serialized hero prints (ALT_DUSTERCB_P_<FACTION>_
     // <NUM>_<RARITY>_<001-030|XXX>, 6 heroes x 31 serials) have no per-serial portrait crop
@@ -1018,7 +1065,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     // filter collapsible toggle
     document.querySelectorAll('.deck-filter-toggle').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var collapsible = btn.closest('.card-altered').querySelector('.deck-filter-collapsible');
+            var collapsible = btn.closest('.deck-filters').querySelector('.deck-filter-collapsible');
             var expanded = collapsible.classList.toggle('expanded');
             btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         });
@@ -1027,11 +1074,15 @@ $showPublicTab = $publicDecksApiPath !== '';
     // tab switching
     var pubLoaded = false;
     var contestRendered = false;
-    document.querySelectorAll('.decks-tab').forEach(function (btn) {
+    document.querySelectorAll('.decks-list-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            document.querySelectorAll('.decks-tab').forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.decks-list-tab').forEach(function (b) {
+                b.classList.remove('active', 'is-active');
+                b.setAttribute('aria-selected', 'false');
+            });
             document.querySelectorAll('.decks-tab-pane').forEach(function (p) { p.style.display = 'none'; });
-            btn.classList.add('active');
+            btn.classList.add('active', 'is-active');
+            btn.setAttribute('aria-selected', 'true');
             var pane = document.getElementById('tab-' + btn.dataset.tab);
             if (pane) pane.style.display = '';
             if (btn.dataset.tab === 'public' && !pubLoaded) {
@@ -1076,7 +1127,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     if (TARGET_TAB === 'my' && !myIsLoggedIn && showPublic) TARGET_TAB = 'public';
 
     function activeDeckTab() {
-        var t = document.querySelector('.decks-tab.active');
+        var t = document.querySelector('.decks-list-tab.active');
         return t ? t.dataset.tab : DEFAULT_DECK_TAB;
     }
 
@@ -1123,17 +1174,17 @@ $showPublicTab = $publicDecksApiPath !== '';
         var fmt = p.get('format');
         if (fmt) {
             var fb = document.querySelector('[data-my-format="' + fmt.replace(/[^a-z0-9_-]/gi, '') + '"]');
-            if (fb) { document.querySelectorAll('[data-my-format]').forEach(function(b){ b.classList.remove('active'); }); fb.classList.add('active'); myFormat = fb.dataset.myFormat; }
+            if (fb) { document.querySelectorAll('[data-my-format]').forEach(function(b){ setChip(b, false); }); setChip(fb, true); myFormat = fb.dataset.myFormat; }
         }
         var fac = p.get('faction');
         if (fac) {
             var ab = document.querySelector('[data-my-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
-            if (ab) { document.querySelectorAll('[data-my-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); myFaction = ab.dataset.myFaction; }
+            if (ab) { document.querySelectorAll('[data-my-faction]').forEach(function(b){ setChip(b, false); }); setChip(ab, true); myFaction = ab.dataset.myFaction; }
         }
         var vis = p.get('visibility');
         if (vis === '0' || vis === '1') {
             var vb = document.querySelector('[data-my-visibility="' + vis + '"]');
-            if (vb) { document.querySelectorAll('[data-my-visibility]').forEach(function(b){ b.classList.remove('active'); }); vb.classList.add('active'); myVisibility = vis; }
+            if (vb) { document.querySelectorAll('[data-my-visibility]').forEach(function(b){ setChip(b, false); }); setChip(vb, true); myVisibility = vis; }
         }
         var sort = p.get('sort');
         var mySortEl = document.getElementById('my-sort');
@@ -1150,12 +1201,12 @@ $showPublicTab = $publicDecksApiPath !== '';
         var fmt = p.get('format');
         if (fmt) {
             var fb = document.querySelector('[data-pub-format="' + fmt.replace(/[^a-z0-9_-]/gi, '') + '"]');
-            if (fb) { document.querySelectorAll('[data-pub-format]').forEach(function(b){ b.classList.remove('active'); }); fb.classList.add('active'); pubFormat = fb.dataset.pubFormat; }
+            if (fb) { document.querySelectorAll('[data-pub-format]').forEach(function(b){ setChip(b, false); }); setChip(fb, true); pubFormat = fb.dataset.pubFormat; }
         }
         var fac = p.get('faction');
         if (fac) {
             var ab = document.querySelector('[data-pub-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
-            if (ab) { document.querySelectorAll('[data-pub-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); pubFaction = ab.dataset.pubFaction; }
+            if (ab) { document.querySelectorAll('[data-pub-faction]').forEach(function(b){ setChip(b, false); }); setChip(ab, true); pubFaction = ab.dataset.pubFaction; }
         }
         var sort = p.get('sort');
         var pubSortEl = document.getElementById('pub-sort');
@@ -1172,12 +1223,12 @@ $showPublicTab = $publicDecksApiPath !== '';
         var set = p.get('set');
         if (set === 'collection' || set === 'winners') {
             var sb = document.querySelector('[data-contest-set="' + set + '"]');
-            if (sb) { document.querySelectorAll('[data-contest-set]').forEach(function(b){ b.classList.remove('active'); }); sb.classList.add('active'); contestSet = set; }
+            if (sb) { document.querySelectorAll('[data-contest-set]').forEach(function(b){ setChip(b, false); }); setChip(sb, true); contestSet = set; }
         }
         var fac = p.get('faction');
         if (fac) {
             var ab = document.querySelector('[data-contest-faction="' + fac.replace(/[^a-z0-9_-]/gi, '') + '"]');
-            if (ab) { document.querySelectorAll('[data-contest-faction]').forEach(function(b){ b.classList.remove('active'); }); ab.classList.add('active'); contestFaction = ab.dataset.contestFaction; }
+            if (ab) { document.querySelectorAll('[data-contest-faction]').forEach(function(b){ setChip(b, false); }); setChip(ab, true); contestFaction = ab.dataset.contestFaction; }
         }
         var hero = p.get('hero');
         if (hero) contestHero = hero;       // applied during refreshContestHeroSelect()
@@ -1188,10 +1239,15 @@ $showPublicTab = $publicDecksApiPath !== '';
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+    // Filter chips: .active (read by the code below) + aria-pressed (drawn by .ac-chip).
+    function setChip(b, on) {
+        b.classList.toggle('active', !!on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
     function apiErrorHtml(msg) {
-        return '<i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>'
-             + '<p class="text-muted mb-1">' + escHtml(msg) + '</p>'
-             + '<p class="text-muted small">' + escHtml(txt.api_later) + '</p>';
+        return ICONS.alert
+             + '<p class="ac-empty__title">' + escHtml(msg) + '</p>'
+             + '<p>' + escHtml(txt.api_later) + '</p>';
     }
 
     function buildMyDeckEditHtml(deckId) {
@@ -1204,79 +1260,36 @@ $showPublicTab = $publicDecksApiPath !== '';
 
         if (!showEdit && !useDropdown) return '';
 
-        var btnStyle = 'background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.15);color:#333';
+        var btnClass = 'ac-button ac-button--secondary ac-button--sm';
         if (showEdit && !useDropdown) {
-            return '<a href="' + escHtml(editHref) + '" class="btn btn-sm" style="' + btnStyle + '">'
-                + '<i class="fa-solid fa-pen me-1"></i>' + escHtml(txt.edit_btn) + '</a>';
+            return '<a href="' + escHtml(editHref) + '" class="' + btnClass + '">'
+                + ICONS.pencil + escHtml(txt.edit_btn) + '</a>';
         }
         var items = '';
         if (showEdit) {
             items += '<li><a class="dropdown-item" href="' + escHtml(editHref) + '">'
                 + (mySiteLogo
-                    ? '<img src="' + escHtml(mySiteLogo) + '" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px">'
-                    : '<i class="fa-solid fa-pen fa-fw me-1"></i>')
+                    ? '<img src="' + escHtml(mySiteLogo) + '" alt="" class="deck-img-16">'
+                    : ICONS.pencil)
                 + escHtml(mySiteName) + '</a></li><li><hr class="dropdown-divider"></li>';
         }
         myDeckBuilders.forEach(function(cb) {
             var cbHref = cb.deckbuilder_url.replace('{deck_id}', deckId) + (cb.deckbuilder_url.indexOf('?') >= 0 ? '&' : '?') + 'theme=' + theme;
             items += '<li><a class="dropdown-item" href="' + escHtml(cbHref) + '" target="_blank" rel="noopener">'
                 + (cb.logo
-                    ? '<img src="' + escHtml(cb.logo) + '" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px">'
-                    : '<i class="fa-solid fa-arrow-up-right-from-square fa-fw me-1"></i>')
+                    ? '<img src="' + escHtml(cb.logo) + '" alt="" class="deck-img-16">'
+                    : ICONS.external)
                 + escHtml(cb.title) + '</a></li>';
         });
-        return '<div class="dropdown"><button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" style="' + btnStyle + '">'
-            + '<i class="fa-solid fa-pen me-1"></i>' + escHtml(txt.edit_btn)
+        return '<div class="dropdown"><button type="button" class="' + btnClass + ' dropdown-toggle" data-bs-toggle="dropdown">'
+            + ICONS.pencil + escHtml(txt.edit_btn)
             + '</button><ul class="dropdown-menu dropdown-menu-start">' + items + '</ul></div>';
     }
 
-    function _deckHeroStyle(heroImgUrl, factionColor) {
-        return heroImgUrl
-            ? 'background-image:linear-gradient(to right,' + factionColor + 'cc 30%,' + factionColor + '00 100%),url(' + escHtml(heroImgUrl) + ');background-size:cover;background-position:left top;'
-            : 'background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url(' + pluginAssetsUrl + '/img/ALT_OFFICIAL_CARDBACK.png);background-size:120% auto;background-position:center center;background-repeat:no-repeat;';
-    }
-
-    function _deckRarityHtml(byRarity) {
-        var html = '';
-        ['C','R','E','U'].forEach(function(r) {
-            var qty = byRarity[r] || 0;
-            if (qty > 0) html += '<span class="d-flex align-items-center gap-1" style="font-size:.8rem">'
-                + '<img src="' + pluginAssetsUrl + '/gems/' + r + '.png" alt="' + r + '" style="width:14px;height:14px;object-fit:contain">'
-                + '<span style="color:rgba(255,255,255,.7)">' + qty + '</span></span>';
-        });
-        return html;
-    }
-
-    function _deckHasErrors(formatErrors, legalityDetail) {
-        if (Array.isArray(formatErrors) && formatErrors.length > 0) return true;
-        if (!legalityDetail || typeof legalityDetail !== 'object') return false;
-        for (var k in legalityDetail) {
-            if (k !== 'global' && legalityDetail[k] === false) return true;
-        }
-        return false;
-    }
-
-    function _deckLegalityHtml(legal, hasActualErrors, formatErrors, legalityDetail, fmtLabel) {
-        if (legal === true)
-            return '<span class="badge" style="background:rgba(34,197,94,.85);color:#fff;font-size:.72rem"><i class="fa-solid fa-check me-1"></i>' + escHtml(txt.legal) + '</span>';
-        if (legal === false && hasActualErrors)
-            return '<button type="button" class="badge border-0 bg-danger js-deck-illegal" style="position:relative;z-index:2"'
-                + ' data-errors="' + escHtml(JSON.stringify(formatErrors)) + '"'
-                + ' data-legality="' + escHtml(JSON.stringify(legalityDetail)) + '"'
-                + ' data-format="' + escHtml(fmtLabel) + '">'
-                + '<i class="fa-solid fa-triangle-exclamation me-1"></i>' + escHtml(txt.illegal) + '</button>';
-        return '';
-    }
-
-    function renderMyDeck(deck) {
-        var deckId   = deck.id || '';
-        var name     = deck.name || txt.unnamed;
+    // Everything a deck tile shows that the "my" and "public" renderers share.
+    function _deckData(deck) {
         var fmt      = (deck.format || 'standard').toLowerCase();
         var fmtData  = formats[fmt] || {};
-        var fmtLabel = fmtData.label || fmt;
-        var fmtColor = fmtData.color || 'var(--neutral-400)';
-        var isPublic = !!deck.isPublic;
-        var isDraft  = !deck.hasOwnProperty('isDraft') || !!deck.isDraft;
         var stats    = deck.stats || {};
         var hero     = stats.hero || {};
         var heroRef  = hero.reference || '';
@@ -1290,59 +1303,113 @@ $showPublicTab = $publicDecksApiPath !== '';
                 }
             }
         }
-        var totalCards = stats.totalCards != null ? stats.totalCards : null;
-        var byRarity   = stats.byRarity || {};
-        var desc       = deck.description || '';
-        var legal          = deck.hasOwnProperty('legal') ? deck.legal : null;
         var formatErrors   = Array.isArray(deck.formatErrors) ? deck.formatErrors : [];
         var legalityDetail = (deck.legalityDetail && typeof deck.legalityDetail === 'object') ? deck.legalityDetail : {};
-
-        var factionCode  = '';
+        var legal          = deck.hasOwnProperty('legal') ? deck.legal : null;
+        var fmtLabel       = fmtData.label || fmt;
+        var factionCode = '';
         var fm = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
         if (fm) factionCode = fm[1];
-        var factionData  = factions[factionCode] || {};
-        var factionColor = factionData.color || '#ffffff';
-        var factionImg   = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
-        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + heroPortraitRef(heroRef) + '_1.webp' : '';
+        var factionData = factions[factionCode] || {};
+        return {
+            fmtLabel:     fmtLabel,
+            fmtColor:     fmtData.color || 'var(--ac-color-text-muted)',
+            heroName:     heroName,
+            totalCards:   stats.totalCards != null ? stats.totalCards : null,
+            byRarity:     stats.byRarity || {},
+            desc:         deck.description || '',
+            factionCode:  factionCode,
+            factionColor: factionData.color || 'var(--ac-color-overlay-control)',
+            factionImg:   factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '',
+            heroImgUrl:   heroRef ? cdnUrl + '/cards/hero/' + heroPortraitRef(heroRef) + '_1.webp' : '',
+            legalityHtml: _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel)
+        };
+    }
 
-        var heroStyle    = _deckHeroStyle(heroImgUrl, factionColor);
-        var rarityHtml   = _deckRarityHtml(byRarity);
-        var legalityHtml = _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel);
+    // Artwork band + the link that makes the whole tile clickable.
+    function _deckTileTop(deckId, name, d) {
+        var art = d.heroImgUrl
+            ? '<div class="deck-tile__art" style="background-image:url(' + escHtml(d.heroImgUrl) + ')">'
+            : '<div class="deck-tile__art deck-tile__art--empty">';
+        return '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-tile__link deck-card-link-overlay" aria-label="' + escHtml(name) + '"></a>'
+            + art
+            + (d.factionImg ? '<img class="deck-tile__faction" src="' + escHtml(d.factionImg) + '" alt="' + escHtml(d.factionCode) + '">' : '')
+            + '</div>';
+    }
+
+    function _deckFormatBadge(d) {
+        return '<span class="ac-badge"><span class="deck-dot" style="--deck-dot:' + escHtml(d.fmtColor) + '"></span>' + escHtml(d.fmtLabel) + '</span>';
+    }
+
+    function _deckVisibilityBadge(isPublic) {
+        return isPublic
+            ? '<span class="ac-badge ac-badge--blue deck-tile__visibility">' + ICONS.globe + escHtml(txt.public) + '</span>'
+            : '<span class="ac-badge deck-tile__visibility">' + ICONS.lock + escHtml(txt.private) + '</span>';
+    }
+
+    function _deckCountsHtml(d) {
+        var html = '<span class="deck-tile__counts">';
+        if (d.totalCards !== null) html += '<span class="deck-tile__total">' + d.totalCards + ' ' + escHtml(txt.cards) + '</span>';
+        ['C','R','E','U'].forEach(function(r) {
+            var qty = d.byRarity[r] || 0;
+            if (qty > 0) html += '<span class="deck-tile__gem">'
+                + '<img src="' + pluginAssetsUrl + '/gems/' + r + '.png" alt="' + r + '">' + qty + '</span>';
+        });
+        return html + '</span>';
+    }
+
+    function _deckHasErrors(formatErrors, legalityDetail) {
+        if (Array.isArray(formatErrors) && formatErrors.length > 0) return true;
+        if (!legalityDetail || typeof legalityDetail !== 'object') return false;
+        for (var k in legalityDetail) {
+            if (k !== 'global' && legalityDetail[k] === false) return true;
+        }
+        return false;
+    }
+
+    function _deckLegalityHtml(legal, hasActualErrors, formatErrors, legalityDetail, fmtLabel) {
+        if (legal === true)
+            return '<span class="ac-badge ac-badge--green">' + ICONS.check + escHtml(txt.legal) + '</span>';
+        if (legal === false && hasActualErrors)
+            return '<button type="button" class="ac-badge ac-badge--red js-deck-illegal"'
+                + ' data-errors="' + escHtml(JSON.stringify(formatErrors)) + '"'
+                + ' data-legality="' + escHtml(JSON.stringify(legalityDetail)) + '"'
+                + ' data-format="' + escHtml(fmtLabel) + '">'
+                + ICONS.alert + escHtml(txt.illegal) + '</button>';
+        return '';
+    }
+
+    function renderMyDeck(deck) {
+        var deckId   = deck.id || '';
+        var name     = deck.name || txt.unnamed;
+        var fmt      = (deck.format || 'standard').toLowerCase();
+        var isPublic = !!deck.isPublic;
+        var isDraft  = !deck.hasOwnProperty('isDraft') || !!deck.isDraft;
+        var d        = _deckData(deck);
 
         var deleteHtml = myShowDeleteBtn
-            ? '<button type="button" class="btn btn-sm js-my-delete" data-id="' + escHtml(deckId) + '" style="background:rgba(255,255,255,.85);border:1px solid rgba(200,50,50,.4);color:#c0392b">'
-              + '<i class="fa-solid fa-trash"></i></button>'
+            ? '<button type="button" class="ac-icon-button ac-icon-button--sm js-my-delete" data-id="' + escHtml(deckId) + '" aria-label="' + escHtml(txt.delete_btn) + '">'
+              + ICONS.trash + '</button>'
             : '';
 
-        return '<div class="col-12 col-md-6 col-lg-4 my-deck-item" data-format="' + escHtml(fmt) + '" data-public="' + (isPublic ? '1' : '0') + '" data-faction="' + escHtml(factionCode) + '" data-deck-id="' + escHtml(deckId) + '">'
-            + '<div class="news-card h-100" style="position:relative;border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
-            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-card-link-overlay" aria-label="' + escHtml(name) + '" style="position:absolute;inset:0;z-index:1"></a>'
-            + '<div class="news-card-body d-flex flex-column gap-2 deck-card-text-white">'
-
-            + '<div class="d-flex flex-wrap gap-1 align-items-center">'
-            + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.72rem">' + escHtml(fmtLabel) + '</span>'
-            + (isDraft ? '<span class="badge bg-secondary" style="font-size:.72rem">' + escHtml(txt.draft) + '</span>' : '')
-            + legalityHtml
-            + '<span class="badge ms-auto" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.72rem">'
-            + '<i class="fa-solid ' + (isPublic ? 'fa-globe' : 'fa-lock') + ' me-1"></i>' + escHtml(isPublic ? txt.public : txt.private)
-            + '</span></div>'
-
-            + '<h3 class="news-card-title mb-0 d-flex align-items-center gap-2" style="font-size:1.05rem">'
-            + (factionImg ? '<img src="' + escHtml(factionImg) + '" alt="' + escHtml(factionCode) + '" style="width:24px;height:24px;object-fit:contain;flex-shrink:0">' : '')
-            + escHtml(name) + '</h3>'
-
-            + (heroName ? '<p class="mb-0" style="font-size:.8rem;color:rgba(255,255,255,.75)">' + escHtml(heroName) + '</p>' : '')
-
-            + '<div class="mt-auto pt-2" style="border-top:1px solid rgba(255,255,255,.2)">'
-            + '<div class="d-flex align-items-center gap-2 mb-2">'
-            + (totalCards !== null ? '<span style="color:rgba(255,255,255,.7);font-size:.875rem;font-weight:700">' + totalCards + ' ' + escHtml(txt.cards) + '</span>' : '')
-            + rarityHtml + '</div>'
-            + '<div class="d-flex align-items-center justify-content-between gap-1">'
-            + '<div class="d-flex gap-1 d-none">' + buildMyDeckEditHtml(deckId) + deleteHtml + '</div>'
-            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="btn btn-primary-altered btn-sm d-none">'
-            + escHtml(txt.view_btn) + ' <i class="fa-solid fa-eye ms-1"></i></a>'
-            + '</div></div>'
-            + '</div></div></div>';
+        // Edit / delete stay in the markup (JS hooks) but hidden, as before: the tile opens the deck page.
+        return '<article class="my-deck-item ac-card ac-card--interactive deck-tile" data-format="' + escHtml(fmt) + '" data-public="' + (isPublic ? '1' : '0') + '" data-faction="' + escHtml(d.factionCode) + '" data-deck-id="' + escHtml(deckId) + '"'
+            + ' style="--deck-faction:' + escHtml(d.factionColor) + '">'
+            + _deckTileTop(deckId, name, d)
+            + '<div class="deck-tile__body">'
+            + '<div class="deck-tile__badges">'
+            + _deckFormatBadge(d)
+            + (isDraft ? '<span class="ac-badge ac-badge--orange">' + escHtml(txt.draft) + '</span>' : '')
+            + d.legalityHtml
+            + _deckVisibilityBadge(isPublic)
+            + '</div>'
+            + '<h3 class="deck-tile__title">' + escHtml(name) + '</h3>'
+            + (d.heroName ? '<p class="deck-tile__hero">' + escHtml(d.heroName) + '</p>' : '')
+            + '<div class="deck-tile__footer">'
+            + _deckCountsHtml(d)
+            + '<div class="deck-tile__actions" hidden>' + buildMyDeckEditHtml(deckId) + deleteHtml + '</div>'
+            + '</div>'
+            + '</div></article>';
     }
 
     function filterMyDecks() {
@@ -1356,34 +1423,31 @@ $showPublicTab = $publicDecksApiPath !== '';
         if (myAllItems.length > 0 && visible === 0) myEmpty.style.display = '';
     }
 
+    // Pagination: ac-pagination (links, current page as aria-current) + a jump field past 5 pages.
     function renderPaginationUI(container, currentPage, totalPages, loaderFn) {
         container.innerHTML = '';
         if (totalPages <= 1) { container.style.setProperty('display', 'none', 'important'); return; }
         container.style.removeProperty('display');
 
-        function makePgBtn(n, active) {
-            var b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'btn btn-sm ' + (active ? 'btn-primary-altered' : 'btn-outline-secondary');
-            b.textContent = n;
-            b.disabled = active;
-            if (!active) b.onclick = function() { loaderFn(n, true); };
-            return b;
+        var list = document.createElement('ul');
+        list.className = 'ac-pagination';
+
+        function addItem(el) {
+            var li = document.createElement('li');
+            li.appendChild(el);
+            list.appendChild(li);
         }
-        function makeDots() {
-            var s = document.createElement('span');
-            s.className = 'text-muted small align-self-center px-1';
-            s.textContent = '…';
-            return s;
+        function pageLink(n, html, label) {
+            var a = document.createElement('a');
+            a.href = '#';
+            a.setAttribute('role', 'button');
+            a.innerHTML = html;
+            if (label) a.setAttribute('aria-label', label);
+            a.addEventListener('click', function(e) { e.preventDefault(); loaderFn(n, true); });
+            return a;
         }
 
-        if (currentPage > 1) {
-            var prev = document.createElement('button');
-            prev.type = 'button'; prev.className = 'btn btn-outline-secondary btn-sm';
-            prev.textContent = '← ' + txt.prev;
-            prev.onclick = function() { loaderFn(currentPage - 1, true); };
-            container.appendChild(prev);
-        }
+        if (currentPage > 1) addItem(pageLink(currentPage - 1, ICONS.prev + '<span class="ac-sr-only">' + escHtml(txt.prev) + '</span>', txt.prev));
 
         var pgNums = [];
         for (var pi = 1; pi <= totalPages; pi++) {
@@ -1393,34 +1457,41 @@ $showPublicTab = $publicDecksApiPath !== '';
         }
         var lastPg = 0;
         for (var pj = 0; pj < pgNums.length; pj++) {
-            if (lastPg && pgNums[pj] > lastPg + 1) container.appendChild(makeDots());
-            container.appendChild(makePgBtn(pgNums[pj], pgNums[pj] === currentPage));
+            if (lastPg && pgNums[pj] > lastPg + 1) {
+                var dots = document.createElement('span');
+                dots.setAttribute('aria-hidden', 'true');
+                dots.textContent = '…';
+                addItem(dots);
+            }
+            if (pgNums[pj] === currentPage) {
+                var cur = document.createElement('span');
+                cur.setAttribute('aria-current', 'page');
+                cur.textContent = pgNums[pj];
+                addItem(cur);
+            } else {
+                addItem(pageLink(pgNums[pj], String(pgNums[pj])));
+            }
             lastPg = pgNums[pj];
         }
 
-        if (currentPage < totalPages) {
-            var next = document.createElement('button');
-            next.type = 'button'; next.className = 'btn btn-outline-secondary btn-sm';
-            next.textContent = txt.next + ' →';
-            next.onclick = function() { loaderFn(currentPage + 1, true); };
-            container.appendChild(next);
-        }
+        if (currentPage < totalPages) addItem(pageLink(currentPage + 1, '<span class="ac-sr-only">' + escHtml(txt.next) + '</span>' + ICONS.next, txt.next));
+
+        container.appendChild(list);
 
         if (totalPages > 5) {
-            var sep = document.createElement('span');
-            sep.style.cssText = 'width:1px;background:var(--neutral-300);align-self:stretch;margin:0 4px';
-            container.appendChild(sep);
+            var jump = document.createElement('div');
+            jump.className = 'deck-page-jump';
 
             var inp = document.createElement('input');
             inp.type = 'number'; inp.min = '1'; inp.max = String(totalPages);
             inp.placeholder = String(currentPage);
-            inp.className = 'form-control form-control-sm';
-            inp.style.cssText = 'width:60px;text-align:center';
-            container.appendChild(inp);
+            inp.className = 'ac-input';
+            inp.setAttribute('aria-label', txt.pagination_label);
+            jump.appendChild(inp);
 
             var go = document.createElement('button');
-            go.type = 'button'; go.className = 'btn btn-sm btn-outline-secondary';
-            go.textContent = 'Go';
+            go.type = 'button'; go.className = 'ac-button ac-button--secondary ac-button--sm';
+            go.textContent = txt.page_go;
             (function(input, total) {
                 go.onclick = function() {
                     var v = parseInt(input.value, 10);
@@ -1430,7 +1501,8 @@ $showPublicTab = $publicDecksApiPath !== '';
                     if (e.key === 'Enter') go.onclick();
                 });
             })(inp, totalPages);
-            container.appendChild(go);
+            jump.appendChild(go);
+            container.appendChild(jump);
         }
     }
 
@@ -1574,8 +1646,8 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-my-format]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var v = btn.dataset.myFormat;
-            if (myFormat === v) { myFormat = ''; btn.classList.remove('active'); }
-            else { document.querySelectorAll('[data-my-format]').forEach(function(b) { b.classList.remove('active'); }); myFormat = v; btn.classList.add('active'); }
+            if (myFormat === v) { myFormat = ''; setChip(btn, false); }
+            else { document.querySelectorAll('[data-my-format]').forEach(function(b) { setChip(b, false); }); myFormat = v; setChip(btn, true); }
             loadMyDecks(1);
         });
     });
@@ -1583,8 +1655,8 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-my-faction]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var v = btn.dataset.myFaction;
-            if (myFaction === v) { myFaction = ''; btn.classList.remove('active'); }
-            else { document.querySelectorAll('[data-my-faction]').forEach(function(b) { b.classList.remove('active'); }); myFaction = v; btn.classList.add('active'); }
+            if (myFaction === v) { myFaction = ''; setChip(btn, false); }
+            else { document.querySelectorAll('[data-my-faction]').forEach(function(b) { setChip(b, false); }); myFaction = v; setChip(btn, true); }
             myHero = '';
             if (myHeroSelect) {
                 myHeroSelect.value = '';
@@ -1597,8 +1669,8 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-my-visibility]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var v = btn.dataset.myVisibility;
-            if (myVisibility === v) { myVisibility = ''; btn.classList.remove('active'); }
-            else { document.querySelectorAll('[data-my-visibility]').forEach(function(b) { b.classList.remove('active'); }); myVisibility = v; btn.classList.add('active'); }
+            if (myVisibility === v) { myVisibility = ''; setChip(btn, false); }
+            else { document.querySelectorAll('[data-my-visibility]').forEach(function(b) { setChip(b, false); }); myVisibility = v; setChip(btn, true); }
             loadMyDecks(1);
         });
     });
@@ -1698,92 +1770,56 @@ $showPublicTab = $publicDecksApiPath !== '';
         var deckId   = deck.id || '';
         var name     = deck.name || txt.unnamed;
         var fmt      = (deck.format || 'standard').toLowerCase();
-        var fmtData  = formats[fmt] || {};
-        var fmtLabel = fmtData.label || fmt;
-        var fmtColor = fmtData.color || 'var(--neutral-400)';
         var isPublic = deck.isPublic;
         var isDraft  = !deck.hasOwnProperty('isDraft') || deck.isDraft;
-        var stats    = deck.stats || {};
-        var hero     = stats.hero || {};
-        var heroRef  = hero.reference || '';
-        var heroName = hero.name || '';
-        var totalCards = stats.totalCards != null ? stats.totalCards : null;
-        var byRarity = stats.byRarity || {};
-        var desc     = deck.description || '';
-        var legal          = deck.hasOwnProperty('legal') ? deck.legal : null;
-        var formatErrors   = Array.isArray(deck.formatErrors) ? deck.formatErrors : [];
-        var legalityDetail = (deck.legalityDetail && typeof deck.legalityDetail === 'object') ? deck.legalityDetail : {};
-
-        var factionCode = '';
-        var m = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
-        if (m) factionCode = m[1];
-        var factionData  = factions[factionCode] || {};
-        var factionColor = factionData.color || '#ffffff';
-        var factionImg   = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
-        var heroImgUrl   = heroRef ? cdnUrl + '/cards/hero/' + heroPortraitRef(heroRef) + '_1.webp' : '';
-
-        var heroStyle    = _deckHeroStyle(heroImgUrl, factionColor);
-        var rarityHtml   = _deckRarityHtml(byRarity);
-        var legalityHtml = _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel);
+        var d        = _deckData(deck);
 
         var viewCount   = deck.viewCount   != null ? parseInt(deck.viewCount,   10) : null;
         var upvoteCount = deck.upvoteCount != null ? parseInt(deck.upvoteCount, 10) : 0;
         var hasUpvoted  = !!deck.hasUpvoted;
         var statsHtml = '';
         if (viewCount !== null || isPublic !== false) {
-            statsHtml = '<span class="deck-stat-pills">';
+            statsHtml = '<span class="deck-tile__stats">';
             if (viewCount !== null) {
-                statsHtml += '<span class="deck-stat-pill deck-stat-pill--view">'
-                    + '<i class="fa-solid fa-eye"></i><span>' + viewCount + '</span></span>';
+                statsHtml += '<span class="ac-badge" title="' + escHtml(txt.views_label) + '">'
+                    + ICONS.eye + '<span>' + viewCount + '</span>'
+                    + '<span class="ac-sr-only">' + escHtml(txt.views_label) + '</span></span>';
             }
             if (isPublic !== false) {
-                statsHtml += '<button type="button" class="deck-stat-pill deck-stat-pill--upvote pub-deck-upvote'
+                statsHtml += '<button type="button" class="ac-chip deck-upvote pub-deck-upvote'
                     + (hasUpvoted ? ' deck-stat-pill--upvoted' : '') + '"'
-                    + ' style="position:relative;z-index:2"'
+                    + ' aria-pressed="' + (hasUpvoted ? 'true' : 'false') + '"'
+                    + ' aria-label="' + escHtml(txt.upvote_label) + '"'
                     + ' data-deck-id="' + escHtml(deckId) + '"'
                     + ' data-upvoted="' + (hasUpvoted ? '1' : '0') + '">'
-                    + '<i class="' + (hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart"></i>'
+                    + ICONS.heart
                     + '<span class="js-upvote-count">' + upvoteCount + '</span></button>';
             }
             statsHtml += '</span>';
         }
 
-        var descHtml = desc ? '<p class="news-card-excerpt mb-0" style="font-size:.88rem">' + escHtml(desc.substring(0, 120) + (desc.length > 120 ? '…' : '')) + '</p>' : '';
-
-        return '<div class="col-12 col-md-6 col-lg-4 pub-deck-item"'
+        return '<article class="pub-deck-item ac-card ac-card--interactive deck-tile"'
             + ' data-name="' + escHtml(name.toLowerCase()) + '"'
             + ' data-format="' + escHtml(fmt) + '"'
-            + ' data-faction="' + escHtml(factionCode) + '"'
+            + ' data-faction="' + escHtml(d.factionCode) + '"'
             + ' data-public="' + (isPublic ? '1' : '0') + '"'
-            + ' data-deck-id="' + escHtml(deckId) + '">'
-            + '<div class="news-card h-100" style="position:relative;border-top:3px solid ' + escHtml(fmtColor) + ';cursor:pointer;' + heroStyle + '">'
-            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="deck-card-link-overlay" aria-label="' + escHtml(name) + '" style="position:absolute;inset:0;z-index:1"></a>'
-            + '<div class="news-card-body d-flex flex-column gap-2 deck-card-text-white">'
-
-            + '<div class="d-flex flex-wrap gap-1 align-items-center">'
-            + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.72rem">' + escHtml(fmtLabel) + '</span>'
-            + (isDraft ? '<span class="badge bg-secondary" style="font-size:.72rem">' + escHtml(txt.draft) + '</span>' : '')
-            + legalityHtml
-            + '<span class="badge ms-auto" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.72rem">'
-            + '<i class="fa-solid ' + (isPublic ? 'fa-globe' : 'fa-lock') + ' me-1"></i>' + escHtml(isPublic ? txt.public : txt.private)
-            + '</span></div>'
-
-            + '<h3 class="news-card-title mb-0 d-flex align-items-center gap-2" style="font-size:1.05rem">'
-            + (factionImg ? '<img src="' + escHtml(factionImg) + '" alt="' + escHtml(factionCode) + '" style="width:24px;height:24px;object-fit:contain;flex-shrink:0">' : '')
-            + escHtml(name) + '</h3>'
-
-            + (heroName ? '<p class="mb-0" style="font-size:.8rem;color:rgba(255,255,255,.75)">' + escHtml(heroName) + '</p>' : '')
-
-            + '<div class="mt-auto pt-2" style="border-top:1px solid rgba(255,255,255,.2)">'
-            + '<div class="d-flex align-items-center gap-2 mb-2">'
-            + (totalCards !== null ? '<span style="color:rgba(255,255,255,.7);font-size:.875rem;font-weight:700">' + totalCards + ' ' + escHtml(txt.cards) + '</span>' : '')
-            + rarityHtml + '</div>'
-            + '<div class="d-flex align-items-center justify-content-between">'
+            + ' data-deck-id="' + escHtml(deckId) + '"'
+            + ' style="--deck-faction:' + escHtml(d.factionColor) + '">'
+            + _deckTileTop(deckId, name, d)
+            + '<div class="deck-tile__body">'
+            + '<div class="deck-tile__badges">'
+            + _deckFormatBadge(d)
+            + (isDraft ? '<span class="ac-badge ac-badge--orange">' + escHtml(txt.draft) + '</span>' : '')
+            + d.legalityHtml
+            + _deckVisibilityBadge(isPublic)
+            + '</div>'
+            + '<h3 class="deck-tile__title">' + escHtml(name) + '</h3>'
+            + (d.heroName ? '<p class="deck-tile__hero">' + escHtml(d.heroName) + '</p>' : '')
+            + '<div class="deck-tile__footer">'
+            + _deckCountsHtml(d)
             + statsHtml
-            + '<a href="' + escHtml(baseUrl) + '/pages/deck?id=' + encodeURIComponent(deckId) + '" class="btn btn-primary-altered btn-sm d-none">'
-            + escHtml(txt.view_btn) + ' <i class="fa-solid fa-eye ms-1"></i></a>'
-            + '</div></div>'
-            + '</div></div></div>';
+            + '</div>'
+            + '</div></article>';
     }
 
     if (pubGrid) {
@@ -1807,8 +1843,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                         if (!data.ok) return;
                         upvoteBtn.dataset.upvoted = data.hasUpvoted ? '1' : '0';
                         upvoteBtn.classList.toggle('deck-stat-pill--upvoted', !!data.hasUpvoted);
-                        var icon = upvoteBtn.querySelector('i');
-                        if (icon) icon.className = (data.hasUpvoted ? 'fa-solid' : 'fa-regular') + ' fa-heart';
+                        upvoteBtn.setAttribute('aria-pressed', data.hasUpvoted ? 'true' : 'false');
                         var countEl = upvoteBtn.querySelector('.js-upvote-count');
                         if (countEl) countEl.textContent = data.upvoteCount;
                     })
@@ -1878,8 +1913,8 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-pub-format]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var v = btn.dataset.pubFormat;
-            if (pubFormat === v) { pubFormat = ''; btn.classList.remove('active'); }
-            else { document.querySelectorAll('[data-pub-format]').forEach(function (b) { b.classList.remove('active'); }); pubFormat = v; btn.classList.add('active'); }
+            if (pubFormat === v) { pubFormat = ''; setChip(btn, false); }
+            else { document.querySelectorAll('[data-pub-format]').forEach(function (b) { setChip(b, false); }); pubFormat = v; setChip(btn, true); }
             loadPublicDecks(1);
         });
     });
@@ -1887,8 +1922,8 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-pub-faction]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var v = btn.dataset.pubFaction;
-            if (pubFaction === v) { pubFaction = ''; btn.classList.remove('active'); }
-            else { document.querySelectorAll('[data-pub-faction]').forEach(function(b) { b.classList.remove('active'); }); pubFaction = v; btn.classList.add('active'); }
+            if (pubFaction === v) { pubFaction = ''; setChip(btn, false); }
+            else { document.querySelectorAll('[data-pub-faction]').forEach(function(b) { setChip(b, false); }); pubFaction = v; setChip(btn, true); }
             pubHero = '';
             if (pubHeroSelect) {
                 pubHeroSelect.value = '';
@@ -2004,8 +2039,8 @@ $showPublicTab = $publicDecksApiPath !== '';
             var set = btn.dataset.contestSet || 'collection';
             if (contestSet === set) return;
             contestSet = set;
-            document.querySelectorAll('[data-contest-set]').forEach(function (b) { b.classList.remove('active'); });
-            btn.classList.add('active');
+            document.querySelectorAll('[data-contest-set]').forEach(function (b) { setChip(b, false); });
+            setChip(btn, true);
             refreshContestHeroSelect();
             renderContestDecks();
             syncDeckUrl('contest');
@@ -2015,11 +2050,11 @@ $showPublicTab = $publicDecksApiPath !== '';
     document.querySelectorAll('[data-contest-faction]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var v = btn.dataset.contestFaction;
-            if (contestFaction === v) { contestFaction = ''; btn.classList.remove('active'); }
+            if (contestFaction === v) { contestFaction = ''; setChip(btn, false); }
             else {
-                document.querySelectorAll('[data-contest-faction]').forEach(function (b) { b.classList.remove('active'); });
+                document.querySelectorAll('[data-contest-faction]').forEach(function (b) { setChip(b, false); });
                 contestFaction = v;
-                btn.classList.add('active');
+                setChip(btn, true);
             }
             contestHero = '';
             if (contestHeroSelect) {
@@ -2043,12 +2078,12 @@ $showPublicTab = $publicDecksApiPath !== '';
     // (The My tab, if it's the target, was already filtered & loaded above.)
     if (TARGET_TAB === 'public') {
         applyPubUrlFilters(_deckUrlParams);
-        var _pubTabBtn = document.querySelector('.decks-tab[data-tab="public"]');
+        var _pubTabBtn = document.querySelector('.decks-list-tab[data-tab="public"]');
         if (_pubTabBtn) _pubTabBtn.click();
         else { pubLoaded = true; loadPublicDecks(1); }
     } else if (TARGET_TAB === 'contest') {
         applyContestUrlFilters(_deckUrlParams);
-        var _contestTabBtn = document.querySelector('.decks-tab[data-tab="contest"]');
+        var _contestTabBtn = document.querySelector('.decks-list-tab[data-tab="contest"]');
         if (_contestTabBtn) _contestTabBtn.click();
     }
     _urlSyncReady = true;
@@ -2076,6 +2111,12 @@ $showPublicTab = $publicDecksApiPath !== '';
         'err_connect'      => $txt['err_connect'],
     ]) ?>;
 
+    var ICONS = <?= json_encode([
+        'drive'   => ac_icon('hard-drive'),
+        'upload'  => ac_icon('cloud-upload'),
+        'spinner' => ac_icon('loader-circle', 'ac-icon--spin'),
+    ]) ?>;
+
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
@@ -2091,24 +2132,23 @@ $showPublicTab = $publicDecksApiPath !== '';
     var total = Object.keys(raw.cards || {}).reduce(function (s, ref) { return s + ((raw.cards[ref].qty) || 0); }, 0);
 
     zone.innerHTML =
-        '<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;padding:12px 16px;font-size:.875rem;color:#1e40af">'
-        + '<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">'
-        + '<span><i class="fa-solid fa-hard-drive me-1"></i>'
-        + '<strong>' + escHtml(name) + '</strong> — '
+        '<div class="ac-notice" role="status">' + ICONS.drive
+        + '<div><div class="deck-local__row">'
+        + '<span><strong>' + escHtml(name) + '</strong> — '
         + total + ' ' + escHtml(txt.cards) + ' — '
         + escHtml(txt.local_deck_found) + '</span>'
-        + '<div class="d-flex gap-2 flex-shrink-0">'
-        + '<button type="button" id="local-discard-btn" class="btn btn-sm btn-outline-secondary">' + escHtml(txt.local_discard_btn) + '</button>'
-        + '<button type="button" id="local-save-btn" class="btn btn-sm btn-primary-altered">'
-        + '<i class="fa-solid fa-cloud-arrow-up me-1"></i>' + escHtml(txt.local_save_btn)
+        + '<div class="deck-local__actions">'
+        + '<button type="button" id="local-discard-btn" class="ac-button ac-button--secondary ac-button--sm">' + escHtml(txt.local_discard_btn) + '</button>'
+        + '<button type="button" id="local-save-btn" class="ac-button ac-button--sm">'
+        + ICONS.upload + escHtml(txt.local_save_btn)
         + '</button>'
         + '</div>'
         + '</div>'
-        + '<div id="local-import-msg" style="margin-top:6px;font-size:.82rem;display:none"></div>'
-        + '</div>';
+        + '<p id="local-import-msg" class="deck-local__msg" style="display:none"></p>'
+        + '</div></div>';
     zone.style.display = '';
 
-    var saveBtnHtml = '<i class="fa-solid fa-cloud-arrow-up me-1"></i>' + escHtml(txt.local_save_btn);
+    var saveBtnHtml = ICONS.upload + escHtml(txt.local_save_btn);
 
     document.getElementById('local-discard-btn').addEventListener('click', function () {
         if (!confirm(txt.local_discard_confirm)) return;
@@ -2120,7 +2160,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         var btn   = this;
         var msgEl = document.getElementById('local-import-msg');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>…';
+        btn.innerHTML = ICONS.spinner + '…';
         msgEl.style.display = 'none';
 
         var hero  = raw.hero  || null;
@@ -2156,7 +2196,6 @@ $showPublicTab = $publicDecksApiPath !== '';
                     btn.disabled = false;
                     btn.innerHTML = saveBtnHtml;
                     msgEl.textContent = data.error || txt.local_save_err;
-                    msgEl.style.color = '#dc2626';
                     msgEl.style.display = '';
                 }
             })
@@ -2164,7 +2203,6 @@ $showPublicTab = $publicDecksApiPath !== '';
                 btn.disabled = false;
                 btn.innerHTML = saveBtnHtml;
                 msgEl.textContent = txt.err_connect;
-                msgEl.style.color = '#dc2626';
                 msgEl.style.display = '';
             });
     });
@@ -2178,8 +2216,10 @@ $showPublicTab = $publicDecksApiPath !== '';
     var GUEST_DECK_KEY = 'alteredcore_guest_deck';
     var baseUrl  = <?= json_encode(BASE_URL) ?>;
     var cdnUrl   = <?= json_encode(CDN_URL) ?>;
-    var formats  = <?= json_encode(array_map(fn($d) => ['label' => $d[$uiLang] ?? $d['en'] ?? '', 'color' => $d['color'] ?? 'var(--neutral-400)'], $formatsData)) ?>;
-    var factions = <?= json_encode(array_map(fn($d) => ['color' => $d['color'] ?? '#ffffff'], $factionsData)) ?>;
+    var pluginAssetsUrl = <?= json_encode($pluginAssetsUrl) ?>;
+    var formats  = <?= json_encode(array_map(fn($d) => ['label' => $d[$uiLang] ?? $d['en'] ?? '', 'color' => $d['color'] ?? 'var(--ac-color-text-muted)'], $formatsData)) ?>;
+    var factions = <?= json_encode(array_map(fn($c) => ['color' => $c], $_factionColorVars)) ?>;
+    var ICONS    = <?= json_encode(['drive' => ac_icon('hard-drive'), 'trash' => ac_icon('trash-2'), 'pencil' => ac_icon('pencil')]) ?>;
     var uiLang   = <?= json_encode($uiLang) ?>;
 
     // The Collector Booster's individually-serialized hero prints (ALT_DUSTERCB_P_<FACTION>_
@@ -2200,6 +2240,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         'edit'           => $txt['guest_edit_btn'],
         'delete_confirm' => $txt['guest_delete_confirm'],
         'no_deck'        => $txt['guest_no_deck'],
+        'delete_label'   => $txt['delete_btn'],
     ]) ?>;
 
     function escHtml(s) {
@@ -2229,51 +2270,40 @@ $showPublicTab = $publicDecksApiPath !== '';
         var fmt      = (raw.format || 'standard').toLowerCase();
         var fmtData  = formats[fmt] || {};
         var fmtLabel = fmtData.label || fmt;
-        var fmtColor = fmtData.color || 'var(--neutral-400)';
+        var fmtColor = fmtData.color || 'var(--ac-color-text-muted)';
 
         var hero        = raw.hero || null;
         var heroRef     = hero ? (hero.cardReference || '') : '';
         var heroName    = hero ? (typeof hero.name === 'object' ? (hero.name[uiLang] || hero.name.en || '') : (hero.name || '')) : '';
         var factionCode = hero ? (hero.factionCode || '') : '';
         var factionData = factions[factionCode] || {};
-        var factionColor = factionData.color || '#ffffff';
+        var factionColor = factionData.color || 'var(--ac-color-overlay-control)';
         var factionImg  = factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '';
         var heroImgUrl  = heroRef ? cdnUrl + '/cards/hero/' + heroPortraitRef(heroRef) + '_1.webp' : '';
 
-        var heroStyle = heroImgUrl
-            ? 'background-image:linear-gradient(to right,' + factionColor + 'cc 30%,' + factionColor + '00 100%),url(' + escHtml(heroImgUrl) + ');background-size:cover;background-position:left top;'
-            : 'background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url(' + pluginAssetsUrl + '/img/ALT_OFFICIAL_CARDBACK.png);background-size:120% auto;background-position:center center;background-repeat:no-repeat;';
+        var art = heroImgUrl
+            ? '<div class="deck-tile__art" style="background-image:url(' + escHtml(heroImgUrl) + ')">'
+            : '<div class="deck-tile__art deck-tile__art--empty">';
 
-        grid.innerHTML = '<div class="col-12 col-md-6 col-lg-4">'
-            + '<div class="news-card h-100" style="border-top:3px solid #f59e0b;' + heroStyle + '">'
-            + '<div class="news-card-body d-flex flex-column gap-2 deck-card-text-white">'
-
-            + '<div class="d-flex flex-wrap gap-1 align-items-center">'
-            + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.72rem">' + escHtml(fmtLabel) + '</span>'
-            + '<span class="badge ms-auto" style="background:rgba(245,158,11,.35);border:1px solid rgba(245,158,11,.6);color:#fef3c7;font-size:.72rem">'
-            + '<i class="fa-solid fa-hard-drive me-1"></i>' + escHtml(txtGuest.local)
+        grid.innerHTML = '<article class="ac-card deck-tile" style="--deck-faction:' + escHtml(factionColor) + '">'
+            + art
+            + (factionImg ? '<img class="deck-tile__faction" src="' + escHtml(factionImg) + '" alt="' + escHtml(factionCode) + '">' : '')
+            + '</div>'
+            + '<div class="deck-tile__body">'
+            + '<div class="deck-tile__badges">'
+            + '<span class="ac-badge"><span class="deck-dot" style="--deck-dot:' + escHtml(fmtColor) + '"></span>' + escHtml(fmtLabel) + '</span>'
+            + '<span class="ac-badge ac-badge--orange deck-tile__visibility">' + ICONS.drive + escHtml(txtGuest.local) + '</span>'
+            + '</div>'
+            + '<h3 class="deck-tile__title">' + escHtml(name) + '</h3>'
+            + (heroName ? '<p class="deck-tile__hero">' + escHtml(heroName) + '</p>' : '')
+            + '<div class="deck-tile__footer">'
+            + '<span class="deck-tile__counts"><span class="deck-tile__total">' + total + ' ' + escHtml(txtGuest.cards) + '</span></span>'
+            + '<span class="deck-tile__actions">'
+            + '<button type="button" onclick="guestDeckDelete()" class="ac-icon-button ac-icon-button--sm" aria-label="' + escHtml(txtGuest.delete_label) + '">' + ICONS.trash + '</button>'
+            + '<a href="' + escHtml(baseUrl) + '/pages/deckbuilder" class="ac-button ac-button--sm">' + ICONS.pencil + escHtml(txtGuest.edit) + '</a>'
             + '</span>'
             + '</div>'
-
-            + '<h3 class="news-card-title mb-0 d-flex align-items-center gap-2" style="font-size:1.05rem">'
-            + (factionImg ? '<img src="' + escHtml(factionImg) + '" alt="' + escHtml(factionCode) + '" style="width:24px;height:24px;object-fit:contain;flex-shrink:0">' : '')
-            + escHtml(name) + '</h3>'
-
-            + (heroName ? '<p class="mb-0" style="font-size:.8rem;color:rgba(255,255,255,.75)">' + escHtml(heroName) + '</p>' : '')
-
-            + '<div class="mt-auto pt-2" style="border-top:1px solid rgba(255,255,255,.2)">'
-            + '<div class="d-flex align-items-center gap-2 mb-2">'
-            + '<span style="color:rgba(255,255,255,.7);font-size:.875rem">' + total + ' ' + escHtml(txtGuest.cards) + '</span>'
-            + '</div>'
-            + '<div class="d-flex align-items-center justify-content-between gap-1">'
-            + '<button type="button" onclick="guestDeckDelete()" class="btn btn-sm" style="background:rgba(255,255,255,.85);border:1px solid rgba(200,50,50,.4);color:#c0392b">'
-            + '<i class="fa-solid fa-trash"></i>'
-            + '</button>'
-            + '<a href="' + escHtml(baseUrl) + '/pages/deckbuilder" class="btn btn-primary-altered btn-sm">'
-            + '<i class="fa-solid fa-pen me-1"></i>' + escHtml(txtGuest.edit)
-            + '</a>'
-            + '</div></div>'
-            + '</div></div></div>';
+            + '</div></article>';
 
         wrap.style.display = '';
         noDeck.style.display = 'none';
@@ -2296,7 +2326,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="fa-solid fa-people-group me-2" style="color:var(--primary-400)"></i><?= h($txt['community_modal_title']) ?>
+                    <?= ac_icon('users', 'text-primary me-2') ?><?= h($txt['community_modal_title']) ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -2304,21 +2334,18 @@ $showPublicTab = $publicDecksApiPath !== '';
                 <div class="row g-3">
                     <?php foreach ($communityBuilders as $cb): ?>
                     <div class="col-12 col-sm-6 col-md-4">
-                        <div class="card-altered h-100 d-flex flex-column" style="overflow:hidden">
+                        <div class="ac-card ac-card--flush h-100 d-flex flex-column">
                             <?php if (!empty($cb['image'])): ?>
-                            <div style="height:120px;overflow:hidden">
-                                <img src="<?= h(assetUrl($cb['image'])) ?>" alt="<?= h($cb['title']) ?>"
-                                     style="width:100%;height:100%;object-fit:cover">
-                            </div>
+                            <img class="ac-card__media" src="<?= h(assetUrl($cb['image'])) ?>" alt="<?= h($cb['title']) ?>">
                             <?php endif; ?>
-                            <div class="p-3 d-flex flex-column flex-fill">
-                                <div class="fw-bold mb-1" style="font-size:1rem"><?= h($cb['title']) ?></div>
-                                <p class="small mb-3 flex-fill" style="color:var(--neutral-600)">
+                            <div class="ac-card__body d-flex flex-column flex-fill">
+                                <h3 class="ac-card__title"><?= h($cb['title']) ?></h3>
+                                <p class="ac-card__meta flex-fill">
                                     <?= h($cb['desc'][$uiLang] ?? $cb['desc']['en'] ?? '') ?>
                                 </p>
                                 <a href="<?= h($cb['url']) ?>" target="_blank" rel="noopener"
-                                   class="btn btn-primary-altered btn-sm align-self-start">
-                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['community_visit']) ?>
+                                   class="ac-button ac-button--sm align-self-start">
+                                    <?= ac_icon('external-link') ?><?= h($txt['community_visit']) ?>
                                 </a>
                             </div>
                         </div>
@@ -2337,7 +2364,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:480px">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fa-solid fa-scale-balanced me-2"></i><?= h($txt['legality_modal_title']) ?></h5>
+                <h5 class="modal-title"><?= ac_icon('scale', 'me-2') ?><?= h($txt['legality_modal_title']) ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="deckFormatErrorsBody"></div>
@@ -2352,7 +2379,7 @@ $showPublicTab = $publicDecksApiPath !== '';
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="fa-solid fa-file-import me-2" style="color:var(--primary-400)"></i><?= h($txt['import_modal_title']) ?>
+                    <?= ac_icon('file-input', 'text-primary me-2') ?><?= h($txt['import_modal_title']) ?>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -2361,13 +2388,13 @@ $showPublicTab = $publicDecksApiPath !== '';
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="import-tab-list-btn" data-bs-toggle="tab"
                                 data-bs-target="#import-pane-list" type="button" role="tab">
-                            <i class="fa-solid fa-list me-1"></i><?= h($txt['import_tab_list']) ?>
+                            <?= ac_icon('list', 'me-1') ?><?= h($txt['import_tab_list']) ?>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="import-tab-gg-btn" data-bs-toggle="tab"
                                 data-bs-target="#import-pane-gg" type="button" role="tab">
-                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['import_tab_gg']) ?>
+                            <?= ac_icon('external-link', 'me-1') ?><?= h($txt['import_tab_gg']) ?>
                         </button>
                     </li>
                 </ul>
@@ -2391,7 +2418,7 @@ $showPublicTab = $publicDecksApiPath !== '';
                         <div class="mb-1">
                             <label class="form-label small fw-semibold"><?= h($txt['import_list_label']) ?></label>
                             <textarea id="import-list" class="form-control form-control-sm" rows="8"
-                                      style="font-family:monospace;font-size:.8rem"
+                                      style="font-variant-numeric:tabular-nums"
                                       placeholder="1 ALT_CORE_B_AX_01_U_2021&#10;3 ALT_CORE_B_AX_02_C&#10;…"></textarea>
                             <div class="form-text"><?= h($txt['import_list_hint']) ?></div>
                         </div>
@@ -2410,8 +2437,8 @@ $showPublicTab = $publicDecksApiPath !== '';
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"><?= h($txt['import_cancel']) ?></button>
-                <button type="button" id="import-submit" class="btn btn-primary-altered btn-sm">
-                    <i class="fa-solid fa-file-import me-1"></i><?= h($txt['import_submit']) ?>
+                <button type="button" id="import-submit" class="btn btn-primary btn-sm">
+                    <?= ac_icon('file-input', 'me-1') ?><?= h($txt['import_submit']) ?>
                 </button>
             </div>
         </div>
@@ -2429,6 +2456,7 @@ $showPublicTab = $publicDecksApiPath !== '';
     var modalEl    = document.getElementById('importDeckModal');
     var submitBtn  = document.getElementById('import-submit');
     var submitHtml = submitBtn ? submitBtn.innerHTML : '';
+    var spinnerHtml = <?= json_encode(ac_icon('loader-circle', 'ac-icon--spin me-1')) ?>;
     if (!submitBtn) return;
 
     function activeTab() {
@@ -2466,7 +2494,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             }
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>…';
+            submitBtn.innerHTML = spinnerHtml + '…';
 
             var body = new FormData();
             body.append('csrf_token', csrf);
@@ -2496,7 +2524,7 @@ $showPublicTab = $publicDecksApiPath !== '';
             if (!url) return;
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>…';
+            submitBtn.innerHTML = spinnerHtml + '…';
 
             var body = new FormData();
             body.append('csrf_token', csrf);

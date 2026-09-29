@@ -33,11 +33,11 @@
         if (unique) {
             cardEl = document.createElement('altered-card');
             cardEl.setAttribute('ref', ref); cardEl.setAttribute('locale', lang);
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:var(--ac-radius-lg);overflow:hidden;box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         } else {
             cardEl = document.createElement('img');
             cardEl.src = imgSrc || ''; cardEl.alt = '';
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:var(--ac-radius-lg);box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         }
         cardEl.addEventListener('click', closeModal);
         if (window.OWN_CARD_MODAL_ENHANCE) {

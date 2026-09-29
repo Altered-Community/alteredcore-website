@@ -376,22 +376,12 @@ function CardSearchPlayset(ctx) {
             if (!needed) { td.classList.add('empty'); td.textContent = '–'; return td; }
             var pct = Math.round(owned / needed * 100);
             // Three-stop heatmap interpolated by completion %: 0% → 50% → 100%.
-            // The stops are CSS variables (--hm-0/50/100) so the dark theme can
-            // swap in a darker palette and the cells recolor live on a theme
-            // toggle. color-mix does the blend; the absolute hsl() line below is a
-            // fallback for browsers without color-mix (invalid value is ignored,
-            // so the hsl one sticks).
+            // The stops are tokens (--ac-cards-heatmap-0/50/100) with dark-theme
+            // values, so the cells recolor live on a theme toggle; color-mix does the blend.
             var p = pct / 100;
-            var gray   = [45, 10, 95];   // light warm gray (light-theme fallback only)
-            var orange = [32, 60, 72];
-            var green  = [135, 38, 66];
-            var from, to, t, fromVar, toVar;
-            if (p < 0.5) { from = gray;   to = orange; t = p / 0.5;         fromVar = '--hm-0';  toVar = '--hm-50';  }
-            else         { from = orange; to = green;  t = (p - 0.5) / 0.5; fromVar = '--hm-50'; toVar = '--hm-100'; }
-            var h = from[0] + (to[0] - from[0]) * t;
-            var s = from[1] + (to[1] - from[1]) * t;
-            var l = from[2] + (to[2] - from[2]) * t;
-            td.style.background = 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+            var t, fromVar, toVar;
+            if (p < 0.5) { t = p / 0.5;         fromVar = '--ac-cards-heatmap-0';  toVar = '--ac-cards-heatmap-50';  }
+            else         { t = (p - 0.5) / 0.5; fromVar = '--ac-cards-heatmap-50'; toVar = '--ac-cards-heatmap-100'; }
             td.style.background = 'color-mix(in hsl, var(' + toVar + ') ' + (t * 100).toFixed(1) + '%, var(' + fromVar + '))';
             // Cell shows the percentage only; the hover popover carries the detail
             // (set · faction · count), positioned over the cell with no reflow.
@@ -528,7 +518,7 @@ function CardSearchPlayset(ctx) {
                 if (elPlaysetExploreLoading) elPlaysetExploreLoading.style.display = 'none';
                 if (elPlaysetSummaryLoading) elPlaysetSummaryLoading.style.display = 'none';
                 if (elPlaysetExploreMeta) elPlaysetExploreMeta.textContent = '';
-                elPlaysetExplore.innerHTML = '<div class="ac-state-pane"><i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:#f87171"></i></div>';
+                elPlaysetExplore.innerHTML = '<div class="ac-state-pane"><i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:var(--ac-color-required)"></i></div>';
                 if (cfg.onError) cfg.onError(err);
             });
     }
@@ -537,7 +527,7 @@ function CardSearchPlayset(ctx) {
     function _psFactionMeta(code) {
         var fs = (cfg.playsetMeta || {}).factions || [];
         for (var i = 0; i < fs.length; i++) if (fs[i].code === code) return fs[i];
-        return { code: code, name: code, color: '#888' };
+        return { code: code, name: code, color: 'var(--ac-color-text-muted)' };
     }
     function _psRarityMeta(code) {
         var rs = (cfg.playsetMeta || {}).rarities || {};
@@ -576,10 +566,10 @@ function CardSearchPlayset(ctx) {
 
         var b = summary.ownedBuckets;
         var segs = [
-            { label: '0',                                color: 'var(--ps-missing)',  val: b['0'] || 0 },
-            { label: panel.getAttribute('data-lbl-12') || '1-2',   color: 'var(--ps-progress)', val: b['1-2'] || 0 },
-            { label: '3',                                color: 'var(--ps-complete)', val: b['3'] || 0 },
-            { label: panel.getAttribute('data-lbl-4plus') || '4+', color: 'var(--ps-extra)',    val: b['4plus'] || 0 }
+            { label: '0',                                color: 'var(--ac-cards-status-missing)',  val: b['0'] || 0 },
+            { label: panel.getAttribute('data-lbl-12') || '1-2',   color: 'var(--ac-cards-status-progress)', val: b['1-2'] || 0 },
+            { label: '3',                                color: 'var(--ac-cards-status-complete)', val: b['3'] || 0 },
+            { label: panel.getAttribute('data-lbl-4plus') || '4+', color: 'var(--ac-cards-status-extra)',    val: b['4plus'] || 0 }
         ];
         var total = segs.reduce(function(s, x) { return s + x.val; }, 0);
 
@@ -587,7 +577,7 @@ function CardSearchPlayset(ctx) {
         var donut = q('playset-donut');
         if (donut) {
             var svg = '<svg viewBox="0 0 42 42" class="cs-ps-donut-svg">' +
-                '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--neutral-200)" stroke-width="5"></circle>';
+                '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--ac-color-track)" stroke-width="5"></circle>';
             var acc = 0;
             if (total > 0) segs.forEach(function(s) {
                 if (!s.val) return;

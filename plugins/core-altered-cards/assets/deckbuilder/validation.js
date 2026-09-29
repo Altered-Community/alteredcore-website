@@ -66,7 +66,7 @@
                 if (!heroWarn) {
                     heroWarn = document.createElement('span');
                     heroWarn.className = 'db-hero-set-warn';
-                    heroWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:#ef4444;font-size:.9rem;cursor:help';
+                    heroWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:var(--ac-color-required);font-size:.9rem;cursor:help';
                     heroWarn.title = AlteredDB.txt.rule_set_legal;
                     heroWarn.innerHTML = '<i class="fa-solid fa-ban"></i>';
                     elHeroBanner.appendChild(heroWarn);
@@ -82,7 +82,7 @@
                 if (!heroArtWarn) {
                     heroArtWarn = document.createElement('span');
                     heroArtWarn.className = 'db-hero-altart-warn';
-                    heroArtWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:#f59e0b;font-size:.9rem;cursor:help';
+                    heroArtWarn.style.cssText = 'margin-left:auto;flex-shrink:0;color:var(--ac-color-warning);font-size:.9rem;cursor:help';
                     heroArtWarn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
                     elHeroBanner.appendChild(heroArtWarn);
                 }
@@ -245,16 +245,16 @@
 
         if (!deck._valid) {
             var badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.style.cssText = 'background:#ef4444;color:#fff;font-size:.75rem;font-weight:600;padding:4px 9px;cursor:pointer';
+            badge.className = 'ac-badge ac-badge--red';
+            badge.style.cssText = 'cursor:pointer';
             badge.innerHTML = escHtml(AlteredDB.txt.deck_invalid) + ' <i class="fa-solid fa-circle-info" style="font-size:.7rem"></i>';
             badge.onclick = function() { openValidationModal(ruleResults, fmtKey); };
             elValidation.innerHTML = '';
             elValidation.appendChild(badge);
         } else {
             var okBadge = document.createElement('span');
-            okBadge.className = 'badge';
-            okBadge.style.cssText = 'background:#22c55e;color:#fff;font-size:.75rem;font-weight:600;padding:4px 9px;cursor:pointer';
+            okBadge.className = 'ac-badge ac-badge--green';
+            okBadge.style.cssText = 'cursor:pointer';
             okBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>' + escHtml(AlteredDB.txt.validation_ok) + ' <i class="fa-solid fa-circle-info" style="font-size:.7rem"></i>';
             okBadge.onclick = function() { openValidationModal(ruleResults, fmtKey); };
             elValidation.innerHTML = '';
@@ -276,7 +276,7 @@
             group.sort(function(a,b) { return (a.mainCost||0) - (b.mainCost||0); });
             var typeLabel = (AlteredDB.txt.types || {})[type] || type;
             var hdr = document.createElement('div');
-            hdr.style.cssText = 'font-size:.7rem;font-weight:700;color:var(--neutral-400);text-transform:uppercase;letter-spacing:.05em;padding:4px 0 2px';
+            hdr.style.cssText = 'font:var(--ac-font-overline);color:var(--ac-color-text-muted);text-transform:uppercase;letter-spacing:var(--ac-letter-spacing-overline);padding:4px 0 2px';
             hdr.textContent = typeLabel + ' (' + group.reduce(function(s,c){ return s + c.qty; }, 0) + ')';
             elCardList.appendChild(hdr);
             group.forEach(function(c) {
@@ -330,19 +330,19 @@
         var html = '<ul style="list-style:none;margin:0;padding:0">';
         results.forEach(function(r) {
             var icon   = r.ok
-                ? '<i class="fa-solid fa-check" style="color:#22c55e;width:14px;flex-shrink:0"></i>'
-                : '<i class="fa-solid fa-xmark" style="color:#ef4444;width:14px;flex-shrink:0"></i>';
+                ? '<i class="fa-solid fa-check" style="color:var(--ac-color-success);width:14px;flex-shrink:0"></i>'
+                : '<i class="fa-solid fa-xmark" style="color:var(--ac-color-required);width:14px;flex-shrink:0"></i>';
             var detail = '';
             if (r.current !== null && r.limit !== null) {
-                detail = '<span style="font-size:.75rem;color:var(--neutral-400);margin-left:auto;white-space:nowrap">'
+                detail = '<span style="font-size:.75rem;color:var(--ac-color-text-muted);margin-left:auto;white-space:nowrap">'
                     + r.current + ' / ' + r.limit + '</span>';
             } else if (r.limit !== null) {
-                detail = '<span style="font-size:.75rem;color:var(--neutral-400);margin-left:auto;white-space:nowrap">'
+                detail = '<span style="font-size:.75rem;color:var(--ac-color-text-muted);margin-left:auto;white-space:nowrap">'
                     + '&le; ' + r.limit + '</span>';
             }
-            html += '<li style="display:flex;align-items:center;gap:8px;padding:7px 16px;border-bottom:1px solid var(--sand-200)">'
+            html += '<li style="display:flex;align-items:center;gap:8px;padding:7px 16px;border-bottom:1px solid var(--ac-color-border)">'
                 + icon
-                + '<span style="font-size:.84rem' + (r.ok ? '' : ';color:#ef4444') + '">' + escHtml(r.label) + '</span>'
+                + '<span style="font-size:.84rem' + (r.ok ? '' : ';color:var(--ac-color-required)') + '">' + escHtml(r.label) + '</span>'
                 + detail
                 + '</li>';
         });

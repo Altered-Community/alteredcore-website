@@ -31,13 +31,13 @@
         <!-- Loading -->
         <div id="<?= h($_csP) ?>-playset-loading" class="ac-state-pane">
             <div class="spinner-border" role="status"
-                 style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+                 style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--ac-color-primary)"></div>
             <div class="mt-2 small text-muted"><?= h($_csTxt['loading'] ?? '') ?></div>
         </div>
 
         <!-- Error -->
         <div id="<?= h($_csP) ?>-playset-error" class="ac-state-pane" style="display:none">
-            <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:#f87171"></i>
+            <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:var(--ac-color-required)"></i>
             <p class="small text-muted mb-0"><?= h($_csTxt['err_api'] ?? 'Could not load data.') ?></p>
         </div>
 
@@ -180,7 +180,7 @@
                  data-lbl-12="<?= h($_csPsCopies12) ?>" data-lbl-4plus="<?= h($_csPsCopies4) ?>">
                 <div class="cs-ps-sum-loading" id="<?= h($_csP) ?>-playset-summary-loading" style="display:none">
                     <div class="spinner-border" role="status"
-                         style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+                         style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--ac-color-primary)"></div>
                 </div>
                 <div class="cs-ps-sum-stats">
                     <div class="cs-ps-sum-stat">
@@ -232,7 +232,7 @@
             <!-- Exploration loading / error (independent of the dashboard) -->
             <div id="<?= h($_csP) ?>-playset-explore-loading" class="ac-state-pane" style="display:none">
                 <div class="spinner-border" role="status"
-                     style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+                     style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--ac-color-primary)"></div>
                 <div class="mt-2 small text-muted"><?= h($_csTxt['loading'] ?? '') ?></div>
             </div>
             <div id="<?= h($_csP) ?>-playset-explore" class="cs-ps-explore"

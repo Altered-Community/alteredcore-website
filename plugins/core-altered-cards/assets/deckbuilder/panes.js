@@ -8,7 +8,7 @@
 
         var keys = Object.keys(deck.cards);
         if (!keys.length) {
-            pane.innerHTML = '<p style="font-size:.82rem;color:var(--neutral-400);padding:.5rem 0">' + escHtml(AlteredDB.txt.no_cards) + '</p>';
+            pane.innerHTML = '<p style="font-size:.82rem;color:var(--ac-color-text-muted);padding:.5rem 0">' + escHtml(AlteredDB.txt.no_cards) + '</p>';
             return;
         }
 
@@ -69,9 +69,9 @@
         }
 
         var html = '<div class="db-stat-section-title">' + escHtml(AlteredDB.txt.stats_cost_main) + '</div>';
-        html += vCurve(costCurve, maxCost, 'var(--primary-400)');
+        html += vCurve(costCurve, maxCost, 'var(--ac-color-chart-main)');
         html += '<div class="db-stat-section-title">' + escHtml(AlteredDB.txt.stats_cost_recall) + '</div>';
-        html += vCurve(recallCurve, maxRecall, 'var(--secondary-400,#a78bfa)');
+        html += vCurve(recallCurve, maxRecall, 'var(--ac-color-chart-reserve)');
 
         html += '<div class="db-stat-section-title" style="margin-top:16px">' + escHtml(AlteredDB.txt.stats_types) + '</div>';
         TYPE_ORDER.forEach(function(t) {
@@ -110,7 +110,7 @@
 
         var keys = Object.keys(deck.cards);
         if (!keys.length) {
-            content.innerHTML = '<p style="font-size:.82rem;color:var(--neutral-400);padding:.5rem 0">' + escHtml(AlteredDB.txt.no_cards) + '</p>';
+            content.innerHTML = '<p style="font-size:.82rem;color:var(--ac-color-text-muted);padding:.5rem 0">' + escHtml(AlteredDB.txt.no_cards) + '</p>';
             return;
         }
 
@@ -146,7 +146,7 @@
                     var dName = typeof c.name === 'object' ? (c.name[AlteredDB.lang] || c.name.en || '') : (c.name || '');
                     var p = c.ref.split('_');
                     var cardImg = (p[5] && p[5][0] === 'U')
-                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uniqueLocale) + '" style="display:block;width:100%;border-radius:7px;overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
+                        ? '<altered-card ref="' + escAttr(c.ref) + '" locale="' + escAttr(AlteredDB.uniqueLocale) + '" style="display:block;width:100%;border-radius:var(--ac-radius-sm);overflow:hidden;aspect-ratio:63.5/88"></altered-card>'
                         : '<img src="' + cdnUrl(c.ref) + '" alt="' + escAttr(dName) + '" loading="lazy">';
                     html += '<div class="db-deckgrid-card" onclick="openDbCardModal(\'' + escAttr(c.ref) + '\')" title="' + escAttr(dName) + '">'
                         + cardImg
