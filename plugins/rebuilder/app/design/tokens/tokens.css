@@ -57,6 +57,9 @@
   /* ---------- Couleurs · données ---------- */
   --ar-color-chart-main: #1463d6;      /* histogramme coût main */
   --ar-color-chart-reserve: #6f45a6;   /* histogramme coût réserve */
+  --ar-color-type-character: #2f7d57;  /* composition moyenne de la main : personnages */
+  --ar-color-type-spell: #c9a84c;      /* … sorts */
+  --ar-color-type-permanent: #5b7aa8;  /* … permanents et autres */
 
   /* ---------- Couleurs · factions ---------- */
   --ar-faction-axiom: #8a3a24;

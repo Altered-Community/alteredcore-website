@@ -1,0 +1,52 @@
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ar-space-5);
+  flex-wrap: wrap;
+}
+.ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* The hole: the card surface. */
+  mask: radial-gradient(circle, transparent 17px, black 18px);
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-2);
+}
+li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--ar-space-2);
+  font-size: 13px;
+  --tone: var(--ar-color-type-permanent);
+}
+li.tone-character {
+  --tone: var(--ar-color-type-character);
+}
+li.tone-spell {
+  --tone: var(--ar-color-type-spell);
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+.label {
+  color: var(--ar-color-text-2);
+}
+strong {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tone);
+  font-variant-numeric: tabular-nums;
+}

@@ -24,6 +24,8 @@ import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../legality-details/legality-details.overlay';
+import { HandCalculators } from '../hand-calculators/hand-calculators';
+import { HandStats } from '../hand-stats/hand-stats';
 import { TestHand } from '../test-hand/test-hand';
 import { deckShareUrl } from './share-url';
 
@@ -55,6 +57,8 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     DeckListView,
     DecklistTable,
     TestHand,
+    HandStats,
+    HandCalculators,
   ],
   templateUrl: './deck.page.html',
   styleUrl: './deck.page.scss',

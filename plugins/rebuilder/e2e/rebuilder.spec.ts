@@ -461,6 +461,13 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(deckPage).toContainText('3 cartes dans le deck');
     await deckPage.getByRole('button', { name: 'Piocher une carte' }).click();
     await expect(hand.locator('ar-card-tile')).toHaveCount(7);
+    // Opening-hand stats and calculators, under the hand (as on the site).
+    await expect(deckPage.locator('app-hand-stats')).toContainText('Composition moyenne');
+    await expect(deckPage.locator('app-hand-stats')).toContainText('Démarrage optimal');
+    const calc = deckPage.locator('app-hand-calculators');
+    await calc.getByRole('combobox', { name: 'Choisir…', exact: true }).click();
+    await page.getByRole('option').first().click();
+    await expect(calc.locator('ar-probability-bars').first()).toContainText('%');
     await evidence(page, testInfo, '23-deck-test-hand');
 
     // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.

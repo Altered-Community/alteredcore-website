@@ -103,6 +103,8 @@
         }
         @case ('main') {
           <app-test-hand [lines]="deck.lines()" />
+          <app-hand-stats [lines]="deck.lines()" />
+          <app-hand-calculators [lines]="deck.lines()" />
         }
         @case ('cartes') {
           @if (bp.compact()) {
