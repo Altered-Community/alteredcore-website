@@ -38,8 +38,8 @@ export class ArBreakpointService {
 }
 
 /**
- * Element that carries `data-density`: `<html>` by default. When the app is embedded in a
- * Shadow DOM, selectors cannot see `<html>`, so the plugin root carries it instead.
+ * Element that carries `data-density`: `<html>` by default. In the plugin's shadow root,
+ * selectors cannot see `<html>`, so the plugin root carries it instead (`embedConfig`).
  */
 export const AR_DENSITY_TARGET = new InjectionToken<HTMLElement>('AR_DENSITY_TARGET');
 

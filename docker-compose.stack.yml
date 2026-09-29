@@ -1,7 +1,7 @@
 # Full local / CI stack: the site wired to a local Keycloak and a local decks API, with the
 # SPA plugins active. Used by the Playwright tests (tests/e2e) and the plugins CI workflow.
 #
-#   (cd plugins/rebuilder/app && npm ci && npm run build:embed)   # SPA bundles are not committed
+#   (cd plugins/rebuilder/app && npm ci && npm run build)   # SPA bundles are not committed
 #   docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
 #
 # Site http://localhost:${WEB_PORT:-8080} · Keycloak http://auth.altered.local.gd:18080 (admin/admin,

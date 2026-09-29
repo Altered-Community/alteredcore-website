@@ -1,11 +1,6 @@
 {
   "locale": "en",
   "translations": {
-    "core.auth.account": "Account",
-    "core.auth.interrupted": "Sign-in interrupted (invalid state). Your guest decks stay on this device.",
-    "core.auth.sessionExpired": "Session expired. Your guest decks stay on this device.",
-    "core.auth.cancelled": "Sign-in cancelled. Your guest decks stay on this device.",
-    "core.auth.failed": "Sign-in failed. Your guest decks stay on this device.",
     "search.filters.set.fugue": "Neverending Journey",
     "search.filters.set.eole": "Roots of Corruption",
     "search.filters.set.duster": "Seeds of Unity",
@@ -135,7 +130,6 @@
     "decks.filters.visibility": "Visibility",
     "decks.filters.reset": "Reset",
     "decks.filters.apply": "Apply",
-    "decks.page.siteMenu": "Site menu",
     "decks.page.newDeck": "New deck",
     "decks.page.import": "Import",
     "decks.page.search": "Search a deck",
@@ -370,25 +364,9 @@
     "ui.uniqueCard.powers": "Powers",
     "ui.uniqueCard.mainCost": "Hand cost {$cost}",
     "ui.uniqueCard.reserveCost": "Reserve cost {$cost}",
-    "ui.appBar.home": "Altered Re:Builder, home",
-    "ui.appBar.mainNav": "Main navigation",
     "ui.backButton.label": "Back",
     "ui.breadcrumb.label": "Breadcrumb",
-    "ui.siteFooter.links": "Footer links",
-    "ui.siteFooter.newTab": "(new tab)",
-    "ui.siteFooter.disclaimer": "Altered Re:Builder is an unofficial community site and is not affiliated with Equinox.",
-    "ui.siteFooter.news": "News",
-    "ui.siteFooter.cards": "Cards",
     "ui.overlay.back": "Back",
-    "ui.overlay.close": "Close",
-    "cards.page.title": "Cards",
-    "cards.page.siteMenu": "Site menu",
-    "cards.page.intro": "Every Altered card and the Uniques, by faction, set, rarity, type, cost or effect.",
-    "shared.account.darkTheme": "Dark theme (coming soon)",
-    "shared.account.language": "Language: English",
-    "shared.account.languageCode": "EN",
-    "shared.account.connecting": "Signing in…",
-    "shared.account.account": "Account {$name}",
-    "shared.account.signIn": "Sign in"
+    "ui.overlay.close": "Close"
   }
 }

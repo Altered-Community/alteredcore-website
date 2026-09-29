@@ -1,8 +1,0 @@
-/*
- * Global base. Design tokens come from design/tokens/tokens.css (angular.json → styles).
- * Mobile-first: base rules target compact screens, media queries widen from there.
- * Breakpoints (literal values, CSS cannot read variables): 768px medium, 1200px expanded.
- */
-
-@use 'styles/fonts';
-@use 'styles/base';

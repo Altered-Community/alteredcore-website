@@ -1,5 +1,5 @@
 @if (bp.compact()) {
-  <ar-app-bar appearance="compact" title="Deck">
+  <ar-app-bar title="Deck">
     <ar-back-button leading fallback="/decks" />
     @if (deck.owned()) {
       <button actions class="edit" arIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" i18n-ariaLabel="@@deck.page.edit" [iconSize]="22" (click)="edit()"></button>

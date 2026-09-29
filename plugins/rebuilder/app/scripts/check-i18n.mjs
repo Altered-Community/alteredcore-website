@@ -1,6 +1,5 @@
-// Checks src/locale/messages.en.json against the messages extracted from the sources, French
-// (`npm run i18n:extract`: the embed build → ../dist/i18n, the standalone build → ../dist/i18n-app,
-// which also has the Cards page): every message has a custom `@@id`
+// Checks src/locale/messages.en.json against the messages extracted from the sources
+// (`ng extract-i18n` → ../dist/i18n/messages.json, French): every message has a custom `@@id`
 // and an English translation with the same placeholders, and no translation is left unused.
 // A missing translation would silently fall back to French at runtime.
 import { readFileSync } from 'node:fs';
@@ -8,8 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const extracted = (dir) => JSON.parse(readFileSync(join(root, '..', 'dist', dir, 'messages.json'), 'utf8')).translations;
-const source = { ...extracted('i18n-app'), ...extracted('i18n') };
+const source = JSON.parse(readFileSync(join(root, '..', 'dist', 'i18n', 'messages.json'), 'utf8')).translations;
 const en = JSON.parse(readFileSync(join(root, 'src', 'locale', 'messages.en.json'), 'utf8')).translations;
 
 const placeholders = (text) => [...text.matchAll(/\{\$([A-Za-z0-9_]+)\}/g)].map((m) => m[1]).sort().join(',');

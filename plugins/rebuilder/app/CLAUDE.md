@@ -2,10 +2,9 @@
 
 ## Produit
 
-Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), montée par le site sur
-`/pages/rebuilder/` (build `embed`, Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources
-importées de [Yutsa/altered-re-builder](https://github.com/Yutsa/altered-re-builder), qui garde l'app autonome
-(Capacitor, BFF d'authentification, maquettes, e2e autonomes). Les mêmes composants s'adaptent à la taille
+Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), plugin du site AlteredCore monté
+sur `/pages/rebuilder/` (Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources reprises de
+[Yutsa/altered-re-builder](https://github.com/Yutsa/altered-re-builder). Les mêmes composants s'adaptent à la taille
 d'écran et à la densité : pas d'écrans « mobile » et « desktop » séparés.
 
 ## Références de conception
@@ -66,14 +65,13 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   Angular 22). Icônes de rareté et de terrain : `public/assets/icons/` (servies sous `assets/icons/`) ; gemmes, factions, terrains et logos d'extension : `public/assets/` (voir son `README.md`).
 - Backend : **réutiliser les services, modèles et intercepteurs existants** pour les appels API. Ne pas dupliquer
   un client ; si un modèle ne correspond pas à l'UI, écrire un mapper plutôt que de modifier le contrat.
-- Embarqué : pas d'accès direct au token Keycloak (session du site, appels decks par le relais
-  `AlteredCore.services.decks`), styles et overlays dans le shadow root, menu du site à la place de `site-menu`.
-- App autonome (Capacitor) : `env(safe-area-inset-*)` pour les zones sûres, `@capacitor/keyboard`, `@capacitor/status-bar`,
-  bouton retour Android via `@capacitor/app` (ferme d'abord l'overlay ouvert).
+- Site hôte : pas d'accès direct au token Keycloak (session du site, appels decks par le relais
+  `AlteredCore.services.decks`), styles et overlays dans le shadow root ; menu, connexion et pied de page sont ceux
+  du site.
 
 ## Vérification avant de terminer une tâche
 
-1. `npm run build`, `npm run build:embed` et `ng lint` sans erreur, `npm test` vert.
+1. `npm run build` et `npm run lint` sans erreur, `npm test` vert.
 2. E2E dans le site (`tests/e2e` + `plugins/rebuilder/e2e`) sur la stack `docker-compose.stack.yml` : voir
    `../README.md`.
 3. Capture Playwright de l'écran embarqué à 1440×900 et 390×844.
@@ -84,15 +82,14 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
 | Emplacement | Contenu |
 |---|---|
 | `design/` | `COMPONENTS.md` et tokens. |
-| `design/tokens/tokens.css` | Tokens `--ar-*`, chargés globalement via `angular.json` → `styles`. |
-| `src/styles.scss` | Base globale (reset, classes `ar-overlay-*` partagées par les contenus d'overlay). |
+| `design/tokens/tokens.css` | Tokens `--ar-*`, chargés par `src/embed/embed.scss`. |
+| `src/styles/_base.scss` | Base globale (reset, classes `ar-overlay-*` partagées par les contenus d'overlay). |
 | `src/app/ui/` | Design system `ar-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ar-radio-card`), `chips/`, `containers/`, `nav/` (dont `ar-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`ArOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`ArBreakpointService`, `ArDensityService`). |
-| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `cards/` (onglet Cartes `/cartes`), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck ; menu du site `site-menu/`, `account-actions/`, `site-links.ts`). |
-| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth.service.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
-| `src/app/app.routes.ts` | Routes de l'app autonome (Cartes, decks, éditeur). |
-| `src/main.embed.ts`, `src/app/embed/` | Mode embarqué : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
-| `src/embed/` | Styles du build embarqué (shadow root, et `<head>` pour les polices). |
-| `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build --configuration embed`. |
+| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `cards/` (navigateur de cartes, pas encore routé), `search/` (recherche de cartes partagée par l'éditeur et Cartes : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck). |
+| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth-session.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
+| `src/main.ts`, `src/app/embed/` | Démarrage : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
+| `src/embed/` | Styles (shadow root, et `<head>` pour les polices). |
+| `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build`. |
 | `../e2e/` | Scénarios Playwright du plugin, lancés par le site sur la stack complète (desktop 1440×900 et mobile 390×844). |
 | `docs/backend-api.md` | Contrat des API consommées. |
 | `docs/api-limitations/` | Manques des API, contournements côté front et corrections backend à faire (un fichier par API). |
@@ -101,11 +98,9 @@ Commandes npm :
 
 | Commande | Rôle |
 |---|---|
-| `npm start` | `ng serve` sur `0.0.0.0:4200`. |
-| `npm run build` | Build de production de l'app autonome. |
-| `npm run build:embed` | Build embarqué → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert). |
+| `npm run build` | Build → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert). |
 | `npm test` | Tests unitaires (Vitest via `@angular/build:unit-test`, fichiers `*.spec.ts`). |
-| `ng lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`). |
+| `npm run lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`) et `i18n:check`. |
 
 
 ## Comportement

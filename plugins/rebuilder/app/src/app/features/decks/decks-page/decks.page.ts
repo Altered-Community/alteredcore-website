@@ -19,7 +19,6 @@ import { ArDeckCard, FACTIONS } from '../../../ui/metier';
 import { ArAppBar, ArTabs } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
-import { SITE_MENU_ENABLED, SiteMenuService } from '../../shared/site-menu/site-menu';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks } from '../deck-filters';
@@ -72,8 +71,6 @@ export class DecksPage {
   private readonly store = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
-  protected readonly menu = inject(SiteMenuService);
-  protected readonly siteMenu = inject(SITE_MENU_ENABLED);
 
   protected readonly tab = toSignal(this.route.queryParamMap.pipe(map((q) => (q.get('tab') === 'community' ? 'community' : 'mine') as Tab)), {
     initialValue: 'mine' as Tab,

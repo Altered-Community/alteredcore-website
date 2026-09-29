@@ -9,11 +9,11 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 | Path | Content |
 |---|---|
 | `plugin.json` | Manifest v2: SPA page, menu entry, build and e2e declarations |
-| `app/` | Angular sources, imported from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
-| `app/src/main.embed.ts`, `app/src/app/embed/` | Embedded mode: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
-| `app/src/embed/` | Styles of the embedded build (shadow root, and `<head>` for fonts) |
+| `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
+| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
+| `app/src/embed/` | Styles (shadow root, and `<head>` for fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |
-| `dist/` | Build output (`npm run build:embed`), not committed |
+| `dist/` | Build output (`npm run build`), not committed |
 
 ## Build
 
@@ -21,18 +21,14 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 cd plugins/rebuilder/app
 nvm use            # Node 22.22.3
 npm ci
-npm run build:embed   # → ../dist/browser + ../dist/embed-manifest.json
+npm run build   # → ../dist/browser + ../dist/embed-manifest.json
 npm run lint && npm test
 ```
 
-The standalone app still builds from the same sources (`npm run build`, `npm start`): the embedded
-mode is a build configuration, not a fork. Android, the auth BFF, the standalone e2e and the design
-mockups stayed in the ReBuilder repository.
 
 ## What is embedded
 
-The base href is `/pages/rebuilder/` and the routes are the standalone app's, so the shared screens
-navigate unchanged:
+The base href is `/pages/rebuilder/`:
 
 | URL | Screen |
 |---|---|
@@ -66,7 +62,7 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 ## Known gaps
 
 - Not ported from the site's decks page: the Starter Deck Contest tab, the community deckbuilders
-  window, the Equinox ZIP import. « Importer » (decklist) creates a guest deck, as in the standalone app.
+  window, the Equinox ZIP import. « Importer » (decklist) creates a guest deck.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
 - Guest decks of the site's builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours

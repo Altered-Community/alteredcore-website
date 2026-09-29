@@ -1,13 +1,11 @@
-import { Service, inject, type Signal } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { AuthService } from './auth.service';
+import { Service, signal, type Signal } from '@angular/core';
+import { of, type Observable } from 'rxjs';
 
 /**
- * Who supplies the Keycloak access token sent to the decks API.
- * Standalone and Capacitor: `AuthService` (PKCE login + auth BFF, the default).
- * Embedded in the AlteredCore site: `HostAuthSession` (the shell's PHP session, `src/app/embed/`).
+ * Session of the site user, for the decks API: `HostAuthSession` (the site's PHP session, the
+ * decks relay adds the token server-side), provided by `embedConfig`. Without it (unit tests), a guest.
  */
-@Service({ factory: () => inject(AuthService) })
+@Service({ factory: () => new GuestSession() })
 export abstract class AuthSession {
   /** Current access token, `null` for a guest. */
   abstract readonly token: Signal<string | null>;
@@ -22,4 +20,19 @@ export abstract class AuthSession {
   abstract ensureFresh(): Observable<void>;
   /** Gets a new access token after a 401; false when the session is gone. */
   abstract refresh(): Observable<boolean>;
+}
+
+/** No user: guest decks only. */
+class GuestSession extends AuthSession {
+  readonly token = signal<string | null>(null).asReadonly();
+  readonly isLoggedIn = signal(false).asReadonly();
+  readonly username = signal<string | null>(null).asReadonly();
+  readonly sessionRestoring = signal(false).asReadonly();
+  readonly sessionNotice = signal<string | null>(null).asReadonly();
+  ensureFresh(): Observable<void> {
+    return of(undefined);
+  }
+  refresh(): Observable<boolean> {
+    return of(false);
+  }
 }

@@ -26,21 +26,11 @@ export interface DeckUpvote {
   hasUpvoted: boolean;
 }
 
-/**
- * `decks.alteredcore.org` only reflects CORS for localhost. Hosts that serve this app
- * behind a same-origin `/decks-api` proxy (production nginx, `ng serve` previews on
- * `*.trapdoor.sh`) must not call the upstream host from the browser.
- */
-export function decksApiBaseUrl(hostname = typeof window === 'undefined' ? '' : window.location.hostname): string {
-  if (hostname === 'deckbuilder.yutsa.fr' || hostname.endsWith('.trapdoor.sh')) return '/decks-api';
-  return environment.decksApiUrl.replace(/\/$/, '');
-}
-
 @Service()
 export class DecksApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthSession);
-  readonly baseUrl = decksApiBaseUrl();
+  readonly baseUrl = environment.decksApiUrl.replace(/\/$/, '');
 
   listMine(page = 1, itemsPerPage = 30): Observable<Deck[] | { member: Deck[] }> {
     return this.send(() =>

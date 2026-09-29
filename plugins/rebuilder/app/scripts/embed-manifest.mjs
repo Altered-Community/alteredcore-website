@@ -1,4 +1,4 @@
-// Writes ../dist/embed-manifest.json after `ng build --configuration embed`: the files the
+// Writes ../dist/embed-manifest.json after `ng build`: the files the
 // AlteredCore shell loads (see includes/spa.php in the site). The polyfills and main modules have hashed names;
 // the non-injected style bundles do not, so they get a content hash as query string.
 import { createHash } from 'node:crypto';

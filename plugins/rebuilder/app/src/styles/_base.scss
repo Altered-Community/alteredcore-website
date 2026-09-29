@@ -1,6 +1,5 @@
 /*
- * Global rules shared by the standalone app (src/styles.scss) and the embedded build
- * (src/embed/embed.scss, inside the plugin's shadow root).
+ * Global rules of the plugin, loaded by src/embed/embed.scss inside the plugin's shadow root.
  */
 
 @use '@angular/cdk/overlay-prebuilt.css';

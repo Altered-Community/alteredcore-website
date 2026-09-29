@@ -2,7 +2,7 @@
  * Embedded build (AlteredCore site, plugin `rebuilder`): loaded inside the plugin's shadow root,
  * so the site's Bootstrap and css/style.css never reach these rules, and these never reach the site.
  * `.ar-embed` is the plugin root (`AlteredCore.getMount().container`): it carries the tokens,
- * `data-density` and `data-theme` that `:root` / `<html>` carry in the standalone app.
+ * `data-density` and `data-theme`.
  */
 
 @use '../../design/tokens/tokens';

@@ -1,8 +1,5 @@
 @if (bp.compact()) {
-  <ar-app-bar appearance="compact" title="Decks">
-    @if (siteMenu) {
-      <button leading arIconButton="menu" variant="ghost" ariaLabel="Menu du site" i18n-ariaLabel="@@decks.page.siteMenu" [iconSize]="22" (click)="menu.open()"></button>
-    }
+  <ar-app-bar title="Decks">
     <button actions class="new-compact" arIconButton="plus" variant="primary" ariaLabel="Nouveau deck" i18n-ariaLabel="@@decks.page.newDeck" [iconSize]="22" (click)="newDeck()"></button>
   </ar-app-bar>
 }

@@ -74,12 +74,11 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 
 | Composant | Entrées | Écrans |
 |---|---|---|
-| `ar-app-bar` | `appearance: 'auto' \| 'expanded' \| 'compact'`, `title?`, `links: {label, route, exact?}[]` (onglet actif via `routerLinkActive`, `exact` pour l'accueil) ; le nom du site mène à `/` ; slots `[leading]` / `[actions]` | tous |
+| `ar-app-bar` | `title?`, `subtitle?` ; slots `[leading]` / `[actions]` ; barre des écrans compacts, sous l'en-tête du site | écrans compacts |
 | `ar-back-button` | `fallback` (route si la page a été ouverte directement), `label = 'Retour'` ; revient à la page précédente de l'app (`ArNavigationHistory`, injecté au démarrage dans `App`) | barres compactes des pages imbriquées : éditeur, consultation, connexion |
 | `ar-tabs` | `tabs: {id,label,count?}[]`, `active = model<string>()`, `appearance: 'auto' \| 'underline' \| 'pill'` (`auto` = souligné ≥ medium, pastilles défilantes en compact) | source des cartes, Mes decks / Communauté, Cartes / Decklist |
 | `ar-bottom-nav` | `items: {route, icon, label, badge?}[]` — rendu seulement en compact, au-dessus de `env(safe-area-inset-bottom)` | éditeur mobile, consultation mobile |
 | `ar-breadcrumb` | `items: {label, route?}[]` | éditeur desktop |
-| `ar-site-footer` | `links: ArNavLink[]`, `externalLinks: {label, href}[]`, `disclaimer`, `logoSrc`, `logoAlt` ; `<footer>` + `<nav aria-label="Liens du pied de page">` ; logo Fan Content 48 px, mention légale, liens internes et lien externe (`target="_blank"` `rel="noopener"`, icône `external-link`, « (nouvel onglet) » masqué). Bandeau pleine largeur, non collant. En compact : colonne centrée ; à partir de 768 px : une ligne, liens à droite, retour à la ligne si la mention ne tient pas | Accueil, Actualités, Article, Connexion. Absent de l'éditeur, de la consultation, de Cartes et de Decks |
 
 ## 6. Conteneurs — `DS-Conteneurs`
 
@@ -91,7 +90,6 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 | `ar-virtual-grid` | `items`, `overscan = 1.5` (écrans de rangées gardés au-dessus et au-dessous), `initial = 36` (cases rendues avant la mesure) ; expose `slice()` (éléments à rendre), `first()` (index dans `items` du premier rendu, pour `aria-posinset`) et `atEnd()` (dernier élément rendu : afficher les squelettes). Le parent rend lui-même les cases en contenu projeté : `<ar-virtual-grid #grid class="grid" [items]="cards">@for (c of grid.slice(); track c.reference) {…}</ar-virtual-grid>`. Grille CSS dont seules les rangées à moins de `overscan` écrans sont dans le DOM ; les autres sont remplacées par un padding de même hauteur (la page garde sa longueur, le sentinel de scroll infini reste en bas). L'hôte est la grille : le parent pose colonnes et espacements par une classe. Toutes les cases ont la hauteur de la première ; défile avec la fenêtre | résultats de recherche de cartes (Cartes, éditeur) |
 | `ArOverlayService` | `open(Component, {title, data, width?, height?: 'auto' \| 'fill', compact?: 'sheet' \| 'drawer' \| 'fullscreen'})` → CDK `Dialog` (`height: 'fill'` : fenêtre = hauteur de l'écran − 80 px) ; **jamais deux fenêtres superposées** : un écran secondaire s'ouvre avec `ref.openStep(Component, {title, data})`, qui remplace le contenu dans la même fenêtre / feuille / tiroir (flèche retour, Échap et bouton retour Android reviennent à l'écran précédent, dont l'état est conservé ; résultat sur `afterClosed` de l'étape) ; en compact : feuille basse par défaut (poignée, coins 20, `--ar-shadow-sheet`), tiroir plein hauteur depuis la gauche (`compact: 'drawer'`, largeur `--ar-drawer-width`, voile `--ar-color-scrim`, `--ar-shadow-drawer`, fermeture au voile, à Fermer et à Échap) ou page plein écran ; ≥ 768 px : fenêtre centrée (rayon 16, `--ar-shadow-dialog`), y compris si `compact: 'drawer'` est demandé ; même composant de contenu, même pied d'actions. Un lien du menu ☰ navigue tout de suite : la navigation `replaceUrl` reprend l'entrée d'historique du tiroir (pas d'attente de la fermeture) | réglages du deck, éditeur d'effet, filtres mobile, nouveau deck, choisir un héros ; menu ☰ (`compact: 'drawer'`) |
 
-Sur Capacitor, la feuille gère le bouton retour Android (`@capacitor/app` → `backButton`) et le clavier (`@capacitor/keyboard`).
 
 ## 7. Composants métier — `DS-Metier`
 
