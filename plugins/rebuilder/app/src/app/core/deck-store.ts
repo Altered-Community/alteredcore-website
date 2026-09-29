@@ -470,25 +470,34 @@ export class DeckStore {
     this.saveError.set(null);
     this.decksApi.patch(id, payload, { keepalive }).subscribe({
       next: (saved) => {
-        if (!this.settle(id, revision)) return;
-        this.isDraft.set(isDraft);
-        this.saved.set(true);
-        if (revision === this.revision) {
-          this.dirty.set(false);
-          if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+        if (this.settle(id, revision)) {
+          this.isDraft.set(isDraft);
+          this.saved.set(true);
+          if (revision === this.revision) {
+            this.dirty.set(false);
+            if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+          }
         }
-        if (this.saveQueued) {
-          this.saveQueued = false;
-          if (!this.saveTimer) this.save();
-        }
+        // Also when the deck was left meanwhile: the queued save is the new deck's.
+        this.sendQueued();
       },
       error: (err: unknown) => {
-        if (!this.settle(id, revision)) return;
+        if (!this.settle(id, revision)) {
+          this.sendQueued();
+          return;
+        }
         // Changes made meanwhile stay dirty: they go with « Réessayer » or the next change.
         this.saveQueued = false;
         this.saveError.set(apiErrorMessage(err, saveErrorHead));
       },
     });
+  }
+
+  /** Sends the save that waited for the running request, once none runs. */
+  private sendQueued(): void {
+    if (!this.saveQueued || this.inFlight !== null) return;
+    this.saveQueued = false;
+    if (!this.saveTimer) this.save();
   }
 
   /** Ends the running request; `false` when the deck was left meanwhile (its answer is ignored). */

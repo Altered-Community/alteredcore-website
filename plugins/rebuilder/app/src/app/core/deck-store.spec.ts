@@ -404,6 +404,27 @@ describe('DeckStore (signed in)', () => {
     expect(store.saveState()).toBe('saved');
   });
 
+  it('sends the save of the next deck that waited for the previous deck’s request', async () => {
+    store.rename('Un');
+    store.flush();
+    const first = patchReq();
+    store.load('other');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/other')).flush({ id: 'other', name: 'Autre', format: 'standard', isPublic: false, cards: [] });
+    await Promise.resolve();
+    TestBed.tick();
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    await settle();
+    store.rename('Autre deck');
+    store.flush();
+    http.expectNone((r) => r.method === 'PATCH');
+    first.flush({ id: 'source', name: 'Un' });
+    const second = http.expectOne((r) => r.method === 'PATCH' && r.url.endsWith('/api/decks/other'));
+    expect(second.request.body).toMatchObject({ name: 'Autre deck' });
+    second.flush({ id: 'other', name: 'Autre deck' });
+    expect(store.dirty()).toBe(false);
+  });
+
   it('flushes with keepalive when the page is left, and warns only when changes may be lost', () => {
     store.rename('Avant de partir');
     expect(store.leavePage()).toBe(false);
