@@ -23,15 +23,27 @@ export class NewDeckPage {
     afterNextRender(() => {
       openNewDeck(this.overlay).afterClosed.subscribe((res) => {
         if (!res) {
-          // Cancel returns to the page that opened the form (home, decks list…).
-          if (this.history.canGoBack) this.location.back();
-          else void this.router.navigateByUrl('/decks', { replaceUrl: true });
+          this.leave();
           return;
         }
-        this.store.createDeck(res).subscribe((deck) => {
-          void this.router.navigate(['/decks', deck.id, 'edit'], { replaceUrl: true });
+        let created = false;
+        this.store.createDeck(res).subscribe({
+          next: (deck) => {
+            created = true;
+            void this.router.navigate(['/decks', deck.id, 'edit'], { replaceUrl: true });
+          },
+          // « Annuler » in the create-failure window ends without a deck.
+          complete: () => {
+            if (!created) this.leave();
+          },
         });
       });
     });
+  }
+
+  /** Back to the page that opened the form (home, decks list…). */
+  private leave(): void {
+    if (this.history.canGoBack) this.location.back();
+    else void this.router.navigateByUrl('/decks', { replaceUrl: true });
   }
 }
