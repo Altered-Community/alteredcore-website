@@ -96,6 +96,15 @@ docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build -
 
 Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
 
+**Like production.** To get the plugins active on https://altered.re and its public content (news, content pages, side menu, footer, fonts, logo, home page text, images):
+
+```bash
+AC_STACK_MIRROR=1 AC_ACTIVATE_PLUGINS="card-scan core-altered-cards equinox-deck-import ownership reunion-events tournament-reports rebuilder" \
+  docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
+```
+
+The copy runs once (`docker/stack/mirror-prod.php`); copy again with `docker compose -f docker-compose.yml -f docker-compose.stack.yml exec web php docker/stack/mirror-prod.php --force`, or from preprod with `--source=https://website-preprod.altered.re`. It reads the public pages only: users, plugin data and plugin settings stay local.
+
 ---
 
 ## Contributing

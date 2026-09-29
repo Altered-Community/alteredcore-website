@@ -7,3 +7,7 @@ data/tinymce_shortcodes.json.dist
 .idea/
 # Angular build cache (plugin front-ends built from the repo root)
 .angular/
+
+# User uploads (server data; the local stack copies production ones with docker/stack/mirror-prod.php)
+/uploads/*
+!/uploads/.htaccess
