@@ -4,7 +4,7 @@ import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, Navig
 import { finalize, from, map, switchMap, timer } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { toDeckListItem, type DeckListItem } from '../../../core/deck-view';
-import { DecksApiService, type PublicDeckPage, type PublicDeckQuery } from '../../../core/decks-api.service';
+import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
 import { DECK_FORMATS } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
@@ -24,24 +24,13 @@ import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks, matchDecks } from '../deck-filters';
 import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
 import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
+import { type CommunityQuery, type CommunityState, EMPTY_COMMUNITY, addCommunityPage, toCommunityQuery } from '../community-pages';
 
 type Tab = 'mine' | 'community' | 'contest';
 
 const TABS: readonly Tab[] = ['mine', 'community', 'contest'];
 
-const COMMUNITY_PAGE_SIZE = 24;
 const SEARCH_DEBOUNCE_MS = 300;
-
-interface CommunityState {
-  items: DeckListItem[];
-  /** API total minus the illegal decks dropped from the pages loaded so far. */
-  total: number | null;
-  dropped: number;
-  page: number;
-  lastPage: number;
-}
-
-const EMPTY_COMMUNITY: CommunityState = { items: [], total: null, dropped: 0, page: 0, lastPage: 1 };
 
 const SORTS: { value: DeckSort; label: string }[] = [
   { value: 'updated', label: $localize`:@@decks.page.sortUpdated:Récemment modifié` },
@@ -50,12 +39,6 @@ const SORTS: { value: DeckSort; label: string }[] = [
   { value: 'name', label: $localize`:@@decks.page.sortName:Nom` },
 ];
 
-const API_ORDER: Record<DeckSort, NonNullable<PublicDeckQuery['order']>> = {
-  updated: 'updatedAt',
-  created: 'createdAt',
-  likes: 'upvoteCount',
-  name: 'name',
-};
 
 type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
@@ -116,9 +99,9 @@ export class DecksPage {
     { value: 'all' as ContestSet, label: $localize`:@@decks.contest.all:Toutes les decklists` },
   ];
 
-  /** API query for the community tab; `undefined` on « Mes decks » (resource idle). Hero and visibility do not reach the API. */
+  /** API query for the community tab; `undefined` on the other tabs (resource idle). */
   private readonly communityQuery = computed(
-    () => (this.tab() === 'community' ? toPublicQuery(this.filters()) : undefined),
+    () => (this.tab() === 'community' ? toCommunityQuery(this.filters()) : undefined),
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );
   /** Back to page 1 whenever the query changes. */
@@ -140,30 +123,23 @@ export class DecksPage {
   });
   /** Pages accumulated for the current query; a failed page keeps the ones already shown. */
   private readonly communityState = linkedSignal<
-    { query: PublicDeckQuery | undefined; loaded: { query: PublicDeckQuery | undefined; page: number; res: PublicDeckPage } | undefined },
+    { query: CommunityQuery | undefined; loaded: { query: CommunityQuery | undefined; page: number; res: PublicDeckPage } | undefined },
     CommunityState
   >({
     source: () => ({ query: this.communityQuery(), loaded: this.communityRes.hasValue() ? this.communityRes.value() : undefined }),
     computation: ({ query, loaded }, prev) => {
       const current = prev && prev.source.query === query ? prev.value : EMPTY_COMMUNITY;
       if (!loaded || loaded.query !== query || loaded.page <= current.page) return current;
-      // The API has no legality filter: illegal decks are dropped here (the server-computed `legal` flag).
-      const members = loaded.res.member ?? [];
-      const legal = members.filter((d) => d.legal);
-      const dropped = (loaded.page === 1 ? 0 : current.dropped) + members.length - legal.length;
-      const seen = new Set(loaded.page === 1 ? [] : current.items.map((d) => d.id));
-      const items = [...(loaded.page === 1 ? [] : current.items), ...legal.map(toDeckListItem).filter((d) => !seen.has(d.id))];
-      return {
-        items: query?.order === 'updatedAt' ? byLastUpdate(items) : items,
-        dropped,
-        total: loaded.res.totalItems == null ? null : loaded.res.totalItems - dropped,
-        page: loaded.page,
-        lastPage: loaded.res.lastPage ?? loaded.page,
-      };
+      return addCommunityPage(current, query, loaded.page, loaded.res);
     },
   });
   protected readonly community = computed(() => this.communityState().items);
   protected readonly communityTotal = computed(() => this.communityState().total);
+  /** Every page of the query is loaded. */
+  private readonly communityComplete = computed(() => {
+    const { page, lastPage } = this.communityState();
+    return page > 0 && page >= lastPage;
+  });
   protected readonly communityLoading = computed(() => this.communityRes.isLoading());
   protected readonly communityError = computed(() => (this.communityRes.error() ? $localize`:@@decks.page.communityError:Impossible de charger les decks publics.` : null));
   /** The infinite-scroll sentinel is on screen. */
@@ -221,8 +197,11 @@ export class DecksPage {
     return (f.format && tab !== 'contest' ? 1 : 0) + (f.hero && tab !== 'community' ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + f.factions.length;
   });
   protected readonly countLabel = computed(() => {
-    const n = this.tab() === 'community' ? this.communityTotal() ?? this.list().length : this.list().length;
+    const community = this.tab() === 'community';
+    const n = community ? this.communityTotal() ?? this.list().length : this.list().length;
     const count = n.toLocaleString(uiLocale());
+    // Several factions: no total from the API, only the matching decks of the pages loaded so far.
+    if (community && this.communityTotal() == null && n > 0 && !this.communityComplete()) return $localize`:@@decks.page.countAtLeast:${count}:count:+ decks`;
     // French puts 0 in the singular, English in the plural.
     const plural = uiLocale() === 'fr' ? n > 1 : n !== 1;
     return plural ? $localize`:@@decks.page.countMany:${count}:count: decks` : $localize`:@@decks.page.countOne:${count}:count: deck`;
@@ -423,23 +402,4 @@ export class DecksPage {
   protected onSentinel(visible: boolean): void {
     this.wantMore.set(visible);
   }
-}
-
-/**
- * The API sorts `updatedAt` DESC with never-modified decks (`updatedAt` null) first, whatever their age. Their date is the
- * creation date here (`lastModified`), so a stable sort of the pages loaded so far moves them to their place; later
- * pages are older than every dated deck already shown, so the order stays right as pages load.
- */
-function byLastUpdate(items: DeckListItem[]): DeckListItem[] {
-  return [...items].sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0));
-}
-
-function toPublicQuery(f: DeckFilters): PublicDeckQuery {
-  return {
-    itemsPerPage: COMMUNITY_PAGE_SIZE,
-    name: f.q.trim() || undefined,
-    faction: f.factions.length === 1 ? f.factions[0] : undefined,
-    format: f.format || undefined,
-    order: API_ORDER[f.sort],
-  };
 }

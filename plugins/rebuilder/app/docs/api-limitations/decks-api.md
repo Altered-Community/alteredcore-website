@@ -34,7 +34,7 @@ dans le groupe de sérialisation `deck:read` (schéma OpenAPI `User-deck.read` v
 `hero`, `cardName`, `cardReference`, `name`, `faction`, `format` et `order[…]`. Environ 4 % des decks publics sont
 illégaux.
 
-**Contournement.** L'onglet Communauté (`src/app/features/decks/decks-page/decks.page.ts`) retire les decks où
+**Contournement.** L'onglet Communauté (`src/app/features/decks/community-pages.ts`) retire les decks où
 `legal` est faux, page par page. Conséquences : une page affiche parfois moins de 24 decks, et le total
 « N decks » (`totalItems` moins les decks retirés jusque-là) reste surestimé tant que toutes les pages ne sont pas
 chargées.
@@ -42,6 +42,18 @@ chargées.
 **À faire côté backend.** Paramètre `legal` dans `PublicDeckController` et condition `AND d.legal = true` dans
 `DeckRepository::buildPublicFilters` (utilisée à la fois par `findPublic` et `countPublic`). Retirer ensuite le
 filtre client.
+
+## Une seule faction sur la liste publique
+
+**Constat.** `/api/decks/public` prend un seul `faction` : pas de liste de factions.
+
+**Contournement.** Avec deux factions ou plus, l'onglet Communauté (`src/app/features/decks/community-pages.ts`)
+n'envoie pas `faction` et garde, page par page, les decks dont le héros est d'une des factions choisies. Le
+défilement infini charge les pages suivantes tant que la liste ne remplit pas l'écran. Le total de l'API ne vaut
+plus rien : le compteur affiche « N+ decks » (decks trouvés jusque-là) tant que toutes les pages ne sont pas chargées.
+
+**À faire côté backend.** Accepter plusieurs factions (`faction[]`) dans `buildPublicFilters`, puis envoyer
+la liste et retirer le filtre client.
 
 ## Pool Frontier inconnu, légalité figée à l'enregistrement
 

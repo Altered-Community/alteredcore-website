@@ -158,6 +158,7 @@
     "decks.page.visibilityPrivate": "Private",
     "decks.page.countMany": "{$count} decks",
     "decks.page.countOne": "{$count} deck",
+    "decks.page.countAtLeast": "{$count}+ decks",
     "decks.page.filtersActive": "Filters, {$count} active",
     "decks.page.filters": "Filters",
     "decks.page.mineList": "My decks",
