@@ -124,7 +124,11 @@ function spaHostConfig(array $page): array {
         ];
     }
     $basePath = BASE_URL . '/pages/' . $page['slug'] . '/';
-    $services = ['cards' => spaPublicServiceUrl('CARDS_API'), 'cdn' => spaPublicServiceUrl('CDN')];
+    $services = [
+        'cards'   => spaPublicServiceUrl('CARDS_API'),
+        'cdn'     => spaPublicServiceUrl('CDN'),
+        'uniques' => spaPublicServiceUrl('UNIQUES_API'),
+    ];
     foreach (array_keys(spaProxyServices()) as $name) $services[$name] = BASE_URL . '/api/v1/services/' . $name;
 
     return [

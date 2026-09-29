@@ -1,4 +1,5 @@
-import type { CardOrder, CardSearchParams, EffectSlot } from './models';
+import type { CardOrder, CardSearchParams } from './models';
+import type { UniquesQuery } from './uniques-api.service';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
 
@@ -134,52 +135,49 @@ export function parseCostExpression(expr: string): number[] | null {
 }
 
 /**
- * Effect blocks read "Quand … ou … / Si … / Alors … ou …": values inside a criterion are OR-ed,
- * blocks are AND-ed. The API matches `effectSlot[N]` triples; one block expands to the
- * cross product of its values (OR mode). Several blocks use AND mode on their first combination
- * each, which is the closest the API can express.
+ * Uniques tab (Uniques search API). Effect blocks read « Quand … ou … / Si … / Alors … ou … »:
+ * values inside a criterion are OR-ed, blocks are AND-ed, as the API matches them. An exact
+ * reference (`ALT_…`) looks up that card only.
  */
-export function effectSlotsFor(blocks: EffectBlock[]): { slots: EffectSlot[]; mode: 'or' | 'and' } {
-  const usable = blocks.filter((b) => b.triggers.length || b.conditions.length || b.effects.length);
-  const combos = (b: EffectBlock): EffectSlot[] => {
-    const t = b.triggers.length ? b.triggers.map((x) => x.id) : [0];
-    const c = b.conditions.length ? b.conditions.map((x) => x.id) : [0];
-    const e = b.effects.length ? b.effects.map((x) => x.id) : [0];
-    const out: EffectSlot[] = [];
-    for (const trigger of t) for (const condition of c) for (const effect of e) out.push({ trigger, condition, effect });
-    return out;
+export function toUniquesQuery(filters: SearchFilters, faction: string | null): UniquesQuery {
+  const q = filters.q.trim();
+  const reference = /^ALT_[A-Z0-9_]+$/i.test(q) ? q.toUpperCase() : undefined;
+  return {
+    name: reference ? undefined : q || undefined,
+    reference,
+    factions: faction ? [faction] : filters.factions,
+    sets: filters.sets,
+    mainCosts: parseCostExpression(filters.mainCost) ?? [],
+    recallCosts: parseCostExpression(filters.recallCost) ?? [],
+    format: filters.environment === 'frontier' ? 'frontier' : undefined,
+    effects: filters.effects.map((b) => ({
+      triggers: b.triggers.map((x) => x.id),
+      conditions: b.conditions.map((x) => x.id),
+      effects: b.effects.map((x) => x.id),
+    })),
   };
-  if (usable.length === 0) return { slots: [], mode: 'or' };
-  if (usable.length === 1) return { slots: combos(usable[0]), mode: 'or' };
-  return { slots: usable.map((b) => combos(b)[0]), mode: 'and' };
 }
 
+/** Other tabs (cards API). */
 export function toSearchParams(
   filters: SearchFilters,
-  source: CardSource,
   faction: string | null,
   page: number,
   itemsPerPage: number,
 ): CardSearchParams {
-  const { slots, mode } = source === 'uniques' ? effectSlotsFor(filters.effects) : { slots: [], mode: 'or' as const };
   return {
     page,
     itemsPerPage,
-    // `locale` is not a Meilisearch filter: with it the cards API falls back to SQL, 6–45 s for
-    // uniques instead of ~0.5 s. Without it, text fields come back as locale maps.
-    locale: source === 'uniques' ? undefined : contentLocale(),
+    locale: contentLocale(),
     q: filters.q.trim() || undefined,
     factions: faction ? [faction] : filters.factions,
     sets: filters.sets,
     // Uniques live in their own tab: an empty rarity selection means C · R · E here.
-    rarities: source === 'uniques' ? ['UNIQUE'] : filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
-    types: source === 'uniques' ? [] : filters.types,
-    variations: source === 'uniques' ? [] : ['standard'],
+    rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
+    types: filters.types,
+    variations: ['standard'],
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
-    gameplayFormats: source === 'uniques' && filters.environment === 'frontier' ? ['frontier'] : [],
-    effectSlots: slots,
-    effectSlotMode: mode,
     order: filters.order,
     hasNoEffect: filters.noEffect || undefined,
     hasEchoEffect: filters.echo || undefined,

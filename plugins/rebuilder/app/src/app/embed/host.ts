@@ -13,8 +13,8 @@ export interface AlteredCoreHost {
   readonly theme: 'light' | 'dark';
   readonly user: AlteredCoreUser | null;
   readonly csrf: string;
-  /** cards / cdn: public, called directly. decks / collection: the site's relay, which adds the token. */
-  readonly services: { cards?: string; cdn?: string; decks?: string; collection?: string };
+  /** cards / cdn / uniques: public, called directly. decks / collection: the site's relay, which adds the token. */
+  readonly services: { cards?: string; cdn?: string; uniques?: string; decks?: string; collection?: string };
   /** apiUrl: the plugin's own PHP endpoints (`/papi/rebuilder/`, manifest "api"). */
   readonly page: { plugin: string; slug: string; basePath: string; subPath: string; assetsUrl: string; apiUrl: string; mount: 'shadow' | 'light' };
   /** window.fetch for same-origin calls, with the session cookie and X-CSRF-Token on writes. */

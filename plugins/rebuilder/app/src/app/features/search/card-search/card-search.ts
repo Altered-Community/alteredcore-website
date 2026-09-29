@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
-import { CardsApiService } from '../../../core/cards-api.service';
+import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder } from '../../../core/models';
 import { ArButton, ArIconButton } from '../../../ui/buttons';
 import { ArCount, ArFilterBar } from '../../../ui/chips';
@@ -46,7 +46,7 @@ export class CardSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(ArOverlayService);
-  private readonly cardsApi = inject(CardsApiService);
+  private readonly uniquesApi = inject(UniquesApiService);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly search = inject(CardSearchStore);
 
@@ -83,6 +83,8 @@ export class CardSearch {
   protected readonly filtersLabel = computed(() => $localize`:@@search.card.filtersActive:Filtres, ${this.activeCount()}:count: actifs`);
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
+  /** The Uniques search API returns its own order, with no sort parameter. */
+  protected readonly sortable = computed(() => this.search.source() !== 'uniques');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';
@@ -120,9 +122,9 @@ export class CardSearch {
     });
   }
 
-  /** The effect editor needs ~40 KB of vocabularies; fetch them while the user reads the uniques. */
+  /** The effect editor needs the vocabularies (one `/api/v2/effects` call); fetch them while the user reads the uniques. */
   private prefetchAbilities(): void {
-    const run = () => (['triggers', 'conditions', 'effects'] as const).forEach((k) => this.cardsApi.abilities(k).subscribe({ error: () => undefined }));
+    const run = () => this.uniquesApi.abilities('triggers').subscribe({ error: () => undefined });
     if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
     else setTimeout(run, 300);
   }

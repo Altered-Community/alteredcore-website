@@ -28,10 +28,10 @@ define('GITHUB_APP_INSTALLATION_ID', '');
 define('GITHUB_APP_PRIVATE_KEY', '');
 define('GITHUB_REPO', 'owner/community-feedback');
 
-// Cards, CDN and collection stay on production (read-only). Decks run locally; SPA plugins
+// Cards, Uniques search, CDN and collection stay on production (read-only). Decks run locally; SPA plugins
 // reach them through the site's relay (/api/v1/services/decks), never directly.
 define('CARDS_API_URL',        'https://cards.alteredcore.org');
-define('UNIQUES_API_URL',      '');
+define('UNIQUES_API_URL',      'https://search.altered.re');
 define('DECKS_API_URL',        'http://decks-api:80');
 define('CDN_URL',              'https://cdn.alteredcore.org');
 define('OWNERSHIP_API_URL',    '');

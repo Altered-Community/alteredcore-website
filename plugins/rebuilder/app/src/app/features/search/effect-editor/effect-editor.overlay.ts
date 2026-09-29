@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { CardsApiService, type AbilityKind } from '../../../core/cards-api.service';
+import { UniquesApiService, type AbilityKind } from '../../../core/uniques-api.service';
 import { ArButton } from '../../../ui/buttons';
 import { ArCombobox } from '../../../ui/fields';
 import { ArBreakpointService } from '../../../ui/layout.services';
@@ -23,7 +23,7 @@ export interface EffectEditorData {
 })
 export class EffectEditorOverlay {
   protected readonly ref = inject<ArOverlayRef<EffectBlock, EffectEditorData>>(ArOverlayRef);
-  private readonly api = inject(CardsApiService);
+  private readonly api = inject(UniquesApiService);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly loadError = signal(false);
 

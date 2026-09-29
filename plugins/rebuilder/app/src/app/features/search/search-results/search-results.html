@@ -49,11 +49,7 @@
 
   @if (search.loading() && search.slow()) {
     <p class="slow" role="status">
-      @if (search.source() === 'uniques' && search.filters().environment === 'frontier') {
-        <ng-container i18n="@@search.results.slowFrontier">Recherche en cours… La première recherche Frontier prend une dizaine de secondes.</ng-container>
-      } @else {
-        <ng-container i18n="@@search.results.slow">Recherche en cours…</ng-container>
-      }
+      <ng-container i18n="@@search.results.slow">Recherche en cours…</ng-container>
     </p>
   }
   @if (search.error(); as e) {

@@ -1,6 +1,8 @@
 /** Default service URLs; the site's (`AlteredCore.services`) replace them at startup (`main.ts`). */
 export const environment = {
   cardsApiUrl: 'https://cards.alteredcore.org',
+  /** Uniques search (rust-cards-api, `/api/v2`): the Uniques tab. */
+  uniquesApiUrl: 'https://search.altered.re',
   decksApiUrl: 'https://decks.alteredcore.org',
   cdnUrl: 'https://cdn.alteredcore.org',
 };

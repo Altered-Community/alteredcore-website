@@ -252,6 +252,56 @@ test.describe('ReBuilder in the shell · languages', () => {
   }
 });
 
+test.describe('ReBuilder in the shell · Uniques search', () => {
+  test('ORs the values of a criterion and ANDs the effects, on the Uniques search API', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'the effect filter is checked on the desktop panel');
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques ${Date.now()}`);
+    await expect(page.locator('ar-card-tile').first()).toBeVisible();
+    const searches: URL[] = [];
+    page.on('request', (r) => {
+      if (r.url().includes('/api/v2/cards')) searches.push(new URL(r.url()));
+    });
+    await page.getByRole('tab', { name: 'Uniques' }).click();
+    await expect(page.locator('ar-unique-card').first()).toBeVisible();
+
+    /** Picks `text` (exact) in the criterion `index` of the open effect window. */
+    const pick = async (index: number, text: string) => {
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('combobox').nth(index).click();
+      await page.locator('.cdk-overlay-container .panel input').fill(text);
+      await page.getByRole('option', { name: text, exact: true }).click();
+      await expect(dialog.locator('ar-combobox').nth(index).locator('.picked').filter({ hasText: text })).toBeVisible();
+    };
+    const editEffect = async (open: () => Promise<void>, picks: [number, string][]) => {
+      await open();
+      for (const [i, text] of picks) await pick(i, text);
+      await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
+      await expect(page.getByRole('dialog')).toBeHidden();
+    };
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+
+    await editEffect(addEffect, [[0, 'Joué depuis la Main'], [1, 'Sans condition'], [2, 'Piochez une carte.']]);
+    await editEffect(addEffect, [[2, 'Piochez une carte.']]);
+    await editEffect(() => page.locator('ar-effect-summary').first().getByRole('button').first().click(), [[0, 'Joué de partout']]);
+
+    // One request: both triggers OR-ed in the first effect, the two effects AND-ed.
+    await expect.poll(() => searches.at(-1)?.searchParams.get('effect[0][t]')).toBe('22,24');
+    const last = searches.at(-1)!;
+    expect(last.searchParams.get('effect[0][c]')).toBe('191');
+    expect(last.searchParams.get('effect[1][o]')).toBe(last.searchParams.get('effect[0][o]'));
+    expect(last.searchParams.get('effectMode')).toBe('and');
+    // The count shown is the API's for that request, and more than with the hand trigger alone.
+    const both = (await (await page.request.get(last.toString())).json()) as { iter: { total: number } };
+    const handOnly = new URL(last);
+    handOnly.searchParams.set('effect[0][t]', '22');
+    const hand = (await (await page.request.get(handOnly.toString())).json()) as { iter: { total: number } };
+    expect(both.iter.total).toBeGreaterThan(hand.iter.total);
+    await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.iter.total.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
+    await evidence(page, testInfo, '11-uniques-effects');
+  });
+});
+
 test.describe('ReBuilder in the shell · guest', () => {
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {
     await page.goto(`${NEW_DECK}?lang=fr`);

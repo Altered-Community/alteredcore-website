@@ -3,38 +3,11 @@
 Constaté le 2026-09-26 sur la production et dans le code de
 [altered-core-cards-api](https://github.com/Altered-Community/altered-core-cards-api) (commit `94d44e4`).
 
-`GET /api/cards` passe par Meilisearch (`SearchAwareCollectionProvider`) seulement si tous les paramètres sont des
-filtres connus (`MeilisearchFilterBuilderService::hasUnmappedFilters`). Sinon, la requête part en SQL, avec un
-`OFFSET` et un `COUNT` sur 5,4 millions d’Uniques.
-
-## `locale` envoie les Uniques en SQL
-
-**Constat.** `locale` n’est ni dans `FILTER_MAP`, ni dans la liste ignorée (`name`, `page`, `itemsPerPage`,
-`pagination`, `order`). Mesures sur la requête par défaut de l’onglet Uniques (7 extensions, 36 cartes, tri par date) :
-
-| Requête | Avec `locale=fr` | Sans `locale` |
-|---|---|---|
-| Page 1, toutes factions (cache serveur froid) | 6 à 21 s | 0,4 s |
-| Pages 50, 500, 5 000 (Muna) | — | 0,7 à 0,8 s |
-| Un déclencheur d’effet (Muna) | 28 s, ou 504 | 0,9 s |
-
-Mêmes références dans le même ordre ; sans `locale`, les textes arrivent en tables de langues (`name.fr`, …).
-
-**Contournement.** `toSearchParams` (`src/app/core/card-filters.ts`) n’envoie pas `locale` pour les Uniques ;
-l’affichage lit déjà `localizedText(…, 'fr')`.
-
-**À faire côté backend.** Ajouter `locale` aux paramètres ignorés de `hasUnmappedFilters` (il ne filtre rien), puis
-remettre `locale=fr` côté front si on veut des réponses plus légères (≈ 30 Ko au lieu de 90 Ko par page).
-
-## `effectSlot` : `0` veut dire « n’importe lequel » en SQL, « aucun » en Meilisearch
-
-**Constat.** `EffectSlotFilter` (SQL) documente `0 = any`. `buildEffectSlotFilter` (Meilisearch) écrit
-`slot1_condition = 0`, qui ne correspond à aucune carte : 0 résultat pour `effectSlot[0][trigger]=24&…[condition]=0&…[effect]=0`.
-
-**Contournement.** `buildCardsSearchParams` (`src/app/core/cards-api.service.ts`) n’envoie que les parties non nulles
-d’un bloc d’effet. Les deux chemins les lisent comme « n’importe lequel ».
-
-**À faire côté backend.** Ignorer les valeurs `0` dans `buildEffectSlotFilter` et `buildEchoSlotFilter`.
+Depuis le 2026-09-29, l’onglet Uniques passe par l’API de recherche des Uniques (`UNIQUES_API_URL`, voir
+[uniques-api.md](uniques-api.md)), comme le site en production. Celle-ci ne savait pas combiner « (A ou B) et C »
+entre plusieurs blocs d’effet (`effectSlot[N]` : une valeur par partie, un seul mode pour tous les slots), et ses
+requêtes avec `locale` ou Frontier étaient lentes (6 à 45 s en SQL, 8 à 9 s pour la première requête Frontier). Les
+decks lisent toujours leurs Uniques avec `/api/cards/batch`.
 
 ## Pas d’image par Unique
 
@@ -51,14 +24,6 @@ numéro de collection) sur l’illustration Unique du CDN.
 
 **À faire côté backend.** Soit publier une image rendue par Unique sur le CDN, soit renvoyer dans `imagePath` l’URL
 CDN de l’illustration au lieu du lien S3 mort.
-
-## Frontier
-
-**Constat.** La première requête Frontier d’une faction prend 8 à 9 s, les suivantes environ 1 s (avec ou sans
-`locale`). Le total annoncé plafonne (5 000 par faction, 30 000 sans faction).
-
-**Contournement.** Squelettes, puis message « La première recherche Frontier prend une dizaine de secondes » après
-3 s (`CardSearchStore.slow`).
 
 ## Faction des Uniques transfuges
 

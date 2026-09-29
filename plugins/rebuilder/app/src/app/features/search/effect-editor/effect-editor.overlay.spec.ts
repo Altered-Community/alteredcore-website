@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, type Observable } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { CardsApiService, NO_CONDITION, toAbilityRefs, type AbilityKind } from '../../../core/cards-api.service';
+import { NO_CONDITION, UniquesApiService, toAbilityRefs, type AbilityKind } from '../../../core/uniques-api.service';
 import { ArOverlayRef } from '../../../ui/overlay';
 import { EffectEditorOverlay, type EffectEditorData } from './effect-editor.overlay';
 
@@ -41,7 +41,7 @@ function setup(effect: EffectBlock, abilities: (kind: AbilityKind) => Observable
     imports: [EffectEditorOverlay],
     providers: [
       { provide: ArOverlayRef, useValue: ref },
-      { provide: CardsApiService, useValue: { abilities } },
+      { provide: UniquesApiService, useValue: { abilities } },
     ],
   });
   const fixture = TestBed.createComponent(EffectEditorOverlay);

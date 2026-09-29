@@ -20,7 +20,9 @@
     @if (condensed()) {
       <div class="summary-line">
         <span><strong>{{ totalLabel() }}</strong> · {{ sourceLabel() }}</span>
-        <span>{{ orderLabel() }}</span>
+        @if (sortable()) {
+          <span>{{ orderLabel() }}</span>
+        }
       </div>
     }
   </div>
@@ -53,7 +55,9 @@
       <div class="toolbar">
         <span class="total">{{ totalLabel() }}</span>
         <span class="tools">
-          <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          @if (sortable()) {
+            <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
           <button
             arIconButton="grid"
             variant="ghost"
@@ -77,7 +81,9 @@
         }
         <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
         <span class="tools">
-          <ar-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          @if (sortable()) {
+            <ar-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
           <ar-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
         </span>
       </div>

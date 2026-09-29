@@ -1,16 +1,18 @@
 import { Service, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { map, type Observable } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
 import {
   defaultFilters,
   filterChips,
   removeChip,
   toSearchParams,
+  toUniquesQuery,
   type CardSource,
   type SearchFilters,
 } from '../../core/card-filters';
-import type { Card, CardCollection } from '../../core/models';
+import type { Card } from '../../core/models';
+import { UniquesApiService } from '../../core/uniques-api.service';
 
 export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, owned: 36, favorites: 36 };
 
@@ -28,10 +30,26 @@ interface SearchQuery {
   run: number;
 }
 
+/**
+ * Where a page starts: a page number on the cards API, a cursor on the Uniques search API
+ * (`null`: the first page). `page` counts the pages of the query.
+ */
+interface PageRequest {
+  page: number;
+  from: number | null;
+}
+
+/** A page of either API; `next` is where the following page starts, `null` at the end. */
+interface ResultPage {
+  member: Card[];
+  totalItems: number;
+  next: number | null;
+}
+
 interface LoadedPage {
   query: SearchQuery;
   page: number;
-  res: CardCollection;
+  res: ResultPage;
   ms: number;
 }
 
@@ -39,23 +57,27 @@ interface SearchState {
   cards: Card[];
   total: number | null;
   page: number;
-  lastPage: number;
+  next: number | null;
   timings: number[];
 }
 
+const FIRST_PAGE: PageRequest = { page: 1, from: null };
+
 function emptyState(source: CardSource): SearchState {
   return LOGIN_ONLY.includes(source)
-    ? { cards: [], total: 0, page: 0, lastPage: 0, timings: [] }
-    : { cards: [], total: null, page: 0, lastPage: 1, timings: [] };
+    ? { cards: [], total: 0, page: 0, next: null, timings: [] }
+    : { cards: [], total: null, page: 0, next: null, timings: [] };
 }
 
 /**
- * Infinite card search. `wantMore` is driven by an IntersectionObserver sentinel placed ~3 viewports
+ * Infinite card search: the Uniques tab on the Uniques search API, the others on the cards API.
+ * `wantMore` is driven by an IntersectionObserver sentinel placed ~3 viewports
  * ahead; while it stays true, pages are chained back-to-back so a fast flick never shows an empty tail.
  */
 @Service({ autoProvided: false })
 export class CardSearchStore {
   private readonly api = inject(CardsApiService);
+  private readonly uniquesApi = inject(UniquesApiService);
 
   readonly source = signal<CardSource>('all');
   readonly faction = signal<string | null>(null);
@@ -69,18 +91,19 @@ export class CardSearchStore {
     filters: this.filters(),
     run: this.run(),
   }));
-  /** Back to page 1 whenever the query changes. */
-  private readonly requestedPage = linkedSignal({ source: this.query, computation: () => 1 });
+  /** Back to the first page whenever the query changes. */
+  private readonly requestedPage = linkedSignal<SearchQuery, PageRequest>({ source: this.query, computation: () => FIRST_PAGE });
   /** A new query or page cancels the pending request, so a stale page never lands in the list. */
   private readonly pageRes = rxResource({
     params: () => {
       const query = this.query();
-      return LOGIN_ONLY.includes(query.source) ? undefined : { query, page: this.requestedPage() };
+      return LOGIN_ONLY.includes(query.source) ? undefined : { query, request: this.requestedPage() };
     },
-    stream: ({ params: { query, page } }) => {
+    stream: ({ params: { query, request } }) => {
       const started = performance.now();
-      const params = toSearchParams(query.filters, query.source, query.faction, page, PAGE_SIZE[query.source]);
-      return this.api.search(params).pipe(map((res): LoadedPage => ({ query, page, res, ms: Math.round(performance.now() - started) })));
+      return this.fetchPage(query, request).pipe(
+        map((res): LoadedPage => ({ query, page: request.page, res, ms: Math.round(performance.now() - started) })),
+      );
     },
   });
   /** Pages accumulated for the current query; a failed page keeps the ones already shown. */
@@ -94,7 +117,7 @@ export class CardSearchStore {
         cards: [...current.cards, ...loaded.res.member.filter((c) => !seen.has(c.reference))],
         total: loaded.res.totalItems,
         page: loaded.page,
-        lastPage: loaded.res.lastPage,
+        next: loaded.res.next,
         timings: [...current.timings, loaded.ms],
       };
     },
@@ -103,7 +126,6 @@ export class CardSearchStore {
   readonly cards = computed(() => this.state().cards);
   readonly total = computed(() => this.state().total);
   readonly page = computed(() => this.state().page);
-  readonly lastPage = computed(() => this.state().lastPage);
   readonly loading = computed(() => this.pageRes.isLoading());
   readonly error = computed(() => {
     const err = this.pageRes.error();
@@ -113,7 +135,7 @@ export class CardSearchStore {
       ? $localize`:@@search.store.timeout:La recherche a pris trop de temps. Affinez les filtres (extension, coût, effet) et réessayez.`
       : $localize`:@@search.store.error:Impossible de charger les cartes.`;
   });
-  readonly hasMore = computed(() => this.page() < this.lastPage());
+  readonly hasMore = computed(() => this.state().next !== null);
   readonly chips = computed(() => filterChips(this.filters(), this.source()));
   /** Timings of the last pages, for diagnostics / perf numbers. */
   readonly timings = computed(() => this.state().timings);
@@ -173,8 +195,9 @@ export class CardSearchStore {
 
   loadMore(): void {
     untracked(() => {
-      if (this.loading() || !this.hasMore() || this.error() || this.page() === 0) return;
-      this.requestedPage.set(this.page() + 1);
+      const { page, next } = this.state();
+      if (this.loading() || next === null || this.error() || page === 0) return;
+      this.requestedPage.set({ page: page + 1, from: next });
     });
   }
 
@@ -183,8 +206,17 @@ export class CardSearchStore {
     this.pageRes.reload();
   }
 
-  /** Drops loaded pages and fetches page 1 again. */
+  /** Drops loaded pages and fetches the first page again. */
   restart(): void {
     this.run.update((n) => n + 1);
+  }
+
+  private fetchPage(query: SearchQuery, request: PageRequest): Observable<ResultPage> {
+    const size = PAGE_SIZE[query.source];
+    if (query.source === 'uniques') return this.uniquesApi.search(toUniquesQuery(query.filters, query.faction), request.from, size);
+    const page = request.from ?? 1;
+    return this.api
+      .search(toSearchParams(query.filters, query.faction, page, size))
+      .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));
   }
 }

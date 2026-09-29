@@ -12,6 +12,7 @@ import { environment } from './environments/environment';
 const host = readHost();
 const env = environment as { -readonly [K in keyof typeof environment]: (typeof environment)[K] };
 env.cardsApiUrl = host.services.cards || env.cardsApiUrl;
+env.uniquesApiUrl = host.services.uniques || env.uniquesApiUrl;
 env.decksApiUrl = host.services.decks || env.decksApiUrl;
 env.cdnUrl = host.services.cdn || env.cdnUrl;
 setAssetBase(host.page.assetsUrl);
