@@ -1,19 +1,23 @@
-/* Events page — large sticky Calendar / Physical / Online tabs */
+/* reunion-events — layout only. Colours, radii, shadows and fonts are design system tokens
+   (design-system/tokens/tokens.css), which already have dark values: no dark-theme selectors here.
+   Values no semantic token covers (source colours, Frontier default, logo plate) are
+   --ac-reunion-events-* tokens. --re-frontier-color is set inline per season (admin data). */
+
+/* Events page — large sticky Calendar / Physical / Online tabs (Bootstrap tabs markup) */
 .re-events-tabs-sticky {
     position: sticky;
-    top: 4.75rem;
-    z-index: 900;
-    margin: 0 0 1.25rem;
-    padding: 0.65rem 0 0.85rem;
-    background: var(--sand-50, #FDFBF6);
-    border-bottom: 2px solid var(--sand-200, #EDE3CC);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    top: var(--ac-sticky-top);
+    z-index: var(--ac-z-sticky);
+    margin: 0 0 var(--ac-space-5);
+    padding: var(--ac-space-2-5) 0 var(--ac-space-3);
+    background: var(--ac-color-bg-app);
+    border-bottom: 1px solid var(--ac-color-border);
 }
 
 .re-events-tabs {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.75rem;
+    gap: var(--ac-space-3);
     border-bottom: none;
     margin-bottom: 0;
 }
@@ -28,105 +32,68 @@
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 0.45rem 0.65rem;
+    gap: var(--ac-space-1-5) var(--ac-space-2-5);
     width: 100%;
-    min-height: 3.75rem;
-    padding: 1rem 1.25rem;
+    min-height: var(--ac-control-lg);
+    padding: var(--ac-space-3) var(--ac-space-5);
     margin-bottom: 0;
-    border: 2px solid var(--sand-300, #DDD0B3);
-    border-radius: 0.75rem;
-    background: var(--sand-100, #FAF5E8);
-    font-size: 1.2rem;
-    font-weight: 700;
-    line-height: 1.25;
-    color: var(--neutral-600, #6b7280);
+    border: 1px solid var(--ac-color-border-control);
+    border-radius: var(--ac-radius-lg);
+    background: var(--ac-color-surface);
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text-2);
     text-align: center;
-    transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    transition: background var(--ac-duration-fast), color var(--ac-duration-fast), border-color var(--ac-duration-fast);
 }
 
 .re-events-tabs .nav-link:hover:not(.active) {
-    color: var(--neutral-800, #1f2937);
-    background: var(--sand-50, #FDFBF6);
-    border-color: var(--primary-400, #C9A84C);
+    color: var(--ac-color-text);
+    background: var(--ac-color-bg-subtle);
+    border-color: var(--ac-color-primary-border);
 }
 
 .re-events-tabs .nav-link.active {
-    color: var(--neutral-800, #1f2937);
-    background: var(--primary-400, #C9A84C);
-    border-color: var(--primary-400, #C9A84C);
-    box-shadow: 0 3px 10px rgba(201, 168, 76, 0.35);
+    color: var(--ac-color-on-primary);
+    background: var(--ac-color-primary);
+    border-color: var(--ac-color-primary);
+    box-shadow: var(--ac-shadow-e1);
 }
 
 .re-events-tab-icon {
-    font-size: 1.35rem;
-    flex-shrink: 0;
+    --ac-icon-size: 22px;
 }
 
 .re-events-tab-label {
     flex: 0 1 auto;
 }
 
-.re-events-tab-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 0.3em 0.55em;
-    background: var(--neutral-700, #374151) !important;
-    color: var(--sand-50, #FDFBF6) !important;
+/* Count on a tab: an .ac-count; inverted on the active (primary) tab. */
+.re-events-tabs .nav-link.active .ac-count {
+    background: var(--ac-color-on-primary);
+    color: var(--ac-color-primary);
 }
 
-.re-events-tabs .nav-link.active .re-events-tab-badge {
-    background: var(--neutral-800, #1f2937) !important;
-    color: var(--sand-50, #FDFBF6) !important;
-}
-
-[data-theme="dark"] .re-events-tabs-sticky {
-    background: var(--neutral-900, #111827);
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-}
-
-[data-theme="dark"] .re-events-tabs .nav-link {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: var(--neutral-500, #9ca3af);
-}
-
-[data-theme="dark"] .re-events-tabs .nav-link:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--neutral-700, #e5e7eb);
-    border-color: var(--primary-400, #C9A84C);
-}
-
-[data-theme="dark"] .re-events-tabs .nav-link.active {
-    color: var(--neutral-800, #1f2937);
-}
-
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     .re-events-tabs-sticky {
-        top: 4.25rem;
-        padding: 0.5rem 0 0.65rem;
+        padding: var(--ac-space-2) 0 var(--ac-space-2-5);
     }
 
     .re-events-tabs {
-        gap: 0.5rem;
+        gap: var(--ac-space-2);
     }
 
     .re-events-tabs .nav-link {
-        min-height: 3.25rem;
-        padding: 0.75rem 0.65rem;
-        font-size: 1.05rem;
+        padding: var(--ac-space-2) var(--ac-space-2-5);
+        font: var(--ac-font-body-strong);
     }
 
     .re-events-tab-icon {
-        font-size: 1.15rem;
+        --ac-icon-size: 18px;
     }
-}
 
-@media (max-width: 400px) {
     .re-events-tabs .nav-link {
         flex-direction: column;
-        gap: 0.25rem;
-        font-size: 0.95rem;
+        gap: var(--ac-space-1);
     }
 }
 
@@ -135,44 +102,39 @@
 .events-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--ac-space-3);
 }
 
 a.event-card {
     display: block;
     text-decoration: none !important;
-    color: var(--neutral-800, #1f2937) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-left: 4px solid var(--primary-400, #C9A84C);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+    color: var(--ac-color-text) !important;
+    transition: transform var(--ac-duration-base) ease, box-shadow var(--ac-duration-base) ease;
+    border-left: 4px solid var(--ac-color-primary);
     cursor: pointer;
 }
 
-a.event-card.card-altered.re-event-card-frontier {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 28%, var(--sand-50, #FDFBF6));
-    border-left-color: var(--re-frontier-color, #2f6fed);
-}
-
-[data-theme="dark"] a.event-card.card-altered.re-event-card-frontier {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 32%, var(--neutral-900, #111827));
+a.event-card.re-event-card-frontier {
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 18%, var(--ac-color-surface));
+    border-left-color: var(--re-frontier-color, var(--ac-reunion-events-frontier));
 }
 
 a.event-card:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--ac-shadow-card);
     text-decoration: none !important;
-    color: var(--neutral-800, #1f2937) !important;
+    color: var(--ac-color-text) !important;
 }
 
-a.event-card:hover .event-actions i {
-    color: var(--primary-400, #C9A84C) !important;
+a.event-card:hover .event-actions .ac-icon {
+    color: var(--ac-color-primary) !important;
 }
 
 .event-card-inner {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--ac-space-4);
 }
 
 .event-info {
@@ -181,32 +143,37 @@ a.event-card:hover .event-actions i {
 }
 
 .event-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--neutral-800, #1f2937);
+    font: var(--ac-font-body-strong);
+    font-size: 17px;
+    color: var(--ac-color-text);
     margin: 0;
     overflow-wrap: break-word;
+}
+
+.event-title-icon {
+    color: var(--ac-color-warning);
 }
 
 .event-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1rem;
-    font-size: 0.875rem;
-    color: var(--neutral-600, #6b7280);
-    margin-top: 0.4rem;
+    gap: var(--ac-space-2) var(--ac-space-4);
+    font: var(--ac-font-small);
+    font-weight: 500;
+    color: var(--ac-color-text-2);
+    margin-top: var(--ac-space-1-5);
 }
 
 .event-details span {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: var(--ac-space-1);
 }
 
 .event-description {
     line-height: 1.5;
-    color: var(--neutral-500, #9ca3af);
-    margin-top: 0.5rem;
+    color: var(--ac-color-text-muted);
+    margin-top: var(--ac-space-2);
     overflow-wrap: break-word;
 }
 
@@ -216,9 +183,9 @@ a.event-card:hover .event-actions i {
 
 /* Calendar */
 .re-calendar {
-    background: var(--sand-50, #FDFBF6);
-    border: 2px solid var(--sand-200, #EDE3CC);
-    border-radius: 0.75rem;
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
     overflow: hidden;
 }
 
@@ -226,31 +193,34 @@ a.event-card:hover .event-actions i {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--sand-100, #FAF5E8);
-    border-bottom: 2px solid var(--sand-200, #EDE3CC);
+    padding: var(--ac-space-3) var(--ac-space-4);
+    background: var(--ac-color-bg-subtle);
+    border-bottom: 1px solid var(--ac-color-border);
 }
 
 .re-cal-nav {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    color: var(--neutral-600, #6b7280);
-    font-size: 0.875rem;
-    transition: background 0.15s;
+    width: var(--ac-control-sm);
+    height: var(--ac-control-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: var(--ac-radius-md);
+    color: var(--ac-color-text-2);
+    transition: background var(--ac-duration-fast);
 }
 
 .re-cal-nav:hover {
-    background: var(--sand-200, #EDE3CC);
-    color: var(--neutral-800, #1f2937);
+    background: var(--ac-color-track);
+    color: var(--ac-color-text);
 }
 
 .re-cal-title {
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--neutral-800, #1f2937);
+    font: var(--ac-font-body-strong);
+    color: var(--ac-color-text);
     text-transform: capitalize;
 }
 
@@ -261,11 +231,10 @@ a.event-card:hover .event-actions i {
 
 .re-cal-day-header {
     text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--neutral-500, #9ca3af);
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--sand-200, #EDE3CC);
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-muted);
+    padding: var(--ac-space-2) 0;
+    border-bottom: 1px solid var(--ac-color-divider);
     text-transform: capitalize;
 }
 
@@ -278,39 +247,39 @@ a.event-card:hover .event-actions i {
     align-items: center;
     justify-content: flex-end;
     padding: 0.5rem 0.3rem 0.45rem;
-    border-right: 1px solid var(--sand-200, #EDE3CC);
-    border-bottom: 1px solid var(--sand-200, #EDE3CC);
-    gap: 0.25rem;
+    border-right: 1px solid var(--ac-color-divider);
+    border-bottom: 1px solid var(--ac-color-divider);
+    gap: var(--ac-space-1);
 }
 
 .re-cal-day:nth-child(7n) { border-right: none; }
 
 .re-cal-empty {
-    background: var(--sand-100, #FAF5E8);
+    background: var(--ac-color-bg-subtle);
 }
 
 .re-cal-has-events {
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background var(--ac-duration-fast);
 }
 
 .re-cal-has-events:hover,
 .re-cal-selected {
-    background: var(--primary-400, #C9A84C);
+    background: var(--ac-color-primary);
 }
 
 .re-cal-has-frontier {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 42%, transparent);
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 32%, transparent);
 }
 
 .re-cal-has-frontier.re-cal-has-events:hover,
 .re-cal-has-frontier.re-cal-selected {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 58%, var(--primary-400, #C9A84C));
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 50%, var(--ac-color-primary));
 }
 
 .re-cal-has-events:hover .re-cal-num,
 .re-cal-selected .re-cal-num {
-    color: var(--neutral-800, #1f2937);
+    color: var(--ac-color-on-primary);
     font-weight: 700;
 }
 
@@ -319,9 +288,8 @@ a.event-card:hover .event-actions i {
     top: 0.22rem;
     right: 0.28rem;
     z-index: 4;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--neutral-700, #374151);
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text-2);
     line-height: 1;
 }
 
@@ -331,19 +299,19 @@ a.event-card:hover .event-actions i {
 
 /* Today: full-cell cue + outlined date (not a filled circle — those mark events) */
 .re-cal-today {
-    background: rgba(201, 168, 76, 0.18);
-    box-shadow: inset 0 0 0 2px var(--primary-400, #C9A84C);
+    background: var(--ac-color-primary-soft);
+    box-shadow: inset 0 0 0 2px var(--ac-color-primary);
 }
 
 .re-cal-today .re-cal-num {
     background: transparent;
-    color: var(--neutral-800, #1f2937);
+    color: var(--ac-color-text);
     width: auto;
     height: auto;
     min-width: 1.5rem;
-    padding: 0.15rem 0.35rem;
-    border-radius: 0.3rem;
-    border: 2px solid var(--neutral-800, #1f2937);
+    padding: var(--ac-space-0-5) var(--ac-space-1);
+    border-radius: var(--ac-radius-xs);
+    border: 2px solid var(--ac-color-text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -352,50 +320,31 @@ a.event-card:hover .event-actions i {
 
 .re-cal-today.re-cal-has-events:hover,
 .re-cal-today.re-cal-selected {
-    background: var(--primary-400, #C9A84C);
-    box-shadow: inset 0 0 0 2px var(--neutral-800, #1f2937);
+    background: var(--ac-color-primary);
+    box-shadow: inset 0 0 0 2px var(--ac-color-text);
 }
 
 .re-cal-today.re-cal-has-frontier.re-cal-has-events:hover,
 .re-cal-today.re-cal-has-frontier.re-cal-selected {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 58%, var(--primary-400, #C9A84C));
-    box-shadow: inset 0 0 0 2px var(--neutral-800, #1f2937);
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 50%, var(--ac-color-primary));
+    box-shadow: inset 0 0 0 2px var(--ac-color-text);
 }
 
 .re-cal-today.re-cal-has-frontier {
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 38%, rgba(201, 168, 76, 0.22));
-    box-shadow: inset 0 0 0 2px var(--primary-400, #C9A84C);
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 32%, var(--ac-color-primary-soft));
+    box-shadow: inset 0 0 0 2px var(--ac-color-primary);
 }
 
 .re-cal-today.re-cal-has-events:hover .re-cal-num,
 .re-cal-today.re-cal-selected .re-cal-num {
-    border-color: var(--neutral-800, #1f2937);
-    color: var(--neutral-800, #1f2937);
-    background: rgba(255, 255, 255, 0.55);
-}
-
-[data-theme="dark"] .re-cal-today {
-    background: rgba(201, 168, 76, 0.22);
-    box-shadow: inset 0 0 0 2px var(--primary-400, #C9A84C);
-}
-
-[data-theme="dark"] .re-cal-today .re-cal-num {
-    color: var(--sand-50, #FDFBF6);
-    border-color: var(--sand-50, #FDFBF6);
-}
-
-[data-theme="dark"] .re-cal-today.re-cal-has-events:hover .re-cal-num,
-[data-theme="dark"] .re-cal-today.re-cal-selected .re-cal-num {
-    color: var(--neutral-800, #1f2937);
-    border-color: var(--neutral-800, #1f2937);
-    background: rgba(255, 255, 255, 0.7);
+    border-color: var(--ac-color-on-primary);
+    color: var(--ac-color-on-primary);
 }
 
 .re-cal-day-title {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--neutral-800, #1f2937);
-    margin: 1rem 0 0.75rem;
+    font: var(--ac-font-body-strong);
+    color: var(--ac-color-text);
+    margin: var(--ac-space-4) 0 var(--ac-space-3);
     text-transform: capitalize;
 }
 
@@ -403,34 +352,14 @@ a.event-card:hover .event-actions i {
 .re-cal-source-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--ac-space-2);
 }
 
-.re-cal-source-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.9rem;
-    border: 2px solid var(--sand-300, #DDD0B3);
-    background: transparent;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    color: var(--neutral-600, #6b7280);
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.re-cal-source-btn:hover {
-    background: var(--sand-100, #FAF5E8);
-    border-color: var(--primary-400, #C9A84C);
-    color: var(--neutral-800, #1f2937);
-}
-
+/* Source filter buttons are .ac-chip (active state: .is-on, toggled by events.js via .active). */
 .re-cal-source-btn.active {
-    background: var(--primary-400, #C9A84C);
-    border-color: var(--primary-400, #C9A84C);
-    color: var(--neutral-800, #1f2937);
-    font-weight: 600;
+    border-color: var(--ac-color-primary-border);
+    background: var(--ac-color-primary-soft);
+    color: var(--ac-color-primary-strong);
 }
 
 .re-cal-marks {
@@ -459,36 +388,36 @@ a.event-card:hover .event-actions i {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.22rem;
+    gap: var(--ac-space-1);
     min-width: 1.75rem;
     height: 1.55rem;
-    padding: 0 0.4rem;
-    border-radius: 0.4rem;
-    font-size: 0.8rem;
+    padding: 0 var(--ac-space-1-5);
+    border-radius: var(--ac-radius-sm);
+    font: var(--ac-font-caption);
     font-weight: 800;
     line-height: 1;
     border: 1px solid transparent;
 }
 
-.re-cal-chip i {
-    font-size: 0.7rem;
+.re-cal-chip .ac-icon {
+    --ac-icon-size: 11px;
 }
 
 .re-cal-chip-physical {
-    background: #8a6a1a;
-    color: #fff;
-    border-color: #6e5414;
+    background: var(--ac-reunion-events-physical);
+    color: var(--ac-color-on-strong);
+    border-color: var(--ac-reunion-events-physical-border);
 }
 
 .re-cal-chip-bga {
-    background: #2563eb;
-    color: #fff;
-    border-color: #1d4ed8;
+    background: var(--ac-reunion-events-online);
+    color: var(--ac-color-on-strong);
+    border-color: var(--ac-reunion-events-online-border);
 }
 
 .re-cal-has-events:hover .re-cal-chip,
 .re-cal-selected .re-cal-chip {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px var(--ac-color-surface);
 }
 
 /* Series branding logos — left of the cell, behind date + chips */
@@ -509,21 +438,17 @@ a.event-card:hover .event-actions i {
     display: block;
     object-fit: contain;
     box-sizing: border-box;
-    background: rgba(6, 9, 16, 0.92);
+    background: var(--ac-reunion-events-logo-plate);
     border: none;
-    border-radius: 0.45rem;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+    border-radius: var(--ac-radius-md);
+    box-shadow: var(--ac-shadow-e1);
 }
 
 .re-cal-brand-logo-day {
     width: 3.75rem;
     height: 3.75rem;
-    padding: 0.16rem;
-    border-radius: 0.55rem;
-}
-
-[data-theme="dark"] .re-cal-brand-logo {
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    padding: var(--ac-space-0-5);
+    border-radius: var(--ac-radius-md);
 }
 
 .re-cal-brand-logos:has(.re-cal-brand-logo-day:nth-child(2)) .re-cal-brand-logo-day {
@@ -531,7 +456,7 @@ a.event-card:hover .event-actions i {
     height: 2.35rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     .re-cal-day {
         min-height: 4.6rem;
         padding: 0.35rem 0.15rem 0.3rem;
@@ -559,7 +484,7 @@ a.event-card:hover .event-actions i {
     .re-cal-brand-logo-day {
         width: 2.5rem;
         height: 2.5rem;
-        border-radius: 0.4rem;
+        border-radius: var(--ac-radius-sm);
     }
 
     .re-cal-brand-logos:has(.re-cal-brand-logo-day:nth-child(2)) .re-cal-brand-logo-day {
@@ -574,7 +499,7 @@ a.event-card:hover .event-actions i {
         padding: 0 0.28rem;
     }
 
-    .re-cal-chip i {
+    .re-cal-chip .ac-icon {
         display: none;
     }
 
@@ -597,21 +522,6 @@ a.event-card:hover .event-actions i {
     }
 }
 
-@media (max-width: 480px) {
-    .re-cal-day {
-        min-height: 4.15rem;
-    }
-
-    .re-cal-brand-logo-day {
-        width: 2rem;
-        height: 2rem;
-    }
-
-    .re-cal-frontier-start-tag {
-        font-size: 0.52rem;
-    }
-}
-
 .re-event-brand-logo-wrap {
     flex-shrink: 0;
 }
@@ -619,12 +529,12 @@ a.event-card:hover .event-actions i {
 .re-cal-brand-logo-card {
     width: 3.25rem;
     height: 3.25rem;
-    padding: 0.22rem;
-    border-radius: 0.5rem;
+    padding: var(--ac-space-1);
+    border-radius: var(--ac-radius-md);
 }
 
 .re-event-card-branded {
-    border-left-color: #1e3a5f;
+    border-left-color: var(--ac-reunion-events-branded);
 }
 
 .re-cal-dot {
@@ -635,12 +545,12 @@ a.event-card:hover .event-actions i {
 }
 
 .re-cal-dot-physical {
-    background: #8a6a1a;
-    border-radius: 0.12rem;
+    background: var(--ac-reunion-events-physical);
+    border-radius: var(--ac-radius-xs);
 }
 
 .re-cal-dot-bga {
-    background: #2563eb;
+    background: var(--ac-reunion-events-online);
     border-radius: 50%;
 }
 
@@ -649,9 +559,9 @@ a.event-card:hover .event-actions i {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.55rem 0.85rem;
-    font-size: 0.85rem;
-    color: var(--neutral-700, #374151);
+    gap: var(--ac-space-2) var(--ac-space-3);
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-2);
 }
 
 .re-cal-frontier-legend-title {
@@ -667,7 +577,7 @@ a.event-card:hover .event-actions i {
     object-fit: contain;
     object-position: center;
     box-sizing: border-box;
-    border-radius: 0.3rem;
+    border-radius: var(--ac-radius-xs);
     border: none;
     box-shadow: none;
     background: transparent;
@@ -684,8 +594,8 @@ a.event-card:hover .event-actions i {
     display: inline-block;
     width: 0.85rem;
     height: 0.85rem;
-    border-radius: 0.2rem;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: var(--ac-radius-xs);
+    border: 1px solid var(--ac-color-border-control);
     flex-shrink: 0;
 }
 
@@ -703,14 +613,14 @@ a.event-card:hover .event-actions i {
     display: block;
     padding: 0.12rem 0.18rem 0.14rem;
     font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
-    font-size: 0.66rem;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
     text-align: center;
     line-height: 1.15;
-    color: #fff;
-    background: color-mix(in srgb, var(--re-frontier-color, #2f6fed) 82%, #0b1220);
+    color: var(--ac-color-on-strong);
+    background: color-mix(in srgb, var(--re-frontier-color, var(--ac-reunion-events-frontier)) 82%, var(--ac-color-overlay-control));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -748,60 +658,32 @@ a.event-card:hover .event-actions i {
 .re-cal-frontier-day-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.55rem;
-    padding: 0.55rem 0.75rem;
-    border-radius: 0.5rem;
-    background: var(--sand-100, #FAF5E8);
-    border: 1px solid var(--sand-200, #EDE3CC);
-}
-
-[data-theme="dark"] .re-cal-frontier-day-item {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme="dark"] .re-cal-frontier-legend {
-    color: var(--neutral-500, #9ca3af);
+    gap: var(--ac-space-2);
+    padding: var(--ac-space-2) var(--ac-space-3);
+    border-radius: var(--ac-radius-md);
+    background: var(--ac-color-bg-subtle);
+    border: 1px solid var(--ac-color-border);
 }
 
 .re-event-source {
     display: inline-block;
     vertical-align: middle;
-    margin-left: 0.35rem;
+    margin-left: var(--ac-space-1-5);
     padding: 0.12em 0.45em;
-    border-radius: 0.35rem;
-    font-size: 0.7rem;
-    font-weight: 700;
+    border-radius: var(--ac-radius-sm);
+    font: var(--ac-font-micro);
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
 
 .re-event-source-physical {
-    background: #8a6a1a;
-    color: #fff;
+    background: var(--ac-reunion-events-physical);
+    color: var(--ac-color-on-strong);
 }
 
 .re-event-source-bga {
-    background: #2563eb;
-    color: #fff;
-}
-
-[data-theme="dark"] .re-cal-source-btn {
-    border-color: rgba(255, 255, 255, 0.15);
-    color: var(--neutral-500, #9ca3af);
-}
-
-[data-theme="dark"] .re-cal-source-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--neutral-700, #e5e7eb);
-}
-
-[data-theme="dark"] .re-cal-source-btn.active {
-    color: var(--neutral-800, #1f2937);
-}
-
-[data-theme="dark"] .re-event-source-bga {
-    color: #fff;
+    background: var(--ac-reunion-events-online);
+    color: var(--ac-color-on-strong);
 }
 
 /* Animation for loading state */
@@ -812,44 +694,23 @@ a.event-card:hover .event-actions i {
 
 .loading-placeholder {
     animation: pulse 1.5s ease-in-out infinite;
-    background: var(--sand-200, #EDE3CC);
-    border-radius: 4px;
+    background: var(--ac-color-track);
+    border-radius: var(--ac-radius-xs);
     height: 1em;
 }
 
-/* Search Form */
+/* Search Form (Bootstrap form markup, drawn by the design system bridge) */
 #search-form .form-label {
-    margin-bottom: 0.35rem;
-}
-
-#search-form .input-group-text {
-    background: var(--sand-100, #FAF5E8);
-    border-color: var(--sand-200, #EDE3CC);
-}
-
-#search-form .form-control,
-#search-form .form-select {
-    border-color: var(--sand-200, #EDE3CC);
-}
-
-#search-form .form-control:focus,
-#search-form .form-select:focus {
-    border-color: var(--primary-400, #C9A84C);
-    box-shadow: 0 0 0 0.2rem rgba(201, 168, 76, 0.2);
-}
-
-/* Search results badge */
-.badge.bg-primary {
-    background-color: var(--primary-400, #C9A84C) !important;
+    margin-bottom: var(--ac-space-1-5);
 }
 
 /* Distance indicator */
-.event-details .fa-route {
-    color: var(--primary-400, #C9A84C);
+.event-details .re-distance-icon {
+    color: var(--ac-color-primary);
 }
 
 /* Responsive search form */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     #search-form .col-md-2 { width: 50%; }
     #search-form .col-md-4 { width: 100%; }
 
@@ -862,9 +723,9 @@ a.event-card:hover .event-actions i {
 }
 
 /* Responsive card */
-@media (max-width: 576px) {
+@media (max-width: 767.98px) {
     .event-card-inner {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--ac-space-2);
     }
 }

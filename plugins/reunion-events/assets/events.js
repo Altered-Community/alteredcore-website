@@ -6,6 +6,14 @@
 
     const locale = (window._reLang === 'fr') ? 'fr-FR' : 'en-US';
 
+    // Default Frontier season colour when a season has none (design system token).
+    const FRONTIER_DEFAULT = 'var(--ac-reunion-events-frontier)';
+
+    // Lucide icon from the design system (design-system/js/ac.js, loaded by the shell).
+    function icon(name, cls) {
+        return typeof window.acIcon === 'function' ? window.acIcon(name, cls) : '';
+    }
+
     function esc(str) {
         const d = document.createElement('div');
         d.textContent = str || '';
@@ -102,8 +110,7 @@
                 alert(btnGeo.dataset.unsupported);
                 return;
             }
-            const icon = btnGeo.querySelector('i');
-            icon.className = 'fa-solid fa-spinner fa-spin';
+            btnGeo.innerHTML = icon('loader-circle', 'ac-icon--spin');
             btnGeo.disabled = true;
 
             navigator.geolocation.getCurrentPosition(
@@ -122,13 +129,13 @@
                     })
                     .catch(function () { alert(btnGeo.dataset.error); })
                     .finally(function () {
-                        icon.className = 'fa-solid fa-crosshairs';
+                        btnGeo.innerHTML = icon('crosshair');
                         btnGeo.disabled = false;
                     });
                 },
                 function () {
                     alert(btnGeo.dataset.error);
-                    icon.className = 'fa-solid fa-crosshairs';
+                    btnGeo.innerHTML = icon('crosshair');
                     btnGeo.disabled = false;
                 },
                 { timeout: 8000 }
@@ -149,25 +156,25 @@
 
         if (mode === 'bga') {
             const startsHtml = e.start_instant_iso
-                ? '<span><i class="fa-solid fa-calendar"></i>' + esc(e.starts_label || '') + ': ' +
+                ? '<span>' + icon('calendar') + esc(e.starts_label || '') + ': ' +
                     '<time class="re-bga-start-dt" datetime="' + esc(e.start_instant_iso) + '" data-has-time="' +
                     (e.start_has_time ? '1' : '0') + '"></time></span>'
                 : '';
             return [
                 startsHtml,
-                e.format      ? '<span><i class="fa-solid fa-layer-group"></i>' + esc(e.format) + '</span>' : '',
-                e.deck_format ? '<span><i class="fa-solid fa-clone"></i>' + esc(e.deck_format) + '</span>' : '',
-                e.game_mode   ? '<span><i class="fa-solid fa-gamepad"></i>' + esc(e.game_mode) + '</span>' : '',
-                e.game_pace   ? '<span><i class="fa-solid fa-clock"></i>' + esc(e.game_pace) + '</span>' : '',
-                e.max_players ? '<span><i class="fa-solid fa-users"></i>' + esc((e.max_players_label || '') + ': ' + e.max_players) + '</span>' : '',
+                e.format      ? '<span>' + icon('layers') + esc(e.format) + '</span>' : '',
+                e.deck_format ? '<span>' + icon('copy') + esc(e.deck_format) + '</span>' : '',
+                e.game_mode   ? '<span>' + icon('gamepad-2') + esc(e.game_mode) + '</span>' : '',
+                e.game_pace   ? '<span>' + icon('clock') + esc(e.game_pace) + '</span>' : '',
+                e.max_players ? '<span>' + icon('users') + esc((e.max_players_label || '') + ': ' + e.max_players) + '</span>' : '',
             ].join('');
         }
 
         return [
-            e.location ? '<span><i class="fa-solid fa-location-dot"></i>' + esc(e.location) + '</span>' : '',
-            e.format   ? '<span><i class="fa-solid fa-layer-group"></i>'  + esc(e.format)   + '</span>' : '',
-            e.players  ? '<span><i class="fa-solid fa-users"></i>'         + esc(e.players)  + '</span>' : '',
-            e.distance ? '<span><i class="fa-solid fa-route"></i>'         + esc(String(e.distance)) + ' km</span>' : '',
+            e.location ? '<span>' + icon('map-pin') + esc(e.location) + '</span>' : '',
+            e.format   ? '<span>' + icon('layers')  + esc(e.format)   + '</span>' : '',
+            e.players  ? '<span>' + icon('users')         + esc(e.players)  + '</span>' : '',
+            e.distance ? '<span>' + icon('route', 're-distance-icon')         + esc(String(e.distance)) + ' km</span>' : '',
         ].join('');
     }
 
@@ -293,7 +300,7 @@
             return '';
         }
         const seasons = seasonsForDate(dateStr, loadFrontierSeasons());
-        return seasons.length ? (seasons[0].color || '#2f6fed') : '';
+        return seasons.length ? (seasons[0].color || FRONTIER_DEFAULT) : '';
     }
 
     function loadFrontierSeasons() {
@@ -343,7 +350,7 @@
         if (!seasonsOnDay || !seasonsOnDay.length) {
             return '';
         }
-        const color = seasonsOnDay[0].color || '#2f6fed';
+        const color = seasonsOnDay[0].color || FRONTIER_DEFAULT;
         return ' style="--re-frontier-color:' + esc(color) + '"';
     }
 
@@ -366,7 +373,7 @@
         active.forEach(function (s) {
             html +=
                 '<div class="re-cal-frontier-day-item">' +
-                    '<span class="re-cal-frontier-swatch" style="background:' + esc(s.color || '#2f6fed') + '"></span>' +
+                    '<span class="re-cal-frontier-swatch" style="background:' + esc(s.color || FRONTIER_DEFAULT) + '"></span>' +
                     '<div>' +
                         '<strong>' + esc(s.name || '') + '</strong>' +
                         '<div class="small text-muted">' + esc(rangeLabel) + ': ' +
@@ -396,14 +403,14 @@
             marks +=
                 '<span class="re-cal-chip re-cal-chip-physical" title="' +
                 esc(strings.source_physical || 'Physical') + '">' +
-                '<i class="fa-solid fa-location-dot" aria-hidden="true"></i>' + phys +
+                icon('map-pin') + phys +
                 '</span>';
         }
         if (bga > 0) {
             marks +=
                 '<span class="re-cal-chip re-cal-chip-bga" title="' +
                 esc(strings.source_bga || 'Online') + '">' +
-                '<i class="fa-solid fa-globe" aria-hidden="true"></i>' + bga +
+                icon('globe') + bga +
                 '</span>';
         }
         return marks;
@@ -474,7 +481,7 @@
                     : '';
                 const brandLogo = eventBrandLogoHtml(e);
                 const seasonColor = eventSeasonTint(e, dateStr, showFrontier);
-                const cardClass = 'event-card card-altered p-4'
+                const cardClass = 'event-card ac-card'
                     + (brandLogo ? ' re-event-card-branded' : '')
                     + (seasonColor ? ' re-event-card-frontier' : '');
                 const seasonStyle = seasonColor
@@ -485,14 +492,14 @@
                         '<div class="event-card-inner">' +
                             (brandLogo ? '<div class="re-event-brand-logo-wrap">' + brandLogo + '</div>' : '') +
                             '<div class="event-info">' +
-                                '<h5 class="event-title mb-1">' +
-                                    '<i class="fa-solid fa-trophy text-warning me-2"></i>' + esc(e.name) +
+                                '<h3 class="event-title mb-1">' +
+                                    icon('trophy', 'event-title-icon me-1') + esc(e.name) +
                                     ' ' + sourceBadgeHtml(e) +
-                                '</h5>' + subtitle +
+                                '</h3>' + subtitle +
                                 '<div class="event-details">' + buildEventDetailsHtml(e) + '</div>' +
                             '</div>' +
                             '<div class="event-actions">' +
-                                '<i class="fa-solid fa-arrow-up-right-from-square text-muted"></i>' +
+                                icon('external-link', 'text-muted') +
                             '</div>' +
                         '</div>' +
                     '</a>';
@@ -564,9 +571,9 @@
             viewCal.innerHTML =
                 '<div class="re-calendar">' +
                     '<div class="re-cal-header">' +
-                        '<button type="button" class="re-cal-nav" data-cal-prev><i class="fa-solid fa-chevron-left"></i></button>' +
+                        '<button type="button" class="re-cal-nav" data-cal-prev aria-label="Previous month">' + icon('chevron-left') + '</button>' +
                         '<span class="re-cal-title">' + esc(titleCap) + '</span>' +
-                        '<button type="button" class="re-cal-nav" data-cal-next><i class="fa-solid fa-chevron-right"></i></button>' +
+                        '<button type="button" class="re-cal-nav" data-cal-next aria-label="Next month">' + icon('chevron-right') + '</button>' +
                     '</div>' +
                     '<div class="re-cal-grid">' +
                         dayHeaders.map(function (n) {

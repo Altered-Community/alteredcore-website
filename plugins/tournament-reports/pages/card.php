@@ -127,31 +127,33 @@ $pageImage = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef .
 $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
 ?>
 
-<div class="container py-4" style="max-width:980px">
+<div class="ac-page tr-card-page">
 
     <?php if ($backToTournament): ?>
     <div class="mb-3">
-        <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($backToTournament)) ?>" class="text-decoration-none">
-            <i class="fa-solid fa-arrow-left me-1"></i><?= h($txt['back_to_tournament']) ?>
+        <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($backToTournament)) ?>" class="ac-button ac-button--ghost ac-button--sm">
+            <?= ac_icon('arrow-left') ?><?= h($txt['back_to_tournament']) ?>
         </a>
     </div>
     <?php endif; ?>
 
-    <div class="section-title mb-4">
-        <span><?= h($txt['page_title']) ?></span>
-    </div>
+    <header class="ac-page-header">
+        <div>
+            <p class="ac-text-overline mb-0"><?= h($txt['page_title']) ?></p>
+        </div>
+    </header>
 
     <?php if (!$ref): ?>
-    <div class="text-center py-5">
-        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>
-        <p class="text-muted mb-1"><?= h($txt['not_found']) ?></p>
+    <div class="ac-empty tr-error-state">
+        <?= ac_icon('circle-alert') ?>
+        <p class="ac-empty__title"><?= h($txt['not_found']) ?></p>
     </div>
     <?php else: ?>
 
-    <div id="card-error" style="display:none" class="text-center py-5">
-        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>
-        <p class="text-muted mb-1" id="card-error-msg"></p>
-        <p class="text-muted small"><?= h($txt['api_later']) ?></p>
+    <div id="card-error" style="display:none" class="ac-empty tr-error-state">
+        <?= ac_icon('circle-alert') ?>
+        <p class="ac-empty__title" id="card-error-msg"></p>
+        <p class="mb-0"><?= h($txt['api_later']) ?></p>
     </div>
 
     <div class="row g-4 g-lg-5" id="card-row">
@@ -172,13 +174,13 @@ $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
 
         <div class="col-md-7 col-lg-8">
 
-            <h1 id="card-name" style="font-size:1.75rem;font-weight:800;color:var(--neutral-800);margin-bottom:.6rem;line-height:1.2">
+            <h1 id="card-name" class="ac-page-header__title tr-card-name">
                 <span class="card-skeleton" style="display:inline-block;width:210px;height:1.8rem">&nbsp;</span>
             </h1>
 
             <div id="card-badges" class="d-flex flex-wrap gap-2 mb-3">
-                <span class="card-skeleton" style="display:inline-block;width:84px;height:26px;border-radius:20px"></span>
-                <span class="card-skeleton" style="display:inline-block;width:66px;height:26px;border-radius:20px"></span>
+                <span class="card-skeleton" style="display:inline-block;width:84px;height:26px;border-radius:var(--ac-radius-pill)"></span>
+                <span class="card-skeleton" style="display:inline-block;width:66px;height:26px;border-radius:var(--ac-radius-pill)"></span>
             </div>
 
             <div id="card-status" class="d-flex flex-wrap gap-2 mb-3" style="display:none!important"></div>
@@ -201,20 +203,20 @@ $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
             <div class="tab-content">
 
                 <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
-                    <div id="card-info-block" class="card-altered p-3 mb-3">
+                    <div id="card-info-block" class="ac-card mb-3">
                         <div class="card-section-label"><?= h($txt['lbl_info']) ?></div>
                         <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
                         <div class="card-skeleton" style="height:1.3rem;width:65%;border-radius:4px"></div>
                     </div>
-                    <div id="card-stats-block" class="card-altered p-3 mb-3" style="display:none">
+                    <div id="card-stats-block" class="ac-card mb-3" style="display:none">
                         <div class="card-section-label"><?= h($txt['lbl_stats']) ?></div>
                         <div id="card-stats-content" class="d-flex flex-wrap gap-3 align-items-center"></div>
                     </div>
-                    <div id="card-effects" class="card-altered p-3 mb-3" style="display:none"></div>
+                    <div id="card-effects" class="ac-card mb-3" style="display:none"></div>
                 </div>
 
                 <div class="tab-pane fade" id="tab-rules" role="tabpanel">
-                    <div class="card-altered p-3">
+                    <div class="ac-card">
                         <div class="card-section-label"><?= h($txt['lbl_rulings']) ?></div>
                         <div id="card-rulings-list">
                             <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
@@ -224,7 +226,7 @@ $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
                 </div>
 
                 <div class="tab-pane fade" id="tab-altered" role="tabpanel">
-                    <div class="card-altered p-3">
+                    <div class="ac-card">
                         <div class="card-section-label"><?= h($txt['lbl_altered_cards']) ?></div>
                         <div id="card-altered-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.5rem"></div>
                     </div>
@@ -232,7 +234,7 @@ $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
 
                 <div class="tab-pane fade" id="tab-lore" role="tabpanel">
                     <div id="card-lore-content">
-                        <div class="card-altered p-3">
+                        <div class="ac-card">
                             <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
                             <div class="card-skeleton" style="height:1.3rem;width:82%;border-radius:4px;margin-bottom:.45rem"></div>
                             <div class="card-skeleton" style="height:1.3rem;width:58%;border-radius:4px"></div>
@@ -248,7 +250,7 @@ $backToTournament = isset($_GET['tournament']) ? $_GET['tournament'] : '';
     <?php endif; ?>
 </div>
 
-<div id="ac-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);align-items:center;justify-content:center;cursor:pointer">
+<div id="ac-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--ac-color-overlay-strong);align-items:center;justify-content:center;cursor:pointer">
     <div id="ac-lightbox-inner" style="max-width:420px;width:88vw;cursor:default;position:relative" onclick="event.stopPropagation()"></div>
 </div>
 
@@ -386,7 +388,9 @@ var AlteredCard = {
         var fCode   = (group.faction && group.faction.code) ? group.faction.code : '';
         var fData   = AlteredCard.factions[fCode] || {};
         var fName   = fData[uiLang] || fData.en || fCode;
-        var fColor  = fData.color  || 'var(--neutral-400)';
+        // Faction colours come from the design system tokens (--ac-faction-*).
+        var FACTION_TOKENS = { AX: 'axiom', BR: 'bravos', LY: 'lyra', MU: 'muna', OR: 'ordis', YZ: 'yzmir' };
+        var fColor  = FACTION_TOKENS[fCode] ? 'var(--ac-faction-' + FACTION_TOKENS[fCode] + ')' : 'var(--ac-color-text-muted)';
 
         var rCode   = (group.rarity && group.rarity.reference) ? group.rarity.reference : '';
         var rData   = AlteredCard.rarities[rCode] || {};
@@ -452,7 +456,7 @@ var AlteredCard = {
             var fb = document.createElement('a');
             fb.href = BASE + '/pages/cards?faction[]=' + encodeURIComponent(fCode);
             fb.className = 'badge d-flex align-items-center gap-1 text-decoration-none';
-            fb.style.cssText = 'background:' + fColor + ';color:#fff;font-size:.8rem;padding:4px 10px;border-radius:20px';
+            fb.style.cssText = 'background:' + fColor + ';color:var(--ac-color-on-strong);font:var(--ac-font-caption);padding:4px 10px;border-radius:var(--ac-radius-pill)';
             fb.innerHTML = '<img src="' + BASE + '/plugins/core-altered-cards/assets/faction/' + escAttr(fCode) + '.png" alt="" style="width:14px;height:14px;object-fit:contain;filter:brightness(10)">'
                 + escHtml(fName);
             badgesEl.appendChild(fb);
@@ -461,7 +465,7 @@ var AlteredCard = {
             var rb = document.createElement('a');
             rb.href = BASE + '/pages/cards?rarity[]=' + encodeURIComponent(rCode);
             rb.className = 'badge d-flex align-items-center gap-1 text-decoration-none';
-            rb.style.cssText = 'background:var(--sand-200);color:var(--neutral-700);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            rb.style.cssText = 'background:var(--ac-color-track);color:var(--ac-color-text-2);font:var(--ac-font-caption);padding:4px 10px;border-radius:var(--ac-radius-pill)';
             rb.innerHTML = '<img src="' + BASE + '/plugins/core-altered-cards/assets/gems/' + escAttr(rLetter) + '.png" alt="' + escAttr(rCode) + '" style="width:14px;height:14px;object-fit:contain">'
                 + escHtml(rName);
             badgesEl.appendChild(rb);
@@ -470,7 +474,7 @@ var AlteredCard = {
             var tb = document.createElement('a');
             tb.href = BASE + '/pages/cards?type[]=' + encodeURIComponent(tCode);
             tb.className = 'badge text-decoration-none';
-            tb.style.cssText = 'background:var(--sand-300);color:var(--neutral-800);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            tb.style.cssText = 'background:var(--ac-color-primary-soft);color:var(--ac-color-primary-strong);font:var(--ac-font-caption);padding:4px 10px;border-radius:var(--ac-radius-pill)';
             tb.textContent = tLabel;
             badgesEl.appendChild(tb);
         }
@@ -478,7 +482,7 @@ var AlteredCard = {
             var stb = document.createElement('a');
             stb.href = BASE + '/pages/cards?subtype[]=' + encodeURIComponent(st.ref);
             stb.className = 'badge text-decoration-none';
-            stb.style.cssText = 'background:var(--sand-200);color:var(--neutral-700);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            stb.style.cssText = 'background:var(--ac-color-track);color:var(--ac-color-text-2);font:var(--ac-font-caption);padding:4px 10px;border-radius:var(--ac-radius-pill)';
             stb.textContent = st.name;
             badgesEl.appendChild(stb);
         });
@@ -486,9 +490,9 @@ var AlteredCard = {
         var statusEl = document.getElementById('card-status');
         statusEl.innerHTML = '';
         var hasStatus = false;
-        if (group.isBanned)    { statusEl.innerHTML += '<span class="badge" style="background:#ef4444;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-ban me-1"></i>' + escHtml(txt.banned) + '</span>'; hasStatus = true; }
-        if (group.isSuspended) { statusEl.innerHTML += '<span class="badge" style="background:#f97316;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-pause me-1"></i>' + escHtml(txt.suspended) + '</span>'; hasStatus = true; }
-        if (group.isErrated)   { statusEl.innerHTML += '<span class="badge" style="background:#eab308;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-pen-to-square me-1"></i>' + escHtml(txt.errated) + '</span>'; hasStatus = true; }
+        if (group.isBanned)    { statusEl.innerHTML += '<span class="ac-badge ac-badge--red">' + acIcon('ban') + escHtml(txt.banned) + '</span>'; hasStatus = true; }
+        if (group.isSuspended) { statusEl.innerHTML += '<span class="ac-badge ac-badge--orange">' + acIcon('pause') + escHtml(txt.suspended) + '</span>'; hasStatus = true; }
+        if (group.isErrated)   { statusEl.innerHTML += '<span class="ac-badge ac-badge--violet">' + acIcon('square-pen') + escHtml(txt.errated) + '</span>'; hasStatus = true; }
         statusEl.style.cssText = hasStatus ? '' : 'display:none!important';
 
         var infoEl = document.getElementById('card-info-block');
@@ -503,17 +507,17 @@ var AlteredCard = {
         infoHtml += '<div class="card-stat-row"><span class="card-stat-label">' + escHtml(txt.lbl_ref) + '</span>'
             + '<span class="card-stat-val d-flex flex-column gap-1">';
         if (collNum) {
-            infoHtml += '<span id="card-collector-num" style="font-family:monospace;font-size:.78rem;color:var(--neutral-400)">'
+            infoHtml += '<span id="card-collector-num" style="font-family:monospace;font-size:12px;color:var(--ac-color-text-muted)">'
                 + escHtml(collNum) + '</span>';
         }
-        infoHtml += '<span style="font-family:monospace;font-size:.78rem;color:var(--neutral-500)">' + escHtml(ref) + '</span>'
+        infoHtml += '<span style="font-family:monospace;font-size:12px;color:var(--ac-color-text-muted)">' + escHtml(ref) + '</span>'
             + '</span></div>';
         infoEl.innerHTML = infoHtml;
 
         function formatChipHtml(fmt) {
             var label = fmt[uiLang] || fmt.en || '';
             return '<span class="d-flex align-items-center gap-1">'
-                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--neutral-400)') + ';display:inline-block;flex-shrink:0"></span>'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--ac-color-text-muted)') + ';display:inline-block;flex-shrink:0"></span>'
                 + escHtml(label) + '</span>';
         }
         function appendFormatChip(fmt) {
@@ -578,7 +582,7 @@ var AlteredCard = {
 
         if (setData.bgalegal === false) {
             infoEl.insertAdjacentHTML('beforeend',
-                '<div class="db-info-banner mt-2"><i class="fa-solid fa-circle-info me-1"></i>' + escHtml(txt.bga_not_legal) + '</div>');
+                '<div class="ac-notice ac-notice--neutral mt-2">' + acIcon('info') + '<div>' + escHtml(txt.bga_not_legal) + '</div></div>');
         }
 
         var statsBlock   = document.getElementById('card-stats-block');
@@ -589,8 +593,8 @@ var AlteredCard = {
             var isMatzHive   = /_OR_85_C(_\d+)?$/.test(ref);
             var reserveSize  = 2;
             var landmarkSize = isMatzHive ? 3 : 2;
-            statsHtml += '<span class="power-pip"><i class="fa-solid fa-layer-group" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
-            statsHtml += '<span class="power-pip"><i class="fa-solid fa-chess-rook" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
+            statsHtml += '<span class="power-pip">' + acIcon('layers') + '<span style="font-weight:400;color:var(--ac-color-text-muted)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
+            statsHtml += '<span class="power-pip">' + acIcon('castle') + '<span style="font-weight:400;color:var(--ac-color-text-muted)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
         } else {
             if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
             if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
@@ -601,7 +605,7 @@ var AlteredCard = {
             var displayVal, show;
             if (dp !== null) {
                 var m = String(dp).match(/^#(.+)#$/);
-                displayVal = m ? '<span style="color:#FFFF00">' + m[1] + '</span>' : String(dp);
+                displayVal = m ? '<span style="color:var(--ac-color-warning);font-weight:800">' + m[1] + '</span>' : String(dp);
                 show = true;
             } else if (card[f] !== undefined && card[f] !== null) {
                 displayVal = card[f];
@@ -709,7 +713,7 @@ var AlteredCard = {
     function loadAlteredCards(l) {
         var grid = document.getElementById('card-altered-grid');
         if (!grid) return;
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--neutral-400)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;padding:var(--ac-space-6)"><span class="ac-spinner" role="status"></span></div>';
 
         var cardName   = loc(groupData.name, l) || ref;
         var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
@@ -734,7 +738,7 @@ var AlteredCard = {
                 renderAlteredGrid(grid, altCards, cardName, l);
             })
             .catch(function () {
-                grid.innerHTML = '<div style="grid-column:1/-1;color:var(--neutral-400);font-size:.85rem">' + escHtml(txt.err_api) + '</div>';
+                grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font:var(--ac-font-small)">' + escHtml(txt.err_api) + '</div>';
             });
     }
 
@@ -754,8 +758,8 @@ var AlteredCard = {
             btn.title = cardName;
             btn.style.cssText = 'display:block;min-width:0;padding:0;border:none;background:none;cursor:pointer';
             btn.innerHTML = '<img src="' + escAttr(acImg) + '" alt="' + escAttr(cardName) + '" loading="lazy"'
-                + ' style="width:100%;aspect-ratio:63.5/88;object-fit:cover;display:block;border-radius:6px;transition:transform .15s,box-shadow .15s"'
-                + ' onmouseover="this.style.transform=\'scale(1.04)\';this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.22)\'"'
+                + ' style="width:100%;aspect-ratio:63.5/88;object-fit:cover;display:block;border-radius:var(--ac-radius-md);transition:transform .15s,box-shadow .15s"'
+                + ' onmouseover="this.style.transform=\'scale(1.04)\';this.style.boxShadow=\'var(--ac-shadow-card)\'"'
                 + ' onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">';
             btn.addEventListener('click', function () { openLightbox(btn); });
             grid.appendChild(btn);
@@ -764,10 +768,10 @@ var AlteredCard = {
         var searchLink = document.createElement('a');
         searchLink.id  = 'card-unique-search-link';
         searchLink.href = BASE + '/pages/cards?q=' + encodeURIComponent(cardName) + '&rarity[]=UNIQUE';
-        searchLink.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:63.5/88;border-radius:6px;border:2px dashed var(--sand-300);gap:.5rem;text-decoration:none;padding:.5rem;text-align:center;color:var(--neutral-500);transition:border-color .15s,color .15s';
-        searchLink.onmouseover = function () { this.style.borderColor = 'var(--primary-400)'; this.style.color = 'var(--primary-400)'; };
-        searchLink.onmouseout  = function () { this.style.borderColor = 'var(--sand-300)';    this.style.color = 'var(--neutral-500)'; };
-        searchLink.innerHTML   = '<span style="font-size:.72rem;font-weight:600;line-height:1.3">' + escHtml(txt.search_unique) + '<br><em>' + escHtml(cardName) + '</em></span>'
+        searchLink.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:63.5/88;border-radius:var(--ac-radius-md);border:2px dashed var(--ac-color-border-dashed);gap:.5rem;text-decoration:none;padding:.5rem;text-align:center;color:var(--ac-color-text-muted);transition:border-color .15s,color .15s';
+        searchLink.onmouseover = function () { this.style.borderColor = 'var(--ac-color-primary)'; this.style.color = 'var(--ac-color-primary)'; };
+        searchLink.onmouseout  = function () { this.style.borderColor = 'var(--ac-color-border-dashed)'; this.style.color = 'var(--ac-color-text-muted)'; };
+        searchLink.innerHTML   = '<span style="font:var(--ac-font-caption)">' + escHtml(txt.search_unique) + '<br><em>' + escHtml(cardName) + '</em></span>'
             + '<img src="' + BASE + '/plugins/core-altered-cards/assets/gems/U.png" alt="Unique" style="width:22px;height:22px;object-fit:contain">';
         grid.appendChild(searchLink);
     }
@@ -779,14 +783,14 @@ var AlteredCard = {
         lbInner.innerHTML = '';
         var imgEl = document.createElement('img');
         imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.name;
-        imgEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+        imgEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:var(--ac-radius-lg);box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         imgEl.addEventListener('click', closeLightbox);
         lbInner.appendChild(imgEl);
         var detailBtn = document.createElement('a');
         detailBtn.href = btn.dataset.url;
-        detailBtn.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>' + escHtml(txt.detail_label);
-        detailBtn.className = 'btn btn-sm btn-primary-altered';
-        detailBtn.style.cssText = 'display:block;width:100%;margin-top:8px;text-decoration:none';
+        detailBtn.innerHTML = acIcon('info') + escHtml(txt.detail_label);
+        detailBtn.className = 'ac-button ac-button--sm ac-button--full';
+        detailBtn.style.cssText = 'margin-top:8px';
         lbInner.appendChild(detailBtn);
         lbModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -819,9 +823,9 @@ var AlteredCard = {
         pairs.forEach(function (p) {
             var text = loc(p[0], l);
             if (!text) return;
-            html += '<div' + (first ? '' : ' style="border-top:1px solid var(--sand-200);padding-top:.75rem;margin-top:.75rem"') + '>'
-                + '<div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--neutral-400);margin-bottom:.3rem">' + escHtml(p[1]) + '</div>'
-                + '<div style="font-size:.9rem;color:var(--neutral-700);line-height:1.55">' + textRender(text) + '</div>'
+            html += '<div' + (first ? '' : ' style="border-top:1px solid var(--ac-color-divider);padding-top:.75rem;margin-top:.75rem"') + '>'
+                + '<div class="ac-text-overline" style="margin-bottom:.3rem">' + escHtml(p[1]) + '</div>'
+                + '<div style="font:var(--ac-font-prose);font-size:15px;color:var(--ac-color-text-2)">' + textRender(text) + '</div>'
                 + '</div>';
             first = false;
         });
@@ -834,14 +838,14 @@ var AlteredCard = {
         if (!list.length) {
             return '<div class="text-center py-3">'
                 + '<img src="' + BASE + '/plugins/core-altered-cards/assets/img/no_rules.png" alt="" style="max-width:120px;opacity:.6;display:block;margin:0 auto .75rem" onerror="this.style.display=\'none\'">'
-                + '<p class="text-muted" style="font-size:.85rem;margin:0">' + escHtml(txt.no_rulings) + '</p></div>';
+                + '<p class="text-muted" style="font:var(--ac-font-small);margin:0">' + escHtml(txt.no_rulings) + '</p></div>';
         }
         var html = '';
         list.forEach(function (r, i) {
-            html += '<div' + (i > 0 ? ' style="border-top:1px solid var(--sand-200);padding-top:.75rem;margin-top:.75rem"' : '') + '>'
-                + '<p style="font-size:.88rem;font-weight:600;color:var(--neutral-800);margin:0 0 .25rem 0">' + escHtml(r.question || '') + '</p>'
-                + '<p style="font-size:.85rem;color:var(--neutral-700);margin:0 0 .3rem 0">' + escHtml(r.answer || '') + '</p>'
-                + (r.rulingDate ? '<p style="font-size:.75rem;color:var(--neutral-400);margin:0">' + escHtml(String(r.rulingDate).substring(0, 10)) + '</p>' : '')
+            html += '<div' + (i > 0 ? ' style="border-top:1px solid var(--ac-color-divider);padding-top:.75rem;margin-top:.75rem"' : '') + '>'
+                + '<p style="font:var(--ac-font-body);color:var(--ac-color-text);margin:0 0 .25rem 0">' + escHtml(r.question || '') + '</p>'
+                + '<p style="font:var(--ac-font-small);font-weight:400;color:var(--ac-color-text-2);margin:0 0 .3rem 0">' + escHtml(r.answer || '') + '</p>'
+                + (r.rulingDate ? '<p style="font:var(--ac-font-caption);color:var(--ac-color-text-muted);margin:0">' + escHtml(String(r.rulingDate).substring(0, 10)) + '</p>' : '')
                 + '</div>';
         });
         return html;
@@ -856,14 +860,14 @@ var AlteredCard = {
             }
         }
         if (!entry) return '';
-        var html = '<div class="card-altered p-3">';
+        var html = '<div class="ac-card">';
         (entry.elements || []).forEach(function (el) {
             var t = el.text || '';
             if (!t || t === '#N/A' || t === 'N/A') return;
             var e = escHtml(t);
-            if (el.type === 'FLAVOR_TEXT')  html += '<blockquote style="border-left:3px solid var(--sand-300);padding-left:1rem;margin:0 0 .75rem 0;color:var(--neutral-600);font-size:.9rem"><em>' + e + '</em></blockquote>';
-            else if (el.type === 'STORY')   html += '<p style="font-size:.88rem;color:var(--neutral-700);line-height:1.65;margin:0 0 .5rem 0">' + e.replace(/\n/g, '<br>') + '</p>';
-            else if (el.type === 'NARRATOR') html += '<p style="font-size:.8rem;color:var(--neutral-500);text-align:right;font-style:italic;margin:0">\u2014 ' + e + '</p>';
+            if (el.type === 'FLAVOR_TEXT')  html += '<blockquote style="border-left:3px solid var(--ac-color-border);padding-left:1rem;margin:0 0 .75rem 0;color:var(--ac-color-text-2);font:var(--ac-font-prose);font-size:15px"><em>' + e + '</em></blockquote>';
+            else if (el.type === 'STORY')   html += '<p style="font:var(--ac-font-prose);font-size:15px;color:var(--ac-color-text-2);margin:0 0 .5rem 0">' + e.replace(/\n/g, '<br>') + '</p>';
+            else if (el.type === 'NARRATOR') html += '<p style="font:var(--ac-font-small);color:var(--ac-color-text-muted);text-align:right;font-style:italic;margin:0">\u2014 ' + e + '</p>';
         });
         return html + '</div>';
     }

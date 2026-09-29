@@ -109,11 +109,11 @@ if (trGetApiUrl() === '') {
 ?>
 
 <div class="admin-header-bar">
-    <h1><i class="fa-solid fa-trophy me-2"></i><?= h($txt['title']) ?></h1>
+    <h1><?= ac_icon('trophy', 'me-2') ?><?= h($txt['title']) ?></h1>
 </div>
 
 <?php if ($liveError): ?>
-<div class="alert alert-warning"><?= h($liveError) ?></div>
+<div class="ac-notice ac-notice--warning mb-3" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($liveError) ?></div></div>
 <?php endif; ?>
 
 <?php if (!empty($modes)): ?>
@@ -127,7 +127,7 @@ if (trGetApiUrl() === '') {
         ?>
         <a href="<?= h(trAdminTournamentsListUrl((string)$mode, $selectedMinPlayers, 1)) ?>"
            class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>">
-            <span style="width:8px;height:8px;border-radius:50%;background:<?= h($modeDisplay['color']) ?>;flex-shrink:0;display:inline-block;margin-right:.35rem"></span><?= h($modeDisplay['label']) ?>
+            <span class="ac-chip__dot me-1" style="--ac-chip-dot:<?= h($modeDisplay['color']) ?>"></span><?= h($modeDisplay['label']) ?>
         </a>
         <?php endforeach; ?>
     </div>
@@ -147,7 +147,7 @@ if (trGetApiUrl() === '') {
 </div>
 
 <!-- Tournament list -->
-<div class="card-altered mb-4">
+<div class="ac-card ac-card--flush mb-4">
     <div class="table-responsive">
         <table class="table table-hover table-altered mb-0">
             <thead>
@@ -173,23 +173,23 @@ if (trGetApiUrl() === '') {
                     </td>
                     <td>
                         <?php if ($t['mode']['label'] !== ''): ?>
-                        <span class="badge" style="background:<?= h($t['mode']['color']) ?>;color:#fff;font-size:.72rem"><?= h($t['mode']['label']) ?></span>
+                        <span class="ac-badge"><span class="ac-chip__dot" style="--ac-chip-dot:<?= h($t['mode']['color']) ?>"></span><?= h($t['mode']['label']) ?></span>
                         <?php else: ?>
                         —
                         <?php endif; ?>
                     </td>
                     <td><?= $t['last_game_at'] ? h($t['last_game_at']) : '—' ?></td>
                     <td><?= $t['total_games'] ?></td>
-                    <td class="text-end" style="white-space:nowrap">
+                    <td class="text-end text-nowrap">
                         <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($t['tournament_id'])) ?>"
-                           class="btn btn-sm btn-outline-primary" target="_blank"
-                           title="<?= h($txt['view_page']) ?>">
-                            <i class="fa-solid fa-eye"></i>
+                           class="ac-icon-button ac-icon-button--sm" target="_blank"
+                           title="<?= h($txt['view_page']) ?>" aria-label="<?= h($txt['view_page']) ?>">
+                            <?= ac_icon('eye') ?>
                         </a>
                         <a href="<?= BASE_URL ?>/admin/plugin-page?plugin=tournament-reports&section=tournament-ranking&tournament=<?= h(urlencode($t['tournament_id'])) ?>"
-                           class="btn btn-sm btn-outline-secondary"
-                           title="<?= h($txt['players']) ?>">
-                            <i class="fa-solid fa-ranking-star"></i>
+                           class="ac-icon-button ac-icon-button--sm"
+                           title="<?= h($txt['players']) ?>" aria-label="<?= h($txt['players']) ?>">
+                            <?= ac_icon('medal') ?>
                         </a>
                     </td>
                 </tr>

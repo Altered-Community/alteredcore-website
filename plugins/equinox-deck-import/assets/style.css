@@ -1,28 +1,40 @@
-/* Progress bar — uses the site's primary gold colour */
-#edi-progress-header .progress-bar {
-    background-color: var(--primary-400, #C9A84C);
+/* Equinox Deck Import — layout only; colours, radii and fonts are design system tokens
+   (design-system/tokens/tokens.css), which already have dark values. */
+
+/* Narrow page column; blocks added by the queue (js/import-view.js) are spaced like a stack. */
+.edi-page {
+    max-width: calc(680px + 2 * var(--ac-page-padding));
+}
+.edi-page > * + * {
+    margin-top: var(--ac-space-4);
 }
 
-/* Import instructions — numbered "how to get your export" steps (import page).
-   Theme-aware: sand surface + gold number badges from the site palette. */
+.edi-intro {
+    font: var(--ac-font-small);
+    font-weight: 500;
+    color: var(--ac-color-text-muted);
+    margin: 0 0 var(--ac-space-4);
+}
+
+/* Import instructions — numbered "how to get your export" steps (import page). */
 .edi-steps {
     list-style: none;
     counter-reset: edi-step;
-    margin: 0 0 1.25rem;
-    padding: 1rem 1.25rem;
-    background: var(--sand-100, #F3EFE7);
-    border: 1px solid var(--panel-border, #E4DDCF);
-    border-radius: .5rem;
-    font-size: .9rem;
+    margin: 0 0 var(--ac-space-5);
+    padding: var(--ac-space-4) var(--ac-space-5);
+    background: var(--ac-color-bg-subtle);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-lg);
+    font: var(--ac-font-body);
 }
 .edi-steps li {
     counter-increment: edi-step;
     display: flex;
     align-items: flex-start;
-    gap: .65rem;
+    gap: var(--ac-space-2-5);
 }
 .edi-steps li + li {
-    margin-top: .65rem;
+    margin-top: var(--ac-space-2-5);
 }
 .edi-steps li::before {
     content: counter(edi-step);
@@ -30,27 +42,60 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.4rem;
-    height: 1.4rem;
-    margin-top: .05rem;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: var(--primary-400, #C9A84C);
-    color: #fff;
-    font-weight: 700;
-    font-size: .78rem;
-    line-height: 1;
+    background: var(--ac-color-primary);
+    color: var(--ac-color-on-primary);
+    font: var(--ac-font-caption);
 }
 
-/* Pending badge — neutral colour matching the design system */
-#edi-deck-tbody .badge-pending {
-    background-color: var(--neutral-200, #D6CFC4);
-    color: var(--neutral-600, #534B40);
+/* Progress card */
+.edi-progress-line {
+    margin-bottom: var(--ac-space-2);
+}
+.edi-progress {
+    height: 8px;
+    margin-bottom: var(--ac-space-3);
+}
+
+/* Pending badge: outlined so it reads as "not started" next to the grey "skipped" badge. */
+.ac-badge.edi-badge-pending {
+    background: transparent;
+    border: 1px solid var(--ac-color-border-control);
+    color: var(--ac-color-text-muted);
+}
+
+.edi-reset {
+    align-self: flex-start;
 }
 
 /* Queue table rows — tighter padding for long lists */
 #edi-deck-tbody td {
-    padding-top: .35rem;
-    padding-bottom: .35rem;
+    padding-top: var(--ac-space-1-5);
+    padding-bottom: var(--ac-space-1-5);
+}
+
+/* Error line under a deck name, with its retry link-button. */
+.edi-row-error {
+    margin-top: var(--ac-space-1);
+    font: var(--ac-font-small);
+    color: var(--ac-color-danger);
+}
+.edi-retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ac-space-1);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ac-color-link);
+    font: inherit;
+    cursor: pointer;
+}
+.edi-retry-btn:hover {
+    color: var(--ac-color-link-hover);
+    text-decoration: underline;
 }
 
 /* Fixed-height scrollable list: the page no longer reflows as decks complete
@@ -77,4 +122,31 @@
 }
 #edi-deck-tbody td:first-child {
     word-break: break-word;
+}
+
+/* Debug panels (?debug=1) */
+.edi-debug-panel {
+    font: var(--ac-font-small);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow: auto;
+}
+.edi-debug-panel--inline {
+    margin-top: var(--ac-space-1);
+    padding: var(--ac-space-2);
+    border-radius: var(--ac-radius-md);
+    background: var(--ac-color-bg-subtle);
+}
+.edi-debug-summary {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
+    cursor: pointer;
+}
+.edi-debug-pre {
+    max-height: 200px;
+    margin: 0 0 var(--ac-space-1);
+    padding: var(--ac-space-2);
+    border-radius: var(--ac-radius-md);
+    background: var(--ac-color-bg-subtle);
+    white-space: pre-wrap;
+    word-break: break-all;
 }

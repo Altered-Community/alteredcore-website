@@ -451,12 +451,12 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
 ?>
 
 <div class="admin-header-bar">
-    <h1><i class="fa-solid fa-gear me-2"></i><?= h($txt['title']) ?></h1>
+    <h1><?= ac_icon('settings', 'me-2') ?><?= h($txt['title']) ?></h1>
 </div>
 
-<div class="card-altered p-4 mb-4" style="max-width:560px">
+<div class="ac-card mb-4" style="max-width:560px">
     <h5 class="mb-3">
-        <i class="fa-solid fa-plug me-2"></i>
+        <?= ac_icon('plug', 'me-2') ?>
         <?= h($txt['api_section']) ?>
     </h5>
 
@@ -475,21 +475,21 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
         </div>
 
         <div class="d-flex gap-2">
-            <button type="submit" name="action" value="save" class="btn btn-sm btn-primary-altered">
-                <i class="fa-solid fa-floppy-disk me-1"></i>
+            <button type="submit" name="action" value="save" class="ac-button ac-button--sm">
+                <?= ac_icon('save', 'me-1') ?>
                 <?= h($txt['btn_save']) ?>
             </button>
             <button type="submit" name="action" value="test" class="btn btn-sm btn-outline-secondary">
-                <i class="fa-solid fa-plug-circle-check me-1"></i>
+                <?= ac_icon('plug-zap', 'me-1') ?>
                 <?= h($txt['btn_test']) ?>
             </button>
         </div>
     </form>
 </div>
 
-<div class="card-altered p-4 mb-4" style="max-width:720px">
+<div class="ac-card mb-4" style="max-width:720px">
     <h5 class="mb-3">
-        <i class="fa-solid fa-cloud-arrow-up me-2"></i>
+        <?= ac_icon('cloud-upload', 'me-2') ?>
         <?= h($txt['bga_section']) ?>
     </h5>
     <p class="text-muted small"><?= h($txt['bga_help']) ?></p>
@@ -518,13 +518,13 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                        class="form-control form-control-sm"
                        accept=".json,application/json">
             </div>
-            <button type="submit" name="action" value="upload_bga" class="btn btn-sm btn-primary-altered">
-                <i class="fa-solid fa-upload me-1"></i>
+            <button type="submit" name="action" value="upload_bga" class="ac-button ac-button--sm">
+                <?= ac_icon('upload', 'me-1') ?>
                 <?= h($txt['bga_btn_upload']) ?>
             </button>
         </form>
         <a href="<?= h($downloadUrl) ?>" class="btn btn-sm btn-outline-secondary">
-            <i class="fa-solid fa-download me-1"></i>
+            <?= ac_icon('download', 'me-1') ?>
             <?= h($txt['bga_btn_download']) ?>
         </a>
     </div>
@@ -532,7 +532,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
     <hr class="my-4">
 
     <h5 class="mb-2">
-        <i class="fa-solid fa-plus me-2"></i>
+        <?= ac_icon('plus', 'me-2') ?>
         <?= h($txt['bga_add_section']) ?>
     </h5>
     <p class="text-muted small mb-3"><?= h($txt['bga_add_help']) ?></p>
@@ -617,8 +617,8 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                        placeholder="https://boardgamearena.com/tournament?id=566604">
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-sm btn-primary-altered">
-                    <i class="fa-solid fa-plus me-1"></i>
+                <button type="submit" class="ac-button ac-button--sm">
+                    <?= ac_icon('plus', 'me-1') ?>
                     <?= h($txt['bga_btn_add']) ?>
                 </button>
             </div>
@@ -626,9 +626,9 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
     </form>
 </div>
 
-<div class="card-altered p-4 mb-4" style="max-width:720px">
+<div class="ac-card mb-4" style="max-width:720px">
     <h5 class="mb-3">
-        <i class="fa-solid fa-layer-group me-2"></i>
+        <?= ac_icon('layers', 'me-2') ?>
         <?= h($txt['frontier_section']) ?>
     </h5>
     <p class="text-muted small"><?= h($txt['frontier_help']) ?></p>
@@ -655,7 +655,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                     <td><?= h($season['end_date']) ?></td>
                     <td>
                         <span class="d-inline-flex align-items-center gap-2">
-                            <span style="display:inline-block;width:1.1rem;height:1.1rem;border-radius:0.25rem;background:<?= h($season['color']) ?>;border:1px solid rgba(0,0,0,.2)"></span>
+                            <span style="display:inline-block;width:1.1rem;height:1.1rem;border-radius:0.25rem;background:<?= h($season['color']) ?>;border:1px solid var(--ac-color-border-control)"></span>
                             <code class="small"><?= h($season['color']) ?></code>
                         </span>
                     </td>
@@ -683,7 +683,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
     <hr class="my-4">
 
     <h5 class="mb-3">
-        <i class="fa-solid fa-<?= $editFrontier ? 'pen' : 'plus' ?> me-2"></i>
+        <?= ac_icon($editFrontier ? 'pen' : 'plus', 'me-2') ?>
         <?= h($editFrontier ? $txt['frontier_btn_update'] : $txt['frontier_btn_add']) ?>
     </h5>
 
@@ -725,8 +725,8 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                 </div>
             </div>
             <div class="col-12 d-flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-sm btn-primary-altered">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                <button type="submit" class="ac-button ac-button--sm">
+                    <?= ac_icon('save', 'me-1') ?>
                     <?= h($editFrontier ? $txt['frontier_btn_update'] : $txt['frontier_btn_add']) ?>
                 </button>
                 <?php if ($editFrontier): ?>
@@ -739,9 +739,9 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
     </form>
 </div>
 
-<div class="card-altered p-4 mb-4" style="max-width:720px">
+<div class="ac-card mb-4" style="max-width:720px">
     <h5 class="mb-3">
-        <i class="fa-solid fa-image me-2"></i>
+        <?= ac_icon('image', 'me-2') ?>
         <?= h($txt['logos_section']) ?>
     </h5>
     <p class="text-muted small"><?= h($txt['logos_help']) ?></p>
@@ -754,7 +754,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
              alt="Frontier"
              width="56"
              height="56"
-             style="width:4.5rem;height:4.5rem;object-fit:contain;border-radius:0.35rem;background:transparent">
+             style="width:4.5rem;height:4.5rem;object-fit:contain;border-radius:var(--ac-radius-sm);background:transparent">
         <span class="badge text-bg-secondary"><?= h($txt['logos_current']) ?></span>
         <?php else: ?>
         <span class="text-muted small"><?= h($txt['logos_frontier_none']) ?></span>
@@ -766,8 +766,8 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
             <div class="flex-grow-1" style="min-width:200px">
                 <input type="file" name="frontier_logo" class="form-control form-control-sm" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" required>
             </div>
-            <button type="submit" name="action" value="upload_frontier_logo" class="btn btn-sm btn-primary-altered">
-                <i class="fa-solid fa-upload me-1"></i>
+            <button type="submit" name="action" value="upload_frontier_logo" class="ac-button ac-button--sm">
+                <?= ac_icon('upload', 'me-1') ?>
                 <?= h($txt['logos_btn_upload']) ?>
             </button>
         </form>
@@ -824,7 +824,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                              alt="<?= h($brand['name']) ?>"
                              width="44"
                              height="44"
-                             style="width:2.75rem;height:2.75rem;object-fit:contain;border-radius:0.45rem;border:2px solid rgba(0,0,0,.2);background:#070b12">
+                             style="width:2.75rem;height:2.75rem;object-fit:contain;border-radius:var(--ac-radius-md);border:2px solid var(--ac-color-border-control);background:var(--ac-reunion-events-logo-plate)">
                         <?php endif; ?>
                     </td>
                     <td><?= h($brand['name']) ?></td>
@@ -852,7 +852,7 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
     <?php endif; ?>
 
     <h5 class="mb-3">
-        <i class="fa-solid fa-<?= $editBrand ? 'pen' : 'plus' ?> me-2"></i>
+        <?= ac_icon($editBrand ? 'pen' : 'plus', 'me-2') ?>
         <?= h($editBrand ? $txt['logos_btn_update'] : $txt['logos_btn_add']) ?>
     </h5>
 
@@ -906,8 +906,8 @@ $frontierLogoCustom = reGetSetting('frontier_logo_file', '') !== '';
                 <div class="form-text"><?= h($txt['logos_file_help']) ?></div>
             </div>
             <div class="col-12 d-flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-sm btn-primary-altered">
-                    <i class="fa-solid fa-floppy-disk me-1"></i>
+                <button type="submit" class="ac-button ac-button--sm">
+                    <?= ac_icon('save', 'me-1') ?>
                     <?= h($editBrand ? $txt['logos_btn_update'] : $txt['logos_btn_add']) ?>
                 </button>
                 <?php if ($editBrand): ?>

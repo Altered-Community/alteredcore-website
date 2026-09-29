@@ -48,62 +48,66 @@ $ownBoosterCount = $ownLoggedIn ? ownGetBoosterCount((int)($_SESSION['user_id'] 
 // collection/boosters/history pages it used to serve moved here).
 $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNERSHIP_WEB_URL, '/') . '/' : '';
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
-    <div class="d-flex align-items-center justify-content-between mb-2">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-    </div>
-    <p class="text-muted mb-4"><?= h($txt['intro']) ?></p>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($pageTitle) ?></h1>
+            <p class="ac-page-header__subtitle"><?= h($txt['intro']) ?></p>
+        </div>
+    </header>
 
     <?php if (!$ownEnabled): ?>
-    <div class="alert alert-warning"><?= h($txt['unavailable']) ?></div>
+    <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['unavailable']) ?></div></div>
     <?php elseif (!$ownLoggedIn): ?>
-    <div class="card-altered p-4">
-        <p class="mb-2 text-muted"><?= h($txt['login_prompt']) ?></p>
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['btn_login']) ?>
-        </a>
+    <div class="ac-card">
+        <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+        <div class="ac-card__footer">
+            <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+                <?= ac_icon('log-in') ?><?= h($txt['btn_login']) ?>
+            </a>
+        </div>
     </div>
     <?php else: ?>
 
     <div class="row g-3">
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership">
-                <i class="fa-solid fa-layer-group fa-2x mb-3"></i>
-                <div class="fw-semibold mb-1"><?= h($txt['collection']) ?></div>
-                <div class="small text-muted"><?= h($txt['collection_d']) ?></div>
+            <a class="ac-card ac-card--interactive own-hub-tile" href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership">
+                <?= ac_icon('layers', 'own-hub-tile-icon') ?>
+                <div class="ac-card__title"><?= h($txt['collection']) ?></div>
+                <div class="ac-card__meta"><?= h($txt['collection_d']) ?></div>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/boosters">
-                <i class="fa-solid fa-gift fa-2x mb-3"></i>
-                <div class="fw-semibold mb-1"><?= h($txt['boosters']) ?></div>
-                <div class="small text-muted"><?= h($txt['boosters_d']) ?></div>
+            <a class="ac-card ac-card--interactive own-hub-tile" href="<?= h(BASE_URL) ?>/pages/boosters">
+                <?= ac_icon('gift', 'own-hub-tile-icon') ?>
+                <div class="ac-card__title"><?= h($txt['boosters']) ?></div>
+                <div class="ac-card__meta"><?= h($txt['boosters_d']) ?></div>
                 <?php if ($ownBoosterCount !== null): ?>
-                <div class="own-hub-tile-count"><?= h(sprintf($txt['boosters_remaining'], $ownBoosterCount)) ?></div>
+                <span class="ac-badge ac-badge--blue own-hub-tile-count"><?= h(sprintf($txt['boosters_remaining'], $ownBoosterCount)) ?></span>
                 <?php endif; ?>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/ownership-history">
-                <i class="fa-solid fa-clock-rotate-left fa-2x mb-3"></i>
-                <div class="fw-semibold mb-1"><?= h($txt['history']) ?></div>
-                <div class="small text-muted"><?= h($txt['history_d']) ?></div>
+            <a class="ac-card ac-card--interactive own-hub-tile" href="<?= h(BASE_URL) ?>/pages/ownership-history">
+                <?= ac_icon('history', 'own-hub-tile-icon') ?>
+                <div class="ac-card__title"><?= h($txt['history']) ?></div>
+                <div class="ac-card__meta"><?= h($txt['history_d']) ?></div>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts">
-                <i class="fa-solid fa-palette fa-2x mb-3"></i>
-                <div class="fw-semibold mb-1"><?= h($txt['altArts']) ?></div>
-                <div class="small text-muted"><?= h($txt['altArts_d']) ?></div>
+            <a class="ac-card ac-card--interactive own-hub-tile" href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts">
+                <?= ac_icon('palette', 'own-hub-tile-icon') ?>
+                <div class="ac-card__title"><?= h($txt['altArts']) ?></div>
+                <div class="ac-card__meta"><?= h($txt['altArts_d']) ?></div>
             </a>
         </div>
         <?php if ($ownImportUrl): ?>
         <div class="col-6 col-md-3">
-            <a class="card-altered own-hub-tile d-block p-4 text-decoration-none h-100" href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
-                <i class="fa-solid fa-file-import fa-2x mb-3"></i>
-                <div class="fw-semibold mb-1"><?= h($txt['import']) ?></div>
-                <div class="small text-muted"><?= h($txt['import_d']) ?></div>
+            <a class="ac-card ac-card--interactive own-hub-tile" href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
+                <?= ac_icon('file-input', 'own-hub-tile-icon') ?>
+                <div class="ac-card__title"><?= h($txt['import']) ?></div>
+                <div class="ac-card__meta"><?= h($txt['import_d']) ?></div>
             </a>
         </div>
         <?php endif; ?>

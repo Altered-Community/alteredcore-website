@@ -27,25 +27,28 @@ if (kcIsLoggedIn()) {
 // collection/boosters/history pages it used to serve moved here).
 $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNERSHIP_WEB_URL, '/') . '/' : '';
 ?>
-<nav class="own-subnav mb-4">
-    <div class="own-subnav-inner">
-        <a class="own-subnav-link<?= $ownActiveTab === 'collection' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership">
-            <i class="fa-solid fa-layer-group"></i><span><?= h($ownSubnavTxt['collection']) ?></span>
-        </a>
-        <a class="own-subnav-link<?= $ownActiveTab === 'boosters' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/boosters">
-            <i class="fa-solid fa-gift"></i><span><?= h($ownSubnavTxt['boosters']) ?></span>
-            <span id="own-nav-boosters-badge" class="own-subnav-badge"<?= ($ownBoosterCount === null || $ownBoosterCount <= 0) ? ' hidden' : '' ?>><?= $ownBoosterCount !== null ? h((string)($ownBoosterCount > 99 ? '99+' : $ownBoosterCount)) : '0' ?></span>
-        </a>
-        <a class="own-subnav-link<?= $ownActiveTab === 'history' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-history">
-            <i class="fa-solid fa-clock-rotate-left"></i><span><?= h($ownSubnavTxt['history']) ?></span>
-        </a>
-        <a class="own-subnav-link<?= $ownActiveTab === 'alt-arts' ? ' own-subnav-link--active' : '' ?>" href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts">
-            <i class="fa-solid fa-palette"></i><span><?= h($ownSubnavTxt['altArts']) ?></span>
-        </a>
-        <?php if ($ownImportUrl): ?>
-        <a class="own-subnav-link" href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
-            <i class="fa-solid fa-file-import"></i><span><?= h($ownSubnavTxt['import']) ?></span>
-        </a>
-        <?php endif; ?>
-    </div>
+<?php
+$ownTab = function (string $tab) use ($ownActiveTab): string {
+    return $ownActiveTab === $tab ? ' aria-current="page"' : '';
+};
+?>
+<nav class="own-subnav ac-tabs ac-tabs--underline" aria-label="<?= h($ownSubnavTxt['collection']) ?>">
+    <a href="<?= h(BASE_URL) ?>/pages/ownership-collection?tab=ownership"<?= $ownTab('collection') ?>>
+        <?= ac_icon('layers') ?><span><?= h($ownSubnavTxt['collection']) ?></span>
+    </a>
+    <a href="<?= h(BASE_URL) ?>/pages/boosters"<?= $ownTab('boosters') ?>>
+        <?= ac_icon('gift') ?><span><?= h($ownSubnavTxt['boosters']) ?></span>
+        <span id="own-nav-boosters-badge" class="ac-count"<?= ($ownBoosterCount === null || $ownBoosterCount <= 0) ? ' hidden' : '' ?>><?= $ownBoosterCount !== null ? h((string)($ownBoosterCount > 99 ? '99+' : $ownBoosterCount)) : '0' ?></span>
+    </a>
+    <a href="<?= h(BASE_URL) ?>/pages/ownership-history"<?= $ownTab('history') ?>>
+        <?= ac_icon('history') ?><span><?= h($ownSubnavTxt['history']) ?></span>
+    </a>
+    <a href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts"<?= $ownTab('alt-arts') ?>>
+        <?= ac_icon('palette') ?><span><?= h($ownSubnavTxt['altArts']) ?></span>
+    </a>
+    <?php if ($ownImportUrl): ?>
+    <a href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
+        <?= ac_icon('file-input') ?><span><?= h($ownSubnavTxt['import']) ?></span>
+    </a>
+    <?php endif; ?>
 </nav>

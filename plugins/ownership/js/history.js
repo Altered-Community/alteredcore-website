@@ -131,7 +131,7 @@
             ? '<altered-card ref="' + escapeHtml(ref) + '" locale="' + escapeHtml(locale()) + '"></altered-card>'
             : (imagePath
                 ? '<img src="' + escapeHtml(imagePath) + '" alt="' + escapeHtml(name) + '" style="max-width:100%;max-height:100%;">'
-                : '<div class="own-opener-cover-fallback"><i class="fa-solid fa-image fa-3x"></i></div>');
+                : '<div class="own-opener-cover-fallback">' + (window.acIcon ? window.acIcon('image') : '') + '</div>');
         window.OWN_CARD_TILT?.attach(zoomContent, { holo: isUnique });
         zoomBackdrop.hidden = false;
     };

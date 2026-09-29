@@ -164,45 +164,47 @@ if (!$userId) {
 
 $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournamentId);
 ?>
-<div class="container py-4" id="tr-page">
+<div class="ac-page" id="tr-page">
 
 <?php if ($loginRequired): ?>
-    <div class="card-altered p-4 text-center">
-        <i class="fa-solid fa-right-to-bracket" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:.3"></i>
-        <h4 class="fw-bold"><?= h($txt['login_title']) ?></h4>
-        <p class="text-muted"><?= h($txt['login_text']) ?></p>
-        <a href="<?= BASE_URL ?>/pages/login" class="btn btn-primary-altered"><?= h($txt['login_btn']) ?></a>
+    <div class="ac-card">
+        <div class="ac-empty">
+            <?= ac_icon('log-in') ?>
+            <h1 class="ac-empty__title"><?= h($txt['login_title']) ?></h1>
+            <p class="mb-0"><?= h($txt['login_text']) ?></p>
+            <a href="<?= BASE_URL ?>/pages/login" class="ac-button"><?= ac_icon('log-in') ?><?= h($txt['login_btn']) ?></a>
+        </div>
     </div>
 <?php elseif ($notFoundError !== null): ?>
-    <div class="card-altered p-4 text-center">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:.3"></i>
-        <h4 class="fw-bold"><?= h($txt['not_found_title']) ?></h4>
-        <p class="text-muted"><?= h(sprintf($txt['not_found_text'], $notFoundError)) ?></p>
-        <a href="<?= BASE_URL ?>/pages/tournaments" class="btn btn-outline-secondary"><?= $txt['back_to_list'] ?></a>
+    <div class="ac-card">
+        <div class="ac-empty">
+            <?= ac_icon('triangle-alert') ?>
+            <h1 class="ac-empty__title"><?= h($txt['not_found_title']) ?></h1>
+            <p class="mb-0"><?= h(sprintf($txt['not_found_text'], $notFoundError)) ?></p>
+            <a href="<?= BASE_URL ?>/pages/tournaments" class="ac-button ac-button--secondary"><?= $txt['back_to_list'] ?></a>
+        </div>
     </div>
 <?php else: ?>
 
     <div id="tr-page-loader" class="tr-page-loader">
-        <span class="tr-spinner tr-spinner-lg"></span>
+        <span class="ac-spinner tr-spinner-lg" role="presentation"></span>
         <span><?= h($txt['loading_tournament']) ?></span>
     </div>
 
     <div id="tr-page-content" style="display:none">
-    <div class="section-title mb-3"><span><?= h($txt['page_title']) ?></span></div>
-
     <!-- Back link -->
-    <div class="mb-3">
-        <a href="<?= BASE_URL ?>/pages/tournaments" class="text-decoration-none">
-            <?= $txt['back_to_list'] ?>
-        </a>
-    </div>
+    <nav class="ac-breadcrumb" aria-label="breadcrumb">
+        <a href="<?= BASE_URL ?>/pages/tournaments"><?= $txt['back_to_list'] ?></a>
+    </nav>
+
+    <p class="ac-text-overline mb-2"><?= h($txt['page_title']) ?></p>
 
     <!-- Tournament header -->
-    <div class="card-altered p-4 mb-4">
+    <div class="ac-card mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-            <h4 class="fw-bold mb-0" id="tr-tournament-name"></h4>
-            <a href="<?= h($bgaUrl) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
-                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['bga_link']) ?>
+            <h1 class="ac-text-title mb-0" id="tr-tournament-name"></h1>
+            <a href="<?= h($bgaUrl) ?>" target="_blank" rel="noopener" class="ac-button ac-button--secondary ac-button--sm">
+                <?= ac_icon('external-link') ?><?= h($txt['bga_link']) ?>
             </a>
         </div>
         <div class="d-flex flex-wrap gap-3 text-muted small" id="tr-tournament-meta">
@@ -224,13 +226,13 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
 
     <!-- Filters -->
     <div class="tr-filter-bar">
-        <select id="tr-filter-faction" class="form-select form-select-sm" style="max-width:180px">
+        <select id="tr-filter-faction" class="ac-select tr-filter-faction" aria-label="<?= h($txt['filter_faction']) ?>">
             <option value=""><?= h($txt['filter_faction']) ?></option>
         </select>
-        <select id="tr-filter-hero" class="form-select form-select-sm" style="max-width:200px">
+        <select id="tr-filter-hero" class="ac-select tr-filter-hero" aria-label="<?= h($txt['filter_hero']) ?>">
             <option value=""><?= h($txt['filter_hero']) ?></option>
         </select>
-        <input type="search" id="tr-filter-search" class="form-control form-control-sm" style="max-width:220px" placeholder="<?= h($txt['filter_search_ph']) ?>">
+        <input type="search" id="tr-filter-search" class="ac-input tr-filter-search" aria-label="<?= h($txt['filter_search_ph']) ?>" placeholder="<?= h($txt['filter_search_ph']) ?>">
     </div>
 
     <!-- Standings -->
@@ -249,7 +251,7 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
 <!-- Chart detail modal (full faction / hero breakdown) -->
 <div id="tr-chart-modal" class="tr-modal-overlay" style="display:none">
     <div class="tr-modal-panel">
-        <button type="button" class="tr-modal-close-btn" id="tr-chart-modal-close" aria-label="Close">&times;</button>
+        <button type="button" class="ac-icon-button ac-icon-button--ghost ac-icon-button--sm tr-modal-close-btn" id="tr-chart-modal-close" aria-label="Close"><?= ac_icon('x') ?></button>
         <div id="tr-chart-modal-body"></div>
     </div>
 </div>
@@ -259,10 +261,10 @@ $bgaUrl = 'https://boardgamearena.com/tournament?id=' . rawurlencode($tournament
 <div id="tr-panel-zoom" class="tr-panel-zoom"></div>
 <div id="tr-player-panel" class="tr-panel">
     <div class="tr-panel-header">
-        <h5 class="tr-panel-title" id="tr-player-panel-title"></h5>
+        <h2 class="tr-panel-title" id="tr-player-panel-title"></h2>
         <div class="tr-panel-header-actions">
-            <button type="button" class="tr-panel-close" id="tr-player-panel-close">
-                <i class="fa-solid fa-xmark"></i>
+            <button type="button" class="ac-icon-button ac-icon-button--sm tr-panel-close" id="tr-player-panel-close" aria-label="Close">
+                <?= ac_icon('x') ?>
             </button>
         </div>
     </div>

@@ -97,33 +97,37 @@ if ($userId) {
     }
 }
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
-    <div class="section-title mb-3"><span><?= h($txt['login_title']) ?></span></div>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($txt['login_title']) ?></h1>
+        </div>
+    </header>
 
-    <div class="card-altered p-4">
+    <div class="ac-card">
         <?php if (!$userId): ?>
-            <div class="text-center text-muted py-4">
-                <i class="fa-solid fa-right-to-bracket" style="font-size:2rem;margin-bottom:1rem;display:block;opacity:.3"></i>
-                <p><?= $txt['login_required'] ?></p>
-                <a href="<?= BASE_URL ?>/pages/login" class="btn btn-sm btn-primary-altered"><?= h($txt['login_btn'] ?? 'Log in') ?></a>
+            <div class="ac-empty">
+                <?= ac_icon('log-in') ?>
+                <p class="mb-0"><?= $txt['login_required'] ?></p>
+                <a href="<?= BASE_URL ?>/pages/login" class="ac-button ac-button--sm"><?= ac_icon('log-in') ?><?= h($txt['login_btn'] ?? 'Log in') ?></a>
             </div>
         <?php elseif ($liveError): ?>
-            <div class="alert alert-warning mb-0"><?= h(sprintf($txt['live_error'], $liveError)) ?></div>
+            <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h(sprintf($txt['live_error'], $liveError)) ?></div></div>
         <?php else: ?>
 
             <?php if (!empty($modes)): ?>
-            <div class="mb-2">
-                <div class="text-muted small mb-1"><?= h($txt['filter_mode']) ?></div>
-                <div class="cat-filter">
+            <div class="mb-3">
+                <div class="ac-text-overline mb-1"><?= h($txt['filter_mode']) ?></div>
+                <div class="ac-row">
                     <a href="<?= h(trTournamentsListUrl('', $selectedMinPlayers, 1)) ?>"
-                       class="<?= $selectedMode === '' ? 'active' : '' ?>"><?= h($txt['filter_all_modes']) ?></a>
+                       class="ac-chip"<?= $selectedMode === '' ? ' aria-current="true"' : '' ?>><?= h($txt['filter_all_modes']) ?></a>
                     <?php foreach ($modes as $mode):
                         $modeDisplay = trModeDisplay((string)$mode, $uiLang);
                     ?>
                     <a href="<?= h(trTournamentsListUrl((string)$mode, $selectedMinPlayers, 1)) ?>"
-                       class="<?= $selectedMode === (string)$mode ? 'active' : '' ?>">
-                        <span style="width:8px;height:8px;border-radius:50%;background:<?= h($modeDisplay['color']) ?>;flex-shrink:0;display:inline-block;margin-right:.35rem"></span><?= h($modeDisplay['label']) ?>
+                       class="ac-chip"<?= $selectedMode === (string)$mode ? ' aria-current="true"' : '' ?>>
+                        <span class="ac-chip__dot" style="--ac-chip-dot:<?= h($modeDisplay['color']) ?>"></span><?= h($modeDisplay['label']) ?>
                     </a>
                     <?php endforeach; ?>
                 </div>
@@ -131,11 +135,11 @@ if ($userId) {
             <?php endif; ?>
 
             <div class="mb-3">
-                <div class="text-muted small mb-1"><?= h($txt['filter_min_players']) ?></div>
-                <div class="cat-filter">
+                <div class="ac-text-overline mb-1"><?= h($txt['filter_min_players']) ?></div>
+                <div class="ac-row">
                     <?php foreach ($playerThresholds as $threshold): ?>
                     <a href="<?= h(trTournamentsListUrl($selectedMode, $threshold, 1)) ?>"
-                       class="<?= $selectedMinPlayers === $threshold ? 'active' : '' ?>">
+                       class="ac-chip"<?= $selectedMinPlayers === $threshold ? ' aria-current="true"' : '' ?>>
                         <?= $threshold === 0 ? h($txt['filter_any_players']) : h($threshold . '+') ?>
                     </a>
                     <?php endforeach; ?>
@@ -143,9 +147,9 @@ if ($userId) {
             </div>
 
             <?php if (empty($liveTournaments)): ?>
-            <div class="text-center text-muted py-4">
-                <i class="fa-solid fa-trophy" style="font-size:3rem;margin-bottom:1rem;display:block;opacity:.3"></i>
-                <p><?= $totalCount === 0 && $selectedMode === '' && $selectedMinPlayers === 0 ? $txt['no_tournaments'] : $txt['no_matches'] ?></p>
+            <div class="ac-empty">
+                <?= ac_icon('trophy') ?>
+                <p class="mb-0"><?= $totalCount === 0 && $selectedMode === '' && $selectedMinPlayers === 0 ? $txt['no_tournaments'] : $txt['no_matches'] ?></p>
             </div>
             <?php else: ?>
             <div class="list-group">
@@ -153,35 +157,35 @@ if ($userId) {
                 <a href="<?= BASE_URL ?>/pages/tournament?id=<?= h(urlencode($t['tournament_id'])) ?>"
                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="mb-1">
+                        <h2 class="tr-list-title">
                             <?= h($t['tournament_name'] ?: 'Tournament #' . $t['tournament_id']) ?>
                             <?php if ($t['mode']['label'] !== ''): ?>
-                            <span class="badge ms-1" style="background:<?= h($t['mode']['color']) ?>;color:#fff;font-size:.72rem"><?= h($t['mode']['label']) ?></span>
+                            <span class="ac-badge"><span class="ac-chip__dot" style="--ac-chip-dot:<?= h($t['mode']['color']) ?>"></span><?= h($t['mode']['label']) ?></span>
                             <?php endif; ?>
-                        </h5>
+                        </h2>
                         <small class="text-muted d-flex flex-wrap gap-3">
                             <?php if ($t['last_game_at']): ?>
-                            <span><i class="fa-solid fa-calendar-day me-1"></i><?= h($t['last_game_at']) ?></span>
+                            <span><?= ac_icon('calendar', 'me-1') ?><?= h($t['last_game_at']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($t['total_players'])): ?>
-                            <span><i class="fa-solid fa-users me-1"></i><?= sprintf($txt['players'], (int)$t['total_players']) ?></span>
+                            <span><?= ac_icon('users', 'me-1') ?><?= sprintf($txt['players'], (int)$t['total_players']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($t['total_games'])): ?>
-                            <span><i class="fa-solid fa-chess-board me-1"></i><?= sprintf($txt['total_games'], (int)$t['total_games']) ?></span>
+                            <span><?= ac_icon('grid-3x3', 'me-1') ?><?= sprintf($txt['total_games'], (int)$t['total_games']) ?></span>
                             <?php endif; ?>
                         </small>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                    <?= ac_icon('chevron-right', 'text-muted') ?>
                 </a>
                 <?php endforeach; ?>
             </div>
 
             <?php if ($totalPages > 1): ?>
-            <nav class="mt-4 d-flex justify-content-center">
-                <ul class="pagination pagination-altered">
+            <nav aria-label="Pagination">
+                <ul class="ac-pagination">
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                        <a class="page-link" href="<?= h(trTournamentsListUrl($selectedMode, $selectedMinPlayers, $i)) ?>"><?= $i ?></a>
+                    <li>
+                        <a href="<?= h(trTournamentsListUrl($selectedMode, $selectedMinPlayers, $i)) ?>"<?= $i === $currentPage ? ' aria-current="page"' : '' ?>><?= $i ?></a>
                     </li>
                     <?php endfor; ?>
                 </ul>

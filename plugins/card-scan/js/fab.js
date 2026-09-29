@@ -23,7 +23,7 @@
         a.id        = 'cs-fab';
         a.href      = '/pages/qrscan';
         a.setAttribute('aria-label', label);
-        a.innerHTML = '<i class="fa-solid fa-qrcode" aria-hidden="true"></i>'
+        a.innerHTML = (typeof window.acIcon === 'function' ? window.acIcon('qr-code') : '')
                     + '<span>' + label + '</span>';
 
         document.body.appendChild(a);

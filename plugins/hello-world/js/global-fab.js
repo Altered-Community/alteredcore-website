@@ -12,7 +12,8 @@
 
         var badge = document.createElement('div');
         badge.id        = 'hw-global-badge';
-        badge.innerHTML = '<i class="fa-solid fa-earth-europe" aria-hidden="true"></i> Hello World';
+        // acIcon() (design-system/js/ac.js, loaded by the shell) returns the SVG of a Lucide icon.
+        badge.innerHTML = acIcon('earth') + ' Hello World';
         document.body.appendChild(badge);
     });
 }());
