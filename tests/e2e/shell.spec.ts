@@ -41,6 +41,10 @@ test.describe('Shell · SPA pages', () => {
     expect(await page.evaluate(() => (window as unknown as { AlteredCore: { services: Record<string, string> } }).AlteredCore.services['decks'])).toBe('/api/v1/services/decks');
 
     // The plugin renders inside its shadow root; none of its styles land in the site's <head>.
+    // Component styles arrive with the first routed screen (the root component has none).
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelectorAll('style').length))
+      .toBeGreaterThan(0);
     const styles = await page.evaluate(() => ({
       head: [...document.head.querySelectorAll('style')].filter((s) => /_ng(host|content)-/.test(s.textContent ?? '')).length,
       shadow: document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelectorAll('style').length,
@@ -48,16 +52,22 @@ test.describe('Shell · SPA pages', () => {
     expect(styles.head).toBe(0);
     expect(styles.shadow).toBeGreaterThan(0);
 
-    // Bootstrap (site) does not style the plugin's buttons, the site theme tokens do reach it.
+    // Design system: the shell injects its base and ac-* component CSS into the shadow root,
+    // before the plugin's own styles; the --ac-* tokens inherit from <html> (both themes).
     const probe = await page.evaluate(() => {
-      const root = document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!.querySelector('.ar-embed') as HTMLElement;
-      const css = getComputedStyle(root);
+      const shadow = document.querySelector('[data-ac-plugin="rebuilder"]')!.shadowRoot!;
+      const root = shadow.querySelector('.ac-plugin-root') as HTMLElement;
+      const links = [...shadow.querySelectorAll('link[rel="stylesheet"]')].map((l) => new URL((l as HTMLLinkElement).href).pathname);
       return {
-        primary: css.getPropertyValue('--ar-color-primary').trim().toLowerCase(),
+        primary: getComputedStyle(root).getPropertyValue('--ac-color-primary').trim().toLowerCase(),
         site: getComputedStyle(document.documentElement).getPropertyValue('--ac-color-primary').trim().toLowerCase(),
+        firstLink: links[0] ?? '',
+        components: links.some((l) => l.startsWith('/design-system/css/components/')),
       };
     });
     expect(probe.primary).toBe(probe.site);
+    expect(probe.firstLink).toBe('/design-system/css/base.css');
+    expect(probe.components).toBe(true);
   });
 
   test('service relay: listed services, api/ paths, CSRF on writes', async ({ page, request }) => {

@@ -302,7 +302,7 @@ for ($__c = 1; $__c <= 4; $__c++) {
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
             <input type="hidden" name="action" value="save_col_content">
             <?php for ($__c = 1; $__c <= 4; $__c++): ?>
-            <div class="mb-4<?= $__c < 4 ? ' pb-4' : '' ?>" style="<?= $__c < 4 ? 'border-bottom:1px solid var(--neutral-200)' : '' ?>">
+            <div class="mb-4<?= $__c < 4 ? ' pb-4' : '' ?>" style="<?= $__c < 4 ? 'border-bottom:1px solid var(--ac-color-border)' : '' ?>">
                 <div class="fw-semibold mb-2" style="font-size:.85rem"><?= h($colLabels[$__c]) ?></div>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -366,7 +366,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
                             <div id="ft_bg_prev" class="mb-2" style="<?= $_ftBgNow ? '' : 'display:none' ?>">
                                 <div style="position:relative;display:inline-block">
                                     <img src="<?= $_ftBgNow ? h(BASE_URL . '/' . $_ftBgNow) : '' ?>" alt=""
-                                         style="max-height:60px;border-radius:6px;border:1px solid var(--neutral-200)">
+                                         style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                                 </div>
@@ -388,7 +388,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
             </div>
 
             <!-- Deco left -->
-            <div class="col-md-6" style="border-top:1px solid var(--neutral-100);padding-top:1.25rem">
+            <div class="col-md-6" style="border-top:1px solid var(--ac-color-divider);padding-top:1.25rem">
                 <div class="fw-semibold mb-2" style="font-size:.85rem">Left decoration</div>
                 <div class="mb-3 img-picker-widget"
                      data-input="ft_dl_inp"
@@ -401,7 +401,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
                     <div id="ft_dl_prev" class="mb-2" style="<?= $_ftDecoLNow ? '' : 'display:none' ?>">
                         <div style="position:relative;display:inline-block">
                             <img src="<?= $_ftDecoLNow ? h(BASE_URL . '/' . $_ftDecoLNow) : '' ?>" alt=""
-                                 style="max-height:60px;border-radius:6px;border:1px solid var(--neutral-200)">
+                                 style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                             <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                     style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                         </div>
@@ -419,7 +419,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
             </div>
 
             <!-- Deco right -->
-            <div class="col-md-6" style="border-top:1px solid var(--neutral-100);padding-top:1.25rem">
+            <div class="col-md-6" style="border-top:1px solid var(--ac-color-divider);padding-top:1.25rem">
                 <div class="fw-semibold mb-2" style="font-size:.85rem">Right decoration</div>
                 <div class="mb-3 img-picker-widget"
                      data-input="ft_dr_inp"
@@ -432,7 +432,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
                     <div id="ft_dr_prev" class="mb-2" style="<?= $_ftDecoRNow ? '' : 'display:none' ?>">
                         <div style="position:relative;display:inline-block">
                             <img src="<?= $_ftDecoRNow ? h(BASE_URL . '/' . $_ftDecoRNow) : '' ?>" alt=""
-                                 style="max-height:60px;border-radius:6px;border:1px solid var(--neutral-200)">
+                                 style="max-height:60px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                             <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                     style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                         </div>
@@ -505,7 +505,7 @@ $_ftDecoROp  = getSetting('footer_deco_right_opacity') !== '' ? (int)getSetting(
                         <td><?= h($link['label_en']) ?></td>
                         <td><?= h($link['label_fr']) ?></td>
                         <td class="text-muted small"><?= h($link['url']) ?></td>
-                        <td><?php if (!empty($link['icon'])): ?><i class="<?= h($link['icon']) ?>"></i><?php endif; ?></td>
+                        <td><?php if (!empty($link['icon'])): ?><?= ac_icon((string)($link['icon'])) ?><?php endif; ?></td>
                         <td class="text-end" style="white-space:nowrap">
                             <!-- Move up -->
                             <form method="post" class="d-inline">

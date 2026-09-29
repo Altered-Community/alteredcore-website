@@ -63,7 +63,7 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
 <div class="hero-announcement alert-<?= h($announcement['color']) ?>" role="alert">
     <div class="container d-flex align-items-start gap-3">
         <?php if ($announcement['icon'] !== ''): ?>
-        <i class="<?= h($announcement['icon']) ?> flex-shrink-0 mt-1"></i>
+        <?= ac_icon((string)$announcement['icon'], 'flex-shrink-0 mt-1') ?>
         <?php endif; ?>
         <div>
             <?php if ($announcement['title'] !== ''): ?>

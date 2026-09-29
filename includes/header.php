@@ -115,7 +115,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
                      ? $pageKeywords
                      : (getSetting('meta_keywords') ?: '');
     $_robots      = isset($pageRobots) && $pageRobots !== '' ? $pageRobots : 'index, follow';
-    $_themeColor  = getSetting('theme_color') ?: '#C49A2A';
+    $_themeColor  = getSetting('theme_color') ?: '#1463d6'; // --ac-color-primary
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
     $_scheme      = request_scheme();
@@ -191,6 +191,9 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <meta name="msapplication-config"                  content="<?= BASE_URL ?>/assets/favicon/browserconfig.xml">
     <meta name="theme-color"                           content="<?= h($_themeColor) ?>">
 
+    <!-- Density (pointer | touch) before the first paint: control heights follow it -->
+    <script><?= dsDensityScript() ?></script>
+
     <!-- Apply saved theme before CSS loads to prevent flash of wrong theme -->
     <?php if (isset($pageForceTheme) && $pageForceTheme === 'dark'): ?>
     <script>document.documentElement.setAttribute('data-theme','dark');</script>
@@ -202,9 +205,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 
     <!-- Preconnect hints: start DNS+TCP+TLS handshakes before the browser hits the link elements -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
     <?php if (!empty($_preloadImage)): ?>
     <link rel="preload" as="image" fetchpriority="high" href="<?= h($_preloadImage) ?>">
@@ -214,10 +215,13 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <!-- Bootstrap CSS — render-blocking (controls layout, must load before paint) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 
-    <!-- Font Awesome — non-blocking: preload starts fetch immediately, onload swaps rel to stylesheet -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+    <!-- Design system (design-system/README.md): fonts, tokens, base, ac-* components, Lucide
+         rendering of the legacy Font Awesome classes, then the Bootstrap and legacy bridges -->
+    <link rel="preload" href="<?= BASE_URL ?>/design-system/fonts/figtree/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <?php foreach (dsDocumentStylesheets() as $_dsCss): ?>
+    <link rel="stylesheet" href="<?= h(dsUrl($_dsCss)) ?>">
+    <?php endforeach; ?>
+    <script src="<?= h(dsUrl('js/ac.js')) ?>" defer></script>
 
     <!-- Flag Icons — non-blocking -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"
@@ -261,7 +265,6 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
         }
         // body.has-bg prefix gives higher specificity than .site-header alone in style.css
         $_bgCss .= 'body.has-bg .site-header{background:transparent;}';
-        $_bgCss .= 'body.has-bg .site-footer{background:rgba(250,245,232,0.80);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}';
     ?>
     <style><?= $_bgCss ?></style>
     <?php endif; ?>

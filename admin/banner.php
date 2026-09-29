@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div id="banner_img_preview" class="mb-2" style="<?= !empty($row['bg_image']) ? '' : 'display:none' ?>">
                                 <div style="position:relative;display:inline-block">
                                     <img src="<?= !empty($row['bg_image']) ? h(BASE_URL . '/' . $row['bg_image']) : '' ?>" alt=""
-                                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                                 </div>

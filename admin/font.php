@@ -94,7 +94,7 @@ foreach (array_keys($slots) as $key) {
         <div class="card-altered p-3">
             <div class="row align-items-center g-3">
                 <div class="col-md-3">
-                    <div class="fw-bold" style="color:var(--neutral-800)"><?= h($label) ?></div>
+                    <div class="fw-bold" style="color:var(--ac-color-text)"><?= h($label) ?></div>
                     <div class="text-muted small mt-1"><code><?= h($selector) ?></code></div>
                 </div>
                 <div class="col-md-4">
@@ -114,7 +114,7 @@ foreach (array_keys($slots) as $key) {
                 </div>
                 <div class="col-md-5">
                     <div id="preview-<?= h($key) ?>"
-                         style="font-family:<?= $previewFam ? "'{$previewFam}',sans-serif" : 'inherit' ?>;font-size:1.15rem;color:var(--neutral-700);padding:.4rem 0">
+                         style="font-family:<?= $previewFam ? "'{$previewFam}',sans-serif" : 'inherit' ?>;font-size:1.15rem;color:var(--ac-color-text-2);padding:.4rem 0">
                         The quick brown fox — 0123456789
                     </div>
                 </div>

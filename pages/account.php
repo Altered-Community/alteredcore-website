@@ -203,7 +203,7 @@ include dirname(__DIR__) . '/includes/header.php';
         <div class="modal-content" style="border-radius:1rem;border:none">
             <div class="modal-body p-4 text-center" style="background:var(--sand-100)">
                 <div style="font-size:2.5rem;margin-bottom:.75rem">
-                    <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
+                    <?= ac_icon('triangle-alert', 'text-danger') ?>
                 </div>
                 <h5 style="font-weight:800;color:var(--neutral-800)"><?= $txt['account_delete_title'] ?></h5>
                 <p style="color:var(--neutral-600);font-size:.9rem;margin:.75rem 0 .5rem">

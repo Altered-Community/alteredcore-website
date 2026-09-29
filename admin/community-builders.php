@@ -128,11 +128,11 @@ function cbPageUrl(int $p): string {
             <?php else: ?>
                 <?php foreach ($rows as $i => $row): ?>
                 <tr>
-                    <td style="width:44px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="width:44px;color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td style="width:60px">
                         <?php if ($row['image']): ?>
                         <img src="<?= h(assetUrl($row['image'])) ?>" alt=""
-                             style="height:36px;width:36px;object-fit:cover;border-radius:4px;border:1px solid var(--neutral-200)">
+                             style="height:36px;width:36px;object-fit:cover;border-radius:var(--ac-radius-xs);border:1px solid var(--ac-color-border)">
                         <?php else: ?>
                         <span class="text-muted small">—</span>
                         <?php endif; ?>

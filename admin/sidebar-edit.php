@@ -2,6 +2,7 @@
 $adminPageTitle = 'Sidebar item';
 $adminSection   = 'sidebar';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db  = getDB();
 $id  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -146,14 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                value="<?= h($row['url']) ?>">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Font Awesome icon</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i id="icon-preview" class="<?= h($row['icon']) ?>"></i></span>
-                            <input type="text" name="icon" id="icon-input" class="form-control"
-                                   value="<?= h($row['icon']) ?>"
-                                   placeholder="fa-solid fa-house">
-                        </div>
-                        <div class="form-text">e.g. <code>fa-solid fa-house</code>, <code>fa-solid fa-newspaper</code> — or Altered icons: <code>fak fa-collection</code>, <code>fak fa-booster-pack</code></div>
+                        <?php adminIconField((string)$row['icon']); ?>
                     </div>
                     <div class="col-12">
                         <div class="form-check">
@@ -210,10 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         toggle();
     });
     toggle();
-
-    document.getElementById('icon-input').addEventListener('input', function () {
-        document.getElementById('icon-preview').className = this.value;
-    });
 }());
 </script>
 

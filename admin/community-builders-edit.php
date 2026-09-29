@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="cb_img_preview" class="mb-2" style="<?= !empty($entry['image']) ? '' : 'display:none' ?>">
                 <div style="position:relative;display:inline-block">
                     <img src="<?= !empty($entry['image']) ? h(assetUrl($entry['image'])) : '' ?>" alt=""
-                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                 </div>
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div id="cb_logo_preview" class="mb-2" style="<?= !empty($entry['deckbuilder_logo']) ? '' : 'display:none' ?>">
                     <div style="position:relative;display:inline-block">
                         <img src="<?= !empty($entry['deckbuilder_logo']) ? h(assetUrl($entry['deckbuilder_logo'])) : '' ?>" alt=""
-                             style="max-height:40px;border-radius:4px;border:1px solid var(--neutral-300)">
+                             style="max-height:40px;border-radius:var(--ac-radius-xs);border:1px solid var(--ac-color-border)">
                         <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                 style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                     </div>

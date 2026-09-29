@@ -93,26 +93,26 @@ for ($i = 29; $i >= 0; $i--) {
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:2rem;font-weight:800;color:var(--primary-400)"><?= $totalNews ?></div>
-            <div style="font-size:.85rem;color:var(--neutral-600)">Total news</div>
+            <div style="font-size:2rem;font-weight:800;color:var(--ac-color-primary)"><?= $totalNews ?></div>
+            <div style="font-size:.85rem;color:var(--ac-color-text-2)">Total news</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:2rem;font-weight:800;color:var(--primary-400)"><?= $pubNews ?></div>
-            <div style="font-size:.85rem;color:var(--neutral-600)">Published</div>
+            <div style="font-size:2rem;font-weight:800;color:var(--ac-color-primary)"><?= $pubNews ?></div>
+            <div style="font-size:.85rem;color:var(--ac-color-text-2)">Published</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:2rem;font-weight:800;color:var(--primary-400)"><?= $cats ?></div>
-            <div style="font-size:.85rem;color:var(--neutral-600)">Categories</div>
+            <div style="font-size:2rem;font-weight:800;color:var(--ac-color-primary)"><?= $cats ?></div>
+            <div style="font-size:.85rem;color:var(--ac-color-text-2)">Categories</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:2rem;font-weight:800;color:var(--primary-400)"><?= $totalUsers ?></div>
-            <div style="font-size:.85rem;color:var(--neutral-600)">
+            <div style="font-size:2rem;font-weight:800;color:var(--ac-color-primary)"><?= $totalUsers ?></div>
+            <div style="font-size:.85rem;color:var(--ac-color-text-2)">
                 Users
                 <span class="text-muted" style="font-size:.75rem">(<?= $kcUsers ?> KC · <?= $adminUsers ?> admin)</span>
             </div>
@@ -122,18 +122,18 @@ for ($i = 29; $i >= 0; $i--) {
 
 <?php if ($hasPending): ?>
 <!-- Pending review -->
-<h6 class="fw-bold mb-3" style="color:var(--neutral-700)">
+<h6 class="fw-bold mb-3" style="color:var(--ac-color-text-2)">
     <i class="fa-solid fa-clock-rotate-left me-1"></i> Pending review
 </h6>
 <div class="card-altered p-3 mb-4">
     <?php if (!empty($pending['news'])): ?>
     <div class="mb-3">
-        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.05em">
+        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--ac-color-text-2);text-transform:uppercase;letter-spacing:.05em">
             <i class="fa-solid fa-newspaper me-1"></i> News (<?= count($pending['news']) ?>)
         </div>
         <div class="d-flex flex-column gap-1">
         <?php foreach ($pending['news'] as $row): ?>
-            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--sand-200);padding-bottom:.4rem">
+            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--ac-color-divider);padding-bottom:.4rem">
                 <span class="text-truncate" style="max-width:60%"><?= h($row['title']) ?></span>
                 <span class="text-muted" style="font-size:.78rem;white-space:nowrap"><?= h($row['category'] ?? '—') ?> · <?= date('d/m/Y', strtotime($row['created_at'])) ?></span>
                 <?php if (adminCanPublish()): ?>
@@ -147,12 +147,12 @@ for ($i = 29; $i >= 0; $i--) {
 
     <?php if (!empty($pending['projects'])): ?>
     <div class="mb-3">
-        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.05em">
+        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--ac-color-text-2);text-transform:uppercase;letter-spacing:.05em">
             <i class="fa-solid fa-rocket me-1"></i> Projects (<?= count($pending['projects']) ?>)
         </div>
         <div class="d-flex flex-column gap-1">
         <?php foreach ($pending['projects'] as $row): ?>
-            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--sand-200);padding-bottom:.4rem">
+            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--ac-color-divider);padding-bottom:.4rem">
                 <span class="text-truncate" style="max-width:55%"><?= h($row['title']) ?></span>
                 <span class="text-muted" style="font-size:.78rem;white-space:nowrap"><?= $row['submitted_by'] ? h($row['submitted_by']) . ' · ' : '' ?><?= date('d/m/Y', strtotime($row['created_at'])) ?></span>
                 <?php if (adminCanPublish()): ?>
@@ -166,12 +166,12 @@ for ($i = 29; $i >= 0; $i--) {
 
     <?php if (!empty($pending['builders'])): ?>
     <div>
-        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.05em">
+        <div class="fw-semibold mb-2" style="font-size:.85rem;color:var(--ac-color-text-2);text-transform:uppercase;letter-spacing:.05em">
             <i class="fa-solid fa-hammer me-1"></i> Community Builders (<?= count($pending['builders']) ?>)
         </div>
         <div class="d-flex flex-column gap-1">
         <?php foreach ($pending['builders'] as $row): ?>
-            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--sand-200);padding-bottom:.4rem">
+            <div class="d-flex align-items-center justify-content-between gap-2" style="font-size:.875rem;border-bottom:1px solid var(--ac-color-divider);padding-bottom:.4rem">
                 <span class="text-truncate" style="max-width:65%"><?= h($row['title']) ?></span>
                 <span class="text-muted" style="font-size:.78rem;white-space:nowrap"><?= date('d/m/Y', strtotime($row['created_at'])) ?></span>
                 <?php if (adminCanPublish()): ?>
@@ -186,44 +186,44 @@ for ($i = 29; $i >= 0; $i--) {
 <?php endif; ?>
 
 <!-- Visits -->
-<h6 class="fw-bold mb-3" style="color:var(--neutral-700)">
+<h6 class="fw-bold mb-3" style="color:var(--ac-color-text-2)">
     <i class="fa-solid fa-chart-line me-1"></i> Visits
 </h6>
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:1.75rem;font-weight:800;color:var(--primary-400)"><?= number_format($viewsToday) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Views today</div>
+            <div style="font-size:1.75rem;font-weight:800;color:var(--ac-color-primary)"><?= number_format($viewsToday) ?></div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Views today</div>
         </div>
     </div>
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
             <div style="font-size:1.75rem;font-weight:800;color:var(--gold-600)"><?= number_format($uniqueToday) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Visitors today</div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Visitors today</div>
         </div>
     </div>
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:1.75rem;font-weight:800;color:var(--primary-400)"><?= number_format($views7d) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Views 7 days</div>
+            <div style="font-size:1.75rem;font-weight:800;color:var(--ac-color-primary)"><?= number_format($views7d) ?></div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Views 7 days</div>
         </div>
     </div>
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
             <div style="font-size:1.75rem;font-weight:800;color:var(--gold-600)"><?= number_format($unique7d) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Visitors 7 days</div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Visitors 7 days</div>
         </div>
     </div>
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
-            <div style="font-size:1.75rem;font-weight:800;color:var(--primary-400)"><?= number_format($views30d) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Views 30 days</div>
+            <div style="font-size:1.75rem;font-weight:800;color:var(--ac-color-primary)"><?= number_format($views30d) ?></div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Views 30 days</div>
         </div>
     </div>
     <div class="col-6 col-md-2">
         <div class="card-altered p-3 text-center">
             <div style="font-size:1.75rem;font-weight:800;color:var(--gold-600)"><?= number_format($unique30d) ?></div>
-            <div style="font-size:.8rem;color:var(--neutral-600)">Visitors 30 days</div>
+            <div style="font-size:.8rem;color:var(--ac-color-text-2)">Visitors 30 days</div>
         </div>
     </div>
 </div>
@@ -232,13 +232,13 @@ for ($i = 29; $i >= 0; $i--) {
 <div class="row g-3 mb-4">
     <div class="col-lg-8">
         <div class="card-altered p-3">
-            <div class="fw-bold mb-3" style="font-size:.9rem;color:var(--neutral-700)">Views per day — last 30 days</div>
+            <div class="fw-bold mb-3" style="font-size:.9rem;color:var(--ac-color-text-2)">Views per day — last 30 days</div>
             <canvas id="visitsChart" height="100"></canvas>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="card-altered p-3 h-100">
-            <div class="fw-bold mb-3" style="font-size:.9rem;color:var(--neutral-700)">Top pages — last 30 days</div>
+            <div class="fw-bold mb-3" style="font-size:.9rem;color:var(--ac-color-text-2)">Top pages — last 30 days</div>
             <?php if (empty($topPages)): ?>
                 <p class="text-muted small mb-0">No data yet.</p>
             <?php else: ?>
@@ -249,11 +249,11 @@ for ($i = 29; $i >= 0; $i--) {
                 ?>
                 <div class="mb-2">
                     <div class="d-flex justify-content-between" style="font-size:.82rem">
-                        <span style="color:var(--neutral-700)"><?= h($p['page']) ?></span>
-                        <span class="fw-bold" style="color:var(--primary-400)"><?= number_format((int)$p['total']) ?></span>
+                        <span style="color:var(--ac-color-text-2)"><?= h($p['page']) ?></span>
+                        <span class="fw-bold" style="color:var(--ac-color-primary)"><?= number_format((int)$p['total']) ?></span>
                     </div>
-                    <div style="height:4px;background:var(--sand-300);border-radius:2px;margin-top:2px">
-                        <div style="height:4px;width:<?= $pct ?>%;background:var(--primary-400);border-radius:2px"></div>
+                    <div style="height:4px;background:var(--ac-color-track);border-radius:var(--ac-radius-pill);margin-top:2px">
+                        <div style="height:4px;width:<?= $pct ?>%;background:var(--ac-color-primary);border-radius:var(--ac-radius-pill)"></div>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -265,6 +265,13 @@ for ($i = 29; $i >= 0; $i--) {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
+// Chart colours come from the design system tokens (Chart.js needs actual colour values).
+var __acCss   = getComputedStyle(document.documentElement);
+var __acMain  = __acCss.getPropertyValue('--ac-color-chart-main').trim();
+var __acMuted = __acCss.getPropertyValue('--ac-color-text-muted').trim();
+function __acAlpha(hex, a) {
+    return /^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex;
+}
 new Chart(document.getElementById('visitsChart'), {
     type: 'bar',
     data: {
@@ -273,16 +280,16 @@ new Chart(document.getElementById('visitsChart'), {
             {
                 label: 'Views',
                 data: <?= json_encode($chartViews) ?>,
-                backgroundColor: 'rgba(201,168,76,.5)',
-                borderColor: 'rgba(201,168,76,1)',
+                backgroundColor: __acAlpha(__acMain, .5),
+                borderColor: __acMain,
                 borderWidth: 1,
                 borderRadius: 3,
             },
             {
                 label: 'Visitors',
                 data: <?= json_encode($chartUniques) ?>,
-                backgroundColor: 'rgba(83,75,64,.35)',
-                borderColor: 'rgba(83,75,64,.8)',
+                backgroundColor: __acAlpha(__acMuted, .35),
+                borderColor: __acAlpha(__acMuted, .8),
                 borderWidth: 1,
                 borderRadius: 3,
             }

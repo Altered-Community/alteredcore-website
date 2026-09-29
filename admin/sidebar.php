@@ -173,7 +173,7 @@ $sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
                     <?php if (!empty($item['is_separator']) || !empty($item['is_section_header'])): ?>
                         <span class="text-muted">—</span>
                     <?php elseif (!empty($item['icon'])): ?>
-                        <i class="<?= h($item['icon']) ?>"></i>
+                        <?= ac_icon((string)($item['icon'])) ?>
                     <?php endif; ?>
                 </td>
                 <td>

@@ -89,7 +89,7 @@ if ($_ftCss): ?>
 <?php endif; ?>
 
 <footer class="az-footer site-footer">
-    <div class="container" style="max-width:1200px">
+    <div class="container site-footer-inner">
 
         <!-- 4 columns -->
         <div class="row g-4 mb-4">
@@ -103,12 +103,12 @@ if ($_ftCss): ?>
                 <div class="footer-col-content"><?= $_footerColContents[1] ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[1]): ?>
-                <ul class="list-unstyled mt-3 mb-0" style="font-size:.88rem">
+                <ul class="list-unstyled footer-links mt-3 mb-0">
                     <?php foreach ($_footerByCol[1] as $_fl): ?>
                         <li>
                             <a href="<?= h($_fl['url']) ?>"
                                <?= (strpos($_fl['url'], 'http') === 0) ? 'target="_blank" rel="noopener"' : '' ?>>
-                                <?php if (!empty($_fl['icon'])): ?><i class="<?= h($_fl['icon']) ?> me-1"></i><?php endif; ?>
+                                <?= !empty($_fl['icon']) ? ac_icon($_fl['icon'], 'me-1') : '' ?>
                                 <?= h($_fl['label']) ?>
                             </a>
                         </li>
@@ -126,12 +126,12 @@ if ($_ftCss): ?>
                 <div class="footer-col-content mb-2"><?= $_footerColContents[2] ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[2]): ?>
-                <ul class="list-unstyled mb-0" style="font-size:.88rem">
+                <ul class="list-unstyled footer-links mb-0">
                     <?php foreach ($_footerByCol[2] as $_fl): ?>
                         <li>
                             <a href="<?= h($_fl['url']) ?>"
                                <?= (strpos($_fl['url'], 'http') === 0) ? 'target="_blank" rel="noopener"' : '' ?>>
-                                <?php if (!empty($_fl['icon'])): ?><i class="<?= h($_fl['icon']) ?> me-1"></i><?php endif; ?>
+                                <?= !empty($_fl['icon']) ? ac_icon($_fl['icon'], 'me-1') : '' ?>
                                 <?= h($_fl['label']) ?>
                             </a>
                         </li>
@@ -149,12 +149,12 @@ if ($_ftCss): ?>
                 <div class="footer-col-content mb-2"><?= $_footerColContents[3] ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[3]): ?>
-                <ul class="list-unstyled mb-0" style="font-size:.88rem">
+                <ul class="list-unstyled footer-links mb-0">
                     <?php foreach ($_footerByCol[3] as $_fl): ?>
                         <li>
                             <a href="<?= h($_fl['url']) ?>"
                                <?= (strpos($_fl['url'], 'http') === 0) ? 'target="_blank" rel="noopener"' : '' ?>>
-                                <?php if (!empty($_fl['icon'])): ?><i class="<?= h($_fl['icon']) ?> me-1"></i><?php endif; ?>
+                                <?= !empty($_fl['icon']) ? ac_icon($_fl['icon'], 'me-1') : '' ?>
                                 <?= h($_fl['label']) ?>
                             </a>
                         </li>
@@ -169,12 +169,12 @@ if ($_ftCss): ?>
                 <div class="footer-col-title"><?= h($_footerColTitles[4]) ?></div>
                 <?php endif; ?>
                 <?php if ($_footerByCol[4]): ?>
-                <ul class="list-unstyled mb-3" style="font-size:.88rem">
+                <ul class="list-unstyled footer-links mb-3">
                     <?php foreach ($_footerByCol[4] as $_fl): ?>
                         <li>
                             <a href="<?= h($_fl['url']) ?>"
                                <?= (strpos($_fl['url'], 'http') === 0) ? 'target="_blank" rel="noopener"' : '' ?>>
-                                <?php if (!empty($_fl['icon'])): ?><i class="<?= h($_fl['icon']) ?> me-1"></i><?php endif; ?>
+                                <?= !empty($_fl['icon']) ? ac_icon($_fl['icon'], 'me-1') : '' ?>
                                 <?= h($_fl['label']) ?>
                             </a>
                         </li>
@@ -190,17 +190,16 @@ if ($_ftCss): ?>
 
         <!-- Theme + lang — always shown on mobile (hidden in header on mobile for Azure) -->
         <div class="d-flex d-md-none justify-content-center align-items-center gap-3 mb-3">
-            <button id="theme-toggle" class="btn-theme-toggle-ac" aria-label="Toggle theme">
-                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            <button id="theme-toggle" class="ac-icon-button" type="button" aria-label="Toggle theme" data-theme-toggle>
+                <?= ac_icon('moon', 'theme-icon-moon') ?><?= str_replace('<svg ', '<svg hidden ', ac_icon('sun', 'theme-icon-sun')) ?>
             </button>
             <div class="dropdown">
-                <button class="btn-theme-toggle-ac" type="button"
+                <button class="ac-icon-button" type="button"
                         data-bs-toggle="dropdown" aria-expanded="false"
-                        title="<?= h($_footerLangNames[$_footerLang] ?? 'Language') ?>"
-                        style="line-height:1;display:inline-flex;align-items:center">
+                        title="<?= h($_footerLangNames[$_footerLang] ?? 'Language') ?>">
                     <?= $_footerLangFlags[$_footerLang] ?? '🌐' ?>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="min-width:auto">
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-flags">
                     <?php foreach ($_footerLangFlags as $_fl3 => $_flag3): ?>
                     <li>
                         <a class="dropdown-item <?= $_footerLang === $_fl3 ? 'active' : '' ?>"
@@ -217,9 +216,9 @@ if ($_ftCss): ?>
         <div class="footer-bottom">
             <span>
                 &copy; <?= date('Y') ?> <?= h(getSiteName()) ?> — <?= h($_footerRights) ?>
-                &nbsp;·&nbsp; <a href="https://github.com/Altered-Community/alteredcore-website" target="_blank" rel="noopener" style="color:inherit;opacity:.7"><?= h($_footerTxt['made_by']) ?></a>
+                &nbsp;·&nbsp; <a href="https://github.com/Altered-Community/alteredcore-website" target="_blank" rel="noopener"><?= h($_footerTxt['made_by']) ?></a>
                 &nbsp;·&nbsp;
-                <a href="<?= BASE_URL ?>/pages/privacy" style="color:inherit;opacity:.7"><?= h($_footerTxt['privacy']) ?></a>
+                <a href="<?= BASE_URL ?>/pages/privacy"><?= h($_footerTxt['privacy']) ?></a>
             </span>
         </div>
 
@@ -236,24 +235,17 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
 <!-- Cookie consent modal -->
 <div class="modal fade" id="cookieModal" tabindex="-1" aria-labelledby="cookieModalLabel"
      data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
-        <div class="modal-content" style="border-radius:1rem;border:none;overflow:hidden">
-            <div class="modal-body p-4 text-center" style="background:var(--sand-100,#FAF5E8)">
-                <div style="font-size:2.5rem;margin-bottom:.75rem">🍪</div>
-                <h5 id="cookieModalLabel" style="font-weight:800;color:var(--neutral-800,#2C2416);margin-bottom:.75rem">
-                    Cookies
-                </h5>
-                <p style="color:var(--neutral-600,#6B5F4A);font-size:.9rem;line-height:1.55;margin-bottom:1.5rem">
-                    <?= h($__consentMsg) ?>
-                </p>
+    <div class="modal-dialog modal-dialog-centered cookie-dialog">
+        <div class="modal-content">
+            <div class="modal-body p-4 text-center">
+                <div class="cookie-emoji" aria-hidden="true">🍪</div>
+                <h5 id="cookieModalLabel" class="ac-text-title mb-2">Cookies</h5>
+                <p class="ac-text-muted mb-4"><?= h($__consentMsg) ?></p>
                 <div class="d-flex flex-column gap-2">
-                    <button id="cookie-accept" type="button" class="btn btn-primary-altered w-100" style="font-weight:700">
+                    <button id="cookie-accept" type="button" class="ac-button ac-button--full">
                         <?= h($__consentBtn) ?>
                     </button>
-                    <a href="<?= BASE_URL ?>/pages/privacy"
-                       style="font-size:.8rem;color:var(--neutral-500,#8A7D6A)">
-                        <?= h($_footerTxt['privacy']) ?>
-                    </a>
+                    <a href="<?= BASE_URL ?>/pages/privacy" class="ac-text-small"><?= h($_footerTxt['privacy']) ?></a>
                 </div>
             </div>
         </div>
@@ -261,8 +253,8 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
 </div>
 
 <!-- Card embed lightbox (for [card] shortcodes in content) -->
-<div id="sc-card-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);align-items:center;justify-content:center;cursor:pointer">
-    <div id="sc-card-lightbox-inner" style="max-width:420px;width:88vw;cursor:default;position:relative" onclick="event.stopPropagation()"></div>
+<div id="sc-card-lightbox" class="card-lightbox" style="display:none">
+    <div id="sc-card-lightbox-inner" class="card-lightbox-inner" onclick="event.stopPropagation()"></div>
 </div>
 <script>
 (function () {
@@ -295,22 +287,22 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
                 cardEl = document.createElement('altered-card');
                 cardEl.setAttribute('ref', ref);
                 cardEl.setAttribute('locale', lang);
-                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+                cardEl.className = 'card-lightbox-card';
             } else {
                 var srcImg = embed.querySelector('img');
                 cardEl = document.createElement('img');
                 cardEl.src = srcImg ? srcImg.src : '';
                 cardEl.alt = ref;
-                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+                cardEl.className = 'card-lightbox-card card-lightbox-card--img';
             }
             cardEl.addEventListener('click', closeModal);
             inner.appendChild(cardEl);
             if (url) {
                 var btn = document.createElement('a');
                 btn.href = url;
-                btn.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>' + detailLabel;
-                btn.className = 'btn btn-sm btn-primary-altered';
-                btn.style.cssText = 'display:block;width:100%;margin-top:8px;text-decoration:none';
+                btn.innerHTML = acIcon('info');
+                btn.appendChild(document.createTextNode(' ' + detailLabel));
+                btn.className = 'ac-button ac-button--full card-lightbox-link';
                 inner.appendChild(btn);
             }
             modal.style.display = 'flex';
@@ -345,32 +337,6 @@ $__needConsent = empty($_COOKIE['alteredcore_consent']) ? 'true' : 'false';
 <script src="<?= h($_pjs) ?>"></script>
 <?php endforeach; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-(function () {
-    var btn  = document.getElementById('theme-toggle');
-    var icon = document.getElementById('theme-icon');
-    if (!btn) return;
-
-    function applyTheme(dark) {
-        if (dark) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            icon.className = 'fa-solid fa-sun';
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-            icon.className = 'fa-solid fa-moon';
-        }
-    }
-
-    // Sync icon with current state (set by anti-FOUC script in <head>)
-    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark');
-
-    btn.addEventListener('click', function () {
-        var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-        applyTheme(dark);
-        try { localStorage.setItem('acTheme', dark ? 'dark' : 'light'); } catch (e) {}
-    });
-}());
-</script>
 <script>
 (function() {
     var needConsent = <?= $__needConsent ?>;

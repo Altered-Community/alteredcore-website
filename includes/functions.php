@@ -995,18 +995,21 @@ function assetUrl(string $path): string {
 }
 
 // theme helpers
+// The site has a single theme folder (themes/azure: header, menu, footer templates); its look
+// comes from the design system (design-system/), with light and dark modes only.
+const SITE_THEME_FALLBACK = 'azure';
 
 function getActiveTheme(): string {
     static $theme = null;
     if ($theme !== null) return $theme;
     $slug = getSetting('active_theme');
-    if ($slug === '') $slug = 'default';
+    if ($slug === '') $slug = SITE_THEME_FALLBACK;
     // Sanitize: only alphanumeric, hyphen, underscore allowed
     $slug = preg_replace('/[^a-zA-Z0-9_-]/', '', $slug);
-    if ($slug === '') $slug = 'default';
+    if ($slug === '') $slug = SITE_THEME_FALLBACK;
     // Validate that the theme directory actually exists on disk
     if (!is_dir(dirname(__DIR__) . '/themes/' . $slug)) {
-        $slug = 'default';
+        $slug = SITE_THEME_FALLBACK;
     }
     $theme = $slug;
     return $theme;
@@ -1017,8 +1020,8 @@ function themeFile(string $file): string {
     $active = getActiveTheme();
     $path   = $root . $active . '/' . $file;
     if (file_exists($path)) return $path;
-    $default = $root . 'default/' . $file;
-    if (file_exists($default)) return $default;
+    $fallback = $root . SITE_THEME_FALLBACK . '/' . $file;
+    if (file_exists($fallback)) return $fallback;
     return $path;
 }
 
@@ -1028,8 +1031,8 @@ function themeUrl(string $file): string {
     if (file_exists($root . $active . '/' . $file)) {
         return BASE_URL . '/themes/' . $active . '/' . $file;
     }
-    if (file_exists($root . 'default/' . $file)) {
-        return BASE_URL . '/themes/default/' . $file;
+    if (file_exists($root . SITE_THEME_FALLBACK . '/' . $file)) {
+        return BASE_URL . '/themes/' . SITE_THEME_FALLBACK . '/' . $file;
     }
     return BASE_URL . '/themes/' . $active . '/' . $file;
 }
@@ -1257,3 +1260,4 @@ function getUserMenuItems(): array {
 require_once __DIR__ . '/func.keycloak.php';
 require_once __DIR__ . '/plugins.php';
 require_once __DIR__ . '/spa.php';
+require_once __DIR__ . '/../design-system/php/ui.php';

@@ -28,31 +28,38 @@ $defaultFolder = !empty($folders) ? $folders[0] : 'news';
 <head>
 <meta charset="utf-8">
 <title>Image Browser</title>
+<link rel="stylesheet" href="<?= htmlspecialchars(dsUrl('fonts/fonts.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(dsUrl('tokens/tokens.css'), ENT_QUOTES) ?>">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; font-size: 13px; background: #f5f4f0; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+body { font-family: var(--ac-font-family); font-size: 13px; background: var(--ac-color-bg-app); color: var(--ac-color-text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+:focus-visible { outline: 2px solid var(--ac-color-focus); outline-offset: 2px; }
 
-#toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #ddd; flex-shrink: 0; }
+#toolbar { display: flex; align-items: center; gap: var(--ac-space-2); padding: var(--ac-space-2) var(--ac-space-3); background: var(--ac-color-surface); border-bottom: 1px solid var(--ac-color-border); flex-shrink: 0; }
 #toolbar label { font-weight: 600; white-space: nowrap; }
-#folderSelect { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
-#searchBox { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; flex: 1; min-width: 0; }
-#statusBar { font-size: 11px; color: #888; margin-left: auto; white-space: nowrap; }
+#folderSelect, #searchBox { height: var(--ac-control-sm); padding: 0 var(--ac-space-2); border: 1px solid var(--ac-color-border-control); border-radius: var(--ac-radius-md); background: var(--ac-color-surface); color: var(--ac-color-text); font: inherit; }
+#searchBox { flex: 1; min-width: 0; }
+#statusBar { font-size: 11px; color: var(--ac-color-text-muted); margin-left: auto; white-space: nowrap; }
 
-#grid { flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; align-content: start; }
+#grid { flex: 1; overflow-y: auto; padding: var(--ac-space-3); display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--ac-space-2); align-content: start; }
 
-.img-item { border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: #fff; transition: border-color .15s; }
-.img-item:hover { border-color: #c9a84c; }
-.img-item.selected { border-color: #c9a84c; box-shadow: 0 0 0 2px #c9a84c44; }
+.img-item { border: 2px solid transparent; border-radius: var(--ac-radius-sm); overflow: hidden; cursor: pointer; background: var(--ac-color-surface); transition: border-color var(--ac-duration-fast); }
+.img-item:hover { border-color: var(--ac-color-primary-border); }
+.img-item.selected { border-color: var(--ac-color-primary); box-shadow: 0 0 0 2px var(--ac-color-primary-soft); }
 .img-item img { display: block; width: 100%; height: 90px; object-fit: cover; }
-.img-item span { display: block; font-size: 10px; color: #666; padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.img-item span { display: block; font-size: 10px; color: var(--ac-color-text-muted); padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-#footer { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border-top: 1px solid #ddd; flex-shrink: 0; }
-#selectedUrl { flex: 1; font-size: 11px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#btnInsert { padding: 6px 18px; background: #c9a84c; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
-#btnInsert:disabled { background: #ccc; cursor: default; }
-#btnCancel { padding: 6px 14px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; }
+#footer { display: flex; align-items: center; gap: var(--ac-space-2); padding: var(--ac-space-2) var(--ac-space-3); background: var(--ac-color-surface); border-top: 1px solid var(--ac-color-border); flex-shrink: 0; }
+#selectedUrl { flex: 1; font-size: 11px; color: var(--ac-color-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#btnInsert, #btnCancel { height: var(--ac-control-sm); padding: 0 var(--ac-space-4); border-radius: var(--ac-radius-md); cursor: pointer; font: inherit; font-weight: 600; }
+#btnInsert { background: var(--ac-color-primary); color: var(--ac-color-on-primary); border: 1px solid transparent; }
+#btnInsert:hover:not(:disabled) { background: var(--ac-color-primary-strong); }
+#btnInsert:disabled { opacity: .45; cursor: not-allowed; }
+#btnCancel { background: var(--ac-color-surface); color: var(--ac-color-text); border: 1px solid var(--ac-color-border-control); }
+#btnCancel:hover { background: var(--ac-color-bg-subtle); }
 
-.msg { grid-column: 1 / -1; text-align: center; padding: 32px; color: #888; font-size: 13px; }
+.msg { grid-column: 1 / -1; text-align: center; padding: var(--ac-space-8); color: var(--ac-color-text-muted); font-size: 13px; }
+.msg--error { color: var(--ac-color-required); }
 </style>
 </head>
 <body>
@@ -151,7 +158,7 @@ body { font-family: system-ui, sans-serif; font-size: 13px; background: #f5f4f0;
                 applyFilter();
             })
             .catch(function () {
-                grid.innerHTML = '<p class="msg" style="color:#c00">Failed to load folder.</p>';
+                grid.innerHTML = '<p class="msg msg--error">Failed to load folder.</p>';
             });
     }
 

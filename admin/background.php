@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$currentColor = getSetting('bg_color') ?: '#FAF5E8';
+$currentColor = (string)(getSetting('bg_color') ?: ''); // '' = design system background (light and dark)
 $currentImage = getSetting('bg_image');
 $currentMode  = getSetting('bg_image_mode') ?: 'cover';
 $ftBgImage    = getSetting('footer_bg_image');
@@ -92,18 +92,19 @@ $ftBgMode     = getSetting('footer_bg_mode') ?: 'cover';
     <div class="card-altered p-3 mb-4">
         <h6 class="fw-bold mb-3">Background color</h6>
         <div class="d-flex align-items-center gap-3 flex-wrap">
-            <input type="color" name="bg_color" class="form-control form-control-color"
-                   value="<?= h($currentColor) ?>" style="width:60px;height:38px;padding:2px">
-            <input type="text" id="bgColorText" class="form-control" style="max-width:120px"
-                   value="<?= h($currentColor) ?>" placeholder="#FAF5E8"
-                   pattern="^#[0-9a-fA-F]{3,8}$">
-            <button type="button" class="btn btn-sm btn-outline-secondary"
-                    onclick="document.querySelector('[name=bg_color]').value='#FAF5E8';document.getElementById('bgColorText').value='#FAF5E8'">
+            <input type="color" id="bgColorPicker" class="form-control form-control-color"
+                   <?= $currentColor !== '' ? 'value="' . h($currentColor) . '"' : '' ?> style="width:60px;height:38px;padding:2px"
+                   aria-label="Pick a background colour">
+            <input type="text" name="bg_color" id="bgColorText" class="form-control" style="max-width:120px"
+                   value="<?= h($currentColor) ?>" placeholder="Default"
+                   pattern="^#[0-9a-fA-F]{3,8}$" aria-describedby="bgColorHelp">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="bgColorReset">
                 Reset
             </button>
         </div>
+        <div class="form-text" id="bgColorHelp">Leave empty to use the design system background, which follows the light and dark themes. A custom colour applies to both themes.</div>
         <div class="mt-3" id="colorPreview"
-             style="height:48px;border-radius:.5rem;border:2px solid var(--sand-300);background:<?= h($currentColor) ?>"></div>
+             style="height:48px;border-radius:var(--ac-radius-md);border:2px solid var(--ac-color-border);background:<?= $currentColor !== '' ? h($currentColor) : 'var(--ac-color-bg-app)' ?>"></div>
     </div>
 
     <div class="card-altered p-3 mb-4">
@@ -132,7 +133,7 @@ $ftBgMode     = getSetting('footer_bg_mode') ?: 'cover';
             <div id="bg_img_preview" class="mb-2" style="<?= $currentImage ? '' : 'display:none' ?>">
                 <div style="position:relative;display:inline-block">
                     <img src="<?= $currentImage ? h(BASE_URL . '/' . $currentImage) : '' ?>" alt=""
-                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                 </div>
@@ -174,7 +175,7 @@ $ftBgMode     = getSetting('footer_bg_mode') ?: 'cover';
             <div id="ft_bg_img_preview" class="mb-2" style="<?= $ftBgImage ? '' : 'display:none' ?>">
                 <div style="position:relative;display:inline-block">
                     <img src="<?= $ftBgImage ? h(BASE_URL . '/' . $ftBgImage) : '' ?>" alt=""
-                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                 </div>
@@ -202,9 +203,18 @@ $ftBgMode     = getSetting('footer_bg_mode') ?: 'cover';
 
 <script>
 (function () {
-    var picker  = document.querySelector('[name=bg_color]');
+    var picker  = document.getElementById('bgColorPicker');
     var text    = document.getElementById('bgColorText');
     var preview = document.getElementById('colorPreview');
+    var reset   = document.getElementById('bgColorReset');
+    var fallback = getComputedStyle(document.documentElement).getPropertyValue('--ac-color-bg-app').trim();
+    if (text.value === '' && /^#[0-9a-fA-F]{6}$/.test(fallback)) picker.value = fallback;
+
+    reset.addEventListener('click', function () {
+        text.value = '';
+        if (/^#[0-9a-fA-F]{6}$/.test(fallback)) picker.value = fallback;
+        preview.style.background = 'var(--ac-color-bg-app)';
+    });
 
     picker.addEventListener('input', function () {
         text.value = this.value;
