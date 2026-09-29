@@ -20,6 +20,11 @@ if [ "${AC_STACK_SEED:-}" = "1" ]; then
     php /var/www/html/docker/stack/seed-decks.php || echo "[entrypoint] WARNING: community decks seed failed." >&2
 fi
 
+# Local stack, opt-in: public content of production (news, pages, settings, images), once.
+if [ "${AC_STACK_MIRROR:-}" = "1" ]; then
+    php /var/www/html/docker/stack/mirror-prod.php || echo "[entrypoint] WARNING: production mirror failed." >&2
+fi
+
 # Optional (local / CI stack): activate plugins listed in AC_ACTIVATE_PLUGINS, like the admin
 # "Activate" button (idempotent; also adds their suggested menu entries once).
 if [ -n "${AC_ACTIVATE_PLUGINS:-}" ]; then
