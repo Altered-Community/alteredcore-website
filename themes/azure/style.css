@@ -4,6 +4,10 @@
    no [data-theme] rule here. Shared page styles are in css/style.css.
    ========================================================= */
 
+/* ---- Page frame: the footer stays at the bottom of short pages ---- */
+body { min-height: 100dvh; display: flex; flex-direction: column; }
+body > .site-wrapper { width: 100%; flex: 1 0 auto; }
+
 /* ---- Header ---- */
 .az-site-header {
     position: sticky;

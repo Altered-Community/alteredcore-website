@@ -719,8 +719,13 @@
     });
 
     /* ── Panel close ────────────────────────────────────────────────────── */
-    document.getElementById('tr-player-panel-close').addEventListener('click', closePlayerPanel);
-    document.getElementById('tr-player-panel-backdrop').addEventListener('click', closePlayerPanel);
+    // The player panel, like the lightbox, only exists on the tournament page.
+    function onId(id, type, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener(type, fn);
+    }
+    onId('tr-player-panel-close', 'click', closePlayerPanel);
+    onId('tr-player-panel-backdrop', 'click', closePlayerPanel);
     document.addEventListener('click', function (e) {
         if (e.target.closest('#tr-player-panel-export')) copyDecklist();
     });
@@ -800,7 +805,7 @@
         zoomEl.innerHTML = '';
     }
 
-    document.getElementById('tr-player-panel-body').addEventListener('mouseover', function (e) {
+    onId('tr-player-panel-body', 'mouseover', function (e) {
         var cardWrap = e.target.closest('.tr-card-wrap');
         if (cardWrap) {
             showZoom(cardWrap.dataset.ref);
@@ -812,7 +817,7 @@
         }
     });
 
-    document.getElementById('tr-player-panel-body').addEventListener('mouseout', function (e) {
+    onId('tr-player-panel-body', 'mouseout', function (e) {
         var cardWrap = e.target.closest('.tr-card-wrap');
         if (cardWrap) { hideZoom(); return; }
         var listRow = e.target.closest('.tr-decklist-table tbody tr');
@@ -866,18 +871,21 @@
             }
         }
     });
-    lightboxEl.addEventListener('click', function (e) {
-        if (e.target === lightboxEl || e.target === lightboxInner) {
-            lightboxEl.style.display = 'none';
-            lightboxInner.innerHTML = '';
-        }
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && lightboxEl.style.display !== 'none') {
-            lightboxEl.style.display = 'none';
-            lightboxInner.innerHTML = '';
-        }
-    });
+    // The lightbox only exists on the tournament page, not on the list.
+    if (lightboxEl) {
+        lightboxEl.addEventListener('click', function (e) {
+            if (e.target === lightboxEl || e.target === lightboxInner) {
+                lightboxEl.style.display = 'none';
+                lightboxInner.innerHTML = '';
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && lightboxEl.style.display !== 'none') {
+                lightboxEl.style.display = 'none';
+                lightboxInner.innerHTML = '';
+            }
+        });
+    }
 
     if (chartModalEl) {
         var chartModalCloseBtn = document.getElementById('tr-chart-modal-close');

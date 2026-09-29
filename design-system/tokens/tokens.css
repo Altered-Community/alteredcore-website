@@ -191,6 +191,7 @@
    * Only for values no semantic token covers. Name them --ac-<plugin>-<role> and give a dark
    * value below when the value depends on the theme. */
   /* core-altered-cards */
+  --ac-cards-hero-text: var(--ac-color-on-strong);   /* deck title and meta over the hero art */
   --ac-cards-unique: #8f6310;               /* Unique accent (gem icon, nudge banner) on a surface */
   --ac-cards-favorite: #f5c518;             /* favourite star, drawn on a dark chip over artwork */
   --ac-cards-favorite-hover: #ffd634;

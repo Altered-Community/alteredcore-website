@@ -199,8 +199,9 @@ main { min-height: 50vh; }
     color: var(--ac-color-text-2);
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* Deck cards with a hero picture behind the text: white text whatever the theme. */
-.deck-card-text-white { color: var(--ac-color-on-strong); text-shadow: var(--ac-shadow-on-image); }
+/* Deck cards with a hero picture behind the text: white text whatever the theme. :is() with a
+   second class so it wins over the surface it is combined with (.card-altered, .news-card). */
+:is(.deck-card-text-white, .deck-card-text-white.deck-card-text-white) { color: var(--ac-color-on-strong); text-shadow: var(--ac-shadow-on-image); }
 .deck-card-text-white :is(.news-card-title, .news-card-excerpt, h1, h2, h3, h4, h5, h6, p) { color: inherit; }
 .news-card-footer { margin-top: var(--ac-space-4); }
 .btn-read-more {
