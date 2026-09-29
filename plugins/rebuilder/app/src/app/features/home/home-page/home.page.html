@@ -49,9 +49,9 @@
   <section class="steps" aria-labelledby="steps-title">
     <h2 id="steps-title" class="section-title">Un deck en trois étapes</h2>
     <ol>
-      @for (s of steps; track s.title; let i = $index) {
+      @for (s of steps; track s.title) {
         <li>
-          <span class="step-n" aria-hidden="true">{{ i + 1 }}</span>
+          <span class="step-n" aria-hidden="true">{{ $index + 1 }}</span>
           <span class="step-text">
             <strong>{{ s.title }}</strong>
             <span>{{ s.text }}</span>

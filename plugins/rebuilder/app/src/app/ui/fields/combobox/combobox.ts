@@ -25,6 +25,8 @@ export interface ComboOption {
   styleUrl: './combobox.scss',
 })
 export class ArCombobox {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   readonly options = input<ComboOption[]>([]);
   readonly values = model<ComboOption[]>([]);
   readonly placeholder = input('Ajouter…');
@@ -32,8 +34,6 @@ export class ArCombobox {
   readonly searchPlaceholder = input('Rechercher…');
   readonly searchChange = output<string>();
 
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
   private readonly search = viewChild<ElementRef<HTMLInputElement>>('search');
 

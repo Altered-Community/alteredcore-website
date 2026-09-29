@@ -42,7 +42,8 @@
         </div>
       }
 
-      @switch (effectiveView()) {
+      @let view = effectiveView();
+      @switch (view) {
         @case ('search') {
           <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [ready]="!deck.loading()" />
         }
@@ -52,6 +53,7 @@
         @case ('deck') {
           <app-deck-list-view (openSettings)="openSettings()" />
         }
+        @default never;
       }
     </main>
 

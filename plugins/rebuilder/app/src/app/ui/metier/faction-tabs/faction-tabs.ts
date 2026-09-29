@@ -22,6 +22,7 @@ import { scrollIntoViewInline } from '../scroll';
   styleUrl: './faction-tabs.scss',
 })
 export class ArFactionTabs {
+  protected readonly density = inject(ArDensityService);
   readonly active = model<string>('AX');
   readonly size = input<'sm' | 'md'>('md');
   readonly layout = input<'scroll' | 'grid'>('scroll');
@@ -30,7 +31,6 @@ export class ArFactionTabs {
   /** Id of the tab panel (hero grid) the tabs control. */
   readonly controls = input('');
   protected readonly factions = FACTIONS;
-  protected readonly density = inject(ArDensityService);
   private readonly tabs = viewChildren<ElementRef<HTMLButtonElement>>('tab');
 
   constructor() {

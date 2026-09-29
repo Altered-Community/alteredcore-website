@@ -137,8 +137,8 @@
     </div>
     <h3>Grille virtuelle (<code>ar-virtual-grid</code>, 2 000 cellules)</h3>
     <ar-virtual-grid #vgrid class="vgrid" role="list" aria-label="Cellules" [items]="cells">
-      @for (n of vgrid.slice(); track n; let i = $index) {
-        <span class="vcell" role="listitem" [attr.aria-posinset]="vgrid.first() + i + 1" [attr.aria-setsize]="cells.length">{{ n }}</span>
+      @for (n of vgrid.slice(); track n) {
+        <span class="vcell" role="listitem" [attr.aria-posinset]="vgrid.first() + $index + 1" [attr.aria-setsize]="cells.length">{{ n }}</span>
       }
     </ar-virtual-grid>
   </section>
@@ -172,8 +172,8 @@
       <ar-deck-summary appearance="embedded" [hero]="deckItem.hero" formatLabel="Standard All Uniques" [total]="39" [legal]="true" [rarity]="deckItem.rarity" />
       <ar-effect-summary [effect]="effect" />
       <div class="two">
-        @for (s of sets; track s.reference; let i = $index) {
-          <ar-extension-tile [extension]="s" [selected]="i === 0" />
+        @for (s of sets; track s.reference) {
+          <ar-extension-tile [extension]="s" [selected]="$first" />
         }
       </div>
     </div>

@@ -24,8 +24,8 @@ describe('visibleRows', () => {
   imports: [ArVirtualGrid],
   template: `
     <ar-virtual-grid #grid [items]="items()" [initial]="4">
-      @for (n of grid.slice(); track n; let i = $index) {
-        <span class="cell" [attr.data-pos]="grid.first() + i + 1 + '/' + items().length">{{ n }}</span>
+      @for (n of grid.slice(); track n) {
+        <span class="cell" [attr.data-pos]="grid.first() + $index + 1 + '/' + items().length">{{ n }}</span>
       }
       @if (grid.atEnd()) {
         <span class="tail">…</span>

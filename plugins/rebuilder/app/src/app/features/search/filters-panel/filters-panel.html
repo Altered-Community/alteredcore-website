@@ -60,9 +60,9 @@
 
   <ar-filter-section title="Effets">
     <div class="effects">
-      @for (e of value().effects; track e.id; let i = $index; let last = $last) {
-        <ar-effect-summary [effect]="e" [title]="'Effet ' + (i + 1)" (edit)="editEffect.emit(i)" (remove)="removeEffect(i)" />
-        @if (!last) {
+      @for (e of value().effects; track e.id) {
+        <ar-effect-summary [effect]="e" [title]="'Effet ' + ($index + 1)" (edit)="editEffect.emit($index)" (remove)="removeEffect($index)" />
+        @if (!$last) {
           <ar-logic-divider />
         }
       }

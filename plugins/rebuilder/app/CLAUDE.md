@@ -33,10 +33,14 @@ d'écran et à la densité : pas d'écrans « mobile » et « desktop » sépar�
   - Pas de `@HostBinding` / `@HostListener` : objet `host` du décorateur. Pas de `ngClass` / `ngStyle` : bindings
     `[class.x]` / `[style.x]`. Pas de `CommonModule` : importer seulement les directives et pipes utilisés.
   - Control flow natif (`@if`, `@for`, `@switch`), templates simples, routes chargées à la demande
-    (`loadComponent`).
+    (`loadComponent`). Variables de contexte de `@for` (`$index`, `$last`…) sans alias. Tout `@switch` a un
+    `@default` ; sur une union, `@default never;` sur une variable `@let` (le compilateur ne restreint pas le
+    type d'un appel de signal) pour vérifier que tous les cas sont traités.
   - Nouveaux formulaires : Signal Forms (`@angular/forms/signals`), sinon Reactive Forms.
   - Images statiques : `NgOptimizedImage` (`ngSrc`), sauf images en base64.
   - TypeScript strict, inférence quand le type est évident, `unknown` plutôt que `any`.
+  - `eslint.config.js` impose ces règles (règles angular-eslint, linting typé) : corriger plutôt que désactiver,
+    et toute désactivation locale porte un commentaire qui la justifie.
 - Un composant par dossier, jamais de `template:` ni de `styles:` en ligne, même pour un petit composant (choix du
   projet, là où Angular suggère le template en ligne) : `<nom>/<nom>.ts` + `<nom>.html`
   (`templateUrl`) + `<nom>.scss` (`styleUrl`, seulement s'il y a des styles). Les fonctions `open…()` d'un overlay

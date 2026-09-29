@@ -1,11 +1,11 @@
 <nav aria-label="Fil d’Ariane">
-  @for (it of items(); track it.label; let last = $last) {
-    @if (it.route && !last) {
+  @for (it of items(); track it.label) {
+    @if (it.route && !$last) {
       <a [routerLink]="it.route">{{ it.label }}</a>
     } @else {
-      <span [attr.aria-current]="last ? 'page' : null">{{ it.label }}</span>
+      <span [attr.aria-current]="$last ? 'page' : null">{{ it.label }}</span>
     }
-    @if (!last) {
+    @if (!$last) {
       <span aria-hidden="true">/</span>
     }
   }

@@ -65,8 +65,8 @@ export class AuthService implements AuthSession {
     return this.stored() ? 'Compte' : null;
   });
 
-  readonly keycloakConfigured = computed(
-    () => !!(environment.keycloakUrl && environment.keycloakRealm && environment.keycloakClientId && environment.authBffUrl),
+  readonly keycloakConfigured = !!(
+    environment.keycloakUrl && environment.keycloakRealm && environment.keycloakClientId && environment.authBffUrl
   );
 
   constructor() {
@@ -100,7 +100,7 @@ export class AuthService implements AuthSession {
 
   /** Starts authorization code + S256 PKCE. `discord` asks Keycloak to open that identity provider. */
   async authorizationUrl(redirectUri: string, idp?: 'discord'): Promise<string | null> {
-    if (!this.keycloakConfigured()) return null;
+    if (!this.keycloakConfigured) return null;
     const { verifier, challenge } = await createPkcePair();
     const state = randomUrlToken();
     writeStorage(VERIFIER_KEY, verifier);
@@ -212,7 +212,7 @@ export class AuthService implements AuthSession {
   }
 
   endSessionUrl(): string | null {
-    if (!this.keycloakConfigured() || typeof location === 'undefined') return null;
+    if (!this.keycloakConfigured || typeof location === 'undefined') return null;
     const params = new URLSearchParams({
       client_id: environment.keycloakClientId,
       post_logout_redirect_uri: `${location.origin}/login`,

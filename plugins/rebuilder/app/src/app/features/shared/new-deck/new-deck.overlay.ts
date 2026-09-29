@@ -32,6 +32,7 @@ export const VISIBILITY_OPTIONS = [
   styleUrl: './new-deck.overlay.scss',
 })
 export class NewDeckOverlay {
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly ref = inject<ArOverlayRef<NewDeckResult>>(ArOverlayRef);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly formats = DECK_FORMATS;
@@ -48,7 +49,6 @@ export class NewDeckOverlay {
    * wrap to 3 × 2 and the heroes use 3 columns, so no label is cut.
    */
   protected readonly narrow = signal(false);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly heroesCol = viewChild.required<ElementRef<HTMLElement>>('heroesCol');
   protected readonly faction = signal(this.form.hero()?.faction || 'AX');
 

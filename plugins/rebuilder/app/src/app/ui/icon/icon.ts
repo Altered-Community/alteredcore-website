@@ -63,11 +63,11 @@ const cache = new Map<string, SafeHtml>();
   styleUrl: './icon.scss',
 })
 export class ArIcon {
+  private readonly sanitizer = inject(DomSanitizer);
   readonly name = input.required<ArIconName>();
   readonly size = input<number>(16);
   readonly strokeWidth = input<number>(2);
 
-  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly svg = computed(() => {
     const key = `${this.name()}|${this.strokeWidth()}`;

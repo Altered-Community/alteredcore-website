@@ -44,12 +44,12 @@
     </div>
     @if (filtered().length) {
       <div role="listbox" class="list" [id]="listId" [attr.aria-label]="placeholder()">
-        @for (o of filtered(); track o.id; let i = $index) {
+        @for (o of filtered(); track o.id) {
           <button
             type="button"
             role="option"
-            [attr.aria-selected]="i === active()"
-            [class.active]="i === active()"
+            [attr.aria-selected]="$index === active()"
+            [class.active]="$index === active()"
             (click)="pick(o)"
           >@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</button>
         }
