@@ -18,6 +18,7 @@ import { CardSearch } from '../../search/card-search/card-search';
 import { DeckListView } from '../deck-list-view/deck-list-view';
 import { DeckPanel } from '../deck-panel/deck-panel';
 import { DeckPreview } from '../deck-preview/deck-preview';
+import { editorLegality } from '../editor-legality';
 
 export type EditorView = 'search' | 'apercu' | 'deck';
 
@@ -85,7 +86,7 @@ export class EditorPage {
       icon: 'layers',
       label: $localize`:@@editor.deck:Deck`,
       badge: this.deck.total(),
-      badgeTone: this.deck.status().legal ? 'success' : 'dark',
+      badgeTone: editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
     },
   ]);
   protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.loadError() && this.deck.owned() === false);

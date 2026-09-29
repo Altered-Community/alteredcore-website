@@ -20,6 +20,8 @@ export function lineToCard(line: DeckCardLine): Card {
     oceanPower: line.oceanPower ?? null,
     mainEffect: line.mainEffect ?? null,
     echoEffect: line.echoEffect ?? null,
+    ...(line.isBanned ? { isBanned: true } : {}),
+    ...(line.isSuspended ? { isSuspended: true } : {}),
   };
 }
 
@@ -51,6 +53,8 @@ export function mergeUniqueFace(current: Card, full: Card): Card {
     artists: current.artists?.length ? current.artists : full.artists,
     set: current.set ?? full.set,
     transfuge: current.transfuge ?? full.transfuge,
+    isBanned: current.isBanned ?? full.isBanned,
+    isSuspended: current.isSuspended ?? full.isSuspended,
   };
 }
 
@@ -69,6 +73,8 @@ export function cardToLine(card: Card, quantity: number): DeckCardLine {
     ...(isUniqueReference(card.reference)
       ? { mainEffect: card.mainEffect ?? null, echoEffect: card.echoEffect ?? null }
       : {}),
+    ...(card.isBanned ? { isBanned: true } : {}),
+    ...(card.isSuspended ? { isSuspended: true } : {}),
   };
 }
 
@@ -138,7 +144,7 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     : deck.stats?.totalCards ?? rarity.C + rarity.R + rarity.U + rarity.E;
   const info = formatInfo(deck.format);
   const legal = deck.legal ?? (lines.length
-    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value).legal
+    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero).legal
     : false);
   return {
     id: deck.id,

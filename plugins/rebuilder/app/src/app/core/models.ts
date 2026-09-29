@@ -123,6 +123,12 @@ export interface DeckCardLine {
    */
   mainEffect?: Card['mainEffect'];
   echoEffect?: Card['echoEffect'];
+  /**
+   * Cards API status, kept on guest lines so the editor still flags a banned or suspended card after a reload.
+   * Decks API lines do not carry it (see `docs/api-limitations/decks-api.md`).
+   */
+  isBanned?: boolean;
+  isSuspended?: boolean;
 }
 
 export interface DeckStats {

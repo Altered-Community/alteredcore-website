@@ -28,6 +28,20 @@ dans le groupe de sérialisation `deck:read` (schéma OpenAPI `User-deck.read` v
 
 **À faire côté backend.** Renvoyer `mainEffect` et `echoEffect` sur la ligne, comme `/api/cards`.
 
+## Statut banni / suspendu absent de la ligne
+
+**Constat.** Les lignes de `GET /api/decks/{id}` n'ont ni `isBanned` ni `isSuspended` (clés relevées le 2026-09-29 :
+`cardReference`, `cardTypeReference`, `effects`, `factionCode`, coûts, puissances, `imagePath`, `name`, `quantity`).
+`/api/cards` et `POST /api/cards/batch` les renvoient.
+
+**Contournement.** L'éditeur vérifie « Aucune carte bannie » et « Aucune carte suspendue » à partir des données de
+carte qu'il a : cartes ajoutées depuis la recherche, Uniques complétées par `POST /api/cards/batch`, et lignes des
+decks invités (`cardToLine` garde les deux statuts). Pour les autres cartes d'un deck du compte, il ne voit pas le
+statut : tant que le deck n'a pas changé depuis la vérification du serveur, `bannedCards` / `suspendedCards` de
+`legalityDetail` s'ajoutent aux règles de l'éditeur (`withServerVerdict`), sans repère sur la ligne concernée.
+
+**À faire côté backend.** Renvoyer `isBanned` et `isSuspended` sur la ligne, comme `/api/cards`.
+
 ## Pas de filtre de légalité sur la liste publique
 
 **Constat.** `/api/decks/public` ignore `legal=true` : `PublicDeckController` ne lit que `page`, `itemsPerPage`,

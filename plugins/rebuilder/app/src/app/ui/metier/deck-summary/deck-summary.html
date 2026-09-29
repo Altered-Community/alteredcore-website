@@ -23,10 +23,13 @@
 </div>
 <div class="counts">
   <span class="total"><strong>{{ total() }}</strong><span i18n="@@ui.deckSummary.cards">{total(), plural, =1 {carte} other {cartes}}</span></span>
-  @if (legal()) {
-    <ar-badge tone="green" icon="check" i18n="@@ui.deckSummary.valid">Valide</ar-badge>
-  } @else {
-    <ar-badge tone="orange" icon="alert">{{ issueLabel() }}</ar-badge>
-  }
+  <button type="button" class="legality" aria-haspopup="dialog" [attr.aria-label]="legalityLabel()" (click)="showLegality.emit()">
+    @if (legal()) {
+      <ar-badge tone="green" icon="check" i18n="@@ui.deckSummary.valid">Valide</ar-badge>
+    } @else {
+      <ar-badge tone="orange" icon="alert">{{ issueLabel() }}</ar-badge>
+    }
+    <ar-icon name="chevron-right" [size]="16" />
+  </button>
   <ar-rarity-summary [counts]="rarity()" />
 </div>
