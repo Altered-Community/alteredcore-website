@@ -1,5 +1,5 @@
 import type { DeckListItem } from '../../core/deck-view';
-import { EMPTY_DECK_FILTERS, filterDecks } from './deck-filters';
+import { EMPTY_DECK_FILTERS, filterDecks, matchDecks } from './deck-filters';
 import { parseDecklist } from './import-deck/import-deck.overlay';
 
 const item = (p: Partial<DeckListItem>): DeckListItem => ({
@@ -16,6 +16,7 @@ const item = (p: Partial<DeckListItem>): DeckListItem => ({
   rarity: { C: 21, R: 15, U: 3, E: 0 },
   guest: true,
   updatedAt: p.updatedAt ?? '2026-01-01',
+  createdAt: p.createdAt ?? '2026-01-01',
   likes: p.likes ?? 0,
   liked: false,
 });
@@ -40,6 +41,27 @@ describe('filterDecks (Mes decks)', () => {
     expect(filterDecks(decks, { ...EMPTY_DECK_FILTERS, sort: 'name' }).map((d) => d.id)).toEqual(['c', 'b', 'a']);
     // Most liked first, ties by last update.
     expect(filterDecks(decks, { ...EMPTY_DECK_FILTERS, sort: 'likes' }).map((d) => d.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('sorts « Récemment créé » by creation date, not by last update', () => {
+    const created = [
+      item({ id: 'old', createdAt: '2025-01-01', updatedAt: '2026-06-01' }),
+      item({ id: 'new', createdAt: '2026-05-01', updatedAt: '2026-05-01' }),
+      item({ id: 'mid', createdAt: '2025-06-01', updatedAt: '2025-06-01' }),
+    ];
+    expect(filterDecks(created, { ...EMPTY_DECK_FILTERS, sort: 'created' }).map((d) => d.id)).toEqual(['new', 'mid', 'old']);
+    expect(filterDecks(created, EMPTY_DECK_FILTERS).map((d) => d.id)).toEqual(['old', 'new', 'mid']);
+  });
+});
+
+describe('matchDecks (concours)', () => {
+  it('filters without reordering', () => {
+    const decks = [
+      item({ id: 'z', name: 'Zeta', updatedAt: '2025-01-01' }),
+      item({ id: 'a', name: 'Alpha', updatedAt: '2026-01-01' }),
+      item({ id: 'x', name: 'Other', hero: { reference: 'ALT_CORE_B_AX_01_C', name: 'Akesha & Taru', faction: 'AX' } }),
+    ];
+    expect(matchDecks(decks, { ...EMPTY_DECK_FILTERS, factions: ['YZ'], sort: 'name' }).map((d) => d.id)).toEqual(['z', 'a']);
   });
 });
 

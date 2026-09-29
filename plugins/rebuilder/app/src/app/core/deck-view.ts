@@ -117,6 +117,8 @@ export interface DeckListItem {
   guest: boolean;
   /** Last modification: see `lastModified`. */
   updatedAt: string;
+  /** `createdAt` of the deck, `''` when absent or not a valid date. */
+  createdAt: string;
   /** `upvoteCount` / `hasUpvoted` of the decks API. */
   likes: number;
   liked: boolean;
@@ -152,6 +154,7 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     rarity,
     guest: !!deck.guest,
     updatedAt: lastModified(deck),
+    createdAt: deck.createdAt && !Number.isNaN(Date.parse(deck.createdAt)) ? deck.createdAt : '',
     likes: deck.upvoteCount ?? 0,
     liked: !!deck.hasUpvoted,
   };

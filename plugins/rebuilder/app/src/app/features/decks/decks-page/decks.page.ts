@@ -21,7 +21,7 @@ import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
-import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks } from '../deck-filters';
+import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks, matchDecks } from '../deck-filters';
 import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
 import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
 
@@ -185,7 +185,7 @@ export class DecksPage {
     const likes = this.likes();
     const tab = this.tab();
     // The contest keeps the order of the snapshot, whatever the sort chosen on the other tabs.
-    if (tab === 'contest') return filterDecks(this.contestInSet(), { ...this.filters(), format: '', visibility: 'all', sort: 'created' });
+    if (tab === 'contest') return matchDecks(this.contestInSet(), { ...this.filters(), format: '', visibility: 'all' });
     return (tab === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
   });
   protected readonly tabs = computed(() => [
