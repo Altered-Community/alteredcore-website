@@ -352,6 +352,19 @@ VALUES
   <li>Multiple files are supported: add them in order to the array.</li>
 </ul>
 
+<h3 id="service-worker">Service worker and offline caching</h3>
+
+<p>The site shell registers the site's only service worker (<code>/sw.php</code>, scope <code>BASE_URL/</code>) so the site can be installed as a PWA. <strong>Plugins must not register their own service worker</strong>: a second worker on the same scope would replace the shell's one, and one on a narrower scope would take over the plugin's pages from it.</p>
+
+<p>What the shell's worker does with plugin requests:</p>
+<ul>
+  <li>Page navigations (<code>/pages/{slug}</code>, including any sub-path) always go to the network and are never cached. When the network is down, an offline page is shown.</li>
+  <li><code>/api/…</code>, <code>/papi/…</code>, <code>/auth/…</code>, <code>/admin/…</code> and every non-GET request are not handled by the worker at all.</li>
+  <li>Static files under <code>plugins/{id}/</code> (CSS, JS, images, fonts) are cached. Unversioned CSS/JS is fetched from the network first and the cache is only used offline; add a <code>?v=</code> query string if you want it served from the cache while the network copy is refreshed in the background.</li>
+</ul>
+
+<p>A plugin with a fixed bottom bar on mobile can add the <code>data-ac-bottom-nav</code> attribute to it, so the install toast is placed above the bar instead of covering it.</p>
+
 <h3>Global assets — typical use cases</h3>
 <p>Use <code>global_css</code> / <code>global_js</code> when your plugin needs to inject UI or behaviour that must be present on pages it does not own — for example:</p>
 <ul>

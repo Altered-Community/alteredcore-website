@@ -1177,24 +1177,27 @@ function getBanner(): array {
 
 function getNavItems(): array {
     $lang = getUiLang();
-    try {
-        $rows = getDB()->query(q(
-            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
-             FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
-        ))->fetchAll();
-    } catch (Exception $e) {
-        // Fallback: some columns may not exist yet on live DB (pending migration)
+    // Newest schema first; older queries are fallbacks for live DBs with pending migrations
+    $queries = [
+        "SELECT id, parent_id, label_{$lang} AS label, description_{$lang} AS description, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+        "SELECT id, parent_id, label_{$lang} AS label, '' AS description, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+        "SELECT id, parent_id, label_{$lang} AS label, '' AS description, url, icon, is_iframe,
+                0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
+                0 AS is_separator, 0 AS is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+    ];
+    $rows = null;
+    foreach ($queries as $sql) {
         try {
-            $rows = getDB()->query(q(
-                "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe,
-                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
-                        0 AS is_separator, 0 AS is_section_header
-                 FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
-            ))->fetchAll();
-        } catch (Exception $e2) {
-            return [];
+            $rows = getDB()->query(q($sql))->fetchAll();
+            break;
+        } catch (Exception $e) {
+            // try the next, older schema
         }
     }
+    if ($rows === null) return [];
     $children = [];
     $parents  = [];
     foreach ($rows as $row) {

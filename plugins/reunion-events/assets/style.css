@@ -282,6 +282,10 @@ a.event-card:hover .event-actions i {
     border-bottom: 1px solid var(--sand-200, #EDE3CC);
     gap: 0.25rem;
 }
+/* Wide screens: day cells get taller as the calendar widens, so they do not turn into flat strips. */
+@media (min-width: 1600px) {
+    .re-cal-day { min-height: clamp(5.5rem, 5.5vw, 9rem); }
+}
 
 .re-cal-day:nth-child(7n) { border-right: none; }
 
