@@ -1,15 +1,19 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
+import { AuthSession } from '../../../core/auth-session';
 import { CardsApiService } from '../../../core/cards-api.service';
 import { typeOf } from '../../../core/deck-rules';
 import { cardToLine, factionFromReference } from '../../../core/deck-view';
+import { DecksApiService } from '../../../core/decks-api.service';
+import { DECK_FORMATS } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
-import type { Card, DeckCardLine, DeckHero } from '../../../core/models';
+import type { Card, DeckCardLine, DeckFormat, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { contentLocale } from '../../../core/locale';
-import { ArInput, ArSegmented } from '../../../ui/fields';
+import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
 import { EquinoxImport } from '../equinox/equinox-import';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
@@ -31,15 +35,15 @@ export function parseDecklist(text: string): { reference: string; quantity: numb
 
 export type ImportMode = 'list' | 'equinox';
 
-/** `deckId`: the guest deck made from a list. */
+/** `deckId`: the deck made from a list (account deck when signed in, guest deck otherwise). */
 export interface ImportResult {
   deckId?: string;
 }
 
-/** Import window: a decklist into a guest deck, or the altered.gg export (Equinox ZIP) into the account. */
+/** Import window: a decklist into an account deck (a guest deck when signed out), or the altered.gg export (Equinox ZIP) into the account. */
 @Component({
   selector: 'app-import-deck',
-  imports: [ArButton, ArInput, ArSegmented, EquinoxImport],
+  imports: [ArButton, ArInput, ArSegmented, ArSelect, EquinoxImport],
   host: { class: 'ar-overlay-content' },
   templateUrl: './import-deck.overlay.html',
   styleUrl: './import-deck.overlay.scss',
@@ -49,8 +53,12 @@ export class ImportDeckOverlay {
   private readonly router = inject(Router);
   private readonly api = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
+  private readonly decksApi = inject(DecksApiService);
+  private readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
   protected readonly name = signal('');
+  protected readonly format = signal<DeckFormat>('standard');
+  protected readonly formats = DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }));
   protected readonly text = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -70,6 +78,10 @@ export class ImportDeckOverlay {
           }
         : null,
     );
+  }
+
+  protected setFormat(value: string): void {
+    this.format.set(DECK_FORMATS.find((f) => f.value === value)?.value ?? 'standard');
   }
 
   protected signIn(): void {
@@ -102,11 +114,36 @@ export class ImportDeckOverlay {
           }
           return cardToLine(card, typeOf(card) === 'HERO' ? 1 : r.quantity);
         });
-        const deck = this.guests.create({ name: this.name().trim() || $localize`:@@decks.import.defaultName:Deck importé`, hero, deckCards: lines });
-        this.busy.set(false);
-        this.ref.close({ deckId: deck.id });
+        const name = this.name().trim() || $localize`:@@decks.import.defaultName:Deck importé`;
+        const format = this.format();
+        if (!this.auth.isLoggedIn()) {
+          const deck = this.guests.create({ name, format, hero, deckCards: lines });
+          this.busy.set(false);
+          this.ref.close({ deckId: deck.id });
+          return;
+        }
+        // Signed in: an account deck, as « Nouveau deck » does. On a refusal the window stays open with the list.
+        const deckCards = lines.map((l) => ({ cardReference: l.cardReference, quantity: l.quantity }));
+        this.decksApi.create({ name, format, isPublic: false, deckCards }).subscribe({
+          next: (deck) => {
+            this.busy.set(false);
+            this.ref.close({ deckId: deck.id });
+          },
+          error: (err: unknown) => {
+            this.busy.set(false);
+            this.error.set(importErrorMessage(err));
+          },
+        });
       });
   }
+}
+
+function importErrorMessage(err: unknown): string {
+  const status = err instanceof HttpErrorResponse ? err.status : -1;
+  if (status === 0) return $localize`:@@decks.import.errNetwork:Impossible de joindre le serveur. Vérifiez votre connexion.`;
+  if (status === 401) return $localize`:@@decks.import.errSession:Session expirée : reconnectez-vous.`;
+  if (status === 400 || status === 422) return $localize`:@@decks.import.errRejected:Le serveur refuse ce deck : vérifiez les références de la liste.`;
+  return $localize`:@@decks.import.errServer:Le deck n’a pas pu être créé sur votre compte. Réessayez.`;
 }
 
 export function openImportDeck(overlay: ArOverlayService, mode: ImportMode = 'list') {

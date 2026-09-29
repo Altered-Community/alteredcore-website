@@ -346,11 +346,12 @@ export class DecksPage {
 
   protected importDeck(): void {
     // Signed in, the window opens on the altered.gg export (the site shows its import link to
-    // signed-in users only); the list import makes a guest deck.
+    // signed-in users only). Both imports make account decks when signed in, a guest deck otherwise.
     openImportDeck(this.overlay, this.auth.isLoggedIn() ? 'equinox' : 'list').afterClosed.subscribe((res) => {
+      // The export import creates account decks even when the window is closed with its cross mid-import,
+      // and the list stays alive behind the deck page (DecksListReuseStrategy): reload it either way.
+      if (this.auth.isLoggedIn()) this.serverRes.reload();
       if (res?.deckId) void this.router.navigate(['/decks', res.deckId]);
-      // The export import creates account decks, even when the window is closed with its cross mid-import.
-      else if (this.auth.isLoggedIn()) this.serverRes.reload();
     });
   }
 
