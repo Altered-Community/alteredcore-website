@@ -11,7 +11,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: '../..',
   testMatch: ['tests/e2e/**/*.spec.ts', 'plugins/*/e2e/**/*.spec.ts'],
-  testIgnore: ['**/node_modules/**'],
+  // .claude/worktrees: other checkouts of the repo (agent worktrees), with their own specs.
+  testIgnore: ['**/node_modules/**', '**/.claude/**'],
   outputDir: './test-results',
   timeout: 90_000,
   expect: { timeout: 20_000 },
