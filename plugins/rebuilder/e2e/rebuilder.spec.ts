@@ -227,7 +227,7 @@ test.describe('ReBuilder in the shell · languages', () => {
       const l = LABELS[lang];
       const other = LABELS[lang === 'en' ? 'fr' : 'en'];
       await page.goto(`${DECKS}?lang=${lang}`);
-      await expect(page.locator('.ac-embed')).toBeVisible();
+      await expect(page.locator('.ac-plugin-root')).toBeVisible();
       // A guest without decks: the list is empty (hidden on mobile), the guest notice is shown.
       await expect(page.getByRole('list', { name: l.myDecks })).toBeAttached();
       await expect(page.getByText(l.guest)).toBeVisible();
