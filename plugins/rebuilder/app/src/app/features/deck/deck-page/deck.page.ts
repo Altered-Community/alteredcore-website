@@ -23,7 +23,7 @@ import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
-import { openLegalityDetails } from '../legality-details/legality-details.overlay';
+import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { HandCalculators } from '../hand-calculators/hand-calculators';
 import { HandStats } from '../hand-stats/hand-stats';
 import { TestHand } from '../test-hand/test-hand';

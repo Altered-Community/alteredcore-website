@@ -6,11 +6,12 @@
     [formatLabel]="formatLabel()"
     [isPublic]="deck.isPublic()"
     [total]="deck.total()"
-    [legal]="deck.status().legal && !!deck.hero()"
+    [legal]="legality().state === 'legal'"
     [issues]="deck.status().issues"
     [rarity]="deck.stats().rarity"
     [editable]="deck.editable()"
     (openSettings)="openSettings.emit()"
+    (showLegality)="showLegality()"
   />
 }
 <ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
@@ -23,6 +24,7 @@
         [card]="l.card"
         [quantity]="l.quantity"
         [max]="deck.maxFor(l.card)"
+        [issues]="issues().get(l.card.reference) ?? noIssues"
         [readonly]="readonly() || !deck.editable()"
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />

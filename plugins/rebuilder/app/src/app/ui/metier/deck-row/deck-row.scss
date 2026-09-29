@@ -63,3 +63,17 @@
   border: 1.5px solid var(--ar-color-text);
   color: var(--ar-color-text);
 }
+:host(.invalid) .name {
+  color: var(--ar-color-danger);
+}
+.issue {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ar-color-danger);
+  cursor: help;
+}
+.blocked {
+  display: flex;
+  flex-shrink: 0;
+  cursor: help;
+}

@@ -1,0 +1,42 @@
+<div class="ar-overlay-body">
+  <section>
+    <h3 i18n="@@deck.legality.format">Format du deck</h3>
+    <p>{{ format }}</p>
+  </section>
+  @if (checks.length) {
+    <section>
+      <h3 i18n="@@deck.legality.checks">Règles du format</h3>
+      <ul class="checks">
+        @for (c of checks; track c.rule) {
+          <li [class.failed]="!c.ok">
+            <ar-icon [name]="c.ok ? 'check' : 'x'" [size]="16" [strokeWidth]="2.6" />
+            <span class="ar-sr-only">{{ c.ok ? passed : failed }}</span>
+            <span class="label">{{ c.label }}</span>
+            @if (c.detail) {
+              <span class="detail">{{ c.detail }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  } @else if (rules.length) {
+    <section>
+      <h3 i18n="@@deck.legality.rules">Erreurs de légalité</h3>
+      <ul>
+        @for (r of rules; track r) {
+          <li>{{ r }}</li>
+        }
+      </ul>
+    </section>
+  }
+  @if (errors.length) {
+    <section>
+      <h3 i18n="@@deck.legality.errors">Erreurs de format</h3>
+      <ul>
+        @for (e of errors; track $index) {
+          <li>{{ e }}</li>
+        }
+      </ul>
+    </section>
+  }
+</div>

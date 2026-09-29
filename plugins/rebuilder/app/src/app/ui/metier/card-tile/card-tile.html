@@ -9,6 +9,11 @@
   <!-- Card browser: no quantity control. -->
 } @else if (readonly()) {
   <span class="qty" [attr.aria-label]="quantityLabel()">×{{ quantity() }}</span>
+} @else if (quantity() === 0 && max() === 0 && blockedReason()) {
+  <span class="action blocked" [title]="blockedReason()">
+    <ar-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ar-badge>
+    <span class="ar-sr-only">{{ blockedReason() }}</span>
+  </span>
 } @else if (quantity() === 0) {
   <ar-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="quantityChange.emit(1)" />
 } @else {

@@ -18,6 +18,12 @@
   right: 10px;
   bottom: 10px;
 }
+.blocked {
+  display: flex;
+  cursor: help;
+  box-shadow: var(--ar-shadow-fab);
+  border-radius: var(--ar-radius-pill);
+}
 .qty {
   position: absolute;
   right: 10px;

@@ -22,6 +22,7 @@
           [plain]="browse()"
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
+          [blockedReason]="blockedReason(c)"
           (quantityChange)="deck.setQuantity(c, $event)"
         />
       }
@@ -41,6 +42,7 @@
           [card]="c"
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
+          [blockedReason]="blockedReason(c)"
           (quantityChange)="deck.setQuantity(c, $event)"
         />
       }

@@ -74,7 +74,7 @@ export class DeckStore {
   /** Non-hero lines. */
   readonly lines = signal<HydratedLine[]>([]);
 
-  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format()));
+  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format(), this.hero()));
   /** `legal` / `legalityDetail` / `formatErrors` of the decks API, until the deck is changed here. */
   private readonly apiLegality = signal<DeckLegality | null>(null);
   /** The decks API's verdict for a server deck; the editor's own checks for a guest or edited deck. */

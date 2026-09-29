@@ -65,6 +65,20 @@
   padding-top: var(--ar-space-2-5);
   border-top: 1px solid var(--ar-color-divider);
 }
+.legality {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ar-color-text-muted);
+  cursor: pointer;
+  border-radius: var(--ar-radius-pill);
+}
+:host-context([data-density='touch']) .legality {
+  min-height: var(--ar-control-md);
+}
 .total {
   display: flex;
   align-items: baseline;
