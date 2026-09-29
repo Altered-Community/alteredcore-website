@@ -84,5 +84,7 @@ window.acSpinner = {
 })();
 </script>
 <?php
+// PWA install toast + service worker registration
+require __DIR__ . '/pwa.php';
 require_once __DIR__ . '/shortcodes.php';
 require themeFile('footer.php');

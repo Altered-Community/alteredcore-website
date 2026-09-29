@@ -1215,3 +1215,70 @@ html { transition: background-color 0.25s, color 0.25s; }
 
 /* Plugin-specific styles live in each plugin's own CSS file (e.g. plugins/core-altered-cards/assets/style.css).
    Themes override plugin classes via CSS variables defined above or via direct class overrides. */
+
+/* =========================================================
+   PWA — safe areas and install toast (js/pwa.js, includes/pwa.php)
+   ========================================================= */
+
+/* viewport-fit=cover lets the page extend under notches and the home
+   indicator; keep content inside the safe area (all insets are 0 elsewhere). */
+body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+}
+body.page-fullwidth main {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+.ac-pwa-toast {
+    position: fixed;
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px) + var(--ac-pwa-bottom-offset, 0px));
+    z-index: 1040; /* above the sticky header and plugin bottom tabs, below Bootstrap modals */
+    width: 22rem;
+    max-width: calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 0.85rem 0.85rem 1rem;
+    background: var(--sand-50);
+    color: var(--neutral-800);
+    border: 2px solid var(--sand-200);
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+    font-size: 0.88rem;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.ac-pwa-toast[hidden] { display: none; }
+.ac-pwa-toast.is-visible { opacity: 1; transform: none; }
+.ac-pwa-toast-icon { width: 40px; height: 40px; flex-shrink: 0; }
+.ac-pwa-toast-body { flex: 1; min-width: 0; }
+.ac-pwa-toast-title { font-weight: 800; color: var(--neutral-800); margin-bottom: 0.2rem; }
+.ac-pwa-toast-text { color: var(--neutral-600); line-height: 1.45; }
+.ac-pwa-toast-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.65rem; }
+.ac-pwa-toast-actions .btn { font-size: 0.82rem; }
+.ac-pwa-toast .ac-pwa-later { color: var(--neutral-600); text-decoration: none; }
+.ac-pwa-toast .ac-pwa-later:hover { color: var(--neutral-800); text-decoration: underline; }
+.ac-pwa-toast .ac-pwa-close { flex-shrink: 0; font-size: 0.7rem; margin-top: 0.1rem; }
+[data-theme="dark"] .ac-pwa-toast {
+    background: var(--sand-200);
+    border-color: var(--sand-300);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+@media (max-width: 575.98px) {
+    .ac-pwa-toast {
+        left: calc(0.75rem + env(safe-area-inset-left, 0px));
+        right: calc(0.75rem + env(safe-area-inset-right, 0px));
+        bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px) + var(--ac-pwa-bottom-offset, 0px));
+        width: auto;
+        max-width: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ac-pwa-toast { transition: none; }
+}
