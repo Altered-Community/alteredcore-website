@@ -60,6 +60,18 @@ export class ImportDeckOverlay {
     { value: 'equinox' as ImportMode, label: $localize`:@@decks.import.modeEquinox:Export altered.gg` },
   ];
 
+  /** During an import, a close by the user (cross, Escape, backdrop, Back) asks to cancel it first. */
+  protected guardClose(busy: boolean, equinox: EquinoxImport): void {
+    this.ref.closeGuard.set(
+      busy
+        ? () => {
+            equinox.askCancel();
+            return false;
+          }
+        : null,
+    );
+  }
+
   protected signIn(): void {
     this.ref.close();
     void this.router.navigateByUrl('/login');

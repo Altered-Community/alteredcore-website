@@ -32,8 +32,12 @@ describe('parseEquinoxCsv', () => {
     expect(decks).toEqual([{ name: 'A', format: 'standard', hero: 'ALT_HERO', cards: [] }]);
   });
 
-  it('splits on semicolons outside quotes only', () => {
+  it('splits on semicolons outside quotes only, like str_getcsv', () => {
     expect(splitCsvLine('a;"b;c";;d')).toEqual(['a', 'b;c', '', 'd']);
+    // A quote inside an unquoted field is a plain character.
+    expect(splitCsvLine('d1;12" deck;standard')).toEqual(['d1', '12" deck', 'standard']);
+    expect(splitCsvLine('"a""b"c;x')).toEqual(['a"bc', 'x']);
+    expect(splitCsvLine('')).toEqual(['']);
   });
 });
 

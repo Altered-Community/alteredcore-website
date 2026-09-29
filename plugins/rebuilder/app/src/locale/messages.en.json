@@ -402,7 +402,6 @@
     "decks.equinox.errNetwork": "Cannot reach the server. Check your connection.",
     "decks.equinox.errSession": "Session expired: sign in again.",
     "decks.equinox.errRate": "Too many requests. Try again shortly.",
-    "decks.equinox.errRejected": "The server rejects this deck (unknown card or format).",
     "decks.equinox.errUnavailable": "Server temporarily unavailable.",
     "decks.equinox.errGeneric": "An error occurred while importing this deck.",
     "decks.equinox.sumImportedOne": "1 deck imported",
@@ -430,6 +429,12 @@
     "decks.equinox.etaMin": "~{$mins} min left",
     "decks.equinox.titleCancelled": "Import cancelled",
     "decks.equinox.titleDone": "Import complete",
-    "decks.equinox.invalidDeck": "This deck has no valid card and cannot be imported."
+    "decks.equinox.invalidDeck": "This deck has no valid card and cannot be imported.",
+    "decks.equinox.noFile": "Choose a .zip file.",
+    "decks.equinox.tokenError": "Could not get access to your decks. Sign out, then sign in again.",
+    "decks.equinox.errBadRequest": "This deck contains data the server does not accept.",
+    "decks.equinox.errCsrf": "Invalid form token. Reload the page.",
+    "decks.equinox.errServer": "Unexpected server error.",
+    "decks.contest.error": "Could not load the contest decks."
   }
 }

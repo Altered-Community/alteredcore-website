@@ -3,7 +3,7 @@
     <ar-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
   }
   @if (ref.data.showHero) {
-    <ar-select label="Héros" i18n-label="@@decks.filters.hero" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+    <ar-select label="Héros" i18n-label="@@decks.filters.hero" [options]="heroes()" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
   }
   @if (ref.data.showVisibility) {
     <div class="field">

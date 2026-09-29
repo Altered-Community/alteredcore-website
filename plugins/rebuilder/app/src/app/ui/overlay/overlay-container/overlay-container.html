@@ -6,7 +6,7 @@
   @if (r.isStep || r.back() || (r.leading() === 'back' && content.mode !== 'dialog')) {
     <button type="button" class="icon-btn" aria-label="Retour" i18n-aria-label="@@ui.overlay.back" (click)="goBack()"><ar-icon name="chevron-left" [size]="22" /></button>
   } @else if (content.mode === 'fullscreen') {
-    <button type="button" class="icon-btn" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.close()"><ar-icon name="x" [size]="22" /></button>
+    <button type="button" class="icon-btn" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.dismiss()"><ar-icon name="x" [size]="22" /></button>
   }
   <div class="titles">
     <h2 #title class="title" tabindex="-1" [id]="content.titleId">
@@ -20,7 +20,7 @@
     <button type="button" class="head-action" (click)="a.run()">{{ a.label }}</button>
   }
   @if (content.mode === 'dialog' || ((content.mode === 'sheet' || content.mode === 'drawer') && r.leading() !== 'back' && !r.isStep)) {
-    <button type="button" class="icon-btn close" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.close()"><ar-icon name="x" [size]="20" /></button>
+    <button type="button" class="icon-btn close" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.dismiss()"><ar-icon name="x" [size]="20" /></button>
   }
 </div>
 @for (v of root.views(); track v.ref) {

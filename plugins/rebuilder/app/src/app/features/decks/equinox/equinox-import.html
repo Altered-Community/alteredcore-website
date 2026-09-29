@@ -1,6 +1,7 @@
 <div class="ar-overlay-body">
-  <ng-content />
   @if (phase() === 'pick' || phase() === 'reading') {
+    <!-- The source switch: only before an import, so an import is never left by it. -->
+    <ng-content />
     @if (!auth.isLoggedIn()) {
       <p class="notice" role="note">
         <ng-container i18n="@@decks.equinox.signInFirst">Les decks de l’export sont importés dans votre compte : connectez-vous d’abord.</ng-container>

@@ -52,6 +52,11 @@ export class ArOverlayRef<R = unknown, D = unknown> {
   readonly leading = signal<'close' | 'back'>('close');
   /** When set, the leading back arrow calls this instead of closing. */
   readonly back = signal<(() => void) | null>(null);
+  /**
+   * Asked before the user closes the window (cross, Escape, backdrop, browser Back); `false` keeps it
+   * open. Programmatic `close()` ignores it.
+   */
+  readonly closeGuard = signal<(() => boolean) | null>(null);
   private readonly closed$ = new Subject<R | undefined>();
   readonly afterClosed: Observable<R | undefined> = this.closed$.asObservable();
   dialogRef?: { close(result?: unknown): void };
@@ -80,6 +85,14 @@ export class ArOverlayRef<R = unknown, D = unknown> {
 
   close(result?: R): void {
     this.dialogRef?.close(result);
+  }
+
+  /** Close asked by the user: goes through `closeGuard`. Returns whether the window closes. */
+  dismiss(): boolean {
+    const guard = this.closeGuard();
+    if (guard && !guard()) return false;
+    this.close();
+    return true;
   }
 
   /** Internal: called once by the service. */
@@ -127,7 +140,9 @@ export class ArOverlayService {
           return;
         }
         const top = this.stack[this.stack.length - 1];
-        if (top && history.state?.arOverlay !== this.stack.length) top.close();
+        if (!top || history.state?.arOverlay === this.stack.length) return;
+        // Kept open by its guard: put back the history entry the Back button popped.
+        if (!top.dismiss()) history.pushState({ ...(history.state ?? {}), arOverlay: this.stack.length }, '');
       });
     }
   }
@@ -204,11 +219,11 @@ export class ArOverlayService {
     });
     ref.dialogRef = dialogRef;
     ref.stepOpener = (c, cfg) => this.openStep(ref as ArOverlayRef, c, cfg, () => dialogRef.componentInstance);
-    dialogRef.backdropClick.subscribe(() => ref.close());
+    dialogRef.backdropClick.subscribe(() => ref.dismiss());
     dialogRef.keydownEvents.subscribe((e) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       e.preventDefault();
-      ref.views().at(-1)!.ref.close();
+      ref.views().at(-1)!.ref.dismiss();
     });
     this.register(ref as ArOverlayRef);
 

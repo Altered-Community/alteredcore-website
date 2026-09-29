@@ -1,5 +1,5 @@
 @if (mode() === 'equinox') {
-  <app-equinox-import (closed)="ref.close()" (signIn)="signIn()">
+  <app-equinox-import #equinox (closed)="ref.close()" (signIn)="signIn()" (busy)="guardClose($event, equinox)">
     <ar-segmented ariaLabel="Source" i18n-ariaLabel="@@decks.import.mode" [fullWidth]="true" [options]="modes" [value]="mode()" (valueChange)="mode.set($event ?? 'list')" />
   </app-equinox-import>
 } @else {

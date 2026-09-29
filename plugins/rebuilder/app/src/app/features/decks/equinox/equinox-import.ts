@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, ElementRef, afterRenderEffect, computed, inject, output, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterRenderEffect, computed, effect, inject, output, signal, viewChild } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { DecksApiService } from '../../../core/decks-api.service';
@@ -11,7 +11,7 @@ import { ArProgressBar } from '../../../ui/containers';
 import { ArFileInput } from '../../../ui/fields';
 import { uiLocale } from '../../../core/i18n';
 import { ArBreakpointService } from '../../../ui/layout.services';
-import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, withHero } from './equinox-csv';
+import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, validCards, withHero } from './equinox-csv';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
 
 export type ImportStatus = 'pending' | 'current' | 'imported' | 'skipped' | 'failed' | 'failedFinal' | 'cancelled';
@@ -51,7 +51,7 @@ const STATUS_TONES: Record<ImportStatus, 'blue' | 'green' | 'neutral' | 'red' | 
   current: 'blue',
   imported: 'green',
   skipped: 'neutral',
-  failed: 'red',
+  failed: 'orange',
   failedFinal: 'red',
   cancelled: 'orange',
 };
@@ -82,6 +82,8 @@ export class EquinoxImport {
   /** « Annuler » or « Terminer ». */
   readonly closed = output<void>();
   readonly signIn = output<void>();
+  /** An import is running or paused: the window asks before closing. */
+  readonly busy = output<boolean>();
 
   protected readonly phase = signal<Phase>('pick');
   protected readonly file = signal<File | null>(null);
@@ -97,9 +99,9 @@ export class EquinoxImport {
   private running = false;
   private destroyed = false;
   private lastStart = 0;
-  /** The user's alt-art preference is « Global »: read once per import. */
-  private globalAltArts = false;
-  /** Account decks by name; `cards` once known (fetched, or created by this import). */
+  /** Bumped by each new file: a request of a previous run never writes into the new rows. */
+  private run = 0;
+  /** Account decks listed before the import, by name; `cards` once fetched. */
   private existing: { id: string; name: string; cards?: DeckCardRef[] }[] = [];
 
   protected readonly maxAttempts = MAX_ATTEMPTS;
@@ -131,21 +133,16 @@ export class EquinoxImport {
     return rest ? $localize`:@@decks.equinox.etaMinSec:~${mins}:mins: min ${rest}:secs: s restantes` : $localize`:@@decks.equinox.etaMin:~${mins}:mins: min restantes`;
   });
 
-  /** « 3 decks importés, 1 déjà existant, 1 échec » (parts at 0 left out, except the first). */
+  /** « 3 decks importés · 1 déjà existant · 1 échec » (parts at 0 left out, as on the site). */
   protected readonly summary = computed(() => {
     const { imported, skipped, failed, failedFinal, cancelled } = this.counts();
     const failures = failed + failedFinal;
-    const parts = [
-      imported === 0
-        ? $localize`:@@decks.equinox.sumImportedNone:Aucun deck importé`
-        : imported === 1
-          ? $localize`:@@decks.equinox.sumImportedOne:1 deck importé`
-          : $localize`:@@decks.equinox.sumImported:${imported}:count: decks importés`,
-    ];
+    const parts: string[] = [];
+    if (imported) parts.push(imported === 1 ? $localize`:@@decks.equinox.sumImportedOne:1 deck importé` : $localize`:@@decks.equinox.sumImported:${imported}:count: decks importés`);
     if (skipped) parts.push(skipped === 1 ? $localize`:@@decks.equinox.sumSkippedOne:1 déjà existant` : $localize`:@@decks.equinox.sumSkipped:${skipped}:count: déjà existants`);
     if (failures) parts.push(failures === 1 ? $localize`:@@decks.equinox.sumFailedOne:1 échec` : $localize`:@@decks.equinox.sumFailed:${failures}:count: échecs`);
     if (cancelled) parts.push(cancelled === 1 ? $localize`:@@decks.equinox.sumCancelledOne:1 annulé` : $localize`:@@decks.equinox.sumCancelled:${cancelled}:count: annulés`);
-    return parts.join(', ');
+    return parts.join(' · ') || $localize`:@@decks.equinox.sumImportedNone:Aucun deck importé`;
   });
   protected readonly doneTitle = computed(() =>
     this.cancelled() ? $localize`:@@decks.equinox.titleCancelled:Import annulé` : $localize`:@@decks.equinox.titleDone:Import terminé`,
@@ -155,6 +152,7 @@ export class EquinoxImport {
   private readonly currentIndex = computed(() => this.rows().findIndex((r) => r.status === 'current'));
 
   constructor() {
+    effect(() => this.busy.emit(this.isRunning()));
     // The list follows the deck being imported.
     afterRenderEffect(() => {
       const i = this.currentIndex();
@@ -178,6 +176,10 @@ export class EquinoxImport {
   protected async start(): Promise<void> {
     const file = this.file();
     if (!file) return;
+    if (!file.size) {
+      this.error.set($localize`:@@decks.equinox.noFile:Choisissez un fichier .zip.`);
+      return;
+    }
     if (!/\.zip$/i.test(file.name)) {
       this.error.set($localize`:@@decks.equinox.notZip:Le fichier doit être un .zip.`);
       return;
@@ -188,7 +190,7 @@ export class EquinoxImport {
     try {
       const csv = await readZipText(file, 'decks.csv');
       if (csv === null) throw new ZipError('no decks.csv');
-      if (!csv.trim()) {
+      if (csv === '') {
         this.fail($localize`:@@decks.equinox.emptyCsv:Le fichier decks.csv est vide.`);
         return;
       }
@@ -208,10 +210,18 @@ export class EquinoxImport {
         deck.name && deck.cards.length ? { deck, status: 'pending', attempts: 0 } : { deck, status: 'failedFinal', attempts: MAX_ATTEMPTS, error: invalid },
       ),
     );
+    const run = ++this.run;
+    const existing = await this.loadMine();
+    if (run !== this.run || this.destroyed) return;
+    if (existing === 'unauthorized') {
+      this.rows.set([]);
+      this.fail($localize`:@@decks.equinox.tokenError:Impossible d’obtenir l’accès à vos decks. Déconnectez-vous puis reconnectez-vous.`);
+      return;
+    }
+    this.existing = existing;
     this.cancelled.set(false);
     this.durations.set([]);
     this.phase.set('importing');
-    [this.existing, this.globalAltArts] = await Promise.all([this.loadMine(), lastValueFrom(this.ownership.globalAltArts())]);
     void this.pump();
   }
 
@@ -237,8 +247,14 @@ export class EquinoxImport {
     this.phase.set('done');
   }
 
+  /** Asked by the window on a close by the user during an import: confirm in place first. */
+  askCancel(): void {
+    this.confirmCancel.set(true);
+  }
+
   /** « Importer un autre fichier ». */
   protected reset(): void {
+    this.run++;
     this.rows.set([]);
     this.file.set(null);
     this.error.set(null);
@@ -260,8 +276,9 @@ export class EquinoxImport {
   private async pump(): Promise<void> {
     if (this.running) return;
     this.running = true;
+    const run = this.run;
     try {
-      while (this.phase() === 'importing' && !this.destroyed) {
+      while (this.phase() === 'importing' && !this.destroyed && run === this.run) {
         const i = this.rows().findIndex((r) => !DONE.includes(r.status));
         if (i < 0) {
           this.phase.set('done');
@@ -270,37 +287,43 @@ export class EquinoxImport {
         if (this.rows()[i].status === 'failed') return;
         const wait = this.lastStart + MIN_INTERVAL_MS - Date.now();
         if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-        if (this.phase() !== 'importing' || this.destroyed) return;
+        if (this.phase() !== 'importing' || this.destroyed || run !== this.run) return;
         this.lastStart = Date.now();
-        await this.importRow(i);
+        await this.importRow(i, run);
       }
     } finally {
       this.running = false;
     }
   }
 
-  private async importRow(i: number): Promise<void> {
+  private async importRow(i: number, run: number): Promise<void> {
     const started = Date.now();
     this.setRow(i, { status: 'current' });
     const row = this.rows()[i];
+    // A cancel, or a new file, while the request was in flight: its answer is dropped.
+    const stale = () => this.cancelled() || run !== this.run;
     try {
-      // « Global » alt-art preference: the user's alt arts replace the exported illustrations, as
-      // the site's importer does; the hero is added afterwards, as it was exported.
-      const exported = this.globalAltArts ? await lastValueFrom(this.ownership.applyAltArts(row.deck.cards)) : row.deck.cards;
+      // « Global » alt-art preference (read for each deck, as the site's importer does): the user's
+      // alt arts replace the exported cards, unless the answer holds an invalid card; the hero is
+      // added afterwards, as it was exported.
+      let exported = row.deck.cards;
+      if (await lastValueFrom(this.ownership.globalAltArts())) {
+        const applied = await lastValueFrom(this.ownership.applyAltArts(exported));
+        if (validCards(applied)) exported = applied;
+      }
       const deck = { name: row.deck.name, cards: withHero(row.deck.hero, exported) };
       let status: ImportStatus = 'skipped';
       if (!(await this.alreadyThere(deck))) {
-        const created = await lastValueFrom(
+        await lastValueFrom(
           this.decksApi.create({ name: deck.name, format: row.deck.format as DeckFormat, isPublic: false, isDraft: false, deckCards: deck.cards }),
         );
-        this.existing.push({ id: created.id, name: deck.name, cards: deck.cards });
         status = 'imported';
       }
-      if (this.cancelled()) return;
+      if (stale()) return;
       this.durations.update((d) => [...d, Date.now() - started].slice(-ETA_WINDOW));
       this.setRow(i, { status, error: undefined });
     } catch (err) {
-      if (this.cancelled()) return;
+      if (stale()) return;
       const attempts = row.attempts + 1;
       this.setRow(i, { status: attempts >= MAX_ATTEMPTS ? 'failedFinal' : 'failed', attempts, error: errorMessage(err) });
     }
@@ -320,7 +343,12 @@ export class EquinoxImport {
     return false;
   }
 
-  private async loadMine(): Promise<{ id: string; name: string }[]> {
+  /**
+   * The account decks, for the duplicate check (only decks that were there before the import, as
+   * on the site: two identical decks of one export are both created). `unauthorized`: no session
+   * token, nothing can be imported. Another error: no duplicate check (warning shown).
+   */
+  private async loadMine(): Promise<{ id: string; name: string }[] | 'unauthorized'> {
     const all: { id: string; name: string }[] = [];
     try {
       for (let page = 1; page <= MINE_MAX_PAGES; page++) {
@@ -330,9 +358,12 @@ export class EquinoxImport {
         all.push(...decks.map((d: Deck) => ({ id: d.id, name: d.name ?? '' })));
         if (decks.length < MINE_PAGE_SIZE) break;
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 401) return 'unauthorized';
       this.dedupWarn.set(true);
+      return [];
     }
+    this.dedupWarn.set(false);
     return all;
   }
 
@@ -346,7 +377,9 @@ function errorMessage(err: unknown): string {
   if (status === 0) return $localize`:@@decks.equinox.errNetwork:Impossible de joindre le serveur. Vérifiez votre connexion.`;
   if (status === 401) return $localize`:@@decks.equinox.errSession:Session expirée : reconnectez-vous.`;
   if (status === 429) return $localize`:@@decks.equinox.errRate:Trop de requêtes. Réessayez dans quelques instants.`;
-  if (status === 400 || status === 422) return $localize`:@@decks.equinox.errRejected:Le serveur refuse ce deck (carte ou format inconnu).`;
+  if (status === 400) return $localize`:@@decks.equinox.errBadRequest:Ce deck contient des données que le serveur n’accepte pas.`;
+  if (status === 403) return $localize`:@@decks.equinox.errCsrf:Jeton de formulaire invalide. Rechargez la page.`;
   if (status === 502 || status === 503 || status === 504) return $localize`:@@decks.equinox.errUnavailable:Serveur temporairement indisponible.`;
+  if (status >= 500) return $localize`:@@decks.equinox.errServer:Erreur serveur inattendue.`;
   return $localize`:@@decks.equinox.errGeneric:Une erreur est survenue lors de l’import de ce deck.`;
 }

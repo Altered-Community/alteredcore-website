@@ -8,7 +8,7 @@
     @if (layout() === 'grid') {
       <span class="badges">
         <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
-        @if (variant() === 'mine' && deck().legal) {
+        @if (variant() !== 'community' && deck().legal) {
           <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
         }
         @if (deck().winner) {
@@ -36,7 +36,7 @@
     @if (layout() === 'row') {
       <span class="badges-inline">
         <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
-        @if (variant() === 'mine' && deck().legal) {
+        @if (variant() !== 'community' && deck().legal) {
           <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
         }
         @if (deck().winner) {

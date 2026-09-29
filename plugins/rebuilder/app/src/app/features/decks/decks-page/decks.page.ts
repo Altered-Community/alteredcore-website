@@ -194,17 +194,20 @@ export class DecksPage {
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
   protected readonly contestLoading = computed(() => this.contestRes.isLoading());
+  protected readonly contestError = computed(() =>
+    this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
+  );
   protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
-  protected readonly heroes = computed(() => {
-    // On the contest tab, the heroes of the selected factions only (as on the site's decks page).
-    const factions = this.filters().factions;
+  protected readonly heroes = computed(() => this.heroOptions(this.filters().factions));
+  /** On the contest tab, the heroes of the set and of the selected factions (as on the site's decks page). */
+  private heroOptions(factions: string[]): { value: string; label: string }[] {
     const decks =
       this.tab() === 'contest'
         ? this.contestInSet().filter((d) => !factions.length || (!!d.hero && factions.includes(d.hero.faction)))
         : this.mine();
     const names = [...new Set(decks.map((d) => d.hero?.name).filter((n): n is string => !!n))].sort((a, b) => a.localeCompare(b, uiLocale()));
     return [{ value: '', label: $localize`:@@decks.page.allHeroes:Tous les héros` }, ...names.map((n) => ({ value: n, label: n }))];
-  });
+  }
   protected readonly visibilities = [
     { value: 'all' as Visibility, label: $localize`:@@decks.page.visibilityAll:Tous` },
     { value: 'public' as Visibility, label: $localize`:@@decks.page.visibilityPublic:Publics` },
@@ -238,12 +241,36 @@ export class DecksPage {
     this.guests.reload();
     // Contest tab: its filters come from the URL (`set`, `faction`, `hero`, `q`) and are kept there,
     // so a filtered list can be shared, as on the site's decks page.
+    // The site's links are understood too: `set=collection`, `hero=` a hero reference.
     const initial = this.route.snapshot.queryParamMap;
     if (initial.get('tab') === 'contest') {
-      if (initial.get('set') === 'all') this.contestSet.set('all');
-      const factions = (initial.get('faction') ?? '').split(',').filter((c) => FACTIONS.some((f) => f.code === c));
+      if (initial.get('set') === 'all' || initial.get('set') === 'collection') this.contestSet.set('all');
+      const factions = (initial.get('faction') ?? '').toUpperCase().split(',').filter((c) => FACTIONS.some((f) => f.code === c));
       this.filters.update((f) => ({ ...f, factions, hero: initial.get('hero') ?? '', q: initial.get('q') ?? '' }));
     }
+    // Once the snapshot is loaded, a hero of the URL becomes a name of the list, or is dropped.
+    effect(() => {
+      const all = this.contestAll();
+      if (this.tab() !== 'contest' || !all.length) return;
+      untracked(() => {
+        const hero = this.filters().hero;
+        if (!hero || this.heroes().some((o) => o.value === hero)) return;
+        const byRef = this.contestInSet().find((d) => d.hero?.reference === hero.toUpperCase())?.hero?.name;
+        this.patch({ hero: byRef && this.heroes().some((o) => o.value === byRef) ? byRef : '' });
+      });
+    });
+    // The contest keeps its own filters, apart from « Mes decks » and « Communauté » (as on the site).
+    let shownGroup = this.tab() === 'contest' ? 'contest' : 'decks';
+    const saved: Record<string, DeckFilters> = {};
+    effect(() => {
+      const group = this.tab() === 'contest' ? 'contest' : 'decks';
+      untracked(() => {
+        if (group === shownGroup) return;
+        saved[shownGroup] = this.filters();
+        this.filters.set(saved[group] ?? EMPTY_DECK_FILTERS);
+        shownGroup = group;
+      });
+    });
     effect(() => {
       if (this.tab() !== 'contest') return;
       const f = this.filters();
@@ -339,7 +366,9 @@ export class DecksPage {
   }
 
   protected importDeck(): void {
-    openImportDeck(this.overlay).afterClosed.subscribe((res) => {
+    // Signed in, the window opens on the altered.gg export (the site shows its import link to
+    // signed-in users only); the list import makes a guest deck.
+    openImportDeck(this.overlay, this.auth.isLoggedIn() ? 'equinox' : 'list').afterClosed.subscribe((res) => {
       if (res?.deckId) void this.router.navigate(['/decks', res.deckId]);
       // The export import creates account decks, even when the window is closed with its cross mid-import.
       else if (this.auth.isLoggedIn()) this.serverRes.reload();
@@ -354,6 +383,8 @@ export class DecksPage {
           filters: this.filters(),
           formats: this.formats,
           heroes: this.heroes(),
+          heroesFor: (factions: string[]) => this.heroOptions(factions),
+          clearHeroOnFaction: this.tab() === 'contest',
           visibilities: this.visibilities,
           showFormat: this.tab() !== 'contest',
           showHero: this.tab() !== 'community',

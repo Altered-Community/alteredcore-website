@@ -106,7 +106,9 @@
       }
     </div>
   }
-  @if (tab() === 'contest' && !contestLoading() && !list().length) {
+  @if (tab() === 'contest' && contestError(); as e) {
+    <p class="notice" role="alert">{{ e }}</p>
+  } @else if (tab() === 'contest' && !contestLoading() && !list().length) {
     <div class="empty">
       <p i18n="@@decks.page.noMatch">Aucun deck ne correspond à ces filtres.</p>
     </div>

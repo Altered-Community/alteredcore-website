@@ -46,6 +46,6 @@ export class ArOverlayContainer {
     const r = this.top().ref;
     const back = r.back();
     if (back) back();
-    else r.close();
+    else r.dismiss();
   }
 }

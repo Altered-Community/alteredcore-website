@@ -50,8 +50,10 @@ export function mergeAltArtLines(lines: unknown): CardQuantity[] | null {
   for (const group of lines) {
     for (const line of Array.isArray(group) ? group : [group]) {
       const { reference, quantity } = (line ?? {}) as { reference?: unknown; quantity?: unknown };
-      if (typeof reference !== 'string' || !reference || typeof quantity !== 'number') continue;
-      sum.set(reference, (sum.get(reference) ?? 0) + quantity);
+      // Quantities read like PHP's `(int)` (the site's importer): numeric strings count.
+      const qty = Math.trunc(Number(quantity));
+      if (typeof reference !== 'string' || !reference || !Number.isFinite(qty)) continue;
+      sum.set(reference, (sum.get(reference) ?? 0) + qty);
     }
   }
   return sum.size ? [...sum].map(([cardReference, quantity]) => ({ cardReference, quantity })) : null;

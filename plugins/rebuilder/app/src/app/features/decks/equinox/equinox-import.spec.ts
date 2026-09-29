@@ -63,6 +63,8 @@ describe('EquinoxImport', () => {
   let failNext: number;
   let mine: Deck[];
   let global: boolean;
+  let altArts: (cards: CardQuantity[]) => CardQuantity[];
+  let mineError: number;
 
   function setup(): Harness {
     created = [];
@@ -72,7 +74,7 @@ describe('EquinoxImport', () => {
         {
           provide: DecksApiService,
           useValue: {
-            listMine: () => of({ member: mine }),
+            listMine: () => (mineError ? throwError(() => new HttpErrorResponse({ status: mineError })) : of({ member: mine })),
             get: (id: string) => of(mine.find((d) => d.id === id)),
             create: (body: DeckWrite) => {
               if (failNext > 0) {
@@ -88,7 +90,7 @@ describe('EquinoxImport', () => {
           provide: OwnershipApiService,
           useValue: {
             globalAltArts: () => of(global),
-            applyAltArts: (cards: CardQuantity[]) => of(cards.map((c) => ({ ...c, cardReference: `${c.cardReference}_ALT` }))),
+            applyAltArts: (cards: CardQuantity[]) => of(altArts(cards)),
           },
         },
       ],
@@ -103,6 +105,8 @@ describe('EquinoxImport', () => {
     failNext = 0;
     mine = [];
     global = false;
+    mineError = 0;
+    altArts = (cards) => cards.map((c) => ({ ...c, cardReference: `${c.cardReference}_ALT` }));
   });
   afterEach(() => vi.useRealTimers());
 
@@ -129,6 +133,39 @@ describe('EquinoxImport', () => {
     const cmp = setup();
     await run(cmp);
     expect(created[0].deckCards).toEqual([{ cardReference: 'ALT_HERO', quantity: 1 }, { cardReference: 'ALT_A_ALT', quantity: 3 }]);
+  });
+
+  it('keeps the exported cards when the alt-art answer holds an invalid card', async () => {
+    global = true;
+    altArts = (cards) => cards.map((c) => ({ ...c, quantity: 0 }));
+    const cmp = setup();
+    await run(cmp);
+    expect(created[0].deckCards).toEqual([{ cardReference: 'ALT_HERO', quantity: 1 }, { cardReference: 'ALT_A', quantity: 3 }]);
+  });
+
+  it('stops before importing when the session has no token', async () => {
+    mineError = 401;
+    const cmp = setup();
+    await run(cmp);
+    expect(cmp.phase()).toBe('pick');
+    expect(created).toEqual([]);
+  });
+
+  it('imports everything, with a warning, when the account decks cannot be listed', async () => {
+    mineError = 502;
+    mine = [{ id: 'old', name: 'Alpha', deckCards: [{ cardReference: 'ALT_A', quantity: 3 }, { cardReference: 'ALT_HERO', quantity: 1 }] }];
+    const cmp = setup();
+    await run(cmp);
+    expect(created.map((d) => d.name)).toEqual(['Alpha', 'Beta']);
+  });
+
+  it('creates two identical decks of one export, as the site does (only account decks are duplicates)', async () => {
+    const cmp = setup();
+    cmp.pickFile(zipFile('decks.csv', ['id;name;format;hero;x;ref;x;qty', 'd1;Same;standard;ALT_HERO;x;ALT_A;x;1', 'd2;Same;standard;ALT_HERO;x;ALT_A;x;1'].join('\n')));
+    const started = cmp.start();
+    await vi.advanceTimersByTimeAsync(5000);
+    await started;
+    expect(created.map((d) => d.name)).toEqual(['Same', 'Same']);
   });
 
   it('skips a deck already in the account with the same name and cards', async () => {

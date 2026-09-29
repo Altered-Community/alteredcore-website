@@ -373,7 +373,7 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
     const rows = ['ALT_CORE_B_AX_04_C', 'ALT_CORE_B_AX_05_C', 'ALT_CORE_B_AX_06_C'].map((ref) => `d1;${name};standard;ALT_CORE_B_AX_01_C;x;${ref};C;3`);
     const zip = zipOf({ 'export/profile.json': '{}', 'export/decks.csv': `﻿id;name;format;hero;card;reference;rarity;quantity\n${rows.join('\n')}\n` });
     await login(page, 'alice', `${DECKS}?lang=fr`);
-    for (const expected of ['1 deck importé', 'Aucun deck importé, 1 déjà existant']) {
+    for (const expected of ['1 deck importé', '1 déjà existant']) {
       await page.getByRole('button', { name: compact ? 'Importer un deck' : 'Importer', exact: true }).click();
       const dialog = page.getByRole('dialog', { name: 'Importer des decks' });
       await dialog.getByText('Export altered.gg', { exact: true }).click();
