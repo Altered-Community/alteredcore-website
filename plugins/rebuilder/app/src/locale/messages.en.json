@@ -44,8 +44,8 @@
     "core.deck.defaultName": "New deck",
     "core.deckStore.notOnDevice": "Deck not found on this device.",
     "core.deckStore.deleteRefused": "Deletion refused: sign-in required.",
-    "core.deckStore.saveRefused": "Server save refused (401).",
-    "core.deckStore.saveFailed": "Save failed.",
+    "core.deckStore.saveRefused": "Save refused: sign in again (HTTP {$status}).",
+    "core.deckStore.saveFailed": "Save failed (HTTP {$status}).",
     "core.deck.untitled": "Untitled",
     "core.deckGroup.characters": "Characters",
     "core.deckGroup.character": "Character",
@@ -537,6 +537,21 @@
     "deck.handStats.plays": "{$count} plays",
     "deck.handStats.expNone": "No character",
     "deck.handStats.expOne": "1 Expedition",
-    "deck.handStats.expBoth": "Both Expeditions"
+    "deck.handStats.expBoth": "Both Expeditions",
+    "core.deckStore.createFailed": "Could not create the deck on your account (HTTP {$status}).",
+    "editor.retrySave": "Retry",
+    "shared.createFailed.title": "Could not create the deck",
+    "shared.createFailed.note": "You can retry, or create the deck on this device only: it will not be on your account.",
+    "shared.createFailed.cancel": "Cancel",
+    "shared.createFailed.local": "Create on this device",
+    "shared.createFailed.retry": "Retry",
+    "shared.deckSettings.name": "Deck name",
+    "shared.deckSettings.description": "Description",
+    "shared.deckSettings.descriptionPlaceholder": "Strategy, mulligan, card choices…",
+    "newDeck.description": "Description (optional)",
+    "newDeck.descriptionPlaceholder": "Strategy, mulligan, card choices…",
+    "ui.saveStatus.saving": "Saving…",
+    "ui.saveStatus.saved": "Saved",
+    "ui.saveStatus.error": "Not saved"
   }
 }

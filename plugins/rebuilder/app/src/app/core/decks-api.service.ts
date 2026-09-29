@@ -110,10 +110,15 @@ export class DecksApiService {
     );
   }
 
-  patch(id: string, body: Partial<DeckWrite>): Observable<Deck> {
+  /**
+   * `keepalive`: the request outlives the page (tab closed, site link followed), like `sendBeacon`
+   * but through the same client, so it keeps the relay's CSRF header (and the token outside the site).
+   */
+  patch(id: string, body: Partial<DeckWrite>, options: { keepalive?: boolean } = {}): Observable<Deck> {
     return this.send(() =>
       this.http.patch<Deck>(`${this.baseUrl}/api/decks/${encodeURIComponent(id)}`, body, {
         headers: this.headers(true),
+        keepalive: !!options.keepalive,
       }),
     );
   }

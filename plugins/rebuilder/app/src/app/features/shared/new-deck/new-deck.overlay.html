@@ -54,6 +54,12 @@
         }
       </div>
     </fieldset>
+    <ar-textarea
+      label="Description (facultatif)" i18n-label="@@newDeck.description"
+      placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@newDeck.descriptionPlaceholder"
+      [rows]="3"
+      [(value)]="form.description"
+    />
   </div>
 </div>
 <div class="ar-overlay-footer new-deck-footer">

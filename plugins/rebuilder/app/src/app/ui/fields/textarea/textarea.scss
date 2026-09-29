@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-1-5);
+  min-width: 0;
+}
+.label {
+  font: var(--ar-font-small);
+  font-weight: 700;
+}
+textarea {
+  width: 100%;
+  min-height: var(--ar-control-md);
+  padding: var(--ar-space-2) var(--ar-space-3);
+  border: 1px solid var(--ar-color-border-control);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-color-surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--ar-color-text);
+  resize: vertical;
+  outline: none;
+}
+:host-context([data-density='touch']) textarea {
+  font-size: 16px;
+}
+textarea::placeholder {
+  color: var(--ar-color-text-muted);
+}
+textarea:focus {
+  border: 2px solid var(--ar-color-primary);
+  padding: calc(var(--ar-space-2) - 1px) calc(var(--ar-space-3) - 1px);
+}
+textarea[aria-invalid='true'] {
+  border-color: var(--ar-color-required);
+}

@@ -1,4 +1,12 @@
 <div class="ar-overlay-body">
+  <ar-input
+    label="Nom du deck" i18n-label="@@shared.deckSettings.name"
+    [required]="true"
+    [invalid]="!name().trim()"
+    enterkeyhint="done"
+    [(value)]="name"
+    (enter)="save()"
+  />
   <div class="hero">
     <span class="thumb">
       @if (hero(); as h) {
@@ -15,6 +23,12 @@
     <span class="label" i18n="@@shared.deckSettings.visibility">Visibilité</span>
     <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@shared.deckSettings.visibility" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
   </div>
+  <ar-textarea
+    label="Description" i18n-label="@@shared.deckSettings.description"
+    placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@shared.deckSettings.descriptionPlaceholder"
+    [rows]="4"
+    [(value)]="description"
+  />
   <fieldset>
     <legend i18n="@@shared.deckSettings.format">Format</legend>
     <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@shared.deckSettings.format">
@@ -33,5 +47,5 @@
 </div>
 <div class="ar-overlay-footer">
   <button arButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.deckSettings.cancel">Annuler</button>
-  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()" i18n="@@shared.deckSettings.save">Enregistrer</button>
+  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!name().trim()" (click)="save()" i18n="@@shared.deckSettings.save">Enregistrer</button>
 </div>

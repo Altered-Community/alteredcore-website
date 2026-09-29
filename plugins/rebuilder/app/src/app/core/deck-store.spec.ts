@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, type Observable } from 'rxjs';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
+import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
 import { DeckStore } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
 import type { Card, Deck } from './models';
@@ -327,6 +328,187 @@ describe('DeckStore (signed in)', () => {
       .expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'))
       .flush({ violations: [{ propertyPath: 'name', message: 'Trop long' }] }, { status: 422, statusText: 'Unprocessable' });
     expect(message).toBe('Impossible de dupliquer ce deck (HTTP 422).\nname : Trop long');
+  });
+
+  const patchReq = () => http.expectOne((r) => r.method === 'PATCH' && r.url.endsWith('/api/decks/source'));
+
+  it('saves name, description and a draft flag that follows the legality', () => {
+    store.updateSettings({ name: '  Kojo Contrôle ', description: ' Midrange ' });
+    store.flush();
+    const req = patchReq();
+    expect(req.request.body).toEqual({
+      name: 'Kojo Contrôle',
+      description: 'Midrange',
+      format: 'nuc',
+      isPublic: true,
+      // 3 cards: not a legal deck, so a draft (as the site's builder does).
+      isDraft: true,
+      deckCards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+        { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2 },
+      ],
+    });
+    expect(req.request.keepalive).toBe(false);
+    expect(store.saveState()).toBe('saving');
+    req.flush({ id: 'source', name: 'Kojo Contrôle', legal: false });
+    expect(store.saveState()).toBe('saved');
+    expect(store.isDraft()).toBe(true);
+    expect(store.dirty()).toBe(false);
+  });
+
+  it('keeps the editor on a failed save, with the API violations, and retries', () => {
+    store.rename('Trop long');
+    expect(store.saveState()).toBe('pending');
+    store.flush();
+    patchReq().flush(
+      { '@type': 'ConstraintViolationList', violations: [{ propertyPath: 'name', message: 'Ce nom est trop long.' }] },
+      { status: 422, statusText: 'Unprocessable Content' },
+    );
+    expect(store.error()).toBeNull();
+    expect(store.loadError()).toBeNull();
+    expect(store.saveState()).toBe('error');
+    expect(store.saveError()).toBe('Échec de l’enregistrement (HTTP 422).\nname : Ce nom est trop long.');
+    expect(store.dirty()).toBe(true);
+    expect(store.name()).toBe('Trop long');
+
+    store.retrySave();
+    expect(store.saveError()).toBeNull();
+    patchReq().flush({ id: 'source', name: 'Trop long' });
+    expect(store.saveState()).toBe('saved');
+  });
+
+  it('shows the problem detail of a refused save, and a sign-in hint on 401', () => {
+    store.rename('A');
+    store.flush();
+    patchReq().flush({ title: 'An error occurred', detail: 'Deck is locked' }, { status: 409, statusText: 'Conflict' });
+    expect(store.saveError()).toBe('Échec de l’enregistrement (HTTP 409).\nDeck is locked');
+    store.retrySave();
+    patchReq().flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(store.saveError()).toBe('Enregistrement refusé : reconnectez-vous (HTTP 401).');
+  });
+
+  it('sends one save at a time and the latest state last', () => {
+    store.rename('Un');
+    store.flush();
+    const first = patchReq();
+    store.rename('Deux');
+    store.flush();
+    http.expectNone((r) => r.method === 'PATCH');
+    first.flush({ id: 'source', name: 'Un' });
+    // The answer to « Un » does not mark « Deux » as saved.
+    expect(store.dirty()).toBe(true);
+    const second = patchReq();
+    expect(second.request.body).toMatchObject({ name: 'Deux' });
+    second.flush({ id: 'source', name: 'Deux' });
+    expect(store.dirty()).toBe(false);
+    expect(store.saveState()).toBe('saved');
+  });
+
+  it('flushes with keepalive when the page is left, and warns only when changes may be lost', () => {
+    store.rename('Avant de partir');
+    expect(store.leavePage()).toBe(false);
+    const req = patchReq();
+    expect(req.request.keepalive).toBe(true);
+    expect(req.request.body).toMatchObject({ name: 'Avant de partir' });
+    req.flush({}, { status: 500, statusText: 'Server Error' });
+
+    // The last save failed: resent with keepalive, but the browser asks before leaving.
+    expect(store.leavePage()).toBe(true);
+    const retry = patchReq();
+    expect(retry.request.keepalive).toBe(true);
+    retry.flush({ id: 'source', name: 'Avant de partir' });
+    expect(store.leavePage()).toBe(false);
+    http.expectNone((r) => r.method === 'PATCH');
+  });
+
+  it('resends a plain running save with keepalive when the page is left', () => {
+    store.rename('En cours');
+    store.flush();
+    const plain = patchReq();
+    expect(store.leavePage()).toBe(false);
+    const kept = patchReq();
+    expect(kept.request.keepalive).toBe(true);
+    plain.flush({ id: 'source', name: 'En cours' });
+    kept.flush({ id: 'source', name: 'En cours' });
+    expect(store.saveState()).toBe('saved');
+  });
+});
+
+describe('DeckStore.createDeck (signed in)', () => {
+  let store: DeckStore;
+  let http: HttpTestingController;
+  let choices: DeckCreateFailureChoice[];
+  let asked: string[];
+  const input = { name: 'Moyo', hero, format: 'standard' as const, isPublic: false, description: ' Rush ' };
+  const postReq = () => http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
+
+  beforeEach(() => {
+    localStorage.clear();
+    asked = [];
+    choices = [];
+    const prompt: DeckCreateFailurePrompt = {
+      ask: (message: string) => {
+        asked.push(message);
+        return of(choices.shift() ?? 'cancel');
+      },
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthSession, useValue: new SignedIn() },
+        { provide: DeckCreateFailurePrompt, useValue: prompt },
+      ],
+    });
+    store = TestBed.inject(DeckStore);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('creates a draft with its description on the account', () => {
+    let id = '';
+    store.createDeck(input).subscribe((d) => (id = d.id));
+    const req = postReq();
+    expect(req.request.body).toEqual({
+      name: 'Moyo',
+      format: 'standard',
+      isPublic: false,
+      isDraft: true,
+      description: 'Rush',
+      deckCards: [{ cardReference: hero.reference, quantity: 1 }],
+    });
+    req.flush({ id: 'new-id', name: 'Moyo' });
+    expect(id).toBe('new-id');
+    expect(asked).toEqual([]);
+  });
+
+  it('asks before keeping a refused deck in this browser', () => {
+    choices = ['local'];
+    let deck: Deck | undefined;
+    store.createDeck(input).subscribe((d) => (deck = d));
+    postReq().flush({ violations: [{ propertyPath: 'format', message: 'Format inconnu' }] }, { status: 422, statusText: 'Unprocessable' });
+    expect(asked).toEqual(['Impossible de créer le deck sur votre compte (HTTP 422).\nformat : Format inconnu']);
+    expect(deck?.guest).toBe(true);
+    expect(stored()[0]).toMatchObject({ name: 'Moyo', description: 'Rush' });
+  });
+
+  it('retries, or creates nothing when the user cancels', () => {
+    choices = ['retry'];
+    let deck: Deck | undefined;
+    store.createDeck(input).subscribe((d) => (deck = d));
+    postReq().flush({}, { status: 503, statusText: 'Unavailable' });
+    postReq().flush({ id: 'second-try', name: 'Moyo' });
+    expect(deck?.id).toBe('second-try');
+
+    let completed = false;
+    let emitted = false;
+    store.createDeck(input).subscribe({ next: () => (emitted = true), complete: () => (completed = true) });
+    postReq().error(new ProgressEvent('error'));
+    expect(asked.at(-1)).toBe('Erreur de connexion.');
+    expect(emitted).toBe(false);
+    expect(completed).toBe(true);
+    expect(stored()).toEqual([]);
   });
 });
 

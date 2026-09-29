@@ -1,10 +1,11 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable, Subscription, of, throwError } from 'rxjs';
+import { EMPTY, Observable, Subscription, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
+import { DeckCreateFailurePrompt } from './deck-create-failure';
 import { legalityFromApi, legalityFromStatus, type DeckLegality } from './deck-legality';
 import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
@@ -27,12 +28,20 @@ export interface NewDeckInput {
   hero: DeckHero;
   format: DeckFormat;
   isPublic: boolean;
+  description?: string;
 }
 
 const SAVE_DELAY_MS = 400;
 
 /** Why a deck could not be opened: private (401/403), unknown id (404), unreachable API, other HTTP error. */
 export type DeckLoadError = 'private' | 'notFound' | 'network' | 'server';
+
+/**
+ * Autosave of the open deck: nothing changed yet (`idle`), a change waits for the save delay
+ * (`pending`), a request is running (`saving`), everything is written (`saved`), or the last
+ * save failed (`error`, message in `saveError`).
+ */
+export type DeckSaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 /**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
@@ -44,6 +53,7 @@ export class DeckStore {
   private readonly cardsApi = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
+  private readonly createFailure = inject(DeckCreateFailurePrompt);
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -56,11 +66,24 @@ export class DeckStore {
   });
 
   readonly loading = computed(() => this.serverDeck.isLoading());
+  /** A save request to the decks API is running. */
   readonly saving = signal(false);
+  /** Why the deck could not be opened (or deleted); a failed save goes to `saveError` instead. */
   readonly error = signal<string | null>(null);
   /** Set with `error` when the deck could not be opened. */
   readonly loadError = signal<DeckLoadError | null>(null);
+  /** Last save refused or unreachable: displayable message, with the API's violations. `null` after a save succeeds. */
+  readonly saveError = signal<string | null>(null);
+  /** Changes not written yet (waiting for the save delay, being sent, or refused). */
   readonly dirty = signal(false);
+  /** At least one save of this deck succeeded since it was opened. */
+  private readonly saved = signal(false);
+  readonly saveState = computed<DeckSaveState>(() => {
+    if (this.saving()) return 'saving';
+    if (this.saveError()) return 'error';
+    if (this.dirty()) return 'pending';
+    return this.saved() ? 'saved' : 'idle';
+  });
 
   readonly deckId = signal<string | null>(null);
   readonly name = signal('');
@@ -111,6 +134,14 @@ export class DeckStore {
   readonly editable = computed(() => this.owned() === true);
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by each change; a save only marks the deck clean when no change came after what it sent. */
+  private revision = 0;
+  /** Revision carried by the running request, `null` when none runs. */
+  private inFlight: number | null = null;
+  /** The running request is a `keepalive` one (it survives the page). */
+  private inFlightKeepalive = false;
+  /** A change was saved while a request was running: send again once it answers. */
+  private saveQueued = false;
 
   constructor() {
     effect(() => {
@@ -141,6 +172,7 @@ export class DeckStore {
   create(input: NewDeckInput): Deck {
     const deck = this.guests.create({
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
+      description: input.description?.trim() ?? '',
       format: input.format,
       isPublic: input.isPublic,
       hero: input.hero,
@@ -153,14 +185,19 @@ export class DeckStore {
 
   /**
    * `create()` on the decks API when the user is signed in (the deck then shows up in the site's
-   * deck list too); a guest deck otherwise, or when the API refuses (the deck is not lost).
+   * deck list too); a guest deck otherwise. When the API refuses, `DeckCreateFailurePrompt` asks
+   * whether to try again or keep the deck in this browser; cancelling completes without a deck.
    */
   createDeck(input: NewDeckInput): Observable<Deck> {
     if (!this.auth.isLoggedIn()) return of(this.create(input));
+    const description = input.description?.trim() ?? '';
     const body: DeckWrite = {
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: input.format,
       isPublic: input.isPublic,
+      // Hero only: a draft until the deck is legal, as the site's builder does on save.
+      isDraft: legalityFromStatus(computeDeckStatus([], input.format), true).state !== 'legal',
+      ...(description ? { description } : {}),
       deckCards: [{ cardReference: input.hero.reference, quantity: 1 }],
     };
     this.saving.set(true);
@@ -175,8 +212,18 @@ export class DeckStore {
       }),
       catchError((err: unknown) => {
         this.saving.set(false);
-        console.warn('Re:Builder: server deck creation failed, keeping a local deck', err);
-        return of(this.create(input));
+        return this.createFailure.ask(apiErrorMessage(err, createErrorHead)).pipe(
+          switchMap((choice) => {
+            switch (choice) {
+              case 'retry':
+                return this.createDeck(input);
+              case 'local':
+                return of(this.create(input));
+              case 'cancel':
+                return EMPTY;
+            }
+          }),
+        );
       }),
     );
   }
@@ -231,11 +278,13 @@ export class DeckStore {
     if (line) this.setQuantity(line.card, line.quantity - 1);
   }
 
-  updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string }): void {
+  /** A blank `name` keeps the current one. */
+  updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string; description?: string }): void {
     if (settings.hero) this.hero.set(settings.hero);
     if (settings.format) this.format.set(settings.format);
     if (settings.isPublic !== undefined) this.isPublic.set(settings.isPublic);
-    if (settings.name !== undefined) this.name.set(settings.name);
+    if (settings.name?.trim()) this.name.set(settings.name.trim());
+    if (settings.description !== undefined) this.description.set(settings.description);
     this.touch();
   }
 
@@ -276,7 +325,7 @@ export class DeckStore {
         this.createdIds.update((ids) => new Set([...ids, created.id]));
         return created.id;
       }),
-      catchError((err: unknown) => throwError(() => new Error(duplicateErrorMessage(err)))),
+      catchError((err: unknown) => throwError(() => new Error(apiErrorMessage(err, duplicateErrorHead)))),
     );
   }
 
@@ -300,13 +349,40 @@ export class DeckStore {
     );
   }
 
-  /** Writes pending changes immediately (navigation away, tests). */
-  flush(): void {
+  /**
+   * Writes pending changes immediately (navigation away, tests). `keepalive` when the page is
+   * being left: whatever is not saved yet (waiting, queued behind a running request, refused, or
+   * sent by a plain request the browser would cancel) is sent again as a `keepalive` request,
+   * which the browser completes after the page is gone.
+   */
+  flush(options: { keepalive?: boolean } = {}): void {
+    const keepalive = !!options.keepalive;
     if (this.saveTimer) {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
-      this.save();
+      this.save(keepalive);
+    } else if (keepalive && this.dirty()) {
+      this.saveQueued = false;
+      this.save(true);
     }
+  }
+
+  /**
+   * The page is being unloaded: flushes with `keepalive`, then tells whether changes may still be
+   * lost, so the browser asks before leaving: the last save failed (sending it again may fail too),
+   * or the changes could not be sent at all.
+   */
+  leavePage(): boolean {
+    const failed = !!this.saveError();
+    this.flush({ keepalive: true });
+    return failed || (this.dirty() && !this.saving());
+  }
+
+  /** Sends the deck again after a failed save (« Réessayer »). */
+  retrySave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = null;
+    this.save();
   }
 
   reset(): void {
@@ -321,6 +397,9 @@ export class DeckStore {
     this.createdAt.set(null);
     this.lines.set([]);
     this.dirty.set(false);
+    this.saveError.set(null);
+    this.saved.set(false);
+    this.saveQueued = false;
     this.isGuest.set(true);
   }
 
@@ -331,6 +410,7 @@ export class DeckStore {
   }
 
   private touch(): void {
+    this.revision++;
     this.dirty.set(true);
     this.apiLegality.set(null);
     if (this.saveTimer) clearTimeout(this.saveTimer);
@@ -345,7 +425,7 @@ export class DeckStore {
     return [...(hero ? [heroLine(hero)] : []), ...this.lines().map((l) => cardToLine(l.card, l.quantity))];
   }
 
-  private save(): void {
+  private save(keepalive = false): void {
     const id = this.deckId();
     if (!id) return;
     if (GuestDeckService.isGuestId(id)) {
@@ -354,6 +434,7 @@ export class DeckStore {
         ...(existing ?? { id }),
         id,
         name: this.name() || $localize`:@@core.deck.defaultName:Nouveau deck`,
+        description: this.description().trim(),
         format: this.format(),
         isPublic: this.isPublic(),
         hero: this.hero(),
@@ -362,27 +443,61 @@ export class DeckStore {
         guest: true,
       });
       this.dirty.set(false);
+      this.saved.set(true);
       return;
     }
     if (!this.auth.isLoggedIn()) return;
+    const revision = this.revision;
+    if (this.inFlight !== null && !keepalive) {
+      // One request at a time, so an older state never lands after a newer one.
+      this.saveQueued = true;
+      return;
+    }
+    if (keepalive && this.inFlight === revision && this.inFlightKeepalive) return;
+    // As the site's builder: a deck is saved as a draft while it is not legal.
+    const isDraft = this.legality().state !== 'legal';
     const payload: Partial<DeckWrite> = {
       name: this.name(),
+      description: this.description().trim(),
       format: this.format(),
       isPublic: this.isPublic(),
+      isDraft,
       deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
     };
+    this.inFlight = revision;
+    this.inFlightKeepalive = keepalive;
     this.saving.set(true);
-    this.decksApi.patch(id, payload).subscribe({
+    this.saveError.set(null);
+    this.decksApi.patch(id, payload, { keepalive }).subscribe({
       next: (saved) => {
-        this.saving.set(false);
-        this.dirty.set(false);
-        if (this.deckId() === id && !this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+        if (!this.settle(id, revision)) return;
+        this.isDraft.set(isDraft);
+        this.saved.set(true);
+        if (revision === this.revision) {
+          this.dirty.set(false);
+          if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+        }
+        if (this.saveQueued) {
+          this.saveQueued = false;
+          if (!this.saveTimer) this.save();
+        }
       },
-      error: (err: { status?: number }) => {
-        this.saving.set(false);
-        this.error.set(err.status === 401 ? $localize`:@@core.deckStore.saveRefused:Enregistrement serveur refusé (401).` : $localize`:@@core.deckStore.saveFailed:Échec de la sauvegarde.`);
+      error: (err: unknown) => {
+        if (!this.settle(id, revision)) return;
+        // Changes made meanwhile stay dirty: they go with « Réessayer » or the next change.
+        this.saveQueued = false;
+        this.saveError.set(apiErrorMessage(err, saveErrorHead));
       },
     });
+  }
+
+  /** Ends the running request; `false` when the deck was left meanwhile (its answer is ignored). */
+  private settle(id: string, revision: number): boolean {
+    if (this.inFlight === revision) {
+      this.inFlight = null;
+      this.saving.set(false);
+    }
+    return this.deckId() === id;
   }
 
   private apply(deck: Deck): void {
@@ -403,6 +518,9 @@ export class DeckStore {
         .map((l) => ({ card: lineToCard(l), quantity: l.quantity })),
     );
     this.dirty.set(false);
+    this.saveError.set(null);
+    this.saved.set(false);
+    this.saveQueued = false;
     this.fillUniqueFaces(deck.id);
   }
 
@@ -457,16 +575,30 @@ function loadErrorMessage(kind: DeckLoadError, status: number): string {
   }
 }
 
-/** « Impossible de dupliquer ce deck (HTTP n). », then the API's violations or detail, as on the site. */
-function duplicateErrorMessage(err: unknown): string {
+const saveErrorHead = (status: number) =>
+  status === 401 || status === 403
+    ? $localize`:@@core.deckStore.saveRefused:Enregistrement refusé : reconnectez-vous (HTTP ${status}:status:).`
+    : $localize`:@@core.deckStore.saveFailed:Échec de l’enregistrement (HTTP ${status}:status:).`;
+const createErrorHead = (status: number) => $localize`:@@core.deckStore.createFailed:Impossible de créer le deck sur votre compte (HTTP ${status}:status:).`;
+const duplicateErrorHead = (status: number) => $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${status}:status:).`;
+
+/**
+ * « <head> (HTTP n). », then what the decks API says, as the site's builder shows it: the
+ * validation `violations` (one per line, « champ : message »), else the problem / Hydra
+ * `detail` / `description` / `title`. Unreachable API: « Erreur de connexion. ».
+ */
+export function apiErrorMessage(err: unknown, head: (status: number) => string): string {
   if (!(err instanceof HttpErrorResponse) || err.status === 0) return $localize`:@@core.deckStore.network:Erreur de connexion.`;
-  const head = $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${err.status}:status:).`;
-  const body = (err.error ?? {}) as { violations?: { propertyPath?: string; message?: string }[]; detail?: string; title?: string };
-  const violations = Array.isArray(body.violations)
-    ? body.violations.map((v) => [v.propertyPath, v.message].filter(Boolean).join(' : ')).filter(Boolean).join('\n')
+  const body = (err.error && typeof err.error === 'object' ? err.error : {}) as Record<string, unknown>;
+  const violations = Array.isArray(body['violations'])
+    ? (body['violations'] as { propertyPath?: string; message?: string }[])
+        .map((v) => [v.propertyPath, v.message].filter(Boolean).join(' : '))
+        .filter(Boolean)
+        .join('\n')
     : '';
-  const extra = violations || body.detail || body.title || '';
-  return extra ? `${head}\n${extra}` : head;
+  const text = (key: string) => (typeof body[key] === 'string' ? (body[key] as string) : '');
+  const extra = violations || text('detail') || text('hydra:description') || text('description') || text('title') || text('hydra:title');
+  return extra ? `${head(err.status)}\n${extra}` : head(err.status);
 }
 
 export function displayName(card: Card): string {
