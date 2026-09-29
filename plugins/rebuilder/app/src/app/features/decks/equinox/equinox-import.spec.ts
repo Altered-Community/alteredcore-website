@@ -70,7 +70,7 @@ describe('EquinoxImport', () => {
     created = [];
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthSession, useClass: SignedIn },
+        { provide: AuthSession, useValue: new SignedIn() },
         {
           provide: DecksApiService,
           useValue: {
