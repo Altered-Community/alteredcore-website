@@ -33,7 +33,7 @@ export class AcHeroSelector {
   /** Grid columns (`layout="grid"`); also the number of loading skeletons. */
   readonly columns = input(4);
   readonly error = input(false);
-  readonly ariaLabel = input('Héros');
+  readonly ariaLabel = input($localize`:@@ui.heroSelector.label:Héros`);
   /** Id of the tile group, referenced by `ac-faction-tabs [controls]`. */
   readonly panelId = input('');
 

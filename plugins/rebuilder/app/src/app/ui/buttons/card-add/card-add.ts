@@ -9,7 +9,7 @@ import { AcIcon } from '../../icon';
   styleUrl: './card-add.scss',
 })
 export class AcCardAdd {
-  readonly label = input('Ajouter au deck');
+  readonly label = input($localize`:@@ui.cardAdd.label:Ajouter au deck`);
   readonly disabled = input(false);
   readonly add = output<void>();
 }

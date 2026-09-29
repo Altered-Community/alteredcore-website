@@ -3,15 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Altered Re:Builder deck editor: the rebuilder SPA plugin of the AlteredCore site (npm run build:embed)",
+  "description": "Altered Re:Builder deck editor, the rebuilder plugin of the AlteredCore site",
   "engines": {
     "node": ">=22.22.3"
   },
   "scripts": {
     "ng": "ng",
-    "build:embed": "ng build && node scripts/embed-manifest.mjs",
+    "build": "ng build && node scripts/embed-manifest.mjs",
     "test": "ng test --watch=false",
-    "lint": "ng lint"
+    "lint": "ng lint && npm run i18n:check",
+    "i18n:extract": "ng extract-i18n",
+    "i18n:check": "npm run i18n:extract && node scripts/check-i18n.mjs"
   },
   "packageManager": "npm@10.9.8",
   "dependencies": {
@@ -30,6 +32,7 @@
     "@angular/build": "^22.1.8",
     "@angular/cli": "^22.1.8",
     "@angular/compiler-cli": "^22.1.0",
+    "@angular/localize": "^22.2.0",
     "@eslint/js": "^10.0.1",
     "angular-eslint": "22.5.0",
     "eslint": "^10.9.1",

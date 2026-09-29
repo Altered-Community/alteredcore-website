@@ -52,6 +52,11 @@ site). Les mêmes composants s'adaptent à la taille d'écran et à la densité 
   (`templateUrl`) + `<nom>.scss` (`styleUrl`, seulement s'il y a des styles). Les fonctions `open…()` d'un overlay
   restent dans le `.ts` du composant ; types et helpers partagés entre plusieurs composants vont dans un fichier
   à part au niveau du groupe (ex. `ui/chips/rarity.ts`, `features/decks/deck-filters.ts`).
+- Textes : sources en français, tout texte affiché (y compris `aria-label`, `title`, placeholders, messages d'erreur,
+  titres d'overlay) marqué `i18n="@@zone.cle"` / `` $localize`:@@zone.cle:Texte` `` avec un id explicite, et sa
+  traduction ajoutée à `src/locale/messages.en.json` (`npm run i18n:check`, lancé par `npm run lint`). Pluriels : ICU
+  dans les templates, deux messages en TypeScript. `Intl` et `toLocale…` avec `uiLocale()` ; données de cartes avec
+  `contentLocale()`.
 - Préfixe `ac-` partout (sélecteurs, classes CSS, classes `Ac*`, tokens `--ac-*`), comme le design system du
   site. Un écran n'utilise que des composants `ac-*` et du layout.
 - Composant générique (il a une classe dans `design-system/css/components/`) : le composant Angular pose le
@@ -60,12 +65,17 @@ site). Les mêmes composants s'adaptent à la taille d'écran et à la densité 
   design system (CSS, `design-system/docs/components/`, page `/pages/design-system`), puis le composant Angular.
   Le SCSS du composant ne garde que ce que le design system ne couvre pas (ex. bouton Effacer de `ac-input`).
   Pas de règle `:host` qui redessine une classe du design system : le SCSS du composant passe après et l'écrase.
+- Composants `ac-*` interactifs : partir du CDK Angular (`@angular/cdk`) plutôt que de réécrire le comportement à la
+  main : `overlay` (listes déroulantes, popovers : position, clic extérieur, Échap, scroll), `listbox` / `menu`
+  (clavier, option active, ARIA), `dialog`, `a11y` (focus, `FocusTrap`, `LiveAnnouncer`). Le code du composant se
+  limite alors au rendu et à ce qui lui est propre. Le plugin monte les overlays du CDK dans son shadow root
+  (`ShadowOverlayContainer`).
 - Composant métier (`ui/metier/`, overlays, combobox, radio-card, stepper…) : SCSS propre, en tokens.
 - Tout composant `ac-*` ajouté ou modifié met à jour `design/COMPONENTS.md`.
 - Styles : aucune valeur en dur (pas de couleur hex / `rgb()` / `hsl()`, vérifié par `php tests/run.php`).
   Couleurs, rayons, ombres, espacements via `var(--ac-*)` ; hauteurs de contrôle via `--ac-control-sm|md|lg`.
-  Jamais de sélecteur `data-theme` ni `data-density` (ni `:host-context`) : une valeur qui change avec la
-  densité est un token (`--ac-control-*`, `--ac-hit-min`, `--ac-field-font-size`, `--ac-select-font-size`,
+  Jamais de sélecteur `data-theme` ni `data-density` (ni `:host-context` sur ces attributs) : une valeur qui change
+  avec la densité est un token (`--ac-control-*`, `--ac-hit-min`, `--ac-field-font-size`, `--ac-select-font-size`,
   `--ac-segment-height`, `--ac-segment-font-size`, `--ac-icon-button-segment`, `--ac-page-padding`).
 - Responsive : `AcBreakpointService` (compact < 768, medium 768–1199, expanded ≥ 1200 ; `BREAKPOINTS` importé de
   `design-system/tokens/breakpoints.ts`) et `AcDensityService` (lecture seule de `data-density`, que le shell pose
@@ -86,7 +96,7 @@ site). Les mêmes composants s'adaptent à la taille d'écran et à la densité 
 
 ## Vérification avant de terminer une tâche
 
-1. `npm run build:embed` et `npm run lint` sans erreur, `npm test` vert ; `php tests/run.php` à la racine du repo
+1. `npm run build` et `npm run lint` sans erreur, `npm test` vert ; `php tests/run.php` à la racine du repo
    (couleurs en dur, points de rupture).
 2. E2E dans le site (`tests/e2e` + `plugins/rebuilder/e2e`) sur la stack `docker-compose.stack.yml` : voir
    `../README.md`.
@@ -100,10 +110,10 @@ site). Les mêmes composants s'adaptent à la taille d'écran et à la densité 
 | `design/COMPONENTS.md` | Inventaire des composants Angular `ac-*`. |
 | `src/app/ui/` | Composants Angular `ac-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ac-radio-card`), `chips/`, `containers/`, `nav/` (dont `ac-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`AcOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`AcBreakpointService`, `AcDensityService`). |
 | `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `search/` (recherche de cartes de l'éditeur : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck). |
-| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `auth-session.ts`, `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck. |
-| `src/main.embed.ts`, `src/app/embed/` | Point d'entrée : lecture de `window.AlteredCore`, routes de la section decks, session du site, overlays et styles dans le shadow root. |
+| `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `uniques-api.service.ts`, `auth-session.ts` (invité par défaut, sans hôte : tests unitaires), `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck, `i18n.ts`. |
+| `src/main.ts`, `src/app/embed/` | Démarrage : lecture de `window.AlteredCore`, langue, routes de la section decks, session du site, overlays et styles dans le shadow root. |
 | `src/embed/` | Styles globaux : `embed.scss` (shadow root, après le design system), `document.scss` (`<head>` : polices des cartes imprimées). |
-| `src/testing/` | Aides des tests unitaires (`provideGuestSession()`). |
+| `src/locale/messages.en.json` | Traductions anglaises (`npm run i18n:check`). |
 | `scripts/embed-manifest.mjs` | Écrit `../dist/embed-manifest.json` (fichiers chargés par le site) après `ng build`. |
 | `../e2e/` | Scénarios Playwright du plugin, lancés par le site sur la stack complète (desktop 1440×900 et mobile 390×844). |
 | `docs/backend-api.md` | Contrat des API consommées. |
@@ -113,9 +123,9 @@ Commandes npm :
 
 | Commande | Rôle |
 |---|---|
-| `npm run build:embed` | Build → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert ; appelé par `plugin.json`). |
+| `npm run build` | Build → `../dist/browser` + `../dist/embed-manifest.json` (ce que le site sert ; appelé par `plugin.json`). |
 | `npm test` | Tests unitaires (Vitest via `@angular/build:unit-test`, fichiers `*.spec.ts`). |
-| `npm run lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`). |
+| `npm run lint` | ESLint (`angular-eslint`, configuration `eslint.config.js`) et `i18n:check`. |
 
 
 ## Comportement

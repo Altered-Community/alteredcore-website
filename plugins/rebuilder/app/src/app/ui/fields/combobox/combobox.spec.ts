@@ -1,3 +1,5 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
+import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AcCombobox, type ComboOption } from './combobox';
 
@@ -44,12 +46,16 @@ describe('AcCombobox « ou »', () => {
 });
 
 describe('AcCombobox picker', () => {
-  const HAND: ComboOption = { id: 22, text: 'Joué depuis la Main', glyph: '\ue023' };
+  const HAND: ComboOption = { id: 22, text: 'Joué depuis la Main', glyph: '' };
   const NONE: ComboOption = { id: 191, text: 'Sans condition' };
 
-  function setup(options: ComboOption[], values: ComboOption[] = []) {
+  /** The list is a CDK overlay: it renders in the overlay container, not inside the component. */
+  const panel = () => document.querySelector<HTMLElement>('.cdk-overlay-container .panel');
+  const options = () => [...(panel()?.querySelectorAll<HTMLElement>('[role=option]') ?? [])];
+
+  function setup(opts: ComboOption[], values: ComboOption[] = []) {
     const fixture = TestBed.createComponent(AcCombobox);
-    fixture.componentRef.setInput('options', options);
+    fixture.componentRef.setInput('options', opts);
     fixture.componentRef.setInput('values', values);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
@@ -59,94 +65,189 @@ describe('AcCombobox picker', () => {
       toggle.click();
       fixture.detectChanges();
     };
-    return { fixture, el, toggle, open };
+    const settle = async () => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    const done = () => {
+      fixture.destroy();
+      el.remove();
+    };
+    return { fixture, el, toggle, open, settle, done };
   }
 
   it('opens a list on a button, without a text field and without moving focus to one', () => {
-    const { el, toggle, open } = setup([MAIN, EXPEDITION]);
+    const { el, toggle, open, done } = setup([MAIN, EXPEDITION]);
     expect(el.querySelector('.field input')).toBeNull();
     expect(toggle.tagName).toBe('BUTTON');
     toggle.focus();
     open();
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    const panel = el.querySelector('.panel')!;
     // The first control of the list is the search field, but it stays unfocused: no touch keyboard.
-    const search = panel.querySelector('input')!;
-    expect(search.hasAttribute('autofocus')).toBe(false);
+    const search = panel()!.querySelector('input')!;
     expect(document.activeElement).not.toBe(search);
     expect(document.activeElement).toBe(toggle);
-    expect([...panel.querySelectorAll('[role=option]')].map((o) => o.textContent)).toEqual([MAIN.text, EXPEDITION.text]);
-    el.remove();
+    expect(options().map((o) => o.textContent)).toEqual([MAIN.text, EXPEDITION.text]);
+    expect(panel()!.querySelector('[role=listbox]')?.id).toBe(toggle.getAttribute('aria-controls'));
+    done();
   });
 
   it('picks a value without typing, and still filters when the user types', () => {
-    const { fixture, el, open } = setup([MAIN, EXPEDITION]);
+    const { fixture, open, done } = setup([MAIN, EXPEDITION]);
     open();
-    el.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    options()[0].click();
     fixture.detectChanges();
     expect(fixture.componentInstance.values()).toEqual([MAIN]);
-    expect(el.querySelector('.panel')).toBeNull();
+    expect(panel()).toBeNull();
 
     open();
-    const search = el.querySelector<HTMLInputElement>('.panel input')!;
+    const search = panel()!.querySelector('input')!;
     search.value = 'expé';
     search.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    expect([...el.querySelectorAll('[role=option]')].map((o) => o.textContent)).toEqual([EXPEDITION.text]);
-    el.remove();
+    expect(options().map((o) => o.textContent)).toEqual([EXPEDITION.text]);
+    done();
   });
 
   it('shows the glyph in the option and on the chip', () => {
-    const { fixture, el, open } = setup([HAND]);
+    const { fixture, el, open, done } = setup([HAND]);
     open();
-    expect(el.querySelector('[role=option] .glyph')?.textContent).toBe('\ue023');
-    el.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    expect(options()[0].querySelector('.glyph')?.textContent).toBe('');
+    options()[0].click();
     fixture.detectChanges();
-    expect(el.querySelector('.picked .glyph')?.textContent).toBe('\ue023');
-    el.remove();
+    expect(el.querySelector('.picked .glyph')?.textContent).toBe('');
+    done();
   });
 
   it('« Sans condition » is a value like the others: « ou » after it, and another value adds to it', () => {
-    const { fixture, el, open } = setup([NONE, MAIN, EXPEDITION]);
+    const { fixture, el, open, done } = setup([NONE, MAIN, EXPEDITION]);
     open();
-    el.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    options()[0].click();
     fixture.detectChanges();
     expect(sequence(el)).toEqual([`chip:${NONE.text}`, 'ou', 'field']);
     open();
-    el.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    options()[0].click();
     fixture.detectChanges();
     expect(fixture.componentInstance.values()).toEqual([NONE, MAIN]);
     expect(sequence(el)).toEqual([`chip:${NONE.text}`, 'ou', `chip:${MAIN.text}`, 'ou', 'field']);
-    el.remove();
+    done();
   });
 
-  it('after a tap, closes the list and leaves nothing focused or highlighted', () => {
-    const { fixture, el, toggle, open } = setup([MAIN, EXPEDITION]);
-    toggle.focus();
+  it('after a pick, closes the list and gives the focus back to the button', () => {
+    const { fixture, toggle, open, done } = setup([MAIN, EXPEDITION]);
     open();
-    expect(el.querySelector('[role=option].active')).toBeNull();
-    el.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    expect(panel()!.querySelector('.cdk-option-active')).toBeNull();
+    options()[0].click();
     fixture.detectChanges();
-    expect(el.querySelector('.panel')).toBeNull();
+    expect(panel()).toBeNull();
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(el.contains(document.activeElement)).toBe(false);
-    open();
-    expect(el.querySelector('[role=option].active')).toBeNull();
-    el.remove();
+    expect(document.activeElement).toBe(toggle);
+    done();
   });
 
-  it('highlights an option only from the keyboard, and Enter gives the focus back to the button', () => {
-    const { fixture, el, toggle } = setup([MAIN, EXPEDITION]);
+  it('closes on a press outside, and on the button', () => {
+    const { fixture, toggle, open, done } = setup([MAIN]);
+    open();
+    document.body.click();
+    fixture.detectChanges();
+    expect(panel()).toBeNull();
+    open();
+    toggle.click();
+    fixture.detectChanges();
+    expect(panel()).toBeNull();
+    done();
+  });
+
+  it('arrows move into the list, Enter picks and gives the focus back to the button', async () => {
+    const { fixture, toggle, settle, done } = setup([MAIN, EXPEDITION]);
     toggle.focus();
     toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    fixture.detectChanges();
-    expect(el.querySelector('[role=option].active')?.textContent).toBe(MAIN.text);
-    toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    fixture.detectChanges();
+    await settle();
+    expect(document.activeElement?.textContent).toBe(MAIN.text);
+    const listbox = panel()!.querySelector<HTMLElement>('[role=listbox]')!;
+    listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, bubbles: true }));
+    await settle();
+    expect(panel()!.querySelector('.cdk-option-active')?.textContent).toBe(EXPEDITION.text);
+    listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+    await settle();
     expect(fixture.componentInstance.values()).toEqual([EXPEDITION]);
-    expect(el.querySelector('.panel')).toBeNull();
+    expect(panel()).toBeNull();
     expect(document.activeElement).toBe(toggle);
-    el.remove();
+    done();
+  });
+
+  it('Escape closes the list and gives the focus back to the button', async () => {
+    const { toggle, open, settle, done } = setup([MAIN]);
+    open();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+    await settle();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+    done();
+  });
+
+  it('a letter on the button starts a search, Enter in it picks the first match', async () => {
+    const { fixture, toggle, settle, done } = setup([MAIN, EXPEDITION]);
+    toggle.focus();
+    toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', bubbles: true }));
+    await settle();
+    const search = panel()!.querySelector('input')!;
+    expect(document.activeElement).toBe(search);
+    expect(search.value).toBe('q');
+    expect(options().map((o) => o.textContent)).toEqual([EXPEDITION.text]);
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
+    expect(fixture.componentInstance.values()).toEqual([EXPEDITION]);
+    done();
+  });
+});
+
+/** The component and its CDK overlay container in a shadow root, as in the plugin (`ShadowOverlayContainer`). */
+const shadowHost = document.createElement('div');
+const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
+
+// A test double of the plugin's container: @Injectable because OverlayContainer takes constructor deps.
+@Injectable()
+class TestShadowOverlayContainer extends OverlayContainer {
+  protected override _createContainer(): void {
+    const container = this._document.createElement('div');
+    container.classList.add('cdk-overlay-container');
+    shadowRoot.appendChild(container);
+    this._containerElement = container;
+  }
+}
+
+describe('AcCombobox in a shadow root', () => {
+  beforeEach(() => {
+    document.body.appendChild(shadowHost);
+    TestBed.configureTestingModule({ providers: [{ provide: OverlayContainer, useClass: TestShadowOverlayContainer }] });
+  });
+  afterEach(() => shadowHost.remove());
+
+  it('a press on an option picks it, a press elsewhere in the shadow root closes the list', () => {
+    const fixture = TestBed.createComponent(AcCombobox);
+    fixture.componentRef.setInput('options', [MAIN, EXPEDITION]);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    shadowRoot.appendChild(el);
+    const panel = () => shadowRoot.querySelector<HTMLElement>('.cdk-overlay-container .panel');
+    const press = (target: Element) => {
+      // Seen from `document`, the target of these events is `shadowHost`, not `target`.
+      target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      target.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      fixture.detectChanges();
+    };
+
+    press(el.querySelector('[role=combobox]')!);
+    expect(panel()).not.toBeNull();
+    press(panel()!.querySelector('[role=option]')!);
+    expect(fixture.componentInstance.values()).toEqual([MAIN]);
+    expect(panel()).toBeNull();
+
+    press(el.querySelector('[role=combobox]')!);
+    press(shadowRoot.appendChild(document.createElement('p')));
+    expect(panel()).toBeNull();
+    fixture.destroy();
   });
 });

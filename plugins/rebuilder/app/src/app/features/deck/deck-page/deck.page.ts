@@ -6,6 +6,7 @@ import { DeckStore } from '../../../core/deck-store';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
+import { uiLocale } from '../../../core/i18n';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcRaritySummary } from '../../../ui/chips';
 import { AcCollapsible } from '../../../ui/containers';
@@ -64,22 +65,31 @@ export class DeckPage {
   private toastTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly tabs = [
-    { id: 'cartes', label: 'Cartes' },
+    { id: 'cartes', label: $localize`:@@deck.page.tabCards:Cartes` },
     { id: 'decklist', label: 'Decklist' },
   ];
   protected readonly groupingOptions = [
-    { value: 'type' as const, label: 'Par type' },
-    { value: 'cost' as const, label: 'Par coût' },
+    { value: 'type' as const, label: $localize`:@@deck.page.byType:Par type` },
+    { value: 'cost' as const, label: $localize`:@@deck.page.byCost:Par coût` },
   ];
+  protected readonly visibilityLabels = {
+    public: $localize`:@@deck.page.public:Public`,
+    private: $localize`:@@deck.page.private:Privé`,
+  };
+  protected readonly moreLabel = computed(() =>
+    this.deck.owned()
+      ? $localize`:@@deck.page.moreOwned:Plus d’actions (copier la liste, dupliquer, supprimer)`
+      : $localize`:@@deck.page.more:Plus d’actions (copier la liste, dupliquer)`,
+  );
   protected readonly info = computed(() => formatInfo(this.deck.format()));
   protected readonly legal = computed(() => this.deck.status().legal && !!this.deck.hero());
   protected readonly groups = computed(() => (this.grouping() === 'type' ? this.deck.groups() : groupByCost(this.deck.lines())));
   protected readonly created = computed(() => {
     const d = this.deck.createdAt();
-    return d ? new Date(d).toLocaleDateString('fr-FR') : '';
+    return d ? new Date(d).toLocaleDateString(uiLocale()) : '';
   });
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
-    { route: `/decks/${this.id()}`, icon: 'eye', label: 'Aperçu' },
+    { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
     { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
   ]);
 
@@ -103,16 +113,16 @@ export class DeckPage {
     const text = decklistText(this.deck.lines(), this.deck.hero());
     try {
       await navigator.clipboard.writeText(text);
-      this.flash('Liste copiée dans le presse-papiers.');
+      this.flash($localize`:@@deck.page.listCopied:Liste copiée dans le presse-papiers.`);
     } catch {
-      this.flash('Copie impossible dans ce navigateur.');
+      this.flash($localize`:@@deck.page.copyFailed:Copie impossible dans ce navigateur.`);
     }
   }
 
   protected async share(): Promise<void> {
     const url = GuestDeckService.isGuestId(this.id()) ? '' : `${location.origin}/decks/${this.id()}`;
     if (!url) {
-      this.flash('Deck invité : enregistré sur cet appareil uniquement. Copiez la liste pour le partager.');
+      this.flash($localize`:@@deck.page.guestShare:Deck invité : enregistré sur cet appareil uniquement. Copiez la liste pour le partager.`);
       return;
     }
     if (navigator.share) {
@@ -125,7 +135,7 @@ export class DeckPage {
     }
     try {
       await navigator.clipboard.writeText(url);
-      this.flash('Lien copié.');
+      this.flash($localize`:@@deck.page.linkCopied:Lien copié.`);
     } catch {
       this.flash(url);
     }
@@ -133,15 +143,15 @@ export class DeckPage {
 
   protected duplicate(): void {
     const id = this.deck.duplicate();
-    this.flash('Deck dupliqué.');
+    this.flash($localize`:@@deck.page.duplicated:Deck dupliqué.`);
     void this.router.navigate(['/decks', id]);
   }
 
   protected remove(): void {
-    if (!confirm(`Supprimer « ${this.deck.name()} » ?`)) return;
+    if (!confirm($localize`:@@deck.page.deleteConfirm:Supprimer « ${this.deck.name()}:name: » ?`)) return;
     this.deck.delete().subscribe((ok) => {
       if (ok) void this.router.navigateByUrl('/decks');
-      else this.flash(this.deck.error() ?? 'Suppression impossible.');
+      else this.flash(this.deck.error() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
     });
   }
 

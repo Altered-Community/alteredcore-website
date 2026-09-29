@@ -2,8 +2,8 @@
   <ac-input
     icon="search"
     appearance="subtle"
-    ariaLabel="Rechercher par nom"
-    placeholder="Rechercher par nom…"
+    ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+    placeholder="Rechercher par nom…" i18n-placeholder="@@search.filters.namePlaceholder"
     [clearable]="true"
     enterkeyhint="search"
     [value]="value().q"
@@ -12,8 +12,8 @@
 }
 
 @if (factionFilter()) {
-  <ac-filter-section title="Faction" [count]="value().factions.length">
-    <div class="types" role="group" aria-label="Faction">
+  <ac-filter-section title="Faction" i18n-title="@@search.filters.faction" [count]="value().factions.length">
+    <div class="types" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
       @for (f of factions; track f.code) {
         <ac-chip [label]="f.name" [dot]="f.color" [selected]="value().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
       }
@@ -21,25 +21,25 @@
   </ac-filter-section>
 }
 
-<ac-filter-section title="Coût">
+<ac-filter-section title="Coût" i18n-title="@@search.filters.cost">
   <div class="two">
-    <ac-input label="Main" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="mainInvalid()" [value]="value().mainCost" (valueChange)="set({ mainCost: $event })" />
-    <ac-input label="Réserve" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="recallInvalid()" [value]="value().recallCost" (valueChange)="set({ recallCost: $event })" />
+    <ac-input label="Main" i18n-label="@@search.filters.handCost" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="mainInvalid()" [value]="value().mainCost" (valueChange)="set({ mainCost: $event })" />
+    <ac-input label="Réserve" i18n-label="@@search.filters.reserveCost" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="recallInvalid()" [value]="value().recallCost" (valueChange)="set({ recallCost: $event })" />
   </div>
 </ac-filter-section>
 
 @if (source() === 'uniques' && mode() === 'aside') {
   <button type="button" class="fold" [attr.aria-expanded]="setsOpen()" (click)="setsOpen.set(!setsOpen())">
-    <span class="fold-l">Extensions <span class="pill">{{ value().sets.length }}</span></span>
+    <span class="fold-l" i18n="@@search.filters.setsFold">Extensions <span class="pill">{{ value().sets.length }}</span></span>
     <span class="chev" [class.open]="setsOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
   </button>
 }
 @if (source() !== 'uniques' || mode() === 'sheet' || setsOpen()) {
-  <ac-filter-section title="Extensions" [count]="value().sets.length">
+  <ac-filter-section title="Extensions" i18n-title="@@search.filters.sets" [count]="value().sets.length">
     @if (mode() === 'sheet') {
-      <button action type="button" class="link" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? 'Aucune' : 'Toutes' }}</button>
+      <button action type="button" class="link" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? labels.none : labels.all }}</button>
     }
-    <div class="sets" role="group" aria-label="Extensions">
+    <div class="sets" role="group" aria-label="Extensions" i18n-aria-label="@@search.filters.sets">
       @for (s of sets(); track s.reference) {
         <ac-extension-tile [extension]="s" [selected]="value().sets.includes(s.reference)" (selectedChange)="toggleSet(s.reference, $event)" />
       }
@@ -48,9 +48,9 @@
 }
 
 @if (source() === 'uniques') {
-  <ac-filter-section title="Environnement">
+  <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment">
     <ac-segmented
-      ariaLabel="Environnement"
+      ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
       [fullWidth]="true"
       [options]="environments"
       [value]="value().environment"
@@ -58,24 +58,24 @@
     />
   </ac-filter-section>
 
-  <ac-filter-section title="Effets">
+  <ac-filter-section title="Effets" i18n-title="@@search.filters.effects">
     <div class="effects">
       @for (e of value().effects; track e.id) {
-        <ac-effect-summary [effect]="e" [title]="'Effet ' + ($index + 1)" (edit)="editEffect.emit($index)" (remove)="removeEffect($index)" />
+        <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (remove)="removeEffect($index)" />
         @if (!$last) {
           <ac-logic-divider />
         }
       }
-      <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()">Ajouter un effet</button>
+      <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
     </div>
   </ac-filter-section>
 } @else {
-  <ac-filter-section title="Rareté">
-    <ac-icon-toggle-group ariaLabel="Rareté" [options]="rarities" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
+  <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity">
+    <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
   </ac-filter-section>
 
-  <ac-filter-section title="Type">
-    <div class="types" role="group" aria-label="Type de carte">
+  <ac-filter-section title="Type" i18n-title="@@search.filters.type">
+    <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
       @for (t of types; track t.value) {
         <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
       }
@@ -84,13 +84,13 @@
 
   <div class="advanced">
     <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
-      <span class="fold-l">Recherche avancée</span>
+      <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
       <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
     </button>
     @if (advancedOpen()) {
-      <div class="types adv" role="group" aria-label="Recherche avancée">
-        <ac-chip shape="square" label="Sans effet" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
-        <ac-chip shape="square" label="Effet d’écho" [selected]="value().echo" (selectedChange)="set({ echo: $event })" />
+      <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
+        <ac-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
+        <ac-chip shape="square" label="Effet d’écho" i18n-label="@@search.filters.chip.echo" [selected]="value().echo" (selectedChange)="set({ echo: $event })" />
       </div>
     }
   </div>

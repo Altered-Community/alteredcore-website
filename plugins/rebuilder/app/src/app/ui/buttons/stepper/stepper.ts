@@ -16,7 +16,15 @@ export class AcStepper {
   readonly label = input('');
   readonly itemName = input('');
 
-  protected readonly suffix = computed(() => (this.itemName() ? ` de ${this.itemName()}` : ''));
+  protected readonly copiesLabel = $localize`:@@ui.stepper.copies:Exemplaires`;
+  protected readonly decLabel = computed(() => {
+    const name = this.itemName();
+    return name ? $localize`:@@ui.stepper.removeOneOf:Retirer un exemplaire de ${name}:name:` : $localize`:@@ui.stepper.removeOne:Retirer un exemplaire`;
+  });
+  protected readonly incLabel = computed(() => {
+    const name = this.itemName();
+    return name ? $localize`:@@ui.stepper.addOneOf:Ajouter un exemplaire de ${name}:name:` : $localize`:@@ui.stepper.addOne:Ajouter un exemplaire`;
+  });
   protected readonly iconSize = computed(() => (this.appearance() === 'overlay' ? 16 : 14));
 
   step(delta: number): void {

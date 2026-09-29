@@ -1,16 +1,16 @@
-import { buildCardsSearchParams } from './cards-api.service';
+import { buildUniquesParams } from './uniques-api.service';
 import {
   ALL_CARDS_SETS,
   UNIQUES_SETS,
   activeFilterCount,
   defaultFilters,
-  effectSlotsFor,
   filterChips,
   newEffectBlock,
   parseCostExpression,
   removeChip,
   setsFor,
   toSearchParams,
+  toUniquesQuery,
 } from './card-filters';
 
 describe('parseCostExpression', () => {
@@ -29,56 +29,63 @@ describe('parseCostExpression', () => {
   });
 });
 
-describe('effectSlotsFor', () => {
-  const block = (t: number[], c: number[], e: number[]) => ({
-    ...newEffectBlock(),
-    triggers: t.map((id) => ({ id, text: `t${id}` })),
-    conditions: c.map((id) => ({ id, text: `c${id}` })),
-    effects: e.map((id) => ({ id, text: `e${id}` })),
+const block = (t: number[], c: number[], e: number[]) => ({
+  ...newEffectBlock(),
+  triggers: t.map((id) => ({ id, text: `t${id}` })),
+  conditions: c.map((id) => ({ id, text: `c${id}` })),
+  effects: e.map((id) => ({ id, text: `e${id}` })),
+});
+
+describe('toUniquesQuery (Uniques search API)', () => {
+  it('ORs the values of a criterion and ANDs the effect blocks, empty ones left out', () => {
+    // « (Joué depuis la Main ou Joué de partout) · Sans condition · Piochez » and « Piochez »: the case
+    // the cards API could not express (it kept the first value of each block).
+    const f = { ...defaultFilters('uniques'), effects: [block([22, 24], [191], [90]), block([], [], []), block([], [], [90])] };
+    const hp = buildUniquesParams(toUniquesQuery(f, 'AX'), null, 36);
+    expect(hp.get('effect[0][t]')).toBe('22,24');
+    expect(hp.get('effect[0][c]')).toBe('191');
+    expect(hp.get('effect[0][o]')).toBe('90');
+    expect(hp.get('effect[1][o]')).toBe('90');
+    expect(hp.has('effect[1][t]')).toBe(false);
+    // « Piochez » covers the first block: the card needs a second drawing ability, not the same one.
+    expect(hp.get('effect[1][matchCount]')).toBe('2');
+    expect(hp.has('effect[0][matchCount]')).toBe(false);
+    expect(hp.keys().filter((k) => k.startsWith('effect['))).toHaveLength(5);
+    expect(hp.get('effectMode')).toBe('and');
   });
 
-  it('expands one block to the OR cross product (0 = any)', () => {
-    const { slots, mode } = effectSlotsFor([block([1, 2], [], [7])]);
-    expect(mode).toBe('or');
-    expect(slots).toEqual([
-      { trigger: 1, condition: 0, effect: 7 },
-      { trigger: 2, condition: 0, effect: 7 },
-    ]);
+  it('sends no effectMode for a single block', () => {
+    const hp = buildUniquesParams(toUniquesQuery({ ...defaultFilters('uniques'), effects: [block([17], [], [])] }, null), null, 36);
+    expect(hp.get('effect[0][t]')).toBe('17');
+    expect(hp.has('effectMode')).toBe(false);
   });
 
-  it('ANDs several blocks and ignores empty ones', () => {
-    const { slots, mode } = effectSlotsFor([block([1], [], []), block([], [], []), block([], [5], [])]);
-    expect(mode).toBe('and');
-    expect(slots).toEqual([
-      { trigger: 1, condition: 0, effect: 0 },
-      { trigger: 0, condition: 5, effect: 0 },
-    ]);
+  it('maps name, hero faction, sets, costs and Frontier; the cursor only after the first page', () => {
+    const f = { ...defaultFilters('uniques'), q: ' kelon ', mainCost: '1-2', recallCost: '4', environment: 'frontier' as const };
+    const q = toUniquesQuery(f, 'AX');
+    expect(q).toMatchObject({ name: 'kelon', reference: undefined, factions: ['AX'], sets: UNIQUES_SETS, mainCosts: [1, 2], recallCosts: [4], format: 'frontier' });
+    const first = buildUniquesParams(q, null, 36);
+    expect(first.get('limit')).toBe('36');
+    expect(first.has('cursor')).toBe(false);
+    expect(first.getAll('faction[]')).toEqual(['AX']);
+    expect(first.getAll('set[]')).toEqual(UNIQUES_SETS);
+    expect(first.getAll('mainCost[]')).toEqual(['1', '2']);
+    expect(first.get('format')).toBe('frontier');
+    expect(buildUniquesParams(q, 3591698, 36).get('cursor')).toBe('3591698');
+    expect(toUniquesQuery(defaultFilters('uniques'), null).format).toBeUndefined();
   });
 
-  it('ignores empty criteria and empty blocks in the request', () => {
-    const filters = { ...defaultFilters('uniques'), effects: [block([17], [], []), block([], [], [])] };
-    const hp = buildCardsSearchParams(toSearchParams(filters, 'uniques', 'AX', 1, 24));
-    expect(hp.keys().filter((k) => k.startsWith('effectSlot'))).toEqual(['effectSlot[0][trigger]']);
-    expect(hp.get('effectSlot[0][trigger]')).toBe('17');
-    expect(hp.has('effectSlotMode')).toBe(false);
-  });
-
-  it('sends « Sans condition » as the empty condition id, not as « any »', () => {
-    const any = effectSlotsFor([block([17], [], [])]).slots;
-    const none = effectSlotsFor([
-      { ...block([17], [], []), conditions: [{ id: 191, text: 'Sans condition' }] },
-    ]).slots;
-    expect(any).toEqual([{ trigger: 17, condition: 0, effect: 0 }]);
-    expect(none).toEqual([{ trigger: 17, condition: 191, effect: 0 }]);
-    expect(buildCardsSearchParams({ effectSlots: none }).get('effectSlot[0][condition]')).toBe('191');
-    expect(buildCardsSearchParams({ effectSlots: any }).has('effectSlot[0][condition]')).toBe(false);
+  it('turns an exact reference into a card lookup', () => {
+    const q = toUniquesQuery({ ...defaultFilters('uniques'), q: 'alt_coreks_b_ax_04_u_1' }, null);
+    expect(q.reference).toBe('ALT_COREKS_B_AX_04_U_1');
+    expect(q.name).toBeUndefined();
   });
 });
 
-describe('toSearchParams', () => {
+describe('toSearchParams (cards API)', () => {
   it('maps the "all cards" filters and hero faction', () => {
     const f = { ...defaultFilters('all'), q: 'rok', mainCost: '1-2', recallCost: '4' };
-    const p = toSearchParams(f, 'all', 'YZ', 2, 36);
+    const p = toSearchParams(f, 'YZ', 2, 36);
     expect(p.page).toBe(2);
     expect(p.itemsPerPage).toBe(36);
     expect(p.factions).toEqual(['YZ']);
@@ -87,23 +94,8 @@ describe('toSearchParams', () => {
     expect(p.mainCosts).toEqual([1, 2]);
     expect(p.recallCosts).toEqual([4]);
     expect(p.q).toBe('rok');
-    expect(p.effectSlots).toEqual([]);
-    expect(toSearchParams({ ...f, rarities: [] }, 'all', 'YZ', 1, 36).rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
-  });
-
-  it('forces UNIQUE rarity, drops types and adds Frontier + effect slots for uniques', () => {
-    const f = { ...defaultFilters('uniques'), environment: 'frontier' as const, effects: [{ ...newEffectBlock(), triggers: [{ id: 17, text: 'Au Crépuscule' }] }] };
-    const p = toSearchParams(f, 'uniques', 'AX', 1, 24);
-    expect(p.rarities).toEqual(['UNIQUE']);
-    expect(p.types).toEqual([]);
-    expect(p.variations).toEqual([]);
-    expect(p.gameplayFormats).toEqual(['frontier']);
-    expect(p.effectSlots).toEqual([{ trigger: 17, condition: 0, effect: 0 }]);
-  });
-
-  it('leaves out `locale` for uniques only, so the cards API answers from Meilisearch', () => {
-    expect(toSearchParams(defaultFilters('uniques'), 'uniques', 'AX', 1, 36).locale).toBeUndefined();
-    expect(toSearchParams(defaultFilters('all'), 'all', 'AX', 1, 36).locale).toBe('fr');
+    expect(p.locale).toBe('fr');
+    expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
   });
 });
 
@@ -139,12 +131,12 @@ describe('filter chips', () => {
 describe('faction filter (card browser)', () => {
   it('sends the selected factions when no faction is locked', () => {
     const f = { ...defaultFilters('all'), factions: ['AX', 'LY'] };
-    expect(toSearchParams(f, 'all', null, 1, 36).factions).toEqual(['AX', 'LY']);
+    expect(toSearchParams(f, null, 1, 36).factions).toEqual(['AX', 'LY']);
   });
 
   it('keeps the locked faction (deck hero) over the selection', () => {
     const f = { ...defaultFilters('all'), factions: ['AX'] };
-    expect(toSearchParams(f, 'all', 'YZ', 1, 36).factions).toEqual(['YZ']);
+    expect(toSearchParams(f, 'YZ', 1, 36).factions).toEqual(['YZ']);
   });
 
   it('shows one chip named after the faction, or the count, and removes it', () => {

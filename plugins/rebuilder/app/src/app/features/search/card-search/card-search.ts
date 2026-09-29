@@ -1,9 +1,10 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
+import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
-import { CardsApiService } from '../../../core/cards-api.service';
+import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
@@ -23,11 +24,14 @@ export interface CardSourceTab {
 }
 
 export const CARD_SOURCES: CardSourceTab[] = [
-  { id: 'all', label: 'Toutes les cartes' },
-  { id: 'uniques', label: 'Uniques' },
-  { id: 'owned', label: 'Propriété numérique' },
-  { id: 'favorites', label: 'Favoris' },
+  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes` },
+  { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
+  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
+  { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
 ];
+
+/** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
+const FILTERS_GROW_MAX = 136;
 
 /**
  * Card search shared by the deck editor and the card browser: source tabs (`?source=`), filters
@@ -45,7 +49,7 @@ export class CardSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(AcOverlayService);
-  private readonly cardsApi = inject(CardsApiService);
+  private readonly uniquesApi = inject(UniquesApiService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
 
@@ -62,11 +66,15 @@ export class CardSearch {
   );
 
   protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
-  protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: `Tri : ${o.label}` }));
+  protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
   protected readonly layoutOptions = [
-    { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: 'Grille' },
-    { value: 'list' as const, icon: 'list' as const, ariaLabel: 'Liste' },
+    { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },
+    { value: 'list' as const, icon: 'list' as const, ariaLabel: $localize`:@@search.card.list:Liste` },
   ];
+  protected readonly labels = {
+    showList: $localize`:@@search.card.showList:Afficher en liste`,
+    showGrid: $localize`:@@search.card.showGrid:Afficher en grille`,
+  };
   protected readonly resultsLayout = signal<'grid' | 'list'>('grid');
   protected readonly condensed = signal(false);
 
@@ -75,11 +83,17 @@ export class CardSearch {
   private applyTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly activeCount = computed(() => activeFilterCount(this.search.filters(), this.search.source()));
+  protected readonly filtersLabel = computed(() => $localize`:@@search.card.filtersActive:Filtres, ${this.activeCount()}:count: actifs`);
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
+  /** The Uniques search API returns its own order, with no sort parameter. */
+  protected readonly sortable = computed(() => this.search.source() !== 'uniques');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
-    return t === null ? '…' : `${t.toLocaleString('fr-FR')} carte${t > 1 ? 's' : ''}`;
+    if (t === null) return '…';
+    const n = t.toLocaleString(uiLocale());
+    if (t === 0) return $localize`:@@search.card.totalZero:0 carte`;
+    return t > 1 ? $localize`:@@search.card.total:${n}:count: cartes` : $localize`:@@search.card.totalOne:1 carte`;
   });
 
   constructor() {
@@ -100,10 +114,14 @@ export class CardSearch {
       untracked(() => this.prefetchAbilities());
     });
 
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const onScroll = () => {
       const next = window.scrollY > 170;
       if (next !== this.condensed()) this.condensed.set(next);
+      // The desktop filters panel grows by the scrolled distance set on the host, no change detection.
+      host.style.setProperty('--app-filters-grow', `${Math.min(window.scrollY, FILTERS_GROW_MAX)}px`);
     };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('scroll', onScroll);
@@ -111,9 +129,9 @@ export class CardSearch {
     });
   }
 
-  /** The effect editor needs ~40 KB of vocabularies; fetch them while the user reads the uniques. */
+  /** The effect editor needs the vocabularies (one `/api/v2/effects` call); fetch them while the user reads the uniques. */
   private prefetchAbilities(): void {
-    const run = () => (['triggers', 'conditions', 'effects'] as const).forEach((k) => this.cardsApi.abilities(k).subscribe({ error: () => undefined }));
+    const run = () => this.uniquesApi.abilities('triggers').subscribe({ error: () => undefined });
     if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
     else setTimeout(run, 300);
   }

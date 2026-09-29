@@ -1,5 +1,5 @@
-// Writes ../dist/embed-manifest.json after `ng build --configuration embed`: the files the
-// AlteredCore shell loads (see includes/spa.php in the site). The main module has a hashed name;
+// Writes ../dist/embed-manifest.json after `ng build`: the files the
+// AlteredCore shell loads (see includes/spa.php in the site). The polyfills and main modules have hashed names;
 // the non-injected style bundles do not, so they get a content hash as query string.
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -24,7 +24,8 @@ function versioned(file) {
 const manifest = {
   version: 1,
   base: 'browser/',
-  js: [one(/^main-[A-Za-z0-9_-]+\.js$/)],
+  // Module scripts run in document order: the polyfills ($localize) before the app.
+  js: [one(/^polyfills-[A-Za-z0-9_-]+\.js$/), one(/^main-[A-Za-z0-9_-]+\.js$/)],
   css: [versioned(one(/^embed\.css$/))],
   documentCss: [versioned(one(/^document\.css$/))],
 };

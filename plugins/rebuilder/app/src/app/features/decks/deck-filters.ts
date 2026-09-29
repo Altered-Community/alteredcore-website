@@ -1,4 +1,5 @@
 import { type DeckListItem } from '../../core/deck-view';
+import { uiLocale } from '../../core/i18n';
 
 export type Visibility = 'all' | 'public' | 'private';
 
@@ -27,7 +28,7 @@ export function filterDecks(items: DeckListItem[], f: DeckFilters): DeckListItem
   );
   return out.sort((a, b) =>
     f.sort === 'name'
-      ? a.name.localeCompare(b.name, 'fr')
+      ? a.name.localeCompare(b.name, uiLocale())
       : (f.sort === 'likes' ? b.likes - a.likes : 0) || (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0),
   );
 }

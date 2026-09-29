@@ -1,2 +1,2 @@
-# Built by `npm run build:embed` (app/) in CI and locally; never committed.
+# Built by `npm run build` (app/) in CI and locally; never committed.
 /dist/

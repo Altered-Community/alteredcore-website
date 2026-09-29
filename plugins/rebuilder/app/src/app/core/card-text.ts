@@ -21,11 +21,11 @@ export type EffectLine = EffectPart[];
 
 /** `alteredicons` code points and sizes, as in Altered-Card-Renderer `core.json`. */
 export const ICONS: Record<string, { glyph: string; scale: number; title: string }> = {
-  R: { glyph: '\ue024', scale: 1, title: 'Joué depuis la Réserve' },
-  J: { glyph: '\ue026', scale: 0.8, title: 'Joué de partout' },
-  H: { glyph: '\ue023', scale: 1, title: 'Joué depuis la Main' },
-  T: { glyph: '\ue027', scale: 1, title: 'Épuisez-moi' },
-  D: { glyph: '\ue029', scale: 1.2, title: 'Défaussez-moi de la Réserve' },
+  R: { glyph: '\ue024', scale: 1, title: $localize`:@@rules.icon.playedFromReserve:Joué depuis la Réserve` },
+  J: { glyph: '\ue026', scale: 0.8, title: $localize`:@@rules.icon.playedFromAnywhere:Joué de partout` },
+  H: { glyph: '\ue023', scale: 1, title: $localize`:@@rules.icon.playedFromHand:Joué depuis la Main` },
+  T: { glyph: '\ue027', scale: 1, title: $localize`:@@rules.icon.exhaustMe:Épuisez-moi` },
+  D: { glyph: '\ue029', scale: 1.2, title: $localize`:@@rules.icon.discardMeFromReserve:Défaussez-moi de la Réserve` },
   O: { glyph: '\ue02d', scale: 1, title: 'O' },
   M: { glyph: '\ue025', scale: 1, title: 'M' },
   V: { glyph: '\ue037', scale: 1, title: 'V' },

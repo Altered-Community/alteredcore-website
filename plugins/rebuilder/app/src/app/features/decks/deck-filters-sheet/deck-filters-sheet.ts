@@ -6,7 +6,7 @@ import { FACTIONS } from '../../../ui/metier';
 import { AcOverlayRef } from '../../../ui/overlay';
 import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
 
-/** Mobile filter sheet for Mes decks (format, héros, visibilité, faction). */
+/** Mobile filter sheet of the decks page (format, héros, visibilité, faction: what the tab supports). */
 @Component({
   selector: 'app-deck-filters-sheet',
   imports: [AcSelect, AcSegmented, AcChip, AcButton],
@@ -16,7 +16,7 @@ import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-f
 })
 export class DeckFiltersSheet {
   protected readonly ref = inject<
-    AcOverlayRef<DeckFilters, { filters: DeckFilters; formats: { value: string; label: string }[]; heroes: { value: string; label: string }[]; visibilities: { value: Visibility; label: string }[]; showVisibility: boolean }>
+    AcOverlayRef<DeckFilters, { filters: DeckFilters; formats: { value: string; label: string }[]; heroes: { value: string; label: string }[]; visibilities: { value: Visibility; label: string }[]; showFormat: boolean; showHero: boolean; showVisibility: boolean }>
   >(AcOverlayRef);
   protected readonly draft = signal<DeckFilters>(this.ref.data.filters);
   protected readonly factions = FACTIONS;

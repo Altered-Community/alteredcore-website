@@ -1,7 +1,6 @@
 :host {
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 .picked {
   display: flex;
@@ -86,13 +85,9 @@
   margin-right: var(--ac-space-1-5);
   vertical-align: -0.12em;
 }
+/* In the CDK overlay container (plugin shadow root), sized to the button (matchWidth). */
 .panel {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 5;
-  margin-top: var(--ac-space-1);
+  width: 100%;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--ac-color-border-control);
@@ -142,7 +137,9 @@
   font-size: 13px;
   color: var(--ac-color-text-muted);
 }
-.list button {
+.option {
+  display: flex;
+  align-items: center;
   min-height: max(36px, var(--ac-hit-min));
   padding: 8px 12px;
   border: none;
@@ -152,7 +149,11 @@
   cursor: pointer;
   flex-shrink: 0;
 }
-.list button.active,
-.list button:hover {
+.option:hover,
+.option.cdk-option-active {
   background: var(--ac-color-bg-app);
+}
+.option:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: -2px;
 }

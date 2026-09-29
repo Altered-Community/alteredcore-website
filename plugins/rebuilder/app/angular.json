@@ -20,11 +20,17 @@
       "root": "",
       "sourceRoot": "src",
       "prefix": "ac",
+      "i18n": {
+        "sourceLocale": "fr"
+      },
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.embed.ts",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "@angular/localize/init"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "outputPath": {
@@ -49,37 +55,35 @@
                 "bundleName": "document",
                 "inject": false
               }
-            ]
-          },
-          "configurations": {
-            "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "12kB",
-                  "maximumError": "20kB"
-                }
-              ],
-              "outputHashing": "all",
-              "extractLicenses": true
-            },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true
-            }
-          },
-          "defaultConfiguration": "production"
+            ],
+            "budgets": [
+              {
+                "type": "initial",
+                "maximumWarning": "500kB",
+                "maximumError": "1MB"
+              },
+              {
+                "type": "anyComponentStyle",
+                "maximumWarning": "12kB",
+                "maximumError": "20kB"
+              }
+            ],
+            "outputHashing": "all",
+            "extractLicenses": true
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "buildTarget": "rebuilder:build",
+            "format": "json",
+            "outputPath": "../dist/i18n"
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "buildTarget": "::development"
+            "buildTarget": "rebuilder:build"
           }
         },
         "lint": {

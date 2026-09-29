@@ -1,6 +1,7 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { AcButton } from '../../../ui/buttons';
+import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
 import { AcFilterSection } from '../../../ui/containers';
 import { AcInput, AcSegmented } from '../../../ui/fields';
@@ -27,15 +28,23 @@ export class FiltersPanel {
   protected readonly types = TYPE_OPTIONS;
   protected readonly factions = FACTIONS;
   protected readonly environments = [
-    { value: 'all' as const, label: 'Toutes les Uniques' },
+    { value: 'all' as const, label: $localize`:@@search.filters.allUniques:Toutes les Uniques` },
     { value: 'frontier' as const, label: 'Frontier' },
   ];
+  protected readonly labels = {
+    none: $localize`:@@search.filters.none:Aucune`,
+    all: $localize`:@@search.filters.all:Toutes`,
+  };
   protected readonly sets = computed(() => setsFor(this.source()));
   protected readonly allSets = computed(() => this.sets().map((s) => s.reference));
   protected readonly setsOpen = signal(false);
   protected readonly advancedOpen = signal(false);
   protected readonly mainInvalid = computed(() => parseCostExpression(this.value().mainCost) === null);
   protected readonly recallInvalid = computed(() => parseCostExpression(this.value().recallCost) === null);
+
+  protected effectTitle(index: number): string {
+    return effectTitle(index);
+  }
 
   set(partial: Partial<SearchFilters>): void {
     this.value.set({ ...this.value(), ...partial });

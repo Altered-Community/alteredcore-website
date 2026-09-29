@@ -1,6 +1,6 @@
 <div class="intro">
   @if (bp.compact()) {
-    <p>Le héros détermine votre faction et les cartes disponibles.</p>
+    <p i18n="@@shared.heroPicker.description">Le héros détermine votre faction et les cartes disponibles.</p>
   }
   <ac-faction-tabs size="sm" [layout]="bp.compact() ? 'scroll' : 'grid'" controls="hero-picker-panel" [(active)]="faction" />
 </div>
@@ -17,11 +17,11 @@
 <div class="ac-overlay-footer">
   <span class="note">
     @if (picked(); as p) {
-      Sélection : <strong>{{ p.name }}</strong> · {{ factionLabel(p.faction) }}
+      <ng-container i18n="@@shared.heroPicker.selection">Sélection : <strong>{{ p.name }}</strong> · {{ factionLabel(p.faction) }}</ng-container>
     } @else {
-      Aucun héros sélectionné
+      <ng-container i18n="@@shared.heroPicker.none">Aucun héros sélectionné</ng-container>
     }
   </span>
-  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
-  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!picked()" (click)="confirm()">Choisir ce héros</button>
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.heroPicker.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!picked()" (click)="confirm()" i18n="@@shared.heroPicker.confirm">Choisir ce héros</button>
 </div>

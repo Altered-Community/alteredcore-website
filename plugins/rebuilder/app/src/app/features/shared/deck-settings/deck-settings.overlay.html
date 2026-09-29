@@ -6,18 +6,18 @@
       }
     </span>
     <span class="meta">
-      <span class="overline">Héros</span>
-      <span class="name">{{ hero()?.name || 'Aucun héros' }}</span>
+      <span class="overline" i18n="@@shared.deckSettings.hero">Héros</span>
+      <span class="name">{{ hero()?.name || noHero }}</span>
     </span>
-    <button acButton variant="secondary" size="sm" (click)="changeHero()">Changer</button>
+    <button acButton variant="secondary" size="sm" (click)="changeHero()" i18n="@@shared.deckSettings.changeHero">Changer</button>
   </div>
   <div class="field">
-    <span class="label">Visibilité</span>
-    <ac-segmented ariaLabel="Visibilité" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
+    <span class="label" i18n="@@shared.deckSettings.visibility">Visibilité</span>
+    <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@shared.deckSettings.visibility" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
   </div>
   <fieldset>
-    <legend>Format</legend>
-    <div class="formats" role="radiogroup" aria-label="Format">
+    <legend i18n="@@shared.deckSettings.format">Format</legend>
+    <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@shared.deckSettings.format">
       @for (f of formats; track f.value) {
         <ac-radio-card
           name="deck-settings-format"
@@ -32,6 +32,6 @@
   </fieldset>
 </div>
 <div class="ac-overlay-footer">
-  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">Annuler</button>
-  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()">Enregistrer</button>
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.deckSettings.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="save()" i18n="@@shared.deckSettings.save">Enregistrer</button>
 </div>

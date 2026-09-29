@@ -6,25 +6,25 @@
   </span>
   <div class="meta">
     @if (appearance() === 'embedded') {
-      <span class="overline">Héros</span>
-      <span class="hero-name">{{ hero()?.name || 'Aucun héros' }}</span>
+      <span class="overline" i18n="@@ui.deckSummary.hero">Héros</span>
+      <span class="hero-name">{{ hero()?.name || noHero }}</span>
     } @else {
       <span class="deck-name">{{ name() }}</span>
-      <span class="sub">Héros : {{ hero()?.name || '—' }}</span>
+      <span class="sub" i18n="@@ui.deckSummary.heroName">Héros : {{ hero()?.name || '—' }}</span>
     }
     <span class="sub fmt">
       {{ formatLabel() }}<span aria-hidden="true">·</span>
-      <ac-icon [name]="isPublic() ? 'eye' : 'lock'" [size]="14" [strokeWidth]="2.2" />{{ isPublic() ? 'Public' : 'Privé' }}
+      <ac-icon [name]="isPublic() ? 'eye' : 'lock'" [size]="14" [strokeWidth]="2.2" />{{ isPublic() ? publicLabel : privateLabel }}
     </span>
   </div>
   @if (editable()) {
-    <button acIconButton="sliders-horizontal" ariaLabel="Réglages du deck : héros, format, visibilité" [iconSize]="20" (click)="openSettings.emit()"></button>
+    <button acIconButton="sliders-horizontal" ariaLabel="Réglages du deck : héros, format, visibilité" i18n-ariaLabel="@@ui.deckSummary.settings" [iconSize]="20" (click)="openSettings.emit()"></button>
   }
 </div>
 <div class="counts">
-  <span class="total"><strong>{{ total() }}</strong><span>cartes</span></span>
+  <span class="total"><strong>{{ total() }}</strong><span i18n="@@ui.deckSummary.cards">{total(), plural, =1 {carte} other {cartes}}</span></span>
   @if (legal()) {
-    <ac-badge tone="green" icon="check">Valide</ac-badge>
+    <ac-badge tone="green" icon="check" i18n="@@ui.deckSummary.valid">Valide</ac-badge>
   } @else {
     <ac-badge tone="orange" icon="circle-alert">{{ issueLabel() }}</ac-badge>
   }

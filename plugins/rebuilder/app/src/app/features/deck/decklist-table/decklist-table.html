@@ -3,20 +3,20 @@
   <span class="count">{{ group().count }}</span>
 </div>
 <div class="row cols" aria-hidden="true">
-  <span class="q">Qté</span>
-  <span class="n">Carte</span>
-  <span class="c">Coût</span>
-  <span class="p" title="Forêt"><i class="sq foret"></i></span>
-  <span class="p" title="Montagne"><i class="sq montagne"></i></span>
-  <span class="p" title="Océan"><i class="sq ocean"></i></span>
+  <span class="q" i18n="@@deck.table.qty">Qté</span>
+  <span class="n" i18n="@@deck.table.card">Carte</span>
+  <span class="c" i18n="@@deck.table.cost">Coût</span>
+  <span class="p" title="Forêt" i18n-title="@@deck.table.forest"><i class="sq foret"></i></span>
+  <span class="p" title="Montagne" i18n-title="@@deck.table.mountain"><i class="sq montagne"></i></span>
+  <span class="p" title="Océan" i18n-title="@@deck.table.water"><i class="sq ocean"></i></span>
 </div>
 @for (r of rows(); track r.ref) {
   <div class="row">
     <span class="q qty">×{{ r.qty }}</span>
     <span class="n"><img [src]="r.icon.src" [alt]="r.icon.label" [title]="r.icon.label" /><span class="name">{{ r.name }}</span></span>
     <span class="c">
-      <span class="main" title="Coût main">{{ r.main }}</span>
-      <span class="res" title="Coût réserve">{{ r.res }}</span>
+      <span class="main" title="Coût main" i18n-title="@@deck.table.handCost">{{ r.main }}</span>
+      <span class="res" title="Coût réserve" i18n-title="@@deck.table.reserveCost">{{ r.res }}</span>
     </span>
     <span class="p val">{{ r.f }}</span>
     <span class="p val">{{ r.m }}</span>

@@ -1,9 +1,9 @@
 <div class="ac-overlay-body new-deck-body">
   <section #heroesCol class="heroes" [class.narrow]="narrow()" aria-labelledby="new-deck-hero-label">
     <div class="heroes-head">
-      <span class="label" id="new-deck-hero-label">{{ t('newDeck.hero') }} <span class="req" aria-hidden="true">*</span></span>
+      <span class="label" id="new-deck-hero-label" i18n="@@newDeck.hero">Héros <span class="req" aria-hidden="true">*</span></span>
       @if (!bp.compact()) {
-        <span class="hint">{{ t('newDeck.heroHint') }}</span>
+        <span class="hint" i18n="@@newDeck.heroHint">Détermine la faction et les cartes disponibles</span>
       }
     </div>
     <ac-faction-tabs
@@ -26,21 +26,21 @@
   </section>
   <div class="side">
     <ac-input
-      [label]="t('newDeck.name')"
+      label="Nom du deck" i18n-label="@@newDeck.name"
       [required]="true"
-      [placeholder]="t('newDeck.namePlaceholder')"
+      placeholder="ex : Moyo Embrasement" i18n-placeholder="@@newDeck.namePlaceholder"
       enterkeyhint="done"
       [value]="form.name()"
       (valueChange)="form.editName($event)"
       (enter)="create()"
     />
     <div class="field">
-      <span class="label">{{ t('newDeck.visibility') }}</span>
-      <ac-segmented [ariaLabel]="t('newDeck.visibility')" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
+      <span class="label" i18n="@@newDeck.visibility">Visibilité</span>
+      <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@newDeck.visibility" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
     </div>
     <fieldset>
-      <legend class="label">{{ t('newDeck.format') }} <span class="req" aria-hidden="true">*</span></legend>
-      <div class="formats" role="radiogroup" [attr.aria-label]="t('newDeck.format')">
+      <legend class="label" i18n="@@newDeck.formatRequired">Format <span class="req" aria-hidden="true">*</span></legend>
+      <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@newDeck.format">
         @for (f of formats; track f.value) {
           <ac-radio-card
             name="new-deck-format"
@@ -60,14 +60,12 @@
   @if (!bp.compact()) {
     <span class="note" aria-live="polite">
       @if (form.hero(); as h) {
-        {{ t('newDeck.selection') }} <strong>{{ h.name }}</strong> · {{ factionLabel(h.faction) }}
+        <ng-container i18n="@@newDeck.selection">Sélection : <strong>{{ h.name }}</strong> · {{ factionLabel(h.faction) }}</ng-container>
       } @else {
-        {{ t('newDeck.pickHero') }}
+        <ng-container i18n="@@newDeck.pickHero">Choisissez un héros pour continuer.</ng-container>
       }
     </span>
   }
-  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()">{{ t('newDeck.cancel') }}</button>
-  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()">
-    {{ t('newDeck.create') }}
-  </button>
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@newDeck.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()" i18n="@@newDeck.create">Créer le deck</button>
 </div>

@@ -1,0 +1,59 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+
+.label {
+  font: var(--ac-font-small);
+  font-weight: 700;
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: 1px dashed var(--ac-color-border-dashed);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text-2);
+  font-size: 14px;
+}
+
+.control:focus-within {
+  border: 2px solid var(--ac-color-primary);
+  padding-inline: calc(var(--ac-space-3) - 1px);
+}
+
+.control.disabled {
+  color: var(--ac-color-text-disabled);
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ac-color-text);
+}
+
+.name.empty {
+  color: var(--ac-color-text-muted);
+}
+
+/* The native input covers the control: a click anywhere opens the file dialog. */
+input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+input:disabled {
+  cursor: default;
+}

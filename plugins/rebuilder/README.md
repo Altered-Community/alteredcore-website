@@ -12,10 +12,10 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 |---|---|
 | `plugin.json` | Manifest v2: SPA page, menu entry, build and e2e declarations |
 | `app/` | Angular sources (see `app/CLAUDE.md` for the code rules, `app/design/COMPONENTS.md` for the components) |
-| `app/src/main.embed.ts`, `app/src/app/embed/` | Entry point: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
+| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Global styles: `embed.scss` (shadow root, after the design system), `document.scss` (`<head>`: printed-card fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |
-| `dist/` | Build output (`npm run build:embed`), not committed |
+| `dist/` | Build output (`npm run build`), not committed |
 
 ## Build
 
@@ -23,11 +23,11 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 cd plugins/rebuilder/app
 nvm use            # Node 22.22.3
 npm ci
-npm run build:embed   # → ../dist/browser + ../dist/embed-manifest.json
+npm run build   # → ../dist/browser + ../dist/embed-manifest.json
 npm run lint && npm test
 ```
 
-`build:embed` is the only build (`ng build`, production configuration, then `scripts/embed-manifest.mjs`).
+`build` is the only build (`ng build`, production configuration, then `scripts/embed-manifest.mjs`).
 The app is not served on its own: run it in the site's stack (`docker-compose.stack.yml`).
 
 ## Design system
@@ -75,12 +75,31 @@ width (`"fullwidth": false`), and each route tells the shell which menu entry is
 On the local / CI stack, `docker/stack/seed-decks.php` creates 16 public decks (copies of legal
 production decks, `docker/stack/community-decks.json`) so the *Communauté* tab has content.
 
+The *Concours deck de démarrage* tab lists the Starter Deck Contest entries (winners by default, or every
+entry) from a snapshot bundled with the plugin (`app/src/app/features/decks/contest/starter-deck-contest.json`,
+copy of `core-altered-cards/data/starter-deck-contest-collection.json`); each entry is a public deck of the
+decks API, opened by id. The local stack's decks API does not have them: their page is empty locally.
+
+« Importer » › *Export altered.gg* imports the decks of an altered.gg personal-data export (the Equinox
+ZIP) into the account, like the site's `equinox-deck-import` plugin: the ZIP is read in the browser
+(`decks.csv`, `DecompressionStream`), each deck is created private with `POST /api/decks` through the
+relay (one per second), and a deck already in the account (same name, same cards) is skipped. Not done:
+the alt-art « Global » preference of the ownership API, which is not behind the relay.
+
+## Languages
+
+The interface and the card data (names, effects, images) follow the site language (`AlteredCore.lang`,
+`en` or `fr`; a change reloads the page). Sources are in French, marked with `@angular/localize`
+(`i18n="@@area.key"` in templates, `` $localize`:@@area.key:Texte` `` in TypeScript); the English
+translations are in `app/src/locale/messages.en.json`, loaded before the app modules when the site is in
+English. `npm run lint` runs `npm run i18n:check`, which fails on a message without a custom id or an
+English translation, and on a translation left over. Vocabulary: the site's deck builder
+(`plugins/core-altered-cards/includes/deckbuilder/i18n.php`, `data/search_settings.json`).
+
 ## Known gaps
 
-- Only the editor's main labels and the page titles follow `AlteredCore.lang`; the decks list, filters,
-  formats and messages are French. Card data (names, effects, images) follows the site language.
-- Not ported from the site's decks page: the Starter Deck Contest tab, the community deckbuilders
-  window, the Equinox ZIP import. « Importer » (decklist) creates a guest deck.
+- Not ported from the site's decks page: the community deckbuilders window. « Importer » › *Liste de
+  cartes* creates a guest deck.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
 - Guest decks of the site's builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: every colour comes from the site's tokens (`--ac-*`), including factions, terrains and the printed

@@ -26,7 +26,7 @@ export class NewDeckForm {
     this.hero.set({ reference: hero.reference, name: hero.name, faction: hero.faction });
     const current = this.name();
     if (!current.trim() || current === this.generatedName) {
-      this.generatedName = `Deck ${hero.name}`;
+      this.generatedName = $localize`:@@newDeck.defaultName:Deck ${hero.name}:hero:`;
       this.name.set(this.generatedName);
     }
   }

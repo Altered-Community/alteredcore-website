@@ -8,7 +8,6 @@ import { DeckStore } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
 import type { Card, Deck } from './models';
 import { localizedText } from './models';
-import { provideGuestSession } from '../../testing/guest-session';
 
 const hero = { reference: 'ALT_CORE_B_YZ_01_C', name: 'Moyo & Silk', faction: 'YZ' };
 const zou: Card = { reference: 'ALT_CORE_B_YZ_10_C', name: 'Zou !', cardType: { reference: 'SPELL' }, mainCost: 2, recallCost: 4 };
@@ -30,8 +29,7 @@ describe('DeckStore (guest mode)', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    sessionStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideGuestSession()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
   });

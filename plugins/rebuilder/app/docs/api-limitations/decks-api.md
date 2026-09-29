@@ -18,7 +18,7 @@ dans le groupe de sérialisation `deck:read` (schéma OpenAPI `User-deck.read` v
 2. [altered-core-decks-api#63](https://github.com/Altered-Community/altered-core-decks-api/pull/63) : `user.username`
    exposé dans `deck:read`, alimenté uniquement par le claim `pseudo` (jamais `preferred_username`, qui vaut l'email).
    Une migration vide les anciens `username` et `app:users:sync-pseudos` les remplit depuis Keycloak.
-3. Ici : le login demande `scope=openid profile`, sinon le token n'a pas `pseudo` (`src/app/core/auth.service.ts`).
+3. Côté site : le login Keycloak demande `scope=openid profile`, sinon le token n'a pas `pseudo`.
 
 ## Texte imprimé d'une Unique absent de la ligne
 

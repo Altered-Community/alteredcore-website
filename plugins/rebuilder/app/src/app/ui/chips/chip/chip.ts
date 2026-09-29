@@ -1,4 +1,4 @@
-import { Component, input, model, output } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 import { AcIcon } from '../../icon';
 
 /**
@@ -18,4 +18,5 @@ export class AcChip {
   readonly selected = model(false);
   readonly shape = input<'pill' | 'square'>('pill');
   readonly remove = output<void>();
+  protected readonly removeLabel = computed(() => $localize`:@@ui.chip.remove:Retirer le filtre ${this.label()}:label:`);
 }

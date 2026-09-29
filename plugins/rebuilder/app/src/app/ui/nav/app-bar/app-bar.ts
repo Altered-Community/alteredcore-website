@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 
 /**
- * Screen bar of compact layouts (< 768 px), under the site header: projected `[leading]`,
+ * Application bar of compact screens (the site draws its own header above): projected `[leading]`,
  * title / subtitle, projected `[actions]`.
  */
 @Component({

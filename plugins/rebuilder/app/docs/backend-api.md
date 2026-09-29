@@ -13,7 +13,7 @@ From `config.local.php.example` in the PHP site:
 | `CARDS_API_URL` | https://cards.alteredcore.org | Public card catalogue (API Platform / hydra-style JSON) |
 | `DECKS_API_URL` | https://decks.alteredcore.org | Deck CRUD (Bearer Keycloak access token) |
 | `CDN_URL` | https://cdn.alteredcore.org | Card art (`/cards/{lang}/{SET}/{REF}.webp`) |
-| `UNIQUES_API_URL` | *(empty in prod example; local `http://localhost:8005`)* | rust-cards-api Uniques search |
+| `UNIQUES_API_URL` | https://search.altered.re | Uniques search (rust-cards-api `/api/v2`): the Uniques tab |
 | `COLLECTION_API_URL` | https://collection.alteredcore.org | Physical collection |
 | `OWNERSHIP_API_URL` | https://ownership.altered.re | Digital ownership / alt-arts |
 | Website | https://alteredcore.org | PHP UI + `/papi/...` proxies |
@@ -55,7 +55,6 @@ Public, no auth. Collection JSON uses `{ member, totalItems, currentPage, itemsP
 | GET | `/api/factions` | `{ id, name, code, position }` |
 | GET | `/api/card_types` | `{ reference, name: {en,fr,…} }` |
 | GET | `/api/sets` | `{ code, name, reference }` |
-| GET | `/api/ability_triggers` · `/api/ability_conditions` · `/api/ability_effects` | Effect vocabularies (`alteredId`, `text{fr,en…}`) for `effectSlot[N][trigger|condition|effect]` |
 | GET | `/api/card_sub_types` | |
 | GET | `/api/card_groups` | Used for hero grouping in the PHP editor |
 | POST | `/api/auth/login` | Cards API login — **not** used by the PHP deckbuilder for decks |
@@ -64,11 +63,8 @@ Notes from production probing: `faction.code` (scalar) is the reliable single-fa
 `mainCost[]` / `recallCost[]` values (`1-3` returns 500); `order[setDate]` alone is not a stable sort (add
 `order[cardNumber]`).
 
-Uniques (probed 2026-09-26): a query answers from Meilisearch in ~0.2–1 s only if every parameter is a mapped
-filter. `locale` is not, so `locale=fr` sends broad uniques queries to SQL (6–45 s, sometimes 504). The Uniques tab
-leaves `locale` out and reads the locale maps (`name.fr`…). On that path `effectSlot[N][condition]=0` is matched
-literally (0 results): send only the non-zero parts. Frontier: first request ~8–9 s, then ~1 s. Details and backend
-fixes: [api-limitations/cards-api.md](api-limitations/cards-api.md).
+The Uniques tab does not use `/api/cards` (see *Uniques API* below); the decks still hydrate their uniques with
+`/api/cards/batch`. Known limits: [api-limitations/cards-api.md](api-limitations/cards-api.md).
 
 Default deckbuilder filters (from `plugins/core-altered-cards/data/search_settings.json`): rarities `COMMON,RARE,EXALTED`, variation `standard`, sets `CORE,ALIZE,BISE,CYCLONE,DUSTER,EOLE`.
 
@@ -85,17 +81,23 @@ is 403. Every unique of a printed card shares one unique illustration, `{CDN_URL
 (`CARD` = reference without `_U_n`), or `{CDN_URL}/illustrations/{SET}/{CARD}_U_FRAMELESS_T1.webp`. The PHP site draws
 the card (frame, costs, powers, text) in a canvas with Altered-Card-Renderer; this app draws it with `ac-unique-card`.
 
-## Uniques API (`UNIQUES_API_URL`)
+## Uniques API (`UNIQUES_API_URL`, `AlteredCore.services.uniques`)
 
-When set, the Uniques tab uses rust-cards-api instead of `/api/cards`:
+The Uniques tab (`src/app/core/uniques-api.service.ts`), like the site's own cards page and deck builder in production
+(`uniquesApiBase: "https://search.altered.re"`). Rust in-memory index of the Unique characters,
+[Altered-Re-Union/uniques-search-api](https://github.com/Altered-Re-Union/uniques-search-api) (fork of
+[Taum/rust-cards-api](https://github.com/Taum/rust-cards-api), contract in its `docs/api-spec.md`). Public,
+`Access-Control-Allow-Origin: *`.
 
-- `GET /api/v2/cards?limit=&cursor=&faction[]=&set[]=&name=&format=`
-- `GET /api/v2/card/{ref}`
-- `GET /api/v2/effects`
-- `GET /api/v2/effects/filtered`
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v2/cards` | `limit` (≤ 200), `cursor` (from `iter.cursor`, absent on the last page), `name`, `faction[]`, `set[]`, `mainCost[]`, `recallCost[]`, `format=frontier`, `effect[N][t\|c\|o]=id,id…` (OR list per part), `effectMode=and\|or` between blocks. Response `{ iter: { total, cursor? }, cards: CardV2[] }`, text fields as locale maps `fr_FR`, `en_US`… |
+| GET | `/api/v2/card/{reference}` | One `CardV2`; 400 / 404 for an unknown reference |
+| GET | `/api/v2/effects` | `{ triggers, conditions, output }`, items `{ idGd, text, isMain, isEcho, duplicatedIdGd }`: the effect editor keeps the `isMain` ones. `idGd` are the cards API `alteredId`, with duplicates of the same text merged |
 
-Leave empty to keep Uniques on the cards API (`rarity[]=UNIQUE`). The PHP site does the same in production: this
-service is only wired in the local Aspire stack (`uniques-search-api`), with no public host.
+No sort parameter (the tab hides « Trier par »), no « Sans effet » / « Effet d’écho » (hidden on Uniques already),
+an unknown set is a 400 (`FUGUE` has no uniques and is not offered). Measures and gaps:
+[api-limitations/uniques-api.md](api-limitations/uniques-api.md).
 
 ## Decks API (`DECKS_API_URL`)
 

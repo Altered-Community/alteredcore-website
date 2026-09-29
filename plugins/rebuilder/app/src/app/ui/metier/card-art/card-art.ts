@@ -27,7 +27,7 @@ export class AcCardArt implements OnDestroy {
   protected readonly visible = signal(false);
   readonly reference = input.required<string>();
   readonly faction = input<string | null | undefined>(null);
-  readonly placeholder = input('Visuel de la carte');
+  readonly placeholder = input($localize`:@@ui.cardArt.placeholder:Visuel de la carte`);
   readonly eager = input(false);
   /** Light grey placeholder, no hatch, no faction colour, no text. */
   readonly neutral = input(false);

@@ -100,7 +100,7 @@ The core stays build-free. Front-end plugins (manifest v2, `"type": "spa"`, e.g.
 ### Full stack (Keycloak, decks API, SPA plugins)
 
 ```bash
-(cd plugins/rebuilder/app && nvm use && npm ci && npm run build:embed)
+(cd plugins/rebuilder/app && nvm use && npm ci && npm run build)
 docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
 ```
 

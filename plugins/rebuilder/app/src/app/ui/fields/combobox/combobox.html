@@ -1,11 +1,11 @@
 @for (v of values(); track v.id) {
   <div class="picked">
     <span>@if (v.glyph) {<span class="glyph" aria-hidden="true">{{ v.glyph }}</span>}{{ v.text }}</span>
-    <button type="button" [attr.aria-label]="'Retirer ' + v.text" (click)="remove(v)"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
+    <button type="button" [attr.aria-label]="removeLabel(v)" (click)="remove(v)"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
   </div>
-  <span class="or" aria-hidden="true">ou</span>
+  <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
 }
-<div class="field">
+<div class="field" cdkOverlayOrigin #origin="cdkOverlayOrigin">
   <button
     #toggle
     type="button"
@@ -14,16 +14,29 @@
     aria-haspopup="listbox"
     [attr.aria-label]="placeholder()"
     [attr.aria-expanded]="open()"
-    [attr.aria-controls]="listId"
+    [attr.aria-controls]="open() ? listId : null"
     (click)="toggleOpen()"
     (keydown)="onToggleKey($event)"
+    (focusout)="onFocusOut($event)"
   >
     <span class="label">{{ label() }}</span>
     <span class="chev" [class.up]="open()"><ac-icon name="chevron-down" [size]="16" /></span>
   </button>
 </div>
-@if (open()) {
-  <div class="panel" (mousedown)="keepFocus($event)">
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayScrollStrategy]="scrollStrategy"
+  [cdkConnectedOverlayMatchWidth]="true"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayDisableClose]="true"
+  (overlayOutsideClick)="onOutsideClick($event)"
+  (overlayKeydown)="onOverlayKey($event)"
+  (detach)="onDetach()"
+>
+  <div class="panel" (focusout)="onFocusOut($event)">
     <div class="search">
       <span class="search-icon"><ac-icon name="search" [size]="16" /></span>
       <input
@@ -36,26 +49,17 @@
         [placeholder]="searchPlaceholder()"
         [value]="query()"
         (input)="setQuery(search.value)"
-        (keydown.arrowDown)="move(1, $event)"
-        (keydown.arrowUp)="move(-1, $event)"
-        (keydown.enter)="pickActive($event)"
-        (keydown.escape)="close($event)"
+        (keydown)="onSearchKey($event)"
       />
     </div>
     @if (filtered().length) {
-      <div role="listbox" class="list" [id]="listId" [attr.aria-label]="placeholder()">
+      <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxValue]="noSelection" (cdkListboxValueChange)="onSelect($event)">
         @for (o of filtered(); track o.id) {
-          <button
-            type="button"
-            role="option"
-            [attr.aria-selected]="$index === active()"
-            [class.active]="$index === active()"
-            (click)="pick(o)"
-          >@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</button>
+          <div class="option" [cdkOption]="o" [cdkOptionTypeaheadLabel]="o.text">@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</div>
         }
       </div>
     } @else {
-      <div class="empty" [id]="listId">{{ query() ? 'Aucun résultat' : 'Aucune valeur disponible' }}</div>
+      <div class="empty" [id]="listId">{{ query() ? noResults : noValues }}</div>
     }
   </div>
-}
+</ng-template>

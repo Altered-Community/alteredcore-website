@@ -76,12 +76,6 @@ export interface CardCollection {
   lastPage: number;
 }
 
-export interface EffectSlot {
-  trigger?: number;
-  condition?: number;
-  effect?: number;
-}
-
 export type CardOrder = 'setDate-desc' | 'setDate-asc' | 'number-asc';
 
 export interface CardSearchParams {
@@ -95,9 +89,6 @@ export interface CardSearchParams {
   variations?: string[];
   mainCosts?: number[];
   recallCosts?: number[];
-  gameplayFormats?: string[];
-  effectSlots?: EffectSlot[];
-  effectSlotMode?: 'or' | 'and';
   order?: CardOrder;
   hasNoEffect?: boolean;
   hasEchoEffect?: boolean;

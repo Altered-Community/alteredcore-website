@@ -1,10 +1,14 @@
 <div class="ac-overlay-body">
-  <ac-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
-  <ac-select label="Héros" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+  @if (ref.data.showFormat) {
+    <ac-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
+  }
+  @if (ref.data.showHero) {
+    <ac-select label="Héros" i18n-label="@@decks.filters.hero" [options]="ref.data.heroes" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+  }
   @if (ref.data.showVisibility) {
     <div class="field">
-      <span class="label">Visibilité</span>
-      <ac-segmented ariaLabel="Visibilité" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+      <span class="label" i18n="@@decks.filters.visibility">Visibilité</span>
+      <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
   }
   <div class="field">
@@ -17,6 +21,6 @@
   </div>
 </div>
 <div class="ac-overlay-footer">
-  <button acButton variant="secondary" class="secondary-action" (click)="draft.set(empty)">Réinitialiser</button>
-  <button acButton size="lg" [fullWidth]="true" (click)="ref.close(draft())">Appliquer</button>
+  <button acButton variant="secondary" class="secondary-action" (click)="draft.set(empty)" i18n="@@decks.filters.reset">Réinitialiser</button>
+  <button acButton size="lg" [fullWidth]="true" (click)="ref.close(draft())" i18n="@@decks.filters.apply">Appliquer</button>
 </div>

@@ -172,6 +172,9 @@
   }
 }
 
+/* Space above the filters panel at the top of the page, below its sticky position. */
+$filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
+
 @media (min-width: 1200px) {
   .toolbar {
     flex-wrap: nowrap;
@@ -189,10 +192,13 @@
     flex-shrink: 0;
     position: sticky;
     top: calc(var(--ac-sticky-top) + var(--ac-space-6));
-    /* Stay inside the viewport under the page header. The footer is a flex
-       sibling of the scroller, so the action row is never scrolled away. */
-    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - 60px - var(--ac-space-4) * 2 - 44px);
+    /* Stay inside the viewport under the page header. At the top of the page the panel sits
+       136px below its sticky position; `--app-filters-grow` (the page scroll, set by the component) grows it
+       as the page scrolls, up to the whole height under the header. The footer is a flex sibling
+       of the scroller, so the action row is never scrolled away. */
+    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - 136px + var(--app-filters-grow, 0px));
     max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+    transition: height 120ms ease-out;
     background: var(--ac-color-surface);
     border: 1px solid var(--ac-color-border);
     border-radius: var(--ac-radius-card);

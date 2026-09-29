@@ -8,7 +8,7 @@ export function assetUrl(path: string): string {
   return base + path;
 }
 
-/** Set once at startup, before the app modules load (`main.embed.ts`). */
+/** Set once at startup, before the app modules load (`main.ts`). */
 export function setAssetBase(url: string): void {
   base = url && !url.endsWith('/') ? `${url}/` : url;
 }

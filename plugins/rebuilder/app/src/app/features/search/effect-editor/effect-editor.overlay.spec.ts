@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, type Observable } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { CardsApiService, NO_CONDITION, toAbilityRefs, type AbilityKind } from '../../../core/cards-api.service';
+import { NO_CONDITION, UniquesApiService, toAbilityRefs, type AbilityKind } from '../../../core/uniques-api.service';
 import { AcOverlayRef } from '../../../ui/overlay';
 import { EffectEditorOverlay, type EffectEditorData } from './effect-editor.overlay';
 
@@ -41,7 +41,7 @@ function setup(effect: EffectBlock, abilities: (kind: AbilityKind) => Observable
     imports: [EffectEditorOverlay],
     providers: [
       { provide: AcOverlayRef, useValue: ref },
-      { provide: CardsApiService, useValue: { abilities } },
+      { provide: UniquesApiService, useValue: { abilities } },
     ],
   });
   const fixture = TestBed.createComponent(EffectEditorOverlay);
@@ -90,11 +90,13 @@ describe('EffectEditorOverlay pickers', () => {
   const api = (kind: AbilityKind) => of(toAbilityRefs(ROWS[kind], kind === 'conditions' ? NO_CONDITION : undefined));
   const empty: EffectBlock = { id: 'e1', triggers: [], conditions: [], effects: [] };
 
-  function open(el: HTMLElement, name: string, fixture: { detectChanges(): void }): HTMLElement {
+  /** Opens a criterion; its list is a CDK overlay, rendered in the overlay container. */
+  function open(el: HTMLElement, name: string, fixture: { detectChanges(): void }) {
     const toggle = el.querySelector<HTMLButtonElement>(`[role=combobox][aria-label="${name}"]`)!;
     toggle.click();
     fixture.detectChanges();
-    return toggle.closest('ac-combobox') as HTMLElement;
+    const options = [...document.querySelectorAll<HTMLElement>('.cdk-overlay-container .panel [role=option]')];
+    return { combo: toggle.closest('ac-combobox') as HTMLElement, toggle, options };
   }
 
   it('opens each criterion on a button, not on a focused text field', () => {
@@ -109,9 +111,9 @@ describe('EffectEditorOverlay pickers', () => {
 
   it('shows the hand, reserve and anywhere glyphs on the triggers', () => {
     const { el, fixture } = setup(empty, api);
-    const combo = open(el, 'Ajouter un déclencheur…', fixture);
+    const { options } = open(el, 'Ajouter un déclencheur…', fixture);
     const glyphs = Object.fromEntries(
-      [...combo.querySelectorAll('[role=option]')].map((o) => [o.textContent!.replace(/^[\ue000-\uf8ff]/, ''), o.querySelector('.glyph')?.textContent ?? null]),
+      options.map((o) => [o.textContent!.replace(/^[\ue000-\uf8ff]/, ''), o.querySelector('.glyph')?.textContent ?? null]),
     );
     expect(glyphs).toEqual({
       'Au Crépuscule': null,
@@ -123,8 +125,8 @@ describe('EffectEditorOverlay pickers', () => {
 
   it('offers « Sans condition » first and applies it as the empty condition', () => {
     const { el, fixture, ref } = setup(empty, api);
-    const combo = open(el, 'Ajouter une condition…', fixture);
-    const first = combo.querySelector<HTMLButtonElement>('[role=option]')!;
+    const { combo, options } = open(el, 'Ajouter une condition…', fixture);
+    const first = options[0];
     expect(first.textContent).toBe('Sans condition');
     first.click();
     fixture.detectChanges();
@@ -156,11 +158,11 @@ describe('EffectEditorOverlay pickers', () => {
 
   it('picking a value leaves every picker closed: the next criterion does not open', () => {
     const { el, fixture } = setup(empty, api);
-    const combo = open(el, 'Ajouter un déclencheur…', fixture);
-    combo.querySelector<HTMLButtonElement>('[role=option]')!.click();
+    const { toggle, options } = open(el, 'Ajouter un déclencheur…', fixture);
+    options[0].click();
     fixture.detectChanges();
     expect([...el.querySelectorAll('[role=combobox]')].map((t) => t.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'false']);
-    expect(el.querySelectorAll('.panel')).toHaveLength(0);
-    expect(el.querySelector('ac-combobox')!.contains(document.activeElement)).toBe(false);
+    expect(document.querySelectorAll('.cdk-overlay-container .panel')).toHaveLength(0);
+    expect(document.activeElement).toBe(toggle);
   });
 });

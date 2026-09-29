@@ -29,7 +29,7 @@
         "install": "npm ci --no-audit --no-fund",
         "lint":    "npm run lint",
         "test":    "npm test",
-        "build":   "npm run build:embed",
+        "build":   "npm run build",
         "output":  "dist"
     },
 

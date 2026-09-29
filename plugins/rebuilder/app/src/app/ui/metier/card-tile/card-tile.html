@@ -8,14 +8,14 @@
 @if (plain()) {
   <!-- Card browser: no quantity control. -->
 } @else if (readonly()) {
-  <span class="qty" [attr.aria-label]="quantity() + ' exemplaire(s)'">×{{ quantity() }}</span>
+  <span class="qty" [attr.aria-label]="quantityLabel()">×{{ quantity() }}</span>
 } @else if (quantity() === 0) {
-  <ac-card-add class="action" [label]="'Ajouter ' + name() + ' au deck'" [disabled]="max() === 0" (add)="quantityChange.emit(1)" />
+  <ac-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="quantityChange.emit(1)" />
 } @else {
   <ac-stepper
     class="action"
     appearance="overlay"
-    [label]="'Exemplaires de ' + name() + ' dans le deck'"
+    [label]="copiesLabel()"
     [value]="quantity()"
     [max]="max()"
     (valueChange)="quantityChange.emit($event)"

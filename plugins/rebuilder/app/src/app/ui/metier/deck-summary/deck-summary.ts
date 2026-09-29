@@ -27,10 +27,13 @@ export class AcDeckSummary {
   readonly editable = input(true);
   readonly openSettings = output<void>();
 
+  protected readonly noHero = $localize`:@@ui.deckSummary.noHero:Aucun héros`;
+  protected readonly publicLabel = $localize`:@@ui.deckSummary.public:Public`;
+  protected readonly privateLabel = $localize`:@@ui.deckSummary.private:Privé`;
   protected readonly issueLabel = computed(() => {
     const size = this.issues().find((i) => i.startsWith('size'));
-    if (!this.hero()) return 'Héros manquant';
-    if (size) return 'Taille invalide';
-    return 'Non valide';
+    if (!this.hero()) return $localize`:@@ui.deckSummary.missingHero:Héros manquant`;
+    if (size) return $localize`:@@ui.deckSummary.invalidSize:Taille invalide`;
+    return $localize`:@@ui.deckSummary.invalid:Non valide`;
   });
 }

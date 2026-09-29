@@ -1,9 +1,8 @@
-/**
- * Service URLs used until the site's values are read: `main.embed.ts` replaces them with
- * `window.AlteredCore.services` (cards, decks relay, CDN) before the app modules evaluate.
- */
+/** Default service URLs; the site's (`AlteredCore.services`) replace them at startup (`main.ts`). */
 export const environment = {
   cardsApiUrl: 'https://cards.alteredcore.org',
+  /** Uniques search (rust-cards-api, `/api/v2`): the Uniques tab. */
+  uniquesApiUrl: 'https://search.altered.re',
   decksApiUrl: 'https://decks.alteredcore.org',
   cdnUrl: 'https://cdn.alteredcore.org',
 };

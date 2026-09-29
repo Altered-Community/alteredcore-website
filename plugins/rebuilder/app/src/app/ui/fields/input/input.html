@@ -23,7 +23,7 @@
     (blur)="onTouched()"
   />
   @if (clearable() && value()) {
-    <button type="button" class="clear" aria-label="Effacer" (click)="emit(''); field.focus()">
+    <button type="button" class="clear" aria-label="Effacer" i18n-aria-label="@@ui.input.clear" (click)="emit(''); field.focus()">
       <ac-icon name="x" [size]="16" />
     </button>
   }

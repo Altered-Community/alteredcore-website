@@ -15,6 +15,12 @@ describe('CardSearchStore (infinite scroll)', () => {
     TestBed.tick();
     return http.match((r) => r.url.endsWith('/api/cards'));
   };
+  /** Same, on the Uniques search API. */
+  const pendingUniques = () => {
+    TestBed.tick();
+    return http.match((r) => r.url.endsWith('/api/v2/cards'));
+  };
+  const uniques = (n: number, size: number) => page(n, size).map((c) => ({ reference: c.reference.replace(/_C$/, '_U_1') }));
   /** Not `whenStable()`: with the sentinel visible the store chains the next page, so the app never goes idle. */
   const settle = async () => {
     await new Promise((resolve) => setTimeout(resolve));
@@ -100,24 +106,38 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(store.cards().length).toBe(PAGE_SIZE.all);
   });
 
-  it('queries uniques without `locale`, the parameter that forces the slow SQL path', () => {
+  it('queries uniques on the Uniques search API and pages with its cursor', async () => {
     store.configure('uniques', 'LY');
-    const [req] = pending();
-    expect(req.request.params.has('locale')).toBe(false);
-    expect(req.request.params.get('faction.code')).toBe('LY');
-    req.flush({ member: [], totalItems: 0 });
+    expect(pending()).toHaveLength(0);
+    const [req] = pendingUniques();
+    expect(req.request.params.getAll('faction[]')).toEqual(['LY']);
+    expect(req.request.params.get('limit')).toBe(String(PAGE_SIZE.uniques));
+    expect(req.request.params.has('cursor')).toBe(false);
+    req.flush({ iter: { total: PAGE_SIZE.uniques + 2, cursor: 1234 }, cards: uniques(1, PAGE_SIZE.uniques) });
+    await settle();
+    expect(store.total()).toBe(PAGE_SIZE.uniques + 2);
+    expect(store.hasMore()).toBe(true);
+
+    store.loadMore();
+    const [next] = pendingUniques();
+    expect(next.request.params.get('cursor')).toBe('1234');
+    next.flush({ iter: { total: PAGE_SIZE.uniques + 2 }, cards: uniques(2, 2) });
+    await settle();
+    expect(store.cards().length).toBe(PAGE_SIZE.uniques + 2);
+    expect(store.page()).toBe(2);
+    expect(store.hasMore()).toBe(false);
   });
 
   it('flags a page that is still loading after SLOW_MS, and clears it on response', async () => {
     vi.useFakeTimers();
     try {
       store.configure('uniques', 'AX');
-      const [req] = pending();
+      const [req] = pendingUniques();
       vi.advanceTimersByTime(SLOW_MS - 100);
       expect(store.slow()).toBe(false);
       vi.advanceTimersByTime(200);
       expect(store.slow()).toBe(true);
-      req.flush({ member: page(1, 3), totalItems: 3 });
+      req.flush({ iter: { total: 3 }, cards: uniques(1, 3) });
       await vi.advanceTimersByTimeAsync(0);
       TestBed.tick();
       expect(store.loading()).toBe(false);
@@ -127,16 +147,15 @@ describe('CardSearchStore (infinite scroll)', () => {
     }
   });
 
-  it('switches to uniques defaults and exposes timeouts as a retryable error', async () => {
+  it('exposes timeouts as a retryable error', async () => {
     store.configure('uniques', 'AX');
-    const [req] = pending();
-    expect(req.request.params.getAll('rarity[]')).toEqual(['UNIQUE']);
-    expect(req.request.params.get('itemsPerPage')).toBe(String(PAGE_SIZE.uniques));
+    const [req] = pendingUniques();
     req.flush('error code: 504', { status: 504, statusText: 'Gateway Timeout' });
     await settle();
     expect(store.error()).toContain('trop de temps');
     store.retry();
-    await answer(pending()[0], 1, 1);
+    pendingUniques()[0].flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    await settle();
     expect(store.error()).toBeNull();
   });
 
