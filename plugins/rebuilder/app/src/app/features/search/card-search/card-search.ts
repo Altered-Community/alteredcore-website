@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -29,6 +29,9 @@ export const CARD_SOURCES: CardSourceTab[] = [
   { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
   { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
 ];
+
+/** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
+const FILTERS_GROW_MAX = 136;
 
 /**
  * Card search shared by the deck editor and the card browser: source tabs (`?source=`), filters
@@ -111,10 +114,14 @@ export class CardSearch {
       untracked(() => this.prefetchAbilities());
     });
 
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const onScroll = () => {
       const next = window.scrollY > 170;
       if (next !== this.condensed()) this.condensed.set(next);
+      // The desktop filters panel grows by the scrolled distance set on the host, no change detection.
+      host.style.setProperty('--app-filters-grow', `${Math.min(window.scrollY, FILTERS_GROW_MAX)}px`);
     };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('scroll', onScroll);
