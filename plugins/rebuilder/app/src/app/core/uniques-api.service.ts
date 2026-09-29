@@ -159,13 +159,39 @@ export function buildUniquesParams(query: UniquesQuery, cursor: number | null, l
   for (const c of query.recallCosts) hp = hp.append('recallCost[]', String(c));
   if (query.format) hp = hp.set('format', query.format);
   const effects = query.effects.filter((e) => e.triggers.length || e.conditions.length || e.effects.length);
+  const counts = effectMatchCounts(effects);
   effects.forEach((e, i) => {
     if (e.triggers.length) hp = hp.set(`effect[${i}][t]`, e.triggers.join(','));
     if (e.conditions.length) hp = hp.set(`effect[${i}][c]`, e.conditions.join(','));
     if (e.effects.length) hp = hp.set(`effect[${i}][o]`, e.effects.join(','));
+    if (counts[i] > 1) hp = hp.set(`effect[${i}][matchCount]`, String(counts[i]));
   });
   if (effects.length > 1) hp = hp.set('effectMode', 'and');
   return hp;
+}
+
+/** The API accepts `matchCount` 1 to 3. */
+const MAX_MATCH_COUNT = 3;
+
+/**
+ * `a` covers `b` when every ability that matches `b` also matches `a`: on each part, `a` is « any »
+ * or lists every value of `b`.
+ */
+function covers(a: UniquesEffect, b: UniquesEffect): boolean {
+  const part = (x: number[], y: number[]) => !x.length || (y.length > 0 && y.every((id) => x.includes(id)));
+  return part(a.triggers, b.triggers) && part(a.conditions, b.conditions) && part(a.effects, b.effects);
+}
+
+/**
+ * `matchCount` of each effect block. The API ANDs blocks per card, so one ability of the card can
+ * answer several blocks: « {J} Piochez une carte » matches both « Quand {J} · Alors Piochez » and
+ * « Alors Piochez ». Each ability should answer one block. A block that covers `k` other blocks
+ * needs `k + 1` matching abilities: necessary in every case, and exact when the blocks it covers
+ * are nested (identical blocks, or « Piochez » after « {J} · Piochez »). Blocks that overlap
+ * without one covering the other stay approximate: the API has no way to ask for distinct abilities.
+ */
+export function effectMatchCounts(effects: UniquesEffect[]): number[] {
+  return effects.map((e, i) => Math.min(MAX_MATCH_COUNT, 1 + effects.filter((o, j) => j !== i && covers(e, o)).length));
 }
 
 function toPage(body: SearchResponse): UniquesPage {

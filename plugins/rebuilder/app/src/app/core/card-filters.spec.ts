@@ -47,7 +47,10 @@ describe('toUniquesQuery (Uniques search API)', () => {
     expect(hp.get('effect[0][o]')).toBe('90');
     expect(hp.get('effect[1][o]')).toBe('90');
     expect(hp.has('effect[1][t]')).toBe(false);
-    expect(hp.keys().filter((k) => k.startsWith('effect['))).toHaveLength(4);
+    // « Piochez » covers the first block: the card needs a second drawing ability, not the same one.
+    expect(hp.get('effect[1][matchCount]')).toBe('2');
+    expect(hp.has('effect[0][matchCount]')).toBe(false);
+    expect(hp.keys().filter((k) => k.startsWith('effect['))).toHaveLength(5);
     expect(hp.get('effectMode')).toBe('and');
   });
 

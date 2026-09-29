@@ -285,19 +285,24 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     await editEffect(addEffect, [[2, 'Piochez une carte.']]);
     await editEffect(() => page.locator('ar-effect-summary').first().getByRole('button').first().click(), [[0, 'Joué de partout']]);
 
-    // One request: both triggers OR-ed in the first effect, the two effects AND-ed.
+    // One request: both triggers OR-ed in the first effect, the two effects AND-ed, and the second
+    // (« Piochez », which covers the first) on two abilities, so one drawing ability does not answer both.
     await expect.poll(() => searches.at(-1)?.searchParams.get('effect[0][t]')).toBe('22,24');
     const last = searches.at(-1)!;
     expect(last.searchParams.get('effect[0][c]')).toBe('191');
     expect(last.searchParams.get('effect[1][o]')).toBe(last.searchParams.get('effect[0][o]'));
+    expect(last.searchParams.get('effect[1][matchCount]')).toBe('2');
     expect(last.searchParams.get('effectMode')).toBe('and');
-    // The count shown is the API's for that request, and more than with the hand trigger alone.
-    const both = (await (await page.request.get(last.toString())).json()) as { iter: { total: number } };
+    const total = async (url: URL) => ((await (await page.request.get(url.toString())).json()) as { iter: { total: number } }).iter.total;
+    const both = await total(last);
     const handOnly = new URL(last);
     handOnly.searchParams.set('effect[0][t]', '22');
-    const hand = (await (await page.request.get(handOnly.toString())).json()) as { iter: { total: number } };
-    expect(both.iter.total).toBeGreaterThan(hand.iter.total);
-    await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.iter.total.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
+    const sameAbility = new URL(last);
+    sameAbility.searchParams.delete('effect[1][matchCount]');
+    expect(both).toBeGreaterThan(await total(handOnly));
+    expect(both).toBeLessThan(await total(sameAbility));
+    // The count shown is the API's for that request.
+    await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
   });
 });

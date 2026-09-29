@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, toAbilityRefs, toCard, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -21,6 +21,26 @@ const KELON = {
   mainEffect: { en_US: '{R} You may…', fr_FR: '{R} Vous pouvez…' },
   echoEffect: {},
 };
+
+describe('effectMatchCounts', () => {
+  const fx = (triggers: number[], conditions: number[], effects: number[]): UniquesEffect => ({ triggers, conditions, effects });
+
+  it('asks a block for one more ability per block it covers, so one ability does not answer two blocks', () => {
+    // « Quand {H} ou {J} · Sans condition · Alors Piochez » and « Alors Piochez »: the second covers the first.
+    expect(effectMatchCounts([fx([22, 24], [191], [90]), fx([], [], [90])])).toEqual([1, 2]);
+    // Two identical blocks: two abilities each.
+    expect(effectMatchCounts([fx([], [], [90]), fx([], [], [90])])).toEqual([2, 2]);
+    // A chain: « Piochez » covers « {J} · Piochez », which covers « {J} · Sans condition · Piochez ».
+    expect(effectMatchCounts([fx([24], [191], [90]), fx([24], [], [90]), fx([], [], [90])])).toEqual([1, 2, 3]);
+  });
+
+  it('leaves unrelated or overlapping blocks at one ability, and caps at the API maximum of 3', () => {
+    expect(effectMatchCounts([fx([22], [], []), fx([], [], [90])])).toEqual([1, 1]);
+    // {H} or {J} does not cover {H} or {R}: a {R} ability matches the second one only.
+    expect(effectMatchCounts([fx([22, 24], [], []), fx([22, 1], [], [])])).toEqual([1, 1]);
+    expect(effectMatchCounts([fx([], [], [90]), fx([], [], [90]), fx([], [], [90]), fx([], [], [90])])).toEqual([3, 3, 3, 3]);
+  });
+});
 
 describe('toCard', () => {
   it('maps a CardV2 to the app card: locale keys fr / en, a Unique Character, the artist', () => {
