@@ -146,6 +146,17 @@ if (!function_exists('__nav_active')) {
                 <?php endif; ?>
             </div><!-- /.az-topbar-controls -->
 
+            <!-- Account button — mobile only, opens #azAccountMenu (script below) -->
+            <button class="az-account-btn d-md-none" type="button" id="azAccountBtn"
+                    aria-controls="azAccountMenu" aria-expanded="false"
+                    aria-label="<?= h($_hTxt['account']) ?>">
+                <?php if (kcIsLoggedIn()): ?>
+                <span class="az-account-initial" aria-hidden="true"><?= h(mb_strtoupper(mb_substr(kcUser()['username'] ?? '', 0, 1))) ?></span>
+                <?php else: ?>
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+                <?php endif; ?>
+            </button>
+
             <!-- Burger button — mobile only, opens #azMobileMenu (script below) -->
             <button class="az-burger d-md-none" type="button" id="azBurger"
                     aria-controls="azMobileMenu" aria-expanded="false"
@@ -317,63 +328,150 @@ foreach ($__navItems as $__ni) {
         <?php endforeach; ?>
     </nav>
 
-    <div class="az-mm-footer">
-        <div class="az-mm-prefs">
-            <button type="button" class="az-mm-pref" data-az-theme-toggle>
-                <i class="fa-solid fa-moon" aria-hidden="true"></i> <?= h($_hTxt['theme']) ?>
-            </button>
-            <details class="az-mm-lang">
-                <summary class="az-mm-pref" aria-label="<?= h($_langNames[$lang] ?? $lang) ?>"><?= $_langFlags[$lang] ?? '' ?> <?= h(strtoupper($lang)) ?></summary>
-                <div class="az-mm-lang-list">
-                    <?php foreach ($_langFlags as $_l => $_flag): if ($_l === $lang) continue; ?>
-                    <a class="az-mm-link" href="<?= h($_langUrls[$_l]) ?>" hreflang="<?= h($_l) ?>"><?= $_flag ?> <?= h($_langNames[$_l]) ?></a>
-                    <?php endforeach; ?>
-                </div>
-            </details>
-            <?php if (kcIsLoggedIn()): ?>
-            <a class="az-mm-pref" href="<?= BASE_URL ?>/pages/account">
-                <i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($_hTxt['my_account']) ?>
-            </a>
-            <?php if (canViewAdminPanel()): ?>
-            <a class="az-mm-pref" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">
-                <i class="fa-solid fa-gauge" aria-hidden="true"></i> Admin
-            </a>
-            <?php endif; ?>
-            <?php endif; ?>
+</div>
+
+<!-- Account popover (below 768px): sign in or the user's links, theme and language -->
+<div id="azAccountBackdrop" class="az-am-backdrop" hidden></div>
+<div id="azAccountMenu" class="az-account-menu" role="dialog" aria-label="<?= h($_hTxt['account']) ?>" hidden>
+    <?php if (kcIsLoggedIn()): $__amUser = kcUser(); ?>
+    <div class="az-am-head">
+        <span class="az-am-avatar is-user" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__amUser['username'] ?? '', 0, 1))) ?></span>
+        <div class="az-am-who">
+            <span class="az-am-name"><?= h($__amUser['username'] ?? '') ?></span>
+            <?php if (!empty($__amUser['email'])): ?><span class="az-am-sub"><?= h($__amUser['email']) ?></span><?php endif; ?>
         </div>
-        <?php if (kcIsLoggedIn()): ?>
-        <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
-        <a class="az-mm-signin" href="<?= $_logoutUrl ?>"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> <?= h($_hTxt['sign_out']) ?></a>
-        <?php else: ?>
-        <a class="az-mm-signin" href="<?= BASE_URL ?>/pages/login"><i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($_hTxt['sign_in']) ?></a>
+    </div>
+    <div class="az-am-links">
+        <?php foreach (getUserMenuItems() as $__mi):
+            if ($__mi['type'] === 'system' && $__mi['system_key'] === 'account'): ?>
+        <a class="az-am-link" href="<?= BASE_URL ?>/pages/account">
+            <i class="fa-regular fa-circle-user" aria-hidden="true"></i>
+            <span><?= h($__mi['label'] ?: $_hTxt['my_account']) ?></span>
+            <i class="fa-solid fa-chevron-right az-am-chevron" aria-hidden="true"></i>
+        </a>
+        <?php elseif ($__mi['type'] === 'link' && $__mi['label']): ?>
+        <a class="az-am-link" href="<?= h($__mi['url'] ? BASE_URL . resolveUrlLang($__mi['url']) : '#') ?>">
+            <i class="<?= h($__mi['icon'] ?: 'fa-solid fa-link') ?>" aria-hidden="true"></i>
+            <span><?= h($__mi['label']) ?></span>
+            <i class="fa-solid fa-chevron-right az-am-chevron" aria-hidden="true"></i>
+        </a>
+        <?php endif; endforeach; ?>
+        <?php if (canViewAdminPanel()): ?>
+        <a class="az-am-link" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">
+            <i class="fa-solid fa-gauge" aria-hidden="true"></i>
+            <span>Admin</span>
+            <i class="fa-solid fa-chevron-right az-am-chevron" aria-hidden="true"></i>
+        </a>
         <?php endif; ?>
     </div>
+    <?php else: ?>
+    <div class="az-am-head az-am-head-guest">
+        <div class="az-am-guest">
+            <span class="az-am-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+            <span class="az-am-sub"><?= h($_hTxt['not_signed_in']) ?></span>
+        </div>
+        <a class="az-am-signin" href="<?= BASE_URL ?>/pages/login">
+            <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> <?= h($_hTxt['sign_in']) ?>
+        </a>
+    </div>
+    <?php endif; ?>
+
+    <div class="az-am-section">
+        <span class="az-am-label" id="azAmTheme"><?= h($_hTxt['theme']) ?></span>
+        <div class="az-am-segmented" role="group" aria-labelledby="azAmTheme">
+            <button type="button" data-az-theme="light" aria-pressed="true"><i class="fa-solid fa-sun" aria-hidden="true"></i> <?= h($_hTxt['light']) ?></button>
+            <button type="button" data-az-theme="dark" aria-pressed="false"><i class="fa-solid fa-moon" aria-hidden="true"></i> <?= h($_hTxt['dark']) ?></button>
+        </div>
+    </div>
+
+    <div class="az-am-section">
+        <span class="az-am-label" id="azAmLang"><?= h($_hTxt['language']) ?></span>
+        <div class="az-am-langs" role="group" aria-labelledby="azAmLang">
+            <?php foreach ($_langNames as $_l => $_lName): ?>
+            <a class="az-am-lang<?= $_l === $lang ? ' active' : '' ?>" href="<?= h($_langUrls[$_l]) ?>" hreflang="<?= h($_l) ?>"
+               title="<?= h($_lName) ?>" aria-label="<?= h($_lName) ?>"<?= $_l === $lang ? ' aria-current="true"' : '' ?>><?= h(strtoupper($_l)) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <?php if (kcIsLoggedIn()): ?>
+    <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
+    <a class="az-am-signout" href="<?= $_logoutUrl ?>"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> <?= h($_hTxt['sign_out']) ?></a>
+    <?php endif; ?>
 </div>
 <script>
-// Mobile menu: the burger opens a full-screen panel under the header
+// Mobile header: the burger opens a full-screen menu, the account button a
+// popover. Opening one closes the other; Escape closes either.
 (function () {
-    var btn   = document.getElementById('azBurger');
-    var menu  = document.getElementById('azMobileMenu');
-    var hdr   = document.querySelector('.az-site-header');
-    if (!btn || !menu || !hdr) return;
-    var icon  = btn.querySelector('i');
+    var hdr = document.querySelector('.az-site-header');
+    if (!hdr) return;
+    var panels = [];
 
-    function setOpen(open) {
-        if (open) menu.style.top = Math.round(hdr.getBoundingClientRect().bottom) + 'px';
-        menu.hidden = !open;
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        btn.setAttribute('aria-label', open ? btn.dataset.labelClose : btn.dataset.labelOpen);
-        icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
-        document.documentElement.classList.toggle('az-mm-open', open);
+    function register(btn, panel, onToggle) {
+        if (!btn || !panel) return null;
+        var p = { btn: btn, panel: panel, onToggle: onToggle };
+        p.setOpen = function (open) {
+            if (open) panels.forEach(function (o) { if (o !== p) o.setOpen(false); });
+            panel.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            onToggle(open);
+        };
+        btn.addEventListener('click', function () { p.setOpen(panel.hidden); });
+        panels.push(p);
+        return p;
     }
-    btn.addEventListener('click', function () { setOpen(menu.hidden); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
-    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) { if (e.matches) setOpen(false); });
+    function headerBottom() { return Math.round(hdr.getBoundingClientRect().bottom); }
 
-    // Theme button reuses the header toggle (hidden on mobile)
-    var themeBtn = menu.querySelector('[data-az-theme-toggle]');
+    // Burger: full-screen menu under the header
+    var burger = document.getElementById('azBurger');
+    var burgerIcon = burger ? burger.querySelector('i') : null;
+    var menu = document.getElementById('azMobileMenu');
+    register(burger, menu, function (open) {
+        if (open) menu.style.top = headerBottom() + 'px';
+        burger.setAttribute('aria-label', open ? burger.dataset.labelClose : burger.dataset.labelOpen);
+        burgerIcon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        document.documentElement.classList.toggle('az-mm-open', open);
+    });
+
+    // Account: popover under its button, the page dimmed behind it
+    var accBtn = document.getElementById('azAccountBtn');
+    var acc = document.getElementById('azAccountMenu');
+    var backdrop = document.getElementById('azAccountBackdrop');
+    var themeBtns = acc ? acc.querySelectorAll('[data-az-theme]') : [];
+    function syncTheme() {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        themeBtns.forEach(function (b) { b.setAttribute('aria-pressed', (b.dataset.azTheme === 'dark') === dark ? 'true' : 'false'); });
+    }
+    var accPanel = register(accBtn, acc, function (open) {
+        backdrop.hidden = !open;
+        if (open) {
+            var top = headerBottom(), r = accBtn.getBoundingClientRect();
+            backdrop.style.top = top + 'px';
+            acc.style.top = (top + 8) + 'px';
+            // Point the caret at the button's centre
+            acc.style.setProperty('--az-am-caret', Math.round(window.innerWidth - r.left - r.width / 2 - 12 - 6) + 'px');
+            syncTheme();
+        }
+    });
+    if (backdrop && accPanel) backdrop.addEventListener('click', function () { accPanel.setOpen(false); });
+
+    // Theme buttons reuse the header toggle (hidden on mobile)
     var headerToggle = document.getElementById('header-theme-toggle');
-    if (themeBtn && headerToggle) themeBtn.addEventListener('click', function () { headerToggle.click(); });
+    themeBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+            var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (headerToggle && (b.dataset.azTheme === 'dark') !== dark) headerToggle.click();
+            syncTheme();
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        panels.forEach(function (p) { if (!p.panel.hidden) { p.setOpen(false); p.btn.focus(); } });
+    });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) {
+        if (e.matches) panels.forEach(function (p) { p.setOpen(false); });
+    });
 }());
 </script>
 <script>

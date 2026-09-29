@@ -83,6 +83,11 @@ $_hTxt = [
         'menu'       => 'Menu',
         'close_menu' => 'Close menu',
         'theme'      => 'Theme',
+        'account'    => 'Account and settings',
+        'not_signed_in' => 'You are not signed in',
+        'light'      => 'Light',
+        'dark'       => 'Dark',
+        'language'   => 'Language',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -93,6 +98,11 @@ $_hTxt = [
         'menu'       => 'Menu',
         'close_menu' => 'Fermer le menu',
         'theme'      => 'Thème',
+        'account'    => 'Compte et réglages',
+        'not_signed_in' => 'Vous n\'êtes pas connecté',
+        'light'      => 'Clair',
+        'dark'       => 'Sombre',
+        'language'   => 'Langue',
     ],
 ][getUiLang()];
 
