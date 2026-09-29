@@ -277,44 +277,43 @@ if (!function_exists('__nav_active')) {
 
 </header>
 
-<!-- Mobile menu (below 768px): sections as an accordion, then theme, language and account -->
+<!-- Mobile menu (below 768px): top-level links, then every dropdown as a grid of tiles (nothing to expand), then theme, language and account -->
+<?php
+$__mmLinks    = [];
+$__mmSections = [];
+foreach ($__navItems as $__ni) {
+    if (!empty($__ni['is_sidebar_toggle'])) continue;
+    if (!empty($__ni['children'])) $__mmSections[] = $__ni; else $__mmLinks[] = $__ni;
+}
+?>
 <div id="azMobileMenu" class="az-mobile-menu" hidden>
     <nav class="az-mm-nav" aria-label="<?= h($_hTxt['menu']) ?>">
-        <?php foreach ($__navItems as $__ni):
-            if (!empty($__ni['is_sidebar_toggle'])) continue;
-            $__mmActive = __nav_active($__ni, $currentPage, $__iframeNavId);
-            foreach ($__ni['children'] as $__nc) {
-                if (__nav_active($__nc, $currentPage, $__iframeNavId)) { $__mmActive = true; break; }
-            }
-        ?>
-        <?php if (!empty($__ni['children'])): ?>
-        <details class="az-mm-section"<?= $__mmActive ? ' open' : '' ?>>
-            <summary class="az-mm-row<?= $__mmActive ? ' active' : '' ?>">
+        <?php if ($__mmLinks): ?>
+        <div class="az-mm-links">
+            <?php foreach ($__mmLinks as $__ni): ?>
+            <a class="az-mm-pill<?= __nav_active($__ni, $currentPage, $__iframeNavId) ? ' active' : '' ?>" href="<?= h(__nav_href($__ni)) ?>"
+               <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                <?php if (!empty($__ni['icon'])): ?><i class="<?= h($__ni['icon']) ?>" aria-hidden="true"></i><?php endif; ?>
                 <span><?= h($__ni['label']) ?></span>
-                <i class="fa-solid fa-chevron-down az-mm-chevron" aria-hidden="true"></i>
-            </summary>
-            <div class="az-mm-children">
-                <?php foreach ($__ni['children'] as $__nc): ?>
-                    <?php if (!empty($__nc['is_section_header'])): ?>
-                    <div class="az-mm-group"><?= h($__nc['label']) ?></div>
-                    <?php elseif (!empty($__nc['is_separator'])): ?>
-                    <div class="az-mm-divider"></div>
-                    <?php else: ?>
-                    <a class="az-mm-link<?= __nav_active($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
-                       href="<?= h(__nav_href($__nc)) ?>"
-                       <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                        <?= h($__nc['label']) ?>
-                    </a>
-                    <?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php foreach ($__mmSections as $__ni): ?>
+        <section class="az-mm-section">
+            <h2 class="az-mm-title"><?= h($__ni['label']) ?></h2>
+            <div class="az-mm-tiles">
+                <?php foreach ($__ni['children'] as $__nc):
+                    if (!empty($__nc['is_section_header']) || !empty($__nc['is_separator'])) continue; ?>
+                <a class="az-mm-tile<?= __nav_active($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
+                   href="<?= h(__nav_href($__nc)) ?>"
+                   <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                    <?php if (!empty($__nc['icon'])): ?><i class="<?= h($__nc['icon']) ?>" aria-hidden="true"></i><?php endif; ?>
+                    <span><?= h($__nc['label']) ?></span>
+                </a>
                 <?php endforeach; ?>
             </div>
-        </details>
-        <?php else: ?>
-        <a class="az-mm-row<?= $__mmActive ? ' active' : '' ?>" href="<?= h(__nav_href($__ni)) ?>"
-           <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-            <span><?= h($__ni['label']) ?></span>
-        </a>
-        <?php endif; ?>
+        </section>
         <?php endforeach; ?>
     </nav>
 
@@ -324,17 +323,15 @@ if (!function_exists('__nav_active')) {
                 <i class="fa-solid fa-moon" aria-hidden="true"></i> <?= h($_hTxt['theme']) ?>
             </button>
             <details class="az-mm-lang">
-                <summary class="az-mm-pref"><?= $_langFlags[$lang] ?? '' ?> <?= h($_langNames[$lang] ?? $lang) ?></summary>
+                <summary class="az-mm-pref" aria-label="<?= h($_langNames[$lang] ?? $lang) ?>"><?= $_langFlags[$lang] ?? '' ?> <?= h(strtoupper($lang)) ?></summary>
                 <div class="az-mm-lang-list">
                     <?php foreach ($_langFlags as $_l => $_flag): if ($_l === $lang) continue; ?>
                     <a class="az-mm-link" href="<?= h($_langUrls[$_l]) ?>" hreflang="<?= h($_l) ?>"><?= $_flag ?> <?= h($_langNames[$_l]) ?></a>
                     <?php endforeach; ?>
                 </div>
             </details>
-        </div>
-        <?php if (kcIsLoggedIn()): ?>
-        <div class="az-mm-prefs">
-            <a class="az-mm-pref<?= canViewAdminPanel() ? '' : ' az-mm-wide' ?>" href="<?= BASE_URL ?>/pages/account">
+            <?php if (kcIsLoggedIn()): ?>
+            <a class="az-mm-pref" href="<?= BASE_URL ?>/pages/account">
                 <i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($_hTxt['my_account']) ?>
             </a>
             <?php if (canViewAdminPanel()): ?>
@@ -342,11 +339,13 @@ if (!function_exists('__nav_active')) {
                 <i class="fa-solid fa-gauge" aria-hidden="true"></i> Admin
             </a>
             <?php endif; ?>
+            <?php endif; ?>
         </div>
+        <?php if (kcIsLoggedIn()): ?>
         <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
-        <a class="az-mm-signin" href="<?= $_logoutUrl ?>"><?= h($_hTxt['sign_out']) ?></a>
+        <a class="az-mm-signin" href="<?= $_logoutUrl ?>"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> <?= h($_hTxt['sign_out']) ?></a>
         <?php else: ?>
-        <a class="az-mm-signin" href="<?= BASE_URL ?>/pages/login"><?= h($_hTxt['sign_in']) ?></a>
+        <a class="az-mm-signin" href="<?= BASE_URL ?>/pages/login"><i class="fa-solid fa-user" aria-hidden="true"></i> <?= h($_hTxt['sign_in']) ?></a>
         <?php endif; ?>
     </div>
 </div>
