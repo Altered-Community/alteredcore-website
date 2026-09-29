@@ -12,8 +12,8 @@ Outputs, all written to assets/favicon/:
   - web-app-manifest-{192,512}.png            manifest purpose "any": transparent, logo as-is
   - web-app-manifest-maskable-{192,512}.png   manifest purpose "maskable": opaque full-bleed
                                               background, medallion inside the 80% safe zone
-  - apple-touch-icon.png (180)                opaque (iOS fills transparency with black and
-                                              applies its own rounded mask)
+  - apple-touch-icon.png (180)                opaque beige background (iOS fills transparency
+                                              with black and applies its own rounded mask)
   - favicon-{16,32,96}.png, favicon.ico       transparent, for browser tabs
 
 If you change ICON_BG, also update the colour in assets/favicon/manifest.php.
@@ -35,6 +35,12 @@ ICON_BG = (0, 97, 150)  # #006196
 # safe zone is a centred circle of 80% diameter; 0.78 keeps a small margin.
 OPAQUE_LOGO_RATIO = 0.78
 
+# apple-touch-icon: the site's light page background, so the gold rim stands out
+# instead of blending into a blue square. iOS crops to a rounded square, not to
+# the 80% maskable circle, so the medallion can be larger.
+APPLE_BG = (250, 245, 232)  # #FAF5E8
+APPLE_LOGO_RATIO = 0.88
+
 
 def load_master():
     img = Image.open(MASTER).convert('RGBA')
@@ -50,9 +56,9 @@ def transparent(master, size):
     return master.resize((size, size), Image.LANCZOS)
 
 
-def opaque(master, size):
-    canvas = Image.new('RGBA', (size, size), ICON_BG + (255,))
-    d = round(size * OPAQUE_LOGO_RATIO)
+def opaque(master, size, bg=ICON_BG, ratio=OPAQUE_LOGO_RATIO):
+    canvas = Image.new('RGBA', (size, size), bg + (255,))
+    d = round(size * ratio)
     logo = master.resize((d, d), Image.LANCZOS)
     canvas.alpha_composite(logo, ((size - d) // 2, (size - d) // 2))
     return canvas.convert('RGB')
@@ -71,7 +77,7 @@ def main():
         save(transparent(master, size), 'web-app-manifest-%dx%d.png' % (size, size))
         save(opaque(master, size), 'web-app-manifest-maskable-%dx%d.png' % (size, size))
 
-    save(opaque(master, 180), 'apple-touch-icon.png')
+    save(opaque(master, 180, APPLE_BG, APPLE_LOGO_RATIO), 'apple-touch-icon.png')
 
     for size in (16, 32, 96):
         save(transparent(master, size), 'favicon-%dx%d.png' % (size, size))
