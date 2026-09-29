@@ -45,7 +45,6 @@ export const embedRoutes: Routes = [
   { path: 'decks/:id/edit/deck', title: $localize`:@@title.myDeck:Mon deck`, loadComponent: editor, data: { view: 'deck', nav: NAV_DECKS } },
   { path: 'decks/:id/deck', title: $localize`:@@title.decklist:Deck — Decklist`, loadComponent: deck, data: { tab: 'decklist', nav: NAV_DECKS } },
   { path: 'decks/:id/description', title: $localize`:@@title.deckDescription:Deck — Description`, loadComponent: deck, data: { tab: 'description', nav: NAV_DECKS } },
-  { path: 'decks/:id/stats', title: $localize`:@@title.deckStats:Deck — Stats`, loadComponent: deck, data: { tab: 'stats', nav: NAV_DECKS } },
   { path: 'decks/:id/main', title: $localize`:@@title.deckHand:Deck — Main de départ`, loadComponent: deck, data: { tab: 'main', nav: NAV_DECKS } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
   { path: 'decks/:id', title: $localize`:@@title.deck:Deck`, loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },

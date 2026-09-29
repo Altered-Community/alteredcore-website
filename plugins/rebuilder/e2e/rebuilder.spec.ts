@@ -423,7 +423,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     else await page.getByRole('tab', { name: tab }).click();
   }
 
-  test('shows the API legality, description, stats and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
+  test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
     // navigator.share is recorded, so the shared link can be checked on every device.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'share', {
@@ -453,12 +453,6 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(deckPage).toContainText('Première ligne');
     await expect(deckPage).toContainText('Deuxième ligne');
     await evidence(page, testInfo, '21-deck-description');
-
-    await openView(page, compact, 'Stats', 'Stats');
-    await expect(page).toHaveURL(new RegExp(`/decks/${id}/stats$`));
-    await expect(deckPage.locator('app-deck-stats-view')).toContainText('Types de cartes');
-    await expect(deckPage.locator('app-deck-stats-view')).toContainText('Puissances moyennes');
-    await evidence(page, testInfo, '22-deck-stats');
 
     await openView(page, compact, 'Main de départ', 'Main');
     await expect(page).toHaveURL(new RegExp(`/decks/${id}/main$`));

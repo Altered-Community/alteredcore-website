@@ -274,27 +274,6 @@ export function deckStats(lines: HydratedLine[]): DeckStatsView {
   return { main, reserve, terrain, rarity };
 }
 
-/** Stats tab: cards per type, and average powers over every non-hero card (the site's « Puissances moy. »). */
-export interface DeckComposition {
-  types: { id: DeckGroupId; label: string; count: number }[];
-  powers: { foret: number; montagne: number; ocean: number };
-}
-
-export function deckComposition(lines: HydratedLine[]): DeckComposition {
-  const types = groupLines(lines).map((g) => ({ id: g.id, label: g.label, count: g.count }));
-  let count = 0;
-  const sum = { foret: 0, montagne: 0, ocean: 0 };
-  for (const { card, quantity } of lines) {
-    if (typeOf(card) === 'HERO' || quantity <= 0) continue;
-    count += quantity;
-    sum.foret += (card.forestPower ?? 0) * quantity;
-    sum.montagne += (card.mountainPower ?? 0) * quantity;
-    sum.ocean += (card.oceanPower ?? 0) * quantity;
-  }
-  const avg = (v: number) => (count ? Math.round((v / count) * 10) / 10 : 0);
-  return { types, powers: { foret: avg(sum.foret), montagne: avg(sum.montagne), ocean: avg(sum.ocean) } };
-}
-
 /** Plain-text decklist, one "qty reference" per line (the format the community site imports). */
 export function decklistText(lines: HydratedLine[], hero?: DeckHero | null): string {
   const rows = lines.filter((l) => l.quantity > 0 && typeOf(l.card) !== 'HERO');

@@ -22,18 +22,17 @@ import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
 import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
-import { DeckStatsView } from '../deck-stats-view/deck-stats-view';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../legality-details/legality-details.overlay';
 import { TestHand } from '../test-hand/test-hand';
 import { deckShareUrl } from './share-url';
 
-type DeckTab = 'cartes' | 'decklist' | 'description' | 'stats' | 'main';
+type DeckTab = 'cartes' | 'decklist' | 'description' | 'main';
 
 /** Path of each tab under `/decks/:id` (`cartes` is the deck page itself). */
-const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'deck', description: 'description', stats: 'stats', main: 'main' };
+const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'deck', description: 'description', main: 'main' };
 
-/** Consultation: Cartes / Decklist / Description / Stats / Main de départ tabs, read-only, summary aside with actions. */
+/** Consultation: Cartes / Decklist / Description / Main de départ tabs, read-only, summary aside with actions. */
 @Component({
   selector: 'app-deck-page',
   imports: [
@@ -55,7 +54,6 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     DeckPreview,
     DeckListView,
     DecklistTable,
-    DeckStatsView,
     TestHand,
   ],
   templateUrl: './deck.page.html',
@@ -83,7 +81,6 @@ export class DeckPage {
     { id: 'cartes', label: $localize`:@@deck.page.tabCards:Cartes` },
     { id: 'decklist', label: 'Decklist' },
     { id: 'description', label: $localize`:@@deck.page.tabDescription:Description` },
-    { id: 'stats', label: 'Stats' },
     { id: 'main', label: $localize`:@@deck.page.tabHand:Main de départ` },
   ];
   protected readonly groupingOptions = [
@@ -111,7 +108,6 @@ export class DeckPage {
     { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
     { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
     { route: `/decks/${this.id()}/description`, icon: 'text', label: $localize`:@@deck.page.navDescription:Infos` },
-    { route: `/decks/${this.id()}/stats`, icon: 'chart', label: 'Stats' },
     { route: `/decks/${this.id()}/main`, icon: 'hand', label: $localize`:@@deck.page.navHand:Main` },
   ]);
 

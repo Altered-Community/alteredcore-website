@@ -101,9 +101,6 @@
             }
           </section>
         }
-        @case ('stats') {
-          <app-deck-stats-view [lines]="deck.lines()" />
-        }
         @case ('main') {
           <app-test-hand [lines]="deck.lines()" />
         }

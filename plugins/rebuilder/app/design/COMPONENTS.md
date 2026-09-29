@@ -22,7 +22,7 @@ Principes communs :
 | `tokens.css` | Variables globales (`:root`, et `.ar-embed` dans le site AlteredCore) | `angular.json` → `styles` (autonome) ; `src/embed/embed.scss` (build `embed`, shadow root). Texte sur fond : `--ar-color-on-primary` (fond `--ar-color-primary`), `--ar-color-inverse` / `--ar-color-on-inverse` (compteurs, onglet pilule actif), `--ar-color-on-strong` (visuel, faction, commande posée sur une carte) ; `--ar-page-top` / `--ar-sticky-top` : haut de page et bord des panneaux collants |
 | `ArDensityService` | Pose `data-density="pointer\|touch"` sur `<html>` (sur la racine du plugin si `AR_DENSITY_TARGET` est fourni) | Basé sur `matchMedia('(pointer: coarse)')` + `BreakpointObserver` (< 768 px ⇒ touch) ; expose `density = signal<'pointer'\|'touch'>()` |
 | `ArBreakpointService` | Taille de fenêtre logique | `size = signal<'compact'\|'medium'\|'expanded'>()` (< 768, 768–1199, ≥ 1200) |
-| `ar-icon` | Icône au trait | `name: string`, `size = 16\|18\|20\|22` — SVG Lucide en ligne (`text`, `chart`, `hand`, `rotate` : onglets Description / Stats / Main de départ du deck) ; `discord` est un logo plein (sans trait) |
+| `ar-icon` | Icône au trait | `name: string`, `size = 16\|18\|20\|22` — SVG Lucide en ligne (`text`, `hand`, `rotate` : onglets Description / Main de départ du deck) ; `discord` est un logo plein (sans trait) |
 
 ## 2. Actions — `DS-Boutons`
 
@@ -102,7 +102,6 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 | `ar-deck-row` | `card`, `quantity`, `max`, `readonly` (consultation : « ×3 » + coûts, sans stepper), `plain` (rareté, nom, coûts, sans quantité) | `quantityChange` | panneau deck, Deck mobile, decklist, Cartes (`plain`) |
 | `ar-deck-section` | `title` (Personnages, Sorts…), `count`, `collapsible` | — | panneau deck, aperçu, cartes |
 | `ar-cost-chart` | `values: number[7]` (coûts 1…7+), `tone: 'main' \| 'reserve'` | — | Stats |
-| `ar-stat-bars` | `label` (titre en capitales), `rows: {key, label, value, iconSrc?, tone?: 'primary' \| 'foret' \| 'montagne' \| 'ocean'}[]`, `max?` (échelle, par défaut la plus grande valeur) ; barres horizontales sur piste `--ar-color-track`, couleur `--ar-color-chart-main` ou `--ar-terrain-*` ; avec `iconSrc`, l'icône remplace le libellé (`alt` = libellé) | — | onglet Stats du deck (types de cartes, puissances moyennes) |
 | `ar-deck-summary` | `deck`, `appearance: 'card' \| 'embedded'` (`embedded` dans le panneau desktop : sans le nom, déjà dans le titre) ; total, validité et raretés centrés | `openSettings` → `ArOverlayService` « Réglages du deck » | éditeur desktop et mobile |
 | `app-new-deck` (contenu d'overlay) | héros intégré (`ar-faction-tabs` + `ar-hero-selector`), nom pré-rempli « Deck <héros> », visibilité, formats `compact` ; colonne des héros < 500 px (fenêtres de 768 à ~950 px) : factions en 3 × 2 et héros sur 3 colonnes ; fenêtre 1080 px × (fenêtre − 80 px) via `ArOverlayService` `height: 'fill'`, plein écran en compact | `NewDeckResult` | Nouveau deck (`features/creation-heros-integre.md`) |
 | `ar-deck-settings` (contenu d'overlay) | `deck` ; héros + « Changer », `ar-segmented` visibilité, `ar-radio-card` formats | `save`, `cancel` | réglages desktop / mobile |
