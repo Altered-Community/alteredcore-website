@@ -4,16 +4,21 @@ import { formatInfo } from '../../../core/formats';
 import { ArCollapsible } from '../../../ui/containers';
 import { ArDeckRow, ArDeckSection, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
 import { ArOverlayService } from '../../../ui/overlay';
+import { EditorAltArts } from '../editor-alt-arts';
+import { openTokenArts } from '../token-arts/token-arts.overlay';
+import { ArButton } from '../../../ui/buttons';
 import { editorLegality, lineIssues, openEditorLegality } from '../editor-legality';
 
 /** Mobile « Mon deck »: summary card, Stats card, flat grouped lists (steppers or read-only). */
 @Component({
   selector: 'app-deck-list-view',
-  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow, ArDeckSection],
+  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow, ArDeckSection, ArButton],
   templateUrl: './deck-list-view.html',
   styleUrl: './deck-list-view.scss',
 })
 export class DeckListView {
+  /** Editor only (not the deck page): illustrations used more times than owned. */
+  protected readonly altArts = inject(EditorAltArts, { optional: true });
   protected readonly deck = inject(DeckStore);
   private readonly overlay = inject(ArOverlayService);
   readonly readonly = input(false);
@@ -26,5 +31,9 @@ export class DeckListView {
 
   protected showLegality(): void {
     openEditorLegality(this.overlay, this.deck);
+  }
+
+  protected chooseTokenArts(): void {
+    openTokenArts(this.overlay);
   }
 }

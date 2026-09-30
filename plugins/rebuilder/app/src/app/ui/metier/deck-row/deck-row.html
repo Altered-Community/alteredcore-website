@@ -8,6 +8,11 @@
     <ar-icon name="alert" [size]="16" [strokeWidth]="2.4" />
   </span>
 }
+@if (warning(); as w) {
+  <span class="warning" role="img" [attr.aria-label]="w" [title]="w">
+    <ar-icon name="alert" [size]="16" [strokeWidth]="2.4" />
+  </span>
+}
 @if (readonly() || plain()) {
   <span class="costs">
     <span class="c main" title="Coût main" i18n-title="@@ui.costChart.main">{{ card().mainCost ?? '–' }}</span>

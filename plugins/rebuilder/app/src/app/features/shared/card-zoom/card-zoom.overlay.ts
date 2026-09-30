@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map, of, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { contentLocale } from '../../../core/locale';
+import { cardImageUrl } from '../../../core/card-art';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArButton, ArStepper } from '../../../ui/buttons';
@@ -15,6 +16,8 @@ export interface CardZoomData {
   card: Card;
   /** Editor: copies in the deck, changed from the window (as the site's deck builder lightbox). */
   quantity?: { value: number; max: number; change: (quantity: number) => void };
+  /** Editor, per-deck alt-art mode: « Choisir une illustration » for a card of the deck (the site's lightbox). */
+  illustrations?: { choice: AltArtChoice; pick: (reference: string) => void };
 }
 
 /** A card shown large, with a link to its sheet on the site (the site's card lightbox); in the editor, its copies. */
@@ -26,8 +29,9 @@ export interface CardZoomData {
   styleUrl: './card-zoom.overlay.scss',
 })
 export class CardZoomOverlay {
-  protected readonly data = inject<ArOverlayRef<void, CardZoomData>>(ArOverlayRef).data;
+  private readonly ref = inject<ArOverlayRef<void, CardZoomData>>(ArOverlayRef);
   private readonly ownership = inject(OwnershipApiService);
+  protected readonly data = this.ref.data;
   /**
    * « Global » alt-art preference (as on the site): the card tilts under the pointer and its illustrations show with the
    * player's copies, `null` otherwise or for a card with one illustration.
@@ -41,6 +45,19 @@ export class CardZoomOverlay {
     { initialValue: null },
   );
   protected readonly tilt = signal({ x: 0, y: 0 });
+  protected readonly choosing = signal(false);
+  protected readonly chosen = signal(this.data.card.reference);
+  protected readonly prints = computed(() =>
+    (this.data.illustrations?.choice.options.options ?? []).map((o) => ({ reference: o.reference, src: cardImageUrl(o.reference), unowned: o.ownedQuantity === 0 })),
+  );
+  protected readonly printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
+
+  /** Unowned prints stay selectable: Board Game Arena shows the base art for the missing copies (as on the site). */
+  protected confirmPrint(): void {
+    const ref = this.chosen();
+    if (ref !== this.data.card.reference) this.data.illustrations?.pick(ref);
+    this.ref.close();
+  }
   protected readonly quantity = signal(this.data.quantity?.value ?? 0);
   protected readonly name = computed(() => localizedText(this.data.card.name, contentLocale()) || this.data.card.reference);
   /** The site's card sheet (`/pages/card`, plugin core-altered-cards). */

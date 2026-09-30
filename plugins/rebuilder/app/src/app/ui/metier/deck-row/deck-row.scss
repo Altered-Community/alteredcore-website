@@ -72,6 +72,12 @@
   color: var(--ar-color-danger);
   cursor: help;
 }
+.warning {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ar-color-warning);
+  cursor: help;
+}
 .blocked {
   display: flex;
   flex-shrink: 0;

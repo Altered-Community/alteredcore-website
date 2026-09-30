@@ -11,5 +11,20 @@
       <ar-stepper appearance="box" [label]="name()" [itemName]="name()" [value]="quantity()" [max]="q.max" (valueChange)="setQuantity($event)" />
     </div>
   }
+  @if (data.illustrations && prints().length > 1) {
+    <button arButton variant="secondary" icon="layers" [fullWidth]="true" [attr.aria-expanded]="choosing()" (click)="choosing.set(!choosing())" i18n="@@cardZoom.chooseIllustration">Choisir une illustration</button>
+    @if (choosing()) {
+      <ul class="prints">
+        @for (p of prints(); track p.reference) {
+          <li>
+            <button type="button" class="print" [class.selected]="p.reference === chosen()" [class.unowned]="p.unowned" [attr.aria-pressed]="p.reference === chosen()" [attr.aria-label]="printLabel($index + 1)" (click)="chosen.set(p.reference)">
+              <img [src]="p.src" alt="" loading="lazy" />
+            </button>
+          </li>
+        }
+      </ul>
+      <button arButton [fullWidth]="true" [disabled]="chosen() === data.card.reference" (click)="confirmPrint()" i18n="@@cardZoom.confirmIllustration">Utiliser cette illustration</button>
+    }
+  }
   <a arButton icon="info" [fullWidth]="true" [href]="detailUrl" i18n="@@cardZoom.detail">Accéder au détail</a>
 </div>

@@ -678,6 +678,15 @@
     "shared.heroPicker.serializedPrint": "Serialized",
     "shared.heroPicker.prints": "Illustrations",
     "shared.heroPicker.altArts": "Alt arts",
-    "shared.heroPicker.serialized": "Serialized"
+    "shared.heroPicker.serialized": "Serialized",
+    "editor.altArt.stockWarn": "Only {$owned} of the {$needed} copies used in this deck are owned for this illustration: on Board Game Arena, the others will show the base art.",
+    "cardZoom.chooseIllustration": "Choose illustration",
+    "cardZoom.confirmIllustration": "Use this illustration",
+    "editor.tokenArts.title": "Token illustrations",
+    "editor.tokenArts.warning": "Token illustration preferences are shared across every deck: they aren't part of this deck's card list.",
+    "editor.tokenArts.empty": "No token has more than one illustration.",
+    "editor.tokenArts.loading": "Loading…",
+    "editor.tokenArts.close": "Close",
+    "editor.tokenArts.open": "Choose token illustrations"
   }
 }

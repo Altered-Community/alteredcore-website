@@ -29,6 +29,8 @@ export class ArDeckRow {
   readonly appearance = input<'list' | 'panel'>('list');
   /** Rules this line breaks (off-faction, too many copies, banned…): alert marker with the reasons. */
   readonly issues = input<readonly string[]>([]);
+  /** A warning that does not break a rule (an illustration used more times than owned): amber marker. */
+  readonly warning = input<string | null>(null);
   /** Why the card cannot be added (`max` is 0), shown in place of the stepper. */
   readonly blockedReason = input<string | null>(null);
   readonly quantityChange = output<number>();

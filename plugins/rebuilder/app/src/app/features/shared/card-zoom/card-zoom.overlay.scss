@@ -21,3 +21,37 @@
   font-size: 13px;
   font-weight: 700;
 }
+.prints {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--ar-space-2);
+}
+.print {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--ar-radius-md);
+  overflow: hidden;
+  background: var(--ar-color-track);
+  cursor: pointer;
+}
+.print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+}
+.print.selected {
+  border-color: var(--ar-color-primary);
+}
+.print.unowned {
+  opacity: 0.5;
+}
+.print:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}

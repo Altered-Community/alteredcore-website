@@ -4,16 +4,21 @@ import { formatInfo } from '../../../core/formats';
 import { ArCollapsible } from '../../../ui/containers';
 import { ArDeckRow, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
 import { ArOverlayService } from '../../../ui/overlay';
+import { EditorAltArts } from '../editor-alt-arts';
+import { openTokenArts } from '../token-arts/token-arts.overlay';
+import { ArButton } from '../../../ui/buttons';
 import { editorLegality, lineIssues, openEditorLegality } from '../editor-legality';
 
 /** Desktop right-hand panel: embedded summary, Stats, grouped rows with steppers. */
 @Component({
   selector: 'app-deck-panel',
-  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow],
+  imports: [ArButton, ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow],
   templateUrl: './deck-panel.html',
   styleUrl: './deck-panel.scss',
 })
 export class DeckPanel {
+  /** Editor only (not the deck page): illustrations used more times than owned. */
+  protected readonly altArts = inject(EditorAltArts, { optional: true });
   protected readonly deck = inject(DeckStore);
   private readonly overlay = inject(ArOverlayService);
   readonly openSettings = output<void>();
@@ -25,5 +30,9 @@ export class DeckPanel {
 
   protected showLegality(): void {
     openEditorLegality(this.overlay, this.deck);
+  }
+
+  protected chooseTokenArts(): void {
+    openTokenArts(this.overlay);
   }
 }

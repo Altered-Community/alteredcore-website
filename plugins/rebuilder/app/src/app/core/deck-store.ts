@@ -296,6 +296,34 @@ export class DeckStore {
     this.touch();
   }
 
+  /**
+   * « Choisir une illustration »: the copies of `card` take the print `reference` (another illustration of the same
+   * card), merged with that print's line when the deck has one already.
+   */
+  swapReference(card: Card, reference: string): void {
+    if (!this.editable() || card.reference === reference) return;
+    this.lines.set(swapLines(this.lines(), card.reference, reference));
+    this.touch();
+  }
+
+  /**
+   * « Global » alt-art mode: every card of a multi-art family takes the player's preferred prints, copy after copy
+   * (the site's deck builder does it on load and after each change); the hero takes the first slot. `false` when
+   * nothing changes.
+   */
+  applyAltArtSlots(slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): boolean {
+    if (!this.editable()) return false;
+    const lines = distributeSlots(this.lines(), slotsByRef);
+    const hero = this.hero();
+    const heroRef = hero ? slotsByRef.get(hero.reference)?.slots[0] : undefined;
+    const heroChanged = !!hero && !!heroRef && heroRef !== hero.reference;
+    if (!lines && !heroChanged) return false;
+    if (lines) this.lines.set(lines);
+    if (heroChanged && hero && heroRef) this.hero.set({ ...hero, reference: heroRef });
+    this.touch();
+    return true;
+  }
+
   addCard(card: Card): void {
     this.setQuantity(card, this.quantityOf(card.reference) + 1);
   }
@@ -662,4 +690,45 @@ export function apiErrorMessage(err: unknown, head: (status: number) => string):
 
 export function displayName(card: Card): string {
   return localizedText(card.name, contentLocale()) || card.reference;
+}
+
+/** `from`'s copies become `to`'s (merged with an existing `to` line). */
+export function swapLines(lines: HydratedLine[], from: string, to: string): HydratedLine[] {
+  const moving = lines.find((l) => l.card.reference === from);
+  if (!moving) return lines;
+  const existing = lines.find((l) => l.card.reference === to);
+  const rest = lines.filter((l) => l.card.reference !== from);
+  if (existing) return rest.map((l) => (l === existing ? { ...l, quantity: l.quantity + moving.quantity } : l));
+  return [...rest, { card: { ...moving.card, reference: to }, quantity: moving.quantity }];
+}
+
+/**
+ * The copies of each family (all its lines together) spread over the player's slots: copy i takes slot i, the copies
+ * past the last slot repeat it (the site's `distributeAcrossSlots`). `null` when every line already matches.
+ */
+export function distributeSlots(lines: HydratedLine[], slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): HydratedLine[] | null {
+  const families = new Map<string, { slots: string[]; qty: number; lines: HydratedLine[] }>();
+  for (const l of lines) {
+    const f = slotsByRef.get(l.card.reference);
+    if (!f || !f.slots.length) continue;
+    const g = families.get(f.key) ?? { slots: f.slots, qty: 0, lines: [] };
+    g.qty += l.quantity;
+    g.lines.push(l);
+    families.set(f.key, g);
+  }
+  let changed = false;
+  let out = lines;
+  for (const g of families.values()) {
+    const counts = new Map<string, number>();
+    for (let i = 0; i < g.qty; i++) {
+      const ref = g.slots[Math.min(i, g.slots.length - 1)];
+      counts.set(ref, (counts.get(ref) ?? 0) + 1);
+    }
+    const same = g.lines.length === counts.size && g.lines.every((l) => counts.get(l.card.reference) === l.quantity);
+    if (same) continue;
+    changed = true;
+    const template = g.lines[0].card;
+    out = out.filter((l) => !g.lines.includes(l)).concat([...counts].map(([reference, quantity]) => ({ card: { ...template, reference }, quantity })));
+  }
+  return changed ? out : null;
 }

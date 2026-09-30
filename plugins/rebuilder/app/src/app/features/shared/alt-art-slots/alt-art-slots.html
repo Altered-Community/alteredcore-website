@@ -1,7 +1,7 @@
 <ul class="strip">
-  @for (t of tiles(); track t.reference; let i = $index) {
+  @for (t of tiles(); track t.reference) {
     <li>
-      <button type="button" class="tile" [class.unowned]="!t.owned" [disabled]="!t.owned" [attr.aria-label]="tileLabel(i + 1)" (click)="pick(t.reference, t.owned)">
+      <button type="button" class="tile" [class.unowned]="!t.owned" [disabled]="!t.owned" [attr.aria-label]="tileLabel($index + 1)" (click)="pick(t.reference, t.owned)">
         <img [src]="t.src" alt="" loading="lazy" />
       </button>
       @if (t.markers.length) {

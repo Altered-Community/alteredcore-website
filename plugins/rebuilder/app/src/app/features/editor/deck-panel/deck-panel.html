@@ -16,6 +16,11 @@
 <ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
   <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ar-collapsible>
+@if (altArts?.canChooseTokens()) {
+  <div class="tokens">
+    <button arButton variant="secondary" size="sm" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+  </div>
+}
 <div class="rows">
   @for (g of deck.groups(); track g.id) {
     <div class="group">
@@ -27,6 +32,7 @@
           [quantity]="l.quantity"
           [max]="deck.maxFor(l.card)"
           [issues]="issues().get(l.card.reference) ?? noIssues"
+          [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
           [readonly]="!deck.editable()"
           (quantityChange)="deck.setQuantity(l.card, $event)"
         />

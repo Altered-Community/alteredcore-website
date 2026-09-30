@@ -13,6 +13,7 @@ import { ArAppBar, ArAvatar, ArBackButton, ArBottomNav, ArBreadcrumb, type ArBot
 import { ArOverlayService } from '../../../ui/overlay';
 import { AuthSession } from '../../../core/auth-session';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
+import { EditorAltArts } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
 import { CardSearch } from '../../search/card-search/card-search';
 import { DeckListView } from '../deck-list-view/deck-list-view';
@@ -24,7 +25,7 @@ export type EditorView = 'search' | 'apercu' | 'deck';
 
 @Component({
   selector: 'app-editor-page',
-  providers: [CardSearchStore],
+  providers: [CardSearchStore, EditorAltArts],
   imports: [
     RouterLink,
     ArAppBar,

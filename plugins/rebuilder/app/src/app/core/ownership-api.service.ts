@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { contentLocale } from './locale';
 
 export interface CardQuantity {
   cardReference: string;
@@ -69,6 +70,30 @@ export class OwnershipApiService {
       }),
       catchError(() => of({})),
     );
+  }
+
+  /**
+   * The token families with several illustrations (per-deck alt-art mode: tokens are not deck cards, their prints are a
+   * preference shared by every deck), from the site's `alt-art-search` (plugin ownership).
+   */
+  tokenAltArts(): Observable<(AltArtChoice & { name: string })[]> {
+    if (!this.baseUrl) return of([]);
+    const params = ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA']
+      .reduce((p, t) => p.append('type[]', t), new HttpParams())
+      .set('hideNonChoices', 'false')
+      .set('locale', contentLocale());
+    const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/ownership/alt-art-search`;
+    return this.http
+      .get<{ families?: (AltArtFamily & { name?: string | Record<string, string> })[]; options?: Record<string, AltArtOptions> }>(url, { params })
+      .pipe(
+        map((res) =>
+          (res?.families ?? []).flatMap((f) => {
+            const options = res.options?.[familyKey(f)];
+            const name = typeof f.name === 'string' ? f.name : f.name?.[contentLocale()] ?? '';
+            return options?.options?.length ? [{ family: { familyId: f.familyId, faction: f.faction, rarity: f.rarity }, options, name }] : [];
+          }),
+        ),
+      );
   }
 
   /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */

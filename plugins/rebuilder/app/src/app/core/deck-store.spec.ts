@@ -6,7 +6,7 @@ import { of, type Observable } from 'rxjs';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
-import { DeckStore } from './deck-store';
+import { DeckStore, distributeSlots, swapLines } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
 import { OwnershipApiService, type CardQuantity } from './ownership-api.service';
 import type { Card, Deck } from './models';
@@ -591,5 +591,24 @@ describe('DeckStore (signed in, « Global » alt arts)', () => {
     ]);
     req.flush({ id: 'copy' });
     http.verify();
+  });
+});
+
+describe('illustrations of the deck lines', () => {
+  const line = (reference: string, quantity: number) => ({ card: { reference, name: 'X' }, quantity });
+
+  it('swaps a card for another print, merged with an existing line', () => {
+    expect(swapLines([line('A_B', 2), line('C', 1)], 'A_B', 'A_P').map((l) => [l.card.reference, l.quantity])).toEqual([['C', 1], ['A_P', 2]]);
+    expect(swapLines([line('A_B', 2), line('A_P', 1)], 'A_B', 'A_P').map((l) => [l.card.reference, l.quantity])).toEqual([['A_P', 3]]);
+  });
+
+  it('spreads the copies of a family over the slots (Global mode)', () => {
+    const slots = new Map([
+      ['A_B', { key: 'f', slots: ['A_P', 'A_B'] }],
+      ['A_P', { key: 'f', slots: ['A_P', 'A_B'] }],
+    ]);
+    const out = distributeSlots([line('A_B', 3), line('C', 1)], slots);
+    expect(out?.map((l) => [l.card.reference, l.quantity])).toEqual([['C', 1], ['A_P', 1], ['A_B', 2]]);
+    expect(distributeSlots(out ?? [], slots)).toBeNull();
   });
 });
