@@ -252,6 +252,21 @@ export const BGA_SETS: Readonly<Record<string, boolean>> = {
   WCS26: true,
 };
 
+/** A hero is on Board Game Arena when one of its prints is of a set BGA has (the site's hero picker badge). */
+export function heroOnBga(references: readonly string[]): boolean {
+  return references.some((ref) => BGA_SETS[ref.split('_')[1] ?? ''] === true);
+}
+
+/**
+ * BGA tag of a format in the format choice: « Héros indispo. BGA » over an available format when the chosen hero is
+ * not on BGA (the site's format pills follow the hero).
+ */
+export function bgaTag(info: FormatInfo, heroUnavailable: boolean): { label: string; tone: 'green' | 'violet' | 'red' } {
+  const base = BGA_LABEL[info.bga];
+  if (heroUnavailable && info.bga !== 'unavailable') return { label: $localize`:@@format.bga.heroUnavailable:Héros indispo. BGA`, tone: 'red' };
+  return { label: base.short, tone: base.tone };
+}
+
 /** A card of `set` is allowed in this format (sets missing from BGA, except in Test). */
 export function setAllowed(set: string, info: FormatInfo): boolean {
   return BGA_SETS[set] === true || (!!info.ignoreBgaIllegalSets && set in BGA_SETS);

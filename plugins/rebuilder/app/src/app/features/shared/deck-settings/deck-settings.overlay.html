@@ -37,7 +37,7 @@
           name="deck-settings-format"
           [title]="f.label"
           [description]="f.short"
-          [tag]="{ label: bga[f.bga].short, tone: bga[f.bga].tone }"
+          [tag]="tagOf(f)"
           [checked]="format() === f.value"
           (choose)="format.set(f.value)"
         />

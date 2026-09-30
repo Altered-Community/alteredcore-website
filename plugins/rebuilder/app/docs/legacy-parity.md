@@ -65,7 +65,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ (service ownership requis, sauf les héros alt-art) |
 | Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ✅ |
 | Main de départ dans l'éditeur | ✅ (vue « Main de départ », `/edit/main`) |
-| Pastilles BGA qui dépendent du héros à la création, formats lus depuis `altered.json` | 🟡 statiques |
+| Pastilles BGA qui dépendent du héros à la création, formats lus depuis `altered.json` | 🟡 pastilles selon le héros faites ; formats toujours recopiés à la main depuis `altered.json` |
 
 Fonctions propres au plugin : plusieurs decks invités, chips de filtres retirables, filtres « Sans effet » / « Écho », vue grille
 ou liste, défilement infini virtualisé, bouton « Dupliquer en local » sur le deck d'un autre, URLs des onglets de la page deck,

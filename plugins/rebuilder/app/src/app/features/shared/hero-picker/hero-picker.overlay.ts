@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
+import { heroOnBga } from '../../../core/formats';
 import { ArChip } from '../../../ui/chips';
 import type { DeckHero } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
@@ -43,12 +44,14 @@ function isPlaceholderPrint(ref: string): boolean {
  * « Numérotées » only), as the site's hero picker.
  */
 export function heroChoices(heroes: readonly HeroGroup[] | null, options: { altArts: boolean; serialized: boolean }): ArHeroOption[] | null {
-  if (!heroes || !options.altArts) return heroes as ArHeroOption[] | null;
+  if (!heroes) return null;
+  const standard = (h: HeroGroup): ArHeroOption => ({ ...h, unavailableOnBga: !heroOnBga(h.prints.length ? h.prints.map((p) => p.reference) : [h.reference]) });
+  if (!options.altArts) return heroes.map(standard);
   return heroes.flatMap((h) => [
-    h,
+    standard(h),
     ...h.prints
       .filter((p) => p.variation !== 'standard' && p.reference !== h.reference && !isPlaceholderPrint(p.reference) && (options.serialized || !isSerializedPrint(p.reference)))
-      .map((p) => ({ reference: p.reference, name: `${h.name} · ${printLabel(p)}`, faction: h.faction })),
+      .map((p) => ({ reference: p.reference, name: `${h.name} · ${printLabel(p)}`, faction: h.faction, unavailableOnBga: !heroOnBga([p.reference]) })),
   ]);
 }
 

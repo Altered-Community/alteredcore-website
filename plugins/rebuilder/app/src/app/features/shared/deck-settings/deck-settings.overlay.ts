@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { BGA_LABEL, visibleFormats } from '../../../core/formats';
+import { BGA_LABEL, bgaTag, heroOnBga, visibleFormats, type FormatInfo } from '../../../core/formats';
 import type { DeckFormat, DeckHero } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { ArInput, ArRadioCard, ArSegmented, ArTextarea } from '../../../ui/fields';
@@ -33,6 +33,11 @@ export class DeckSettingsOverlay {
   protected readonly bp = inject(ArBreakpointService);
   protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
+  /** BGA tag of a format, « Héros indispo. BGA » when the chosen hero is not on Board Game Arena (as on the site). */
+  protected tagOf(f: FormatInfo): { label: string; tone: 'green' | 'violet' | 'red' } {
+    const hero = this.hero();
+    return bgaTag(f, !!hero && !heroOnBga([hero.reference]));
+  }
   protected readonly visibility = VISIBILITY_OPTIONS;
   protected readonly noHero = $localize`:@@shared.deckSettings.noHero:Aucun héros`;
 

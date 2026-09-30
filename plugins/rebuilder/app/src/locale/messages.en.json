@@ -693,6 +693,7 @@
     "editor.progressLabel": "Progress toward the minimum number of cards",
     "editor.hand": "Starting hand",
     "editor.handShort": "Hand",
-    "title.editorHand": "Starting hand"
+    "title.editorHand": "Starting hand",
+    "format.bga.heroUnavailable": "Hero not on BGA"
   }
 }

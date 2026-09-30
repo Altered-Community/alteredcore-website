@@ -55,7 +55,7 @@
             layout="compact"
             [title]="f.label"
             [description]="f.short"
-            [tag]="{ label: bga[f.bga].short, tone: bga[f.bga].tone }"
+            [tag]="tagOf(f)"
             [checked]="form.format() === f.value"
             (choose)="form.format.set(f.value)"
           />
