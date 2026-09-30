@@ -22,7 +22,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Badge Brouillon ; badge Illégal avec la fenêtre des règles | ✅ (Mes decks ; « Non légal » comme sur la page deck) |
 | Nombre de vues, cartes et raretés sur les tuiles Communauté | ✅ |
 | Decks illégaux affichés (et signalés) en Communauté | ✅ badge « Non légal » et fenêtre des règles |
-| Import depuis une URL ou un ID altered.gg | ❌ (import Equinox ZIP seulement) |
+| Import depuis une URL ou un ID altered.gg | — abandonné : api.altered.gg n’existe plus |
 | Deck invité du site (`alteredcore_guest_deck`) repris ; « Enregistrer sur mon compte » une fois connecté | ❌ |
 | Bandeau des deckbuilders communautaires | ❌ |
 | Format caché `test` (bgatester) | ❌ |
