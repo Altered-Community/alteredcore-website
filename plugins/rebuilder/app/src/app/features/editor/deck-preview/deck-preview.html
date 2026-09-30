@@ -23,6 +23,8 @@
           [zoomable]="true"
           (quantityChange)="deck.setQuantity(l.card, $event)"
           (zoom)="zoom(l.card)"
+          [favorite]="favorites.enabled() ? favorites.has(l.card.reference) : null"
+          (favoriteToggle)="favorites.toggle(l.card)"
         />
       }
     </div>

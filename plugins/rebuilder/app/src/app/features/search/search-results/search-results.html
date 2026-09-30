@@ -26,6 +26,8 @@
           [zoomable]="true"
           (quantityChange)="deck.setQuantity(c, $event)"
           (zoom)="zoom(c)"
+          [favorite]="favorites.enabled() ? favorites.has(c.reference) : null"
+          (favoriteToggle)="favorites.toggle(c)"
         />
       }
       @if (search.loading() && grid.atEnd()) {

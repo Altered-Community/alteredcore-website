@@ -48,6 +48,7 @@ export const AR_ICONS = {
   droplet: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
   'toggle-on': '<rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="16" cy="12" r="2"/>',
   'toggle-off': '<rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="8" cy="12" r="2"/>',
+  star: '<path d="M11.5 2.9a.6.6 0 0 1 1 0l2.5 5.2 5.7.8a.6.6 0 0 1 .3 1l-4.1 4 1 5.7a.6.6 0 0 1-.8.6L12 17.5l-5.1 2.7a.6.6 0 0 1-.8-.6l1-5.7-4.1-4a.6.6 0 0 1 .3-1l5.7-.8z"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
   alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/>',
   /** Discord mark (Simple Icons), filled without stroke. */

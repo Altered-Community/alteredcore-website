@@ -8,6 +8,7 @@ import { ArVirtualGrid } from '../../../ui/containers';
 import { ArInfiniteSentinel } from '../../../ui/infinite';
 import { ArCardTile, ArDeckRow } from '../../../ui/metier';
 import { ArOverlayService } from '../../../ui/overlay';
+import { FavoritesService } from '../../../core/favorites.service';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { CardSearchStore } from '../card-search.store';
 
@@ -21,6 +22,7 @@ export class SearchResults {
   protected readonly search = inject(CardSearchStore);
   protected readonly deck = inject(DeckStore);
   private readonly overlay = inject(ArOverlayService);
+  protected readonly favorites = inject(FavoritesService);
   readonly layout = input<'grid' | 'list'>('grid');
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);

@@ -52,6 +52,7 @@
   --ar-color-warning: #8a4b0c;
   --ar-color-warning-soft: #fdf0e1;
   --ar-color-like: #b42318;            /* cœur « J’aime » actif */
+  --ar-color-favorite: #f5c518;        /* étoile d’une carte favorite (posée sur le visuel) */
   --ar-color-discord: #5865f2;         /* logo Discord (bouton de connexion) ; pas pour du texte */
 
   /* ---------- Couleurs · données ---------- */

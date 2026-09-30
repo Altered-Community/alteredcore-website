@@ -14,6 +14,11 @@
     <ng-container [ngTemplateOutlet]="face" />
   </div>
 }
+@if (favorite() !== null) {
+  <button type="button" class="favorite" [class.on]="favorite()" [attr.aria-pressed]="favorite()" [attr.aria-label]="favoriteLabel()" [title]="favoriteLabel()" (click)="favoriteToggle.emit()">
+    <ar-icon name="star" [size]="15" />
+  </button>
+}
 @if (plain()) {
   <!-- Card browser: no quantity control. -->
 } @else if (readonly()) {

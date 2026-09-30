@@ -636,6 +636,8 @@
     "deck.play.actionDiscard": "{$START_TAG_AR_ICON}{$CLOSE_TAG_AR_ICON}Discard",
     "deck.play.actionZoom": "{$START_TAG_AR_ICON}{$CLOSE_TAG_AR_ICON}Enlarge",
     "deck.play.returnHand": "Return to hand",
-    "deck.play.discard": "Discard"
+    "deck.play.discard": "Discard",
+    "ui.cardTile.unfavorite": "Remove {$name} from favorites",
+    "ui.cardTile.favorite": "Add {$name} to favorites"
   }
 }

@@ -3,6 +3,7 @@ import { DeckStore } from '../../../core/deck-store';
 import { ArButton } from '../../../ui/buttons';
 import { ArCardTile, ArDeckSection } from '../../../ui/metier';
 import { ArOverlayService } from '../../../ui/overlay';
+import { FavoritesService } from '../../../core/favorites.service';
 import type { Card } from '../../../core/models';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
@@ -16,6 +17,7 @@ import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 export class DeckPreview {
   protected readonly deck = inject(DeckStore);
   private readonly overlay = inject(ArOverlayService);
+  protected readonly favorites = inject(FavoritesService);
   readonly readonly = input(false);
   /** Three columns on compact (consultation « Cartes »). */
   readonly dense = input(false);

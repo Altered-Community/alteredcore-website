@@ -18,6 +18,7 @@ env.cdnUrl = host.services.cdn || env.cdnUrl;
 env.ownershipApiUrl = host.services.ownership || env.ownershipApiUrl;
 env.pluginApiUrl = host.page.apiUrl || env.pluginApiUrl;
 env.siteUrl = host.baseUrl ?? env.siteUrl;
+env.siteCsrf = host.csrf ?? env.siteCsrf;
 setAssetBase(host.page.assetsUrl);
 setContentLocale(host.lang);
 
