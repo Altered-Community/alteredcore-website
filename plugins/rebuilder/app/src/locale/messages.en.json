@@ -612,6 +612,8 @@
     "deck.share.makePublic": "Make public & share",
     "deck.share.link": "Link",
     "deck.share.copied": "Copied!",
-    "deck.share.copy": "Copy"
+    "deck.share.copy": "Copy",
+    "deck.page.statsTypes": "Card types",
+    "deck.page.statsPowers": "Avg. powers"
   }
 }
