@@ -42,7 +42,7 @@ Spécifications : bouton rayon `--ar-radius-control` (14 px en `lg` tactile), po
 
 | Composant | Entrées | Sorties | Écrans |
 |---|---|---|---|
-| `ar-input` | `label?`, `icon?` (loupe), `placeholder`, `type`, CVA | — | recherche, coûts « 3, 1-3, 4+ », nom du deck |
+| `ar-input` | `label?`, `icon?` (loupe), `placeholder`, `type`, `readonly` (texte affiché, sélectionné au focus), CVA | — | recherche, coûts « 3, 1-3, 4+ », nom du deck, lien de partage |
 | `ar-textarea` | `value = model<string>()`, `label?`, `ariaLabel?`, `placeholder`, `rows` (4), `maxlength?`, `invalid`, CVA ; même bordure, rayon et focus que `ar-input`, redimensionnable en hauteur | — | description du deck (réglages, nouveau deck) |
 | `ar-file-input` | `file = model<File \| null>()`, `label?`, `accept`, `disabled` ; vrai `<input type="file">` transparent sur un champ en pointillés (hauteur `--ar-control-md`) qui affiche le nom du fichier | `fileChange` | import de l'export altered.gg |
 | `ar-select` | `options: {value,label,group?}[]` (`group` : options consécutives d’un même groupe sous un `<optgroup>`), `label?`, CVA | — | tri, formats, héros groupés par faction (liste des decks) |

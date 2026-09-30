@@ -471,6 +471,16 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await evidence(page, testInfo, '23-deck-test-hand');
 
     // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
+    // The deck is private: « Rendre public & partager » first, then the link and its QR code (as on the site).
+    await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
+    const share = page.getByRole('dialog', { name: 'Partager ce deck' });
+    await expect(share).toContainText('Ce deck est privé');
+    await share.getByRole('button', { name: 'Rendre public & partager' }).click();
+    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
+    await evidence(page, testInfo, '24-deck-share');
+    await page.keyboard.press('Escape');
+    // Now public: the system share sheet, where the browser has one.
     await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
     await expect.poll(() => page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared?.url)).toBe(`${baseURL}${DECKS}/${id}`);
 

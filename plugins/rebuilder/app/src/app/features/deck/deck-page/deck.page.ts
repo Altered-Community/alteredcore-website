@@ -26,6 +26,7 @@ import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
+import { openShareDeck } from '../share-deck/share-deck.overlay';
 import { HandCalculators } from '../hand-calculators/hand-calculators';
 import { HandStats } from '../hand-stats/hand-stats';
 import { TestHand } from '../test-hand/test-hand';
@@ -167,26 +168,27 @@ export class DeckPage {
     }
   }
 
+  /**
+   * The user's own private deck: « Ce deck est privé » first (« Rendre public & partager »). Then the system share sheet
+   * where the browser has one, else the share window (link, « Copier », QR code), as on the site's deck page.
+   */
   protected async share(): Promise<void> {
     const url = GuestDeckService.isGuestId(this.id()) ? '' : deckShareUrl(this.router, this.locationStrategy, this.id());
     if (!url) {
       this.flash($localize`:@@deck.page.guestShare:Deck invité : enregistré sur cet appareil uniquement. Copiez la liste pour le partager.`);
       return;
     }
-    if (navigator.share) {
+    // The decks API serves a private deck to its owner only: a private deck shown here is the user's.
+    const privateOwned = !this.deck.isPublic();
+    if (navigator.share && !privateOwned) {
       try {
         await navigator.share({ title: this.deck.name(), url });
-        return;
       } catch {
-        return;
+        // Share sheet dismissed.
       }
+      return;
     }
-    try {
-      await navigator.clipboard.writeText(url);
-      this.flash($localize`:@@deck.page.linkCopied:Lien copié.`);
-    } catch {
-      this.flash(url);
-    }
+    openShareDeck(this.overlay, { url, privateOwned });
   }
 
   protected duplicate(): void {

@@ -21,6 +21,8 @@ export class ArInput extends ValueAccessor<string> {
   readonly required = input(false);
   readonly invalid = input(false);
   readonly clearable = input(false);
+  /** Shown, not edited (a link to copy); focusing it selects the text. */
+  readonly readonly = input(false);
   readonly appearance = input<'default' | 'subtle'>('default');
   readonly inputmode = input<string | null>(null);
   readonly enterkeyhint = input<string | null>(null);

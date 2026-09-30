@@ -113,7 +113,6 @@
     "deck.page.listCopied": "Decklist copied to the clipboard.",
     "deck.page.copyFailed": "Copying is not available in this browser.",
     "deck.page.guestShare": "Guest deck: saved on this device only. Copy the decklist to share it.",
-    "deck.page.linkCopied": "Link copied.",
     "deck.page.duplicated": "Deck duplicated.",
     "deck.page.deleteConfirm": "Delete “{$name}”?",
     "deck.page.deleteFailed": "Could not delete the deck.",
@@ -602,6 +601,17 @@
     "format.test.short": "4 to 100 cards · BGA test format",
     "ui.cardTile.zoom": "Enlarge {$name}",
     "cardZoom.inDeck": "In the deck",
-    "cardZoom.detail": "View detail"
+    "cardZoom.detail": "View detail",
+    "core.deckStore.makePublicFailed": "Could not make this deck public (HTTP {$status}).",
+    "deck.share.qr": "QR code of the link",
+    "deck.share.title": "Share this deck",
+    "deck.share.privateTitle": "This deck is private",
+    "deck.share.privateBody": "The link only works for you. Make the deck public so others can open it.",
+    "deck.share.cancel": "Cancel",
+    "deck.share.makingPublic": "Making public…",
+    "deck.share.makePublic": "Make public & share",
+    "deck.share.link": "Link",
+    "deck.share.copied": "Copied!",
+    "deck.share.copy": "Copy"
   }
 }

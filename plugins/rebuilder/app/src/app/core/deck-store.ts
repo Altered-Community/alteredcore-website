@@ -329,6 +329,25 @@ export class DeckStore {
     );
   }
 
+  /**
+   * « Rendre public & partager »: only `isPublic` is sent (the rest of the deck is untouched), as the site's deck page
+   * does; `false` on a refusal, with the reason in `error`.
+   */
+  makePublic(): Observable<boolean> {
+    const id = this.deckId();
+    if (!id || GuestDeckService.isGuestId(id)) return of(false);
+    return this.decksApi.patch(id, { isPublic: true }).pipe(
+      map(() => {
+        this.isPublic.set(true);
+        return true;
+      }),
+      catchError((err: unknown) => {
+        this.error.set(apiErrorMessage(err, makePublicErrorHead));
+        return of(false);
+      }),
+    );
+  }
+
   delete(): Observable<boolean> {
     const id = this.deckId();
     if (!id) return of(false);
@@ -589,6 +608,7 @@ const saveErrorHead = (status: number) =>
     ? $localize`:@@core.deckStore.saveRefused:Enregistrement refusé : reconnectez-vous (HTTP ${status}:status:).`
     : $localize`:@@core.deckStore.saveFailed:Échec de l’enregistrement (HTTP ${status}:status:).`;
 const createErrorHead = (status: number) => $localize`:@@core.deckStore.createFailed:Impossible de créer le deck sur votre compte (HTTP ${status}:status:).`;
+const makePublicErrorHead = (status: number) => $localize`:@@core.deckStore.makePublicFailed:Impossible de rendre ce deck public (HTTP ${status}:status:).`;
 const duplicateErrorHead = (status: number) => $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${status}:status:).`;
 
 /**
