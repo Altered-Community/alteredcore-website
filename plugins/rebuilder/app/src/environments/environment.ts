@@ -7,4 +7,6 @@ export const environment = {
   cdnUrl: 'https://cdn.alteredcore.org',
   /** Digital ownership (alt-art preferences), through the site's relay only: empty outside the site. */
   ownershipApiUrl: '',
+  /** The plugin's own PHP endpoints (`AlteredCore.page.apiUrl`, `/papi/rebuilder/`): empty outside the site. */
+  pluginApiUrl: '',
 };

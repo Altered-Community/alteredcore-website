@@ -3,6 +3,7 @@ import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-int
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
 import { concatMap, finalize, from, map, switchMap, timer, toArray } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
+import { CommunityBuildersService } from '../../../core/community-builders.service';
 import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
 import { DECK_FORMATS } from '../../../core/formats';
@@ -21,6 +22,7 @@ import { ArAppBar, ArTabs } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
+import { openCommunityBuilders } from '../community-builders/community-builders.overlay';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
@@ -84,6 +86,8 @@ export class DecksPage {
   private readonly store = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
+  /** The site's community deckbuilders: a banner above the tabs on wide screens, as on the site's decks page. */
+  protected readonly builders = toSignal(inject(CommunityBuildersService).list(), { initialValue: [] });
 
   /** `?tab=`, with the site's names too (`my`, `public`). */
   private readonly queryTab = toSignal(this.route.queryParamMap.pipe(map((q) => tabFromParam(q.get('tab')))), { initialValue: undefined });
@@ -517,6 +521,10 @@ export class DecksPage {
   protected discardLocalDecks(): void {
     if (!confirm($localize`:@@decks.local.discardConfirm:Supprimer les decks locaux ? Cette action est irréversible.`)) return;
     for (const d of this.localDecks()) this.guests.delete(d.id);
+  }
+
+  protected showBuilders(): void {
+    openCommunityBuilders(this.overlay, this.builders());
   }
 
   protected openFilters(): void {

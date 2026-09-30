@@ -595,6 +595,10 @@
     "decks.local.discardConfirm": "Delete the local decks? This cannot be undone.",
     "decks.local.region": "Local decks",
     "decks.local.discard": "Discard",
-    "decks.local.save": "Save to my account"
+    "decks.local.save": "Save to my account",
+    "decks.builders.title": "Community deckbuilders",
+    "decks.builders.visit": "Visit",
+    "decks.builders.info": "Other deck builders share the same database. Create, edit, or import decks in any of them and continue anywhere. All decks appear on BGA.",
+    "decks.builders.show": "View deckbuilders"
   }
 }

@@ -15,6 +15,13 @@
     </div>
   }
 
+  @if (!bp.compact() && builders().length) {
+    <div class="builders-banner">
+      <p><ar-icon name="info" [size]="16" /><span i18n="@@decks.builders.info">D’autres deck builders partagent la même base de données. Créez, modifiez ou importez vos decks dans l’un d’eux et continuez sur un autre. Tous les decks apparaissent sur BGA.</span></p>
+      <button arButton variant="secondary" size="sm" icon="external-link" aria-haspopup="dialog" (click)="showBuilders()" i18n="@@decks.builders.show">Voir les deckbuilders</button>
+    </div>
+  }
+
   <ar-tabs ariaLabel="Decks" [appearance]="bp.compact() ? 'pill' : 'underline'" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
 
   @if (tab() === 'contest') {

@@ -20,6 +20,10 @@
         }
     ],
 
+    "api": [
+        { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] }
+    ],
+
     "menu": [
         { "page": "rebuilder", "path": "decks", "parent_url": "/pages/decks", "label_en": "Re:Builder (beta)", "label_fr": "Re:Builder (bêta)", "icon": "fa-solid fa-pen-ruler" }
     ],

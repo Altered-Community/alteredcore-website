@@ -16,6 +16,7 @@ env.uniquesApiUrl = host.services.uniques || env.uniquesApiUrl;
 env.decksApiUrl = host.services.decks || env.decksApiUrl;
 env.cdnUrl = host.services.cdn || env.cdnUrl;
 env.ownershipApiUrl = host.services.ownership || env.ownershipApiUrl;
+env.pluginApiUrl = host.page.apiUrl || env.pluginApiUrl;
 setAssetBase(host.page.assetsUrl);
 setContentLocale(host.lang);
 

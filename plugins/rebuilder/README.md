@@ -8,7 +8,8 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 
 | Path | Content |
 |---|---|
-| `plugin.json` | Manifest v2: SPA page, menu entry, build and e2e declarations |
+| `plugin.json` | Manifest v2: SPA page, API endpoints, menu entry, build and e2e declarations |
+| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
 | `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Styles (shadow root, and `<head>` for fonts) |
@@ -74,8 +75,7 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 
 ## Known gaps
 
-- Not ported from the site's decks page: the community deckbuilders window. « Importer » › *Liste de
-  cartes* creates a guest deck.
+- « Importer » › *Liste de cartes* creates a guest deck when signed out.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours
   keep ReBuilder's values.
