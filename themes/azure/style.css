@@ -129,17 +129,6 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     .az-user { padding-right: var(--ac-space-1-5); }
 }
 
-/* Mobile compact mode (MOBILE_HEADER_MODE = 1): icon strip, always visible */
-@media (max-width: 767.98px) {
-    .az-mobile-compact .az-navband { display: block !important; }
-    .az-mobile-compact .az-nav-list { flex-direction: row !important; flex-wrap: nowrap; justify-content: space-evenly; }
-    .az-mobile-compact .az-nav-list .nav-link { padding: 0 var(--ac-space-2); height: var(--ac-control-lg); }
-    .az-mobile-compact .az-nav-list .nav-link .ac-icon { --ac-icon-size: 20px; }
-    .az-mobile-compact .az-nav-list .nav-link span { display: none !important; }
-    .az-mobile-compact .az-nav-list .dropdown-toggle:not(.nav-link-split-caret)::after { display: none !important; }
-    .az-mobile-compact .az-nav-list .nav-item-split { flex-direction: row; }
-}
-
 /* ---- Mobile header (below 768px): account button and burger; the burger opens a full-screen
    menu of tiles (#azMobileMenu), the account button a popover with the user's links, theme
    and language (#azAccountMenu). Script in nav.php. ---- */
@@ -147,9 +136,9 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 .az-account-menu,
 .az-am-backdrop { display: none; }
 @media (max-width: 767.98px) {
-    /* Controls and menu live in the panels on mobile (the compact icon strip stays). */
+    /* Controls and menu live in the panels on mobile: the burger and the account button open them. */
     .az-site-header .az-topbar-controls,
-    body:not(.az-mobile-compact) .az-site-header .az-navband { display: none !important; }
+    .az-site-header .az-navband { display: none !important; }
     .az-site-header .az-account-btn { margin-left: auto; }
     .az-site-header .az-account-btn[aria-expanded='true'] { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
 

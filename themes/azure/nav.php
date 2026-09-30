@@ -152,7 +152,7 @@ if (!function_exists('__nav_active')) {
         </div><!-- /.az-topbar-inner -->
     </div><!-- /.az-topbar -->
 
-    <!-- Row 2: navband — always visible in compact mode, collapsed behind burger otherwise -->
+    <!-- Row 2: navband — desktop only; on mobile the burger and the account button open the menus -->
     <div class="az-navband<?= $__mobileCompact ? '' : ' collapse' ?>" id="azNav">
         <div class="az-navband-inner">
             <ul class="navbar-nav az-nav-list d-flex flex-row">
