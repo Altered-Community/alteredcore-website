@@ -28,6 +28,17 @@
   </div>
 </ar-filter-section>
 
+<!-- The Uniques search API has no power filter. -->
+@if (source() !== 'uniques') {
+  <ar-filter-section title="Puissance" i18n-title="@@search.filters.power">
+    <div class="three">
+      <ar-input label="Forêt" i18n-label="@@ui.terrain.forest" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().forest" [value]="value().forestPower" (valueChange)="set({ forestPower: $event })" />
+      <ar-input label="Montagne" i18n-label="@@ui.terrain.mountain" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().mountain" [value]="value().mountainPower" (valueChange)="set({ mountainPower: $event })" />
+      <ar-input label="Océan" i18n-label="@@ui.terrain.ocean" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().ocean" [value]="value().oceanPower" (valueChange)="set({ oceanPower: $event })" />
+    </div>
+  </ar-filter-section>
+}
+
 @if (source() === 'uniques' && mode() === 'aside') {
   <button type="button" class="fold" [attr.aria-expanded]="setsOpen()" (click)="setsOpen.set(!setsOpen())">
     <span class="fold-l" i18n="@@search.filters.setsFold">Extensions <span class="pill">{{ value().sets.length }}</span></span>
@@ -103,11 +114,6 @@
             </div>
           </div>
         }
-        <div class="three">
-          <ar-input label="Forêt" i18n-label="@@ui.terrain.forest" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().forest" [value]="value().forestPower" (valueChange)="set({ forestPower: $event })" />
-          <ar-input label="Montagne" i18n-label="@@ui.terrain.mountain" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().mountain" [value]="value().mountainPower" (valueChange)="set({ mountainPower: $event })" />
-          <ar-input label="Océan" i18n-label="@@ui.terrain.ocean" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().ocean" [value]="value().oceanPower" (valueChange)="set({ oceanPower: $event })" />
-        </div>
         @if (value().altArts && promoOptions().length) {
           <div class="adv-field">
             <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>

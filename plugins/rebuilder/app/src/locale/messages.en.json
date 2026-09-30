@@ -680,6 +680,7 @@
     "editor.tokenArts.close": "Close",
     "editor.tokenArts.open": "Choose token illustrations",
     "editor.toast.undo": "Undo",
+    "search.filters.power": "Power",
     "decks.page.mineLoading": "Loading your decks… This can take a while if you have many.",
     "decks.page.tabMineLoading": "My decks · …",
     "editor.hand": "Starting hand",

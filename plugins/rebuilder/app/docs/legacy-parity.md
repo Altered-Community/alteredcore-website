@@ -58,7 +58,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Règles : même faction, limite d'Uniques par héros, formats sans Uniques, bannies/suspendues | ✅ fait dans #106 (limites Singleton par héros tirées d’`altered.json`) |
 | Détail des règles depuis l'éditeur, marqueur de violation par ligne | ✅ fait dans #106 |
 | Liste blanche Frontier des Uniques, sets absents de BGA | ✅ (API de recherche des Uniques, table des sets d’`altered.json`) |
-| Filtres : puissances, sous-type, relation de coût, syntaxe `<`/`>` des coûts, alt-arts et éditions promo, changer de faction | ✅ (dans « Recherche avancée ») |
+| Filtres : puissances, sous-type, relation de coût, syntaxe `<`/`>` des coûts, alt-arts et éditions promo, changer de faction | ✅ (puissances sous les coûts, le reste dans « Recherche avancée ») |
 | Filtres mot-clé et effet d'écho | ❌ écartés volontairement (l'API des cartes ne les remplit pas, voir `api-limitations/cards-api.md`) |
 | Tris (17 sur le site, 3 dans le plugin) | ✅ (ceux du site, en plus des 3 du plugin) |
 | Onglets Collection physique, Possession numérique, Favoris | ✅ (endpoints du plugin core-altered-cards ; collection et possession demandent leurs API) |

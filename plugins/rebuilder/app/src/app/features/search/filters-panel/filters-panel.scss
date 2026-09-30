@@ -105,6 +105,9 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--ar-space-2);
 }
+:host(.sheet) .three {
+  gap: var(--ar-space-2-5);
+}
 .three ::ng-deep .label {
   font-weight: 600;
 }
