@@ -94,7 +94,7 @@ jobs:
           # ── Liste blanche ────────────────────────────────────────────────────
           MIRROR_DIRS=(admin api assets auth css design-system includes js sql themes)
           PUSH_DIRS=(pages)
-          ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example)
+          ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example sw.php offline.php)
           PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)
           cp data/tinymce_shortcodes.json data/tinymce_shortcodes.json.dist
 

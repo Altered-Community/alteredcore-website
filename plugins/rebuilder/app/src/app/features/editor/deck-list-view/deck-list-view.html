@@ -6,16 +6,20 @@
     [formatLabel]="formatLabel()"
     [isPublic]="deck.isPublic()"
     [total]="deck.total()"
-    [legal]="deck.status().legal && !!deck.hero()"
+    [legal]="legality().state === 'legal'"
     [issues]="deck.status().issues"
     [rarity]="deck.stats().rarity"
     [editable]="deck.editable()"
     (openSettings)="openSettings.emit()"
+    (showLegality)="showLegality()"
   />
 }
 <ac-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
   <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ac-collapsible>
+@if (!readonly() && altArts?.canChooseTokens()) {
+  <button acButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+}
 @for (g of deck.groups(); track g.id) {
   <ac-deck-section appearance="flat" [title]="g.label" [count]="g.count">
     @for (l of g.lines; track l.card.reference) {
@@ -23,6 +27,8 @@
         [card]="l.card"
         [quantity]="l.quantity"
         [max]="deck.maxFor(l.card)"
+        [issues]="issues().get(l.card.reference) ?? noIssues"
+        [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
         [readonly]="readonly() || !deck.editable()"
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />

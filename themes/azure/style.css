@@ -22,7 +22,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 /* Row 1: brand, controls, burger */
 .az-topbar { padding: 0 var(--ac-page-padding); }
 .az-topbar-inner {
-    max-width: var(--ac-page-max-width);
+    max-width: var(--ac-site-max-width);
     min-height: var(--ac-app-bar-height);
     margin: auto;
     display: flex;
@@ -81,7 +81,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     .az-navband { display: block !important; }
 }
 .az-navband-inner {
-    max-width: calc(var(--ac-page-max-width) + 2 * var(--ac-page-padding));
+    max-width: calc(var(--ac-site-max-width) + 2 * var(--ac-page-padding));
     margin: auto;
     padding: 0 var(--ac-page-padding);
 }
@@ -129,33 +129,6 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     .az-user { padding-right: var(--ac-space-1-5); }
 }
 
-/* Mobile menu, burger mode: vertical list */
-@media (max-width: 767.98px) {
-    body:not(.az-mobile-compact) .az-navband-inner { padding-block: var(--ac-space-2); }
-    body:not(.az-mobile-compact) .az-nav-list { flex-direction: column; gap: var(--ac-space-0-5); }
-    body:not(.az-mobile-compact) .az-nav-list .nav-link {
-        width: 100%;
-        height: var(--ac-control-lg);
-        border-bottom: none;
-        border-radius: var(--ac-radius-md);
-    }
-    body:not(.az-mobile-compact) .az-nav-list .nav-link.active,
-    body:not(.az-mobile-compact) .az-nav-list .nav-item-split.active > .nav-link {
-        background: var(--ac-color-primary-soft);
-    }
-    body:not(.az-mobile-compact) .az-nav-list .dropdown-menu {
-        position: static !important;
-        transform: none !important;
-        margin: 0 0 var(--ac-space-1) var(--ac-space-6) !important;
-        border: none;
-        box-shadow: none;
-        background: transparent;
-    }
-    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-main { flex: 1 1 auto; width: auto; }
-    body:not(.az-mobile-compact) .az-nav-list .nav-item-split .nav-link-split-caret { flex: 0 0 auto; width: auto; }
-    body:not(.az-mobile-compact) .az-nav-list .nav-item { flex-wrap: wrap; }
-}
-
 /* Mobile compact mode (MOBILE_HEADER_MODE = 1): icon strip, always visible */
 @media (max-width: 767.98px) {
     .az-mobile-compact .az-navband { display: block !important; }
@@ -165,6 +138,302 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     .az-mobile-compact .az-nav-list .nav-link span { display: none !important; }
     .az-mobile-compact .az-nav-list .dropdown-toggle:not(.nav-link-split-caret)::after { display: none !important; }
     .az-mobile-compact .az-nav-list .nav-item-split { flex-direction: row; }
+}
+
+/* ---- Mobile header (below 768px): account button and burger; the burger opens a full-screen
+   menu of tiles (#azMobileMenu), the account button a popover with the user's links, theme
+   and language (#azAccountMenu). Script in nav.php. ---- */
+.az-mobile-menu,
+.az-account-menu,
+.az-am-backdrop { display: none; }
+@media (max-width: 767.98px) {
+    /* Controls and menu live in the panels on mobile (the compact icon strip stays). */
+    .az-site-header .az-topbar-controls,
+    body:not(.az-mobile-compact) .az-site-header .az-navband { display: none !important; }
+    .az-site-header .az-account-btn { margin-left: auto; }
+    .az-site-header .az-account-btn[aria-expanded='true'] { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
+
+    /* Account popover: a card under the button, the page dimmed behind it */
+    .az-am-backdrop:not([hidden]) {
+        display: block;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: calc(var(--ac-z-header) - 2);
+        background: var(--ac-color-scrim);
+    }
+    html:has(.az-account-menu:not([hidden])) { overflow: hidden; }
+    .az-account-menu:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        right: var(--ac-space-3);
+        z-index: calc(var(--ac-z-header) - 1);
+        width: min(318px, calc(100vw - 2 * var(--ac-space-3)));
+        max-height: calc(100dvh - 80px);
+        overflow-y: auto;
+        border-radius: var(--ac-radius-dialog);
+        background: var(--ac-color-surface);
+        box-shadow: var(--ac-shadow-dialog);
+    }
+    .az-account-menu::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        right: var(--az-am-caret, 62px);
+        width: 12px;
+        height: 12px;
+        background: var(--ac-color-surface);
+        transform: rotate(45deg);
+    }
+    .az-am-head {
+        display: flex;
+        align-items: center;
+        gap: var(--ac-space-3);
+        padding: var(--ac-space-4);
+        border-bottom: 1px solid var(--ac-color-divider);
+    }
+    .az-am-head-guest { flex-direction: column; align-items: stretch; gap: var(--ac-space-3); }
+    .az-am-guest { display: flex; align-items: center; gap: var(--ac-space-3); }
+    .az-am-avatar.ac-avatar { width: 44px; height: 44px; font-size: 18px; flex-shrink: 0; }
+    .az-am-avatar.is-user { background: var(--ac-color-primary); color: var(--ac-color-on-primary); }
+    .az-am-who { display: flex; flex-direction: column; gap: var(--ac-space-0-5); min-width: 0; }
+    .az-am-name { font: var(--ac-font-body-strong); color: var(--ac-color-text); }
+    .az-am-sub { font: var(--ac-font-small); font-weight: 400; color: var(--ac-color-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .az-am-links { display: flex; flex-direction: column; padding: var(--ac-space-1-5) 0; border-bottom: 1px solid var(--ac-color-divider); }
+    .az-am-links:empty { display: none; }
+    .az-am-link,
+    .az-am-signout {
+        display: flex;
+        align-items: center;
+        gap: var(--ac-space-3);
+        min-height: var(--ac-control-lg);
+        padding: 0 var(--ac-space-4);
+        font: var(--ac-font-body-strong);
+        color: var(--ac-color-text);
+        text-decoration: none;
+    }
+    .az-am-link:hover,
+    .az-am-signout:hover { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); text-decoration: none; }
+    .az-am-link > .ac-icon:first-child { color: var(--ac-color-primary); }
+    .az-am-link span { flex-grow: 1; }
+    .az-am-chevron { --ac-icon-size: 14px; color: var(--ac-color-text-muted); }
+    .az-account-menu .az-am-signout,
+    .az-account-menu .az-am-signout:hover { color: var(--ac-color-danger); }
+    .az-am-section { display: flex; flex-direction: column; gap: var(--ac-space-2); padding: var(--ac-space-3) var(--ac-space-4) 0; }
+    .az-am-section:last-child,
+    .az-am-section:has(+ .az-am-signout) { padding-bottom: var(--ac-space-4); }
+    .az-am-section:has(+ .az-am-signout) { border-bottom: 1px solid var(--ac-color-divider); }
+    .az-am-label {
+        font: var(--ac-font-overline);
+        letter-spacing: var(--ac-letter-spacing-overline);
+        text-transform: uppercase;
+        color: var(--ac-color-text-2);
+    }
+
+    /* Full-screen menu under the header: every link visible, no section to expand */
+    .az-mobile-menu:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: calc(var(--ac-z-header) - 1);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--ac-color-bg-app);
+        padding: var(--ac-space-2) var(--ac-space-4) calc(var(--ac-space-4) + env(safe-area-inset-bottom, 0px));
+    }
+    html.az-mm-open { overflow: hidden; }
+    .az-mm-nav { display: flex; flex-direction: column; gap: var(--ac-space-4); padding-top: var(--ac-space-1-5); margin-bottom: var(--ac-space-4); }
+    .az-mm-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--ac-space-2); }
+    .az-mm-pill,
+    .az-mm-tile {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--ac-color-border);
+        background: var(--ac-color-surface);
+        text-decoration: none;
+    }
+    .az-mm-pill {
+        gap: var(--ac-space-2-5);
+        min-height: var(--ac-control-lg);
+        padding: 0 var(--ac-space-3);
+        border-radius: var(--ac-radius-control);
+        font: var(--ac-font-body-strong);
+        color: var(--ac-color-text);
+    }
+    .az-mm-section { display: flex; flex-direction: column; gap: var(--ac-space-1-5); }
+    .az-mm-title {
+        margin: 0;
+        font: var(--ac-font-overline);
+        letter-spacing: var(--ac-letter-spacing-overline);
+        text-transform: uppercase;
+        color: var(--ac-color-primary-strong);
+    }
+    .az-mm-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ac-space-2); }
+    .az-mm-tile {
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--ac-space-1-5);
+        min-height: calc(var(--ac-control-lg) + var(--ac-space-4));
+        padding: var(--ac-space-2) var(--ac-space-1);
+        border-radius: var(--ac-radius-card);
+        font: var(--ac-font-caption);
+        font-weight: 600;
+        line-height: 1.15;
+        text-align: center;
+        color: var(--ac-color-text-2);
+    }
+    .az-mm-pill .ac-icon,
+    .az-mm-tile .ac-icon { color: var(--ac-color-primary); }
+    .az-mm-tile .ac-icon { --ac-icon-size: 20px; }
+    .az-mm-pill:hover,
+    .az-mm-tile:hover { border-color: var(--ac-color-primary); color: var(--ac-color-primary-strong); text-decoration: none; }
+    .az-mm-pill.active,
+    .az-mm-tile.active { background: var(--ac-color-primary); border-color: var(--ac-color-primary); color: var(--ac-color-on-primary); }
+    .az-mm-pill.active .ac-icon,
+    .az-mm-tile.active .ac-icon { color: currentColor; }
+}
+
+/* ---- Dropdown menus as columns (nav.php .az-mega) ----
+   Mobile (compact icon strip): a plain list, columns stacked with a divider, descriptions hidden.
+   Desktop (below): a full-width mega menu under the bar. */
+.az-mega-inner { display: flex; flex-direction: column; }
+.az-mega-col + .az-mega-col {
+    border-top: 1px solid var(--ac-color-divider);
+    margin-top: var(--ac-space-1);
+    padding-top: var(--ac-space-1);
+}
+.az-mega-title {
+    font: var(--ac-font-overline);
+    letter-spacing: var(--ac-letter-spacing-overline);
+    text-transform: uppercase;
+    color: var(--ac-color-text-muted);
+    padding: var(--ac-space-1-5) var(--ac-space-4) var(--ac-space-0-5);
+}
+.az-mega-link { display: flex; align-items: center; gap: var(--ac-space-2); }
+.az-mega-icon { display: inline-flex; justify-content: center; flex-shrink: 0; }
+.az-mega-desc { display: none; }
+
+/* ---- Desktop: one bar (brand, menu, then the controls on the right) ----
+   Same markup as the mobile header: the topbar wrappers become display: contents so the
+   brand, the navband and the controls are items of one flex row. */
+@media (min-width: 768px) {
+    .az-site-header {
+        display: flex;
+        align-items: center;
+        gap: var(--ac-space-6);
+        min-height: var(--ac-app-bar-height);
+        padding: 0 max(var(--ac-page-padding), (100% - var(--ac-site-max-width)) / 2 + var(--ac-page-padding));
+    }
+    .az-topbar,
+    .az-topbar-inner,
+    .az-navband-inner { display: contents; }
+    .az-site-header .az-navband {
+        order: 1;
+        display: flex !important;
+        align-items: center;
+        align-self: stretch;
+        gap: var(--ac-space-6);
+        border-top: 0;
+    }
+    /* Divider between the brand and the menu */
+    .az-navband::before {
+        content: "";
+        width: 1px;
+        height: var(--ac-control-sm);
+        background: var(--ac-color-divider);
+    }
+    .az-nav-list { flex-wrap: nowrap; align-self: stretch; }
+    .az-site-header .az-nav-list .nav-link { height: auto; }
+    .az-topbar-controls { order: 2; }
+    .az-site-header .az-brand,
+    .az-site-header .az-navband,
+    .az-topbar-controls { flex-shrink: 0; }
+    .az-burger { order: 3; }
+
+    /* Mega menu: full width under the bar, sections as columns.
+       !important: overrides the inline position Popper sets on dropdowns. */
+    .az-site-header .az-nav-list .dropdown { position: static; }
+    .az-site-header .az-mega {
+        position: absolute !important;
+        inset: 100% 0 auto 0 !important;
+        transform: none !important;
+        margin: 0 !important;
+        padding: 0;
+        border: 0;
+        border-top: 1px solid var(--ac-color-border);
+        border-bottom: 1px solid var(--ac-color-border);
+        border-radius: 0;
+        background: var(--ac-color-surface);
+        box-shadow: var(--ac-shadow-e2);
+    }
+    .az-mega-inner {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--ac-space-6);
+        max-width: calc(var(--ac-site-max-width) + 2 * var(--ac-page-padding));
+        margin: 0 auto;
+        padding: var(--ac-space-6) var(--ac-page-padding) var(--ac-space-8);
+        box-sizing: border-box;
+    }
+    .az-mega-col + .az-mega-col { border-top: 0; margin-top: 0; padding-top: 0; }
+    .az-mega-col { display: flex; flex-direction: column; gap: var(--ac-space-1); }
+    .az-mega-title { color: var(--ac-color-primary-strong); padding: 0 var(--ac-space-3) var(--ac-space-2); }
+    .az-site-header .az-mega-link {
+        gap: var(--ac-space-3);
+        padding: var(--ac-space-2-5) var(--ac-space-3);
+        border-radius: var(--ac-radius-md);
+        white-space: normal;
+        color: var(--ac-color-text);
+    }
+    .az-site-header .az-mega-link:is(:hover, :focus, .active) {
+        background: var(--ac-color-bg-subtle);
+        color: var(--ac-color-text);
+    }
+    .az-mega-icon {
+        width: 34px;
+        height: 34px;
+        align-items: center;
+        border-radius: var(--ac-radius-md);
+        background: var(--ac-color-primary-soft);
+        color: var(--ac-color-primary-strong);
+    }
+    .az-mega-link:is(:hover, .active) .az-mega-icon { background: var(--ac-color-surface); }
+    .az-mega-text { display: flex; flex-direction: column; gap: var(--ac-space-0-5); }
+    .az-mega-label { font: var(--ac-font-body-strong); }
+    .az-mega-desc { display: block; font: var(--ac-font-small); font-weight: 400; line-height: 1.35; color: var(--ac-color-text-muted); }
+
+    /* Menu item whose panel is open */
+    .az-site-header .az-nav-list .dropdown-toggle.show,
+    .az-site-header .az-nav-list .nav-item-split:has(.dropdown-toggle.show) .nav-link {
+        color: var(--ac-color-text);
+        border-bottom-color: var(--ac-color-primary-border);
+    }
+
+    /* Not enough room for the whole bar: nav.php's fit script adds these classes one after the
+       other until the menu fits — tighter spacing, then the logo without the site name, then
+       icon-only menu items from the last one (labels stay for screen readers and as titles). */
+    .az-site-header.az-nav-tight,
+    .az-nav-tight .az-navband { gap: var(--ac-space-4); }
+    .az-nav-tight .az-nav-list .nav-link { padding-left: var(--ac-space-2); padding-right: var(--ac-space-2); }
+    .az-nav-tight .az-nav-list .nav-link-split-main { padding-right: var(--ac-space-1); }
+    .az-nav-tight .az-nav-list .nav-link-split-caret { padding-left: var(--ac-space-0-5); }
+    .az-nav-no-name .az-brand-name,
+    .az-nav-list .az-nav-item-icon .nav-link > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+}
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .az-mega-inner { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* ---- Sidebar (drawer) ---- */
@@ -248,7 +517,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 .az-brand + [data-sidebar-toggle]:hover { background: var(--ac-color-bg-subtle); }
 
 /* ---- Footer ---- */
-.site-footer-inner { max-width: calc(var(--ac-page-max-width) + 2 * var(--ac-page-padding)); padding-inline: var(--ac-page-padding); }
+.site-footer-inner { max-width: calc(var(--ac-site-max-width) + 2 * var(--ac-page-padding)); padding-inline: var(--ac-page-padding); }
 .footer-links li + li { margin-top: var(--ac-space-1-5); }
 .footer-links a { display: inline-flex; align-items: center; gap: var(--ac-space-1); }
 

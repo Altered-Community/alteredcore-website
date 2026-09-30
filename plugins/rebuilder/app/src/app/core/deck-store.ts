@@ -1,13 +1,19 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable, Subscription, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { EMPTY, Observable, Subscription, of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
-import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
+import { DeckCreateFailurePrompt } from './deck-create-failure';
+import { legalityFromApi, legalityFromStatus, type DeckLegality } from './deck-legality';
+import { computeDeckStatus, maxCopiesFor, rarityOf, type DeckStatus } from './deck-rules';
+import { UniquesApiService } from './uniques-api.service';
+import { formatInfo } from './formats';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
 import { GuestDeckService } from './guest-deck.service';
+import { OwnershipApiService } from './ownership-api.service';
 import {
   type Card,
   type Deck,
@@ -25,9 +31,20 @@ export interface NewDeckInput {
   hero: DeckHero;
   format: DeckFormat;
   isPublic: boolean;
+  description?: string;
 }
 
 const SAVE_DELAY_MS = 400;
+
+/** Why a deck could not be opened: private (401/403), unknown id (404), unreachable API, other HTTP error. */
+export type DeckLoadError = 'private' | 'notFound' | 'network' | 'server';
+
+/**
+ * Autosave of the open deck: nothing changed yet (`idle`), a change waits for the save delay
+ * (`pending`), a request is running (`saving`), everything is written (`saved`), or the last
+ * save failed (`error`, message in `saveError`).
+ */
+export type DeckSaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 /**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
@@ -36,9 +53,13 @@ const SAVE_DELAY_MS = 400;
 @Service()
 export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
+  private readonly ownership = inject(OwnershipApiService);
   private readonly cardsApi = inject(CardsApiService);
+  private readonly uniquesApi = inject(UniquesApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
+  private readonly createFailure = inject(DeckCreateFailurePrompt);
+  private readonly frontierPending = new Set<string>();
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -51,12 +72,29 @@ export class DeckStore {
   });
 
   readonly loading = computed(() => this.serverDeck.isLoading());
+  /** A save request to the decks API is running. */
   readonly saving = signal(false);
+  /** Why the deck could not be opened (or deleted); a failed save goes to `saveError` instead. */
   readonly error = signal<string | null>(null);
+  /** Set with `error` when the deck could not be opened. */
+  readonly loadError = signal<DeckLoadError | null>(null);
+  /** Last save refused or unreachable: displayable message, with the API's violations. `null` after a save succeeds. */
+  readonly saveError = signal<string | null>(null);
+  /** Changes not written yet (waiting for the save delay, being sent, or refused). */
   readonly dirty = signal(false);
+  /** At least one save of this deck succeeded since it was opened. */
+  private readonly saved = signal(false);
+  readonly saveState = computed<DeckSaveState>(() => {
+    if (this.saving()) return 'saving';
+    if (this.saveError()) return 'error';
+    if (this.dirty()) return 'pending';
+    return this.saved() ? 'saved' : 'idle';
+  });
 
   readonly deckId = signal<string | null>(null);
   readonly name = signal('');
+  readonly description = signal('');
+  readonly isDraft = signal<boolean | null>(null);
   readonly format = signal<DeckFormat>('standard');
   readonly isPublic = signal(false);
   readonly hero = signal<DeckHero | null>(null);
@@ -65,7 +103,14 @@ export class DeckStore {
   /** Non-hero lines. */
   readonly lines = signal<HydratedLine[]>([]);
 
-  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format()));
+  /** Frontier list answers for the Uniques checked so far (reference → on the list); fail closed on an API error. */
+  private readonly frontierChecked = signal<ReadonlyMap<string, boolean>>(new Map());
+  private readonly frontierIllegal = computed(() => new Set([...this.frontierChecked()].filter(([, ok]) => !ok).map(([ref]) => ref)));
+  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format(), this.hero(), { frontierIllegal: this.frontierIllegal() }));
+  /** `legal` / `legalityDetail` / `formatErrors` of the decks API, until the deck is changed here. */
+  private readonly apiLegality = signal<DeckLegality | null>(null);
+  /** The decks API's verdict for a server deck; the editor's own checks for a guest or edited deck. */
+  readonly legality = computed<DeckLegality>(() => this.apiLegality() ?? legalityFromStatus(this.status(), !!this.hero()));
   readonly groups = computed(() => groupLines(this.lines()));
   readonly stats = computed(() => deckStats(this.lines()));
   readonly total = computed(() => this.status().total);
@@ -98,17 +143,43 @@ export class DeckStore {
   readonly editable = computed(() => this.owned() === true);
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by each change; a save only marks the deck clean when no change came after what it sent. */
+  private revision = 0;
+  /** Revision carried by the running request, `null` when none runs. */
+  private inFlight: number | null = null;
+  /** The running request is a `keepalive` one (it survives the page). */
+  private inFlightKeepalive = false;
+  /** A change was saved while a request was running: send again once it answers. */
+  private saveQueued = false;
 
   constructor() {
+    // Frontier: the Uniques of the deck not checked yet go to the uniques search API (as the site's deck builder).
+    effect(() => {
+      if (!formatInfo(this.format()).frontierUniques) return;
+      const checked = this.frontierChecked();
+      const refs = this.lines()
+        .filter((l) => l.quantity > 0 && rarityOf(l.card) === 'UNIQUE' && !checked.has(l.card.reference))
+        .map((l) => l.card.reference)
+        .filter((r) => !this.frontierPending.has(r));
+      if (!refs.length) return;
+      untracked(() => {
+        refs.forEach((r) => this.frontierPending.add(r));
+        const done = (legal: Set<string> | null) => {
+          refs.forEach((r) => this.frontierPending.delete(r));
+          this.frontierChecked.update((m) => new Map([...m, ...refs.map((r) => [r, !!legal?.has(r)] as const)]));
+        };
+        this.uniquesApi.frontierLegal(refs).subscribe({ next: done, error: () => done(null) });
+      });
+    });
     effect(() => {
       const err = this.serverDeck.error();
       if (err) {
-        const status = (err as { status?: number }).status;
-        untracked(() =>
-          this.error.set(
-            status === 401 || status === 403 ? $localize`:@@core.deckStore.private:Ce deck est privé : connexion requise.` : $localize`:@@core.deckStore.loadFailed:Impossible de charger le deck.`,
-          ),
-        );
+        const status = (err as { status?: number }).status ?? 0;
+        const kind: DeckLoadError = status === 401 || status === 403 ? 'private' : status === 404 ? 'notFound' : status === 0 ? 'network' : 'server';
+        untracked(() => {
+          this.loadError.set(kind);
+          this.error.set(loadErrorMessage(kind, status));
+        });
         return;
       }
       if (!this.serverDeck.hasValue()) return;
@@ -128,6 +199,7 @@ export class DeckStore {
   create(input: NewDeckInput): Deck {
     const deck = this.guests.create({
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
+      description: input.description?.trim() ?? '',
       format: input.format,
       isPublic: input.isPublic,
       hero: input.hero,
@@ -140,14 +212,19 @@ export class DeckStore {
 
   /**
    * `create()` on the decks API when the user is signed in (the deck then shows up in the site's
-   * deck list too); a guest deck otherwise, or when the API refuses (the deck is not lost).
+   * deck list too); a guest deck otherwise. When the API refuses, `DeckCreateFailurePrompt` asks
+   * whether to try again or keep the deck in this browser; cancelling completes without a deck.
    */
   createDeck(input: NewDeckInput): Observable<Deck> {
     if (!this.auth.isLoggedIn()) return of(this.create(input));
+    const description = input.description?.trim() ?? '';
     const body: DeckWrite = {
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: input.format,
       isPublic: input.isPublic,
+      // Hero only: a draft until the deck is legal, as the site's builder does on save.
+      isDraft: legalityFromStatus(computeDeckStatus([], input.format), true).state !== 'legal',
+      ...(description ? { description } : {}),
       deckCards: [{ cardReference: input.hero.reference, quantity: 1 }],
     };
     this.saving.set(true);
@@ -162,8 +239,18 @@ export class DeckStore {
       }),
       catchError((err: unknown) => {
         this.saving.set(false);
-        console.warn('Re:Builder: server deck creation failed, keeping a local deck', err);
-        return of(this.create(input));
+        return this.createFailure.ask(apiErrorMessage(err, createErrorHead)).pipe(
+          switchMap((choice) => {
+            switch (choice) {
+              case 'retry':
+                return this.createDeck(input);
+              case 'local':
+                return of(this.create(input));
+              case 'cancel':
+                return EMPTY;
+            }
+          }),
+        );
       }),
     );
   }
@@ -174,12 +261,14 @@ export class DeckStore {
     if (this.serverId() === id && this.loading()) return;
     this.flush();
     this.error.set(null);
+    this.loadError.set(null);
     if (GuestDeckService.isGuestId(id)) {
       this.serverId.set(null);
       const guest = this.guests.get(id);
       if (!guest) {
         this.reset();
         this.deckId.set(id);
+        this.loadError.set('notFound');
         this.error.set($localize`:@@core.deckStore.notOnDevice:Deck introuvable sur cet appareil.`);
         return;
       }
@@ -193,9 +282,14 @@ export class DeckStore {
     else this.serverId.set(id);
   }
 
+  /** Last copy count changed from the editor (`delta` > 0: added), for the « Annuler » toast. */
+  readonly lastChange = signal<{ card: Card; quantity: number; delta: number } | null>(null);
+
   setQuantity(card: Card, quantity: number): void {
     if (!this.editable()) return;
     const qty = Math.max(0, Math.min(this.maxFor(card), Math.round(quantity)));
+    const before = this.quantityOf(card.reference);
+    if (qty !== before) this.lastChange.set({ card, quantity: qty, delta: qty - before });
     this.lines.update((current) => {
       const i = current.findIndex((l) => l.card.reference === card.reference);
       if (i === -1) return qty > 0 ? [...current, { card, quantity: qty }] : current;
@@ -207,6 +301,34 @@ export class DeckStore {
     this.touch();
   }
 
+  /**
+   * « Choisir une illustration »: the copies of `card` take the print `reference` (another illustration of the same
+   * card), merged with that print's line when the deck has one already.
+   */
+  swapReference(card: Card, reference: string): void {
+    if (!this.editable() || card.reference === reference) return;
+    this.lines.set(swapLines(this.lines(), card.reference, reference));
+    this.touch();
+  }
+
+  /**
+   * « Global » alt-art mode: every card of a multi-art family takes the player's preferred prints, copy after copy
+   * (the site's deck builder does it on load and after each change); the hero takes the first slot. `false` when
+   * nothing changes.
+   */
+  applyAltArtSlots(slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): boolean {
+    if (!this.editable()) return false;
+    const lines = distributeSlots(this.lines(), slotsByRef);
+    const hero = this.hero();
+    const heroRef = hero ? slotsByRef.get(hero.reference)?.slots[0] : undefined;
+    const heroChanged = !!hero && !!heroRef && heroRef !== hero.reference;
+    if (!lines && !heroChanged) return false;
+    if (lines) this.lines.set(lines);
+    if (heroChanged && hero && heroRef) this.hero.set({ ...hero, reference: heroRef });
+    this.touch();
+    return true;
+  }
+
   addCard(card: Card): void {
     this.setQuantity(card, this.quantityOf(card.reference) + 1);
   }
@@ -216,11 +338,13 @@ export class DeckStore {
     if (line) this.setQuantity(line.card, line.quantity - 1);
   }
 
-  updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string }): void {
+  /** A blank `name` keeps the current one. */
+  updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string; description?: string }): void {
     if (settings.hero) this.hero.set(settings.hero);
     if (settings.format) this.format.set(settings.format);
     if (settings.isPublic !== undefined) this.isPublic.set(settings.isPublic);
-    if (settings.name !== undefined) this.name.set(settings.name);
+    if (settings.name?.trim()) this.name.set(settings.name.trim());
+    if (settings.description !== undefined) this.description.set(settings.description);
     this.touch();
   }
 
@@ -229,16 +353,62 @@ export class DeckStore {
     this.touch();
   }
 
-  /** Copies the current deck into a new guest deck and returns its id. */
-  duplicate(nameSuffix = ' (copie)'): string {
-    const copy = this.guests.create({
-      name: `${this.name() || 'Deck'}${nameSuffix}`,
+  /** Default name of a copy: « <name> (copie) ». */
+  duplicateName(): string {
+    return $localize`:@@core.deckStore.copyName:${this.name() || 'Deck'}:name: (copie)`;
+  }
+
+  /** Copies the open deck into a new private guest deck (this browser) and returns its id. */
+  duplicateToGuest(name: string): string {
+    const description = this.description().trim();
+    return this.guests.create({ name, description, format: this.format(), isPublic: false, hero: this.hero(), deckCards: this.serializeLines() }).id;
+  }
+
+  /**
+   * Copies the open deck, private, and emits the copy's id: on the account when the user is signed
+   * in (like the site's « Dupliquer »), in this browser otherwise. Fails with a displayable message.
+   */
+  duplicate(name: string): Observable<string> {
+    const deckName = name.trim() || this.duplicateName();
+    const description = this.description().trim();
+    if (!this.auth.isLoggedIn()) return of(this.duplicateToGuest(deckName));
+    const body: DeckWrite = {
+      name: deckName,
       format: this.format(),
       isPublic: false,
-      hero: this.hero(),
-      deckCards: this.serializeLines(),
-    });
-    return copy.id;
+      isDraft: this.isDraft() ?? this.format() === 'sandbox',
+      ...(description ? { description } : {}),
+      deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+    };
+    // « Global » alt-art preference: the copy takes the user's preferred illustrations (the site's duplicate does too).
+    return this.ownership.globalAltArts().pipe(
+      switchMap((global) => (global ? this.ownership.applyAltArts(body.deckCards ?? []) : of(body.deckCards ?? []))),
+      switchMap((deckCards) => this.decksApi.create({ ...body, deckCards })),
+      map((created) => {
+        this.createdIds.update((ids) => new Set([...ids, created.id]));
+        return created.id;
+      }),
+      catchError((err: unknown) => throwError(() => new Error(apiErrorMessage(err, duplicateErrorHead)))),
+    );
+  }
+
+  /**
+   * « Rendre public & partager »: only `isPublic` is sent (the rest of the deck is untouched), as the site's deck page
+   * does; `false` on a refusal, with the reason in `error`.
+   */
+  makePublic(): Observable<boolean> {
+    const id = this.deckId();
+    if (!id || GuestDeckService.isGuestId(id)) return of(false);
+    return this.decksApi.patch(id, { isPublic: true }).pipe(
+      map(() => {
+        this.isPublic.set(true);
+        return true;
+      }),
+      catchError((err: unknown) => {
+        this.error.set(apiErrorMessage(err, makePublicErrorHead));
+        return of(false);
+      }),
+    );
   }
 
   delete(): Observable<boolean> {
@@ -261,24 +431,57 @@ export class DeckStore {
     );
   }
 
-  /** Writes pending changes immediately (navigation away, tests). */
-  flush(): void {
+  /**
+   * Writes pending changes immediately (navigation away, tests). `keepalive` when the page is
+   * being left: whatever is not saved yet (waiting, queued behind a running request, refused, or
+   * sent by a plain request the browser would cancel) is sent again as a `keepalive` request,
+   * which the browser completes after the page is gone.
+   */
+  flush(options: { keepalive?: boolean } = {}): void {
+    const keepalive = !!options.keepalive;
     if (this.saveTimer) {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
-      this.save();
+      this.save(keepalive);
+    } else if (keepalive && this.dirty()) {
+      this.saveQueued = false;
+      this.save(true);
     }
+  }
+
+  /**
+   * The page is being unloaded: flushes with `keepalive`, then tells whether changes may still be
+   * lost, so the browser asks before leaving: the last save failed (sending it again may fail too),
+   * or the changes could not be sent at all.
+   */
+  leavePage(): boolean {
+    const failed = !!this.saveError();
+    this.flush({ keepalive: true });
+    return failed || (this.dirty() && !this.saving());
+  }
+
+  /** Sends the deck again after a failed save (« Réessayer »). */
+  retrySave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = null;
+    this.save();
   }
 
   reset(): void {
     this.deckId.set(null);
     this.name.set('');
+    this.description.set('');
+    this.isDraft.set(null);
+    this.apiLegality.set(null);
     this.format.set('standard');
     this.isPublic.set(false);
     this.hero.set(null);
     this.createdAt.set(null);
     this.lines.set([]);
     this.dirty.set(false);
+    this.saveError.set(null);
+    this.saved.set(false);
+    this.saveQueued = false;
     this.isGuest.set(true);
   }
 
@@ -289,7 +492,9 @@ export class DeckStore {
   }
 
   private touch(): void {
+    this.revision++;
     this.dirty.set(true);
+    this.apiLegality.set(null);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
@@ -302,7 +507,7 @@ export class DeckStore {
     return [...(hero ? [heroLine(hero)] : []), ...this.lines().map((l) => cardToLine(l.card, l.quantity))];
   }
 
-  private save(): void {
+  private save(keepalive = false): void {
     const id = this.deckId();
     if (!id) return;
     if (GuestDeckService.isGuestId(id)) {
@@ -311,6 +516,7 @@ export class DeckStore {
         ...(existing ?? { id }),
         id,
         name: this.name() || $localize`:@@core.deck.defaultName:Nouveau deck`,
+        description: this.description().trim(),
         format: this.format(),
         isPublic: this.isPublic(),
         hero: this.hero(),
@@ -319,43 +525,93 @@ export class DeckStore {
         guest: true,
       });
       this.dirty.set(false);
+      this.saved.set(true);
       return;
     }
     if (!this.auth.isLoggedIn()) return;
+    const revision = this.revision;
+    if (this.inFlight !== null && !keepalive) {
+      // One request at a time, so an older state never lands after a newer one.
+      this.saveQueued = true;
+      return;
+    }
+    if (keepalive && this.inFlight === revision && this.inFlightKeepalive) return;
+    // As the site's builder: a deck is saved as a draft while it is not legal.
+    const isDraft = this.legality().state !== 'legal';
     const payload: Partial<DeckWrite> = {
       name: this.name(),
+      description: this.description().trim(),
       format: this.format(),
       isPublic: this.isPublic(),
+      isDraft,
       deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
     };
+    this.inFlight = revision;
+    this.inFlightKeepalive = keepalive;
     this.saving.set(true);
-    this.decksApi.patch(id, payload).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.dirty.set(false);
+    this.saveError.set(null);
+    this.decksApi.patch(id, payload, { keepalive }).subscribe({
+      next: (saved) => {
+        if (this.settle(id, revision)) {
+          this.isDraft.set(isDraft);
+          this.saved.set(true);
+          if (revision === this.revision) {
+            this.dirty.set(false);
+            if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+          }
+        }
+        // Also when the deck was left meanwhile: the queued save is the new deck's.
+        this.sendQueued();
       },
-      error: (err: { status?: number }) => {
-        this.saving.set(false);
-        this.error.set(err.status === 401 ? $localize`:@@core.deckStore.saveRefused:Enregistrement serveur refusé (401).` : $localize`:@@core.deckStore.saveFailed:Échec de la sauvegarde.`);
+      error: (err: unknown) => {
+        if (!this.settle(id, revision)) {
+          this.sendQueued();
+          return;
+        }
+        // Changes made meanwhile stay dirty: they go with « Réessayer » or the next change.
+        this.saveQueued = false;
+        this.saveError.set(apiErrorMessage(err, saveErrorHead));
       },
     });
+  }
+
+  /** Sends the save that waited for the running request, once none runs. */
+  private sendQueued(): void {
+    if (!this.saveQueued || this.inFlight !== null) return;
+    this.saveQueued = false;
+    if (!this.saveTimer) this.save();
+  }
+
+  /** Ends the running request; `false` when the deck was left meanwhile (its answer is ignored). */
+  private settle(id: string, revision: number): boolean {
+    if (this.inFlight === revision) {
+      this.inFlight = null;
+      this.saving.set(false);
+    }
+    return this.deckId() === id;
   }
 
   private apply(deck: Deck): void {
     const hero = heroOf(deck);
     this.deckId.set(deck.id);
     this.name.set(deck.name || $localize`:@@core.deck.untitled:Sans nom`);
+    this.description.set(deck.description ?? '');
+    this.isDraft.set(typeof deck.isDraft === 'boolean' ? deck.isDraft : null);
     this.format.set((deck.format as DeckFormat) || 'standard');
     this.isPublic.set(!!deck.isPublic);
     this.hero.set(hero);
     this.createdAt.set(deck.createdAt ?? deck.updatedAt ?? null);
     this.isGuest.set(!!deck.guest || GuestDeckService.isGuestId(deck.id));
+    this.apiLegality.set(this.isGuest() ? null : legalityFromApi(deck));
     this.lines.set(
       deckLines(deck)
         .filter((l) => !isHeroLine(l, hero))
         .map((l) => ({ card: lineToCard(l), quantity: l.quantity })),
     );
     this.dirty.set(false);
+    this.saveError.set(null);
+    this.saved.set(false);
+    this.saveQueued = false;
     this.fillUniqueFaces(deck.id);
   }
 
@@ -397,6 +653,87 @@ function heroLine(hero: DeckHero) {
   };
 }
 
+function loadErrorMessage(kind: DeckLoadError, status: number): string {
+  switch (kind) {
+    case 'private':
+      return $localize`:@@core.deckStore.private:Ce deck est privé : connexion requise.`;
+    case 'notFound':
+      return $localize`:@@core.deckStore.notFound:Deck introuvable.`;
+    case 'network':
+      return $localize`:@@core.deckStore.network:Erreur de connexion.`;
+    case 'server':
+      return $localize`:@@core.deckStore.loadFailedHttp:Impossible de charger le deck (HTTP ${status}:status:).`;
+  }
+}
+
+const saveErrorHead = (status: number) =>
+  status === 401 || status === 403
+    ? $localize`:@@core.deckStore.saveRefused:Enregistrement refusé : reconnectez-vous (HTTP ${status}:status:).`
+    : $localize`:@@core.deckStore.saveFailed:Échec de l’enregistrement (HTTP ${status}:status:).`;
+const createErrorHead = (status: number) => $localize`:@@core.deckStore.createFailed:Impossible de créer le deck sur votre compte (HTTP ${status}:status:).`;
+const makePublicErrorHead = (status: number) => $localize`:@@core.deckStore.makePublicFailed:Impossible de rendre ce deck public (HTTP ${status}:status:).`;
+const duplicateErrorHead = (status: number) => $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${status}:status:).`;
+
+/**
+ * « <head> (HTTP n). », then what the decks API says, as the site's builder shows it: the
+ * validation `violations` (one per line, « champ : message »), else the problem / Hydra
+ * `detail` / `description` / `title`. Unreachable API: « Erreur de connexion. ».
+ */
+export function apiErrorMessage(err: unknown, head: (status: number) => string): string {
+  if (!(err instanceof HttpErrorResponse) || err.status === 0) return $localize`:@@core.deckStore.network:Erreur de connexion.`;
+  const body = (err.error && typeof err.error === 'object' ? err.error : {}) as Record<string, unknown>;
+  const violations = Array.isArray(body['violations'])
+    ? (body['violations'] as { propertyPath?: string; message?: string }[])
+        .map((v) => [v.propertyPath, v.message].filter(Boolean).join(' : '))
+        .filter(Boolean)
+        .join('\n')
+    : '';
+  const text = (key: string) => (typeof body[key] === 'string' ? (body[key] as string) : '');
+  const extra = violations || text('detail') || text('hydra:description') || text('description') || text('title') || text('hydra:title');
+  return extra ? `${head(err.status)}\n${extra}` : head(err.status);
+}
+
 export function displayName(card: Card): string {
   return localizedText(card.name, contentLocale()) || card.reference;
+}
+
+/** `from`'s copies become `to`'s (merged with an existing `to` line). */
+export function swapLines(lines: HydratedLine[], from: string, to: string): HydratedLine[] {
+  const moving = lines.find((l) => l.card.reference === from);
+  if (!moving) return lines;
+  const existing = lines.find((l) => l.card.reference === to);
+  const rest = lines.filter((l) => l.card.reference !== from);
+  if (existing) return rest.map((l) => (l === existing ? { ...l, quantity: l.quantity + moving.quantity } : l));
+  return [...rest, { card: { ...moving.card, reference: to }, quantity: moving.quantity }];
+}
+
+/**
+ * The copies of each family (all its lines together) spread over the player's slots: copy i takes slot i, the copies
+ * past the last slot repeat it (the site's `distributeAcrossSlots`). `null` when every line already matches.
+ */
+export function distributeSlots(lines: HydratedLine[], slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): HydratedLine[] | null {
+  const families = new Map<string, { slots: string[]; qty: number; lines: HydratedLine[] }>();
+  for (const l of lines) {
+    const f = slotsByRef.get(l.card.reference);
+    if (!f || !f.slots.length) continue;
+    const g = families.get(f.key) ?? { slots: f.slots, qty: 0, lines: [] };
+    g.qty += l.quantity;
+    g.lines.push(l);
+    families.set(f.key, g);
+  }
+  let changed = false;
+  let out = lines;
+  for (const g of families.values()) {
+    const counts = new Map<string, number>();
+    for (let i = 0; i < g.qty; i++) {
+      const ref = g.slots[Math.min(i, g.slots.length - 1)];
+      counts.set(ref, (counts.get(ref) ?? 0) + 1);
+    }
+    const same = g.lines.length === counts.size && g.lines.every((l) => counts.get(l.card.reference) === l.quantity);
+    if (same) continue;
+    changed = true;
+    const template = g.lines[0].card;
+    out = out.filter((l) => !g.lines.includes(l)).concat([...counts].map(([reference, quantity]) => ({ card: { ...template, reference }, quantity })));
+  }
+  return changed ? out : null;
 }

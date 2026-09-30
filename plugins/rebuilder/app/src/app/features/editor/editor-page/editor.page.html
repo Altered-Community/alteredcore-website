@@ -1,6 +1,9 @@
 @if (bp.compact()) {
   <ac-app-bar [title]="view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
     <ac-back-button leading fallback="/decks" />
+    @if (deck.editable()) {
+      <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
+    }
     <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? labels.account : labels.signIn">
       @if (auth.isLoggedIn()) {
         <ac-avatar [size]="32" [name]="auth.username() || '?'" />
@@ -11,9 +14,9 @@
   </ac-app-bar>
 }
 
-@if (deck.error(); as err) {
+@if (deck.loadError()) {
   <div class="page state">
-    <p>{{ err }}</p>
+    <p>{{ deck.error() }}</p>
     <a acButton variant="secondary" routerLink="/decks" i18n="@@editor.backToDecks">Retour à mes decks</a>
   </div>
 } @else {
@@ -23,15 +26,27 @@
         <div class="head">
           <div class="title-block">
             <ac-breadcrumb [items]="labels.breadcrumb" />
-            <ac-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+            <div class="title-row">
+              <ac-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+              @if (deck.editable()) {
+                <ac-save-status [state]="deck.saveState()" />
+              }
+            </div>
           </div>
           <ac-segmented
             size="lg"
             ariaLabel="Mode d’affichage" i18n-ariaLabel="@@editor.displayMode"
             [options]="modeOptions"
-            [value]="effectiveView() === 'apercu' ? 'apercu' : 'search'"
+            [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
+        </div>
+      }
+
+      @if (deck.saveError(); as saveError) {
+        <div class="banner error" role="alert">
+          <span class="message">{{ saveError }}</span>
+          <button acButton variant="secondary" size="sm" icon="rotate-ccw" [disabled]="deck.saving()" (click)="deck.retrySave()" i18n="@@editor.retrySave">Réessayer</button>
         </div>
       }
 
@@ -45,13 +60,20 @@
       @let view = effectiveView();
       @switch (view) {
         @case ('search') {
-          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [ready]="!deck.loading()" />
+          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.loading()" />
         }
         @case ('apercu') {
           <app-deck-preview />
         }
         @case ('deck') {
           <app-deck-list-view (openSettings)="openSettings()" />
+        }
+        @case ('main') {
+          <div class="hand">
+            <app-test-hand [lines]="deck.lines()" />
+            <app-hand-stats [lines]="deck.lines()" />
+            <app-hand-calculators [lines]="deck.lines()" />
+          </div>
         }
         @default never;
       }
@@ -64,5 +86,10 @@
 
   @if (bp.compact()) {
     <ac-bottom-nav ariaLabel="Éditeur de deck" i18n-ariaLabel="@@editor.bottomNav" [items]="navItems()" />
+  }
+  @if (toast(); as t) {
+    <ac-toast [actionLabel]="undoLabel" (action)="undo(t.card, t.quantity - t.delta)">
+      <ac-icon [name]="t.delta > 0 ? 'plus' : 'minus'" [size]="14" [strokeWidth]="2.6" />{{ t.name }} ×{{ t.quantity }}
+    </ac-toast>
   }
 }

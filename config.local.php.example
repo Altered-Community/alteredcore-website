@@ -112,3 +112,17 @@ define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridde
 // auto-detects X-Forwarded-Proto / -Ssl; uncomment to force HTTPS if your proxy
 // does not send those headers.
 // define('FORCE_HTTPS', true);
+// ─── Newsletter (Listmonk) ───────────────────────────────────────────────────
+// "Newsletter" block of the account page (shows whether the account's e-mail
+// receives the newsletter, subscribe / unsubscribe) and the homepage "Stay
+// informed" form (SHOW_NEWSLETTER), which then subscribes in Listmonk instead
+// of the local newsletter_sub table. Leave LISTMONK_URL empty to hide the
+// account block and keep the homepage form on newsletter_sub. The API user (Listmonk admin ->
+// Users -> API) needs a role with subscribers:get_all, subscribers:manage,
+// subscribers:sql_query, lists:get_all and lists:manage_all.
+define('LISTMONK_URL',       '');        // e.g. 'https://newsletter.altered.re'
+define('LISTMONK_API_USER',  '');        // e.g. 'website'
+define('LISTMONK_API_TOKEN', '');
+// Numeric list ids (Lists page, "ID"), NOT the UUIDs.
+define('LISTMONK_LIST_EN',   0);         // id of the "Newsletter EN" list
+define('LISTMONK_LIST_FR',   0);         // id of the "Newsletter FR" list

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { defaultFilters, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import type { DeckFormat } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { openEffectEditorStep } from '../effect-editor/effect-editor.overlay';
@@ -8,6 +9,7 @@ import { FiltersPanel } from '../filters-panel/filters-panel';
 export interface FiltersSheetData {
   source: CardSource;
   faction: string | null;
+  format?: DeckFormat | null;
   filters: SearchFilters;
   factionFilter?: boolean;
 }
@@ -15,6 +17,7 @@ export interface FiltersSheetData {
 const SOURCE_LABEL: Record<CardSource, string> = {
   all: $localize`:@@search.source.all:Toutes les cartes`,
   uniques: $localize`:@@search.source.uniques:Uniques`,
+  collection: $localize`:@@search.source.collection:Collection physique`,
   owned: $localize`:@@search.source.owned:Propriété numérique`,
   favorites: $localize`:@@search.source.favorites:Favoris`,
 };

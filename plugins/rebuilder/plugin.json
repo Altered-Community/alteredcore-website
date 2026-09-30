@@ -15,9 +15,14 @@
             "entry":    "dist/embed-manifest.json",
             "mount":    "shadow",
             "fullwidth": false,
+            "meta":     "meta.php",
             "title_en": "Re:Builder",
             "title_fr": "Re:Builder"
         }
+    ],
+
+    "api": [
+        { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] }
     ],
 
     "menu": [

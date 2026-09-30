@@ -1,0 +1,19 @@
+<ul class="strip">
+  @for (t of tiles(); track t.reference) {
+    <li>
+      <button type="button" class="tile" [class.unowned]="!t.owned" [disabled]="!t.owned" [attr.aria-label]="tileLabel($index + 1)" (click)="pick(t.reference, t.owned)">
+        <img [src]="t.src" alt="" loading="lazy" />
+      </button>
+      @if (t.markers.length) {
+        <span class="markers">
+          @for (m of t.markers; track m.slotIndex) {
+            <button type="button" class="marker" [class.active]="m.slotIndex === active()" [attr.aria-pressed]="m.slotIndex === active()" [attr.aria-label]="markerLabel(m.slotIndex + 1)" (click)="selectMarker(m.slotIndex, $event)">{{ m.slotIndex + 1 }}</button>
+          }
+        </span>
+      }
+    </li>
+  }
+</ul>
+@if (error(); as e) {
+  <p class="error" role="alert">{{ e }}</p>
+}

@@ -1,0 +1,16 @@
+<div class="ac-overlay-body">
+  @if (cards().length) {
+    <ul class="grid">
+      @for (c of cards(); track c.id) {
+        <li>
+          <ac-card-tile [card]="c.card" [plain]="true" [eager]="true" />
+          @if (canReturn) {
+            <button acButton variant="secondary" size="sm" icon="rotate-ccw" [fullWidth]="true" (click)="returnToHand(c.id)" i18n="@@deck.play.returnHand">Remettre en main</button>
+          }
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="empty" i18n="@@deck.play.emptyZone">Vide</p>
+  }
+</div>

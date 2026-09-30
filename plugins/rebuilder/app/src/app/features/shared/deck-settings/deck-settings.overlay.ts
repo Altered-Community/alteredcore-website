@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
+import { BGA_LABEL, bgaTag, heroOnBga, visibleFormats, type FormatInfo } from '../../../core/formats';
 import type { DeckFormat, DeckHero } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
-import { AcRadioCard, AcSegmented } from '../../../ui/fields';
+import { AcInput, AcRadioCard, AcSegmented, AcTextarea } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcCardArt } from '../../../ui/metier';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
@@ -10,15 +10,20 @@ import { openHeroPickerStep } from '../hero-picker/hero-picker.overlay';
 import { VISIBILITY_OPTIONS } from '../new-deck/new-deck.overlay';
 
 export interface DeckSettings {
+  name: string;
+  description: string;
   hero: DeckHero | null;
   format: DeckFormat;
   isPublic: boolean;
 }
 
-/** ac-deck-settings — « Réglages du deck » (héros, visibilité, format), same content in window and sheet. */
+/**
+ * ac-deck-settings — « Réglages du deck » (nom, héros, visibilité, description, format), same content in
+ * window and sheet: the only place to rename a deck in the compact layout.
+ */
 @Component({
   selector: 'ac-deck-settings',
-  imports: [AcButton, AcRadioCard, AcSegmented, AcCardArt],
+  imports: [AcButton, AcInput, AcRadioCard, AcSegmented, AcTextarea, AcCardArt],
   host: { class: 'ac-overlay-content' },
   templateUrl: './deck-settings.overlay.html',
   styleUrl: './deck-settings.overlay.scss',
@@ -26,11 +31,18 @@ export interface DeckSettings {
 export class DeckSettingsOverlay {
   protected readonly ref = inject<AcOverlayRef<DeckSettings, DeckSettings>>(AcOverlayRef);
   protected readonly bp = inject(AcBreakpointService);
-  protected readonly formats = DECK_FORMATS;
+  protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
+  /** BGA tag of a format, « Héros indispo. BGA » when the chosen hero is not on Board Game Arena (as on the site). */
+  protected tagOf(f: FormatInfo): { label: string; tone: 'green' | 'violet' | 'red' } {
+    const hero = this.hero();
+    return bgaTag(f, !!hero && !heroOnBga([hero.reference]));
+  }
   protected readonly visibility = VISIBILITY_OPTIONS;
   protected readonly noHero = $localize`:@@shared.deckSettings.noHero:Aucun héros`;
 
+  protected readonly name = signal(this.ref.data.name);
+  protected readonly description = signal(this.ref.data.description);
   protected readonly hero = signal<DeckHero | null>(this.ref.data.hero);
   protected readonly format = signal<DeckFormat>(this.ref.data.format);
   protected readonly isPublic = signal<boolean | undefined>(this.ref.data.isPublic);
@@ -42,7 +54,9 @@ export class DeckSettingsOverlay {
   }
 
   save(): void {
-    this.ref.close({ hero: this.hero(), format: this.format(), isPublic: !!this.isPublic() });
+    const name = this.name().trim();
+    if (!name) return;
+    this.ref.close({ name, description: this.description().trim(), hero: this.hero(), format: this.format(), isPublic: !!this.isPublic() });
   }
 }
 

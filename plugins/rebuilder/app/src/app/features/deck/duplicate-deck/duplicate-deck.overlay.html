@@ -1,0 +1,31 @@
+<div class="ac-overlay-body">
+  <ac-input
+    label="Nom du nouveau deck" i18n-label="@@deck.duplicate.name"
+    [required]="true"
+    placeholder="Nom du deck…" i18n-placeholder="@@deck.duplicate.placeholder"
+    enterkeyhint="done"
+    [invalid]="!!error()"
+    [(value)]="name"
+    (enter)="submit()"
+  />
+  <p class="note">
+    @if (auth.isLoggedIn()) {
+      <ng-container i18n="@@deck.duplicate.account">La copie est un deck privé de votre compte.</ng-container>
+    } @else {
+      <ng-container i18n="@@deck.duplicate.guest">La copie est enregistrée sur cet appareil (mode invité).</ng-container>
+    }
+  </p>
+  @if (error(); as e) {
+    <p class="error" role="alert">{{ e }}</p>
+  }
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@deck.duplicate.cancel">Annuler</button>
+  <button acButton icon="copy-plus" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="busy()" (click)="submit()">
+    @if (busy()) {
+      <ng-container i18n="@@deck.duplicate.busy">Duplication…</ng-container>
+    } @else {
+      <ng-container i18n="@@deck.duplicate.submit">Dupliquer</ng-container>
+    }
+  </button>
+</div>

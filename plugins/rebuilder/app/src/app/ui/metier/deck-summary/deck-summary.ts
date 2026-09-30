@@ -26,6 +26,8 @@ export class AcDeckSummary {
   readonly appearance = input<'card' | 'embedded'>('card');
   readonly editable = input(true);
   readonly openSettings = output<void>();
+  /** Click on the validity badge: the format's rules, passed or failed. */
+  readonly showLegality = output<void>();
 
   protected readonly noHero = $localize`:@@ui.deckSummary.noHero:Aucun héros`;
   protected readonly publicLabel = $localize`:@@ui.deckSummary.public:Public`;
@@ -34,6 +36,12 @@ export class AcDeckSummary {
     const size = this.issues().find((i) => i.startsWith('size'));
     if (!this.hero()) return $localize`:@@ui.deckSummary.missingHero:Héros manquant`;
     if (size) return $localize`:@@ui.deckSummary.invalidSize:Taille invalide`;
+    if (this.issues().some((i) => i.startsWith('faction'))) return $localize`:@@ui.deckSummary.offFaction:Cartes hors faction`;
     return $localize`:@@ui.deckSummary.invalid:Non valide`;
   });
+  protected readonly legalityLabel = computed(() =>
+    this.legal()
+      ? $localize`:@@ui.deckSummary.validDetails:Valide : voir les règles du format`
+      : $localize`:@@ui.deckSummary.invalidDetails:${this.issueLabel()}:issue: : voir les règles du format`,
+  );
 }

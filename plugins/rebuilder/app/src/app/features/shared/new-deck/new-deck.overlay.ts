@@ -1,11 +1,14 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
-import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
+import { BGA_LABEL, bgaTag, heroOnBga, visibleFormats, type FormatInfo } from '../../../core/formats';
 import { AcButton } from '../../../ui/buttons';
-import { AcInput, AcRadioCard, AcSegmented } from '../../../ui/fields';
+import { AcChip } from '../../../ui/chips';
+import { AcInput, AcRadioCard, AcSegmented, AcTextarea } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcFactionTabs, AcHeroSelector, factionName } from '../../../ui/metier';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
-import { injectHeroes } from '../hero-picker/hero-picker.overlay';
+import { heroChoices, injectHeroes } from '../hero-picker/hero-picker.overlay';
+import { OwnershipApiService } from '../../../core/ownership-api.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NewDeckForm, type NewDeckResult } from '../new-deck.form';
 
 export type { NewDeckResult } from '../new-deck.form';
@@ -25,20 +28,29 @@ export const VISIBILITY_OPTIONS = [
  */
 @Component({
   selector: 'app-new-deck',
-  imports: [AcButton, AcInput, AcRadioCard, AcSegmented, AcFactionTabs, AcHeroSelector],
+  imports: [AcButton, AcInput, AcRadioCard, AcSegmented, AcTextarea, AcFactionTabs, AcHeroSelector, AcChip],
   host: { class: 'ac-overlay-content' },
   templateUrl: './new-deck.overlay.html',
   styleUrl: './new-deck.overlay.scss',
 })
 export class NewDeckOverlay {
+  private readonly ownership = inject(OwnershipApiService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly ref = inject<AcOverlayRef<NewDeckResult>>(AcOverlayRef);
   protected readonly bp = inject(AcBreakpointService);
-  protected readonly formats = DECK_FORMATS;
+  protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
+  /** BGA tag of a format, « Héros indispo. BGA » when the chosen hero is not on Board Game Arena (as on the site). */
+  protected tagOf(f: FormatInfo): { label: string; tone: 'green' | 'violet' | 'red' } {
+    const hero = this.form.hero();
+    return bgaTag(f, !!hero && !heroOnBga([hero.reference]));
+  }
   protected readonly visibility = VISIBILITY_OPTIONS;
   private readonly load = injectHeroes();
-  protected readonly heroes = this.load.heroes;
+  protected readonly altArts = signal(false);
+  protected readonly serialized = signal(false);
+  protected readonly heroes = computed(() => heroChoices(this.load.heroes(), { altArts: this.altArts(), serialized: this.serialized() }));
+  protected readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
   protected readonly error = this.load.error;
 
   readonly form = new NewDeckForm();

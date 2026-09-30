@@ -68,6 +68,17 @@ ac-app-bar.static {
   font-weight: 600;
 }
 
+.banner.error {
+  align-items: flex-start;
+  background: var(--ac-color-danger-soft);
+  color: var(--ac-color-danger);
+}
+
+.banner .message {
+  flex: 1 1 16rem;
+  white-space: pre-line;
+}
+
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
   .editor {
@@ -109,6 +120,21 @@ ac-app-bar.static {
     min-width: 0;
   }
 
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-3);
+    min-width: 0;
+  }
+
+  .title-row ac-editable-title {
+    min-width: 0;
+  }
+
+  .title-row ac-save-status {
+    flex-shrink: 0;
+  }
+
   .panel {
     width: 300px;
     flex-shrink: 0;
@@ -122,4 +148,9 @@ ac-app-bar.static {
   .panel {
     width: var(--ac-deck-panel-width);
   }
+}
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-6);
 }

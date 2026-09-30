@@ -226,9 +226,9 @@ test.describe('ReBuilder in the shell · languages', () => {
     test(`shows its interface in the site language (${lang})`, async ({ page, compact }, testInfo) => {
       const l = LABELS[lang];
       const other = LABELS[lang === 'en' ? 'fr' : 'en'];
-      await page.goto(`${DECKS}?lang=${lang}`);
+      await page.goto(`${DECKS}?tab=mine&lang=${lang}`);
       await expect(page.locator('.ac-plugin-root')).toBeVisible();
-      // A guest without decks: the list is empty (hidden on mobile), the guest notice is shown.
+      // A guest without decks lands on « Communauté »; on « Mes decks » the list is empty (hidden on mobile), the guest notice is shown.
       await expect(page.getByRole('list', { name: l.myDecks })).toBeAttached();
       await expect(page.getByText(l.guest)).toBeVisible();
       if (!compact) await expect(page.getByText(l.sortBy, { exact: true })).toBeVisible();
@@ -320,6 +320,12 @@ test.describe('ReBuilder in the shell · Starter Deck Contest', () => {
     await page.getByRole('textbox', { name: 'Rechercher un deck' }).first().fill('Akesha');
     await expect(list.locator('ac-deck-card').first()).toContainText('Akesha');
     await expect(list.locator('ac-deck-card').filter({ hasNotText: 'Akesha' })).toHaveCount(0);
+    // The filters stay in the URL, and a shared URL opens the same list.
+    await expect(page).toHaveURL(/tab=contest/);
+    await expect(page).toHaveURL(/set=all/);
+    await expect(page).toHaveURL(/q=Akesha/);
+    await page.goto(`${DECKS}?tab=contest&set=all&faction=YZ&lang=fr`);
+    await expect(list.locator('ac-deck-card')).toHaveCount(26);
     // A contest deck is a public deck of the decks API, opened like any other.
     await expect(list.locator('ac-deck-card').first().getByRole('link').first()).toHaveAttribute('href', /\/decks\/[0-9a-f-]{36}$/);
   });
@@ -367,7 +373,7 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
     const rows = ['ALT_CORE_B_AX_04_C', 'ALT_CORE_B_AX_05_C', 'ALT_CORE_B_AX_06_C'].map((ref) => `d1;${name};standard;ALT_CORE_B_AX_01_C;x;${ref};C;3`);
     const zip = zipOf({ 'export/profile.json': '{}', 'export/decks.csv': `﻿id;name;format;hero;card;reference;rarity;quantity\n${rows.join('\n')}\n` });
     await login(page, 'alice', `${DECKS}?lang=fr`);
-    for (const expected of ['1 deck importé', 'Aucun deck importé, 1 déjà existant']) {
+    for (const expected of ['1 deck importé', '1 déjà existant']) {
       await page.getByRole('button', { name: compact ? 'Importer un deck' : 'Importer', exact: true }).click();
       const dialog = page.getByRole('dialog', { name: 'Importer des decks' });
       await dialog.getByText('Export altered.gg', { exact: true }).click();
@@ -385,7 +391,160 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · deck page', () => {
+  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why). */
+  async function createServerDeck(page: Page, name: string): Promise<string> {
+    return page.evaluate(async (deckName) => {
+      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
+        body: JSON.stringify({
+          name: deckName,
+          description: 'Première ligne\nDeuxième ligne',
+          format: 'standard',
+          isPublic: false,
+          deckCards: [
+            { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
+            { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
+            { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
+            { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
+          ],
+        }),
+      });
+      if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
+      return ((await res.json()) as { id: string }).id;
+    }, name);
+  }
+
+  /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
+  async function openView(page: Page, compact: boolean, tab: string, nav: string): Promise<void> {
+    if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
+    else await page.getByRole('tab', { name: tab }).click();
+  }
+
+  test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
+    // navigator.share is recorded, so the shared link can be checked on every device.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (data: ShareData) => void ((window as unknown as { __shared: ShareData }).__shared = data),
+      });
+    });
+    const name = `E2E page ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(`${DECKS}/${id}`);
+    const deckPage = page.locator('app-deck-page');
+    await expect(deckPage).toContainText(name);
+
+    // Legality from the decks API, with its details.
+    await deckPage.getByRole('button', { name: 'Non légal : voir le détail' }).first().click();
+    const legality = page.getByRole('dialog', { name: 'Légalité du deck' });
+    await expect(legality).toContainText('Standard');
+    await expect(legality).toContainText('Nombre de cartes invalide');
+    await expect(legality).toContainText('Deck must contain between 39 and 59 cards');
+    await evidence(page, testInfo, '20-deck-legality');
+    await page.keyboard.press('Escape');
+    await expect(legality).toBeHidden();
+
+    await openView(page, compact, 'Description', 'Infos');
+    await expect(page).toHaveURL(new RegExp(`/decks/${id}/description$`));
+    await expect(deckPage).toContainText('Première ligne');
+    await expect(deckPage).toContainText('Deuxième ligne');
+    await evidence(page, testInfo, '21-deck-description');
+
+    await openView(page, compact, 'Main de départ', 'Main');
+    await expect(page).toHaveURL(new RegExp(`/decks/${id}/main$`));
+    const hand = deckPage.getByRole('list', { name: 'Main de départ' });
+    await expect(hand.locator('ac-card-tile')).toHaveCount(6);
+    await expect(deckPage).toContainText('3 cartes dans le deck');
+    await deckPage.getByRole('button', { name: 'Piocher une carte' }).click();
+    await expect(hand.locator('ac-card-tile')).toHaveCount(7);
+    // Opening-hand stats and calculators, under the hand (as on the site).
+    await expect(deckPage.locator('app-hand-stats')).toContainText('Composition moyenne');
+    await expect(deckPage.locator('app-hand-stats')).toContainText('Démarrage optimal');
+    const calc = deckPage.locator('app-hand-calculators');
+    await calc.getByRole('combobox', { name: 'Choisir…', exact: true }).click();
+    await page.getByRole('option').first().click();
+    await expect(calc.locator('ac-probability-bars').first()).toContainText('%');
+    await evidence(page, testInfo, '23-deck-test-hand');
+    // Game mode (the site's playground): 3 cards to mana, then a card played from its menu.
+    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+    for (const i of [0, 1, 2]) await deckPage.getByRole('button', { name: /: mettre en mana$/ }).nth(i).click();
+    await deckPage.getByRole('button', { name: /Mettre en mana/ }).click();
+    await expect(deckPage.getByRole('button', { name: 'Cartes en mana' })).toContainText('3');
+    await deckPage.getByRole('button', { name: /: actions$/ }).first().click();
+    await page.getByRole('menuitem', { name: 'Jouer sur le plateau' }).click();
+    await expect(deckPage.getByRole('region', { name: 'En jeu' }).locator('ac-card-tile')).toHaveCount(1);
+    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+
+    // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
+    // The deck is private: « Rendre public & partager » first, then the link and its QR code (as on the site).
+    await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
+    const share = page.getByRole('dialog', { name: 'Partager ce deck' });
+    await expect(share).toContainText('Ce deck est privé');
+    await share.getByRole('button', { name: 'Rendre public & partager' }).click();
+    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
+    await evidence(page, testInfo, '24-deck-share');
+    await page.keyboard.press('Escape');
+    // Now public: the system share sheet, where the browser has one.
+    await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared?.url)).toBe(`${baseURL}${DECKS}/${id}`);
+
+    // Duplicate: named copy, private deck of the account.
+    if (compact) {
+      await page.getByRole('button', { name: /Plus d’actions/ }).click();
+      await page.getByRole('menuitem', { name: 'Dupliquer' }).click();
+    } else {
+      await deckPage.getByRole('button', { name: 'Dupliquer', exact: true }).click();
+    }
+    const dialog = page.getByRole('dialog', { name: 'Dupliquer le deck' });
+    const field = dialog.getByRole('textbox', { name: 'Nom du nouveau deck' });
+    await expect(field).toHaveValue(`${name} (copie)`);
+    await field.fill(`${name} bis`);
+    await evidence(page, testInfo, '24-deck-duplicate');
+    const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
+    await dialog.getByRole('button', { name: 'Dupliquer', exact: true }).click();
+    const res = await created;
+    expect(res.status()).toBe(201);
+    const copy = (await res.json()) as { id: string; isPublic: boolean };
+    expect(copy.isPublic).toBe(false);
+    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${copy.id}$`));
+    await expect(deckPage).toContainText(`${name} bis`);
+    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
+    await page.goto(DECKS);
+    await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
+  });
+
+  test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {
+    const res = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await res.json()) as { member: { id: string; name: string }[] }).member[0];
+    // Server-rendered for link previews (manifest `meta`), then kept by the app.
+    const html = await (await page.request.get(`${DECKS}/${deck.id}?lang=fr`)).text();
+    expect(html).toContain(`<meta property="og:title"       content="${deck.name.replace(/&/g, '&amp;')} —`);
+    await page.goto(`/pages/rebuilder/deck?id=${deck.id}&lang=fr`);
+    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}$`));
+    await expect(page).toHaveTitle(new RegExp(`^${deck.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} —`));
+  });
+
+  test('tells an unknown deck apart', async ({ page }, testInfo) => {
+    await page.goto(`${DECKS}/00000000-0000-0000-0000-000000000000?lang=fr`);
+    await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
+    await evidence(page, testInfo, '25-deck-not-found');
+  });
+});
+
 test.describe('ReBuilder in the shell · guest', () => {
+  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page }) => {
+    await page.goto(`${DECKS}?lang=fr`);
+    await expect(page.getByRole('tab', { name: FR.community })).toHaveAttribute('aria-selected', 'true');
+    await page.goto(`${DECKS}?tab=public&faction=MU&sort=name:asc&lang=fr`);
+    await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/decks\?faction=MU&sort=name(&|$)/);
+  });
+
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, 'Deck invité');

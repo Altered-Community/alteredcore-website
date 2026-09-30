@@ -536,7 +536,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     $pubQ = trim($_GET['q'] ?? '');
     if (mb_strlen($pubQ) > 100) $pubQ = mb_substr($pubQ, 0, 100);
 
-    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 21];
+    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 24];
     if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
     if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
     if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
@@ -585,7 +585,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '')
     $myHero = $_GET['hero'] ?? '';
     if (!preg_match('/^[A-Z0-9_]+$/', $myHero)) $myHero = '';
 
-    $apiParams = ['page' => $myPage, 'itemsPerPage' => 21];
+    $apiParams = ['page' => $myPage, 'itemsPerPage' => 24];
     if ($myFormat !== '')    $apiParams['format']   = $myFormat;
     if ($myIsPublic !== '')  $apiParams['isPublic'] = $myIsPublic === '1' ? 'true' : 'false';
     if ($myIsDraft  !== '')  $apiParams['isDraft']  = $myIsDraft  === '1' ? 'true' : 'false';
@@ -1543,7 +1543,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
                 myAllItems = Array.from(myGrid.querySelectorAll('.my-deck-item'));
                 filterMyDecks();
                 var pagination = data.pagination || {};
-                var total  = pagination.totalItems ? Math.ceil(pagination.totalItems / 21) : (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
+                var total  = pagination.totalItems ? Math.ceil(pagination.totalItems / 24) : (data.totalItems ? Math.ceil(data.totalItems / 24) : 1);
                 var totalN = pagination.totalItems || data.totalItems || decks.length;
                 if (myCountEl) { myCountEl.textContent = totalN + ' deck' + (totalN > 1 ? 's' : ''); myCountEl.style.display = ''; }
                 renderMyPagination(p, total);
@@ -1891,7 +1891,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
                     return;
                 }
                 decks.forEach(function (deck) { pubGrid.insertAdjacentHTML('beforeend', renderPublicDeck(deck)); });
-                var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 21) : 1);
+                var total = data.lastPage || (data.totalItems ? Math.ceil(data.totalItems / 24) : 1);
                 renderPagination(p, total);
                 if (scroll) pubGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })

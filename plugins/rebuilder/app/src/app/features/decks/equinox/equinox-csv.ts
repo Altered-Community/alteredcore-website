@@ -14,34 +14,48 @@ export interface EquinoxDeck {
   /** As exported, lowercased; `standard` when empty. */
   format: string;
   hero: string;
-  /** Hero first (quantity 1) when the export lists it apart. */
+  /** The exported cards (the hero is usually not among them: see `withHero`). */
   cards: DeckCardRef[];
 }
 
 const REFERENCE = /^ALT_[A-Z0-9_]+$/;
 const MAX_QUANTITY = 99;
 
-/** One CSV line: `;` separators, `"` quotes, `""` for a quote inside a quoted field. */
+/** A card the decks API gets: `ALT_…` reference, 1 to 99 copies (the site's importer `Card`). */
+export function validCards(cards: DeckCardRef[]): boolean {
+  return cards.every((c) => REFERENCE.test(c.cardReference) && Number.isInteger(c.quantity) && c.quantity >= 1 && c.quantity <= MAX_QUANTITY);
+}
+
+/**
+ * One CSV line, read like PHP's `str_getcsv($line, ';', '"')` (the site's importer): a `"` opens a
+ * quoted field only at the start of a field (elsewhere it is a plain character), `""` inside quotes
+ * is a quote, and what follows the closing quote up to the next `;` is kept.
+ */
 export function splitCsvLine(line: string): string[] {
   const cols: string[] = [];
-  let field = '';
-  let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (quoted) {
-      if (c === '"' && line[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (c === '"') quoted = false;
-      else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ';') {
-      cols.push(field);
+  let i = 0;
+  for (;;) {
+    let field = '';
+    while (line[i] === ' ' || line[i] === '\t') field += line[i++];
+    if (line[i] === '"') {
       field = '';
-    } else field += c;
+      i++;
+      for (; i < line.length; i++) {
+        if (line[i] !== '"') field += line[i];
+        else if (line[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          i++;
+          break;
+        }
+      }
+    }
+    while (i < line.length && line[i] !== ';') field += line[i++];
+    cols.push(field);
+    if (i >= line.length) return cols;
+    i++;
   }
-  cols.push(field);
-  return cols;
 }
 
 export function parseEquinoxCsv(raw: string): EquinoxDeck[] {
@@ -71,9 +85,14 @@ export function parseEquinoxCsv(raw: string): EquinoxDeck[] {
   }
   return [...decks.values()].map((d) => {
     const cards = [...d.cards].filter(([, q]) => q <= MAX_QUANTITY).map(([cardReference, quantity]) => ({ cardReference, quantity }));
-    if (REFERENCE.test(d.hero) && !d.cards.has(d.hero)) cards.unshift({ cardReference: d.hero, quantity: 1 });
     return { name: d.name, format: d.format, hero: d.hero, cards };
   });
+}
+
+/** The deck's cards with its hero first (quantity 1), unless the export already lists it. */
+export function withHero(hero: string, cards: DeckCardRef[]): DeckCardRef[] {
+  if (!REFERENCE.test(hero) || cards.some((c) => c.cardReference === hero)) return cards;
+  return [{ cardReference: hero, quantity: 1 }, ...cards];
 }
 
 /** Same name (case and spaces aside) and same cards: the deck is already in the account. */

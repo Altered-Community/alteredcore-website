@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of, shareReplay, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import type { Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
+import type { CardOrder, Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
 import { localizedText } from './models';
 import { contentLocale } from './locale';
 
@@ -12,6 +12,8 @@ export interface HeroGroup {
   faction: string;
   /** Standard-print reference (ALT_{SET}_B_{FACTION}_NN_C) used in decks and for art. */
   reference: string;
+  /** Every print of the hero (promo, alt arts, trophy prints), for the « Alt arts » choice. */
+  prints: { reference: string; variation: string }[];
 }
 
 /** Search pages kept in memory, least recently used first out (a uniques page is ~90 KB of JSON). */
@@ -99,15 +101,31 @@ function toHeroGroup(g: RawCardGroup): HeroGroup | null {
   const standard = (g.cards ?? []).filter((c) => c.variation === 'standard' && /_B_/.test(c.reference));
   const reference = standard[0]?.reference ?? g.cards?.[0]?.reference;
   if (!faction || !reference) return null;
-  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference };
+  const prints = (g.cards ?? []).map((c) => ({ reference: c.reference, variation: c.variation ?? '' }));
+  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference, prints };
 }
 
 /** Many cards share a set date: without a unique tie-breaker, pages overlap and cards go missing. */
+/** Ties of a sort on a shared value (cost, power) go to the default order, as on the site. */
+const TIE_BREAK: [string, string][] = [['order[setDate]', 'desc'], ['order[collectorNumberFormatedId]', 'asc']];
+
 const ORDER_PARAM: Record<string, [string, string][]> = {
   'setDate-desc': [['order[setDate]', 'desc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
   'setDate-asc': [['order[setDate]', 'asc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
   'number-asc': [['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'collector-asc': [['order[collectorNumberFormatedId]', 'asc']],
+  'collector-desc': [['order[collectorNumberFormatedId]', 'desc']],
+  ...Object.fromEntries(
+    ['mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'].flatMap((field) =>
+      (['asc', 'desc'] as const).map((dir) => [`${field}-${dir}`, [[`order[${field}]`, dir], ...TIE_BREAK]]),
+    ),
+  ),
 };
+
+function orderParams(order: CardOrder): [string, string][] {
+  if (order === 'random') return [['random', 'true']];
+  return ORDER_PARAM[order] ?? [];
+}
 
 export function buildCardsSearchParams(params: CardSearchParams): HttpParams {
   let hp = new HttpParams()
@@ -132,12 +150,16 @@ export function buildCardsSearchParams(params: CardSearchParams): HttpParams {
   for (const v of params.variations ?? ['standard']) hp = hp.append('variation[]', v);
   for (const c of params.mainCosts ?? []) hp = hp.append('mainCost[]', String(c));
   for (const c of params.recallCosts ?? []) hp = hp.append('recallCost[]', String(c));
+  for (const c of params.forestPowers ?? []) hp = hp.append('forestPower[]', String(c));
+  for (const c of params.mountainPowers ?? []) hp = hp.append('mountainPower[]', String(c));
+  for (const c of params.oceanPowers ?? []) hp = hp.append('oceanPower[]', String(c));
+  for (const t of params.subtypes ?? []) hp = hp.append('subTypes[]', t);
+  if (params.costRelation) hp = hp.set('costRelation', params.costRelation);
 
 
   if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
-  if (params.hasEchoEffect) hp = hp.set('hasEchoEffect', 'true');
 
-  for (const [key, dir] of params.order ? ORDER_PARAM[params.order] ?? [] : []) hp = hp.set(key, dir);
+  for (const [key, dir] of params.order ? orderParams(params.order) : []) hp = hp.set(key, dir);
   return hp;
 }
 

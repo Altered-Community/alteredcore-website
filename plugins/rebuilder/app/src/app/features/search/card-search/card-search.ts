@@ -5,7 +5,7 @@ import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
-import type { CardOrder } from '../../../core/models';
+import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
 import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
@@ -26,6 +26,7 @@ export interface CardSourceTab {
 export const CARD_SOURCES: CardSourceTab[] = [
   { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes` },
   { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
+  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique` },
   { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
   { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
 ];
@@ -55,6 +56,8 @@ export class CardSearch {
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
   readonly faction = input<string | null>(null);
+  /** Editor: the deck's format (Favoris show the cards it allows by default). */
+  readonly format = input<DeckFormat | null>(null);
   /** False while the host is still loading what `faction` depends on. */
   readonly ready = input(true);
   /** Card browser: faction filter, no quantity controls on the cards. */
@@ -87,7 +90,8 @@ export class CardSearch {
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
   /** The Uniques search API returns its own order, with no sort parameter. */
-  protected readonly sortable = computed(() => this.search.source() !== 'uniques');
+  // The Uniques search API and the account lists (favorites, collection, ownership) have their own order.
+  protected readonly sortable = computed(() => this.search.source() === 'all');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';
@@ -100,10 +104,11 @@ export class CardSearch {
     effect(() => {
       const source = this.source();
       const faction = this.faction();
+      const format = this.format();
       if (!this.ready()) return;
       untracked(() => {
-        if (source !== this.search.source() || faction !== this.search.faction() || (this.search.page() === 0 && !this.search.loading())) {
-          this.search.configure(source, faction);
+        if (source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
+          this.search.configure(source, faction, format);
           this.draft.set(this.search.filters());
         }
       });
@@ -185,6 +190,7 @@ export class CardSearch {
     openFiltersSheet(this.overlay, {
       source: this.search.source(),
       faction: this.search.faction(),
+      format: this.search.format(),
       filters: this.search.filters(),
       factionFilter: this.browse(),
     }).afterClosed.subscribe((f) => {

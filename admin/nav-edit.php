@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/icon-field.php';
 
 $db  = getDB();
 $id  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$row = ['id' => 0, 'parent_id' => null, 'label_en' => '', 'label_fr' => '', 'url' => '#',
+$row = ['id' => 0, 'parent_id' => null, 'label_en' => '', 'label_fr' => '', 'description_en' => '', 'description_fr' => '', 'url' => '#',
         'icon' => 'link', 'sort_order' => 0, 'is_visible' => 1, 'is_iframe' => 0, 'is_blank' => 0,
         'is_fullwidth' => 0, 'hide_label' => 0, 'is_separator' => 0, 'is_section_header' => 0];
 $topLevelItems = $db->query(q("SELECT id, label_en FROM {nav_items} WHERE parent_id IS NULL ORDER BY sort_order, id"))->fetchAll();
@@ -38,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = [
             ':label_en'          => trim($_POST['label_en']   ?? ''),
             ':label_fr'          => trim($_POST['label_fr']   ?? ''),
+            ':description_en'    => $isSep || $isHdr ? '' : mb_substr(trim($_POST['description_en'] ?? ''), 0, 160),
+            ':description_fr'    => $isSep || $isHdr ? '' : mb_substr(trim($_POST['description_fr'] ?? ''), 0, 160),
             ':url'               => $isSep ? '#' : trim($_POST['url'] ?? ''),
             ':icon'              => trim($_POST['icon']       ?? 'link'),
             ':sort_order'        => (int)($_POST['sort_order'] ?? 0),
@@ -64,15 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data[':id'] = $id;
                 $db->prepare(q(
                     "UPDATE {nav_items} SET parent_id=:parent_id, label_en=:label_en, label_fr=:label_fr,
-                     url=:url, icon=:icon, sort_order=:sort_order, is_visible=:is_visible,
+                     description_en=:description_en, description_fr=:description_fr, url=:url, icon=:icon, sort_order=:sort_order, is_visible=:is_visible,
                      is_iframe=:is_iframe, is_blank=:is_blank, is_fullwidth=:is_fullwidth,
                      hide_label=:hide_label, is_separator=:is_separator, is_section_header=:is_section_header
                      WHERE id=:id"
                 ))->execute($data);
             } else {
                 $db->prepare(q(
-                    "INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible, is_iframe, is_blank, is_fullwidth, hide_label, is_separator, is_section_header)
-                     VALUES (:parent_id, :label_en, :label_fr, :url, :icon, :sort_order, :is_visible, :is_iframe, :is_blank, :is_fullwidth, :hide_label, :is_separator, :is_section_header)"
+                    "INSERT INTO {nav_items} (parent_id, label_en, label_fr, description_en, description_fr, url, icon, sort_order, is_visible, is_iframe, is_blank, is_fullwidth, hide_label, is_separator, is_section_header)
+                     VALUES (:parent_id, :label_en, :label_fr, :description_en, :description_fr, :url, :icon, :sort_order, :is_visible, :is_iframe, :is_blank, :is_fullwidth, :hide_label, :is_separator, :is_section_header)"
                 ))->execute($data);
             }
             flash($id ? 'Item updated.' : 'Item added.');
@@ -82,6 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $row = array_merge($row, [
             'label_en'          => $data[':label_en'],
             'label_fr'          => $data[':label_fr'],
+            'description_en'    => $data[':description_en'],
+            'description_fr'    => $data[':description_fr'],
             'url'               => $data[':url'],
             'icon'              => $data[':icon'],
             'sort_order'        => $data[':sort_order'],
@@ -156,6 +160,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" name="label_fr" class="form-control" value="<?= h($row['label_fr']) ?>">
                 </div>
             </div>
+            <div id="row-descriptions" class="col-12 row g-3 m-0 p-0">
+                <div class="col-md-6">
+                    <label class="form-label">Description English 🇬🇧 <small class="text-muted">(optional)</small></label>
+                    <input type="text" name="description_en" class="form-control" maxlength="160" value="<?= h($row['description_en'] ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Description French 🇫🇷 <small class="text-muted">(optional)</small></label>
+                    <input type="text" name="description_fr" class="form-control" maxlength="160" value="<?= h($row['description_fr'] ?? '') ?>">
+                </div>
+                <div class="col-12 form-text mt-1">One line shown under dropdown links in the azure theme's mega menu.</div>
+            </div>
             <div id="row-url" class="col-md-8">
                 <label class="form-label">URL</label>
                 <input type="text" name="url" class="form-control"
@@ -227,6 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     var hidden   = document.getElementById('item_type_val');
     var rowLabel = document.getElementById('row-labels');
     var rowUrl   = document.getElementById('row-url');
+    var rowDesc  = document.getElementById('row-descriptions');
     var rowOpts  = document.getElementById('row-options');
 
     function applyType(type) {
@@ -235,6 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         var isHdr = type === 'section_header';
         if (rowLabel) rowLabel.style.display = isSep ? 'none' : '';
         if (rowUrl)   rowUrl.style.display   = (isSep || isHdr) ? 'none' : '';
+        if (rowDesc)  rowDesc.style.display  = (isSep || isHdr) ? 'none' : '';
         if (rowOpts)  rowOpts.style.display  = (isSep || isHdr) ? 'none' : '';
     }
 

@@ -1,7 +1,10 @@
-import { Component, inject, signal, type Signal } from '@angular/core';
+import { Component, computed, inject, signal, type Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
+import { OwnershipApiService } from '../../../core/ownership-api.service';
+import { heroOnBga } from '../../../core/formats';
+import { AcChip } from '../../../ui/chips';
 import type { DeckHero } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcFactionTabs, AcHeroSelector, factionName, type AcHeroOption } from '../../../ui/metier';
@@ -24,6 +27,40 @@ export function injectHeroes(): { heroes: Signal<HeroGroup[] | null>; error: Sig
   return { heroes, error: error.asReadonly() };
 }
 
+/** A numbered collector copy (trophy prints, a per-copy serial segment), offered only with « Numérotées ». */
+function isSerializedPrint(ref: string): boolean {
+  const parts = ref.split('_');
+  return parts[1] === 'WCF25' || parts.length > 6;
+}
+
+/** « _XXX »: the API's « any copy » slot of a serialized print, never a card. */
+function isPlaceholderPrint(ref: string): boolean {
+  const parts = ref.split('_');
+  return parts.length > 6 && parts.at(-1) === 'XXX';
+}
+
+/**
+ * Heroes to choose from: one per hero, or with « Alt arts » every other print as its own choice (numbered copies with
+ * « Numérotées » only), as the site's hero picker.
+ */
+export function heroChoices(heroes: readonly HeroGroup[] | null, options: { altArts: boolean; serialized: boolean }): AcHeroOption[] | null {
+  if (!heroes) return null;
+  const standard = (h: HeroGroup): AcHeroOption => ({ ...h, unavailableOnBga: !heroOnBga(h.prints.length ? h.prints.map((p) => p.reference) : [h.reference]) });
+  if (!options.altArts) return heroes.map(standard);
+  return heroes.flatMap((h) => [
+    standard(h),
+    ...h.prints
+      .filter((p) => p.variation !== 'standard' && p.reference !== h.reference && !isPlaceholderPrint(p.reference) && (options.serialized || !isSerializedPrint(p.reference)))
+      .map((p) => ({ reference: p.reference, name: `${h.name} · ${printLabel(p)}`, faction: h.faction, unavailableOnBga: !heroOnBga([p.reference]) })),
+  ]);
+}
+
+function printLabel(p: { reference: string; variation: string }): string {
+  const set = p.reference.split('_')[1] ?? '';
+  const kind = p.variation === 'promo' ? 'Promo' : p.variation === 'serialized' ? $localize`:@@shared.heroPicker.serializedPrint:Numérotée` : p.variation;
+  return `${kind} ${set}`.trim();
+}
+
 function heroPickerTitle(): string {
   return $localize`:@@shared.heroPicker.title:Choisir un héros`;
 }
@@ -35,16 +72,21 @@ export interface HeroPickerData {
 /** « Choisir un héros » — a step of « Réglages du deck », shown in the same window / sheet. */
 @Component({
   selector: 'app-hero-picker',
-  imports: [AcFactionTabs, AcHeroSelector, AcButton],
+  imports: [AcFactionTabs, AcHeroSelector, AcButton, AcChip],
   host: { class: 'ac-overlay-content' },
   templateUrl: './hero-picker.overlay.html',
   styleUrl: './hero-picker.overlay.scss',
 })
 export class HeroPickerOverlay {
+  private readonly ownership = inject(OwnershipApiService);
   protected readonly ref = inject<AcOverlayRef<DeckHero, HeroPickerData>>(AcOverlayRef);
   protected readonly bp = inject(AcBreakpointService);
   private readonly load = injectHeroes();
-  protected readonly heroes = this.load.heroes;
+  protected readonly altArts = signal(false);
+  protected readonly serialized = signal(false);
+  protected readonly heroes = computed(() => heroChoices(this.load.heroes(), { altArts: this.altArts(), serialized: this.serialized() }));
+  /** « Alt arts » is hidden in « Global » alt-art mode: the preferred print comes from the player's preferences. */
+  protected readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
   protected readonly error = this.load.error;
   protected readonly picked = signal<AcHeroOption | null>(this.ref.data?.selected ?? null);
   protected readonly faction = signal(this.ref.data?.selected?.faction || 'AX');

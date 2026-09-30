@@ -80,6 +80,59 @@
   flex-wrap: wrap;
 }
 
+.builders-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border: 1px solid var(--ac-color-border);
+  border-left: 3px solid var(--ac-color-primary);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-bg-subtle);
+  font-size: 13px;
+  color: var(--ac-color-text-2);
+}
+.builders-banner p {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+.builders-banner ac-icon {
+  flex-shrink: 0;
+  color: var(--ac-color-primary);
+}
+
+.local-decks {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2) var(--ac-space-3);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border: 1px solid var(--ac-color-primary-border);
+  border-radius: var(--ac-radius-card);
+  background: var(--ac-color-primary-tint);
+  color: var(--ac-color-primary-strong);
+  font-size: 13px;
+}
+.local-decks p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  font-weight: 600;
+}
+.local-actions {
+  display: flex;
+  gap: var(--ac-space-2);
+}
+.local-decks .local-error {
+  flex-basis: 100%;
+  color: var(--ac-color-danger);
+}
+
 .notice.guest {
   color: var(--ac-color-text-muted);
 }
@@ -130,6 +183,30 @@
   height: 188px;
   border-radius: var(--ac-radius-card);
   background: var(--ac-color-track);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .spin {
+    animation: none;
+  }
 }
 
 .empty {

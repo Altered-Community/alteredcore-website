@@ -24,6 +24,14 @@ describe('buildCardsSearchParams', () => {
     expect(buildCardsSearchParams({ factions: ['AX', 'LY'] }).getAll('faction.code[]')).toEqual(['AX', 'LY']);
   });
 
+  it('sorts like the site: costs and powers with the default order on ties, random', () => {
+    const forest = buildCardsSearchParams({ order: 'forestPower-asc' });
+    expect(forest.get('order[forestPower]')).toBe('asc');
+    expect(forest.get('order[setDate]')).toBe('desc');
+    expect(forest.get('order[collectorNumberFormatedId]')).toBe('asc');
+    expect(buildCardsSearchParams({ order: 'random' }).get('random')).toBe('true');
+  });
+
   it('sends explicit cost arrays, order and advanced flags', () => {
     const hp = buildCardsSearchParams({
       mainCosts: [1, 2],
@@ -76,7 +84,18 @@ describe('CardsApiService', () => {
         },
       ],
     });
-    expect(first).toEqual([{ slug: 'AX-001-C', name: 'Sierra & Oddball', faction: 'AX', reference: 'ALT_CORE_B_AX_01_C' }]);
+    expect(first).toEqual([
+      {
+        slug: 'AX-001-C',
+        name: 'Sierra & Oddball',
+        faction: 'AX',
+        reference: 'ALT_CORE_B_AX_01_C',
+        prints: [
+          { reference: 'ALT_CORE_P_AX_01_C', variation: 'promo' },
+          { reference: 'ALT_CORE_B_AX_01_C', variation: 'standard' },
+        ],
+      },
+    ]);
     api.heroes().subscribe();
     http.expectNone((r) => r.url.endsWith('/api/card_groups'));
   });

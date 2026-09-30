@@ -56,6 +56,25 @@
   font-size: 14px;
 }
 
+.progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ac-space-1) var(--ac-space-3);
+}
+
+.muted {
+  color: var(--ac-color-text-muted);
+  font-size: 13px;
+}
+
+.row-retry {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
 .rows {
   margin: 0;
   padding: 0;

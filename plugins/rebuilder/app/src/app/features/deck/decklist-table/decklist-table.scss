@@ -73,6 +73,23 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+button.name {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.name:hover {
+  text-decoration: underline;
+}
+button.name:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
 .c {
   width: 54px;
   flex-shrink: 0;

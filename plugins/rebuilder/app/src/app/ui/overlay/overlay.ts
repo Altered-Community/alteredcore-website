@@ -21,6 +21,8 @@ export interface AcOverlayConfig<D = unknown> {
   /** Sheet height: fit content (default) or full (top at 48 px). */
   sheetHeight?: 'auto' | 'full';
   ariaLabel?: string;
+  /** No window: the content alone over the backdrop, centered at every width (the title is read by screen readers only). */
+  bare?: boolean;
 }
 
 /** A step shown in place of the current content, in the same window / sheet (no stacked overlay). */
@@ -52,6 +54,11 @@ export class AcOverlayRef<R = unknown, D = unknown> {
   readonly leading = signal<'close' | 'back'>('close');
   /** When set, the leading back arrow calls this instead of closing. */
   readonly back = signal<(() => void) | null>(null);
+  /**
+   * Asked before the user closes the window (cross, Escape, backdrop, browser Back); `false` keeps it
+   * open. Programmatic `close()` ignores it.
+   */
+  readonly closeGuard = signal<(() => boolean) | null>(null);
   private readonly closed$ = new Subject<R | undefined>();
   readonly afterClosed: Observable<R | undefined> = this.closed$.asObservable();
   dialogRef?: { close(result?: unknown): void };
@@ -82,6 +89,14 @@ export class AcOverlayRef<R = unknown, D = unknown> {
     this.dialogRef?.close(result);
   }
 
+  /** Close asked by the user: goes through `closeGuard`. Returns whether the window closes. */
+  dismiss(): boolean {
+    const guard = this.closeGuard();
+    if (guard && !guard()) return false;
+    this.close();
+    return true;
+  }
+
   /** Internal: called once by the service. */
   notifyClosed(result: R | undefined): void {
     this.closed$.next(result);
@@ -89,7 +104,7 @@ export class AcOverlayRef<R = unknown, D = unknown> {
   }
 }
 
-export const AC_OVERLAY_CONTENT = new InjectionToken<{ ref: AcOverlayRef; mode: string; fill?: boolean; titleId: string }>(
+export const AC_OVERLAY_CONTENT = new InjectionToken<{ ref: AcOverlayRef; mode: string; fill?: boolean; bare?: boolean; titleId: string }>(
   'AC_OVERLAY_CONTENT',
 );
 
@@ -127,7 +142,9 @@ export class AcOverlayService {
           return;
         }
         const top = this.stack[this.stack.length - 1];
-        if (top && history.state?.acOverlay !== this.stack.length) top.close();
+        if (!top || history.state?.acOverlay === this.stack.length) return;
+        // Kept open by its guard: put back the history entry the Back button popped.
+        if (!top.dismiss()) history.pushState({ ...(history.state ?? {}), acOverlay: this.stack.length }, '');
       });
     }
   }
@@ -151,7 +168,8 @@ export class AcOverlayService {
 
   open<C, R = unknown, D = unknown>(component: Type<C>, config: AcOverlayConfig<D>): AcOverlayRef<R, D> {
     const compact = this.breakpoints.compact();
-    const mode = compact ? (config.compact ?? 'sheet') : 'dialog';
+    const bare = !!config.bare;
+    const mode = compact && !bare ? (config.compact ?? 'sheet') : 'dialog';
     const fill = mode === 'dialog' && config.height === 'fill';
     const ref = new AcOverlayRef<R, D>(config.data as D);
     ref.title.set(config.title);
@@ -162,7 +180,7 @@ export class AcOverlayService {
     const injector = Injector.create({
       providers: [
         { provide: AcOverlayRef, useValue: ref },
-        { provide: AC_OVERLAY_CONTENT, useValue: { ref, mode, fill, titleId } },
+        { provide: AC_OVERLAY_CONTENT, useValue: { ref, mode, fill, bare, titleId } },
       ],
     });
     ref.views.set([{ component, ref: ref as AcOverlayRef, injector }]);
@@ -188,7 +206,7 @@ export class AcOverlayService {
             ? 'calc(100dvh - 48px)'
             : undefined,
       positionStrategy: position,
-      panelClass: ['ac-overlay-pane', `ac-overlay-pane--${mode}`, ...(fill ? ['ac-overlay-pane--fill'] : [])],
+      panelClass: ['ac-overlay-pane', `ac-overlay-pane--${mode}`, ...(fill ? ['ac-overlay-pane--fill'] : []), ...(bare ? ['ac-overlay-pane--bare'] : [])],
       backdropClass: 'ac-overlay-backdrop',
       hasBackdrop: true,
       // Accessible name follows the visible title, which changes with steps.
@@ -202,11 +220,11 @@ export class AcOverlayService {
     });
     ref.dialogRef = dialogRef;
     ref.stepOpener = (c, cfg) => this.openStep(ref as AcOverlayRef, c, cfg, () => dialogRef.componentInstance);
-    dialogRef.backdropClick.subscribe(() => ref.close());
+    dialogRef.backdropClick.subscribe(() => ref.dismiss());
     dialogRef.keydownEvents.subscribe((e) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       e.preventDefault();
-      ref.views().at(-1)!.ref.close();
+      ref.views().at(-1)!.ref.dismiss();
     });
     this.register(ref as AcOverlayRef);
 

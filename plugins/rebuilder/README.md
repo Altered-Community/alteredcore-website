@@ -10,7 +10,9 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 
 | Path | Content |
 |---|---|
-| `plugin.json` | Manifest v2: SPA page, menu entry, build and e2e declarations |
+| `plugin.json` | Manifest v2: SPA page, API endpoints, menu entry, build and e2e declarations |
+| `meta.php` | Manifest `meta`: the deck's name as page title and link preview (`og:title`) on `decks/{id}` |
+| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
 | `app/` | Angular sources (see `app/CLAUDE.md` for the code rules, `app/design/COMPONENTS.md` for the components) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Global styles: `embed.scss` (shadow root, after the design system), `document.scss` (`<head>`: printed-card fonts) |
@@ -63,6 +65,7 @@ The base href is `/pages/rebuilder/`:
 | `/pages/rebuilder/decks/new` | New deck (hero, format, visibility) |
 | `/pages/rebuilder/decks/{id}/edit` | Editor (card search and filters, deck list, validation, statistics, settings), preview |
 | `/pages/rebuilder?id={id}` | Redirects to the editor (same link format as the site's deck builder) |
+| `/pages/rebuilder/deck?id={id}` | Redirects to the deck page (same link format as the site's deck page) |
 
 Signed in, decks are listed, created and saved on the decks API through the site's relay
 (`/api/v1/services/decks`), which adds the Keycloak token of the PHP session server-side: the browser
@@ -81,10 +84,12 @@ copy of `core-altered-cards/data/starter-deck-contest-collection.json`); each en
 decks API, opened by id. The local stack's decks API does not have them: their page is empty locally.
 
 « Importer » › *Export altered.gg* imports the decks of an altered.gg personal-data export (the Equinox
-ZIP) into the account, like the site's `equinox-deck-import` plugin: the ZIP is read in the browser
-(`decks.csv`, `DecompressionStream`), each deck is created private with `POST /api/decks` through the
-relay (one per second), and a deck already in the account (same name, same cards) is skipped. Not done:
-the alt-art « Global » preference of the ownership API, which is not behind the relay.
+ZIP) into the account, with the behaviour of the site's `equinox-deck-import` plugin: the ZIP is read
+in the browser (`decks.csv`, `DecompressionStream`); with the « Global » alt-art preference of the
+ownership API (relay `services.ownership`), the user's alt arts replace the exported cards; each deck is
+created private with `POST /api/decks` through the relay, one per second, and a deck already in the
+account (same name, same cards) is skipped. A failed deck stops the queue until « Réessayer » (3
+attempts, then it is given up); the import can be paused or cancelled.
 
 ## Languages
 
@@ -98,9 +103,7 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 
 ## Known gaps
 
-- Not ported from the site's decks page: the community deckbuilders window. « Importer » › *Liste de
-  cartes* creates a guest deck.
+- « Importer » › *Liste de cartes* creates a guest deck when signed out.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
-- Guest decks of the site's builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: every colour comes from the site's tokens (`--ac-*`), including factions, terrains and the printed
   Unique card.

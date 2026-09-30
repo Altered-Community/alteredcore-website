@@ -7,3 +7,4 @@ export * from './segmented/segmented';
 export * from './select/select';
 export * from './types';
 export * from './value-accessor';
+export * from './textarea/textarea';

@@ -33,6 +33,9 @@
   --ac-color-divider: #eef1f5;
   --ac-color-chart-axis: #cfd5df;
   --ac-color-track: #e6eaf1;          /* segmented control track, neutral fills */
+  /* Scroll bar thumb, from the muted text: follows the light and dark themes. */
+  --ac-color-scrollbar: color-mix(in srgb, var(--ac-color-text-muted) 40%, transparent);
+  --ac-color-scrollbar-hover: color-mix(in srgb, var(--ac-color-text-muted) 65%, transparent);
   --ac-color-bg-app: #f3f5f9;         /* page background */
   --ac-color-bg-subtle: #f8f9fb;      /* hovered row, subtle field */
   --ac-color-surface: #ffffff;        /* cards, panels, menus, dialogs */
@@ -180,6 +183,7 @@
   --ac-header-height: 0px;         /* sticky site header, measured by js/altered-core-host.js */
   --ac-page-max-width: 1200px;     /* content column of regular pages */
   --ac-page-max-width-wide: 1600px;
+  --ac-site-max-width: 2400px;     /* header, footer and tool pages: the screen width up to this */
   --ac-app-bar-height: 60px;
   --ac-bottom-nav-height: 68px;    /* + env(safe-area-inset-bottom) */
   --ac-filter-panel-width: 264px;

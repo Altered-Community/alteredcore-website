@@ -42,7 +42,9 @@
   gap: var(--ac-space-1-5);
 }
 .label,
-legend {
+legend,
+ac-input ::ng-deep .ac-field__label,
+ac-textarea ::ng-deep .ac-field__label {
   font-size: var(--ac-field-font-size);
   font-weight: 700;
 }

@@ -17,7 +17,8 @@ const signIn: CanActivateFn = () => {
  * Re:Builder's decks section on the site page `/pages/rebuilder/` (the base href): decks list
  * (mine / community), deck page, new deck and editor. The site's own decks pages and deck builder
  * stay as they are.
- * `?id=` opens a deck in the editor, like the site's deck builder links.
+ * `?id=` opens a deck in the editor, like the site's deck builder links; `deck?id=` its page, like the site's deck page links
+ * (`/pages/deck?id=`: shared links, QR codes).
  */
 export const embedRoutes: Routes = [
   {
@@ -26,6 +27,14 @@ export const embedRoutes: Routes = [
     redirectTo: ({ queryParams }) => {
       const id = queryParams['id'];
       return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}/edit` : '/decks');
+    },
+  },
+  {
+    path: 'deck',
+    pathMatch: 'full',
+    redirectTo: ({ queryParams }) => {
+      const id = queryParams['id'];
+      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}` : '/decks');
     },
   },
   {
@@ -43,7 +52,10 @@ export const embedRoutes: Routes = [
   { path: 'decks/:id/edit', title: $localize`:@@title.editor:Modifier le deck`, loadComponent: editor, data: { view: 'search', nav: NAV_DECKS } },
   { path: 'decks/:id/edit/apercu', title: $localize`:@@title.preview:Aperçu du deck`, loadComponent: editor, data: { view: 'apercu', nav: NAV_DECKS } },
   { path: 'decks/:id/edit/deck', title: $localize`:@@title.myDeck:Mon deck`, loadComponent: editor, data: { view: 'deck', nav: NAV_DECKS } },
+  { path: 'decks/:id/edit/main', title: $localize`:@@title.editorHand:Main de départ`, loadComponent: editor, data: { view: 'main', nav: NAV_DECKS } },
   { path: 'decks/:id/deck', title: $localize`:@@title.decklist:Deck — Decklist`, loadComponent: deck, data: { tab: 'decklist', nav: NAV_DECKS } },
+  { path: 'decks/:id/description', title: $localize`:@@title.deckDescription:Deck — Description`, loadComponent: deck, data: { tab: 'description', nav: NAV_DECKS } },
+  { path: 'decks/:id/main', title: $localize`:@@title.deckHand:Deck — Main de départ`, loadComponent: deck, data: { tab: 'main', nav: NAV_DECKS } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
   { path: 'decks/:id', title: $localize`:@@title.deck:Deck`, loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },
   { path: 'login', canActivate: [signIn], children: [] },

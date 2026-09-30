@@ -7,7 +7,7 @@ import { AC_OVERLAY_CONTENT } from '../overlay';
   selector: 'ac-overlay-container',
   imports: [NgComponentOutlet, AcIcon],
   host: {
-    '[class]': "'ac-overlay ac-overlay--' + content.mode + (content.fill ? ' ac-overlay--fill' : '')",
+    '[class]': "'ac-overlay ac-overlay--' + content.mode + (content.fill ? ' ac-overlay--fill' : '') + (content.bare ? ' ac-overlay--bare' : '')",
     role: 'presentation',
   },
   templateUrl: './overlay-container.html',
@@ -46,6 +46,6 @@ export class AcOverlayContainer {
     const r = this.top().ref;
     const back = r.back();
     if (back) back();
-    else r.close();
+    else r.dismiss();
   }
 }

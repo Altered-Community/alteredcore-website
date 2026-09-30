@@ -5,6 +5,7 @@ import { CardsApiService, type HeroGroup } from '../../core/cards-api.service';
 import { AcOverlayRef } from '../../ui/overlay';
 import { NewDeckForm } from './new-deck.form';
 import { NewDeckOverlay, type NewDeckResult } from './new-deck/new-deck.overlay';
+import { heroChoices } from './hero-picker/hero-picker.overlay';
 
 const SIERRA = { reference: 'ALT_CORE_B_AX_01_C', name: 'Sierra & Oddball', faction: 'AX' };
 const TREYST = { reference: 'ALT_CORE_B_AX_02_C', name: 'Treyst & Rossum', faction: 'AX' };
@@ -72,15 +73,17 @@ describe('NewDeckForm (Nouveau deck)', () => {
     form.editName('  Moyo Embrasement ');
     form.format.set('frontier');
     form.isPublic.set(true);
-    expect(form.result()).toEqual({ name: 'Moyo Embrasement', hero: MOYO, format: 'frontier', isPublic: true });
+    expect(form.result()).toEqual({ name: 'Moyo Embrasement', hero: MOYO, format: 'frontier', isPublic: true, description: '' });
+    form.description.set('  Contrôle ');
+    expect(form.result()?.description).toBe('Contrôle');
   });
 });
 
 describe('NewDeckOverlay', () => {
   const heroes: HeroGroup[] = [
-    { slug: 'sierra', ...SIERRA },
-    { slug: 'treyst', ...TREYST },
-    { slug: 'moyo', ...MOYO },
+    { slug: 'sierra', ...SIERRA, prints: [] },
+    { slug: 'treyst', ...TREYST, prints: [] },
+    { slug: 'moyo', ...MOYO, prints: [] },
   ];
   let closed: (NewDeckResult | undefined)[];
 
@@ -128,6 +131,27 @@ describe('NewDeckOverlay', () => {
     input.value = 'Mon deck';
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    expect(closed).toEqual([{ name: 'Mon deck', hero: TREYST, format: 'standard', isPublic: false }]);
+    expect(closed).toEqual([{ name: 'Mon deck', hero: TREYST, format: 'standard', isPublic: false, description: '' }]);
+  });
+});
+
+describe('heroChoices', () => {
+  const hero: HeroGroup = {
+    slug: 'AX-001-C',
+    name: 'Sierra & Oddball',
+    faction: 'AX',
+    reference: 'ALT_CORE_B_AX_01_C',
+    prints: [
+      { reference: 'ALT_CORE_B_AX_01_C', variation: 'standard' },
+      { reference: 'ALT_CORE_P_AX_01_C', variation: 'promo' },
+      { reference: 'ALT_WCF25_P_AX_01_C', variation: 'promo' },
+      { reference: 'ALT_DUSTERCB_P_AX_01_C_XXX', variation: 'serialized' },
+    ],
+  };
+
+  it('offers the other prints with « Alt arts », the numbered ones with « Numérotées »', () => {
+    expect(heroChoices([hero], { altArts: false, serialized: false })?.map((h) => h.reference)).toEqual(['ALT_CORE_B_AX_01_C']);
+    expect(heroChoices([hero], { altArts: true, serialized: false })?.map((h) => h.reference)).toEqual(['ALT_CORE_B_AX_01_C', 'ALT_CORE_P_AX_01_C']);
+    expect(heroChoices([hero], { altArts: true, serialized: true })?.map((h) => h.reference)).toEqual(['ALT_CORE_B_AX_01_C', 'ALT_CORE_P_AX_01_C', 'ALT_WCF25_P_AX_01_C']);
   });
 });

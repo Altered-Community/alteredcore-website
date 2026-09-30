@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  --label: 56px;
+}
+:host(.wide) {
+  --label: 128px;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+li {
+  display: grid;
+  grid-template-columns: var(--label) minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: var(--ac-space-2-5);
+  font-size: 13px;
+  --bar: var(--ac-color-chart-main);
+}
+li.warn {
+  --bar: var(--ac-color-chart-reserve);
+}
+.label {
+  color: var(--ac-color-text-2);
+  text-align: right;
+}
+.track {
+  height: 8px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-track);
+  overflow: hidden;
+}
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bar);
+}
+.value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

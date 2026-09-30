@@ -52,7 +52,8 @@
   gap: var(--ac-space-1-5);
 }
 .label,
-.side ::ng-deep ac-input .ac-field__label {
+.side ::ng-deep ac-input .ac-field__label,
+.side ::ng-deep ac-textarea .ac-field__label {
   font-size: 16px;
   font-weight: 700;
 }
@@ -111,7 +112,8 @@ legend {
     gap: var(--ac-space-4);
   }
   .label,
-  .side ::ng-deep ac-input .ac-field__label {
+  .side ::ng-deep ac-input .ac-field__label,
+  .side ::ng-deep ac-textarea .ac-field__label {
     font-size: 14px;
   }
   .new-deck-footer {
@@ -121,4 +123,8 @@ legend {
   .new-deck-footer .note {
     color: var(--ac-color-text-2);
   }
+}
+.prints {
+  display: flex;
+  gap: var(--ac-space-1-5);
 }

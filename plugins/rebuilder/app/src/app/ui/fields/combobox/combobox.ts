@@ -10,6 +10,10 @@ export interface ComboOption {
   text: string;
   /** `Altered Icons` glyph shown before the text, in the list and on the chip. */
   glyph?: string;
+  /** Thumbnail in the list (a card image). */
+  thumb?: string;
+  /** Heading of the list: consecutive options of the same group sit under it. */
+  group?: string;
 }
 
 /** Below the button, above it when there is no room. */
@@ -58,6 +62,17 @@ export class AcCombobox {
   protected readonly open = signal(false);
 
   protected readonly label = computed(() => (this.values().length ? this.placeholder() : this.emptyPlaceholder() || this.placeholder()));
+
+  /** Where a group heading goes: the first listed option of each group. */
+  protected readonly groupStarts = computed(() => {
+    const starts = new Set<number>();
+    let last: string | undefined;
+    for (const o of this.filtered()) {
+      if (o.group && o.group !== last) starts.add(o.id);
+      last = o.group;
+    }
+    return starts;
+  });
 
   protected readonly filtered = computed(() => {
     const q = normalize(this.query());

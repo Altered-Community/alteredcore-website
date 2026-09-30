@@ -6,15 +6,11 @@
       <span class="ph ac-hatch"></span>
     }
     @if (layout() === 'grid') {
-      <span class="badges">
-        <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
-        @if (variant() === 'mine' && deck().legal) {
-          <ac-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ac-badge>
-        }
-        @if (deck().winner) {
-          <ac-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ac-badge>
-        }
-      </span>
+      @if (!illegal()) {
+        <span class="badges">
+          <ng-container *ngTemplateOutlet="gridBadges" />
+        </span>
+      }
       @if (variant() === 'mine') {
         <span class="vis" [title]="deck().isPublic ? publicLabel : privateLabel"><ac-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
       }
@@ -36,8 +32,11 @@
     @if (layout() === 'row') {
       <span class="badges-inline">
         <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
-        @if (variant() === 'mine' && deck().legal) {
+        @if (variant() === 'contest' && deck().legal) {
           <ac-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ac-badge>
+        }
+        @if (showDraft()) {
+          <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>
         }
         @if (deck().winner) {
           <ac-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ac-badge>
@@ -61,4 +60,32 @@
 </a>
 @if (variant() === 'community') {
   <button acLikeButton class="like" [count]="deck().likes" [liked]="deck().liked" [ariaLabel]="likeLabel()" (click)="likeToggle.emit()"></button>
+}
+
+<ng-template #gridBadges>
+  <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
+  @if (variant() === 'contest' && deck().legal) {
+    <ac-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ac-badge>
+  }
+  @if (showDraft()) {
+    <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>
+  }
+  @if (deck().winner) {
+    <ac-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ac-badge>
+  }
+</ng-template>
+<!-- « Non légal » opens the rules window: a button, so it sits outside the link, over the same spot. -->
+@if (illegal()) {
+  @if (layout() === 'grid') {
+    <span class="badges badges--over">
+      <ng-container *ngTemplateOutlet="gridBadges" />
+      <button type="button" class="illegal" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+        <ac-badge tone="orange" icon="circle-alert" i18n="@@ui.deckCard.illegal">Non légal</ac-badge>
+      </button>
+    </span>
+  } @else {
+    <button type="button" class="illegal illegal--row" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+      <ac-badge tone="orange" icon="circle-alert" i18n="@@ui.deckCard.illegal">Non légal</ac-badge>
+    </button>
+  }
 }

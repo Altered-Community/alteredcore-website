@@ -1,6 +1,9 @@
-@if (search.source() === 'owned' || search.source() === 'favorites') {
+@if ((search.source() === 'collection' || search.source() === 'owned' || search.source() === 'favorites') && !auth.isLoggedIn()) {
   <div class="state">
-    @if (search.source() === 'owned') {
+    @if (search.source() === 'collection') {
+      <strong i18n="@@search.source.collection">Collection physique</strong>
+      <p i18n="@@search.results.collectionLogin">Connectez-vous pour retrouver les cartes de votre collection physique.</p>
+    } @else if (search.source() === 'owned') {
       <strong i18n="@@search.source.owned">Propriété numérique</strong>
       <p i18n="@@search.results.ownedLogin">Connectez-vous pour retrouver les cartes de votre collection numérique.</p>
     } @else {
@@ -22,7 +25,12 @@
           [plain]="browse()"
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
+          [blockedReason]="blockedReason(c)"
+          [zoomable]="true"
           (quantityChange)="deck.setQuantity(c, $event)"
+          (zoom)="zoom(c)"
+          [favorite]="favorites.enabled() ? favorites.has(c.reference) : null"
+          (favoriteToggle)="favorites.toggle(c)"
         />
       }
       @if (search.loading() && grid.atEnd()) {
@@ -41,6 +49,7 @@
           [card]="c"
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
+          [blockedReason]="blockedReason(c)"
           (quantityChange)="deck.setQuantity(c, $event)"
         />
       }

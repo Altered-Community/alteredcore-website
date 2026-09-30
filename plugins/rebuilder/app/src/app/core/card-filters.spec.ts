@@ -23,9 +23,37 @@ describe('parseCostExpression', () => {
     expect(parseCostExpression('1, 4-5, 3')).toEqual([1, 3, 4, 5]);
   });
 
+  it('reads the site\'s bounds: <, >, <=, >= and « n- »', () => {
+    expect(parseCostExpression('<3')).toEqual([0, 1, 2]);
+    expect(parseCostExpression('<=2')).toEqual([0, 1, 2]);
+    expect(parseCostExpression('>10')).toEqual([11, 12]);
+    expect(parseCostExpression('>=11')).toEqual([11, 12]);
+    expect(parseCostExpression('2-')).toEqual([0, 1, 2]);
+  });
+
   it('rejects invalid expressions', () => {
     expect(parseCostExpression('abc')).toBeNull();
-    expect(parseCostExpression('1-')).toBeNull();
+    expect(parseCostExpression('<')).toBeNull();
+  });
+});
+
+describe('advanced filters (cards API)', () => {
+  it('sends powers, subtypes, cost relation, alt arts with promo editions, another faction', () => {
+    const f = {
+      ...defaultFilters('all'),
+      forestPower: '>=4',
+      subtypes: ['ANIMAL'],
+      costRelation: 'mainHigher' as const,
+      altArts: true,
+      promoSets: ['DUSTEROP'],
+      otherFactions: ['LY'],
+    };
+    const p = toSearchParams(f, 'AX', 1, 36);
+    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
+    expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
+    expect(p.sets).toContain('DUSTEROP');
+    expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
+    expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
   });
 });
 

@@ -1,0 +1,15 @@
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ac-color-text-muted);
+}
+h3 {
+  margin: 0 0 var(--ac-space-2);
+  font-size: 14px;
+  font-weight: 700;
+}

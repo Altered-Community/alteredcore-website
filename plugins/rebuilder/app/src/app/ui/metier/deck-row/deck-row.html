@@ -3,10 +3,25 @@
 }
 <img class="rarity" [src]="rarity().src" [alt]="rarity().label" [title]="rarity().label" />
 <span class="name">{{ name() }}</span>
+@if (issues().length) {
+  <span class="issue" role="img" [attr.aria-label]="issuesLabel()" [title]="issuesLabel()">
+    <ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" />
+  </span>
+}
+@if (warning(); as w) {
+  <span class="warning" role="img" [attr.aria-label]="w" [title]="w">
+    <ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" />
+  </span>
+}
 @if (readonly() || plain()) {
   <span class="costs">
     <span class="c main" title="Coût main" i18n-title="@@ui.costChart.main">{{ card().mainCost ?? '–' }}</span>
     <span class="c res" title="Coût réserve" i18n-title="@@ui.deckStats.reserve">{{ card().recallCost ?? '–' }}</span>
+  </span>
+} @else if (blocked()) {
+  <span class="blocked" [title]="blockedReason()">
+    <ac-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ac-badge>
+    <span class="ac-sr-only">{{ blockedReason() }}</span>
   </span>
 } @else {
   <ac-stepper

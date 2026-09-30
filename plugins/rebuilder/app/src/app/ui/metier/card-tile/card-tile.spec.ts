@@ -17,6 +17,13 @@ describe('AcCardTile', () => {
     expect(render({}).querySelector('button[aria-label="Ajouter Le Kraken au deck"]')).not.toBeNull();
   });
 
+  it('says why a card cannot be added instead of a disabled « + »', () => {
+    const el = render({ max: 0, blockedReason: 'Cartes uniques interdites en Standard No Unique' });
+    expect(el.querySelector('button')).toBeNull();
+    expect(el.querySelector('.blocked')?.getAttribute('title')).toBe('Cartes uniques interdites en Standard No Unique');
+    expect(el.querySelector('.blocked .ac-sr-only')?.textContent).toBe('Cartes uniques interdites en Standard No Unique');
+  });
+
   it('shows only the card in the card browser (plain)', () => {
     const el = render({ plain: true, quantity: 2 });
     expect(el.querySelector('button')).toBeNull();

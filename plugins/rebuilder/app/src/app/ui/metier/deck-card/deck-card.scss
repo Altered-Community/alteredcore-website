@@ -51,6 +51,41 @@ a:hover {
 .badges ac-badge {
   background: var(--ac-color-surface);
 }
+/* Same spot as `.badges` inside the link (+ its 1px border); only the « Illégal » button takes the clicks. */
+.badges--over {
+  left: calc(var(--ac-space-2) + 1px);
+  top: calc(var(--ac-space-2) + 1px);
+  pointer-events: none;
+}
+.illegal {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: var(--ac-radius-pill);
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* Hit area of at least --ac-hit-min around the 24 px badge. */
+.illegal::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.illegal:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.illegal--row {
+  position: absolute;
+  left: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+}
 .vis {
   position: absolute;
   right: var(--ac-space-2);

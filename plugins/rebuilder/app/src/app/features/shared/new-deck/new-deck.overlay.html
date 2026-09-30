@@ -13,6 +13,14 @@
       controls="new-deck-heroes"
       [(active)]="faction"
     />
+    @if (!global()) {
+      <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
+        <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+        @if (altArts()) {
+          <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+        }
+      </div>
+    }
     <ac-hero-selector
       panelId="new-deck-heroes"
       [layout]="bp.compact() ? 'carousel' : 'grid'"
@@ -47,13 +55,19 @@
             layout="compact"
             [title]="f.label"
             [description]="f.short"
-            [tag]="{ label: bga[f.bga].short, tone: bga[f.bga].tone }"
+            [tag]="tagOf(f)"
             [checked]="form.format() === f.value"
             (choose)="form.format.set(f.value)"
           />
         }
       </div>
     </fieldset>
+    <ac-textarea
+      label="Description (facultatif)" i18n-label="@@newDeck.description"
+      placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@newDeck.descriptionPlaceholder"
+      [rows]="3"
+      [(value)]="form.description"
+    />
   </div>
 </div>
 <div class="ac-overlay-footer new-deck-footer">

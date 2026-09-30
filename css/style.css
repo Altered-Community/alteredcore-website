@@ -9,9 +9,50 @@
 /* ---- Page frame ---- */
 html { overflow-x: clip; }
 
+/* ---- Page width ----
+   Header, footer and tool pages (card search, decks, deckbuilder…) use the
+   screen width up to --ac-site-max-width. Pages authored in Admin → Pages
+   (body.page-cms: FAQ, rules…) keep the --ac-page-max-width reading column.
+   Every wide box is "max-width: --ac-site-max-width, padding: --ac-page-padding" so
+   header, content and footer edges line up. */
 .site-wrapper {
-    max-width: calc(var(--ac-page-max-width) + 2 * var(--ac-page-padding));
     margin: 0 auto;
+}
+/* :where() keeps specificity at (0,1,0): page-level rules such as
+   .faq-wrap { max-width: 820px } or inline max-width styles still win. */
+:where(main) .container {
+    max-width: var(--ac-site-max-width);
+}
+/* Narrow containers with an inline max-width (news detail, login, account…)
+   keep Bootstrap's padding so their text column does not shrink. */
+:where(main) .container:where(:not([style*="max-width"])) {
+    padding-left: var(--ac-page-padding);
+    padding-right: var(--ac-page-padding);
+}
+:where(body.page-cms main) .container {
+    max-width: var(--ac-page-max-width);
+    padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+    padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+}
+.site-footer-inner {
+    max-width: var(--ac-site-max-width);
+    padding-left: var(--ac-page-padding);
+    padding-right: var(--ac-page-padding);
+}
+/* Home hero: same edges as the content column.
+   "main" prefix so this wins over the themes' .hero-stack { margin: 1rem }. */
+main .hero-stack {
+    margin-left:  max(var(--ac-page-padding), (100% - var(--ac-site-max-width)) / 2 + var(--ac-page-padding));
+    margin-right: max(var(--ac-page-padding), (100% - var(--ac-site-max-width)) / 2 + var(--ac-page-padding));
+}
+/* News cards grow with the column: keep the image proportions instead of a
+   fixed 180px strip. */
+@media (min-width: 1600px) {
+    main .news-card-img,
+    main .news-card-img-placeholder {
+        height: auto;
+        aspect-ratio: 5 / 2;
+    }
 }
 body.page-fullwidth main {
     width: 100vw;
@@ -524,3 +565,61 @@ main { min-height: 50vh; }
 
 /* Plugin-specific styles live in each plugin's own CSS (plugins/<id>/assets/), built from the
    --ac-* tokens; see design-system/README.md. */
+
+/* ---- PWA: safe areas and install toast (js/pwa.js, includes/pwa.php) ----
+   viewport-fit=cover lets the page extend under notches and the home indicator; keep content
+   inside the safe area (all insets are 0 elsewhere). */
+body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+}
+body.page-fullwidth main {
+    padding-left: max(var(--ac-page-padding), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--ac-page-padding), env(safe-area-inset-right, 0px));
+}
+
+.ac-pwa-toast {
+    position: fixed;
+    right: calc(var(--ac-space-4) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--ac-space-4) + env(safe-area-inset-bottom, 0px) + var(--ac-pwa-bottom-offset, 0px));
+    z-index: calc(var(--ac-z-overlay) - 10); /* above the sticky header and plugin bottom tabs, below dialogs */
+    width: 22rem;
+    max-width: calc(100vw - 2 * var(--ac-space-4) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ac-space-3);
+    padding: var(--ac-space-3) var(--ac-space-3) var(--ac-space-3) var(--ac-space-4);
+    background: var(--ac-color-surface);
+    color: var(--ac-color-text);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    box-shadow: var(--ac-shadow-e2);
+    font: var(--ac-font-small);
+    font-weight: 400;
+    opacity: 0;
+    transform: translateY(var(--ac-space-2));
+    transition: opacity var(--ac-duration-base) ease-out, transform var(--ac-duration-base) ease-out;
+}
+.ac-pwa-toast[hidden],
+.ac-pwa-toast [hidden] { display: none; }
+.ac-pwa-toast.is-visible { opacity: 1; transform: none; }
+.ac-pwa-toast-icon { width: 40px; height: 40px; flex-shrink: 0; }
+.ac-pwa-toast-body { flex: 1; min-width: 0; }
+.ac-pwa-toast-title { font: var(--ac-font-body-strong); color: var(--ac-color-text); margin-bottom: var(--ac-space-1); }
+.ac-pwa-toast-text { color: var(--ac-color-text-2); line-height: 1.45; }
+.ac-pwa-toast-actions { display: flex; flex-wrap: wrap; gap: var(--ac-space-2); margin-top: var(--ac-space-2-5); }
+.ac-pwa-toast .ac-pwa-close { flex-shrink: 0; }
+@media (max-width: 767.98px) {
+    .ac-pwa-toast {
+        left: calc(var(--ac-space-3) + env(safe-area-inset-left, 0px));
+        right: calc(var(--ac-space-3) + env(safe-area-inset-right, 0px));
+        bottom: calc(var(--ac-space-3) + env(safe-area-inset-bottom, 0px) + var(--ac-pwa-bottom-offset, 0px));
+        width: auto;
+        max-width: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ac-pwa-toast { transition: none; }
+}

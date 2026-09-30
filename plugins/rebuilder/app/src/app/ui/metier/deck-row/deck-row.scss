@@ -63,3 +63,23 @@
   border: 1.5px solid var(--ac-color-text);
   color: var(--ac-color-text);
 }
+:host(.invalid) .name {
+  color: var(--ac-color-danger);
+}
+.issue {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ac-color-danger);
+  cursor: help;
+}
+.warning {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ac-color-warning);
+  cursor: help;
+}
+.blocked {
+  display: flex;
+  flex-shrink: 0;
+  cursor: help;
+}

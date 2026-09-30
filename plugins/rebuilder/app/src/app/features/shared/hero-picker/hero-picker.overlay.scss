@@ -17,3 +17,7 @@ p {
 .note strong {
   color: var(--ac-color-text);
 }
+.prints {
+  display: flex;
+  gap: var(--ac-space-1-5);
+}

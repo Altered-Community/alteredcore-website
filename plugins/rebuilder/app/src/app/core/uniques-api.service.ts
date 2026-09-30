@@ -7,6 +7,7 @@ import { ICONS } from './card-text';
 import { contentLocale } from './locale';
 import type { Card, Localized } from './models';
 import { localizedText } from './models';
+import { printKeywordCodes } from './card-vocabulary';
 
 /**
  * Uniques search of the site (rust-cards-api, `AlteredCore.services.uniques`, `UNIQUES_API_URL`):
@@ -117,6 +118,17 @@ export class UniquesApiService {
     return page$;
   }
 
+  /**
+   * Which of `references` (Uniques) are on the Frontier list: the uniques search API answers only those with
+   * `format=frontier`, as the decks API checks it on save (the site's deck builder does the same).
+   */
+  frontierLegal(references: string[]): Observable<Set<string>> {
+    const params = new HttpParams().set('ref', references.join(',')).set('format', 'frontier');
+    return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
+      map((res) => new Set((res.cards ?? []).map((c) => c.reference).filter((r): r is string => !!r))),
+    );
+  }
+
   /** Trigger / condition / effect vocabularies of the effect editor (main-effect entries). */
   abilities(kind: AbilityKind): Observable<AbilityRef[]> {
     this.effects$ ??= this.http.get<EffectsResponse>(`${this.baseUrl}/api/v2/effects`).pipe(
@@ -130,7 +142,7 @@ export class UniquesApiService {
       map((body) => {
         const rows = (kind === 'triggers' ? body.triggers : kind === 'conditions' ? body.conditions : body.output) ?? [];
         return toAbilityRefs(
-          rows.filter((r) => r.isMain !== false).map((r) => ({ alteredId: r.idGd, text: fromV2Locales(r.text) ?? {} })),
+          rows.filter((r) => r.isMain !== false).map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {} })),
           kind === 'conditions' ? NO_CONDITION : undefined,
         );
       }),
@@ -207,6 +219,13 @@ function fromV2Locales(value: Localized | undefined): Localized | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
+/** Effect texts: as `fromV2Locales`, with the `[FLEETING]` keyword codes printed in each language. */
+function fromV2Text(value: Localized | undefined): Localized | undefined {
+  const out = fromV2Locales(value);
+  if (out) for (const [key, text] of Object.entries(out)) if (text) out[key] = printKeywordCodes(text, key);
+  return out;
+}
+
 const CHARACTER = { reference: 'CHARACTER', name: { fr: 'Personnage', en: 'Character', de: 'Charakter', es: 'Personaje', it: 'Personaggio' } };
 
 /** CardV2 → the app's Card (uniques are all Characters). */
@@ -223,8 +242,8 @@ export function toCard(c: CardV2): Card {
     forestPower: c.forestPower,
     mountainPower: c.mountainPower,
     oceanPower: c.oceanPower,
-    mainEffect: fromV2Locales(c.mainEffect) ?? null,
-    echoEffect: fromV2Locales(c.echoEffect) ?? null,
+    mainEffect: fromV2Text(c.mainEffect) ?? null,
+    echoEffect: fromV2Text(c.echoEffect) ?? null,
     artists: c.artist ? [{ name: c.artist }] : [],
     set: c.set ? { reference: c.set.reference, name: c.set.name, code: c.set.code } : undefined,
   };

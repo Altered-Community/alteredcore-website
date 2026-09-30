@@ -30,3 +30,44 @@ CDN de l’illustration au lieu du lien S3 mort.
 Pas un défaut : une Unique `transfuge` a une autre faction que sa carte imprimée (`ALT_EOLE_B_AX_106_U_1086` est
 Lyra). `faction.code` filtre sur la faction de l’Unique, celle qui compte pour le deck. La face affiche l’emblème de
 cette faction.
+
+## Tris ignorés ou valeurs vides en tête
+
+Constaté le 2026-09-30 sur `GET /api/cards` en production, avec les paramètres que Re:Builder et le site envoient.
+`/api/docs.json` ne déclare que `order[setDate]` (ou `order[set.date]`), `order[cardNumber]` et
+`order[collectorNumberFormatedId]`.
+
+**Constat.**
+
+- `order[name.{locale}]` et `order[reference]` sont ignorés : `asc` et `desc` renvoient la même liste que sans tri.
+  `order[name]`, `order[name.en]`, `order[cardGroup.name]` et `sort=name` aussi.
+- Les tris qui marchent (date d'extension, numéro de collection, coûts, puissances) placent les valeurs vides en
+  tête en ordre décroissant et à la fin en ordre croissant, comme PostgreSQL par défaut. Avec
+  `order[forestPower]=desc` (idem montagne, océan), les sorts, repères, permanents et héros, sans puissance, passent
+  tous avant le personnage le plus fort, sur plusieurs pages. `order[mainCost]=desc` met d'abord les jetons (sans
+  coût), `order[collectorNumberFormatedId]=desc` les cartes sans numéro de collection.
+
+**Contournement.** Re:Builder ne propose plus les tris par nom et par référence. Les autres restent proposés tels
+quels.
+
+**À faire côté backend.** Déclarer le tri par nom localisé et par référence, et trier les valeurs vides en dernier
+(`NULLS LAST`) dans les deux sens.
+
+## Mots-clés et effet d'écho presque absents des données
+
+Constaté le 2026-09-30 sur `GET /api/cards` en production (raretés Commune, Rare, Exaltée, comme l'onglet
+« Toutes les cartes »).
+
+**Constat.**
+
+- Les mots-clés d'effet (`effect1.keywords`…) manquent sur la plupart des cartes : Récupérateur Axiom a
+  « [Ravitaillez] » dans son texte et aucun mot-clé, Ruche des Scarabots crée des Scarabots et ne porte que
+  « Fugace ». En Axiom, `effectKeyword[]=BRASSBUG` (Scarabot) et `AGUERRI` renvoient 0 carte, `RAVITAILLEZ` 13 en
+  8 s, `FUGACE` une erreur 500 après 30 s.
+- `hasEchoEffect=true` renvoie 0 carte hors Uniques : seules les Uniques sont marquées.
+- Sans filtre de rareté (Uniques comprises), ces filtres prennent de 20 s à plus de 60 s (timeout).
+
+**Contournement.** Re:Builder ne propose plus les filtres mot-clé et effet d'écho sur l'API des cartes.
+
+**À faire côté backend.** Renseigner les mots-clés et l'effet d'écho des cartes communes, rares et exaltées, et
+indexer ces filtres.

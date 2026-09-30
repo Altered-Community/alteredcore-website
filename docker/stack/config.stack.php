@@ -34,7 +34,8 @@ define('CARDS_API_URL',        'https://cards.alteredcore.org');
 define('UNIQUES_API_URL',      'https://search.altered.re');
 define('DECKS_API_URL',        'http://decks-api:80');
 define('CDN_URL',              'https://cdn.alteredcore.org');
-define('OWNERSHIP_API_URL',    '');
+// Mock of the digital-ownership service (docker/stack/ownership-mock): alt arts in the site and Re:Builder.
+define('OWNERSHIP_API_URL',    'http://ownership:8080');
 define('OWNERSHIP_WEB_URL',    '');
 define('COLLECTION_API_URL',   'https://collection.alteredcore.org');
 define('COLLECTION_USE_API',   false);

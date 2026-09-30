@@ -1,18 +1,51 @@
 @if (bp.compact()) {
   <ac-app-bar title="Deck">
     <ac-back-button leading fallback="/decks" />
-    @if (deck.owned()) {
+    <!-- Nothing to act on when the deck could not be opened (one node per @if, for the [actions] slot). -->
+    @if (!deck.error() && deck.owned()) {
       <button actions class="edit" acIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" i18n-ariaLabel="@@deck.page.edit" [iconSize]="22" (click)="edit()"></button>
     }
-    <button actions acIconButton="share-2" variant="ghost" ariaLabel="Partager" i18n-ariaLabel="@@deck.page.share" [iconSize]="22" (click)="share()"></button>
-    <button actions acIconButton="ellipsis" variant="ghost" [ariaLabel]="moreLabel()" [iconSize]="22" (click)="more()"></button>
+    @if (!deck.error()) {
+      <button actions acIconButton="share-2" variant="ghost" ariaLabel="Partager" i18n-ariaLabel="@@deck.page.share" [iconSize]="22" (click)="share()"></button>
+    }
+    @if (!deck.error()) {
+      <button actions acIconButton="ellipsis" variant="ghost" [ariaLabel]="moreLabel()" [iconSize]="22" (click)="more()"></button>
+    }
   </ac-app-bar>
 }
 
+<ng-template #badges>
+  <div class="badges">
+    <ac-badge [tone]="info().badgeTone">{{ info().label }}</ac-badge>
+    <!-- No legality badge while the decks API has not computed it (state 'unknown'), as on the site. -->
+    @if (legality().state === 'legal') {
+      <ac-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ac-badge>
+    } @else if (legality().state === 'illegal') {
+      <button type="button" class="legal-details" aria-haspopup="dialog" aria-label="Non légal : voir le détail" i18n-aria-label="@@deck.page.illegalDetails" (click)="showLegality()">
+        <ac-badge tone="orange" icon="circle-alert" i18n="@@deck.page.illegal">Non légal</ac-badge>
+        <ac-icon name="chevron-right" [size]="16" />
+      </button>
+    }
+    @if (deck.isDraft()) {
+      <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>
+    }
+    <ac-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ac-badge>
+  </div>
+</ng-template>
+
 @if (deck.error(); as err) {
-  <div class="state">
-    <p>{{ err }}</p>
-    <a acButton variant="secondary" routerLink="/decks" i18n="@@deck.page.backToDecks">Retour à mes decks</a>
+  <div class="state" role="alert">
+    <ac-icon class="state-icon" [name]="deck.loadError() === 'private' ? 'lock' : 'circle-alert'" [size]="22" />
+    <p class="state-title">{{ err }}</p>
+    @if (deck.loadError() === 'server' || deck.loadError() === 'network') {
+      <p class="state-hint" i18n="@@deck.page.apiLater">L’API est actuellement indisponible. Veuillez réessayer plus tard.</p>
+    }
+    <div class="state-actions">
+      @if (deck.loadError() === 'private' && !auth.isLoggedIn()) {
+        <a acButton routerLink="/login" i18n="@@deck.page.signIn">Se connecter</a>
+      }
+      <a acButton variant="secondary" routerLink="/decks" i18n="@@deck.page.backToDecks">Retour à mes decks</a>
+    </div>
   </div>
 } @else if (deck.loading()) {
   <div class="state" aria-busy="true"><p i18n="@@deck.page.loading">Chargement du deck…</p></div>
@@ -31,19 +64,16 @@
               }
             </span>
             <div class="m-meta">
-              <h1>{{ deck.name() }}</h1>
+              <h1>
+                @if (factionLogo(); as src) {
+                  <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+                }
+                <span class="h1-text">{{ deck.name() }}</span>
+              </h1>
               <span>{{ deck.hero()?.name }}</span>
             </div>
           </div>
-          <div class="badges">
-            <ac-badge [tone]="info().badgeTone">{{ info().label }}</ac-badge>
-            @if (legal()) {
-              <ac-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ac-badge>
-            } @else {
-              <ac-badge tone="orange" icon="circle-alert" i18n="@@deck.page.illegal">Non légal</ac-badge>
-            }
-            <ac-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ac-badge>
-          </div>
+          <ng-container [ngTemplateOutlet]="badges" />
           <div class="m-counts">
             <span i18n="@@deck.page.cardCount"><strong>{{ deck.total() }}</strong> cartes</span>
             <span class="sep" aria-hidden="true"></span>
@@ -52,52 +82,70 @@
         </section>
       }
 
-      @if (tab() === 'decklist') {
-        @if (bp.compact()) {
-          <app-deck-list-view [readonly]="true" />
-        } @else {
-          <div class="grouping">
-            <ac-segmented ariaLabel="Regrouper par" i18n-ariaLabel="@@deck.page.groupBy" [options]="groupingOptions" [(value)]="grouping" />
-          </div>
-          <div class="tables">
-            @for (g of groups(); track g.label) {
-              <app-decklist-table [group]="g" />
-            } @empty {
-              <p class="empty" i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
+      @let view = tab();
+      @switch (view) {
+        @case ('decklist') {
+          @if (bp.compact()) {
+            <app-deck-list-view [readonly]="true" />
+          } @else {
+            <div class="grouping">
+              <ac-segmented ariaLabel="Regrouper par" i18n-ariaLabel="@@deck.page.groupBy" [options]="groupingOptions" [(value)]="grouping" />
+            </div>
+            <div class="tables">
+              @for (g of groups(); track g.label) {
+                <app-decklist-table [group]="g" />
+              } @empty {
+                <p class="empty" i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
+              }
+            </div>
+          }
+        }
+        @case ('description') {
+          <section class="description" aria-label="Description" i18n-aria-label="@@deck.page.tabDescription">
+            @if (deck.description().trim(); as text) {
+              <p class="description-text">{{ text }}</p>
+            } @else {
+              <p class="empty" i18n="@@deck.page.noDescription">Aucune description pour ce deck.</p>
             }
-          </div>
+          </section>
         }
-      } @else {
-        @if (bp.compact()) {
-          <ac-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
-            <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-          </ac-collapsible>
+        @case ('main') {
+          <app-test-hand [lines]="deck.lines()" />
+          <app-hand-stats [lines]="deck.lines()" />
+          <app-hand-calculators [lines]="deck.lines()" />
         }
-        <app-deck-preview [readonly]="true" [dense]="true" />
+        @case ('cartes') {
+          @if (bp.compact()) {
+            <ac-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
+              <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+            </ac-collapsible>
+          }
+          <app-deck-preview [readonly]="true" [dense]="true" />
+        }
+        @default never;
       }
     </main>
 
     @if (!bp.compact()) {
       <aside class="aside" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
-        <div class="banner">
-          @if (deck.hero(); as h) {
+        @if (deck.hero(); as h) {
+          <button type="button" class="banner zoom" aria-haspopup="dialog" [attr.aria-label]="heroZoomLabel()" (click)="zoomHero()">
             <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" i18n-placeholder="@@deck.page.heroArt" position="center 18%" [eager]="true" />
-          }
-        </div>
+          </button>
+        } @else {
+          <div class="banner"></div>
+        }
         <div class="aside-body">
           <div class="titles">
-            <h1>{{ deck.name() }}</h1>
+            <h1>
+              @if (factionLogo(); as src) {
+                <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+              }
+              {{ deck.name() }}
+            </h1>
             <span>{{ deck.hero()?.name }}@if (created()) { · <ng-container i18n="@@deck.page.createdOn">créé le {{ created() }}</ng-container>}</span>
           </div>
-          <div class="badges">
-            <ac-badge [tone]="info().badgeTone">{{ info().label }}</ac-badge>
-            @if (legal()) {
-              <ac-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ac-badge>
-            } @else {
-              <ac-badge tone="orange" icon="circle-alert" i18n="@@deck.page.illegal">Non légal</ac-badge>
-            }
-            <ac-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ac-badge>
-          </div>
+          <ng-container [ngTemplateOutlet]="badges" />
           <ac-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
           <ac-collapsible title="Stats" [(open)]="statsOpen">
             <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />

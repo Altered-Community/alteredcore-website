@@ -1,0 +1,17 @@
+.grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--ac-space-3);
+}
+li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+.empty {
+  margin: 0;
+  color: var(--ac-color-text-muted);
+}

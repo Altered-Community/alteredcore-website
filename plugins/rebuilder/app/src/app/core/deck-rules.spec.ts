@@ -1,4 +1,5 @@
-import { DECK_SIZE, computeDeckStatus, maxCopiesFor, rarityCountsFromRefs } from './deck-rules';
+import { DECK_SIZE, addBlockedReason, allowedInFormat, computeDeckStatus, heroKey, maxCopiesFor, rarityCountsFromRefs, uniqueLimit } from './deck-rules';
+import { formatInfo } from './formats';
 import type { Card, HydratedLine } from './models';
 import { rarityFromReference } from './models';
 
@@ -40,19 +41,115 @@ describe('computeDeckStatus', () => {
     expect(status.issues.some((i) => i.startsWith('copies same'))).toBe(true);
   });
 
-  it('forbids uniques in NUC formats and allows anything in sandbox', () => {
+  it('forbids uniques in NUC formats, flagging each one, and allows anything in sandbox', () => {
     const lines = [...commons(12), line('ALT_EOLE_B_AX_109_U_374', 1)];
-    expect(computeDeckStatus(lines, 'nuc').issues.some((i) => i.startsWith('unique'))).toBe(true);
+    const nuc = computeDeckStatus(lines, 'nuc');
+    expect(nuc.issues.some((i) => i.startsWith('unique'))).toBe(true);
+    expect(nuc.rules).toContain('uniqueQuantity');
+    expect(nuc.violations['ALT_EOLE_B_AX_109_U_374']).toEqual(['uniqueQuantity']);
     expect(computeDeckStatus([line('ALT_CORE_B_AX_20_R', 20, 'SPELL')], 'sandbox').legal).toBe(true);
+  });
+
+  describe('same faction (site: validation.js sameFaction)', () => {
+    const hero = { reference: 'ALT_CORE_B_AX_01_C', faction: 'AX' };
+    const inFaction = (n: number) => commons(n).map((l) => ({ ...l, card: { ...l.card, faction: { code: 'AX', name: 'Axiom' } } }));
+    const lyra = { quantity: 3, card: card({ reference: 'ALT_CORE_B_LY_10_C', name: 'Lyra card', faction: { code: 'LY', name: 'Lyra' } }) };
+
+    it('makes the deck illegal and flags each off-faction line against the hero', () => {
+      const status = computeDeckStatus([...inFaction(12), lyra], 'standard', hero);
+      expect(status.total).toBe(39);
+      expect(status.legal).toBe(false);
+      expect(status.rules).toEqual(['faction']);
+      expect(status.violations).toEqual({ ALT_CORE_B_LY_10_C: ['faction'] });
+    });
+
+    it('checks the hero’s faction, so changing the hero leaves the old cards off-faction', () => {
+      const status = computeDeckStatus(inFaction(13), 'standard', { reference: 'ALT_CORE_B_LY_01_C' });
+      expect(status.rules).toEqual(['faction']);
+      expect(Object.keys(status.violations)).toHaveLength(13);
+    });
+
+    it('reads the card’s own faction, not its reference (out-of-faction rare, unknown faction)', () => {
+      const oof = { quantity: 3, card: card({ reference: 'ALT_CORE_B_LY_10_R2', name: 'OOF', faction: { code: 'AX', name: 'Axiom' } }) };
+      const unknown = { quantity: 3, card: card({ reference: 'ALT_CORE_B_LY_11_C', name: 'Unknown' }) };
+      expect(computeDeckStatus([...inFaction(11), oof, unknown], 'standard', hero).legal).toBe(true);
+    });
+
+    it('does not apply in sandbox', () => {
+      expect(computeDeckStatus([...inFaction(12), lyra], 'sandbox', hero).legal).toBe(true);
+    });
+  });
+
+  describe('Uniques by hero in Singleton (altered.json heroUniqueLimits)', () => {
+    const singles = (n: number) => commons(n, 1);
+    const uniques = (n: number) => Array.from({ length: n }, (_, i) => line(`ALT_EOLE_B_AX_${120 + i}_U_${i + 1}`, 1, 'CHARACTER', `Unique ${i}`));
+
+    it('allows 5 Uniques with Sierra, 4 with Subhash, 3 with a hero not listed', () => {
+      const deck = [...singles(55), ...uniques(5)];
+      expect(computeDeckStatus(deck, 'singleton', { reference: 'ALT_CORE_B_AX_01_C' }).legal).toBe(true);
+      const subhash = computeDeckStatus(deck, 'singleton', { reference: 'ALT_CORE_B_AX_03_C' });
+      expect(subhash.uniqueMax).toBe(4);
+      expect(subhash.rules).toEqual(['uniqueQuantity']);
+      expect(computeDeckStatus(deck, 'singleton', { reference: 'ALT_CORE_B_AX_02_C' }).uniqueMax).toBe(3);
+      expect(computeDeckStatus(deck, 'singleton').uniqueMax).toBe(3);
+    });
+
+    it('keys the table on FACTION_NUMBER, whatever the set or print', () => {
+      expect(heroKey('ALT_ALIZE_B_YZ_65_C')).toBe('YZ_65');
+      expect(uniqueLimit(formatInfo('singleton'), { reference: 'ALT_ALIZE_A_YZ_65_R' })).toBe(5);
+      expect(uniqueLimit(formatInfo('standard'), { reference: 'ALT_CORE_B_AX_01_C' })).toBe(3);
+      expect(uniqueLimit(formatInfo('singleton_nuc'), { reference: 'ALT_CORE_B_AX_01_C' })).toBe(0);
+      expect(uniqueLimit(formatInfo('sandbox'), { reference: 'ALT_CORE_B_AX_01_C' })).toBeNull();
+    });
+  });
+
+  describe('banned and suspended cards', () => {
+    const banned = { quantity: 1, card: card({ reference: 'ALT_CORE_B_AX_05_U_141', isBanned: true }) };
+    const suspended = { quantity: 3, card: card({ reference: 'ALT_CORE_B_AX_27_R1', name: 'Susp', isSuspended: true }) };
+
+    it('fails the rule and flags the line, except in sandbox', () => {
+      const status = computeDeckStatus([...commons(11), banned, suspended], 'standard');
+      expect(status.total).toBe(37);
+      expect(status.rules).toEqual(['deckSize', 'bannedCards', 'suspendedCards']);
+      expect(status.violations).toEqual({ ALT_CORE_B_AX_05_U_141: ['bannedCards'], ALT_CORE_B_AX_27_R1: ['suspendedCards'] });
+      expect(status.checks.find((c) => c.rule === 'bannedCards')).toMatchObject({ ok: false, current: 1 });
+      expect(computeDeckStatus([...commons(11), banned, suspended], 'sandbox').legal).toBe(true);
+    });
+  });
+
+  it('flags every line of a name over the copy limit', () => {
+    const lines = [...commons(12), line('ALT_CORE_B_AX_90_C', 2, 'CHARACTER', 'Same'), line('ALT_CORE_B_AX_90_R1', 2, 'CHARACTER', 'Same')];
+    const status = computeDeckStatus(lines, 'standard');
+    expect(status.violations).toEqual({ ALT_CORE_B_AX_90_C: ['copies'], ALT_CORE_B_AX_90_R1: ['copies'] });
+  });
+
+  it('has no per-Unique copy limit in sandbox, as on the site', () => {
+    const status = computeDeckStatus([line('ALT_EOLE_B_AX_109_U_374', 4)], 'sandbox');
+    expect(status.legal).toBe(true);
+    expect(computeDeckStatus([...commons(12), line('ALT_EOLE_B_AX_109_U_374', 2)], 'standard').rules).toEqual(['deckSize', 'uniqueCopies']);
   });
 });
 
 describe('maxCopiesFor', () => {
+  const unique = card({ reference: 'ALT_EOLE_B_AX_109_U_374' });
+
   it('returns 1 for heroes, uniques and singleton, 3 otherwise', () => {
     expect(maxCopiesFor(card({ reference: 'ALT_CORE_B_AX_01_C', cardType: { reference: 'HERO' } }))).toBe(1);
-    expect(maxCopiesFor(card({ reference: 'ALT_EOLE_B_AX_109_U_374' }))).toBe(1);
+    expect(maxCopiesFor(unique)).toBe(1);
     expect(maxCopiesFor(card({ reference: 'ALT_CORE_B_AX_10_C' }), 'singleton')).toBe(1);
     expect(maxCopiesFor(card({ reference: 'ALT_CORE_B_AX_10_C' }))).toBe(3);
+  });
+
+  it('blocks Uniques in No Unique formats, with the reason', () => {
+    expect(maxCopiesFor(unique, 'nuc')).toBe(0);
+    expect(maxCopiesFor(unique, 'singleton_nuc')).toBe(0);
+    expect(addBlockedReason(unique, 'nuc')).toBe('Cartes uniques interdites en Standard No Unique');
+    expect(addBlockedReason(unique, 'standard')).toBeNull();
+    expect(addBlockedReason(card({ reference: 'ALT_CORE_B_AX_10_C' }), 'nuc')).toBeNull();
+  });
+
+  it('lets Uniques go past one copy in sandbox, like any card', () => {
+    expect(maxCopiesFor(unique, 'sandbox')).toBe(99);
   });
 });
 
@@ -75,5 +172,44 @@ describe('rarity from references', () => {
       'ALT_CORE_B_AX_01_C',
     );
     expect(counts).toEqual({ C: 3, R: 2, U: 1, E: 0 });
+  });
+});
+
+describe('sets missing from BGA and the Frontier list', () => {
+  const line = (reference: string, quantity = 1): HydratedLine => ({ quantity, card: { reference, name: reference, cardType: { reference: 'SPELL' } } });
+
+  it('refuses a card of a set missing from BGA, except in Test', () => {
+    const lines = [line('ALT_FUGUE_B_AX_130_C'), line('ALT_CORE_B_AX_04_C')];
+    const standard = computeDeckStatus(lines, 'standard');
+    expect(standard.rules).toContain('sets');
+    expect(standard.violations['ALT_FUGUE_B_AX_130_C']).toContain('sets');
+    expect(computeDeckStatus(lines, 'test').rules).not.toContain('sets');
+  });
+
+  it('refuses the Uniques off the Frontier list in Frontier only', () => {
+    const lines = [line('ALT_CORE_B_AX_04_U_12'), line('ALT_CORE_B_AX_05_U_3')];
+    const data = { frontierIllegal: new Set(['ALT_CORE_B_AX_04_U_12']) };
+    const frontier = computeDeckStatus(lines, 'frontier', null, data);
+    expect(frontier.rules).toContain('frontierUniques');
+    expect(frontier.violations['ALT_CORE_B_AX_04_U_12']).toContain('frontierUniques');
+    expect(frontier.violations['ALT_CORE_B_AX_05_U_3']).toBeUndefined();
+    expect(computeDeckStatus(lines, 'standard', null, data).rules).not.toContain('frontierUniques');
+  });
+});
+
+describe('allowedInFormat (Favoris « légales »)', () => {
+  const card = (reference: string, extra: Partial<Card> = {}) => ({ reference, name: reference, ...extra }) as Card;
+  it('drops Uniques in a No Unique format, banned and suspended cards where forbidden, sets missing from BGA', () => {
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1'), 'nuc')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_U_123'), 'nuc')).toBe(false);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_U_123'), 'standard')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isBanned: true }), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isBanned: true }), 'sandbox')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isSuspended: true }), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_FUGUE_B_AX_08_C'), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_CYCLONE_B_AX_66_U_97', { gameplayFormat: ['FRONTIER'] }), 'frontier')).toBe(true);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'frontier')).toBe(false);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'standard')).toBe(true);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3'), 'frontier')).toBe(true);
   });
 });

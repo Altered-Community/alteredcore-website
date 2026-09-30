@@ -2,6 +2,7 @@ import { isUniqueReference } from './card-art';
 import { echoText } from './card-text';
 import { computeDeckStatus, rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
 import { formatInfo } from './formats';
+import { type DeckLegality, legalityFromApi, legalityFromStatus } from './deck-legality';
 import type { Card, Deck, DeckCardLine, DeckFormat, DeckHero, HydratedLine } from './models';
 import { deckLines, localizedText } from './models';
 import { contentLocale } from './locale';
@@ -20,6 +21,8 @@ export function lineToCard(line: DeckCardLine): Card {
     oceanPower: line.oceanPower ?? null,
     mainEffect: line.mainEffect ?? null,
     echoEffect: line.echoEffect ?? null,
+    ...(line.isBanned ? { isBanned: true } : {}),
+    ...(line.isSuspended ? { isSuspended: true } : {}),
   };
 }
 
@@ -51,6 +54,8 @@ export function mergeUniqueFace(current: Card, full: Card): Card {
     artists: current.artists?.length ? current.artists : full.artists,
     set: current.set ?? full.set,
     transfuge: current.transfuge ?? full.transfuge,
+    isBanned: current.isBanned ?? full.isBanned,
+    isSuspended: current.isSuspended ?? full.isSuspended,
   };
 }
 
@@ -69,6 +74,8 @@ export function cardToLine(card: Card, quantity: number): DeckCardLine {
     ...(isUniqueReference(card.reference)
       ? { mainEffect: card.mainEffect ?? null, echoEffect: card.echoEffect ?? null }
       : {}),
+    ...(card.isBanned ? { isBanned: true } : {}),
+    ...(card.isSuspended ? { isSuspended: true } : {}),
   };
 }
 
@@ -109,6 +116,10 @@ export interface DeckListItem {
   formatLabel: string;
   formatTone: 'blue' | 'violet' | 'neutral';
   legal: boolean;
+  /** Verdict and failed rules (the decks API's, or computed for a guest deck), for the « Non légal » badge's window. */
+  legality: DeckLegality;
+  /** `isDraft` of the decks API. */
+  draft: boolean;
   isPublic: boolean;
   /** Owner's username, when the API exposes it. */
   author: string | null;
@@ -117,6 +128,8 @@ export interface DeckListItem {
   guest: boolean;
   /** Last modification: see `lastModified`. */
   updatedAt: string;
+  /** `createdAt` of the deck, `''` when absent or not a valid date. */
+  createdAt: string;
   /** `upvoteCount` / `hasUpvoted` of the decks API. */
   likes: number;
   liked: boolean;
@@ -135,9 +148,11 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     ? lines.filter((l) => !isHeroLine(l, hero)).reduce((n, l) => n + l.quantity, 0)
     : deck.stats?.totalCards ?? rarity.C + rarity.R + rarity.U + rarity.E;
   const info = formatInfo(deck.format);
-  const legal = deck.legal ?? (lines.length
-    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value).legal
-    : false);
+  const status = deck.legal == null && lines.length
+    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero)
+    : null;
+  const legal = deck.legal ?? status?.legal ?? false;
+  const legality = legalityFromApi(deck) ?? (status ? legalityFromStatus(status, !!hero) : { state: 'unknown' as const, rules: [], errors: [] });
   return {
     id: deck.id,
     name: deck.name || $localize`:@@core.deck.untitled:Sans nom`,
@@ -146,12 +161,15 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     formatLabel: info.label,
     formatTone: info.badgeTone,
     legal: !!legal && !!hero,
+    legality,
+    draft: deck.isDraft === true,
     isPublic: !!deck.isPublic,
     author: authorOf(deck),
     total,
     rarity,
     guest: !!deck.guest,
     updatedAt: lastModified(deck),
+    createdAt: deck.createdAt && !Number.isNaN(Date.parse(deck.createdAt)) ? deck.createdAt : '',
     likes: deck.upvoteCount ?? 0,
     liked: !!deck.hasUpvoted,
   };
@@ -190,7 +208,11 @@ export interface DeckGroup {
 }
 
 function groupIdOf(card: Card): DeckGroupId {
-  const t = typeOf(card);
+  return groupIdOfType(typeOf(card));
+}
+
+/** Group of a card type (`typeOf`): characters and tokens, spells, permanents, other. */
+export function groupIdOfType(t: string): DeckGroupId {
   if (t === 'CHARACTER' || t === 'TOKEN') return 'characters';
   if (t === 'SPELL') return 'spells';
   if (t.includes('PERMANENT')) return 'permanents';

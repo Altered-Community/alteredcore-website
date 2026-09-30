@@ -66,6 +66,8 @@ export interface Card {
   isBanned?: boolean;
   isErrated?: boolean;
   isSuspended?: boolean;
+  /** Formats a Unique is played in (`['FRONTIER']` when it is on the Frontier list), from the cards API. */
+  gameplayFormat?: string[];
 }
 
 export interface CardCollection {
@@ -76,7 +78,23 @@ export interface CardCollection {
   lastPage: number;
 }
 
-export type CardOrder = 'setDate-desc' | 'setDate-asc' | 'number-asc';
+export type CardOrder =
+  | 'setDate-desc'
+  | 'setDate-asc'
+  | 'number-asc'
+  | 'collector-asc'
+  | 'collector-desc'
+  | 'mainCost-asc'
+  | 'mainCost-desc'
+  | 'recallCost-asc'
+  | 'recallCost-desc'
+  | 'forestPower-asc'
+  | 'forestPower-desc'
+  | 'mountainPower-asc'
+  | 'mountainPower-desc'
+  | 'oceanPower-asc'
+  | 'oceanPower-desc'
+  | 'random';
 
 export interface CardSearchParams {
   page?: number;
@@ -89,9 +107,13 @@ export interface CardSearchParams {
   variations?: string[];
   mainCosts?: number[];
   recallCosts?: number[];
+  forestPowers?: number[];
+  mountainPowers?: number[];
+  oceanPowers?: number[];
+  subtypes?: string[];
+  costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
-  hasEchoEffect?: boolean;
   locale?: Locale;
 }
 
@@ -123,6 +145,12 @@ export interface DeckCardLine {
    */
   mainEffect?: Card['mainEffect'];
   echoEffect?: Card['echoEffect'];
+  /**
+   * Cards API status, kept on guest lines so the editor still flags a banned or suspended card after a reload.
+   * Decks API lines do not carry it (see `docs/api-limitations/decks-api.md`).
+   */
+  isBanned?: boolean;
+  isSuspended?: boolean;
 }
 
 export interface DeckStats {

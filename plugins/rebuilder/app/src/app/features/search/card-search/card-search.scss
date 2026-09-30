@@ -133,6 +133,15 @@
   color: var(--ac-color-text);
 }
 
+/* Sticks to the bottom of the viewport inside the results column; takes no room below the list. */
+.to-top.in-column {
+  position: sticky;
+  right: auto;
+  bottom: var(--ac-space-5);
+  align-self: flex-end;
+  margin-top: calc(-48px - var(--ac-space-4));
+}
+
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
   :host {

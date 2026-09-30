@@ -1,6 +1,6 @@
 <?php
 // /api/v1/services/{service}/{path} — same-origin relay from front-end plugins to the
-// authenticated Altered services (decks, collection). Rewritten by .htaccess with
+// authenticated Altered services (decks, collection, ownership). Rewritten by .htaccess with
 // ?_service=&_path= (the client's query string is read from REQUEST_URI).
 //
 // The browser never holds a Keycloak token: the relay reads the access token from the PHP

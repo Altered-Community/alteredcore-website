@@ -6,6 +6,8 @@ export interface NewDeckResult {
   hero: DeckHero;
   format: DeckFormat;
   isPublic: boolean;
+  /** Optional, trimmed; empty when none was typed. */
+  description: string;
 }
 
 /**
@@ -14,6 +16,7 @@ export interface NewDeckResult {
  */
 export class NewDeckForm {
   readonly name = signal('');
+  readonly description = signal('');
   readonly hero = signal<DeckHero | null>(null);
   readonly format = signal<DeckFormat>('standard');
   /** `boolean | undefined` to bind `ac-segmented [(value)]` directly. */
@@ -40,6 +43,6 @@ export class NewDeckForm {
     const hero = this.hero();
     const name = this.name().trim();
     if (!hero || !name) return null;
-    return { name, hero, format: this.format(), isPublic: !!this.isPublic() };
+    return { name, hero, format: this.format(), isPublic: !!this.isPublic(), description: this.description().trim() };
   }
 }

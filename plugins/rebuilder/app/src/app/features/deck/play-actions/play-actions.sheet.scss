@@ -1,0 +1,18 @@
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--ac-space-2);
+}
+button {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  border: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  padding: 0 var(--ac-space-1);
+}

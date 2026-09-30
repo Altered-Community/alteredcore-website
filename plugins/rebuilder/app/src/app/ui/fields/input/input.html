@@ -17,10 +17,12 @@
     [attr.aria-invalid]="invalid() || null"
     [placeholder]="placeholder()"
     [value]="value()"
+    [readOnly]="readonly()"
     autocomplete="off"
     (input)="emit(field.value)"
     (keydown.enter)="enter.emit(field.value)"
     (blur)="onTouched()"
+    (focus)="readonly() && field.select()"
   />
   @if (clearable() && value()) {
     <button type="button" class="clear" aria-label="Effacer" i18n-aria-label="@@ui.input.clear" (click)="emit(''); field.focus()">

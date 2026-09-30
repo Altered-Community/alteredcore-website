@@ -6,8 +6,18 @@
     <label [for]="id" class="inline-label">{{ label() }}</label>
   }
   <select #sel class="ac-select" [id]="id" [attr.aria-label]="label() ? null : ariaLabel()" (change)="pick(sel.value)">
-    @for (o of options(); track o.value) {
-      <option [value]="o.value" [selected]="o.value === value()">{{ o.label }}</option>
+    @for (g of groups(); track $index) {
+      @if (g.label) {
+        <optgroup [label]="g.label">
+          @for (o of g.options; track o.value) {
+            <option [value]="o.value" [selected]="o.value === value()">{{ o.label }}</option>
+          }
+        </optgroup>
+      } @else {
+        @for (o of g.options; track o.value) {
+          <option [value]="o.value" [selected]="o.value === value()">{{ o.label }}</option>
+        }
+      }
     }
   </select>
 </div>

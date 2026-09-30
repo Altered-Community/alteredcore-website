@@ -40,7 +40,7 @@
   @if (bp.expanded()) {
     <aside class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
       <div class="filters-scroll">
-        <app-filters-panel [source]="search.source()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+        <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
       </div>
       <div class="filters-foot">
         <button acButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
@@ -89,6 +89,10 @@
       </div>
     }
     <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+    <!-- Desktop: at the bottom right of the results column, clear of the editor's deck panel. -->
+    @if (!bp.compact() && condensed()) {
+      <button class="to-top in-column" acIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+    }
   </section>
 </div>
 

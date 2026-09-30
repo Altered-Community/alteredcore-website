@@ -65,6 +65,30 @@
   padding-top: var(--ac-space-2-5);
   border-top: 1px solid var(--ac-color-divider);
 }
+.legality {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ac-color-text-muted);
+  cursor: pointer;
+  border-radius: var(--ac-radius-pill);
+}
+/* Hit area of at least --ac-hit-min around the badge. */
+.legality {
+  position: relative;
+}
+.legality::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
 .total {
   display: flex;
   align-items: baseline;

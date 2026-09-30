@@ -5,4 +5,12 @@ export const environment = {
   uniquesApiUrl: 'https://search.altered.re',
   decksApiUrl: 'https://decks.alteredcore.org',
   cdnUrl: 'https://cdn.alteredcore.org',
+  /** Digital ownership (alt-art preferences), through the site's relay only: empty outside the site. */
+  ownershipApiUrl: '',
+  /** The site's base URL (`AlteredCore.baseUrl`, `''` at the domain root): links to its pages (card sheet). */
+  siteUrl: '',
+  /** CSRF token of the site session (`AlteredCore.csrf`): form posts to the site's plugin endpoints (favorites). */
+  siteCsrf: '',
+  /** The plugin's own PHP endpoints (`AlteredCore.page.apiUrl`, `/papi/rebuilder/`): empty outside the site. */
+  pluginApiUrl: '',
 };

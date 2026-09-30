@@ -149,6 +149,23 @@
   cursor: pointer;
   flex-shrink: 0;
 }
+.group {
+  padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+  flex-shrink: 0;
+}
+.thumb {
+  width: 28px;
+  aspect-ratio: 5 / 7;
+  margin-right: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .option:hover,
 .option.cdk-option-active {
   background: var(--ac-color-bg-app);

@@ -83,8 +83,20 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_en'      => $page['title_en'] ?? '',
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
+        'meta_file'     => spaMetaFile($plugin, $page),
         'spa'           => $spa,
     ];
+}
+
+/**
+ * Absolute path of the page's `meta` file (manifest), or null when absent or outside the plugin. The router includes it
+ * before the header, so a client route can set its title and link preview ($pageTitle, $pageDescription, $pageImage).
+ */
+function spaMetaFile(array $plugin, array $page): ?string {
+    $rel = isset($page['meta']) && is_string($page['meta']) ? spaSafeRelPath($page['meta']) : null;
+    if ($rel === null) return null;
+    $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    return is_file($abs) ? $abs : null;
 }
 
 /**
@@ -104,7 +116,7 @@ function spaPublicServiceUrl(string $name): string {
  */
 function spaProxyServices(): array {
     $out = [];
-    foreach (['decks' => 'DECKS_API_URL', 'collection' => 'COLLECTION_API_URL'] as $name => $const) {
+    foreach (['decks' => 'DECKS_API_URL', 'collection' => 'COLLECTION_API_URL', 'ownership' => 'OWNERSHIP_API_URL'] as $name => $const) {
         if (defined($const) && (string)constant($const) !== '') $out[$name] = rtrim((string)constant($const), '/');
     }
     return $out;

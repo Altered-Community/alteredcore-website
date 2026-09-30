@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, expand, map, reduce, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthSession } from './auth-session';
 import type { Deck, DeckWrite } from './models';
@@ -10,8 +10,12 @@ export interface PublicDeckQuery {
   itemsPerPage?: number;
   name?: string;
   faction?: string;
+  /** Hero reference (the API matches its base and promo prints). */
+  hero?: string;
   format?: string;
   order?: 'updatedAt' | 'createdAt' | 'name' | 'upvoteCount' | 'viewCount';
+  /** Direction of `order`: ascending for `name`, descending otherwise when absent. */
+  dir?: 'asc' | 'desc';
 }
 
 export interface PublicDeckPage {
@@ -19,6 +23,13 @@ export interface PublicDeckPage {
   totalItems: number;
   currentPage: number;
   lastPage: number;
+}
+
+/** A hero that has public decks (`GET /api/decks/public/heroes`). */
+export interface PublicDeckHero {
+  reference: string;
+  name: string;
+  imagePath?: string | null;
 }
 
 export interface DeckUpvote {
@@ -46,6 +57,30 @@ export class DecksApiService {
   }
 
   /**
+   * Every deck of the caller: `listMine` page after page until a page comes back shorter than
+   * `itemsPerPage` (or empty), at most `maxPages` requests. `GET /api/decks` ignores `page` and
+   * `itemsPerPage` today and returns every deck at once: a page longer than `itemsPerPage`, or one
+   * that brings no new deck, ends the loop (each further request would return the same decks).
+   */
+  listAllMine(itemsPerPage = 100, maxPages = 50): Observable<Deck[]> {
+    const seen = new Set<string>();
+    const fetch = (page: number) =>
+      this.listMine(page, itemsPerPage).pipe(
+        map((body) => {
+          const decks = Array.isArray(body) ? body : (body.member ?? []);
+          const fresh = decks.filter((d) => !seen.has(d.id)).length;
+          decks.forEach((d) => seen.add(d.id));
+          return { page, decks, last: decks.length !== itemsPerPage || fresh === 0 };
+        }),
+      );
+    return fetch(1).pipe(
+      expand(({ page, last }) => (last || page >= maxPages ? EMPTY : fetch(page + 1))),
+      reduce((all: Deck[], { decks }) => [...all, ...decks], []),
+      map((all) => [...new Map(all.map((d) => [d.id, d])).values()]),
+    );
+  }
+
+  /**
    * `GET /api/decks/public` is anonymous; with a token, each deck's `hasUpvoted` is the caller's.
    * An expired token gets a 401 there, so the list is then fetched again without it.
    */
@@ -56,8 +91,9 @@ export class DecksApiService {
     };
     if (query.name) params['name'] = query.name;
     if (query.faction) params['faction'] = query.faction;
+    if (query.hero) params['hero'] = query.hero;
     if (query.format) params['format'] = query.format;
-    if (query.order) params[`order[${query.order}]`] = query.order === 'name' ? 'asc' : 'desc';
+    if (query.order) params[`order[${query.order}]`] = query.dir ?? (query.order === 'name' ? 'asc' : 'desc');
     const url = `${this.baseUrl}/api/decks/public`;
     const startedWithToken = !!this.auth.token();
     const anonymous = () =>
@@ -67,6 +103,13 @@ export class DecksApiService {
         err instanceof HttpErrorResponse && err.status === 401 && startedWithToken ? anonymous() : throwError(() => err),
       ),
     );
+  }
+
+  /** Heroes of the public decks, for the hero filter of the community tab (anonymous). */
+  publicHeroes(locale = 'en'): Observable<PublicDeckHero[]> {
+    return this.http
+      .get<PublicDeckHero[]>(`${this.baseUrl}/api/decks/public/heroes`, { headers: new HttpHeaders({ Accept: 'application/json' }), params: { locale } })
+      .pipe(map((heroes) => (Array.isArray(heroes) ? heroes : [])));
   }
 
   /** Public decks are readable anonymously by UUID; private ones need the owner's token. */
@@ -96,10 +139,15 @@ export class DecksApiService {
     );
   }
 
-  patch(id: string, body: Partial<DeckWrite>): Observable<Deck> {
+  /**
+   * `keepalive`: the request outlives the page (tab closed, site link followed), like `sendBeacon`
+   * but through the same client, so it keeps the relay's CSRF header (and the token outside the site).
+   */
+  patch(id: string, body: Partial<DeckWrite>, options: { keepalive?: boolean } = {}): Observable<Deck> {
     return this.send(() =>
       this.http.patch<Deck>(`${this.baseUrl}/api/decks/${encodeURIComponent(id)}`, body, {
         headers: this.headers(true),
+        keepalive: !!options.keepalive,
       }),
     );
   }

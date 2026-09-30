@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+.strip {
+  margin: 0;
+  padding: 0 0 var(--ac-space-1);
+  list-style: none;
+  display: flex;
+  gap: var(--ac-space-2);
+  overflow-x: auto;
+}
+li {
+  position: relative;
+  flex-shrink: 0;
+}
+.tile {
+  display: block;
+  width: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  overflow: hidden;
+  background: var(--ac-color-track);
+  cursor: pointer;
+}
+.tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+}
+.tile.unowned {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.tile:focus-visible,
+.marker:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.markers {
+  position: absolute;
+  left: 50%;
+  bottom: var(--ac-space-1);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+.marker {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--ac-color-on-strong);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.marker.active {
+  background: var(--ac-color-primary);
+}
+.error {
+  margin: var(--ac-space-2) 0 0;
+  font-size: 12px;
+  color: var(--ac-color-danger);
+}

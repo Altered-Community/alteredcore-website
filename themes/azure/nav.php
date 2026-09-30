@@ -130,14 +130,24 @@ if (!function_exists('__nav_active')) {
                 <?php endif; ?>
             </div><!-- /.az-topbar-controls -->
 
-            <!-- Burger button — mobile only, hidden in compact mode -->
-            <?php if (!$__mobileCompact): ?>
-            <button class="ac-icon-button az-burger d-md-none" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#azNav"
-                    aria-controls="azNav" aria-expanded="false" aria-label="Menu">
-                <?= ac_icon('menu') ?>
+            <!-- Account button — mobile only, opens #azAccountMenu (script below) -->
+            <button class="ac-icon-button ac-icon-button--ghost az-account-btn d-md-none" type="button" id="azAccountBtn"
+                    aria-controls="azAccountMenu" aria-expanded="false"
+                    aria-label="<?= h($_hTxt['account']) ?>">
+                <?php if (kcIsLoggedIn()): ?>
+                <span class="ac-avatar az-account-initial" aria-hidden="true"><?= h(mb_strtoupper(mb_substr(kcUser()['username'] ?? '', 0, 1))) ?></span>
+                <?php else: ?>
+                <?= ac_icon('user') ?>
+                <?php endif; ?>
             </button>
-            <?php endif; ?>
+
+            <!-- Burger button — mobile only, opens #azMobileMenu (script below) -->
+            <button class="ac-icon-button az-burger d-md-none" type="button" id="azBurger"
+                    aria-controls="azMobileMenu" aria-expanded="false"
+                    aria-label="<?= h($_hTxt['menu']) ?>"
+                    data-label-open="<?= h($_hTxt['menu']) ?>" data-label-close="<?= h($_hTxt['close_menu']) ?>">
+                <?= ac_icon('menu', 'az-burger-open') ?><?= str_replace('<svg ', '<svg hidden ', ac_icon('x', 'az-burger-close')) ?>
+            </button>
 
         </div><!-- /.az-topbar-inner -->
     </div><!-- /.az-topbar -->
@@ -163,7 +173,7 @@ if (!function_exists('__nav_active')) {
                     <li class="nav-item">
                         <button type="button" data-sidebar-toggle
                                 class="nav-link"
-                                <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                                title="<?= h($__ni['label']) ?>">
                             <?= ac_icon((string)$__ni['icon']) ?>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -176,7 +186,7 @@ if (!function_exists('__nav_active')) {
                         <a href="<?= h(__nav_href($__ni)) ?>"
                            class="nav-link nav-link-split-main"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <?= ac_icon((string)$__ni['icon']) ?>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -188,32 +198,64 @@ if (!function_exists('__nav_active')) {
                         <?php else: ?>
                         <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                            data-bs-toggle="dropdown" aria-expanded="false"
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <?= ac_icon((string)$__ni['icon']) ?>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
                             <?php endif; ?>
                         </a>
                         <?php endif; ?>
-                        <ul class="dropdown-menu">
-                            <?php foreach ($__ni['children'] as $__nc): ?>
-                            <li>
-                                <a class="dropdown-item <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
-                                   href="<?= h(__nav_href($__nc)) ?>"
-                                   <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                                    <?= !empty($__nc['icon']) ? ac_icon((string)$__nc['icon']) : '' ?>
-                                    <?= h($__nc['label']) ?>
-                                </a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <?php
+                        // Children grouped into columns: a section header (or a separator)
+                        // starts a new column. Desktop shows them as a full-width mega menu,
+                        // mobile as a plain list (style.css).
+                        $__cols = [['title' => '', 'items' => []]];
+                        foreach ($__ni['children'] as $__nc) {
+                            if (!empty($__nc['is_section_header']) || !empty($__nc['is_separator'])) {
+                                $__title = !empty($__nc['is_section_header']) ? $__nc['label'] : '';
+                                if (empty(end($__cols)['items']) && end($__cols)['title'] === '') {
+                                    $__cols[count($__cols) - 1]['title'] = $__title;
+                                } else {
+                                    $__cols[] = ['title' => $__title, 'items' => []];
+                                }
+                                continue;
+                            }
+                            $__cols[count($__cols) - 1]['items'][] = $__nc;
+                        }
+                        ?>
+                        <div class="dropdown-menu az-mega">
+                            <div class="az-mega-inner">
+                                <?php foreach ($__cols as $__col): if (!$__col['items'] && $__col['title'] === '') continue; ?>
+                                <div class="az-mega-col">
+                                    <?php if ($__col['title'] !== ''): ?>
+                                    <div class="az-mega-title"><?= h($__col['title']) ?></div>
+                                    <?php endif; ?>
+                                    <?php foreach ($__col['items'] as $__nc): ?>
+                                    <a class="dropdown-item az-mega-link <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
+                                       href="<?= h(__nav_href($__nc)) ?>"
+                                       <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                                        <?php if (!empty($__nc['icon'])): ?>
+                                        <span class="az-mega-icon"><?= ac_icon((string)$__nc['icon']) ?></span>
+                                        <?php endif; ?>
+                                        <span class="az-mega-text">
+                                            <span class="az-mega-label"><?= h($__nc['label']) ?></span>
+                                            <?php if (($__nc['description'] ?? '') !== ''): ?>
+                                            <span class="az-mega-desc"><?= h($__nc['description']) ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </a>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
                         <a href="<?= h(__nav_href($__ni)) ?>"
                            class="nav-link <?= $__niActive ? 'active' : '' ?>"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
-                           <?= !empty($__ni['hide_label']) ? 'title="' . h($__ni['label']) . '"' : '' ?>>
+                           title="<?= h($__ni['label']) ?>">
                             <?= ac_icon((string)$__ni['icon']) ?>
                             <?php if (empty($__ni['hide_label'])): ?>
                             <span><?= h($__ni['label']) ?></span>
@@ -227,6 +269,230 @@ if (!function_exists('__nav_active')) {
     </div><!-- /.az-navband -->
 
 </header>
+
+<!-- Mobile menu (below 768px): top-level links, then every dropdown as a grid of tiles (nothing to expand), then theme, language and account -->
+<?php
+$__mmLinks    = [];
+$__mmSections = [];
+foreach ($__navItems as $__ni) {
+    if (!empty($__ni['is_sidebar_toggle'])) continue;
+    if (!empty($__ni['children'])) $__mmSections[] = $__ni; else $__mmLinks[] = $__ni;
+}
+?>
+<div id="azMobileMenu" class="az-mobile-menu" hidden>
+    <nav class="az-mm-nav" aria-label="<?= h($_hTxt['menu']) ?>">
+        <?php if ($__mmLinks): ?>
+        <div class="az-mm-links">
+            <?php foreach ($__mmLinks as $__ni): ?>
+            <a class="az-mm-pill<?= __nav_active($__ni, $currentPage, $__iframeNavId) ? ' active' : '' ?>" href="<?= h(__nav_href($__ni)) ?>"
+               <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                <?= !empty($__ni['icon']) ? ac_icon((string)$__ni['icon']) : '' ?>
+                <span><?= h($__ni['label']) ?></span>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php foreach ($__mmSections as $__ni): ?>
+        <section class="az-mm-section">
+            <h2 class="az-mm-title"><?= h($__ni['label']) ?></h2>
+            <div class="az-mm-tiles">
+                <?php foreach ($__ni['children'] as $__nc):
+                    if (!empty($__nc['is_section_header']) || !empty($__nc['is_separator'])) continue; ?>
+                <a class="az-mm-tile<?= __nav_active($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
+                   href="<?= h(__nav_href($__nc)) ?>"
+                   <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                    <?= !empty($__nc['icon']) ? ac_icon((string)$__nc['icon']) : '' ?>
+                    <span><?= h($__nc['label']) ?></span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endforeach; ?>
+    </nav>
+
+</div>
+
+<!-- Account popover (below 768px): sign in or the user's links, theme and language -->
+<div id="azAccountBackdrop" class="az-am-backdrop" hidden></div>
+<div id="azAccountMenu" class="az-account-menu" role="dialog" aria-label="<?= h($_hTxt['account']) ?>" hidden>
+    <?php if (kcIsLoggedIn()): $__amUser = kcUser(); ?>
+    <div class="az-am-head">
+        <span class="ac-avatar az-am-avatar is-user" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__amUser['username'] ?? '', 0, 1))) ?></span>
+        <div class="az-am-who">
+            <span class="az-am-name"><?= h($__amUser['username'] ?? '') ?></span>
+            <?php if (!empty($__amUser['email'])): ?><span class="az-am-sub"><?= h($__amUser['email']) ?></span><?php endif; ?>
+        </div>
+    </div>
+    <div class="az-am-links">
+        <?php foreach (getUserMenuItems() as $__mi):
+            if ($__mi['type'] === 'system' && $__mi['system_key'] === 'account'): ?>
+        <a class="az-am-link" href="<?= BASE_URL ?>/pages/account">
+            <?= ac_icon('circle-user') ?>
+            <span><?= h($__mi['label'] ?: $_hTxt['my_account']) ?></span>
+            <?= ac_icon('chevron-right', 'az-am-chevron') ?>
+        </a>
+        <?php elseif ($__mi['type'] === 'link' && $__mi['label']): ?>
+        <a class="az-am-link" href="<?= h($__mi['url'] ? BASE_URL . resolveUrlLang($__mi['url']) : '#') ?>">
+            <?= ac_icon((string)($__mi['icon'] ?: 'link')) ?>
+            <span><?= h($__mi['label']) ?></span>
+            <?= ac_icon('chevron-right', 'az-am-chevron') ?>
+        </a>
+        <?php endif; endforeach; ?>
+        <?php if (canViewAdminPanel()): ?>
+        <a class="az-am-link" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">
+            <?= ac_icon('gauge') ?>
+            <span>Admin</span>
+            <?= ac_icon('chevron-right', 'az-am-chevron') ?>
+        </a>
+        <?php endif; ?>
+    </div>
+    <?php else: ?>
+    <div class="az-am-head az-am-head-guest">
+        <div class="az-am-guest">
+            <span class="ac-avatar az-am-avatar" aria-hidden="true"><?= ac_icon('user') ?></span>
+            <span class="az-am-sub"><?= h($_hTxt['not_signed_in']) ?></span>
+        </div>
+        <a class="ac-button ac-button--full az-am-signin" href="<?= BASE_URL ?>/pages/login">
+            <?= ac_icon('log-in') ?> <?= h($_hTxt['sign_in']) ?>
+        </a>
+    </div>
+    <?php endif; ?>
+
+    <div class="az-am-section">
+        <span class="az-am-label" id="azAmTheme"><?= h($_hTxt['theme']) ?></span>
+        <div class="ac-segmented ac-segmented--full" role="group" aria-labelledby="azAmTheme">
+            <button type="button" data-az-theme="light" aria-pressed="true"><?= ac_icon('sun') ?> <?= h($_hTxt['light']) ?></button>
+            <button type="button" data-az-theme="dark" aria-pressed="false"><?= ac_icon('moon') ?> <?= h($_hTxt['dark']) ?></button>
+        </div>
+    </div>
+
+    <div class="az-am-section">
+        <span class="az-am-label" id="azAmLang"><?= h($_hTxt['language']) ?></span>
+        <div class="ac-segmented ac-segmented--full" role="group" aria-labelledby="azAmLang">
+            <?php foreach ($_langNames as $_l => $_lName): ?>
+            <a href="<?= h($_langUrls[$_l]) ?>" hreflang="<?= h($_l) ?>"
+               title="<?= h($_lName) ?>" aria-label="<?= h($_lName) ?>"<?= $_l === $lang ? ' aria-current="page"' : '' ?>><?= h(strtoupper($_l)) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <?php if (kcIsLoggedIn()): ?>
+    <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
+    <a class="az-am-signout" href="<?= $_logoutUrl ?>"><?= ac_icon('log-out') ?> <?= h($_hTxt['sign_out']) ?></a>
+    <?php endif; ?>
+</div>
+<script>
+// Mobile header: the burger opens a full-screen menu, the account button a
+// popover. Opening one closes the other; Escape closes either.
+(function () {
+    var hdr = document.querySelector('.az-site-header');
+    if (!hdr) return;
+    var panels = [];
+
+    function register(btn, panel, onToggle) {
+        if (!btn || !panel) return null;
+        var p = { btn: btn, panel: panel, onToggle: onToggle };
+        p.setOpen = function (open) {
+            if (open) panels.forEach(function (o) { if (o !== p) o.setOpen(false); });
+            panel.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            onToggle(open);
+        };
+        btn.addEventListener('click', function () { p.setOpen(panel.hidden); });
+        panels.push(p);
+        return p;
+    }
+    function headerBottom() { return Math.round(hdr.getBoundingClientRect().bottom); }
+
+    // Burger: full-screen menu under the header
+    var burger = document.getElementById('azBurger');
+    var burgerOpen  = burger ? burger.querySelector('.az-burger-open') : null;
+    var burgerClose = burger ? burger.querySelector('.az-burger-close') : null;
+    var menu = document.getElementById('azMobileMenu');
+    register(burger, menu, function (open) {
+        if (open) menu.style.top = headerBottom() + 'px';
+        burger.setAttribute('aria-label', open ? burger.dataset.labelClose : burger.dataset.labelOpen);
+        burgerOpen.toggleAttribute('hidden', open);
+        burgerClose.toggleAttribute('hidden', !open);
+        document.documentElement.classList.toggle('az-mm-open', open);
+    });
+
+    // Account: popover under its button, the page dimmed behind it
+    var accBtn = document.getElementById('azAccountBtn');
+    var acc = document.getElementById('azAccountMenu');
+    var backdrop = document.getElementById('azAccountBackdrop');
+    var themeBtns = acc ? acc.querySelectorAll('[data-az-theme]') : [];
+    function syncTheme() {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        themeBtns.forEach(function (b) { b.setAttribute('aria-pressed', (b.dataset.azTheme === 'dark') === dark ? 'true' : 'false'); });
+    }
+    var accPanel = register(accBtn, acc, function (open) {
+        backdrop.hidden = !open;
+        if (open) {
+            var top = headerBottom(), r = accBtn.getBoundingClientRect();
+            backdrop.style.top = top + 'px';
+            acc.style.top = (top + 8) + 'px';
+            // Point the caret at the button's centre
+            acc.style.setProperty('--az-am-caret', Math.round(window.innerWidth - r.left - r.width / 2 - 12 - 6) + 'px');
+            syncTheme();
+        }
+    });
+    if (backdrop && accPanel) backdrop.addEventListener('click', function () { accPanel.setOpen(false); });
+
+    // Theme buttons reuse the header toggle (hidden on mobile)
+    var headerToggle = document.getElementById('header-theme-toggle');
+    themeBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+            var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (headerToggle && (b.dataset.azTheme === 'dark') !== dark) headerToggle.click();
+            syncTheme();
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        panels.forEach(function (p) { if (!p.panel.hidden) { p.setOpen(false); p.btn.focus(); } });
+    });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) {
+        if (e.matches) panels.forEach(function (p) { p.setOpen(false); });
+    });
+}());
+</script>
+<script>
+// Desktop single bar: shrink the header step by step, only as far as needed
+// for the menu to fit between the brand and the controls: tighter spacing,
+// then the logo without the site name, then icon-only menu items starting
+// from the last one (classes styled in style.css).
+(function () {
+    var header = document.querySelector('.az-site-header');
+    if (!header || !window.matchMedia) return;
+    var desktop = window.matchMedia('(min-width: 768px)');
+    var steps   = ['az-nav-tight', 'az-nav-no-name'];
+    var nav     = header.querySelector('.az-nav-list');
+    var ctrls   = header.querySelector('.az-topbar-controls');
+    if (!nav || !ctrls) return;
+    var items   = Array.prototype.slice.call(nav.children).reverse();
+
+    function overflows() {
+        // Bar items do not shrink (style.css), so a menu that is too wide
+        // pushes the controls out of the header.
+        return header.scrollWidth > header.clientWidth
+            || nav.getBoundingClientRect().right > ctrls.getBoundingClientRect().left - 16;
+    }
+    function fit() {
+        steps.forEach(function (c) { header.classList.remove(c); });
+        items.forEach(function (li) { li.classList.remove('az-nav-item-icon'); });
+        if (!desktop.matches) return;
+        for (var i = 0; i < steps.length && overflows(); i++) header.classList.add(steps[i]);
+        for (var j = 0; j < items.length && overflows(); j++) items[j].classList.add('az-nav-item-icon');
+    }
+
+    fit();
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit); // the logo and web fonts change widths
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+}());
+</script>
 
 <?php
 $__sidebarItems = getSidebarItems();

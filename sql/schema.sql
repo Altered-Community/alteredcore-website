@@ -145,6 +145,8 @@ CREATE TABLE IF NOT EXISTS `{prefix}nav_items` (
     `parent_id`         INT DEFAULT NULL,
     `label_en`          VARCHAR(100) NOT NULL DEFAULT '',
     `label_fr`          VARCHAR(100) NOT NULL DEFAULT '',
+    `description_en`    VARCHAR(160) NOT NULL DEFAULT '',
+    `description_fr`    VARCHAR(160) NOT NULL DEFAULT '',
     `url`               VARCHAR(500) NOT NULL DEFAULT '#',
     `icon`              VARCHAR(100) NOT NULL DEFAULT 'fa-solid fa-link',
     `sort_order`        SMALLINT NOT NULL DEFAULT 0,
