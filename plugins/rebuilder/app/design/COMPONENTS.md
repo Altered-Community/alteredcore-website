@@ -22,7 +22,7 @@ Principes communs :
 | `tokens.css` | Variables globales (`:root`, et `.ar-embed` dans le site AlteredCore) | `angular.json` → `styles` (autonome) ; `src/embed/embed.scss` (build `embed`, shadow root). Texte sur fond : `--ar-color-on-primary` (fond `--ar-color-primary`), `--ar-color-inverse` / `--ar-color-on-inverse` (compteurs, onglet pilule actif), `--ar-color-on-strong` (visuel, faction, commande posée sur une carte) ; `--ar-page-top` / `--ar-sticky-top` : haut de page et bord des panneaux collants |
 | `ArDensityService` | Pose `data-density="pointer\|touch"` sur `<html>` (sur la racine du plugin si `AR_DENSITY_TARGET` est fourni) | Basé sur `matchMedia('(pointer: coarse)')` + `BreakpointObserver` (< 768 px ⇒ touch) ; expose `density = signal<'pointer'\|'touch'>()` |
 | `ArBreakpointService` | Taille de fenêtre logique | `size = signal<'compact'\|'medium'\|'expanded'>()` (< 768, 768–1199, ≥ 1200) |
-| `ar-icon` | Icône au trait | `name: string`, `size = 16\|18\|20\|22` — SVG Lucide en ligne (`text`, `hand`, `rotate` : onglets Description / Main de départ du deck) ; `discord` est un logo plein (sans trait) |
+| `ar-icon` | Icône au trait | `name: string`, `size = 16\|18\|20\|22` — SVG Lucide en ligne (`text`, `hand`, `rotate` : onglets Description / Main de départ du deck ; `hard-drive` : decks locaux) ; `discord` est un logo plein (sans trait) |
 
 ## 2. Actions — `DS-Boutons`
 

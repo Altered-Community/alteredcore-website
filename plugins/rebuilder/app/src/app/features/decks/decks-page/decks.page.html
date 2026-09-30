@@ -64,6 +64,18 @@
     </div>
   }
 
+  @if (tab() === 'mine' && localDecks().length) {
+    <div class="local-decks" role="region" aria-label="Decks locaux" i18n-aria-label="@@decks.local.region">
+      <p><ar-icon name="hard-drive" [size]="16" />{{ localDecksLabel() }}</p>
+      <div class="local-actions">
+        <button arButton variant="secondary" size="sm" [disabled]="localSaving()" (click)="discardLocalDecks()" i18n="@@decks.local.discard">Ignorer</button>
+        <button arButton size="sm" icon="upload" [disabled]="localSaving()" (click)="saveLocalDecks()" i18n="@@decks.local.save">Enregistrer sur mon compte</button>
+      </div>
+      @if (localError(); as e) {
+        <p class="local-error" role="alert">{{ e }}</p>
+      }
+    </div>
+  }
   @if (tab() === 'mine' && (serverError() || auth.sessionNotice())) {
     <p class="notice" role="status">{{ serverError() || auth.sessionNotice() }}</p>
   }

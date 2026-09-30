@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
-import { finalize, from, map, switchMap, timer } from 'rxjs';
+import { concatMap, finalize, from, map, switchMap, timer, toArray } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
@@ -113,6 +113,16 @@ export class DecksPage {
       : $localize`:@@decks.page.accountDecksUnavailable:Decks du compte indisponibles.`;
   });
   protected readonly mine = computed(() => [...this.guests.decks(), ...this.serverDecks()].map(toDeckListItem));
+  /** Signed in with decks left from guest mode on this device (Re:Builder's, or the site builder's): offered for the account. */
+  protected readonly localDecks = computed(() => (this.auth.isLoggedIn() ? this.guests.decks() : []));
+  protected readonly localDecksLabel = computed(() => {
+    const decks = this.localDecks();
+    if (decks.length !== 1) return $localize`:@@decks.local.many:Vous avez ${decks.length}:count: decks sauvegardés en mode invité sur cet appareil.`;
+    const d = toDeckListItem(decks[0]);
+    return $localize`:@@decks.local.one:${d.name}:name: — ${d.total}:count: cartes — Vous avez un deck sauvegardé en mode invité.`;
+  });
+  protected readonly localSaving = signal(false);
+  protected readonly localError = signal<string | null>(null);
   protected readonly mineFiltered = computed(() => filterDecks(this.mine(), this.filters()));
 
   /** Starter Deck Contest snapshot, loaded the first time the tab opens. */
@@ -457,6 +467,56 @@ export class DecksPage {
   /** « Non légal » on a deck tile: the deck's rules window, as on the site's decks page. */
   protected showLegality(deck: DeckListItem): void {
     openLegalityDetails(this.overlay, { format: deck.formatLabel, legality: deck.legality });
+  }
+
+  /** « Enregistrer sur mon compte »: each guest deck becomes a private draft of the account, then leaves this device. */
+  protected saveLocalDecks(): void {
+    const decks = this.localDecks();
+    if (!decks.length || this.localSaving()) return;
+    this.localSaving.set(true);
+    this.localError.set(null);
+    from(decks)
+      .pipe(
+        concatMap((d) =>
+          this.decksApi
+            .create({
+              name: d.name,
+              description: d.description ?? '',
+              format: d.format,
+              isPublic: false,
+              isDraft: true,
+              deckCards: [
+                ...(d.hero ? [{ cardReference: d.hero.reference, quantity: 1 }] : []),
+                ...(d.deckCards ?? []).filter((l) => l.cardReference !== d.hero?.reference).map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+              ],
+            })
+            .pipe(
+              map((created) => {
+                this.guests.forgetSiteDeck(d.id);
+                this.guests.delete(d.id);
+                return created;
+              }),
+            ),
+        ),
+        toArray(),
+        finalize(() => this.localSaving.set(false)),
+      )
+      .subscribe({
+        next: (created) => {
+          this.serverRes.reload();
+          if (created.length === 1) void this.router.navigate(['/decks', created[0].id]);
+        },
+        error: () => {
+          this.serverRes.reload();
+          this.localError.set($localize`:@@decks.local.error:Impossible d’enregistrer le deck sur votre compte. Réessayez.`);
+        },
+      });
+  }
+
+  /** « Ignorer »: the guest decks are deleted from this device, after a confirmation (as on the site). */
+  protected discardLocalDecks(): void {
+    if (!confirm($localize`:@@decks.local.discardConfirm:Supprimer les decks locaux ? Cette action est irréversible.`)) return;
+    for (const d of this.localDecks()) this.guests.delete(d.id);
   }
 
   protected openFilters(): void {

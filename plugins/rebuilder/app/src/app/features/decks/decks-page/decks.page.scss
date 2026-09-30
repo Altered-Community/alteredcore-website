@@ -80,6 +80,35 @@
   flex-wrap: wrap;
 }
 
+.local-decks {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ar-space-2) var(--ar-space-3);
+  padding: var(--ar-space-3) var(--ar-space-4);
+  border: 1px solid var(--ar-color-primary-border);
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-color-primary-tint);
+  color: var(--ar-color-primary-strong);
+  font-size: 13px;
+}
+.local-decks p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-1-5);
+  font-weight: 600;
+}
+.local-actions {
+  display: flex;
+  gap: var(--ar-space-2);
+}
+.local-decks .local-error {
+  flex-basis: 100%;
+  color: var(--ar-color-danger);
+}
+
 .notice.guest {
   color: var(--ar-color-text-muted);
 }

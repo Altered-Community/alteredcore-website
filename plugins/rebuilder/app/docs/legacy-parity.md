@@ -23,7 +23,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Nombre de vues, cartes et raretés sur les tuiles Communauté | ✅ |
 | Decks illégaux affichés (et signalés) en Communauté | ✅ badge « Non légal » et fenêtre des règles |
 | Import depuis une URL ou un ID altered.gg | — abandonné : api.altered.gg n’existe plus |
-| Deck invité du site (`alteredcore_guest_deck`) repris ; « Enregistrer sur mon compte » une fois connecté | ❌ |
+| Deck invité du site (`alteredcore_guest_deck`) repris ; « Enregistrer sur mon compte » une fois connecté | ✅ (aussi pour les decks invités de Re:Builder) |
 | Bandeau des deckbuilders communautaires | ❌ |
 | Format caché `test` (bgatester) | ❌ |
 

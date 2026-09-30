@@ -77,6 +77,5 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 - Not ported from the site's decks page: the community deckbuilders window. « Importer » › *Liste de
   cartes* creates a guest deck.
 - The site's deck page and deck builder link to themselves, not to Re:Builder.
-- Guest decks of the site's builder (`localStorage` key of core-altered-cards) are not read.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours
   keep ReBuilder's values.
