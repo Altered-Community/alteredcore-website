@@ -1,7 +1,9 @@
 <div class="toolbar">
   <button arButton icon="rotate" (click)="newHand()" [disabled]="!lines().length" i18n="@@deck.hand.new">Nouvelle main</button>
   <button arButton variant="secondary" icon="plus" (click)="draw()" [disabled]="!remaining() || setup()" i18n="@@deck.hand.draw">Piocher une carte</button>
-  <button arButton [variant]="game() ? 'primary' : 'secondary'" [icon]="game() ? 'toggle-on' : 'toggle-off'" [attr.aria-pressed]="!!game()" [disabled]="!lines().length" (click)="toggleGame()" i18n="@@deck.play.toggle">Mode jeu</button>
+  @if (!compact()) {
+    <button arButton [variant]="game() ? 'primary' : 'secondary'" [icon]="game() ? 'toggle-on' : 'toggle-off'" [attr.aria-pressed]="!!game()" [disabled]="!lines().length" (click)="toggleGame()" i18n="@@deck.play.toggle">Mode jeu</button>
+  }
   <span class="left" i18n="@@deck.hand.remaining">{remaining(), plural, =0 {Deck vide} =1 {1 carte dans le deck} other {{{ remaining() }} cartes dans le deck}}</span>
 </div>
 

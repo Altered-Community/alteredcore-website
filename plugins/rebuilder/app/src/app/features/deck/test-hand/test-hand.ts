@@ -22,6 +22,7 @@ import {
 import { ArButton } from '../../../ui/buttons';
 import { ArIcon } from '../../../ui/icon';
 import { ArCardTile } from '../../../ui/metier';
+import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { PlayActionsSheet, type PlayAction } from '../play-actions/play-actions.sheet';
@@ -40,6 +41,8 @@ import { openPlayZone } from '../play-zone/play-zone.overlay';
 })
 export class TestHand {
   private readonly overlay = inject(ArOverlayService);
+  /** « Mode jeu » is desktop only: hidden in the compact layout. */
+  protected readonly compact = inject(ArBreakpointService).compact;
   readonly lines = input.required<HydratedLine[]>();
   /** Draw order: indexes into `pool`. Kept by index so late card data (unique faces) shows in the hand. */
   private readonly order = signal<number[]>([]);
@@ -77,6 +80,10 @@ export class TestHand {
     effect(() => {
       const size = this.pool().length;
       untracked(() => (size ? this.newHand() : this.order.set([])));
+    });
+    // Window narrowed to the compact layout during a game: back to the plain hand.
+    effect(() => {
+      if (this.compact()) untracked(() => this.game.set(null));
     });
   }
 
