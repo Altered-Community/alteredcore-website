@@ -52,3 +52,16 @@ Altered-Re-Union/uniques-search-api).
   Personnages Uniques (`toCard`), le numéro de collection est déduit de la référence (`collectorNumber`), l’illustration
   vient du CDN comme avant.
 - Le total Frontier est celui de la liste du format (30 000 sans faction).
+
+## Mots-clés en codes non traduits (2026-09-30)
+
+**Constat.** Les textes d'effet (`mainEffect`, `echoEffect`, et les capacités de `/api/v2/effects`) écrivent les
+mots-clés en codes, les mêmes dans toutes les langues : `[GIGANTIC]`, `[FLEETING]`, `[RESUPPLY_T]`,
+`[BOOSTED_CHA_P]`, `[TOUGH_1]`… L'API des cartes les imprime traduits (`[Gigantesque]`, `[Fugace]`, `[Ravitaillez]`,
+`[Boosté]`, `[Coriace 1]`).
+
+**Contournement.** `printKeywordCodes` (`src/app/core/card-vocabulary.ts`) remplace chaque code par le mot-clé en
+français, en anglais pour les autres langues : nom anglais en capitales, variantes ramenées au mot-clé de base,
+nombre final conservé. Un code inconnu reste tel quel.
+
+**À faire côté backend.** Renvoyer les mots-clés traduits, comme l'API des cartes.
