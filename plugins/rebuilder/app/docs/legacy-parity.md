@@ -25,7 +25,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Import depuis une URL ou un ID altered.gg | — abandonné : api.altered.gg n’existe plus |
 | Deck invité du site (`alteredcore_guest_deck`) repris ; « Enregistrer sur mon compte » une fois connecté | ✅ (aussi pour les decks invités de Re:Builder) |
 | Bandeau des deckbuilders communautaires | ✅ (endpoint du plugin `papi/community-builders.php`) |
-| Format caché `test` (bgatester) | ❌ |
+| Format caché `test` (bgatester) | ✅ (création, réglages, import, filtre) |
 
 ## Page deck
 

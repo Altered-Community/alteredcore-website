@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
+import { BGA_LABEL, visibleFormats } from '../../../core/formats';
 import type { DeckFormat, DeckHero } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { ArInput, ArRadioCard, ArSegmented, ArTextarea } from '../../../ui/fields';
@@ -31,7 +31,7 @@ export interface DeckSettings {
 export class DeckSettingsOverlay {
   protected readonly ref = inject<ArOverlayRef<DeckSettings, DeckSettings>>(ArOverlayRef);
   protected readonly bp = inject(ArBreakpointService);
-  protected readonly formats = DECK_FORMATS;
+  protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
   protected readonly visibility = VISIBILITY_OPTIONS;
   protected readonly noHero = $localize`:@@shared.deckSettings.noHero:Aucun héros`;

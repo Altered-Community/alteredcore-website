@@ -1,5 +1,5 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
-import { BGA_LABEL, DECK_FORMATS } from '../../../core/formats';
+import { BGA_LABEL, visibleFormats } from '../../../core/formats';
 import { ArButton } from '../../../ui/buttons';
 import { ArInput, ArRadioCard, ArSegmented, ArTextarea } from '../../../ui/fields';
 import { ArBreakpointService } from '../../../ui/layout.services';
@@ -34,7 +34,7 @@ export class NewDeckOverlay {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly ref = inject<ArOverlayRef<NewDeckResult>>(ArOverlayRef);
   protected readonly bp = inject(ArBreakpointService);
-  protected readonly formats = DECK_FORMATS;
+  protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
   protected readonly visibility = VISIBILITY_OPTIONS;
   private readonly load = injectHeroes();

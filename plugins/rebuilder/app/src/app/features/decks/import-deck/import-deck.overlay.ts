@@ -7,7 +7,7 @@ import { CardsApiService } from '../../../core/cards-api.service';
 import { typeOf } from '../../../core/deck-rules';
 import { cardToLine, factionFromReference } from '../../../core/deck-view';
 import { DecksApiService } from '../../../core/decks-api.service';
-import { DECK_FORMATS } from '../../../core/formats';
+import { visibleFormats } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import type { Card, DeckCardLine, DeckFormat, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
@@ -58,7 +58,8 @@ export class ImportDeckOverlay {
   protected readonly bp = inject(ArBreakpointService);
   protected readonly name = signal('');
   protected readonly format = signal<DeckFormat>('standard');
-  protected readonly formats = DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }));
+  private readonly formatList = visibleFormats();
+  protected readonly formats = this.formatList.map((f) => ({ value: f.value, label: f.label }));
   protected readonly text = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -81,7 +82,7 @@ export class ImportDeckOverlay {
   }
 
   protected setFormat(value: string): void {
-    this.format.set(DECK_FORMATS.find((f) => f.value === value)?.value ?? 'standard');
+    this.format.set(this.formatList.find((f) => f.value === value)?.value ?? 'standard');
   }
 
   protected signIn(): void {

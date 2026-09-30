@@ -38,6 +38,8 @@ export interface FormatInfo {
   allowSuspended: boolean;
   /** Uniques restricted to the Frontier list. */
   frontierUniques?: boolean;
+  /** Offered only to the BGA test team (`visibleFormats`). */
+  hidden?: boolean;
   badgeTone: 'blue' | 'violet' | 'neutral';
 }
 
@@ -196,7 +198,42 @@ export const DECK_FORMATS: readonly FormatInfo[] = [
     allowSuspended: true,
     badgeTone: 'neutral',
   },
+  {
+    value: 'test',
+    label: 'Test',
+    description: $localize`:@@format.test.description:4 à 100 cartes · format de test BGA`,
+    short: $localize`:@@format.test.short:4 à 100 cartes · format de test BGA`,
+    bga: 'unavailable',
+    min: 4,
+    max: 100,
+    copyMax: 99,
+    nameCopyMax: null,
+    nameRarityCopyMax: null,
+    uniqueCopyMax: null,
+    uniqueMax: null,
+    rareMax: null,
+    exaltedMax: null,
+    sameFaction: false,
+    allowBanned: true,
+    allowSuspended: true,
+    badgeTone: 'neutral',
+    hidden: true,
+  },
 ];
+
+/** The site's opt-in page for the BGA test team (`/pages/bgatester`) sets this flag. */
+export const BGA_TESTER_KEY = 'bgatester';
+
+/** The formats offered in the pickers and filters: the hidden `test` format only for the BGA test team, as on the site. */
+export function visibleFormats(): readonly FormatInfo[] {
+  let tester = false;
+  try {
+    tester = localStorage.getItem(BGA_TESTER_KEY) === 'true';
+  } catch {
+    tester = false;
+  }
+  return DECK_FORMATS.filter((f) => !f.hidden || tester);
+}
 
 export function formatInfo(format: DeckFormat | string | null | undefined): FormatInfo {
   return DECK_FORMATS.find((f) => f.value === format) ?? DECK_FORMATS[0];

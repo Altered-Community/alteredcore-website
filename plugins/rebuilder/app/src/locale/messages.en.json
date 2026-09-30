@@ -599,6 +599,8 @@
     "decks.builders.title": "Community deckbuilders",
     "decks.builders.visit": "Visit",
     "decks.builders.info": "Other deck builders share the same database. Create, edit, or import decks in any of them and continue anywhere. All decks appear on BGA.",
-    "decks.builders.show": "View deckbuilders"
+    "decks.builders.show": "View deckbuilders",
+    "format.test.description": "4 to 100 cards · BGA test format",
+    "format.test.short": "4 to 100 cards · BGA test format"
   }
 }

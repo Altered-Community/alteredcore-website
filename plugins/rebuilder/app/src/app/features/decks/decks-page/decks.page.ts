@@ -6,7 +6,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { CommunityBuildersService } from '../../../core/community-builders.service';
 import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
-import { DECK_FORMATS } from '../../../core/formats';
+import { visibleFormats } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
@@ -219,7 +219,7 @@ export class DecksPage {
   protected readonly contestError = computed(() =>
     this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
   );
-  protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
+  protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...visibleFormats().map((f) => ({ value: f.value, label: f.label }))];
   /** Heroes that have public decks, loaded the first time the community tab opens. */
   private readonly publicHeroesRes = rxResource({
     params: () => (this.tab() === 'community' ? contentLocale() : undefined),
@@ -296,7 +296,7 @@ export class DecksPage {
       const visibility: Visibility = vis === 'public' || vis === '1' ? 'public' : vis === 'private' || vis === '0' ? 'private' : 'all';
       this.filters.set({
         q,
-        format: DECK_FORMATS.some((f) => f.value === format) ? format : '',
+        format: visibleFormats().some((f) => f.value === format) ? format : '',
         hero: this.tab() === 'community' ? hero.toUpperCase() : hero,
         visibility: this.tab() === 'mine' ? visibility : 'all',
         factions,
