@@ -91,12 +91,12 @@ describe('toUniquesQuery (Uniques search API)', () => {
   it('maps name, hero faction, sets, costs and Frontier; the cursor only after the first page', () => {
     const f = { ...defaultFilters('uniques'), q: ' kelon ', mainCost: '1-2', recallCost: '4', environment: 'frontier' as const };
     const q = toUniquesQuery(f, 'AX');
-    expect(q).toMatchObject({ name: 'kelon', reference: undefined, factions: ['AX'], sets: UNIQUES_SETS.filter((x) => x !== 'COREKS'), mainCosts: [1, 2], recallCosts: [4], format: 'frontier' });
+    expect(q).toMatchObject({ name: 'kelon', reference: undefined, factions: ['AX'], sets: UNIQUES_SETS, mainCosts: [1, 2], recallCosts: [4], format: 'frontier' });
     const first = buildUniquesParams(q, null, 36);
     expect(first.get('limit')).toBe('36');
     expect(first.has('cursor')).toBe(false);
     expect(first.getAll('faction[]')).toEqual(['AX']);
-    expect(first.getAll('set[]')).toEqual(UNIQUES_SETS.filter((x) => x !== 'COREKS'));
+    expect(first.getAll('set[]')).toEqual(UNIQUES_SETS);
     expect(first.getAll('mainCost[]')).toEqual(['1', '2']);
     expect(first.get('format')).toBe('frontier');
     expect(buildUniquesParams(q, 3591698, 36).get('cursor')).toBe('3591698');
@@ -136,7 +136,7 @@ describe('filter chips', () => {
 
   it('shows the uniques environment chip without counting "Toutes" as active', () => {
     const f = defaultFilters('uniques');
-    expect(filterChips(f, 'uniques').map((c) => c.label)).toEqual(['6 extensions', 'Toutes']);
+    expect(filterChips(f, 'uniques').map((c) => c.label)).toEqual(['7 extensions', 'Toutes']);
     expect(activeFilterCount(f, 'uniques')).toBe(1);
     expect(activeFilterCount({ ...f, environment: 'frontier' }, 'uniques')).toBe(2);
   });

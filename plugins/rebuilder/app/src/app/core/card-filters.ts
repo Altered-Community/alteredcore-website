@@ -82,8 +82,13 @@ export const CARD_SETS: readonly SetInfo[] = [
 
 export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
-/** Offered but left out by default: the set not on BGA yet (FUGUE) and the Kickstarter edition (COREKS). */
-const SETS_OFF_BY_DEFAULT = ['FUGUE', 'COREKS'];
+/**
+ * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except where
+ * Uniques are listed (Uniques, Favoris).
+ */
+function setsOffByDefault(source: CardSource): string[] {
+  return source === 'uniques' || source === 'favorites' ? ['FUGUE'] : ['FUGUE', 'COREKS'];
+}
 
 export const RARITY_OPTIONS = [
   { value: 'COMMON', short: 'C', label: $localize`:@@search.filters.rarity.common:Commune`, icon: assetUrl('assets/icons/rarete-commune.png') },
@@ -143,7 +148,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     q: '',
     mainCost: '',
     recallCost: '',
-    sets: (source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS).filter((s) => !SETS_OFF_BY_DEFAULT.includes(s)),
+    sets: (source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS).filter((s) => !setsOffByDefault(source).includes(s)),
     rarities: source === 'uniques' ? [] : rarityOptionsFor(source).map((r) => r.value),
     types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
     factions: [],
