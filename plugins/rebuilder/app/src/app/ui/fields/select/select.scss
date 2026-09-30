@@ -1,11 +1,18 @@
-/* Field, label and select are drawn by .ac-field / .ac-select (design-system/css/components/field.css). */
+/* Field and label: .ac-field (field.css); trigger, panel and options: .ac-listbox (listbox.css). */
 .wrap {
   display: flex;
   align-items: center;
   gap: var(--ac-space-2);
 }
+.wrap > .ac-listbox {
+  flex: 1;
+}
 .inline-label {
   font: var(--ac-font-small);
   color: var(--ac-color-text-muted);
   white-space: nowrap;
+}
+/* In the CDK overlay pane, which is at least as wide as the field (panelMinWidth). */
+.ac-listbox__panel {
+  width: 100%;
 }

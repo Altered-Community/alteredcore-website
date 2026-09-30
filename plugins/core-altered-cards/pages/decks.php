@@ -1724,6 +1724,9 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         Object.keys(groups).sort().forEach(function(fc) {
             var grp = document.createElement('optgroup');
             grp.label = (factions[fc] && factions[fc].name) ? factions[fc].name : fc;
+            // Faction dot in the design-system listbox (design-system/docs/components/listbox.md).
+            var fid = { AX: 'axiom', BR: 'bravos', LY: 'lyra', MU: 'muna', OR: 'ordis', YZ: 'yzmir' }[fc];
+            if (fid) grp.dataset.faction = fid;
             groups[fc].forEach(function(h) {
                 var opt = document.createElement('option');
                 opt.value = h.reference;

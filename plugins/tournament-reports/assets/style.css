@@ -314,8 +314,9 @@
     gap: var(--ac-space-2);
     margin-bottom: var(--ac-space-3);
 }
-.tr-filter-bar .tr-filter-faction { max-width: 180px; }
-.tr-filter-bar .tr-filter-hero { max-width: 200px; }
+/* The selects are drawn by the design-system listbox (a wrapper around the hidden <select>). */
+.tr-filter-bar .ac-listbox:has(> .tr-filter-faction) { width: 100%; max-width: 180px; }
+.tr-filter-bar .ac-listbox:has(> .tr-filter-hero) { width: 100%; max-width: 200px; }
 .tr-filter-bar .tr-filter-search { max-width: 220px; }
 
 /* View toggle (images/list) and deck actions */

@@ -70,8 +70,11 @@ padding.
 
 ## Select — `ac-select`
 
-Native `<select>` with the chevron drawn as a background image (`--ac-select-chevron`, one per
-theme). Height `--ac-control-md`, font size `--ac-select-font-size` (13 px, 15 px touch), bold.
+Write a native `<select>`: on the site's pages `js/ac.js` draws it as a [listbox](listbox.md)
+(list drawn by the design system, search from 8 options, groups, colour dots) and keeps the
+`<select>` for the form. Without the script (or with `data-ac-native`), the `<select>` itself has
+the same closed look: chevron drawn as a background image (`--ac-select-chevron`, one per theme),
+height `--ac-control-md`, font size `--ac-select-font-size` (13 px, 15 px touch), bold.
 
 ```php
 <div class="ac-field">
@@ -83,8 +86,7 @@ theme). Height `--ac-control-md`, font size `--ac-select-font-size` (13 px, 15 p
 </div>
 ```
 
-Focus: primary border and ring. The select has no invalid or disabled style of its own; the
-browser's disabled rendering applies.
+Focus: primary border and ring. Invalid and disabled states: see [listbox.md](listbox.md).
 
 ## Checkbox and radio — `ac-check`
 

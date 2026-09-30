@@ -166,6 +166,16 @@ include dirname(__DIR__) . '/includes/header.php';
                     <select class="ac-select" id="ds-format"><option>Standard</option><option>Frontier</option><option>Singleton</option></select>
                 </div>
                 <div class="ac-field">
+                    <label class="ac-field__label" for="ds-hero">Hero (listbox: search, groups, dots)</label>
+                    <select class="ac-select" id="ds-hero">
+                        <option value="">All heroes</option>
+                        <optgroup label="Axiom" data-faction="axiom"><option>Della &amp; Bolt</option><option>Isaree &amp; Pebble</option><option>Sierra &amp; Oddball</option><option>Treyst &amp; Rossum</option></optgroup>
+                        <optgroup label="Bravos" data-faction="bravos"><option>Kojo &amp; Booda</option></optgroup>
+                        <optgroup label="Muna" data-faction="muna"><option selected>Teija &amp; Nauraa</option></optgroup>
+                        <optgroup label="Yzmir" data-faction="yzmir"><option>Akesha &amp; Taru</option><option>Moyo &amp; Silk</option></optgroup>
+                    </select>
+                </div>
+                <div class="ac-field">
                     <label class="ac-field__label" for="ds-bad">Cost</label>
                     <input class="ac-input" id="ds-bad" value="3-" aria-invalid="true" aria-describedby="ds-bad-err">
                     <p class="ac-field__error" id="ds-bad-err">Use a number or a range: 3, 1-3, 4+.</p>

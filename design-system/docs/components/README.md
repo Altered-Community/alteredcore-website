@@ -9,6 +9,7 @@ One page per component family. Each page matches one file of `css/components/` (
 | [icon.md](icon.md) | `icon.css` | Lucide icons, brand logos, sizes, spin; `ac_icon()`, `acIcon()`, legacy Font Awesome markup, Altered glyphs |
 | [button.md](button.md) | `button.css` | Button (primary, secondary, danger, ghost, add), icon button |
 | [field.md](field.md) | `field.css` | Field wrapper, label, hint, error, input, textarea, input with icon, select, checkbox / radio, switch |
+| [listbox.md](listbox.md) | `listbox.css`, `js/ac.js` | Select drawn by the design system: search, groups, colour dots |
 | [segmented.md](segmented.md) | `segmented.css` | Segmented control |
 | [chips.md](chips.md) | `chips.css` | Chip, badge, tag, count, avatar |
 | [card.md](card.md) | `card.css` | Card, list, empty state |

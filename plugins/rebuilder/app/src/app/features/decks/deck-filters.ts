@@ -68,7 +68,7 @@ export interface HeroChoice {
  */
 export function heroOptions(choices: HeroChoice[], factions: string[], allLabel: string): AcOption[] {
   const grouped = FACTIONS.filter((f) => !factions.length || factions.includes(f.code)).flatMap((f) =>
-    choices.filter((h) => h.faction === f.code).map((h) => ({ value: h.value, label: h.label, group: f.name })),
+    choices.filter((h) => h.faction === f.code).map((h) => ({ value: h.value, label: h.label, group: f.name, color: f.color })),
   );
   return [{ value: '', label: allLabel }, ...grouped];
 }
