@@ -162,6 +162,8 @@ export function handStats(cards: OddsCard[], handSize: number): HandStats {
 export interface OddsGroup {
   id: number;
   key: string;
+  /** Reference of the first line of the group (its image). */
+  reference: string;
   name: string;
   /** C, R, U or E. */
   rarity: string;
@@ -189,6 +191,7 @@ export function oddsGroups(lines: HydratedLine[]): OddsGroup[] {
       groups.set(key, {
         id: groups.size,
         key,
+        reference: card.reference,
         name,
         rarity,
         type,

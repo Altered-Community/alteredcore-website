@@ -55,7 +55,10 @@
     @if (filtered().length) {
       <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxValue]="noSelection" (cdkListboxValueChange)="onSelect($event)">
         @for (o of filtered(); track o.id) {
-          <div class="option" [cdkOption]="o" [cdkOptionTypeaheadLabel]="o.text">@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</div>
+          @if (groupStarts().has(o.id)) {
+            <div class="group" role="presentation">{{ o.group }}</div>
+          }
+          <div class="option" [cdkOption]="o" [cdkOptionTypeaheadLabel]="o.text">@if (o.thumb) {<img class="thumb" [src]="o.thumb" alt="" loading="lazy" />}@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</div>
         }
       </div>
     } @else {

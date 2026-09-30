@@ -40,7 +40,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Badge Brouillon, icône de faction dans l'en-tête | ✅ |
 | Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | ✅ (sous les totaux, dans Stats) |
 | Main de test en mode jeu (mana, plateau, défausse, glisser-déposer) | ✅ (glisser-déposer du CDK, appui long sur mobile ; menu d’actions au clic) |
-| Calculateurs : vignettes et groupes par type dans le choix des cartes | 🟡 |
+| Calculateurs : vignettes et groupes par type dans le choix des cartes | ✅ |
 | Duplication avec les illustrations préférées (mode Global) | ❌ |
 | Étoile favori sur les cartes, widget possession / tilt dans le zoom | ❌ |
 | Groupes fins (Repères, Permanents d'expédition, Jetons) ; faction et puissances de toutes les cartes dans la decklist | 🟡 |

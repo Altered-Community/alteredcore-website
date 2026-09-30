@@ -1,6 +1,8 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { bestFraction, oddsGroups, pAtLeast, pAtLeastOne, pComboBoth, type OddsGroup } from '../../../core/hand-odds';
 import type { HydratedLine } from '../../../core/models';
+import { cardImageSources } from '../../../core/card-art';
+import { GROUP_LABELS, groupIdOfType } from '../../../core/deck-view';
 import { HAND_SIZE } from '../../../core/test-hand';
 import { ArCardSurface } from '../../../ui/containers';
 import { ArCombobox, ArInput, type ComboOption } from '../../../ui/fields';
@@ -22,7 +24,10 @@ export class HandCalculators {
 
   private readonly groups = computed(() => oddsGroups(this.lines()));
   protected readonly deckSize = computed(() => this.groups().reduce((n, g) => n + g.qty, 0));
-  protected readonly options = computed<ComboOption[]>(() => this.groups().map((g) => ({ id: g.id, text: optionText(g) })));
+  /** Card thumbnails, grouped by type (the site's calculators list). */
+  protected readonly options = computed<ComboOption[]>(() =>
+    this.groups().map((g) => ({ id: g.id, text: optionText(g), thumb: cardImageSources(g.reference)[0], group: GROUP_LABELS[groupIdOfType(g.type)].label })),
+  );
 
   protected readonly drawnInput = signal(String(HAND_SIZE));
   protected readonly drawn = computed(() => {

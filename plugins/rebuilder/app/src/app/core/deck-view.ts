@@ -208,7 +208,11 @@ export interface DeckGroup {
 }
 
 function groupIdOf(card: Card): DeckGroupId {
-  const t = typeOf(card);
+  return groupIdOfType(typeOf(card));
+}
+
+/** Group of a card type (`typeOf`): characters and tokens, spells, permanents, other. */
+export function groupIdOfType(t: string): DeckGroupId {
   if (t === 'CHARACTER' || t === 'TOKEN') return 'characters';
   if (t === 'SPELL') return 'spells';
   if (t.includes('PERMANENT')) return 'permanents';
