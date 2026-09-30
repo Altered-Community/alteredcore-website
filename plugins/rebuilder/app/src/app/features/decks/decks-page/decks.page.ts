@@ -33,6 +33,28 @@ const TABS: readonly Tab[] = ['mine', 'community', 'contest'];
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+function tabFromParam(value: string | null): Tab | undefined {
+  if (value === 'my') return 'mine';
+  if (value === 'public') return 'community';
+  return TABS.find((t) => t === value);
+}
+
+/** The site's `sort` values (`field:dir`) and Re:Builder's. */
+const SITE_SORTS: Record<string, DeckSort> = {
+  'updatedAt:desc': 'updated',
+  'updatedAt:asc': 'updated-asc',
+  'createdAt:desc': 'created',
+  'createdAt:asc': 'created-asc',
+  'name:asc': 'name',
+  'name:desc': 'name-desc',
+  'upvoteCount:desc': 'likes',
+};
+
+function sortFromParam(value: string | null): DeckSort | undefined {
+  if (!value) return undefined;
+  return SITE_SORTS[value] ?? SORTS.find((s) => s.value === value)?.value;
+}
+
 const SORTS: { value: DeckSort; label: string }[] = [
   { value: 'updated', label: $localize`:@@decks.page.sortUpdated:Récemment modifié` },
   { value: 'updated-asc', label: $localize`:@@decks.page.sortUpdatedAsc:Plus ancien modifié` },
@@ -62,10 +84,15 @@ export class DecksPage {
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(ArBreakpointService);
 
-  protected readonly tab = toSignal(
-    this.route.queryParamMap.pipe(map((q) => TABS.find((t) => t === q.get('tab')) ?? 'mine')),
-    { initialValue: 'mine' as Tab },
+  /** `?tab=`, with the site's names too (`my`, `public`). */
+  private readonly queryTab = toSignal(this.route.queryParamMap.pipe(map((q) => tabFromParam(q.get('tab')))), { initialValue: undefined });
+  /** A guest without decks on this device lands on « Communauté », as on the site's decks page. */
+  private readonly defaultTab = computed<Tab>(() =>
+    !this.auth.isLoggedIn() && !this.auth.sessionRestoring() && !this.guests.decks().length ? 'community' : 'mine',
   );
+  protected readonly tab = computed<Tab>(() => this.queryTab() ?? this.defaultTab());
+  /** Bumped when the list is shown again, so its filters go back to the URL. */
+  private readonly urlSync = signal(0);
   protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);
 
   /**
@@ -238,15 +265,42 @@ export class DecksPage {
 
   constructor() {
     this.guests.reload();
-    // Contest tab: its filters come from the URL (`set`, `faction`, `hero`, `q`) and are kept there,
-    // so a filtered list can be shared, as on the site's decks page.
-    // The site's links are understood too: `set=collection`, `hero=` a hero reference.
+    // Filters and sort come from the URL and are kept there, so a filtered list can be shared, as on the site's decks
+    // page. The site's links are understood too: `set=collection`, `hero=` a hero reference, `visibility=1|0`,
+    // `sort=field:dir`, `tab=my|public`.
     const initial = this.route.snapshot.queryParamMap;
-    if (initial.get('tab') === 'contest') {
+    const factions = (initial.get('faction') ?? '').toUpperCase().split(',').filter((c) => FACTIONS.some((f) => f.code === c));
+    const hero = initial.get('hero') ?? '';
+    const q = initial.get('q') ?? '';
+    if (this.tab() === 'contest') {
       if (initial.get('set') === 'all' || initial.get('set') === 'collection') this.contestSet.set('all');
-      const factions = (initial.get('faction') ?? '').toUpperCase().split(',').filter((c) => FACTIONS.some((f) => f.code === c));
-      this.filters.update((f) => ({ ...f, factions, hero: initial.get('hero') ?? '', q: initial.get('q') ?? '' }));
+      this.filters.update((f) => ({ ...f, factions, hero, q }));
+    } else {
+      const format = initial.get('format') ?? '';
+      const vis = initial.get('visibility');
+      const visibility: Visibility = vis === 'public' || vis === '1' ? 'public' : vis === 'private' || vis === '0' ? 'private' : 'all';
+      this.filters.set({
+        q,
+        format: DECK_FORMATS.some((f) => f.value === format) ? format : '',
+        hero: this.tab() === 'community' ? hero.toUpperCase() : hero,
+        visibility: this.tab() === 'mine' ? visibility : 'all',
+        factions,
+        sort: sortFromParam(initial.get('sort')) ?? 'updated',
+      });
     }
+    // « Mes decks »: a hero reference of the URL (site link) becomes the name of that hero once the decks are loaded.
+    effect(() => {
+      const mine = this.mine();
+      if (this.tab() !== 'mine' || !this.serverRes.hasValue()) return;
+      untracked(() => {
+        const hero = this.filters().hero;
+        if (!/^ALT_/i.test(hero)) return;
+        const ref = hero.toUpperCase();
+        const base = ref.replace(/^(ALT_[^_]+)_[BP]_/, '$1_');
+        const match = mine.find((d) => d.hero && (d.hero.reference === ref || d.hero.reference.replace(/^(ALT_[^_]+)_[BP]_/, '$1_') === base));
+        this.patch({ hero: match?.hero?.name ?? '' });
+      });
+    });
     // Once the snapshot is loaded, a hero of the URL becomes a name of the list, or is dropped.
     effect(() => {
       const all = this.contestAll();
@@ -280,16 +334,26 @@ export class DecksPage {
       });
     });
     effect(() => {
-      if (this.tab() !== 'contest') return;
+      this.urlSync();
+      const tab = this.tab();
       const f = this.filters();
-      const queryParams = {
-        tab: 'contest',
-        set: this.contestSet() === 'all' ? 'all' : null,
-        faction: f.factions.join(',') || null,
-        hero: f.hero || null,
-        q: f.q.trim() || null,
-      };
-      untracked(() => void this.router.navigate([], { queryParams, replaceUrl: true }));
+      const common = { faction: f.factions.join(',') || null, hero: f.hero || null, q: f.q.trim() || null };
+      const queryParams =
+        tab === 'contest'
+          ? { tab, set: this.contestSet() === 'all' ? 'all' : null, ...common }
+          : {
+              tab: tab === this.defaultTab() ? null : tab,
+              format: f.format || null,
+              ...common,
+              visibility: tab === 'mine' && f.visibility !== 'all' ? f.visibility : null,
+              sort: f.sort !== 'updated' ? f.sort : null,
+            };
+      untracked(() => {
+        if (!isDecksListUrl(this.router.url)) return;
+        const current = this.route.snapshot.queryParamMap;
+        const same = Object.entries(queryParams).every(([k, v]) => current.get(k) === v) && current.keys.every((k) => k in queryParams);
+        if (!same) void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
+      });
     });
     // Keeps loading pages while the sentinel stays visible (fast scroll, tall screens).
     effect(() => {
@@ -320,6 +384,7 @@ export class DecksPage {
       if ((e instanceof NavigationCancel || e instanceof NavigationError) && isDecksListUrl(this.router.url)) {
         this.trackScroll = true;
       }
+      if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects)) this.urlSync.update((n) => n + 1);
       if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects) && !this.trackScroll) {
         const y = this.listScroll;
         const apply = () => window.scrollTo(0, y);
@@ -345,8 +410,8 @@ export class DecksPage {
 
   protected setTab(id: string): void {
     const tab = TABS.find((t) => t === id) ?? 'mine';
-    // Only `tab` is kept: the contest filters of the URL do not follow to the other tabs.
-    void this.router.navigate([], { queryParams: { tab: tab === 'mine' ? null : tab }, replaceUrl: true });
+    // Only `tab` is kept: the URL effect then writes the filters of the tab shown.
+    void this.router.navigate([], { queryParams: { tab: tab === this.defaultTab() ? null : tab }, replaceUrl: true });
   }
 
   protected patch(p: Partial<DeckFilters>): void {

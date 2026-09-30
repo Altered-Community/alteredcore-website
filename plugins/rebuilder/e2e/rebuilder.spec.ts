@@ -226,9 +226,9 @@ test.describe('ReBuilder in the shell · languages', () => {
     test(`shows its interface in the site language (${lang})`, async ({ page, compact }, testInfo) => {
       const l = LABELS[lang];
       const other = LABELS[lang === 'en' ? 'fr' : 'en'];
-      await page.goto(`${DECKS}?lang=${lang}`);
+      await page.goto(`${DECKS}?tab=mine&lang=${lang}`);
       await expect(page.locator('.ar-embed')).toBeVisible();
-      // A guest without decks: the list is empty (hidden on mobile), the guest notice is shown.
+      // A guest without decks lands on « Communauté »; on « Mes decks » the list is empty (hidden on mobile), the guest notice is shown.
       await expect(page.getByRole('list', { name: l.myDecks })).toBeAttached();
       await expect(page.getByText(l.guest)).toBeVisible();
       if (!compact) await expect(page.getByText(l.sortBy, { exact: true })).toBeVisible();
@@ -507,6 +507,14 @@ test.describe('ReBuilder in the shell · deck page', () => {
 });
 
 test.describe('ReBuilder in the shell · guest', () => {
+  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page }) => {
+    await page.goto(`${DECKS}?lang=fr`);
+    await expect(page.getByRole('tab', { name: FR.community })).toHaveAttribute('aria-selected', 'true');
+    await page.goto(`${DECKS}?tab=public&faction=MU&sort=name:asc&lang=fr`);
+    await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ar-deck-card').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/decks\?faction=MU&sort=name(&|$)/);
+  });
+
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, 'Deck invité');
