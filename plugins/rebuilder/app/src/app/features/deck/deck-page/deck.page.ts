@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { PageTitle } from '../../../core/page-title';
+import { factionSrc } from '../../../core/assets';
 import { DeckStore } from '../../../core/deck-store';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
@@ -16,7 +17,7 @@ import { ArCollapsible } from '../../../ui/containers';
 import { ArSegmented } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
 import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArCardArt, ArDeckStats } from '../../../ui/metier';
+import { ArCardArt, ArDeckStats, factionName } from '../../../ui/metier';
 import { ArAppBar, ArBackButton, ArBottomNav, ArTabs, type ArBottomNavItem } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
@@ -135,6 +136,8 @@ export class DeckPage {
     });
   }
 
+  protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
+  protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
   protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
 
   /** The hero banner: the hero card large, as on the site's deck page. */

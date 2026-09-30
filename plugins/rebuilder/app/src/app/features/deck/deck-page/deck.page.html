@@ -26,6 +26,9 @@
         <ar-icon name="chevron-right" [size]="16" />
       </button>
     }
+    @if (deck.isDraft()) {
+      <ar-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ar-badge>
+    }
     <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ar-badge>
   </div>
 </ng-template>
@@ -61,7 +64,12 @@
               }
             </span>
             <div class="m-meta">
-              <h1>{{ deck.name() }}</h1>
+              <h1>
+                @if (factionLogo(); as src) {
+                  <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+                }
+                <span class="h1-text">{{ deck.name() }}</span>
+              </h1>
               <span>{{ deck.hero()?.name }}</span>
             </div>
           </div>
@@ -129,7 +137,12 @@
         }
         <div class="aside-body">
           <div class="titles">
-            <h1>{{ deck.name() }}</h1>
+            <h1>
+              @if (factionLogo(); as src) {
+                <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+              }
+              {{ deck.name() }}
+            </h1>
             <span>{{ deck.hero()?.name }}@if (created()) { · <ng-container i18n="@@deck.page.createdOn">créé le {{ created() }}</ng-container>}</span>
           </div>
           <ng-container [ngTemplateOutlet]="badges" />

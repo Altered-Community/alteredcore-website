@@ -37,7 +37,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Nom du deck dans `<title>` / og:title (aperçu des liens partagés) | ✅ (`meta.php`, champ `meta` du manifeste) |
 | Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ |
 | Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ✅ (Web Share gardé quand le navigateur le propose) |
-| Badge Brouillon, icône de faction dans l'en-tête | ❌ |
+| Badge Brouillon, icône de faction dans l'en-tête | ✅ |
 | Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | 🟡 |
 | Main de test en mode jeu (mana, plateau, défausse, glisser-déposer) | ❌ |
 | Calculateurs : vignettes et groupes par type dans le choix des cartes | 🟡 |

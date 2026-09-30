@@ -125,6 +125,13 @@
   color: var(--ar-color-text-muted);
 }
 
+.m-meta h1,
+.titles h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-space-2);
+}
+
 .m-meta h1 {
   margin: 0;
   font: var(--ar-font-heading);
@@ -132,6 +139,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.h1-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.faction {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .badges {
