@@ -10,6 +10,8 @@ export interface PublicDeckQuery {
   itemsPerPage?: number;
   name?: string;
   faction?: string;
+  /** Hero reference (the API matches its base and promo prints). */
+  hero?: string;
   format?: string;
   order?: 'updatedAt' | 'createdAt' | 'name' | 'upvoteCount' | 'viewCount';
 }
@@ -19,6 +21,13 @@ export interface PublicDeckPage {
   totalItems: number;
   currentPage: number;
   lastPage: number;
+}
+
+/** A hero that has public decks (`GET /api/decks/public/heroes`). */
+export interface PublicDeckHero {
+  reference: string;
+  name: string;
+  imagePath?: string | null;
 }
 
 export interface DeckUpvote {
@@ -70,6 +79,7 @@ export class DecksApiService {
     };
     if (query.name) params['name'] = query.name;
     if (query.faction) params['faction'] = query.faction;
+    if (query.hero) params['hero'] = query.hero;
     if (query.format) params['format'] = query.format;
     if (query.order) params[`order[${query.order}]`] = query.order === 'name' ? 'asc' : 'desc';
     const url = `${this.baseUrl}/api/decks/public`;
@@ -81,6 +91,13 @@ export class DecksApiService {
         err instanceof HttpErrorResponse && err.status === 401 && startedWithToken ? anonymous() : throwError(() => err),
       ),
     );
+  }
+
+  /** Heroes of the public decks, for the hero filter of the community tab (anonymous). */
+  publicHeroes(locale = 'en'): Observable<PublicDeckHero[]> {
+    return this.http
+      .get<PublicDeckHero[]>(`${this.baseUrl}/api/decks/public/heroes`, { headers: new HttpHeaders({ Accept: 'application/json' }), params: { locale } })
+      .pipe(map((heroes) => (Array.isArray(heroes) ? heroes : [])));
   }
 
   /** Public decks are readable anonymously by UUID; private ones need the owner's token. */

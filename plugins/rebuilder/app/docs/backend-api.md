@@ -106,7 +106,8 @@ an unknown set is a 400 (`FUGUE` has no uniques and is not offered). Measures an
 
 API Platform. **Unauthenticated `GET /api/decks` returns 401** (probed). Writes always need Bearer.
 Anonymous reads (from `config/packages/security.yaml` in altered-core-decks-api): `GET /api/decks/public`
-(`page`, `itemsPerPage`, `name`, `faction`, `format`, `hero`, `order[field]`), `GET /api/decks/{uuid}` for public decks
+(`page`, `itemsPerPage`, `name`, `faction`, `format`, `hero`, `order[field]`), `GET /api/decks/public/heroes?locale=`
+(`[{ reference, name, imagePath }]`, heroes of the community tab's hero filter), `GET /api/decks/{uuid}` for public decks
 (lines embed name, faction, type, costs, powers) and `GET /api/formats` (legality limits).
 
 | Method | Path | Content-Type | Body / notes |

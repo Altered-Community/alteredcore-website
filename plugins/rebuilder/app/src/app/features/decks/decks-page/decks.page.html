@@ -46,9 +46,7 @@
         @if (tab() !== 'contest') {
           <ar-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
         }
-        @if (tab() !== 'community') {
-          <ar-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
-        }
+        <ar-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
         @if (tab() === 'mine') {
           <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
         }
@@ -116,6 +114,10 @@
   @if (tab() === 'community') {
     @if (communityError(); as e) {
       <p class="notice" role="alert">{{ e }}</p>
+    } @else if (!communityLoading() && communityComplete() && !list().length) {
+      <div class="empty">
+        <p i18n="@@decks.page.noMatch">Aucun deck ne correspond à ces filtres.</p>
+      </div>
     }
     <div #listSentinel arInfiniteSentinel class="sentinel" (visible)="onSentinel($event)"></div>
   }

@@ -28,13 +28,14 @@ const API_ORDER: Record<DeckSort, NonNullable<PublicDeckQuery['order']>> = {
   name: 'name',
 };
 
-/** Hero and visibility do not reach the API. */
+/** Visibility does not reach the API; the hero is a reference there (community tab). */
 export function toCommunityQuery(f: DeckFilters): CommunityQuery {
   return {
     itemsPerPage: COMMUNITY_PAGE_SIZE,
     name: f.q.trim() || undefined,
     faction: f.factions.length === 1 ? f.factions[0] : undefined,
     factions: f.factions.length > 1 ? [...f.factions].sort() : undefined,
+    hero: f.hero || undefined,
     format: f.format || undefined,
     order: API_ORDER[f.sort],
   };

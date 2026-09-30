@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ArButton } from '../../../ui/buttons';
 import { ArChip } from '../../../ui/chips';
-import { ArSegmented, ArSelect } from '../../../ui/fields';
+import { type ArOption, ArSegmented, ArSelect } from '../../../ui/fields';
 import { FACTIONS } from '../../../ui/metier';
 import { ArOverlayRef } from '../../../ui/overlay';
 import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
@@ -21,9 +21,9 @@ export class DeckFiltersSheet {
       {
         filters: DeckFilters;
         formats: { value: string; label: string }[];
-        heroes: { value: string; label: string }[];
-        /** Hero options for the factions chosen in the sheet (contest tab). */
-        heroesFor?: (factions: string[]) => { value: string; label: string }[];
+        heroes: ArOption[];
+        /** Hero options for the factions chosen in the sheet. */
+        heroesFor?: (factions: string[]) => ArOption[];
         /** A faction change clears the hero (contest tab, as on the site). */
         clearHeroOnFaction?: boolean;
         visibilities: { value: Visibility; label: string }[];
@@ -41,7 +41,10 @@ export class DeckFiltersSheet {
     this.draft.update((d) => ({ ...d, ...p }));
   }
   toggle(code: string, on: boolean): void {
-    const hero = this.ref.data.clearHeroOnFaction ? '' : this.draft().hero;
-    this.draft.update((d) => ({ ...d, hero, factions: on ? [...d.factions, code] : d.factions.filter((f) => f !== code) }));
+    this.draft.update((d) => {
+      const factions = on ? [...d.factions, code] : d.factions.filter((f) => f !== code);
+      const offered = !d.hero || (this.ref.data.heroesFor?.(factions) ?? this.ref.data.heroes).some((o) => o.value === d.hero);
+      return { ...d, hero: this.ref.data.clearHeroOnFaction || !offered ? '' : d.hero, factions };
+    });
   }
 }

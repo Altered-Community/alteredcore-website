@@ -3,11 +3,12 @@ import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-int
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
 import { finalize, from, map, switchMap, timer } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
-import { toDeckListItem, type DeckListItem } from '../../../core/deck-view';
+import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
 import { DECK_FORMATS } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
+import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
 import { ArButton, ArIconButton } from '../../../ui/buttons';
 import { ArChip, ArCount } from '../../../ui/chips';
@@ -21,7 +22,7 @@ import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
-import { type Visibility, type DeckFilters, type DeckSort, EMPTY_DECK_FILTERS, filterDecks, matchDecks } from '../deck-filters';
+import { type Visibility, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
 import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
 import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
 import { type CommunityQuery, type CommunityState, EMPTY_COMMUNITY, addCommunityPage, toCommunityQuery } from '../community-pages';
@@ -136,7 +137,7 @@ export class DecksPage {
   protected readonly community = computed(() => this.communityState().items);
   protected readonly communityTotal = computed(() => this.communityState().total);
   /** Every page of the query is loaded. */
-  private readonly communityComplete = computed(() => {
+  protected readonly communityComplete = computed(() => {
     const { page, lastPage } = this.communityState();
     return page > 0 && page >= lastPage;
   });
@@ -174,15 +175,31 @@ export class DecksPage {
     this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
   );
   protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...DECK_FORMATS.map((f) => ({ value: f.value, label: f.label }))];
+  /** Heroes that have public decks, loaded the first time the community tab opens. */
+  private readonly publicHeroesRes = rxResource({
+    params: () => (this.tab() === 'community' ? contentLocale() : undefined),
+    stream: ({ params }) => this.decksApi.publicHeroes(params),
+  });
+  private readonly publicHeroes = linkedSignal<HeroChoice[] | undefined, HeroChoice[]>({
+    source: () =>
+      this.publicHeroesRes.hasValue()
+        ? this.publicHeroesRes.value().map((h) => ({ value: h.reference, label: h.name, faction: factionFromReference(h.reference) }))
+        : undefined,
+    computation: (heroes, prev) => heroes ?? prev?.value ?? [],
+  });
   protected readonly heroes = computed(() => this.heroOptions(this.filters().factions));
-  /** On the contest tab, the heroes of the set and of the selected factions (as on the site's decks page). */
-  private heroOptions(factions: string[]): { value: string; label: string }[] {
-    const decks =
-      this.tab() === 'contest'
-        ? this.contestInSet().filter((d) => !factions.length || (!!d.hero && factions.includes(d.hero.faction)))
-        : this.mine();
-    const names = [...new Set(decks.map((d) => d.hero?.name).filter((n): n is string => !!n))].sort((a, b) => a.localeCompare(b, uiLocale()));
-    return [{ value: '', label: $localize`:@@decks.page.allHeroes:Tous les héros` }, ...names.map((n) => ({ value: n, label: n }))];
+  /**
+   * Hero filter options, grouped by faction (as on the site's decks page). Community tab: the heroes of the public decks,
+   * by reference (the API filters on it). Contest tab: the heroes of the set. Mine: the heroes of the account's decks.
+   */
+  private heroOptions(factions: string[]): { value: string; label: string; group?: string }[] {
+    const all = $localize`:@@decks.page.allHeroes:Tous les héros`;
+    if (this.tab() === 'community') return heroOptions(this.publicHeroes(), factions, all);
+    const decks = this.tab() === 'contest' ? this.contestInSet() : this.mine();
+    const byName = new Map<string, HeroChoice>();
+    for (const d of decks) if (d.hero?.name && !byName.has(d.hero.name)) byName.set(d.hero.name, { value: d.hero.name, label: d.hero.name, faction: d.hero.faction });
+    const choices = [...byName.values()].sort((a, b) => a.label.localeCompare(b.label, uiLocale()));
+    return heroOptions(choices, factions, all);
   }
   protected readonly visibilities = [
     { value: 'all' as Visibility, label: $localize`:@@decks.page.visibilityAll:Tous` },
@@ -194,7 +211,7 @@ export class DecksPage {
   protected readonly activeFilters = computed(() => {
     const f = this.filters();
     const tab = this.tab();
-    return (f.format && tab !== 'contest' ? 1 : 0) + (f.hero && tab !== 'community' ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + f.factions.length;
+    return (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + f.factions.length;
   });
   protected readonly countLabel = computed(() => {
     const community = this.tab() === 'community';
@@ -248,6 +265,15 @@ export class DecksPage {
         saved[shownGroup] = this.filters();
         this.filters.set(saved[group] ?? EMPTY_DECK_FILTERS);
         shownGroup = group;
+      });
+    });
+    // « Mes decks » filters on the hero's name, « Communauté » on its reference: the hero does not follow a tab change.
+    let heroTab = this.tab();
+    effect(() => {
+      const tab = this.tab();
+      untracked(() => {
+        if (tab !== heroTab && tab !== 'contest' && heroTab !== 'contest' && this.filters().hero) this.patch({ hero: '' });
+        heroTab = tab;
       });
     });
     effect(() => {
@@ -332,9 +358,13 @@ export class DecksPage {
   }
 
   protected toggleFaction(code: string, on: boolean): void {
-    // On the contest tab the hero list follows the factions, so the hero is cleared (as on the site).
-    const hero = this.tab() === 'contest' ? '' : undefined;
-    this.filters.update((f) => ({ ...f, ...(hero === undefined ? {} : { hero }), factions: on ? [...f.factions, code] : f.factions.filter((c) => c !== code) }));
+    // On the contest tab the hero list follows the factions, so the hero is cleared (as on the site). Elsewhere the
+    // hero stays while the list still offers it.
+    this.filters.update((f) => {
+      const factions = on ? [...f.factions, code] : f.factions.filter((c) => c !== code);
+      const keep = this.tab() !== 'contest' && (!f.hero || this.heroOptions(factions).some((o) => o.value === f.hero));
+      return { ...f, hero: keep ? f.hero : '', factions };
+    });
   }
 
   protected newDeck(): void {
@@ -367,7 +397,7 @@ export class DecksPage {
           clearHeroOnFaction: this.tab() === 'contest',
           visibilities: this.visibilities,
           showFormat: this.tab() !== 'contest',
-          showHero: this.tab() !== 'community',
+          showHero: true,
           showVisibility: this.tab() === 'mine',
         },
       })

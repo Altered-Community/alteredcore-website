@@ -16,6 +16,11 @@ describe('toCommunityQuery', () => {
     expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, factions: ['YZ', 'AX'] })).toMatchObject({ faction: undefined, factions: ['AX', 'YZ'] });
     expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'created' }).order).toBe('createdAt');
   });
+
+  it('sends the hero reference to the API', () => {
+    expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, hero: 'ALT_CORE_B_AX_01_C' }).hero).toBe('ALT_CORE_B_AX_01_C');
+    expect(toCommunityQuery(EMPTY_DECK_FILTERS).hero).toBeUndefined();
+  });
 });
 
 describe('addCommunityPage', () => {
