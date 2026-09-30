@@ -172,10 +172,10 @@ export class DeckPage {
   }
 
   /**
-   * The user's own private deck: « Ce deck est privé » first (« Rendre public & partager »). Then the system share sheet
-   * where the browser has one, else the share window (link, « Copier », QR code), as on the site's deck page.
+   * The share window (link, « Copier », QR code), as on the site's deck page; never the system share sheet. The user's
+   * own private deck shows « Ce deck est privé » first (« Rendre public & partager »).
    */
-  protected async share(): Promise<void> {
+  protected share(): void {
     const url = GuestDeckService.isGuestId(this.id()) ? '' : deckShareUrl(this.router, this.locationStrategy, this.id());
     if (!url) {
       this.flash($localize`:@@deck.page.guestShare:Deck invité : enregistré sur cet appareil uniquement. Copiez la liste pour le partager.`);
@@ -183,14 +183,6 @@ export class DeckPage {
     }
     // The decks API serves a private deck to its owner only: a private deck shown here is the user's.
     const privateOwned = !this.deck.isPublic();
-    if (navigator.share && !privateOwned) {
-      try {
-        await navigator.share({ title: this.deck.name(), url });
-      } catch {
-        // Share sheet dismissed.
-      }
-      return;
-    }
     openShareDeck(this.overlay, { url, privateOwned });
   }
 

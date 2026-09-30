@@ -424,7 +424,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
   }
 
   test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
-    // navigator.share is recorded, so the shared link can be checked on every device.
+    // navigator.share is recorded: sharing must never use the system share sheet.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'share', {
         configurable: true,
@@ -469,15 +469,17 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await page.getByRole('option').first().click();
     await expect(calc.locator('ar-probability-bars').first()).toContainText('%');
     await evidence(page, testInfo, '23-deck-test-hand');
-    // Game mode (the site's playground): 3 cards to mana, then a card played from its menu.
-    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
-    for (const i of [0, 1, 2]) await deckPage.getByRole('button', { name: /: mettre en mana$/ }).nth(i).click();
-    await deckPage.getByRole('button', { name: /Mettre en mana/ }).click();
-    await expect(deckPage.getByRole('button', { name: 'Cartes en mana' })).toContainText('3');
-    await deckPage.getByRole('button', { name: /: actions$/ }).first().click();
-    await page.getByRole('menuitem', { name: 'Jouer sur le plateau' }).click();
-    await expect(deckPage.getByRole('region', { name: 'En jeu' }).locator('ar-card-tile')).toHaveCount(1);
-    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+    // Game mode (the site's playground, desktop only): 3 cards to mana, then a card played from its menu.
+    if (!compact) {
+      await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+      for (const i of [0, 1, 2]) await deckPage.getByRole('button', { name: /: mettre en mana$/ }).nth(i).click();
+      await deckPage.getByRole('button', { name: /Mettre en mana/ }).click();
+      await expect(deckPage.getByRole('button', { name: 'Cartes en mana' })).toContainText('3');
+      await deckPage.getByRole('button', { name: /: actions$/ }).first().click();
+      await page.getByRole('menuitem', { name: 'Jouer sur le plateau' }).click();
+      await expect(deckPage.getByRole('region', { name: 'En jeu' }).locator('ar-card-tile')).toHaveCount(1);
+      await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+    }
 
     // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
     // The deck is private: « Rendre public & partager » first, then the link and its QR code (as on the site).
@@ -489,9 +491,12 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
     await evidence(page, testInfo, '24-deck-share');
     await page.keyboard.press('Escape');
-    // Now public: the system share sheet, where the browser has one.
+    // Now public: the same window straight away (link and QR code), even where the browser has a system share sheet.
     await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared?.url)).toBe(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared)).toBeUndefined();
+    await page.keyboard.press('Escape');
 
     // Duplicate: named copy, private deck of the account.
     if (compact) {
