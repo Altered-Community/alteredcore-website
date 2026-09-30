@@ -35,7 +35,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Grille par type, decklist, description, courbes, main de test, stats de main, calculateurs | ✅ |
 | URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | 🟡 `/pages/rebuilder/deck?id=` redirige vers la page deck ; `/pages/deck` reste la page du site |
 | Nom du deck dans `<title>` / og:title (aperçu des liens partagés) | ✅ (`meta.php`, champ `meta` du manifeste) |
-| Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ❌ |
+| Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ |
 | Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ❌ |
 | Badge Brouillon, icône de faction dans l'en-tête | ❌ |
 | Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | 🟡 |

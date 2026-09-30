@@ -237,6 +237,19 @@
     background: var(--ar-color-text-2);
   }
 
+  button.banner {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    cursor: zoom-in;
+  }
+
+  button.banner:focus-visible {
+    outline: 2px solid var(--ar-color-primary);
+    outline-offset: -2px;
+  }
+
   .aside-body {
     padding: 18px;
     display: flex;

@@ -13,7 +13,7 @@
 @for (r of rows(); track r.ref) {
   <div class="row">
     <span class="q qty">×{{ r.qty }}</span>
-    <span class="n"><img [src]="r.icon.src" [alt]="r.icon.label" [title]="r.icon.label" /><span class="name">{{ r.name }}</span></span>
+    <span class="n"><img [src]="r.icon.src" [alt]="r.icon.label" [title]="r.icon.label" /><button type="button" class="name" aria-haspopup="dialog" (click)="zoom(r.ref)">{{ r.name }}</button></span>
     <span class="c">
       <span class="main" title="Coût main" i18n-title="@@deck.table.handCost">{{ r.main }}</span>
       <span class="res" title="Coût réserve" i18n-title="@@deck.table.reserveCost">{{ r.res }}</span>

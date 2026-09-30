@@ -2,6 +2,9 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { ArButton } from '../../../ui/buttons';
 import { ArCardTile, ArDeckSection } from '../../../ui/metier';
+import { ArOverlayService } from '../../../ui/overlay';
+import type { Card } from '../../../core/models';
+import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
 /** « Aperçu » / « Cartes »: count line, « Tout replier », one section per type with tiles. */
 @Component({
@@ -12,6 +15,7 @@ import { ArCardTile, ArDeckSection } from '../../../ui/metier';
 })
 export class DeckPreview {
   protected readonly deck = inject(DeckStore);
+  private readonly overlay = inject(ArOverlayService);
   readonly readonly = input(false);
   /** Three columns on compact (consultation « Cartes »). */
   readonly dense = input(false);
@@ -28,6 +32,15 @@ export class DeckPreview {
       if (open) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }
+
+  /** A tile's visual: the card large, with its copies when the deck can be edited (the site's card lightbox). */
+  protected zoom(card: Card): void {
+    const editable = !this.readonly() && this.deck.editable();
+    openCardZoom(this.overlay, {
+      card,
+      quantity: editable ? { value: this.deck.quantities().get(card.reference) ?? 0, max: this.deck.maxFor(card), change: (n) => this.deck.setQuantity(card, n) } : undefined,
     });
   }
 

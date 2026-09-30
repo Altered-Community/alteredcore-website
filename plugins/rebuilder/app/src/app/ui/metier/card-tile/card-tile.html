@@ -1,10 +1,19 @@
-<div class="visual">
+<ng-template #face>
   @if (unique()) {
     <ar-unique-card [card]="card()" [eager]="eager()" />
   } @else {
     <ar-card-art [reference]="card().reference" [eager]="eager()" [neutral]="true" />
   }
-</div>
+</ng-template>
+@if (zoomable()) {
+  <button type="button" class="visual zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoom.emit()">
+    <ng-container [ngTemplateOutlet]="face" />
+  </button>
+} @else {
+  <div class="visual">
+    <ng-container [ngTemplateOutlet]="face" />
+  </div>
+}
 @if (plain()) {
   <!-- Card browser: no quantity control. -->
 } @else if (readonly()) {

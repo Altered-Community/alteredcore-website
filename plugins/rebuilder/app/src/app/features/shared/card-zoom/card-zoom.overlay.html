@@ -1,0 +1,10 @@
+<div class="ar-overlay-body">
+  <ar-card-tile class="card" [card]="data.card" [plain]="true" [eager]="true" />
+  @if (data.quantity; as q) {
+    <div class="qty">
+      <span i18n="@@cardZoom.inDeck">Dans le deck</span>
+      <ar-stepper appearance="box" [label]="name()" [itemName]="name()" [value]="quantity()" [max]="q.max" (valueChange)="setQuantity($event)" />
+    </div>
+  }
+  <a arButton icon="info" [fullWidth]="true" [href]="detailUrl" i18n="@@cardZoom.detail">Accéder au détail</a>
+</div>

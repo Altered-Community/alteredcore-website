@@ -25,6 +25,7 @@ import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
+import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { HandCalculators } from '../hand-calculators/hand-calculators';
 import { HandStats } from '../hand-stats/hand-stats';
 import { TestHand } from '../test-hand/test-hand';
@@ -131,6 +132,14 @@ export class DeckPage {
       const timer = setTimeout(() => pageTitle.set(name));
       onCleanup(() => clearTimeout(timer));
     });
+  }
+
+  protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
+
+  /** The hero banner: the hero card large, as on the site's deck page. */
+  protected zoomHero(): void {
+    const hero = this.deck.hero();
+    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
   }
 
   protected setTab(id: string): void {

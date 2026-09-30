@@ -120,11 +120,13 @@
 
     @if (!bp.compact()) {
       <aside class="aside" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
-        <div class="banner">
-          @if (deck.hero(); as h) {
+        @if (deck.hero(); as h) {
+          <button type="button" class="banner zoom" aria-haspopup="dialog" [attr.aria-label]="heroZoomLabel()" (click)="zoomHero()">
             <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" i18n-placeholder="@@deck.page.heroArt" position="center 18%" [eager]="true" />
-          }
-        </div>
+          </button>
+        } @else {
+          <div class="banner"></div>
+        }
         <div class="aside-body">
           <div class="titles">
             <h1>{{ deck.name() }}</h1>

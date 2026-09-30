@@ -20,7 +20,9 @@
           [quantity]="l.quantity"
           [max]="deck.maxFor(l.card)"
           [readonly]="readonly() || !deck.editable()"
+          [zoomable]="true"
           (quantityChange)="deck.setQuantity(l.card, $event)"
+          (zoom)="zoom(l.card)"
         />
       }
     </div>
