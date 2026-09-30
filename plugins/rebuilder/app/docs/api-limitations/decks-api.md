@@ -101,8 +101,9 @@ lieu d'être ignoré. Le token est pourtant nécessaire pour que `hasUpvoted` re
 la page suivante jusqu'à 50 fois, et chaque réponse contenait à nouveau tous les decks.
 
 **Contournement.** `listAllMine` (`src/app/core/decks-api.service.ts`) s'arrête dès qu'une page est plus longue que
-`itemsPerPage` ou n'apporte aucun deck nouveau : une seule requête avec l'API actuelle. « Mes decks » affiche des
-squelettes pendant le chargement. Filtres et tri restent côté client, sur la liste complète.
+`itemsPerPage` ou n'apporte aucun deck nouveau : une seule requête avec l'API actuelle. Pendant le chargement,
+« Mes decks » affiche « Chargement de vos decks… », des squelettes animés et « Mes decks · … » dans l'onglet.
+Filtres et tri restent côté client, sur la liste complète. L'API des decks n'est pas modifiée de notre côté.
 
 **À faire côté backend.** Paginer `findByUser` (`LIMIT`/`OFFSET`, total pour `totalItems`) et y appliquer les filtres
 et le tri déclarés. « Mes decks » pourra alors charger page par page au défilement, comme l'onglet Communauté.

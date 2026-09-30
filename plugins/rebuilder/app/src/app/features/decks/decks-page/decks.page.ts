@@ -213,7 +213,7 @@ export class DecksPage {
     return (tab === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
   });
   protected readonly tabs = computed(() => [
-    { id: 'mine', label: $localize`:@@decks.page.tabMine:Mes decks · ${this.mine().length}:count:` },
+    { id: 'mine', label: this.mineLoading() ? $localize`:@@decks.page.tabMineLoading:Mes decks · …` : $localize`:@@decks.page.tabMine:Mes decks · ${this.mine().length}:count:` },
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);

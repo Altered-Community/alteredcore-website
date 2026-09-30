@@ -83,6 +83,11 @@
       }
     </div>
   }
+  @if (tab() === 'mine' && mineLoading()) {
+    <p class="notice loading" role="status">
+      <ar-icon class="spin" name="loader" [size]="14" /><span i18n="@@decks.page.mineLoading">Chargement de vos decks… Cela peut prendre un moment si vous en avez beaucoup.</span>
+    </p>
+  }
   @if (tab() === 'mine' && (serverError() || auth.sessionNotice())) {
     <p class="notice" role="status">{{ serverError() || auth.sessionNotice() }}</p>
   }
