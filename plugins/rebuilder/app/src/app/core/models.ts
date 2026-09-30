@@ -76,7 +76,27 @@ export interface CardCollection {
   lastPage: number;
 }
 
-export type CardOrder = 'setDate-desc' | 'setDate-asc' | 'number-asc';
+export type CardOrder =
+  | 'setDate-desc'
+  | 'setDate-asc'
+  | 'number-asc'
+  | 'collector-asc'
+  | 'collector-desc'
+  | 'reference-asc'
+  | 'reference-desc'
+  | 'name-asc'
+  | 'name-desc'
+  | 'mainCost-asc'
+  | 'mainCost-desc'
+  | 'recallCost-asc'
+  | 'recallCost-desc'
+  | 'forestPower-asc'
+  | 'forestPower-desc'
+  | 'mountainPower-asc'
+  | 'mountainPower-desc'
+  | 'oceanPower-asc'
+  | 'oceanPower-desc'
+  | 'random';
 
 export interface CardSearchParams {
   page?: number;

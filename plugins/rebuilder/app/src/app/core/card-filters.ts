@@ -107,6 +107,23 @@ export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'setDate-desc', label: $localize`:@@search.filters.order.setDateDesc:Date set ↓` },
   { value: 'setDate-asc', label: $localize`:@@search.filters.order.setDateAsc:Date set ↑` },
   { value: 'number-asc', label: $localize`:@@search.filters.order.number:Numéro` },
+  { value: 'collector-asc', label: $localize`:@@search.filters.order.collectorAsc:Collector N° ↑` },
+  { value: 'collector-desc', label: $localize`:@@search.filters.order.collectorDesc:Collector N° ↓` },
+  { value: 'reference-asc', label: $localize`:@@search.filters.order.referenceAsc:Référence ↑` },
+  { value: 'reference-desc', label: $localize`:@@search.filters.order.referenceDesc:Référence ↓` },
+  { value: 'name-asc', label: $localize`:@@search.filters.order.nameAsc:Nom A→Z` },
+  { value: 'name-desc', label: $localize`:@@search.filters.order.nameDesc:Nom Z→A` },
+  { value: 'mainCost-asc', label: $localize`:@@search.filters.order.mainAsc:Main ↑` },
+  { value: 'mainCost-desc', label: $localize`:@@search.filters.order.mainDesc:Main ↓` },
+  { value: 'recallCost-asc', label: $localize`:@@search.filters.order.reserveAsc:Réserve ↑` },
+  { value: 'recallCost-desc', label: $localize`:@@search.filters.order.reserveDesc:Réserve ↓` },
+  { value: 'forestPower-asc', label: $localize`:@@search.filters.order.forestAsc:Forêt ↑` },
+  { value: 'forestPower-desc', label: $localize`:@@search.filters.order.forestDesc:Forêt ↓` },
+  { value: 'mountainPower-asc', label: $localize`:@@search.filters.order.mountainAsc:Montagne ↑` },
+  { value: 'mountainPower-desc', label: $localize`:@@search.filters.order.mountainDesc:Montagne ↓` },
+  { value: 'oceanPower-asc', label: $localize`:@@search.filters.order.oceanAsc:Océan ↑` },
+  { value: 'oceanPower-desc', label: $localize`:@@search.filters.order.oceanDesc:Océan ↓` },
+  { value: 'random', label: $localize`:@@search.filters.order.random:Aléatoire` },
 ];
 
 export function defaultFilters(source: CardSource): SearchFilters {

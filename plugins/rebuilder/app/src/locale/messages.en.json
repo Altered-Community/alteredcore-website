@@ -655,6 +655,23 @@
     "search.filters.promoEditions": "Promo editions",
     "search.filters.keyword": "Keyword",
     "search.filters.subtype": "Subtype",
-    "search.filters.add": "Add…"
+    "search.filters.add": "Add…",
+    "search.filters.order.collectorAsc": "Collector No. ↑",
+    "search.filters.order.collectorDesc": "Collector No. ↓",
+    "search.filters.order.referenceAsc": "Reference ↑",
+    "search.filters.order.referenceDesc": "Reference ↓",
+    "search.filters.order.nameAsc": "Name A→Z",
+    "search.filters.order.nameDesc": "Name Z→A",
+    "search.filters.order.mainAsc": "Hand ↑",
+    "search.filters.order.mainDesc": "Hand ↓",
+    "search.filters.order.reserveAsc": "Reserve ↑",
+    "search.filters.order.reserveDesc": "Reserve ↓",
+    "search.filters.order.forestAsc": "Forest ↑",
+    "search.filters.order.forestDesc": "Forest ↓",
+    "search.filters.order.mountainAsc": "Mountain ↑",
+    "search.filters.order.mountainDesc": "Mountain ↓",
+    "search.filters.order.oceanAsc": "Ocean ↑",
+    "search.filters.order.oceanDesc": "Ocean ↓",
+    "search.filters.order.random": "Random"
   }
 }

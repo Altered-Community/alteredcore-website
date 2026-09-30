@@ -24,6 +24,16 @@ describe('buildCardsSearchParams', () => {
     expect(buildCardsSearchParams({ factions: ['AX', 'LY'] }).getAll('faction.code[]')).toEqual(['AX', 'LY']);
   });
 
+  it('sorts like the site: name in the card language, costs and powers with the default order on ties, random', () => {
+    const name = buildCardsSearchParams({ order: 'name-desc', locale: 'fr' });
+    expect(name.get('order[name.fr]')).toBe('desc');
+    expect(name.get('order[setDate]')).toBe('desc');
+    const forest = buildCardsSearchParams({ order: 'forestPower-asc' });
+    expect(forest.get('order[forestPower]')).toBe('asc');
+    expect(forest.get('order[collectorNumberFormatedId]')).toBe('asc');
+    expect(buildCardsSearchParams({ order: 'random' }).get('random')).toBe('true');
+  });
+
   it('sends explicit cost arrays, order and advanced flags', () => {
     const hp = buildCardsSearchParams({
       mainCosts: [1, 2],
