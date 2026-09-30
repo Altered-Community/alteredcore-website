@@ -7,3 +7,5 @@ backend. Un fichier par API. Supprimer une entrée quand le backend est corrigé
 |---|---|
 | [cards-api.md](cards-api.md) | `cards.alteredcore.org` ([Altered-Community/altered-core-cards-api](https://github.com/Altered-Community/altered-core-cards-api)) |
 | [decks-api.md](decks-api.md) | `decks.alteredcore.org` ([Altered-Community/altered-core-decks-api](https://github.com/Altered-Community/altered-core-decks-api)) |
+| [uniques-api.md](uniques-api.md) | `search.altered.re` (recherche des Uniques) |
+| [site-favorites.md](site-favorites.md) | `/papi/core-altered-cards/favorites-search` (favoris du site) |
