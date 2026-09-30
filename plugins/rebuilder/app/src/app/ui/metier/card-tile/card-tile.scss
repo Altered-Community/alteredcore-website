@@ -18,7 +18,7 @@ button.visual {
   width: 100%;
   padding: 0;
   border: 0;
-  cursor: zoom-in;
+  cursor: pointer;
 }
 button.visual:focus-visible {
   outline: 2px solid var(--ar-color-primary);
