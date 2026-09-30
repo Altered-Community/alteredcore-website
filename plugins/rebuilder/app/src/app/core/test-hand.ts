@@ -52,3 +52,68 @@ export function handSummary(hand: DrawnCard[]): HandSummary {
   }
   return { characters, spells, permanents, averageCost: hand.length ? Math.round((cost / hand.length) * 10) / 10 : null };
 }
+
+/** Zones of the game mode (the site's hand tester playground). */
+export type PlayZone = 'hand' | 'mana' | 'board' | 'discard';
+
+/**
+ * Game mode: `setup` while 3 cards of the opening hand are chosen for mana, then `play` (draw, play to the board,
+ * discard, put in mana). Every zone holds `DrawnCard` ids; `deck` is the draw pile, top first.
+ */
+export interface PlayState {
+  phase: 'setup' | 'play';
+  deck: number[];
+  hand: number[];
+  mana: number[];
+  board: number[];
+  discard: number[];
+  /** Setup: the hand cards chosen for mana (3 at most). */
+  manaPick: number[];
+}
+
+/** Cards put in mana at the start of the game. */
+export const STARTING_MANA = 3;
+
+/** A new game from a shuffled draw order (ids of the pool): the opening hand, the rest as the draw pile. */
+export function newGame(order: readonly number[]): PlayState {
+  const n = Math.min(HAND_SIZE, order.length);
+  return { phase: 'setup', hand: order.slice(0, n), deck: order.slice(n), mana: [], board: [], discard: [], manaPick: [] };
+}
+
+/** Setup: picks or unpicks a hand card for mana (no more than 3). */
+export function toggleManaPick(state: PlayState, id: number): PlayState {
+  if (state.phase !== 'setup' || !state.hand.includes(id)) return state;
+  if (state.manaPick.includes(id)) return { ...state, manaPick: state.manaPick.filter((p) => p !== id) };
+  if (state.manaPick.length >= STARTING_MANA) return state;
+  return { ...state, manaPick: [...state.manaPick, id] };
+}
+
+/** Setup: the 3 picked cards go to mana and the game starts. */
+export function commitMana(state: PlayState): PlayState {
+  if (state.phase !== 'setup' || state.manaPick.length !== STARTING_MANA) return state;
+  return {
+    ...state,
+    phase: 'play',
+    hand: state.hand.filter((id) => !state.manaPick.includes(id)),
+    mana: [...state.mana, ...state.manaPick],
+    manaPick: [],
+  };
+}
+
+/** Play: the top card of the draw pile goes to the hand. */
+export function drawCard(state: PlayState): PlayState {
+  if (state.phase !== 'play' || !state.deck.length) return state;
+  const [top, ...rest] = state.deck;
+  return { ...state, deck: rest, hand: [...state.hand, top] };
+}
+
+/** Play: a card moves to another zone (placed at `index`, at the end by default). */
+export function moveCard(state: PlayState, id: number, to: PlayZone, index?: number): PlayState {
+  if (state.phase !== 'play') return state;
+  const from = (['hand', 'mana', 'board', 'discard'] as const).find((z) => state[z].includes(id));
+  if (!from) return state;
+  const next = { ...state, [from]: state[from].filter((c) => c !== id) };
+  const target = [...next[to]];
+  target.splice(index ?? target.length, 0, id);
+  return { ...next, [to]: target };
+}

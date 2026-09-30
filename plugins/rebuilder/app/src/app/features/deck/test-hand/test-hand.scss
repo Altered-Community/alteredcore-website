@@ -36,3 +36,191 @@
 .empty {
   color: var(--ar-color-text-muted);
 }
+
+/* Game mode (the site's playground). */
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+.hint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ar-color-primary-strong);
+}
+.table {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ar-space-3);
+}
+.zone {
+  position: relative;
+  border: 1px dashed var(--ar-color-border-dashed);
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-color-bg-subtle);
+}
+.zone.cdk-drop-list-dragging,
+.zone.cdk-drop-list-receiving {
+  border-color: var(--ar-color-primary);
+  background: var(--ar-color-primary-tint);
+}
+.zone-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+.board {
+  min-height: 190px;
+  padding: var(--ar-space-2) var(--ar-space-3) var(--ar-space-10);
+}
+.board-cards {
+  margin: var(--ar-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ar-space-2);
+}
+.board-cards li {
+  width: 96px;
+}
+.mana {
+  position: absolute;
+  right: var(--ar-space-2);
+  bottom: var(--ar-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ar-space-1-5);
+  min-height: var(--ar-control-sm);
+  padding: 0 var(--ar-space-3);
+  border: 0;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-chart-main);
+  color: var(--ar-color-on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.side {
+  display: flex;
+  justify-content: center;
+  gap: var(--ar-space-3);
+}
+.pile {
+  width: 112px;
+  display: flex;
+  flex-direction: column;
+}
+.pile-button,
+.deck-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ar-space-1-5);
+  height: 100%;
+  padding: var(--ar-space-2);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.pile-button {
+  width: 100%;
+}
+.deck-pile {
+  border: 1px dashed var(--ar-color-border-dashed);
+}
+.deck-pile:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.pile-face {
+  width: 88px;
+  aspect-ratio: 5 / 7;
+  border-radius: var(--ar-radius-md);
+  background: var(--ar-color-track);
+  overflow: hidden;
+}
+.pile-face.back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ar-space-1);
+  background: var(--ar-color-inverse);
+  color: var(--ar-color-on-inverse);
+  font-size: 12px;
+}
+.pile-face.back strong {
+  font-size: 22px;
+}
+.pile-count {
+  font-size: 13px;
+}
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: var(--ar-radius-lg);
+  cursor: pointer;
+}
+.card:focus-visible,
+.mana:focus-visible,
+.pile-button:focus-visible,
+.deck-pile:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}
+.card.picked ar-card-tile {
+  opacity: 0.35;
+}
+.mana-pick {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ar-space-1);
+  border: 2px solid var(--ar-color-chart-main);
+  border-radius: var(--ar-radius-lg);
+  color: var(--ar-color-primary-strong);
+  font-weight: 700;
+}
+.hand-zone {
+  min-height: 120px;
+  padding: var(--ar-space-2);
+  border: 1px dashed transparent;
+  border-radius: var(--ar-radius-card);
+}
+.hand-zone.cdk-drop-list-receiving {
+  border-color: var(--ar-color-primary);
+}
+.cdk-drag-preview {
+  box-shadow: var(--ar-shadow-card);
+}
+.cdk-drag-animating,
+.cdk-drop-list-dragging li:not(.cdk-drag-placeholder) {
+  transition: transform 0.2s;
+}
+.drop-placeholder {
+  aspect-ratio: 5 / 7;
+  border: 2px dashed var(--ar-color-primary-border);
+  border-radius: var(--ar-radius-lg);
+}
+.commit {
+  display: flex;
+  justify-content: center;
+}
+@media (min-width: 768px) {
+  .table {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

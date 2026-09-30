@@ -1,4 +1,4 @@
-import { HAND_SIZE, handPool, handSummary, shuffled } from './test-hand';
+import { HAND_SIZE, commitMana, drawCard, handPool, handSummary, moveCard, newGame, shuffled, toggleManaPick } from './test-hand';
 import type { HydratedLine } from './models';
 
 const lines: HydratedLine[] = [
@@ -30,5 +30,35 @@ describe('test hand', () => {
     const hand = handPool(lines).slice(0, HAND_SIZE);
     expect(handSummary(hand)).toEqual({ characters: 2, spells: 3, permanents: 1, averageCost: 2.2 });
     expect(handSummary([]).averageCost).toBeNull();
+  });
+});
+
+describe('game mode', () => {
+  const order = [5, 3, 8, 1, 0, 9, 2, 4, 6, 7];
+
+  it('deals 6, picks 3 for mana, then plays', () => {
+    let s = newGame(order);
+    expect(s).toMatchObject({ phase: 'setup', hand: [5, 3, 8, 1, 0, 9], deck: [2, 4, 6, 7] });
+    s = toggleManaPick(s, 5);
+    s = toggleManaPick(s, 3);
+    expect(commitMana(s)).toBe(s);
+    s = toggleManaPick(s, 8);
+    expect(toggleManaPick(s, 1).manaPick).toEqual([5, 3, 8]);
+    expect(toggleManaPick(s, 3).manaPick).toEqual([5, 8]);
+    s = commitMana(s);
+    expect(s).toMatchObject({ phase: 'play', hand: [1, 0, 9], mana: [5, 3, 8], manaPick: [] });
+  });
+
+  it('draws, plays to the board, discards and returns to the hand', () => {
+    let s = commitMana(toggleManaPick(toggleManaPick(toggleManaPick(newGame(order), 5), 3), 8));
+    s = drawCard(s);
+    expect(s).toMatchObject({ hand: [1, 0, 9, 2], deck: [4, 6, 7] });
+    s = moveCard(s, 0, 'board');
+    s = moveCard(s, 9, 'discard');
+    s = moveCard(s, 2, 'mana');
+    expect(s).toMatchObject({ hand: [1], board: [0], discard: [9], mana: [5, 3, 8, 2] });
+    s = moveCard(s, 9, 'hand', 0);
+    expect(s.hand).toEqual([9, 1]);
+    expect(moveCard(newGame(order), 5, 'board')).toMatchObject({ phase: 'setup', board: [] });
   });
 });

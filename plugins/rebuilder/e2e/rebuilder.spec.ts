@@ -469,6 +469,15 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await page.getByRole('option').first().click();
     await expect(calc.locator('ar-probability-bars').first()).toContainText('%');
     await evidence(page, testInfo, '23-deck-test-hand');
+    // Game mode (the site's playground): 3 cards to mana, then a card played from its menu.
+    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
+    for (const i of [0, 1, 2]) await deckPage.getByRole('button', { name: /: mettre en mana$/ }).nth(i).click();
+    await deckPage.getByRole('button', { name: /Mettre en mana/ }).click();
+    await expect(deckPage.getByRole('button', { name: 'Cartes en mana' })).toContainText('3');
+    await deckPage.getByRole('button', { name: /: actions$/ }).first().click();
+    await page.getByRole('menuitem', { name: 'Jouer sur le plateau' }).click();
+    await expect(deckPage.getByRole('region', { name: 'En jeu' }).locator('ar-card-tile')).toHaveCount(1);
+    await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
 
     // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
     // The deck is private: « Rendre public & partager » first, then the link and its QR code (as on the site).
