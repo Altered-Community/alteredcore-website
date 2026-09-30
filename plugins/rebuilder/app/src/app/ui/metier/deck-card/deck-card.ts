@@ -12,8 +12,8 @@ import { factionName } from '../factions';
 
 /**
  * Deck in the deck list: grid card (expanded) or row (compact).
- * `mine`: visibility, legality (« Non légal » opens the rules: `legalityClick`), draft, card count and rarities. `community`: card count, rarities and views, author, last update and like count; « Non légal » on an illegal deck (every listed deck is
- * public); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
+ * `mine`: visibility, legality (« Non légal » opens the rules: `legalityClick`), draft, card count and rarities. `community`: author, last update and like count instead (every listed deck is public
+ * and legal); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
  * on the winners of the Starter Deck Contest.
  */
 @Component({
@@ -31,11 +31,7 @@ export class ArDeckCard {
   /** « Non légal » badge clicked: the page opens the deck's rules window. */
   readonly legalityClick = output<void>();
   /** Failed rules known (as on the site's decks page: no badge when the API gives no reason). */
-  protected readonly illegal = computed(() => this.deck().legality.state === 'illegal');
-  protected readonly viewsLabel = computed(() => {
-    const views = this.deck().views;
-    return views === 1 ? $localize`:@@ui.deckCard.viewsOne:${views}:views: vue` : $localize`:@@ui.deckCard.views:${views}:views: vues`;
-  });
+  protected readonly illegal = computed(() => this.variant() !== 'community' && this.deck().legality.state === 'illegal');
   protected readonly showDraft = computed(() => this.variant() === 'mine' && this.deck().draft);
   protected readonly illegalLabel = computed(() => $localize`:@@ui.deckCard.illegalRules:Non légal : voir le détail de ${this.deck().name}:name:`);
   protected readonly link = computed(() => ['/decks', this.deck().id]);

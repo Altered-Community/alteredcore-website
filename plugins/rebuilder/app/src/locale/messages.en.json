@@ -587,8 +587,6 @@
     "ui.deckCard.draft": "Draft",
     "ui.deckCard.illegal": "Not legal",
     "ui.deckCard.illegalRules": "Not legal: see the details of {$name}",
-    "ui.deckCard.viewsOne": "{$views} view",
-    "ui.deckCard.views": "{$views} views",
     "decks.local.many": "You have {$count} decks saved in guest mode on this device.",
     "decks.local.one": "{$name} — {$count} cards — You have a deck saved in guest mode.",
     "decks.local.error": "The deck could not be saved on your account. Try again.",

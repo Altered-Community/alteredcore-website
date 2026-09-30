@@ -21,7 +21,6 @@ const item = (p: Partial<DeckListItem>): DeckListItem => ({
   createdAt: p.createdAt ?? '2026-01-01',
   likes: p.likes ?? 0,
   liked: false,
-  views: 0,
 });
 
 describe('filterDecks (Mes decks)', () => {

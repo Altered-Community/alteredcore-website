@@ -49,11 +49,6 @@
         <ar-rarity-summary [counts]="deck().rarity" [gap]="layout() === 'row' ? 14 : 10" />
       </span>
     } @else {
-      <span class="foot">
-        <span class="total" i18n="@@ui.deckCard.total">{deck().total, plural, =1 {1 carte} other {{{ deck().total }} cartes}}</span>
-        <ar-rarity-summary [counts]="deck().rarity" [gap]="layout() === 'row' ? 14 : 10" />
-        <span class="views" [attr.aria-label]="viewsLabel()" [title]="viewsLabel()"><ar-icon name="eye" [size]="14" />{{ deck().views }}</span>
-      </span>
       @if (deck().author; as author) {
         <span class="author"><ar-icon name="user" [size]="14" />{{ author }}</span>
       }
@@ -89,7 +84,7 @@
       </button>
     </span>
   } @else {
-    <button type="button" class="illegal illegal--row" [class.illegal--top]="variant() === 'community'" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+    <button type="button" class="illegal illegal--row" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
       <ar-badge tone="orange" icon="alert" i18n="@@ui.deckCard.illegal">Non légal</ar-badge>
     </button>
   }

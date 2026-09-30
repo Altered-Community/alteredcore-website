@@ -133,8 +133,6 @@ export interface DeckListItem {
   /** `upvoteCount` / `hasUpvoted` of the decks API. */
   likes: number;
   liked: boolean;
-  /** `viewCount` of the decks API. */
-  views: number;
   /** Starter Deck Contest winner (contest tab only). */
   winner?: boolean;
 }
@@ -174,7 +172,6 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     createdAt: deck.createdAt && !Number.isNaN(Date.parse(deck.createdAt)) ? deck.createdAt : '',
     likes: deck.upvoteCount ?? 0,
     liked: !!deck.hasUpvoted,
-    views: deck.viewCount ?? 0,
   };
 }
 
