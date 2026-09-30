@@ -40,14 +40,3 @@
 .tokens {
   padding: 0 var(--ar-space-4) var(--ar-space-3);
 }
-.progress {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ar-space-1);
-  padding: 0 var(--ar-space-4) var(--ar-space-3);
-}
-.progress-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ar-color-text-muted);
-}

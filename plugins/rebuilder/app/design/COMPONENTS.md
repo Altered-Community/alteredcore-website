@@ -87,7 +87,7 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 | Composant | Entrées | Écrans |
 |---|---|---|
 | `ar-card` | `padding: 'md' \| 'sm'` | panneaux, sections de deck |
-| `ar-progress-bar` | `value` (0–100), `ariaLabel` ; `role=progressbar`, barre `--ar-color-track` remplie en `--ar-color-primary` | import de l'export altered.gg, progression vers le minimum de cartes (éditeur) |
+| `ar-progress-bar` | `value` (0–100), `ariaLabel` ; `role=progressbar`, barre `--ar-color-track` remplie en `--ar-color-primary` | import de l'export altered.gg |
 | `ar-toast` | contenu projeté, `actionLabel?` ; `role=status`, en bas au centre (au-dessus de la barre de navigation en compact), fond inversé | `action` | ajout / retrait d’une carte dans l’éditeur (« Annuler ») |
 | `ar-collapsible` | `title`, `open = model<boolean>(false)`, contenu projeté | Stats (ouvertes par défaut : `[(open)]` à `true`) |
 | `ar-filter-section` | `title`, `count?`, action projetée (`ng-content select="[action]"`) | panneau de filtres |
