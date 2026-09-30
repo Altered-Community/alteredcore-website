@@ -60,7 +60,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Liste blanche Frontier des Uniques, sets absents de BGA | ✅ (API de recherche des Uniques, table des sets d’`altered.json`) |
 | Filtres : puissances, mot-clé, sous-type, relation de coût, syntaxe `<`/`>` des coûts, alt-arts et éditions promo, changer de faction | ✅ (dans « Recherche avancée ») |
 | Tris (17 sur le site, 3 dans le plugin) | ✅ (ceux du site, en plus des 3 du plugin) |
-| Onglets Collection physique, Possession numérique, Favoris | ❌ (les deux derniers sont des emplacements vides) |
+| Onglets Collection physique, Possession numérique, Favoris | ✅ (endpoints du plugin core-altered-cards ; collection et possession demandent leurs API) |
 | Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
 | Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ❌ |
 | Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ❌ |

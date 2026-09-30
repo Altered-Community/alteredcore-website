@@ -15,6 +15,7 @@ export interface FiltersSheetData {
 const SOURCE_LABEL: Record<CardSource, string> = {
   all: $localize`:@@search.source.all:Toutes les cartes`,
   uniques: $localize`:@@search.source.uniques:Uniques`,
+  collection: $localize`:@@search.source.collection:Collection physique`,
   owned: $localize`:@@search.source.owned:Propriété numérique`,
   favorites: $localize`:@@search.source.favorites:Favoris`,
 };

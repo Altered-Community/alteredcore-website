@@ -4,7 +4,7 @@ import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
 import { KEYWORDS, PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
 
-export type CardSource = 'all' | 'uniques' | 'owned' | 'favorites';
+export type CardSource = 'all' | 'uniques' | 'collection' | 'owned' | 'favorites';
 
 export interface AbilityRef {
   id: number;

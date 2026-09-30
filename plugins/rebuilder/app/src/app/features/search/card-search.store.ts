@@ -13,14 +13,16 @@ import {
 } from '../../core/card-filters';
 import type { Card } from '../../core/models';
 import { UniquesApiService } from '../../core/uniques-api.service';
+import { OwnedCardsService } from '../../core/owned-cards.service';
+import { AuthSession } from '../../core/auth-session';
 
-export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, owned: 36, favorites: 36 };
+export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, collection: 36, owned: 36, favorites: 36 };
 
 /** A page still loading after this long gets a « still searching » notice. */
 export const SLOW_MS = 3000;
 
-/** Sources that need an account: nothing to fetch from the cards API yet. */
-const LOGIN_ONLY: readonly CardSource[] = ['owned', 'favorites'];
+/** Sources of the user's own cards (the site's endpoints): nothing to fetch for a guest. */
+const LOGIN_ONLY: readonly CardSource[] = ['collection', 'owned', 'favorites'];
 
 interface SearchQuery {
   source: CardSource;
@@ -63,8 +65,8 @@ interface SearchState {
 
 const FIRST_PAGE: PageRequest = { page: 1, from: null };
 
-function emptyState(source: CardSource): SearchState {
-  return LOGIN_ONLY.includes(source)
+function emptyState(source: CardSource, guest: boolean): SearchState {
+  return guest && LOGIN_ONLY.includes(source)
     ? { cards: [], total: 0, page: 0, next: null, timings: [] }
     : { cards: [], total: null, page: 0, next: null, timings: [] };
 }
@@ -78,6 +80,8 @@ function emptyState(source: CardSource): SearchState {
 export class CardSearchStore {
   private readonly api = inject(CardsApiService);
   private readonly uniquesApi = inject(UniquesApiService);
+  private readonly owned = inject(OwnedCardsService);
+  private readonly auth = inject(AuthSession);
 
   readonly source = signal<CardSource>('all');
   readonly faction = signal<string | null>(null);
@@ -97,7 +101,7 @@ export class CardSearchStore {
   private readonly pageRes = rxResource({
     params: () => {
       const query = this.query();
-      return LOGIN_ONLY.includes(query.source) ? undefined : { query, request: this.requestedPage() };
+      return LOGIN_ONLY.includes(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
     },
     stream: ({ params: { query, request } }) => {
       const started = performance.now();
@@ -110,7 +114,7 @@ export class CardSearchStore {
   private readonly state = linkedSignal<{ query: SearchQuery; loaded: LoadedPage | undefined }, SearchState>({
     source: () => ({ query: this.query(), loaded: this.pageRes.hasValue() ? this.pageRes.value() : undefined }),
     computation: ({ query, loaded }, prev) => {
-      const current = prev && prev.source.query === query ? prev.value : emptyState(query.source);
+      const current = prev && prev.source.query === query ? prev.value : emptyState(query.source, !this.auth.isLoggedIn());
       if (!loaded || loaded.query !== query || loaded.page <= current.page) return current;
       const seen = new Set(current.cards.map((c) => c.reference));
       return {
@@ -215,6 +219,12 @@ export class CardSearchStore {
     const size = PAGE_SIZE[query.source];
     if (query.source === 'uniques') return this.uniquesApi.search(toUniquesQuery(query.filters, query.faction), request.from, size);
     const page = request.from ?? 1;
+    if (query.source === 'collection' || query.source === 'owned' || query.source === 'favorites') {
+      const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
+      return this.owned
+        .search(query.source, query.filters, factions, page, size)
+        .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));
+    }
     return this.api
       .search(toSearchParams(query.filters, query.faction, page, size))
       .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));

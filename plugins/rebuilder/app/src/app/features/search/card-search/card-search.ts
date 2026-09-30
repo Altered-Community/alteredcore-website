@@ -26,6 +26,7 @@ export interface CardSourceTab {
 export const CARD_SOURCES: CardSourceTab[] = [
   { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes` },
   { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
+  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique` },
   { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
   { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
 ];
@@ -87,7 +88,8 @@ export class CardSearch {
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
   /** The Uniques search API returns its own order, with no sort parameter. */
-  protected readonly sortable = computed(() => this.search.source() !== 'uniques');
+  // The Uniques search API and the account lists (favorites, collection, ownership) have their own order.
+  protected readonly sortable = computed(() => this.search.source() === 'all');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';

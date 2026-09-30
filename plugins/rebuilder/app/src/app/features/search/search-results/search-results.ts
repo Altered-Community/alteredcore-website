@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { addBlockedReason } from '../../../core/deck-rules';
 import { DeckStore } from '../../../core/deck-store';
+import { AuthSession } from '../../../core/auth-session';
 import type { Card } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { ArVirtualGrid } from '../../../ui/containers';
@@ -21,6 +22,7 @@ import { CardSearchStore } from '../card-search.store';
 export class SearchResults {
   protected readonly search = inject(CardSearchStore);
   protected readonly deck = inject(DeckStore);
+  protected readonly auth = inject(AuthSession);
   private readonly overlay = inject(ArOverlayService);
   protected readonly favorites = inject(FavoritesService);
   readonly layout = input<'grid' | 'list'>('grid');

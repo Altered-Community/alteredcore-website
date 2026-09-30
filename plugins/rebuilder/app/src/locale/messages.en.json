@@ -672,6 +672,8 @@
     "search.filters.order.mountainDesc": "Mountain ↓",
     "search.filters.order.oceanAsc": "Ocean ↑",
     "search.filters.order.oceanDesc": "Ocean ↓",
-    "search.filters.order.random": "Random"
+    "search.filters.order.random": "Random",
+    "search.source.collection": "Physical collection",
+    "search.results.collectionLogin": "Sign in to find the cards of your physical collection."
   }
 }
