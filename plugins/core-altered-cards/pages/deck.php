@@ -367,9 +367,13 @@ if ($deckId) {
 $pageTitle = $deck['name'] ?? $txt['page_title'];
 // Check ownership: the collection endpoint returns only the current user's decks,
 // so fetching /api/decks and looking for this deck ID is reliable without any API change.
+// Narrowed by name: once /api/decks is paginated (1000 per page at most) and filters on it,
+// an account with more decks still finds this one; an API that ignores `name` returns them all.
 $isOwner = false;
 if ($isLoggedIn && $deck && $deckId && !empty($token)) {
-    $ch2 = curl_init(DECKS_API_URL . '/api/decks?' . http_build_query(['itemsPerPage' => 1000]));
+    $ownQuery = ['itemsPerPage' => 1000];
+    if (($deck['name'] ?? '') !== '') $ownQuery['name'] = $deck['name'];
+    $ch2 = curl_init(DECKS_API_URL . '/api/decks?' . http_build_query($ownQuery));
     curl_setopt_array($ch2, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
@@ -380,7 +384,8 @@ if ($isLoggedIn && $deck && $deckId && !empty($token)) {
     curl_close($ch2);
     if ($c2 === 200 && $r2) {
         $d2      = json_decode($r2, true);
-        $d2Items = $d2['data'] ?? (isset($d2[0]['id']) ? $d2 : []);
+        // Paginated envelope (`member`), older `data` envelope, or a bare array.
+        $d2Items = $d2['member'] ?? $d2['data'] ?? (isset($d2[0]['id']) ? $d2 : []);
         $myIds   = array_column($d2Items, 'id');
         $isOwner = in_array($deckId, $myIds);
     }
