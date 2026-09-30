@@ -104,15 +104,15 @@ export class EditorPage {
   ]);
   protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.loadError() && this.deck.owned() === false);
 
-  /** « Nom ×n » after a copy is added or removed, with « Annuler » after an add (the site's deck builder toast). */
+  /** « Nom ×n » after a copy is added or removed, with « Annuler » restoring the previous count (after an add, as the site's deck builder toast, and after a removal). */
   protected readonly toast = signal<{ card: Card; name: string; quantity: number; delta: number } | null>(null);
   protected readonly undoLabel = $localize`:@@editor.toast.undo:Annuler`;
   private toastTimer?: ReturnType<typeof setTimeout>;
   /** The change « Annuler » makes is not announced again. */
   private undone: unknown = null;
 
-  protected undo(card: Card, quantity: number): void {
-    this.deck.setQuantity(card, quantity - 1);
+  protected undo(card: Card, previous: number): void {
+    this.deck.setQuantity(card, previous);
     this.undone = this.deck.lastChange();
     this.toast.set(null);
   }
