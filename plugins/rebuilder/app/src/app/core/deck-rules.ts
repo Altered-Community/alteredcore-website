@@ -1,4 +1,4 @@
-import { formatInfo, type FormatInfo } from './formats';
+import { formatInfo, setAllowed, type FormatInfo } from './formats';
 import type { Card, DeckFormat, DeckHero, HydratedLine } from './models';
 import { localizedText, rarityFromReference } from './models';
 
@@ -106,7 +106,12 @@ export function uniqueLimit(limits: FormatInfo, hero?: HeroLike | null): number 
   return byHero ?? limits.uniqueMax;
 }
 
-export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 'standard', hero?: HeroLike | null): DeckStatus {
+/** What the editor learns from the APIs: the Uniques out of the Frontier list (uniques search API, `format=frontier`). */
+export interface DeckRuleData {
+  frontierIllegal?: ReadonlySet<string>;
+}
+
+export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 'standard', hero?: HeroLike | null, data: DeckRuleData = {}): DeckStatus {
   const limits = formatInfo(format);
   const uniqueMax = uniqueLimit(limits, hero);
   let total = 0;
@@ -144,6 +149,16 @@ export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 's
     byNameRarity.set(`${key}|${r}`, (byNameRarity.get(`${key}|${r}`) ?? 0) + qty);
     const f = cardFaction(line.card);
     if (f) factions.add(f);
+  }
+
+  // Sets missing from BGA (the site's `rule_set_legal`, first of its list), the hero's included.
+  const setOf = (ref: string) => ref.split('_')[1] ?? '';
+  const offSet = deckLines.filter((l) => !setAllowed(setOf(l.card.reference), limits));
+  const heroOffSet = !!hero && !setAllowed(setOf(hero.reference), limits);
+  check('sets', !offSet.length && !heroOffSet, offSet.length + (heroOffSet ? 1 : 0) || null);
+  for (const l of offSet) {
+    issues.push(`set ${l.card.reference}`);
+    flag(l.card.reference, 'sets');
   }
 
   const sizeOk = total >= limits.min && total <= limits.max;
@@ -212,6 +227,16 @@ export function computeDeckStatus(lines: HydratedLine[], format: DeckFormat = 's
     for (const l of suspended) {
       issues.push(`suspended ${l.card.reference}`);
       flag(l.card.reference, 'suspendedCards');
+    }
+  }
+
+  // Frontier: the Uniques must be on the Frontier list (checked by the uniques search API).
+  if (limits.frontierUniques) {
+    const off = deckLines.filter((l) => rarityOf(l.card) === 'UNIQUE' && data.frontierIllegal?.has(l.card.reference));
+    check('frontierUniques', !off.length, off.length || null);
+    for (const l of off) {
+      issues.push(`frontier ${l.card.reference}`);
+      flag(l.card.reference, 'frontierUniques');
     }
   }
 

@@ -117,6 +117,17 @@ export class UniquesApiService {
     return page$;
   }
 
+  /**
+   * Which of `references` (Uniques) are on the Frontier list: the uniques search API answers only those with
+   * `format=frontier`, as the decks API checks it on save (the site's deck builder does the same).
+   */
+  frontierLegal(references: string[]): Observable<Set<string>> {
+    const params = new HttpParams().set('ref', references.join(',')).set('format', 'frontier');
+    return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
+      map((res) => new Set((res.cards ?? []).map((c) => c.reference).filter((r): r is string => !!r))),
+    );
+  }
+
   /** Trigger / condition / effect vocabularies of the effect editor (main-effect entries). */
   abilities(kind: AbilityKind): Observable<AbilityRef[]> {
     this.effects$ ??= this.http.get<EffectsResponse>(`${this.baseUrl}/api/v2/effects`).pipe(

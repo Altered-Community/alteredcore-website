@@ -7,7 +7,9 @@ import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt } from './deck-create-failure';
 import { legalityFromApi, legalityFromStatus, type DeckLegality } from './deck-legality';
-import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
+import { computeDeckStatus, maxCopiesFor, rarityOf, type DeckStatus } from './deck-rules';
+import { UniquesApiService } from './uniques-api.service';
+import { formatInfo } from './formats';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
 import { GuestDeckService } from './guest-deck.service';
@@ -53,9 +55,11 @@ export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
   private readonly ownership = inject(OwnershipApiService);
   private readonly cardsApi = inject(CardsApiService);
+  private readonly uniquesApi = inject(UniquesApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
   private readonly createFailure = inject(DeckCreateFailurePrompt);
+  private readonly frontierPending = new Set<string>();
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -99,7 +103,10 @@ export class DeckStore {
   /** Non-hero lines. */
   readonly lines = signal<HydratedLine[]>([]);
 
-  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format(), this.hero()));
+  /** Frontier list answers for the Uniques checked so far (reference → on the list); fail closed on an API error. */
+  private readonly frontierChecked = signal<ReadonlyMap<string, boolean>>(new Map());
+  private readonly frontierIllegal = computed(() => new Set([...this.frontierChecked()].filter(([, ok]) => !ok).map(([ref]) => ref)));
+  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format(), this.hero(), { frontierIllegal: this.frontierIllegal() }));
   /** `legal` / `legalityDetail` / `formatErrors` of the decks API, until the deck is changed here. */
   private readonly apiLegality = signal<DeckLegality | null>(null);
   /** The decks API's verdict for a server deck; the editor's own checks for a guest or edited deck. */
@@ -146,6 +153,24 @@ export class DeckStore {
   private saveQueued = false;
 
   constructor() {
+    // Frontier: the Uniques of the deck not checked yet go to the uniques search API (as the site's deck builder).
+    effect(() => {
+      if (!formatInfo(this.format()).frontierUniques) return;
+      const checked = this.frontierChecked();
+      const refs = this.lines()
+        .filter((l) => l.quantity > 0 && rarityOf(l.card) === 'UNIQUE' && !checked.has(l.card.reference))
+        .map((l) => l.card.reference)
+        .filter((r) => !this.frontierPending.has(r));
+      if (!refs.length) return;
+      untracked(() => {
+        refs.forEach((r) => this.frontierPending.add(r));
+        const done = (legal: Set<string> | null) => {
+          refs.forEach((r) => this.frontierPending.delete(r));
+          this.frontierChecked.update((m) => new Map([...m, ...refs.map((r) => [r, !!legal?.has(r)] as const)]));
+        };
+        this.uniquesApi.frontierLegal(refs).subscribe({ next: done, error: () => done(null) });
+      });
+    });
     effect(() => {
       const err = this.serverDeck.error();
       if (err) {

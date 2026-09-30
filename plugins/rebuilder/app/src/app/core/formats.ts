@@ -40,6 +40,8 @@ export interface FormatInfo {
   frontierUniques?: boolean;
   /** Offered only to the BGA test team (`visibleFormats`). */
   hidden?: boolean;
+  /** Cards of the sets missing from BGA are allowed (Test). */
+  ignoreBgaIllegalSets?: boolean;
   badgeTone: 'blue' | 'violet' | 'neutral';
 }
 
@@ -218,8 +220,42 @@ export const DECK_FORMATS: readonly FormatInfo[] = [
     allowSuspended: true,
     badgeTone: 'neutral',
     hidden: true,
+    ignoreBgaIllegalSets: true,
   },
 ];
+
+/**
+ * Sets and whether Board Game Arena has them (`sets[].bgalegal` of the site's `altered.json`). The site's deck builder
+ * refuses a card of a set missing from BGA (`false`) or unknown to this table, except in Test.
+ */
+export const BGA_SETS: Readonly<Record<string, boolean>> = {
+  CORE: true,
+  COREKS: true,
+  ALIZE: true,
+  BISE: true,
+  CYCLONE: true,
+  DUSTER: true,
+  DUSTEROP: true,
+  DUSTERTOP: true,
+  DUSTERCB: true,
+  EOLE: true,
+  EOLEOP: true,
+  EOLETOP: true,
+  EOLECB: true,
+  FUGUE: false,
+  TCS3: true,
+  WCQ25: true,
+  WCF25: true,
+  WCS25: true,
+  JUDGE: true,
+  MUSUBI: true,
+  WCS26: true,
+};
+
+/** A card of `set` is allowed in this format (sets missing from BGA, except in Test). */
+export function setAllowed(set: string, info: FormatInfo): boolean {
+  return BGA_SETS[set] === true || (!!info.ignoreBgaIllegalSets && set in BGA_SETS);
+}
 
 /** The site's opt-in page for the BGA test team (`/pages/bgatester`) sets this flag. */
 export const BGA_TESTER_KEY = 'bgatester';

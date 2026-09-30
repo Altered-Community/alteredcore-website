@@ -57,7 +57,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Échec de création sur le compte : erreur affichée au lieu d'un deck local silencieux | ✅ fait dans #106 |
 | Règles : même faction, limite d'Uniques par héros, formats sans Uniques, bannies/suspendues | ✅ fait dans #106 (limites Singleton par héros tirées d’`altered.json`) |
 | Détail des règles depuis l'éditeur, marqueur de violation par ligne | ✅ fait dans #106 |
-| Liste blanche Frontier des Uniques, sets absents de BGA | ❌ |
+| Liste blanche Frontier des Uniques, sets absents de BGA | ✅ (API de recherche des Uniques, table des sets d’`altered.json`) |
 | Filtres : puissances, mot-clé, sous-type, relation de coût, syntaxe `<`/`>` des coûts, alt-arts et éditions promo, changer de faction | ❌ |
 | Tris (17 sur le site, 3 dans le plugin) | 🟡 |
 | Onglets Collection physique, Possession numérique, Favoris | ❌ (les deux derniers sont des emplacements vides) |

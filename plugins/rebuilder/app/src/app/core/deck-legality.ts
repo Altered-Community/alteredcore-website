@@ -62,6 +62,8 @@ const LINE_LABELS: Partial<Record<LegalityRule, string>> = {
   bannedCards: $localize`:@@core.violation.bannedCards:Carte bannie`,
   suspendedCards: $localize`:@@core.violation.suspendedCards:Carte suspendue`,
   uniqueQuantity: $localize`:@@core.violation.uniqueQuantity:Cartes uniques interdites dans ce format`,
+  sets: $localize`:@@core.violation.sets:Set absent de BGA`,
+  frontierUniques: $localize`:@@core.violation.frontierUniques:Hors de la liste Frontier`,
 };
 
 /** Label of a rule a deck line breaks. */

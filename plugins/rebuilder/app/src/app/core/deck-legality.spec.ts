@@ -30,6 +30,7 @@ describe('deck legality', () => {
     expect(legality).toMatchObject({ state: 'illegal', rules: ['hero', 'deckSize', 'copies'], errors: [] });
     expect(legality.checks?.map((c) => [c.rule, c.ok])).toEqual([
       ['hero', false],
+      ['sets', true],
       ['deckSize', false],
       ['rareQuantity', true],
       ['exaltedQuantity', true],

@@ -174,3 +174,25 @@ describe('rarity from references', () => {
     expect(counts).toEqual({ C: 3, R: 2, U: 1, E: 0 });
   });
 });
+
+describe('sets missing from BGA and the Frontier list', () => {
+  const line = (reference: string, quantity = 1): HydratedLine => ({ quantity, card: { reference, name: reference, cardType: { reference: 'SPELL' } } });
+
+  it('refuses a card of a set missing from BGA, except in Test', () => {
+    const lines = [line('ALT_FUGUE_B_AX_130_C'), line('ALT_CORE_B_AX_04_C')];
+    const standard = computeDeckStatus(lines, 'standard');
+    expect(standard.rules).toContain('sets');
+    expect(standard.violations['ALT_FUGUE_B_AX_130_C']).toContain('sets');
+    expect(computeDeckStatus(lines, 'test').rules).not.toContain('sets');
+  });
+
+  it('refuses the Uniques off the Frontier list in Frontier only', () => {
+    const lines = [line('ALT_CORE_B_AX_04_U_12'), line('ALT_CORE_B_AX_05_U_3')];
+    const data = { frontierIllegal: new Set(['ALT_CORE_B_AX_04_U_12']) };
+    const frontier = computeDeckStatus(lines, 'frontier', null, data);
+    expect(frontier.rules).toContain('frontierUniques');
+    expect(frontier.violations['ALT_CORE_B_AX_04_U_12']).toContain('frontierUniques');
+    expect(frontier.violations['ALT_CORE_B_AX_05_U_3']).toBeUndefined();
+    expect(computeDeckStatus(lines, 'standard', null, data).rules).not.toContain('frontierUniques');
+  });
+});
