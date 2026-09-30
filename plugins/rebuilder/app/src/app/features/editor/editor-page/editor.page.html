@@ -37,7 +37,7 @@
             size="lg"
             ariaLabel="Mode d’affichage" i18n-ariaLabel="@@editor.displayMode"
             [options]="modeOptions"
-            [value]="effectiveView() === 'apercu' ? 'apercu' : 'search'"
+            [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
         </div>
@@ -67,6 +67,13 @@
         }
         @case ('deck') {
           <app-deck-list-view (openSettings)="openSettings()" />
+        }
+        @case ('main') {
+          <div class="hand">
+            <app-test-hand [lines]="deck.lines()" />
+            <app-hand-stats [lines]="deck.lines()" />
+            <app-hand-calculators [lines]="deck.lines()" />
+          </div>
         }
         @default never;
       }

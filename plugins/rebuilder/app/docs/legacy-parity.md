@@ -64,7 +64,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
 | Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ (service ownership requis, sauf les héros alt-art) |
 | Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ✅ |
-| Main de départ dans l'éditeur | ❌ (sur la page deck seulement) |
+| Main de départ dans l'éditeur | ✅ (vue « Main de départ », `/edit/main`) |
 | Pastilles BGA qui dépendent du héros à la création, formats lus depuis `altered.json` | 🟡 statiques |
 
 Fonctions propres au plugin : plusieurs decks invités, chips de filtres retirables, filtres « Sans effet » / « Écho », vue grille

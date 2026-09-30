@@ -22,9 +22,12 @@ import { CardSearch } from '../../search/card-search/card-search';
 import { DeckListView } from '../deck-list-view/deck-list-view';
 import { DeckPanel } from '../deck-panel/deck-panel';
 import { DeckPreview } from '../deck-preview/deck-preview';
+import { TestHand } from '../../deck/test-hand/test-hand';
+import { HandStats } from '../../deck/hand-stats/hand-stats';
+import { HandCalculators } from '../../deck/hand-calculators/hand-calculators';
 import { editorLegality } from '../editor-legality';
 
-export type EditorView = 'search' | 'apercu' | 'deck';
+export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
 
 @Component({
   selector: 'app-editor-page',
@@ -45,6 +48,9 @@ export type EditorView = 'search' | 'apercu' | 'deck';
     CardSearch,
     DeckPanel,
     DeckPreview,
+    TestHand,
+    HandStats,
+    HandCalculators,
     DeckListView,
   ],
   host: {
@@ -78,6 +84,7 @@ export class EditorPage {
   protected readonly modeOptions = [
     { value: 'search' as const, label: $localize`:@@editor.search:Recherche`, icon: 'search' as const },
     { value: 'apercu' as const, label: $localize`:@@editor.viewDeck:Voir le deck`, icon: 'eye' as const },
+    { value: 'main' as const, label: $localize`:@@editor.hand:Main de départ`, icon: 'hand' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
@@ -93,6 +100,7 @@ export class EditorPage {
       badge: this.deck.total(),
       badgeTone: editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
     },
+    { route: `${this.base()}/main`, icon: 'hand', label: $localize`:@@editor.handShort:Main` },
   ]);
   protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.loadError() && this.deck.owned() === false);
 
@@ -129,7 +137,7 @@ export class EditorPage {
   }
 
   protected setMode(mode: string | undefined): void {
-    void this.router.navigateByUrl(mode === 'apercu' ? `${this.base()}/apercu` : this.base());
+    void this.router.navigateByUrl(mode === 'apercu' || mode === 'main' ? `${this.base()}/${mode}` : this.base());
   }
 
   protected openSettings(): void {

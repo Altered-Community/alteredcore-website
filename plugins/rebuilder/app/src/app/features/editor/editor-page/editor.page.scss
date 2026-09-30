@@ -149,3 +149,8 @@ ar-app-bar.static {
     width: var(--ar-deck-panel-width);
   }
 }
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-6);
+}
