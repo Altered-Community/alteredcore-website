@@ -80,4 +80,9 @@
   @if (bp.compact()) {
     <ar-bottom-nav ariaLabel="Éditeur de deck" i18n-ariaLabel="@@editor.bottomNav" [items]="navItems()" />
   }
+  @if (toast(); as t) {
+    <ar-toast [actionLabel]="t.delta > 0 ? undoLabel : ''" (action)="undo(t.card, t.quantity)">
+      <ar-icon [name]="t.delta > 0 ? 'plus' : 'minus'" [size]="14" [strokeWidth]="2.6" />{{ t.name }} ×{{ t.quantity }}
+    </ar-toast>
+  }
 }

@@ -13,6 +13,10 @@
     (openSettings)="openSettings.emit()"
     (showLegality)="showLegality()"
   />
+  <div class="progress">
+    <span class="progress-label" i18n="@@editor.progress">{{ deck.total() }} / {{ minCards() }} cartes minimum</span>
+    <ar-progress-bar [value]="progress()" [ariaLabel]="progressLabel()" />
+  </div>
 }
 <ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
   <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />

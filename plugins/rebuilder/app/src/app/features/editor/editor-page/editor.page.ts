@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -7,6 +7,9 @@ import { formatInfo } from '../../../core/formats';
 import { ArButton } from '../../../ui/buttons';
 import { ArEditableTitle, ArSegmented } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
+import { ArToast } from '../../../ui/containers';
+import { contentLocale } from '../../../core/locale';
+import { localizedText, type Card } from '../../../core/models';
 import { ArSaveStatus } from '../../../ui/metier';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArAppBar, ArAvatar, ArBackButton, ArBottomNav, ArBreadcrumb, type ArBottomNavItem } from '../../../ui/nav';
@@ -27,6 +30,7 @@ export type EditorView = 'search' | 'apercu' | 'deck';
   selector: 'app-editor-page',
   providers: [CardSearchStore, EditorAltArts],
   imports: [
+    ArToast,
     RouterLink,
     ArAppBar,
     ArAvatar,
@@ -92,7 +96,31 @@ export class EditorPage {
   ]);
   protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.loadError() && this.deck.owned() === false);
 
+  /** « Nom ×n » after a copy is added or removed, with « Annuler » after an add (the site's deck builder toast). */
+  protected readonly toast = signal<{ card: Card; name: string; quantity: number; delta: number } | null>(null);
+  protected readonly undoLabel = $localize`:@@editor.toast.undo:Annuler`;
+  private toastTimer?: ReturnType<typeof setTimeout>;
+  /** The change « Annuler » makes is not announced again. */
+  private undone: unknown = null;
+
+  protected undo(card: Card, quantity: number): void {
+    this.deck.setQuantity(card, quantity - 1);
+    this.undone = this.deck.lastChange();
+    this.toast.set(null);
+  }
+
   constructor() {
+    // A change made before this page (another deck) is not announced.
+    this.deck.lastChange.set(null);
+    effect(() => {
+      const change = this.deck.lastChange();
+      if (!change || change === this.undone) return;
+      untracked(() => {
+        this.toast.set({ ...change, name: localizedText(change.card.name, contentLocale()) || change.card.reference });
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => this.toast.set(null), 2600);
+      });
+    });
     effect(() => {
       const id = this.id();
       if (id) untracked(() => this.deck.load(id));

@@ -1,0 +1,4 @@
+<span class="message"><ng-content /></span>
+@if (actionLabel()) {
+  <button type="button" class="action" (click)="action.emit()">{{ actionLabel() }}</button>
+}

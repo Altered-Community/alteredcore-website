@@ -63,7 +63,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Onglets Collection physique, Possession numérique, Favoris | ✅ (endpoints du plugin core-altered-cards ; collection et possession demandent leurs API) |
 | Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
 | Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ (service ownership requis, sauf les héros alt-art) |
-| Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ❌ |
+| Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ✅ |
 | Main de départ dans l'éditeur | ❌ (sur la page deck seulement) |
 | Pastilles BGA qui dépendent du héros à la création, formats lus depuis `altered.json` | 🟡 statiques |
 

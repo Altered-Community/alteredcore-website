@@ -282,9 +282,14 @@ export class DeckStore {
     else this.serverId.set(id);
   }
 
+  /** Last copy count changed from the editor (`delta` > 0: added), for the « Annuler » toast. */
+  readonly lastChange = signal<{ card: Card; quantity: number; delta: number } | null>(null);
+
   setQuantity(card: Card, quantity: number): void {
     if (!this.editable()) return;
     const qty = Math.max(0, Math.min(this.maxFor(card), Math.round(quantity)));
+    const before = this.quantityOf(card.reference);
+    if (qty !== before) this.lastChange.set({ card, quantity: qty, delta: qty - before });
     this.lines.update((current) => {
       const i = current.findIndex((l) => l.card.reference === card.reference);
       if (i === -1) return qty > 0 ? [...current, { card, quantity: qty }] : current;

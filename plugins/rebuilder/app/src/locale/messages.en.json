@@ -687,6 +687,9 @@
     "editor.tokenArts.empty": "No token has more than one illustration.",
     "editor.tokenArts.loading": "Loading…",
     "editor.tokenArts.close": "Close",
-    "editor.tokenArts.open": "Choose token illustrations"
+    "editor.tokenArts.open": "Choose token illustrations",
+    "editor.toast.undo": "Undo",
+    "editor.progress": "{$INTERPOLATION} / {$INTERPOLATION_1} cards minimum",
+    "editor.progressLabel": "Progress toward the minimum number of cards"
   }
 }

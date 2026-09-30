@@ -87,7 +87,8 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 | Composant | Entrées | Écrans |
 |---|---|---|
 | `ar-card` | `padding: 'md' \| 'sm'` | panneaux, sections de deck |
-| `ar-progress-bar` | `value` (0–100), `ariaLabel` ; `role=progressbar`, barre `--ar-color-track` remplie en `--ar-color-primary` | import de l'export altered.gg |
+| `ar-progress-bar` | `value` (0–100), `ariaLabel` ; `role=progressbar`, barre `--ar-color-track` remplie en `--ar-color-primary` | import de l'export altered.gg, progression vers le minimum de cartes (éditeur) |
+| `ar-toast` | contenu projeté, `actionLabel?` ; `role=status`, en bas au centre (au-dessus de la barre de navigation en compact), fond inversé | `action` | ajout / retrait d’une carte dans l’éditeur (« Annuler ») |
 | `ar-collapsible` | `title`, `open = model<boolean>(false)`, contenu projeté | Stats (ouvertes par défaut : `[(open)]` à `true`) |
 | `ar-filter-section` | `title`, `count?`, action projetée (`ng-content select="[action]"`) | panneau de filtres |
 | `ar-virtual-grid` | `items`, `overscan = 1.5` (écrans de rangées gardés au-dessus et au-dessous), `initial = 36` (cases rendues avant la mesure) ; expose `slice()` (éléments à rendre), `first()` (index dans `items` du premier rendu, pour `aria-posinset`) et `atEnd()` (dernier élément rendu : afficher les squelettes). Le parent rend lui-même les cases en contenu projeté : `<ar-virtual-grid #grid class="grid" [items]="cards">@for (c of grid.slice(); track c.reference) {…}</ar-virtual-grid>`. Grille CSS dont seules les rangées à moins de `overscan` écrans sont dans le DOM ; les autres sont remplacées par un padding de même hauteur (la page garde sa longueur, le sentinel de scroll infini reste en bas). L'hôte est la grille : le parent pose colonnes et espacements par une classe. Toutes les cases ont la hauteur de la première ; défile avec la fenêtre | résultats de recherche de cartes (Cartes, éditeur) |
