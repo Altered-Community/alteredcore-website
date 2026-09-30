@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -6,6 +6,28 @@ import { environment } from '../../environments/environment';
 export interface CardQuantity {
   cardReference: string;
   quantity: number;
+}
+
+/** A multi-art family of the ownership catalog. */
+export interface AltArtFamily {
+  familyId: number;
+  faction: string;
+  rarity: string;
+}
+
+/** The illustrations of a family (`ownedQuantity`: `null` = unlimited) and the player's copy slots (one per copy). */
+export interface AltArtOptions {
+  options: { reference: string; ownedQuantity: number | null }[];
+  slots: { slotIndex: number; reference: string }[];
+}
+
+export interface AltArtChoice {
+  family: AltArtFamily;
+  options: AltArtOptions;
+}
+
+export function familyKey(f: AltArtFamily): string {
+  return `${f.familyId}:${f.faction}:${f.rarity}`;
 }
 
 /**
@@ -26,6 +48,32 @@ export class OwnershipApiService {
       map((body) => body?.mode === 'Global'),
       catchError(() => of(false)),
     );
+  }
+
+  /**
+   * Families and illustrations of `references`, by reference (none for a card with a single illustration), from the
+   * site's `deck-alt-arts` (plugin core-altered-cards), which also finds the family of a reprint.
+   */
+  altArtChoices(references: string[]): Observable<Record<string, AltArtChoice>> {
+    if (!this.baseUrl || !references.length) return of({});
+    const params = references.reduce((p, r) => p.append('ref[]', r), new HttpParams());
+    const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/deck-alt-arts`;
+    return this.http.get<{ groups?: Record<string, AltArtFamily>; options?: Record<string, AltArtOptions> }>(url, { params }).pipe(
+      map((res) => {
+        const out: Record<string, AltArtChoice> = {};
+        for (const [ref, family] of Object.entries(res?.groups ?? {})) {
+          const options = res.options?.[familyKey(family)];
+          if (options?.options?.length) out[ref] = { family, options };
+        }
+        return out;
+      }),
+      catchError(() => of({})),
+    );
+  }
+
+  /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */
+  setAltArtPreference(family: AltArtFamily, slotReferences: string[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences });
   }
 
   /** The cards with the preferred alt arts, as `POST /api/alt-arts/apply-to-deck` returns them. */

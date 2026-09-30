@@ -638,6 +638,9 @@
     "deck.play.returnHand": "Return to hand",
     "deck.play.discard": "Discard",
     "ui.cardTile.unfavorite": "Remove {$name} from favorites",
-    "ui.cardTile.favorite": "Add {$name} to favorites"
+    "ui.cardTile.favorite": "Add {$name} to favorites",
+    "altArt.tile": "Illustration {$n}",
+    "altArt.marker": "Copy {$n}",
+    "altArt.saveError": "Could not save your choice."
   }
 }

@@ -1,5 +1,10 @@
 <div class="ar-overlay-body">
-  <ar-card-tile class="card" [card]="data.card" [plain]="true" [eager]="true" />
+  <div #stage class="stage" (pointermove)="onTilt($event, stage)" (pointerleave)="tilt.set({ x: 0, y: 0 })">
+    <ar-card-tile class="card" [card]="data.card" [plain]="true" [eager]="true" [style.--rx.deg]="tilt().x" [style.--ry.deg]="tilt().y" />
+  </div>
+  @if (altArts(); as choice) {
+    <app-alt-art-slots [choice]="choice" />
+  }
   @if (data.quantity; as q) {
     <div class="qty">
       <span i18n="@@cardZoom.inDeck">Dans le deck</span>

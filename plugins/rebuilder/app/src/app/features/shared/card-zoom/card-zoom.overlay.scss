@@ -3,9 +3,15 @@
   flex-direction: column;
   gap: var(--ar-space-3);
 }
-.card {
-  width: min(100%, 360px);
+.stage {
   align-self: center;
+  width: min(100%, 360px);
+  perspective: 900px;
+}
+.card {
+  display: block;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.12s ease-out;
 }
 .qty {
   display: flex;
