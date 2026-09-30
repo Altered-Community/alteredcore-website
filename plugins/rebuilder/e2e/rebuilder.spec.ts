@@ -12,12 +12,12 @@ import { evidence, expect, login, test, type Page } from '../../../tests/e2e/fix
 const LABELS = {
   fr: {
     newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler',
-    deckNav: 'Éditeur de deck', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
+    deckNav: 'Éditeur de deck', decksNav: 'Decks', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
     sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
   },
   en: {
     newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel',
-    deckNav: 'Deck editor', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
+    deckNav: 'Deck editor', decksNav: 'Decks', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
     sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
   },
 };
@@ -40,6 +40,13 @@ async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Pro
   const l = LABELS[lang];
   if (compact) await expect(page.getByRole('navigation', { name: l.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
   else await expect(page.locator('ar-segmented').getByText(l.viewDeck, { exact: true })).toBeVisible();
+}
+
+/** Decks list tab: tabs on desktop, bottom navigation on mobile. */
+function decksTab(page: Page, compact: boolean, name: string, lang: Lang = 'fr') {
+  return compact
+    ? page.getByRole('navigation', { name: LABELS[lang].decksNav }).getByRole('link', { name })
+    : page.getByRole('tab', { name });
 }
 
 /** Adds one copy of the first two cards of the search results; returns their names. */
@@ -131,12 +138,12 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('lists community decks from the public API, through the relay', async ({ page }, testInfo) => {
+  test('lists community decks from the public API, through the relay', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     // The list goes through the relay. The app may cancel a request and send a new one (query
     // change), so its response body is not read here: the expected page is fetched separately.
     const listed = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/services/decks/api/decks/public' && r.ok());
-    await page.getByRole('tab', { name: 'Communauté' }).click();
+    await decksTab(page, compact, 'Communauté').click();
     await listed;
     await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\?(.*&)?tab=community/);
     // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1.
@@ -239,7 +246,7 @@ test.describe('ReBuilder in the shell · languages', () => {
       if (!compact) await expect(page.getByText(l.sortBy, { exact: true })).toBeVisible();
       await expect(page.getByText(other.guest)).toHaveCount(0);
 
-      await page.getByRole('tab', { name: l.community }).click();
+      await decksTab(page, compact, l.community, lang).click();
       await expect(page.getByRole('list', { name: l.communityDecks }).locator('ar-deck-card').first()).toBeVisible();
       await evidence(page, testInfo, `09-community-${lang}`);
 
@@ -547,9 +554,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
 });
 
 test.describe('ReBuilder in the shell · guest', () => {
-  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page }) => {
+  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page, compact }) => {
     await page.goto(`${DECKS}?lang=fr`);
-    await expect(page.getByRole('tab', { name: FR.community })).toHaveAttribute('aria-selected', 'true');
+    await expect(decksTab(page, compact, FR.community)).toHaveAttribute(compact ? 'aria-current' : 'aria-selected', compact ? 'page' : 'true');
     await page.goto(`${DECKS}?tab=public&faction=MU&sort=name:asc&lang=fr`);
     await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ar-deck-card').first()).toBeVisible();
     await expect(page).toHaveURL(/\/decks\?faction=MU&sort=name(&|$)/);

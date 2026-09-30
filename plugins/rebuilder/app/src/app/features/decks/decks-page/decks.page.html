@@ -4,7 +4,7 @@
   </ar-app-bar>
 }
 
-<main class="page">
+<main class="page" [class.with-nav]="bp.compact()">
   @if (!bp.compact()) {
     <div class="head">
       <h1>Decks</h1>
@@ -22,7 +22,9 @@
     </div>
   }
 
-  <ar-tabs ariaLabel="Decks" [appearance]="bp.compact() ? 'pill' : 'underline'" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
+  @if (!bp.compact()) {
+    <ar-tabs ariaLabel="Decks" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
+  }
 
   @if (tab() === 'contest') {
     <div class="contest-head">
@@ -150,3 +152,7 @@
     <button arButton variant="secondary" size="lg" icon="upload" [fullWidth]="true" (click)="importDeck()" i18n="@@decks.page.importDeck">Importer un deck</button>
   }
 </main>
+
+@if (bp.compact()) {
+  <ar-bottom-nav ariaLabel="Decks" [items]="navItems()" />
+}

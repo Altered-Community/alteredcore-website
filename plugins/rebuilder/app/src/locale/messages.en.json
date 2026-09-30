@@ -150,6 +150,8 @@
     "decks.page.communityError": "Could not load the public decks.",
     "decks.page.tabMine": "My decks · {$count}",
     "decks.page.tabCommunity": "Community",
+    "decks.nav.mine": "My decks",
+    "decks.nav.contest": "Contest",
     "decks.page.allFormats": "All formats",
     "decks.page.allHeroes": "All heroes",
     "decks.page.visibilityAll": "All",

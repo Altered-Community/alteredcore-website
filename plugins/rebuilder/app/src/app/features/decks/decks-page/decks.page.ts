@@ -18,7 +18,7 @@ import { ArIcon } from '../../../ui/icon';
 import { ArInfiniteSentinel } from '../../../ui/infinite';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArDeckCard, FACTIONS } from '../../../ui/metier';
-import { ArAppBar, ArTabs } from '../../../ui/nav';
+import { ArAppBar, ArBottomNav, ArTabs, type ArBottomNavItem } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
@@ -73,7 +73,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, ArAppBar, ArTabs, ArButton, ArIconButton, ArInput, ArSelect, ArSegmented, ArChip, ArDeckCard, ArIcon, ArCount, ArInfiniteSentinel],
+  imports: [RouterLink, ArAppBar, ArBottomNav, ArTabs, ArButton, ArIconButton, ArInput, ArSelect, ArSegmented, ArChip, ArDeckCard, ArIcon, ArCount, ArInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
@@ -217,6 +217,21 @@ export class DecksPage {
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
+  /** Compact: the tabs are a bottom navigation, as in the editor and the deck page. */
+  protected readonly navItems = computed<ArBottomNavItem[]>(() => {
+    const item = (tab: Tab, icon: ArBottomNavItem['icon'], label: string): ArBottomNavItem => ({
+      route: '.',
+      queryParams: this.tabParams(tab),
+      active: this.tab() === tab,
+      icon,
+      label,
+    });
+    return [
+      item('mine', 'layers', $localize`:@@decks.nav.mine:Mes decks`),
+      item('community', 'users', $localize`:@@decks.page.tabCommunity:Communauté`),
+      item('contest', 'trophy', $localize`:@@decks.nav.contest:Concours`),
+    ];
+  });
   protected readonly contestLoading = computed(() => this.contestRes.isLoading());
   protected readonly contestError = computed(() =>
     this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
@@ -429,8 +444,12 @@ export class DecksPage {
 
   protected setTab(id: string): void {
     const tab = TABS.find((t) => t === id) ?? 'mine';
-    // Only `tab` is kept: the URL effect then writes the filters of the tab shown.
-    void this.router.navigate([], { queryParams: { tab: tab === this.defaultTab() ? null : tab }, replaceUrl: true });
+    void this.router.navigate([], { queryParams: this.tabParams(tab), replaceUrl: true });
+  }
+
+  /** Only `tab` is kept: the URL effect then writes the filters of the tab shown. */
+  private tabParams(tab: Tab): { tab: Tab | null } {
+    return { tab: tab === this.defaultTab() ? null : tab };
   }
 
   protected patch(p: Partial<DeckFilters>): void {

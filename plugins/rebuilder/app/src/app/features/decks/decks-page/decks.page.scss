@@ -17,6 +17,10 @@
   margin: 0 auto;
 }
 
+.page.with-nav {
+  padding-bottom: calc(var(--ar-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ar-space-4));
+}
+
 .search-row {
   display: flex;
   gap: var(--ar-space-2);

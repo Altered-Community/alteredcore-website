@@ -79,7 +79,7 @@ texte `--ar-color-primary-strong` 700 ; segments rayon 8.
 | `ar-app-bar` | `title?`, `subtitle?` ; slots `[leading]` / `[actions]` ; barre des écrans compacts, sous l'en-tête du site | écrans compacts |
 | `ar-back-button` | `fallback` (route si la page a été ouverte directement), `label = 'Retour'` ; revient à la page précédente de l'app (`ArNavigationHistory`, injecté au démarrage dans `App`) | barres compactes des pages imbriquées : éditeur, consultation, connexion |
 | `ar-tabs` | `tabs: {id,label,count?}[]`, `active = model<string>()`, `appearance: 'auto' \| 'underline' \| 'pill'` (`auto` = souligné ≥ medium, pastilles défilantes en compact) | source des cartes, Mes decks / Communauté, Cartes / Decklist |
-| `ar-bottom-nav` | `items: {route, icon, label, badge?}[]` — rendu seulement en compact, au-dessus de `env(safe-area-inset-bottom)` | éditeur mobile, consultation mobile |
+| `ar-bottom-nav` | `items: {route, icon, label, badge?, queryParams?, active?}[]` — rendu seulement en compact, au-dessus de `env(safe-area-inset-bottom)`. Sans `queryParams`, les paramètres de l'URL sont gardés et l'onglet actif suit la route ; onglets d'une même page (`?tab=`) : `queryParams` remplace ceux de l'URL et `active` (posé par la page) remplace `routerLinkActive` | éditeur mobile, consultation mobile, Decks mobile (Mes decks, Communauté, Concours) |
 | `ar-breadcrumb` | `items: {label, route?}[]` | éditeur desktop |
 
 ## 6. Conteneurs — `DS-Conteneurs`
