@@ -357,16 +357,18 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 $__isCurrent    = basename($_SERVER['PHP_SELF'], '.php');
 $__iframeNavId  = ($__isCurrent === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
 $_pageFullwidth = isset($pageFullwidth) && $pageFullwidth;
+// As before SPA pages: an empty or "#" URL (dropdown parent) never matches, not even the home page.
+$__fwMatch = fn(string $url): bool => navUrlPage($url) === $__isCurrent && navUrlIsCurrent($url, $__isCurrent);
 if (!$_pageFullwidth) {
     foreach ($__navItems as $__fni) {
         $__match = !empty($__fni['is_iframe'])
             ? ($__iframeNavId === (int)$__fni['id'])
-            : navUrlIsCurrent((string)$__fni['url'], $__isCurrent);
+            : $__fwMatch((string)$__fni['url']);
         if ($__match && !empty($__fni['is_fullwidth'])) { $_pageFullwidth = true; break; }
         foreach ($__fni['children'] as $__fnc) {
             $__match = !empty($__fnc['is_iframe'])
                 ? ($__iframeNavId === (int)$__fnc['id'])
-                : navUrlIsCurrent((string)$__fnc['url'], $__isCurrent);
+                : $__fwMatch((string)$__fnc['url']);
             if ($__match && !empty($__fnc['is_fullwidth'])) { $_pageFullwidth = true; break 2; }
         }
     }
