@@ -8,6 +8,7 @@ import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
 import { DeckStore } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
+import { OwnershipApiService, type CardQuantity } from './ownership-api.service';
 import type { Card, Deck } from './models';
 import { localizedText } from './models';
 
@@ -545,5 +546,50 @@ describe('GuestDeckService', () => {
     expect(svc.decks().map((d) => d.id)).toEqual(['guest-a']);
     expect(GuestDeckService.isGuestId('guest-a')).toBe(true);
     expect(GuestDeckService.isGuestId('01a0')).toBe(false);
+  });
+});
+
+describe('DeckStore (signed in, « Global » alt arts)', () => {
+  it('duplicates with the preferred illustrations, as the site does', async () => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthSession, useValue: new SignedIn() },
+        {
+          provide: OwnershipApiService,
+          useValue: {
+            globalAltArts: () => of(true),
+            applyAltArts: (cards: CardQuantity[]) => of(cards.map((c) => (c.cardReference === 'ALT_CORE_B_LY_04_C' ? { ...c, cardReference: 'ALT_CORE_A_LY_04_C' } : c))),
+          },
+        },
+      ],
+    });
+    const store = TestBed.inject(DeckStore);
+    const http = TestBed.inject(HttpTestingController);
+    store.load('source');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/source')).flush({
+      id: 'source',
+      name: 'Kojo',
+      format: 'standard',
+      cards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1, name: 'Fen & Crowbar', factionCode: 'LY', cardTypeReference: 'HERO' },
+        { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2, name: 'Martengale', factionCode: 'LY', cardTypeReference: 'CHARACTER' },
+      ],
+    });
+    await Promise.resolve();
+    TestBed.tick();
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    await settle();
+    store.duplicate('Copie').subscribe();
+    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
+    expect(req.request.body.deckCards).toEqual([
+      { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+      { cardReference: 'ALT_CORE_A_LY_04_C', quantity: 2 },
+    ]);
+    req.flush({ id: 'copy' });
+    http.verify();
   });
 });

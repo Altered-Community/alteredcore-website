@@ -11,6 +11,7 @@ import { computeDeckStatus, maxCopiesFor, type DeckStatus } from './deck-rules';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
 import { GuestDeckService } from './guest-deck.service';
+import { OwnershipApiService } from './ownership-api.service';
 import {
   type Card,
   type Deck,
@@ -50,6 +51,7 @@ export type DeckSaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 @Service()
 export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
+  private readonly ownership = inject(OwnershipApiService);
   private readonly cardsApi = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
@@ -320,7 +322,10 @@ export class DeckStore {
       ...(description ? { description } : {}),
       deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
     };
-    return this.decksApi.create(body).pipe(
+    // « Global » alt-art preference: the copy takes the user's preferred illustrations (the site's duplicate does too).
+    return this.ownership.globalAltArts().pipe(
+      switchMap((global) => (global ? this.ownership.applyAltArts(body.deckCards ?? []) : of(body.deckCards ?? []))),
+      switchMap((deckCards) => this.decksApi.create({ ...body, deckCards })),
       map((created) => {
         this.createdIds.update((ids) => new Set([...ids, created.id]));
         return created.id;
