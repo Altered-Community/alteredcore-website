@@ -21,6 +21,8 @@ export interface ArOverlayConfig<D = unknown> {
   /** Sheet height: fit content (default) or full (top at 48 px). */
   sheetHeight?: 'auto' | 'full';
   ariaLabel?: string;
+  /** No window: the content alone over the backdrop, centered at every width (the title is read by screen readers only). */
+  bare?: boolean;
 }
 
 /** A step shown in place of the current content, in the same window / sheet (no stacked overlay). */
@@ -102,7 +104,7 @@ export class ArOverlayRef<R = unknown, D = unknown> {
   }
 }
 
-export const AR_OVERLAY_CONTENT = new InjectionToken<{ ref: ArOverlayRef; mode: string; fill?: boolean; titleId: string }>(
+export const AR_OVERLAY_CONTENT = new InjectionToken<{ ref: ArOverlayRef; mode: string; fill?: boolean; bare?: boolean; titleId: string }>(
   'AR_OVERLAY_CONTENT',
 );
 
@@ -166,7 +168,8 @@ export class ArOverlayService {
 
   open<C, R = unknown, D = unknown>(component: Type<C>, config: ArOverlayConfig<D>): ArOverlayRef<R, D> {
     const compact = this.breakpoints.compact();
-    const mode = compact ? (config.compact ?? 'sheet') : 'dialog';
+    const bare = !!config.bare;
+    const mode = compact && !bare ? (config.compact ?? 'sheet') : 'dialog';
     const fill = mode === 'dialog' && config.height === 'fill';
     const ref = new ArOverlayRef<R, D>(config.data as D);
     ref.title.set(config.title);
@@ -177,7 +180,7 @@ export class ArOverlayService {
     const injector = Injector.create({
       providers: [
         { provide: ArOverlayRef, useValue: ref },
-        { provide: AR_OVERLAY_CONTENT, useValue: { ref, mode, fill, titleId } },
+        { provide: AR_OVERLAY_CONTENT, useValue: { ref, mode, fill, bare, titleId } },
       ],
     });
     ref.views.set([{ component, ref: ref as ArOverlayRef, injector }]);
@@ -205,7 +208,7 @@ export class ArOverlayService {
             ? 'calc(100dvh - 48px)'
             : undefined,
       positionStrategy: position,
-      panelClass: ['ar-overlay-pane', `ar-overlay-pane--${mode}`, ...(fill ? ['ar-overlay-pane--fill'] : [])],
+      panelClass: ['ar-overlay-pane', `ar-overlay-pane--${mode}`, ...(fill ? ['ar-overlay-pane--fill'] : []), ...(bare ? ['ar-overlay-pane--bare'] : [])],
       backdropClass: 'ar-overlay-backdrop',
       hasBackdrop: true,
       // Accessible name follows the visible title, which changes with steps.

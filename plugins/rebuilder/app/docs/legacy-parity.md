@@ -35,10 +35,10 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Grille par type, decklist, description, courbes, main de test, stats de main, calculateurs | ✅ |
 | URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | 🟡 `/pages/rebuilder/deck?id=` redirige vers la page deck ; `/pages/deck` reste la page du site |
 | Nom du deck dans `<title>` / og:title (aperçu des liens partagés) | ✅ (`meta.php`, champ `meta` du manifeste) |
-| Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ |
+| Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ (sans fenêtre, comme le site) |
 | Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ✅ (Web Share gardé quand le navigateur le propose) |
 | Badge Brouillon, icône de faction dans l'en-tête | ✅ |
-| Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | ✅ (sous les totaux, dans Stats) |
+| Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | ❌ écarté volontairement (jugé inutile) |
 | Main de test en mode jeu (mana, plateau, défausse, glisser-déposer) | ✅ (glisser-déposer du CDK, appui long sur mobile ; menu d’actions au clic) |
 | Calculateurs : vignettes et groupes par type dans le choix des cartes | ✅ |
 | Duplication avec les illustrations préférées (mode Global) | ✅ |

@@ -316,12 +316,3 @@
     width: 360px;
   }
 }
-
-.more-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--ar-space-4);
-  margin-top: var(--ar-space-4);
-  padding-top: var(--ar-space-4);
-  border-top: 1px solid var(--ar-color-divider);
-}

@@ -33,15 +33,6 @@
   </div>
 </ng-template>
 
-<ng-template #moreStats>
-  <div class="more-stats">
-    @if (typeBars().length) {
-      <ar-stat-bars [title]="typesTitle" [rows]="typeBars()" />
-    }
-    <ar-stat-bars [title]="powersTitle" [rows]="powerBars()" [decimals]="1" />
-  </div>
-</ng-template>
-
 @if (deck.error(); as err) {
   <div class="state" role="alert">
     <ar-icon class="state-icon" [name]="deck.loadError() === 'private' ? 'lock' : 'alert'" [size]="22" />
@@ -127,7 +118,6 @@
           @if (bp.compact()) {
             <ar-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
               <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-              <ng-container [ngTemplateOutlet]="moreStats" />
             </ar-collapsible>
           }
           <app-deck-preview [readonly]="true" [dense]="true" />
@@ -159,7 +149,6 @@
           <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
           <ar-collapsible title="Stats" [(open)]="statsOpen">
             <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-            <ng-container [ngTemplateOutlet]="moreStats" />
           </ar-collapsible>
           @if (deck.owned()) {
             <button arButton icon="pencil" [fullWidth]="true" (click)="edit()" i18n="@@deck.page.edit">Modifier le deck</button>

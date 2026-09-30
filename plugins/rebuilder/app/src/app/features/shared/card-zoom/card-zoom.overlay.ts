@@ -81,6 +81,7 @@ export function openCardZoom(overlay: ArOverlayService, data: CardZoomData): ArO
   return overlay.open<CardZoomOverlay, void, CardZoomData>(CardZoomOverlay, {
     title: localizedText(data.card.name, contentLocale()) || data.card.reference,
     data,
-    width: 420,
+    width: 360,
+    bare: true,
   });
 }

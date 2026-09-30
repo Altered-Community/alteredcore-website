@@ -17,8 +17,7 @@ import { ArCollapsible } from '../../../ui/containers';
 import { ArSegmented } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
 import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArCardArt, ArDeckStats, ArStatBars, type ArStatBar, factionName } from '../../../ui/metier';
-import { assetUrl } from '../../../core/asset-url';
+import { ArCardArt, ArDeckStats, factionName } from '../../../ui/metier';
 import { ArAppBar, ArBackButton, ArBottomNav, ArTabs, type ArBottomNavItem } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
@@ -57,7 +56,6 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     ArRaritySummary,
     ArCollapsible,
     ArDeckStats,
-    ArStatBars,
     ArCardArt,
     DeckPreview,
     DeckListView,
@@ -138,24 +136,6 @@ export class DeckPage {
     });
   }
 
-  /** Copies by type of card (the site's « Types de cartes »), hero apart. */
-  protected readonly typeBars = computed<ArStatBar[]>(() =>
-    this.deck.groups().filter((g) => g.count > 0).map((g) => ({ key: g.id, label: g.label, value: g.count })),
-  );
-  /** Powers averaged over every card but the hero (the site's « Puissances moy. »). */
-  protected readonly powerBars = computed<ArStatBar[]>(() => {
-    const lines = this.deck.lines().filter((l) => l.quantity > 0 && l.card.cardType?.reference !== 'HERO');
-    const count = lines.reduce((n, l) => n + l.quantity, 0);
-    const avg = (pick: (l: (typeof lines)[number]) => number | null | undefined) =>
-      count ? Math.round((lines.reduce((sum, l) => sum + (pick(l) ?? 0) * l.quantity, 0) / count) * 10) / 10 : 0;
-    return [
-      { key: 'f', label: $localize`:@@ui.terrain.forest:Forêt`, icon: assetUrl('assets/icons/terrain-foret.png'), value: avg((l) => l.card.forestPower), color: 'var(--ar-terrain-foret)' },
-      { key: 'm', label: $localize`:@@ui.terrain.mountain:Montagne`, icon: assetUrl('assets/icons/terrain-montagne.png'), value: avg((l) => l.card.mountainPower), color: 'var(--ar-terrain-montagne)' },
-      { key: 'o', label: $localize`:@@ui.terrain.ocean:Océan`, icon: assetUrl('assets/icons/terrain-ocean.png'), value: avg((l) => l.card.oceanPower), color: 'var(--ar-terrain-ocean)' },
-    ];
-  });
-  protected readonly typesTitle = $localize`:@@deck.page.statsTypes:Types de cartes`;
-  protected readonly powersTitle = $localize`:@@deck.page.statsPowers:Puissances moy.`;
   protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
   protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);

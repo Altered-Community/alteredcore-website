@@ -7,7 +7,7 @@ import { AR_OVERLAY_CONTENT } from '../overlay';
   selector: 'ar-overlay-container',
   imports: [NgComponentOutlet, ArIcon],
   host: {
-    '[class]': "'ar-overlay ar-overlay--' + content.mode + (content.fill ? ' ar-overlay--fill' : '')",
+    '[class]': "'ar-overlay ar-overlay--' + content.mode + (content.fill ? ' ar-overlay--fill' : '') + (content.bare ? ' ar-overlay--bare' : '')",
     role: 'presentation',
   },
   templateUrl: './overlay-container.html',

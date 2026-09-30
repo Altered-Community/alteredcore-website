@@ -19,7 +19,7 @@
   @if (r.headerAction(); as a) {
     <button type="button" class="head-action" (click)="a.run()">{{ a.label }}</button>
   }
-  @if (content.mode === 'dialog' || ((content.mode === 'sheet' || content.mode === 'drawer') && r.leading() !== 'back' && !r.isStep)) {
+  @if ((content.mode === 'dialog' && !content.bare) || ((content.mode === 'sheet' || content.mode === 'drawer') && r.leading() !== 'back' && !r.isStep)) {
     <button type="button" class="icon-btn close" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.dismiss()"><ar-icon name="x" [size]="20" /></button>
   }
 </div>

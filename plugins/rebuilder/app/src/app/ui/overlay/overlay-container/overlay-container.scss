@@ -12,6 +12,22 @@
   box-shadow: var(--ar-shadow-dialog);
   max-height: min(90vh, 900px);
 }
+:host(.ar-overlay--bare) {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Title kept for screen readers and step focus. */
+:host(.ar-overlay--bare) .head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 :host(.ar-overlay--dialog.ar-overlay--fill) {
   height: calc(100dvh - 2 * var(--ar-space-10));
   max-height: none;
