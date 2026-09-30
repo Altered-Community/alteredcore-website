@@ -61,7 +61,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Filtres : puissances, mot-clé, sous-type, relation de coût, syntaxe `<`/`>` des coûts, alt-arts et éditions promo, changer de faction | ❌ |
 | Tris (17 sur le site, 3 dans le plugin) | 🟡 |
 | Onglets Collection physique, Possession numérique, Favoris | ❌ (les deux derniers sont des emplacements vides) |
-| Zoom d'une carte avec quantité et lien vers la fiche | ❌ |
+| Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
 | Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ❌ |
 | Toast « Annuler » après un ajout, bandeau d'état avec progression vers le minimum | ❌ |
 | Main de départ dans l'éditeur | ❌ (sur la page deck seulement) |

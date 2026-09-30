@@ -7,6 +7,8 @@ import { ArButton } from '../../../ui/buttons';
 import { ArVirtualGrid } from '../../../ui/containers';
 import { ArInfiniteSentinel } from '../../../ui/infinite';
 import { ArCardTile, ArDeckRow } from '../../../ui/metier';
+import { ArOverlayService } from '../../../ui/overlay';
+import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { CardSearchStore } from '../card-search.store';
 
 @Component({
@@ -18,6 +20,7 @@ import { CardSearchStore } from '../card-search.store';
 export class SearchResults {
   protected readonly search = inject(CardSearchStore);
   protected readonly deck = inject(DeckStore);
+  private readonly overlay = inject(ArOverlayService);
   readonly layout = input<'grid' | 'list'>('grid');
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
@@ -26,6 +29,15 @@ export class SearchResults {
   /** Why a card cannot be added in the deck's format (a Unique in a No Unique format). */
   protected blockedReason(card: Card): string | null {
     return addBlockedReason(card, this.deck.format());
+  }
+
+  /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox); the card alone in the browser. */
+  protected zoom(card: Card): void {
+    const editable = !this.browse() && this.deck.editable() && !this.blockedReason(card);
+    openCardZoom(this.overlay, {
+      card,
+      quantity: editable ? { value: this.deck.quantities().get(card.reference) ?? 0, max: this.deck.maxFor(card), change: (n) => this.deck.setQuantity(card, n) } : undefined,
+    });
   }
 
 }

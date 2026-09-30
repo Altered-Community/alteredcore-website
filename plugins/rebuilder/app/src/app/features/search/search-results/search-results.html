@@ -23,7 +23,9 @@
           [quantity]="deck.quantities().get(c.reference) ?? 0"
           [max]="deck.maxFor(c)"
           [blockedReason]="blockedReason(c)"
+          [zoomable]="true"
           (quantityChange)="deck.setQuantity(c, $event)"
+          (zoom)="zoom(c)"
         />
       }
       @if (search.loading() && grid.atEnd()) {
