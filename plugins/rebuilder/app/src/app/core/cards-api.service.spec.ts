@@ -86,7 +86,18 @@ describe('CardsApiService', () => {
         },
       ],
     });
-    expect(first).toEqual([{ slug: 'AX-001-C', name: 'Sierra & Oddball', faction: 'AX', reference: 'ALT_CORE_B_AX_01_C' }]);
+    expect(first).toEqual([
+      {
+        slug: 'AX-001-C',
+        name: 'Sierra & Oddball',
+        faction: 'AX',
+        reference: 'ALT_CORE_B_AX_01_C',
+        prints: [
+          { reference: 'ALT_CORE_P_AX_01_C', variation: 'promo' },
+          { reference: 'ALT_CORE_B_AX_01_C', variation: 'standard' },
+        ],
+      },
+    ]);
     api.heroes().subscribe();
     http.expectNone((r) => r.url.endsWith('/api/card_groups'));
   });

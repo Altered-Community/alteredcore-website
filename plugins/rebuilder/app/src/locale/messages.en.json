@@ -674,6 +674,10 @@
     "search.filters.order.oceanDesc": "Ocean ↓",
     "search.filters.order.random": "Random",
     "search.source.collection": "Physical collection",
-    "search.results.collectionLogin": "Sign in to find the cards of your physical collection."
+    "search.results.collectionLogin": "Sign in to find the cards of your physical collection.",
+    "shared.heroPicker.serializedPrint": "Serialized",
+    "shared.heroPicker.prints": "Illustrations",
+    "shared.heroPicker.altArts": "Alt arts",
+    "shared.heroPicker.serialized": "Serialized"
   }
 }

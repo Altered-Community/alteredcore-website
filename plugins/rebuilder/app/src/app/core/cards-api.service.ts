@@ -12,6 +12,8 @@ export interface HeroGroup {
   faction: string;
   /** Standard-print reference (ALT_{SET}_B_{FACTION}_NN_C) used in decks and for art. */
   reference: string;
+  /** Every print of the hero (promo, alt arts, trophy prints), for the « Alt arts » choice. */
+  prints: { reference: string; variation: string }[];
 }
 
 /** Search pages kept in memory, least recently used first out (a uniques page is ~90 KB of JSON). */
@@ -99,7 +101,8 @@ function toHeroGroup(g: RawCardGroup): HeroGroup | null {
   const standard = (g.cards ?? []).filter((c) => c.variation === 'standard' && /_B_/.test(c.reference));
   const reference = standard[0]?.reference ?? g.cards?.[0]?.reference;
   if (!faction || !reference) return null;
-  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference };
+  const prints = (g.cards ?? []).map((c) => ({ reference: c.reference, variation: c.variation ?? '' }));
+  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference, prints };
 }
 
 /** Many cards share a set date: without a unique tie-breaker, pages overlap and cards go missing. */
