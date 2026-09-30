@@ -580,6 +580,9 @@
     "newDeck.descriptionPlaceholder": "Strategy, mulligan, card choices…",
     "ui.saveStatus.saving": "Saving…",
     "ui.saveStatus.saved": "Saved",
-    "ui.saveStatus.error": "Not saved"
+    "ui.saveStatus.error": "Not saved",
+    "decks.page.sortUpdatedAsc": "Oldest updated",
+    "decks.page.sortCreatedAsc": "Oldest created",
+    "decks.page.sortNameDesc": "Name Z→A"
   }
 }

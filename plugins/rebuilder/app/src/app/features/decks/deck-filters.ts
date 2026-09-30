@@ -5,7 +5,7 @@ import { FACTIONS } from '../../ui/metier';
 
 export type Visibility = 'all' | 'public' | 'private';
 
-export type DeckSort = 'updated' | 'created' | 'name' | 'likes';
+export type DeckSort = 'updated' | 'updated-asc' | 'created' | 'created-asc' | 'name' | 'name-desc' | 'likes';
 
 export interface DeckFilters {
   q: string;
@@ -39,12 +39,18 @@ export function filterDecks(items: DeckListItem[], f: DeckFilters): DeckListItem
     switch (f.sort) {
       case 'name':
         return a.name.localeCompare(b.name, uiLocale());
+      case 'name-desc':
+        return b.name.localeCompare(a.name, uiLocale());
       case 'likes':
         return b.likes - a.likes || byUpdate(a, b);
       case 'created':
         return time(b.createdAt) - time(a.createdAt) || byUpdate(a, b);
+      case 'created-asc':
+        return time(a.createdAt) - time(b.createdAt) || byUpdate(b, a);
       case 'updated':
         return byUpdate(a, b);
+      case 'updated-asc':
+        return byUpdate(b, a);
     }
   });
 }

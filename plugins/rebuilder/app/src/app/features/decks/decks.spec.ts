@@ -28,6 +28,13 @@ describe('filterDecks (Mes decks)', () => {
     item({ id: 'c', name: 'Akesha Frontier', hero: { reference: 'ALT_CORE_B_AX_01_C', name: 'Akesha & Taru', faction: 'AX' }, updatedAt: '2026-04-01' }),
   ];
 
+  it('sorts ascending: oldest update, oldest creation, name Z→A', () => {
+    const ids = (sort: typeof EMPTY_DECK_FILTERS.sort) => filterDecks(decks, { ...EMPTY_DECK_FILTERS, sort }).map((d) => d.id);
+    expect(ids('updated-asc')).toEqual(['a', 'c', 'b']);
+    expect(ids('name-desc')).toEqual(['a', 'b', 'c']);
+    expect(ids('created-asc')).toEqual(['a', 'c', 'b']);
+  });
+
   it('sorts by last update by default', () => {
     expect(filterDecks(decks, EMPTY_DECK_FILTERS).map((d) => d.id)).toEqual(['b', 'c', 'a']);
   });

@@ -15,6 +15,8 @@ describe('toCommunityQuery', () => {
     expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, factions: ['AX'] })).toMatchObject({ faction: 'AX', factions: undefined });
     expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, factions: ['YZ', 'AX'] })).toMatchObject({ faction: undefined, factions: ['AX', 'YZ'] });
     expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'created' }).order).toBe('createdAt');
+    expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'created-asc' })).toMatchObject({ order: 'createdAt', dir: 'asc' });
+    expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'name-desc' })).toMatchObject({ order: 'name', dir: 'desc' });
   });
 
   it('sends the hero reference to the API', () => {

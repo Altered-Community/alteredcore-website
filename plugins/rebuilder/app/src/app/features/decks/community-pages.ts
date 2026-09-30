@@ -21,11 +21,14 @@ export interface CommunityState {
 
 export const EMPTY_COMMUNITY: CommunityState = { items: [], total: null, dropped: 0, page: 0, lastPage: 1 };
 
-const API_ORDER: Record<DeckSort, NonNullable<PublicDeckQuery['order']>> = {
-  updated: 'updatedAt',
-  created: 'createdAt',
-  likes: 'upvoteCount',
-  name: 'name',
+const API_ORDER: Record<DeckSort, Pick<PublicDeckQuery, 'order' | 'dir'>> = {
+  updated: { order: 'updatedAt', dir: 'desc' },
+  'updated-asc': { order: 'updatedAt', dir: 'asc' },
+  created: { order: 'createdAt', dir: 'desc' },
+  'created-asc': { order: 'createdAt', dir: 'asc' },
+  likes: { order: 'upvoteCount', dir: 'desc' },
+  name: { order: 'name', dir: 'asc' },
+  'name-desc': { order: 'name', dir: 'desc' },
 };
 
 /** Visibility does not reach the API; the hero is a reference there (community tab). */
@@ -37,7 +40,7 @@ export function toCommunityQuery(f: DeckFilters): CommunityQuery {
     factions: f.factions.length > 1 ? [...f.factions].sort() : undefined,
     hero: f.hero || undefined,
     format: f.format || undefined,
-    order: API_ORDER[f.sort],
+    ...API_ORDER[f.sort],
   };
 }
 
@@ -51,7 +54,7 @@ export function addCommunityPage(current: CommunityState, query: CommunityQuery 
   const seen = new Set(page === 1 ? [] : current.items.map((d) => d.id));
   const items = [...(page === 1 ? [] : current.items), ...kept.filter((d) => !seen.has(d.id))];
   return {
-    items: query?.order === 'updatedAt' ? byLastUpdate(items) : items,
+    items: query?.order === 'updatedAt' && query.dir !== 'asc' ? byLastUpdate(items) : items,
     dropped,
     total: factions || res.totalItems == null ? null : res.totalItems - dropped,
     page,

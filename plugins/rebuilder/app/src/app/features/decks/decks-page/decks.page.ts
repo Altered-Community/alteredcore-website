@@ -35,9 +35,12 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 const SORTS: { value: DeckSort; label: string }[] = [
   { value: 'updated', label: $localize`:@@decks.page.sortUpdated:Récemment modifié` },
+  { value: 'updated-asc', label: $localize`:@@decks.page.sortUpdatedAsc:Plus ancien modifié` },
   { value: 'created', label: $localize`:@@decks.page.sortCreated:Récemment créé` },
+  { value: 'created-asc', label: $localize`:@@decks.page.sortCreatedAsc:Plus ancien créé` },
   { value: 'likes', label: $localize`:@@decks.page.sortLikes:Les plus aimés` },
   { value: 'name', label: $localize`:@@decks.page.sortName:Nom` },
+  { value: 'name-desc', label: $localize`:@@decks.page.sortNameDesc:Nom Z→A` },
 ];
 
 

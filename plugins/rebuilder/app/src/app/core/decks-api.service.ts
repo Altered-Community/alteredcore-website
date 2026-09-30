@@ -14,6 +14,8 @@ export interface PublicDeckQuery {
   hero?: string;
   format?: string;
   order?: 'updatedAt' | 'createdAt' | 'name' | 'upvoteCount' | 'viewCount';
+  /** Direction of `order`: ascending for `name`, descending otherwise when absent. */
+  dir?: 'asc' | 'desc';
 }
 
 export interface PublicDeckPage {
@@ -81,7 +83,7 @@ export class DecksApiService {
     if (query.faction) params['faction'] = query.faction;
     if (query.hero) params['hero'] = query.hero;
     if (query.format) params['format'] = query.format;
-    if (query.order) params[`order[${query.order}]`] = query.order === 'name' ? 'asc' : 'desc';
+    if (query.order) params[`order[${query.order}]`] = query.dir ?? (query.order === 'name' ? 'asc' : 'desc');
     const url = `${this.baseUrl}/api/decks/public`;
     const startedWithToken = !!this.auth.token();
     const anonymous = () =>

@@ -17,7 +17,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Filtre plusieurs factions en Communauté (ignoré en silence) | ✅ fait dans #106 |
 | Import d'une liste texte : deck du compte si connecté, choix du format | ✅ fait dans #106 |
 | Filtre héros en Communauté, héros groupés par faction | ✅ |
-| Tris ascendants (modifié ↑, créé ↑, nom Z→A) | ❌ |
+| Tris ascendants (modifié ↑, créé ↑, nom Z→A) | ✅ |
 | Filtres et tri dans l'URL, onglet Communauté par défaut pour un invité | 🟡 seul l'onglet (et les filtres du concours) |
 | Badge Brouillon ; badge Illégal avec la fenêtre des règles | ❌ |
 | Nombre de vues, cartes et raretés sur les tuiles Communauté | ❌ |
