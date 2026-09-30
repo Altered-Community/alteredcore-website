@@ -58,13 +58,23 @@ export class DecksApiService {
 
   /**
    * Every deck of the caller: `listMine` page after page until a page comes back shorter than
-   * `itemsPerPage` (or empty), at most `maxPages` requests.
+   * `itemsPerPage` (or empty), at most `maxPages` requests. `GET /api/decks` ignores `page` and
+   * `itemsPerPage` today and returns every deck at once: a page longer than `itemsPerPage`, or one
+   * that brings no new deck, ends the loop (each further request would return the same decks).
    */
   listAllMine(itemsPerPage = 100, maxPages = 50): Observable<Deck[]> {
+    const seen = new Set<string>();
     const fetch = (page: number) =>
-      this.listMine(page, itemsPerPage).pipe(map((body) => ({ page, decks: Array.isArray(body) ? body : body.member ?? [] })));
+      this.listMine(page, itemsPerPage).pipe(
+        map((body) => {
+          const decks = Array.isArray(body) ? body : (body.member ?? []);
+          const fresh = decks.filter((d) => !seen.has(d.id)).length;
+          decks.forEach((d) => seen.add(d.id));
+          return { page, decks, last: decks.length !== itemsPerPage || fresh === 0 };
+        }),
+      );
     return fetch(1).pipe(
-      expand(({ page, decks }) => (decks.length < itemsPerPage || page >= maxPages ? EMPTY : fetch(page + 1))),
+      expand(({ page, last }) => (last || page >= maxPages ? EMPTY : fetch(page + 1))),
       reduce((all: Deck[], { decks }) => [...all, ...decks], []),
       map((all) => [...new Map(all.map((d) => [d.id, d])).values()]),
     );

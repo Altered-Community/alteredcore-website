@@ -41,4 +41,17 @@ describe('DecksApiService.listAllMine', () => {
     expectPage(2).flush({ member: decks(3, 2) });
     expect((await capped).length).toBe(4);
   });
+
+  it('stops after one request when the API ignores the pagination (every deck at once)', async () => {
+    const all = lastValueFrom(api.listAllMine(2));
+    expectPage(1).flush({ member: decks(1, 5) });
+    expect((await all).length).toBe(5);
+  });
+
+  it('stops when a full page brings no new deck (the same page served again)', async () => {
+    const all = lastValueFrom(api.listAllMine(2));
+    expectPage(1).flush({ member: decks(1, 2) });
+    expectPage(2).flush({ member: decks(1, 2) });
+    expect((await all).map((d) => d.id)).toEqual(['d1', 'd2']);
+  });
 });

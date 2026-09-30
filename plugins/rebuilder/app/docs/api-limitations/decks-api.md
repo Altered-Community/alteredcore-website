@@ -91,3 +91,18 @@ lieu d'être ignoré. Le token est pourtant nécessaire pour que `hasUpvoted` re
 **Contournement.** `DecksApiService.listPublic` envoie le token, et refait la requête sans lui après un 401.
 
 **À faire côté backend.** Traiter un token invalide comme une requête anonyme sur `/api/decks/public`.
+
+## Liste des decks du compte non paginée
+
+**Constat.** `GET /api/decks` ignore `page` et `itemsPerPage` : `DeckCollectionProvider` appelle
+`DeckRepository::findByUser`, qui renvoie tous les decks de l'utilisateur sans `LIMIT`. Il ne lit pas non plus
+`format`, `isPublic`, `isDraft`, `name` ni `order[…]`, même si `Deck` les déclare en `ApiFilter` (seuls `faction` et
+`hero` sont appliqués, tri fixe `updated_at DESC`). Pour un compte de plus de 100 decks, `listAllMine` demandait
+la page suivante jusqu'à 50 fois, et chaque réponse contenait à nouveau tous les decks.
+
+**Contournement.** `listAllMine` (`src/app/core/decks-api.service.ts`) s'arrête dès qu'une page est plus longue que
+`itemsPerPage` ou n'apporte aucun deck nouveau : une seule requête avec l'API actuelle. « Mes decks » affiche des
+squelettes pendant le chargement. Filtres et tri restent côté client, sur la liste complète.
+
+**À faire côté backend.** Paginer `findByUser` (`LIMIT`/`OFFSET`, total pour `totalItems`) et y appliquer les filtres
+et le tri déclarés. « Mes decks » pourra alors charger page par page au défilement, comme l'onglet Communauté.

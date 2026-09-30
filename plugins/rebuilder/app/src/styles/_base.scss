@@ -17,6 +17,31 @@
   box-sizing: border-box;
 }
 
+/* Thin scroll bars on the plugin's scrolling areas (panels, windows, lists); the page's own is the site's. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ar-color-scrollbar) transparent;
+}
+
+/* Browsers without `scrollbar-color` (Safari before 18.2). */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background: var(--ar-color-scrollbar) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ar-color-scrollbar-hover);
+  }
+}
+
 html,
 body {
   margin: 0;

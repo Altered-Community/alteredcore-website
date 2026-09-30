@@ -25,6 +25,9 @@
   --ar-color-border: #e3e7ee;
   --ar-color-divider: #eef1f5;
   --ar-color-chart-axis: #cfd5df;
+  /* Scroll bar thumb, from the muted text: follows the site's light and dark themes. */
+  --ar-color-scrollbar: color-mix(in srgb, var(--ar-color-text-muted) 40%, transparent);
+  --ar-color-scrollbar-hover: color-mix(in srgb, var(--ar-color-text-muted) 65%, transparent);
   --ar-color-track: #e6eaf1;          /* piste des contrôles segmentés, fonds neutres */
   --ar-color-bg-app: #f3f5f9;
   --ar-color-bg-subtle: #f8f9fb;

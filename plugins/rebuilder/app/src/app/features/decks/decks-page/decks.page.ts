@@ -108,6 +108,8 @@ export class DecksPage {
     params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
     stream: () => this.decksApi.listAllMine(),
   });
+  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. */
+  protected readonly mineLoading = computed(() => this.serverRes.isLoading());
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();

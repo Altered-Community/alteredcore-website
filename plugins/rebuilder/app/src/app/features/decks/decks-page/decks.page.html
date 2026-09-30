@@ -93,7 +93,7 @@
     </p>
   }
 
-  <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()">
+  <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()" [attr.aria-busy]="(tab() === 'mine' && mineLoading()) || null">
     @for (d of list(); track d.id) {
       <ar-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
     }
@@ -103,14 +103,14 @@
         Nouveau deck
       </button>
     }
-    @if ((tab() === 'community' && communityLoading()) || (tab() === 'contest' && contestLoading())) {
+    @if ((tab() === 'mine' && mineLoading()) || (tab() === 'community' && communityLoading()) || (tab() === 'contest' && contestLoading())) {
       @for (i of [1, 2, 3, 4]; track i) {
         <span class="skeleton" aria-hidden="true"></span>
       }
     }
   </div>
 
-  @if (tab() === 'mine' && !list().length) {
+  @if (tab() === 'mine' && !mineLoading() && !list().length) {
     <div class="empty">
       @if (mine().length) {
         <p i18n="@@decks.page.noMatch">Aucun deck ne correspond à ces filtres.</p>
