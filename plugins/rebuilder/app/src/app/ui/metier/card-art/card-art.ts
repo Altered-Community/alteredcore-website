@@ -35,8 +35,9 @@ export class ArCardArt implements OnDestroy {
   /** Replaces the fallback chain derived from `reference`. */
   readonly sources = input<string[] | null>(null);
 
-  protected readonly loaded = signal(false);
   private readonly chain = computed(() => this.sources() ?? cardImageSources(this.reference(), contentLocale()));
+  /** Reset with the chain: a new reference shows the placeholder until its own image loads. */
+  protected readonly loaded = linkedSignal({ source: this.chain, computation: () => false });
   private readonly attempt = linkedSignal({ source: this.chain, computation: () => 0 });
   protected readonly src = computed(() => this.chain()[this.attempt()] ?? null);
   protected readonly tint = computed(() => factionColor(this.faction()));

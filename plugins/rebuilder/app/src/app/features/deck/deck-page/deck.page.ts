@@ -198,7 +198,7 @@ export class DeckPage {
     if (!confirm($localize`:@@deck.page.deleteConfirm:Supprimer « ${this.deck.name()}:name: » ?`)) return;
     this.deck.delete().subscribe((ok) => {
       if (ok) void this.router.navigateByUrl('/decks');
-      else this.flash(this.deck.error() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
+      else this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
     });
   }
 

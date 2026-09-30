@@ -108,8 +108,8 @@ export class DecksPage {
     params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
     stream: () => this.decksApi.listAllMine(),
   });
-  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. */
-  protected readonly mineLoading = computed(() => this.serverRes.isLoading());
+  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. A reload keeps the list. */
+  protected readonly mineLoading = computed(() => this.serverRes.status() === 'loading');
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();
@@ -403,6 +403,8 @@ export class DecksPage {
       }
       if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects)) this.urlSync.update((n) => n + 1);
       if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects) && !this.trackScroll) {
+        // Decks created, edited, duplicated or deleted meanwhile: the kept list is refreshed in place.
+        if (this.auth.isLoggedIn()) this.serverRes.reload();
         const y = this.listScroll;
         const apply = () => window.scrollTo(0, y);
         apply();
@@ -522,7 +524,11 @@ export class DecksPage {
   /** « Ignorer »: the guest decks are deleted from this device, after a confirmation (as on the site). */
   protected discardLocalDecks(): void {
     if (!confirm($localize`:@@decks.local.discardConfirm:Supprimer les decks locaux ? Cette action est irréversible.`)) return;
-    for (const d of this.localDecks()) this.guests.delete(d.id);
+    for (const d of this.localDecks()) {
+      // As « Enregistrer sur mon compte »: the site builder's copy goes too, or it comes back with its next edit.
+      this.guests.forgetSiteDeck(d.id);
+      this.guests.delete(d.id);
+    }
   }
 
   protected showBuilders(): void {

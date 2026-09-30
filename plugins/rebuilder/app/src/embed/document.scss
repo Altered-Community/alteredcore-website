@@ -28,3 +28,10 @@
   font-display: block;
   src: url('../../public/assets/unique-card/fonts/NotoSansSymbols-circled.woff2') format('woff2');
 }
+
+/* CDK dialogs block the page scroll with this class on <html>; its rule in the shadow root cannot reach it. */
+html.cdk-global-scrollblock {
+  position: fixed;
+  width: 100%;
+  overflow-y: scroll;
+}

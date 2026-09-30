@@ -88,7 +88,12 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deck = (await res.json()) as { id: string };
     await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}/edit$`));
 
-    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
+    // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
+    const saved = page.waitForResponse((r) => {
+      if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${deck.id}`) || !r.ok()) return false;
+      const lines = ((r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? []);
+      return lines.reduce((n, l) => n + l.quantity, 0) === 3;
+    });
     const cards = await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
     await saved;
@@ -556,7 +561,15 @@ test.describe('ReBuilder in the shell · guest', () => {
     await expect(page).toHaveURL(/\/decks\/guest-[^/]+\/edit$/);
     await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
-    await page.waitForTimeout(600); // autosave debounce (400 ms)
+    // Saved in localStorage once the autosave delay is over: hero + 2 cards.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const decks = JSON.parse(localStorage.getItem('arb.guest-decks') ?? '[]') as { name: string; deckCards?: { quantity: number }[] }[];
+          return (decks.find((d) => d.name === 'Deck invité')?.deckCards ?? []).reduce((n, l) => n + l.quantity, 0);
+        }),
+      )
+      .toBe(3);
     await page.reload();
     await expectDeckCount(page, compact, 2);
     await page.goto(DECKS);

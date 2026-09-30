@@ -96,7 +96,8 @@ export class EquinoxImport {
   protected readonly cancelled = signal(false);
   /** Durations of the last imports, for the time left. */
   private readonly durations = signal<number[]>([]);
-  private running = false;
+  /** The run whose `pump` loop is going: after « Annuler », a new file starts its own while the old one ends. */
+  private pumping: number | null = null;
   private destroyed = false;
   private lastStart = 0;
   /** Bumped by each new file: a request of a previous run never writes into the new rows. */
@@ -274,9 +275,9 @@ export class EquinoxImport {
 
   /** Imports the decks in order; stops on a failed deck (waiting for « Réessayer »), a pause or the end. */
   private async pump(): Promise<void> {
-    if (this.running) return;
-    this.running = true;
     const run = this.run;
+    if (this.pumping === run) return;
+    this.pumping = run;
     try {
       while (this.phase() === 'importing' && !this.destroyed && run === this.run) {
         const i = this.rows().findIndex((r) => !DONE.includes(r.status));
@@ -292,7 +293,7 @@ export class EquinoxImport {
         await this.importRow(i, run);
       }
     } finally {
-      this.running = false;
+      if (this.pumping === run) this.pumping = null;
     }
   }
 
@@ -319,7 +320,12 @@ export class EquinoxImport {
         );
         status = 'imported';
       }
-      if (stale()) return;
+      // Cancelled while the deck was being created: it is on the account all the same, shown so
+      // while its row is still displayed.
+      if (stale()) {
+        if (status === 'imported' && this.rows()[i]?.deck === row.deck) this.setRow(i, { status, error: undefined });
+        return;
+      }
       this.durations.update((d) => [...d, Date.now() - started].slice(-ETA_WINDOW));
       this.setRow(i, { status, error: undefined });
     } catch (err) {

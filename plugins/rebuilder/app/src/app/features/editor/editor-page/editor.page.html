@@ -27,7 +27,7 @@
           <div class="title-block">
             <ar-breadcrumb [items]="labels.breadcrumb" />
             <div class="title-row">
-              <ar-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+              <ar-editable-title [value]="deck.name()" [readonly]="!deck.editable()" (valueChange)="deck.rename($event)" />
               @if (deck.editable()) {
                 <ar-save-status [state]="deck.saveState()" />
               }

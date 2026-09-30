@@ -74,8 +74,10 @@ export class DeckStore {
   readonly loading = computed(() => this.serverDeck.isLoading());
   /** A save request to the decks API is running. */
   readonly saving = signal(false);
-  /** Why the deck could not be opened (or deleted); a failed save goes to `saveError` instead. */
+  /** Why the deck could not be opened; a failed save goes to `saveError`, a failed delete or « Rendre public » to `actionError`. */
   readonly error = signal<string | null>(null);
+  /** Last `delete()` / `makePublic()` refused or unreachable: displayable message; the deck stays open. */
+  readonly actionError = signal<string | null>(null);
   /** Set with `error` when the deck could not be opened. */
   readonly loadError = signal<DeckLoadError | null>(null);
   /** Last save refused or unreachable: displayable message, with the API's violations. `null` after a save succeeds. */
@@ -119,13 +121,12 @@ export class DeckStore {
   /**
    * Account decks of the signed-in user, to tell whether the open deck is theirs: the decks API
    * does not say who owns a deck (`user` is `[]`), but `GET /api/decks` only lists the caller's.
-   * Refetched when the open server deck or the account changes.
+   * Fetched when the first server deck is opened and when the account changes, not for every deck
+   * opened: the list is large. Decks created from this tab meanwhile are in `createdIds`.
    */
+  private readonly mineWanted = signal(false);
   private readonly mineIds = rxResource({
-    params: () => {
-      const id = this.deckId();
-      return id && !this.isGuest() && this.auth.isLoggedIn() ? { id, user: this.auth.username(), token: this.auth.token() } : undefined;
-    },
+    params: () => (this.mineWanted() && this.auth.isLoggedIn() ? { user: this.auth.username(), token: this.auth.token() } : undefined),
     stream: () =>
       this.decksApi.listMine(1, 1000).pipe(map((body) => new Set((Array.isArray(body) ? body : (body.member ?? [])).map((d) => d.id)))),
   });
@@ -138,6 +139,7 @@ export class DeckStore {
     if (!id || !this.auth.isLoggedIn()) return false;
     if (this.createdIds().has(id)) return true;
     if (this.mineIds.error()) return false;
+    if (this.mineIds.isLoading()) return null;
     return this.mineIds.hasValue() ? this.mineIds.value().has(id) : null;
   });
   readonly editable = computed(() => this.owned() === true);
@@ -149,8 +151,16 @@ export class DeckStore {
   private inFlight: number | null = null;
   /** The running request is a `keepalive` one (it survives the page). */
   private inFlightKeepalive = false;
-  /** A change was saved while a request was running: send again once it answers. */
-  private saveQueued = false;
+  /**
+   * Saves that waited for the running request, by deck: the payload is built when queued, so it
+   * still writes that deck after another one is opened meanwhile.
+   */
+  private readonly queued = new Map<string, { revision: number; payload: Partial<DeckWrite> }>();
+  /**
+   * Newest revision the decks API confirmed. A `keepalive` save runs next to a plain one: when the
+   * older one answers last, it may have been written last too, so the current state is sent again.
+   */
+  private acked: { id: string; revision: number } | null = null;
 
   constructor() {
     // Frontier: the Uniques of the deck not checked yet go to the uniques search API (as the site's deck builder).
@@ -164,11 +174,15 @@ export class DeckStore {
       if (!refs.length) return;
       untracked(() => {
         refs.forEach((r) => this.frontierPending.add(r));
-        const done = (legal: Set<string> | null) => {
-          refs.forEach((r) => this.frontierPending.delete(r));
-          this.frontierChecked.update((m) => new Map([...m, ...refs.map((r) => [r, !!legal?.has(r)] as const)]));
-        };
-        this.uniquesApi.frontierLegal(refs).subscribe({ next: done, error: () => done(null) });
+        const release = () => refs.forEach((r) => this.frontierPending.delete(r));
+        this.uniquesApi.frontierLegal(refs).subscribe({
+          next: (legal) => {
+            release();
+            this.frontierChecked.update((m) => new Map([...m, ...refs.map((r) => [r, legal.has(r)] as const)]));
+          },
+          // Unknown, not illegal: a failed check must not turn the deck into a draft. Checked again on the next change.
+          error: release,
+        });
       });
     });
     effect(() => {
@@ -340,6 +354,7 @@ export class DeckStore {
 
   /** A blank `name` keeps the current one. */
   updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string; description?: string }): void {
+    if (!this.editable()) return;
     if (settings.hero) this.hero.set(settings.hero);
     if (settings.format) this.format.set(settings.format);
     if (settings.isPublic !== undefined) this.isPublic.set(settings.isPublic);
@@ -348,9 +363,11 @@ export class DeckStore {
     this.touch();
   }
 
+  /** A blank name is shown while typing but not saved. */
   rename(name: string): void {
+    if (!this.editable()) return;
     this.name.set(name);
-    this.touch();
+    if (name.trim()) this.touch();
   }
 
   /** Default name of a copy: « <name> (copie) ». */
@@ -399,13 +416,14 @@ export class DeckStore {
   makePublic(): Observable<boolean> {
     const id = this.deckId();
     if (!id || GuestDeckService.isGuestId(id)) return of(false);
+    this.actionError.set(null);
     return this.decksApi.patch(id, { isPublic: true }).pipe(
       map(() => {
         this.isPublic.set(true);
         return true;
       }),
       catchError((err: unknown) => {
-        this.error.set(apiErrorMessage(err, makePublicErrorHead));
+        this.actionError.set(apiErrorMessage(err, makePublicErrorHead));
         return of(false);
       }),
     );
@@ -419,13 +437,15 @@ export class DeckStore {
       this.clear();
       return of(true);
     }
+    this.actionError.set(null);
     return this.decksApi.delete(id).pipe(
       map(() => {
+        this.queued.delete(id);
         this.clear();
         return true;
       }),
-      catchError(() => {
-        this.error.set($localize`:@@core.deckStore.deleteRefused:Suppression refusée : connexion requise.`);
+      catchError((err: unknown) => {
+        this.actionError.set(apiErrorMessage(err, deleteErrorHead));
         return of(false);
       }),
     );
@@ -439,12 +459,18 @@ export class DeckStore {
    */
   flush(options: { keepalive?: boolean } = {}): void {
     const keepalive = !!options.keepalive;
+    if (keepalive) {
+      for (const [id, q] of [...this.queued]) {
+        if (id === this.deckId()) continue;
+        this.queued.delete(id);
+        this.send(id, q.revision, q.payload, true);
+      }
+    }
     if (this.saveTimer) {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
       this.save(keepalive);
     } else if (keepalive && this.dirty()) {
-      this.saveQueued = false;
       this.save(true);
     }
   }
@@ -481,7 +507,7 @@ export class DeckStore {
     this.dirty.set(false);
     this.saveError.set(null);
     this.saved.set(false);
-    this.saveQueued = false;
+    this.actionError.set(null);
     this.isGuest.set(true);
   }
 
@@ -530,56 +556,79 @@ export class DeckStore {
     }
     if (!this.auth.isLoggedIn()) return;
     const revision = this.revision;
+    if (keepalive && this.inFlight === revision && this.inFlightKeepalive) return;
+    const payload = this.payload();
     if (this.inFlight !== null && !keepalive) {
       // One request at a time, so an older state never lands after a newer one.
-      this.saveQueued = true;
+      this.queued.set(id, { revision, payload });
       return;
     }
-    if (keepalive && this.inFlight === revision && this.inFlightKeepalive) return;
-    // As the site's builder: a deck is saved as a draft while it is not legal.
-    const isDraft = this.legality().state !== 'legal';
-    const payload: Partial<DeckWrite> = {
-      name: this.name(),
+    // This request carries the newest state of the deck.
+    this.queued.delete(id);
+    this.send(id, revision, payload, keepalive);
+  }
+
+  /** The open deck as PATCHed. As the site's builder: a deck is saved as a draft while it is not legal. */
+  private payload(): Partial<DeckWrite> {
+    return {
+      name: this.name().trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       description: this.description().trim(),
       format: this.format(),
       isPublic: this.isPublic(),
-      isDraft,
+      isDraft: this.legality().state !== 'legal',
       deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
     };
+  }
+
+  private send(id: string, revision: number, payload: Partial<DeckWrite>, keepalive: boolean): void {
     this.inFlight = revision;
     this.inFlightKeepalive = keepalive;
     this.saving.set(true);
-    this.saveError.set(null);
+    if (this.deckId() === id) this.saveError.set(null);
     this.decksApi.patch(id, payload, { keepalive }).subscribe({
       next: (saved) => {
+        const overtaken = this.acked?.id === id && this.acked.revision > revision;
+        if (!overtaken) this.acked = { id, revision };
         if (this.settle(id, revision)) {
-          this.isDraft.set(isDraft);
-          this.saved.set(true);
-          if (revision === this.revision) {
-            this.dirty.set(false);
-            if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+          if (overtaken) {
+            // A newer save answered first: this older state may have been written last.
+            this.queued.set(id, { revision: this.revision, payload: this.payload() });
+          } else {
+            this.isDraft.set(payload.isDraft ?? null);
+            this.saved.set(true);
+            if (revision === this.revision) {
+              this.dirty.set(false);
+              if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+            }
           }
         }
-        // Also when the deck was left meanwhile: the queued save is the new deck's.
+        // Also when the deck was left meanwhile: a queued save may be another deck's.
         this.sendQueued();
       },
       error: (err: unknown) => {
-        if (!this.settle(id, revision)) {
-          this.sendQueued();
-          return;
+        if (this.settle(id, revision)) {
+          // Changes made meanwhile stay dirty: they go with « Réessayer » or the next change.
+          this.queued.delete(id);
+          this.saveError.set(apiErrorMessage(err, saveErrorHead));
         }
-        // Changes made meanwhile stay dirty: they go with « Réessayer » or the next change.
-        this.saveQueued = false;
-        this.saveError.set(apiErrorMessage(err, saveErrorHead));
+        this.sendQueued();
       },
     });
   }
 
-  /** Sends the save that waited for the running request, once none runs. */
+  /**
+   * Sends a save that waited for the running request, once none runs: the open deck's current
+   * state (unless a change is about to be saved anyway), or the payload queued for a deck left since.
+   */
   private sendQueued(): void {
-    if (!this.saveQueued || this.inFlight !== null) return;
-    this.saveQueued = false;
-    if (!this.saveTimer) this.save();
+    if (this.inFlight !== null) return;
+    const next = this.queued.entries().next();
+    if (next.done) return;
+    const [id, q] = next.value;
+    this.queued.delete(id);
+    if (id !== this.deckId()) this.send(id, q.revision, q.payload, false);
+    else if (!this.saveTimer) this.save();
+    else this.sendQueued();
   }
 
   /** Ends the running request; `false` when the deck was left meanwhile (its answer is ignored). */
@@ -592,6 +641,8 @@ export class DeckStore {
   }
 
   private apply(deck: Deck): void {
+    // Another deck replaces the open one (created, duplicated): its waiting change goes first.
+    if (this.deckId() !== deck.id) this.flush();
     const hero = heroOf(deck);
     this.deckId.set(deck.id);
     this.name.set(deck.name || $localize`:@@core.deck.untitled:Sans nom`);
@@ -603,6 +654,7 @@ export class DeckStore {
     this.createdAt.set(deck.createdAt ?? deck.updatedAt ?? null);
     this.isGuest.set(!!deck.guest || GuestDeckService.isGuestId(deck.id));
     this.apiLegality.set(this.isGuest() ? null : legalityFromApi(deck));
+    if (!this.isGuest()) this.mineWanted.set(true);
     this.lines.set(
       deckLines(deck)
         .filter((l) => !isHeroLine(l, hero))
@@ -611,7 +663,7 @@ export class DeckStore {
     this.dirty.set(false);
     this.saveError.set(null);
     this.saved.set(false);
-    this.saveQueued = false;
+    this.actionError.set(null);
     this.fillUniqueFaces(deck.id);
   }
 
@@ -672,6 +724,10 @@ const saveErrorHead = (status: number) =>
     : $localize`:@@core.deckStore.saveFailed:Échec de l’enregistrement (HTTP ${status}:status:).`;
 const createErrorHead = (status: number) => $localize`:@@core.deckStore.createFailed:Impossible de créer le deck sur votre compte (HTTP ${status}:status:).`;
 const makePublicErrorHead = (status: number) => $localize`:@@core.deckStore.makePublicFailed:Impossible de rendre ce deck public (HTTP ${status}:status:).`;
+const deleteErrorHead = (status: number) =>
+  status === 401 || status === 403
+    ? $localize`:@@core.deckStore.deleteRefused:Suppression refusée : connexion requise.`
+    : $localize`:@@core.deckStore.deleteFailed:Impossible de supprimer ce deck (HTTP ${status}:status:).`;
 const duplicateErrorHead = (status: number) => $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${status}:status:).`;
 
 /**

@@ -14,7 +14,7 @@
   }
 </div>
 <div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@decks.import.cancel">Annuler</button>
+  <button arButton variant="secondary" class="secondary-action" [disabled]="busy()" (click)="ref.close()" i18n="@@decks.import.cancel">Annuler</button>
   <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="busy() || !text().trim()" (click)="run()">
     @if (busy()) {
       <ng-container i18n="@@decks.import.importing">Import…</ng-container>

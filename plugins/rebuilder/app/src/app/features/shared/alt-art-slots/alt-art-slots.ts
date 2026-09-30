@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { finalize } from 'rxjs';
 import { cardImageUrl } from '../../../core/card-art';
 import { OwnershipApiService, type AltArtChoice } from '../../../core/ownership-api.service';
 
@@ -19,6 +20,8 @@ export class AltArtSlots {
   protected readonly slots = linkedSignal(() => [...this.choice().options.slots].sort((a, b) => a.slotIndex - b.slotIndex));
   protected readonly active = linkedSignal(() => this.slots().at(-1)?.slotIndex ?? 0);
   protected readonly error = signal<string | null>(null);
+  /** A save is running: the tiles wait for it, so that saves never cross (a late refusal would undo a later choice). */
+  protected readonly saving = signal(false);
   protected readonly tiles = computed(() =>
     this.choice().options.options.map((o) => ({
       reference: o.reference,
@@ -32,7 +35,7 @@ export class AltArtSlots {
 
   /** An owned illustration: the active marker (or the next one not already there) moves onto it. */
   protected pick(reference: string, owned: boolean): void {
-    if (!owned) return;
+    if (!owned || this.saving()) return;
     const slots = this.slots();
     const start = Math.max(0, slots.findIndex((s) => s.slotIndex === this.active()));
     let moved: { slotIndex: number; reference: string } | undefined;
@@ -51,7 +54,8 @@ export class AltArtSlots {
     this.slots.set(next);
     this.active.set(next[(index + 1) % next.length].slotIndex);
     this.error.set(null);
-    this.ownership.setAltArtPreference(this.choice().family, next.map((s) => s.reference)).subscribe({
+    this.saving.set(true);
+    this.ownership.setAltArtPreference(this.choice().family, next.map((s) => s.reference)).pipe(finalize(() => this.saving.set(false))).subscribe({
       error: (err: unknown) => {
         this.slots.set(before);
         this.active.set(beforeActive);

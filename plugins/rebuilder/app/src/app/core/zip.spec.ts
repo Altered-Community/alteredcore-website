@@ -1,7 +1,10 @@
 import { ZipError, readZipText } from './zip';
 
-/** A minimal ZIP writer for the tests: entries stored (method 0) or deflated (method 8). */
-async function zip(entries: { name: string; text: string; deflate?: boolean }[]): Promise<Blob> {
+/**
+ * A minimal ZIP writer for the tests: entries stored (method 0) or deflated (method 8). `size`
+ * overrides the declared uncompressed size.
+ */
+async function zip(entries: { name: string; text: string; deflate?: boolean; size?: number }[]): Promise<Blob> {
   const enc = new TextEncoder();
   const parts: Uint8Array[] = [];
   const central: Uint8Array[] = [];
@@ -14,13 +17,13 @@ async function zip(entries: { name: string; text: string; deflate?: boolean }[])
     local.setUint32(0, 0x04034b50, true);
     local.setUint16(8, e.deflate ? 8 : 0, true);
     local.setUint32(18, data.length, true);
-    local.setUint32(22, raw.length, true);
+    local.setUint32(22, e.size ?? raw.length, true);
     local.setUint16(26, name.length, true);
     const cd = new DataView(new ArrayBuffer(46));
     cd.setUint32(0, 0x02014b50, true);
     cd.setUint16(10, e.deflate ? 8 : 0, true);
     cd.setUint32(20, data.length, true);
-    cd.setUint32(24, raw.length, true);
+    cd.setUint32(24, e.size ?? raw.length, true);
     cd.setUint16(28, name.length, true);
     cd.setUint32(42, offset, true);
     parts.push(new Uint8Array(local.buffer), name, data);
@@ -51,5 +54,12 @@ describe('readZipText', () => {
   it('returns null without the entry, and throws on a file that is not a ZIP', async () => {
     expect(await readZipText(await zip([{ name: 'cards.csv', text: 'x' }]), 'decks.csv')).toBeNull();
     await expect(readZipText(new Blob(['not a zip']), 'decks.csv')).rejects.toBeInstanceOf(ZipError);
+  });
+
+  it('rejects an entry declared or inflated past 20 MB', async () => {
+    await expect(readZipText(await zip([{ name: 'decks.csv', text: 'x', size: 21 * 1024 * 1024 }]), 'decks.csv')).rejects.toBeInstanceOf(ZipError);
+    // A « zip bomb »: a small declared size, 21 MB once inflated.
+    const bomb = await zip([{ name: 'decks.csv', text: 'a'.repeat(21 * 1024 * 1024), deflate: true, size: 10 }]);
+    await expect(readZipText(bomb, 'decks.csv')).rejects.toBeInstanceOf(ZipError);
   });
 });

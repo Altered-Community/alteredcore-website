@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { _getFocusedElementPierceShadowDom } from '@angular/cdk/platform';
+import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, output } from '@angular/core';
 import { isUniqueReference } from '../../../core/card-art';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
@@ -19,6 +20,8 @@ import { contentLocale } from '../../../core/locale';
   styleUrl: './card-tile.scss',
 })
 export class ArCardTile {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   readonly card = input.required<Card>();
   readonly quantity = input(0);
   readonly max = input(3);
@@ -49,4 +52,23 @@ export class ArCardTile {
     return n === 1 ? $localize`:@@ui.cardTile.quantityOne:${n}:count: exemplaire(s)` : $localize`:@@ui.cardTile.quantity:${n}:count: exemplaire(s)`;
   });
   protected readonly unique = computed(() => isUniqueReference(this.card().reference));
+
+  /**
+   * « + » becomes a stepper at 1 copy, and back at 0: the focused button is replaced, so the focus
+   * moves to the new control instead of falling to the page (keyboard, screen readers).
+   */
+  protected changeQuantity(quantity: number): void {
+    const focused = _getFocusedElementPierceShadowDom();
+    const hadFocus = !!focused && this.host.nativeElement.contains(focused);
+    this.quantityChange.emit(quantity);
+    if (!hadFocus) return;
+    afterNextRender(
+      () => {
+        const active = _getFocusedElementPierceShadowDom();
+        if (active && this.host.nativeElement.contains(active)) return;
+        this.host.nativeElement.querySelector<HTMLElement>(quantity > 0 ? '.action .inc' : '.action button')?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
 }

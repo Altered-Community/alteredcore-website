@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { CardsApiService } from '../../../core/cards-api.service';
 import { typeOf } from '../../../core/deck-rules';
@@ -9,7 +8,7 @@ import { cardToLine, factionFromReference } from '../../../core/deck-view';
 import { DecksApiService } from '../../../core/decks-api.service';
 import { visibleFormats } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
-import type { Card, DeckCardLine, DeckFormat, DeckHero } from '../../../core/models';
+import type { DeckCardLine, DeckFormat, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { contentLocale } from '../../../core/locale';
@@ -18,7 +17,10 @@ import { EquinoxImport } from '../equinox/equinox-import';
 import { ArBreakpointService } from '../../../ui/layout.services';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
 
-/** Parses "3 ALT_CORE_B_AX_04_C" / "ALT_… x3" lines into reference → quantity. */
+/** Copies of one card at most, as the Equinox import (`equinox-csv.ts`) and the decks API allow. */
+const MAX_QUANTITY = 99;
+
+/** Parses "3 ALT_CORE_B_AX_04_C" / "ALT_… x3" lines into reference → quantity (1 to 99; a line at 0 is left out). */
 export function parseDecklist(text: string): { reference: string; quantity: number }[] {
   const out = new Map<string, number>();
   for (const raw of text.split(/\r?\n/)) {
@@ -30,7 +32,7 @@ export function parseDecklist(text: string): { reference: string; quantity: numb
     const key = ref.toUpperCase();
     out.set(key, (out.get(key) ?? 0) + qty);
   }
-  return [...out].map(([reference, quantity]) => ({ reference, quantity }));
+  return [...out].filter(([, quantity]) => quantity > 0).map(([reference, quantity]) => ({ reference, quantity: Math.min(quantity, MAX_QUANTITY) }));
 }
 
 export type ImportMode = 'list' | 'equinox';
@@ -96,16 +98,25 @@ export class ImportDeckOverlay {
       this.error.set($localize`:@@decks.import.noLines:Aucune ligne reconnue. Format attendu : « quantité référence ».`);
       return;
     }
-    this.busy.set(true);
+    this.setBusy(true);
     this.error.set(null);
-    this.api
-      .batch(rows.map((r) => r.reference), contentLocale())
-      .pipe(catchError(() => of([] as Card[])))
-      .subscribe((cards) => {
+    this.api.batch(rows.map((r) => r.reference), contentLocale()).subscribe({
+      error: () => {
+        this.setBusy(false);
+        this.error.set($localize`:@@decks.import.errCards:Impossible de vérifier les cartes de la liste. Réessayez.`);
+      },
+      next: (cards) => {
         const byRef = new Map(cards.map((c) => [c.reference, c]));
+        // A reference the cards API does not know would make a deck line without a card.
+        const unknown = rows.filter((r) => !byRef.has(r.reference)).map((r) => r.reference);
+        if (unknown.length) {
+          this.setBusy(false);
+          this.error.set($localize`:@@decks.import.unknownRefs:Références inconnues : ${unknown.join(', ')}:refs:. Corrigez la liste puis réessayez.`);
+          return;
+        }
         let hero: DeckHero | null = null;
         const lines: DeckCardLine[] = rows.map((r) => {
-          const card = byRef.get(r.reference) ?? ({ reference: r.reference } as Card);
+          const card = byRef.get(r.reference)!;
           if (typeOf(card) === 'HERO' && !hero) {
             hero = {
               reference: card.reference,
@@ -119,7 +130,7 @@ export class ImportDeckOverlay {
         const format = this.format();
         if (!this.auth.isLoggedIn()) {
           const deck = this.guests.create({ name, format, hero, deckCards: lines });
-          this.busy.set(false);
+          this.setBusy(false);
           this.ref.close({ deckId: deck.id });
           return;
         }
@@ -127,15 +138,22 @@ export class ImportDeckOverlay {
         const deckCards = lines.map((l) => ({ cardReference: l.cardReference, quantity: l.quantity }));
         this.decksApi.create({ name, format, isPublic: false, deckCards }).subscribe({
           next: (deck) => {
-            this.busy.set(false);
+            this.setBusy(false);
             this.ref.close({ deckId: deck.id });
           },
           error: (err: unknown) => {
-            this.busy.set(false);
+            this.setBusy(false);
             this.error.set(importErrorMessage(err));
           },
         });
-      });
+      },
+    });
+  }
+
+  /** While a list is imported, a close by the user (cross, Escape, backdrop, Back) is ignored. */
+  private setBusy(busy: boolean): void {
+    this.busy.set(busy);
+    this.ref.closeGuard.set(busy ? () => false : null);
   }
 }
 

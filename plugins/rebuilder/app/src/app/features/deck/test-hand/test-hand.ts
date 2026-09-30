@@ -49,6 +49,8 @@ export class TestHand {
   private readonly drawn = signal(0);
 
   private readonly pool = computed(() => handPool(this.lines()));
+  /** Changes with the deck contents only, not with late card data (a new `pool` array each time). */
+  private readonly poolSize = computed(() => this.pool().length);
   protected readonly hand = computed(() => {
     const pool = this.pool();
     const ids = this.game()?.hand ?? this.order().slice(0, this.drawn());
@@ -78,7 +80,7 @@ export class TestHand {
   constructor() {
     // New deck contents (loaded, or another deck): deal again.
     effect(() => {
-      const size = this.pool().length;
+      const size = this.poolSize();
       untracked(() => (size ? this.newHand() : this.order.set([])));
     });
     // Window narrowed to the compact layout during a game: back to the plain hand.
