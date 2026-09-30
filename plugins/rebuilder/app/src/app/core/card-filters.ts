@@ -2,6 +2,7 @@ import type { CardOrder, CardSearchParams } from './models';
 import type { UniquesQuery } from './uniques-api.service';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
+import { KEYWORDS, PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
 
 export type CardSource = 'all' | 'uniques' | 'owned' | 'favorites';
 
@@ -34,7 +35,30 @@ export interface SearchFilters {
   /** Recherche avancée. */
   noEffect: boolean;
   echo: boolean;
+  /** Biome powers, same syntax as the costs (« 3 », « 1-3 », « 4+ », « <4 »…). */
+  forestPower: string;
+  mountainPower: string;
+  oceanPower: string;
+  /** Effect keywords (all of them), subtypes (any of them). */
+  keywords: string[];
+  subtypes: string[];
+  costRelation: CostRelation;
+  /** « Alt arts »: every printing, and the promo editions of the chosen sets (`promoSets`). */
+  altArts: boolean;
+  promoSets: string[];
+  /** Editor: « Changer de faction », searched instead of the hero's faction. */
+  otherFactions: string[];
 }
+
+/** Main cost against reserve cost (`costRelation` of the cards API). */
+export type CostRelation = '' | 'equal' | 'mainHigher' | 'recallHigher';
+
+export const COST_RELATIONS: { value: CostRelation; label: string }[] = [
+  { value: '', label: $localize`:@@search.filters.costRelation.any:Gestion des coûts` },
+  { value: 'equal', label: $localize`:@@search.filters.costRelation.equal:Coût main = réserve` },
+  { value: 'mainHigher', label: $localize`:@@search.filters.costRelation.mainHigher:Coût main plus élevé` },
+  { value: 'recallHigher', label: $localize`:@@search.filters.costRelation.recallHigher:Coût réserve plus élevé` },
+];
 
 export interface SetInfo {
   reference: string;
@@ -99,7 +123,21 @@ export function defaultFilters(source: CardSource): SearchFilters {
     order: 'setDate-desc',
     noEffect: false,
     echo: false,
+    forestPower: '',
+    mountainPower: '',
+    oceanPower: '',
+    keywords: [],
+    subtypes: [],
+    costRelation: '',
+    altArts: false,
+    promoSets: [],
+    otherFactions: [],
   };
+}
+
+/** Promo editions of the chosen main sets (« Alt arts » turned on, as on the site). */
+export function promoSetsOf(sets: readonly string[]): string[] {
+  return PROMO_SETS.filter((p) => sets.includes(p.parent)).map((p) => p.code);
 }
 
 export function setsFor(source: CardSource): SetInfo[] {
@@ -118,15 +156,28 @@ export function parseCostExpression(expr: string): number[] | null {
   const trimmed = expr.trim();
   if (!trimmed) return [];
   const values = new Set<number>();
+  const span = (a: number, b: number) => {
+    for (let v = Math.max(0, a); v <= Math.min(MAX_COST, b); v++) values.add(v);
+  };
   for (const raw of trimmed.split(/[,;\s]+/).filter(Boolean)) {
     let m: RegExpExecArray | null;
     if ((m = /^(\d{1,2})$/.exec(raw))) {
       values.add(Number(m[1]));
     } else if ((m = /^(\d{1,2})\s*-\s*(\d{1,2})$/.exec(raw))) {
       const [a, b] = [Number(m[1]), Number(m[2])].sort((x, y) => x - y);
-      for (let v = a; v <= b; v++) values.add(v);
+      span(a, b);
     } else if ((m = /^(\d{1,2})\+$/.exec(raw))) {
-      for (let v = Number(m[1]); v <= MAX_COST; v++) values.add(v);
+      span(Number(m[1]), MAX_COST);
+    } else if ((m = /^(\d{1,2})-$/.exec(raw))) {
+      // « 4- »: 4 or less (the site's syntax).
+      span(0, Number(m[1]));
+    } else if ((m = /^(<=|>=|<|>)(\d{1,2})$/.exec(raw))) {
+      // « <4 », « >2 », « <=4 », « >=2 » (the site's syntax).
+      const n = Number(m[2]);
+      if (m[1] === '<') span(0, n - 1);
+      else if (m[1] === '<=') span(0, n);
+      else if (m[1] === '>') span(n + 1, MAX_COST);
+      else span(n, MAX_COST);
     } else {
       return null;
     }
@@ -170,14 +221,21 @@ export function toSearchParams(
     itemsPerPage,
     locale: contentLocale(),
     q: filters.q.trim() || undefined,
-    factions: faction ? [faction] : filters.factions,
-    sets: filters.sets,
+    // The editor searches the hero's faction, or the ones chosen in « Changer de faction ».
+    factions: faction ? (filters.otherFactions.length ? filters.otherFactions : [faction]) : filters.factions,
+    sets: filters.altArts ? [...filters.sets, ...filters.promoSets.filter((p) => !filters.sets.includes(p))] : filters.sets,
     // Uniques live in their own tab: an empty rarity selection means C · R · E here.
     rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
     types: filters.types,
-    variations: ['standard'],
+    variations: filters.altArts ? VARIATIONS.map((v) => v.code) : ['standard'],
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
+    forestPowers: parseCostExpression(filters.forestPower) ?? [],
+    mountainPowers: parseCostExpression(filters.mountainPower) ?? [],
+    oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
+    keywords: filters.keywords,
+    subtypes: filters.subtypes,
+    costRelation: filters.costRelation || undefined,
     order: filters.order,
     hasNoEffect: filters.noEffect || undefined,
     hasEchoEffect: filters.echo || undefined,
@@ -211,6 +269,24 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   if (filters.mainCost.trim()) chips.push({ id: 'mainCost', label: $localize`:@@search.filters.chip.mainCost:Coût main : ${filters.mainCost.trim()}:cost:` });
   if (filters.recallCost.trim()) chips.push({ id: 'recallCost', label: $localize`:@@search.filters.chip.recallCost:Réserve : ${filters.recallCost.trim()}:cost:` });
   if (filters.noEffect) chips.push({ id: 'noEffect', label: $localize`:@@search.filters.chip.noEffect:Sans effet` });
+  if (source !== 'uniques') {
+    const power = (id: 'forestPower' | 'mountainPower' | 'oceanPower', label: string) => {
+      if (filters[id].trim()) chips.push({ id, label: `${label} : ${filters[id].trim()}` });
+    };
+    power('forestPower', $localize`:@@ui.terrain.forest:Forêt`);
+    power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
+    power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
+    if (filters.keywords.length) chips.push({ id: 'keywords', label: filters.keywords.length === 1 ? termLabel(KEYWORDS.find((k) => k.code === filters.keywords[0]) ?? { code: '', fr: filters.keywords[0], en: filters.keywords[0] }) : $localize`:@@search.filters.chip.keywords:${filters.keywords.length}:count: mots-clés` });
+    if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
+    if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
+    if (filters.altArts) chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
+    if (filters.otherFactions.length) {
+      chips.push({
+        id: 'otherFactions',
+        label: filters.otherFactions.map((c) => FACTION_OPTIONS.find((f) => f.code === c)?.name ?? c).join(' · '),
+      });
+    }
+  }
   if (filters.echo) chips.push({ id: 'echo', label: $localize`:@@search.filters.chip.echo:Effet d’écho` });
   if (source === 'uniques') {
     chips.push({ id: 'environment', label: filters.environment === 'frontier' ? 'Frontier' : $localize`:@@search.filters.chip.allUniques:Toutes` });
@@ -244,6 +320,20 @@ export function removeChip(filters: SearchFilters, id: string): SearchFilters {
       return { ...filters, noEffect: false };
     case 'echo':
       return { ...filters, echo: false };
+    case 'forestPower':
+    case 'mountainPower':
+    case 'oceanPower':
+      return { ...filters, [id]: '' };
+    case 'keywords':
+      return { ...filters, keywords: [] };
+    case 'subtypes':
+      return { ...filters, subtypes: [] };
+    case 'costRelation':
+      return { ...filters, costRelation: '' };
+    case 'altArts':
+      return { ...filters, altArts: false, promoSets: [] };
+    case 'otherFactions':
+      return { ...filters, otherFactions: [] };
     default:
       return filters;
   }

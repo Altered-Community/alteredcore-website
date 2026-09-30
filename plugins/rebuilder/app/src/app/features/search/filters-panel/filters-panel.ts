@@ -1,17 +1,18 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
-import { RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { COST_RELATIONS, RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { KEYWORDS, PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { ArButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
 import { ArFilterSection } from '../../../ui/containers';
-import { ArInput, ArSegmented } from '../../../ui/fields';
+import { ArCombobox, ArInput, ArSegmented, ArSelect, type ComboOption } from '../../../ui/fields';
 import { ArIcon } from '../../../ui/icon';
 import { ArEffectSummary, ArExtensionTile, FACTIONS } from '../../../ui/metier';
 
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  imports: [ArInput, ArFilterSection, ArExtensionTile, ArIconToggleGroup, ArChip, ArSegmented, ArEffectSummary, ArLogicDivider, ArButton, ArIcon],
+  imports: [ArInput, ArSelect, ArCombobox, ArFilterSection, ArExtensionTile, ArIconToggleGroup, ArChip, ArSegmented, ArEffectSummary, ArLogicDivider, ArButton, ArIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',
   styleUrl: './filters-panel.scss',
@@ -41,6 +42,37 @@ export class FiltersPanel {
   protected readonly advancedOpen = signal(false);
   protected readonly mainInvalid = computed(() => parseCostExpression(this.value().mainCost) === null);
   protected readonly recallInvalid = computed(() => parseCostExpression(this.value().recallCost) === null);
+  protected readonly powerInvalid = computed(() => {
+    const v = this.value();
+    return { forest: parseCostExpression(v.forestPower) === null, mountain: parseCostExpression(v.mountainPower) === null, ocean: parseCostExpression(v.oceanPower) === null };
+  });
+  protected readonly costRelations = COST_RELATIONS;
+  protected readonly keywordOptions: ComboOption[] = KEYWORDS.map((k, id) => ({ id, text: termLabel(k) }));
+  protected readonly subtypeOptions: ComboOption[] = SUBTYPES.map((k, id) => ({ id, text: termLabel(k) }));
+  /** Promo editions of the chosen sets. */
+  protected readonly promoOptions = computed(() =>
+    PROMO_SETS.filter((p) => this.value().sets.includes(p.parent)).map((p) => ({ code: p.code, label: termLabel(p) })),
+  );
+
+  protected picked(options: ComboOption[], codes: string[]): ComboOption[] {
+    const vocabulary = options === this.keywordOptions ? KEYWORDS : SUBTYPES;
+    return codes.map((c) => options[vocabulary.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);
+  }
+
+  protected codes(values: ComboOption[], options: ComboOption[]): string[] {
+    const vocabulary = options === this.keywordOptions ? KEYWORDS : SUBTYPES;
+    return values.map((v) => vocabulary[v.id]?.code).filter((c): c is string => !!c);
+  }
+
+  /** « Alt arts » on: every printing and the promo editions of the chosen sets (as on the site); off: back to standard. */
+  protected setAltArts(on: boolean): void {
+    this.set({ altArts: on, promoSets: on ? promoSetsOf(this.value().sets) : [] });
+  }
+
+  protected togglePromo(code: string, on: boolean): void {
+    const cur = this.value().promoSets.filter((p) => p !== code);
+    this.set({ promoSets: on ? [...cur, code] : cur });
+  }
 
   protected effectTitle(index: number): string {
     return effectTitle(index);
@@ -58,6 +90,11 @@ export class FiltersPanel {
   toggleFaction(code: string, on: boolean): void {
     const cur = this.value().factions.filter((f) => f !== code);
     this.set({ factions: on ? [...cur, code] : cur });
+  }
+
+  toggleOtherFaction(code: string, on: boolean): void {
+    const cur = this.value().otherFactions.filter((f) => f !== code);
+    this.set({ otherFactions: on ? [...cur, code] : cur });
   }
 
   toggleType(t: string, on: boolean): void {

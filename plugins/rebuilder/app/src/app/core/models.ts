@@ -89,6 +89,13 @@ export interface CardSearchParams {
   variations?: string[];
   mainCosts?: number[];
   recallCosts?: number[];
+  forestPowers?: number[];
+  mountainPowers?: number[];
+  oceanPowers?: number[];
+  /** Effect keywords, all required. */
+  keywords?: string[];
+  subtypes?: string[];
+  costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
   hasEchoEffect?: boolean;

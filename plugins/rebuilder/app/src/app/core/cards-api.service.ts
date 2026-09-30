@@ -132,6 +132,14 @@ export function buildCardsSearchParams(params: CardSearchParams): HttpParams {
   for (const v of params.variations ?? ['standard']) hp = hp.append('variation[]', v);
   for (const c of params.mainCosts ?? []) hp = hp.append('mainCost[]', String(c));
   for (const c of params.recallCosts ?? []) hp = hp.append('recallCost[]', String(c));
+  for (const c of params.forestPowers ?? []) hp = hp.append('forestPower[]', String(c));
+  for (const c of params.mountainPowers ?? []) hp = hp.append('mountainPower[]', String(c));
+  for (const c of params.oceanPowers ?? []) hp = hp.append('oceanPower[]', String(c));
+  for (const k of params.keywords ?? []) hp = hp.append('effectKeyword[]', k);
+  // Several keywords: all of them (the site's search does the same).
+  if ((params.keywords?.length ?? 0) > 1) hp = hp.set('effectKeywordMode', 'and');
+  for (const t of params.subtypes ?? []) hp = hp.append('subTypes[]', t);
+  if (params.costRelation) hp = hp.set('costRelation', params.costRelation);
 
 
   if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');

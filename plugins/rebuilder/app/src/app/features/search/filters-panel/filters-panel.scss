@@ -85,3 +85,26 @@
   flex-direction: column;
   gap: var(--ar-space-2);
 }
+.adv-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+  margin-top: var(--ar-space-3);
+}
+.adv-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-1-5);
+}
+.adv-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ar-space-2);
+}
+.three ::ng-deep .label {
+  font-weight: 600;
+}

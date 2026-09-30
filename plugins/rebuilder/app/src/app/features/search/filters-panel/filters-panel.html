@@ -91,6 +91,43 @@
       <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
         <ar-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
         <ar-chip shape="square" label="Effet d’écho" i18n-label="@@search.filters.chip.echo" [selected]="value().echo" (selectedChange)="set({ echo: $event })" />
+        <ar-chip shape="square" label="Alt arts" i18n-label="@@search.filters.chip.altArts" [selected]="value().altArts" (selectedChange)="setAltArts($event)" />
+      </div>
+      <div class="adv-body">
+        @if (!factionFilter()) {
+          <div class="adv-field">
+            <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
+            <div class="types" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
+              @for (f of factions; track f.code) {
+                <ar-chip [label]="f.name" [dot]="f.color" [selected]="value().otherFactions.includes(f.code)" (selectedChange)="toggleOtherFaction(f.code, $event)" />
+              }
+            </div>
+          </div>
+        }
+        <div class="three">
+          <ar-input label="Forêt" i18n-label="@@ui.terrain.forest" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().forest" [value]="value().forestPower" (valueChange)="set({ forestPower: $event })" />
+          <ar-input label="Montagne" i18n-label="@@ui.terrain.mountain" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().mountain" [value]="value().mountainPower" (valueChange)="set({ mountainPower: $event })" />
+          <ar-input label="Océan" i18n-label="@@ui.terrain.ocean" placeholder="3, 1-3, <4" inputmode="text" [invalid]="powerInvalid().ocean" [value]="value().oceanPower" (valueChange)="set({ oceanPower: $event })" />
+        </div>
+        @if (value().altArts && promoOptions().length) {
+          <div class="adv-field">
+            <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
+            <div class="types" role="group" aria-label="Éditions promo" i18n-aria-label="@@search.filters.promoEditions">
+              @for (p of promoOptions(); track p.code) {
+                <ar-chip shape="square" [label]="p.label" [selected]="value().promoSets.includes(p.code)" (selectedChange)="togglePromo(p.code, $event)" />
+              }
+            </div>
+          </div>
+        }
+        <div class="adv-field">
+          <span class="adv-label" i18n="@@search.filters.keyword">Mot-clé</span>
+          <ar-combobox [options]="keywordOptions" [values]="picked(keywordOptions, value().keywords)" (valuesChange)="set({ keywords: codes($event, keywordOptions) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
+        </div>
+        <div class="adv-field">
+          <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
+          <ar-combobox [options]="subtypeOptions" [values]="picked(subtypeOptions, value().subtypes)" (valuesChange)="set({ subtypes: codes($event, subtypeOptions) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
+        </div>
+        <ar-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
       </div>
     }
   </div>
