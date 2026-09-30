@@ -4,6 +4,7 @@ import { LocationStrategy, NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
+import { PageTitle } from '../../../core/page-title';
 import { DeckStore } from '../../../core/deck-store';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
@@ -119,6 +120,16 @@ export class DeckPage {
     effect(() => {
       const id = this.id();
       if (id) untracked(() => this.deck.load(id));
+    });
+    // The deck's name as the page title (as on the site's deck page), over the route's « Deck ». After the route's own
+    // title, which the router sets at the end of the navigation (tab change).
+    const pageTitle = inject(PageTitle);
+    effect((onCleanup) => {
+      const name = this.deck.deckId() === this.id() && !this.deck.loading() ? this.deck.name() : '';
+      this.tab();
+      if (!name) return;
+      const timer = setTimeout(() => pageTitle.set(name));
+      onCleanup(() => clearTimeout(timer));
     });
   }
 

@@ -17,7 +17,8 @@ const signIn: CanActivateFn = () => {
  * Re:Builder's decks section on the site page `/pages/rebuilder/` (the base href): decks list
  * (mine / community), deck page, new deck and editor. The site's own decks pages and deck builder
  * stay as they are.
- * `?id=` opens a deck in the editor, like the site's deck builder links.
+ * `?id=` opens a deck in the editor, like the site's deck builder links; `deck?id=` its page, like the site's deck page links
+ * (`/pages/deck?id=`: shared links, QR codes).
  */
 export const embedRoutes: Routes = [
   {
@@ -26,6 +27,14 @@ export const embedRoutes: Routes = [
     redirectTo: ({ queryParams }) => {
       const id = queryParams['id'];
       return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}/edit` : '/decks');
+    },
+  },
+  {
+    path: 'deck',
+    pathMatch: 'full',
+    redirectTo: ({ queryParams }) => {
+      const id = queryParams['id'];
+      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}` : '/decks');
     },
   },
   {

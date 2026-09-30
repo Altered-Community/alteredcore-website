@@ -74,6 +74,12 @@ if ($_pluginPage !== null) {
     if ($_pluginPage['type'] === 'spa') {
         $_pluginPage['sub_path'] = $_subPath;
         $pageFullwidth = $_pluginPage['fullwidth'];
+        // Manifest `meta`: title and link preview of the client route ($subPath), set before the header.
+        if (!empty($_pluginPage['meta_file'])) {
+            (function (string $subPath) use (&$pageTitle, &$pageDescription, &$pageImage, $_pluginPage) {
+                include $_pluginPage['meta_file'];
+            })((string)$_subPath);
+        }
         spaRenderPage($_pluginPage);
     } else {
         include $_pluginPage['abs_file'];

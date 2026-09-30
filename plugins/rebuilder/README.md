@@ -9,6 +9,7 @@ unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Dec
 | Path | Content |
 |---|---|
 | `plugin.json` | Manifest v2: SPA page, API endpoints, menu entry, build and e2e declarations |
+| `meta.php` | Manifest `meta`: the deck's name as page title and link preview (`og:title`) on `decks/{id}` |
 | `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
 | `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
@@ -38,6 +39,7 @@ The base href is `/pages/rebuilder/`:
 | `/pages/rebuilder/decks/new` | New deck (hero, format, visibility) |
 | `/pages/rebuilder/decks/{id}/edit` | Editor (card search and filters, deck list, validation, statistics, settings), preview |
 | `/pages/rebuilder?id={id}` | Redirects to the editor (same link format as the site's deck builder) |
+| `/pages/rebuilder/deck?id={id}` | Redirects to the deck page (same link format as the site's deck page) |
 
 Signed in, decks are listed, created and saved on the decks API through the site's relay
 (`/api/v1/services/decks`), which adds the Keycloak token of the PHP session server-side: the browser

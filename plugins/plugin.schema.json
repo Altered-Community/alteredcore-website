@@ -88,6 +88,10 @@
           "fullwidth": {
             "type": "boolean",
             "description": "Full-width layout (default true for spa pages, false for php pages)."
+                },
+                "meta": {
+                    "type": "string",
+                    "description": "spa: PHP file, relative to the plugin, included before the site header with $subPath (client route under /pages/{slug}/) in scope; it may set $pageTitle, $pageDescription and $pageImage (title and link previews of a client route)."
           }
         },
         "allOf": [

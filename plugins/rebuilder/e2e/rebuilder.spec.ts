@@ -502,6 +502,17 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ar-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
   });
 
+  test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {
+    const res = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await res.json()) as { member: { id: string; name: string }[] }).member[0];
+    // Server-rendered for link previews (manifest `meta`), then kept by the app.
+    const html = await (await page.request.get(`${DECKS}/${deck.id}?lang=fr`)).text();
+    expect(html).toContain(`<meta property="og:title"       content="${deck.name.replace(/&/g, '&amp;')} —`);
+    await page.goto(`/pages/rebuilder/deck?id=${deck.id}&lang=fr`);
+    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}$`));
+    await expect(page).toHaveTitle(new RegExp(`^${deck.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} —`));
+  });
+
   test('tells an unknown deck apart', async ({ page }, testInfo) => {
     await page.goto(`${DECKS}/00000000-0000-0000-0000-000000000000?lang=fr`);
     await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
