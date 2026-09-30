@@ -20,6 +20,7 @@ import { ArDeckCard, FACTIONS } from '../../../ui/metier';
 import { ArAppBar, ArTabs } from '../../../ui/nav';
 import { ArOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
+import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
@@ -451,6 +452,11 @@ export class DecksPage {
       if (this.auth.isLoggedIn()) this.serverRes.reload();
       if (res?.deckId) void this.router.navigate(['/decks', res.deckId]);
     });
+  }
+
+  /** « Non légal » on a deck tile: the deck's rules window, as on the site's decks page. */
+  protected showLegality(deck: DeckListItem): void {
+    openLegalityDetails(this.overlay, { format: deck.formatLabel, legality: deck.legality });
   }
 
   protected openFilters(): void {

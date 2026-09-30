@@ -583,6 +583,9 @@
     "ui.saveStatus.error": "Not saved",
     "decks.page.sortUpdatedAsc": "Oldest updated",
     "decks.page.sortCreatedAsc": "Oldest created",
-    "decks.page.sortNameDesc": "Name Z→A"
+    "decks.page.sortNameDesc": "Name Z→A",
+    "ui.deckCard.draft": "Draft",
+    "ui.deckCard.illegal": "Not legal",
+    "ui.deckCard.illegalRules": "Not legal: see the details of {$name}"
   }
 }

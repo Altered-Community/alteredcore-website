@@ -10,6 +10,8 @@ const item = (p: Partial<DeckListItem>): DeckListItem => ({
   formatLabel: 'Standard All Uniques',
   formatTone: 'blue',
   legal: true,
+  legality: { state: 'legal', rules: [], errors: [] },
+  draft: false,
   isPublic: p.isPublic ?? false,
   author: null,
   total: 39,

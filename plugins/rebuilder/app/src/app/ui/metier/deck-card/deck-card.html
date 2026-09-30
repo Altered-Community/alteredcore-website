@@ -6,15 +6,11 @@
       <span class="ph ar-hatch"></span>
     }
     @if (layout() === 'grid') {
-      <span class="badges">
-        <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
-        @if (variant() !== 'community' && deck().legal) {
-          <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
-        }
-        @if (deck().winner) {
-          <ar-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ar-badge>
-        }
-      </span>
+      @if (!illegal()) {
+        <span class="badges">
+          <ng-container *ngTemplateOutlet="gridBadges" />
+        </span>
+      }
       @if (variant() === 'mine') {
         <span class="vis" [title]="deck().isPublic ? publicLabel : privateLabel"><ar-icon [name]="deck().isPublic ? 'eye' : 'lock'" [size]="14" /></span>
       }
@@ -39,6 +35,9 @@
         @if (variant() !== 'community' && deck().legal) {
           <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
         }
+        @if (showDraft()) {
+          <ar-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ar-badge>
+        }
         @if (deck().winner) {
           <ar-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ar-badge>
         }
@@ -61,4 +60,32 @@
 </a>
 @if (variant() === 'community') {
   <button arLikeButton class="like" [count]="deck().likes" [liked]="deck().liked" [ariaLabel]="likeLabel()" (click)="likeToggle.emit()"></button>
+}
+
+<ng-template #gridBadges>
+  <ar-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ar-badge>
+  @if (variant() !== 'community' && deck().legal) {
+    <ar-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ar-badge>
+  }
+  @if (showDraft()) {
+    <ar-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ar-badge>
+  }
+  @if (deck().winner) {
+    <ar-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ar-badge>
+  }
+</ng-template>
+<!-- « Non légal » opens the rules window: a button, so it sits outside the link, over the same spot. -->
+@if (illegal()) {
+  @if (layout() === 'grid') {
+    <span class="badges badges--over">
+      <ng-container *ngTemplateOutlet="gridBadges" />
+      <button type="button" class="illegal" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+        <ar-badge tone="orange" icon="alert" i18n="@@ui.deckCard.illegal">Non légal</ar-badge>
+      </button>
+    </span>
+  } @else {
+    <button type="button" class="illegal illegal--row" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+      <ar-badge tone="orange" icon="alert" i18n="@@ui.deckCard.illegal">Non légal</ar-badge>
+    </button>
+  }
 }

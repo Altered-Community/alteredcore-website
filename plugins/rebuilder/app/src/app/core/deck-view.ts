@@ -2,6 +2,7 @@ import { isUniqueReference } from './card-art';
 import { echoText } from './card-text';
 import { computeDeckStatus, rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
 import { formatInfo } from './formats';
+import { type DeckLegality, legalityFromApi, legalityFromStatus } from './deck-legality';
 import type { Card, Deck, DeckCardLine, DeckFormat, DeckHero, HydratedLine } from './models';
 import { deckLines, localizedText } from './models';
 import { contentLocale } from './locale';
@@ -115,6 +116,10 @@ export interface DeckListItem {
   formatLabel: string;
   formatTone: 'blue' | 'violet' | 'neutral';
   legal: boolean;
+  /** Verdict and failed rules (the decks API's, or computed for a guest deck), for the « Non légal » badge's window. */
+  legality: DeckLegality;
+  /** `isDraft` of the decks API. */
+  draft: boolean;
   isPublic: boolean;
   /** Owner's username, when the API exposes it. */
   author: string | null;
@@ -143,9 +148,11 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     ? lines.filter((l) => !isHeroLine(l, hero)).reduce((n, l) => n + l.quantity, 0)
     : deck.stats?.totalCards ?? rarity.C + rarity.R + rarity.U + rarity.E;
   const info = formatInfo(deck.format);
-  const legal = deck.legal ?? (lines.length
-    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero).legal
-    : false);
+  const status = deck.legal == null && lines.length
+    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero)
+    : null;
+  const legal = deck.legal ?? status?.legal ?? false;
+  const legality = legalityFromApi(deck) ?? (status ? legalityFromStatus(status, !!hero) : { state: 'unknown' as const, rules: [], errors: [] });
   return {
     id: deck.id,
     name: deck.name || $localize`:@@core.deck.untitled:Sans nom`,
@@ -154,6 +161,8 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     formatLabel: info.label,
     formatTone: info.badgeTone,
     legal: !!legal && !!hero,
+    legality,
+    draft: deck.isDraft === true,
     isPublic: !!deck.isPublic,
     author: authorOf(deck),
     total,

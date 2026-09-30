@@ -76,7 +76,7 @@
 
   <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()">
     @for (d of list(); track d.id) {
-      <ar-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" />
+      <ar-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
     }
     @if (tab() === 'mine' && !bp.compact()) {
       <button type="button" class="new-tile" (click)="newDeck()" i18n="@@decks.page.newDeckTile">

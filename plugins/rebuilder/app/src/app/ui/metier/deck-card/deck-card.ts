@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { factionSrc } from '../../../core/assets';
 import { relativeTime } from '../../../core/relative-time';
@@ -11,13 +12,13 @@ import { factionName } from '../factions';
 
 /**
  * Deck in the deck list: grid card (expanded) or row (compact).
- * `mine`: visibility, legality, card count and rarities. `community`: author, last update and like count instead (every listed deck is public
+ * `mine`: visibility, legality (« Non légal » opens the rules: `legalityClick`), draft, card count and rarities. `community`: author, last update and like count instead (every listed deck is public
  * and legal); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
  * on the winners of the Starter Deck Contest.
  */
 @Component({
   selector: 'ar-deck-card',
-  imports: [RouterLink, ArCardArt, ArBadge, ArIcon, ArRaritySummary, ArLikeButton],
+  imports: [NgTemplateOutlet, RouterLink, ArCardArt, ArBadge, ArIcon, ArRaritySummary, ArLikeButton],
   host: { '[class]': "'ar-deck-card--' + layout()" },
   templateUrl: './deck-card.html',
   styleUrl: './deck-card.scss',
@@ -27,6 +28,12 @@ export class ArDeckCard {
   readonly layout = input<'grid' | 'row'>('grid');
   readonly variant = input<'mine' | 'community' | 'contest'>('mine');
   readonly likeToggle = output<void>();
+  /** « Non légal » badge clicked: the page opens the deck's rules window. */
+  readonly legalityClick = output<void>();
+  /** Failed rules known (as on the site's decks page: no badge when the API gives no reason). */
+  protected readonly illegal = computed(() => this.variant() !== 'community' && this.deck().legality.state === 'illegal');
+  protected readonly showDraft = computed(() => this.variant() === 'mine' && this.deck().draft);
+  protected readonly illegalLabel = computed(() => $localize`:@@ui.deckCard.illegalRules:Non légal : voir le détail de ${this.deck().name}:name:`);
   protected readonly link = computed(() => ['/decks', this.deck().id]);
   protected readonly factionLogo = computed(() => factionSrc(this.deck().hero?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck().hero?.faction));
