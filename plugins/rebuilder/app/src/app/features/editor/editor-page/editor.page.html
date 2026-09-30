@@ -60,7 +60,7 @@
       @let view = effectiveView();
       @switch (view) {
         @case ('search') {
-          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [ready]="!deck.loading()" />
+          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.loading()" />
         }
         @case ('apercu') {
           <app-deck-preview />

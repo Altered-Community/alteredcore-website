@@ -1,4 +1,4 @@
-import { DECK_SIZE, addBlockedReason, computeDeckStatus, heroKey, maxCopiesFor, rarityCountsFromRefs, uniqueLimit } from './deck-rules';
+import { DECK_SIZE, addBlockedReason, allowedInFormat, computeDeckStatus, heroKey, maxCopiesFor, rarityCountsFromRefs, uniqueLimit } from './deck-rules';
 import { formatInfo } from './formats';
 import type { Card, HydratedLine } from './models';
 import { rarityFromReference } from './models';
@@ -194,5 +194,18 @@ describe('sets missing from BGA and the Frontier list', () => {
     expect(frontier.violations['ALT_CORE_B_AX_04_U_12']).toContain('frontierUniques');
     expect(frontier.violations['ALT_CORE_B_AX_05_U_3']).toBeUndefined();
     expect(computeDeckStatus(lines, 'standard', null, data).rules).not.toContain('frontierUniques');
+  });
+});
+
+describe('allowedInFormat (Favoris « légales »)', () => {
+  const card = (reference: string, extra: Partial<Card> = {}) => ({ reference, name: reference, ...extra }) as Card;
+  it('drops Uniques in a No Unique format, banned and suspended cards where forbidden, sets missing from BGA', () => {
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1'), 'nuc')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_U_123'), 'nuc')).toBe(false);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_U_123'), 'standard')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isBanned: true }), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isBanned: true }), 'sandbox')).toBe(true);
+    expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isSuspended: true }), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_FUGUE_B_AX_08_C'), 'standard')).toBe(false);
   });
 });

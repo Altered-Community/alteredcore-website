@@ -255,6 +255,19 @@ export function maxCopiesFor(card: Card, format: DeckFormat = 'standard'): numbe
   return limits.copyMax;
 }
 
+/**
+ * Whether the format lets `card` in at all, whatever the deck: its set (BGA), no Unique in a No Unique format, no
+ * banned or suspended card where they are forbidden. Frontier's list of Uniques is not checked here (it takes the
+ * Uniques search API).
+ */
+export function allowedInFormat(card: Card, format: DeckFormat): boolean {
+  const limits = formatInfo(format);
+  if (!setAllowed(card.reference.split('_')[1] ?? '', limits)) return false;
+  if (maxCopiesFor(card, format) === 0) return false;
+  if (card.isBanned && !limits.allowBanned) return false;
+  return !(card.isSuspended && !limits.allowSuspended);
+}
+
 /** Why a card cannot be added at all in this format (`maxCopiesFor` is 0), else `null`. */
 export function addBlockedReason(card: Card, format: DeckFormat = 'standard'): string | null {
   if (maxCopiesFor(card, format) > 0) return null;

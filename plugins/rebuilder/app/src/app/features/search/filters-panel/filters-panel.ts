@@ -1,6 +1,8 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
-import { COST_RELATIONS, RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { COST_RELATIONS, TYPE_OPTIONS, rarityOptionsFor, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
+import { formatInfo } from '../../../core/formats';
+import type { DeckFormat } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
@@ -20,12 +22,15 @@ import { ArEffectSummary, ArExtensionTile, FACTIONS } from '../../../ui/metier';
 export class FiltersPanel {
   readonly source = input<CardSource>('all');
   readonly mode = input<'aside' | 'sheet'>('aside');
+  /** Editor: the deck's format, for the « légales » filter of Favoris. */
+  readonly format = input<DeckFormat | null>(null);
   /** Card browser only: the editor locks the faction to the hero's. */
   readonly factionFilter = input(false);
   readonly value = model.required<SearchFilters>();
   readonly editEffect = output<number>();
 
-  protected readonly rarities = RARITY_OPTIONS.map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short }));
+  protected readonly rarities = computed(() => rarityOptionsFor(this.source()).map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
+  protected readonly legalLabel = computed(() => $localize`:@@search.filters.legalOnly:Légales en ${formatInfo(this.format()).label}:format:`);
   protected readonly types = TYPE_OPTIONS;
   protected readonly factions = FACTIONS;
   protected readonly environments = [

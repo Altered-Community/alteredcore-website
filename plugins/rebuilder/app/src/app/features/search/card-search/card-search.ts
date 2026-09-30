@@ -5,7 +5,7 @@ import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
-import type { CardOrder } from '../../../core/models';
+import type { CardOrder, DeckFormat } from '../../../core/models';
 import { ArButton, ArIconButton } from '../../../ui/buttons';
 import { ArCount, ArFilterBar } from '../../../ui/chips';
 import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
@@ -56,6 +56,8 @@ export class CardSearch {
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
   readonly faction = input<string | null>(null);
+  /** Editor: the deck's format (Favoris show the cards it allows by default). */
+  readonly format = input<DeckFormat | null>(null);
   /** False while the host is still loading what `faction` depends on. */
   readonly ready = input(true);
   /** Card browser: faction filter, no quantity controls on the cards. */
@@ -102,10 +104,11 @@ export class CardSearch {
     effect(() => {
       const source = this.source();
       const faction = this.faction();
+      const format = this.format();
       if (!this.ready()) return;
       untracked(() => {
-        if (source !== this.search.source() || faction !== this.search.faction() || (this.search.page() === 0 && !this.search.loading())) {
-          this.search.configure(source, faction);
+        if (source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
+          this.search.configure(source, faction, format);
           this.draft.set(this.search.filters());
         }
       });
@@ -187,6 +190,7 @@ export class CardSearch {
     openFiltersSheet(this.overlay, {
       source: this.search.source(),
       faction: this.search.faction(),
+      format: this.search.format(),
       filters: this.search.filters(),
       factionFilter: this.browse(),
     }).afterClosed.subscribe((f) => {

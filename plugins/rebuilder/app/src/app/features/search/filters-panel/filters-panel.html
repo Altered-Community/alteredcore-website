@@ -82,8 +82,16 @@
   </ar-filter-section>
 } @else {
   <ar-filter-section title="Rareté" i18n-title="@@search.filters.rarity">
-    <ar-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
+    <ar-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
   </ar-filter-section>
+
+  @if (source() === 'favorites' && format()) {
+    <ar-filter-section title="Format" i18n-title="@@search.filters.format">
+      <div class="types">
+        <ar-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
+      </div>
+    </ar-filter-section>
+  }
 
   <ar-filter-section title="Type" i18n-title="@@search.filters.type">
     <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">

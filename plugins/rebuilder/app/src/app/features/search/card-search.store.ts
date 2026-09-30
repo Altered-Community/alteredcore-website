@@ -11,7 +11,8 @@ import {
   type CardSource,
   type SearchFilters,
 } from '../../core/card-filters';
-import type { Card } from '../../core/models';
+import type { Card, DeckFormat } from '../../core/models';
+import { allowedInFormat } from '../../core/deck-rules';
 import { UniquesApiService } from '../../core/uniques-api.service';
 import { OwnedCardsService } from '../../core/owned-cards.service';
 import { AuthSession } from '../../core/auth-session';
@@ -27,6 +28,8 @@ const LOGIN_ONLY: readonly CardSource[] = ['collection', 'owned', 'favorites'];
 interface SearchQuery {
   source: CardSource;
   faction: string | null;
+  /** The deck's format in the editor (Favoris: « légales »), `null` on the card browser. */
+  format: DeckFormat | null;
   filters: SearchFilters;
   /** Bumped by `restart()` so that applying the same filters still refetches from page 1. */
   run: number;
@@ -85,6 +88,7 @@ export class CardSearchStore {
 
   readonly source = signal<CardSource>('all');
   readonly faction = signal<string | null>(null);
+  readonly format = signal<DeckFormat | null>(null);
   readonly filters = signal<SearchFilters>(defaultFilters('all'));
   private readonly run = signal(0);
   private readonly wantMore = signal(false);
@@ -92,6 +96,7 @@ export class CardSearchStore {
   private readonly query = computed<SearchQuery>(() => ({
     source: this.source(),
     faction: this.faction(),
+    format: this.format(),
     filters: this.filters(),
     run: this.run(),
   }));
@@ -162,10 +167,11 @@ export class CardSearchStore {
     });
   }
 
-  configure(source: CardSource, faction: string | null): void {
+  configure(source: CardSource, faction: string | null, format: DeckFormat | null = null): void {
     const changedSource = source !== this.source();
     this.source.set(source);
     this.faction.set(faction);
+    this.format.set(format);
     if (changedSource) this.filters.set(defaultFilters(source));
     this.restart();
   }
@@ -221,9 +227,14 @@ export class CardSearchStore {
     const page = request.from ?? 1;
     if (query.source === 'collection' || query.source === 'owned' || query.source === 'favorites') {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
-      return this.owned
-        .search(query.source, query.filters, factions, page, size)
-        .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));
+      // Favoris « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
+      const format = query.source === 'favorites' && query.filters.legalOnly ? query.format : null;
+      return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
+        map((res): ResultPage => {
+          const member = format ? res.member.filter((c) => allowedInFormat(c, format)) : res.member;
+          return { member, totalItems: res.totalItems - (res.member.length - member.length), next: page < res.lastPage ? page + 1 : null };
+        }),
+      );
     }
     return this.api
       .search(toSearchParams(query.filters, query.faction, page, size))

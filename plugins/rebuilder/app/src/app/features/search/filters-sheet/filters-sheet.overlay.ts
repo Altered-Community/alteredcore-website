@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { defaultFilters, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import type { DeckFormat } from '../../../core/models';
 import { ArButton } from '../../../ui/buttons';
 import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
 import { openEffectEditorStep } from '../effect-editor/effect-editor.overlay';
@@ -8,6 +9,7 @@ import { FiltersPanel } from '../filters-panel/filters-panel';
 export interface FiltersSheetData {
   source: CardSource;
   faction: string | null;
+  format?: DeckFormat | null;
   filters: SearchFilters;
   factionFilter?: boolean;
 }

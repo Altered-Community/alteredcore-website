@@ -47,6 +47,8 @@ export interface SearchFilters {
   /** « Alt arts »: every printing, and the promo editions of the chosen sets (`promoSets`). */
   altArts: boolean;
   promoSets: string[];
+  /** Favoris in the editor: only the cards the deck's format allows (`allowedInFormat`). */
+  legalOnly: boolean;
   /** Editor: « Changer de faction », searched instead of the hero's faction. */
   otherFactions: string[];
 }
@@ -86,6 +88,13 @@ export const RARITY_OPTIONS = [
   { value: 'RARE', short: 'R', label: $localize`:@@search.filters.rarity.rare:Rare`, icon: assetUrl('assets/icons/rarete-rare.png') },
   { value: 'EXALTED', short: 'E', label: $localize`:@@search.filters.rarity.exalted:Exaltée`, icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
+
+/** The Favoris tab also lists the favorite Uniques. */
+export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@search.filters.rarity.unique:Unique`, icon: assetUrl('assets/icons/rarete-unique.png') };
+
+export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
+  return source === 'favorites' ? [...RARITY_OPTIONS, UNIQUE_RARITY] : RARITY_OPTIONS;
+}
 
 export const TYPE_OPTIONS = [
   { value: 'CHARACTER', label: $localize`:@@search.filters.type.character:Personnage` },
@@ -133,7 +142,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     mainCost: '',
     recallCost: '',
     sets: source === 'uniques' ? [...UNIQUES_SETS] : ALL_CARDS_SETS.filter((s) => s !== 'FUGUE'),
-    rarities: source === 'uniques' ? [] : RARITY_OPTIONS.map((r) => r.value),
+    rarities: source === 'uniques' ? [] : rarityOptionsFor(source).map((r) => r.value),
     types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
     factions: [],
     environment: 'all',
@@ -148,6 +157,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     altArts: false,
     promoSets: [],
     otherFactions: [],
+    legalOnly: true,
   };
 }
 
@@ -274,7 +284,7 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   if (source !== 'uniques' && filters.rarities.length) {
     chips.push({
       id: 'rarities',
-      label: RARITY_OPTIONS.filter((r) => filters.rarities.includes(r.value)).map((r) => r.short).join(' · '),
+      label: rarityOptionsFor(source).filter((r) => filters.rarities.includes(r.value)).map((r) => r.short).join(' · '),
     });
   }
   if (source !== 'uniques' && filters.types.length) {

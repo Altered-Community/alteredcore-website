@@ -1,10 +1,11 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { map, type Observable } from 'rxjs';
+import { map, of, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { RARITY_OPTIONS, parseCostExpression, type SearchFilters } from './card-filters';
+import { RARITY_OPTIONS, parseCostExpression, rarityOptionsFor, type SearchFilters } from './card-filters';
+import { formatInfo } from './formats';
 import { contentLocale } from './locale';
-import type { Card } from './models';
+import type { Card, DeckFormat } from './models';
 
 /** The card lists of the site's account tabs, as the site's deck builder: favorites, physical collection, digital ownership. */
 export type OwnedSource = 'favorites' | 'collection' | 'owned';
@@ -37,9 +38,10 @@ const ENDPOINT: Record<OwnedSource, string> = {
 export class OwnedCardsService {
   private readonly http = inject(HttpClient);
 
-  search(source: OwnedSource, filters: SearchFilters, factions: string[], page: number, itemsPerPage: number): Observable<OwnedPage> {
+  search(source: OwnedSource, filters: SearchFilters, factions: string[], page: number, itemsPerPage: number, format: DeckFormat | null = null): Observable<OwnedPage> {
+    if (source === 'favorites' && !favoriteRarities(filters, format).length) return of({ member: [], totalItems: 0, lastPage: 1 });
     const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/${ENDPOINT[source]}`;
-    return this.http.get<{ member?: (Card & CollectionItem)[]; totalItems?: number; lastPage?: number }>(url, { params: ownedParams(source, filters, factions, page, itemsPerPage) }).pipe(
+    return this.http.get<{ member?: (Card & CollectionItem)[]; totalItems?: number; lastPage?: number }>(url, { params: ownedParams(source, filters, factions, page, itemsPerPage, format) }).pipe(
       map((res) => ({
         member: (res.member ?? []).map((c) => (source === 'favorites' ? c : collectionCard(c))).filter((c) => !!c.reference),
         totalItems: res.totalItems ?? 0,
@@ -49,14 +51,22 @@ export class OwnedCardsService {
   }
 }
 
+/** Rarities of the Favoris tab: the chosen ones (all when none), without the Uniques in a No Unique format (« légales »). */
+export function favoriteRarities(f: SearchFilters, format: DeckFormat | null): string[] {
+  const picked = f.rarities.length ? f.rarities : rarityOptionsFor('favorites').map((r) => r.value);
+  return format && f.legalOnly && formatInfo(format).uniqueMax === 0 ? picked.filter((r) => r !== 'UNIQUE') : picked;
+}
+
 /** Query of each endpoint (their names differ: `faction[]` / `faction`, `set[]` / `cardSet`…). */
-export function ownedParams(source: OwnedSource, f: SearchFilters, factions: string[], page: number, itemsPerPage: number): HttpParams {
+export function ownedParams(source: OwnedSource, f: SearchFilters, factions: string[], page: number, itemsPerPage: number, format: DeckFormat | null = null): HttpParams {
   let p = new HttpParams().set('page', page).set('itemsPerPage', itemsPerPage).set('locale', contentLocale());
   const rarities = f.rarities.length ? f.rarities : RARITY_OPTIONS.map((r) => r.value);
   const add = (key: string, values: readonly string[]) => values.forEach((v) => (p = p.append(key, v)));
   if (source === 'favorites') {
     add('faction[]', factions);
-    add('rarity[]', rarities);
+    // Every rarity: no filter, so the stars saved without their rarity (older favorites) still show.
+    const picked = favoriteRarities(f, format);
+    if (picked.length < rarityOptionsFor('favorites').length) add('rarity[]', picked);
     add('set[]', f.sets);
     return p;
   }
