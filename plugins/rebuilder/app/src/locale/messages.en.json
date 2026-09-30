@@ -586,6 +586,8 @@
     "decks.page.sortNameDesc": "Name Z→A",
     "ui.deckCard.draft": "Draft",
     "ui.deckCard.illegal": "Not legal",
-    "ui.deckCard.illegalRules": "Not legal: see the details of {$name}"
+    "ui.deckCard.illegalRules": "Not legal: see the details of {$name}",
+    "ui.deckCard.viewsOne": "{$views} view",
+    "ui.deckCard.views": "{$views} views"
   }
 }

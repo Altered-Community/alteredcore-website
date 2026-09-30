@@ -82,6 +82,11 @@ a:hover {
   left: var(--ar-space-1-5);
   bottom: var(--ar-space-1-5);
 }
+/* The like button holds the bottom of the visual on community rows. */
+.illegal--top {
+  bottom: auto;
+  top: var(--ar-space-1-5);
+}
 .vis {
   position: absolute;
   right: var(--ar-space-2);
@@ -172,6 +177,14 @@ a:hover {
 .total {
   font-size: 13px;
   font-weight: 700;
+}
+.views {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ar-space-1);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ar-color-text-muted);
 }
 /* row layout (compact list) */
 :host(.ar-deck-card--row) a {

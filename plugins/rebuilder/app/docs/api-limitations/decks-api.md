@@ -42,21 +42,6 @@ statut : tant que le deck n'a pas changé depuis la vérification du serveur, `b
 
 **À faire côté backend.** Renvoyer `isBanned` et `isSuspended` sur la ligne, comme `/api/cards`.
 
-## Pas de filtre de légalité sur la liste publique
-
-**Constat.** `/api/decks/public` ignore `legal=true` : `PublicDeckController` ne lit que `page`, `itemsPerPage`,
-`hero`, `cardName`, `cardReference`, `name`, `faction`, `format` et `order[…]`. Environ 4 % des decks publics sont
-illégaux.
-
-**Contournement.** L'onglet Communauté (`src/app/features/decks/community-pages.ts`) retire les decks où
-`legal` est faux, page par page. Conséquences : une page affiche parfois moins de 24 decks, et le total
-« N decks » (`totalItems` moins les decks retirés jusque-là) reste surestimé tant que toutes les pages ne sont pas
-chargées.
-
-**À faire côté backend.** Paramètre `legal` dans `PublicDeckController` et condition `AND d.legal = true` dans
-`DeckRepository::buildPublicFilters` (utilisée à la fois par `findPublic` et `countPublic`). Retirer ensuite le
-filtre client.
-
 ## Une seule faction sur la liste publique
 
 **Constat.** `/api/decks/public` prend un seul `faction` : pas de liste de factions.

@@ -134,16 +134,19 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.getByRole('tab', { name: 'Communauté' }).click();
     await listed;
     await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\?(.*&)?tab=community/);
-    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1.
+    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows every deck of page 1, the illegal ones flagged.
     const res = await page.request.get('/api/v1/services/decks/api/decks/public', {
       params: { page: 1, itemsPerPage: 24, 'order[updatedAt]': 'desc' },
       headers: { Accept: 'application/json' },
     });
     expect(res.status()).toBe(200);
-    const legal = ((await res.json()) as { member: { legal: boolean }[] }).member.filter((d) => d.legal).length;
-    expect(legal).toBeGreaterThan(0);
+    const members = ((await res.json()) as { member: { legal: boolean; formatErrors?: string[] }[] }).member;
+    expect(members.length).toBeGreaterThan(0);
     const list = page.getByRole('list', { name: 'Decks de la communauté' });
-    await expect(list.locator('ar-deck-card')).toHaveCount(legal);
+    await expect(list.locator('ar-deck-card').nth(members.length - 1)).toBeAttached();
+    if (members.some((d) => !d.legal && d.formatErrors?.length)) {
+      await expect(page.getByRole('button', { name: /^Non légal : voir le détail de/ }).first()).toBeAttached();
+    }
     await evidence(page, testInfo, '05-community');
 
     // Someone else's deck (seeded as bob): no « Modifier » nor « Supprimer », « Dupliquer » stays.

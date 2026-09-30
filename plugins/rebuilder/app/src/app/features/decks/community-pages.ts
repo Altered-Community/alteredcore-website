@@ -12,14 +12,13 @@ export type CommunityQuery = PublicDeckQuery & { factions?: string[] };
 
 export interface CommunityState {
   items: DeckListItem[];
-  /** API total minus the illegal decks dropped from the pages loaded so far; `null` when unknown (several factions). */
+  /** API total; `null` when unknown (several factions). */
   total: number | null;
-  dropped: number;
   page: number;
   lastPage: number;
 }
 
-export const EMPTY_COMMUNITY: CommunityState = { items: [], total: null, dropped: 0, page: 0, lastPage: 1 };
+export const EMPTY_COMMUNITY: CommunityState = { items: [], total: null, page: 0, lastPage: 1 };
 
 const API_ORDER: Record<DeckSort, Pick<PublicDeckQuery, 'order' | 'dir'>> = {
   updated: { order: 'updatedAt', dir: 'desc' },
@@ -44,19 +43,16 @@ export function toCommunityQuery(f: DeckFilters): CommunityQuery {
   };
 }
 
-/** Adds a loaded page to the list of `query`. The API has no legality filter: illegal decks are dropped here (the server-computed `legal` flag). */
+/** Adds a loaded page to the list of `query`. Illegal decks stay, flagged on their tile (as on the site's decks page). */
 export function addCommunityPage(current: CommunityState, query: CommunityQuery | undefined, page: number, res: PublicDeckPage): CommunityState {
-  const members = res.member ?? [];
-  const legal = members.filter((d) => d.legal).map(toDeckListItem);
+  const members = (res.member ?? []).map(toDeckListItem);
   const factions = query?.factions;
-  const kept = factions ? legal.filter((d) => !!d.hero && factions.includes(d.hero.faction)) : legal;
-  const dropped = (page === 1 ? 0 : current.dropped) + members.length - legal.length;
+  const kept = factions ? members.filter((d) => !!d.hero && factions.includes(d.hero.faction)) : members;
   const seen = new Set(page === 1 ? [] : current.items.map((d) => d.id));
   const items = [...(page === 1 ? [] : current.items), ...kept.filter((d) => !seen.has(d.id))];
   return {
     items: query?.order === 'updatedAt' && query.dir !== 'asc' ? byLastUpdate(items) : items,
-    dropped,
-    total: factions || res.totalItems == null ? null : res.totalItems - dropped,
+    total: factions || res.totalItems == null ? null : res.totalItems,
     page,
     lastPage: res.lastPage ?? page,
   };
