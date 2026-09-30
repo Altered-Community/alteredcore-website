@@ -207,5 +207,9 @@ describe('allowedInFormat (Favoris « légales »)', () => {
     expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isBanned: true }), 'sandbox')).toBe(true);
     expect(allowedInFormat(card('ALT_CORE_B_AX_08_R1', { isSuspended: true }), 'standard')).toBe(false);
     expect(allowedInFormat(card('ALT_FUGUE_B_AX_08_C'), 'standard')).toBe(false);
+    expect(allowedInFormat(card('ALT_CYCLONE_B_AX_66_U_97', { gameplayFormat: ['FRONTIER'] }), 'frontier')).toBe(true);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'frontier')).toBe(false);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'standard')).toBe(true);
+    expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3'), 'frontier')).toBe(true);
   });
 });

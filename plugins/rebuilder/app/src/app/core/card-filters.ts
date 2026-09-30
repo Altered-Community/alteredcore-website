@@ -82,6 +82,8 @@ export const CARD_SETS: readonly SetInfo[] = [
 
 export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'CORE'];
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
+/** Favoris also hold Uniques, among them the Kickstarter ones (COREKS). */
+export const FAVORITES_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 
 export const RARITY_OPTIONS = [
   { value: 'COMMON', short: 'C', label: $localize`:@@search.filters.rarity.common:Commune`, icon: assetUrl('assets/icons/rarete-commune.png') },
@@ -141,7 +143,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     q: '',
     mainCost: '',
     recallCost: '',
-    sets: source === 'uniques' ? [...UNIQUES_SETS] : ALL_CARDS_SETS.filter((s) => s !== 'FUGUE'),
+    sets: source === 'uniques' ? [...UNIQUES_SETS] : (source === 'favorites' ? FAVORITES_SETS : ALL_CARDS_SETS).filter((s) => s !== 'FUGUE'),
     rarities: source === 'uniques' ? [] : rarityOptionsFor(source).map((r) => r.value),
     types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
     factions: [],
@@ -167,7 +169,7 @@ export function promoSetsOf(sets: readonly string[]): string[] {
 }
 
 export function setsFor(source: CardSource): SetInfo[] {
-  const refs = source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS;
+  const refs = source === 'uniques' ? UNIQUES_SETS : source === 'favorites' ? FAVORITES_SETS : ALL_CARDS_SETS;
   return CARD_SETS.filter((s) => refs.includes(s.reference));
 }
 

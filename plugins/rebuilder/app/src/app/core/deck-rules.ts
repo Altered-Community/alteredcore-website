@@ -256,14 +256,15 @@ export function maxCopiesFor(card: Card, format: DeckFormat = 'standard'): numbe
 }
 
 /**
- * Whether the format lets `card` in at all, whatever the deck: its set (BGA), no Unique in a No Unique format, no
- * banned or suspended card where they are forbidden. Frontier's list of Uniques is not checked here (it takes the
- * Uniques search API).
+ * Whether the format lets `card` in at all, whatever the deck: its set (BGA), no Unique in a No Unique format, in
+ * Frontier only the Uniques of its list (`gameplayFormat`, kept when the card came without its data), no banned or
+ * suspended card where they are forbidden.
  */
 export function allowedInFormat(card: Card, format: DeckFormat): boolean {
   const limits = formatInfo(format);
   if (!setAllowed(card.reference.split('_')[1] ?? '', limits)) return false;
   if (maxCopiesFor(card, format) === 0) return false;
+  if (limits.frontierUniques && rarityOf(card) === 'UNIQUE' && card.gameplayFormat && !card.gameplayFormat.includes('FRONTIER')) return false;
   if (card.isBanned && !limits.allowBanned) return false;
   return !(card.isSuspended && !limits.allowSuspended);
 }

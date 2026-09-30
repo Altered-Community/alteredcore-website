@@ -66,6 +66,8 @@ export interface Card {
   isBanned?: boolean;
   isErrated?: boolean;
   isSuspended?: boolean;
+  /** Formats a Unique is played in (`['FRONTIER']` when it is on the Frontier list), from the cards API. */
+  gameplayFormat?: string[];
 }
 
 export interface CardCollection {
