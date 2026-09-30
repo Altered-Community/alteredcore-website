@@ -133,6 +133,11 @@
         });
     }
 
+    // Changing the copy split in a card-detail modal's alt-art widget (ownership plugin,
+    // only wired in Global mode) saves the global preference -- re-apply it to this deck
+    // too, same as after a card list change.
+    document.addEventListener('own:alt-art-preference-saved', autoApplyAltArtPreferences);
+
     function updateBrowserCardBadge(ref) {
         var wrap = elCards.querySelector('[data-ref="' + ref.replace(/"/g, '\\"') + '"]');
         if (!wrap) return;
