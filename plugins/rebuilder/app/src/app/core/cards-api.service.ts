@@ -106,7 +106,7 @@ function toHeroGroup(g: RawCardGroup): HeroGroup | null {
 }
 
 /** Many cards share a set date: without a unique tie-breaker, pages overlap and cards go missing. */
-/** Ties of a sort on a shared value (name, cost, power) go to the default order, as on the site. */
+/** Ties of a sort on a shared value (cost, power) go to the default order, as on the site. */
 const TIE_BREAK: [string, string][] = [['order[setDate]', 'desc'], ['order[collectorNumberFormatedId]', 'asc']];
 
 const ORDER_PARAM: Record<string, [string, string][]> = {
@@ -115,8 +115,6 @@ const ORDER_PARAM: Record<string, [string, string][]> = {
   'number-asc': [['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
   'collector-asc': [['order[collectorNumberFormatedId]', 'asc']],
   'collector-desc': [['order[collectorNumberFormatedId]', 'desc']],
-  'reference-asc': [['order[reference]', 'asc']],
-  'reference-desc': [['order[reference]', 'desc']],
   ...Object.fromEntries(
     ['mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'].flatMap((field) =>
       (['asc', 'desc'] as const).map((dir) => [`${field}-${dir}`, [[`order[${field}]`, dir], ...TIE_BREAK]]),
@@ -124,9 +122,8 @@ const ORDER_PARAM: Record<string, [string, string][]> = {
   ),
 };
 
-function orderParams(order: CardOrder, locale: string): [string, string][] {
+function orderParams(order: CardOrder): [string, string][] {
   if (order === 'random') return [['random', 'true']];
-  if (order === 'name-asc' || order === 'name-desc') return [[`order[name.${locale}]`, order === 'name-asc' ? 'asc' : 'desc'], ...TIE_BREAK];
   return ORDER_PARAM[order] ?? [];
 }
 
@@ -166,7 +163,7 @@ export function buildCardsSearchParams(params: CardSearchParams): HttpParams {
   if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
   if (params.hasEchoEffect) hp = hp.set('hasEchoEffect', 'true');
 
-  for (const [key, dir] of params.order ? orderParams(params.order, params.locale ?? 'en') : []) hp = hp.set(key, dir);
+  for (const [key, dir] of params.order ? orderParams(params.order) : []) hp = hp.set(key, dir);
   return hp;
 }
 
