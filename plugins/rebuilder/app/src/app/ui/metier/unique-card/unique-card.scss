@@ -21,6 +21,8 @@ $print-shadow: 0 card(5) card(10) var(--ar-card-ink);
   font-family: var(--ar-card-font);
   color: var(--ar-card-paper);
   line-height: 1;
+  /* Its own alignment: the tile opening the zoom is a <button>, which centers its text. */
+  text-align: left;
   /* Keeps the frame and the effect text above the illustration, without covering the tile’s controls. */
   isolation: isolate;
   /* The face is a fixed layer: scrolling the list repaints the page, not each glyph. */
