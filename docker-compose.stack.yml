@@ -6,7 +6,7 @@
 #
 # Site http://localhost:${WEB_PORT:-8080} · Keycloak http://auth.altered.local.gd:18080 (admin/admin,
 # users alice / bob, password TestPassword1234) · decks API http://localhost:8001
-# Cards and CDN are production (read-only).
+# Cards and CDN are production (read-only). Digital ownership is a mock (docker/stack/ownership-mock).
 services:
   web:
     # Named images: the CI builds them first (docker buildx bake, with a cache), then starts the
@@ -16,7 +16,7 @@ services:
       - .:/var/www/html
       - ./docker/stack/config.stack.php:/var/www/html/config.local.php:ro
     environment:
-      AC_ACTIVATE_PLUGINS: "core-altered-cards rebuilder"
+      AC_ACTIVATE_PLUGINS: "core-altered-cards rebuilder ownership"
       AC_STACK_SEED: "1"
     depends_on:
       db:
@@ -25,11 +25,26 @@ services:
         condition: service_healthy
       decks-api:
         condition: service_healthy
+      ownership:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost/pages/index"]
       interval: 5s
       timeout: 5s
       retries: 30
+
+  # Stand-in for AlteredOwnership (alt-art families, preferences, preference mode), reached by the
+  # site only (OWNERSHIP_API_URL); built on the production cards API.
+  ownership:
+    image: php:8.3-cli-alpine
+    command: ["php", "-S", "0.0.0.0:8080", "/app/index.php"]
+    volumes:
+      - ./docker/stack/ownership-mock:/app:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
