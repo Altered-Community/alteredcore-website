@@ -38,11 +38,10 @@ describe('parseCostExpression', () => {
 });
 
 describe('advanced filters (cards API)', () => {
-  it('sends powers, keywords (all of them), subtypes, cost relation, alt arts with promo editions, another faction', () => {
+  it('sends powers, subtypes, cost relation, alt arts with promo editions, another faction', () => {
     const f = {
       ...defaultFilters('all'),
       forestPower: '>=4',
-      keywords: ['ANCRE', 'AGUERRI'],
       subtypes: ['ANIMAL'],
       costRelation: 'mainHigher' as const,
       altArts: true,
@@ -50,11 +49,11 @@ describe('advanced filters (cards API)', () => {
       otherFactions: ['LY'],
     };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12], keywords: ['ANCRE', 'AGUERRI'], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
+    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
     expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
-    expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'keywords', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
+    expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
   });
 });
 

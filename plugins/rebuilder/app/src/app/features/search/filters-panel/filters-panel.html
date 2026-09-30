@@ -90,7 +90,6 @@
     @if (advancedOpen()) {
       <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
         <ar-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
-        <ar-chip shape="square" label="Effet d’écho" i18n-label="@@search.filters.chip.echo" [selected]="value().echo" (selectedChange)="set({ echo: $event })" />
         <ar-chip shape="square" label="Alt arts" i18n-label="@@search.filters.chip.altArts" [selected]="value().altArts" (selectedChange)="setAltArts($event)" />
       </div>
       <div class="adv-body">
@@ -120,12 +119,8 @@
           </div>
         }
         <div class="adv-field">
-          <span class="adv-label" i18n="@@search.filters.keyword">Mot-clé</span>
-          <ar-combobox [options]="keywordOptions" [values]="picked(keywordOptions, value().keywords)" (valuesChange)="set({ keywords: codes($event, keywordOptions) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
-        </div>
-        <div class="adv-field">
           <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
-          <ar-combobox [options]="subtypeOptions" [values]="picked(subtypeOptions, value().subtypes)" (valuesChange)="set({ subtypes: codes($event, subtypeOptions) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
+          <ar-combobox [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
         </div>
         <ar-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
       </div>

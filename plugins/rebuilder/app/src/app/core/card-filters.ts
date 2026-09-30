@@ -2,7 +2,7 @@ import type { CardOrder, CardSearchParams } from './models';
 import type { UniquesQuery } from './uniques-api.service';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
-import { KEYWORDS, PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
+import { PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
 
 export type CardSource = 'all' | 'uniques' | 'collection' | 'owned' | 'favorites';
 
@@ -34,13 +34,14 @@ export interface SearchFilters {
   order: CardOrder;
   /** Recherche avancée. */
   noEffect: boolean;
-  echo: boolean;
   /** Biome powers, same syntax as the costs (« 3 », « 1-3 », « 4+ », « <4 »…). */
   forestPower: string;
   mountainPower: string;
   oceanPower: string;
-  /** Effect keywords (all of them), subtypes (any of them). */
-  keywords: string[];
+  /**
+   * Subtypes (any of them). No keyword or echo filter: the cards API has almost no keyword on the cards and marks the
+   * echo effect on Uniques only (checked 2026-09-30, see docs/api-limitations/cards-api.md).
+   */
   subtypes: string[];
   costRelation: CostRelation;
   /** « Alt arts »: every printing, and the promo editions of the chosen sets (`promoSets`). */
@@ -139,11 +140,9 @@ export function defaultFilters(source: CardSource): SearchFilters {
     effects: [],
     order: 'setDate-desc',
     noEffect: false,
-    echo: false,
     forestPower: '',
     mountainPower: '',
     oceanPower: '',
-    keywords: [],
     subtypes: [],
     costRelation: '',
     altArts: false,
@@ -250,12 +249,10 @@ export function toSearchParams(
     forestPowers: parseCostExpression(filters.forestPower) ?? [],
     mountainPowers: parseCostExpression(filters.mountainPower) ?? [],
     oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
-    keywords: filters.keywords,
     subtypes: filters.subtypes,
     costRelation: filters.costRelation || undefined,
     order: filters.order,
     hasNoEffect: filters.noEffect || undefined,
-    hasEchoEffect: filters.echo || undefined,
   };
 }
 
@@ -293,7 +290,6 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
     power('forestPower', $localize`:@@ui.terrain.forest:Forêt`);
     power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
     power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
-    if (filters.keywords.length) chips.push({ id: 'keywords', label: filters.keywords.length === 1 ? termLabel(KEYWORDS.find((k) => k.code === filters.keywords[0]) ?? { code: '', fr: filters.keywords[0], en: filters.keywords[0] }) : $localize`:@@search.filters.chip.keywords:${filters.keywords.length}:count: mots-clés` });
     if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
     if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
     if (filters.altArts) chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
@@ -304,7 +300,6 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
       });
     }
   }
-  if (filters.echo) chips.push({ id: 'echo', label: $localize`:@@search.filters.chip.echo:Effet d’écho` });
   if (source === 'uniques') {
     chips.push({ id: 'environment', label: filters.environment === 'frontier' ? 'Frontier' : $localize`:@@search.filters.chip.allUniques:Toutes` });
     const n = filters.effects.filter((b) => b.triggers.length || b.conditions.length || b.effects.length).length;
@@ -335,14 +330,10 @@ export function removeChip(filters: SearchFilters, id: string): SearchFilters {
       return { ...filters, effects: [] };
     case 'noEffect':
       return { ...filters, noEffect: false };
-    case 'echo':
-      return { ...filters, echo: false };
     case 'forestPower':
     case 'mountainPower':
     case 'oceanPower':
       return { ...filters, [id]: '' };
-    case 'keywords':
-      return { ...filters, keywords: [] };
     case 'subtypes':
       return { ...filters, subtypes: [] };
     case 'costRelation':

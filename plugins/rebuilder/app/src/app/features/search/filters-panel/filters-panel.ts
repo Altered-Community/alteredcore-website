@@ -1,6 +1,6 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { COST_RELATIONS, RARITY_OPTIONS, TYPE_OPTIONS, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
-import { KEYWORDS, PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
+import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { ArButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
@@ -47,21 +47,18 @@ export class FiltersPanel {
     return { forest: parseCostExpression(v.forestPower) === null, mountain: parseCostExpression(v.mountainPower) === null, ocean: parseCostExpression(v.oceanPower) === null };
   });
   protected readonly costRelations = COST_RELATIONS;
-  protected readonly keywordOptions: ComboOption[] = KEYWORDS.map((k, id) => ({ id, text: termLabel(k) }));
   protected readonly subtypeOptions: ComboOption[] = SUBTYPES.map((k, id) => ({ id, text: termLabel(k) }));
   /** Promo editions of the chosen sets. */
   protected readonly promoOptions = computed(() =>
     PROMO_SETS.filter((p) => this.value().sets.includes(p.parent)).map((p) => ({ code: p.code, label: termLabel(p) })),
   );
 
-  protected picked(options: ComboOption[], codes: string[]): ComboOption[] {
-    const vocabulary = options === this.keywordOptions ? KEYWORDS : SUBTYPES;
-    return codes.map((c) => options[vocabulary.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);
+  protected picked(codes: string[]): ComboOption[] {
+    return codes.map((c) => this.subtypeOptions[SUBTYPES.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);
   }
 
-  protected codes(values: ComboOption[], options: ComboOption[]): string[] {
-    const vocabulary = options === this.keywordOptions ? KEYWORDS : SUBTYPES;
-    return values.map((v) => vocabulary[v.id]?.code).filter((c): c is string => !!c);
+  protected codes(values: ComboOption[]): string[] {
+    return values.map((v) => SUBTYPES[v.id]?.code).filter((c): c is string => !!c);
   }
 
   /** « Alt arts » on: every printing and the promo editions of the chosen sets (as on the site); off: back to standard. */

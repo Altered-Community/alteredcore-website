@@ -108,13 +108,10 @@ export interface CardSearchParams {
   forestPowers?: number[];
   mountainPowers?: number[];
   oceanPowers?: number[];
-  /** Effect keywords, all required. */
-  keywords?: string[];
   subtypes?: string[];
   costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
-  hasEchoEffect?: boolean;
   locale?: Locale;
 }
 

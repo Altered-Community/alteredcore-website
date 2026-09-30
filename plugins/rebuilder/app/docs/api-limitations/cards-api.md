@@ -52,3 +52,22 @@ quels.
 
 **À faire côté backend.** Déclarer le tri par nom localisé et par référence, et trier les valeurs vides en dernier
 (`NULLS LAST`) dans les deux sens.
+
+## Mots-clés et effet d'écho presque absents des données
+
+Constaté le 2026-09-30 sur `GET /api/cards` en production (raretés Commune, Rare, Exaltée, comme l'onglet
+« Toutes les cartes »).
+
+**Constat.**
+
+- Les mots-clés d'effet (`effect1.keywords`…) manquent sur la plupart des cartes : Récupérateur Axiom a
+  « [Ravitaillez] » dans son texte et aucun mot-clé, Ruche des Scarabots crée des Scarabots et ne porte que
+  « Fugace ». En Axiom, `effectKeyword[]=BRASSBUG` (Scarabot) et `AGUERRI` renvoient 0 carte, `RAVITAILLEZ` 13 en
+  8 s, `FUGACE` une erreur 500 après 30 s.
+- `hasEchoEffect=true` renvoie 0 carte hors Uniques : seules les Uniques sont marquées.
+- Sans filtre de rareté (Uniques comprises), ces filtres prennent de 20 s à plus de 60 s (timeout).
+
+**Contournement.** Re:Builder ne propose plus les filtres mot-clé et effet d'écho sur l'API des cartes.
+
+**À faire côté backend.** Renseigner les mots-clés et l'effet d'écho des cartes communes, rares et exaltées, et
+indexer ces filtres.

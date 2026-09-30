@@ -1,5 +1,5 @@
 // Vocabulary of the cards API filters, from the site's `plugins/core-altered-cards/data/altered.json` (kept in step by
-// hand, as `formats.ts`): keywords (`effectKeyword[]`), subtypes (`subTypes[]`), variations (`variation[]`) and the
+// hand, as `formats.ts`): subtypes (`subTypes[]`), variations (`variation[]`) and the
 // promo editions (`set.reference[]`, sets of `subtype: sub` with their `parent`).
 import { uiLocale } from './i18n';
 
@@ -13,40 +13,6 @@ export interface Term {
 export function termLabel(t: Term): string {
   return uiLocale() === 'fr' ? t.fr : t.en;
 }
-
-/** Effect keywords (Aguerri, Ancré…), French order. */
-export const KEYWORDS: readonly Term[] = [
-  { code: "MAW", fr: "0/0/0 Maw", en: "Maw 0/0/0" },
-  { code: "WOOLLYBACK", fr: "1/1/1 Dotouffu", en: "Woollyback 1/1/1" },
-  { code: "ORDIS_RECRUIT", fr: "1/1/1 Recrue Ordis", en: "Ordis Recruit 1/1/1" },
-  { code: "BOODA", fr: "2/2/2 Booda", en: "Booda 2/2/2" },
-  { code: "HALUA", fr: "2/2/2 Halua", en: "Halua 2/2/2" },
-  { code: "MANA_MOTH", fr: "2/2/2 Phalène de Mana", en: "Mana Moth 2/2/2" },
-  { code: "BRASSBUG", fr: "2/2/2 Scarabot", en: "Brassbug 2/2/2" },
-  { code: "DRAGON_SHADE", fr: "5/5/5 Reflet Draconique", en: "Dragon Shade 5/5/5" },
-  { code: "AGUERRI", fr: "Aguerri", en: "Seasoned" },
-  { code: "AUGMENT", fr: "Amplifier", en: "Augment" },
-  { code: "ANCRE", fr: "Ancré", en: "Anchored" },
-  { code: "AFTER_YOU", fr: "Après vous", en: "After You" },
-  { code: "AEROLITH", fr: "Aérolithe", en: "Aerolith" },
-  { code: "BOOSTE", fr: "Boosté", en: "Boosted" },
-  { code: "CORIACE", fr: "Coriace", en: "Tough" },
-  { code: "DON", fr: "Don", en: "Gift" },
-  { code: "DEFENSEUR", fr: "Défenseur", en: "Defender" },
-  { code: "IN_CONTACT", fr: "En Contact", en: "In Contact" },
-  { code: "ENDORMI", fr: "Endormi", en: "Asleep" },
-  { code: "FONCER", fr: "Foncer", en: "Rush" },
-  { code: "FUGACE", fr: "Fugace", en: "Fleeting" },
-  { code: "GIGANTESQUE", fr: "Gigantesque", en: "Gigantic" },
-  { code: "MANASEED", fr: "Graine de Mana", en: "Manaseed" },
-  { code: "RAFRAICHISSEMENT", fr: "Rafraîchissement", en: "Cooldown" },
-  { code: "RAVITAILLEZ", fr: "Ravitaillez", en: "Resupply" },
-  { code: "RAVITAILLEZ_EPUISE", fr: "Ravitaillez Épuisé", en: "Exhausted Resupply" },
-  { code: "REPERAGE", fr: "Repérage", en: "Scout" },
-  { code: "SABOTEZ", fr: "Sabotez", en: "Sabotage" },
-  { code: "ASCENDS", fr: "s'Élève", en: "Ascends" },
-  { code: "ETERNEL", fr: "Éternel", en: "Eternal" },
-];
 
 /** Card subtypes (Animal, Ingénieur…), French order. */
 export const SUBTYPES: readonly Term[] = [
