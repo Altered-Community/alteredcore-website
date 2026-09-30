@@ -89,6 +89,10 @@
       </div>
     }
     <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+    <!-- Desktop: at the bottom right of the results column, clear of the editor's deck panel. -->
+    @if (!bp.compact() && condensed()) {
+      <button class="to-top in-column" arIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+    }
   </section>
 </div>
 
