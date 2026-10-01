@@ -358,8 +358,7 @@ foreach ($__navItems as $__ni) {
         if (open) {
             var top = headerBottom(), r = accBtn.getBoundingClientRect(), w = document.documentElement.clientWidth;
             var right = Math.max(12, Math.round(w - r.right));
-            // Desktop: over the whole page, header included, so a click anywhere else closes the menu
-            backdrop.style.top = desktop.matches ? '0' : top + 'px';
+            backdrop.style.top = top + 'px';
             acc.style.top = (top + 8) + 'px';
             acc.style.right = right + 'px';
             // Point the caret at the button's centre
@@ -367,7 +366,10 @@ foreach ($__navItems as $__ni) {
             syncTheme();
         }
     });
-    if (backdrop && accPanel) backdrop.addEventListener('click', function () { accPanel.setOpen(false); });
+    // A click anywhere else (backdrop on mobile, header and page on desktop) closes it
+    if (accPanel) document.addEventListener('click', function (e) {
+        if (!acc.hidden && !acc.contains(e.target) && !accBtn.contains(e.target)) accPanel.setOpen(false);
+    });
 
     // « Beta Deckbuilder »: a cookie of this browser, read by the page router (pages/_router.php), then a reload
     var beta = acc ? acc.querySelector('[data-az-beta]') : null;
