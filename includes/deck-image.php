@@ -2,7 +2,7 @@
 // Decklist image of a deck's link preview (og:image, 1200×630 JPEG), served by api/deck-image.php.
 //
 // Top, a banner on the faction's colour: the hero, the deck's name, hero · format · author, the copies per card
-// type, the cost curve (hand and reserve costs) and the characters' average power per biome. Below, on white,
+// type, the cost curve (hand and reserve costs) and the characters' total power per biome (as Re:Builder). Below, on white,
 // one section per card type: copies of one card stacked (whatever their rarity), each Unique alone. The cards
 // shrink until every section fits.
 //
@@ -21,18 +21,18 @@ const DECK_IMAGE_SCALE   = 2;
 const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
-const DECK_IMAGE_VERSION = 6;            // bump to redraw every cached image after a layout change
+const DECK_IMAGE_VERSION = 7;            // bump to redraw every cached image after a layout change
 
 /** Labels of the image, in English for languages without a translation. */
 function deckImageLabels(string $lang): array {
     if ($lang === 'fr') {
-        return ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance moy.', 'unique' => 'Unique',
+        return ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance totale', 'unique' => 'Unique',
                 'biomes' => ['O' => 'Eau', 'M' => 'Montagne', 'F' => 'Forêt'],
-                'types' => [['Personnage', 'Personnages'], ['Sort', 'Sorts'], ['Permanent', 'Permanents'], ['Autre', 'Autres']], 'decimal' => ','];
+                'types' => [['Personnage', 'Personnages'], ['Sort', 'Sorts'], ['Permanent', 'Permanents'], ['Autre', 'Autres']]];
     }
-    return ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Average power', 'unique' => 'Unique',
+    return ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Total power', 'unique' => 'Unique',
             'biomes' => ['O' => 'Ocean', 'M' => 'Mountain', 'F' => 'Forest'],
-            'types' => [['Character', 'Characters'], ['Spell', 'Spells'], ['Permanent', 'Permanents'], ['Other', 'Others']], 'decimal' => '.'];
+            'types' => [['Character', 'Characters'], ['Spell', 'Spells'], ['Permanent', 'Permanents'], ['Other', 'Others']]];
 }
 
 /** Display order of a card type: characters, spells, permanents (landmark, expedition…), others. */
@@ -92,7 +92,7 @@ function deckImageStacks(array $deck): array {
 
 /**
  * The left panel's figures: copies per type group, the cost curve (hand and reserve costs, 7 and more in one
- * bar, the 0 bar only when used) and the characters' average power per biome (null without characters).
+ * bar, the 0 bar only when used) and the characters' total power per biome (null without characters).
  */
 function deckImageStats(array $deck): array {
     $types = [0, 0, 0, 0];
@@ -119,8 +119,7 @@ function deckImageStats(array $deck): array {
     foreach (range($hand[0] + $resv[0] > 0 ? 0 : 1, 7) as $cost) {
         $curve[] = ['label' => $cost === 7 ? '7+' : (string)$cost, 'hand' => $hand[$cost], 'reserve' => $resv[$cost]];
     }
-    $avg = $chars > 0 ? array_map(function ($p) use ($chars) { return $p / $chars; }, $power) : null;
-    return ['types' => $types, 'curve' => $curve, 'power' => $avg];
+    return ['types' => $types, 'curve' => $curve, 'power' => $chars > 0 ? $power : null];
 }
 
 /** Downloads URLs in parallel: [url => image bytes], failed ones left out. */
@@ -338,28 +337,34 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
         foreach ($missing as $ref) $urls[$ref] = deckImageCardUrl($ref, 'en');
         if ($missing) $got += deckImageDownload(array_map(function ($r) use ($urls) { return $urls[$r]; }, $missing));
     }
-    $images = [];
-    foreach ($refs as $ref) $images[$ref] = deckImageDecode($got[$urls[$ref]] ?? null);
-
     // Uniques: their own face, drawn from their data on their illustration.
     $uniqueRefs = array_values(array_filter($refs, 'deckImageIsUnique'));
-    $faces = [];
-    $artMissing = false;
+    $uniqueLang = in_array($lang, ['en', 'fr'], true) ? $lang : 'en';
+    $faces   = [];
+    $artUrls = [];
+    $arts    = [];
     if ($uniqueRefs && deckUniqueAvailable()) {
-        $cards = deckUniqueFetch($uniqueRefs, in_array($lang, ['en', 'fr'], true) ? $lang : 'en');
-        $artUrls = [];
-        foreach ($cards as $ref => $card) $artUrls[$ref] = deckUniqueArtUrls($ref, deckUniqueFrame($card, $lang));
+        $faces = deckUniqueFetch($uniqueRefs, $uniqueLang);
+        foreach ($faces as $ref => $card) $artUrls[$ref] = deckUniqueArtUrls($ref, deckUniqueFrame($card, $uniqueLang));
         $arts = $artUrls ? deckImageDownload(array_merge(...array_values($artUrls))) : [];
-        foreach ($cards as $ref => $card) {
+    }
+    $complete = !deckUniqueAvailable() || count($faces) === count($uniqueRefs);
+
+    // A card's full-size image (its face for a Unique), decoded only when drawn: a 60-card deck does not fit in
+    // memory at full size. The caller destroys it.
+    $load = function (string $ref) use (&$complete, $got, $urls, $faces, $artUrls, $arts, $uniqueLang) {
+        if (isset($faces[$ref])) {
             $art = null;
             foreach ($artUrls[$ref] as $url) if (isset($arts[$url]) && ($art = deckImageDecode($arts[$url]))) break;
-            if (!$art) $artMissing = true;
-            $faces[$ref] = deckUniqueRender($card, $art, in_array($lang, ['en', 'fr'], true) ? $lang : 'en');
+            if (!$art) $complete = false;
+            $face = deckUniqueRender($faces[$ref], $art, $uniqueLang);
             if ($art) imagedestroy($art);
-            if (!empty($images[$ref])) imagedestroy($images[$ref]);
-            $images[$ref] = $faces[$ref];
+            return $face;
         }
-    }
+        $image = deckImageDecode($got[$urls[$ref]] ?? null);
+        if (!$image) $complete = false;
+        return $image;
+    };
 
     $im = imagecreatetruecolor(deckImageK(DECK_IMAGE_WIDTH), deckImageK(DECK_IMAGE_HEIGHT));
     imagealphablending($im, true);
@@ -371,13 +376,13 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
     deckImageRect($im, 0, 0, DECK_IMAGE_WIDTH - 1, DECK_IMAGE_HEIGHT - 1, $white);
     deckImageRect($im, 0, 0, DECK_IMAGE_WIDTH - 1, DECK_IMAGE_BANNER - 1, deckImageColor($im, $panel));
 
-    // ── Banner, right to left: average power, cost curve, then the deck's identity in what is left ──
+    // ── Banner, right to left: total power, cost curve, then the deck's identity in what is left ──
     $pad = DECK_IMAGE_PAD;
     $bx  = DECK_IMAGE_WIDTH - $pad - 160;
     if ($stats['power'] !== null) {
         deckImageText($im, $fBold, 11, $bx, 20, $soft, mb_strtoupper($txt['power']));
         $by = 40;
-        foreach ($stats['power'] as $biome => $avg) {
+        foreach ($stats['power'] as $biome => $total) {
             $iconFile = $assets . 'biome/' . $biome . '.webp';
             $icon = is_file($iconFile) && function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($iconFile) : null;
             if ($icon) {
@@ -385,7 +390,7 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
                 imagedestroy($icon);
             }
             deckImageText($im, $fBody, 14, $bx + 30, $by + 6, $white, $txt['biomes'][$biome]);
-            $value = number_format($avg, 1, $txt['decimal'], '');
+            $value = (string)$total;
             deckImageText($im, $fBold, 17, $bx + 160 - deckImageBox($fBold, 17, $value)['w'], $by + 4, $white, $value);
             $by += 28;
         }
@@ -422,12 +427,13 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
     }
 
     // Identity: hero portrait, name, hero · format · author, copies per type.
-    $heroImg = $heroRef !== '' ? ($images[$heroRef] ?? null) : null;
+    $heroImg = $heroRef !== '' ? $load($heroRef) : null;
     $tx = $pad;
     if ($heroImg) {
         $portrait = deckImageThumb($heroImg, 88, 88, 44, [0.15, 0.17, 0.7, 0.4]);
         deckImageCopy($im, $portrait, $pad, intdiv(DECK_IMAGE_BANNER - 88, 2));
         imagedestroy($portrait);
+        imagedestroy($heroImg);
         $tx += 88 + 20;
     }
     $tw   = $cx - 32 - $tx;
@@ -450,7 +456,6 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
         $label = mb_strtoupper($txt['types'][$group][$n > 1 ? 1 : 0]) . ' · ' . $n;
         $sections[] = ['label' => $label, 'stacks' => $list, 'count' => count($list), 'minW' => deckImageBox($fBold, 13, $label)['w']];
     }
-    $complete = !in_array(null, $images, true) && !$artMissing && (!deckUniqueAvailable() || count($faces) === count($uniqueRefs));
     if (!$sections) return $im;
     $maxCopies = max(1, ...array_map(function ($s) { return count($s['refs']); }, $stacks));
     $areaW  = DECK_IMAGE_WIDTH - 2 * $pad;
@@ -480,8 +485,12 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
             foreach ($stack['refs'] as $c => $ref) {
                 $cy = $sy + $c * $grid['off'];
                 deckImageCopy($im, $drop, $sx + 1, $cy + 2);
-                if (!empty($images[$ref])) {
-                    $thumbs[$ref] = $thumbs[$ref] ?? deckImageThumb($images[$ref], $grid['w'], $grid['h'], $radius);
+                if (!isset($thumbs[$ref])) {
+                    $source = $load($ref);
+                    $thumbs[$ref] = $source ? deckImageThumb($source, $grid['w'], $grid['h'], $radius) : false;
+                    if ($source) imagedestroy($source);
+                }
+                if ($thumbs[$ref]) {
                     deckImageCopy($im, $thumbs[$ref], $sx, $cy);
                 } else {
                     deckImageRoundedRect($im, $sx, $cy, $grid['w'], $grid['h'], $radius, $empty);
@@ -500,7 +509,7 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
         }
         $sx0 += $grid['widths'][$i] + $grid['sep'];
     }
-    foreach (array_merge([$drop], array_values($thumbs), array_filter($images)) as $gd) imagedestroy($gd);
+    foreach (array_merge([$drop], array_filter($thumbs)) as $gd) imagedestroy($gd);
     return $im;
 }
 
