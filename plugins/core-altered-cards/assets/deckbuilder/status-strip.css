@@ -61,6 +61,19 @@ button.db-ss-chip { cursor:pointer; }
 .db-ss-strip-save[data-state="error"]  { background:var(--ac-color-danger-soft); color:var(--ac-color-danger); }
 .db-ss-strip-savebtn { min-height:34px; white-space:nowrap; }
 
+/* « Partager » / « Terminer » (share.js): next to the page title; « Partager » goes into the strip on phones. */
+.db-title-row { display:flex; align-items:center; justify-content:space-between; gap:var(--ac-space-3); margin-bottom:var(--ac-space-4); }
+.db-title-actions { display:flex; align-items:center; gap:var(--ac-space-2); flex-shrink:0; }
+.db-ss-strip-share { display:none; }
+.db-action-error { align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:var(--ac-space-3); font:var(--ac-font-small); }
+.db-action-error[hidden] { display:none; }
+.db-action-error-text { display:flex; flex-direction:column; gap:var(--ac-space-1); flex:1 1 16rem; }
+.db-share-saved { display:flex; align-items:center; gap:var(--ac-space-1-5); margin:0 0 var(--ac-space-3); font:var(--ac-font-small); color:var(--ac-color-success); }
+.db-share-private-error { margin:0 0 var(--ac-space-3); font:var(--ac-font-small); color:var(--ac-color-danger); }
+.db-share-private-error[hidden] { display:none; }
+.db-sign-in-badge { width:var(--ac-control-md); height:var(--ac-control-md); flex-shrink:0; border-radius:var(--ac-radius-pill); display:flex; align-items:center; justify-content:center;
+    background:var(--ac-color-primary-soft); color:var(--ac-color-primary-strong); --ac-icon-size:20px; }
+
 .db-card-wrap:has(.db-card-qty-badge) { box-shadow:0 0 0 3px var(--ac-color-primary); }
 .db-card-wrap:has(.db-card-qty-badge) .db-card-qty-badge { background:var(--ac-color-primary); color:var(--ac-color-on-primary); font-size:.9rem; padding:3px 9px; }
 .db-card-wrap:has(.db-card-qty-badge).db-ss-bump { animation:db-ss-ring .55s ease-out; }
@@ -89,6 +102,12 @@ button.db-ss-chip { cursor:pointer; }
 }
 @media (max-width:767px) {
     html { --db-ss-bottom:50px; }
+    .db-title-row { margin-bottom:var(--ac-space-3); }
+    .db-share-btn { display:none; }
+    .db-done-btn { background:transparent; color:var(--ac-color-primary); }
+    .db-done-btn:is(:hover, :focus-visible):not(:disabled) { background:var(--ac-color-primary-soft); color:var(--ac-color-primary-strong); }
+    .db-done-btn .ac-icon { display:none; }
+    .db-ss-strip-share { display:inline-flex; width:var(--ac-control-sm); height:var(--ac-control-sm); border-radius:var(--ac-radius-pill); }
     .db-ss-strip { gap:6px; margin:0 -4px 10px; padding:6px 8px; border-radius:var(--ac-radius-lg); }
     .db-ss-strip-main { gap:8px; }
     .db-ss-strip-id { display:none; }

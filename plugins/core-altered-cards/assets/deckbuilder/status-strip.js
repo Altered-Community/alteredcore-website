@@ -59,12 +59,13 @@
     }
 
     var strip;
+    // Whole class lists: design-system/icons/build.mjs finds the Font Awesome names to draw (fa-shim.css) by their style prefix.
     var SAVE_LABELS = {
-        idle:   ['fa-cloud', txt.strip_saved],
-        dirty:  ['fa-pen', txt.strip_unsaved],
-        saving: ['fa-spinner fa-spin', txt.saving || 'Saving…'],
-        saved:  ['fa-check', txt.strip_saved],
-        error:  ['fa-triangle-exclamation', txt.strip_save_failed],
+        idle:   ['fa-solid fa-cloud', txt.strip_saved],
+        dirty:  ['fa-solid fa-pen', txt.strip_unsaved],
+        saving: ['fa-solid fa-spinner fa-spin', txt.saving || 'Saving…'],
+        saved:  ['fa-solid fa-check', txt.strip_saved],
+        error:  ['fa-solid fa-triangle-exclamation', txt.strip_save_failed],
     };
     function buildStrip() {
         strip = el('div', 'db-ss-strip');
@@ -74,6 +75,8 @@
             + '<span class="db-ss-strip-progress"><span class="db-ss-strip-count"></span><span class="db-ss-progress"><span class="db-ss-progress-fill"></span></span></span>'
             + '<button type="button" class="db-ss-chip db-ss-strip-valid"></button>'
             + '<span class="db-ss-chip db-ss-strip-save" data-state="idle"></span>'
+            // « Partager » on phones (< 768 px), always in view; from 768 px it is next to the page title.
+            + '<button type="button" class="ac-icon-button db-ss-strip-share" data-db-action="share" aria-label="' + escHtml(txt.share_btn || 'Share') + '">' + AlteredDB.icons.share + '</button>'
             + '<button type="button" class="btn btn-sm btn-primary-altered db-ss-strip-savebtn"><i class="fa-solid fa-floppy-disk"></i><span class="d-none d-md-inline ms-1">' + escHtml(txt.save_btn || 'Save') + '</span></button>'
             + '</div>'
             + '<div class="db-ss-strip-chips"></div>';
@@ -134,7 +137,7 @@
         var chip = strip.querySelector('.db-ss-strip-save');
         var l = SAVE_LABELS[state];
         chip.dataset.state = state;
-        chip.innerHTML = '<i class="fa-solid ' + l[0] + '"></i><span>' + escHtml(l[1]) + '</span>';
+        chip.innerHTML = '<i class="' + l[0] + '"></i><span>' + escHtml(l[1]) + '</span>';
         clearTimeout(saveFadeTimer);
         if (state === 'saved') saveFadeTimer = setTimeout(function() { chip.dataset.state = 'idle'; }, 2500);
     }

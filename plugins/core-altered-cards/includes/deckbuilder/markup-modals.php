@@ -208,3 +208,62 @@ usort($_fmtKeys, function ($a, $b) use ($formatsData, $uiLang, $_bgaArenaFormat)
         </div>
     </div>
 </div>
+
+<!-- « Partager » (share.js): the deck is saved first. Same window as the deck page's (link, Copier, QR code). -->
+<div class="modal fade" id="dbShareModal" tabindex="-1" aria-labelledby="db-share-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+        <div class="modal-content db-modal-content">
+            <div class="modal-body p-4 db-modal-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0" id="db-share-title"><?= h($txt['share_title']) ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h($txt['share_cancel']) ?>"></button>
+                </div>
+                <p id="db-share-saved" class="db-share-saved" role="status"><?= ac_icon('check') ?><span></span></p>
+                <div id="db-share-private" hidden>
+                    <p class="fw-bold mb-2"><?= ac_icon('lock', 'me-1') ?><?= h($txt['share_private_title']) ?></p>
+                    <p class="small mb-3" style="color:var(--ac-color-text-2)"><?= h($txt['share_private_body']) ?></p>
+                    <p id="db-share-private-error" class="db-share-private-error" role="alert" hidden></p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="ac-button ac-button--secondary flex-fill" data-bs-dismiss="modal"><?= h($txt['share_cancel']) ?></button>
+                        <button type="button" id="db-share-make-public" class="ac-button flex-fill"><?= ac_icon('eye') ?><?= h($txt['share_make_public']) ?></button>
+                    </div>
+                </div>
+                <div id="db-share-link">
+                    <label class="form-label small fw-semibold mb-1" for="db-share-url"><?= h($txt['share_link_label']) ?></label>
+                    <div class="input-group mb-3">
+                        <input type="text" id="db-share-url" class="form-control form-control-sm" readonly style="font-size:.82rem">
+                        <button type="button" id="db-share-copy" class="btn btn-primary-altered btn-sm"><?= ac_icon('copy', 'me-1') ?><span><?= h($txt['share_copy']) ?></span></button>
+                    </div>
+                    <div id="db-share-qr" class="d-flex justify-content-center" role="img" aria-label="<?= h($txt['share_qr']) ?>" style="padding:12px;background:var(--ac-card-paper);border-radius:var(--ac-radius-control);border:1px solid var(--ac-color-border)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if ($isGuest): ?>
+<!-- « Partager » on a guest deck: it lives in this browser only, so it has no link yet. -->
+<div class="modal fade" id="dbSignInShareModal" tabindex="-1" aria-labelledby="db-sign-in-share-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+        <div class="modal-content db-modal-content">
+            <div class="modal-body p-4 db-modal-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0" id="db-sign-in-share-title"><?= h($txt['share_sign_in_title']) ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= h($txt['share_sign_in_later']) ?>"></button>
+                </div>
+                <div class="d-flex gap-3 align-items-start mb-4">
+                    <span class="db-sign-in-badge" aria-hidden="true"><?= ac_icon('cloud-upload') ?></span>
+                    <div>
+                        <p class="fw-bold mb-1"><?= h($txt['share_sign_in_body']) ?></p>
+                        <p class="small mb-0" style="color:var(--ac-color-text-muted)"><?= h($txt['share_sign_in_note']) ?></p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    <button type="button" class="ac-button ac-button--secondary" data-bs-dismiss="modal"><?= h($txt['share_sign_in_later']) ?></button>
+                    <a href="<?= h($shareLoginUrl) ?>" id="db-sign-in-share" class="ac-button"><?= ac_icon('log-in') ?><?= h($txt['share_sign_in']) ?></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
