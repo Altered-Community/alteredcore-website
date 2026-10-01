@@ -1,17 +1,30 @@
 import { environment } from '../../environments/environment';
 import { contentLocale } from './locale';
+import type { Deck } from './models';
 
 /** The image could not be had (deck not found, decks API down): not the browser's fault. */
 export class DeckImageUnavailable extends Error {}
 
+/** Where the image is asked for: a deck of the decks API by its id (GET), a guest deck by its content (`body`, POST). */
+export interface DeckImageSource {
+  url: string;
+  body?: string;
+}
+
 /**
  * The deck's decklist image (its link preview's og:image, 2400×1260 JPEG), drawn by the site's card plugin
  * (`/papi/core-altered-cards/deck-image`), the user's private decks included; `null` outside the site.
+ *
+ * A guest deck, kept on this device, is unknown to the decks API: its hero and cards are sent instead, and its image
+ * has no QR code (the deck has no page).
  */
-export function deckImageUrl(id: string): string | null {
+export function deckImageSource(id: string, guest?: Deck | null): DeckImageSource | null {
   if (!environment.pluginApiUrl || !id) return null;
-  const params = new URLSearchParams({ id, lang: contentLocale() });
-  return `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/deck-image?${params}`;
+  const params = new URLSearchParams(guest ? { lang: contentLocale() } : { id, lang: contentLocale() });
+  const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/deck-image?${params}`;
+  if (!guest) return { url };
+  const body = { name: guest.name, format: guest.format ?? '', hero: guest.hero ?? null, cards: guest.deckCards ?? guest.cards ?? [] };
+  return { url, body: JSON.stringify(body) };
 }
 
 /** File name of the saved image: the deck's name in lower case, without accents or punctuation. */
@@ -27,10 +40,15 @@ export function deckImageFileName(name: string): string {
   return `${slug || 'deck'}.jpg`;
 }
 
-async function fetchImage(url: string): Promise<Blob> {
+async function fetchImage({ url, body }: DeckImageSource): Promise<Blob> {
   let res: Response;
   try {
-    res = await fetch(url, { credentials: 'same-origin' });
+    res = await fetch(
+      url,
+      body === undefined
+        ? { credentials: 'same-origin' }
+        : { method: 'POST', credentials: 'same-origin', body, headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': environment.siteCsrf } },
+    );
   } catch {
     throw new DeckImageUnavailable('network');
   }
@@ -53,9 +71,9 @@ async function toPng(image: Blob): Promise<Blob> {
  * Copies the image to the clipboard. The ClipboardItem gets the image's promise during the click: Safari refuses a
  * write once the click's permission is gone, and drawing the image takes seconds.
  */
-export async function copyDeckImage(url: string): Promise<void> {
+export async function copyDeckImage(source: DeckImageSource): Promise<void> {
   if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) throw new Error('clipboard');
-  const png = fetchImage(url).then(toPng);
+  const png = fetchImage(source).then(toPng);
   try {
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
   } catch (err) {
@@ -66,8 +84,8 @@ export async function copyDeckImage(url: string): Promise<void> {
 }
 
 /** Saves the image in the browser's downloads. */
-export async function downloadDeckImage(url: string, name: string): Promise<void> {
-  const href = URL.createObjectURL(await fetchImage(url));
+export async function downloadDeckImage(source: DeckImageSource, name: string): Promise<void> {
+  const href = URL.createObjectURL(await fetchImage(source));
   const link = document.createElement('a');
   link.href = href;
   link.download = deckImageFileName(name);
@@ -78,10 +96,10 @@ export async function downloadDeckImage(url: string, name: string): Promise<void
 }
 
 /** Opens the image in a new tab. The tab is opened during the click (popup blockers), then shown the image. */
-export async function openDeckImage(url: string): Promise<void> {
+export async function openDeckImage(source: DeckImageSource): Promise<void> {
   const tab = window.open('', '_blank');
   try {
-    const href = URL.createObjectURL(await fetchImage(url));
+    const href = URL.createObjectURL(await fetchImage(source));
     if (tab) tab.location.href = href;
     else window.open(href, '_blank');
     setTimeout(() => URL.revokeObjectURL(href), 60_000);

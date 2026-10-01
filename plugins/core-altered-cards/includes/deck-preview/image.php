@@ -634,12 +634,56 @@ function deckImageCachePrefix(string $id, string $lang, string $siteUrl): string
  * The deck's image as a JPEG file: ['file' => path, 'temporary' => bool]. Drawn once per deck version (one request
  * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
  * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
- * Without $cache (a private deck), always 'temporary': the cache is served to anyone who has the deck's id.
+ * Without $cache (a private or guest deck), always 'temporary': the cache is served to anyone who has the deck's id.
  */
 function deckImageFile(array $deck, string $lang, string $siteUrl = '', bool $cache = true): ?array {
     $id      = (string)($deck['id'] ?? '');
+/**
+ * A guest deck sent by Re:Builder (kept in the browser, unknown to the decks API) as a deck of the decks API, for
+ * deckImageRender: { name, format, hero: { reference, name }, cards: [{ cardReference, quantity, name, cardTypeReference,
+ * mainCost, recallCost, forestPower, mountainPower, oceanPower }] }. Names may be locale maps. Card references must look
+ * like the CDN's (they go in its URLs); null when nothing is left to draw or the deck is too large.
+ */
+function deckImageGuestDeck($body, string $lang): ?array {
+    if (!is_array($body)) return null;
+    $text = function ($v, int $max) use ($lang): string {
+        if (is_array($v)) $v = $v[$lang] ?? $v['en'] ?? reset($v);
+        return is_string($v) ? mb_substr(trim($v), 0, $max) : '';
+    };
+    $validRef = function ($ref): bool { return is_string($ref) && (bool)preg_match('#^ALT_[A-Z0-9]+(_[A-Z0-9]+){3,5}$#', $ref); };
+    $int      = function ($v): ?int { return is_int($v) || (is_string($v) && is_numeric($v)) ? (int)$v : null; };
+
+    $cards = [];
+    $copies = 0;
+    foreach (is_array($body['cards'] ?? null) ? array_slice($body['cards'], 0, 120) : [] as $card) {
+        if (!is_array($card) || !$validRef($card['cardReference'] ?? null)) continue;
+        $qty = min(99, max(0, (int)($int($card['quantity'] ?? 0) ?? 0)));
+        if ($qty === 0) continue;
+        $copies += $qty;
+        $line = ['cardReference' => $card['cardReference'], 'quantity' => $qty, 'name' => $text($card['name'] ?? '', 80)];
+        $type = $card['cardTypeReference'] ?? '';
+        if (is_string($type) && preg_match('#^[A-Z_]{1,40}$#', $type)) $line['cardTypeReference'] = $type;
+        foreach (['mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as $key) {
+            if (($v = $int($card[$key] ?? null)) !== null) $line[$key] = max(0, min(99, $v));
+        }
+        $cards[] = $line;
+    }
+    $hero = is_array($body['hero'] ?? null) && $validRef($body['hero']['reference'] ?? null)
+        ? ['reference' => $body['hero']['reference'], 'name' => $text($body['hero']['name'] ?? '', 80)]
+        : null;
+    if ($copies > 300 || (!$cards && $hero === null)) return null;
+    $format = $body['format'] ?? '';
+    return [
+        'name'   => $text($body['name'] ?? '', 120),
+        'format' => is_string($format) && array_key_exists($format, loadAlteredData('formats')) ? $format : '',
+        'stats'  => ['hero' => $hero],
+        'cards'  => $cards,
+    ];
+}
+
     $file    = deckImageCachePath($id, $lang, deckPreviewVersion($deck), $siteUrl);
-    $deckUrl = $siteUrl !== '' ? $siteUrl . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]) : '';
+    // A guest deck (no id) has no page: no QR code.
+    $deckUrl = $siteUrl !== '' && deckPreviewValidId($id) ? $siteUrl . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]) : '';
     if ($file === null) return null;
     if (!$cache) {
         $im  = deckImageRender($deck, $lang, $complete, $deckUrl);

@@ -7,7 +7,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { PageTitle } from '../../../core/page-title';
 import { factionSrc } from '../../../core/assets';
 import { DeckStore } from '../../../core/deck-store';
-import { deckImageUrl } from '../../../core/deck-image';
+import { deckImageSource } from '../../../core/deck-image';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
@@ -76,6 +76,7 @@ export class DeckPage {
   private readonly router = inject(Router);
   private readonly overlay = inject(ArOverlayService);
   private readonly locationStrategy = inject(LocationStrategy);
+  private readonly guestDecks = inject(GuestDeckService);
   protected readonly auth = inject(AuthSession);
   protected readonly deck = inject(DeckStore);
   protected readonly bp = inject(ArBreakpointService);
@@ -140,8 +141,13 @@ export class DeckPage {
     });
   }
 
-  /** The deck's image (« Copier en image »): a deck of the decks API, not a guest deck kept on this device. */
-  protected readonly imageUrl = computed(() => (GuestDeckService.isGuestId(this.id()) ? null : deckImageUrl(this.id())));
+  /** The deck's image (« Copier en image »): a deck of the decks API by its id, a guest deck by its cards. */
+  protected readonly imageSource = computed(() => {
+    const id = this.id();
+    if (!GuestDeckService.isGuestId(id)) return deckImageSource(id);
+    const guest = this.guestDecks.get(id);
+    return guest ? deckImageSource(id, guest) : null;
+  });
 
   protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
@@ -210,7 +216,7 @@ export class DeckPage {
   }
 
   protected more(): void {
-    const data: DeckActionsData = { canDelete: this.deck.owned() === true, imageUrl: this.imageUrl(), name: this.deck.name() };
+    const data: DeckActionsData = { canDelete: this.deck.owned() === true, image: this.imageSource(), name: this.deck.name() };
     this.overlay
       .open<DeckActionsSheet, DeckActionsResult>(DeckActionsSheet, { title: 'Actions', width: 400, data })
       .afterClosed.subscribe((a) => {

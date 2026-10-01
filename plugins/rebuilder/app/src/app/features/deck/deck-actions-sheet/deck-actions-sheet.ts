@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
+import type { DeckImageSource } from '../../../core/deck-image';
 import { ArIcon } from '../../../ui/icon';
 import { ArOverlayRef } from '../../../ui/overlay';
 import { runDeckImageAction, type DeckImageAction } from '../deck-image-actions';
 
 export interface DeckActionsData {
   canDelete?: boolean;
-  /** The deck's image (« Copier en image »), `null` for a guest deck. */
-  imageUrl?: string | null;
+  /** The deck's image (« Copier en image »), `null` outside the site. */
+  image?: DeckImageSource | null;
   /** The deck's name: the saved image's. */
   name?: string;
 }
@@ -29,10 +30,10 @@ export class DeckActionsSheet {
   protected readonly ref = inject<ArOverlayRef<DeckActionsResult, DeckActionsData>>(ArOverlayRef);
   /** « Supprimer » only for the user's own decks. */
   protected readonly canDelete = this.ref.data?.canDelete !== false;
-  protected readonly imageUrl = this.ref.data?.imageUrl ?? null;
+  protected readonly imageSource = this.ref.data?.image ?? null;
 
   protected image(action: DeckImageAction): void {
-    if (!this.imageUrl) return;
-    this.ref.close({ image: runDeckImageAction(action, this.imageUrl, this.ref.data?.name ?? '') });
+    if (!this.imageSource) return;
+    this.ref.close({ image: runDeckImageAction(action, this.imageSource, this.ref.data?.name ?? '') });
   }
 }

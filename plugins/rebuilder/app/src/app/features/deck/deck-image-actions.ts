@@ -1,4 +1,4 @@
-import { copyDeckImage, DeckImageUnavailable, downloadDeckImage, openDeckImage } from '../../core/deck-image';
+import { copyDeckImage, DeckImageUnavailable, downloadDeckImage, openDeckImage, type DeckImageSource } from '../../core/deck-image';
 
 /** « Copier en image » (deck page) and its menu: copy to the clipboard, save, open in a new tab. */
 export type DeckImageAction = 'copy' | 'save' | 'open';
@@ -12,13 +12,13 @@ export function deckImageBusyMessage(): string {
  * Runs `action` on the deck's image; resolves with the toast's message, `null` when the browser shows the outcome
  * (download, new tab). Call it during the click: the clipboard and the new tab need the click's permission.
  */
-export async function runDeckImageAction(action: DeckImageAction, url: string, name: string): Promise<string | null> {
+export async function runDeckImageAction(action: DeckImageAction, source: DeckImageSource, name: string): Promise<string | null> {
   try {
     if (action === 'copy') {
-      await copyDeckImage(url);
+      await copyDeckImage(source);
       return $localize`:@@deck.image.copied:Image copiée dans le presse-papiers.`;
     }
-    await (action === 'save' ? downloadDeckImage(url, name) : openDeckImage(url));
+    await (action === 'save' ? downloadDeckImage(source, name) : openDeckImage(source));
     return null;
   } catch (err) {
     return err instanceof DeckImageUnavailable

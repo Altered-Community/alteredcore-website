@@ -1,5 +1,5 @@
 import { Component, computed, input, output, signal } from '@angular/core';
-import { deckImageFileName } from '../../../core/deck-image';
+import { deckImageFileName, type DeckImageSource } from '../../../core/deck-image';
 import { ArSplitButton, type ArSplitButtonItem } from '../../../ui/buttons';
 import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '../deck-image-actions';
 
@@ -13,7 +13,7 @@ import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '
   templateUrl: './deck-image-export.html',
 })
 export class DeckImageExport {
-  readonly url = input.required<string>();
+  readonly source = input.required<DeckImageSource>();
   /** The deck's name: the saved file's. */
   readonly name = input('');
   readonly notice = output<string>();
@@ -35,7 +35,7 @@ export class DeckImageExport {
   protected async run(action: string): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
-    const message = await runDeckImageAction(action as DeckImageAction, this.url(), this.name());
+    const message = await runDeckImageAction(action as DeckImageAction, this.source(), this.name());
     this.busy.set(false);
     if (message) this.notice.emit(message);
   }

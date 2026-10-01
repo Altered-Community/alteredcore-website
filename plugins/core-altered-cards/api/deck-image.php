@@ -6,6 +6,9 @@
 //
 // Re:Builder's « Copier en image » also asks for the signed-in user's private decks: fetched with the session's token
 // (as Re:Builder's meta.php), drawn for that request only, never cached.
+//
+// POST /papi/core-altered-cards/deck-image?lang={lang}, body the guest deck as JSON (deckImageGuestDeck): Re:Builder's
+// guest decks, kept in the browser. Drawn without a QR code (the deck has no page), never cached.
 require_once dirname(__DIR__) . '/includes/deck-preview/image.php';
 
 function deckImageSend(string $file, string $cacheControl): void {
@@ -23,8 +26,21 @@ function deckImageFail(int $code, string $message): void {
     exit;
 }
 
+$lang = deckPreviewLang($_GET['lang'] ?? '');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+    $body = (string)file_get_contents('php://input', false, null, 0, 65536);
+    $deck = deckImageGuestDeck(json_decode($body, true), $lang);
+    if ($deck === null) deckImageFail(400, 'Invalid deck');
+    $image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, deckImageSiteUrl(), false) : null;
+    if ($image === null) deckImageFail(500, 'Image unavailable');
+    deckImageSend($image['file'], 'private, no-store');
+    @unlink($image['file']);
+    exit;
+}
+
 $id      = (string)($_GET['id'] ?? '');
-$lang    = deckPreviewLang($_GET['lang'] ?? '');
 $version = preg_match('#^[0-9a-f]{10}$#', (string)($_GET['v'] ?? '')) ? (string)$_GET['v'] : null;
 if (!deckPreviewValidId($id)) deckImageFail(404, 'Deck not found');
 
