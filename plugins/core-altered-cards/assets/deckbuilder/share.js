@@ -60,6 +60,8 @@
     function saveFirst(cb) {
         if (_autoSaving) { setTimeout(function() { saveFirst(cb); }, 100); return; }
         if (!dirty && deck.id) { cb(true); return; }
+        // The pending autosave would fire during this save: for a deck without an id yet, a second creation.
+        if (_autoSaveTimer) { clearTimeout(_autoSaveTimer); _autoSaveTimer = null; }
         saveDeck(cb);
     }
 
