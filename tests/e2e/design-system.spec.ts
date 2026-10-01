@@ -68,13 +68,13 @@ test.describe('Design system', () => {
     expect(header).toBe('rgb(23, 27, 35)'); // --ac-color-surface, dark
   });
 
-  test('the site header is the brand blue in the light theme', async ({ page }) => {
+  test('the site header is the production blue in the light theme', async ({ page }) => {
     await page.goto('/pages/index');
     await page.evaluate(() => localStorage.setItem('acTheme', 'light'));
     await page.reload();
     const header = await page.evaluate(() => getComputedStyle(document.querySelector('.site-header')!).backgroundColor);
-    expect(header).toBe('rgb(20, 99, 214)'); // --ac-header-bg = --ac-color-primary, light
+    expect(header).toBe('rgb(26, 111, 217)'); // --ac-header-bg, light: the production blue
     const themeColor = await page.evaluate(() => document.querySelector('meta[name="theme-color"]')!.getAttribute('content'));
-    expect(themeColor).toBe('#1463d6');
+    expect(themeColor).toBe('#1a6fd9');
   });
 });
