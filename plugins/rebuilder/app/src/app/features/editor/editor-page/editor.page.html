@@ -4,13 +4,6 @@
     @if (deck.editable()) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
-    <a actions class="avatar-link" routerLink="/login" [attr.aria-label]="auth.isLoggedIn() ? labels.account : labels.signIn">
-      @if (auth.isLoggedIn()) {
-        <ac-avatar [size]="32" [name]="auth.username() || '?'" />
-      } @else {
-        <span class="guest-avatar"><ac-icon name="user" [size]="18" /></span>
-      }
-    </a>
   </ac-app-bar>
 }
 

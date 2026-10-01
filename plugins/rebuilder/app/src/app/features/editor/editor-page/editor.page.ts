@@ -12,9 +12,8 @@ import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
 import { AcSaveStatus } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
-import { AcAppBar, AcAvatar, AcBackButton, AcBottomNav, AcBreadcrumb, type AcBottomNavItem } from '../../../ui/nav';
+import { AcAppBar, AcBackButton, AcBottomNav, AcBreadcrumb, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
-import { AuthSession } from '../../../core/auth-session';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { EditorAltArts } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
@@ -36,7 +35,6 @@ export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
     AcToast,
     RouterLink,
     AcAppBar,
-    AcAvatar,
     AcBackButton,
     AcBottomNav,
     AcBreadcrumb,
@@ -67,7 +65,6 @@ export class EditorPage {
   private readonly overlay = inject(AcOverlayService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
-  protected readonly auth = inject(AuthSession);
 
   protected readonly id = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly view = toSignal(this.route.data.pipe(map((d) => (d['view'] as EditorView) ?? 'search')), {
@@ -75,8 +72,6 @@ export class EditorPage {
   });
   protected readonly labels = {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
-    account: $localize`:@@editor.account:Compte`,
-    signIn: $localize`:@@editor.signIn:Se connecter`,
     public: $localize`:@@editor.public:Public`,
     private: $localize`:@@editor.private:Privé`,
     breadcrumb: [{ label: $localize`:@@editor.myDecks:Mes decks`, route: '/decks' }, { label: $localize`:@@editor.edit:Modifier` }],
