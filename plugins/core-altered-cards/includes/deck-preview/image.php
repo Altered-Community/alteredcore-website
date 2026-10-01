@@ -25,7 +25,7 @@ const DECK_IMAGE_SCALE   = 2;
 const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
-const DECK_IMAGE_VERSION = 9;            // bump to redraw every cached image after a layout change
+const DECK_IMAGE_VERSION = 10;           // bump to redraw every cached image after a layout change
 
 /**
  * Labels of the image, in English for languages without a translation. Types and biomes are named as in
@@ -212,6 +212,51 @@ function deckImageEllipsis(string $font, float $px, string $text, int $maxW): st
     if (deckImageBox($font, $px, $text)['w'] <= $maxW) return $text;
     while (mb_strlen($text) > 1 && deckImageBox($font, $px, $text . '…')['w'] > $maxW) $text = rtrim(mb_substr($text, 0, -1));
     return $text . '…';
+}
+
+/** Every way to cut $words in $n lines, as arrays of lines. */
+function deckImageSplits(array $words, int $n): array {
+    if ($n === 1) return [[implode(' ', $words)]];
+    $splits = [];
+    for ($i = 1; $i <= count($words) - $n + 1; $i++) {
+        foreach (deckImageSplits(array_slice($words, $i), $n - 1) as $rest) $splits[] = array_merge([implode(' ', array_slice($words, 0, $i))], $rest);
+    }
+    return $splits;
+}
+
+/**
+ * The deck's name, never cut, in [size, lines]: on one line from 42 down to 28, as before; longer, on two lines
+ * (30 at most) or three (22 at most), whichever is larger, cut at the spaces that balance the lines, a line never
+ * starting with a separator (« · », « — »…). A name of 150 capitals fits three lines at about 17.
+ */
+function deckImageTitle(string $font, string $text, int $maxW): array {
+    $width = function (array $lines, int $size) use ($font) {
+        return max(array_map(function ($l) use ($font, $size) { return deckImageBox($font, $size, $l)['w']; }, $lines));
+    };
+    $fit = function (array $lines, int $from) use ($width, $maxW) {
+        $size = min($from, (int)floor($from * $maxW / max(1, $width($lines, $from))));
+        while ($size > 8 && $width($lines, $size) > $maxW) $size--;
+        return $size;
+    };
+    $best  = [$fit([$text], 42), [$text]];
+    $words = preg_split('#\s+#u', trim($text));
+    if ($best[0] >= 28) return $best;
+    foreach ([2 => 30, 3 => 22] as $n => $max) {
+        if (count($words) < $n) break;
+        $splits = deckImageSplits($words, $n);
+        $clean  = array_filter($splits, function ($lines) {
+            foreach (array_slice($lines, 1) as $l) if (preg_match('#^[^\p{L}\p{N}]+(\s|$)#u', $l)) return false;
+            return true;
+        });
+        $balanced = null;
+        foreach ($clean ?: $splits as $lines) {
+            $w = $width($lines, $max);
+            if ($balanced === null || $w < $balanced[0]) $balanced = [$w, $lines];
+        }
+        $size = $fit($balanced[1], $max);
+        if ($size > $best[0]) $best = [$size, $balanced[1]];
+    }
+    return $best;
 }
 
 /** $text in lines of at most $maxW, the last one cut when there are more than $maxLines. */
@@ -481,13 +526,19 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
         $tx += 88 + 20;
     }
     $tw   = $cx - 32 - $tx;
-    $name = mb_strtoupper(trim((string)($deck['name'] ?? '')));
-    for ($size = 42; $size > 28 && deckImageBox($fTitle, $size, $name)['w'] > $tw; $size -= 2);
-    $y   = deckImageText($im, $fTitle, $size, $tx, 26 + intdiv(42 - $size, 3), $white, deckImageEllipsis($fTitle, $size, $name, $tw));
-    $sub = implode(' · ', array_filter([deckPreviewDescription($deck, $lang), deckPreviewByLine($deck, $lang) ?? ''], 'strlen'));
-    if ($sub !== '') $y = deckImageText($im, $fBody, 17, $tx, $y + 13, $soft, deckImageEllipsis($fBody, 17, $sub, $tw));
+    [$size, $title] = deckImageTitle($fTitle, mb_strtoupper(trim((string)($deck['name'] ?? ''))), $tw);
+    $sub   = implode(' · ', array_filter([deckPreviewDescription($deck, $lang), deckPreviewByLine($deck, $lang) ?? ''], 'strlen'));
     $types = [];
     foreach ($stats['types'] as $group => $n) if ($n > 0) $types[] = $n . ' ' . $txt['types'][$group][$n > 1 ? 1 : 0];
+    // The block (name, subtitle, copies per type) centred in the banner.
+    $cap     = deckImageBox($fTitle, $size, 'H')['ascent'];
+    $lineGap = round($size * 0.3);
+    $blockH  = count($title) * $cap + (count($title) - 1) * $lineGap
+        + ($sub !== '' ? 13 + deckImageBox($fBody, 17, 'H')['ascent'] : 0)
+        + ($types ? 13 + deckImageBox($fBold, 16, 'H')['ascent'] : 0);
+    $y = (DECK_IMAGE_BANNER - $blockH) / 2 - $lineGap;
+    foreach ($title as $text) $y = deckImageText($im, $fTitle, $size, $tx, $y + $lineGap, $white, $text);
+    if ($sub !== '') $y = deckImageText($im, $fBody, 17, $tx, $y + 13, $soft, deckImageEllipsis($fBody, 17, $sub, $tw));
     if ($types) deckImageText($im, $fBold, 16, $tx, $y + 13, $white, deckImageEllipsis($fBold, 16, implode(' · ', $types), $tw));
 
     // ── Sections: one per card type, side by side ──
