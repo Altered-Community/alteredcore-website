@@ -49,7 +49,8 @@
         const state = {
             slots: optData.slots.slice().sort((a, b) => a.slotIndex - b.slotIndex)
                 .map((s) => ({ slotIndex: s.slotIndex, reference: s.reference })),
-            activeSlot: optData.slots[optData.slots.length - 1].slotIndex,
+            // Rotation starts at slot 1 so successive clicks fill slots 1, 2, 3 in order.
+            activeSlot: optData.slots.slice().sort((a, b) => a.slotIndex - b.slotIndex)[0].slotIndex,
         };
 
         // Last slot references the server confirmed -- what a failed save rolls back to.
