@@ -28,6 +28,9 @@ function serviceProxyReply(int $status, array $body): void {
 
 header('Cache-Control: no-store, max-age=0');
 header('X-Content-Type-Options: nosniff');
+// The upstream content type is passed through: if a service ever answers HTML, it must not run
+// as a page of the site's origin (same-origin XSS with the user's session).
+header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; sandbox");
 
 $service  = preg_replace('/[^a-z0-9-]/', '', (string)($_GET['_service'] ?? ''));
 $path     = (string)($_GET['_path'] ?? '');

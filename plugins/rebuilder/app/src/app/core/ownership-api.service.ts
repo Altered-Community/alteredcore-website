@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Service, inject } from '@angular/core';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Service, inject, signal } from '@angular/core';
+import { Observable, catchError, map, of, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { contentLocale } from './locale';
 
@@ -41,6 +41,9 @@ export function familyKey(f: AltArtFamily): string {
 export class OwnershipApiService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.ownershipApiUrl.replace(/\/$/, '');
+  private readonly version = signal(0);
+  /** Bumped by each alt-art preference saved: what was read from the service before may be stale. */
+  readonly altArtVersion = this.version.asReadonly();
 
   /** `true` when the user applies their alt-art preferences to every deck. */
   globalAltArts(): Observable<boolean> {
@@ -98,7 +101,9 @@ export class OwnershipApiService {
 
   /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */
   setAltArtPreference(family: AltArtFamily, slotReferences: string[]): Observable<void> {
-    return this.http.put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences });
+    return this.http
+      .put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences })
+      .pipe(tap({ complete: () => this.version.update((v) => v + 1) }));
   }
 
   /** The cards with the preferred alt arts, as `POST /api/alt-arts/apply-to-deck` returns them. */

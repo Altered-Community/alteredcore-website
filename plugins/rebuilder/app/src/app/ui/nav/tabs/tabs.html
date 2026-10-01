@@ -1,8 +1,9 @@
 @for (t of tabs(); track t.id) {
   <button
+    #tab
     type="button"
     role="tab"
-    [id]="'tab-' + t.id"
+    [id]="idPrefix + '-' + t.id"
     [attr.aria-selected]="t.id === active()"
     [attr.tabindex]="t.id === active() ? 0 : -1"
     (click)="active.set(t.id)"

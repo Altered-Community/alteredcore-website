@@ -29,7 +29,7 @@
     <span class="ac-sr-only">{{ blockedReason() }}</span>
   </span>
 } @else if (quantity() === 0) {
-  <ac-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="quantityChange.emit(1)" />
+  <ac-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="changeQuantity(1)" />
 } @else {
   <ac-stepper
     class="action"
@@ -37,6 +37,6 @@
     [label]="copiesLabel()"
     [value]="quantity()"
     [max]="max()"
-    (valueChange)="quantityChange.emit($event)"
+    (valueChange)="changeQuantity($event)"
   />
 }

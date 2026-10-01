@@ -54,6 +54,11 @@ export class EditorAltArts {
       );
       untracked(() => this.deck.applyAltArtSlots(slots));
     });
+    // Global mode: a preference saved meanwhile (in the card zoom) is fetched again, for the deck to follow it.
+    const seen = this.ownership.altArtVersion();
+    effect(() => {
+      if (this.ownership.altArtVersion() !== seen && untracked(this.global)) untracked(() => this.choicesRes.reload());
+    });
   }
 
   /** « Choisir les arts des jetons »: per-deck mode with the ownership service, on an editable deck. */

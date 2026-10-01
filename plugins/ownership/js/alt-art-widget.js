@@ -52,6 +52,9 @@
             activeSlot: optData.slots[optData.slots.length - 1].slotIndex,
         };
 
+        // Last slot references the server confirmed -- what a failed save rolls back to.
+        let savedRefs = state.slots.map((s) => s.reference);
+
         const renderTile = (opt) => {
             const tile = document.createElement('div');
             tile.className = 'own-aa-tile';
@@ -108,7 +111,7 @@
         };
         applyMarkers();
 
-        const saveGroup = async () => {
+        const saveGroup = async (slotReferences) => {
             const res = await fetch(cfg.setPreferenceUrl, {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -117,7 +120,7 @@
                     familyId: family.familyId,
                     faction: family.faction,
                     rarity: family.rarity,
-                    slotReferences: state.slots.map((s) => s.reference),
+                    slotReferences,
                     csrf_token: cfg.csrfToken,
                 }),
             });
@@ -132,6 +135,44 @@
                 throw new Error(saveErrorMsg + (msg ? ' — ' + msg : ''));
             }
             throw new Error(saveErrorMsg);
+        };
+
+        // One save in flight at a time, always sending the latest marker state: firing a
+        // request per click let two quick clicks race server-side, so the stored slots
+        // could end up on the older click while the markers showed the newer one (e.g.
+        // both top markers on an alt art, yet a 2-copy deck got one alt + one base).
+        // Clicks made while a save is in flight are coalesced into one follow-up save.
+        let saving = false;
+        let savePending = false;
+        const requestSave = async () => {
+            if (saving) { savePending = true; return; }
+            saving = true;
+            let lastError = null;
+            do {
+                savePending = false;
+                const refs = state.slots.map((s) => s.reference);
+                try {
+                    await saveGroup(refs);
+                    savedRefs = refs;
+                    lastError = null;
+                } catch (err) {
+                    lastError = err; // a newer pending state may still be valid -- retry with it first
+                }
+            } while (savePending);
+            saving = false;
+
+            if (lastError) {
+                state.slots.forEach((s, i) => { s.reference = savedRefs[i]; });
+                applyMarkers();
+                showError(lastError.message);
+                return;
+            }
+            // Lets the host page react to a committed preference change (e.g. the
+            // deckbuilder re-applies alt-art preferences to the deck being edited).
+            document.dispatchEvent(new CustomEvent('own:alt-art-preference-saved', {
+                detail: { familyId: family.familyId, faction: family.faction, rarity: family.rarity,
+                    slotReferences: savedRefs.slice() },
+            }));
         };
 
         // After a successful move, the active slot advances to the next one in sequence
@@ -158,22 +199,12 @@
             }
             if (!slot) return; // every marker is already on this tile — nothing to move
 
-            const movedSlot = slot.slotIndex;
-            const previousActiveSlot = state.activeSlot;
-            const previousRef = slot.reference;
-
             slot.reference = newRef;
-            state.activeSlot = movedSlot;
+            state.activeSlot = slot.slotIndex;
             advanceActiveSlot();
             applyMarkers();
             clearError();
-
-            saveGroup().catch((err) => {
-                slot.reference = previousRef;
-                state.activeSlot = previousActiveSlot;
-                applyMarkers();
-                showError(err.message);
-            });
+            requestSave();
         };
 
         const onClick = (e) => {

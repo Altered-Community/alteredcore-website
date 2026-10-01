@@ -84,6 +84,40 @@ function ownershipIsActive(): bool {
         && isset($GLOBALS['_ac_active_plugins']['ownership']);
 }
 
+/** Cookie of « Beta Deckbuilder » (account menu of the theme): '1' when the visitor turned it on, in this browser. */
+const AC_BETA_COOKIE = 'ac_beta';
+
+function betaModeOn(): bool {
+    return ($_COOKIE[AC_BETA_COOKIE] ?? '') === '1';
+}
+
+/**
+ * SPA pages of active plugins with `beta_slugs` (manifest), as [plugin, page] pairs: the theme shows the
+ * « Beta Deckbuilder » toggle when there is one.
+ */
+function pluginBetaPages(): array {
+    $out = [];
+    foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $plugin) {
+        foreach ($plugin['pages'] ?? [] as $page) {
+            if (($page['type'] ?? 'php') === 'spa' && !empty($page['beta_slugs'])) $out[] = [$plugin, $page];
+        }
+    }
+    return $out;
+}
+
+/**
+ * The SPA page that serves $slug in beta mode (e.g. the site's decks pages), at the same URL, with its own slug
+ * (`own_slug`); null when none does. pluginFindPage() keeps serving the slug otherwise.
+ */
+function pluginFindBetaPage(string $slug): ?array {
+    foreach (pluginBetaPages() as [$plugin, $page]) {
+        if (in_array($slug, (array)$page['beta_slugs'], true)) {
+            return ['slug' => $slug, 'own_slug' => $page['slug'], 'base_path' => BASE_URL . '/pages/'] + spaResolvePage($plugin, $page);
+        }
+    }
+    return null;
+}
+
 function pluginFindPage(string $slug): ?array {
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
         foreach ($plugin['pages'] ?? [] as $page) {

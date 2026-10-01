@@ -2,11 +2,11 @@
 
 ## Produit
 
-Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), montée par le site sur
-`/pages/rebuilder/` (Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Re:Builder n'existe plus
-que comme plugin du site : pas d'app autonome, pas de `index.html`, pas d'authentification propre (session du
-site). Les mêmes composants s'adaptent à la taille d'écran et à la densité : pas d'écrans « mobile » et
-« desktop » séparés.
+Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), plugin du site AlteredCore servi
+sur les pages decks du site avec « Beta Deckbuilder » (`/pages/decks`, `/pages/deck?id=`, `/pages/deckbuilder?id=`, base
+href `/pages/` ; Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Re:Builder n'existe plus que comme
+plugin du site : pas d'app autonome, pas de `index.html`, pas d'authentification propre (session du site). Les mêmes
+composants s'adaptent à la taille d'écran et à la densité : pas d'écrans « mobile » et « desktop » séparés.
 
 ## Références de conception
 

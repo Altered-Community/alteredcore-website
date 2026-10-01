@@ -33,6 +33,8 @@ export const CARD_SOURCES: CardSourceTab[] = [
 
 /** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
 const FILTERS_GROW_MAX = 136;
+/** Filters typed into a text field: a change is applied once the typing pauses. */
+const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as const satisfies readonly (keyof SearchFilters)[];
 
 /**
  * Card search shared by the deck editor and the card browser: source tabs (`?source=`), filters
@@ -149,7 +151,8 @@ export class CardSearch {
     const prev = this.draft();
     this.draft.set(next);
     clearTimeout(this.applyTimer);
-    const textChanged = prev.q !== next.q || prev.mainCost !== next.mainCost || prev.recallCost !== next.recallCost;
+    // Free-text fields (name, costs, powers) wait for the typing to pause.
+    const textChanged = TEXT_FILTERS.some((key) => prev[key] !== next[key]);
     if (textChanged) this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
     else this.search.apply(next);
   }

@@ -60,7 +60,7 @@ services:
       # JDK 21 dies with SIGILL on recent Apple Silicon (SVE/SME): disable SVE, ignored on x86.
       JAVA_OPTS_APPEND: "-XX:+IgnoreUnrecognizedVMOptions -XX:UseSVE=0"
     ports:
-      - "18080:18080"
+      - "127.0.0.1:18080:18080"  # loopback only: start-dev with admin/admin
     volumes:
       - ./docker/stack/players-realm.json:/opt/keycloak/data/import/players-realm.json:ro
     networks:
@@ -111,7 +111,7 @@ services:
       MERCURE_PUBLISHER_JWT_ALG: HS256
       MERCURE_SUBSCRIBER_JWT_ALG: HS256
     ports:
-      - "8001:80"
+      - "127.0.0.1:8001:80"
     depends_on:
       decks-db:
         condition: service_healthy

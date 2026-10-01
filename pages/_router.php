@@ -44,14 +44,22 @@ if ($_subPath === '' && file_exists($_corePath)) {
 
 // Plugin page
 initPlugins();
-$_pluginPage = pluginFindPage($_slug);
+// Visibility setting (set in Admin → Pages)
+$_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
+if (!is_array($_hiddenPluginSlugs)) $_hiddenPluginSlugs = [];
+// Beta mode (« Beta Deckbuilder »): a plugin's SPA page takes over the slugs of its manifest `beta_slugs`, at the
+// same URLs, unless it is hidden itself. The page it replaces keeps answering its own calls (?ajax=…, form posts).
+$_pluginPage = null;
+if ($_subPath === '' && betaModeOn() && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) && !isset($_GET['ajax'])) {
+    $_pluginPage = pluginFindBetaPage($_slug);
+    if ($_pluginPage !== null && in_array($_pluginPage['own_slug'], $_hiddenPluginSlugs, true)) $_pluginPage = null;
+}
+$_pluginPage = $_pluginPage ?? pluginFindPage($_slug);
 if ($_pluginPage !== null && $_subPath !== '' && $_pluginPage['type'] !== 'spa') {
     $_pluginPage = null; // deep paths exist only for client-routed pages
 }
 if ($_pluginPage !== null) {
-    // Respect visibility setting (set in Admin → Pages)
-    $_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
-    if (is_array($_hiddenPluginSlugs) && in_array($_slug, $_hiddenPluginSlugs, true)) {
+    if (in_array($_slug, $_hiddenPluginSlugs, true)) {
         include __DIR__ . '/404.php';
         exit;
     }
@@ -74,11 +82,11 @@ if ($_pluginPage !== null) {
     if ($_pluginPage['type'] === 'spa') {
         $_pluginPage['sub_path'] = $_subPath;
         $pageFullwidth = $_pluginPage['fullwidth'];
-        // Manifest `meta`: title and link preview of the client route ($subPath), set before the header.
+        // Manifest `meta`: title and link preview of the client route ($slug, $subPath), set before the header.
         if (!empty($_pluginPage['meta_file'])) {
-            (function (string $subPath) use (&$pageTitle, &$pageDescription, &$pageImage, $_pluginPage) {
+            (function (string $slug, string $subPath) use (&$pageTitle, &$pageDescription, &$pageImage, $_pluginPage) {
                 include $_pluginPage['meta_file'];
-            })((string)$_subPath);
+            })($_slug, (string)$_subPath);
         }
         spaRenderPage($_pluginPage);
     } else {

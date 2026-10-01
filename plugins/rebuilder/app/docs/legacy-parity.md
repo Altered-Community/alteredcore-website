@@ -33,10 +33,10 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 |---|---|
 | Deck privé, 404, erreur, retour, modifier, supprimer, dupliquer, copier la liste | ✅ |
 | Grille par type, decklist, description, courbes, main de test, stats de main, calculateurs | ✅ |
-| URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | 🟡 `/pages/rebuilder/deck?id=` redirige vers la page deck ; `/pages/deck` reste la page du site |
+| URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | ✅ mêmes URL (`/pages/decks`, `/pages/deck?id=`, `/pages/deckbuilder?id=`) : Re:Builder avec « Beta Deckbuilder », la page du site sinon |
 | Nom du deck dans `<title>` / og:title (aperçu des liens partagés) | ✅ (`meta.php`, champ `meta` du manifeste) |
 | Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ (sans fenêtre, comme le site) |
-| Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ✅ (Web Share gardé quand le navigateur le propose) |
+| Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ✅ (toujours la fenêtre, jamais le partage système) |
 | Badge Brouillon, icône de faction dans l'en-tête | ✅ |
 | Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | ❌ écarté volontairement (jugé inutile) |
 | Main de test en mode jeu (mana, plateau, défausse, glisser-déposer) | ✅ (glisser-déposer du CDK, menu d’actions au clic ; masqué sur mobile) |
@@ -72,4 +72,4 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 
 Fonctions propres au plugin : plusieurs decks invités, chips de filtres retirables, filtres « Sans effet » / « Écho », vue grille
 ou liste, défilement infini virtualisé, bouton « Dupliquer en local » sur le deck d'un autre, URLs des onglets de la page deck,
-Web Share, import Equinox intégré, retour à la même position dans la liste.
+import Equinox intégré, retour à la même position dans la liste.

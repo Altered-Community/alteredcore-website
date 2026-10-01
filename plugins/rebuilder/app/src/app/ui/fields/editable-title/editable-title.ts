@@ -11,6 +11,8 @@ import { nextId } from '../value-accessor';
 })
 export class AcEditableTitle {
   readonly value = model('');
+  /** Someone else's deck: the name is shown, not editable. */
+  readonly readonly = input(false);
   readonly ariaLabel = input($localize`:@@ui.editableTitle.label:Nom du deck`);
   readonly commit = output<string>();
   protected readonly id = nextId('ac-title');

@@ -84,6 +84,8 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
         'meta_file'     => spaMetaFile($plugin, $page),
+        // Base href of the client routes (pluginFindBetaPage(): /pages/, the routes being the slugs it takes over)
+        'base_path'     => BASE_URL . '/pages/' . $slug . '/',
         'spa'           => $spa,
     ];
 }
@@ -135,7 +137,7 @@ function spaHostConfig(array $page): array {
             'sub'      => ($u['sub'] ?? '') !== '' ? $u['sub'] : null,
         ];
     }
-    $basePath = BASE_URL . '/pages/' . $page['slug'] . '/';
+    $basePath = $page['base_path'];
     $services = [
         'cards'   => spaPublicServiceUrl('CARDS_API'),
         'cdn'     => spaPublicServiceUrl('CDN'),

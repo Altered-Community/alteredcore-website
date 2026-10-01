@@ -1,5 +1,6 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, ElementRef, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
+import { _getFocusedElementPierceShadowDom } from '@angular/cdk/platform';
 import { AcIcon } from '../../icon';
 import { AC_OVERLAY_CONTENT } from '../overlay';
 
@@ -39,7 +40,8 @@ export class AcOverlayContainer {
 
   /** Called by the service before a step is shown. */
   rememberOpener(): void {
-    this.openers[this.root.views().length - 1] = document.activeElement;
+    // Inside the shadow root, `document.activeElement` is the shadow host.
+    this.openers[this.root.views().length - 1] = _getFocusedElementPierceShadowDom();
   }
 
   goBack(): void {

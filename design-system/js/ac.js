@@ -7,6 +7,7 @@
  *                                       localStorage 'acTheme'); a child .theme-icon-moon /
  *                                       .theme-icon-sun is shown for the theme it switches to;
  *                                       optional data-label-dark / data-label-light titles.
+ *   acSetTheme(dark)                    same switch from a script (theme buttons of a menu).
  *   --ac-header-height                  measured on <html> from the sticky .site-header, for
  *                                       sticky panels and full-height layouts.
  *   select.ac-select, select.form-select drawn as a listbox (docs/components/listbox.md), also
@@ -48,14 +49,16 @@
         });
     }
 
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest && e.target.closest('[data-theme-toggle]');
-        if (!btn) return;
-        var dark = !isDark();
+    window.acSetTheme = function (dark) {
         if (dark) root.setAttribute('data-theme', 'dark');
         else root.removeAttribute('data-theme');
         try { localStorage.setItem('acTheme', dark ? 'dark' : 'light'); } catch (err) { /* private mode */ }
         syncToggles();
+    };
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('[data-theme-toggle]');
+        if (btn) window.acSetTheme(!isDark());
     });
 
     function measureHeader() {

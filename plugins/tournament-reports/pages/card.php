@@ -694,7 +694,8 @@ var AlteredCard = {
                 });
         }
 
-        history.pushState(null, '', '?ref=' + encodeURIComponent(ref) + '&card_lang=' + encodeURIComponent(l) + (AlteredCard.tournamentId ? '&tournament=' + encodeURIComponent(AlteredCard.tournamentId) : ''));
+        // Replace, not push: switching the card language must not add Back steps.
+        history.replaceState(history.state, '', '?ref=' + encodeURIComponent(ref) + '&card_lang=' + encodeURIComponent(l) + (AlteredCard.tournamentId ? '&tournament=' + encodeURIComponent(AlteredCard.tournamentId) : ''));
 
         document.querySelectorAll('.card-lang-btn').forEach(function (b) {
             var active = b.dataset.lang === l;

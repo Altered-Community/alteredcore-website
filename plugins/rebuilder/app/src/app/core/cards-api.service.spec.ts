@@ -111,6 +111,13 @@ describe('CardsApiService', () => {
     expect(got).toEqual([7, 7]);
   });
 
+  it('refetches a random search each time (a new deal)', () => {
+    api.search({ page: 1, order: 'random' }).subscribe();
+    http.expectOne((r) => r.params.get('random') === 'true').flush({ member: [], totalItems: 7 });
+    api.search({ page: 1, order: 'random' }).subscribe();
+    http.expectOne((r) => r.params.get('random') === 'true').flush({ member: [], totalItems: 7 });
+  });
+
   it('does not keep a failed search, and cancels one nobody listens to any more', () => {
     api.search({ page: 1 }).subscribe({ error: () => undefined });
     http.expectOne((r) => r.url.endsWith('/api/cards')).flush('boom', { status: 504, statusText: 'Gateway Timeout' });

@@ -1,25 +1,47 @@
-import { csrfOf, expect, login, test } from './fixtures';
+import { BETA_COOKIE, csrfOf, expect, login, setBeta, test } from './fixtures';
 
-/** The shell's side of manifest v2: routing, host contract, session token. Plugin-agnostic. */
+/**
+ * The shell's side of manifest v2: routing, host contract, session token. The SPA page under test is Re:Builder's,
+ * served on the site's decks pages with « Beta Deckbuilder » on.
+ */
 test.describe('Shell · SPA pages', () => {
-  test('deep links reach SPA pages only; PHP pages keep a single URL', async ({ request }) => {
-    for (const path of ['/pages/rebuilder', '/pages/rebuilder/decks', '/pages/rebuilder/decks/new', '/pages/rebuilder/any/deep/path']) {
-      const res = await request.get(path);
-      expect(res.status(), path).toBe(200);
-      expect(await res.text()).toContain('data-ac-plugin="rebuilder"');
+  test.beforeEach(async ({ page }) => setBeta(page, true));
+
+  test('deep paths reach SPA pages only; PHP pages keep a single URL', async ({ request }) => {
+    // The plugin's own page answers deep paths (its former links, redirected to the site's URLs by its meta.php).
+    for (const [path, to] of [['/pages/rebuilder', '/pages/decks'], ['/pages/rebuilder/decks/new', '/pages/deckbuilder'], ['/pages/rebuilder/any/deep/path', '/pages/decks']]) {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect(res.status(), path).toBe(302);
+      expect(new URL(res.headers()['location']!, 'http://x').pathname, path).toBe(to);
     }
     expect((await request.get('/pages/decks/anything')).status()).toBe(404);
     expect((await request.get('/pages/news/anything')).status()).toBe(404);
-    // The site's own decks pages and deck builder are still there, next to Re:Builder.
+    // Without the beta, the site's own decks pages and deck builder.
     for (const path of ['/pages/decks', '/pages/deckbuilder']) {
-      const res = await request.get(path);
+      const res = await request.get(path, { headers: { Cookie: '' } });
       expect(res.status(), path).toBe(200);
       expect(await res.text(), path).not.toContain('data-ac-plugin="rebuilder"');
     }
   });
 
+  test('« Beta Deckbuilder »: the SPA page serves its beta_slugs at their URLs, the site page keeps its calls', async ({ playwright, baseURL }) => {
+    const beta = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: `${BETA_COOKIE}=1` } });
+    for (const path of ['/pages/decks', '/pages/deck?id=00000000-0000-0000-0000-000000000000', '/pages/deckbuilder']) {
+      const res = await beta.get(path);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain('data-ac-plugin="rebuilder"');
+      expect(html, path).toContain('"basePath":"/pages/"');
+    }
+    // ?ajax=… calls of the site's pages still reach them (JSON), deep paths stay PHP-only.
+    const heroes = await beta.get('/pages/decks?ajax=heroes');
+    expect(heroes.headers()['content-type']).toContain('application/json');
+    expect((await beta.get('/pages/decks/anything')).status()).toBe(404);
+    await beta.dispose();
+  });
+
   test('publishes window.AlteredCore v1 and isolates the plugin in a shadow root', async ({ page }) => {
-    await page.goto('/pages/rebuilder?lang=fr');
+    await page.goto('/pages/decks?lang=fr');
     // The plugin asks for its mount (and the shell attaches the shadow root) once its modules load.
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     const host = await page.evaluate(() => {
@@ -34,7 +56,7 @@ test.describe('Shell · SPA pages', () => {
         shadow: !!el.shadowRoot,
       };
     });
-    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/rebuilder/', shadow: true });
+    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/', shadow: true });
     expect(host.methods).toHaveLength(5);
     // No token API: authenticated services are reached through the site's relay.
     expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);
@@ -84,7 +106,7 @@ test.describe('Shell · SPA pages', () => {
     expect((await request.post('/api/v1/services/decks/api/decks', { data: {} })).status()).toBe(403);
     expect((await request.get('/api/v1/session/token')).status()).toBe(404);
 
-    await page.goto('/pages/rebuilder');
+    await page.goto('/pages/decks');
     const csrf = await csrfOf(page);
     const guestWrite = await page.request.post('/api/v1/services/decks/api/decks', { headers: { 'X-CSRF-Token': csrf }, data: {} });
     expect(guestWrite.status()).toBe(401);
@@ -95,7 +117,7 @@ test.describe('Shell · SPA pages', () => {
     expect((await request.post(toggle, { form: { card_ref: 'x' } })).status()).toBe(403);
     expect((await request.get('/papi/rebuilder/nope')).status()).toBe(404);
 
-    await login(page, 'alice', '/pages/rebuilder');
+    await login(page, 'alice', '/pages/decks');
     const csrf = await csrfOf(page);
     const post = (headers: Record<string, string>, form: Record<string, string>) =>
       page.evaluate(async ([u, h, f]) => {
@@ -109,7 +131,7 @@ test.describe('Shell · SPA pages', () => {
   });
 
   test('a signed-in session reaches the decks API through the relay, without a token in the browser', async ({ page }) => {
-    await login(page, 'alice', '/pages/rebuilder');
+    await login(page, 'alice', '/pages/decks');
     const res = await page.evaluate(async () => {
       const r = await fetch('/api/v1/services/decks/api/decks?itemsPerPage=1', { headers: { Accept: 'application/json' } });
       return { status: r.status, body: await r.text() };

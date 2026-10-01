@@ -125,15 +125,24 @@ export class GuestDeckService {
 
   /** The deck is now on the account: the site's builder stops offering its guest copy (as the site's decks page does). */
   forgetSiteDeck(id: string): void {
-    if (typeof localStorage === 'undefined' || this.siteImport()?.id !== id) return;
-    localStorage.removeItem(SITE_GUEST_DECK_KEY);
-    localStorage.removeItem(SITE_GUEST_IMPORT_KEY);
+    const store = storage();
+    if (!store || this.siteImport()?.id !== id) return;
+    write(() => {
+      store.removeItem(SITE_GUEST_DECK_KEY);
+      store.removeItem(SITE_GUEST_IMPORT_KEY);
+    });
   }
 
   /** Makes (or updates) the guest deck of the site's builder, when its JSON changed since the last time. */
   private syncSiteDeck(): void {
-    if (typeof localStorage === 'undefined') return;
-    const raw = localStorage.getItem(SITE_GUEST_DECK_KEY);
+    const store = storage();
+    if (!store) return;
+    let raw: string | null;
+    try {
+      raw = store.getItem(SITE_GUEST_DECK_KEY);
+    } catch {
+      return;
+    }
     const done = this.siteImport();
     if (!raw || done?.raw === raw) return;
     let input: GuestDeckInput | null;
@@ -145,12 +154,12 @@ export class GuestDeckService {
     if (!input) return;
     const previous = done ? this.get(done.id) : undefined;
     const deck = previous ? this.save({ ...previous, ...input, name: input.name || previous.name }) : this.create(input);
-    localStorage.setItem(SITE_GUEST_IMPORT_KEY, JSON.stringify({ id: deck.id, raw }));
+    write(() => store.setItem(SITE_GUEST_IMPORT_KEY, JSON.stringify({ id: deck.id, raw })));
   }
 
   private siteImport(): { id: string; raw: string } | null {
     try {
-      const v = JSON.parse(localStorage.getItem(SITE_GUEST_IMPORT_KEY) ?? 'null') as { id?: unknown; raw?: unknown } | null;
+      const v = JSON.parse(storage()?.getItem(SITE_GUEST_IMPORT_KEY) ?? 'null') as { id?: unknown; raw?: unknown } | null;
       return v && typeof v.id === 'string' && typeof v.raw === 'string' ? { id: v.id, raw: v.raw } : null;
     } catch {
       return null;
@@ -158,9 +167,8 @@ export class GuestDeckService {
   }
 
   private read(): Deck[] {
-    if (typeof localStorage === 'undefined') return [];
     try {
-      const raw = localStorage.getItem(GUEST_DECKS_KEY);
+      const raw = storage()?.getItem(GUEST_DECKS_KEY);
       if (!raw) return [];
       const parsed = JSON.parse(raw) as Deck[];
       return Array.isArray(parsed) ? parsed.filter((d) => d && typeof d.id === 'string') : [];
@@ -170,8 +178,29 @@ export class GuestDeckService {
   }
 
   private persist(): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(GUEST_DECKS_KEY, JSON.stringify(this.decksSig()));
+    const store = storage();
+    if (store) write(() => store.setItem(GUEST_DECKS_KEY, JSON.stringify(this.decksSig())));
+  }
+}
+
+/**
+ * localStorage, or `null` when there is none: reading `window.localStorage` throws when the
+ * browser blocks site data. The decks then live in memory only.
+ */
+function storage(): Storage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** A storage write that may fail (quota exceeded, storage blocked): the decks stay in memory. */
+function write(fn: () => void): void {
+  try {
+    fn();
+  } catch {
+    // Kept in memory only.
   }
 }
 

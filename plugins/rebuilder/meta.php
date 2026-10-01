@@ -1,10 +1,29 @@
 <?php
-// Manifest `meta` of the Re:Builder page: title and link preview of a deck (`decks/{id}`, `decks/{id}/edit`, `deck?id=`), as on the
-// site's deck page (core-altered-cards pages/deck.php sets $pageTitle to the deck's name). Included by pages/_router.php
-// with $subPath in scope; a guest deck, an unknown deck or an unreachable API keep the page's default title.
-// `deck?id=` is the site's deck page link format (the app redirects it to `decks/{id}`).
-if ($subPath === 'deck' && preg_match('#^[0-9a-f-]{36}$#i', (string)($_GET['id'] ?? ''))) $subPath = 'decks/' . $_GET['id'];
-if (!preg_match('#^decks/([0-9a-f-]{36})(?:/edit)?$#i', $subPath, $m) || !defined('DECKS_API_URL') || DECKS_API_URL === '') return;
+// Manifest `meta` of the Re:Builder page, included by pages/_router.php before the header with $slug and $subPath in
+// scope.
+// The plugin's own page (/pages/rebuilder/…): its former links go to the site's URLs, which open Re:Builder or the
+// site's page depending on « Beta Deckbuilder » (same mapping as app/src/app/embed/legacy-url.serializer.ts).
+if ($slug === 'rebuilder') {
+    $query = $_GET;
+    $id    = (string)($query['id'] ?? '');
+    unset($query['id']);
+    if ($subPath === '' && $id !== '')        [$page, $params] = ['deckbuilder', ['id' => $id]];
+    elseif ($subPath === 'deck' && $id !== '') [$page, $params] = ['deck', ['id' => $id]];
+    elseif ($subPath === 'decks/new')          [$page, $params] = ['deckbuilder', []];
+    elseif (preg_match('#^decks/([^/]+)(?:/(deck|description|main|cartes))?$#', $subPath, $m)) {
+        [$page, $params] = ['deck', ['id' => $m[1]] + (isset($m[2]) && $m[2] !== 'cartes' ? ['tab' => $m[2]] : [])];
+    } elseif (preg_match('#^decks/([^/]+)/edit(?:/(apercu|deck|main))?$#', $subPath, $m)) {
+        [$page, $params] = ['deckbuilder', ['id' => $m[1]] + (isset($m[2]) ? ['view' => $m[2]] : [])];
+    } else [$page, $params] = ['decks', []];
+    $qs = http_build_query($params + $query);
+    redirect(BASE_URL . '/pages/' . $page . ($qs !== '' ? '?' . $qs : ''));
+}
+
+// Title and link preview of a deck (`deck?id=`, `deckbuilder?id=`), as on the site's deck page (core-altered-cards
+// pages/deck.php sets $pageTitle to the deck's name). A guest deck, an unknown deck or an unreachable API keep the
+// page's default title.
+$id = in_array($slug, ['deck', 'deckbuilder'], true) ? (string)($_GET['id'] ?? '') : '';
+if (!preg_match('#^[0-9a-f-]{36}$#i', $id) || !defined('DECKS_API_URL') || DECKS_API_URL === '') return;
 
 $headers = ['Accept: application/json'];
 // The owner's private deck needs the session's token (the relay's, kc_get_access_token refreshes it).
@@ -12,7 +31,7 @@ if (kcIsLoggedIn() && defined('KC_URL') && KC_URL !== '' && function_exists('kc_
     $token = kc_get_access_token((int)($_SESSION['user_id'] ?? 0));
     if ($token) $headers[] = 'Authorization: Bearer ' . $token;
 }
-$ch = curl_init(rtrim(DECKS_API_URL, '/') . '/api/decks/' . rawurlencode($m[1]) . '?' . http_build_query(['locale' => getUiLang()]));
+$ch = curl_init(rtrim(DECKS_API_URL, '/') . '/api/decks/' . rawurlencode($id) . '?' . http_build_query(['locale' => getUiLang()]));
 curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 4]);
 $body = curl_exec($ch);
 $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -56,7 +56,7 @@ export class ShareDeckOverlay {
     this.deck.makePublic().subscribe((ok) => {
       this.busy.set(false);
       if (ok) this.step.set('share');
-      else this.error.set(this.deck.error());
+      else this.error.set(this.deck.actionError());
     });
   }
 

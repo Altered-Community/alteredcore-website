@@ -27,7 +27,7 @@
           <div class="title-block">
             <ac-breadcrumb [items]="labels.breadcrumb" />
             <div class="title-row">
-              <ac-editable-title [value]="deck.name()" (valueChange)="deck.rename($event)" />
+              <ac-editable-title [value]="deck.name()" [readonly]="!deck.editable()" (valueChange)="deck.rename($event)" />
               @if (deck.editable()) {
                 <ac-save-status [state]="deck.saveState()" />
               }

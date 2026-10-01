@@ -2,7 +2,7 @@
 // azure theme navigation
 // Variables provided by includes/header.php:
 //   $lang, $currentPage, $__navItems, $__iframeNavId
-//   $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact
+//   $_langNames, $_langUrls, $_hTxt, $__mobileCompact
 
 $__iframeNavId    = ($currentPage === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
 if (!function_exists('__nav_href')) {
@@ -43,102 +43,18 @@ if (!function_exists('__nav_active')) {
                 <span class="az-brand-name"><?= h(getSiteName()) ?></span>
             </a>
 
-            <!-- Controls: dark mode toggle, language dropdown, user menu / login -->
-            <div class="az-topbar-controls">
-                <button id="header-theme-toggle" class="ac-icon-button ac-icon-button--ghost" type="button" data-theme-toggle
-                        data-label-dark="<?= h($_hTxt['dark_mode']) ?>" data-label-light="<?= h($_hTxt['light_mode']) ?>"
-                        aria-label="<?= h($_hTxt['dark_mode']) ?>">
-                    <?= ac_icon('moon', 'theme-icon-moon') ?><?= str_replace('<svg ', '<svg hidden ', ac_icon('sun', 'theme-icon-sun')) ?>
-                </button>
-
-                <!-- Language dropdown -->
-                <div class="dropdown dropdown-lang">
-                    <button class="ac-icon-button ac-icon-button--ghost" type="button"
-                            data-bs-toggle="dropdown" aria-expanded="false"
-                            title="<?= h($_langNames[$lang] ?? 'Language') ?>"
-                            aria-label="<?= h($_langNames[$lang] ?? 'Language') ?>">
-                        <?= $_langFlags[$lang] ?? '🌐' ?>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-flags">
-                        <?php foreach ($_langFlags as $_l => $_flag): ?>
-                        <li>
-                            <a class="dropdown-item <?= $lang === $_l ? 'active' : '' ?>"
-                               href="<?= h($_langUrls[$_l]) ?>"
-                               title="<?= h($_langNames[$_l]) ?>">
-                                <?= $_flag ?>
-                            </a>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-
-                <!-- User menu or login button -->
-                <?php if (kcIsLoggedIn()):
-                    $kcU = kcUser(); ?>
-                    <div class="dropdown">
-                        <button class="az-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="ac-avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr((string)$kcU['username'], 0, 1))) ?></span>
-                            <span class="az-user-name"><?= h($kcU['username']) ?></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <?php foreach (getUserMenuItems() as $__mi): ?>
-                                <?php if ($__mi['type'] === 'separator'): ?>
-                                    <li><hr class="dropdown-divider"></li>
-                                <?php elseif ($__mi['type'] === 'system'): ?>
-                                    <?php if ($__mi['system_key'] === 'email_display'): ?>
-                                        <li><span class="dropdown-item-text small text-muted"><?= h($kcU['email']) ?></span></li>
-                                    <?php elseif ($__mi['system_key'] === 'account'): ?>
-                                        <li>
-                                            <a class="dropdown-item" href="<?= BASE_URL ?>/pages/account">
-                                                <?= ac_icon('user') ?>
-                                                <?= h($__mi['label'] ?: $_hTxt['my_account']) ?>
-                                            </a>
-                                        </li>
-                                    <?php elseif ($__mi['system_key'] === 'logout'): ?>
-                                        <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="<?= $_logoutUrl ?>">
-                                                <?= ac_icon($__mi['icon'] ?: 'log-out') ?>
-                                                <?= h($_hTxt['sign_out']) ?>
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>
-                                <?php elseif ($__mi['type'] === 'link' && $__mi['label']): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="<?= h($__mi['url'] ? BASE_URL . resolveUrlLang($__mi['url']) : '#') ?>">
-                                            <?= !empty($__mi['icon']) ? ac_icon((string)$__mi['icon']) : '' ?>
-                                            <?= h($__mi['label']) ?>
-                                        </a>
-                                    </li>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                            <?php if (canViewAdminPanel()): ?>
-                                <li>
-                                    <a class="dropdown-item" href="<?= BASE_URL ?>/admin/" target="_blank" rel="noopener">
-                                        <?= ac_icon('gauge') ?>
-                                        Admin
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
-                <?php else: ?>
-                    <a href="<?= BASE_URL ?>/pages/login" class="ac-button ac-button--sm az-login">
-                        <?= ac_icon('log-in') ?>
-                        <span><?= h($_hTxt['sign_in']) ?></span>
-                    </a>
-                <?php endif; ?>
-            </div><!-- /.az-topbar-controls -->
-
-            <!-- Account button — mobile only, opens #azAccountMenu (script below) -->
-            <button class="ac-icon-button ac-icon-button--ghost az-account-btn d-md-none" type="button" id="azAccountBtn"
+            <!-- Account button, opens #azAccountMenu (script below): sign in or the user's links, theme, language, beta -->
+            <button class="az-account-btn" type="button" id="azAccountBtn"
                     aria-controls="azAccountMenu" aria-expanded="false"
                     aria-label="<?= h($_hTxt['account']) ?>">
-                <?php if (kcIsLoggedIn()): ?>
-                <span class="ac-avatar az-account-initial" aria-hidden="true"><?= h(mb_strtoupper(mb_substr(kcUser()['username'] ?? '', 0, 1))) ?></span>
+                <?php if (kcIsLoggedIn()): $__accName = kcUser()['username'] ?? ''; ?>
+                <span class="ac-avatar az-account-initial" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__accName, 0, 1))) ?></span>
+                <span class="az-account-label" aria-hidden="true"><?= h($__accName) ?></span>
                 <?php else: ?>
                 <?= ac_icon('user') ?>
+                <span class="az-account-label" aria-hidden="true"><?= h($_hTxt['account_btn']) ?></span>
                 <?php endif; ?>
+                <?= ac_icon('chevron-down', 'az-account-caret') ?>
             </button>
 
             <!-- Burger button — mobile only, opens #azMobileMenu (script below) -->
@@ -165,9 +81,6 @@ if (!function_exists('__nav_active')) {
                             }
                         }
                     }
-                    // A parent with both a real URL and children renders as a split
-                    // button: left side navigates, right side opens the dropdown.
-                    $__niSplit = !empty($__ni['children']) && !empty($__ni['url']) && $__ni['url'] !== '#';
                 ?>
                 <?php if (!empty($__ni['is_sidebar_toggle'])): ?>
                     <li class="nav-item">
@@ -181,21 +94,7 @@ if (!function_exists('__nav_active')) {
                         </button>
                     </li>
                 <?php elseif (!empty($__ni['children'])): ?>
-                    <li class="nav-item dropdown<?= $__niSplit ? ' nav-item-split' : '' ?><?= ($__niSplit && $__niActive) ? ' active' : '' ?>">
-                        <?php if ($__niSplit): ?>
-                        <a href="<?= h(__nav_href($__ni)) ?>"
-                           class="nav-link nav-link-split-main"
-                           <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
-                           title="<?= h($__ni['label']) ?>">
-                            <?= ac_icon((string)$__ni['icon']) ?>
-                            <?php if (empty($__ni['hide_label'])): ?>
-                            <span><?= h($__ni['label']) ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <a href="#" class="nav-link dropdown-toggle nav-link-split-caret"
-                           data-bs-toggle="dropdown" aria-expanded="false"
-                           title="<?= h($__ni['label']) ?>"></a>
-                        <?php else: ?>
+                    <li class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle <?= $__niActive ? 'active' : '' ?>"
                            data-bs-toggle="dropdown" aria-expanded="false"
                            title="<?= h($__ni['label']) ?>">
@@ -204,7 +103,6 @@ if (!function_exists('__nav_active')) {
                             <span><?= h($__ni['label']) ?></span>
                             <?php endif; ?>
                         </a>
-                        <?php endif; ?>
                         <?php
                         // Children grouped into columns: a section header (or a separator)
                         // starts a new column. Desktop shows them as a full-width mega menu,
@@ -312,7 +210,7 @@ foreach ($__navItems as $__ni) {
 
 </div>
 
-<!-- Account popover (below 768px): sign in or the user's links, theme and language -->
+<!-- Account popover: sign in or the user's links, theme, language and « Beta Deckbuilder » -->
 <div id="azAccountBackdrop" class="az-am-backdrop" hidden></div>
 <div id="azAccountMenu" class="az-account-menu" role="dialog" aria-label="<?= h($_hTxt['account']) ?>" hidden>
     <?php if (kcIsLoggedIn()): $__amUser = kcUser(); ?>
@@ -376,18 +274,33 @@ foreach ($__navItems as $__ni) {
         </div>
     </div>
 
+    <?php if (pluginBetaPages()): ?>
+    <div class="az-am-section">
+        <span class="az-am-label"><?= h($_hTxt['beta']) ?></span>
+        <label class="ac-switch az-am-beta">
+            <span class="az-am-beta-text">
+                <span class="az-am-beta-title" id="azAmBeta"><?= h($_hTxt['beta_deckbuilder']) ?></span>
+                <span class="az-am-beta-desc"><?= h($_hTxt['beta_deckbuilder_desc']) ?></span>
+            </span>
+            <input type="checkbox" role="switch" aria-labelledby="azAmBeta"<?= betaModeOn() ? ' checked' : '' ?>
+                   data-az-beta="<?= h(AC_BETA_COOKIE) ?>" data-az-beta-path="<?= h(BASE_URL . '/') ?>">
+        </label>
+    </div>
+    <?php endif; ?>
+
     <?php if (kcIsLoggedIn()): ?>
     <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
     <a class="az-am-signout" href="<?= $_logoutUrl ?>"><?= ac_icon('log-out') ?> <?= h($_hTxt['sign_out']) ?></a>
     <?php endif; ?>
 </div>
 <script>
-// Mobile header: the burger opens a full-screen menu, the account button a
+// Header: the burger (mobile) opens a full-screen menu, the account button a
 // popover. Opening one closes the other; Escape closes either.
 (function () {
     var hdr = document.querySelector('.az-site-header');
     if (!hdr) return;
     var panels = [];
+    var desktop = window.matchMedia('(min-width: 768px)');
 
     function register(btn, panel, onToggle) {
         if (!btn || !panel) return null;
@@ -417,7 +330,7 @@ foreach ($__navItems as $__ni) {
         document.documentElement.classList.toggle('az-mm-open', open);
     });
 
-    // Account: popover under its button, the page dimmed behind it
+    // Account: popover under its button, right-aligned with it (the page dimmed behind it on mobile)
     var accBtn = document.getElementById('azAccountBtn');
     var acc = document.getElementById('azAccountMenu');
     var backdrop = document.getElementById('azAccountBackdrop');
@@ -429,38 +342,47 @@ foreach ($__navItems as $__ni) {
     var accPanel = register(accBtn, acc, function (open) {
         backdrop.hidden = !open;
         if (open) {
-            var top = headerBottom(), r = accBtn.getBoundingClientRect();
+            var top = headerBottom(), r = accBtn.getBoundingClientRect(), w = document.documentElement.clientWidth;
+            var right = Math.max(12, Math.round(w - r.right));
             backdrop.style.top = top + 'px';
             acc.style.top = (top + 8) + 'px';
+            acc.style.right = right + 'px';
             // Point the caret at the button's centre
-            acc.style.setProperty('--az-am-caret', Math.round(window.innerWidth - r.left - r.width / 2 - 12 - 6) + 'px');
+            acc.style.setProperty('--az-am-caret', Math.round(w - r.left - r.width / 2 - right - 6) + 'px');
             syncTheme();
         }
     });
-    if (backdrop && accPanel) backdrop.addEventListener('click', function () { accPanel.setOpen(false); });
+    // A click anywhere else (backdrop on mobile, header and page on desktop) closes it
+    if (accPanel) document.addEventListener('click', function (e) {
+        if (!acc.hidden && !acc.contains(e.target) && !accBtn.contains(e.target)) accPanel.setOpen(false);
+    });
 
-    // Theme buttons reuse the header toggle (hidden on mobile)
-    var headerToggle = document.getElementById('header-theme-toggle');
+    // « Beta Deckbuilder »: a cookie of this browser, read by the page router (pages/_router.php), then a reload
+    var beta = acc ? acc.querySelector('[data-az-beta]') : null;
+    if (beta) beta.addEventListener('change', function () {
+        var on = beta.checked;
+        document.cookie = beta.dataset.azBeta + '=' + (on ? '1; max-age=31536000' : '; max-age=0')
+            + '; path=' + beta.dataset.azBetaPath + '; SameSite=Lax';
+        location.replace(location.href.split('#')[0]); // a GET, even on a page rendered by a form post
+    });
+
+    // Theme: the account menu's Light / Dark buttons (the footer keeps its own toggle, its icon follows)
     themeBtns.forEach(function (b) {
-        b.addEventListener('click', function () {
-            var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (headerToggle && (b.dataset.azTheme === 'dark') !== dark) headerToggle.click();
-            syncTheme();
-        });
+        b.addEventListener('click', function () { window.acSetTheme(b.dataset.azTheme === 'dark'); syncTheme(); });
     });
 
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         panels.forEach(function (p) { if (!p.panel.hidden) { p.setOpen(false); p.btn.focus(); } });
     });
-    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) {
+    desktop.addEventListener('change', function (e) {
         if (e.matches) panels.forEach(function (p) { p.setOpen(false); });
     });
 }());
 </script>
 <script>
 // Desktop single bar: shrink the header step by step, only as far as needed
-// for the menu to fit between the brand and the controls: tighter spacing,
+// for the menu to fit between the brand and the account button: tighter spacing,
 // then the logo without the site name, then icon-only menu items starting
 // from the last one (classes styled in style.css).
 (function () {
@@ -469,13 +391,13 @@ foreach ($__navItems as $__ni) {
     var desktop = window.matchMedia('(min-width: 768px)');
     var steps   = ['az-nav-tight', 'az-nav-no-name'];
     var nav     = header.querySelector('.az-nav-list');
-    var ctrls   = header.querySelector('.az-topbar-controls');
+    var ctrls   = header.querySelector('.az-account-btn');
     if (!nav || !ctrls) return;
     var items   = Array.prototype.slice.call(nav.children).reverse();
 
     function overflows() {
         // Bar items do not shrink (style.css), so a menu that is too wide
-        // pushes the controls out of the header.
+        // pushes the account button out of the header.
         return header.scrollWidth > header.clientWidth
             || nav.getBoundingClientRect().right > ctrls.getBoundingClientRect().left - 16;
     }

@@ -1,7 +1,7 @@
 let base = '';
 
 /**
- * URL of a file from `public/` (`assets/…`). The page URL is the site's (`/pages/rebuilder/…`),
+ * URL of a file from `public/` (`assets/…`). The page URL is the site's (`/pages/decks`…),
  * so files come from the plugin's build directory (`AlteredCore.page.assetsUrl`).
  */
 export function assetUrl(path: string): string {

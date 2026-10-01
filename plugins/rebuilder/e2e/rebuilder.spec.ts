@@ -1,23 +1,23 @@
 import { deflateRawSync } from 'node:zlib';
-import { evidence, expect, login, test, type Page } from '../../../tests/e2e/fixtures';
+import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
 
 /**
- * Re:Builder's decks section mounted by the shell on /pages/rebuilder (plugin `rebuilder`): decks
- * list (mine / community), deck page and editor, next to the site's own decks pages and builder,
- * against the local stack: Keycloak session of the site, decks API, production cards API.
- * Playwright locators pierce the open shadow root, so the plugin is driven like any page.
+ * Re:Builder's decks section (plugin `rebuilder`): with « Beta Deckbuilder » on (cookie ac_beta), the shell serves it
+ * on the site's decks pages, at their URLs (/pages/decks, /pages/deck?id=…, /pages/deckbuilder?id=…): decks list
+ * (mine / community), deck page and editor, against the local stack: Keycloak session of the site, decks API,
+ * production cards API. Playwright locators pierce the open shadow root, so the plugin is driven like any page.
  */
 
 /** Labels in both site languages (the interface follows AlteredCore.lang). */
 const LABELS = {
   fr: {
     newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler',
-    deckNav: 'Éditeur de deck', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
+    deckNav: 'Éditeur de deck', decksNav: 'Decks', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
     sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
   },
   en: {
     newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel',
-    deckNav: 'Deck editor', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
+    deckNav: 'Deck editor', decksNav: 'Decks', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
     sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
   },
 };
@@ -30,7 +30,10 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
   const dialog = page.getByRole('dialog', { name: l.newDeck });
   await expect(dialog).toBeVisible();
   await dialog.locator('ac-hero-tile button').first().click();
-  await dialog.getByRole('textbox', { name: l.deckName }).fill(name);
+  // The hero pre-fills the name (« Deck <hero> »): wait for it, or it lands after the typed name.
+  const field = dialog.getByRole('textbox', { name: l.deckName });
+  await expect(field).not.toHaveValue('');
+  await field.fill(name);
   await dialog.getByRole('button', { name: l.create }).click();
   await expect(dialog).toBeHidden();
 }
@@ -40,6 +43,13 @@ async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Pro
   const l = LABELS[lang];
   if (compact) await expect(page.getByRole('navigation', { name: l.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
   else await expect(page.locator('ac-segmented').getByText(l.viewDeck, { exact: true })).toBeVisible();
+}
+
+/** Decks list tab: tabs on desktop, bottom navigation on mobile. */
+function decksTab(page: Page, compact: boolean, name: string, lang: Lang = 'fr') {
+  return compact
+    ? page.getByRole('navigation', { name: LABELS[lang].decksNav }).getByRole('link', { name })
+    : page.getByRole('tab', { name });
 }
 
 /** Adds one copy of the first two cards of the search results; returns their names. */
@@ -63,8 +73,15 @@ async function expectDeckCount(page: Page, compact: boolean, count: number): Pro
   }
 }
 
-const DECKS = '/pages/rebuilder/decks';
-const NEW_DECK = '/pages/rebuilder/decks/new';
+const DECKS = '/pages/decks';
+const NEW_DECK = '/pages/deckbuilder';
+const DECK = (id: string) => `/pages/deck?id=${id}`;
+const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
+/** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
+
+test.beforeEach(async ({ page }) => setBeta(page, true));
 
 test.describe('ReBuilder in the shell · signed in', () => {
   test('creates a deck from the decks list, edits it, finds it in the list and opens its page', async ({ page, compact }, testInfo) => {
@@ -76,7 +93,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
       if (/\/api\/decks/.test(req.url()) && !req.url().includes('/api/v1/services/decks/')) leaks.push(`direct call ${req.url()}`);
     });
     await login(page, 'alice', `${DECKS}?lang=fr`);
-    await expect(page).toHaveURL(/\/pages\/rebuilder\/decks(\?|$)/);
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
     await expect(page.getByRole('list', { name: 'Mes decks' })).toBeVisible();
     await evidence(page, testInfo, '01-my-decks');
 
@@ -86,9 +103,14 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const res = await created;
     expect(res.status()).toBe(201);
     const deck = (await res.json()) as { id: string };
-    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}/edit$`));
+    await expect(page).toHaveURL(at(EDITOR(deck.id)));
 
-    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
+    // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
+    const saved = page.waitForResponse((r) => {
+      if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${deck.id}`) || !r.ok()) return false;
+      const lines = ((r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? []);
+      return lines.reduce((n, l) => n + l.quantity, 0) === 3;
+    });
     const cards = await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
     await saved;
@@ -96,7 +118,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
 
     // Reload: the deck comes back from the decks API (not from the browser).
     await page.reload();
-    await expect(page).toHaveURL(new RegExp(`/decks/${deck.id}/edit$`));
+    await expect(page).toHaveURL(at(EDITOR(deck.id)));
     await expectDeckCount(page, compact, 2);
     if (!compact) {
       await expect(page.locator('ac-editable-title input')).toHaveValue(name);
@@ -109,31 +131,34 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(item).toBeVisible();
     await evidence(page, testInfo, '03-listed');
     await item.getByRole('link').first().click();
-    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}$`));
+    await expect(page).toHaveURL(at(DECK(deck.id)));
     await expect(page.locator('app-deck-page')).toContainText(name);
     await evidence(page, testInfo, '04-deck-page');
     // Alice's own deck: she can edit it.
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
 
-    // Same decks API: the site's own list sees the deck too, and still links to the site's builder.
+    // Same decks API: with the beta off, the site's own list sees the deck too, and links to the same editor URL.
+    await setBeta(page, false);
     await page.goto('/pages/decks');
     const siteItem = page.locator('#my-deck-grid .my-deck-item').filter({ hasText: name });
     await expect(siteItem).toBeVisible();
-    await expect(siteItem.locator(`a[href*="/pages/deckbuilder?id=${deck.id}"]`)).toHaveCount(1);
+    await expect(siteItem.locator(`a[href*="${EDITOR(deck.id)}"]`)).toHaveCount(1);
+    // A former link of the plugin's own page lands on the site's URL.
+    await setBeta(page, true);
     await page.goto(`/pages/rebuilder?id=${deck.id}`);
-    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}/edit$`));
+    await expect(page).toHaveURL(at(EDITOR(deck.id)));
     expect(leaks).toEqual([]);
   });
 
-  test('lists community decks from the public API, through the relay', async ({ page }, testInfo) => {
+  test('lists community decks from the public API, through the relay', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     // The list goes through the relay. The app may cancel a request and send a new one (query
     // change), so its response body is not read here: the expected page is fetched separately.
     const listed = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/services/decks/api/decks/public' && r.ok());
-    await page.getByRole('tab', { name: 'Communauté' }).click();
+    await decksTab(page, compact, 'Communauté').click();
     await listed;
-    await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\?(.*&)?tab=community/);
+    await expect(page).toHaveURL(/\/pages\/decks\?(.*&)?tab=community/);
     // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1.
     const res = await page.request.get('/api/v1/services/decks/api/decks/public', {
       params: { page: 1, itemsPerPage: 24, 'order[updatedAt]': 'desc' },
@@ -148,7 +173,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
 
     // Someone else's deck (seeded as bob): no « Modifier » nor « Supprimer », « Dupliquer » stays.
     await list.locator('ac-deck-card').first().getByRole('link').first().click();
-    await expect(page).toHaveURL(/\/pages\/rebuilder\/decks\/[0-9a-f-]{36}$/);
+    await expect(page).toHaveURL(/\/pages\/deck\?id=[0-9a-f-]{36}$/);
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage.locator('ac-card-art').first()).toBeVisible();
     await expect(deckPage.getByRole('button', { name: /Plus d’actions|Dupliquer/ }).first()).toBeVisible();
@@ -160,7 +185,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
   test('follows the site theme live and the site language', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${NEW_DECK}?lang=en&theme=light`);
     await createDeck(page, `E2E theme ${testInfo.project.name} ${Date.now()}`, 'en');
-    await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=[0-9a-f-]{36}$/);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await expectEditorLabels(page, compact, 'en');
     await evidence(page, testInfo, '06-light-en');
@@ -168,54 +193,87 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const root = page.locator('.ac-plugin-root');
     await expect(root).toHaveAttribute('data-theme', 'light');
     const lightBg = await root.evaluate((el) => getComputedStyle(el).backgroundColor);
-    const editor = new URL(page.url()).pathname;
-    // Live switch from the site header when it is shown (desktop), else the site's ?theme= switch.
-    const toggle = page.locator('#header-theme-toggle');
-    if (await toggle.isVisible()) await toggle.click();
-    else await page.goto(`${editor}?theme=dark`);
+    const editor = page.url();
+    // Live switch from the site's account menu.
+    await page.locator('#azAccountBtn').click();
+    await page.locator('#azAccountMenu [data-az-theme="dark"]').click();
     await expect(root).toHaveAttribute('data-theme', 'dark');
     await expect.poll(() => root.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(lightBg);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await evidence(page, testInfo, '07-dark-en');
 
-    await page.goto(`${editor}?lang=fr`);
+    await page.goto(`${editor}&lang=fr`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     await expectEditorLabels(page, compact, 'fr');
-    await page.goto(`${editor}?theme=light`);
+    await page.goto(`${editor}&theme=light`);
     await expect(root).toHaveAttribute('data-theme', 'light');
   });
 
-  test('has a beta entry in the site\'s Decks menu', async ({ page, compact }, testInfo) => {
+  test('has one Decks entry in the site menu: Re:Builder with the beta on, the site\'s page with it off', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the menu is checked on the desktop header');
     await login(page, 'alice', `${DECKS}?lang=en`);
     await expect(page.getByRole('list', { name: LABELS.en.myDecks })).toBeVisible();
-    // One entry, on the decks list (a new deck is created from the list), inside the Decks menu.
-    const decksMenu = page.locator('header li.dropdown').filter({ has: page.locator('a.nav-link-split-main[href$="/pages/decks"]') });
-    const entry = decksMenu.locator('a.dropdown-item[href$="/pages/rebuilder/decks"]');
+    const decksMenu = page.locator('header li.nav-item.dropdown').filter({ has: page.locator('a.dropdown-toggle[title="Decks"]') });
+    const entry = decksMenu.locator(`a.dropdown-item[href$="${DECKS}"]`);
+    // One entry for the decks pages, the site's own URL: no « Re:Builder (beta) » entry anymore.
     await expect(entry).toHaveCount(1);
-    await expect(entry).toContainText('Re:Builder (beta)');
-    await expect(page.locator('header a[href*="/pages/rebuilder/"]')).toHaveCount(1);
+    await expect(page.locator('header a[href*="/pages/rebuilder"]')).toHaveCount(0);
     await expect(entry).toHaveClass(/\bactive\b/);
-    // The Decks menu is the current section; its « Decks » item (the site's list) is not current.
-    await expect(decksMenu).toHaveClass(/\bactive\b/);
-    await expect(decksMenu.locator('a.dropdown-item[href$="/pages/decks"]')).not.toHaveClass(/\bactive\b/);
-    await decksMenu.locator('.nav-link-split-caret').click();
+    await decksMenu.locator('a.dropdown-toggle').click();
     await expect(entry).toBeVisible();
     await evidence(page, testInfo, '08-menu');
-    await page.keyboard.press('Escape');
+    await entry.click();
+    await expect(page.locator('[data-ac-plugin="rebuilder"]')).toBeAttached();
 
     // Still current in the editor, after a client navigation and after a reload.
     await page.getByRole('button', { name: LABELS.en.newDeck }).first().click();
     await createDeck(page, `E2E menu ${testInfo.project.name} ${Date.now()}`, 'en');
-    await expect(page).toHaveURL(/\/decks\/[0-9a-f-]{36}\/edit$/);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=[0-9a-f-]{36}$/);
     await expect(entry).toHaveClass(/\bactive\b/);
     await page.reload();
     await expect(entry).toHaveClass(/\bactive\b/);
 
-    // On the site's own decks page, the site's item is current, not Re:Builder's.
-    await page.goto('/pages/decks');
-    await expect(entry).not.toHaveClass(/\bactive\b/);
-    await expect(decksMenu.locator('a.dropdown-item[href$="/pages/decks"]')).toHaveClass(/\bactive\b/);
+    // Beta off: the same entry opens the site's own decks page.
+    await setBeta(page, false);
+    await page.goto(DECKS);
+    await decksMenu.locator('a.dropdown-toggle').click();
+    await entry.click();
+    await expect(page.locator('#my-deck-grid')).toBeAttached();
+    await expect(page.locator('[data-ac-plugin="rebuilder"]')).toHaveCount(0);
+    await expect(entry).toHaveClass(/\bactive\b/);
+  });
+});
+
+test.describe('« Beta Deckbuilder » · one link, two deckbuilders', () => {
+  test('a deck link opens the site\'s deck page, then Re:Builder once the beta is on in the account menu', async ({ page }, testInfo) => {
+    await setBeta(page, false);
+    const res = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await res.json()) as { member: { id: string; name: string }[] }).member[0];
+    const link = `${DECK(deck.id)}&lang=en`;
+
+    await page.goto(link);
+    await expect(page.locator('#deck-share-btn')).toBeVisible();
+    await expect(page.locator('[data-ac-plugin="rebuilder"]')).toHaveCount(0);
+    await evidence(page, testInfo, '30-deck-link-legacy');
+
+    // « Beta Deckbuilder » in the account menu: the page reloads, same URL, now Re:Builder's deck page.
+    await page.locator('#azAccountBtn').click();
+    const beta = page.getByRole('switch', { name: 'Beta Deckbuilder' });
+    await expect(beta).not.toBeChecked();
+    await evidence(page, testInfo, '31-account-menu-beta-off');
+    await Promise.all([page.waitForEvent('load'), beta.click()]);
+    await expect(page).toHaveURL(at(DECK(deck.id), true));
+    await expect(page.locator('app-deck-page')).toContainText(deck.name);
+    await expect(page.locator('#deck-share-btn')).toHaveCount(0);
+    await evidence(page, testInfo, '32-deck-link-beta');
+    await page.locator('#azAccountBtn').click();
+    await expect(beta).toBeChecked();
+    await evidence(page, testInfo, '33-account-menu-beta-on');
+
+    // Off again: the same link is the site's deck page.
+    await Promise.all([page.waitForEvent('load'), beta.click()]);
+    await page.goto(link);
+    await expect(page.locator('#deck-share-btn')).toBeVisible();
   });
 });
 
@@ -234,7 +292,7 @@ test.describe('ReBuilder in the shell · languages', () => {
       if (!compact) await expect(page.getByText(l.sortBy, { exact: true })).toBeVisible();
       await expect(page.getByText(other.guest)).toHaveCount(0);
 
-      await page.getByRole('tab', { name: l.community }).click();
+      await decksTab(page, compact, l.community, lang).click();
       await expect(page.getByRole('list', { name: l.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
       await evidence(page, testInfo, `09-community-${lang}`);
 
@@ -327,7 +385,7 @@ test.describe('ReBuilder in the shell · Starter Deck Contest', () => {
     await page.goto(`${DECKS}?tab=contest&set=all&faction=YZ&lang=fr`);
     await expect(list.locator('ac-deck-card')).toHaveCount(26);
     // A contest deck is a public deck of the decks API, opened like any other.
-    await expect(list.locator('ac-deck-card').first().getByRole('link').first()).toHaveAttribute('href', /\/decks\/[0-9a-f-]{36}$/);
+    await expect(list.locator('ac-deck-card').first().getByRole('link').first()).toHaveAttribute("href", /\/pages\/deck\?id=[0-9a-f-]{36}$/);
   });
 });
 
@@ -424,7 +482,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
   }
 
   test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
-    // navigator.share is recorded, so the shared link can be checked on every device.
+    // navigator.share is recorded: sharing must never use the system share sheet.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'share', {
         configurable: true,
@@ -434,7 +492,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     const name = `E2E page ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, name);
-    await page.goto(`${DECKS}/${id}`);
+    await page.goto(DECK(id));
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage).toContainText(name);
 
@@ -449,13 +507,13 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(legality).toBeHidden();
 
     await openView(page, compact, 'Description', 'Infos');
-    await expect(page).toHaveURL(new RegExp(`/decks/${id}/description$`));
+    await expect(page).toHaveURL(at(`${DECK(id)}&tab=description`));
     await expect(deckPage).toContainText('Première ligne');
     await expect(deckPage).toContainText('Deuxième ligne');
     await evidence(page, testInfo, '21-deck-description');
 
     await openView(page, compact, 'Main de départ', 'Main');
-    await expect(page).toHaveURL(new RegExp(`/decks/${id}/main$`));
+    await expect(page).toHaveURL(at(`${DECK(id)}&tab=main`));
     const hand = deckPage.getByRole('list', { name: 'Main de départ' });
     await expect(hand.locator('ac-card-tile')).toHaveCount(6);
     await expect(deckPage).toContainText('3 cartes dans le deck');
@@ -481,19 +539,22 @@ test.describe('ReBuilder in the shell · deck page', () => {
       await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
     }
 
-    // Share: the link of the deck page under the site page's base (/pages/rebuilder/), not /decks/… at the origin.
+    // Share: the site's deck page link (/pages/deck?id=…), which opens Re:Builder or the site's page depending on the beta.
     // The deck is private: « Rendre public & partager » first, then the link and its QR code (as on the site).
     await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
     const share = page.getByRole('dialog', { name: 'Partager ce deck' });
     await expect(share).toContainText('Ce deck est privé');
     await share.getByRole('button', { name: 'Rendre public & partager' }).click();
-    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECK(id)}`);
     await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
     await evidence(page, testInfo, '24-deck-share');
     await page.keyboard.press('Escape');
-    // Now public: the system share sheet, where the browser has one.
+    // Now public: the same window straight away (link and QR code), even where the browser has a system share sheet.
     await deckPage.getByRole('button', { name: 'Partager', exact: true }).first().click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared?.url)).toBe(`${baseURL}${DECKS}/${id}`);
+    await expect(share.getByRole('textbox', { name: 'Lien' })).toHaveValue(`${baseURL}${DECK(id)}`);
+    await expect(share.getByRole('img', { name: 'QR code du lien' })).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { __shared?: ShareData }).__shared)).toBeUndefined();
+    await page.keyboard.press('Escape');
 
     // Duplicate: named copy, private deck of the account.
     if (compact) {
@@ -513,7 +574,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     expect(res.status()).toBe(201);
     const copy = (await res.json()) as { id: string; isPublic: boolean };
     expect(copy.isPublic).toBe(false);
-    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${copy.id}$`));
+    await expect(page).toHaveURL(at(DECK(copy.id)));
     await expect(deckPage).toContainText(`${name} bis`);
     await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
     await page.goto(DECKS);
@@ -524,24 +585,25 @@ test.describe('ReBuilder in the shell · deck page', () => {
     const res = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
     const deck = ((await res.json()) as { member: { id: string; name: string }[] }).member[0];
     // Server-rendered for link previews (manifest `meta`), then kept by the app.
-    const html = await (await page.request.get(`${DECKS}/${deck.id}?lang=fr`)).text();
+    const html = await (await page.request.get(`${DECK(deck.id)}&lang=fr`)).text();
     expect(html).toContain(`<meta property="og:title"       content="${deck.name.replace(/&/g, '&amp;')} —`);
+    // A former link of the plugin's own page: same title, on the site's URL.
     await page.goto(`/pages/rebuilder/deck?id=${deck.id}&lang=fr`);
-    await expect(page).toHaveURL(new RegExp(`/pages/rebuilder/decks/${deck.id}$`));
-    await expect(page).toHaveTitle(new RegExp(`^${deck.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} —`));
+    await expect(page).toHaveURL(at(DECK(deck.id), true));
+    await expect(page).toHaveTitle(new RegExp(`^${escape(deck.name)} —`));
   });
 
   test('tells an unknown deck apart', async ({ page }, testInfo) => {
-    await page.goto(`${DECKS}/00000000-0000-0000-0000-000000000000?lang=fr`);
+    await page.goto(`${DECK('00000000-0000-0000-0000-000000000000')}&lang=fr`);
     await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
     await evidence(page, testInfo, '25-deck-not-found');
   });
 });
 
 test.describe('ReBuilder in the shell · guest', () => {
-  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page }) => {
+  test('lands on the community tab without guest decks, and keeps the filters of a site link', async ({ page, compact }) => {
     await page.goto(`${DECKS}?lang=fr`);
-    await expect(page.getByRole('tab', { name: FR.community })).toHaveAttribute('aria-selected', 'true');
+    await expect(decksTab(page, compact, FR.community)).toHaveAttribute(compact ? 'aria-current' : 'aria-selected', compact ? 'page' : 'true');
     await page.goto(`${DECKS}?tab=public&faction=MU&sort=name:asc&lang=fr`);
     await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
     await expect(page).toHaveURL(/\/decks\?faction=MU&sort=name(&|$)/);
@@ -550,10 +612,18 @@ test.describe('ReBuilder in the shell · guest', () => {
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, 'Deck invité');
-    await expect(page).toHaveURL(/\/decks\/guest-[^/]+\/edit$/);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=guest-[^&]+$/);
     await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
-    await page.waitForTimeout(600); // autosave debounce (400 ms)
+    // Saved in localStorage once the autosave delay is over: hero + 2 cards.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const decks = JSON.parse(localStorage.getItem('arb.guest-decks') ?? '[]') as { name: string; deckCards?: { quantity: number }[] }[];
+          return (decks.find((d) => d.name === 'Deck invité')?.deckCards ?? []).reduce((n, l) => n + l.quantity, 0);
+        }),
+      )
+      .toBe(3);
     await page.reload();
     await expectDeckCount(page, compact, 2);
     await page.goto(DECKS);

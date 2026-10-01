@@ -14,7 +14,7 @@
   }
 </div>
 <div class="ac-overlay-footer">
-  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@decks.import.cancel">Annuler</button>
+  <button acButton variant="secondary" class="secondary-action" [disabled]="busy()" (click)="ref.close()" i18n="@@decks.import.cancel">Annuler</button>
   <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="busy() || !text().trim()" (click)="run()">
     @if (busy()) {
       <ng-container i18n="@@decks.import.importing">Import…</ng-container>

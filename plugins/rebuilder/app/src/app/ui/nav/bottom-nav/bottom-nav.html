@@ -1,21 +1,30 @@
 <nav [attr.aria-label]="ariaLabel()" [style.--cols]="items().length">
-  @for (it of items(); track it.route) {
-    <a
-      [routerLink]="it.route"
-      routerLinkActive="active"
-      #rla="routerLinkActive"
-      [routerLinkActiveOptions]="{ exact: it.exact ?? true }"
-      [attr.aria-current]="rla.isActive ? 'page' : null"
-      queryParamsHandling="preserve"
-      replaceUrl
-    >
-      <span class="ico">
-        <ac-icon [name]="it.icon" [size]="22" />
-        @if (it.badge !== undefined) {
-          <span class="badge"><ac-count [value]="it.badge" [tone]="it.badgeTone ?? 'success'" /></span>
-        }
-      </span>
-      {{ it.label }}
-    </a>
+  @for (it of items(); track $index) {
+    @if (it.active === undefined) {
+      <a
+        [routerLink]="it.route"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        [routerLinkActiveOptions]="{ exact: it.exact ?? true }"
+        queryParamsHandling="preserve"
+        replaceUrl
+      >
+        <ng-container [ngTemplateOutlet]="content" [ngTemplateOutletContext]="{ $implicit: it }" />
+      </a>
+    } @else {
+      <a [routerLink]="it.route" [queryParams]="it.queryParams" [class.active]="it.active" [attr.aria-current]="it.active ? 'page' : null" replaceUrl>
+        <ng-container [ngTemplateOutlet]="content" [ngTemplateOutletContext]="{ $implicit: it }" />
+      </a>
+    }
   }
 </nav>
+
+<ng-template #content let-it>
+  <span class="ico">
+    <ac-icon [name]="it.icon" [size]="22" />
+    @if (it.badge !== undefined) {
+      <span class="badge"><ac-count [value]="it.badge" [tone]="it.badgeTone ?? 'success'" /></span>
+    }
+  </span>
+  {{ it.label }}
+</ng-template>

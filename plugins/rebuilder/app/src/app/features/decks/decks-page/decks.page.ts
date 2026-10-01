@@ -18,7 +18,7 @@ import { AcIcon } from '../../../ui/icon';
 import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcDeckCard, FACTIONS } from '../../../ui/metier';
-import { AcAppBar, AcTabs } from '../../../ui/nav';
+import { AcAppBar, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
@@ -73,7 +73,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, AcAppBar, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
@@ -108,8 +108,8 @@ export class DecksPage {
     params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
     stream: () => this.decksApi.listAllMine(),
   });
-  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. */
-  protected readonly mineLoading = computed(() => this.serverRes.isLoading());
+  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. A reload keeps the list. */
+  protected readonly mineLoading = computed(() => this.serverRes.status() === 'loading');
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();
@@ -217,6 +217,21 @@ export class DecksPage {
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
+  /** Compact: the tabs are a bottom navigation, as in the editor and the deck page. */
+  protected readonly navItems = computed<AcBottomNavItem[]>(() => {
+    const item = (tab: Tab, icon: AcBottomNavItem['icon'], label: string): AcBottomNavItem => ({
+      route: '.',
+      queryParams: this.tabParams(tab),
+      active: this.tab() === tab,
+      icon,
+      label,
+    });
+    return [
+      item('mine', 'layers', $localize`:@@decks.nav.mine:Mes decks`),
+      item('community', 'users', $localize`:@@decks.page.tabCommunity:Communauté`),
+      item('contest', 'trophy', $localize`:@@decks.nav.contest:Concours`),
+    ];
+  });
   protected readonly contestLoading = computed(() => this.contestRes.isLoading());
   protected readonly contestError = computed(() =>
     this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
@@ -403,6 +418,8 @@ export class DecksPage {
       }
       if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects)) this.urlSync.update((n) => n + 1);
       if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects) && !this.trackScroll) {
+        // Decks created, edited, duplicated or deleted meanwhile: the kept list is refreshed in place.
+        if (this.auth.isLoggedIn()) this.serverRes.reload();
         const y = this.listScroll;
         const apply = () => window.scrollTo(0, y);
         apply();
@@ -427,8 +444,12 @@ export class DecksPage {
 
   protected setTab(id: string): void {
     const tab = TABS.find((t) => t === id) ?? 'mine';
-    // Only `tab` is kept: the URL effect then writes the filters of the tab shown.
-    void this.router.navigate([], { queryParams: { tab: tab === this.defaultTab() ? null : tab }, replaceUrl: true });
+    void this.router.navigate([], { queryParams: this.tabParams(tab), replaceUrl: true });
+  }
+
+  /** Only `tab` is kept: the URL effect then writes the filters of the tab shown. */
+  private tabParams(tab: Tab): { tab: Tab | null } {
+    return { tab: tab === this.defaultTab() ? null : tab };
   }
 
   protected patch(p: Partial<DeckFilters>): void {
@@ -522,7 +543,11 @@ export class DecksPage {
   /** « Ignorer »: the guest decks are deleted from this device, after a confirmation (as on the site). */
   protected discardLocalDecks(): void {
     if (!confirm($localize`:@@decks.local.discardConfirm:Supprimer les decks locaux ? Cette action est irréversible.`)) return;
-    for (const d of this.localDecks()) this.guests.delete(d.id);
+    for (const d of this.localDecks()) {
+      // As « Enregistrer sur mon compte »: the site builder's copy goes too, or it comes back with its next edit.
+      this.guests.forgetSiteDeck(d.id);
+      this.guests.delete(d.id);
+    }
   }
 
   protected showBuilders(): void {

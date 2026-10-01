@@ -36,9 +36,13 @@ export class CardsApiService {
   /**
    * Pages already fetched this session are replayed (tab switches, editor ↔ Cartes, same filters
    * applied again). Unsubscribing before the response still cancels the request; errors are not kept.
+   * The « Aléatoire » order is never cached: each search deals new cards.
    */
   search(params: CardSearchParams): Observable<CardCollection> {
     const hp = buildCardsSearchParams(params);
+    if (params.order === 'random') {
+      return this.http.get<CardCollection | Card[]>(`${this.baseUrl}/api/cards`, { params: hp }).pipe(map((body) => normalizeCollection(body)));
+    }
     const key = hp.toString();
     const hit = this.searchCache.get(key);
     if (hit) {

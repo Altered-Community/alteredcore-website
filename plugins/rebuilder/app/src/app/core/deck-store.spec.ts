@@ -295,7 +295,7 @@ describe('DeckStore (signed in)', () => {
     // The account list (ownership) is fetched once the deck is applied; answer it before settling.
     await Promise.resolve();
     TestBed.tick();
-    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([{ id: 'source' }, { id: 'other' }]);
     await settle();
   });
 
@@ -412,10 +412,9 @@ describe('DeckStore (signed in)', () => {
     store.load('other');
     TestBed.tick();
     http.expectOne((r) => r.url.endsWith('/api/decks/other')).flush({ id: 'other', name: 'Autre', format: 'standard', isPublic: false, cards: [] });
-    await Promise.resolve();
-    TestBed.tick();
-    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    // The account list is kept: it is not fetched again for each deck opened.
     await settle();
+    http.expectNone((r) => r.method === 'GET' && r.url.endsWith('/api/decks'));
     store.rename('Autre deck');
     store.flush();
     http.expectNone((r) => r.method === 'PATCH');
@@ -424,6 +423,59 @@ describe('DeckStore (signed in)', () => {
     expect(second.request.body).toMatchObject({ name: 'Autre deck' });
     second.flush({ id: 'other', name: 'Autre deck' });
     expect(store.dirty()).toBe(false);
+  });
+
+  it('still writes a change queued behind a running save when another deck is opened meanwhile', async () => {
+    store.rename('Un');
+    store.flush();
+    const first = patchReq();
+    store.rename('Deux');
+    store.flush();
+    store.load('other');
+    TestBed.tick();
+    http.expectOne((r) => r.url.endsWith('/api/decks/other')).flush({ id: 'other', name: 'Autre', format: 'standard', isPublic: false, cards: [] });
+    await settle();
+    first.flush({ id: 'source', name: 'Un' });
+    // « Deux » was queued for « source »: it goes to « source », not to the deck open now.
+    const queued = patchReq();
+    expect(queued.request.body).toMatchObject({ name: 'Deux' });
+    queued.flush({ id: 'source', name: 'Deux' });
+    expect(store.name()).toBe('Autre');
+    http.expectNone((r) => r.method === 'PATCH');
+  });
+
+  it('sends the current state again when an older save answers after a newer keepalive one', () => {
+    store.rename('Un');
+    store.flush();
+    const plain = patchReq();
+    store.rename('Deux');
+    store.flush({ keepalive: true });
+    const kept = patchReq();
+    expect(kept.request.body).toMatchObject({ name: 'Deux' });
+    kept.flush({ id: 'source', name: 'Deux' });
+    plain.flush({ id: 'source', name: 'Un' });
+    // « Un » may have been written after « Deux »: « Deux » is sent again.
+    const again = patchReq();
+    expect(again.request.body).toMatchObject({ name: 'Deux' });
+    again.flush({ id: 'source', name: 'Deux' });
+    http.expectNone((r) => r.method === 'PATCH');
+  });
+
+  it('does not save a blank name while it is typed', () => {
+    store.rename('  ');
+    expect(store.dirty()).toBe(false);
+    store.flush();
+    http.expectNone((r) => r.method === 'PATCH');
+  });
+
+  it('keeps the deck open when a delete fails, with the reason in actionError', () => {
+    let ok: boolean | undefined;
+    store.delete().subscribe((r) => (ok = r));
+    http.expectOne((r) => r.method === 'DELETE').flush({}, { status: 500, statusText: 'Server Error' });
+    expect(ok).toBe(false);
+    expect(store.error()).toBeNull();
+    expect(store.actionError()).toBe('Impossible de supprimer ce deck (HTTP 500).');
+    expect(store.deckId()).toBe('source');
   });
 
   it('flushes with keepalive when the page is left, and warns only when changes may be lost', () => {

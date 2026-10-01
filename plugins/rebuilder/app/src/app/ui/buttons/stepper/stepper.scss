@@ -12,7 +12,7 @@ button {
   cursor: pointer;
   color: inherit;
 }
-button:disabled {
+button[aria-disabled="true"] {
   cursor: not-allowed;
 }
 .ring {
@@ -39,10 +39,13 @@ button:disabled {
 .ac-stepper--overlay .inc .ring {
   background: var(--ac-color-primary);
 }
-.ac-stepper--overlay .inc:disabled .ring {
+.ac-stepper--overlay .inc .ring {
+  background: var(--ac-color-primary);
+}
+.ac-stepper--overlay .inc[aria-disabled="true"] .ring {
   opacity: 0.4;
 }
-.ac-stepper--overlay .dec:disabled .ring {
+.ac-stepper--overlay .dec[aria-disabled="true"] .ring {
   opacity: 0.5;
 }
 .ac-stepper--overlay .value {
@@ -67,7 +70,10 @@ button:disabled {
 .ac-stepper--inline button:hover:not(:disabled) .ring {
   background: var(--ac-color-bg-subtle);
 }
-.ac-stepper--inline button:disabled .ring {
+.ac-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
+  background: var(--ac-color-bg-subtle);
+}
+.ac-stepper--inline button[aria-disabled="true"] .ring {
   opacity: 0.45;
 }
 .ac-stepper--inline .value {
@@ -87,7 +93,7 @@ button:disabled {
   width: 28px;
   height: 28px;
 }
-.ac-stepper--box button:disabled {
+.ac-stepper--box button[aria-disabled="true"] {
   opacity: 0.4;
 }
 .ac-stepper--box .value {
