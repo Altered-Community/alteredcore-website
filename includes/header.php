@@ -117,6 +117,10 @@ $_hTxt = [
 // Nav items (loaded once here, available in nav.php via $__navItems)
 $__navItems    = getNavItems();
 $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
+
+// Before any output: an expired session comes back from the kc_remember cookie here, which sets
+// a cookie and regenerates the session id (nav.php only reads the result afterwards).
+kcIsLoggedIn();
 ?>
 <!DOCTYPE html>
 <html lang="<?= h($lang) ?>">

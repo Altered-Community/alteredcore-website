@@ -142,3 +142,20 @@ test.describe('Shell · SPA pages', () => {
     expect(res.body).not.toContain('access_token');
   });
 });
+
+test.describe('Shell · session', () => {
+  test('an expired session comes back from the remember cookie before the page is sent', async ({ page, context }) => {
+    await login(page);
+    // The PHP session is gone (garbage-collected); kc_remember is still there.
+    const kept = (await context.cookies()).filter((c) => c.name === 'kc_remember' || c.name === 'alteredcore_consent');
+    expect(kept.map((c) => c.name)).toContain('kc_remember');
+    await context.clearCookies();
+    await context.addCookies(kept);
+
+    const res = await page.goto('/pages/index');
+    expect(await res!.text()).not.toContain('headers already sent');
+    await expect(page.locator('#azAccountBtn .az-account-initial')).toHaveText('A');
+    // The restored session (session_name AC_…) reached the browser: the next page needs no restore.
+    expect((await context.cookies()).some((c) => c.name.startsWith('AC_'))).toBe(true);
+  });
+});
