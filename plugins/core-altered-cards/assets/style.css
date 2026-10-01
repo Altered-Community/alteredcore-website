@@ -172,12 +172,15 @@
 /* =========================================================
    Cards browser  (cards.php)
    ========================================================= */
-.cards-grid { display:grid; grid-template-columns:repeat(var(--cards-cols,4),1fr); gap:10px; }
+/* The column setting picks the card size it had in the 1200px layout (1176px
+   of content). A wider grid adds columns instead of growing the cards: the
+   minimum is 85% of that size, so cards stay between ~85% and ~110% of it.
+   A grid narrower than 1176px still gets exactly --cards-cols columns. */
+.cards-grid {
+    display:grid; gap:10px;
+    grid-template-columns:repeat(auto-fill,minmax(min(calc((1176px / var(--cards-cols,4) - 10px) * .85), calc((100% - (var(--cards-cols,4) - 1) * 10px) / var(--cards-cols,4) - 1px)),1fr));
+}
 @media (max-width:575px) { .cards-grid { grid-template-columns:repeat(var(--cards-mobile-cols,2),1fr); gap:6px; } }
-/* Wide screens: the column setting picks the card size it had in the 1200px
-   layout (1176px of content), and the grid fits as many cards of that size as
-   the row allows. */
-@media (min-width:1500px) { .cards-grid { grid-template-columns:repeat(auto-fill,minmax(calc(1176px / var(--cards-cols,4) - 10px),1fr)); } }
 .card-img-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; }
 /* Reserves the card's height even while its <altered-card> renderer is unmounted
    (card-search.js virtualizes unique cards outside the viewport), so the grid doesn't
@@ -253,9 +256,9 @@
 .deck-cards-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 @media (min-width:576px) { .deck-cards-grid { grid-template-columns:repeat(3,1fr); } }
 @media (min-width:900px) { .deck-cards-grid { grid-template-columns:repeat(4,1fr); } }
-@media (min-width:1200px) { .deck-cards-grid { grid-template-columns:repeat(5,1fr); } }
-/* Wide screens: keep the card size of the 1200px layout and add columns. */
-@media (min-width:1500px) { .deck-cards-grid { grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); } }
+/* From 1200px: 5 columns of ~227px in the 1200px layout. A wider page adds
+   columns instead of growing the cards (85% of that size as the minimum). */
+@media (min-width:1200px) { .deck-cards-grid { grid-template-columns:repeat(auto-fill,minmax(193px,1fr)); } }
 .deck-card-wrap { position:relative; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:8px; cursor:pointer; }
 .deck-card-qty { position:absolute; bottom:6px; right:6px; background:var(--overlay-qty-bg); color:#fff; font-size:.88rem; font-weight:700; padding:3px 9px; border-radius:5px; border:1px solid rgba(255,255,255,.25); pointer-events:none; z-index:1; }
 .deck-card-img { display:block; width:100%; border-radius:8px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; }
@@ -429,9 +432,14 @@
     .db-mobile-tab.active { border-top-color:var(--primary-400); color:var(--primary-500); }
     .db-layout { padding-bottom:58px; }
 }
-.cards-grid-db { display:grid; grid-template-columns:repeat(var(--db-cols,3),1fr); gap:8px; }
-/* Wide screens: same idea as .cards-grid, based on the 800px search panel of the 1200px layout. */
-@media (min-width:1500px) { .cards-grid-db { grid-template-columns:repeat(auto-fill,minmax(calc(800px / var(--db-cols,3) - 8px),1fr)); } }
+/* The column setting picks the card size it had in the 1200px layout (800px
+   search panel). A wider panel adds columns instead of growing the cards: the
+   minimum is 85% of that size, so cards stay between ~85% and ~110% of it.
+   A panel narrower than 800px still gets exactly --db-cols columns. */
+.cards-grid-db {
+    display:grid; gap:8px;
+    grid-template-columns:repeat(auto-fill,minmax(min(calc((800px / var(--db-cols,3) - 8px) * .85), calc((100% - (var(--db-cols,3) - 1) * 8px) / var(--db-cols,3) - 1px)),1fr));
+}
 @media (max-width:575px) { .cards-grid-db { grid-template-columns:repeat(2,1fr); } }
 .db-card-wrap { position:relative; cursor:pointer; min-width:0; overflow:hidden; background:url('img/ALT_OFFICIAL_CARDBACK.png') center/cover no-repeat var(--neutral-100); border-radius:7px; }
 .db-card-img { display:block; width:100%; border-radius:7px; overflow:hidden; aspect-ratio:63.5/88; object-fit:cover; background:transparent; transition:transform .12s; }
