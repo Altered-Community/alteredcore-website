@@ -3,12 +3,15 @@
 // link preview (og:image, includes/deck-preview/preview.php), drawn by includes/deck-preview/image.php. `v` changes with each edit of the deck
 // so that Discord and browsers fetch the new image; the drawn image is cached per deck version, and a cached
 // version is served without asking the decks API.
+//
+// Re:Builder's « Copier en image » also asks for the signed-in user's private decks: fetched with the session's token
+// (as Re:Builder's meta.php), drawn for that request only, never cached.
 require_once dirname(__DIR__) . '/includes/deck-preview/image.php';
 
-function deckImageSend(string $file, bool $versioned): void {
+function deckImageSend(string $file, string $cacheControl): void {
     header('Content-Type: image/jpeg');
     header('Content-Length: ' . filesize($file));
-    header('Cache-Control: public, max-age=' . ($versioned ? 604800 : 300));
+    header('Cache-Control: ' . $cacheControl);
     readfile($file);
 }
 
@@ -28,17 +31,25 @@ if (!deckPreviewValidId($id)) deckImageFail(404, 'Deck not found');
 $siteUrl = deckImageSiteUrl();
 $cached  = $version !== null ? deckImageCachePath($id, $lang, $version, $siteUrl) : null;
 if ($cached !== null && is_file($cached)) {
-    deckImageSend($cached, true);
+    deckImageSend($cached, 'public, max-age=604800');
     exit;
 }
 
-$deck = deckPreviewFetch($id, $lang, null, 4, $status);
+$token = null;
+if (kcIsLoggedIn() && defined('KC_URL') && KC_URL !== '' && function_exists('kc_get_access_token')) {
+    $token = kc_get_access_token((int)($_SESSION['user_id'] ?? 0)) ?: null;
+}
+// Drawing takes seconds: the session's lock would hold the user's other requests.
+if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+
+$deck = deckPreviewFetch($id, $lang, $token, 4, $status);
 if ($deck === null) {
     in_array($status, [401, 403, 404], true) ? deckImageFail(404, 'Deck not found') : deckImageFail(503, 'Deck API unavailable');
 }
-if (empty($deck['isPublic'])) deckImageFail(404, 'Deck not found');
+$public = !empty($deck['isPublic']);
+if (!$public && $token === null) deckImageFail(404, 'Deck not found');
 
-$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, $siteUrl) : null;
+$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, $siteUrl, $public) : null;
 if ($image === null) deckImageFail(500, 'Image unavailable');
-deckImageSend($image['file'], $version !== null && !$image['temporary']);
+deckImageSend($image['file'], !$public ? 'private, no-store' : ($version !== null && !$image['temporary'] ? 'public, max-age=604800' : 'public, max-age=300'));
 if ($image['temporary']) @unlink($image['file']);

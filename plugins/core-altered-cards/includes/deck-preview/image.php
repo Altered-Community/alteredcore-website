@@ -634,12 +634,20 @@ function deckImageCachePrefix(string $id, string $lang, string $siteUrl): string
  * The deck's image as a JPEG file: ['file' => path, 'temporary' => bool]. Drawn once per deck version (one request
  * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
  * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
+ * Without $cache (a private deck), always 'temporary': the cache is served to anyone who has the deck's id.
  */
-function deckImageFile(array $deck, string $lang, string $siteUrl = ''): ?array {
+function deckImageFile(array $deck, string $lang, string $siteUrl = '', bool $cache = true): ?array {
     $id      = (string)($deck['id'] ?? '');
     $file    = deckImageCachePath($id, $lang, deckPreviewVersion($deck), $siteUrl);
     $deckUrl = $siteUrl !== '' ? $siteUrl . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]) : '';
     if ($file === null) return null;
+    if (!$cache) {
+        $im  = deckImageRender($deck, $lang, $complete, $deckUrl);
+        $tmp = $file . '.' . getmypid() . '.' . bin2hex(random_bytes(4)) . '.tmp';
+        $ok  = imagejpeg($im, $tmp, 85);
+        imagedestroy($im);
+        return $ok ? ['file' => $tmp, 'temporary' => true] : null;
+    }
     if (is_file($file)) return ['file' => $file, 'temporary' => false];
     $lock = fopen($file . '.lock', 'c');
     if ($lock) flock($lock, LOCK_EX);
