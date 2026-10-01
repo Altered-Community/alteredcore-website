@@ -587,7 +587,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     // Server-rendered for link previews (manifest `meta`), then kept by the app.
     const html = await (await page.request.get(`${DECK(deck.id)}&lang=fr`)).text();
     expect(html).toContain(`<meta property="og:title"       content="${deck.name.replace(/&/g, '&amp;')}">`);
-    expect(html).toMatch(new RegExp(`<meta property="og:image"\\s+content="[^"]*/api/deck-image\\?id=${deck.id}&amp;lang=fr&amp;v=`));
+    expect(html).toMatch(new RegExp(`<meta property="og:image"\\s+content="[^"]*/papi/core-altered-cards/deck-image\\?id=${deck.id}&amp;lang=fr&amp;v=`));
     // A former link of the plugin's own page: same title, on the site's URL.
     await page.goto(`/pages/rebuilder/deck?id=${deck.id}&lang=fr`);
     await expect(page).toHaveURL(at(DECK(deck.id), true));

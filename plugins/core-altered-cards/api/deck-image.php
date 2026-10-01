@@ -1,11 +1,9 @@
 <?php
-// GET /api/deck-image?id={deck}&lang={lang}&v={version} — decklist image of a public deck's link preview
-// (og:image, includes/deck-preview.php), drawn by includes/deck-image.php. `v` changes with each edit of the deck
+// GET /papi/core-altered-cards/deck-image?id={deck}&lang={lang}&v={version} — decklist image of a public deck's
+// link preview (og:image, includes/deck-preview/preview.php), drawn by includes/deck-preview/image.php. `v` changes with each edit of the deck
 // so that Discord and browsers fetch the new image; the drawn image is cached per deck version, and a cached
 // version is served without asking the decks API.
-require_once dirname(__DIR__) . '/config.php';
-require_once dirname(__DIR__) . '/includes/functions.php';
-require_once dirname(__DIR__) . '/includes/deck-image.php';
+require_once dirname(__DIR__) . '/includes/deck-preview/image.php';
 
 function deckImageSend(string $file, bool $versioned): void {
     header('Content-Type: image/jpeg');

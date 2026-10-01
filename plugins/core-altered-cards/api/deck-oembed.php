@@ -1,9 +1,8 @@
 <?php
-// GET /api/deck-oembed?id={deck}&lang={lang} — oEmbed of a public deck's page, linked from its <head>
-// (includes/deck-preview.php). Discord shows `author_name` above the embed's title and `provider_name` above it.
-require_once dirname(__DIR__) . '/config.php';
-require_once dirname(__DIR__) . '/includes/functions.php';
-require_once dirname(__DIR__) . '/includes/deck-preview.php';
+// GET /papi/core-altered-cards/deck-oembed?id={deck}&lang={lang} — oEmbed of a public deck's page, linked from
+// its <head> (includes/deck-preview/preview.php). Discord shows `author_name` above the embed's title and
+// `provider_name` above it.
+require_once dirname(__DIR__) . '/includes/deck-preview/preview.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 

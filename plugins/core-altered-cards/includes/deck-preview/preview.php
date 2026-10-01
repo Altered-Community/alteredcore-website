@@ -1,32 +1,20 @@
 <?php
-// Link preview of a deck (Discord, Slack, social networks…), shared by the site's deck page
-// (plugins/core-altered-cards/pages/deck.php) and Re:Builder's (plugins/rebuilder/meta.php): both serve
-// /pages/deck?id=…, and a link-preview bot gets one or the other depending on the « Beta Deckbuilder » cookie.
+// Link preview of a deck (Discord, Slack, social networks…), shared by this plugin's deck page (pages/deck.php)
+// and Re:Builder's (plugins/rebuilder/meta.php): both serve /pages/deck?id=…, and a link-preview bot gets one or
+// the other depending on the « Beta Deckbuilder » cookie.
 //
 //   og:title       the deck's name ($pageOgTitle)
 //   og:description hero · format ($pageDescription)
-//   og:image       /api/deck-image?id=… — the decklist drawn by api/deck-image.php ($pageImage)
+//   og:image       /papi/core-altered-cards/deck-image?id=… — the decklist drawn by image.php ($pageImage)
 //   theme-color    the hero's faction: the embed's side bar on Discord ($pageThemeColor)
 //   oEmbed         « by {author} », shown above the title ($pageOembedUrl → api/deck-oembed.php)
 //
 // A private deck keeps the site's default preview: bots fetch the page without a session.
+require_once dirname(__DIR__) . '/functions.php';
 
-/** Formats as named on the site (deck page, deck list). */
-const DECK_PREVIEW_FORMATS = [
-    'standard' => 'Standard All Uniques', 'frontier' => 'Frontier', 'nuc' => 'Standard No Unique', 'singleton' => 'Singleton',
-    'singleton_nuc' => 'Singleton No Unique', 'sandbox' => 'Sandbox', 'test' => 'Test',
-];
-
-/** Faction colours: [accent (theme-color, as in altered.json), dark panel of the image]. */
-const DECK_PREVIEW_FACTIONS = [
-    'AX' => ['#8c432a', '#5e2a19'],
-    'BR' => ['#c32637', '#7e1d26'],
-    'LY' => ['#cf4171', '#7a2650'],
-    'MU' => ['#3d6b42', '#1f4a2a'],
-    'OR' => ['#0f6593', '#0f4766'],
-    'YZ' => ['#764891', '#4b2e73'],
-];
-const DECK_PREVIEW_NEUTRAL = ['#5b5566', '#2e2935'];
+/** This plugin's directory and the site's root. */
+const DECK_PREVIEW_PLUGIN = __DIR__ . '/../..';
+const DECK_PREVIEW_SITE   = __DIR__ . '/../../../..';
 
 /** A content language of the site (deck names, card images), English otherwise. */
 function deckPreviewLang($lang): string {
@@ -65,13 +53,21 @@ function deckPreviewFetch(string $id, string $locale, ?string $token = null, int
 /** Faction code of the deck's hero (`ALT_CORE_B_LY_…` → `LY`), null without a hero. */
 function deckPreviewFaction(array $deck): ?string {
     $parts = explode('_', (string)($deck['stats']['hero']['reference'] ?? ''));
-    return isset($parts[3]) && array_key_exists($parts[3], DECK_PREVIEW_FACTIONS) ? $parts[3] : null;
+    return isset($parts[3]) && array_key_exists($parts[3], loadAlteredData('factions')) ? $parts[3] : null;
 }
 
-/** [accent, panel] colours of the deck's faction. */
+/** [accent, panel] colours of the deck's faction: its colour in altered.json, and that colour darkened. */
 function deckPreviewColors(array $deck): array {
     $faction = deckPreviewFaction($deck);
-    return $faction !== null ? DECK_PREVIEW_FACTIONS[$faction] : DECK_PREVIEW_NEUTRAL;
+    $accent  = $faction !== null ? (string)(loadAlteredData('factions')[$faction]['color'] ?? '#5b5566') : '#5b5566';
+    $rgb     = array_map(function ($c) { return (int)round(hexdec($c) * 0.58); }, str_split(ltrim($accent, '#'), 2));
+    return [$accent, vsprintf('#%02x%02x%02x', $rgb)];
+}
+
+/** A format's name (altered.json), '' when unknown. */
+function deckPreviewFormatName(string $format, string $lang): string {
+    $names = loadAlteredData('formats')[$format] ?? [];
+    return (string)($names[$lang] ?? $names['en'] ?? '');
 }
 
 /** The author's username; the API sends `user` as an object, or as an empty list when it hides it. */
@@ -83,9 +79,9 @@ function deckPreviewAuthor(array $deck): ?string {
 }
 
 /** « Hero · Format », or what is known of it. */
-function deckPreviewDescription(array $deck): string {
+function deckPreviewDescription(array $deck, string $lang): string {
     $hero   = trim((string)($deck['stats']['hero']['name'] ?? ''));
-    $format = DECK_PREVIEW_FORMATS[$deck['format'] ?? ''] ?? '';
+    $format = deckPreviewFormatName((string)($deck['format'] ?? ''), $lang);
     return implode(' · ', array_filter([$hero, $format], 'strlen'));
 }
 
@@ -108,13 +104,13 @@ function deckPreviewMeta(array $deck, string $lang): array {
     if (empty($deck['isPublic']) || !deckPreviewValidId($id)) return $meta;
 
     $lang = deckPreviewLang($lang);
-    $desc = deckPreviewDescription($deck);
+    $desc = deckPreviewDescription($deck, $lang);
     $meta['description'] = $desc !== '' ? $desc : null;
     // The version (last change) makes Discord and the image's own cache fetch a new image after an edit.
-    $meta['image'] = BASE_URL . '/api/deck-image?' . http_build_query(['id' => $id, 'lang' => $lang, 'v' => deckPreviewVersion($deck)]);
+    $meta['image'] = BASE_URL . '/papi/core-altered-cards/deck-image?' . http_build_query(['id' => $id, 'lang' => $lang, 'v' => deckPreviewVersion($deck)]);
     $meta['themeColor'] = deckPreviewColors($deck)[0];
     if (deckPreviewAuthor($deck) !== null) {
-        $meta['oembed'] = BASE_URL . '/api/deck-oembed?' . http_build_query(['id' => $id, 'lang' => $lang]);
+        $meta['oembed'] = BASE_URL . '/papi/core-altered-cards/deck-oembed?' . http_build_query(['id' => $id, 'lang' => $lang]);
     }
     return $meta;
 }

@@ -1,7 +1,7 @@
 <?php
 // Minimal QR code encoder: byte mode, error correction M, versions 1–6 (up to 103 bytes). Same choices as
 // QRCode.js on the Altered site (version from the text's length + 3, mask with the fewest penalty points), so a
-// unique card drawn by includes/deck-unique-card.php carries the same code as on the site.
+// unique card drawn by unique-card.php carries the same code as on the site.
 
 /** [total codewords, EC codewords per block, blocks] of versions 1–6 at level M. */
 const QR_M_BLOCKS = [1 => [26, 10, 1], [44, 16, 1], [70, 26, 1], [100, 18, 2], [134, 24, 2], [172, 16, 4]];

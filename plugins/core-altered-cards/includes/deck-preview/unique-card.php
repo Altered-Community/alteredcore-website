@@ -1,11 +1,13 @@
 <?php
-// A unique card's face drawn with GD (744×1039), for the decklist image (includes/deck-image.php). Nobody publishes
+// A unique card's face drawn with GD (744×1039), for the decklist image (image.php). Nobody publishes
 // a rendered image per unique: the CDN only has the illustration shared by every unique of a printed card. This is
 // the PHP version of Re:Builder's `ar-unique-card` (plugins/rebuilder/app/src/app/ui/metier/unique-card/), itself
 // laid out like Altered-Card-Renderer: positions in % of the card, sizes in px of the 744 px wide card.
 //
 // Assets: frames and fonts of Re:Builder (plugins/rebuilder/app/public/assets/unique-card/), biome badges and set
-// logos rasterised from its SVGs (assets/deck-image/). Italics are drawn upright: Haptic Pro has no italic face.
+// logos rasterised from its SVGs (this plugin's assets/deck-image/). Italics are drawn upright: Haptic Pro has no
+// italic face.
+require_once __DIR__ . '/preview.php';
 require_once __DIR__ . '/qr-code.php';
 
 const DECK_UNIQUE_W = 744;
@@ -20,8 +22,8 @@ const DECK_UNIQUE_ICONS = [
 const DECK_UNIQUE_CIRCLED = ["\u{24ea}", "\u{2776}", "\u{2777}", "\u{2778}", "\u{2779}", "\u{277a}", "\u{277b}", "\u{277c}", "\u{277d}", "\u{277e}"];
 
 function deckUniqueFonts(): array {
-    $rb = dirname(__DIR__) . '/plugins/rebuilder/app/public/assets/unique-card/fonts/';
-    $site = dirname(__DIR__) . '/assets/font/';
+    $rb = DECK_PREVIEW_SITE . '/plugins/rebuilder/app/public/assets/unique-card/fonts/';
+    $site = DECK_PREVIEW_SITE . '/assets/font/';
     return ['regular' => $site . 'HapticPro-Regular.ttf', 'bold' => $site . 'HapticPro-Extrabold.ttf',
             'icons' => $rb . 'alteredicons.woff2', 'circled' => $rb . 'NotoSansSymbols-circled.woff2'];
 }
@@ -33,25 +35,13 @@ function deckUniqueAvailable(): bool {
 }
 
 function deckUniqueFramePath(string $faction, string $frame): string {
-    return dirname(__DIR__) . '/plugins/rebuilder/app/public/assets/unique-card/frames/' . $faction . '_' . $frame . '.webp';
+    return DECK_PREVIEW_SITE . '/plugins/rebuilder/app/public/assets/unique-card/frames/' . $faction . '_' . $frame . '.webp';
 }
 
-/** POST /api/cards/batch on the cards API: [reference => card] (name, costs, powers, effects, type, artist…). */
+/** The uniques' data from the cards API (cacCardsApiBatch): [reference => card]. */
 function deckUniqueFetch(array $refs, string $lang): array {
-    if (!$refs || !defined('CARDS_API_URL') || CARDS_API_URL === '') return [];
-    $ch = curl_init(rtrim(CARDS_API_URL, '/') . '/api/cards/batch?' . http_build_query(['locale' => $lang]));
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 6, CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
-        CURLOPT_POSTFIELDS => json_encode(['references' => array_values($refs)]),
-    ]);
-    $body = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    $list = $code === 200 && is_string($body) ? json_decode($body, true) : null;
-    if (isset($list['member'])) $list = $list['member'];
     $out = [];
-    foreach (is_array($list) ? $list : [] as $card) {
+    foreach (cacCardsApiBatch($refs, $lang) as $card) {
         if (is_array($card) && isset($card['reference'])) $out[$card['reference']] = $card;
     }
     return $out;
@@ -286,7 +276,7 @@ function deckUniqueRender(array $card, $art, string $lang) {
     $W = DECK_UNIQUE_W;
     $H = DECK_UNIQUE_H;
     $f = deckUniqueFonts();
-    $assets = dirname(__DIR__) . '/assets/deck-image/';
+    $assets = DECK_PREVIEW_PLUGIN . '/assets/deck-image/';
     $ref = (string)$card['reference'];
     $faction = $card['faction']['code'] ?? explode('_', $ref)[3] ?? 'AX';
     if (!in_array($faction, ['AX', 'BR', 'LY', 'MU', 'OR', 'YZ'], true)) $faction = 'AX';

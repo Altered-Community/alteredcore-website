@@ -1,5 +1,5 @@
 <?php
-// Decklist image of a deck's link preview (og:image, 1200×630 JPEG), served by api/deck-image.php.
+// Decklist image of a deck's link preview (og:image, 1200×630 ratio JPEG), served by api/deck-image.php.
 //
 // Top, a banner on the faction's colour: the hero, the deck's name, hero · format · author, the copies per card
 // type, the cost curve (hand and reserve costs), the characters' total power per biome (as Re:Builder) and a QR
@@ -11,10 +11,12 @@
 // readable when the image is opened.
 //
 // Card images come from the CDN. A Unique has none there (the site draws it in the browser with
-// <altered-card>): includes/deck-unique-card.php draws its face from the cards API's data on its CDN
+// Altered-Card-Renderer, in JS): unique-card.php draws its face from the cards API's data on its CDN
 // illustration. Without that data, it shows its common version with a « Unique » pill.
-require_once __DIR__ . '/deck-preview.php';
-require_once __DIR__ . '/deck-unique-card.php';
+//
+// Names of types, biomes and formats and the factions' colours come from data/altered.json.
+require_once __DIR__ . '/preview.php';
+require_once __DIR__ . '/unique-card.php';
 require_once __DIR__ . '/qr-code.php';
 
 const DECK_IMAGE_WIDTH   = 1200;         // layout units; the image is DECK_IMAGE_SCALE times larger
@@ -23,18 +25,27 @@ const DECK_IMAGE_SCALE   = 2;
 const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
-const DECK_IMAGE_VERSION = 8;            // bump to redraw every cached image after a layout change
+const DECK_IMAGE_VERSION = 9;            // bump to redraw every cached image after a layout change
 
-/** Labels of the image, in English for languages without a translation. */
+/**
+ * Labels of the image, in English for languages without a translation. Types and biomes are named as in
+ * altered.json (types: [singular, plural] per type group of deckImageTypeGroup).
+ */
 function deckImageLabels(string $lang): array {
-    if ($lang === 'fr') {
-        return ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance totale', 'unique' => 'Unique',
-                'biomes' => ['O' => 'Eau', 'M' => 'Montagne', 'F' => 'Forêt'],
-                'types' => [['Personnage', 'Personnages'], ['Sort', 'Sorts'], ['Permanent', 'Permanents'], ['Autre', 'Autres']]];
-    }
-    return ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Total power', 'unique' => 'Unique',
-            'biomes' => ['O' => 'Ocean', 'M' => 'Mountain', 'F' => 'Forest'],
-            'types' => [['Character', 'Characters'], ['Spell', 'Spells'], ['Permanent', 'Permanents'], ['Other', 'Others']]];
+    $l = $lang === 'fr' ? 'fr' : 'en';
+    $types  = loadAlteredData('types');
+    $powers = loadAlteredData('powers');
+    $type   = function (string $key, string $fallback) use ($types, $l) {
+        $name = (string)($types[$key][$l] ?? $fallback);
+        return [$name, $name . 's'];
+    };
+    $biome  = function (string $key) use ($powers, $l) { return (string)($powers[$key][$l] ?? ucfirst($key)); };
+    $labels = $l === 'fr'
+        ? ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance totale', 'unique' => 'Unique', 'other' => ['Autre', 'Autres']]
+        : ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Total power', 'unique' => 'Unique', 'other' => ['Other', 'Others']];
+    $labels['biomes'] = ['O' => $biome('ocean'), 'M' => $biome('mountain'), 'F' => $biome('forest')];
+    $labels['types']  = [$type('CHARACTER', 'Character'), $type('SPELL', 'Spell'), $type('PERMANENT', 'Permanent'), $labels['other']];
+    return $labels;
 }
 
 /** Display order of a card type: characters, spells, permanents (landmark, expedition…), others. */
@@ -340,11 +351,11 @@ function deckImageQr($im, string $text, float $x, float $y, float $size): bool {
  */
 function deckImageRender(array $deck, string $lang, ?bool &$complete = null, string $deckUrl = '') {
     $txt    = deckImageLabels($lang);
-    $fonts  = dirname(__DIR__) . '/assets/font/';
+    $fonts  = DECK_PREVIEW_SITE . '/assets/font/';
     $fTitle = $fonts . 'Tiller-Bold.ttf';
     $fBody  = $fonts . 'HapticPro-Regular.ttf';
     $fBold  = $fonts . 'HapticPro-Extrabold.ttf';
-    $assets = dirname(__DIR__) . '/plugins/core-altered-cards/assets/';
+    $assets = DECK_PREVIEW_PLUGIN . '/assets/';
     [, $panel] = deckPreviewColors($deck);
     $stacks = deckImageStacks($deck);
     $stats  = deckImageStats($deck);
@@ -354,7 +365,9 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     $refs    = array_values(array_unique(array_merge($heroRef !== '' ? [$heroRef] : [], ...array_map(function ($s) { return $s['refs']; }, $stacks ?: [['refs' => []]]))));
     $urls    = [];
     foreach ($refs as $ref) $urls[$ref] = deckImageCardUrl($ref, $lang);
-    $got = deckImageDownload(array_values($urls));
+    // The hero's portrait crop, as on the deckbuilder's hero banner (assets/deckbuilder/hero.js).
+    $heroBanner = $heroRef !== '' ? rtrim(CDN_URL, '/') . '/cards/hero/' . cacHeroPortraitRef($heroRef) . '_1.webp' : '';
+    $got = deckImageDownload(array_values(array_filter(array_merge($urls, [$heroBanner]))));
     if ($lang !== 'en') {
         $missing = array_values(array_filter($refs, function ($r) use ($urls, $got) { return !isset($got[$urls[$r]]); }));
         foreach ($missing as $ref) $urls[$ref] = deckImageCardUrl($ref, 'en');
@@ -452,10 +465,16 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     }
 
     // Identity: hero portrait, name, hero · format · author, copies per type.
-    $heroImg = $heroRef !== '' ? $load($heroRef) : null;
+    // From the portrait crop (640×227, the hero on the left), else from the card's illustration.
+    $heroImg = $heroBanner !== '' ? deckImageDecode($got[$heroBanner] ?? null) : null;
+    $region  = [0.08, 0, 0.36, 1];
+    if (!$heroImg && $heroRef !== '') {
+        $heroImg = $load($heroRef);
+        $region  = [0.15, 0.17, 0.7, 0.4];
+    }
     $tx = $pad;
     if ($heroImg) {
-        $portrait = deckImageThumb($heroImg, 88, 88, 44, [0.15, 0.17, 0.7, 0.4]);
+        $portrait = deckImageThumb($heroImg, 88, 88, 44, $region);
         deckImageCopy($im, $portrait, $pad, intdiv(DECK_IMAGE_BANNER - 88, 2));
         imagedestroy($portrait);
         imagedestroy($heroImg);
@@ -465,7 +484,7 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     $name = mb_strtoupper(trim((string)($deck['name'] ?? '')));
     for ($size = 42; $size > 28 && deckImageBox($fTitle, $size, $name)['w'] > $tw; $size -= 2);
     $y   = deckImageText($im, $fTitle, $size, $tx, 26 + intdiv(42 - $size, 3), $white, deckImageEllipsis($fTitle, $size, $name, $tw));
-    $sub = implode(' · ', array_filter([trim((string)($deck['stats']['hero']['name'] ?? '')), DECK_PREVIEW_FORMATS[$deck['format'] ?? ''] ?? '', deckPreviewByLine($deck, $lang) ?? ''], 'strlen'));
+    $sub = implode(' · ', array_filter([deckPreviewDescription($deck, $lang), deckPreviewByLine($deck, $lang) ?? ''], 'strlen'));
     if ($sub !== '') $y = deckImageText($im, $fBody, 17, $tx, $y + 13, $soft, deckImageEllipsis($fBody, 17, $sub, $tw));
     $types = [];
     foreach ($stats['types'] as $group => $n) if ($n > 0) $types[] = $n . ' ' . $txt['types'][$group][$n > 1 ? 1 : 0];

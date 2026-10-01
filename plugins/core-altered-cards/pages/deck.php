@@ -367,7 +367,7 @@ if ($deckId) {
 $pageTitle = $deck['name'] ?? $txt['page_title'];
 // Link preview (Discord…) of a public deck, the same as Re:Builder's (plugins/rebuilder/meta.php).
 if (is_array($deck) && $deckId) {
-    require_once dirname(__DIR__, 3) . '/includes/deck-preview.php';
+    require_once dirname(__DIR__) . '/includes/deck-preview/preview.php';
     $_deckPreview = deckPreviewMeta($deck, $lang);
     if ($_deckPreview['image'] !== null) {
         ['description' => $pageDescription, 'image' => $pageImage, 'themeColor' => $pageThemeColor, 'oembed' => $pageOembedUrl] = $_deckPreview;

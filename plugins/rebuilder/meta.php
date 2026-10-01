@@ -19,9 +19,12 @@ if ($slug === 'rebuilder') {
     redirect(BASE_URL . '/pages/' . $page . ($qs !== '' ? '?' . $qs : ''));
 }
 
-// Title and link preview of a deck (`deck?id=`, `deckbuilder?id=`), the same as the site's deck page's
-// (includes/deck-preview.php). A guest deck, an unknown deck or an unreachable API keep the page's default title.
-require_once dirname(__DIR__, 2) . '/includes/deck-preview.php';
+// Title and link preview of a deck (`deck?id=`, `deckbuilder?id=`), the same as the site's deck page's: the helper
+// of core-altered-cards (includes/deck-preview/preview.php), when that plugin is active. A guest deck, an unknown
+// deck or an unreachable API keep the page's default title.
+$preview = dirname(__DIR__) . '/core-altered-cards/includes/deck-preview/preview.php';
+if (!isset($GLOBALS['_ac_active_plugins']['core-altered-cards']) || !is_file($preview)) return;
+require_once $preview;
 $id = in_array($slug, ['deck', 'deckbuilder'], true) ? (string)($_GET['id'] ?? '') : '';
 if (!deckPreviewValidId($id)) return;
 
