@@ -33,6 +33,15 @@ export async function login(page: Page, user: keyof typeof USERS = 'alice', retu
   await page.waitForURL((url) => !url.pathname.includes('/realms/') && !url.pathname.includes('/auth/'));
 }
 
+/** Cookie of « Beta Deckbuilder » (AC_BETA_COOKIE, includes/plugins.php): the decks pages are Re:Builder's. */
+export const BETA_COOKIE = 'ac_beta';
+
+/** Turns « Beta Deckbuilder » on or off in this browser (the account menu's cookie). */
+export async function setBeta(page: Page, on: boolean): Promise<void> {
+  if (on) await page.context().addCookies([{ name: BETA_COOKIE, value: '1', url: test.info().project.use.baseURL! }]);
+  else await page.context().clearCookies({ name: BETA_COOKIE });
+}
+
 /** CSRF token of the current page (window.AlteredCore on SPA pages). */
 export async function csrfOf(page: Page): Promise<string> {
   return page.evaluate(() => (window as unknown as { AlteredCore: { csrf: string } }).AlteredCore.csrf);

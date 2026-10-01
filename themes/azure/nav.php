@@ -2,7 +2,7 @@
 // azure theme navigation
 // Variables provided by includes/header.php:
 //   $lang, $currentPage, $__navItems, $__iframeNavId
-//   $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact
+//   $_langNames, $_langUrls, $_hTxt, $__mobileCompact
 
 $__iframeNavId    = ($currentPage === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
 $__sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
@@ -55,11 +55,6 @@ if (!function_exists('__nav_active')) {
             </button>
             <?php endif; ?>
 
-            <!-- Theme switch, driven by the account menu's Light / Dark buttons (scripts below) -->
-            <button id="header-theme-toggle" type="button" hidden
-                    data-label-dark="<?= h($_hTxt['dark_mode']) ?>" data-label-light="<?= h($_hTxt['light_mode']) ?>">
-                <i class="fa-solid fa-moon"></i>
-            </button>
 
             <!-- Account button, opens #azAccountMenu (script below): sign in or the user's links, theme, language, beta -->
             <button class="az-account-btn" type="button" id="azAccountBtn"
@@ -384,14 +379,16 @@ foreach ($__navItems as $__ni) {
         location.replace(location.href.split('#')[0]); // a GET, even on a page rendered by a form post
     });
 
-    // Theme buttons drive the hidden header toggle
-    var headerToggle = document.getElementById('header-theme-toggle');
+    // Theme: the account menu's Light / Dark buttons (the footer keeps its own toggle, its icon follows)
+    function setTheme(dark) {
+        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+        try { localStorage.setItem('acTheme', dark ? 'dark' : 'light'); } catch (e) {}
+        var footerIcon = document.getElementById('theme-icon');
+        if (footerIcon) footerIcon.className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
     themeBtns.forEach(function (b) {
-        b.addEventListener('click', function () {
-            var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (headerToggle && (b.dataset.azTheme === 'dark') !== dark) headerToggle.click();
-            syncTheme();
-        });
+        b.addEventListener('click', function () { setTheme(b.dataset.azTheme === 'dark'); syncTheme(); });
     });
 
     document.addEventListener('keydown', function (e) {
@@ -495,29 +492,3 @@ if ($__hasSidebarBtn || !empty($__sidebarItems)):
 <?php endif; ?>
 
 <main>
-<script>
-(function () {
-    var btn  = document.getElementById('header-theme-toggle');
-    if (!btn) return;
-    var icon = btn.querySelector('i');
-
-    function syncHeaderIcon(dark) {
-        icon.className  = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-        btn.title       = dark ? btn.dataset.labelLight : btn.dataset.labelDark;
-    }
-
-    // Sync on load with the theme already applied by the anti-FOUC script
-    syncHeaderIcon(document.documentElement.getAttribute('data-theme') === 'dark');
-
-    btn.addEventListener('click', function () {
-        var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
-        else      document.documentElement.removeAttribute('data-theme');
-        try { localStorage.setItem('acTheme', dark ? 'dark' : 'light'); } catch (e) {}
-        syncHeaderIcon(dark);
-        // Keep the footer toggle icon in sync if it exists
-        var footerIcon = document.getElementById('theme-icon');
-        if (footerIcon) footerIcon.className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    });
-}());
-</script>

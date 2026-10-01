@@ -282,21 +282,6 @@ a:hover { color: var(--primary-400); }
 .login-option-arrow { color: var(--neutral-400); font-size: 0.85rem; }
 .login-option:hover .login-option-arrow { color: var(--primary-500); }
 
-.btn-user-badge {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #fff;
-    background: var(--primary-500);
-    border: 1px solid var(--primary-400);
-    border-radius: 0.4rem;
-    padding: 0.3rem 0.8rem;
-    transition: background 0.15s;
-    white-space: nowrap;
-}
-.btn-user-badge:hover,
-.btn-user-badge:focus { background: var(--primary-400); color: #fff; box-shadow: none; }
-.btn-user-badge::after { margin-left: 0.4rem; }
-
 /* ---- Hero ---- */
 .hero-stack {
     display: flex;
@@ -1065,13 +1050,6 @@ html { transition: background-color 0.25s, color 0.25s; }
     color: #eef5ff;
 }
 [data-theme="dark"] .btn-login:hover { background: #3B8EF0; color: #eef5ff; }
-[data-theme="dark"] .btn-user-badge {
-    background: #2B80F0;
-    border-color: #3B8EF0;
-    color: #eef5ff;
-}
-[data-theme="dark"] .btn-user-badge:hover,
-[data-theme="dark"] .btn-user-badge:focus { background: #3B8EF0; color: #eef5ff; }
 
 [data-theme="dark"] .news-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
 

@@ -1,11 +1,11 @@
-import { csrfOf, expect, login, test } from './fixtures';
+import { BETA_COOKIE, csrfOf, expect, login, setBeta, test } from './fixtures';
 
 /**
  * The shell's side of manifest v2: routing, host contract, session token. The SPA page under test is Re:Builder's,
- * served on the site's decks pages with « Beta Deckbuilder » on (cookie ac_beta).
+ * served on the site's decks pages with « Beta Deckbuilder » on.
  */
 test.describe('Shell · SPA pages', () => {
-  test.beforeEach(async ({ context, baseURL }) => context.addCookies([{ name: 'ac_beta', value: '1', url: baseURL! }]));
+  test.beforeEach(async ({ page }) => setBeta(page, true));
 
   test('deep paths reach SPA pages only; PHP pages keep a single URL', async ({ request }) => {
     // The plugin's own page answers deep paths (its former links, redirected to the site's URLs by its meta.php).
@@ -25,7 +25,7 @@ test.describe('Shell · SPA pages', () => {
   });
 
   test('« Beta Deckbuilder »: the SPA page serves its beta_slugs at their URLs, the site page keeps its calls', async ({ playwright, baseURL }) => {
-    const beta = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: 'ac_beta=1' } });
+    const beta = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: `${BETA_COOKIE}=1` } });
     for (const path of ['/pages/decks', '/pages/deck?id=00000000-0000-0000-0000-000000000000', '/pages/deckbuilder']) {
       const res = await beta.get(path);
       expect(res.status(), path).toBe(200);

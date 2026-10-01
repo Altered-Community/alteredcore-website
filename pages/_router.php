@@ -44,16 +44,17 @@ if ($_subPath === '' && file_exists($_corePath)) {
 
 // Plugin page
 initPlugins();
-$_pluginPage = pluginFindPage($_slug);
 // Visibility setting (set in Admin → Pages)
 $_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
 if (!is_array($_hiddenPluginSlugs)) $_hiddenPluginSlugs = [];
 // Beta mode (« Beta Deckbuilder »): a plugin's SPA page takes over the slugs of its manifest `beta_slugs`, at the
 // same URLs, unless it is hidden itself. The page it replaces keeps answering its own calls (?ajax=…, form posts).
+$_pluginPage = null;
 if ($_subPath === '' && betaModeOn() && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) && !isset($_GET['ajax'])) {
-    $_betaPage = pluginFindBetaPage($_slug);
-    if ($_betaPage !== null && !in_array($_betaPage['own_slug'], $_hiddenPluginSlugs, true)) $_pluginPage = $_betaPage;
+    $_pluginPage = pluginFindBetaPage($_slug);
+    if ($_pluginPage !== null && in_array($_pluginPage['own_slug'], $_hiddenPluginSlugs, true)) $_pluginPage = null;
 }
+$_pluginPage = $_pluginPage ?? pluginFindPage($_slug);
 if ($_pluginPage !== null && $_subPath !== '' && $_pluginPage['type'] !== 'spa') {
     $_pluginPage = null; // deep paths exist only for client-routed pages
 }

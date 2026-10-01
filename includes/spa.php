@@ -84,9 +84,8 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
         'meta_file'     => spaMetaFile($plugin, $page),
-        // Base href of the client routes: /pages/ for a page with `beta_slugs`, whose routes are the slugs it
-        // takes over (decks, deck?id=…), else its own /pages/{slug}/.
-        'base_path'     => BASE_URL . '/pages/' . (empty($page['beta_slugs']) ? $slug . '/' : ''),
+        // Base href of the client routes (pluginFindBetaPage(): /pages/, the routes being the slugs it takes over)
+        'base_path'     => BASE_URL . '/pages/' . $slug . '/',
         'spa'           => $spa,
     ];
 }

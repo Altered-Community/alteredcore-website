@@ -112,7 +112,7 @@ function pluginBetaPages(): array {
 function pluginFindBetaPage(string $slug): ?array {
     foreach (pluginBetaPages() as [$plugin, $page]) {
         if (in_array($slug, (array)$page['beta_slugs'], true)) {
-            return ['slug' => $slug, 'own_slug' => $page['slug']] + spaResolvePage($plugin, $page);
+            return ['slug' => $slug, 'own_slug' => $page['slug'], 'base_path' => BASE_URL . '/pages/'] + spaResolvePage($plugin, $page);
         }
     }
     return null;

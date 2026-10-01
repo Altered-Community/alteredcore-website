@@ -1,5 +1,5 @@
 import { deflateRawSync } from 'node:zlib';
-import { evidence, expect, login, test, type Page } from '../../../tests/e2e/fixtures';
+import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
 
 /**
  * Re:Builder's decks section (plugin `rebuilder`): with « Beta Deckbuilder » on (cookie ac_beta), the shell serves it
@@ -77,12 +77,6 @@ const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
 /** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
-
-/** Turns « Beta Deckbuilder » on or off in this browser (the account menu's cookie). */
-async function setBeta(page: Page, on: boolean): Promise<void> {
-  if (on) await page.context().addCookies([{ name: 'ac_beta', value: '1', url: test.info().project.use.baseURL! }]);
-  else await page.context().clearCookies({ name: 'ac_beta' });
-}
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
 

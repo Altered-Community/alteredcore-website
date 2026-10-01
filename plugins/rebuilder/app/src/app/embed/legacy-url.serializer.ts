@@ -1,8 +1,14 @@
 import { DefaultUrlSerializer, type UrlTree } from '@angular/router';
 
-/** Deck page tabs (`decks/:id/<tab>`) and editor views (`decks/:id/edit/<view>`) of the routes. */
-const DECK_TABS = new Set(['deck', 'description', 'main']);
-const EDITOR_VIEWS = new Set(['apercu', 'deck', 'main']);
+/**
+ * The two site pages the routes map to: `deck?id=X[&tab=…]` ⇄ `decks/X[/tab]` and
+ * `deckbuilder?id=X[&view=…]` ⇄ `decks/X/edit[/view]`; without an id, `deck` ⇄ `decks` and `deckbuilder` ⇄ `decks/new`.
+ */
+const PAGES = {
+  deck: { key: 'tab', subs: new Set(['deck', 'description', 'main']), base: [] as string[], none: ['decks'] },
+  deckbuilder: { key: 'view', subs: new Set(['apercu', 'deck', 'main']), base: ['edit'], none: ['decks', 'new'] },
+};
+type Page = keyof typeof PAGES;
 
 interface Parts {
   path: string[];
@@ -20,48 +26,34 @@ function join({ path, query, hash }: Parts): string {
   return `/${path.map(encodeURIComponent).join('/')}${q ? `?${q}` : ''}${hash}`;
 }
 
-/** `id` (and `tab` / `view`) first, then the other query parameters. */
-function withId(id: string, key: string, value: string | undefined, rest: URLSearchParams): URLSearchParams {
-  const query = new URLSearchParams({ id });
-  if (value) query.set(key, value);
-  rest.forEach((v, k) => query.append(k, v));
-  return query;
-}
-
-/**
- * The site's URLs (under the base href `/pages/`) → the routes: `deck?id=X[&tab=…]` → `decks/X[/tab]`,
- * `deckbuilder?id=X[&view=…]` → `decks/X/edit[/view]`, `deckbuilder` → `decks/new`; anything else is left as it is.
- * (The former links of the plugin's own page, `/pages/rebuilder/…`, are redirected by the server: `meta.php`.)
- */
+/** The site's URLs (under the base href `/pages/`) → the routes; anything else is left as it is. */
 export function toRouteUrl(url: string): string {
+  if (!/^\/deck(builder)?([?#]|$)/.test(url)) return url;
   const parts = split(url);
-  let { path } = parts;
-  const { query } = parts;
-  if (path.length !== 1 || (path[0] !== 'deck' && path[0] !== 'deckbuilder')) return url;
-
-  const id = query.get('id');
-  const sub = query.get(path[0] === 'deck' ? 'tab' : 'view') ?? '';
-  query.delete('id');
-  query.delete(path[0] === 'deck' ? 'tab' : 'view');
-  if (path[0] === 'deck') path = id ? ['decks', id, ...(DECK_TABS.has(sub) ? [sub] : [])] : ['decks'];
-  else path = id ? ['decks', id, 'edit', ...(EDITOR_VIEWS.has(sub) ? [sub] : [])] : ['decks', 'new'];
-  return join({ ...parts, path, query });
+  const page = PAGES[parts.path[0] as Page];
+  const id = parts.query.get('id');
+  const sub = parts.query.get(page.key) ?? '';
+  parts.query.delete('id');
+  parts.query.delete(page.key);
+  const path = id ? ['decks', id, ...page.base, ...(page.subs.has(sub) ? [sub] : [])] : page.none;
+  return join({ ...parts, path });
 }
 
 /** The routes → the site's URLs, the reverse of toRouteUrl(): the decks pages keep the links of the site's own pages. */
 export function toSiteUrl(url: string): string {
+  if (!url.startsWith('/decks/')) return url;
   const parts = split(url);
-  const [root, id, a, b] = parts.path;
-  const n = parts.path.length;
-  if (root !== 'decks' || n < 2) return url;
-  if (id === 'new' && n === 2) return join({ ...parts, path: ['deckbuilder'] });
-  if (n <= 3 && (n === 2 || DECK_TABS.has(a) || a === 'cartes')) {
-    return join({ ...parts, path: ['deck'], query: withId(id, 'tab', DECK_TABS.has(a) ? a : undefined, parts.query) });
-  }
-  if (a === 'edit' && (n === 3 || (n === 4 && EDITOR_VIEWS.has(b)))) {
-    return join({ ...parts, path: ['deckbuilder'], query: withId(id, 'view', b, parts.query) });
-  }
-  return url;
+  const [, id, ...rest] = parts.path;
+  if (id === 'new' && !rest.length) return join({ ...parts, path: ['deckbuilder'] });
+  const name: Page = rest[0] === 'edit' ? 'deckbuilder' : 'deck';
+  const page = PAGES[name];
+  const subs = rest.slice(page.base.length);
+  const sub = subs[0];
+  if (subs.length > 1 || (sub !== undefined && !page.subs.has(sub) && !(name === 'deck' && sub === 'cartes'))) return url;
+  const query = new URLSearchParams({ id });
+  if (sub && page.subs.has(sub)) query.set(page.key, sub);
+  parts.query.forEach((v, k) => query.append(k, v));
+  return join({ ...parts, path: [name], query });
 }
 
 /**

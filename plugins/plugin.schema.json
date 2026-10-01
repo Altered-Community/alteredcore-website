@@ -96,7 +96,7 @@
           "beta_slugs": {
             "type": "array",
             "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-            "description": "spa: slugs of other pages (e.g. the site's decks pages) this page serves, at the same URLs, when the visitor turned on « Beta Deckbuilder » (cookie ac_beta). Its client routes then sit under /pages/ (base href) instead of /pages/{slug}/."
+            "description": "spa: slugs of other pages (e.g. the site's decks pages) this page serves, at the same URLs, when the visitor turned on « Beta Deckbuilder » (cookie ac_beta). Its client routes then sit under /pages/ (base href) instead of /pages/{slug}/; /pages/{slug} itself stays its own page."
           }
         },
         "allOf": [
