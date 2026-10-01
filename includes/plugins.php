@@ -92,28 +92,30 @@ function betaModeOn(): bool {
 }
 
 /**
- * The SPA page of an active plugin that serves $slug in beta mode (manifest `beta_slugs`, e.g. the site's
- * decks pages), at the same URL; null when none does. pluginFindPage() keeps serving the slug otherwise.
+ * SPA pages of active plugins with `beta_slugs` (manifest), as [plugin, page] pairs: the theme shows the
+ * « Beta Deckbuilder » toggle when there is one.
  */
-function pluginFindBetaPage(string $slug): ?array {
+function pluginBetaPages(): array {
+    $out = [];
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $plugin) {
         foreach ($plugin['pages'] ?? [] as $page) {
-            if (($page['type'] ?? 'php') === 'spa' && in_array($slug, (array)($page['beta_slugs'] ?? []), true)) {
-                return ['slug' => $slug] + spaResolvePage($plugin, $page);
-            }
+            if (($page['type'] ?? 'php') === 'spa' && !empty($page['beta_slugs'])) $out[] = [$plugin, $page];
+        }
+    }
+    return $out;
+}
+
+/**
+ * The SPA page that serves $slug in beta mode (e.g. the site's decks pages), at the same URL, with its own slug
+ * (`own_slug`); null when none does. pluginFindPage() keeps serving the slug otherwise.
+ */
+function pluginFindBetaPage(string $slug): ?array {
+    foreach (pluginBetaPages() as [$plugin, $page]) {
+        if (in_array($slug, (array)$page['beta_slugs'], true)) {
+            return ['slug' => $slug, 'own_slug' => $page['slug']] + spaResolvePage($plugin, $page);
         }
     }
     return null;
-}
-
-/** Whether an active plugin has beta pages: the theme then shows the « Beta Deckbuilder » toggle. */
-function pluginHasBetaPages(): bool {
-    foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $plugin) {
-        foreach ($plugin['pages'] ?? [] as $page) {
-            if (!empty($page['beta_slugs'])) return true;
-        }
-    }
-    return false;
 }
 
 function pluginFindPage(string $slug): ?array {

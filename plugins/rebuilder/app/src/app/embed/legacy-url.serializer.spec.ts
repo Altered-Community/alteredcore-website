@@ -14,10 +14,6 @@ describe('legacy URLs of the decks pages', () => {
     ['/deckbuilder', '/decks/new'],
     ['/decks?tab=community', '/decks?tab=community'],
     [`/decks/${ID}/edit`, `/decks/${ID}/edit`],
-    [`/rebuilder/decks/${ID}/edit`, `/decks/${ID}/edit`],
-    [`/rebuilder?id=${ID}`, `/decks/${ID}/edit`],
-    [`/rebuilder/deck?id=${ID}`, `/decks/${ID}`],
-    ['/rebuilder', '/'],
   ])('reads %s as the route %s', (url, route) => {
     expect(toRouteUrl(url)).toBe(route);
   });

@@ -294,7 +294,7 @@ foreach ($__navItems as $__ni) {
         </div>
     </div>
 
-    <?php if (pluginHasBetaPages()): ?>
+    <?php if (pluginBetaPages()): ?>
     <div class="az-am-section">
         <span class="az-am-label"><?= h($_hTxt['beta']) ?></span>
         <div class="az-am-beta">
@@ -315,12 +315,13 @@ foreach ($__navItems as $__ni) {
     <?php endif; ?>
 </div>
 <script>
-// Mobile header: the burger opens a full-screen menu, the account button a
+// Header: the burger (mobile) opens a full-screen menu, the account button a
 // popover. Opening one closes the other; Escape closes either.
 (function () {
     var hdr = document.querySelector('.az-site-header');
     if (!hdr) return;
     var panels = [];
+    var desktop = window.matchMedia('(min-width: 768px)');
 
     function register(btn, panel, onToggle) {
         if (!btn || !panel) return null;
@@ -362,7 +363,8 @@ foreach ($__navItems as $__ni) {
         if (open) {
             var top = headerBottom(), r = accBtn.getBoundingClientRect(), w = document.documentElement.clientWidth;
             var right = Math.max(12, Math.round(w - r.right));
-            backdrop.style.top = top + 'px';
+            // Desktop: over the whole page, header included, so a click anywhere else closes the menu
+            backdrop.style.top = desktop.matches ? '0' : top + 'px';
             acc.style.top = (top + 8) + 'px';
             acc.style.right = right + 'px';
             // Point the caret at the button's centre
@@ -379,7 +381,7 @@ foreach ($__navItems as $__ni) {
         beta.setAttribute('aria-checked', on ? 'true' : 'false');
         document.cookie = beta.dataset.azBeta + '=' + (on ? '1; max-age=31536000' : '; max-age=0')
             + '; path=' + beta.dataset.azBetaPath + '; SameSite=Lax';
-        location.reload();
+        location.replace(location.href.split('#')[0]); // a GET, even on a page rendered by a form post
     });
 
     // Theme buttons drive the hidden header toggle
@@ -396,7 +398,7 @@ foreach ($__navItems as $__ni) {
         if (e.key !== 'Escape') return;
         panels.forEach(function (p) { if (!p.panel.hidden) { p.setOpen(false); p.btn.focus(); } });
     });
-    window.matchMedia('(min-width: 768px)').addEventListener('change', function (e) {
+    desktop.addEventListener('change', function (e) {
         if (e.matches) panels.forEach(function (p) { p.setOpen(false); });
     });
 }());

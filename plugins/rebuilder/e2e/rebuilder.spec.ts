@@ -75,7 +75,8 @@ const NEW_DECK = '/pages/deckbuilder';
 const DECK = (id: string) => `/pages/deck?id=${id}`;
 const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
 /** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
-const at = (path: string, more = false) => new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${more ? '(&|$)' : '$'}`);
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 /** Turns « Beta Deckbuilder » on or off in this browser (the account menu's cookie). */
 async function setBeta(page: Page, on: boolean): Promise<void> {
@@ -592,7 +593,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     // A former link of the plugin's own page: same title, on the site's URL.
     await page.goto(`/pages/rebuilder/deck?id=${deck.id}&lang=fr`);
     await expect(page).toHaveURL(at(DECK(deck.id), true));
-    await expect(page).toHaveTitle(new RegExp(`^${deck.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} —`));
+    await expect(page).toHaveTitle(new RegExp(`^${escape(deck.name)} —`));
   });
 
   test('tells an unknown deck apart', async ({ page }, testInfo) => {

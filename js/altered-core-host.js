@@ -81,6 +81,7 @@
             var base = host.page.basePath;
             var target = path ? new URL(path, location.origin).pathname.replace(/\/+$/, '') : null;
             document.querySelectorAll('.site-header a.nav-link[href], .site-header a.dropdown-item[href]').forEach(function (a) {
+                if (a.getAttribute('href').charAt(0) === '#') return; // dropdown toggles: the server's state
                 var p = new URL(a.getAttribute('href'), location.origin).pathname.replace(/\/+$/, '');
                 if ((p + '/').indexOf(base) !== 0) return;
                 a.classList.toggle('active', p === target);

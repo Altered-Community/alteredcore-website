@@ -30,18 +30,13 @@ function withId(id: string, key: string, value: string | undefined, rest: URLSea
 
 /**
  * The site's URLs (under the base href `/pages/`) → the routes: `deck?id=X[&tab=…]` → `decks/X[/tab]`,
- * `deckbuilder?id=X[&view=…]` → `decks/X/edit[/view]`, `deckbuilder` → `decks/new`. The former links of the plugin's
- * own page (`rebuilder/decks/X`, `rebuilder?id=X`, `rebuilder/deck?id=X`) too; anything else is left as it is.
+ * `deckbuilder?id=X[&view=…]` → `decks/X/edit[/view]`, `deckbuilder` → `decks/new`; anything else is left as it is.
+ * (The former links of the plugin's own page, `/pages/rebuilder/…`, are redirected by the server: `meta.php`.)
  */
 export function toRouteUrl(url: string): string {
   const parts = split(url);
   let { path } = parts;
   const { query } = parts;
-  if (path[0] === 'rebuilder') {
-    path = path.slice(1);
-    if (!path.length && query.has('id')) path = ['deckbuilder'];
-    if (path[0] !== 'deck' && path[0] !== 'deckbuilder') return join({ ...parts, path });
-  }
   if (path.length !== 1 || (path[0] !== 'deck' && path[0] !== 'deckbuilder')) return url;
 
   const id = query.get('id');
