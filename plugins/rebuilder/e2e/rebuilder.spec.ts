@@ -30,7 +30,10 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
   const dialog = page.getByRole('dialog', { name: l.newDeck });
   await expect(dialog).toBeVisible();
   await dialog.locator('ar-hero-tile button').first().click();
-  await dialog.getByRole('textbox', { name: l.deckName }).fill(name);
+  // The hero pre-fills the name (« Deck <hero> »): wait for it, or it lands after the typed name.
+  const field = dialog.getByRole('textbox', { name: l.deckName });
+  await expect(field).not.toHaveValue('');
+  await field.fill(name);
   await dialog.getByRole('button', { name: l.create }).click();
   await expect(dialog).toBeHidden();
 }
