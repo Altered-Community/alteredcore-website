@@ -4,7 +4,8 @@
 // Top, a banner on the faction's colour: the hero's illustration on the left, fading into it, the deck's name,
 // hero · format · author, the copies per card type, the cost curve (hand and reserve costs), the characters' total
 // power per biome (as Re:Builder) and a QR code of the deck's page. Below, on white, one section per card type:
-// copies of one card stacked (whatever their rarity), each Unique alone. The cards shrink until every section fits.
+// copies of one card stacked (whatever their rarity), only their name band showing. The Uniques, whose text players
+// want to read, in a section of their own on the right with larger cards. The cards shrink until every section fits.
 //
 // The layout is in 1200×630 units, drawn at DECK_IMAGE_SCALE (2400×1260) so that the cards' text stays
 // readable when the image is opened.
@@ -25,7 +26,9 @@ const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
 const DECK_IMAGE_FADE    = 110;          // width of the hero illustration's fade into the banner
-const DECK_IMAGE_VERSION = 11;           // bump to redraw every cached image after a layout change
+const DECK_IMAGE_STACK   = 0.09;         // offset of a stacked copy / card width: its name band shows
+const DECK_IMAGE_UNIQUE  = 1.6;          // the Uniques' cards / the other cards' width, where it fits
+const DECK_IMAGE_VERSION = 12;           // bump to redraw every cached image after a layout change
 
 /**
  * Labels of the image, in English for languages without a translation. Types and biomes are named as in
@@ -41,8 +44,8 @@ function deckImageLabels(string $lang): array {
     };
     $biome  = function (string $key) use ($powers, $l) { return (string)($powers[$key][$l] ?? ucfirst($key)); };
     $labels = $l === 'fr'
-        ? ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance totale', 'unique' => 'Unique', 'other' => ['Autre', 'Autres']]
-        : ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Total power', 'unique' => 'Unique', 'other' => ['Other', 'Others']];
+        ? ['curve' => 'Courbe de coût', 'hand' => 'Main', 'reserve' => 'Réserve', 'power' => 'Puissance totale', 'unique' => 'Unique', 'uniques' => ['Unique', 'Uniques'], 'other' => ['Autre', 'Autres']]
+        : ['curve' => 'Cost curve', 'hand' => 'Hand', 'reserve' => 'Reserve', 'power' => 'Total power', 'unique' => 'Unique', 'uniques' => ['Unique', 'Uniques'], 'other' => ['Other', 'Others']];
     $labels['biomes'] = ['O' => $biome('ocean'), 'M' => $biome('mountain'), 'F' => $biome('forest')];
     $labels['types']  = [$type('CHARACTER', 'Character'), $type('SPELL', 'Spell'), $type('PERMANENT', 'Permanent'), $labels['other']];
     return $labels;
@@ -354,8 +357,8 @@ function deckImageLayout(array $sections, int $maxCopies, int $areaW, int $areaH
         $cols  = array_map(function ($s) use ($rows) { return max(1, (int)ceil($s['count'] / $rows)); }, $sections);
         $total = array_sum($cols);
         $byW   = ($areaW - $sep * (count($sections) - 1) - $gap * ($total - count($sections))) / $total;
-        $byH   = (($areaH - ($rows - 1) * $rowGap) / $rows) / (DECK_IMAGE_RATIO + ($maxCopies - 1) * 0.175);
-        $w     = (int)floor(min($byW, $byH, 150));
+        $byH   = (($areaH - ($rows - 1) * $rowGap) / $rows) / (DECK_IMAGE_RATIO + ($maxCopies - 1) * DECK_IMAGE_STACK);
+        $w     = (int)floor(min($byW, $byH));
         // A section is at least as wide as its label.
         do {
             $widths = [];
@@ -364,7 +367,7 @@ function deckImageLayout(array $sections, int $maxCopies, int $areaW, int $areaH
         } while (--$w > 20);
         if ($best === null || $w > $best['w']) {
             $h    = (int)round($w * DECK_IMAGE_RATIO);
-            $off  = (int)round($w * 0.175);
+            $off  = (int)round($w * DECK_IMAGE_STACK);
             $best = ['w' => $w, 'h' => $h, 'off' => $off, 'gap' => $gap, 'rowGap' => $rowGap, 'sep' => $sep, 'rows' => $rows,
                      'rowH' => $h + ($maxCopies - 1) * $off, 'cols' => $cols, 'widths' => $widths];
         }
@@ -554,70 +557,97 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     if ($sub !== '') $y = deckImageText($im, $fBody, $subPx, $tx, $y + 13, $soft, deckImageEllipsis($fBody, $subPx, $sub, $tw));
     if ($types !== '') deckImageText($im, $fBold, $typesPx, $tx, $y + 13, $white, deckImageEllipsis($fBold, $typesPx, $types, $tw));
 
-    // ── Sections: one per card type, side by side ──
-    $groups = [];
-    foreach ($stacks as $stack) $groups[$stack['group']][] = $stack;
+    // ── Sections: one per card type, side by side; the Uniques on the right ──
+    $section = function (array $list, string $label) use ($fBold) {
+        return ['label' => $label, 'stacks' => $list, 'count' => count($list), 'minW' => deckImageBox($fBold, 13, $label)['w']];
+    };
+    $groups  = [];
+    $uniques = [];
+    foreach ($stacks as $stack) {
+        if ($stack['unique']) $uniques[] = $stack;
+        else $groups[$stack['group']][] = $stack;
+    }
     ksort($groups);
     $sections = [];
     foreach ($groups as $group => $list) {
-        $n     = $stats['types'][$group];
-        $label = mb_strtoupper($txt['types'][$group][$n > 1 ? 1 : 0]) . ' · ' . $n;
-        $sections[] = ['label' => $label, 'stacks' => $list, 'count' => count($list), 'minW' => deckImageBox($fBold, 13, $label)['w']];
+        $n = $stats['types'][$group]; // as in the banner, the type's Uniques included
+        $sections[] = $section($list, mb_strtoupper($txt['types'][$group][$n > 1 ? 1 : 0]) . ' · ' . $n);
     }
-    if (!$sections) return $im;
+    $uSection = $uniques ? $section($uniques, mb_strtoupper($txt['uniques'][count($uniques) > 1 ? 1 : 0]) . ' · ' . count($uniques)) : null;
+    if (!$sections && !$uSection) return $im;
     $maxCopies = max(1, ...array_map(function ($s) { return count($s['refs']); }, $stacks));
     $areaW  = DECK_IMAGE_WIDTH - 2 * $pad;
     $labelH = 26;
-    $top    = DECK_IMAGE_BANNER + 18;
-    $areaH  = DECK_IMAGE_HEIGHT - $top - 16 - $labelH;
-    $grid   = deckImageLayout($sections, $maxCopies, $areaW, $areaH);
-    $gridH  = $grid['rows'] * $grid['rowH'] + ($grid['rows'] - 1) * $grid['rowGap'];
-    $top   += intdiv(max(0, $areaH - $gridH), 2); // vertically centred below the banner
-    $radius = max(4, (int)round($grid['w'] * 0.05));
-    $drop   = deckImageShadow($grid['w'], $grid['h'], $radius, 92);
-    $pill   = deckImageColor($im, '#c37424');
-    $empty  = deckImageColor($im, '#ece6ea');
-    $thumbs = [];
-    $usedW  = array_sum($grid['widths']) + $grid['sep'] * (count($sections) - 1);
-    $sx0    = $pad + ($areaW - $usedW) / 2;
-    $gridTop = $top + $labelH;
-    foreach ($sections as $i => $section) {
-        if ($i > 0) {
-            $lineX = $sx0 - intdiv($grid['sep'], 2);
-            deckImageRect($im, $lineX, $top, $lineX, min(DECK_IMAGE_HEIGHT - 16, $gridTop + $gridH), $line);
+    $top0   = DECK_IMAGE_BANNER + 18;
+    $areaH  = DECK_IMAGE_HEIGHT - $top0 - 16 - $labelH;
+    $sep    = 36;
+    $gridH  = function (array $g) { return $g['rows'] * $g['rowH'] + ($g['rows'] - 1) * $g['rowGap']; };
+    // Boxes: [sections, grid, x, width]. With Uniques and other cards, the width given to the Uniques that brings their
+    // cards nearest DECK_IMAGE_UNIQUE times the others', the others' as large as that allows.
+    if (!$sections || !$uSection) {
+        $only  = $sections ?: [$uSection];
+        $boxes = [[$only, deckImageLayout($only, $maxCopies, $areaW, $areaH), $pad, $areaW]];
+    } else {
+        $best = null;
+        for ($uw = 120; $uw <= $areaW - 300; $uw += 10) {
+            $g1    = deckImageLayout($sections, $maxCopies, $areaW - $uw - $sep, $areaH);
+            $g2    = deckImageLayout([$uSection], 1, $uw, $areaH);
+            $score = min($g1['w'] * DECK_IMAGE_UNIQUE, $g2['w']);
+            if ($best === null || $score > $best[0]) $best = [$score, $uw, $g1, $g2];
         }
-        deckImageText($im, $fBold, 13, $sx0, $top + 2, $ink, $section['label']);
-        foreach ($section['stacks'] as $j => $stack) {
-            $sx = $sx0 + ($j % $grid['cols'][$i]) * ($grid['w'] + $grid['gap']);
-            $sy = $gridTop + intdiv($j, $grid['cols'][$i]) * ($grid['rowH'] + $grid['rowGap']);
-            foreach ($stack['refs'] as $c => $ref) {
-                $cy = $sy + $c * $grid['off'];
-                deckImageCopy($im, $drop, $sx + 1, $cy + 2);
-                if (!isset($thumbs[$ref])) {
-                    $source = $load($ref);
-                    $thumbs[$ref] = $source ? deckImageThumb($source, $grid['w'], $grid['h'], $radius) : false;
-                    if ($source) imagedestroy($source);
-                }
-                if ($thumbs[$ref]) {
-                    deckImageCopy($im, $thumbs[$ref], $sx, $cy);
-                } else {
-                    deckImageRoundedRect($im, $sx, $cy, $grid['w'], $grid['h'], $radius, $empty);
-                    $ty = $cy + 10;
-                    foreach (deckImageWrap($fBold, 11, $stack['name'], $grid['w'] - 12, 3) as $l) $ty = deckImageText($im, $fBold, 11, $sx + 6, $ty, $ink, $l) + 5;
-                }
-            }
-            if ($stack['unique'] && !isset($faces[$stack['refs'][0]])) {
-                $label = mb_strtoupper($txt['unique']);
-                $pw    = deckImageBox($fBold, 11, $label)['w'] + 16;
-                $px    = $sx + ($grid['w'] - $pw) / 2;
-                $py    = $sy + $grid['h'] - 9;
-                deckImageRoundedRect($im, $px, $py, $pw, 18, 9, $pill);
-                deckImageText($im, $fBold, 11, $px + 8, $py + 5, $white, $label);
-            }
-        }
-        $sx0 += $grid['widths'][$i] + $grid['sep'];
+        [, $uw, $g1, $g2] = $best;
+        $boxes = [[$sections, $g1, $pad, $areaW - $uw - $sep], [[$uSection], $g2, $pad + $areaW - $uw, $uw]];
     }
-    foreach (array_merge([$drop], array_filter($thumbs)) as $gd) imagedestroy($gd);
+    // Every box's labels on one line: the block vertically centred below the banner.
+    $top     = $top0 + intdiv((int)max(0, $areaH - max(array_map(function ($b) use ($gridH) { return $gridH($b[1]); }, $boxes))), 2);
+    $gridTop = $top + $labelH;
+    $pill    = deckImageColor($im, '#c37424');
+    $empty   = deckImageColor($im, '#ece6ea');
+    $thumbs  = [];
+    foreach ($boxes as $b => [$list, $grid, $x0, $boxW]) {
+        $radius = max(4, (int)round($grid['w'] * 0.05));
+        $drop   = deckImageShadow($grid['w'], $grid['h'], $radius, 92);
+        $usedW  = array_sum($grid['widths']) + $grid['sep'] * (count($list) - 1);
+        $sx0    = $x0 + ($boxW - $usedW) / 2;
+        foreach ($list as $i => $sec) {
+            if ($i > 0 || $b > 0) {
+                $lineX = $b > 0 && $i === 0 ? $x0 - intdiv($sep, 2) : $sx0 - intdiv($grid['sep'], 2);
+                deckImageRect($im, $lineX, $top0, $lineX, DECK_IMAGE_HEIGHT - 16, $line);
+            }
+            deckImageText($im, $fBold, 13, $sx0, $top + 2, $ink, $sec['label']);
+            foreach ($sec['stacks'] as $j => $stack) {
+                $sx = $sx0 + ($j % $grid['cols'][$i]) * ($grid['w'] + $grid['gap']);
+                $sy = $gridTop + intdiv($j, $grid['cols'][$i]) * ($grid['rowH'] + $grid['rowGap']);
+                foreach ($stack['refs'] as $c => $ref) {
+                    $cy = $sy + $c * $grid['off'];
+                    deckImageCopy($im, $drop, $sx + 1, $cy + 2);
+                    if (!isset($thumbs[$ref])) {
+                        $source = $load($ref);
+                        $thumbs[$ref] = $source ? deckImageThumb($source, $grid['w'], $grid['h'], $radius) : false;
+                        if ($source) imagedestroy($source);
+                    }
+                    if ($thumbs[$ref]) {
+                        deckImageCopy($im, $thumbs[$ref], $sx, $cy);
+                    } else {
+                        deckImageRoundedRect($im, $sx, $cy, $grid['w'], $grid['h'], $radius, $empty);
+                        $ty = $cy + 10;
+                        foreach (deckImageWrap($fBold, 11, $stack['name'], $grid['w'] - 12, 3) as $l) $ty = deckImageText($im, $fBold, 11, $sx + 6, $ty, $ink, $l) + 5;
+                    }
+                }
+                if ($stack['unique'] && !isset($faces[$stack['refs'][0]])) {
+                    $label = mb_strtoupper($txt['unique']);
+                    $pw    = deckImageBox($fBold, 11, $label)['w'] + 16;
+                    $px    = $sx + ($grid['w'] - $pw) / 2;
+                    $py    = $sy + $grid['h'] - 9;
+                    deckImageRoundedRect($im, $px, $py, $pw, 18, 9, $pill);
+                    deckImageText($im, $fBold, 11, $px + 8, $py + 5, $white, $label);
+                }
+            }
+            $sx0 += $grid['widths'][$i] + $grid['sep'];
+        }
+        imagedestroy($drop);
+    }
+    foreach (array_filter($thumbs) as $gd) imagedestroy($gd);
     return $im;
 }
 
