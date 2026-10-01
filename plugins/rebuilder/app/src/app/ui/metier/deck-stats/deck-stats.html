@@ -1,0 +1,5 @@
+<div class="charts">
+  <ar-cost-chart [values]="main()" label="Coût main" i18n-label="@@ui.costChart.main" />
+  <ar-cost-chart [values]="reserve()" tone="reserve" label="Coût réserve" i18n-label="@@ui.deckStats.reserve" />
+</div>
+<ar-terrain-totals [totals]="terrain()" />

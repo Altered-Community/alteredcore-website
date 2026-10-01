@@ -1,0 +1,35 @@
+<div class="intro">
+  @if (bp.compact()) {
+    <p i18n="@@shared.heroPicker.description">Le héros détermine votre faction et les cartes disponibles.</p>
+  }
+  <ar-faction-tabs size="sm" [layout]="bp.compact() ? 'scroll' : 'grid'" controls="hero-picker-panel" [(active)]="faction" />
+  @if (!global()) {
+    <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
+      <ar-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+      @if (altArts()) {
+        <ar-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+      }
+    </div>
+  }
+</div>
+<div class="ar-overlay-body">
+  <ar-hero-selector
+    panelId="hero-picker-panel"
+    [heroes]="heroes()"
+    [error]="error()"
+    [faction]="faction()"
+    [columns]="bp.compact() ? 3 : 4"
+    [(selected)]="picked"
+  />
+</div>
+<div class="ar-overlay-footer">
+  <span class="note">
+    @if (picked(); as p) {
+      <ng-container i18n="@@shared.heroPicker.selection">Sélection : <strong>{{ p.name }}</strong> · {{ factionLabel(p.faction) }}</ng-container>
+    } @else {
+      <ng-container i18n="@@shared.heroPicker.none">Aucun héros sélectionné</ng-container>
+    }
+  </span>
+  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.heroPicker.cancel">Annuler</button>
+  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!picked()" (click)="confirm()" i18n="@@shared.heroPicker.confirm">Choisir ce héros</button>
+</div>

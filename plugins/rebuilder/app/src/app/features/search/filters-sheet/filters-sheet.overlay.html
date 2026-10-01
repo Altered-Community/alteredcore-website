@@ -1,0 +1,6 @@
+<div class="ar-overlay-body">
+  <app-filters-panel mode="sheet" [source]="ref.data.source" [format]="ref.data.format ?? null" [factionFilter]="ref.data.factionFilter ?? false" [(value)]="draft" (editEffect)="editEffect($event)" />
+</div>
+<div class="ar-overlay-footer">
+  <button arButton size="lg" [fullWidth]="true" (click)="apply()" i18n="@@search.card.submit">Rechercher</button>
+</div>

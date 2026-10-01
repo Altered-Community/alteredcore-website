@@ -1,0 +1,6 @@
+@for (r of icons; track r.key) {
+  <span class="item" [title]="r.label">
+    <img [src]="r.src" [alt]="r.label" />
+    <strong>{{ counts()[r.key] }}</strong>
+  </span>
+}

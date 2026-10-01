@@ -1,0 +1,107 @@
+.group {
+  display: inline-flex;
+  align-items: center;
+}
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+}
+button[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+/* overlay (on card) */
+.group.ar-stepper--overlay {
+  padding: 2px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-overlay-control);
+  color: var(--ar-color-on-strong);
+  box-shadow: var(--ar-shadow-e3);
+}
+.ar-stepper--overlay .ring {
+  width: 36px;
+  height: 36px;
+}
+:host-context([data-density='touch']) .ar-stepper--overlay .ring {
+  width: 44px;
+  height: 44px;
+}
+.ar-stepper--overlay .dec .ring {
+  background: rgb(255 255 255 / 0.12);
+}
+.ar-stepper--overlay .inc .ring {
+  background: var(--ar-color-primary);
+}
+.ar-stepper--overlay .inc[aria-disabled="true"] .ring {
+  opacity: 0.4;
+}
+.ar-stepper--overlay .dec[aria-disabled="true"] .ring {
+  opacity: 0.5;
+}
+.ar-stepper--overlay .value {
+  min-width: 30px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+}
+/* inline (deck rows) */
+.group.ar-stepper--inline {
+  color: var(--ar-color-text-2);
+}
+.ar-stepper--inline button {
+  width: var(--ar-hit-min);
+  height: var(--ar-hit-min);
+}
+.ar-stepper--inline .ring {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ar-color-border-control);
+}
+:host-context([data-density='touch']) .ar-stepper--inline .ring {
+  width: 30px;
+  height: 30px;
+}
+.ar-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
+  background: var(--ar-color-bg-subtle);
+}
+.ar-stepper--inline button[aria-disabled="true"] .ring {
+  opacity: 0.45;
+}
+.ar-stepper--inline .value {
+  width: 18px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ar-color-text);
+}
+/* compact box variant used in the desktop deck panel */
+.group.ar-stepper--box {
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-md);
+  color: var(--ar-color-text-2);
+}
+.ar-stepper--box button {
+  width: 28px;
+  height: 28px;
+}
+.ar-stepper--box button[aria-disabled="true"] {
+  opacity: 0.4;
+}
+.ar-stepper--box .value {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ar-color-text);
+}

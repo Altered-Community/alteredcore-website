@@ -78,6 +78,8 @@
   <a href="#pages">Front-end pages</a>
   <a href="#linking">Linking to pages</a>
   <a href="#assets">CSS &amp; JS assets (incl. global)</a>
+  <a href="#spa">SPA plugins (manifest v2)</a>
+  <a href="#host">Host contract (window.AlteredCore)</a>
   <div class="nav-section">Back-end</div>
   <a href="#admin">Admin pages</a>
   <a href="#tinymce">TinyMCE rich-text editor</a>
@@ -88,6 +90,7 @@
   <a href="#variables">Variables &amp; constants</a>
   <div class="nav-section">Development</div>
   <a href="#dev">Local development</a>
+  <a href="#tests">Tests &amp; CI</a>
   <div class="nav-section">Deployment</div>
   <a href="#zip">Creating the ZIP</a>
   <a href="#install">Installing, updating &amp; activating</a>
@@ -505,6 +508,94 @@ $pages  = array_values((array)($config['pages'] ?? []));
 </div>
 
 
+
+<h2 id="spa">SPA plugins (manifest v2)</h2>
+<p>A page can ship a front-end built with any framework instead of a PHP file. The shell keeps
+its header, menu and footer, and mounts the plugin's bundle in the page. Everything under
+<code>/pages/{slug}/…</code> is served by that page, so the plugin can route on the client with deep links
+(its base path is <code>/pages/{slug}/</code>). Plugins without <code>"type"</code> stay PHP plugins, unchanged.</p>
+
+<pre><code>{
+  "$schema": "../plugin.schema.json",
+  "manifest_version": 2,
+  "id": "rebuilder",
+  "name": "Re:Builder",
+  "version": "0.2.0",
+  "pages": [
+    { "slug": "rebuilder", "type": "spa", "entry": "dist/embed-manifest.json", "mount": "shadow",
+      "title_en": "Re:Builder", "title_fr": "Re:Builder" }
+  ],
+  "menu": [ { "page": "rebuilder", "path": "decks", "parent_url": "/pages/decks", "label_en": "Re:Builder (beta)", "label_fr": "Re:Builder (bêta)", "icon": "fa-solid fa-pen-ruler" } ],
+  "build": { "workdir": "app", "install": "npm ci", "lint": "npm run lint", "test": "npm test", "build": "npm run build:embed", "output": "dist" },
+  "tests": { "e2e": "e2e" }
+}</code></pre>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>pages[].type</td><td><span class="opt">optional</span></td><td><code>php</code> (default) or <code>spa</code>. An SPA page has no <code>file</code>.</td></tr>
+  <tr><td>pages[].entry</td><td><span class="req">spa</span></td><td>Build manifest written by the plugin's build (relative to the plugin): <code>{"version":1, "base":"browser/", "js":["main-HASH.js"], "css":["embed.css?v=…"], "documentCss":["document.css?v=…"]}</code>. <code>js</code>: ES modules, in order. <code>css</code>: loaded inside the shadow root. <code>documentCss</code>: loaded in <code>&lt;head&gt;</code> (<code>@font-face</code> is ignored in a shadow root).</td></tr>
+  <tr><td>pages[].mount</td><td><span class="opt">optional</span></td><td><code>shadow</code> (default): the plugin renders in a Shadow DOM, so Bootstrap and <code>css/style.css</code> do not reach it and its styles do not reach the site. <code>light</code>: rendered in the page.</td></tr>
+  <tr><td>pages[].meta</td><td><span class="opt">optional</span></td><td>SPA: PHP file included before the site header, with <code>$subPath</code> (the client route under <code>/pages/{slug}/</code>) in scope. It may set <code>$pageTitle</code>, <code>$pageDescription</code> and <code>$pageImage</code>, so a client route has its own title and link preview (rebuilder: the deck's name on <code>decks/{id}</code>).</td></tr>
+  <tr><td>pages[].fullwidth</td><td><span class="opt">optional</span></td><td>Full-width layout. Default <code>true</code> for SPA pages; <code>false</code> keeps the page in the site's content width (rebuilder).</td></tr>
+  <tr><td>menu</td><td><span class="opt">optional</span></td><td>Suggested navigation entries, inserted on activation when no item has the same URL. Admins edit or hide them afterwards (Admin → Navigation). An entry targets <code>page</code> (URL <code>/pages/{page}</code>), plus <code>path</code> for a client route of an SPA page (<code>/pages/{page}/{path}</code>), or an explicit <code>url</code>. An entry with <code>children</code> is a dropdown (no URL of its own); its missing children are added under it. An entry with <code>parent_url</code> goes inside the existing top-level menu that has this URL (e.g. <code>/pages/decks</code>), last unless <code>sort_order</code> is set; at the top level when the site has no such menu.</td></tr>
+  <tr><td>build</td><td><span class="opt">optional</span></td><td>Commands run in <code>workdir</code> by CI and <code>php bin/plugins.php run &lt;stage&gt; &lt;id&gt;</code>. The output (<code>dist/</code>) is not committed.</td></tr>
+  <tr><td>tests</td><td><span class="opt">optional</span></td><td>Test entry points. See <a href="#tests">Tests &amp; CI</a>.</td></tr>
+</table>
+
+<div class="warn">The shell never builds a plugin. Deploying an SPA plugin means deploying its build output:
+build it before packaging the ZIP (the ZIP check requires the <code>entry</code> file), and in the Git deployment
+the workflow builds it before the upload. Until it is built, the page shows “not available” (admins see why).</div>
+
+<h3>Styling and theme</h3>
+<p>Custom properties cross the Shadow DOM. The shell publishes theme tokens a plugin maps its own design tokens onto;
+they follow the light / dark switch and the active theme without any code:</p>
+<pre><code>--ac-color-bg  --ac-color-surface  --ac-color-surface-2  --ac-color-border
+--ac-color-text  --ac-color-text-muted  --ac-color-primary  --ac-color-on-primary  --ac-color-link
+--ac-font-family  --ac-radius  --ac-header-height (height of the sticky site header, set by the runtime)</code></pre>
+<p>Inherited properties (font, colour, line height) also cross the boundary: reset them on <code>:host</code>
+(<code>all: initial</code>). The plugin root also carries <code>data-theme="light|dark"</code> and <code>lang</code>.</p>
+
+<h2 id="host">Host contract — <code>window.AlteredCore</code> (version 1)</h2>
+<p>Published by <code>js/altered-core-host.js</code> before the plugin's modules run. A plugin checks <code>version</code> and refuses a contract it does not know.</p>
+<table class="kv">
+  <tr><th>Member</th><th></th><th>Description</th></tr>
+  <tr><td>version</td><td></td><td><code>1</code></td></tr>
+  <tr><td>user</td><td></td><td><code>{ id, username, sub }</code> or <code>null</code> for a guest. No e-mail.</td></tr>
+  <tr><td>lang</td><td></td><td><code>en</code> or <code>fr</code> (site UI language). A language change reloads the page.</td></tr>
+  <tr><td>theme</td><td></td><td><code>light</code> or <code>dark</code>, kept up to date.</td></tr>
+  <tr><td>baseUrl, siteName, csrf</td><td></td><td>Install prefix, site name, CSRF token of the session.</td></tr>
+  <tr><td>services</td><td></td><td>Where to call the Altered services from the browser. <code>cards</code>, <code>cdn</code>, <code>uniques</code> (Uniques search, rust-cards-api <code>/api/v2</code>, <code>UNIQUES_API_URL</code>; empty when not configured): public, called directly (<code>CARDS_API_PUBLIC_URL</code> overrides <code>CARDS_API_URL</code> if the server uses an internal host, same for the others). <code>decks</code>, <code>collection</code>, <code>ownership</code> (digital ownership, alt-art preferences): the site's relay, <code>/api/v1/services/decks</code> etc. (see below).</td></tr>
+  <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL. <code>apiUrl</code> is the plugin's own PHP endpoints, <code>/papi/{plugin-id}/</code> (see <a href="#api">HTTP API endpoints</a>).</td></tr>
+  <tr><td>fetch(url, init?)</td><td></td><td><code>window.fetch</code> for calls to the site: sends the session cookie, <code>Accept: application/json</code> by default, and <code>X-CSRF-Token</code> on same-origin writes (the relay and <code>page.apiUrl</code>).</td></tr>
+  <tr><td>login(returnTo?)</td><td></td><td>Sends the user to the site's sign-in, then back to <code>returnTo</code> (default: current URL).</td></tr>
+  <tr><td>setTitle(title)</td><td></td><td>Sets <code>document.title</code> to “title — site name”.</td></tr>
+  <tr><td>setActiveNav(path)</td><td></td><td>Marks the menu entry whose URL is <code>path</code> as current, among the entries that point inside this page (<code>/pages/{slug}/…</code>); <code>null</code> clears them. The shell highlights the longest matching entry on load; call it after client navigation. Optional for plugins: check it exists.</td></tr>
+  <tr><td>getMount(pluginId)</td><td></td><td><code>{ host, root, container }</code>: the element the shell rendered, its shadow root (or itself), and the element to render into.</td></tr>
+  <tr><td>on(type, fn)</td><td></td><td><code>theme</code> <code>{theme}</code>; <code>auth</code> <code>{user}</code> and <code>lang</code> <code>{lang}</code> are reserved (a sign-in or a language change reloads the page today). Returns an unsubscribe function. Also dispatched on <code>window</code> as <code>alteredcore:&lt;type&gt;</code>.</td></tr>
+</table>
+
+<h3>Service relay — <code>/api/v1/services/{service}/{path}</code></h3>
+<p>The browser never holds a Keycloak token. A plugin calls <code>AlteredCore.services.decks + '/api/decks…'</code> on the
+site's own origin; the relay (<code>api/v1/services/proxy.php</code>) reads the access token from the PHP session, renews it
+when needed, adds <code>Authorization: Bearer</code> and forwards the request to <code>DECKS_API_URL</code>. It returns the service's
+status and body unchanged. The client secret, the refresh token and the access token all stay on the server, and the
+services no longer need CORS for the site.</p>
+<ul>
+  <li>Services: <code>decks</code> (<code>DECKS_API_URL</code>), <code>collection</code> (<code>COLLECTION_API_URL</code>), <code>ownership</code> (<code>OWNERSHIP_API_URL</code>), when configured. Others: 404.</li>
+  <li>Paths under <code>api/</code> only, made of <code>[A-Za-z0-9._~-]</code> segments (no <code>.</code>/<code>..</code>, no percent-encoding); anything else is refused (400). Query strings are forwarded, cookies are not.</li>
+  <li>Writes (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>) need the header <code>X-CSRF-Token: AlteredCore.csrf</code> (403 otherwise). Body limit 1 MB.</li>
+  <li>Guests are relayed without a token: public endpoints answer, the others return the service's 401.</li>
+  <li>A 401 with a token (revoked, clock skew) makes the relay renew the token once and retry.</li>
+</ul>
+<p>The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
+<code>main-site</code> token is accepted. A plugin's own <code>papi</code> endpoints can do the same server-side with
+<code>kc_get_access_token($_SESSION['user_id'])</code>.</p>
+
+<h3>What an SPA plugin can declare</h3>
+<p>Besides its SPA pages, a v2 plugin uses the same manifest keys as a PHP plugin: <code>api</code> (its own endpoints, <code>/papi/{id}/…</code>),
+<code>admin</code> (PHP admin sections), <code>sql</code> / <code>tables</code> (its tables, prefixed), <code>assets.global_*</code>. Its front-end calls its
+endpoints at <code>page.apiUrl</code> (see <a href="#api">HTTP API endpoints</a>).</p>
+
 <h2 id="admin">Admin pages</h2>
 
 <p>Each entry in the <code>admin</code> array registers one section in the admin panel. The section link appears in the sidebar for any user whose group has been granted the section permission.</p>
@@ -847,7 +938,16 @@ ALTER TABLE {messages}
   <tr><th>Key</th><th></th><th>Description</th></tr>
   <tr><td>endpoint</td><td><span class="req">required</span></td><td>URL slug for this endpoint. Lowercase letters, digits, hyphens and underscores only.</td></tr>
   <tr><td>file</td><td><span class="req">required</span></td><td>Path to the PHP handler file, relative to the plugin root.</td></tr>
+  <tr><td>methods</td><td><span class="opt">optional</span></td><td>HTTP methods accepted, e.g. <code>["GET", "PUT"]</code>. Others get <strong>405</strong> with an <code>Allow</code> header. Default: any method.</td></tr>
+  <tr><td>auth</td><td><span class="opt">optional</span></td><td><code>user</code>: a signed-in user, else <strong>401</strong>. <code>admin</code>: a site admin, else 401 (guest) or <strong>403</strong>. Default: public.</td></tr>
+  <tr><td>csrf</td><td><span class="opt">optional</span></td><td><code>false</code> turns off the router's CSRF check (below), for a caller that cannot hold the session token, e.g. a webhook that checks its own signature. Default: <code>true</code>.</td></tr>
 </table>
+
+<pre><code>"api": [
+    { "endpoint": "notes",       "file": "api/notes.php",       "methods": ["GET", "PUT"], "auth": "user" },
+    { "endpoint": "notes-stats", "file": "api/notes-stats.php", "methods": ["GET"],        "auth": "admin" }
+]</code></pre>
+<p>(Example: private notes per user, readable and writable by their owner, counts for admins.)</p>
 
 <h3>URL pattern</h3>
 
@@ -860,7 +960,7 @@ ALTER TABLE {messages}
 
 <h3>Writing the handler file</h3>
 
-<p>The handler is a plain PHP file. All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
+<p>The handler is a plain PHP file, run only once the router's checks pass (see <a href="#api-auth">Auth, CSRF and methods</a>). All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
 
 <pre><code>&lt;?php
 // Reached via GET /papi/hello-world/data
@@ -892,16 +992,32 @@ fetch(SITE_BASE + '/papi/hello-world/data')
 $data = json_decode($raw, true);
 echo $data['greeting'];</code></pre>
 
-<h3>Auth and authorization</h3>
-<p>The router does <strong>not</strong> enforce any authentication — API endpoints are public by default. If an endpoint should be restricted, add a session check at the top of the handler file:</p>
+<h3 id="api-auth">Auth, CSRF and methods</h3>
+<p>The router (<code>includes/_plugin_router.php</code>, <code>pluginApiGuard()</code>) checks each request against the endpoint's
+manifest entry before the handler runs, and answers <code>{"error": "…"}</code> itself when a check fails:</p>
+<ol>
+  <li><strong>Method</strong> not in <code>methods</code> → 405 <code>method_not_allowed</code>.</li>
+  <li><strong>CSRF</strong>: every request other than <code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code> needs the session's CSRF token → else 403 <code>csrf</code>.
+      The router accepts it as the header <code>X-CSRF-Token</code>, a <code>csrf_token</code> form field, or a <code>csrf_token</code> field of a JSON body.
+      This applies to all plugins; existing PHP plugins already send <code>csrf_token</code>, and their own <code>csrfValid()</code> checks still pass.</li>
+  <li><strong>Auth</strong>: <code>"auth": "user"</code> → 401 <code>unauthenticated</code> for a guest; <code>"auth": "admin"</code> → 401 for a guest, 403 <code>forbidden</code> for a user who is not a site admin.</li>
+</ol>
+<p>An endpoint without <code>auth</code> is public: check the session in the handler if only part of it is restricted.
+<code>GET</code> handlers must not change data, since they are not CSRF-checked. In the handler, <code>$_SESSION['user_id']</code> is the site user
+and <code>pluginApiBody()</code> returns the decoded JSON body (the router has already read it).</p>
 
-<pre><code>&lt;?php
-// Require login
-if (!kcIsLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}</code></pre>
+<h3>Calling from an SPA plugin</h3>
+<p><code>AlteredCore.page.apiUrl</code> is the plugin's endpoint base (<code>/papi/{plugin-id}/</code>). <code>AlteredCore.fetch()</code> is
+<code>window.fetch</code> with the session cookie, <code>Accept: application/json</code> and, on writes to the site, the CSRF header:</p>
+<pre><code>const ac = window.AlteredCore;
+const note = await ac.fetch(ac.page.apiUrl + 'notes?deck=' + id).then((r) =&gt; r.json());
+await ac.fetch(ac.page.apiUrl + 'notes', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ deck: id, body: 'Mulligan: keep 2-cost characters' }),
+});</code></pre>
+<p>A framework HTTP client can add the header itself instead (the rebuilder plugin does it with an Angular interceptor,
+<code>site-csrf.interceptor.ts</code>, for its writes to the relay). The endpoint is the same one a PHP plugin would write: same database, tables, session and helpers.</p>
 
 
 <h2 id="helpers">Helper functions</h2>
@@ -1115,6 +1231,24 @@ fetch('/papi/my-plugin/data')
 <p>See the repository <code>README.md</code> for full Docker setup instructions including creating the first admin account and resetting the database.</p>
 
 
+
+<h2 id="tests">Tests &amp; CI</h2>
+<p>Pull requests to <code>preprod</code> and <code>main</code> run <code>.github/workflows/plugins-ci.yml</code>. It knows no plugin by name:
+<code>php bin/plugins.php plan</code> lists what each plugin declares, or what it finds by convention.</p>
+<table class="kv">
+  <tr><th>What</th><th>Declared in plugin.json</th><th>Convention</th></tr>
+  <tr><td>PHP tests</td><td><code>"tests": {"php": ["tests/run.php"]}</code></td><td><code>tests/run.php</code>, exit code ≠ 0 on failure</td></tr>
+  <tr><td>Node tests</td><td><code>"tests": {"node": ["…test.mjs"]}</code></td><td><code>**/*.test.mjs</code>, run with <code>node --test</code> from the repo root</td></tr>
+  <tr><td>Front-end</td><td><code>"build": {…}</code></td><td>install → lint → test → build, per plugin</td></tr>
+  <tr><td>End-to-end</td><td><code>"tests": {"e2e": "e2e"}</code></td><td><code>e2e/*.spec.ts</code> (Playwright), importing <code>test</code> from <code>tests/e2e/fixtures.ts</code></td></tr>
+</table>
+<p>Every PHP file also goes through <code>php -l</code> (PHP 7.4). The end-to-end job starts <code>docker-compose.stack.yml</code>
+(site, Keycloak, decks API) with the built plugins and runs <code>tests/e2e</code> plus every plugin's <code>e2e/</code>,
+at 1440×900 and 390×844. The check to require is <strong>Plugins CI</strong>.</p>
+<pre><code>php bin/plugins.php plan
+php bin/plugins.php run php-tests           # or node-tests, install, lint, test, build [plugin-id…]
+(cd tests/e2e &amp;&amp; npm ci &amp;&amp; E2E_BASE_URL=http://localhost:8080 npx playwright test)</code></pre>
+
 <h2 id="zip">Packaging a ZIP</h2>
 
 <p>Create a ZIP archive of your plugin directory and upload it via <strong>Admin → Plugins → Install plugin</strong>. Use your OS's built-in archive tool or any command-line ZIP tool — no helper script is required.</p>
@@ -1229,7 +1363,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 
 <ul>
   <li><strong>Trust</strong> — plugins execute arbitrary PHP on the server. Only install plugins from sources you control or fully trust.</li>
-  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>.</li>
+  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>. Plugin API endpoints and the service relay check it for every write (<a href="#api-auth">see above</a>); keep <code>GET</code> handlers read-only.</li>
   <li><strong>Output escaping</strong> — always use <code>h()</code> to escape user-supplied data before rendering HTML.</li>
   <li><strong>SQL injection</strong> — always use PDO prepared statements (<code>$db-&gt;prepare()</code> + <code>execute()</code>) for any query involving user input.</li>
   <li><strong>Direct PHP access</strong> — PHP files in <code>plugins/</code> are not directly accessible via URL. Only static assets (CSS, JS, images) in <code>assets/</code> are served publicly.</li>

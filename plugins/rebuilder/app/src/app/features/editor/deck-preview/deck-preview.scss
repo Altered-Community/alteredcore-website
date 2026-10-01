@@ -1,0 +1,59 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-4);
+}
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ar-space-3);
+}
+.count {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ar-color-text-2);
+}
+.count strong {
+  color: var(--ar-color-text);
+  font-weight: 800;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ar-space-2-5);
+}
+.grid.dense {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ar-space-2);
+}
+@media (min-width: 768px) {
+  .grid,
+  .grid.dense {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    column-gap: var(--ar-space-2);
+    row-gap: var(--ar-space-3);
+  }
+}
+@media (min-width: 1200px) {
+  .grid,
+  .grid.dense {
+    /* Tile width follows the 280px cap (5:7). Columns are that wide, not
+       stretched 1fr tracks, so the horizontal gap is only the column-gap. */
+    --ar-card-tile-max-h: 280px;
+    grid-template-columns: repeat(auto-fill, calc(var(--ar-card-tile-max-h) * 5 / 7));
+    justify-content: start;
+    column-gap: var(--ar-space-2);
+    row-gap: var(--ar-space-3);
+  }
+  .grid ar-card-tile,
+  .grid.dense ar-card-tile {
+    width: min(100%, calc(var(--ar-card-tile-max-h) * 5 / 7));
+    justify-self: start;
+  }
+}
+.empty {
+  text-align: center;
+  padding: var(--ar-space-10) var(--ar-space-4);
+  color: var(--ar-color-text-2);
+}

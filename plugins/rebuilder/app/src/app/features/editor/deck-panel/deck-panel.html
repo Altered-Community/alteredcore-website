@@ -1,0 +1,44 @@
+<div class="summary">
+  <ar-deck-summary
+    appearance="embedded"
+    [hero]="deck.hero()"
+    [formatLabel]="formatLabel()"
+    [isPublic]="deck.isPublic()"
+    [total]="deck.total()"
+    [legal]="legality().state === 'legal'"
+    [issues]="deck.status().issues"
+    [rarity]="deck.stats().rarity"
+    [editable]="deck.editable()"
+    (openSettings)="openSettings.emit()"
+    (showLegality)="showLegality()"
+  />
+</div>
+<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
+  <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+</ar-collapsible>
+@if (altArts?.canChooseTokens()) {
+  <div class="tokens">
+    <button arButton variant="secondary" size="sm" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+  </div>
+}
+<div class="rows">
+  @for (g of deck.groups(); track g.id) {
+    <div class="group">
+      <div class="group-head"><span>{{ g.label }}</span><span>{{ g.count }}</span></div>
+      @for (l of g.lines; track l.card.reference) {
+        <ar-deck-row
+          appearance="panel"
+          [card]="l.card"
+          [quantity]="l.quantity"
+          [max]="deck.maxFor(l.card)"
+          [issues]="issues().get(l.card.reference) ?? noIssues"
+          [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
+          [readonly]="!deck.editable()"
+          (quantityChange)="deck.setQuantity(l.card, $event)"
+        />
+      }
+    </div>
+  } @empty {
+    <p class="empty" i18n="@@panel.empty">Ajoutez des cartes depuis la recherche avec le bouton « + ».</p>
+  }
+</div>

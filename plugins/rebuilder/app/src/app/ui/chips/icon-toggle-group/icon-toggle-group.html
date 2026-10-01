@@ -1,0 +1,10 @@
+@for (o of options(); track o.value) {
+  <button type="button" [attr.aria-pressed]="values().includes(o.value)" [title]="o.label" (click)="toggle(o.value)">
+    <img [src]="o.icon" alt="" />
+    @if (o.short) {
+      <span>{{ o.short }}</span>
+    } @else {
+      <span class="ar-sr-only">{{ o.label }}</span>
+    }
+  </button>
+}

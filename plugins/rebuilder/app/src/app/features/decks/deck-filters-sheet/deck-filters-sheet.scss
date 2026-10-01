@@ -1,0 +1,19 @@
+.ar-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-4);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-1-5);
+}
+.label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ar-space-1-5);
+}

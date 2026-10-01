@@ -1,0 +1,203 @@
+name: Plugins CI
+
+# Checks every pull request against preprod / main, separately from deploy.yml:
+#   • php -l on all PHP (7.4, the production version);
+#   • each plugin's tests, found through bin/plugins.php (plugin.json "tests" / "build",
+#     or the conventions tests/run.php, **/*.test.mjs, e2e/*.spec.ts);
+#   • front-end plugins ("build" in plugin.json): install, lint, unit tests, build;
+#   • Playwright (tests/e2e + plugins/*/e2e) against the full stack (docker-compose.stack.yml).
+# Nothing here is plugin-specific: a new plugin is picked up from its manifest.
+# Make the "Plugins CI" check required in the branch protection of preprod and main.
+on:
+  pull_request:
+    branches: [preprod, main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: plugins-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Discover plugins
+    runs-on: ubuntu-latest
+    outputs:
+      frontends: ${{ steps.plan.outputs.frontends }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - id: plan
+        run: |
+          php bin/plugins.php plan | tee plan.json
+          echo "frontends=$(jq -c '[.[] | select(.build != null) | {id, dir, workdir: .build.workdir, output: .build.output, nvmrc: (.build.nvmrc // "")}]' plan.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Plugins'
+            echo '| Plugin | PHP tests | Node tests | Front-end build | E2E |'
+            echo '|---|---|---|---|---|'
+            jq -r '.[] | "| \(.id) | \(.php_tests | length) | \(.node_tests | length) | \(if .build then "yes" else "—" end) | \(.e2e // "—") |"' plan.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  php:
+    name: PHP lint and plugin PHP tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - name: php -l
+        run: |
+          find . -name '*.php' -not -path '*/node_modules/*' -not -path './.git/*' -print0 \
+            | xargs -0 -n1 -P4 php -l > /tmp/lint.log 2>&1 || { grep -v '^No syntax errors' /tmp/lint.log; exit 1; }
+          echo "$(grep -c '^No syntax errors' /tmp/lint.log) files OK"
+      - name: Plugin PHP tests
+        run: php bin/plugins.php run php-tests
+
+  node:
+    name: Plugin Node tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: php bin/plugins.php run node-tests
+
+  frontend:
+    name: Front-end ${{ matrix.plugin.id }}
+    needs: plan
+    if: needs.plan.outputs.frontends != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.plan.outputs.frontends) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ${{ matrix.plugin.nvmrc != '' && format('{0}/{1}', matrix.plugin.dir, matrix.plugin.nvmrc) || '' }}
+          node-version: ${{ matrix.plugin.nvmrc == '' && '22' || '' }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.plugin.dir }}/${{ matrix.plugin.workdir }}/package-lock.json
+      - name: Install
+        run: php bin/plugins.php run install ${{ matrix.plugin.id }}
+      - name: Lint
+        run: php bin/plugins.php run lint ${{ matrix.plugin.id }}
+      - name: Unit tests
+        run: php bin/plugins.php run test ${{ matrix.plugin.id }}
+      - name: Build
+        run: php bin/plugins.php run build ${{ matrix.plugin.id }}
+
+  e2e:
+    name: Playwright (shell and plugins)
+    # Does not wait for the front-end jobs: it builds the bundles itself, while the stack starts.
+    needs: [plan, php]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      E2E_EVIDENCE_DIR: ${{ github.workspace }}/tests/e2e/evidence
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.stack.yml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the local Keycloak host
+        # *.local.gd is public DNS for 127.0.0.1; pin it so the job does not depend on it.
+        run: echo "127.0.0.1 auth.altered.local.gd" | sudo tee -a /etc/hosts
+      - name: Start Keycloak and the databases
+        # Plain images: they boot (Keycloak ~30 s) while the steps below build the rest.
+        run: $COMPOSE up -d keycloak db decks-db
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            plugins/*/*/package-lock.json
+            tests/e2e/package-lock.json
+      - name: Build front-end plugins (background)
+        # The web container mounts the checkout: the bundles only have to exist before the tests.
+        env:
+          FRONTENDS: ${{ needs.plan.outputs.frontends }}
+        run: |
+          cat > "$RUNNER_TEMP/frontends.sh" <<'EOF'
+          set -euo pipefail
+          for id in $(jq -r '.[].id' <<< "$FRONTENDS"); do
+            php bin/plugins.php run install "$id"
+            php bin/plugins.php run build "$id"
+          done
+          EOF
+          # shellcheck disable=SC2016 # expanded by the inner bash
+          nohup bash -c 'bash "$RUNNER_TEMP/frontends.sh"; echo $? > "$RUNNER_TEMP/frontends.exit"' > "$RUNNER_TEMP/frontends.log" 2>&1 &
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the stack images
+        # From the GitHub Actions cache (one scope per image): rebuilt only when the Dockerfile or
+        # the pinned decks API commit changes.
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          files: |
+            docker-compose.yml
+            docker-compose.stack.yml
+          load: true
+          set: |
+            web.cache-from=type=gha,scope=stack-web
+            web.cache-to=type=gha,scope=stack-web,mode=max
+            decks-api.cache-from=type=gha,scope=stack-decks-api
+            decks-api.cache-to=type=gha,scope=stack-decks-api,mode=max
+      - name: Start the stack
+        run: $COMPOSE up -d --no-build --wait --wait-timeout 600
+      - name: Wait for the front-end builds
+        run: |
+          while [ ! -f "$RUNNER_TEMP/frontends.exit" ]; do sleep 2; done
+          cat "$RUNNER_TEMP/frontends.log"
+          exit "$(cat "$RUNNER_TEMP/frontends.exit")"
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Run Playwright
+        working-directory: tests/e2e
+        run: npx playwright test
+      - name: Stack logs
+        if: failure()
+        run: $COMPOSE logs --no-color --tail=200
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/evidence
+            tests/e2e/test-results
+          retention-days: 14
+
+  result:
+    # Single check to require in branch protection.
+    name: Plugins CI
+    needs: [plan, php, node, frontend, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs passed
+        run: |
+          echo '${{ toJSON(needs) }}' | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo '${{ toJSON(needs) }}' | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
+          [ "${{ needs.e2e.result }}" = "success" ]

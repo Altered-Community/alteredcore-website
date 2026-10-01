@@ -1,0 +1,106 @@
+:host {
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  contain: layout style;
+}
+.visual {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  max-height: var(--ar-card-tile-max-h, none);
+  border-radius: var(--ar-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--ar-shadow-card);
+  background: var(--ar-color-text-2);
+}
+button.visual {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+button.visual:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}
+.action {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+.blocked {
+  display: flex;
+  cursor: help;
+  box-shadow: var(--ar-shadow-fab);
+  border-radius: var(--ar-radius-pill);
+}
+.qty {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 var(--ar-space-2);
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-overlay-control);
+  color: var(--ar-color-on-strong);
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--ar-shadow-fab);
+}
+/* Narrow tiles (5-column deck views, compact 3-column grids). */
+@container (max-width: 150px) {
+  .qty {
+    right: 6px;
+    bottom: 6px;
+    min-width: 28px;
+    height: 24px;
+    font-size: 12px;
+  }
+}
+/* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */
+.favorite {
+  position: absolute;
+  top: var(--ar-space-1-5);
+  right: var(--ar-space-1-5);
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-overlay-chip);
+  color: var(--ar-color-on-strong);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+:host(:hover) .favorite,
+.favorite:focus-visible,
+.favorite.on,
+:host-context([data-density='touch']) .favorite {
+  opacity: 1;
+}
+.favorite.on {
+  color: var(--ar-color-favorite);
+}
+/* 44 px touch target around the 28 px star. */
+:host-context([data-density='touch']) .favorite::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+.favorite.on ar-icon ::ng-deep svg {
+  fill: currentColor;
+}
+.favorite:focus-visible {
+  outline: 2px solid var(--ar-color-primary);
+  outline-offset: 2px;
+}

@@ -1,0 +1,13 @@
+@if (!loaded() && !neutral()) {
+  <span class="ph" aria-hidden="true">{{ placeholder() }}</span>
+}
+@if (visible() && src(); as s) {
+  <img
+    [src]="s"
+    alt=""
+    [attr.fetchpriority]="eager() ? 'high' : null"
+    [style.object-position]="position()"
+    (load)="loaded.set(true)"
+    (error)="next()"
+  />
+}

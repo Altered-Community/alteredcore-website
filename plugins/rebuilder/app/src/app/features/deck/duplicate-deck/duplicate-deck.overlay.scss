@@ -1,0 +1,16 @@
+.ar-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+}
+.error {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 13px;
+  color: var(--ar-color-danger);
+}

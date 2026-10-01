@@ -1,0 +1,13 @@
+@for (t of tabs(); track t.id) {
+  <button
+    #tab
+    type="button"
+    role="tab"
+    [id]="idPrefix + '-' + t.id"
+    [attr.aria-selected]="t.id === active()"
+    [attr.tabindex]="t.id === active() ? 0 : -1"
+    (click)="active.set(t.id)"
+    (keydown.arrowRight)="step(1)"
+    (keydown.arrowLeft)="step(-1)"
+  >{{ t.label }}@if (t.count !== undefined) {<span class="count"> · {{ t.count }}</span>}</button>
+}

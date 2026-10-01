@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  height: var(--ar-space-1-5);
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ar-color-primary);
+  transition: width 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

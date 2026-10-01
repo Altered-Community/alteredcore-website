@@ -1,0 +1,47 @@
+:host {
+  display: block;
+  position: sticky;
+  top: var(--ar-page-top);
+  z-index: 20;
+}
+header {
+  background: var(--ar-color-surface);
+  border-bottom: 1px solid var(--ar-color-border);
+  display: flex;
+  align-items: center;
+  box-sizing: content-box;
+  padding-top: env(safe-area-inset-top);
+  height: 56px;
+  gap: var(--ar-space-1);
+  padding-inline: 6px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  padding-right: 4px;
+}
+.titles {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--ar-space-1);
+}
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.titles:has(.subtitle) .title {
+  font-size: 17px;
+}

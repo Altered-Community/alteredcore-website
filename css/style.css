@@ -35,6 +35,22 @@
     --overlay-add-bg:    rgba(0,0,0,.45);
     --mobile-nav-bg:     var(--sand-50);
     --mobile-nav-border: var(--sand-200);
+
+    /* Public theme tokens for front-end plugins (manifest v2, "type": "spa").
+       Custom properties inherit into the plugin's Shadow DOM, so a plugin maps its own
+       design tokens onto these and follows the active theme (light / dark) for free.
+       Keep the names stable: they are part of the host contract (window.AlteredCore v1). */
+    --ac-color-bg:          var(--sand-100);
+    --ac-color-surface:     var(--sand-50);
+    --ac-color-surface-2:   var(--sand-200);
+    --ac-color-border:      var(--sand-300);
+    --ac-color-text:        var(--neutral-800);
+    --ac-color-text-muted:  var(--neutral-500);
+    --ac-color-primary:     var(--primary-500);
+    --ac-color-on-primary:  var(--neutral-800);
+    --ac-color-link:        var(--primary-500);
+    --ac-font-family:       'Segoe UI', system-ui, -apple-system, sans-serif;
+    --ac-radius:            0.5rem;
 }
 
 /* ---- Base ---- */
@@ -1013,6 +1029,10 @@ a:hover { color: var(--primary-400); }
     --panel-border:      var(--sand-300);
     --mobile-nav-bg:     var(--sand-100);
     --mobile-nav-border: var(--sand-300);
+    /* Public plugin tokens that do not follow the palette variables above */
+    --ac-color-primary:     var(--primary-300);
+    --ac-color-on-primary:  #12141f;
+    --ac-color-link:        #D4AF6B;
 }
 
 /* Smooth transition when switching theme */

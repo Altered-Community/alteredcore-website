@@ -1,0 +1,21 @@
+:host {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-inverse);
+  color: var(--ar-color-on-inverse);
+  font: var(--ar-font-micro);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+:host(.success) {
+  background: var(--ar-color-success);
+}
+:host(.soft) {
+  background: var(--ar-color-track);
+  color: var(--ar-color-text-2);
+}

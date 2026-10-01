@@ -1,0 +1,3166 @@
+{
+  "decks": [
+    {
+      "id": "019e1c0b-989e-769d-92e3-761a8c555c53",
+      "name": "Akesha B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_01_C",
+          "name": "Akesha & Taru"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-894e-7e74-84e2-cfeffcaac76b",
+      "name": "Treyst B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_02_C",
+          "name": "Treyst & Rossum"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b203-712c-a69d-b1b666a51cb5",
+      "name": "Della A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_AX_85_C",
+          "name": "Della & Bolt"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b699-7143-88fb-ef94e3b79ac2",
+      "name": "Della D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_AX_85_C",
+          "name": "Della & Bolt"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b54c-7f80-a16f-f1282e301cad",
+      "name": "Della C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_AX_85_C",
+          "name": "Della & Bolt"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b855-7972-8909-4f857f5e1a22",
+      "name": "Della E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_AX_85_C",
+          "name": "Della & Bolt"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-d1a4-7e70-a16d-4d198ef5db0c",
+      "name": "Isaree A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-d4b5-7a84-a694-06a1e33cace2",
+      "name": "Isaree B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-d5f4-71ba-8c24-eb0a9ee1df05",
+      "name": "Isaree C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-db3c-7210-83fb-b2c65d862ab0",
+      "name": "Isaree E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-dd87-7cb0-8c5e-0594a3158f49",
+      "name": "Isaree F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-dfe3-71b9-84d7-1621cf93eab4",
+      "name": "Isaree G",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-404d-7cca-a53f-a62d6eed93c7",
+      "name": "Sierra B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3d9c-7d5f-afca-f9ab630885c7",
+      "name": "Sierra A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-43d7-7f08-8a04-23cdf5787814",
+      "name": "Sierra D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-4215-7c12-b16e-480b62715182",
+      "name": "Sierra C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e4ecf-6b76-7b53-9821-d47a488c8bdd",
+      "name": "Sierra F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-4870-7efc-ba4f-3de3b8acd556",
+      "name": "Sierra G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-4510-7553-bc73-a4e7ba80a23d",
+      "name": "Sierra E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_01_C",
+          "name": "Sierra & Oddball"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-618d-733b-b411-963a21933f0c",
+      "name": "Subhash A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_03_C",
+          "name": "Subhash & Marmo"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-62d8-7096-8751-cf73bd75facf",
+      "name": "Subhash B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_03_C",
+          "name": "Subhash & Marmo"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-66b1-741c-bc5f-4488e9eafd01",
+      "name": "Subhash D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_03_C",
+          "name": "Subhash & Marmo"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-6510-7751-b632-aa422ed38400",
+      "name": "Subbash C",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_03_C",
+          "name": "Subhash & Marmo"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-76e5-7541-9d64-891486110fab",
+      "name": "Treyst A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_02_C",
+          "name": "Treyst & Rossum"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7887-7b42-a222-31ec461181fd",
+      "name": "Treyst C",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_02_C",
+          "name": "Treyst & Rossum"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7b45-7f31-8467-83bd70a0dd93",
+      "name": "Treyst D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_AX_02_C",
+          "name": "Treyst & Rossum"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3ffa-c490-7ec7-ba3a-f5bb6f940592",
+      "name": "Isaree D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_AX_65_C",
+          "name": "Isaree & Pebble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f28-0664-7288-bbe1-6791db2c205f",
+      "name": "Auraq B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3ffb-c153-7906-9a86-eb29d1ae41cc",
+      "name": "Atsadi H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-faf2-7453-b24a-3bb4d18a98b3",
+      "name": "Matz A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-630f-77c5-9584-c05c471cbe0a",
+      "name": "Zhen H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-6ed9-7723-bca9-08c786e88339",
+      "name": "Zhen D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-716e-7235-b022-72bd228a833c",
+      "name": "Zhen C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-72f2-744a-9488-ca6e0f3347a7",
+      "name": "Zhen B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-747d-705b-8a5a-8d76f6f7e676",
+      "name": "Zhen A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-7605-79cd-bd99-822d75205c1a",
+      "name": "Waru F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-78c7-72bb-8b67-b5a56963037b",
+      "name": "Waru E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-7bbe-7e76-a612-fd73f0ccfec7",
+      "name": "Waru C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-7eca-710e-92b5-d300565edb68",
+      "name": "Waru B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-813c-744a-9434-b6a06899552a",
+      "name": "Waru A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8366-7f12-a38a-f6f4226304f7",
+      "name": "Turuun M",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-84bb-7e37-bcc4-aaca6dcf0863",
+      "name": "Turuun L",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8615-79f7-9b6c-7daf0bcfb72c",
+      "name": "Turuun K",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8785-738e-bc3f-fff70145e06b",
+      "name": "Turuun J",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8c14-73f7-973a-7e59d23458d2",
+      "name": "Arjun C",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8e2a-748d-bb41-76d516effb5f",
+      "name": "Arjun B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-8fc3-7457-8fc4-178fd315f60f",
+      "name": "Afanas H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-92cc-7e68-b97f-08de564d1c5b",
+      "name": "Atsadi B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-96c1-7934-9fe2-adffb93c0010",
+      "name": "Atsadi E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9873-72b8-a28e-0e9263c34e45",
+      "name": "Atsadi F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9a06-7d53-854c-1b811caef2c2",
+      "name": "Atsadi G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9d6a-7145-8255-8d9d2ff786f2",
+      "name": "Arjun K",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9e98-77b7-b7e3-1cbc7a9ca7fa",
+      "name": "Akesha E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_01_C",
+          "name": "Akesha & Taru"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a03b-7cfe-a7a7-ec0aa17c2f26",
+      "name": "Afanas G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a180-78d9-85f5-2a91bd4c9eeb",
+      "name": "Afanas E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a2d0-7689-a715-26a825f3b638",
+      "name": "Arjun J",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a417-7e33-994a-1cc01aa0aaf0",
+      "name": "Arjun I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a571-72b8-adf3-dd4a50d7a43e",
+      "name": "Akesha D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_01_C",
+          "name": "Akesha & Taru"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a6eb-7d1c-a878-b1c58f235594",
+      "name": "Basira D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-a8eb-7ce5-bda5-0f4c29cb4249",
+      "name": "Basira C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-aa82-799f-aea3-2e495da0fbe5",
+      "name": "Arjun H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-acf4-7b16-8622-821f6d9c2a07",
+      "name": "Basira B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-af04-701f-a9b2-2686e66c1cb7",
+      "name": "Basira E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b047-7ae6-8721-f38f4ff87868",
+      "name": "Basira F",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-b3fc-722b-92d4-b694813165a5",
+      "name": "Della B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_AX_85_C",
+          "name": "Della & Bolt"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ba82-7bda-a66c-df1dfe47f220",
+      "name": "Fen A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-be2e-771e-bfd9-3b390de14e17",
+      "name": "Fen C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-bf97-70f5-ad13-0151d3391deb",
+      "name": "Fen D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-c8dd-7e0f-b8c4-e6e342447786",
+      "name": "Gulrang A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_03_C",
+          "name": "Gulrang & Tocsin"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ca26-7ae6-b02d-451edb3298da",
+      "name": "Gulrang B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_03_C",
+          "name": "Gulrang & Tocsin"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e7b6-75a5-8b2f-a5530755d313",
+      "name": "Kauri E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e8f4-7b96-8647-3f0bcc38fe2d",
+      "name": "Kauri F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-eab2-75d6-9775-c3728bbc680a",
+      "name": "Kauri G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f371-702d-a7ce-54aa59e6ee09",
+      "name": "Kojo D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_01_C",
+          "name": "Kojo & Booda"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f592-7589-9f24-0f3145aa372a",
+      "name": "Lindiwe A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_02_C",
+          "name": "Lindiwe & Maw"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f6f0-7e60-829e-ea4cdb550158",
+      "name": "Lindiwe B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_02_C",
+          "name": "Lindiwe & Maw"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f83a-7f38-80ee-ab7018c3f6a0",
+      "name": "Lindiwe C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_02_C",
+          "name": "Lindiwe & Maw"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f986-7088-8038-a3c39258a351",
+      "name": "Lindiwe D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_02_C",
+          "name": "Lindiwe & Maw"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-0155-7ebb-8dd1-259e0f3c170d",
+      "name": "Matz D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1f1d-7eb9-b939-f4525588d10f",
+      "name": "Nadir C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-2084-7a27-9648-76f0e43df5e9",
+      "name": "Nadir D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-21af-7643-a5fe-78f5b89c223d",
+      "name": "Nadir E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-22ec-749a-8845-ae25b70d5970",
+      "name": "Nadir F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-240f-7114-a1d9-6e79123b3f85",
+      "name": "Nevenka A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-256c-72fc-bf07-55fee2a191af",
+      "name": "Nevenka B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-26ad-7881-b3d3-bd46b5d57c04",
+      "name": "Nevenka C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-280f-78aa-88ed-50fec67f26fc",
+      "name": "Nevenka D",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-2c4c-7da6-9f31-a13327fec849",
+      "name": "Rin A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-2ea6-7765-85d8-6aca75f55cf7",
+      "name": "Rin C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-300e-7964-b8c3-a03498ff8f50",
+      "name": "Rin D",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-318e-7203-8289-3c8429ed72c2",
+      "name": "Rin E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3328-755c-a500-ec8a603d04ec",
+      "name": "Rin F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3769-7b4b-a06a-8ac21a26c7a8",
+      "name": "Rin H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-395f-7f7e-8685-80cf819615a7",
+      "name": "Rin I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3ab2-7b6d-8a11-ab7f0967182e",
+      "name": "Rin J",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-4ad5-7689-bde9-23630aec2fda",
+      "name": "Sigismar A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_01_C",
+          "name": "Sigismar & Wingspan"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-4ec2-7087-a20f-6b7bb9d3b1e6",
+      "name": "Sigismar B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_01_C",
+          "name": "Sigismar & Wingspan"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-50dd-725b-889b-3186aaff97f1",
+      "name": "Sigismar C",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_01_C",
+          "name": "Sigismar & Wingspan"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-57c8-7804-b42f-af2ad81d5df4",
+      "name": "Sigismar E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_01_C",
+          "name": "Sigismar & Wingspan"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-58fa-7d71-a9d8-960ca314fdb3",
+      "name": "Sol A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5c1a-7dcf-bc43-91a209dd6c4a",
+      "name": "Sol C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5d70-7f30-b3bc-966955fe5846",
+      "name": "Sol D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5eb8-7863-a56f-2ed14851223a",
+      "name": "Sol E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5ffc-7e7d-aba5-1a8e656aafb7",
+      "name": "Sol F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-684a-7efa-9f55-67899fa4c8f2",
+      "name": "Teija A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-6972-726c-872a-80bc1e6311a3",
+      "name": "Teija B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-6a9b-752c-9cb1-1c3d189ebdc2",
+      "name": "Teija C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-6dd9-7098-b17a-f9f2daeb6361",
+      "name": "Teija D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-6f97-7899-80c2-a60e9affd09f",
+      "name": "Teija E",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-711f-75b5-813f-4574b9fff27a",
+      "name": "Teija F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7277-703b-b931-994d73a908af",
+      "name": "Teija G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7430-7ddd-9614-adce9633274e",
+      "name": "Teija H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7cc7-7538-9edf-247f6c6dce2c",
+      "name": "Turuun A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7e1a-7572-a49b-60e6f1fbfb27",
+      "name": "Turuun B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-7f5c-79ac-a261-cadeebe0ec63",
+      "name": "Turuun C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-8277-721a-889d-3c68ebb12172",
+      "name": "Afanas D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-844f-7898-9991-8a2be0f53c1e",
+      "name": "Turuun F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-85e5-7ced-9520-cee8740604da",
+      "name": "Turuun G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-878d-7e93-bc39-fe2af1f14647",
+      "name": "Turuun H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-88f9-706c-a77b-07732f7014a0",
+      "name": "Turuun E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-8a3a-7038-9773-b582fa78ac05",
+      "name": "Afanas A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-8d14-7783-bde2-bd3fbe895395",
+      "name": "Afanas B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-8ead-7ca6-965d-a3ff4426bdf6",
+      "name": "Afanas F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-96e2-731f-b5a8-b41178e20c81",
+      "name": "Afanas C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-a5ba-7db9-bfb2-201f12afec22",
+      "name": "Arjun G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-a796-7a95-b900-60e0a0061d65",
+      "name": "Arjun E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-a8ee-71c4-9e47-3428c72d679a",
+      "name": "Akesha C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_01_C",
+          "name": "Akesha & Taru"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-ac7e-7ac1-8df2-29e0124266ff",
+      "name": "Akesha A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_01_C",
+          "name": "Akesha & Taru"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-b0e8-78d0-8520-db162463b961",
+      "name": "Turuun I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-c0d6-7ab4-a867-804cf4a900f3",
+      "name": "Fen E",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-c4d8-7a13-9486-3b1ec29a8a96",
+      "name": "Fen F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-c6fd-7be9-aa20-1277e4989482",
+      "name": "Fen G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ceee-79b2-95d3-381d9a307106",
+      "name": "Gulrang C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_03_C",
+          "name": "Gulrang & Tocsin"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-d794-7d45-add4-0702fdc73833",
+      "name": "Basira A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_03_C",
+          "name": "Basira & Kaizaimon"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-d92e-7c30-8089-c4da8e113699",
+      "name": "Arjun F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e12c-7477-ac57-6260072b0430",
+      "name": "Kauri A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e2ad-7a38-8a5b-9ce8d8388168",
+      "name": "Kauri B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e408-7a22-ad39-e109c221746d",
+      "name": "Kauri C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-e648-7f0b-8043-3751d0a2163a",
+      "name": "Kauri D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ecaa-7b40-ab40-bc7920daac53",
+      "name": "Kauri H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-edfb-7ed3-a82e-820f4264c421",
+      "name": "Kauri I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ef42-78bb-bd32-cfe40dca8a37",
+      "name": "Kojo A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_01_C",
+          "name": "Kojo & Booda"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f0af-7320-b718-1a5c0928e239",
+      "name": "Kojo B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_01_C",
+          "name": "Kojo & Booda"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-f22a-7d4d-808f-f750542e34cf",
+      "name": "Kojo C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_01_C",
+          "name": "Kojo & Booda"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-fd72-7d9b-8081-aee4f85e81ac",
+      "name": "Matz B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-ff07-7a35-80ca-895eaf8144a2",
+      "name": "Matz C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-04a5-78c8-b1c4-fa0b7d2606c9",
+      "name": "Matz E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-06c0-7b25-9558-b8462f35f447",
+      "name": "Matz F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-09a7-72c8-baec-e91245442f50",
+      "name": "Matz G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_OR_85_C",
+          "name": "Matz & Hive"
+        },
+        "byRarity": {
+          "C": 21,
+          "R": 15,
+          "U": 0,
+          "E": 3
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-0b7c-71e5-9dff-dc89d6c12d90",
+      "name": "Moyo A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-0d62-7a80-bba4-cea674878333",
+      "name": "Moyo B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-0f59-76ed-be97-f6c8647418c7",
+      "name": "Moyo C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1112-767a-a3fa-74863a848363",
+      "name": "Moyo D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-12ae-7587-80e7-2a6966878541",
+      "name": "Moyo E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-6010-7707-9225-bfc5e6cf45b1",
+      "name": "Zhen I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-7a21-7ed3-8597-54784aa7fcf7",
+      "name": "Waru D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_02_C",
+          "name": "Waru & Mack"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-912b-7a48-8c9a-c7e18dd49600",
+      "name": "Atsadi C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9435-7e51-a359-188036aeda03",
+      "name": "Arjun A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 25,
+          "R": 14,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-958d-7344-846b-e512395c5f5e",
+      "name": "Atsadi D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-9c0e-7e95-a808-be8aff5713df",
+      "name": "Atsadi A",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_BR_02_C",
+          "name": "Atsadi & Surge"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-bca6-71b5-8503-473158d3b1e1",
+      "name": "Fen B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_03_C",
+          "name": "Fen & Crowbar"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-13e9-7308-bdf0-88c580298b3a",
+      "name": "Moyo F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1599-7618-8e48-ff573685a0f4",
+      "name": "Moyo G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 22,
+          "R": 15,
+          "U": 0,
+          "E": 2
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1702-7ad2-a184-d88b742b68f6",
+      "name": "Moyo H",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_YZ_65_C",
+          "name": "Moyo & Silk"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1871-783f-8495-33f7bce3ca77",
+      "name": "Kauri J",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_MU_65_C",
+          "name": "Kauri & Puff"
+        },
+        "byRarity": {
+          "C": 27,
+          "R": 12,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1a5e-71f8-8f98-2e3081719c0f",
+      "name": "Nadir A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-1db3-7ed2-9d1f-0cc3dbadea31",
+      "name": "Nadir B",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_LY_65_C",
+          "name": "Nadir & Bubbles"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-299a-73ff-977e-5f3fdf797de0",
+      "name": "Nevenka E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-2b21-72f7-8f33-001c959620a3",
+      "name": "Nevenka F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_01_C",
+          "name": "Nevenka & Blotch"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-2d83-7619-a426-b2faf4fff459",
+      "name": "Rin B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-35bd-71a2-a489-99523e83615d",
+      "name": "Rin G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3c47-7861-9401-5561db7ab5ca",
+      "name": "Rin K",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_03_C",
+          "name": "Rin & Orchid"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-3ef7-74a0-b13e-4ace630d85b3",
+      "name": "Arjun D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_02_C",
+          "name": "Arjun & Spike"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5557-776b-aa42-1140a7f355cb",
+      "name": "Sigismar D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_OR_01_C",
+          "name": "Sigismar & Wingspan"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-5ab2-714d-b5c7-c5ed0632272b",
+      "name": "Sol B",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_BR_65_C",
+          "name": "Sol & Halua"
+        },
+        "byRarity": {
+          "C": 23,
+          "R": 15,
+          "U": 0,
+          "E": 1
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-8099-77f6-a21d-55a86cc2420a",
+      "name": "Turuun D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_DUSTER_B_MU_85_C",
+          "name": "Turuun & Benih"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-94c3-7d1d-839e-d26df90402fd",
+      "name": "Afanas I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_YZ_03_C",
+          "name": "Afanas & Senka"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-678a-7bec-a089-c62a59645161",
+      "name": "Zhen F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0a-6bd6-7f9c-93e6-2488a9a6daa2",
+      "name": "Zhen E",
+      "winner": true,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CYCLONE_B_OR_65_C",
+          "name": "Zhen & Zéphyr"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e1c0b-75b2-73a2-9e26-1a5e159cff11",
+      "name": "Teija I",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_MU_01_C",
+          "name": "Teija & Nauraa"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f27-fc8c-72c4-a003-57da60e4d8eb",
+      "name": "Auraq F",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f27-fe14-755c-ac49-5eef6312d87e",
+      "name": "Auraq D",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f28-0066-79fb-802a-28ca80e8ed64",
+      "name": "Auraq G",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f28-030a-7753-ab28-cfcf081a8afd",
+      "name": "Auraq E",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f28-04bc-7b51-829f-88993916a82b",
+      "name": "Auraq C",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    },
+    {
+      "id": "019e3f28-09c8-7b7b-af1c-17ad8dff22b6",
+      "name": "Auraq A",
+      "winner": false,
+      "stats": {
+        "hero": {
+          "reference": "ALT_CORE_B_LY_02_C",
+          "name": "Auraq & Kibble"
+        },
+        "byRarity": {
+          "C": 24,
+          "R": 15,
+          "U": 0,
+          "E": 0
+        }
+      }
+    }
+  ]
+}

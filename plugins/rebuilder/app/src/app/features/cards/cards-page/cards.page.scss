@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+ar-app-bar.static {
+  position: static;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+  padding: var(--ar-space-3) var(--ar-page-padding) calc(var(--ar-space-8) + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .page {
+    gap: var(--ar-space-4);
+    padding: var(--ar-space-6);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ar-space-1);
+  }
+
+  h1 {
+    margin: 0;
+    font: var(--ar-font-display);
+    letter-spacing: var(--ar-letter-spacing-display);
+  }
+
+  .head p {
+    margin: 0;
+    font: var(--ar-font-body);
+    color: var(--ar-color-text-2);
+  }
+}

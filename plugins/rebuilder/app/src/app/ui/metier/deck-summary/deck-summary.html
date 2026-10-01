@@ -1,0 +1,35 @@
+<div class="top">
+  <span class="thumb">
+    @if (hero(); as h) {
+      <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+    }
+  </span>
+  <div class="meta">
+    @if (appearance() === 'embedded') {
+      <span class="overline" i18n="@@ui.deckSummary.hero">Héros</span>
+      <span class="hero-name">{{ hero()?.name || noHero }}</span>
+    } @else {
+      <span class="deck-name">{{ name() }}</span>
+      <span class="sub" i18n="@@ui.deckSummary.heroName">Héros : {{ hero()?.name || '—' }}</span>
+    }
+    <span class="sub fmt">
+      {{ formatLabel() }}<span aria-hidden="true">·</span>
+      <ar-icon [name]="isPublic() ? 'eye' : 'lock'" [size]="14" [strokeWidth]="2.2" />{{ isPublic() ? publicLabel : privateLabel }}
+    </span>
+  </div>
+  @if (editable()) {
+    <button arIconButton="sliders" ariaLabel="Réglages du deck : héros, format, visibilité" i18n-ariaLabel="@@ui.deckSummary.settings" [iconSize]="20" (click)="openSettings.emit()"></button>
+  }
+</div>
+<div class="counts">
+  <span class="total"><strong>{{ total() }}</strong><span i18n="@@ui.deckSummary.cards">{total(), plural, =1 {carte} other {cartes}}</span></span>
+  <button type="button" class="legality" aria-haspopup="dialog" [attr.aria-label]="legalityLabel()" (click)="showLegality.emit()">
+    @if (legal()) {
+      <ar-badge tone="green" icon="check" i18n="@@ui.deckSummary.valid">Valide</ar-badge>
+    } @else {
+      <ar-badge tone="orange" icon="alert">{{ issueLabel() }}</ar-badge>
+    }
+    <ar-icon name="chevron-right" [size]="16" />
+  </button>
+  <ar-rarity-summary [counts]="rarity()" />
+</div>

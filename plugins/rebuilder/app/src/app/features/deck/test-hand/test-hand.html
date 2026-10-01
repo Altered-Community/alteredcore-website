@@ -1,0 +1,92 @@
+<div class="toolbar">
+  <button arButton icon="rotate" (click)="newHand()" [disabled]="!lines().length" i18n="@@deck.hand.new">Nouvelle main</button>
+  <button arButton variant="secondary" icon="plus" (click)="draw()" [disabled]="!remaining() || setup()" i18n="@@deck.hand.draw">Piocher une carte</button>
+  @if (!compact()) {
+    <button arButton [variant]="game() ? 'primary' : 'secondary'" [icon]="game() ? 'toggle-on' : 'toggle-off'" [attr.aria-pressed]="!!game()" [disabled]="!lines().length" (click)="toggleGame()" i18n="@@deck.play.toggle">Mode jeu</button>
+  }
+  <span class="left" i18n="@@deck.hand.remaining">{remaining(), plural, =0 {Deck vide} =1 {1 carte dans le deck} other {{{ remaining() }} cartes dans le deck}}</span>
+</div>
+
+@if (game(); as g) {
+  <div class="game" cdkDropListGroup>
+    @if (setup()) {
+      <p class="hint" role="status" i18n="@@deck.play.setupHint">Sélectionnez 3 cartes à mettre en mana</p>
+    }
+    <div class="table">
+      <section class="zone board" cdkDropList cdkDropListOrientation="mixed" [cdkDropListData]="zones.board" (cdkDropListDropped)="drop($event)" aria-label="En jeu" i18n-aria-label="@@deck.play.boardLabel">
+        <span class="zone-label" i18n="@@deck.play.board">En jeu (Expéditions, Réserve, Permanents)</span>
+        <ul class="board-cards">
+          @for (c of board(); track c.id) {
+            <li cdkDrag cdkDragPreviewContainer="parent" [cdkDragData]="c.id" [cdkDragDisabled]="dragLocked()" [cdkDragStartDelay]="dragDelay">
+              <button type="button" class="card" aria-haspopup="menu" [attr.aria-label]="cardLabel(c)" (click)="cardClick(c, 'board')"><ar-card-tile [card]="c.card" [plain]="true" /></button>
+              <div class="drop-placeholder" *cdkDragPlaceholder></div>
+            </li>
+          }
+        </ul>
+        <button type="button" class="mana" (click)="showMana()" [attr.aria-label]="labels.mana">
+          <ar-icon name="droplet" [size]="16" /><span i18n="@@deck.play.mana">Mana</span><strong>{{ manaCount() }}</strong>
+        </button>
+      </section>
+      <div class="side">
+        <div class="zone pile" cdkDropList [cdkDropListData]="zones.discard" (cdkDropListDropped)="drop($event)">
+          <button type="button" class="pile-button" (click)="showDiscard()" [attr.aria-label]="labels.discard">
+            <span class="zone-label" i18n="@@deck.play.discard">Défausse</span>
+            <span class="pile-face">
+              @if (topDiscard(); as top) {
+                <ar-card-tile [card]="top.card" [plain]="true" />
+              }
+            </span>
+            <strong class="pile-count">{{ discard().length }}</strong>
+          </button>
+        </div>
+        <button type="button" class="zone pile deck-pile" [disabled]="setup() || !remaining()" (click)="draw()">
+          <span class="zone-label" i18n="@@deck.play.deck">Deck</span>
+          <span class="pile-face back"><strong>{{ remaining() }}</strong><span i18n="@@deck.play.draw">Piocher</span></span>
+        </button>
+      </div>
+    </div>
+
+    @if (hand().length) {
+      <p class="summary" aria-live="polite">
+        <span i18n="@@deck.hand.characters">Personnages <strong>{{ summary().characters }}</strong></span>
+        <span i18n="@@deck.hand.spells">Sorts <strong>{{ summary().spells }}</strong></span>
+        <span i18n="@@deck.hand.permanents">Permanents <strong>{{ summary().permanents }}</strong></span>
+        <span i18n="@@deck.hand.averageCost">Coût moyen <strong>{{ averageCost() }}</strong></span>
+      </p>
+    }
+    <ul class="grid hand-zone" cdkDropList cdkDropListOrientation="mixed" [cdkDropListData]="zones.hand" (cdkDropListDropped)="drop($event)" aria-label="Main de départ" i18n-aria-label="@@deck.hand.title">
+      @for (c of hand(); track c.id) {
+        <li cdkDrag cdkDragPreviewContainer="parent" [cdkDragData]="c.id" [cdkDragDisabled]="dragLocked()" [cdkDragStartDelay]="dragDelay">
+          <button type="button" class="card" [class.picked]="picked().has(c.id)" [attr.aria-pressed]="setup() ? picked().has(c.id) : null" [attr.aria-haspopup]="setup() ? null : 'menu'" [attr.aria-label]="cardLabel(c)" (click)="cardClick(c, 'hand')">
+            <ar-card-tile [card]="c.card" [plain]="true" [eager]="true" />
+            @if (picked().has(c.id)) {
+              <span class="mana-pick"><ar-icon name="droplet" [size]="22" /><span i18n="@@deck.play.mana">Mana</span></span>
+            }
+          </button>
+          <div class="drop-placeholder" *cdkDragPlaceholder></div>
+        </li>
+      } @empty {
+        <li class="empty" i18n="@@deck.play.emptyHand">Main vide</li>
+      }
+    </ul>
+    @if (setup()) {
+      <div class="commit">
+        <button arButton icon="droplet" [disabled]="picked().size !== startingMana" (click)="commitMana()" i18n="@@deck.play.commit">Mettre en mana ({{ picked().size }}/{{ startingMana }})</button>
+      </div>
+    }
+  </div>
+} @else if (hand().length) {
+  <p class="summary" aria-live="polite">
+    <span i18n="@@deck.hand.characters">Personnages <strong>{{ summary().characters }}</strong></span>
+    <span i18n="@@deck.hand.spells">Sorts <strong>{{ summary().spells }}</strong></span>
+    <span i18n="@@deck.hand.permanents">Permanents <strong>{{ summary().permanents }}</strong></span>
+    <span i18n="@@deck.hand.averageCost">Coût moyen <strong>{{ averageCost() }}</strong></span>
+  </p>
+  <ul class="grid" aria-label="Main de départ" i18n-aria-label="@@deck.hand.title">
+    @for (c of hand(); track c.id) {
+      <li><ar-card-tile [card]="c.card" [plain]="true" [eager]="true" /></li>
+    }
+  </ul>
+} @else {
+  <p class="empty" i18n="@@deck.hand.empty">Aucune carte à piocher.</p>
+}

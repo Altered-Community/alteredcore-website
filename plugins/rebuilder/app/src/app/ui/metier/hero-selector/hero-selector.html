@@ -1,0 +1,24 @@
+@if (error()) {
+  <p class="state" role="alert" i18n="@@ui.heroSelector.error">Impossible de charger les héros. Vérifiez votre connexion.</p>
+} @else if (!heroes()) {
+  <div #track class="track" aria-busy="true" aria-label="Chargement des héros" i18n-aria-label="@@ui.heroSelector.loading">
+    @for (i of skeletons(); track i) {
+      <span class="slot"><span class="skeleton"></span><span class="skeleton-name"></span></span>
+    }
+  </div>
+} @else if (!visible().length) {
+  <p class="state" i18n="@@ui.heroSelector.empty">Aucun héros dans cette faction.</p>
+} @else {
+  <div #track class="track" role="group" [attr.id]="panelId() || null" [attr.aria-label]="ariaLabel()">
+    @for (h of visible(); track h.reference) {
+      <ar-hero-tile
+        class="slot"
+        [hero]="h"
+        [size]="layout() === 'carousel' ? 'sm' : 'md'"
+        [selected]="selected()?.reference === h.reference"
+        [unavailableOnBga]="!!h.unavailableOnBga"
+        (choose)="pick(h)"
+      />
+    }
+  </div>
+}

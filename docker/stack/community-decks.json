@@ -1,0 +1,1262 @@
+[
+ {
+  "name": "Fen & Crowbar · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CORE_B_LY_03_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_04_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_113_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_09_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_106_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_13_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_111_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_LY_35_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_18_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_115_R1",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_81_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_22_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_120_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_98_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_YZ_37_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_120_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_16_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_23_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_24_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_LY_88_U_2615",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_112_U_5151",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_113_U_993",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Akesha & Taru · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CORE_B_YZ_01_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R1",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_YZ_86_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_11_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_YZ_72_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_AX_92_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_YZ_70_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_12_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_07_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_YZ_74_R1",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_YZ_39_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_21_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_19_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_28_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_YZ_45_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_YZ_101_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_122_E",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_YZ_42_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_111_U_2105",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_111_U_1881",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_YZ_87_U_2173",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Auraq & Kibble · NUC",
+  "format": "nuc",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_DUSTER_B_MU_98_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_06_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_02_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_LY_42_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_23_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_LY_49_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_11_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_LY_50_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_34_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_BISE_B_LY_53_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_LY_66_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_LY_63_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_LY_52_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_LY_43_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_24_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_LY_72_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_49_R2",
+    "quantity": 2
+   }
+  ]
+ },
+ {
+  "name": "Sol & Halua · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_65_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_122_E",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_AX_96_U_9894",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_72_U_3059",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_72_U_5334",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_94_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_99_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_79_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_68_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_57_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_MU_61_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_19_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_95_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_67_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_78_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_40_R1",
+    "quantity": 3
+   }
+  ]
+ },
+ {
+  "name": "Gretel & Rust · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_EOLE_B_BR_105_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_114_U_19198",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_114_U_18846",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_113_U_3162",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_121_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_119_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_122_E",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_120_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_116_E",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_77_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_75_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_70_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_110_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_109_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_115_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_59_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_69_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_19_R1",
+    "quantity": 3
+   }
+  ]
+ },
+ {
+  "name": "Atsadi & Surge · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_BISE_B_BR_57_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_LY_44_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_02_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_LY_75_U_4300",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_LY_75_U_4335",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_LY_75_U_8517",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_79_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_19_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_59_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_75_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_94_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_29_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_121_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_69_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_52_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_45_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_18_R2",
+    "quantity": 2
+   }
+  ]
+ },
+ {
+  "name": "Kauri & Puff · NUC",
+  "format": "nuc",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_EOLE_B_MU_65_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_120_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_113_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_112_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_111_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_110_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_109_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_108_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_70_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_66_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_MU_55_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_118_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_MU_122_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_82_R1",
+    "quantity": 3
+   }
+  ]
+ },
+ {
+  "name": "Sam & Spook · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_EOLE_B_YZ_120_U_9455",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_105_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_107_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_A_YZ_116_E",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_119_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_118_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_111_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_YZ_72_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_52_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_121_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_110_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_106_U_2598",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_117_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_118_U_768",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_BISE_A_YZ_52_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_YZ_86_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_13_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_07_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_19_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_22_C",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Sigismar & Wingspan · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_BISE_B_OR_54_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_OR_94_U_11510",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_89_U_7574",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_01_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_16_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_05_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_OR_107_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_OR_92_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_15_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_BISE_B_OR_49_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_OR_59_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_24_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_OR_79_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_OR_67_U_6181",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_OR_67_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_MU_31_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_OR_44_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_MUSUBI_B_OR_09_C",
+    "quantity": 2
+   }
+  ]
+ },
+ {
+  "name": "Isaree & Pebble · NUC",
+  "format": "nuc",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CYCLONE_B_AX_65_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_116_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_113_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_111_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_109_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_108_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_107_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_106_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_AX_04_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_AX_55_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_119_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_118_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_121_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_121_R1",
+    "quantity": 3
+   }
+  ]
+ },
+ {
+  "name": "Atsadi & Surge · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_BISE_B_BR_59_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_75_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_YZ_18_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_70_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_99_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_24_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_P_BR_02_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_32_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_45_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_57_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_A_BR_79_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_81_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_80_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_LY_97_U_10506",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_LY_97_U_6006",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_LY_97_U_788",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Sol & Halua · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_EOLE_B_LY_114_U_20537",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_114_U_18231",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_96_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_BR_100_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_67_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_69_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_72_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_77_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_P_BR_65_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_19_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_23_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_43_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_81_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_113_U_5452",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_70_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_26_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_114_R1",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Basira & Kaizaimon · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CORE_B_BR_03_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_32_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_11_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_70_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_16_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_61_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_A_BR_26_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_BISE_B_YZ_56_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_107_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_86_U_10735",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_BR_38_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_BR_52_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_25_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_YZ_70_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_11_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_COREKS_B_BR_11_U_901",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_04_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_BR_108_U_404",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_81_R1",
+    "quantity": 2
+   }
+  ]
+ },
+ {
+  "name": "Gulrang & Tocsin · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_CORE_B_OR_03_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_YZ_119_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_OR_102_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_OR_43_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_OR_45_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_04_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_OR_54_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_A_OR_24_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_OR_08_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_OR_59_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_OR_118_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_OR_34_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_107_U_3356",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_107_U_511",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_AX_107_U_1411",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_A_AX_76_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_OR_121_C",
+    "quantity": 2
+   }
+  ]
+ },
+ {
+  "name": "Turuun & Benih · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_DUSTER_B_MU_85_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_MU_66_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_BISE_B_MU_49_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_04_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_05_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_88_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_12_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_95_R1",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_96_E",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_28_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_27_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_BR_29_R2",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_BISE_B_MU_61_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_ALIZE_B_MU_42_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_102_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_DUSTER_B_MU_95_U_11319",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_OR_115_U_502",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_OR_115_U_1446",
+    "quantity": 1
+   }
+  ]
+ },
+ {
+  "name": "Yeong-gi & Ember · Frontier",
+  "format": "frontier",
+  "description": "",
+  "deckCards": [
+   {
+    "cardReference": "ALT_EOLE_B_LY_113_R1",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_23_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CYCLONE_B_BR_81_R2",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_04_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_121_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_A_LY_117_E",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_105_C",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_09_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_MU_16_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_07_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_A_YZ_19_R2",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_18_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_10_R1",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_CORE_B_LY_13_C",
+    "quantity": 3
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_107_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_120_C",
+    "quantity": 2
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_113_U_993",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_COREKS_B_YZ_07_U_1344",
+    "quantity": 1
+   },
+   {
+    "cardReference": "ALT_EOLE_B_LY_113_U_625",
+    "quantity": 1
+   }
+  ]
+ }
+]

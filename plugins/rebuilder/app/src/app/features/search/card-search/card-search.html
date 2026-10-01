@@ -1,0 +1,101 @@
+@if (bp.compact()) {
+  <div class="search-head" [class.condensed]="condensed()">
+    <div class="search-row">
+      <ar-input
+        class="q"
+        icon="search"
+        ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+        placeholder="Rechercher une carte…" i18n-placeholder="@@search.card.placeholder"
+        enterkeyhint="search"
+        [clearable]="true"
+        [value]="draft().q"
+        (valueChange)="setQuery($event)"
+      />
+      <button class="filters-btn" arIconButton="sliders" variant="primary" [ariaLabel]="filtersLabel()" [iconSize]="20" (click)="openFilters()">
+        @if (activeCount()) {
+          <span class="badge"><ar-count [value]="activeCount()" /></span>
+        }
+      </button>
+    </div>
+    @if (condensed()) {
+      <div class="summary-line">
+        <span><strong>{{ totalLabel() }}</strong> · {{ sourceLabel() }}</span>
+        @if (sortable()) {
+          <span>{{ orderLabel() }}</span>
+        }
+      </div>
+    }
+  </div>
+}
+
+<ar-tabs
+  ariaLabel="Source des cartes" i18n-ariaLabel="@@search.card.sources"
+  [appearance]="bp.compact() ? 'pill' : 'underline'"
+  [tabs]="sources()"
+  [active]="search.source()"
+  (activeChange)="setSource($event)"
+/>
+
+<div class="search-body">
+  @if (bp.expanded()) {
+    <aside class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
+      <div class="filters-scroll">
+        <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+      </div>
+      <div class="filters-foot">
+        <button arButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
+        <button arButton class="go" (click)="applyNow()" i18n="@@search.card.submit">Rechercher</button>
+      </div>
+    </aside>
+  }
+
+  <section class="results" aria-label="Résultats" i18n-aria-label="@@search.card.results">
+    @if (bp.compact()) {
+      <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        <span class="tools">
+          @if (sortable()) {
+            <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
+          <button
+            arIconButton="grid"
+            variant="ghost"
+            size="sm"
+            [ariaLabel]="resultsLayout() === 'grid' ? labels.showList : labels.showGrid"
+            [iconSize]="18"
+            (click)="resultsLayout.set(resultsLayout() === 'grid' ? 'list' : 'grid')"
+          ></button>
+        </span>
+      </div>
+    } @else {
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        @if (!bp.expanded()) {
+          <button arButton variant="secondary" icon="sliders" (click)="openFilters()">
+            <ng-container i18n="@@search.card.filters">Filtres</ng-container>
+            @if (activeCount()) {
+              <ar-count [value]="activeCount()" />
+            }
+          </button>
+        }
+        <ar-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+        <span class="tools">
+          @if (sortable()) {
+            <ar-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
+          <ar-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
+        </span>
+      </div>
+    }
+    <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+    <!-- Desktop: at the bottom right of the results column, clear of the editor's deck panel. -->
+    @if (!bp.compact() && condensed()) {
+      <button class="to-top in-column" arIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+    }
+  </section>
+</div>
+
+@if (bp.compact() && condensed()) {
+  <button class="to-top" arIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+}

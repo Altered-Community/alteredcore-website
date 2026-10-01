@@ -1,0 +1,39 @@
+<ng-content select="[summary]" />
+@if (!readonly()) {
+  <ar-deck-summary
+    [name]="deck.name()"
+    [hero]="deck.hero()"
+    [formatLabel]="formatLabel()"
+    [isPublic]="deck.isPublic()"
+    [total]="deck.total()"
+    [legal]="legality().state === 'legal'"
+    [issues]="deck.status().issues"
+    [rarity]="deck.stats().rarity"
+    [editable]="deck.editable()"
+    (openSettings)="openSettings.emit()"
+    (showLegality)="showLegality()"
+  />
+}
+<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
+  <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+</ar-collapsible>
+@if (!readonly() && altArts?.canChooseTokens()) {
+  <button arButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+}
+@for (g of deck.groups(); track g.id) {
+  <ar-deck-section appearance="flat" [title]="g.label" [count]="g.count">
+    @for (l of g.lines; track l.card.reference) {
+      <ar-deck-row
+        [card]="l.card"
+        [quantity]="l.quantity"
+        [max]="deck.maxFor(l.card)"
+        [issues]="issues().get(l.card.reference) ?? noIssues"
+        [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
+        [readonly]="readonly() || !deck.editable()"
+        (quantityChange)="deck.setQuantity(l.card, $event)"
+      />
+    }
+  </ar-deck-section>
+} @empty {
+  <p class="empty" i18n="@@editor.list.empty">Aucune carte pour l’instant.</p>
+}

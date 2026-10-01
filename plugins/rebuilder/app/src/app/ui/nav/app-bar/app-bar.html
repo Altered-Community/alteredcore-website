@@ -1,0 +1,10 @@
+<header>
+  <ng-content select="[leading]" />
+  <div class="titles">
+    <span class="title">{{ title() }}</span>
+    @if (subtitle()) {
+      <span class="subtitle">{{ subtitle() }}</span>
+    }
+  </div>
+  <div class="actions"><ng-content select="[actions]" /></div>
+</header>

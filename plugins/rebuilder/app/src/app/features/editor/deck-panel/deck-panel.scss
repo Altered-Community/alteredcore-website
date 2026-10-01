@@ -1,0 +1,42 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--ar-color-surface);
+  border: 1px solid var(--ar-color-border);
+  border-radius: var(--ar-radius-card);
+  overflow: hidden;
+  min-height: 0;
+}
+.summary {
+  padding: var(--ar-space-4);
+  border-bottom: 1px solid var(--ar-color-border);
+  flex-shrink: 0;
+}
+.stats {
+  border-bottom: 1px solid var(--ar-color-border);
+  flex-shrink: 0;
+}
+.rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ar-space-2) var(--ar-space-3) var(--ar-space-4);
+}
+.group-head {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--ar-space-3) var(--ar-space-1) var(--ar-space-1-5);
+  font: var(--ar-font-caption);
+  letter-spacing: var(--ar-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ar-color-text-muted);
+}
+.empty {
+  margin: var(--ar-space-4) var(--ar-space-1);
+  font-size: 13px;
+  color: var(--ar-color-text-muted);
+}
+.tokens {
+  padding: 0 var(--ar-space-4) var(--ar-space-3);
+}

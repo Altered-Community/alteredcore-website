@@ -46,7 +46,7 @@ if ((empty($_SESSION['admin_logged_in']) || saIsPreviewingGroup()) && !($GLOBALS
                         $__pageAllowed = true; break;
                     }
                 } else {
-                    if ($currentPage === basename(parse_url($__nr['url'], PHP_URL_PATH) ?: '', '.php')) {
+                    if ($currentPage === navUrlPage((string)$__nr['url'])) {
                         $__pageAllowed = true; break;
                     }
                 }
@@ -88,6 +88,10 @@ $_hTxt = [
         'light'      => 'Light',
         'dark'       => 'Dark',
         'language'   => 'Language',
+        'account_btn' => 'Account',
+        'beta'       => 'Beta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'The Deck and Deck Builder pages open in the new builder, in beta.',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -103,6 +107,10 @@ $_hTxt = [
         'light'      => 'Clair',
         'dark'       => 'Sombre',
         'language'   => 'Langue',
+        'account_btn' => 'Compte',
+        'beta'       => 'Bêta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'Les pages Deck et Deck Builder s\'ouvrent avec le nouveau Builder en mode bêta.',
     ],
 ][getUiLang()];
 
@@ -357,16 +365,18 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 $__isCurrent    = basename($_SERVER['PHP_SELF'], '.php');
 $__iframeNavId  = ($__isCurrent === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
 $_pageFullwidth = isset($pageFullwidth) && $pageFullwidth;
+// As before SPA pages: an empty or "#" URL (dropdown parent) never matches, not even the home page.
+$__fwMatch = fn(string $url): bool => navUrlPage($url) === $__isCurrent && navUrlIsCurrent($url, $__isCurrent);
 if (!$_pageFullwidth) {
     foreach ($__navItems as $__fni) {
         $__match = !empty($__fni['is_iframe'])
             ? ($__iframeNavId === (int)$__fni['id'])
-            : ($__isCurrent === basename(parse_url($__fni['url'], PHP_URL_PATH) ?: '', '.php'));
+            : $__fwMatch((string)$__fni['url']);
         if ($__match && !empty($__fni['is_fullwidth'])) { $_pageFullwidth = true; break; }
         foreach ($__fni['children'] as $__fnc) {
             $__match = !empty($__fnc['is_iframe'])
                 ? ($__iframeNavId === (int)$__fnc['id'])
-                : ($__isCurrent === basename(parse_url($__fnc['url'], PHP_URL_PATH) ?: '', '.php'));
+                : $__fwMatch((string)$__fnc['url']);
             if ($__match && !empty($__fnc['is_fullwidth'])) { $_pageFullwidth = true; break 2; }
         }
     }

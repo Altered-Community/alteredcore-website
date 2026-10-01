@@ -1,0 +1,16 @@
+<button
+  type="button"
+  [class.on]="selected() || removable()"
+  [class.square]="shape() === 'square'"
+  [attr.aria-pressed]="removable() ? null : selected()"
+  [attr.aria-label]="removable() ? removeLabel() : null"
+  (click)="removable() ? remove.emit() : selected.set(!selected())"
+>
+  @if (dot()) {
+    <span class="dot" [style.background]="dot()"></span>
+  }
+  {{ label() }}
+  @if (removable()) {
+    <ar-icon name="x" [size]="14" [strokeWidth]="2.4" />
+  }
+</button>

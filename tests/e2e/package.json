@@ -1,0 +1,12 @@
+{
+  "name": "alteredcore-e2e",
+  "private": true,
+  "description": "Playwright tests of the shell (tests/e2e/*.spec.ts) and of every plugin (plugins/*/e2e/*.spec.ts), run against docker-compose.stack.yml. Dev tooling only: not deployed.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.0.0"
+  }
+}

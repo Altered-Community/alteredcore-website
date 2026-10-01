@@ -1,0 +1,176 @@
+@if (bp.compact()) {
+  <ar-app-bar title="Deck">
+    <ar-back-button leading fallback="/decks" />
+    <!-- Nothing to act on when the deck could not be opened (one node per @if, for the [actions] slot). -->
+    @if (!deck.error() && deck.owned()) {
+      <button actions class="edit" arIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" i18n-ariaLabel="@@deck.page.edit" [iconSize]="22" (click)="edit()"></button>
+    }
+    @if (!deck.error()) {
+      <button actions arIconButton="share" variant="ghost" ariaLabel="Partager" i18n-ariaLabel="@@deck.page.share" [iconSize]="22" (click)="share()"></button>
+    }
+    @if (!deck.error()) {
+      <button actions arIconButton="more" variant="ghost" [ariaLabel]="moreLabel()" [iconSize]="22" (click)="more()"></button>
+    }
+  </ar-app-bar>
+}
+
+<ng-template #badges>
+  <div class="badges">
+    <ar-badge [tone]="info().badgeTone">{{ info().label }}</ar-badge>
+    <!-- No legality badge while the decks API has not computed it (state 'unknown'), as on the site. -->
+    @if (legality().state === 'legal') {
+      <ar-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ar-badge>
+    } @else if (legality().state === 'illegal') {
+      <button type="button" class="legal-details" aria-haspopup="dialog" aria-label="Non légal : voir le détail" i18n-aria-label="@@deck.page.illegalDetails" (click)="showLegality()">
+        <ar-badge tone="orange" icon="alert" i18n="@@deck.page.illegal">Non légal</ar-badge>
+        <ar-icon name="chevron-right" [size]="16" />
+      </button>
+    }
+    @if (deck.isDraft()) {
+      <ar-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ar-badge>
+    }
+    <ar-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ar-badge>
+  </div>
+</ng-template>
+
+@if (deck.error(); as err) {
+  <div class="state" role="alert">
+    <ar-icon class="state-icon" [name]="deck.loadError() === 'private' ? 'lock' : 'alert'" [size]="22" />
+    <p class="state-title">{{ err }}</p>
+    @if (deck.loadError() === 'server' || deck.loadError() === 'network') {
+      <p class="state-hint" i18n="@@deck.page.apiLater">L’API est actuellement indisponible. Veuillez réessayer plus tard.</p>
+    }
+    <div class="state-actions">
+      @if (deck.loadError() === 'private' && !auth.isLoggedIn()) {
+        <a arButton routerLink="/login" i18n="@@deck.page.signIn">Se connecter</a>
+      }
+      <a arButton variant="secondary" routerLink="/decks" i18n="@@deck.page.backToDecks">Retour à mes decks</a>
+    </div>
+  </div>
+} @else if (deck.loading()) {
+  <div class="state" aria-busy="true"><p i18n="@@deck.page.loading">Chargement du deck…</p></div>
+} @else {
+  <div class="page">
+    <main class="main">
+      @if (!bp.compact()) {
+        <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ar-icon name="chevron-left" [size]="16" />Mes decks</a>
+        <ar-tabs ariaLabel="Vues du deck" i18n-ariaLabel="@@deck.page.views" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
+      } @else {
+        <section class="m-summary" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
+          <div class="m-top">
+            <span class="m-thumb">
+              @if (deck.hero(); as h) {
+                <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+              }
+            </span>
+            <div class="m-meta">
+              <h1>
+                @if (factionLogo(); as src) {
+                  <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+                }
+                <span class="h1-text">{{ deck.name() }}</span>
+              </h1>
+              <span>{{ deck.hero()?.name }}</span>
+            </div>
+          </div>
+          <ng-container [ngTemplateOutlet]="badges" />
+          <div class="m-counts">
+            <span i18n="@@deck.page.cardCount"><strong>{{ deck.total() }}</strong> cartes</span>
+            <span class="sep" aria-hidden="true"></span>
+            <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="12" />
+          </div>
+        </section>
+      }
+
+      @let view = tab();
+      @switch (view) {
+        @case ('decklist') {
+          @if (bp.compact()) {
+            <app-deck-list-view [readonly]="true" />
+          } @else {
+            <div class="grouping">
+              <ar-segmented ariaLabel="Regrouper par" i18n-ariaLabel="@@deck.page.groupBy" [options]="groupingOptions" [(value)]="grouping" />
+            </div>
+            <div class="tables">
+              @for (g of groups(); track g.label) {
+                <app-decklist-table [group]="g" />
+              } @empty {
+                <p class="empty" i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
+              }
+            </div>
+          }
+        }
+        @case ('description') {
+          <section class="description" aria-label="Description" i18n-aria-label="@@deck.page.tabDescription">
+            @if (deck.description().trim(); as text) {
+              <p class="description-text">{{ text }}</p>
+            } @else {
+              <p class="empty" i18n="@@deck.page.noDescription">Aucune description pour ce deck.</p>
+            }
+          </section>
+        }
+        @case ('main') {
+          <app-test-hand [lines]="deck.lines()" />
+          <app-hand-stats [lines]="deck.lines()" />
+          <app-hand-calculators [lines]="deck.lines()" />
+        }
+        @case ('cartes') {
+          @if (bp.compact()) {
+            <ar-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
+              <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+            </ar-collapsible>
+          }
+          <app-deck-preview [readonly]="true" [dense]="true" />
+        }
+        @default never;
+      }
+    </main>
+
+    @if (!bp.compact()) {
+      <aside class="aside" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
+        @if (deck.hero(); as h) {
+          <button type="button" class="banner zoom" aria-haspopup="dialog" [attr.aria-label]="heroZoomLabel()" (click)="zoomHero()">
+            <ar-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" i18n-placeholder="@@deck.page.heroArt" position="center 18%" [eager]="true" />
+          </button>
+        } @else {
+          <div class="banner"></div>
+        }
+        <div class="aside-body">
+          <div class="titles">
+            <h1>
+              @if (factionLogo(); as src) {
+                <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
+              }
+              {{ deck.name() }}
+            </h1>
+            <span>{{ deck.hero()?.name }}@if (created()) { · <ng-container i18n="@@deck.page.createdOn">créé le {{ created() }}</ng-container>}</span>
+          </div>
+          <ng-container [ngTemplateOutlet]="badges" />
+          <ar-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
+          <ar-collapsible title="Stats" [(open)]="statsOpen">
+            <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+          </ar-collapsible>
+          @if (deck.owned()) {
+            <button arButton icon="pencil" [fullWidth]="true" (click)="edit()" i18n="@@deck.page.edit">Modifier le deck</button>
+          }
+          <div class="actions">
+            <button arButton variant="secondary" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
+            <button arButton variant="secondary" icon="share" (click)="share()" i18n="@@deck.page.share">Partager</button>
+            <button arButton variant="secondary" icon="duplicate" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
+            @if (deck.owned()) {
+              <button arButton variant="danger" icon="trash" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
+            }
+          </div>
+        </div>
+      </aside>
+    }
+  </div>
+
+  @if (bp.compact()) {
+    <ar-bottom-nav ariaLabel="Consultation du deck" i18n-ariaLabel="@@deck.page.bottomNav" [items]="navItems()" />
+  }
+}
+
+@if (toast(); as t) {
+  <div class="toast" role="status">{{ t }}</div>
+}

@@ -1,0 +1,26 @@
+:host {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ar-space-1-5);
+}
+.pill {
+  height: 30px;
+  padding: 0 var(--ar-space-2) 0 3px;
+  border-radius: var(--ar-radius-pill);
+  background: var(--ar-color-bg-app);
+  border: 1px solid var(--ar-color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ar-space-1-5);
+  white-space: nowrap;
+}
+img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: block;
+}
+strong {
+  font-size: 14px;
+}

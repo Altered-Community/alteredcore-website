@@ -1,0 +1,156 @@
+:host {
+  display: block;
+}
+
+ar-app-bar.static {
+  position: static;
+}
+
+.avatar-link {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guest-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ar-color-primary-soft);
+  color: var(--ar-color-primary-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state {
+  padding: var(--ar-space-10) var(--ar-page-padding);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ar-space-3);
+}
+
+/* ---------- compact first ---------- */
+.editor {
+  display: flex;
+  gap: var(--ar-space-6);
+  padding: var(--ar-space-3) var(--ar-page-padding) calc(var(--ar-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ar-space-4));
+}
+
+.main {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-3);
+}
+
+/* « Revenir en haut » sits above the bottom navigation. */
+.search {
+  --app-search-bottom-inset: calc(var(--ar-bottom-nav-height) + env(safe-area-inset-bottom));
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ar-space-2);
+  padding: var(--ar-space-2-5) var(--ar-space-3);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-color-warning-soft);
+  color: var(--ar-color-warning);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.banner.error {
+  align-items: flex-start;
+  background: var(--ar-color-danger-soft);
+  color: var(--ar-color-danger);
+}
+
+.banner .message {
+  flex: 1 1 16rem;
+  white-space: pre-line;
+}
+
+/* ---------- medium and up ---------- */
+@media (min-width: 768px) {
+  .editor {
+    padding: var(--ar-space-6);
+    align-items: flex-start;
+  }
+
+  .main {
+    gap: var(--ar-space-4);
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--ar-space-6);
+  }
+
+  /* « Recherche » sits next to « Voir le deck ». The label must stay whole:
+     the segmented control ellipsizes spans once a button is allowed to shrink. */
+  .head ar-segmented {
+    flex-shrink: 0;
+  }
+
+  .head ar-segmented ::ng-deep button {
+    min-width: max-content;
+    overflow: visible;
+  }
+
+  .head ar-segmented ::ng-deep button span {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ar-space-1);
+    min-width: 0;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ar-space-3);
+    min-width: 0;
+  }
+
+  .title-row ar-editable-title {
+    min-width: 0;
+  }
+
+  .title-row ar-save-status {
+    flex-shrink: 0;
+  }
+
+  .panel {
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ar-sticky-top) + var(--ar-space-6));
+    height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6));
+  }
+}
+
+@media (min-width: 1200px) {
+  .panel {
+    width: var(--ar-deck-panel-width);
+  }
+}
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-space-6);
+}

@@ -1,0 +1,18 @@
+<label [class.compact]="layout() === 'compact'" [class.checked]="checked()">
+  <input type="radio" [name]="name()" [checked]="checked()" (change)="choose.emit()" />
+  <span class="body">
+    <span class="head">
+      <span class="title">{{ title() }}</span>
+      @if (tag() && layout() === 'row') {
+        <span class="tag" [class]="'tag tone-' + tag()!.tone">{{ tag()!.label }}</span>
+      }
+    </span>
+    <span class="desc" [attr.title]="layout() === 'compact' ? description() : null">{{ description() }}</span>
+    @if (tag() && layout() === 'stacked') {
+      <span [class]="'tag tone-' + tag()!.tone">{{ tag()!.label }}</span>
+    }
+  </span>
+  @if (tag() && layout() === 'compact') {
+    <span [class]="'tag tone-' + tag()!.tone">{{ tag()!.label }}</span>
+  }
+</label>

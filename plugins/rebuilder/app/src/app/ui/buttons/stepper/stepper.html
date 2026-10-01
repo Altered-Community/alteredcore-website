@@ -1,0 +1,9 @@
+<div role="group" [class]="'group ar-stepper--' + appearance()" [attr.aria-label]="label() || copiesLabel">
+  <button type="button" class="dec" [attr.aria-label]="decLabel()" [attr.aria-disabled]="value() <= min()" (click)="step(-1)">
+    <span class="ring"><ar-icon name="minus" [size]="iconSize()" [strokeWidth]="2.6" /></span>
+  </button>
+  <span class="value" aria-live="polite">{{ value() }}</span>
+  <button type="button" class="inc" [attr.aria-label]="incLabel()" [attr.aria-disabled]="value() >= max()" (click)="step(1)">
+    <span class="ring"><ar-icon name="plus" [size]="iconSize()" [strokeWidth]="2.6" /></span>
+  </button>
+</div>
