@@ -17,7 +17,7 @@ define('KC_CLIENT_SECRET', 'dev-main-site-secret');
 define('KC_SCOPES',        'openid profile email');
 define('ENCRYPTION_KEY',   'stack-dev-encryption-key-not-secret');
 
-define('SHOW_NEWSLETTER', false);
+define('SHOW_NEWSLETTER', true);   // as in production; without Listmonk it fills the local newsletter_sub table
 define('COLLECTION_MODE', true);
 define('API_RESPONSE_DEBUG', false);
 define('STORE_KC_USER_DATA', true);

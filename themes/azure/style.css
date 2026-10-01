@@ -323,14 +323,15 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 
 /* ---- Desktop: one bar (brand, menu, then the account button on the right) ----
    Same markup as the mobile header: the topbar wrappers become display: contents so the
-   brand, the navband and the account button are items of one flex row. */
+   brand, the navband and the account button are items of one flex row. Full width at any screen
+   size (the brand and the account button stay at the gutter), as in production. */
 @media (min-width: 768px) {
     .az-site-header {
         display: flex;
         align-items: center;
         gap: var(--ac-space-6);
         min-height: var(--ac-app-bar-height);
-        padding: 0 max(var(--ac-page-padding), (100% - var(--ac-site-max-width)) / 2 + var(--ac-page-padding));
+        padding: 0 var(--ac-page-padding);
     }
     .az-topbar,
     .az-topbar-inner,
@@ -350,7 +351,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
         height: var(--ac-control-sm);
         background: var(--ac-header-divider);
     }
-    .az-nav-list { flex-wrap: nowrap; align-self: stretch; }
+    .az-nav-list { flex-wrap: nowrap; align-self: stretch; gap: 0; }
     .az-site-header .az-nav-list .nav-link { height: auto; }
     .az-site-header .az-account-btn { order: 2; }
     .az-site-header .az-brand,

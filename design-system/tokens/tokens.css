@@ -56,11 +56,11 @@
 
   /* ---------- Colours · site header (themes/azure) ----------
    * Light: the brand blue bar with white text. Dark: the surface, like the rest of the shell. */
-  --ac-header-bg: var(--ac-color-primary);
+  --ac-header-bg: #1a6fd9;              /* production header blue */
   --ac-header-border: var(--ac-color-primary-strong);
   --ac-header-divider: #4a86e0;         /* brand | menu separator */
   --ac-header-text: #ffffff;            /* brand name, hovered and active menu item */
-  --ac-header-text-2: #e3edfc;          /* menu items */
+  --ac-header-text-2: #ffffff;          /* menu items (4.8:1 on the header blue) */
   --ac-header-icon: #b8cdf3;            /* menu item icons */
   --ac-header-button-text: #ffffff;     /* icon button (burger) */
   --ac-header-hover-bg: var(--ac-color-primary-strong);   /* icon buttons */

@@ -5,7 +5,7 @@
 
 require_once dirname(__DIR__, 2) . '/includes/functions.php';
 
-const SEED_VERSION = '2';
+const SEED_VERSION = '3';
 
 if (getSetting('stack_seed_version') === SEED_VERSION) {
     echo "[seed] already applied\n";
@@ -14,7 +14,6 @@ if (getSetting('stack_seed_version') === SEED_VERSION) {
 
 // [label_en, label_fr, url, icon, children] — children: same shape, '-' for a separator.
 $menu = [
-    ['Home', 'Accueil', '/pages/index', 'fa-solid fa-house', [], ['hide_label' => 1]],
     ['Cards', 'Cartes', '/pages/cards', 'fak fa-collection', [
         ['Search', 'Rechercher', '/pages/cards', 'fa-solid fa-magnifying-glass'],
         ['Scan', 'Scanner', '/pages/qrscan', 'fa-solid fa-qrcode'],
