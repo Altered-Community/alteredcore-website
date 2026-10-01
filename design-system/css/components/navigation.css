@@ -36,6 +36,14 @@
   color: var(--ac-color-primary-strong);
   font-weight: 700;
 }
+/* Tabs that share the row, no scrolling (compact screens; extra tabs go in a « Plus » menu, an ac-menu). */
+.ac-tabs--fill { gap: 0; }
+.ac-tabs--fill > :is(button, a) {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  padding: 0 var(--ac-space-2);
+}
 .ac-tabs--pill {
   gap: var(--ac-space-1-5);
   overflow-x: auto;

@@ -21,15 +21,20 @@ import { SearchResults } from '../search-results/search-results';
 export interface CardSourceTab {
   id: CardSource;
   label: string;
+  /** Label in the compact tab row. */
+  short?: string;
 }
 
 export const CARD_SOURCES: CardSourceTab[] = [
-  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes` },
+  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
   { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
-  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique` },
-  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
   { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
+  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
+  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
 ];
+
+/** Compact screens: tabs in the row, the others under « Plus ». */
+const COMPACT_SOURCE_TABS = 4;
 
 /** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
 const FILTERS_GROW_MAX = 136;
@@ -57,6 +62,7 @@ export class CardSearch {
   protected readonly search = inject(CardSearchStore);
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
+  protected readonly compactSourceTabs = COMPACT_SOURCE_TABS;
   readonly faction = input<string | null>(null);
   /** Editor: the deck's format (Favoris show the cards it allows by default). */
   readonly format = input<DeckFormat | null>(null);

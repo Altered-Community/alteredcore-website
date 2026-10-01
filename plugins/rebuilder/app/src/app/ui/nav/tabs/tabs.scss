@@ -1,5 +1,10 @@
-/* Drawn by .ac-tabs (design-system/css/components/navigation.css). Pills bleed into the page gutter. */
+/* Drawn by .ac-tabs (design-system/css/components/navigation.css). Pills and filled tabs bleed into the page gutter. */
 :host(.ac-tabs--pill) {
   margin-inline: calc(-1 * var(--ac-page-padding));
   padding-inline: var(--ac-page-padding);
+}
+
+:host(.ac-tabs--fill) {
+  margin-inline: calc(-1 * var(--ac-page-padding));
+  padding-inline: var(--ac-space-1);
 }

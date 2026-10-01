@@ -27,27 +27,28 @@
   max-width: 100%;
 }
 
-/* Thin scroll bars on the plugin's scrolling areas (panels, windows, lists); the page's own is the site's. */
-.ac-plugin-root * {
+/* Thin scroll bars on the plugin's scrolling areas (panels, windows, lists); the page's own is the site's.
+   Zero specificity (:where), so a component that hides its scroll bar (.ac-tabs--pill…) keeps it hidden. */
+:where(.ac-plugin-root *) {
   scrollbar-width: thin;
   scrollbar-color: var(--ac-color-scrollbar) transparent;
 }
 
 /* Browsers without `scrollbar-color` (Safari before 18.2). */
 @supports not (scrollbar-color: auto) {
-  .ac-plugin-root ::-webkit-scrollbar {
+  :where(.ac-plugin-root) ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  .ac-plugin-root ::-webkit-scrollbar-track {
+  :where(.ac-plugin-root) ::-webkit-scrollbar-track {
     background: transparent;
   }
-  .ac-plugin-root ::-webkit-scrollbar-thumb {
+  :where(.ac-plugin-root) ::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 4px;
     background: var(--ac-color-scrollbar) padding-box;
   }
-  .ac-plugin-root ::-webkit-scrollbar-thumb:hover {
+  :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
     background-color: var(--ac-color-scrollbar-hover);
   }
 }

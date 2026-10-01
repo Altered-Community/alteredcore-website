@@ -30,7 +30,7 @@
 
 <ac-tabs
   ariaLabel="Source des cartes" i18n-ariaLabel="@@search.card.sources"
-  [appearance]="bp.compact() ? 'pill' : 'underline'"
+  [maxTabs]="bp.compact() ? compactSourceTabs : null"
   [tabs]="sources()"
   [active]="search.source()"
   (activeChange)="setSource($event)"
