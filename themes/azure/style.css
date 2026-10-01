@@ -213,11 +213,23 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 @media (max-width: 767.98px) {
     /* The menu lives in the burger's panel on mobile; the account button shows its avatar or icon only */
     .az-site-header .az-navband { display: none !important; }
-    .az-site-header .az-account-btn { padding-right: var(--ac-space-0-5); }
-    .az-site-header .az-account-btn > .ac-icon:first-child { margin: 0 var(--ac-space-1-5); }
+    /* Same square as the burger next to it (ac-icon-button): avatar or user icon centred */
+    .az-site-header .az-account-btn {
+        justify-content: center;
+        width: var(--ac-control-md);
+        height: var(--ac-control-md);
+        padding: 0;
+        border-color: var(--ac-header-button-border);
+        border-radius: var(--ac-radius-control);
+        background: none;
+        color: var(--ac-header-button-text);
+    }
+    .az-site-header .az-account-btn > .ac-icon:first-child { margin: 0; }
+    .az-site-header .az-account-btn .ac-avatar { width: 28px; height: 28px; background: var(--ac-header-button-avatar-bg); color: var(--ac-header-button-avatar-text); }
     .az-account-label,
     .az-account-caret { display: none; }
-    .az-site-header .az-account-btn[aria-expanded='true'] { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
+    .az-site-header .az-account-btn:hover,
+    .az-site-header .az-account-btn[aria-expanded='true'] { background: var(--ac-header-hover-bg); color: var(--ac-header-text); }
 
     /* Account popover: the page dimmed behind it */
     .az-am-backdrop:not([hidden]) { background: var(--ac-color-scrim); }

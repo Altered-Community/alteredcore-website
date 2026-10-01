@@ -67,6 +67,8 @@
   --ac-header-active-text: #ffffff;     /* current menu item */
   --ac-header-active-line: #ffffff;     /* its underline */
   --ac-header-button-border: #4a86e0;   /* bordered icon button (burger) */
+  --ac-header-button-avatar-bg: #ffffff;  /* avatar in the square account button (mobile) */
+  --ac-header-button-avatar-text: var(--ac-color-primary-strong);
   --ac-header-focus: #ffffff;
   --ac-header-control-bg: #ffffff;      /* account button */
   --ac-header-control-hover-bg: var(--ac-color-primary-soft);
@@ -341,6 +343,8 @@
   --ac-header-active-text: var(--ac-color-primary-strong);
   --ac-header-active-line: var(--ac-color-primary);
   --ac-header-button-border: var(--ac-color-border);
+  --ac-header-button-avatar-bg: var(--ac-color-primary);
+  --ac-header-button-avatar-text: var(--ac-color-on-primary);
   --ac-header-focus: var(--ac-color-focus);
   --ac-header-control-bg: var(--ac-color-surface);
   --ac-header-control-hover-bg: var(--ac-color-bg-subtle);
