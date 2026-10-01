@@ -413,6 +413,19 @@ function CardSearch(cfg) {
         return [api + '[' + p.op + ']=' + p.val]; // bound
     }
 
+    // rust-cards-api (Uniques) query parts. It does not combine two bounds on one
+    // field: with mainCost[gte]=1&mainCost[lte]=3 only gte applies, so a range is
+    // sent as the explicit list mainCost[]=1&mainCost[]=2&mainCost[]=3.
+    function numUniquesParts(api, raw) {
+        var p = parseNumExpr(raw);
+        if (p && p.kind === 'range') {
+            var out = [];
+            for (var v = p.min; v <= p.max; v++) out.push(api + '[]=' + v);
+            return out;
+        }
+        return numCardsParts(api, raw);
+    }
+
     // Collection proxy query parts (reads mainCost[gte]/[lte]/[gt]/[lt]).
     // exact → equal bounds; list → min..max envelope (degraded); range/bound direct.
     function numCollParts(api, raw) {
@@ -935,7 +948,7 @@ function CardSearch(cfg) {
             .forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
 
         NUM_FIELDS.forEach(function(f) {
-            numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+            numUniquesParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
         });
 
         _readEffectRows();
