@@ -26,7 +26,7 @@ li {
   grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: var(--ac-space-2);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   --tone: var(--ac-cards-type-other);
 }
 li.tone-character {
@@ -45,7 +45,7 @@ li.tone-spell {
   color: var(--ac-color-text-2);
 }
 strong {
-  font-size: 18px;
+  font-size: var(--ac-font-size-title-sm);
   font-weight: 600;
   color: var(--tone);
   font-variant-numeric: tabular-nums;

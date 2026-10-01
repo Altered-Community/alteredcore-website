@@ -11,7 +11,7 @@
 }
 .count {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   color: var(--ac-color-text-2);
 }
 .count strong {

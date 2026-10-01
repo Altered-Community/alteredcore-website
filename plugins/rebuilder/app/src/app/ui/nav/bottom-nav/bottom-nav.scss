@@ -21,7 +21,7 @@ a {
   justify-content: center;
   gap: 3px;
   color: var(--ac-color-text-2);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 600;
 }
 a.active {

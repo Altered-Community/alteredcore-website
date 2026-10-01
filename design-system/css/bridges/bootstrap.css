@@ -9,7 +9,7 @@
 
 :root {
   --bs-body-font-family: var(--ac-font-family);
-  --bs-body-font-size: 14px;
+  --bs-body-font-size: var(--ac-font-size-body);
   --bs-body-font-weight: 400;
   --bs-body-line-height: 1.5;
   --bs-body-color: var(--ac-color-text);
@@ -85,7 +85,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
 /* ---------- Buttons ---------- */
 .btn {
   --bs-btn-font-family: var(--ac-font-family);
-  --bs-btn-font-size: 14px;
+  --bs-btn-font-size: var(--ac-font-size-body);
   --bs-btn-font-weight: 700;
   --bs-btn-padding-x: var(--ac-space-4);
   --bs-btn-padding-y: 0;
@@ -100,12 +100,12 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   line-height: 1.2;
 }
 .btn-sm {
-  --bs-btn-font-size: 13px;
+  --bs-btn-font-size: var(--ac-font-size-small);
   --bs-btn-padding-x: var(--ac-space-3);
   --bs-btn-border-radius: var(--ac-radius-md);
   min-height: var(--ac-control-sm);
 }
-.btn-lg { --bs-btn-font-size: 15px; min-height: var(--ac-control-lg); }
+.btn-lg { --bs-btn-font-size: var(--ac-font-size-body-strong); min-height: var(--ac-control-lg); }
 .btn-primary {
   --bs-btn-bg: var(--ac-color-primary);
   --bs-btn-border-color: var(--ac-color-primary);
@@ -215,7 +215,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   color: var(--ac-color-text);
   margin-bottom: var(--ac-space-1-5);
 }
-.form-text { color: var(--ac-color-text-muted); font-size: 13px; }
+.form-text { color: var(--ac-color-text-muted); font-size: var(--ac-font-size-small); }
 .form-control, .form-select {
   min-height: var(--ac-control-md);
   padding: var(--ac-space-2) var(--ac-space-3);
@@ -241,7 +241,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   min-height: var(--ac-control-sm);
   padding-block: var(--ac-space-1);
   border-radius: var(--ac-radius-md);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .form-control-lg, .form-select-lg { min-height: var(--ac-control-lg); }
 .form-control-color { padding: var(--ac-space-1); }
@@ -322,7 +322,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   --bs-modal-footer-border-color: var(--ac-color-divider);
   --bs-modal-footer-bg: var(--ac-color-surface);
 }
-.modal-title { font: var(--ac-font-title); font-size: 18px; }
+.modal-title { font: var(--ac-font-title); font-size: var(--ac-font-size-title-sm); }
 .modal-backdrop { --bs-backdrop-bg: var(--ac-color-scrim); --bs-backdrop-opacity: 1; }
 .offcanvas {
   --bs-offcanvas-bg: var(--ac-color-surface);
@@ -349,7 +349,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   --bs-dropdown-box-shadow: var(--ac-shadow-e2);
   --bs-dropdown-padding-x: var(--ac-space-1);
   --bs-dropdown-padding-y: var(--ac-space-1);
-  --bs-dropdown-font-size: 14px;
+  --bs-dropdown-font-size: var(--ac-font-size-body);
   --bs-dropdown-link-color: var(--ac-color-text);
   --bs-dropdown-link-hover-color: var(--ac-color-text);
   --bs-dropdown-link-hover-bg: var(--ac-color-bg-subtle);
@@ -414,13 +414,13 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
 .breadcrumb {
   --bs-breadcrumb-item-active-color: var(--ac-color-text);
   --bs-breadcrumb-divider-color: var(--ac-color-text-muted);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 
 /* ---------- Badges, alerts, tables, progress ---------- */
 .badge {
   --bs-badge-font-weight: 700;
-  --bs-badge-font-size: 12px;
+  --bs-badge-font-size: var(--ac-font-size-caption);
   --bs-badge-border-radius: var(--ac-radius-pill);
   --bs-badge-padding-x: 9px;
   --bs-badge-padding-y: 5px;
@@ -448,7 +448,7 @@ hr { border-color: var(--ac-color-divider); opacity: 1; }
   --bs-table-active-bg: var(--ac-color-track);
   --bs-table-active-color: var(--ac-color-text);
 }
-.table > thead th { color: var(--ac-color-text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: var(--ac-letter-spacing-overline); }
+.table > thead th { color: var(--ac-color-text-muted); font-weight: 700; font-size: var(--ac-font-size-caption); text-transform: uppercase; letter-spacing: var(--ac-letter-spacing-overline); }
 .table-light, .table-dark { --bs-table-bg: var(--ac-color-bg-subtle); --bs-table-color: var(--ac-color-text); --bs-table-border-color: var(--ac-color-divider); }
 .progress, .progress-stacked { --bs-progress-bg: var(--ac-color-track); --bs-progress-bar-bg: var(--ac-color-primary); --bs-progress-border-radius: var(--ac-radius-pill); }
 .spinner-border, .spinner-grow { color: var(--ac-color-primary); }

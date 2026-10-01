@@ -49,7 +49,7 @@
   gap: var(--ac-space-3);
   padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-2);
 }
-.ac-dialog__title { font: var(--ac-font-title); font-size: 18px; margin: 0; }
+.ac-dialog__title { font: var(--ac-font-title); font-size: var(--ac-font-size-title-sm); margin: 0; }
 .ac-dialog__body { padding: var(--ac-space-2) var(--ac-space-5) var(--ac-space-4); }
 .ac-dialog__footer {
   display: flex;
@@ -127,3 +127,52 @@
 .ac-table tbody tr:last-child td { border-bottom: none; }
 .ac-table tbody tr:hover td { background: var(--ac-color-bg-subtle); }
 .ac-table .ac-table__num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---- Toast: short notice at the bottom of the screen, with an optional action ----
+ *   <div class="ac-toast" role="status" aria-live="polite">
+ *     <span class="ac-toast__message">Deck deleted.</span>
+ *     <button type="button" class="ac-toast__action">Undo</button>
+ *   </div>
+ * --ac-toast-offset lifts it above a fixed bottom bar (Re:Builder's bottom navigation). */
+.ac-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--ac-toast-offset, 0px) + env(safe-area-inset-bottom, 0px) + var(--ac-space-4));
+  transform: translateX(-50%);
+  z-index: var(--ac-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  max-width: calc(100vw - 2 * var(--ac-space-4));
+  padding: var(--ac-space-2) var(--ac-space-2) var(--ac-space-2) var(--ac-space-4);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+  font-size: var(--ac-font-size-body);
+  font-weight: 600;
+  box-shadow: var(--ac-shadow-e2);
+}
+@media (min-width: 768px) {
+  .ac-toast { bottom: var(--ac-space-6); }
+}
+.ac-toast[hidden] { display: none; }
+.ac-toast__message {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+.ac-toast__action {
+  min-height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-3);
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.ac-toast__action:focus-visible {
+  outline: 2px solid var(--ac-color-on-inverse);
+  outline-offset: 2px;
+}

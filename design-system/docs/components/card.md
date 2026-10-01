@@ -92,6 +92,32 @@ disabled colour.
 
 Say what is missing and, when there is one, the action that fills it.
 
+## Collapsible — `ac-collapsible`
+
+A section that folds: a full-width header button with a chevron, and a body shown when open.
+Bordered card by default; `ac-collapsible--bare` drops the border and background (inside a panel
+that already has one). Closed by default.
+
+```php
+<div class="ac-collapsible">
+  <button type="button" class="ac-collapsible__head" aria-expanded="false" aria-controls="stats-detail">
+    <span class="ac-collapsible__chevron"><?= ac_icon('chevron-down') ?></span>
+    <span class="ac-collapsible__title"><?= h(t('stats.detail')) ?></span>
+  </button>
+  <div class="ac-collapsible__body" id="stats-detail" hidden>…</div>
+</div>
+```
+
+| Class | Effect |
+|---|---|
+| `ac-collapsible__head` | Header button, `--ac-control-md` + 4 px tall. Its `aria-expanded` is the state: the chevron points right when closed, down when open. Extra content after the title (a summary, a count) goes inside the button. |
+| `ac-collapsible__title` | Field-size text (14 / 16 px touch), extra-bold. |
+| `ac-collapsible__body` | Column, 10 px gap, `hidden` when closed. |
+| `ac-collapsible--bare` | No border, no background, 16 px side padding. |
+
+`js/ac.js` toggles `aria-expanded` and `hidden` on click: PHP pages only write the markup (closed:
+`aria-expanded="false"` + `hidden`; open: `"true"` and no `hidden`).
+
 ## Density
 
 Cards and empty states do not change with the density. List rows follow `--ac-control-lg`
@@ -110,8 +136,10 @@ Cards and empty states do not change with the density. List rows follow `--ac-co
 ## Frameworks
 
 - **Angular**: `<ac-card [padding]="'sm'">` (`padding`: `md` | `sm` | `none`) in
-  `plugins/rebuilder/app/src/app/ui/containers/card-surface/`. Lists and empty states are written
-  with the classes.
+  `plugins/rebuilder/app/src/app/ui/containers/card-surface/`.
+  `<ac-collapsible title="Stats" [(open)]="statsOpen" [bare]="true">` in `containers/collapsible/`
+  (the host is the `ac-collapsible`; the body is rendered only when open). Lists and empty states
+  are written with the classes.
 - **React**:
 
 ```tsx

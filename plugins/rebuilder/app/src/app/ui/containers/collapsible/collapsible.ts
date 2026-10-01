@@ -1,13 +1,12 @@
 import { Component, input, model } from '@angular/core';
 import { AcIcon } from '../../icon';
 
-/** Section that folds (closed by default; the Stats sections open it). */
+/** Section that folds (closed by default; the Stats sections open it): `ac-collapsible`. */
 @Component({
   selector: 'ac-collapsible',
   imports: [AcIcon],
-  host: { '[class.bare]': 'bare()', '[class.open]': 'open()' },
+  host: { class: 'ac-collapsible', '[class.ac-collapsible--bare]': 'bare()' },
   templateUrl: './collapsible.html',
-  styleUrl: './collapsible.scss',
 })
 export class AcCollapsible {
   readonly title = input.required<string>();

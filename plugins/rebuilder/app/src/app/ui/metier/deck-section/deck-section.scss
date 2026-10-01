@@ -59,7 +59,7 @@
   padding: 0 7px;
   border-radius: var(--ac-radius-pill);
   background: var(--ac-color-track);
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -67,7 +67,7 @@
 }
 .distinct {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 700;
   color: var(--ac-color-text-muted);
   text-align: right;

@@ -1,11 +1,12 @@
 # Feedback and data
 
-`css/components/feedback.css`: notice, scrim, dialog, spinner, blocking loader, progress bar,
-table.
+`css/components/feedback.css`: notice, toast, scrim, dialog, spinner, blocking loader, progress
+bar, table.
 
 | Component | Use | Not for |
 |---|---|---|
 | Notice `ac-notice` | A message inside the page: result of a form, a warning about the current item, an explanation. | Messages that must interrupt the user (use a dialog). |
+| Toast `ac-toast` | A short confirmation of an action that just happened, optionally with "Undo". Disappears by itself. | Errors or anything the user must read (use a notice or a dialog). |
 | Dialog `ac-dialog` | A task or a confirmation that needs an answer before going on. | Long content or navigation (use a page). |
 | Scrim `ac-scrim` | The dimmed layer behind a dialog, drawer or loader. | — |
 | Spinner `ac-spinner` | A short wait inside a component (button, panel). | Waits the user should not interrupt (use the loader). |
@@ -42,6 +43,33 @@ last paragraph or list has no bottom margin.
 Roles: `role="status"` for a message that appears after an action; `role="alert"` only for an
 error that needs immediate attention; no role for a message present on page load.
 
+## Toast — `ac-toast`
+
+Dark pill-shaped bar (`--ac-color-inverse`) centred at the bottom of the screen, 14 px semibold
+text, an optional primary action. It sits at `--ac-z-toast`, above dialogs. One at a time.
+
+From a site script, `acToast()` builds it, removes it after 5 s and replaces the previous one:
+
+```js
+acToast('Deck deleted.', { actionLabel: 'Undo', onAction: restoreDeck });
+acToast('Link copied.', { duration: 3000 });
+```
+
+Markup, for reference or for a SPA:
+
+```php
+<div class="ac-toast" role="status" aria-live="polite">
+  <span class="ac-toast__message"><?= ac_icon('circle-check') ?> <?= h(t('deck.deleted')) ?></span>
+  <button type="button" class="ac-toast__action"><?= h(t('common.undo')) ?></button>
+</div>
+```
+
+| Class | Role |
+|---|---|
+| `ac-toast__message` | Text, with an optional icon before it. |
+| `ac-toast__action` | Primary button, `--ac-control-sm` tall. |
+| `--ac-toast-offset` | Set it (on the toast or an ancestor) to lift the toast above a fixed bottom bar, e.g. `var(--ac-bottom-nav-height)`. |
+
 ## Dialog — `ac-dialog`, `ac-scrim`
 
 Use the native `<dialog>`: `showModal()` gives the backdrop (drawn with `--ac-color-scrim`),
@@ -68,7 +96,7 @@ focus trapping and Escape.
 |---|---|
 | `ac-dialog` | Surface, 16 px radius, `--ac-shadow-dialog`, width up to 560 px, scrolls when taller than the viewport. |
 | `ac-dialog__header` | Title and close button on one row. |
-| `ac-dialog__title` | 18 px extra-bold. |
+| `ac-dialog__title` | `--ac-font-title` at `--ac-font-size-title-sm` (18 px extra-bold). |
 | `ac-dialog__body` | Content. |
 | `ac-dialog__footer` | Actions aligned right; the primary one last. |
 | `ac-scrim` | Fixed full-screen layer in `--ac-color-scrim`, `z-index: var(--ac-z-overlay)`. For panels that are not a native `<dialog>` (drawer, loader). |
@@ -178,6 +206,9 @@ dialog footer follow `--ac-control-*`).
 
 ## Frameworks
 
+- **Angular**: `<ac-toast actionLabel="Annuler" (action)="undo()">Deck supprimé.</ac-toast>`
+  (`plugins/rebuilder/app/src/app/ui/containers/toast/`): the host is the `ac-toast`; Re:Builder
+  sets `--ac-toast-offset` to its bottom navigation on phones.
 - **Angular**: Re:Builder opens dialogs and sheets with its overlay service
   (`plugins/rebuilder/app/src/app/ui/overlay/`, `<ac-overlay-container>`, `AcOverlayService`), which draws the
   panel (dialog on wide screens, bottom sheet on compact ones) with the same tokens. Notices, spinners and tables are written with the classes.

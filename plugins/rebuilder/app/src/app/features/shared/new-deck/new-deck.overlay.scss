@@ -28,7 +28,7 @@
   white-space: nowrap;
 }
 .hint {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
   text-align: right;
 }
@@ -54,7 +54,7 @@
 .label,
 .side ::ng-deep ac-input .ac-field__label,
 .side ::ng-deep ac-textarea .ac-field__label {
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   font-weight: 700;
 }
 .req,
@@ -114,7 +114,7 @@ legend {
   .label,
   .side ::ng-deep ac-input .ac-field__label,
   .side ::ng-deep ac-textarea .ac-field__label {
-    font-size: 14px;
+    font-size: var(--ac-font-size-body);
   }
   .new-deck-footer {
     background: var(--ac-color-bg-subtle);

@@ -5,12 +5,12 @@
 }
 .note {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 .error {
   margin: 0;
   white-space: pre-line;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   color: var(--ac-color-danger);
 }

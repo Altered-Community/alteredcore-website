@@ -92,7 +92,7 @@
 }
 .desc {
   margin: 2px 0 0;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   color: var(--ac-color-text-muted);
 }
 .head:has(.desc) {
@@ -102,14 +102,14 @@
 .title {
   margin: 0;
   font: var(--ac-font-title);
-  font-size: 18px;
+  font-size: var(--ac-font-size-title-sm);
   min-width: 0;
 }
 :host(.ac-overlay--sheet) .title {
-  font-size: 20px;
+  font-size: var(--ac-font-size-title);
 }
 .sub {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
   color: var(--ac-color-text-muted);
 }

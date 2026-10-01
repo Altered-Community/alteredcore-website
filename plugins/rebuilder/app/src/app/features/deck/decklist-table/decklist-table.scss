@@ -24,7 +24,7 @@ h2 {
   padding: 0 var(--ac-space-2);
   border-radius: var(--ac-radius-pill);
   background: var(--ac-color-track);
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -42,7 +42,7 @@ h2 {
 }
 .row.cols {
   height: 32px;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 700;
   color: var(--ac-color-text-muted);
   border-bottom-color: var(--ac-color-border);
@@ -52,7 +52,7 @@ h2 {
   flex-shrink: 0;
 }
 .qty {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 800;
 }
 .n {
@@ -61,7 +61,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: var(--ac-space-2);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 .n img {
   height: 14px;
@@ -104,7 +104,7 @@ button.name:focus-visible {
   border-radius: 50%;
   background: var(--ac-color-inverse);
   color: var(--ac-color-on-inverse);
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -115,7 +115,7 @@ button.name:focus-visible {
   height: 18px;
   border-radius: 50%;
   border: 1.5px solid var(--ac-color-text);
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@ button.name:focus-visible {
   justify-content: center;
 }
 .val {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
 }
 .sq {

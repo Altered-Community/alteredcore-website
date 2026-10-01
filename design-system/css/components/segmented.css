@@ -42,7 +42,7 @@
 .ac-segmented--lg > :is(button, a) {
   height: var(--ac-control-md);
   padding: 0 14px;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 .ac-segmented > .ac-segmented__icon-only {
   width: var(--ac-icon-button-segment);

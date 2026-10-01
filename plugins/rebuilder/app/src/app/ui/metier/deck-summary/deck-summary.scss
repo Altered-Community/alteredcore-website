@@ -45,7 +45,7 @@
   font-size: 19px;
 }
 .sub {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -95,10 +95,10 @@
   gap: var(--ac-space-1);
 }
 .total strong {
-  font-size: 18px;
+  font-size: var(--ac-font-size-title-sm);
   font-weight: 800;
 }
 .total span {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }

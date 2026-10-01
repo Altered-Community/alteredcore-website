@@ -83,7 +83,7 @@ Heading style (17 px, 800) with a 12 px bottom margin. Put it on the `<h2>` of e
 | Class | Token | Use |
 |---|---|---|
 | `ac-text-display` | `--ac-font-display` (28 px, 800) + tight letter spacing | Page titles outside `ac-page-header`. |
-| `ac-text-title` | `--ac-font-title` (20 px, 800) | Dialog or sheet title. |
+| `ac-text-title` | `--ac-font-title` (20 px, 800) | Large title: standalone card, offline page. |
 | `ac-text-heading` | `--ac-font-heading` (17 px, 800) | Section heading. |
 | `ac-text-strong` | `--ac-font-body-strong` (15 px, 700) | Item titles. |
 | `ac-text-body` | `--ac-font-body` (14 px, 600) | UI text: controls, lists, cards. |

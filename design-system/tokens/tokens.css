@@ -114,16 +114,27 @@
 
   /* ---------- Typography ---------- */
   --ac-font-family: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ac-font-display: 800 28px/1.2 var(--ac-font-family);   /* page title, letter-spacing display */
-  --ac-font-title: 800 20px/1.25 var(--ac-font-family);    /* sheet / dialog title */
-  --ac-font-heading: 800 17px/1.3 var(--ac-font-family);
-  --ac-font-body-strong: 700 15px/1.35 var(--ac-font-family);
-  --ac-font-body: 600 14px/1.4 var(--ac-font-family);      /* UI text: controls, lists, cards */
-  --ac-font-prose: 400 16px/1.6 var(--ac-font-family);     /* long text: news, rules, pages */
-  --ac-font-small: 600 13px/1.4 var(--ac-font-family);
-  --ac-font-caption: 700 12px/1.3 var(--ac-font-family);
-  --ac-font-micro: 700 11px/1.2 var(--ac-font-family);     /* axes, counters */
-  --ac-font-overline: 700 12px/1.3 var(--ac-font-family);  /* + uppercase + letter-spacing overline */
+  /* Sizes alone, for a font-size next to a weight or line-height of the component's own. */
+  --ac-font-size-display: 28px;
+  --ac-font-size-title: 20px;
+  --ac-font-size-title-sm: 18px;   /* dialog, sheet and app-bar titles, key figures */
+  --ac-font-size-heading: 17px;
+  --ac-font-size-prose: 16px;
+  --ac-font-size-body-strong: 15px;
+  --ac-font-size-body: 14px;
+  --ac-font-size-small: 13px;
+  --ac-font-size-caption: 12px;
+  --ac-font-size-micro: 11px;
+  --ac-font-display: 800 var(--ac-font-size-display)/1.2 var(--ac-font-family);   /* page title, letter-spacing display */
+  --ac-font-title: 800 var(--ac-font-size-title)/1.25 var(--ac-font-family);      /* large title: section, standalone card */
+  --ac-font-heading: 800 var(--ac-font-size-heading)/1.3 var(--ac-font-family);
+  --ac-font-body-strong: 700 var(--ac-font-size-body-strong)/1.35 var(--ac-font-family);
+  --ac-font-body: 600 var(--ac-font-size-body)/1.4 var(--ac-font-family);         /* UI text: controls, lists, cards */
+  --ac-font-prose: 400 var(--ac-font-size-prose)/1.6 var(--ac-font-family);       /* long text: news, rules, pages */
+  --ac-font-small: 600 var(--ac-font-size-small)/1.4 var(--ac-font-family);
+  --ac-font-caption: 700 var(--ac-font-size-caption)/1.3 var(--ac-font-family);
+  --ac-font-micro: 700 var(--ac-font-size-micro)/1.2 var(--ac-font-family);       /* axes, counters */
+  --ac-font-overline: 700 var(--ac-font-size-caption)/1.3 var(--ac-font-family);  /* + uppercase + letter-spacing overline */
   --ac-letter-spacing-display: -0.02em;
   --ac-letter-spacing-overline: 0.06em;
 

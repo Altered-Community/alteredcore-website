@@ -16,7 +16,7 @@ number matters for layout.
 1. **No raw value outside `tokens/`.** A colour, radius, shadow, font size, spacing or control
    height in a component or plugin comes from a token. Layout-only values (a grid template, a
    `max-width` in `ch`, a percentage) are fine. `php tests/run.php` fails on hex colours in
-   `css/` and in plugins.
+   `css/` and in plugins, and on raw font sizes in the design system and Re:Builder.
 2. **Every colour has a light and a dark value.** The light value is in `:root`, the dark value
    in `:root[data-theme='dark']`. A token that does not change between themes (faction and terrain colours) is declared
    once, and that is a decision, not an omission.
@@ -55,6 +55,7 @@ Both modes are attributes set on `<html>` by the shell.
 | `--ac-color-divider` | Lines between rows, `<hr>`. |
 | `--ac-color-chart-axis` | Chart axes and grid lines. |
 | `--ac-color-track` | Neutral fills: segmented track, neutral badge, progress track, image placeholder. |
+| `--ac-color-scrollbar`, `--ac-color-scrollbar-hover` | Scrollbar thumb, at rest and hovered (muted text colour, partly transparent). |
 | `--ac-color-bg-app` | Page background. |
 | `--ac-color-bg-subtle` | Hovered row, table header, subtle input, disabled field. |
 | `--ac-color-surface` | Cards, panels, menus, dialogs, inputs. |
@@ -102,6 +103,7 @@ Both modes are attributes set on `<html>` by the shell.
 |---|---|
 | `--ac-color-hero-from`, `--ac-color-hero-to` | Gradient of the home hero banner. |
 | `--ac-color-on-hero`, `--ac-color-on-hero-muted` | Text on the hero (gradient or the admin's banner image). |
+| `--ac-color-hero-scrim` | Veil over the banner image, under the hero text. |
 | `--ac-shadow-on-image` | Text shadow for text over artwork. |
 | `--ac-color-scrim` | Backdrop behind dialogs, drawers, the loader. |
 | `--ac-select-chevron` | Chevron image of `.ac-select` (an SVG data URL in the muted colour, one per theme). |
@@ -115,7 +117,7 @@ Font: `--ac-font-family` (Figtree, self-hosted in `fonts/`, then system fonts). 
 | Token | Weight / size / line height | Use |
 |---|---|---|
 | `--ac-font-display` | 800 / 28 px / 1.2 | Page title (with `--ac-letter-spacing-display`, −0.02em). |
-| `--ac-font-title` | 800 / 20 px / 1.25 | Dialog, sheet title. |
+| `--ac-font-title` | 800 / 20 px / 1.25 | Large title: standalone card, offline page. Dialogs, sheets and the app bar use it at `--ac-font-size-title-sm` (18 px). |
 | `--ac-font-heading` | 800 / 17 px / 1.3 | Section heading. |
 | `--ac-font-body-strong` | 700 / 15 px / 1.35 | Item titles. |
 | `--ac-font-body` | 600 / 14 px / 1.4 | UI text: controls, lists, cards. |
@@ -126,6 +128,12 @@ Font: `--ac-font-family` (Figtree, self-hosted in `fonts/`, then system fonts). 
 | `--ac-font-overline` | 700 / 12 px / 1.3 | Group labels, table headers (with uppercase and `--ac-letter-spacing-overline`, 0.06em). |
 
 Text classes that apply them: [components/layout.md](components/layout.md#text-styles-basecss).
+
+Sizes alone: `--ac-font-size-display` (28), `-title` (20), `-title-sm` (18: dialog, sheet and app-bar titles, key figures), `-heading` (17), `-prose` (16),
+`-body-strong` (15), `-body` (14), `-small` (13), `-caption` (12), `-micro` (11). The shorthands above
+are built from them. Use a size token when a component keeps its own weight or line height
+(`font-size: var(--ac-font-size-small)`); prefer the shorthand otherwise. A size off this scale
+needs a reason (artwork, a reproduced printed card) and stays local to its plugin.
 
 ## Spacing
 
@@ -195,6 +203,7 @@ on touch screens.
 | `--ac-header-height` | Height of the sticky site header, measured at runtime by `js/altered-core-host.js`. |
 | `--ac-page-top`, `--ac-sticky-top` | Top of the page content and of sticky panels (under the site header). |
 | `--ac-page-max-width`, `--ac-page-max-width-wide` | Content column (1200 px), wide tools (1600 px). |
+| `--ac-site-max-width` | Header, footer and tool pages: they follow the screen width up to 2400 px. |
 | `--ac-app-bar-height`, `--ac-bottom-nav-height` | Re:Builder app bar and bottom navigation (add `env(safe-area-inset-bottom)` to the latter). |
 | `--ac-filter-panel-width`, `--ac-deck-panel-width`, `--ac-drawer-width` | Side panels of the builder screens. |
 

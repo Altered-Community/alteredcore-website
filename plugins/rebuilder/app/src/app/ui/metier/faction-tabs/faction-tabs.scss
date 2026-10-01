@@ -16,7 +16,7 @@ button {
   border: 1px solid var(--ac-color-border-control);
   background: var(--ac-color-surface);
   color: var(--ac-color-text);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -47,7 +47,7 @@ button[aria-selected='true'] .dot {
 :host(.touch) button {
   flex: 0 0 auto;
   border-radius: var(--ac-radius-pill);
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   height: var(--ac-control-md);
 }
 
@@ -61,7 +61,7 @@ button[aria-selected='true'] .dot {
   height: calc(var(--ac-control-sm) + var(--ac-space-1));
   padding: 0 var(--ac-space-3);
   border-radius: var(--ac-radius-pill);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   gap: var(--ac-space-1-5);
 }
 :host(.sm.touch) button {

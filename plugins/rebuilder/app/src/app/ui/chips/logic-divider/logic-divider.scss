@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: var(--ac-space-2);
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 800;
   color: var(--ac-color-text-muted);
   text-transform: uppercase;

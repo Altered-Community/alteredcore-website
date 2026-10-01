@@ -64,7 +64,7 @@ ac-app-bar.static {
   border-radius: var(--ac-radius-control);
   background: var(--ac-color-warning-soft);
   color: var(--ac-color-warning);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 600;
 }
 

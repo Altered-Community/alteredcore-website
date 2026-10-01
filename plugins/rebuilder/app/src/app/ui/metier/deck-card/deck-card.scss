@@ -125,7 +125,7 @@ a:hover {
   align-items: center;
   gap: var(--ac-space-1-5);
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   color: var(--ac-color-text-muted);
 }
 .faction {
@@ -146,7 +146,7 @@ a:hover {
   gap: var(--ac-space-1);
   min-width: 0;
   margin-top: var(--ac-space-2);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -174,7 +174,7 @@ a:hover {
   margin-top: var(--ac-space-2);
 }
 .total {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 700;
 }
 /* row layout (compact list) */
@@ -193,10 +193,10 @@ a:hover {
   gap: var(--ac-space-1);
 }
 :host(.ac-deck-card--row) .name {
-  font-size: 17px;
+  font-size: var(--ac-font-size-heading);
 }
 :host(.ac-deck-card--row) .hero {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 :host(.ac-deck-card--row) .faction {
   width: 18px;
@@ -207,11 +207,11 @@ a:hover {
 }
 :host(.ac-deck-card--row) .updated time {
   padding-top: var(--ac-space-1-5);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 :host(.ac-deck-card--row) .author {
   margin-top: var(--ac-space-1);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 .vis-inline {
   color: var(--ac-color-text-muted);
@@ -230,5 +230,5 @@ a:hover {
   margin-top: var(--ac-space-1);
 }
 :host(.ac-deck-card--row) .total {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }

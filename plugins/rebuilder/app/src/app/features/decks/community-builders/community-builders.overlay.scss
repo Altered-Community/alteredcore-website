@@ -32,7 +32,7 @@ h3 {
 p {
   flex-grow: 1;
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 a {

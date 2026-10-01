@@ -5,7 +5,7 @@
 }
 .overline {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
   letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
@@ -42,7 +42,7 @@
 }
 h3 {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 700;
   letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
@@ -52,7 +52,7 @@ p {
   margin: 0;
 }
 .sub {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 .body {
@@ -66,7 +66,7 @@ p {
   font-variant-numeric: tabular-nums;
 }
 .note {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 .highlights {
@@ -85,7 +85,7 @@ p {
   background: var(--ac-color-primary-tint);
 }
 .tile-label {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .tile-value {
   font-size: 24px;
@@ -96,7 +96,7 @@ p {
   color: var(--ac-color-primary);
 }
 .tile-note {
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   color: var(--ac-color-text-2);
 }
 .detail {
@@ -110,6 +110,6 @@ p {
   }
 }
 .detail-label {
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   color: var(--ac-color-text-muted);
 }

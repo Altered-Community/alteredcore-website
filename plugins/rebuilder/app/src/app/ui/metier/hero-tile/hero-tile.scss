@@ -48,7 +48,7 @@ button[aria-pressed='true'] .visual {
   justify-content: center;
 }
 .name {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
   line-height: 1.25;
   color: var(--ac-color-text);
@@ -60,7 +60,7 @@ button[aria-pressed='true'] .visual {
   overflow-wrap: anywhere;
 }
 :host(.sm) .name {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 button[aria-pressed='true'] .name {
   font-weight: 800;

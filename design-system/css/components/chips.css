@@ -116,5 +116,5 @@
   flex-shrink: 0;
   overflow: hidden;
 }
-.ac-avatar--lg { width: 32px; height: 32px; font-size: 13px; }
+.ac-avatar--lg { width: 32px; height: 32px; font-size: var(--ac-font-size-small); }
 .ac-avatar img { width: 100%; height: 100%; object-fit: cover; }

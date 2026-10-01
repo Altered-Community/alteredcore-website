@@ -5,11 +5,11 @@
 }
 .note {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 h3 {
   margin: 0 0 var(--ac-space-2);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
 }

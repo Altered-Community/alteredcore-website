@@ -97,6 +97,41 @@ foreach ($cssFiles as $f) {
 }
 assertSame([], $found, 'no hex / rgb() / hsl() colour in page, theme, plugin or component CSS (use --ac-* tokens)');
 
+// ---- Font sizes come from the tokens (--ac-font-size-*, --ac-font-*) ----
+// Checked in the design system and in Re:Builder. A size off the scale stays local to the screen
+// that needs it and is listed here; anything else uses a token.
+$fontSize = '/(?:font-size\s*:|\bfont\s*:[^;]*?)\s*[0-9.]+(?:px|rem)\b/';
+$offScale = [
+    'plugins/rebuilder/app/src/app/features/deck/deck-page/deck.page.scss' => ['24px'],
+    'plugins/rebuilder/app/src/app/features/deck/hand-stats/hand-stats.scss' => ['32px', '24px'],
+    'plugins/rebuilder/app/src/app/features/deck/test-hand/test-hand.scss' => ['22px'],
+    'plugins/rebuilder/app/src/app/features/decks/decks-page/decks.page.scss' => ['30px'],
+    'plugins/rebuilder/app/src/app/features/shared/alt-art-slots/alt-art-slots.scss' => ['10px'],
+    'plugins/rebuilder/app/src/app/ui/metier/cost-chart/cost-chart.scss' => ['10px', '10px'],
+    'plugins/rebuilder/app/src/app/ui/metier/deck-summary/deck-summary.scss' => ['19px'],
+];
+$sizeFiles = array_merge(glob($ds . '/css/*.css') ?: [], glob($ds . '/css/components/*.css') ?: [], glob($ds . '/css/bridges/*.css') ?: []);
+$rebuilderSrc = $root . '/plugins/rebuilder/app/src';
+if (is_dir($rebuilderSrc)) {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($rebuilderSrc, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if (preg_match('/\.(css|scss)$/', $file->getFilename())) $sizeFiles[] = str_replace('\\', '/', $file->getPathname());
+    }
+}
+$found = [];
+foreach ($sizeFiles as $f) {
+    $rel = substr($f, strlen($root) + 1);
+    $allowed = $offScale[$rel] ?? [];
+    foreach (file($f) ?: [] as $n => $line) {
+        $code = preg_replace('#/\*.*?\*/#', '', $line);
+        if (!preg_match($fontSize, $code, $m)) continue;
+        preg_match('/[0-9.]+(?:px|rem)/', $m[0], $v);
+        $i = array_search($v[0], $allowed, true);
+        if ($i !== false) { unset($allowed[$i]); continue; }
+        $found[] = $rel . ':' . ($n + 1) . ' ' . $v[0];
+    }
+}
+assertSame([], $found, 'no raw font size in the design system or Re:Builder CSS (use --ac-font-size-* or --ac-font-*)');
+
 // ---- Components are documented ----
 foreach (dsComponentFiles() as $rel) {
     $doc = $ds . '/docs/components/' . basename($rel, '.css') . '.md';

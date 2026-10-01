@@ -45,7 +45,7 @@ button.visual:focus-visible {
   border-radius: var(--ac-radius-pill);
   background: var(--ac-color-overlay-control);
   color: var(--ac-color-on-strong);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -59,7 +59,7 @@ button.visual:focus-visible {
     bottom: 6px;
     min-width: 28px;
     height: 24px;
-    font-size: 12px;
+    font-size: var(--ac-font-size-caption);
   }
 }
 /* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */

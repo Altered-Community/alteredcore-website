@@ -30,7 +30,7 @@
 .ac-button--sm {
   height: var(--ac-control-sm);
   padding: 0 var(--ac-space-3);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .ac-button--lg { height: var(--ac-control-lg); }
 .ac-button--full { width: 100%; }

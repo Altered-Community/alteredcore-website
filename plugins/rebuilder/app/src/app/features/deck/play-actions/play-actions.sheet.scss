@@ -10,7 +10,7 @@ button {
   gap: var(--ac-space-3);
   border: none;
   background: none;
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   font-weight: 600;
   cursor: pointer;
   text-align: left;

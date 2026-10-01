@@ -11,12 +11,12 @@
 }
 .muted {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 .error {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-danger);
 }
 .link {

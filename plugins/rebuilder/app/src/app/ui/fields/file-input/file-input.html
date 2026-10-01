@@ -1,8 +1,8 @@
 @if (label()) {
-  <label [for]="id" class="label">{{ label() }}</label>
+  <label [for]="id" class="ac-field__label">{{ label() }}</label>
 }
-<span class="control" [class.disabled]="disabled()">
+<span class="ac-file-input__control">
   <ac-icon name="upload" [size]="18" />
-  <span class="name" [class.empty]="!file()">{{ file()?.name || placeholder }}</span>
+  <span class="ac-file-input__name" [class.ac-file-input__name--empty]="!file()">{{ file()?.name || placeholder }}</span>
   <input #field [id]="id" type="file" [accept]="accept()" [disabled]="disabled()" (change)="pick(field)" />
 </span>

@@ -106,6 +106,54 @@ input so the whole line is clickable; it is at least `--ac-hit-min` tall.
 </fieldset>
 ```
 
+## Radio card — `ac-radio-card`
+
+A rich radio choice: title, description and an optional `ac-tag`, in a bordered card that turns
+primary when its input is checked. Group several in a `role="radiogroup"` with a name.
+
+```php
+<div class="ac-grid" role="radiogroup" aria-label="<?= h(t('deck.format')) ?>" style="--ac-grid-min: 220px">
+  <?php foreach ($formats as $f): ?>
+  <label class="ac-radio-card">
+    <input type="radio" name="format" value="<?= h($f['key']) ?>" <?= $f['key'] === $format ? 'checked' : '' ?>>
+    <span class="ac-radio-card__body">
+      <span class="ac-radio-card__head">
+        <span class="ac-radio-card__title"><?= h($f['label']) ?></span>
+        <?php if ($f['tag']): ?><span class="ac-tag ac-tag--green"><?= h($f['tag']) ?></span><?php endif; ?>
+      </span>
+      <span class="ac-radio-card__desc"><?= h($f['description']) ?></span>
+    </span>
+  </label>
+  <?php endforeach; ?>
+</div>
+```
+
+| Class | Effect |
+|---|---|
+| `ac-radio-card` | Tag beside the title. Checked (`:has(input:checked)`): 2 px primary border, `--ac-color-primary-tint` background. Focus ring around the card when the input has keyboard focus. |
+| `ac-radio-card--stacked` | Roomier, input at the top; put the tag after the description. |
+| `ac-radio-card--compact` | Tighter, one-line description with an ellipsis (give it a `title`); put the tag after `__body`, it is centred on the right. |
+
+## File input — `ac-file-input`
+
+A real `<input type="file">`, transparent and stretched over a dashed control that shows the chosen
+file name: a click anywhere opens the file dialog, and keyboard and screen readers get the native
+control.
+
+```php
+<div class="ac-file-input">
+  <label class="ac-field__label" for="coll-zip"><?= h(t('collection.import_file')) ?></label>
+  <span class="ac-file-input__control">
+    <?= ac_icon('upload', 'ac-icon--18') ?>
+    <span class="ac-file-input__name ac-file-input__name--empty"><?= h(t('common.choose_file')) ?></span>
+    <input type="file" id="coll-zip" name="collection_zip" accept=".zip,application/zip">
+  </span>
+</div>
+```
+
+`js/ac.js` writes the file name into `ac-file-input__name` (and removes `--empty`) when a file is
+chosen. Disabled: `disabled` on the input. Focus: 2 px primary border.
+
 ## Switch — `ac-switch`
 
 A checkbox drawn as a 36 × 20 px switch: off in the control border colour, on in primary.
@@ -148,6 +196,9 @@ Use it for a setting that applies immediately (the page saves it on `change`).
   `required`, `invalid`, `clearable`, `appearance: 'default' | 'subtle'`, two-way `value`) and
   `<ac-select>` (`options`, `label`, `ariaLabel`, `inlineLabel`, two-way `value`), in
   `plugins/rebuilder/app/src/app/ui/fields/`. Both work with forms through a value accessor.
+  `<ac-radio-card>` (`name`, `title`, `description`, `tag: { label, tone }`, `checked`,
+  `layout: 'row' | 'stacked' | 'compact'`, `choose` output) and `<ac-file-input>` (`label`,
+  `accept`, `disabled`, two-way `file`) render the classes above.
 
 ```html
 <ac-input label="Nom du deck" [(value)]="name" [required]="true" />

@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-1-5);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   color: var(--ac-color-text-2);
 }
 
@@ -31,7 +31,7 @@
 
 .notice {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
   display: flex;
   flex-wrap: wrap;
@@ -46,14 +46,14 @@
 .row-error {
   margin: 0;
   color: var(--ac-color-danger);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 
 .progress {
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-1-5);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 
 .progress-line {
@@ -65,7 +65,7 @@
 
 .muted {
   color: var(--ac-color-text-muted);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 
 .row-retry {
@@ -91,7 +91,7 @@
   align-items: center;
   gap: var(--ac-space-1) var(--ac-space-2);
   padding: var(--ac-space-2) var(--ac-space-3);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 
 .rows li + li {

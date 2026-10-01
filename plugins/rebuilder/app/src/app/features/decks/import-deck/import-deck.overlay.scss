@@ -4,7 +4,7 @@
   gap: var(--ac-space-3);
 }
 .label {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 700;
 }
 textarea {
@@ -13,11 +13,11 @@ textarea {
   border-radius: var(--ac-radius-control);
   padding: var(--ac-space-3);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   resize: vertical;
 }
 .error {
   margin: 0;
   color: var(--ac-color-danger);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }

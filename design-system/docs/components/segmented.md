@@ -83,7 +83,7 @@ The `--lg` variant uses `--ac-control-md` in both densities (40 / 44 px).
 
 - **Angular**: `<ac-segmented>` (`plugins/rebuilder/app/src/app/ui/fields/segmented/`), inputs
   `options` (`{ value, label?, icon?, ariaLabel? }[]`), `ariaLabel`, `fullWidth`, `size`
-  (`sm` | `md` | `lg`), two-way `value`. Options with an icon and no label render icon-only.
+  (`md` | `lg`), two-way `value`. Options with an icon and no label render icon-only.
 
 ```html
 <ac-segmented ariaLabel="Affichage" [options]="views" [(value)]="view" />

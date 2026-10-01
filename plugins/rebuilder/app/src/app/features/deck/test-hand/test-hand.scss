@@ -10,7 +10,7 @@
   gap: var(--ac-space-2);
 }
 .left {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 .summary {
@@ -18,7 +18,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ac-space-2) var(--ac-space-4);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 .summary strong {
@@ -45,7 +45,7 @@
 }
 .hint {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 600;
   color: var(--ac-color-primary-strong);
 }
@@ -66,7 +66,7 @@
   background: var(--ac-color-primary-tint);
 }
 .zone-label {
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
   letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
@@ -100,7 +100,7 @@
   border-radius: var(--ac-radius-pill);
   background: var(--ac-color-chart-main);
   color: var(--ac-color-on-primary);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -153,13 +153,13 @@
   gap: var(--ac-space-1);
   background: var(--ac-color-inverse);
   color: var(--ac-color-on-inverse);
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
 }
 .pile-face.back strong {
   font-size: 22px;
 }
 .pile-count {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .card {
   position: relative;

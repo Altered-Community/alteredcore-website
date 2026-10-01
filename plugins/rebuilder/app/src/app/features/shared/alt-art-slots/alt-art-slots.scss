@@ -63,6 +63,6 @@ li {
 }
 .error {
   margin: var(--ac-space-2) 0 0;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   color: var(--ac-color-danger);
 }

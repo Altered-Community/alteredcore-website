@@ -12,6 +12,11 @@
  *                                       sticky panels and full-height layouts.
  *   select.ac-select, select.form-select drawn as a listbox (docs/components/listbox.md), also
  *                                       when added later; acListbox(el) does it on demand.
+ *   .ac-collapsible__head               toggles aria-expanded and `hidden` on its body.
+ *   .ac-file-input input[type=file]     shows the chosen file name in .ac-file-input__name.
+ *   acToast(message, options?)          short notice at the bottom of the screen; options:
+ *                                       actionLabel + onAction (an "Undo" button), duration (ms,
+ *                                       default 5000). Returns { hide }.
  *
  * Icons come from design-system/icons/sprite.svg (Lucide + brands, same names as ac_icon()).
  * PHP pages call ac_icon() instead: inline SVG, no request. SPA plugins use their framework's
@@ -60,6 +65,66 @@
         var btn = e.target.closest && e.target.closest('[data-theme-toggle]');
         if (btn) window.acSetTheme(!isDark());
     });
+
+    // ---- Collapsible and file input (docs/components/card.md, field.md) ----
+    document.addEventListener('click', function (e) {
+        var head = e.target.closest && e.target.closest('.ac-collapsible__head');
+        if (!head) return;
+        var open = head.getAttribute('aria-expanded') !== 'true';
+        head.setAttribute('aria-expanded', open ? 'true' : 'false');
+        var body = document.getElementById(head.getAttribute('aria-controls') || '');
+        if (body) body.hidden = !open;
+    });
+
+    document.addEventListener('change', function (e) {
+        var input = e.target;
+        if (!input.matches || !input.matches('.ac-file-input input[type="file"]')) return;
+        var name = input.closest('.ac-file-input__control');
+        name = name && name.querySelector('.ac-file-input__name');
+        if (!name) return;
+        if (!name.hasAttribute('data-placeholder')) name.setAttribute('data-placeholder', name.textContent);
+        var file = input.files && input.files[0];
+        name.textContent = file ? file.name : name.getAttribute('data-placeholder');
+        name.classList.toggle('ac-file-input__name--empty', !file);
+    });
+
+    // ---- Toast (docs/components/feedback.md) ----
+    var currentToast = null;
+    window.acToast = function (message, options) {
+        options = options || {};
+        if (currentToast) currentToast.hide();
+        var el = document.createElement('div');
+        el.className = 'ac-toast';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        var text = document.createElement('span');
+        text.className = 'ac-toast__message';
+        text.textContent = message;
+        el.appendChild(text);
+        var timer = null;
+        var handle = {
+            hide: function () {
+                clearTimeout(timer);
+                if (el.parentNode) el.parentNode.removeChild(el);
+                if (currentToast === handle) currentToast = null;
+            }
+        };
+        if (options.actionLabel) {
+            var action = document.createElement('button');
+            action.type = 'button';
+            action.className = 'ac-toast__action';
+            action.textContent = options.actionLabel;
+            action.addEventListener('click', function () {
+                handle.hide();
+                if (typeof options.onAction === 'function') options.onAction();
+            });
+            el.appendChild(action);
+        }
+        document.body.appendChild(el);
+        timer = setTimeout(handle.hide, options.duration || 5000);
+        currentToast = handle;
+        return handle;
+    };
 
     function measureHeader() {
         var header = document.querySelector('.site-header');

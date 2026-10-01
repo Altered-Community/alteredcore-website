@@ -27,6 +27,6 @@ export class AcSegmented<T = string> {
   readonly value = model<T>();
   readonly ariaLabel = input('');
   readonly fullWidth = input(false);
-  readonly size = input<'sm' | 'md' | 'lg'>('md');
+  readonly size = input<'md' | 'lg'>('md');
   protected readonly iconOnly = computed(() => this.options().every((o) => o.icon && !o.label));
 }

@@ -28,7 +28,7 @@
 }
 
 .state-hint {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 
@@ -67,7 +67,7 @@
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   line-height: 1.6;
   color: var(--ac-color-text-2);
 }
@@ -121,7 +121,7 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
 
@@ -164,7 +164,7 @@
   display: flex;
   align-items: center;
   gap: var(--ac-space-3);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
   flex-wrap: wrap;
 }
@@ -198,7 +198,7 @@
   border-radius: var(--ac-radius-control);
   background: var(--ac-color-inverse);
   color: var(--ac-color-on-inverse);
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 600;
   box-shadow: var(--ac-shadow-e2);
 }
@@ -217,7 +217,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--ac-space-1);
-    font-size: 14px;
+    font-size: var(--ac-font-size-body);
     font-weight: 700;
     color: var(--ac-color-text-2);
     margin-bottom: calc(-1 * var(--ac-space-2));
@@ -281,7 +281,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--ac-space-1);
-    font-size: 14px;
+    font-size: var(--ac-font-size-body);
     color: var(--ac-color-text-muted);
   }
 

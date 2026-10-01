@@ -18,7 +18,7 @@ li {
   grid-template-columns: var(--label) minmax(0, 1fr) 48px;
   align-items: center;
   gap: var(--ac-space-2-5);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   --bar: var(--ac-color-chart-main);
 }
 li.warn {

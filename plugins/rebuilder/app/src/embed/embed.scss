@@ -122,7 +122,7 @@
 }
 
 .ac-overlay-footer .note {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
   margin-right: auto;
 }

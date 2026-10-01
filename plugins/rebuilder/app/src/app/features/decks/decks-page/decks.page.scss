@@ -52,7 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
 }
 
 .count-row ac-select ::ng-deep select {
@@ -70,13 +70,13 @@
 .contest-intro {
   margin: 0;
   flex: 1 1 280px;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 
 .notice {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
   display: flex;
   align-items: center;
@@ -93,7 +93,7 @@
   border-left: 3px solid var(--ac-color-primary);
   border-radius: var(--ac-radius-md);
   background: var(--ac-color-bg-subtle);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 .builders-banner p {
@@ -119,7 +119,7 @@
   border-radius: var(--ac-radius-card);
   background: var(--ac-color-primary-tint);
   color: var(--ac-color-primary-strong);
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .local-decks p {
   margin: 0;
@@ -158,7 +158,7 @@
   border-radius: var(--ac-radius-card);
   background: transparent;
   color: var(--ac-color-primary);
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   font-weight: 700;
   display: flex;
   flex-direction: column;
@@ -274,7 +274,7 @@
   }
 
   .row ac-select ::ng-deep select {
-    font-size: 14px;
+    font-size: var(--ac-font-size-body);
   }
 
   .grow {

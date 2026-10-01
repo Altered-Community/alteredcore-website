@@ -6,7 +6,7 @@
 }
 h3 {
   margin: 0 0 var(--ac-space-1);
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
   letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
@@ -15,7 +15,7 @@ h3 {
 p,
 ul {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 ul {
   padding-left: var(--ac-space-5);
@@ -53,7 +53,7 @@ ul.checks {
 .detail {
   flex-shrink: 0;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   color: var(--ac-color-text-muted);
   font-variant-numeric: tabular-nums;
 }

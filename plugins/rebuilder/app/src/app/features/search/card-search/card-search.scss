@@ -61,7 +61,7 @@
   align-items: center;
   justify-content: space-between;
   height: 24px;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-2);
 }
 
@@ -104,7 +104,7 @@
 }
 
 .total {
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   font-weight: 800;
   white-space: nowrap;
   flex-shrink: 0;
@@ -164,7 +164,7 @@
   }
 
   .toolbar .total {
-    font-size: 16px;
+    font-size: var(--ac-font-size-prose);
     margin-right: 6px;
   }
 
