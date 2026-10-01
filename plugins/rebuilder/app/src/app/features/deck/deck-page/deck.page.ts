@@ -7,6 +7,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { PageTitle } from '../../../core/page-title';
 import { factionSrc } from '../../../core/assets';
 import { DeckStore } from '../../../core/deck-store';
+import { deckImageUrl } from '../../../core/deck-image';
 import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
@@ -23,7 +24,9 @@ import { ArOverlayService } from '../../../ui/overlay';
 import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
 import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
-import { DeckActionsSheet } from '../deck-actions-sheet/deck-actions-sheet';
+import { DeckActionsSheet, type DeckActionsData, type DeckActionsResult } from '../deck-actions-sheet/deck-actions-sheet';
+import { deckImageBusyMessage } from '../deck-image-actions';
+import { DeckImageExport } from '../deck-image-export/deck-image-export';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
@@ -60,6 +63,7 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     DeckPreview,
     DeckListView,
     DecklistTable,
+    DeckImageExport,
     TestHand,
     HandStats,
     HandCalculators,
@@ -101,8 +105,8 @@ export class DeckPage {
   };
   protected readonly moreLabel = computed(() =>
     this.deck.owned()
-      ? $localize`:@@deck.page.moreOwned:Plus d’actions (copier la liste, dupliquer, supprimer)`
-      : $localize`:@@deck.page.more:Plus d’actions (copier la liste, dupliquer)`,
+      ? $localize`:@@deck.page.moreOwned:Plus d’actions (copier en image, copier la liste, dupliquer, supprimer)`
+      : $localize`:@@deck.page.more:Plus d’actions (copier en image, copier la liste, dupliquer)`,
   );
   protected readonly info = computed(() => formatInfo(this.deck.format()));
   protected readonly legality = this.deck.legality;
@@ -135,6 +139,9 @@ export class DeckPage {
       onCleanup(() => clearTimeout(timer));
     });
   }
+
+  /** The deck's image (« Copier en image »): a deck of the decks API, not a guest deck kept on this device. */
+  protected readonly imageUrl = computed(() => (GuestDeckService.isGuestId(this.id()) ? null : deckImageUrl(this.id())));
 
   protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
@@ -203,16 +210,27 @@ export class DeckPage {
   }
 
   protected more(): void {
+    const data: DeckActionsData = { canDelete: this.deck.owned() === true, imageUrl: this.imageUrl(), name: this.deck.name() };
     this.overlay
-      .open<DeckActionsSheet, 'copy' | 'duplicate' | 'delete'>(DeckActionsSheet, { title: 'Actions', width: 400, data: { canDelete: this.deck.owned() === true } })
+      .open<DeckActionsSheet, DeckActionsResult>(DeckActionsSheet, { title: 'Actions', width: 400, data })
       .afterClosed.subscribe((a) => {
         if (a === 'copy') void this.copyList();
         if (a === 'duplicate') this.duplicate();
         if (a === 'delete') this.remove();
+        if (typeof a === 'object') void this.imageDone(a.image);
       });
   }
 
-  private flash(message: string): void {
+  /** An image action of the sheet: « Génération… » until the image is there. */
+  private async imageDone(image: Promise<string | null>): Promise<void> {
+    clearTimeout(this.toastTimer);
+    this.toast.set(deckImageBusyMessage());
+    const message = await image;
+    if (message) this.flash(message);
+    else this.toast.set(null);
+  }
+
+  protected flash(message: string): void {
     this.toast.set(message);
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.toast.set(null), 3200);

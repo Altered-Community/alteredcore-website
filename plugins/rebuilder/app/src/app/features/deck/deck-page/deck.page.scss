@@ -293,6 +293,10 @@
     color: var(--ar-color-text);
   }
 
+  .image-export {
+    margin-top: calc(-1 * var(--ar-space-2));
+  }
+
   .actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
