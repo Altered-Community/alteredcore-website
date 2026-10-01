@@ -2,7 +2,8 @@
 // Decklist image of a deck's link preview (og:image, 1200×630 JPEG), served by api/deck-image.php.
 //
 // Top, a banner on the faction's colour: the hero, the deck's name, hero · format · author, the copies per card
-// type, the cost curve (hand and reserve costs) and the characters' total power per biome (as Re:Builder). Below, on white,
+// type, the cost curve (hand and reserve costs), the characters' total power per biome (as Re:Builder) and a QR
+// code of the deck's page. Below, on white,
 // one section per card type: copies of one card stacked (whatever their rarity), each Unique alone. The cards
 // shrink until every section fits.
 //
@@ -14,6 +15,7 @@
 // illustration. Without that data, it shows its common version with a « Unique » pill.
 require_once __DIR__ . '/deck-preview.php';
 require_once __DIR__ . '/deck-unique-card.php';
+require_once __DIR__ . '/qr-code.php';
 
 const DECK_IMAGE_WIDTH   = 1200;         // layout units; the image is DECK_IMAGE_SCALE times larger
 const DECK_IMAGE_HEIGHT  = 630;
@@ -21,7 +23,7 @@ const DECK_IMAGE_SCALE   = 2;
 const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
-const DECK_IMAGE_VERSION = 7;            // bump to redraw every cached image after a layout change
+const DECK_IMAGE_VERSION = 8;            // bump to redraw every cached image after a layout change
 
 /** Labels of the image, in English for languages without a translation. */
 function deckImageLabels(string $lang): array {
@@ -314,8 +316,29 @@ function deckImageLayout(array $sections, int $maxCopies, int $areaW, int $areaH
     return $best;
 }
 
-/** Renders the image; returns a GD image. $complete is false when a card image or a unique's data is missing. */
-function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
+/** QR code of $text on a white square ($size layout units, quiet zone included) at ($x, $y). */
+function deckImageQr($im, string $text, float $x, float $y, float $size): bool {
+    $qr = qrMatrix($text);
+    if ($qr === null) return false;
+    $n = count($qr);
+    deckImageRoundedRect($im, $x, $y, $size, $size, 6, deckImageColor($im, '#ffffff'));
+    $ink = deckImageColor($im, '#000000');
+    $module = ($size - 2 * 5) / $n; // 5 units of quiet zone
+    foreach ($qr as $r => $row) {
+        foreach ($row as $c => $dark) {
+            if (!$dark) continue;
+            imagefilledrectangle($im, deckImageK($x + 5 + $c * $module), deckImageK($y + 5 + $r * $module),
+                deckImageK($x + 5 + ($c + 1) * $module) - 1, deckImageK($y + 5 + ($r + 1) * $module) - 1, $ink);
+        }
+    }
+    return true;
+}
+
+/**
+ * Renders the image; returns a GD image. $deckUrl (absolute) is printed as a QR code in the banner. $complete is
+ * false when a card image or a unique's data is missing.
+ */
+function deckImageRender(array $deck, string $lang, ?bool &$complete = null, string $deckUrl = '') {
     $txt    = deckImageLabels($lang);
     $fonts  = dirname(__DIR__) . '/assets/font/';
     $fTitle = $fonts . 'Tiller-Bold.ttf';
@@ -378,7 +401,9 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null) {
 
     // ── Banner, right to left: total power, cost curve, then the deck's identity in what is left ──
     $pad = DECK_IMAGE_PAD;
-    $bx  = DECK_IMAGE_WIDTH - $pad - 160;
+    $right = DECK_IMAGE_WIDTH - $pad;
+    if ($deckUrl !== '' && deckImageQr($im, $deckUrl, $right - 100, intdiv(DECK_IMAGE_BANNER - 100, 2), 100)) $right -= 100 + 32;
+    $bx  = $right - 160;
     if ($stats['power'] !== null) {
         deckImageText($im, $fBold, 11, $bx, 20, $soft, mb_strtoupper($txt['power']));
         $by = 40;
@@ -525,7 +550,7 @@ function deckImageCachePath(string $id, string $lang, string $version): ?string 
  * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
  * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
  */
-function deckImageFile(array $deck, string $lang): ?array {
+function deckImageFile(array $deck, string $lang, string $deckUrl = ''): ?array {
     $id   = (string)($deck['id'] ?? '');
     $file = deckImageCachePath($id, $lang, deckPreviewVersion($deck));
     if ($file === null) return null;
@@ -534,7 +559,7 @@ function deckImageFile(array $deck, string $lang): ?array {
     if ($lock) flock($lock, LOCK_EX);
     try {
         if (is_file($file)) return ['file' => $file, 'temporary' => false];
-        $im  = deckImageRender($deck, $lang, $complete);
+        $im  = deckImageRender($deck, $lang, $complete, $deckUrl);
         $tmp = $file . '.' . getmypid() . '.tmp';
         $ok  = imagejpeg($im, $tmp, 85);
         imagedestroy($im);

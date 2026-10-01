@@ -39,7 +39,8 @@ if ($deck === null) {
 }
 if (empty($deck['isPublic'])) deckImageFail(404, 'Deck not found');
 
-$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang) : null;
+$deckUrl = request_scheme() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]);
+$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, $deckUrl) : null;
 if ($image === null) deckImageFail(500, 'Image unavailable');
 deckImageSend($image['file'], $version !== null && !$image['temporary']);
 if ($image['temporary']) @unlink($image['file']);
