@@ -27,7 +27,7 @@ the site has a light and a dark theme and two densities, nothing else to choose.
 | `js/ac.js` | `acIcon()` for HTML built by the site's scripts. |
 | `docs/components/*.md` | One page per component family: markup, variants, states, accessibility. |
 | `WORKFLOW.md` | How to design and implement with Claude Code, the design mode and Claude Design. |
-| `CLAUDE.md` | Rules for Claude Code when touching the design system. |
+| `AGENTS.md` | Rules for coding agents when touching the design system (`CLAUDE.md` imports it for Claude Code). |
 
 ## How it is loaded
 

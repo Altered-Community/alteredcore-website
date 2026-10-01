@@ -60,7 +60,7 @@ module.exports = defineConfig([
     },
   },
   {
-    // One component per folder with its .html and .scss (CLAUDE.md); test hosts may stay inline.
+    // One component per folder with its .html and .scss (AGENTS.md); test hosts may stay inline.
     files: ['**/*.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {

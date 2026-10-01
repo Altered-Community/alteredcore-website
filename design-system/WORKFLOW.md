@@ -8,7 +8,7 @@ Anthropic *design* plugin.
 
 | Tool | What it is | Use it for |
 |---|---|---|
-| **Claude Code** in this repo | Reads and edits the code. Loads `CLAUDE.md` and `design-system/CLAUDE.md`. | Implementing screens and components, migrating pages. |
+| **Claude Code** in this repo | Reads and edits the code. Loads `CLAUDE.md` and `design-system/CLAUDE.md`, which import the `AGENTS.md` files next to them (the same rules other agents read). | Implementing screens and components, migrating pages. |
 | **`/design`** in Claude Code | Built-in command: drafts a design as a Claude Design artifact (canvas, editable artboards) from a brief, with the repo in context. | Designing a screen of a plugin: it sees the existing `ac-*` components and the plugin's code, and the same session can implement right after. |
 | **Claude Design** (claude.ai/design) | Standalone design tool with *design system projects*, prototypes and exports. | Free exploration, sharing designs with other contributors, keeping the visual reference of the design system. |
 | **`/design-login`, `/design-sync`** in Claude Code | Log Claude Code into claude.ai, then sync a local component library with a Claude Design design-system project, component by component, in both directions. | Keeping the Claude Design project equal to this folder. |
