@@ -1,11 +1,10 @@
 <?php
 // Decklist image of a deck's link preview (og:image, 1200×630 ratio JPEG), served by api/deck-image.php.
 //
-// Top, a banner on the faction's colour: the hero, the deck's name, hero · format · author, the copies per card
-// type, the cost curve (hand and reserve costs), the characters' total power per biome (as Re:Builder) and a QR
-// code of the deck's page. Below, on white,
-// one section per card type: copies of one card stacked (whatever their rarity), each Unique alone. The cards
-// shrink until every section fits.
+// Top, a banner on the faction's colour: the hero's illustration on the left, fading into it, the deck's name,
+// hero · format · author, the copies per card type, the cost curve (hand and reserve costs), the characters' total
+// power per biome (as Re:Builder) and a QR code of the deck's page. Below, on white, one section per card type:
+// copies of one card stacked (whatever their rarity), each Unique alone. The cards shrink until every section fits.
 //
 // The layout is in 1200×630 units, drawn at DECK_IMAGE_SCALE (2400×1260) so that the cards' text stays
 // readable when the image is opened.
@@ -25,7 +24,8 @@ const DECK_IMAGE_SCALE   = 2;
 const DECK_IMAGE_BANNER  = 132;          // banner's height
 const DECK_IMAGE_PAD     = 24;
 const DECK_IMAGE_RATIO   = 1.395;        // card height / width
-const DECK_IMAGE_VERSION = 10;           // bump to redraw every cached image after a layout change
+const DECK_IMAGE_FADE    = 110;          // width of the hero illustration's fade into the banner
+const DECK_IMAGE_VERSION = 11;           // bump to redraw every cached image after a layout change
 
 /**
  * Labels of the image, in English for languages without a translation. Types and biomes are named as in
@@ -481,8 +481,8 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     }
 
     // Cost curve: hand (white) and reserve (gold) side by side per cost.
-    $cw = 250;
-    $cx = $bx - 44 - $cw;
+    $cw = 210;
+    $cx = $bx - 36 - $cw;
     deckImageText($im, $fBold, 11, $cx, 20, $soft, mb_strtoupper($txt['curve']));
     $lx = $cx + $cw;
     foreach ([[$txt['reserve'], $gold], [$txt['hand'], $white]] as [$label, $color]) {
@@ -509,37 +509,50 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
         deckImageText($im, $fBold, 12, (int)round($cx + $i * $groupW + ($groupW - $lw) / 2), $base + 6, $soft, $bucket['label']);
     }
 
-    // Identity: hero portrait, name, hero · format · author, copies per type.
-    // From the portrait crop (640×227, the hero on the left), else from the card's illustration.
+    // Identity: hero illustration, name, hero · format · author, copies per type.
+    // The portrait crop (640×227) whole, the banner's height on its left edge, fading into the faction's colour;
+    // without it, the card's illustration cut to that ratio.
     $heroImg = $heroBanner !== '' ? deckImageDecode($got[$heroBanner] ?? null) : null;
-    $region  = [0.08, 0, 0.36, 1];
+    $region  = [0, 0, 1, 1];
     if (!$heroImg && $heroRef !== '') {
         $heroImg = $load($heroRef);
-        $region  = [0.15, 0.17, 0.7, 0.4];
+        $region  = [0.05, 0.12, 0.9, 0.4];
     }
     $tx = $pad;
     if ($heroImg) {
-        $portrait = deckImageThumb($heroImg, 88, 88, 44, $region);
-        deckImageCopy($im, $portrait, $pad, intdiv(DECK_IMAGE_BANNER - 88, 2));
-        imagedestroy($portrait);
+        $artW = (int)round(DECK_IMAGE_BANNER * 640 / 227);
+        $art  = deckImageThumb($heroImg, $artW, DECK_IMAGE_BANNER, 0, $region);
+        deckImageCopy($im, $art, 0, 0);
+        imagedestroy($art);
         imagedestroy($heroImg);
-        $tx += 88 + 20;
+        // The fade: a column of the faction's colour per pixel, from transparent to opaque.
+        $fadeW = deckImageK(DECK_IMAGE_FADE);
+        $fromX = deckImageK($artW - DECK_IMAGE_FADE);
+        for ($i = 0; $i < $fadeW; $i++) {
+            $c = deckImageColor($im, $panel, (int)round(127 * (1 - ($i + 1) / $fadeW)));
+            imageline($im, $fromX + $i, 0, $fromX + $i, deckImageK(DECK_IMAGE_BANNER) - 1, $c);
+        }
+        $tx = $artW - 24;
     }
     $tw   = $cx - 32 - $tx;
     [$size, $title] = deckImageTitle($fTitle, mb_strtoupper(trim((string)($deck['name'] ?? ''))), $tw);
     $sub   = implode(' · ', array_filter([deckPreviewDescription($deck, $lang), deckPreviewByLine($deck, $lang) ?? ''], 'strlen'));
     $types = [];
     foreach ($stats['types'] as $group => $n) if ($n > 0) $types[] = $n . ' ' . $txt['types'][$group][$n > 1 ? 1 : 0];
+    $types = implode(' · ', $types);
+    // Subtitle and copies per type shrink a little before being cut.
+    for ($subPx = 17; $subPx > 14 && deckImageBox($fBody, $subPx, $sub)['w'] > $tw; $subPx--);
+    for ($typesPx = 16; $typesPx > 13 && deckImageBox($fBold, $typesPx, $types)['w'] > $tw; $typesPx--);
     // The block (name, subtitle, copies per type) centred in the banner.
     $cap     = deckImageBox($fTitle, $size, 'H')['ascent'];
     $lineGap = round($size * 0.3);
     $blockH  = count($title) * $cap + (count($title) - 1) * $lineGap
-        + ($sub !== '' ? 13 + deckImageBox($fBody, 17, 'H')['ascent'] : 0)
-        + ($types ? 13 + deckImageBox($fBold, 16, 'H')['ascent'] : 0);
+        + ($sub !== '' ? 13 + deckImageBox($fBody, $subPx, 'H')['ascent'] : 0)
+        + ($types !== '' ? 13 + deckImageBox($fBold, $typesPx, 'H')['ascent'] : 0);
     $y = (DECK_IMAGE_BANNER - $blockH) / 2 - $lineGap;
     foreach ($title as $text) $y = deckImageText($im, $fTitle, $size, $tx, $y + $lineGap, $white, $text);
-    if ($sub !== '') $y = deckImageText($im, $fBody, 17, $tx, $y + 13, $soft, deckImageEllipsis($fBody, 17, $sub, $tw));
-    if ($types) deckImageText($im, $fBold, 16, $tx, $y + 13, $white, deckImageEllipsis($fBold, 16, implode(' · ', $types), $tw));
+    if ($sub !== '') $y = deckImageText($im, $fBody, $subPx, $tx, $y + 13, $soft, deckImageEllipsis($fBody, $subPx, $sub, $tw));
+    if ($types !== '') deckImageText($im, $fBold, $typesPx, $tx, $y + 13, $white, deckImageEllipsis($fBold, $typesPx, $types, $tw));
 
     // ── Sections: one per card type, side by side ──
     $groups = [];
@@ -625,19 +638,6 @@ function deckImageCachePath(string $id, string $lang, string $version, string $s
     return $dir . '/' . deckImageCachePrefix($id, $lang, $siteUrl) . $version . '-' . DECK_IMAGE_VERSION . '.jpg';
 }
 
-/** Start of the cache files of a deck, language and origin (all its versions). */
-function deckImageCachePrefix(string $id, string $lang, string $siteUrl): string {
-    return strtolower($id) . '-' . $lang . '-' . substr(md5($siteUrl), 0, 8) . '-';
-}
-
-/**
- * The deck's image as a JPEG file: ['file' => path, 'temporary' => bool]. Drawn once per deck version (one request
- * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
- * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
- * Without $cache (a private or guest deck), always 'temporary': the cache is served to anyone who has the deck's id.
- */
-function deckImageFile(array $deck, string $lang, string $siteUrl = '', bool $cache = true): ?array {
-    $id      = (string)($deck['id'] ?? '');
 /**
  * A guest deck sent by Re:Builder (kept in the browser, unknown to the decks API) as a deck of the decks API, for
  * deckImageRender: { name, format, hero: { reference, name }, cards: [{ cardReference, quantity, name, cardTypeReference,
@@ -681,6 +681,19 @@ function deckImageGuestDeck($body, string $lang): ?array {
     ];
 }
 
+/** Start of the cache files of a deck, language and origin (all its versions). */
+function deckImageCachePrefix(string $id, string $lang, string $siteUrl): string {
+    return strtolower($id) . '-' . $lang . '-' . substr(md5($siteUrl), 0, 8) . '-';
+}
+
+/**
+ * The deck's image as a JPEG file: ['file' => path, 'temporary' => bool]. Drawn once per deck version (one request
+ * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
+ * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
+ * Without $cache (a private or guest deck), always 'temporary': the cache is served to anyone who has the deck's id.
+ */
+function deckImageFile(array $deck, string $lang, string $siteUrl = '', bool $cache = true): ?array {
+    $id      = (string)($deck['id'] ?? '');
     $file    = deckImageCachePath($id, $lang, deckPreviewVersion($deck), $siteUrl);
     // A guest deck (no id) has no page: no QR code.
     $deckUrl = $siteUrl !== '' && deckPreviewValidId($id) ? $siteUrl . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]) : '';
