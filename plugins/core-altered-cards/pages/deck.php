@@ -365,6 +365,15 @@ if ($deckId) {
 
 // process deck data
 $pageTitle = $deck['name'] ?? $txt['page_title'];
+// Link preview (Discord…) of a public deck, the same as Re:Builder's (plugins/rebuilder/meta.php).
+if (is_array($deck) && $deckId) {
+    require_once dirname(__DIR__, 3) . '/includes/deck-preview.php';
+    $_deckPreview = deckPreviewMeta($deck, $lang);
+    if ($_deckPreview['image'] !== null) {
+        ['description' => $pageDescription, 'image' => $pageImage, 'themeColor' => $pageThemeColor, 'oembed' => $pageOembedUrl] = $_deckPreview;
+        $pageOgTitle = $_deckPreview['title'];
+    }
+}
 // Check ownership: the collection endpoint returns only the current user's decks,
 // so fetching /api/decks and looking for this deck ID is reliable without any API change.
 $isOwner = false;
