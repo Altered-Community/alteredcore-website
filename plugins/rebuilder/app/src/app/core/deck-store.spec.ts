@@ -405,6 +405,40 @@ describe('DeckStore (signed in)', () => {
     expect(store.saveState()).toBe('saved');
   });
 
+  it('saveNow() writes a pending change at once and tells when every change is saved', () => {
+    const results: boolean[] = [];
+    store.saveNow().subscribe((ok) => results.push(ok));
+    expect(results).toEqual([true]);
+
+    store.rename('Un');
+    store.saveNow().subscribe((ok) => results.push(ok));
+    const first = patchReq();
+    // A change made while it is sent is part of what « Partager » waits for.
+    store.rename('Deux');
+    store.saveNow().subscribe((ok) => results.push(ok));
+    first.flush({ id: 'source', name: 'Un' });
+    expect(results).toEqual([true]);
+    const second = patchReq();
+    expect(second.request.body).toMatchObject({ name: 'Deux' });
+    second.flush({ id: 'source', name: 'Deux' });
+    expect(results).toEqual([true, true, true]);
+    expect(store.saveState()).toBe('saved');
+  });
+
+  it('saveNow() emits false on a failed save, and sends it again the next time', () => {
+    const results: boolean[] = [];
+    store.rename('Un');
+    store.saveNow().subscribe((ok) => results.push(ok));
+    patchReq().flush({}, { status: 500, statusText: 'Server Error' });
+    expect(results).toEqual([false]);
+    expect(store.saveState()).toBe('error');
+
+    store.saveNow().subscribe((ok) => results.push(ok));
+    patchReq().flush({ id: 'source', name: 'Un' });
+    expect(results).toEqual([false, true]);
+    expect(store.saveError()).toBeNull();
+  });
+
   it('sends the save of the next deck that waited for the previous deck’s request', async () => {
     store.rename('Un');
     store.flush();
@@ -583,6 +617,61 @@ describe('DeckStore.createDeck (signed in)', () => {
     expect(emitted).toBe(false);
     expect(completed).toBe(true);
     expect(stored()).toEqual([]);
+  });
+});
+
+describe('DeckStore.moveToAccount (signed in)', () => {
+  let store: DeckStore;
+  let http: HttpTestingController;
+  const postReq = () => http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: new SignedIn() }] });
+    store = TestBed.inject(DeckStore);
+    http = TestBed.inject(HttpTestingController);
+    store.create({ name: 'Moyo', hero, format: 'standard', isPublic: false, description: 'Rush' });
+    store.setQuantity(zou, 2);
+  });
+
+  afterEach(() => http.verify());
+
+  it('creates the guest deck on the account, removes it from this device and opens the account deck', () => {
+    const guestId = store.deckId();
+    let id: string | null = null;
+    store.moveToAccount().subscribe((r) => (id = r));
+    // The guest copy is written before the request: it stays if the account refuses the deck.
+    expect(stored()[0].deckCards?.map((l) => l.cardReference)).toEqual([hero.reference, zou.reference]);
+    const req = postReq();
+    expect(req.request.body).toEqual({
+      name: 'Moyo',
+      format: 'standard',
+      isPublic: false,
+      isDraft: true,
+      description: 'Rush',
+      deckCards: [
+        { cardReference: hero.reference, quantity: 1 },
+        { cardReference: zou.reference, quantity: 2 },
+      ],
+    });
+    req.flush({ id: 'account-deck', name: 'Moyo' });
+    expect(id).toBe('account-deck');
+    expect(stored().find((d) => d.id === guestId)).toBeUndefined();
+    expect(store.deckId()).toBe('account-deck');
+    expect(store.isGuest()).toBe(false);
+    expect(store.owned()).toBe(true);
+    expect(store.quantityOf(zou.reference)).toBe(2);
+  });
+
+  it('keeps the guest deck on this device when the account refuses it', () => {
+    const guestId = store.deckId();
+    let id: string | null = 'unset';
+    store.moveToAccount().subscribe((r) => (id = r));
+    postReq().flush({}, { status: 500, statusText: 'Server Error' });
+    expect(id).toBeNull();
+    expect(store.saveError()).toBe('Impossible d’enregistrer le deck sur votre compte (HTTP 500).');
+    expect(store.deckId()).toBe(guestId);
+    expect(stored().map((d) => d.id)).toEqual([guestId]);
   });
 });
 

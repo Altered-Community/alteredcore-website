@@ -4,6 +4,22 @@
     @if (deck.editable()) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
+    @if (!deck.loadError()) {
+      <button
+        actions
+        [acIconButton]="waiting() === 'share' ? 'loader-circle' : 'share-2'"
+        variant="ghost"
+        [class.waiting]="waiting() === 'share'"
+        [ariaLabel]="waiting() === 'share' ? labels.saving : labels.share"
+        [iconSize]="22"
+        [disabled]="!!waiting()"
+        [attr.aria-busy]="waiting() === 'share'"
+        (click)="act('share')"
+      ></button>
+    }
+    @if (!deck.loadError()) {
+      <button actions class="done" acButton variant="ghost" size="sm" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')" i18n="@@editor.done">Terminer</button>
+    }
   </ac-app-bar>
 }
 
@@ -16,9 +32,27 @@
   <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
     <main class="main">
       @if (!bp.compact()) {
+        <div class="head-top">
+          <ac-breadcrumb [items]="breadcrumb()" />
+          <div class="actions">
+            <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
+              @if (waiting() === 'share') {
+                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
+              } @else {
+                <ng-container i18n="@@editor.share">Partager</ng-container>
+              }
+            </button>
+            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')">
+              @if (waiting() === 'done') {
+                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
+              } @else {
+                <ng-container i18n="@@editor.done">Terminer</ng-container>
+              }
+            </button>
+          </div>
+        </div>
         <div class="head">
           <div class="title-block">
-            <ac-breadcrumb [items]="labels.breadcrumb" />
             <div class="title-row">
               <ac-editable-title [value]="deck.name()" [readonly]="!deck.editable()" (valueChange)="deck.rename($event)" />
               @if (deck.editable()) {
@@ -38,8 +72,15 @@
 
       @if (deck.saveError(); as saveError) {
         <div class="banner error" role="alert">
-          <span class="message">{{ saveError }}</span>
-          <button acButton variant="secondary" size="sm" icon="rotate-ccw" [disabled]="deck.saving()" (click)="deck.retrySave()" i18n="@@editor.retrySave">Réessayer</button>
+          <span class="message">
+            <span class="text">{{ saveError }}</span>
+            @if (stopped() === 'share') {
+              <span class="then" i18n="@@editor.stopped.share">Le partage s’ouvrira une fois le deck enregistré.</span>
+            } @else if (stopped() === 'done') {
+              <span class="then" i18n="@@editor.stopped.done">La page du deck s’ouvrira une fois le deck enregistré.</span>
+            }
+          </span>
+          <button acButton variant="secondary" size="sm" icon="rotate-ccw" [disabled]="deck.saving()" (click)="retry()" i18n="@@editor.retrySave">Réessayer</button>
         </div>
       }
 

@@ -630,3 +630,68 @@ test.describe('ReBuilder in the shell · guest', () => {
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: 'Deck invité' })).toBeVisible();
   });
 });
+
+test.describe('ReBuilder in the shell · « Partager » and « Terminer » in the editor', () => {
+  /** « Partager »: a button on desktop, an icon in the app bar on mobile. */
+  const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
+  const doneButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Terminer', exact: true });
+
+  test('saves the deck first, then shares it, then goes back to the deck page', async ({ page, compact }, testInfo) => {
+    const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'bob', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
+    await createDeck(page, name);
+    const deck = (await (await created).json()) as { id: string };
+    await expect(page).toHaveURL(at(EDITOR(deck.id)));
+
+    // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
+    await addTwoCards(page);
+    await shareButton(page).click();
+    const patch = await saved;
+    expect(((patch.request().postDataJSON() as { deckCards?: unknown[] }).deckCards ?? []).length).toBeGreaterThanOrEqual(2);
+    const dialog = page.getByRole('dialog', { name: 'Partager ce deck' });
+    await expect(dialog).toContainText('Deck enregistré : le lien affiche la dernière version.');
+    // A new deck is private: « Rendre public & partager » first, then the link.
+    await expect(dialog).toContainText('Ce deck est privé');
+    await evidence(page, testInfo, '40-editor-share-saved');
+    await dialog.getByRole('button', { name: 'Rendre public & partager' }).click();
+    await expect(dialog.getByRole('textbox', { name: 'Lien' })).toHaveValue(new RegExp(`${escape(DECK(deck.id))}$`));
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    await doneButton(page).click();
+    await expect(page).toHaveURL(at(DECK(deck.id)));
+    await expect(page.locator('app-deck-page')).toContainText(name);
+    if (!compact) await expect(page.locator('app-deck-page').getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
+  });
+
+  test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page }, testInfo) => {
+    const name = `E2E invité ${testInfo.project.name} ${Date.now()}`;
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, name);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=guest-[^&]+$/);
+    await addTwoCards(page);
+
+    await shareButton(page).click();
+    const prompt = page.getByRole('dialog', { name: 'Connectez-vous pour partager' });
+    await expect(prompt).toContainText('Pour partager ce deck et l’enregistrer sur le serveur, connectez-vous.');
+    await evidence(page, testInfo, '41-editor-share-sign-in');
+    await prompt.getByRole('button', { name: 'Se connecter' }).click();
+
+    // The site's Keycloak login, then back to the editor.
+    await page.locator('#username').fill('bob');
+    await page.locator('#password').fill('TestPassword1234');
+    await page.locator('#kc-login').click();
+    const dialog = page.getByRole('dialog', { name: 'Partager ce deck' });
+    await expect(dialog).toContainText('Deck enregistré sur votre compte : vous pouvez le partager.');
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=(?!guest-)[^&]+$/);
+    await evidence(page, testInfo, '42-editor-share-after-sign-in');
+    // Removed from this device: one copy of the deck, on the account.
+    const guests = await page.evaluate(() => (JSON.parse(localStorage.getItem('arb.guest-decks') ?? '[]') as { name: string }[]).map((d) => d.name));
+    expect(guests).not.toContain(name);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('app-editor-page')).toContainText('2');
+  });
+});

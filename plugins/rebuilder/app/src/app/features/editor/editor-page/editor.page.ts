@@ -1,10 +1,13 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { LocationStrategy } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
+import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
+import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { AcButton } from '../../../ui/buttons';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcToast } from '../../../ui/containers';
@@ -25,8 +28,14 @@ import { TestHand } from '../../deck/test-hand/test-hand';
 import { HandStats } from '../../deck/hand-stats/hand-stats';
 import { HandCalculators } from '../../deck/hand-calculators/hand-calculators';
 import { editorLegality } from '../editor-legality';
+import { openShareDeck } from '../../deck/share-deck/share-deck.overlay';
+import { deckShareUrl } from '../../deck/deck-page/share-url';
+import { openSignInToShare } from '../sign-in-to-share/sign-in-to-share.overlay';
+import { rememberShareAfterSignIn, takeShareAfterSignIn } from '../share-after-sign-in';
 
 export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
+/** « Partager » and « Terminer »: both save the deck first, so the link and the deck page show the latest changes. */
+export type EditorAction = 'share' | 'done';
 
 @Component({
   selector: 'app-editor-page',
@@ -41,6 +50,7 @@ export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
     AcEditableTitle,
     AcSegmented,
     AcButton,
+    AcIconButton,
     AcIcon,
     AcSaveStatus,
     CardSearch,
@@ -63,6 +73,8 @@ export class EditorPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(AcOverlayService);
+  private readonly locationStrategy = inject(LocationStrategy);
+  private readonly auth = inject(AuthSession);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
 
@@ -74,8 +86,19 @@ export class EditorPage {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
     public: $localize`:@@editor.public:Public`,
     private: $localize`:@@editor.private:Privé`,
-    breadcrumb: [{ label: $localize`:@@editor.myDecks:Mes decks`, route: '/decks' }, { label: $localize`:@@editor.edit:Modifier` }],
+    myDecks: $localize`:@@editor.myDecks:Mes decks`,
+    edit: $localize`:@@editor.edit:Modifier`,
+    share: $localize`:@@editor.share:Partager`,
+    saving: $localize`:@@editor.savingFirst:Enregistrement…`,
+    saved: $localize`:@@editor.share.saved:Deck enregistré : le lien affiche la dernière version.`,
+    savedToAccount: $localize`:@@editor.share.savedToAccount:Deck enregistré sur votre compte : vous pouvez le partager.`,
   };
+  /** « Mes decks / <deck> / Modifier »: the deck's name leads to its page too. */
+  protected readonly breadcrumb = computed(() => [
+    { label: this.labels.myDecks, route: '/decks' },
+    { label: this.deck.name() || 'Deck', route: `/decks/${this.id()}` },
+    { label: this.labels.edit },
+  ]);
   protected readonly modeOptions = [
     { value: 'search' as const, label: $localize`:@@editor.search:Recherche`, icon: 'search' as const },
     { value: 'apercu' as const, label: $localize`:@@editor.viewDeck:Voir le deck`, icon: 'eye' as const },
@@ -97,6 +120,10 @@ export class EditorPage {
     },
     { route: `${this.base()}/main`, icon: 'hand', label: $localize`:@@editor.handShort:Main` },
   ]);
+  /** The action waiting for the deck to be saved: its button shows the wait, both are disabled. */
+  protected readonly waiting = signal<EditorAction | null>(null);
+  /** The action a failed save stopped: the error banner says « Réessayer » carries it on. */
+  protected readonly stopped = signal<EditorAction | null>(null);
   protected readonly readonlyServerDeck = computed(() => !this.deck.loading() && !this.deck.loadError() && this.deck.owned() === false);
 
   /** « Nom ×n » after a copy is added or removed, with « Annuler » restoring the previous count (after an add, as the site's deck builder toast, and after a removal). */
@@ -129,6 +156,81 @@ export class EditorPage {
       if (id) untracked(() => this.deck.load(id));
     });
     inject(DestroyRef).onDestroy(() => this.deck.flush());
+    // Saved meanwhile (the next autosave): nothing is stopped any more.
+    effect(() => {
+      if (!this.deck.saveError()) untracked(() => this.stopped.set(null));
+    });
+    // Back from the site's login after « Partager » on a guest deck: the deck goes to the account, then the share window opens.
+    effect(() => {
+      const id = this.id();
+      if (!GuestDeckService.isGuestId(id) || this.deck.deckId() !== id || this.deck.loadError()) return;
+      if (!this.auth.isLoggedIn() || this.auth.sessionRestoring()) return;
+      untracked(() => {
+        if (takeShareAfterSignIn(id)) this.shareGuest();
+      });
+    });
+  }
+
+  /** « Partager » / « Terminer »: saves the deck, then opens the share window or the deck page. */
+  protected act(action: EditorAction): void {
+    if (this.waiting()) return;
+    if (action === 'share' && this.deck.isGuest()) {
+      this.shareGuest();
+      return;
+    }
+    this.stopped.set(null);
+    this.waiting.set(action);
+    this.deck.saveNow().subscribe((ok) => {
+      this.waiting.set(null);
+      if (!ok) {
+        this.stopped.set(action);
+        return;
+      }
+      if (action === 'done') void this.router.navigate(['/decks', this.id()]);
+      else this.openShare(this.labels.saved);
+    });
+  }
+
+  /** « Réessayer » of the error banner: the save again, then the action it stopped. */
+  protected retry(): void {
+    const action = this.stopped();
+    if (action) this.act(action);
+    else this.deck.retrySave();
+  }
+
+  /**
+   * A guest deck has no link: signed out, « Connectez-vous pour partager » (then the site's login, back here); signed in,
+   * the deck moves to the account (and leaves this device), then the share window opens on the account deck.
+   */
+  private shareGuest(): void {
+    const id = this.deck.deckId();
+    if (!id) return;
+    if (!this.auth.isLoggedIn()) {
+      openSignInToShare(this.overlay).afterClosed.subscribe((signIn) => {
+        if (!signIn) return;
+        rememberShareAfterSignIn(id);
+        void this.router.navigateByUrl('/login');
+      });
+      return;
+    }
+    this.stopped.set(null);
+    this.waiting.set('share');
+    this.deck.moveToAccount().subscribe((created) => {
+      this.waiting.set(null);
+      if (!created) {
+        this.stopped.set('share');
+        return;
+      }
+      // Same view of the editor, on the account deck.
+      void this.router.navigateByUrl(this.router.url.replace(id, created), { replaceUrl: true }).then(() => this.openShare(this.labels.savedToAccount));
+    });
+  }
+
+  private openShare(saved: string): void {
+    const id = this.deck.deckId();
+    if (!id) return;
+    // The decks API serves a private deck to its owner only: « Rendre public & partager » comes first.
+    openShareDeck(this.overlay, { url: deckShareUrl(this.router, this.locationStrategy, id), privateOwned: !this.deck.isPublic(), saved });
   }
 
   protected setMode(mode: string | undefined): void {
