@@ -343,6 +343,14 @@
     gap: var(--ac-space-2-5);
     margin-bottom: var(--ac-space-1-5);
 }
+/* Wide screens: tiles keep the size they had in the 1200px layout (4 across 1176px of
+   content) and the strip fits as many as the row allows — auto-fill rather than auto-fit
+   so every family's tiles stay the same size, even a 2-art family. */
+@media (min-width: 1500px) {
+    .own-aa-strip {
+        grid-template-columns: repeat(auto-fill, minmax(calc(1176px / 4 - var(--ac-space-2-5)), 1fr));
+    }
+}
 @media (max-width: 767.98px) {
     .own-aa-strip {
         grid-template-columns: repeat(2, 1fr);
