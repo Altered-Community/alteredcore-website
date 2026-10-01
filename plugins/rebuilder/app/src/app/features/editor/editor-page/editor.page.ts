@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LocationStrategy } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
@@ -75,6 +75,7 @@ export class EditorPage {
   private readonly overlay = inject(AcOverlayService);
   private readonly locationStrategy = inject(LocationStrategy);
   private readonly auth = inject(AuthSession);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
 
@@ -155,7 +156,7 @@ export class EditorPage {
       const id = this.id();
       if (id) untracked(() => this.deck.load(id));
     });
-    inject(DestroyRef).onDestroy(() => this.deck.flush());
+    this.destroyRef.onDestroy(() => this.deck.flush());
     // Saved meanwhile (the next autosave): nothing is stopped any more.
     effect(() => {
       if (!this.deck.saveError()) untracked(() => this.stopped.set(null));
@@ -173,14 +174,16 @@ export class EditorPage {
 
   /** « Partager » / « Terminer »: saves the deck, then opens the share window or the deck page. */
   protected act(action: EditorAction): void {
-    if (this.waiting()) return;
+    // Before the deck is loaded, the share window would show the store's defaults (a public deck as private).
+    if (this.waiting() || this.deck.loading()) return;
     if (action === 'share' && this.deck.isGuest()) {
       this.shareGuest();
       return;
     }
     this.stopped.set(null);
     this.waiting.set(action);
-    this.deck.saveNow().subscribe((ok) => {
+    // Left meanwhile: no navigation or share window on another page.
+    this.deck.saveNow().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ok) => {
       this.waiting.set(null);
       if (!ok) {
         this.stopped.set(action);
@@ -215,7 +218,7 @@ export class EditorPage {
     }
     this.stopped.set(null);
     this.waiting.set('share');
-    this.deck.moveToAccount().subscribe((created) => {
+    this.deck.moveToAccount().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
       this.waiting.set(null);
       if (!created) {
         this.stopped.set('share');

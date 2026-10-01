@@ -499,6 +499,9 @@ export class DeckStore {
       this.saveTimer = null;
     }
     if (this.dirty() || this.saveError()) this.save();
+    const id = this.deckId();
+    // Signed out meanwhile (session expired): the changes cannot be sent, say so instead of failing silently.
+    if (this.dirty() && id && !GuestDeckService.isGuestId(id) && !this.auth.isLoggedIn()) this.saveError.set(saveErrorHead(401));
     const done = () => !this.saveTimer && this.inFlight === null;
     const saved = () => !this.saveError() && !this.dirty();
     if (done()) return of(saved());

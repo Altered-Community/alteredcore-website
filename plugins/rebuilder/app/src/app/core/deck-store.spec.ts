@@ -257,7 +257,9 @@ describe('DeckStore (guest mode)', () => {
 /** Given with `useValue`: `useClass` would go through the factory `AuthSession` declares (a guest). */
 class SignedIn extends AuthSession {
   readonly token = signal<string | null>(null).asReadonly();
-  readonly isLoggedIn = signal(true).asReadonly();
+  /** Set to false to end the session (expired). */
+  readonly loggedIn = signal(true);
+  readonly isLoggedIn = this.loggedIn.asReadonly();
   readonly username = signal<string | null>('alice').asReadonly();
   readonly sessionRestoring = signal(false).asReadonly();
   readonly sessionNotice = signal<string | null>(null).asReadonly();
@@ -272,10 +274,12 @@ class SignedIn extends AuthSession {
 describe('DeckStore (signed in)', () => {
   let store: DeckStore;
   let http: HttpTestingController;
+  let session: SignedIn;
 
   beforeEach(async () => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: new SignedIn() }] });
+    session = new SignedIn();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: session }] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
     store.load('source');
@@ -423,6 +427,16 @@ describe('DeckStore (signed in)', () => {
     second.flush({ id: 'source', name: 'Deux' });
     expect(results).toEqual([true, true, true]);
     expect(store.saveState()).toBe('saved');
+  });
+
+  it('saveNow() says why when the session is gone and the changes cannot be sent', () => {
+    store.rename('Un');
+    session.loggedIn.set(false);
+    const results: boolean[] = [];
+    store.saveNow().subscribe((ok) => results.push(ok));
+    http.expectNone((r) => r.method === 'PATCH');
+    expect(results).toEqual([false]);
+    expect(store.saveError()).toBe('Enregistrement refusé : reconnectez-vous (HTTP 401).');
   });
 
   it('saveNow() emits false on a failed save, and sends it again the next time', () => {

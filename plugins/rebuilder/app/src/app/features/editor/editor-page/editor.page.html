@@ -12,13 +12,13 @@
         [class.waiting]="waiting() === 'share'"
         [ariaLabel]="waiting() === 'share' ? labels.saving : labels.share"
         [iconSize]="22"
-        [disabled]="!!waiting()"
+        [disabled]="!!waiting() || deck.loading()"
         [attr.aria-busy]="waiting() === 'share'"
         (click)="act('share')"
       ></button>
     }
     @if (!deck.loadError()) {
-      <button actions class="done" acButton variant="ghost" size="sm" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')" i18n="@@editor.done">Terminer</button>
+      <button actions class="done" acButton variant="ghost" size="sm" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')" i18n="@@editor.done">Terminer</button>
     }
   </ac-app-bar>
 }
@@ -35,14 +35,14 @@
         <div class="head-top">
           <ac-breadcrumb [items]="breadcrumb()" />
           <div class="actions">
-            <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
+            <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
               @if (waiting() === 'share') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
               } @else {
                 <ng-container i18n="@@editor.share">Partager</ng-container>
               }
             </button>
-            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')">
+            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')">
               @if (waiting() === 'done') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
               } @else {
