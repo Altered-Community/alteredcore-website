@@ -11,9 +11,9 @@ $lang = (isset($_GET['lang']) && $_GET['lang'] === 'fr') ? 'fr' : 'en';
 
 $name        = getSiteName();
 $description = getSetting('meta_description_' . $lang) ?: ($lang === 'fr' ? SITE_DESCRIPTION_FR : SITE_DESCRIPTION_EN);
-// Light theme, from the design system: the title bar blends with the header (surface),
+// Light theme, from the design system: the title bar blends with the header background,
 // the splash screen with the page background.
-$themeColor  = dsToken('--ac-color-surface');
+$themeColor  = dsToken('--ac-header-bg');
 $iconDir     = BASE_URL . '/assets/favicon';
 
 $shortcutLabels = [

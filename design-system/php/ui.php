@@ -45,7 +45,8 @@ function dsShadowStylesheets(): array {
 
 /**
  * Value of a colour token in tokens.css, for the places CSS cannot reach (theme-color meta, web app
- * manifest): 'light' reads `:root`, 'dark' reads `:root[data-theme='dark']`. null if missing.
+ * manifest): 'light' reads `:root`, 'dark' reads `:root[data-theme='dark']` (then `:root`). A `var()`
+ * value is resolved. null if missing.
  */
 function dsToken(string $name, string $theme = 'light'): ?string {
     static $blocks = null;
@@ -55,8 +56,14 @@ function dsToken(string $name, string $theme = 'light'): ?string {
         if (preg_match('/^:root \{(.*?)^\}/ms', $css, $m)) $blocks['light'] = $m[1];
         if (preg_match("/^:root\[data-theme='dark'\] \{(.*?)^\}/ms", $css, $m)) $blocks['dark'] = $m[1];
     }
-    $block = $blocks[$theme] ?? '';
-    return preg_match('/' . preg_quote($name, '/') . ':\s*([^;]+);/', $block, $m) ? trim($m[1]) : null;
+    // The dark block only lists what changes: a token missing there takes its light value.
+    $value = null;
+    foreach ($theme === 'dark' ? ['dark', 'light'] : ['light'] as $t) {
+        if (preg_match('/' . preg_quote($name, '/') . ':\s*([^;]+);/', $blocks[$t] ?? '', $m)) { $value = trim($m[1]); break; }
+    }
+    // A token that points at another one (var(--ac-…)) is resolved in the same theme.
+    if ($value !== null && preg_match('/^var\((--[\w-]+)\)$/', $value, $m)) return dsToken($m[1], $theme);
+    return $value;
 }
 
 /** Inline script for <head>: sets data-density before the first paint (see tokens.css). */

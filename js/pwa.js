@@ -40,10 +40,10 @@
     }
 
     // ── theme-color follows the header background (light / dark theme) ────
-    // The header's surface token (design-system/tokens/tokens.css), light or dark.
+    // The header's background token (design-system/tokens/tokens.css), light or dark.
     var themeMeta = document.querySelector('meta[name="theme-color"][data-ac-auto]');
     function syncThemeColor() {
-        var bg = getComputedStyle(document.documentElement).getPropertyValue('--ac-color-surface').trim();
+        var bg = getComputedStyle(document.documentElement).getPropertyValue('--ac-header-bg').trim();
         if (bg) themeMeta.setAttribute('content', bg);
     }
     if (themeMeta) {

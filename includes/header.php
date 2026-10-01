@@ -143,9 +143,9 @@ kcIsLoggedIn();
                      ? $pageKeywords
                      : (getSetting('meta_keywords') ?: '');
     $_robots      = isset($pageRobots) && $pageRobots !== '' ? $pageRobots : 'index, follow';
-    // theme-color (browser / status bar): the header's surface, so the title bar blends with the
+    // theme-color (browser / status bar): the header's background, so the title bar blends with the
     // header; js/pwa.js keeps it in sync with the dark theme.
-    $_themeColor  = dsToken('--ac-color-surface');
+    $_themeColor  = dsToken('--ac-header-bg');
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
     $_scheme      = request_scheme();

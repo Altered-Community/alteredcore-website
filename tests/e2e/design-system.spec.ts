@@ -67,4 +67,14 @@ test.describe('Design system', () => {
     const header = await page.evaluate(() => getComputedStyle(document.querySelector('.site-header')!).backgroundColor);
     expect(header).toBe('rgb(23, 27, 35)'); // --ac-color-surface, dark
   });
+
+  test('the site header is the brand blue in the light theme', async ({ page }) => {
+    await page.goto('/pages/index');
+    await page.evaluate(() => localStorage.setItem('acTheme', 'light'));
+    await page.reload();
+    const header = await page.evaluate(() => getComputedStyle(document.querySelector('.site-header')!).backgroundColor);
+    expect(header).toBe('rgb(20, 99, 214)'); // --ac-header-bg = --ac-color-primary, light
+    const themeColor = await page.evaluate(() => document.querySelector('meta[name="theme-color"]')!.getAttribute('content'));
+    expect(themeColor).toBe('#1463d6');
+  });
 });

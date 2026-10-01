@@ -54,6 +54,26 @@
   --ac-color-link-hover: var(--ac-color-primary-strong);
   --ac-color-focus: var(--ac-color-primary);
 
+  /* ---------- Colours · site header (themes/azure) ----------
+   * Light: the brand blue bar with white text. Dark: the surface, like the rest of the shell. */
+  --ac-header-bg: var(--ac-color-primary);
+  --ac-header-border: var(--ac-color-primary-strong);
+  --ac-header-divider: #4a86e0;         /* brand | menu separator */
+  --ac-header-text: #ffffff;            /* brand name, hovered and active menu item */
+  --ac-header-text-2: #e3edfc;          /* menu items */
+  --ac-header-icon: #b8cdf3;            /* menu item icons */
+  --ac-header-button-text: #ffffff;     /* icon button (burger) */
+  --ac-header-hover-bg: var(--ac-color-primary-strong);   /* icon buttons */
+  --ac-header-active-text: #ffffff;     /* current menu item */
+  --ac-header-active-line: #ffffff;     /* its underline */
+  --ac-header-button-border: #4a86e0;   /* bordered icon button (burger) */
+  --ac-header-focus: #ffffff;
+  --ac-header-control-bg: #ffffff;      /* account button */
+  --ac-header-control-hover-bg: var(--ac-color-primary-soft);
+  --ac-header-control-text: var(--ac-color-primary-strong);
+  --ac-header-control-border: transparent;
+  --ac-header-control-caret: var(--ac-color-primary-strong);
+
   /* ---------- Colours · semantic ---------- */
   --ac-color-success: #166534;
   --ac-color-success-soft: #e3f4e8;
@@ -309,6 +329,24 @@
   --ac-color-primary-soft: #1b2b47;
   --ac-color-primary-tint: #151f31;
   --ac-color-on-primary: #0b1220;
+
+  --ac-header-bg: var(--ac-color-surface);
+  --ac-header-border: var(--ac-color-border);
+  --ac-header-divider: var(--ac-color-divider);
+  --ac-header-text: var(--ac-color-text);
+  --ac-header-text-2: var(--ac-color-text-2);
+  --ac-header-icon: var(--ac-color-text-muted);
+  --ac-header-button-text: var(--ac-color-text-2);
+  --ac-header-hover-bg: var(--ac-color-bg-subtle);
+  --ac-header-active-text: var(--ac-color-primary-strong);
+  --ac-header-active-line: var(--ac-color-primary);
+  --ac-header-button-border: var(--ac-color-border);
+  --ac-header-focus: var(--ac-color-focus);
+  --ac-header-control-bg: var(--ac-color-surface);
+  --ac-header-control-hover-bg: var(--ac-color-bg-subtle);
+  --ac-header-control-text: var(--ac-color-text);
+  --ac-header-control-border: var(--ac-color-border-control);
+  --ac-header-control-caret: var(--ac-color-text-muted);
 
   --ac-color-success: #6cc990;
   --ac-color-success-soft: #15301f;
