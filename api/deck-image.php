@@ -27,7 +27,8 @@ $lang    = deckPreviewLang($_GET['lang'] ?? '');
 $version = preg_match('#^[0-9a-f]{10}$#', (string)($_GET['v'] ?? '')) ? (string)$_GET['v'] : null;
 if (!deckPreviewValidId($id)) deckImageFail(404, 'Deck not found');
 
-$cached = $version !== null ? deckImageCachePath($id, $lang, $version) : null;
+$siteUrl = deckImageSiteUrl();
+$cached  = $version !== null ? deckImageCachePath($id, $lang, $version, $siteUrl) : null;
 if ($cached !== null && is_file($cached)) {
     deckImageSend($cached, true);
     exit;
@@ -39,8 +40,7 @@ if ($deck === null) {
 }
 if (empty($deck['isPublic'])) deckImageFail(404, 'Deck not found');
 
-$deckUrl = request_scheme() . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]);
-$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, $deckUrl) : null;
+$image = function_exists('imagecreatetruecolor') ? deckImageFile($deck, $lang, $siteUrl) : null;
 if ($image === null) deckImageFail(500, 'Image unavailable');
 deckImageSend($image['file'], $version !== null && !$image['temporary']);
 if ($image['temporary']) @unlink($image['file']);

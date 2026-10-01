@@ -538,11 +538,26 @@ function deckImageRender(array $deck, string $lang, ?bool &$complete = null, str
     return $im;
 }
 
-/** Cache file of a deck version's image; null without a writable cache directory. */
-function deckImageCachePath(string $id, string $lang, string $version): ?string {
+/**
+ * Origin printed in the image's QR code: SITE_URL when configured, else the request's scheme and host (only a
+ * well-formed host name). The cache is kept per origin, so a forged Host header never reaches another host's image.
+ */
+function deckImageSiteUrl(): string {
+    if (defined('SITE_URL') && SITE_URL !== '') return rtrim(SITE_URL, '/');
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    return preg_match('#^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:\d{1,5})?$#', $host) ? request_scheme() . '://' . $host : '';
+}
+
+/** Cache file of a deck version's image for an origin; null without a writable cache directory. */
+function deckImageCachePath(string $id, string $lang, string $version, string $siteUrl): ?string {
     $dir = sys_get_temp_dir() . '/alteredcore-deck-image';
     if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) return null;
-    return $dir . '/' . strtolower($id) . '-' . $lang . '-' . $version . '-' . DECK_IMAGE_VERSION . '.jpg';
+    return $dir . '/' . deckImageCachePrefix($id, $lang, $siteUrl) . $version . '-' . DECK_IMAGE_VERSION . '.jpg';
+}
+
+/** Start of the cache files of a deck, language and origin (all its versions). */
+function deckImageCachePrefix(string $id, string $lang, string $siteUrl): string {
+    return strtolower($id) . '-' . $lang . '-' . substr(md5($siteUrl), 0, 8) . '-';
 }
 
 /**
@@ -550,9 +565,10 @@ function deckImageCachePath(string $id, string $lang, string $version): ?string 
  * draws, the others wait for it) and cached, the previous versions of the deck in that language removed. An image
  * drawn with missing cards (CDN or cards API down) is not cached: 'temporary', the caller deletes it once sent.
  */
-function deckImageFile(array $deck, string $lang, string $deckUrl = ''): ?array {
-    $id   = (string)($deck['id'] ?? '');
-    $file = deckImageCachePath($id, $lang, deckPreviewVersion($deck));
+function deckImageFile(array $deck, string $lang, string $siteUrl = ''): ?array {
+    $id      = (string)($deck['id'] ?? '');
+    $file    = deckImageCachePath($id, $lang, deckPreviewVersion($deck), $siteUrl);
+    $deckUrl = $siteUrl !== '' ? $siteUrl . BASE_URL . '/pages/deck?' . http_build_query(['id' => $id]) : '';
     if ($file === null) return null;
     if (is_file($file)) return ['file' => $file, 'temporary' => false];
     $lock = fopen($file . '.lock', 'c');
@@ -566,7 +582,7 @@ function deckImageFile(array $deck, string $lang, string $deckUrl = ''): ?array 
         if (!$ok) return null;
         if (!$complete) return ['file' => $tmp, 'temporary' => true];
         if (!rename($tmp, $file)) return null;
-        foreach (glob(dirname($file) . '/' . strtolower($id) . '-' . $lang . '-*.jpg') ?: [] as $old) {
+        foreach (glob(dirname($file) . '/' . deckImageCachePrefix($id, $lang, $siteUrl) . '*.jpg') ?: [] as $old) {
             if ($old !== $file) @unlink($old);
         }
         return ['file' => $file, 'temporary' => false];
