@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
-import { Router, type CanActivateFn, type Routes } from '@angular/router';
+import type { CanActivateFn, Routes } from '@angular/router';
 import { ALTERED_CORE } from './host';
 
 const editor = () => import('../features/editor/editor-page/editor.page').then((m) => m.EditorPage);
 const deck = () => import('../features/deck/deck-page/deck.page').then((m) => m.DeckPage);
 
-/** Site menu entry of the plugin (plugin.json "menu"), relative to the base href: route data `nav`. */
+/** Site menu entry of the decks pages (`/pages/decks`), relative to the base href: route data `nav`. */
 const NAV_DECKS = 'decks';
 
 const signIn: CanActivateFn = () => {
@@ -14,29 +14,12 @@ const signIn: CanActivateFn = () => {
 };
 
 /**
- * Re:Builder's decks section on the site page `/pages/rebuilder/` (the base href): decks list
- * (mine / community), deck page, new deck and editor. The site's own decks pages and deck builder
- * stay as they are.
- * `?id=` opens a deck in the editor, like the site's deck builder links; `deck?id=` its page, like the site's deck page links
- * (`/pages/deck?id=`: shared links, QR codes).
+ * Re:Builder's decks section. With « Beta Deckbuilder » on, the shell serves it on the site's decks pages, base href
+ * `/pages/`: its page URLs are the site's (`decks`, `deck?id=…`, `deckbuilder?id=…`, see LegacyUrlSerializer), the
+ * routes below stay `decks/:id/…`.
  */
 export const embedRoutes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: ({ queryParams }) => {
-      const id = queryParams['id'];
-      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}/edit` : '/decks');
-    },
-  },
-  {
-    path: 'deck',
-    pathMatch: 'full',
-    redirectTo: ({ queryParams }) => {
-      const id = queryParams['id'];
-      return inject(Router).parseUrl(typeof id === 'string' && id ? `/decks/${encodeURIComponent(id)}` : '/decks');
-    },
-  },
+  { path: '', pathMatch: 'full', redirectTo: 'decks' },
   {
     path: 'decks',
     title: $localize`:@@title.decks:Decks`,

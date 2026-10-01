@@ -33,7 +33,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 |---|---|
 | Deck privé, 404, erreur, retour, modifier, supprimer, dupliquer, copier la liste | ✅ |
 | Grille par type, decklist, description, courbes, main de test, stats de main, calculateurs | ✅ |
-| URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | 🟡 `/pages/rebuilder/deck?id=` redirige vers la page deck ; `/pages/deck` reste la page du site |
+| URL `/pages/deck?id=` (liens partagés, QR codes, `card.php`, tournament-reports) | ✅ mêmes URL (`/pages/decks`, `/pages/deck?id=`, `/pages/deckbuilder?id=`) : Re:Builder avec « Beta Deckbuilder », la page du site sinon |
 | Nom du deck dans `<title>` / og:title (aperçu des liens partagés) | ✅ (`meta.php`, champ `meta` du manifeste) |
 | Zoom d'une carte (grille, decklist, héros) avec lien vers la fiche | ✅ (sans fenêtre, comme le site) |
 | Partage : fenêtre avec QR code ; deck privé : avertissement « Rendre public et partager » | ✅ (toujours la fenêtre, jamais le partage système) |

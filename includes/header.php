@@ -88,6 +88,10 @@ $_hTxt = [
         'light'      => 'Light',
         'dark'       => 'Dark',
         'language'   => 'Language',
+        'account_btn' => 'Account',
+        'beta'       => 'Beta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'The Deck and Deck Builder pages open in the new builder, in beta.',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -103,6 +107,10 @@ $_hTxt = [
         'light'      => 'Clair',
         'dark'       => 'Sombre',
         'language'   => 'Langue',
+        'account_btn' => 'Compte',
+        'beta'       => 'Bêta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'Les pages Deck et Deck Builder s\'ouvrent avec le nouveau Builder en mode bêta.',
     ],
 ][getUiLang()];
 

@@ -16,7 +16,7 @@
  *   login(returnTo?)   sends the user to the shell's login, then back to returnTo
  *   setTitle(title)    document title, suffixed with the site name
  *   setActiveNav(path) marks the menu entry of this client route as current, among the entries
- *                      that point inside this page (/pages/{slug}/…); others keep their state
+ *                      that point inside the page's base (page.basePath); others keep their state
  *   getMount(pluginId) { host, root, container } — the element the plugin renders into
  *   on(type, fn)       'theme' | 'lang' | 'auth' events; returns an unsubscribe function
  */
@@ -78,11 +78,11 @@
         },
 
         setActiveNav: function (path) {
-            var base = host.baseUrl + '/pages/' + host.page.slug + '/';
+            var base = host.page.basePath;
             var target = path ? new URL(path, location.origin).pathname.replace(/\/+$/, '') : null;
             document.querySelectorAll('.site-header a.nav-link[href], .site-header a.dropdown-item[href]').forEach(function (a) {
                 var p = new URL(a.getAttribute('href'), location.origin).pathname.replace(/\/+$/, '');
-                if (p.indexOf(base) !== 0) return;
+                if ((p + '/').indexOf(base) !== 0) return;
                 a.classList.toggle('active', p === target);
                 if (p === target) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
             });

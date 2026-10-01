@@ -2,8 +2,9 @@
 
 ## Produit
 
-Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), plugin du site AlteredCore monté
-sur `/pages/rebuilder/` (Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources reprises de
+Section decks d'Altered Re:Builder (liste, page de deck, nouveau deck, éditeur), plugin du site AlteredCore servi
+sur les pages decks du site avec « Beta Deckbuilder » (`/pages/decks`, `/pages/deck?id=`, `/pages/deckbuilder?id=`, base
+href `/pages/` ; Shadow DOM, contrat `window.AlteredCore` : voir `../README.md`). Sources reprises de
 [Yutsa/altered-re-builder](https://github.com/Yutsa/altered-re-builder). Les mêmes composants s'adaptent à la taille
 d'écran et à la densité : pas d'écrans « mobile » et « desktop » séparés.
 

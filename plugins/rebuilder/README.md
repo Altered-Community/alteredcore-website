@@ -1,15 +1,17 @@
 # rebuilder — Altered Re:Builder as an SPA plugin
 
-The decks section of [Altered Re:Builder](https://github.com/Yutsa/altered-re-builder) (Angular 22),
-mounted by the shell on `/pages/rebuilder` (manifest v2, `"type": "spa"`, Shadow DOM). It sits next to
-the site's own pages: `/pages/decks` and `/pages/deckbuilder` (plugin `core-altered-cards`) are
-unchanged, and the plugin adds a **Re:Builder (beta)** entry to the site's **Decks** menu
-(`/pages/rebuilder/decks`, manifest `parent_url`); new decks are created from that list.
+The decks section of [Altered Re:Builder](https://github.com/Yutsa/altered-re-builder) (Angular 22), an
+SPA page of the shell (manifest v2, `"type": "spa"`, Shadow DOM). It replaces the site's decks pages for the
+visitors who turn on **Beta Deckbuilder** in the account menu (cookie `ac_beta`, this browser only), at the
+same URLs: `/pages/decks`, `/pages/deck?id=…` and `/pages/deckbuilder?id=…` (manifest `beta_slugs`). Without
+it, those URLs stay the pages of `core-altered-cards`. Shared links, QR codes and the site's own links
+(`card.php`, tournament-reports) therefore open one or the other deckbuilder, and the site's Decks menu keeps
+its single **Decks** entry. The pages it replaces keep answering their own calls (`?ajax=…`, form posts).
 
 | Path | Content |
 |---|---|
-| `plugin.json` | Manifest v2: SPA page, API endpoints, menu entry, build and e2e declarations |
-| `meta.php` | Manifest `meta`: the deck's name as page title and link preview (`og:title`) on `decks/{id}` |
+| `plugin.json` | Manifest v2: SPA page and its `beta_slugs`, API endpoints, build and e2e declarations |
+| `meta.php` | Manifest `meta`: the deck's name as page title and link preview (`og:title`) on `deck?id=` and `deckbuilder?id=` |
 | `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
 | `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
@@ -30,16 +32,16 @@ npm run lint && npm test
 
 ## What is embedded
 
-The base href is `/pages/rebuilder/`:
+The base href is `/pages/`. The app's routes are `decks/:id/…`; `LegacyUrlSerializer`
+(`app/src/app/embed/legacy-url.serializer.ts`) writes them as the site's URLs:
 
 | URL | Screen |
 |---|---|
-| `/pages/rebuilder/decks` | Decks: *Mes decks* (account and guest decks) and *Communauté* (`?tab=community`, public decks) |
-| `/pages/rebuilder/decks/{id}` | Deck page (cards / decklist), actions |
-| `/pages/rebuilder/decks/new` | New deck (hero, format, visibility) |
-| `/pages/rebuilder/decks/{id}/edit` | Editor (card search and filters, deck list, validation, statistics, settings), preview |
-| `/pages/rebuilder?id={id}` | Redirects to the editor (same link format as the site's deck builder) |
-| `/pages/rebuilder/deck?id={id}` | Redirects to the deck page (same link format as the site's deck page) |
+| `/pages/decks` | Decks: *Mes decks* (account and guest decks) and *Communauté* (`?tab=community`, public decks) |
+| `/pages/deck?id={id}` | Deck page (cards; `&tab=deck`, `description`, `main`), actions |
+| `/pages/deckbuilder` | New deck (hero, format, visibility) |
+| `/pages/deckbuilder?id={id}` | Editor (card search and filters, deck list, validation, statistics, settings; `&view=apercu`, `deck`, `main`) |
+| `/pages/rebuilder/…` | The plugin's own page: its former links (`decks/{id}`, `?id={id}`, `deck?id={id}`) land on the URLs above |
 
 Signed in, decks are listed, created and saved on the decks API through the site's relay
 (`/api/v1/services/decks`), which adds the Keycloak token of the PHP session server-side: the browser
@@ -47,7 +49,7 @@ never holds a token. They are the same decks as the site's (`/pages/decks` lists
 they stay in `localStorage` (`arb.guest-decks`). Sign-in is the site's (`AlteredCore.login()`), and the
 site draws the navigation: the app's own menu button is hidden. The page keeps the site's content
 width (`"fullwidth": false`), and each route tells the shell which menu entry is current
-(route data `nav`, `AlteredCore.setActiveNav()`).
+(route data `nav`, `AlteredCore.setActiveNav()`): the site's **Decks** entry.
 
 On the local / CI stack, `docker/stack/seed-decks.php` creates 16 public decks (copies of legal
 production decks, `docker/stack/community-decks.json`) so the *Communauté* tab has content.
@@ -78,6 +80,5 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 ## Known gaps
 
 - « Importer » › *Liste de cartes* creates a guest deck when signed out.
-- The site's deck page and deck builder link to themselves, not to Re:Builder.
 - Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours
   keep ReBuilder's values.

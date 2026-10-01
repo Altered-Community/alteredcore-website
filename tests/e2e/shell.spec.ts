@@ -18,6 +18,22 @@ test.describe('Shell · SPA pages', () => {
     }
   });
 
+  test('« Beta Deckbuilder » (cookie ac_beta): the SPA page serves its beta_slugs at their URLs, the site page keeps its calls', async ({ playwright, baseURL }) => {
+    const beta = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: 'ac_beta=1' } });
+    for (const path of ['/pages/decks', '/pages/deck?id=00000000-0000-0000-0000-000000000000', '/pages/deckbuilder']) {
+      const res = await beta.get(path);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain('data-ac-plugin="rebuilder"');
+      expect(html, path).toContain('"basePath":"/pages/"');
+    }
+    // ?ajax=… calls of the site's pages still reach them (JSON), deep paths stay PHP-only.
+    const heroes = await beta.get('/pages/decks?ajax=heroes');
+    expect(heroes.headers()['content-type']).toContain('application/json');
+    expect((await beta.get('/pages/decks/anything')).status()).toBe(404);
+    await beta.dispose();
+  });
+
   test('publishes window.AlteredCore v1 and isolates the plugin in a shadow root', async ({ page }) => {
     await page.goto('/pages/rebuilder?lang=fr');
     // The plugin asks for its mount (and the shell attaches the shadow root) once its modules load.
@@ -34,7 +50,7 @@ test.describe('Shell · SPA pages', () => {
         shadow: !!el.shadowRoot,
       };
     });
-    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/rebuilder/', shadow: true });
+    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/', shadow: true });
     expect(host.methods).toHaveLength(5);
     // No token API: authenticated services are reached through the site's relay.
     expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);

@@ -3,8 +3,8 @@
     "manifest_version": 2,
     "id":               "rebuilder",
     "name":             "Re:Builder",
-    "version":          "0.2.0",
-    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular), mounted as a SPA page on /pages/rebuilder, next to the site's own decks pages and deck builder.",
+    "version":          "0.3.0",
+    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular). With « Beta Deckbuilder » on, it serves the site's decks pages (/pages/decks, /pages/deck, /pages/deckbuilder) at their URLs.",
     "author":           "Yutsa",
     "icon":             "fa-solid fa-pen-ruler",
 
@@ -16,6 +16,7 @@
             "mount":    "shadow",
             "fullwidth": false,
             "meta":     "meta.php",
+            "beta_slugs": ["decks", "deck", "deckbuilder"],
             "title_en": "Re:Builder",
             "title_fr": "Re:Builder"
         }
@@ -23,10 +24,6 @@
 
     "api": [
         { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] }
-    ],
-
-    "menu": [
-        { "page": "rebuilder", "path": "decks", "parent_url": "/pages/decks", "label_en": "Re:Builder (beta)", "label_fr": "Re:Builder (bêta)", "icon": "fa-solid fa-pen-ruler" }
     ],
 
     "build": {
