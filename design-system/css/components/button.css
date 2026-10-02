@@ -2,6 +2,9 @@
  * Button and icon button.
  * <button class="ac-button">, <a class="ac-button ac-button--secondary">, <button class="ac-icon-button" aria-label="…">
  * Docs: design-system/docs/components/button.md
+ *
+ * Hover styles sit in @media (hover: hover): on touch screens :hover sticks after a tap, and the
+ * next control drawn at the same spot (a sheet replaced by another) would look hovered.
  */
 .ac-button {
   height: var(--ac-control-md);
@@ -22,10 +25,17 @@
   flex-shrink: 0;
   transition: background-color var(--ac-duration-fast), border-color var(--ac-duration-fast);
 }
-.ac-button:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+.ac-button:focus-visible:not(:disabled, [aria-disabled='true']) {
   background: var(--ac-color-primary-strong);
   color: var(--ac-color-on-primary);
   text-decoration: none;
+}
+@media (hover: hover) {
+  .ac-button:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--ac-color-primary-strong);
+    color: var(--ac-color-on-primary);
+    text-decoration: none;
+  }
 }
 .ac-button--sm {
   height: var(--ac-control-sm);
@@ -42,22 +52,40 @@
   color: var(--ac-color-text);
   font-weight: 600;
 }
-.ac-button--secondary:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+.ac-button--secondary:focus-visible:not(:disabled, [aria-disabled='true']) {
   background: var(--ac-color-bg-subtle);
   color: var(--ac-color-text);
 }
+@media (hover: hover) {
+  .ac-button--secondary:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-text);
+  }
+}
 .ac-button--danger { color: var(--ac-color-required); }
-.ac-button--danger:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+.ac-button--danger:focus-visible:not(:disabled, [aria-disabled='true']) {
   background: var(--ac-color-danger-soft);
   color: var(--ac-color-required);
+}
+@media (hover: hover) {
+  .ac-button--danger:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--ac-color-danger-soft);
+    color: var(--ac-color-required);
+  }
 }
 .ac-button--ghost {
   background: transparent;
   color: var(--ac-color-primary);
 }
-.ac-button--ghost:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+.ac-button--ghost:focus-visible:not(:disabled, [aria-disabled='true']) {
   background: var(--ac-color-primary-soft);
   color: var(--ac-color-primary-strong);
+}
+@media (hover: hover) {
+  .ac-button--ghost:hover:not(:disabled, [aria-disabled='true']) {
+    background: var(--ac-color-primary-soft);
+    color: var(--ac-color-primary-strong);
+  }
 }
 .ac-button--add {
   border: 1px dashed var(--ac-color-border-dashed);
@@ -65,10 +93,17 @@
   color: var(--ac-color-primary);
   font-weight: 600;
 }
-.ac-button--add:is(:hover, :focus-visible):not(:disabled, [aria-disabled='true']) {
+.ac-button--add:focus-visible:not(:disabled, [aria-disabled='true']) {
   border-color: var(--ac-color-primary);
   background: var(--ac-color-surface);
   color: var(--ac-color-primary-strong);
+}
+@media (hover: hover) {
+  .ac-button--add:hover:not(:disabled, [aria-disabled='true']) {
+    border-color: var(--ac-color-primary);
+    background: var(--ac-color-surface);
+    color: var(--ac-color-primary-strong);
+  }
 }
 .ac-button:disabled,
 .ac-button[aria-disabled='true'] {
@@ -95,9 +130,15 @@
   flex-shrink: 0;
   text-decoration: none;
 }
-.ac-icon-button:is(:hover, :focus-visible) {
+.ac-icon-button:focus-visible {
   background: var(--ac-color-bg-subtle);
   color: var(--ac-color-text);
+}
+@media (hover: hover) {
+  .ac-icon-button:hover {
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-text);
+  }
 }
 .ac-icon-button--sm {
   width: var(--ac-control-sm);
@@ -117,9 +158,15 @@
   background: var(--ac-color-primary);
   color: var(--ac-color-on-primary);
 }
-.ac-icon-button--primary:is(:hover, :focus-visible) {
+.ac-icon-button--primary:focus-visible {
   background: var(--ac-color-primary-strong);
   color: var(--ac-color-on-primary);
+}
+@media (hover: hover) {
+  .ac-icon-button--primary:hover {
+    background: var(--ac-color-primary-strong);
+    color: var(--ac-color-on-primary);
+  }
 }
 .ac-icon-button:disabled {
   opacity: 0.45;

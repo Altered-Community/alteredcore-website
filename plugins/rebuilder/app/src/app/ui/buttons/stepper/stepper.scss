@@ -67,11 +67,13 @@ button[aria-disabled="true"] {
   height: calc(var(--ac-control-sm) - 4px);
   border: 1px solid var(--ac-color-border-control);
 }
-.ac-stepper--inline button:hover:not(:disabled) .ring {
-  background: var(--ac-color-bg-subtle);
-}
-.ac-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
-  background: var(--ac-color-bg-subtle);
+@media (hover: hover) {
+  .ac-stepper--inline button:hover:not(:disabled) .ring {
+    background: var(--ac-color-bg-subtle);
+  }
+  .ac-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
+    background: var(--ac-color-bg-subtle);
+  }
 }
 .ac-stepper--inline button[aria-disabled="true"] .ring {
   opacity: 0.45;

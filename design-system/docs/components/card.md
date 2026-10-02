@@ -40,7 +40,7 @@ Card with a picture, as a link:
 | `ac-card--sm` | 12 px padding at every width. |
 | `ac-card--flush` | No padding, content clipped to the radius (media cards, lists, tables). |
 | `ac-card--raised` | No border, `--ac-shadow-card` (a card that floats over the page). |
-| `ac-card--interactive` | The whole card is a link or button: pointer cursor; on hover and keyboard focus the border darkens and the card shadow appears. |
+| `ac-card--interactive` | The whole card is a link or button: pointer cursor; on hover (devices that can hover) and keyboard focus the border darkens and the card shadow appears. |
 
 | Part | Role |
 |---|---|
@@ -73,7 +73,7 @@ first).
 </nav>
 ```
 
-`a.ac-list__item` gets the subtle background on hover and focus. There is no selected style: mark
+`a.ac-list__item` gets the subtle background on hover (devices that can hover) and focus. There is no selected style: mark
 the current row with `aria-current="page"` and, if it must be visible, a badge or bold text.
 
 ## Empty state — `ac-empty`

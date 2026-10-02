@@ -25,9 +25,11 @@ a {
   color: var(--ac-color-text);
   transition: box-shadow 0.15s;
 }
-a:hover {
-  box-shadow: var(--ac-shadow-card);
-  color: var(--ac-color-text);
+@media (hover: hover) {
+  a:hover {
+    box-shadow: var(--ac-shadow-card);
+    color: var(--ac-color-text);
+  }
 }
 .visual {
   position: relative;

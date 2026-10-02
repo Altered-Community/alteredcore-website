@@ -28,8 +28,10 @@ input {
   max-width: 100%;
   outline: none;
 }
-input:hover {
-  border-color: var(--ac-color-border);
+@media (hover: hover) {
+  input:hover {
+    border-color: var(--ac-color-border);
+  }
 }
 input:focus {
   border-color: var(--ac-color-primary);

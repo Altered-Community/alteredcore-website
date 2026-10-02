@@ -12,8 +12,10 @@
   border-bottom: none;
   border-radius: var(--ac-radius-md);
 }
-:host(.panel:hover) {
-  background: var(--ac-color-bg-subtle);
+@media (hover: hover) {
+  :host(.panel:hover) {
+    background: var(--ac-color-bg-subtle);
+  }
 }
 :host(:last-child) {
   border-bottom: none;
