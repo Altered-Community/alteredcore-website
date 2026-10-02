@@ -21,5 +21,4 @@ before changing anything under `design-system/` or building a screen.
   page is migrated, it uses `ac-*` classes and `--ac-*` tokens directly.
 - PHP helpers (`php/ui.php`) must stay PHP 7.4 compatible (production runs php:7.4).
 - After a change: `php tests/run.php` (Docker: `docker compose exec web php tests/run.php`), then
-  look at `/pages/design-system` in both themes, and remind the user to sync the Claude Design
-  project (`/design-sync` in Claude Code, `WORKFLOW.md`).
+  look at `/pages/design-system` in both themes.

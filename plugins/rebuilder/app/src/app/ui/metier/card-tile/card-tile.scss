@@ -82,10 +82,14 @@ button.visual:focus-visible {
   opacity: 0;
   transition: opacity 0.15s;
 }
-:host(:hover) .favorite,
 .favorite:focus-visible,
 .favorite.on {
   opacity: 1;
+}
+@media (hover: hover) {
+  :host(:hover) .favorite {
+    opacity: 1;
+  }
 }
 @media (hover: none), (pointer: coarse) {
   .favorite {

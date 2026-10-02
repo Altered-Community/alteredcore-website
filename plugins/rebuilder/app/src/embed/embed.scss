@@ -48,8 +48,10 @@
     border-radius: 4px;
     background: var(--ac-color-scrollbar) padding-box;
   }
-  :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--ac-color-scrollbar-hover);
+  @media (hover: hover) {
+    :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--ac-color-scrollbar-hover);
+    }
   }
 }
 
@@ -141,7 +143,9 @@
   text-align: center;
 }
 
+/* Compact: the secondary action (« Annuler », « Réinitialiser »…) stays, full width under the others. */
 .ac-overlay--sheet .ac-overlay-footer .secondary-action,
 .ac-overlay--fullscreen .ac-overlay-footer .secondary-action {
-  display: none;
+  order: 1;
+  height: var(--ac-control-lg);
 }

@@ -76,7 +76,7 @@ Square button with an icon only: toolbars, card actions, close buttons.
 | `ac-icon-button` | Surface, border, `--ac-color-text-2` icon, `--ac-control-md` square. |
 | `ac-icon-button--ghost` | No border, no background (toolbars, inside cards). |
 | `ac-icon-button--primary` | Primary background, `--ac-color-on-primary` icon. |
-| `ac-icon-button--sm` / `--lg` | `--ac-control-sm` / `--ac-control-lg` square. |
+| `ac-icon-button--sm` / `ac-icon-button--lg` | `--ac-control-sm` / `--ac-control-lg` square. |
 | `ac-icon-button__dot` | 8 px primary dot in the top-right corner (unread, filter active). Describe it in the label ("Notifications, 3 unread"). |
 
 Disabled: `disabled` (45 % opacity).

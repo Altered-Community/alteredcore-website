@@ -102,7 +102,31 @@ focus trapping and Escape.
 | `ac-scrim` | Fixed full-screen layer in `--ac-color-scrim`, `z-index: var(--ac-z-overlay)`. For panels that are not a native `<dialog>` (drawer, loader). |
 
 Under 768 px the dialog becomes a bottom sheet: full width, stuck to the bottom, only the top
-corners rounded (`--ac-radius-sheet`), `--ac-shadow-sheet`.
+corners rounded (`--ac-radius-sheet`), `--ac-shadow-sheet`. Its actions stack full width at
+`--ac-control-lg`, the primary one on top and « Cancel » (or « Reset »…) under it: the secondary
+action stays visible, the close button is not its only replacement.
+
+Confirm with this dialog, never with the browser's `confirm()` / `alert()` / `prompt()`: they
+ignore the theme, the fonts and the bottom sheet.
+
+### In an Angular plugin
+
+Re:Builder does not render `ac-dialog` itself: its windows go through `AcOverlayService`
+(`plugins/rebuilder/app/src/app/ui/overlay/`, CDK Dialog in the shadow root), which gives the same
+centered window, bottom sheet under 768 px, Escape, backdrop and browser Back. Content puts its
+actions in `ac-overlay-footer`, primary last, the secondary one with the `secondary-action` class
+(stacked under the primary one in compact). For a yes / no question, use `openConfirm()`
+(`features/shared/confirm/`):
+
+```ts
+openConfirm(this.overlay, {
+  title: $localize`:@@deck.page.deleteTitle:Supprimer le deck ?`,
+  message: $localize`:@@deck.page.deleteConfirm:« ${name}:name: » sera supprimé. Cette action est irréversible.`,
+  confirmLabel: $localize`:@@deck.page.deleteAction:Supprimer`,
+  icon: 'trash-2',
+  danger: true,
+}).subscribe((confirmed) => { if (confirmed) this.delete(); });
+```
 
 ## Spinner — `ac-spinner`
 

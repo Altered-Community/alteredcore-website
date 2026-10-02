@@ -4,8 +4,8 @@ One look for the whole site: the shell (header, menu, footer), the PHP pages, th
 the SPA plugins (Angular today, React or others later). The design comes from Altered Re:Builder;
 the site has a light and a dark theme and two densities, nothing else to choose.
 
-- **Source of truth**: this folder. The design project in Claude Design is a synchronised copy
-  (see [WORKFLOW.md](WORKFLOW.md)).
+- **Source of truth**: this folder; `/design` in Claude Code reads it from the repo (see
+  [WORKFLOW.md](WORKFLOW.md)).
 - **No build**: plain CSS files, served as they are. The site never runs Node. The only generated
   files (icons) are committed.
 - **Reference page**: `/pages/design-system` shows every token and component, in both themes and
@@ -26,7 +26,7 @@ the site has a light and a dark theme and two densities, nothing else to choose.
 | `php/ui.php` | PHP helpers: `ac_icon()`, stylesheet lists used by the shell. |
 | `js/ac.js` | `acIcon()` for HTML built by the site's scripts. |
 | `docs/components/*.md` | One page per component family: markup, variants, states, accessibility. |
-| `WORKFLOW.md` | How to design and implement with Claude Code, the design mode and Claude Design. |
+| `WORKFLOW.md` | How to design and implement with Claude Code and its design mode (`/design`). |
 | `AGENTS.md` | Rules for coding agents when touching the design system (`CLAUDE.md` imports it for Claude Code). |
 
 ## How it is loaded
@@ -133,9 +133,9 @@ Icons: `lucide-react` (same names as `ac_icon()`), with `className="ac-icon"`.
 
 ## Changing the design system
 
-See [WORKFLOW.md](WORKFLOW.md). In short: design in Claude Design (or with `/design` in Claude
-Code), then update `tokens/` and `css/components/`, the doc in `docs/components/`, the reference
-page (`pages/design-system.php`), and the framework components that render it. Run
+See [WORKFLOW.md](WORKFLOW.md). In short: design with `/design` in Claude Code, then update
+`tokens/` and `css/components/`, the doc in `docs/components/`, the reference page
+(`pages/design-system.php`), and the framework components that render it. Run
 `php tests/run.php` (checks breakpoints, icons and hard-coded colours).
 
 Icons: to add a Font Awesome name used by legacy markup, add it to `icons/fa-map.json` if Lucide

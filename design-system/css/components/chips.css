@@ -19,6 +19,14 @@
   white-space: nowrap;
   flex-shrink: 0;
   text-decoration: none;
+  position: relative;
+}
+/* Tap area of at least --ac-hit-min (44 px in touch density) while the chip is drawn at --ac-control-sm.
+   The insets start inside the 1px border, hence the extra -1px. */
+.ac-chip::after {
+  content: '';
+  position: absolute;
+  inset: min(-1px, calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2 - 1px)) -1px;
 }
 @media (hover: hover) { .ac-chip:hover { color: var(--ac-color-text); } }
 .ac-chip--square {

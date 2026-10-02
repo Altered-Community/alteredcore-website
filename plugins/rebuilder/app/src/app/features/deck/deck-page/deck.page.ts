@@ -28,6 +28,7 @@ import { DeckActionsSheet, type DeckActionsData, type DeckActionsResult } from '
 import { deckImageBusyMessage } from '../deck-image-actions';
 import { DeckImageExport } from '../deck-image-export/deck-image-export';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
+import { openConfirm } from '../../shared/confirm/confirm.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openShareDeck } from '../share-deck/share-deck.overlay';
@@ -208,10 +209,18 @@ export class DeckPage {
   }
 
   protected remove(): void {
-    if (!confirm($localize`:@@deck.page.deleteConfirm:Supprimer « ${this.deck.name()}:name: » ?`)) return;
-    this.deck.delete().subscribe((ok) => {
-      if (ok) void this.router.navigateByUrl('/decks');
-      else this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
+    openConfirm(this.overlay, {
+      title: $localize`:@@deck.page.deleteTitle:Supprimer le deck ?`,
+      message: $localize`:@@deck.page.deleteConfirm:« ${this.deck.name()}:name: » sera supprimé. Cette action est irréversible.`,
+      confirmLabel: $localize`:@@deck.page.deleteAction:Supprimer`,
+      icon: 'trash-2',
+      danger: true,
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.deck.delete().subscribe((ok) => {
+        if (ok) void this.router.navigateByUrl('/decks');
+        else this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
+      });
     });
   }
 

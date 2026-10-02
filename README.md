@@ -86,8 +86,8 @@ define('BASE_URL', '/alteredcore'); // leave empty if at domain root
 One look for the shell, the core pages and every plugin (PHP or SPA): `design-system/` holds the
 tokens (light and dark themes, pointer and touch densities), the `ac-*` components, Lucide icons,
 the Bootstrap bridge and the docs. Plain CSS, no build. Reference page: `/pages/design-system`.
-Start with [design-system/README.md](design-system/README.md); designing with Claude Code and
-Claude Design: [design-system/WORKFLOW.md](design-system/WORKFLOW.md).
+Start with [design-system/README.md](design-system/README.md); designing with Claude Code
+(`/design`): [design-system/WORKFLOW.md](design-system/WORKFLOW.md).
 
 ---
 
