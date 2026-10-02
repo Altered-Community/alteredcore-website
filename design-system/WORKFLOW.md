@@ -31,6 +31,23 @@ exist for the code.
 5. **Check**: `/pages/design-system` for the components, the page itself in light, dark, and at
    375 px wide; `design:accessibility-review` on the result if the screen is new.
 
+## Adjusting an existing pattern (variants in the real app)
+
+For a change to something that already exists (spacing, order of the buttons, a mobile state, which
+action is shown), compare variants on the real screens rather than on artboards: they render with the
+real components, data and CSS.
+
+1. **Scenario.** A module in `tests/e2e/variants/` (example: `sheet-secondary-action.mjs`): the scenes
+   (URL + steps up to the state to show), the variants (CSS added to the page and to the plugins'
+   shadow roots, `''` for the current state), the user and the viewports.
+2. **Boards.** With the stack up (`README.md` § Full stack):
+   `cd tests/e2e && node preview-variants.mjs variants/<scenario>.mjs` writes one image per scene and
+   viewport, the variants side by side, in `tests/e2e/evidence/variants/<scenario>/`.
+3. **Choose**, then write the rule where it belongs: the component CSS (`css/components/` or the
+   plugin's overlay styles), its doc (`docs/components/`), the reference page, and the
+   `AGENTS.md` of the plugin if agents must follow it. Keep the scenario: it shows why the rule is
+   what it is, and re-running it checks the screens later.
+
 ## Adding or changing a component
 
 1. Design it (`/design`), including every state: hover, focus, disabled, error,
@@ -52,4 +69,5 @@ large text and UI parts), then look at `/pages/design-system` in both themes.
 
 - No hex colour or pixel height outside `tokens/` (the tests catch colours in `css/` and plugins).
 - New components are documented and on the reference page.
-- Screenshots in light and dark, desktop and phone, in the PR description.
+- Screenshots in light and dark, desktop and phone, in the PR description: the e2e evidence
+  (`E2E_EVIDENCE_DIR`) composed and pushed by `node tests/e2e/pr-screenshots.mjs <pr>`.
