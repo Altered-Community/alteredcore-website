@@ -128,7 +128,7 @@
   background: var(--ac-color-bg-subtle);
 }
 .ac-table tbody tr:last-child td { border-bottom: none; }
-.ac-table tbody tr:hover td { background: var(--ac-color-bg-subtle); }
+@media (hover: hover) { .ac-table tbody tr:hover td { background: var(--ac-color-bg-subtle); } }
 .ac-table .ac-table__num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---- Toast: short notice at the bottom of the screen, with an optional action ----

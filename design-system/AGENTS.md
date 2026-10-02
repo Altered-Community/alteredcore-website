@@ -7,6 +7,8 @@ before changing anything under `design-system/` or building a screen.
   dark value (`:root[data-theme='dark']`), and a touch value if it depends on the density.
 - Components (`css/components/`) use tokens only and never test `data-theme` / `data-density`:
   they are injected into SPA shadow roots, where `<html>` selectors do not match.
+- Hover styles go in `@media (hover: hover)`, keyboard focus (`:focus-visible`) outside it: on
+  touch screens `:hover` sticks to the last tapped spot until the next tap.
 - Class names: `ac-<component>`, `ac-<component>__<part>`, `ac-<component>--<variant>`. States
   use ARIA attributes (`aria-pressed`, `aria-current`, `aria-selected`, `aria-invalid`,
   `:disabled`) rather than classes when a native attribute exists.

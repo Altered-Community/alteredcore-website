@@ -42,7 +42,7 @@ Heights follow the density: nothing to do in the markup.
 
 | State | How |
 |---|---|
-| Hover, keyboard focus | Automatic (`:hover`, `:focus-visible`): darker primary, subtle background for secondary. The global focus outline is drawn as well. |
+| Hover, keyboard focus | Automatic (`:hover`, `:focus-visible`): darker primary, subtle background for secondary. The global focus outline is drawn as well. Hover applies only on devices that can hover (`@media (hover: hover)`): on touch screens `:hover` sticks after a tap, so the control drawn next at the same spot would look hovered. |
 | Disabled | `disabled` on a `<button>`; `aria-disabled="true"` on an `<a>` (and remove its `href` or prevent the click). Drawn at 45 % opacity with a `not-allowed` cursor; hover styles are off. |
 | Loading | Disable the button and replace its icon with `<span class="ac-spinner" aria-hidden="true"></span>` or `ac_icon('loader-circle', 'ac-icon--spin')`; keep the label. |
 

@@ -204,7 +204,7 @@ screens).
 ```
 
 Header cells: overline style (12 px, uppercase, muted) on the subtle background. Rows: 10 px ×
-16 px padding, divider between rows, subtle background on hover. `ac-table__num` right-aligns a
+16 px padding, divider between rows, subtle background on hover (devices that can hover). `ac-table__num` right-aligns a
 column with tabular figures.
 
 ## Density

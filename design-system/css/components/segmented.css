@@ -55,6 +55,8 @@
   color: var(--ac-color-primary-strong);
   font-weight: 700;
 }
-.ac-segmented > :is(button, a):hover:not([aria-pressed='true'], [aria-current], [aria-selected='true'], .is-active) {
-  color: var(--ac-color-text);
+@media (hover: hover) {
+  .ac-segmented > :is(button, a):hover:not([aria-pressed='true'], [aria-current], [aria-selected='true'], .is-active) {
+    color: var(--ac-color-text);
+  }
 }

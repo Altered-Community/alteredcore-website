@@ -22,11 +22,19 @@
   cursor: pointer;
   transition: border-color var(--ac-duration-fast), box-shadow var(--ac-duration-fast);
 }
-.ac-card--interactive:is(:hover, :focus-visible) {
+.ac-card--interactive:focus-visible {
   border-color: var(--ac-color-border-control);
   box-shadow: var(--ac-shadow-card);
   color: var(--ac-color-text);
   text-decoration: none;
+}
+@media (hover: hover) {
+  .ac-card--interactive:hover {
+    border-color: var(--ac-color-border-control);
+    box-shadow: var(--ac-shadow-card);
+    color: var(--ac-color-text);
+    text-decoration: none;
+  }
 }
 .ac-card__media {
   display: block;
@@ -73,7 +81,8 @@
 }
 .ac-list > li:first-child,
 .ac-list__item:first-child { border-top: none; }
-a.ac-list__item:is(:hover, :focus-visible) { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); }
+a.ac-list__item:focus-visible { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); }
+@media (hover: hover) { a.ac-list__item:hover { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); } }
 
 /* Empty state. */
 .ac-empty {

@@ -40,8 +40,10 @@ body,
   color: var(--ac-color-link);
 }
 
-:where(body, .ac-plugin-root) :where(a:hover) {
-  color: var(--ac-color-link-hover);
+@media (hover: hover) {
+  :where(body, .ac-plugin-root) :where(a:hover) {
+    color: var(--ac-color-link-hover);
+  }
 }
 
 :focus-visible {
