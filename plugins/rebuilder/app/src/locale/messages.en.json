@@ -107,8 +107,8 @@
     "deck.page.byCost": "By cost",
     "deck.page.public": "Public",
     "deck.page.private": "Private",
-    "deck.page.moreOwned": "More actions (copy decklist, duplicate, delete)",
-    "deck.page.more": "More actions (copy decklist, duplicate)",
+    "deck.page.moreOwned": "More actions (copy as image, copy decklist, duplicate, delete)",
+    "deck.page.more": "More actions (copy as image, copy decklist, duplicate)",
     "deck.page.navPreview": "Preview",
     "deck.page.listCopied": "Decklist copied to the clipboard.",
     "deck.page.copyFailed": "Copying is not available in this browser.",
@@ -712,6 +712,21 @@
     "editor.hand": "Starting hand",
     "editor.handShort": "Hand",
     "title.editorHand": "Starting hand",
-    "format.bga.heroUnavailable": "Hero not on BGA"
+    "format.bga.heroUnavailable": "Hero not on BGA",
+    "deck.image.copied": "Image copied to the clipboard.",
+    "deck.image.unavailable": "The deck’s image is not available right now. Try again later.",
+    "deck.image.copyFailed": "Copying the image is not available in this browser. Save it instead.",
+    "deck.image.busy": "Generating the image…",
+    "deck.image.copy": "Copy as image",
+    "deck.image.more": "More image export options",
+    "deck.image.menu": "Export as image",
+    "deck.image.copyItem": "Copy to the clipboard",
+    "deck.image.copyHint": "To paste it in Discord or elsewhere",
+    "deck.image.default": "Default",
+    "deck.image.save": "Save the image",
+    "deck.image.open": "Open in a new tab",
+    "deck.actions.imageCopy": "{$START_TAG_AC_ICON}{$CLOSE_TAG_AC_ICON}Copy as image",
+    "deck.actions.imageSave": "{$START_TAG_AC_ICON}{$CLOSE_TAG_AC_ICON}Save the image",
+    "deck.actions.imageOpen": "{$START_TAG_AC_ICON}{$CLOSE_TAG_AC_ICON}Open the image in a new tab"
   }
 }
