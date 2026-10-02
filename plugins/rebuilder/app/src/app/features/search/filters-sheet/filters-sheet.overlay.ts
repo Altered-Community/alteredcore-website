@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { defaultFilters, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { defaultFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
@@ -44,7 +44,7 @@ export class FiltersSheetOverlay {
   editEffect(index: number): void {
     const effect = this.draft().effects[index];
     if (!effect) return;
-    openEffectEditorStep(this.ref, { effect, index }).afterClosed.subscribe((next) => {
+    openEffectEditorStep(this.ref, { effect, index, query: toUniquesQuery(this.draft(), this.ref.data.faction) }).afterClosed.subscribe((next) => {
       if (!next) return;
       this.draft.update((d) => ({ ...d, effects: d.effects.map((e, i) => (i === index ? next : e)) }));
     });

@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { ORDER_OPTIONS, activeFilterCount, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
@@ -230,7 +230,7 @@ export class CardSearch {
   protected editEffect(index: number): void {
     const effect = this.draft().effects[index];
     if (!effect) return;
-    openEffectEditor(this.overlay, { effect, index }).afterClosed.subscribe((next) => {
+    openEffectEditor(this.overlay, { effect, index, query: toUniquesQuery(this.draft(), this.search.faction()) }).afterClosed.subscribe((next) => {
       const effects = next
         ? this.draft().effects.map((e, i) => (i === index ? next : e))
         : this.draft().effects.filter((e, i) => i !== index || e.triggers.length || e.conditions.length || e.effects.length);

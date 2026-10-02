@@ -2,15 +2,15 @@
   <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
   <div class="crit">
     <span class="label" i18n="@@search.effect.when">Quand <span class="muted">· déclencheur</span></span>
-    <ac-combobox [options]="triggers()" [(values)]="pickedTriggers" placeholder="Ajouter un déclencheur…" i18n-placeholder="@@search.effect.addTrigger" />
+    <ac-combobox [options]="triggerOptions()" [(values)]="pickedTriggers" placeholder="Ajouter un déclencheur…" i18n-placeholder="@@search.effect.addTrigger" />
   </div>
   <div class="crit">
     <span class="label" i18n="@@search.effect.if">Si <span class="muted">· condition</span></span>
-    <ac-combobox [options]="conditions()" [(values)]="pickedConditions" placeholder="Ajouter une condition…" i18n-placeholder="@@search.effect.addCondition" emptyPlaceholder="Toutes · ajouter une condition…" i18n-emptyPlaceholder="@@search.effect.anyCondition" />
+    <ac-combobox [options]="conditionOptions()" [(values)]="pickedConditions" placeholder="Ajouter une condition…" i18n-placeholder="@@search.effect.addCondition" emptyPlaceholder="Toutes · ajouter une condition…" i18n-emptyPlaceholder="@@search.effect.anyCondition" />
   </div>
   <div class="crit">
     <span class="label" i18n="@@search.effect.then">Alors <span class="muted">· effet</span></span>
-    <ac-combobox [options]="effects()" [(values)]="pickedEffects" placeholder="Ajouter un effet…" i18n-placeholder="@@search.effect.addEffect" />
+    <ac-combobox [options]="effectOptions()" [(values)]="pickedEffects" placeholder="Ajouter un effet…" i18n-placeholder="@@search.effect.addEffect" />
   </div>
   @if (loadError()) {
     <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
