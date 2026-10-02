@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import qrcode from 'qrcode-generator';
 import { DeckStore } from '../../../core/deck-store';
 import { AcButton } from '../../../ui/buttons';
@@ -10,6 +11,8 @@ export interface ShareDeckData {
   url: string;
   /** The user's own private deck: first « Ce deck est privé », with « Rendre public & partager » (as on the site). */
   privateOwned: boolean;
+  /** Opened from the editor once the deck is saved: the line that says so (« Deck enregistré… »). */
+  saved?: string;
 }
 
 /** QR code of `text` as one SVG path (`n`: modules per side). */
@@ -33,7 +36,7 @@ export function qrPath(text: string): { size: number; path: string } {
 /** « Partager ce deck »: the link, « Copier », and a QR code (the site's share window). */
 @Component({
   selector: 'app-share-deck',
-  imports: [AcButton, AcInput, AcIcon],
+  imports: [AcButton, AcInput, AcIcon, NgTemplateOutlet],
   host: { class: 'ac-overlay-content' },
   templateUrl: './share-deck.overlay.html',
   styleUrl: './share-deck.overlay.scss',
@@ -42,6 +45,7 @@ export class ShareDeckOverlay {
   protected readonly ref = inject<AcOverlayRef<void, ShareDeckData>>(AcOverlayRef);
   private readonly deck = inject(DeckStore);
   protected readonly url = this.ref.data.url;
+  protected readonly saved = this.ref.data.saved;
   protected readonly step = signal<'private' | 'share'>(this.ref.data.privateOwned ? 'private' : 'share');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);

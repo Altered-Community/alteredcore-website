@@ -1,5 +1,12 @@
+<ng-template #savedLine>
+  @if (saved) {
+    <p class="saved" role="status"><ac-icon name="check" [size]="16" [strokeWidth]="2.4" />{{ saved }}</p>
+  }
+</ng-template>
+
 @if (step() === 'private') {
   <div class="ac-overlay-body">
+    <ng-container [ngTemplateOutlet]="savedLine" />
     <p class="private-title"><ac-icon name="lock" [size]="16" /><strong i18n="@@deck.share.privateTitle">Ce deck est privé</strong></p>
     <p class="muted" i18n="@@deck.share.privateBody">Le lien ne fonctionne que pour vous. Rendez le deck public pour que les autres puissent y accéder.</p>
     @if (error(); as e) {
@@ -28,6 +35,7 @@
         }
       </button>
     </div>
+    <ng-container [ngTemplateOutlet]="savedLine" />
     <div class="qr">
       <svg role="img" [attr.aria-label]="qrLabel" [attr.viewBox]="'-2 -2 ' + (qr().size + 4) + ' ' + (qr().size + 4)" shape-rendering="crispEdges">
         <path [attr.d]="qr().path" />
