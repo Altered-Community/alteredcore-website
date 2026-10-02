@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+button {
+  width: 100%;
+  min-height: 64px;
+  height: 100%;
+  padding: var(--ac-space-2) var(--ac-space-1-5);
+  border-radius: var(--ac-radius-control);
+  border: 1px solid var(--ac-color-border-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  cursor: pointer;
+  text-align: center;
+}
+button[aria-pressed='true'] {
+  border: 1.5px solid var(--ac-color-primary);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+}
+.logo {
+  filter: var(--ac-rebuilder-logo-filter);
+  width: 40px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+.name {
+  font-size: calc(var(--ac-select-font-size) - 2px); /* 11 px, 13 px in touch */
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}

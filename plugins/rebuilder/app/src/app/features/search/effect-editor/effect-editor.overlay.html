@@ -1,0 +1,22 @@
+<div class="ac-overlay-body">
+  <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+  <div class="crit">
+    <span class="label" i18n="@@search.effect.when">Quand <span class="muted">· déclencheur</span></span>
+    <ac-combobox [options]="triggerOptions()" [(values)]="pickedTriggers" placeholder="Ajouter un déclencheur…" i18n-placeholder="@@search.effect.addTrigger" />
+  </div>
+  <div class="crit">
+    <span class="label" i18n="@@search.effect.if">Si <span class="muted">· condition</span></span>
+    <ac-combobox [options]="conditionOptions()" [(values)]="pickedConditions" placeholder="Ajouter une condition…" i18n-placeholder="@@search.effect.addCondition" emptyPlaceholder="Toutes · ajouter une condition…" i18n-emptyPlaceholder="@@search.effect.anyCondition" />
+  </div>
+  <div class="crit">
+    <span class="label" i18n="@@search.effect.then">Alors <span class="muted">· effet</span></span>
+    <ac-combobox [options]="effectOptions()" [(values)]="pickedEffects" placeholder="Ajouter un effet…" i18n-placeholder="@@search.effect.addEffect" />
+  </div>
+  @if (loadError()) {
+    <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
+  }
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@search.effect.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="apply()" i18n="@@search.effect.apply">Appliquer</button>
+</div>

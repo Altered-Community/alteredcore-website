@@ -1,0 +1,17 @@
+<button
+  type="button"
+  class="ac-chip"
+  [class.ac-chip--square]="shape() === 'square'"
+  [class.is-on]="selected() || removable()"
+  [attr.aria-pressed]="removable() ? null : selected()"
+  [attr.aria-label]="removable() ? removeLabel() : null"
+  (click)="removable() ? remove.emit() : selected.set(!selected())"
+>
+  @if (dot()) {
+    <span class="ac-chip__dot" [style.--ac-chip-dot]="dot()"></span>
+  }
+  {{ label() }}
+  @if (removable()) {
+    <span class="ac-chip__remove"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></span>
+  }
+</button>

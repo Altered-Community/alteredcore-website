@@ -1,0 +1,42 @@
+:host {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-grow: 1;
+  --ac-filter-bar-bg: var(--ac-color-bg-app);
+}
+.scroller {
+  display: flex;
+  gap: var(--ac-space-2);
+  overflow-x: auto;
+  min-width: 0;
+  flex-grow: 1;
+  padding-right: 110px;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+.clear {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 36px;
+  background: linear-gradient(to right, transparent, var(--ac-filter-bar-bg) 36px);
+}
+.clear button {
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-1);
+  border: none;
+  background: none;
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+  color: var(--ac-color-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}

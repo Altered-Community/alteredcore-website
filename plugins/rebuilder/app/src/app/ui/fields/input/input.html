@@ -1,0 +1,32 @@
+@if (label()) {
+  <label [for]="id" class="ac-field__label">{{ label() }}@if (required()) {<span class="ac-field__required"> *</span>}</label>
+}
+<div class="wrap" [class.ac-input-icon]="!!icon()">
+  @if (icon(); as i) {
+    <ac-icon [name]="i" [size]="18" />
+  }
+  <input
+    #field
+    class="ac-input"
+    [class.ac-input--subtle]="appearance() === 'subtle'"
+    [id]="id"
+    [type]="type()"
+    [attr.inputmode]="inputmode()"
+    [attr.enterkeyhint]="enterkeyhint()"
+    [attr.aria-label]="label() ? null : ariaLabel() || placeholder()"
+    [attr.aria-invalid]="invalid() || null"
+    [placeholder]="placeholder()"
+    [value]="value()"
+    [readOnly]="readonly()"
+    autocomplete="off"
+    (input)="emit(field.value)"
+    (keydown.enter)="enter.emit(field.value)"
+    (blur)="onTouched()"
+    (focus)="readonly() && field.select()"
+  />
+  @if (clearable() && value()) {
+    <button type="button" class="clear" aria-label="Effacer" i18n-aria-label="@@ui.input.clear" (click)="emit(''); field.focus()">
+      <ac-icon name="x" [size]="16" />
+    </button>
+  }
+</div>

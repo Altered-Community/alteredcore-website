@@ -1,0 +1,29 @@
+:host {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--ac-space-1-5);
+}
+button {
+  height: var(--ac-control-sm);
+  border-radius: var(--ac-radius-md);
+  border: 1px solid var(--ac-color-border-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1-5);
+  cursor: pointer;
+}
+button[aria-pressed='true'] {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+}
+img {
+  height: 14px;
+  width: auto;
+  display: block;
+}

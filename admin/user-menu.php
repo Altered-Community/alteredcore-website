@@ -115,9 +115,9 @@ $total = count($items);
                     <?php if ($item['type'] === 'system' && $item['system_key'] === 'email_display'): ?>
                         <span class="text-muted fst-italic">user@email.com</span>
                     <?php elseif ($item['type'] === 'separator'): ?>
-                        <hr class="my-0" style="border-color:var(--neutral-300)">
+                        <hr class="my-0" style="border-color:var(--ac-color-border)">
                     <?php else: ?>
-                        <?php if ($item['icon']): ?><i class="<?= h($item['icon']) ?> me-1"></i><?php endif; ?>
+                        <?php if ($item['icon']): ?><?= ac_icon((string)($item['icon']), 'me-1') ?><?php endif; ?>
                         <?= h($item['label_en'] ?: '—') ?>
                         <?php if ($item['url']): ?>
                             <span class="text-muted ms-1">(<?= h($item['url']) ?>)</span>

@@ -78,6 +78,9 @@
   <a href="#pages">Front-end pages</a>
   <a href="#linking">Linking to pages</a>
   <a href="#assets">CSS &amp; JS assets (incl. global)</a>
+  <a href="#design-system">Design system (tokens, components, icons)</a>
+  <a href="#spa">SPA plugins (manifest v2)</a>
+  <a href="#host">Host contract (window.AlteredCore)</a>
   <div class="nav-section">Back-end</div>
   <a href="#admin">Admin pages</a>
   <a href="#tinymce">TinyMCE rich-text editor</a>
@@ -88,6 +91,7 @@
   <a href="#variables">Variables &amp; constants</a>
   <div class="nav-section">Development</div>
   <a href="#dev">Local development</a>
+  <a href="#tests">Tests &amp; CI</a>
   <div class="nav-section">Deployment</div>
   <a href="#zip">Creating the ZIP</a>
   <a href="#install">Installing, updating &amp; activating</a>
@@ -206,7 +210,7 @@
   <tr><td>version</td><td><span class="req">required</span></td><td>Semver string, e.g. <code>1.2.0</code>. Required — the installer uses this to determine whether an upload is an upgrade.</td></tr>
   <tr><td>description</td><td><span class="req">required</span></td><td>One-line description shown in the Plugins admin page.</td></tr>
   <tr><td>author</td><td><span class="req">required</span></td><td>Author name or contact.</td></tr>
-  <tr><td>icon</td><td><span class="opt">optional</span></td><td>Font Awesome class used in the Plugins list, e.g. <code>fa-solid fa-star</code>.</td></tr>
+  <tr><td>icon</td><td><span class="opt">optional</span></td><td>Icon of the plugin in the Plugins list and admin sidebar, as a Font Awesome class string (e.g. <code>fa-solid fa-star</code>), drawn with the matching Lucide icon by the icon shim. Places rendered with <code>ac_icon()</code> also accept a Lucide name.</td></tr>
   <tr><td>table_prefix</td><td><span class="opt">optional</span></td><td>Short unique string used to namespace your database tables, e.g. <code>"hw"</code>. Results in table names like <code>altcore_plugin_hw_messages</code>. Required if your plugin declares <code>tables</code> or uses <code>qp()</code>.</td></tr>
   <tr><td>pages</td><td><span class="opt">optional</span></td><td>Array of front-end page declarations. See <a href="#pages">Front-end pages</a>.</td></tr>
   <tr><td>admin</td><td><span class="opt">optional</span></td><td>Array of admin section declarations. See <a href="#admin">Admin pages</a>.</td></tr>
@@ -299,8 +303,8 @@ redirect($adminUrl);                   // after a POST action
 header('Location: ' . $adminUrl);     // raw redirect</code></pre>
 
 <h3>Linking from admin back to the front-end page</h3>
-<pre><code>&lt;a href="&lt;?= BASE_URL ?&gt;/pages/my-slug" target="_blank" class="btn btn-sm btn-outline-secondary"&gt;
-    &lt;i class="fa-solid fa-arrow-up-right-from-square me-1"&gt;&lt;/i&gt; View page
+<pre><code>&lt;a href="&lt;?= BASE_URL ?&gt;/pages/my-slug" target="_blank" class="ac-button ac-button--secondary ac-button--sm"&gt;
+    &lt;?= ac_icon('external-link') ?&gt; View page
 &lt;/a&gt;</code></pre>
 
 <h3>Registering the page in the navigation menu</h3>
@@ -343,9 +347,9 @@ VALUES
 }</code></pre>
 
 <ul>
-  <li><strong>CSS</strong> (<code>css</code> and <code>global_css</code>) is injected as <code>&lt;link&gt;</code> tags in <code>&lt;head&gt;</code>, after Bootstrap and the theme stylesheet.</li>
+  <li><strong>CSS</strong> (<code>css</code> and <code>global_css</code>) is injected as <code>&lt;link&gt;</code> tags in <code>&lt;head&gt;</code>, after Bootstrap and the design system (see <a href="#design-system">Design system</a>).</li>
   <li><strong>JS</strong> (<code>js</code> and <code>global_js</code>) is injected as <code>&lt;script&gt;</code> tags just before the Bootstrap bundle in the footer.</li>
-  <li>Bootstrap 5 and Font Awesome are already loaded by the theme — no need to include them.</li>
+  <li>Bootstrap 5 and the design system (tokens, <code>ac-*</code> components, <code>ac_icon()</code> / <code>acIcon()</code>) are already loaded by the shell — no need to include them. Font Awesome is not loaded: use Lucide icons.</li>
   <li>Multiple files are supported: add them in order to the array.</li>
 </ul>
 
@@ -386,124 +390,207 @@ $pages  = array_values((array)($config['pages'] ?? []));
   Global assets (<code>global_css</code>, <code>global_js</code>, <code>global_php</code>) are loaded on <strong>every</strong> page while the plugin is active. Keep them small and fast. Wrap all JS in an IIFE; scope CSS selectors tightly with a unique ID or plugin-prefixed class; keep PHP files side-effect-free (output only, no redirects or session writes).
 </div>
 
-<h3>CSS layering — what goes where</h3>
-
-<p>Four layers apply to every page, loaded in this order. Each layer sits on top of the previous one:</p>
+<h3 id="design-system">Design system — how a plugin looks</h3>
+<p>The whole site shares one design system, in <code>design-system/</code> at the repository root
+(overview: <a href="../design-system/README.md">design-system/README.md</a>, design → code process:
+<a href="../design-system/WORKFLOW.md">design-system/WORKFLOW.md</a>). The shell loads it on every page, after
+Bootstrap: fonts, tokens, base styles, the <code>ac-*</code> components, a Bootstrap bridge and the icon shim.
+A plugin loads nothing and follows the light / dark theme and the pointer / touch density without any code.</p>
 
 <table class="kv">
-  <tr><th>#</th><th>Layer</th><th>File(s)</th><th>Rule</th></tr>
-  <tr>
-    <td>1</td>
-    <td><strong>Bootstrap 5</strong></td>
-    <td>CDN</td>
-    <td>Use Bootstrap utilities and components in HTML <em>before</em> writing any CSS. Covers layout (<code>container</code>, <code>row</code>, <code>col-*</code>), spacing (<code>mb-3</code>, <code>gap-2</code>, <code>p-4</code>), text (<code>text-muted</code>, <code>fw-bold</code>, <code>small</code>), flex (<code>d-flex</code>, <code>align-items-center</code>), buttons (<code>btn</code>, <code>btn-outline-secondary</code>), modals, dropdowns, badges, forms, and more.</td>
-  </tr>
-  <tr>
-    <td>2</td>
-    <td><strong>Site CSS</strong></td>
-    <td><code>css/style.css</code></td>
-    <td>Shared site components that all pages and plugins can use. <strong>Never add plugin-specific styles here.</strong> Reuse these classes in your plugin templates — they are theme-aware and respond to dark mode automatically.</td>
-  </tr>
-  <tr>
-    <td>3</td>
-    <td><strong>Plugin CSS</strong></td>
-    <td><code>plugins/{id}/assets/style.css</code></td>
-    <td>Only write plugin CSS for elements that <em>cannot</em> be expressed with layers 1–2. Keep it to layout geometry and plugin-specific selectors. Use CSS variables from the site palette — never hard-code colours.</td>
-  </tr>
-  <tr>
-    <td>4</td>
-    <td><strong>Active theme</strong></td>
-    <td><code>themes/{name}/style.css</code></td>
-    <td>Loaded last. Overrides everything above. Plugins do <em>not</em> need to know which theme is active — themes reskin Bootstrap components (<code>.dropdown-menu</code>, <code>.modal-content</code>, <code>.form-control</code>…) and redefine CSS variables globally. Your plugin inherits all of this automatically.</td>
-  </tr>
+  <tr><th>What</th><th>Where</th><th>Use it for</th></tr>
+  <tr><td><strong>Tokens</strong> <code>--ac-*</code></td><td><code>design-system/tokens/tokens.css</code></td><td>Every colour, font, spacing, radius, shadow and control height. Each colour token has a light and a dark value.</td></tr>
+  <tr><td><strong>Components</strong> <code>ac-*</code></td><td><code>design-system/css/components/*.css</code>, documented in <code>design-system/docs/components/</code></td><td>Page layout, buttons, cards, lists, badges, chips, notices, dialogs, fields, tabs, segmented controls, tables, pagination. Live reference: <code>/pages/design-system</code>.</td></tr>
+  <tr><td><strong>Icons</strong></td><td><code>ac_icon()</code> (PHP), <code>acIcon()</code> (site JS)</td><td>Lucide icons by name (<a href="https://lucide.dev/icons">lucide.dev/icons</a>), drawn as inline SVG.</td></tr>
+  <tr><td><strong>Bootstrap bridge</strong></td><td><code>design-system/css/bridges/bootstrap.css</code></td><td>Bootstrap markup (<code>btn</code>, <code>form-control</code>, <code>modal</code>, <code>dropdown-menu</code>, <code>alert</code>, <code>table</code>…) is drawn with the tokens, so existing Bootstrap markup keeps working. Bootstrap's grid and utilities (<code>row</code>, <code>col-*</code>, <code>d-flex</code>, <code>gap-2</code>, <code>mb-3</code>…) stay available.</td></tr>
 </table>
 
-<h4>Layer 1 — Bootstrap first</h4>
-<p>Always start with Bootstrap. Common utilities to reach for before writing any CSS:</p>
-<ul>
-  <li><strong>Layout</strong>: <code>container</code>, <code>row g-3</code>, <code>col-12 col-md-6</code>, <code>d-flex</code>, <code>align-items-center</code>, <code>justify-content-between</code>, <code>gap-2</code>, <code>flex-wrap</code>, <code>ms-auto</code></li>
-  <li><strong>Spacing</strong>: <code>mb-3</code>, <code>py-4</code>, <code>px-3</code>, <code>p-0</code></li>
-  <li><strong>Typography</strong>: <code>fw-bold</code>, <code>text-muted</code>, <code>small</code>, <code>fs-6</code>, <code>text-truncate</code></li>
-  <li><strong>Components</strong>: <code>btn btn-sm btn-outline-secondary</code>, <code>badge</code>, <code>alert alert-danger</code>, <code>input-group input-group-sm</code>, <code>form-control form-control-sm</code>, <code>form-select</code>, <code>modal fade</code> + <code>modal-dialog modal-dialog-centered</code>, <code>dropdown-menu</code> + <code>dropdown-item</code></li>
-  <li><strong>Visibility</strong>: <code>d-none d-md-block</code>, <code>position-relative</code>, <code>overflow-hidden</code>, <code>w-100</code>, <code>h-100</code></li>
-</ul>
+<h4>A page with the components</h4>
+<pre><code>&lt;div class="ac-page"&gt;
+  &lt;header class="ac-page-header"&gt;
+    &lt;div&gt;
+      &lt;h1 class="ac-page-header__title"&gt;&lt;?= h($txt['title']) ?&gt;&lt;/h1&gt;
+      &lt;p class="ac-page-header__subtitle"&gt;&lt;?= h($txt['subtitle']) ?&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class="ac-page-header__actions"&gt;
+      &lt;a class="ac-button" href="&lt;?= BASE_URL ?&gt;/pages/my-page?new=1"&gt;&lt;?= ac_icon('plus') ?&gt; &lt;?= h($txt['new']) ?&gt;&lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
 
-<h4>Layer 2 — Site CSS classes</h4>
-<p>After Bootstrap, reach for site-level shared classes before writing custom CSS. These are defined in <code>css/style.css</code> and automatically adapt to both themes and dark mode:</p>
-<ul>
-  <li><strong>Cards / surfaces</strong>: <code>card-altered</code> — the site's standard card surface</li>
-  <li><strong>Buttons</strong>: <code>btn-primary-altered</code> — the branded primary button</li>
-  <li><strong>Page header</strong>: <code>section-title</code> — the underlined page title style</li>
-  <li><strong>Tabs</strong>: <code>ac-tabs</code> + <code>ac-tab</code> (active state: <code>active</code>) — site-styled tab bar</li>
-  <li><strong>State panes</strong>: <code>ac-state-pane</code> — empty/loading state panel</li>
-  <li><strong>Notices</strong>: <code>ac-notice ac-notice--warning</code>, <code>ac-notice--info</code> — themed notice boxes</li>
-  <li><strong>Modal surfaces</strong>: Bootstrap's <code>modal-content</code>, <code>modal-header</code>, <code>modal-body</code>, <code>modal-footer</code> are already themed by <code>css/style.css</code> (sand background, site border colours) and overridden per theme — use them as-is, without adding custom background or border colours.</li>
-</ul>
+  &lt;div class="ac-card"&gt;
+    &lt;h2 class="ac-card__title"&gt;…&lt;/h2&gt;
+    &lt;p class="ac-card__meta"&gt;…&lt;/p&gt;
+    &lt;div class="ac-card__footer"&gt;
+      &lt;button type="button" class="ac-button ac-button--secondary ac-button--sm"&gt;…&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
 
-<h4>Layer 3 — Plugin CSS (last resort)</h4>
-<p>Write plugin CSS only for things that <em>genuinely</em> cannot be achieved with layers 1–2. Typical legitimate uses:</p>
-<ul>
-  <li>Custom geometry: a specific <code>max-height</code>, a grid with a fixed column count, a sticky panel offset.</li>
-  <li>Transition or animation unique to the plugin.</li>
-  <li>A component that exists nowhere else in the site (e.g. a card-flip, a scanner overlay).</li>
-</ul>
-<p>Always use CSS variables with fallbacks so themes can override:</p>
-<pre><code>/* Good — uses site variables, falls back gracefully */
-.my-badge { background: var(--overlay-badge-bg, rgba(0,0,0,.7)); color: #fff; }
+  &lt;div class="ac-notice ac-notice--warning" role="status"&gt;&lt;?= ac_icon('triangle-alert') ?&gt;&lt;div&gt;…&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>The <strong>hello-world</strong> plugin is a complete example (<code>plugins/hello-world/pages/hellopage.php</code>).</p>
 
-/* Bad — hard-coded colour, invisible to themes and dark mode */
-.my-badge { background: #333; color: #fff; }</code></pre>
+<h4>Icons</h4>
+<pre><code>&lt;?= ac_icon('trash-2') ?&gt;                          // decorative (aria-hidden)
+&lt;?= ac_icon('trash-2', 'ac-icon--16') ?&gt;           // extra classes
+&lt;?= ac_icon('trash-2', '', $txt['delete']) ?&gt;      // icon that carries meaning on its own
+
+button.innerHTML = acIcon('trash-2') + ' ' + label; // JS, label escaped beforehand</code></pre>
+<p>Font Awesome is no longer loaded. Old <code>&lt;i class="fa-solid fa-…"&gt;</code> markup is still drawn with the
+matching Lucide icon by <code>design-system/icons/fa-shim.css</code> (name map: <code>design-system/icons/fa-map.json</code>),
+but new code uses <code>ac_icon()</code> / <code>acIcon()</code>. The <code>icon</code> fields of <code>plugin.json</code> accept a Lucide
+name or a Font Awesome class string where the shell renders them with <code>ac_icon()</code>; keep the Font Awesome form where
+the admin still renders them as <code>&lt;i class&gt;</code> (plugin list, admin sidebar). The Altered game glyphs (<code>fak fa-altered-*</code>) are a font and stay as they are.</p>
+
+<h4>Rules for plugin CSS</h4>
+<p>Plugin CSS (<code>assets/*.css</code>) only lays things out: grid templates, a fixed <code>max-height</code>, a sticky offset,
+an animation. Everything else comes from the tokens.</p>
+<ol>
+  <li><strong>No raw colours.</strong> No hex, <code>rgb()</code> or <code>hsl()</code> in plugin CSS, <code>&lt;style&gt;</code> blocks, <code>style="…"</code>
+      attributes or colours set from JS. Use <code>var(--ac-color-*)</code>. <code>tests/DesignSystemTest.php</code> lists every
+      remaining raw colour by file and line.</li>
+  <li><strong>No dark-theme selectors.</strong> Never write <code>[data-theme="dark"] .my-class</code>: the tokens already have a dark value.</li>
+  <li><strong>Heights come from <code>--ac-control-sm | md | lg</code></strong>, never a pixel height: they grow in the touch density.</li>
+  <li><strong>Radii, shadows, fonts and spacing are tokens too</strong>: <code>--ac-radius-*</code>, <code>--ac-shadow-*</code>,
+      <code>--ac-font-*</code> (shorthand: <code>font: var(--ac-font-small)</code>), <code>--ac-space-*</code>.</li>
+  <li><strong>Contrast</strong>: text on <code>--ac-color-primary</code> is <code>--ac-color-on-primary</code>; on a soft background
+      (<code>--ac-color-*-soft</code>) use the matching strong colour (<code>--ac-color-primary-strong</code>, <code>--ac-color-success</code>…);
+      text on artwork is <code>--ac-color-on-strong</code> with <code>text-shadow: var(--ac-shadow-on-image)</code>.</li>
+  <li><strong>Use an <code>ac-*</code> component when one exists</strong> instead of restyling your own button, card, badge, notice or tabs.
+      Prefix your own classes with the plugin's short id (<code>hw-</code>, <code>tr-</code>…), never <code>ac-</code>.</li>
+  <li><strong>Values no token covers</strong> (game data, artwork effects, colours of your own categories) become tokens named
+      <code>--ac-&lt;plugin-id&gt;-&lt;role&gt;</code> in the “other PHP plugins” slots of <code>tokens.css</code>, with a dark value when
+      it depends on the theme.</li>
+  <li><strong>Breakpoints</strong>: <code>@media (min-width: 768px)</code> and <code>(min-width: 1200px)</code>
+      (or <code>max-width: 767.98px</code> / <code>1199.98px</code>), nothing else.</li>
+</ol>
+<pre><code>/* Good — layout plus tokens */
+.my-tile { padding: var(--ac-space-4); border-radius: var(--ac-radius-card); background: var(--ac-color-surface); }
+.my-tile.is-selected { background: var(--ac-color-primary); color: var(--ac-color-on-primary); }
+
+/* Bad — raw colour and a dark-theme override */
+.my-tile { background: #fff; border-radius: 12px; }
+[data-theme="dark"] .my-tile { background: #222; }</code></pre>
 
 <div class="warn">
-  <strong>Never add plugin CSS to <code>css/style.css</code>.</strong> That file is global — it loads on every page. Plugin styles belong exclusively in the plugin's own <code>assets/style.css</code>.
+  <strong>Never add plugin CSS to the site's stylesheets or to <code>design-system/</code>.</strong> Plugin styles belong in the plugin's own
+  <code>assets/*.css</code>. A component that several plugins need is added to the design system first (CSS, doc, reference page), see
+  <a href="../design-system/WORKFLOW.md">WORKFLOW.md</a>.
 </div>
 
-<h4>Layer 4 — Themes override everything</h4>
-<p>The active theme's <code>style.css</code> is loaded after everything else. It redefines CSS variables (colours, glass effects) and overrides Bootstrap components. Your plugin does not need to handle themes at all — if you use Bootstrap classes and site CSS variables correctly, both themes (and dark mode) work automatically without any plugin changes.</p>
-<p>If a theme needs to adjust something specific to your plugin, it can add a rule targeting your plugin's selector. No coordination needed between the plugin and the theme.</p>
-
-<h4>Practical checklist</h4>
-<ol>
-  <li>Need a button? → <code>btn btn-sm btn-primary-altered</code> or <code>btn btn-outline-secondary</code>. No custom CSS needed.</li>
-  <li>Need a modal? → <code>modal fade</code> + <code>modal-dialog modal-dialog-centered</code>. Use <code>style="--bs-modal-width:400px"</code> for custom widths (not <code>max-width</code>). No custom background or border CSS needed — the site and theme handle it.</li>
-  <li>Need a dropdown? → <code>dropdown-menu</code> + <code>dropdown-item</code>. Themed automatically including dark mode.</li>
-  <li>Need a surface/card? → <code>card-altered p-3</code>. No custom CSS needed.</li>
-  <li>Need a colour? → Use <code>var(--primary-400)</code>, <code>var(--neutral-600)</code>, <code>var(--sand-200)</code>, etc. Never hard-code.</li>
-  <li>Still need custom CSS? → Write it in <code>assets/style.css</code> using CSS variables. One targeted selector, no <code>!important</code>.</li>
-</ol>
-
-<h3>CSS variables — making your plugin theme-aware</h3>
-<p>The site exposes a CSS custom property palette in <code>css/style.css :root</code>. Use these variables in your plugin stylesheet instead of hard-coded colours so that your plugin automatically adapts when a theme changes the palette:</p>
-
-<pre><code>/* Instead of hard-coded colour: */
-.my-badge { background: rgba(0,0,0,.7); color: #fff; }
-
-/* Use a variable with a fallback — theme can override just the variable: */
-.my-badge { background: var(--overlay-badge-bg, rgba(0,0,0,.7)); color: #fff; }</code></pre>
-
-<p>Palette groups available in all themes:</p>
-<table class="kv">
-  <tr><th>Variables</th><th>Role</th></tr>
-  <tr><td><code>--sand-50 … --sand-300</code></td><td>Page and surface backgrounds</td></tr>
-  <tr><td><code>--neutral-100 … --neutral-800</code></td><td>Text and border shades (100 = lightest, 800 = body text)</td></tr>
-  <tr><td><code>--primary-300 … --primary-500</code></td><td>Brand accent (links, active buttons)</td></tr>
-  <tr><td><code>--modal-panel-bg</code></td><td>Modal / panel background (glass in altered-db theme)</td></tr>
-  <tr><td><code>--panel-border</code></td><td>Modal / panel border color</td></tr>
-  <tr><td><code>--card-lightbox-bg</code></td><td>Full-screen lightbox overlay background</td></tr>
-  <tr><td><code>--overlay-badge-bg</code></td><td>Small overlay badge on card images</td></tr>
-  <tr><td><code>--overlay-bar-bg</code></td><td>Bar overlay on card images</td></tr>
-  <tr><td><code>--overlay-qty-bg</code></td><td>Quantity badge overlay on card images</td></tr>
-  <tr><td><code>--overlay-add-bg</code></td><td>Add-to-deck overlay background</td></tr>
-  <tr><td><code>--mobile-nav-bg</code></td><td>Fixed bottom tab bar background (mobile)</td></tr>
-  <tr><td><code>--mobile-nav-border</code></td><td>Fixed bottom tab bar top border (mobile)</td></tr>
-</table>
-
-<p>A theme can restyle your plugin with zero changes to your code — it only needs to redefine the relevant variables in its <code>:root</code> block.</p>
+<h4>Deprecated variables</h4>
+<p>The variables of the previous palette (<code>--sand-*</code>, <code>--primary-*</code>, <code>--neutral-*</code>, <code>--notice-*</code>,
+<code>--modal-panel-bg</code>, <code>--panel-border</code>, <code>--card-lightbox-bg</code>, <code>--overlay-*</code>, <code>--mobile-nav-*</code>) and
+the classes <code>card-altered</code>, <code>btn-primary-altered</code>, <code>section-title</code> still work through
+<code>design-system/css/bridges/legacy.css</code> and the site stylesheet, for plugins not migrated yet. Do not use them in new code.
+The old palette put dark text on the gold primary colour; the new primary colour takes <code>--ac-color-on-primary</code> text,
+so a migrated plugin must change that text colour.</p>
 
 <div class="info">
   PHP files inside <code>plugins/</code> are blocked from direct HTTP access by the <code>.htaccess</code> at the root of the plugins directory. CSS, JS, images and fonts are served normally.
 </div>
 
+
+
+<h2 id="spa">SPA plugins (manifest v2)</h2>
+<p>A page can ship a front-end built with any framework instead of a PHP file. The shell keeps
+its header, menu and footer, and mounts the plugin's bundle in the page. Everything under
+<code>/pages/{slug}/…</code> is served by that page, so the plugin can route on the client with deep links
+(its base path is <code>/pages/{slug}/</code>). Plugins without <code>"type"</code> stay PHP plugins, unchanged.</p>
+
+<pre><code>{
+  "$schema": "../plugin.schema.json",
+  "manifest_version": 2,
+  "id": "rebuilder",
+  "name": "Re:Builder",
+  "version": "0.2.0",
+  "pages": [
+    { "slug": "rebuilder", "type": "spa", "entry": "dist/embed-manifest.json", "mount": "shadow",
+      "title_en": "Re:Builder", "title_fr": "Re:Builder" }
+  ],
+  "menu": [ { "page": "rebuilder", "path": "decks", "parent_url": "/pages/decks", "label_en": "Re:Builder (beta)", "label_fr": "Re:Builder (bêta)", "icon": "fa-solid fa-pen-ruler" } ],
+  "build": { "workdir": "app", "install": "npm ci", "lint": "npm run lint", "test": "npm test", "build": "npm run build:embed", "output": "dist" },
+  "tests": { "e2e": "e2e" }
+}</code></pre>
+
+<table class="kv">
+  <tr><th>Key</th><th></th><th>Description</th></tr>
+  <tr><td>pages[].type</td><td><span class="opt">optional</span></td><td><code>php</code> (default) or <code>spa</code>. An SPA page has no <code>file</code>.</td></tr>
+  <tr><td>pages[].entry</td><td><span class="req">spa</span></td><td>Build manifest written by the plugin's build (relative to the plugin): <code>{"version":1, "base":"browser/", "js":["main-HASH.js"], "css":["embed.css?v=…"], "documentCss":["document.css?v=…"]}</code>. <code>js</code>: ES modules, in order. <code>css</code>: loaded inside the shadow root. <code>documentCss</code>: loaded in <code>&lt;head&gt;</code> (<code>@font-face</code> is ignored in a shadow root).</td></tr>
+  <tr><td>pages[].mount</td><td><span class="opt">optional</span></td><td><code>shadow</code> (default): the plugin renders in a Shadow DOM, so Bootstrap and <code>css/style.css</code> do not reach it and its styles do not reach the site. <code>light</code>: rendered in the page.</td></tr>
+  <tr><td>pages[].meta</td><td><span class="opt">optional</span></td><td>SPA: PHP file included before the site header, with <code>$subPath</code> (the client route under <code>/pages/{slug}/</code>) in scope. It may set <code>$pageTitle</code>, <code>$pageDescription</code> and <code>$pageImage</code>, so a client route has its own title and link preview (rebuilder: the deck's name on <code>decks/{id}</code>).</td></tr>
+  <tr><td>pages[].fullwidth</td><td><span class="opt">optional</span></td><td>Full-width layout. Default <code>true</code> for SPA pages; <code>false</code> keeps the page in the site's content width (rebuilder).</td></tr>
+  <tr><td>menu</td><td><span class="opt">optional</span></td><td>Suggested navigation entries, inserted on activation when no item has the same URL. Admins edit or hide them afterwards (Admin → Navigation). An entry targets <code>page</code> (URL <code>/pages/{page}</code>), plus <code>path</code> for a client route of an SPA page (<code>/pages/{page}/{path}</code>), or an explicit <code>url</code>. An entry with <code>children</code> is a dropdown (no URL of its own); its missing children are added under it. An entry with <code>parent_url</code> goes inside the existing top-level menu that has this URL (e.g. <code>/pages/decks</code>), last unless <code>sort_order</code> is set; at the top level when the site has no such menu.</td></tr>
+  <tr><td>build</td><td><span class="opt">optional</span></td><td>Commands run in <code>workdir</code> by CI and <code>php bin/plugins.php run &lt;stage&gt; &lt;id&gt;</code>. The output (<code>dist/</code>) is not committed.</td></tr>
+  <tr><td>tests</td><td><span class="opt">optional</span></td><td>Test entry points. See <a href="#tests">Tests &amp; CI</a>.</td></tr>
+</table>
+
+<div class="warn">The shell never builds a plugin. Deploying an SPA plugin means deploying its build output:
+build it before packaging the ZIP (the ZIP check requires the <code>entry</code> file), and in the Git deployment
+the workflow builds it before the upload. Until it is built, the page shows “not available” (admins see why).</div>
+
+<h3>Styling and theme</h3>
+<p>The shell injects the design system into the plugin's shadow root before the plugin's own CSS:
+<code>design-system/css/base.css</code> and every <code>design-system/css/components/*.css</code>
+(<code>js/altered-core-host.js</code>, <code>getMount()</code>). The plugin renders into the mount's
+<code>container</code>, which has the class <code>ac-plugin-root</code> (document defaults: background, text colour, font, box sizing).</p>
+<ul>
+  <li><strong>Tokens inherit.</strong> Custom properties cross the Shadow DOM, so every <code>--ac-*</code> token of
+      <code>design-system/tokens/tokens.css</code> is available inside the plugin without importing it.</li>
+  <li><strong>Modes are attributes of <code>&lt;html&gt;</code></strong>: <code>data-theme="dark"</code> (absent in light) and
+      <code>data-density="pointer|touch"</code>. Tokens change with them; plugin CSS never tests them (selectors on <code>&lt;html&gt;</code> do not match
+      inside a shadow root anyway). <code>AlteredCore.theme</code> and <code>on('theme', fn)</code> exist for code that needs the value
+      (a canvas, a chart library); the plugin root also carries <code>data-theme</code> and <code>lang</code>.</li>
+  <li><strong>Use the <code>ac-*</code> classes</strong> through thin framework components (see
+      <code>plugins/rebuilder/app/src/app/ui/</code> for Angular, and the React example in
+      <a href="../design-system/README.md">design-system/README.md</a>). Icons: the framework's Lucide package with the same names.</li>
+  <li><strong>Fonts</strong>: <code>@font-face</code> only works in the document. Figtree is loaded by the shell; a plugin that needs another
+      font declares it in <code>documentCss</code>.</li>
+  <li><code>--ac-header-height</code> (height of the sticky site header, measured by the runtime) and <code>--ac-page-top</code> /
+      <code>--ac-sticky-top</code> place full-height layouts and sticky panels under the header.</li>
+</ul>
+<p>The same rules as PHP plugins apply: no raw colours, no dark-theme selectors, heights from <code>--ac-control-*</code>
+(see <a href="#design-system">Design system</a>).</p>
+
+<h2 id="host">Host contract — <code>window.AlteredCore</code> (version 1)</h2>
+<p>Published by <code>js/altered-core-host.js</code> before the plugin's modules run. A plugin checks <code>version</code> and refuses a contract it does not know.</p>
+<table class="kv">
+  <tr><th>Member</th><th></th><th>Description</th></tr>
+  <tr><td>version</td><td></td><td><code>1</code></td></tr>
+  <tr><td>user</td><td></td><td><code>{ id, username, sub }</code> or <code>null</code> for a guest. No e-mail.</td></tr>
+  <tr><td>lang</td><td></td><td><code>en</code> or <code>fr</code> (site UI language). A language change reloads the page.</td></tr>
+  <tr><td>theme</td><td></td><td><code>light</code> or <code>dark</code>, kept up to date.</td></tr>
+  <tr><td>baseUrl, siteName, csrf</td><td></td><td>Install prefix, site name, CSRF token of the session.</td></tr>
+  <tr><td>services</td><td></td><td>Where to call the Altered services from the browser. <code>cards</code>, <code>cdn</code>, <code>uniques</code> (Uniques search, rust-cards-api <code>/api/v2</code>, <code>UNIQUES_API_URL</code>; empty when not configured): public, called directly (<code>CARDS_API_PUBLIC_URL</code> overrides <code>CARDS_API_URL</code> if the server uses an internal host, same for the others). <code>decks</code>, <code>collection</code>, <code>ownership</code> (digital ownership, alt-art preferences): the site's relay, <code>/api/v1/services/decks</code> etc. (see below).</td></tr>
+  <tr><td>page</td><td></td><td><code>{ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount }</code>. <code>assetsUrl</code> is the build directory: resolve static files against it, not against the page URL. <code>apiUrl</code> is the plugin's own PHP endpoints, <code>/papi/{plugin-id}/</code> (see <a href="#api">HTTP API endpoints</a>).</td></tr>
+  <tr><td>fetch(url, init?)</td><td></td><td><code>window.fetch</code> for calls to the site: sends the session cookie, <code>Accept: application/json</code> by default, and <code>X-CSRF-Token</code> on same-origin writes (the relay and <code>page.apiUrl</code>).</td></tr>
+  <tr><td>login(returnTo?)</td><td></td><td>Sends the user to the site's sign-in, then back to <code>returnTo</code> (default: current URL).</td></tr>
+  <tr><td>setTitle(title)</td><td></td><td>Sets <code>document.title</code> to “title — site name”.</td></tr>
+  <tr><td>setActiveNav(path)</td><td></td><td>Marks the menu entry whose URL is <code>path</code> as current, among the entries that point inside this page (<code>/pages/{slug}/…</code>); <code>null</code> clears them. The shell highlights the longest matching entry on load; call it after client navigation. Optional for plugins: check it exists.</td></tr>
+  <tr><td>getMount(pluginId)</td><td></td><td><code>{ host, root, container }</code>: the element the shell rendered, its shadow root (or itself), and the element to render into.</td></tr>
+  <tr><td>on(type, fn)</td><td></td><td><code>theme</code> <code>{theme}</code>; <code>auth</code> <code>{user}</code> and <code>lang</code> <code>{lang}</code> are reserved (a sign-in or a language change reloads the page today). Returns an unsubscribe function. Also dispatched on <code>window</code> as <code>alteredcore:&lt;type&gt;</code>.</td></tr>
+</table>
+
+<h3>Service relay — <code>/api/v1/services/{service}/{path}</code></h3>
+<p>The browser never holds a Keycloak token. A plugin calls <code>AlteredCore.services.decks + '/api/decks…'</code> on the
+site's own origin; the relay (<code>api/v1/services/proxy.php</code>) reads the access token from the PHP session, renews it
+when needed, adds <code>Authorization: Bearer</code> and forwards the request to <code>DECKS_API_URL</code>. It returns the service's
+status and body unchanged. The client secret, the refresh token and the access token all stay on the server, and the
+services no longer need CORS for the site.</p>
+<ul>
+  <li>Services: <code>decks</code> (<code>DECKS_API_URL</code>), <code>collection</code> (<code>COLLECTION_API_URL</code>), <code>ownership</code> (<code>OWNERSHIP_API_URL</code>), when configured. Others: 404.</li>
+  <li>Paths under <code>api/</code> only, made of <code>[A-Za-z0-9._~-]</code> segments (no <code>.</code>/<code>..</code>, no percent-encoding); anything else is refused (400). Query strings are forwarded, cookies are not.</li>
+  <li>Writes (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>) need the header <code>X-CSRF-Token: AlteredCore.csrf</code> (403 otherwise). Body limit 1 MB.</li>
+  <li>Guests are relayed without a token: public endpoints answer, the others return the service's 401.</li>
+  <li>A 401 with a token (revoked, clock skew) makes the relay renew the token once and retry.</li>
+</ul>
+<p>The decks and collection APIs validate the token signature against the realm (no audience check), so the site's
+<code>main-site</code> token is accepted. A plugin's own <code>papi</code> endpoints can do the same server-side with
+<code>kc_get_access_token($_SESSION['user_id'])</code>.</p>
+
+<h3>What an SPA plugin can declare</h3>
+<p>Besides its SPA pages, a v2 plugin uses the same manifest keys as a PHP plugin: <code>api</code> (its own endpoints, <code>/papi/{id}/…</code>),
+<code>admin</code> (PHP admin sections), <code>sql</code> / <code>tables</code> (its tables, prefixed), <code>assets.global_*</code>. Its front-end calls its
+endpoints at <code>page.apiUrl</code> (see <a href="#api">HTTP API endpoints</a>).</p>
 
 <h2 id="admin">Admin pages</h2>
 
@@ -535,10 +622,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?&gt;
 
 &lt;div class="admin-header-bar"&gt;
-    &lt;h1&gt;&lt;i class="fa-solid fa-star me-2"&gt;&lt;/i&gt;My Plugin&lt;/h1&gt;
+    &lt;h1&gt;&lt;?= ac_icon('star', 'me-2') ?&gt;My Plugin&lt;/h1&gt;
 &lt;/div&gt;
 
-&lt;div class="card-altered p-3"&gt;
+&lt;div class="ac-card"&gt;
     &lt;!-- Your admin UI here --&gt;
 &lt;/div&gt;</code></pre>
 
@@ -696,7 +783,7 @@ document.querySelectorAll('[data-tab]').forEach(function (btn) {
                   class="form-control"&gt;&lt;?= h($row['body'] ?? '') ?&gt;&lt;/textarea&gt;
     &lt;/div&gt;
 
-    &lt;button type="submit" class="btn btn-primary-altered"&gt;Save&lt;/button&gt;
+    &lt;button type="submit" class="ac-button"&gt;Save&lt;/button&gt;
 &lt;/form&gt;
 
 &lt;?php if (defined('TINYMCE_API_KEY') &amp;&amp; TINYMCE_API_KEY !== ''): ?&gt;
@@ -847,7 +934,16 @@ ALTER TABLE {messages}
   <tr><th>Key</th><th></th><th>Description</th></tr>
   <tr><td>endpoint</td><td><span class="req">required</span></td><td>URL slug for this endpoint. Lowercase letters, digits, hyphens and underscores only.</td></tr>
   <tr><td>file</td><td><span class="req">required</span></td><td>Path to the PHP handler file, relative to the plugin root.</td></tr>
+  <tr><td>methods</td><td><span class="opt">optional</span></td><td>HTTP methods accepted, e.g. <code>["GET", "PUT"]</code>. Others get <strong>405</strong> with an <code>Allow</code> header. Default: any method.</td></tr>
+  <tr><td>auth</td><td><span class="opt">optional</span></td><td><code>user</code>: a signed-in user, else <strong>401</strong>. <code>admin</code>: a site admin, else 401 (guest) or <strong>403</strong>. Default: public.</td></tr>
+  <tr><td>csrf</td><td><span class="opt">optional</span></td><td><code>false</code> turns off the router's CSRF check (below), for a caller that cannot hold the session token, e.g. a webhook that checks its own signature. Default: <code>true</code>.</td></tr>
 </table>
+
+<pre><code>"api": [
+    { "endpoint": "notes",       "file": "api/notes.php",       "methods": ["GET", "PUT"], "auth": "user" },
+    { "endpoint": "notes-stats", "file": "api/notes-stats.php", "methods": ["GET"],        "auth": "admin" }
+]</code></pre>
+<p>(Example: private notes per user, readable and writable by their owner, counts for admins.)</p>
 
 <h3>URL pattern</h3>
 
@@ -860,7 +956,7 @@ ALTER TABLE {messages}
 
 <h3>Writing the handler file</h3>
 
-<p>The handler is a plain PHP file. All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
+<p>The handler is a plain PHP file, run only once the router's checks pass (see <a href="#api-auth">Auth, CSRF and methods</a>). All helper functions are available — <code>getDB()</code>, <code>qp()</code>, <code>h()</code>, <code>kcIsLoggedIn()</code>, etc. <code>Content-Type: application/json</code> is set automatically; you can override it if needed.</p>
 
 <pre><code>&lt;?php
 // Reached via GET /papi/hello-world/data
@@ -892,16 +988,32 @@ fetch(SITE_BASE + '/papi/hello-world/data')
 $data = json_decode($raw, true);
 echo $data['greeting'];</code></pre>
 
-<h3>Auth and authorization</h3>
-<p>The router does <strong>not</strong> enforce any authentication — API endpoints are public by default. If an endpoint should be restricted, add a session check at the top of the handler file:</p>
+<h3 id="api-auth">Auth, CSRF and methods</h3>
+<p>The router (<code>includes/_plugin_router.php</code>, <code>pluginApiGuard()</code>) checks each request against the endpoint's
+manifest entry before the handler runs, and answers <code>{"error": "…"}</code> itself when a check fails:</p>
+<ol>
+  <li><strong>Method</strong> not in <code>methods</code> → 405 <code>method_not_allowed</code>.</li>
+  <li><strong>CSRF</strong>: every request other than <code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code> needs the session's CSRF token → else 403 <code>csrf</code>.
+      The router accepts it as the header <code>X-CSRF-Token</code>, a <code>csrf_token</code> form field, or a <code>csrf_token</code> field of a JSON body.
+      This applies to all plugins; existing PHP plugins already send <code>csrf_token</code>, and their own <code>csrfValid()</code> checks still pass.</li>
+  <li><strong>Auth</strong>: <code>"auth": "user"</code> → 401 <code>unauthenticated</code> for a guest; <code>"auth": "admin"</code> → 401 for a guest, 403 <code>forbidden</code> for a user who is not a site admin.</li>
+</ol>
+<p>An endpoint without <code>auth</code> is public: check the session in the handler if only part of it is restricted.
+<code>GET</code> handlers must not change data, since they are not CSRF-checked. In the handler, <code>$_SESSION['user_id']</code> is the site user
+and <code>pluginApiBody()</code> returns the decoded JSON body (the router has already read it).</p>
 
-<pre><code>&lt;?php
-// Require login
-if (!kcIsLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}</code></pre>
+<h3>Calling from an SPA plugin</h3>
+<p><code>AlteredCore.page.apiUrl</code> is the plugin's endpoint base (<code>/papi/{plugin-id}/</code>). <code>AlteredCore.fetch()</code> is
+<code>window.fetch</code> with the session cookie, <code>Accept: application/json</code> and, on writes to the site, the CSRF header:</p>
+<pre><code>const ac = window.AlteredCore;
+const note = await ac.fetch(ac.page.apiUrl + 'notes?deck=' + id).then((r) =&gt; r.json());
+await ac.fetch(ac.page.apiUrl + 'notes', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ deck: id, body: 'Mulligan: keep 2-cost characters' }),
+});</code></pre>
+<p>A framework HTTP client can add the header itself instead (the rebuilder plugin does it with an Angular interceptor,
+<code>site-csrf.interceptor.ts</code>, for its writes to the relay). The endpoint is the same one a PHP plugin would write: same database, tables, session and helpers.</p>
 
 
 <h2 id="helpers">Helper functions</h2>
@@ -1098,11 +1210,11 @@ fetch('/papi/my-plugin/data')
         window.acSpinner.hide();
     });</code></pre>
 
-<p>The overlay renders above Bootstrap modals (<code>z-index: 9100</code>). It uses theme CSS variables (<code>--sand-50</code>, <code>--primary-400</code>, <code>--neutral-700</code>) so it automatically adapts to both the default and azure themes. The spinner circle uses Bootstrap's <code>.spinner-border</code> class — no additional CSS needed.</p>
+<p>The overlay renders above Bootstrap modals (<code>z-index: 9100</code>). It is drawn with the design system tokens, so it follows the light and dark themes — no additional CSS needed.</p>
 <p>A live demo is available on the <strong>hello-world</strong> plugin's front page (<code>/pages/hello-page</code>).</p>
 
 <h3>CSS</h3>
-<p><strong>Bootstrap 5</strong> utility classes and components (<code>btn</code>, <code>container</code>, <code>card</code>, <code>text-muted</code>, etc.) are available in all plugin templates — no import needed. <strong>Font Awesome</strong> icons are also available everywhere.</p>
+<p>The design system (<code>ac-*</code> components, <code>--ac-*</code> tokens, <code>ac_icon()</code> / <code>acIcon()</code>) and <strong>Bootstrap 5</strong> (grid, utilities, and components drawn by the bridge) are available in all plugin templates — no import needed. See <a href="#design-system">Design system</a>.</p>
 
 <h2 id="dev">Local development</h2>
 
@@ -1114,6 +1226,24 @@ fetch('/papi/my-plugin/data')
 
 <p>See the repository <code>README.md</code> for full Docker setup instructions including creating the first admin account and resetting the database.</p>
 
+
+
+<h2 id="tests">Tests &amp; CI</h2>
+<p>Pull requests to <code>preprod</code> and <code>main</code> run <code>.github/workflows/plugins-ci.yml</code>. It knows no plugin by name:
+<code>php bin/plugins.php plan</code> lists what each plugin declares, or what it finds by convention.</p>
+<table class="kv">
+  <tr><th>What</th><th>Declared in plugin.json</th><th>Convention</th></tr>
+  <tr><td>PHP tests</td><td><code>"tests": {"php": ["tests/run.php"]}</code></td><td><code>tests/run.php</code>, exit code ≠ 0 on failure</td></tr>
+  <tr><td>Node tests</td><td><code>"tests": {"node": ["…test.mjs"]}</code></td><td><code>**/*.test.mjs</code>, run with <code>node --test</code> from the repo root</td></tr>
+  <tr><td>Front-end</td><td><code>"build": {…}</code></td><td>install → lint → test → build, per plugin</td></tr>
+  <tr><td>End-to-end</td><td><code>"tests": {"e2e": "e2e"}</code></td><td><code>e2e/*.spec.ts</code> (Playwright), importing <code>test</code> from <code>tests/e2e/fixtures.ts</code></td></tr>
+</table>
+<p>Every PHP file also goes through <code>php -l</code> (PHP 7.4). The end-to-end job starts <code>docker-compose.stack.yml</code>
+(site, Keycloak, decks API) with the built plugins and runs <code>tests/e2e</code> plus every plugin's <code>e2e/</code>,
+at 1440×900 and 390×844. The check to require is <strong>Plugins CI</strong>.</p>
+<pre><code>php bin/plugins.php plan
+php bin/plugins.php run php-tests           # or node-tests, install, lint, test, build [plugin-id…]
+(cd tests/e2e &amp;&amp; npm ci &amp;&amp; E2E_BASE_URL=http://localhost:8080 npx playwright test)</code></pre>
 
 <h2 id="zip">Packaging a ZIP</h2>
 
@@ -1229,7 +1359,7 @@ git archive HEAD plugins/my-plugin --prefix=my-plugin/ -o my-plugin-1.0.0.zip</c
 
 <ul>
   <li><strong>Trust</strong> — plugins execute arbitrary PHP on the server. Only install plugins from sources you control or fully trust.</li>
-  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>.</li>
+  <li><strong>CSRF</strong> — always protect POST actions in admin pages with <code>csrfToken()</code> / <code>csrfValid()</code>. Plugin API endpoints and the service relay check it for every write (<a href="#api-auth">see above</a>); keep <code>GET</code> handlers read-only.</li>
   <li><strong>Output escaping</strong> — always use <code>h()</code> to escape user-supplied data before rendering HTML.</li>
   <li><strong>SQL injection</strong> — always use PDO prepared statements (<code>$db-&gt;prepare()</code> + <code>execute()</code>) for any query involving user input.</li>
   <li><strong>Direct PHP access</strong> — PHP files in <code>plugins/</code> are not directly accessible via URL. Only static assets (CSS, JS, images) in <code>assets/</code> are served publicly.</li>

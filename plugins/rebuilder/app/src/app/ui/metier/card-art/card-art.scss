@@ -1,0 +1,33 @@
+:host {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+:host(.neutral) {
+  background: var(--ac-color-track);
+}
+:host(.loaded) img {
+  opacity: 1;
+}
+.ph {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ac-color-on-strong) 70%, transparent);
+  white-space: nowrap;
+}

@@ -6,24 +6,24 @@
     max-height: 380px;
     overflow-y: auto;
     padding: .5rem;
-    background: var(--sand-100, #f8f4ed);
-    border-radius: .5rem;
-    border: 1px solid var(--neutral-300, #ddd);
+    background: var(--ac-color-bg-subtle);
+    border-radius: var(--ac-radius-md);
+    border: 1px solid var(--ac-color-border);
 }
 .img-picker-item {
     cursor: pointer;
     border: 2px solid transparent;
-    border-radius: .5rem;
+    border-radius: var(--ac-radius-md);
     overflow: hidden;
-    background: #fff;
+    background: var(--ac-color-surface);
     padding: 4px;
-    transition: border-color .15s;
+    transition: border-color var(--ac-duration-fast);
     text-align: center;
 }
-.img-picker-item:hover { border-color: var(--primary-400, #8B7355); }
+.img-picker-item:hover { border-color: var(--ac-color-primary-border); }
 .img-picker-item.selected {
-    border-color: var(--primary-600, #5a4a2e);
-    background: var(--sand-200, #f0e8d6);
+    border-color: var(--ac-color-primary);
+    background: var(--ac-color-primary-tint);
 }
 .img-picker-item img {
     max-width: 100%;
@@ -34,7 +34,7 @@
 }
 .img-picker-item .img-picker-name {
     font-size: 10px;
-    color: #777;
+    color: var(--ac-color-text-muted);
     word-break: break-all;
     display: block;
     line-height: 1.2;
@@ -82,7 +82,7 @@
                     </div>
                     <div id="imgPickerUploadPreview" class="mb-3" style="display:none">
                         <img id="imgPickerUploadThumb" src="" alt=""
-                             style="max-height:120px;border-radius:6px;border:1px solid var(--neutral-300)">
+                             style="max-height:120px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                     </div>
                     <div class="d-flex align-items-center gap-3">
                         <button type="button" class="btn btn-sm btn-primary-altered" id="imgPickerUploadBtn" disabled>

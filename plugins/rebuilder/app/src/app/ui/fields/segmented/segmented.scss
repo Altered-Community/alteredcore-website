@@ -1,0 +1,5 @@
+/* Drawn by .ac-segmented (design-system/css/components/segmented.css). Long labels ellipsize once a segment shrinks. */
+span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

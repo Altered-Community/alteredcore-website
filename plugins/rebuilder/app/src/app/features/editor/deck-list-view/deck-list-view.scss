@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+.stats {
+  border-radius: var(--ac-radius-card);
+}
+.empty {
+  text-align: center;
+  color: var(--ac-color-text-muted);
+}

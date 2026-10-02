@@ -7,7 +7,7 @@ $_pwaTxt  = [
     'en' => [
         'title'   => 'Install the ' . $_pwaSite . ' app',
         'text'    => 'Add it to your home screen or desktop to open it like an app.',
-        'ios'     => 'Tap <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> <strong>Share</strong>, then <strong>Add to Home Screen</strong>.',
+        'ios'     => 'Tap ' . ac_icon('share') . ' <strong>Share</strong>, then <strong>Add to Home Screen</strong>.',
         'install' => 'Install',
         'later'   => 'Not now',
         'got_it'  => 'Got it',
@@ -16,7 +16,7 @@ $_pwaTxt  = [
     'fr' => [
         'title'   => 'Installer l’application ' . $_pwaSite,
         'text'    => 'Ajoutez-la à votre écran d’accueil ou à votre bureau pour l’ouvrir comme une application.',
-        'ios'     => 'Touchez <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.',
+        'ios'     => 'Touchez ' . ac_icon('share') . ' <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.',
         'install' => 'Installer',
         'later'   => 'Plus tard',
         'got_it'  => 'Compris',
@@ -33,12 +33,12 @@ $_pwaTxt  = [
             <span data-pwa-mode="ios" hidden><?= $_pwaTxt['ios'] /* static markup above */ ?></span>
         </div>
         <div class="ac-pwa-toast-actions">
-            <button type="button" class="btn btn-sm btn-primary-altered" data-pwa-mode="prompt" data-pwa-install><?= h($_pwaTxt['install']) ?></button>
-            <button type="button" class="btn btn-sm btn-link ac-pwa-later" data-pwa-mode="prompt" data-pwa-dismiss><?= h($_pwaTxt['later']) ?></button>
-            <button type="button" class="btn btn-sm btn-primary-altered" data-pwa-mode="ios" data-pwa-dismiss hidden><?= h($_pwaTxt['got_it']) ?></button>
+            <button type="button" class="ac-button ac-button--sm" data-pwa-mode="prompt" data-pwa-install><?= h($_pwaTxt['install']) ?></button>
+            <button type="button" class="ac-button ac-button--sm ac-button--ghost" data-pwa-mode="prompt" data-pwa-dismiss><?= h($_pwaTxt['later']) ?></button>
+            <button type="button" class="ac-button ac-button--sm" data-pwa-mode="ios" data-pwa-dismiss hidden><?= h($_pwaTxt['got_it']) ?></button>
         </div>
     </div>
-    <button type="button" class="btn-close ac-pwa-close" data-pwa-dismiss aria-label="<?= h($_pwaTxt['close']) ?>"></button>
+    <button type="button" class="ac-icon-button ac-icon-button--ghost ac-icon-button--sm ac-pwa-close" data-pwa-dismiss aria-label="<?= h($_pwaTxt['close']) ?>"><?= ac_icon('x') ?></button>
 </div>
 <script>
 window.acPwaConfig = <?= json_encode([

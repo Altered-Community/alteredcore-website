@@ -1,0 +1,68 @@
+/*
+ * Layout — page column, page header, stack and row.
+ * Docs: design-system/docs/components/layout.md
+ */
+
+/* Page column: centred, max width, density-aware gutter. */
+.ac-page {
+  width: 100%;
+  max-width: calc(var(--ac-page-max-width) + 2 * var(--ac-page-padding));
+  margin-inline: auto;
+  padding-inline: var(--ac-page-padding);
+  padding-block: var(--ac-space-6) var(--ac-space-10);
+}
+.ac-page--wide { max-width: calc(var(--ac-page-max-width-wide) + 2 * var(--ac-page-padding)); }
+.ac-page--full { max-width: none; }
+
+/* Page header: title, optional subtitle and actions. */
+.ac-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ac-space-4);
+  margin-bottom: var(--ac-space-6);
+}
+.ac-page-header__title {
+  font: var(--ac-font-display);
+  letter-spacing: var(--ac-letter-spacing-display);
+  margin: 0;
+}
+.ac-page-header__subtitle {
+  font: var(--ac-font-small);
+  font-weight: 500;
+  color: var(--ac-color-text-muted);
+  margin: var(--ac-space-1) 0 0;
+}
+.ac-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+
+/* Section title inside a page. */
+.ac-section-title {
+  font: var(--ac-font-heading);
+  margin: 0 0 var(--ac-space-3);
+}
+
+/* Vertical stack and horizontal row with a gap. */
+.ac-stack { display: flex; flex-direction: column; gap: var(--ac-space-4); }
+.ac-stack--sm { gap: var(--ac-space-2); }
+.ac-stack--lg { gap: var(--ac-space-6); }
+.ac-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ac-space-2); }
+.ac-row--lg { gap: var(--ac-space-4); }
+.ac-row--between { justify-content: space-between; }
+
+/* Responsive card grid. */
+.ac-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ac-grid-min, 260px), 1fr));
+  gap: var(--ac-space-4);
+}
+
+.ac-divider {
+  border: 0;
+  border-top: 1px solid var(--ac-color-divider);
+  margin: var(--ac-space-4) 0;
+}

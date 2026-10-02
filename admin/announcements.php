@@ -75,17 +75,17 @@ $rows = $db->query(q(
             <?php else: ?>
                 <?php foreach ($rows as $row): ?>
                 <tr>
-                    <td style="width:44px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="width:44px;color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td>
                         <?php $t = h($row['title_en'] ?: $row['title_fr'] ?: '—'); ?>
                         <span><?= $t ?></span>
                     </td>
                     <td>
-                        <span class="badge" style="background:var(--bs-<?= h($row['color']) ?>-bg-subtle,#eee);color:var(--bs-<?= h($row['color']) ?>-text-emphasis,#333);border:1px solid var(--bs-<?= h($row['color']) ?>-border-subtle,#ccc)">
+                        <span class="badge text-bg-<?= h($row['color']) ?>">
                             <?= h($row['color']) ?>
                         </span>
                     </td>
-                    <td style="font-size:.9rem"><i class="<?= h($row['icon']) ?>"></i></td>
+                    <td style="font-size:.9rem"><?= ac_icon((string)($row['icon'])) ?></td>
                     <td>
                         <?php if ($row['is_active']): ?>
                             <span class="badge bg-success">Active</span>

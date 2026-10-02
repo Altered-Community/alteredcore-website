@@ -1,0 +1,195 @@
+:host {
+  display: block;
+}
+
+ac-app-bar.static {
+  position: static;
+}
+
+.state {
+  padding: var(--ac-space-10) var(--ac-page-padding);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+
+/* ---------- compact first ---------- */
+.editor {
+  display: flex;
+  gap: var(--ac-space-6);
+  padding: var(--ac-space-3) var(--ac-page-padding) calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom) + var(--ac-space-4));
+}
+
+.main {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+/* « Revenir en haut » sits above the bottom navigation. */
+.search {
+  --app-search-bottom-inset: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom));
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-2-5) var(--ac-space-3);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-warning-soft);
+  color: var(--ac-color-warning);
+  font-size: var(--ac-font-size-small);
+  font-weight: 600;
+}
+
+.banner.error {
+  align-items: flex-start;
+  background: var(--ac-color-danger-soft);
+  color: var(--ac-color-danger);
+}
+
+.banner .message {
+  flex: 1 1 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+}
+
+.banner .message .text {
+  white-space: pre-line;
+}
+
+/* « Partager » / « Terminer » while the deck is being saved first. */
+.waiting ::ng-deep .ac-icon {
+  animation: ac-icon-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting ::ng-deep .ac-icon {
+    animation-duration: 3s;
+  }
+}
+
+.done {
+  padding-inline: var(--ac-space-2-5);
+}
+
+/* ---------- medium and up ---------- */
+@media (min-width: 768px) {
+  .editor {
+    padding: var(--ac-space-6);
+    align-items: flex-start;
+  }
+
+  .main {
+    gap: var(--ac-space-4);
+  }
+
+  .head-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ac-space-4);
+    margin-bottom: calc(-1 * var(--ac-space-3));
+  }
+
+  .head-top .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-2);
+    flex-shrink: 0;
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--ac-space-6);
+  }
+
+  /* « Recherche » sits next to « Voir le deck ». The label must stay whole:
+     the segmented control ellipsizes spans once a button is allowed to shrink. */
+  .head ac-segmented {
+    flex-shrink: 0;
+  }
+
+  .head ac-segmented ::ng-deep button {
+    min-width: max-content;
+    overflow: visible;
+  }
+
+  .head ac-segmented ::ng-deep button span {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-1);
+    min-width: 0;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-3);
+    min-width: 0;
+  }
+
+  .title-row ac-editable-title {
+    min-width: 0;
+  }
+
+  .title-row ac-save-status {
+    flex-shrink: 0;
+  }
+
+  /* The deck panel and its « Masquer » handle, on the panel's left edge. */
+  .panel {
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+  }
+
+  .panel app-deck-panel {
+    height: 100%;
+  }
+
+  /* Deck hidden: the tab takes its place, against the right edge of the page. */
+  .deck-tab {
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    margin-right: calc(-1 * var(--ac-space-6));
+  }
+
+  .deck-tab ac-icon.legal {
+    color: var(--ac-color-success);
+  }
+
+  /* The filters tab of the card search reaches the left edge of the page the same way. */
+  .search {
+    --app-drawer-bleed: var(--ac-space-6);
+  }
+}
+
+@media (min-width: 1200px) {
+  .panel {
+    width: var(--ac-deck-panel-width);
+  }
+}
+.hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-6);
+}

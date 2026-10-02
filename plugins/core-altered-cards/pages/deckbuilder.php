@@ -21,6 +21,8 @@ require_once __DIR__ . '/../includes/deckbuilder/config-js.php';
 <script src="<?= h($pluginAssetsUrl) ?>/deckbuilder/lightbox.js"></script>
 <script src="<?= h($pluginAssetsUrl) ?>/deckbuilder/ui.js"></script>
 <script src="<?= h($pluginAssetsUrl) ?>/deckbuilder/status-strip.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/deckbuilder/share.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
 <link rel="stylesheet" href="<?= h($pluginAssetsUrl) ?>/effect-filters.css">

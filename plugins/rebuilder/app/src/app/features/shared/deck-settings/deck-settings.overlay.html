@@ -1,0 +1,51 @@
+<div class="ac-overlay-body">
+  <ac-input
+    label="Nom du deck" i18n-label="@@shared.deckSettings.name"
+    [required]="true"
+    [invalid]="!name().trim()"
+    enterkeyhint="done"
+    [(value)]="name"
+    (enter)="save()"
+  />
+  <div class="hero">
+    <span class="thumb">
+      @if (hero(); as h) {
+        <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+      }
+    </span>
+    <span class="meta">
+      <span class="overline" i18n="@@shared.deckSettings.hero">Héros</span>
+      <span class="name">{{ hero()?.name || noHero }}</span>
+    </span>
+    <button acButton variant="secondary" size="sm" (click)="changeHero()" i18n="@@shared.deckSettings.changeHero">Changer</button>
+  </div>
+  <div class="field">
+    <span class="label" i18n="@@shared.deckSettings.visibility">Visibilité</span>
+    <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@shared.deckSettings.visibility" [options]="visibility" [(value)]="isPublic" [fullWidth]="true" />
+  </div>
+  <ac-textarea
+    label="Description" i18n-label="@@shared.deckSettings.description"
+    placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@shared.deckSettings.descriptionPlaceholder"
+    [rows]="4"
+    [(value)]="description"
+  />
+  <fieldset>
+    <legend i18n="@@shared.deckSettings.format">Format</legend>
+    <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@shared.deckSettings.format">
+      @for (f of formats; track f.value) {
+        <ac-radio-card
+          name="deck-settings-format"
+          [title]="f.label"
+          [description]="f.short"
+          [tag]="tagOf(f)"
+          [checked]="format() === f.value"
+          (choose)="format.set(f.value)"
+        />
+      }
+    </div>
+  </fieldset>
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.deckSettings.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!name().trim()" (click)="save()" i18n="@@shared.deckSettings.save">Enregistrer</button>
+</div>

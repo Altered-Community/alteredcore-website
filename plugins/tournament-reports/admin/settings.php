@@ -44,10 +44,10 @@ $txt = [
 ?>
 
 <div class="admin-header-bar">
-    <h1><i class="fa-solid fa-trophy me-2"></i><?= h($txt['title']) ?></h1>
+    <h1><?= ac_icon('trophy', 'me-2') ?><?= h($txt['title']) ?></h1>
 </div>
 
-<div class="card-altered p-4">
+<div class="ac-card">
     <form method="post">
         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
@@ -67,8 +67,8 @@ $txt = [
             <div class="form-text"><?= $txt['key_help'] ?></div>
         </div>
 
-        <button type="submit" class="btn btn-primary-altered">
-            <i class="fa-solid fa-check me-1"></i><?= h($txt['save_btn']) ?>
+        <button type="submit" class="ac-button">
+            <?= ac_icon('check') ?><?= h($txt['save_btn']) ?>
         </button>
     </form>
 </div>

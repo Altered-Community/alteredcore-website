@@ -1,0 +1,37 @@
+<div class="bar">
+  <p class="count"><strong i18n="@@editor.preview.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong> · <ng-container i18n="@@editor.preview.distinct">{deck.distinct(), plural, =1 {1 différente} other {{{ deck.distinct() }} différentes}}</ng-container></p>
+  @if (deck.groups().length) {
+    <button acButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? labels.expandAll : labels.collapseAll }}</button>
+  }
+</div>
+@for (g of deck.groups(); track g.id) {
+  <ac-deck-section
+    [title]="g.label"
+    [count]="g.count"
+    [distinct]="g.distinct"
+    [collapsible]="true"
+    [open]="!closed().has(g.id)"
+    (openChange)="setOpen(g.id, $event)"
+  >
+    <div class="grid" [class.dense]="dense()">
+      @for (l of g.lines; track l.card.reference) {
+        <ac-card-tile
+          [card]="l.card"
+          [quantity]="l.quantity"
+          [max]="deck.maxFor(l.card)"
+          [readonly]="readonly() || !deck.editable()"
+          [zoomable]="true"
+          (quantityChange)="deck.setQuantity(l.card, $event)"
+          (zoom)="zoom(l.card)"
+          [favorite]="favorites.enabled() ? favorites.has(l.card.reference) : null"
+          (favoriteToggle)="favorites.toggle(l.card)"
+        />
+      }
+    </div>
+  </ac-deck-section>
+} @empty {
+  <div class="empty">
+    <strong i18n="@@editor.preview.emptyTitle">Deck vide</strong>
+    <p i18n="@@editor.preview.empty">Ajoutez des cartes depuis la recherche.</p>
+  </div>
+}

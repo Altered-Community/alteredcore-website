@@ -1,0 +1,37 @@
+<h2 class="overline" i18n="@@deck.calc.title">Calculateurs</h2>
+<ac-card class="head">
+  <span class="deck"><ac-icon name="layers" [size]="16" /><ng-container i18n="@@deck.calc.deck">Deck</ng-container> <strong>{{ deckSize() }}</strong></span>
+  <span class="draw">
+    <span aria-hidden="true" i18n="@@deck.calc.drawn">Piochées</span>
+    <ac-input class="drawn" ariaLabel="Piochées" i18n-ariaLabel="@@deck.calc.drawn" type="number" inputmode="numeric" [(value)]="drawnInput" />
+  </span>
+</ac-card>
+<div class="grid">
+  <ac-card class="calc">
+    <h3 i18n="@@deck.calc.atLeast">Chances d’avoir</h3>
+    <ac-probability-bars [rows]="cardBars()" />
+    <p class="mid" i18n="@@deck.calc.among">cartes parmi</p>
+    <ac-combobox [options]="options()" [(values)]="cards" placeholder="Choisir…" i18n-placeholder="@@deck.calc.pick" />
+    <p class="foot" i18n="@@deck.calc.drawing">en piochant <strong>{{ drawn() }}</strong> cartes</p>
+    @if (cardRatio(); as r) {
+      <p class="ratio">{{ r }}</p>
+    }
+  </ac-card>
+  <ac-card class="calc">
+    <h3 i18n="@@deck.calc.atLeastCombo">Chances d’avoir au moins une de</h3>
+    <ac-probability-bars [rows]="comboBars()" />
+    <p class="mid" i18n="@@deck.calc.amongCombo">parmi</p>
+    <div class="group">
+      <span class="group-label" aria-hidden="true">A</span>
+      <ac-combobox [options]="options()" [(values)]="groupA" placeholder="Choisir… (A)" i18n-placeholder="@@deck.calc.pickA" />
+    </div>
+    <div class="group">
+      <span class="group-label" aria-hidden="true">B</span>
+      <ac-combobox [options]="options()" [(values)]="groupB" placeholder="Choisir… (B)" i18n-placeholder="@@deck.calc.pickB" />
+    </div>
+    <p class="foot" i18n="@@deck.calc.drawing">en piochant <strong>{{ drawn() }}</strong> cartes</p>
+    @if (comboRatio(); as r) {
+      <p class="ratio">{{ r }}</p>
+    }
+  </ac-card>
+</div>

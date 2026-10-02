@@ -64,7 +64,11 @@ if (canPreviewGroups()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($adminPageTitle) ? h($adminPageTitle) . ' — ' : '' ?>Admin – <?= h(getSiteName()) ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <?php foreach (dsDocumentStylesheets() as $_dsCss): ?>
+    <link rel="stylesheet" href="<?= h(dsUrl($_dsCss)) ?>">
+    <?php endforeach; ?>
+    <script src="<?= h(dsUrl('js/ac.js')) ?>" defer></script>
+    <script><?= dsDensityScript() ?></script>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/font/alteredicons.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css">
 </head>
@@ -81,26 +85,26 @@ if (canPreviewGroups()) {
             <i class="fa-solid fa-user-shield" style="font-size:.75rem"></i>
             <span><?= h($adminUser) ?></span>
             <?php if ($_adminGroup): ?>
-                <span class="badge" style="background:<?= h($_adminGroup['color']) ?>;color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px"
+                <span class="badge" style="background:<?= h($_adminGroup['color']) ?>;color:var(--ac-color-on-strong);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ac-radius-pill)"
                       title="<?= h($_adminGroup['name']) ?>">
                     <?php if (!empty($_adminGroup['icon'])): ?>
-                    <i class="<?= h($_adminGroup['icon']) ?>"></i>
+                    <?= ac_icon((string)($_adminGroup['icon'])) ?>
                     <?php else: ?>
                     <?= h($_adminGroup['name']) ?>
                     <?php endif; ?>
                 </span>
             <?php elseif (!empty($_SESSION['admin_logged_in'])): ?>
-                <span class="badge" style="background:#f59e0b;color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px"
+                <span class="ac-badge ac-badge--orange"
                       title="Super Admin">
                     <i class="fa-solid fa-shield-halved"></i>
                 </span>
             <?php endif; ?>
         </div>
         <?php if (canPreviewGroups()): ?>
-        <div style="margin:.5rem 1rem .75rem;padding:.55rem .7rem;background:var(--neutral-800);border-radius:6px;border:1px solid var(--neutral-600)">
+        <div class="admin-sidebar-preview">
             <?php if ($_saPreviewId): ?>
-            <div style="font-size:.68rem;color:var(--neutral-400);margin-bottom:.35rem">
-                <i class="fa-solid fa-eye me-1"></i>Viewing as <strong style="color:#fff"><?= h($_saPreviewName) ?></strong>
+            <div class="ac-text-muted" style="font-size:.68rem;margin-bottom:.35rem">
+                <i class="fa-solid fa-eye me-1"></i>Viewing as <strong class="text-body"><?= h($_saPreviewName) ?></strong>
             </div>
             <form method="post" action="<?= h($_saBack) ?>">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
@@ -138,7 +142,7 @@ if (canPreviewGroups()) {
             <?php endif; ?>
 
             <?php if (adminHasSection('news') || adminHasSection('projects') || adminHasSection('project-categories') || adminHasSection('homepage') || adminHasSection('pages')): ?>
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <?php endif; ?>
 
             <?php if (adminHasSection('news')): ?>
@@ -201,23 +205,16 @@ if (canPreviewGroups()) {
             </a>
             <?php endif; ?>
 
-            <?php $__showSettings = (bool) array_filter(['settings','themes','banner','announcement','background','logo','font','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
+            <?php $__showSettings = (bool) array_filter(['settings','banner','announcement','logo','nav','sidebar','user-menu','footer','privacy','shortcodes'], 'adminHasSection'); ?>
             <?php if ($__showSettings): ?>
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <?php endif; ?>
 
             <?php if ($__showSettings): ?>
             <a href="<?= BASE_URL ?>/admin/settings"
-               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','background','logo','font','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit','themes']) ? 'active' : '' ?>">
+               class="nav-link <?= in_array($currentAdmin, ['settings','banner','announcements','announcement-edit','logo','nav','user-menu','footer','footer-link-edit','privacy','shortcodes','shortcode-edit']) ? 'active' : '' ?>">
                 <i class="fa-solid fa-gear"></i> Settings
             </a>
-            <?php if (adminHasSection('themes')): ?>
-            <a href="<?= BASE_URL ?>/admin/themes"
-               class="nav-link <?= $currentAdmin === 'themes' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-palette"></i> Themes
-            </a>
-            <?php endif; ?>
             <?php if (adminHasSection('banner')): ?>
             <a href="<?= BASE_URL ?>/admin/banner"
                class="nav-link <?= $currentAdmin === 'banner' ? 'active' : '' ?>"
@@ -232,25 +229,11 @@ if (canPreviewGroups()) {
                 <i class="fa-solid fa-bullhorn"></i> Announcements
             </a>
             <?php endif; ?>
-            <?php if (adminHasSection('background')): ?>
-            <a href="<?= BASE_URL ?>/admin/background"
-               class="nav-link <?= $currentAdmin === 'background' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-fill-drip"></i> Background
-            </a>
-            <?php endif; ?>
             <?php if (adminHasSection('logo')): ?>
             <a href="<?= BASE_URL ?>/admin/logo"
                class="nav-link <?= $currentAdmin === 'logo' ? 'active' : '' ?>"
                style="padding-left:2rem;font-size:.9em">
                 <i class="fa-solid fa-circle-half-stroke"></i> Logo
-            </a>
-            <?php endif; ?>
-            <?php if (adminHasSection('font')): ?>
-            <a href="<?= BASE_URL ?>/admin/font"
-               class="nav-link <?= $currentAdmin === 'font' ? 'active' : '' ?>"
-               style="padding-left:2rem;font-size:.9em">
-                <i class="fa-solid fa-font"></i> Font
             </a>
             <?php endif; ?>
             <?php if (adminHasSection('nav')): ?>
@@ -298,7 +281,7 @@ if (canPreviewGroups()) {
             <?php endif; ?>
 
             <?php if (adminHasSection('users') || adminHasSection('groups') || adminHasSection('maintenance') || adminHasSection('altered-json')): ?>
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <?php endif; ?>
 
             <?php if (adminHasSection('users')): ?>
@@ -317,7 +300,7 @@ if (canPreviewGroups()) {
             <?php if (adminHasSection('maintenance')): ?>
             <a href="<?= BASE_URL ?>/admin/maintenance"
                class="nav-link <?= $currentAdmin === 'maintenance' ? 'active' : '' ?>"
-               <?= getSetting('maintenance_enabled') === '1' ? 'style="color:#f87171"' : '' ?>>
+               <?= getSetting('maintenance_enabled') === '1' ? 'style="color:var(--ac-color-required)"' : '' ?>>
                 <i class="fa-solid fa-triangle-exclamation"></i> Maintenance
             </a>
             <?php endif; ?>
@@ -331,7 +314,7 @@ if (canPreviewGroups()) {
                 if (adminHasSection($_ps['section'])) { $_hasPluginSection = true; break; }
             }
             if ($_hasPluginSection): ?>
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <?php foreach ($_pluginSections as $_ps):
                 if (!adminHasSection($_ps['section'])) continue;
                 if (!empty($_ps['hide_in_nav'])) continue;
@@ -339,25 +322,25 @@ if (canPreviewGroups()) {
                 $_pluginActive = ($currentAdmin === 'plugin-page' && ($_GET['section'] ?? '') === $_ps['section'] && ($_GET['plugin'] ?? '') === $_ps['plugin_id']);
             ?>
             <a href="<?= h($_pluginUrl) ?>" class="nav-link <?= $_pluginActive ? 'active' : '' ?>">
-                <i class="<?= h($_ps['icon'] ?? 'fa-solid fa-puzzle-piece') ?>"></i>
+                <?= ac_icon((string)($_ps['icon'] ?? 'puzzle')) ?>
                 <?= h($_ps['label_en'] ?? $_ps['section']) ?>
             </a>
             <?php endforeach; ?>
             <?php endif; ?>
 
             <?php if (adminHasSection('plugins')): ?>
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <a href="<?= BASE_URL ?>/admin/plugins"
                class="nav-link <?= $currentAdmin === 'plugins' ? 'active' : '' ?>">
                 <i class="fa-solid fa-puzzle-piece"></i> Plugins
             </a>
             <?php endif; ?>
 
-            <hr style="border-color:var(--neutral-600);margin:0.75rem 1rem">
+            <hr class="admin-sidebar-divider">
             <a href="<?= BASE_URL ?>/" target="_blank" class="nav-link">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> View site
             </a>
-            <a href="<?= BASE_URL ?>/admin/logout" class="nav-link" style="color:#f87171">
+            <a href="<?= BASE_URL ?>/admin/logout" class="nav-link admin-sidebar-logout">
                 <i class="fa-solid fa-right-from-bracket"></i> Log out
             </a>
         </nav>
@@ -378,14 +361,14 @@ if (canPreviewGroups()) {
             </div>
         </div>
         <?php if ($_saPreviewId): ?>
-        <div class="alert mb-3 d-flex align-items-center justify-content-between" style="background:#78350f;color:#fef3c7;border:none;border-radius:8px;font-size:.85rem" role="alert">
+        <div class="alert alert-warning mb-3 d-flex align-items-center justify-content-between" style="font-size:.85rem" role="alert">
             <span><i class="fa-solid fa-eye me-2"></i>Preview mode — viewing as <strong><?= h($_saPreviewName) ?></strong></span>
             <form method="post" action="<?= h($_saBack) ?>" class="ms-3 mb-0">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <input type="hidden" name="_sa_preview" value="1">
                 <input type="hidden" name="_sa_preview_gid" value="0">
                 <input type="hidden" name="_back" value="<?= h($_saBack) ?>">
-                <button type="submit" class="btn btn-sm" style="background:#92400e;color:#fef3c7;border:none;font-size:.8rem">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size:.8rem">
                     <i class="fa-solid fa-xmark me-1"></i>Exit
                 </button>
             </form>

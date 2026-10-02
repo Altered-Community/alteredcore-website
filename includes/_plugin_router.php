@@ -24,6 +24,17 @@ if ($_apiEntry === null) {
     exit;
 }
 
+// Method, CSRF and auth rules declared in plugin.json (pluginApiGuard): the endpoint only runs
+// once they pass, so plugins do not repeat these checks.
+$_denied = pluginApiGuard($_apiEntry);
+if ($_denied !== null) {
+    [$_status, $_error, $_headers] = $_denied;
+    foreach ($_headers as $_h) header($_h);
+    http_response_code($_status);
+    echo json_encode(['error' => $_error]);
+    exit;
+}
+
 $GLOBALS['_ac_current_plugin_prefix'] = $_apiEntry['_table_prefix'];
 include $_apiEntry['abs_file'];
 unset($GLOBALS['_ac_current_plugin_prefix']);

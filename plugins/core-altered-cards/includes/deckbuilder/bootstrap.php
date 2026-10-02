@@ -166,4 +166,11 @@ $variationOptionsJson = json_encode(array_values(array_map(
     array_keys($variationsData), array_values($variationsData)
 )));
 $pageTitle = $editDeckId ? $txt['edit_deck'] : $txt['new_deck'];
+
+// « Partager » on a guest deck: the login brings the user back here to save the deck to the account and share it
+// (share.js). Keycloak honours `return` (same-site only); the local login page has no return URL.
+$shareGuestReturn = BASE_URL . '/pages/deckbuilder?share_guest=1';
+$shareLoginUrl = (defined('KC_URL') && KC_URL !== '')
+    ? BASE_URL . '/auth/keycloak-login?return=' . rawurlencode($shareGuestReturn)
+    : BASE_URL . '/pages/login';
 ?>

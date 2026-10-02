@@ -1,0 +1,17 @@
+<ac-split-button
+  icon="image"
+  [busy]="busy()"
+  [items]="items()"
+  moreLabel="Autres options d’export en image"
+  i18n-moreLabel="@@deck.image.more"
+  menuLabel="Exporter en image"
+  i18n-menuLabel="@@deck.image.menu"
+  (press)="run('copy')"
+  (pick)="run($event)"
+>
+  @if (busy()) {
+    {{ busyLabel }}
+  } @else {
+    <ng-container i18n="@@deck.image.copy">Copier en image</ng-container>
+  }
+</ac-split-button>

@@ -155,14 +155,14 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
 
     <?php if (!$ref): ?>
     <div class="text-center py-5">
-        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>
+        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:var(--ac-color-required);margin-bottom:.75rem;display:block"></i>
         <p class="text-muted mb-1"><?= h($txt['not_found']) ?></p>
     </div>
     <?php else: ?>
 
     <!-- Error state (hidden until JS reveals it) -->
     <div id="card-error" style="display:none" class="text-center py-5">
-        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>
+        <i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:var(--ac-color-required);margin-bottom:.75rem;display:block"></i>
         <p class="text-muted mb-1" id="card-error-msg"></p>
         <p class="text-muted small"><?= h($txt['api_later']) ?></p>
     </div>
@@ -190,14 +190,14 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
         <div class="col-md-7 col-lg-8">
 
             <!-- Name skeleton -->
-            <h1 id="card-name" style="font-size:1.75rem;font-weight:800;color:var(--neutral-800);margin-bottom:.6rem;line-height:1.2">
+            <h1 id="card-name" style="font-size:1.75rem;font-weight:800;color:var(--ac-color-text);margin-bottom:.6rem;line-height:1.2">
                 <span class="card-skeleton" style="display:inline-block;width:210px;height:1.8rem">&nbsp;</span>
             </h1>
 
             <!-- Badges skeleton -->
             <div id="card-badges" class="d-flex flex-wrap gap-2 mb-3">
-                <span class="card-skeleton" style="display:inline-block;width:84px;height:26px;border-radius:20px"></span>
-                <span class="card-skeleton" style="display:inline-block;width:66px;height:26px;border-radius:20px"></span>
+                <span class="card-skeleton" style="display:inline-block;width:84px;height:26px;border-radius:var(--ac-radius-pill)"></span>
+                <span class="card-skeleton" style="display:inline-block;width:66px;height:26px;border-radius:var(--ac-radius-pill)"></span>
             </div>
 
             <!-- Status flags (hidden until needed) -->
@@ -230,8 +230,8 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                 <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
                     <div id="card-info-block" class="card-altered p-3 mb-3">
                         <div class="card-section-label"><?= h($txt['lbl_info']) ?></div>
-                        <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
-                        <div class="card-skeleton" style="height:1.3rem;width:65%;border-radius:4px"></div>
+                        <div class="card-skeleton" style="height:1.3rem;border-radius:var(--ac-radius-xs);margin-bottom:.45rem"></div>
+                        <div class="card-skeleton" style="height:1.3rem;width:65%;border-radius:var(--ac-radius-xs)"></div>
                     </div>
                     <div id="card-stats-block" class="card-altered p-3 mb-3" style="display:none">
                         <div class="card-section-label"><?= h($txt['lbl_stats']) ?></div>
@@ -245,8 +245,8 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                     <div class="card-altered p-3">
                         <div class="card-section-label"><?= h($txt['lbl_rulings']) ?></div>
                         <div id="card-rulings-list">
-                            <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
-                            <div class="card-skeleton" style="height:1.3rem;width:75%;border-radius:4px"></div>
+                            <div class="card-skeleton" style="height:1.3rem;border-radius:var(--ac-radius-xs);margin-bottom:.45rem"></div>
+                            <div class="card-skeleton" style="height:1.3rem;width:75%;border-radius:var(--ac-radius-xs)"></div>
                         </div>
                     </div>
                 </div>
@@ -263,9 +263,9 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                 <div class="tab-pane fade" id="tab-lore" role="tabpanel">
                     <div id="card-lore-content">
                         <div class="card-altered p-3">
-                            <div class="card-skeleton" style="height:1.3rem;border-radius:4px;margin-bottom:.45rem"></div>
-                            <div class="card-skeleton" style="height:1.3rem;width:82%;border-radius:4px;margin-bottom:.45rem"></div>
-                            <div class="card-skeleton" style="height:1.3rem;width:58%;border-radius:4px"></div>
+                            <div class="card-skeleton" style="height:1.3rem;border-radius:var(--ac-radius-xs);margin-bottom:.45rem"></div>
+                            <div class="card-skeleton" style="height:1.3rem;width:82%;border-radius:var(--ac-radius-xs);margin-bottom:.45rem"></div>
+                            <div class="card-skeleton" style="height:1.3rem;width:58%;border-radius:var(--ac-radius-xs)"></div>
                         </div>
                     </div>
                 </div>
@@ -287,7 +287,7 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
                             </div>
                         </div>
                         <div id="deck-tab-loading" class="text-center py-3" style="display:none">
-                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--neutral-400)"></i>
+                            <i class="fa-solid fa-spinner fa-spin" style="color:var(--ac-color-text-muted)"></i>
                         </div>
                         <div id="deck-tab-error" class="text-muted small py-2" style="display:none"></div>
                         <div id="deck-tab-empty" class="text-muted small py-2" style="display:none"></div>
@@ -305,7 +305,7 @@ $pageImage   = $ref ? CDN_URL . '/cards/assets/' . $_assetSet . '/' . $_assetRef
 </div>
 
 <!-- Altered Cards lightbox -->
-<div id="ac-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);align-items:center;justify-content:center;cursor:pointer">
+<div id="ac-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--ac-color-overlay-strong);align-items:center;justify-content:center;cursor:pointer">
     <div id="ac-lightbox-inner" style="max-width:420px;width:88vw;cursor:default;position:relative" onclick="event.stopPropagation()"></div>
 </div>
 
@@ -468,7 +468,7 @@ var AlteredCard = {
         var fCode   = (group.faction && group.faction.code) ? group.faction.code : '';
         var fData   = AlteredCard.factions[fCode] || {};
         var fName   = fData[uiLang] || fData.en || fCode;
-        var fColor  = fData.color  || 'var(--neutral-400)';
+        var fColor  = fData.color  || 'var(--ac-color-text-muted)';
 
         // Rarity
         var rCode   = (group.rarity && group.rarity.reference) ? group.rarity.reference : '';
@@ -504,7 +504,7 @@ var AlteredCard = {
             ac.id = 'card-render';
             ac.setAttribute('ref', ref);
             ac.setAttribute('locale', l);
-            ac.style.cssText = 'display:block;max-width:300px;margin:0 auto;border-radius:10px;overflow:hidden';
+            ac.style.cssText = 'display:block;max-width:300px;margin:0 auto;border-radius:var(--ac-radius-control);overflow:hidden';
             var oldRender = document.getElementById('card-render');
             imgWrap.replaceChild(ac, oldRender);
         } else {
@@ -543,7 +543,7 @@ var AlteredCard = {
             var fb = document.createElement('a');
             fb.href = BASE + '/pages/cards?faction[]=' + encodeURIComponent(fCode);
             fb.className = 'badge d-flex align-items-center gap-1 text-decoration-none';
-            fb.style.cssText = 'background:' + fColor + ';color:#fff;font-size:.8rem;padding:4px 10px;border-radius:20px';
+            fb.style.cssText = 'background:' + fColor + ';color:var(--ac-color-on-strong);font-size:.8rem;padding:4px 10px;border-radius:var(--ac-radius-pill)';
             fb.innerHTML = '<img src="' + BASE + '/plugins/core-altered-cards/assets/faction/' + escAttr(fCode) + '.png" alt="" style="width:14px;height:14px;object-fit:contain;filter:brightness(10)">'
                 + escHtml(fName);
             badgesEl.appendChild(fb);
@@ -552,7 +552,7 @@ var AlteredCard = {
             var rb = document.createElement('a');
             rb.href = BASE + '/pages/cards?rarity[]=' + encodeURIComponent(rCode);
             rb.className = 'badge d-flex align-items-center gap-1 text-decoration-none';
-            rb.style.cssText = 'background:var(--sand-200);color:var(--neutral-700);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            rb.style.cssText = 'background:var(--ac-color-track);color:var(--ac-color-text-2);font-size:.8rem;padding:4px 10px;border-radius:var(--ac-radius-pill)';
             rb.innerHTML = '<img src="' + BASE + '/plugins/core-altered-cards/assets/gems/' + escAttr(rLetter) + '.png" alt="' + escAttr(rCode) + '" style="width:14px;height:14px;object-fit:contain">'
                 + escHtml(rName);
             badgesEl.appendChild(rb);
@@ -561,7 +561,7 @@ var AlteredCard = {
             var tb = document.createElement('a');
             tb.href = BASE + '/pages/cards?type[]=' + encodeURIComponent(tCode);
             tb.className = 'badge text-decoration-none';
-            tb.style.cssText = 'background:var(--sand-300);color:var(--neutral-800);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            tb.style.cssText = 'background:var(--ac-color-border-control);color:var(--ac-color-text);font-size:.8rem;padding:4px 10px;border-radius:var(--ac-radius-pill)';
             tb.textContent = tLabel;
             badgesEl.appendChild(tb);
         }
@@ -569,7 +569,7 @@ var AlteredCard = {
             var stb = document.createElement('a');
             stb.href = BASE + '/pages/cards?subtype[]=' + encodeURIComponent(st.ref);
             stb.className = 'badge text-decoration-none';
-            stb.style.cssText = 'background:var(--sand-200);color:var(--neutral-700);font-size:.8rem;padding:4px 10px;border-radius:20px';
+            stb.style.cssText = 'background:var(--ac-color-track);color:var(--ac-color-text-2);font-size:.8rem;padding:4px 10px;border-radius:var(--ac-radius-pill)';
             stb.textContent = st.name;
             badgesEl.appendChild(stb);
         });
@@ -578,9 +578,9 @@ var AlteredCard = {
         var statusEl = document.getElementById('card-status');
         statusEl.innerHTML = '';
         var hasStatus = false;
-        if (group.isBanned)    { statusEl.innerHTML += '<span class="badge" style="background:#ef4444;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-ban me-1"></i>' + escHtml(txt.banned) + '</span>'; hasStatus = true; }
-        if (group.isSuspended) { statusEl.innerHTML += '<span class="badge" style="background:#f97316;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-pause me-1"></i>' + escHtml(txt.suspended) + '</span>'; hasStatus = true; }
-        if (group.isErrated)   { statusEl.innerHTML += '<span class="badge" style="background:#eab308;color:#fff;font-size:.78rem;padding:4px 10px;border-radius:20px"><i class="fa-solid fa-pen-to-square me-1"></i>' + escHtml(txt.errated) + '</span>'; hasStatus = true; }
+        if (group.isBanned)    { statusEl.innerHTML += '<span class="ac-badge ac-badge--red"><i class="fa-solid fa-ban"></i>' + escHtml(txt.banned) + '</span>'; hasStatus = true; }
+        if (group.isSuspended) { statusEl.innerHTML += '<span class="ac-badge ac-badge--orange"><i class="fa-solid fa-pause"></i>' + escHtml(txt.suspended) + '</span>'; hasStatus = true; }
+        if (group.isErrated)   { statusEl.innerHTML += '<span class="ac-badge ac-badge--blue"><i class="fa-solid fa-pen-to-square"></i>' + escHtml(txt.errated) + '</span>'; hasStatus = true; }
         statusEl.style.cssText = hasStatus ? '' : 'display:none!important';
 
         // info block
@@ -596,10 +596,10 @@ var AlteredCard = {
         infoHtml += '<div class="card-stat-row"><span class="card-stat-label">' + escHtml(txt.lbl_ref) + '</span>'
             + '<span class="card-stat-val d-flex flex-column gap-1">';
         if (collNum) {
-            infoHtml += '<span id="card-collector-num" style="font-family:monospace;font-size:.78rem;color:var(--neutral-400)">'
+            infoHtml += '<span id="card-collector-num" style="font-variant-numeric:tabular-nums;font-size:.78rem;color:var(--ac-color-text-muted)">'
                 + escHtml(collNum) + '</span>';
         }
-        infoHtml += '<span style="font-family:monospace;font-size:.78rem;color:var(--neutral-500)">' + escHtml(ref) + '</span>'
+        infoHtml += '<span style="font-variant-numeric:tabular-nums;font-size:.78rem;color:var(--ac-color-text-muted)">' + escHtml(ref) + '</span>'
             + '</span></div>';
         infoEl.innerHTML = infoHtml;
 
@@ -607,7 +607,7 @@ var AlteredCard = {
         function formatChipHtml(fmt) {
             var label = fmt[uiLang] || fmt.en || '';
             return '<span class="d-flex align-items-center gap-1">'
-                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--neutral-400)') + ';display:inline-block;flex-shrink:0"></span>'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--ac-color-text-muted)') + ';display:inline-block;flex-shrink:0"></span>'
                 + escHtml(label) + '</span>';
         }
         function appendFormatChip(fmt) {
@@ -699,8 +699,8 @@ var AlteredCard = {
             var isMatzHive   = /_OR_85_C(_\d+)?$/.test(ref);
             var reserveSize  = 2;
             var landmarkSize = isMatzHive ? 3 : 2;
-            statsHtml += '<span class="power-pip"><i class="fa-solid fa-layer-group" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
-            statsHtml += '<span class="power-pip"><i class="fa-solid fa-chess-rook" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--neutral-500)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-layer-group" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--ac-color-text-muted)">' + escHtml(txt.lbl_reserve_size) + '</span>&nbsp;' + reserveSize + '</span>';
+            statsHtml += '<span class="power-pip"><i class="fa-solid fa-chess-rook" style="font-size:.85rem"></i><span style="font-weight:400;color:var(--ac-color-text-muted)">' + escHtml(txt.lbl_landmark_size) + '</span>&nbsp;' + landmarkSize + '</span>';
         } else {
             if (card.mainCost   !== undefined && card.mainCost   !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-h" style="font-size:.88rem"></i>' + card.mainCost   + '</span>';
             if (card.recallCost !== undefined && card.recallCost !== null) statsHtml += '<span class="power-pip"><i class="fak fa-altered-r" style="font-size:.88rem"></i>' + card.recallCost + '</span>';
@@ -711,7 +711,7 @@ var AlteredCard = {
             var displayVal, show;
             if (dp !== null) {
                 var m = String(dp).match(/^#(.+)#$/);
-                displayVal = m ? '<span style="color:#FFFF00">' + m[1] + '</span>' : String(dp);
+                displayVal = m ? '<span style="color:var(--ac-cards-unique)">' + m[1] + '</span>' : String(dp);
                 show = true;
             } else if (card[f] !== undefined && card[f] !== null) {
                 displayVal = card[f];
@@ -840,7 +840,7 @@ var AlteredCard = {
     function loadAlteredCards(l) {
         var grid = document.getElementById('card-altered-grid');
         if (!grid) return;
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--neutral-400)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--ac-color-text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
         var cardName   = loc(groupData.name, l) || ref;
         var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
@@ -865,7 +865,7 @@ var AlteredCard = {
                 renderAlteredGrid(grid, altCards, cardName, l);
             })
             .catch(function () {
-                grid.innerHTML = '<div style="grid-column:1/-1;color:var(--neutral-400);font-size:.85rem">' + escHtml(txt.err_api) + '</div>';
+                grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font-size:.85rem">' + escHtml(txt.err_api) + '</div>';
             });
     }
 
@@ -885,8 +885,8 @@ var AlteredCard = {
             btn.title = cardName;
             btn.style.cssText = 'display:block;min-width:0;padding:0;border:none;background:none;cursor:pointer';
             btn.innerHTML = '<img src="' + escAttr(acImg) + '" alt="' + escAttr(cardName) + '" loading="lazy"'
-                + ' style="width:100%;aspect-ratio:63.5/88;object-fit:cover;display:block;border-radius:6px;transition:transform .15s,box-shadow .15s"'
-                + ' onmouseover="this.style.transform=\'scale(1.04)\';this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.22)\'"'
+                + ' style="width:100%;aspect-ratio:63.5/88;object-fit:cover;display:block;border-radius:var(--ac-radius-sm);transition:transform .15s,box-shadow .15s"'
+                + ' onmouseover="this.style.transform=\'scale(1.04)\';this.style.boxShadow=\'var(--ac-shadow-card)\'"'
                 + ' onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">';
             btn.addEventListener('click', function () { openLightbox(btn); });
             grid.appendChild(btn);
@@ -896,9 +896,9 @@ var AlteredCard = {
         var searchLink = document.createElement('a');
         searchLink.id  = 'card-unique-search-link';
         searchLink.href = BASE + '/pages/cards?q=' + encodeURIComponent(cardName) + '&rarity[]=UNIQUE';
-        searchLink.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:63.5/88;border-radius:6px;border:2px dashed var(--sand-300);gap:.5rem;text-decoration:none;padding:.5rem;text-align:center;color:var(--neutral-500);transition:border-color .15s,color .15s';
-        searchLink.onmouseover = function () { this.style.borderColor = 'var(--primary-400)'; this.style.color = 'var(--primary-400)'; };
-        searchLink.onmouseout  = function () { this.style.borderColor = 'var(--sand-300)';    this.style.color = 'var(--neutral-500)'; };
+        searchLink.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:63.5/88;border-radius:var(--ac-radius-sm);border:2px dashed var(--ac-color-border-dashed);gap:.5rem;text-decoration:none;padding:.5rem;text-align:center;color:var(--ac-color-text-muted);transition:border-color .15s,color .15s';
+        searchLink.onmouseover = function () { this.style.borderColor = 'var(--ac-color-primary)'; this.style.color = 'var(--ac-color-primary)'; };
+        searchLink.onmouseout  = function () { this.style.borderColor = 'var(--ac-color-border-dashed)'; this.style.color = 'var(--ac-color-text-muted)'; };
         searchLink.innerHTML   = '<span style="font-size:.72rem;font-weight:600;line-height:1.3">' + escHtml(txt.search_unique) + '<br><em>' + escHtml(cardName) + '</em></span>'
             + '<img src="' + BASE + '/plugins/core-altered-cards/assets/gems/U.png" alt="Unique" style="width:22px;height:22px;object-fit:contain">';
         grid.appendChild(searchLink);
@@ -1023,7 +1023,7 @@ var AlteredCard = {
             var fmt       = (deck.format || 'standard').toLowerCase();
             var fmtData   = (AlteredCard.formats || {})[fmt] || {};
             var fmtLabel  = fmtData.label || fmt;
-            var fmtColor  = fmtData.color || 'var(--neutral-400)';
+            var fmtColor  = fmtData.color || 'var(--ac-color-text-muted)';
             var stats     = deck.stats || {};
             var hero      = stats.hero || {};
             var heroName  = hero.name || '';
@@ -1045,7 +1045,7 @@ var AlteredCard = {
                 + '<div class="deck-compact-meta">'
                 + (heroName ? escHtml(heroName) + ' · ' : '')
                 + (totalCards !== null ? totalCards + ' ' + escHtml(txt.deck_cards) + ' ' : '')
-                + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:#fff;font-size:.68rem">' + escHtml(fmtLabel) + '</span>'
+                + '<span class="badge" style="background:' + escHtml(fmtColor) + ';color:var(--ac-color-on-strong);font-size:.68rem">' + escHtml(fmtLabel) + '</span>'
                 + '</div></div>'
                 + btnHtml
                 + '</div>';
@@ -1104,7 +1104,7 @@ var AlteredCard = {
         lbInner.innerHTML = '';
         var imgEl = document.createElement('img');
         imgEl.src = btn.dataset.img; imgEl.alt = btn.dataset.name;
-        imgEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+        imgEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:var(--ac-radius-lg);box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         imgEl.addEventListener('click', closeLightbox);
         lbInner.appendChild(imgEl);
         var detailBtn = document.createElement('a');
@@ -1147,9 +1147,9 @@ var AlteredCard = {
         pairs.forEach(function (p) {
             var text = loc(p[0], l);
             if (!text) return;
-            html += '<div' + (first ? '' : ' style="border-top:1px solid var(--sand-200);padding-top:.75rem;margin-top:.75rem"') + '>'
-                + '<div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--neutral-400);margin-bottom:.3rem">' + escHtml(p[1]) + '</div>'
-                + '<div style="font-size:.9rem;color:var(--neutral-700);line-height:1.55">' + textRender(text) + '</div>'
+            html += '<div' + (first ? '' : ' style="border-top:1px solid var(--ac-color-border);padding-top:.75rem;margin-top:.75rem"') + '>'
+                + '<div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ac-color-text-muted);margin-bottom:.3rem">' + escHtml(p[1]) + '</div>'
+                + '<div style="font-size:.9rem;color:var(--ac-color-text-2);line-height:1.55">' + textRender(text) + '</div>'
                 + '</div>';
             first = false;
         });
@@ -1166,10 +1166,10 @@ var AlteredCard = {
         }
         var html = '';
         list.forEach(function (r, i) {
-            html += '<div' + (i > 0 ? ' style="border-top:1px solid var(--sand-200);padding-top:.75rem;margin-top:.75rem"' : '') + '>'
-                + '<p style="font-size:.88rem;font-weight:600;color:var(--neutral-800);margin:0 0 .25rem 0">' + escHtml(r.question || '') + '</p>'
-                + '<p style="font-size:.85rem;color:var(--neutral-700);margin:0 0 .3rem 0">' + escHtml(r.answer || '') + '</p>'
-                + (r.rulingDate ? '<p style="font-size:.75rem;color:var(--neutral-400);margin:0">' + escHtml(String(r.rulingDate).substring(0, 10)) + '</p>' : '')
+            html += '<div' + (i > 0 ? ' style="border-top:1px solid var(--ac-color-border);padding-top:.75rem;margin-top:.75rem"' : '') + '>'
+                + '<p style="font-size:.88rem;font-weight:600;color:var(--ac-color-text);margin:0 0 .25rem 0">' + escHtml(r.question || '') + '</p>'
+                + '<p style="font-size:.85rem;color:var(--ac-color-text-2);margin:0 0 .3rem 0">' + escHtml(r.answer || '') + '</p>'
+                + (r.rulingDate ? '<p style="font-size:.75rem;color:var(--ac-color-text-muted);margin:0">' + escHtml(String(r.rulingDate).substring(0, 10)) + '</p>' : '')
                 + '</div>';
         });
         return html;
@@ -1189,9 +1189,9 @@ var AlteredCard = {
             var t = el.text || '';
             if (!t || t === '#N/A' || t === 'N/A') return;
             var esc = escHtml(t);
-            if (el.type === 'FLAVOR_TEXT')  html += '<blockquote style="border-left:3px solid var(--sand-300);padding-left:1rem;margin:0 0 .75rem 0;color:var(--neutral-600);font-size:.9rem"><em>' + esc + '</em></blockquote>';
-            else if (el.type === 'STORY')   html += '<p style="font-size:.88rem;color:var(--neutral-700);line-height:1.65;margin:0 0 .5rem 0">' + esc.replace(/\n/g, '<br>') + '</p>';
-            else if (el.type === 'NARRATOR') html += '<p style="font-size:.8rem;color:var(--neutral-500);text-align:right;font-style:italic;margin:0">— ' + esc + '</p>';
+            if (el.type === 'FLAVOR_TEXT')  html += '<blockquote style="border-left:3px solid var(--ac-color-border-control);padding-left:1rem;margin:0 0 .75rem 0;color:var(--ac-color-text-2);font-size:.9rem"><em>' + esc + '</em></blockquote>';
+            else if (el.type === 'STORY')   html += '<p style="font-size:.88rem;color:var(--ac-color-text-2);line-height:1.65;margin:0 0 .5rem 0">' + esc.replace(/\n/g, '<br>') + '</p>';
+            else if (el.type === 'NARRATOR') html += '<p style="font-size:.8rem;color:var(--ac-color-text-muted);text-align:right;font-style:italic;margin:0">— ' + esc + '</p>';
         });
         return html + '</div>';
     }

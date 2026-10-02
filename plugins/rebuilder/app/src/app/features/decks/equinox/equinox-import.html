@@ -1,0 +1,90 @@
+<div class="ac-overlay-body">
+  @if (phase() === 'pick' || phase() === 'reading') {
+    <!-- The source switch: only before an import, so an import is never left by it. -->
+    <ng-content />
+    @if (!auth.isLoggedIn()) {
+      <p class="notice" role="note">
+        <ng-container i18n="@@decks.equinox.signInFirst">Les decks de l’export sont importés dans votre compte : connectez-vous d’abord.</ng-container>
+        <button type="button" class="link" (click)="signIn.emit()" i18n="@@decks.equinox.signIn">Se connecter</button>
+      </p>
+    }
+    <ol class="steps">
+      <li i18n="@@decks.equinox.step1">Sur altered.gg, ouvrez <a [href]="personalDataUrl" target="_blank" rel="noopener">Gérer le compte › Données personnelles</a>.</li>
+      <li i18n="@@decks.equinox.step2">Demandez l’export de vos données, puis téléchargez l’archive ZIP. Gardez-la telle quelle, sans l’extraire.</li>
+      <li i18n="@@decks.equinox.step3">Choisissez l’archive : ses decks sont créés dans votre compte, en privé. Ceux qui y sont déjà (même nom, mêmes cartes) sont ignorés.</li>
+    </ol>
+    <ac-file-input label="Export altered.gg (.zip)" i18n-label="@@decks.equinox.fileLabel" accept=".zip,application/zip" [disabled]="phase() === 'reading'" [file]="file()" (fileChange)="pickFile($event)" />
+    @if (error(); as e) {
+      <p class="error" role="alert">{{ e }}</p>
+    }
+  } @else {
+    @if (dedupWarn()) {
+      <p class="notice warn" role="status" i18n="@@decks.equinox.dedupWarn">Vos decks n’ont pas pu être listés : les doublons ne sont pas détectés, tous les decks sont importés.</p>
+    }
+    <div class="progress" role="status">
+      @if (phase() === 'done') {
+        <strong>{{ doneTitle() }}</strong>
+        <span>{{ summary() }}</span>
+      } @else {
+        <span class="progress-line">
+          <strong>{{ progressLabel() }}</strong>
+          @if (phase() === 'paused') {
+            <span class="muted" i18n="@@decks.equinox.paused">En pause</span>
+          } @else if (eta(); as t) {
+            <span class="muted">{{ t }}</span>
+          }
+        </span>
+      }
+      <ac-progress-bar [value]="progress()" [ariaLabel]="progressLabel()" />
+    </div>
+    <ul #list class="rows" aria-label="Decks de l’export" i18n-aria-label="@@decks.equinox.rows">
+      @for (r of rows(); track $index) {
+        <li [class.current]="r.status === 'current'">
+          <span class="name">{{ r.deck.name }}</span>
+          <ac-badge [tone]="statusTones[r.status]">{{ statusLabels[r.status] }}</ac-badge>
+          @if (r.error; as e) {
+            <span class="row-error">{{ e }}</span>
+          }
+          @if (r.status === 'failed' && isRunning()) {
+            <span class="row-retry">
+              <button acButton variant="secondary" size="sm" (click)="retry($index)" i18n="@@decks.equinox.retry">Réessayer</button>
+              <span class="muted" i18n="@@decks.equinox.attemptsLeft">{maxAttempts - r.attempts, plural, =1 {1 essai restant} other {{{ maxAttempts - r.attempts }} essais restants}}</span>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+    @if (confirmCancel()) {
+      <p class="notice warn" role="alert" i18n="@@decks.equinox.cancelConfirm">Annuler l’import ? Les decks déjà importés sont conservés.</p>
+    }
+  }
+</div>
+<div class="ac-overlay-footer">
+  @if (isRunning()) {
+    @if (confirmCancel()) {
+      <button acButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(false)" i18n="@@decks.equinox.keepGoing">Continuer</button>
+      <button acButton variant="danger" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="cancel()" i18n="@@decks.equinox.cancelYes">Annuler l’import</button>
+    } @else {
+      <button acButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(true)" i18n="@@decks.equinox.cancel">Annuler</button>
+      <button acButton variant="secondary" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="togglePause()">
+        @if (phase() === 'paused') {
+          <ng-container i18n="@@decks.equinox.resume">Reprendre</ng-container>
+        } @else {
+          <ng-container i18n="@@decks.equinox.pause">Pause</ng-container>
+        }
+      </button>
+    }
+  } @else if (phase() === 'done') {
+    <button acButton variant="secondary" class="secondary-action" (click)="reset()" i18n="@@decks.equinox.another">Importer un autre fichier</button>
+    <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="close()" i18n="@@decks.equinox.done">Terminer</button>
+  } @else {
+    <button acButton variant="secondary" class="secondary-action" (click)="close()" i18n="@@decks.import.cancel">Annuler</button>
+    <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!file() || phase() === 'reading' || !auth.isLoggedIn()" (click)="start()">
+      @if (phase() === 'reading') {
+        <ng-container i18n="@@decks.equinox.reading">Lecture du fichier…</ng-container>
+      } @else {
+        <ng-container i18n="@@decks.import.submit">Importer</ng-container>
+      }
+    </button>
+  }
+</div>

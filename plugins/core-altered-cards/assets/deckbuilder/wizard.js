@@ -90,7 +90,7 @@
         name.textContent   = hero.name || '';
         var fData = AlteredDB.factions[hero.factionCode] || null;
         fact.textContent   = fData ? (fData[AlteredDB.uiLang] || fData.en || '') : (hero.factionCode || '');
-        row.style.setProperty('--faction-color', (fData && fData.color) || 'var(--neutral-300)');
+        row.style.setProperty('--faction-color', (fData && fData.color) || 'var(--ac-color-text-disabled)');
         action.textContent = AlteredDB.txt.wizard_change;
 
         var partial = hero.bgaState === 'partial';

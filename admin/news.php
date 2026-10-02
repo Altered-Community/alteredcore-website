@@ -115,10 +115,10 @@ function newsPageUrl(int $p): string {
                     $date = $row['published_at'] ?? $row['created_at'];
                 ?>
                 <tr>
-                    <td style="width:50px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="width:50px;color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td>
                         <?php if ($row['is_pinned']): ?>
-                            <i class="fa-solid fa-thumbtack me-1" style="color:var(--primary-400);font-size:.8rem" title="Pinned"></i>
+                            <i class="fa-solid fa-thumbtack me-1" style="color:var(--ac-color-primary);font-size:.8rem" title="Pinned"></i>
                         <?php endif; ?>
                         <?= h($row['title_en']) ?>
                     </td>

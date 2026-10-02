@@ -1,0 +1,23 @@
+button {
+  width: var(--ac-control-md);
+  height: var(--ac-control-md);
+  border-radius: 50%;
+  border: none;
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--ac-shadow-fab);
+  cursor: pointer;
+  padding: 0;
+}
+@media (hover: hover) {
+  button:hover {
+    background: var(--ac-color-primary-strong);
+  }
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

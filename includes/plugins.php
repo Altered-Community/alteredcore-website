@@ -84,12 +84,50 @@ function ownershipIsActive(): bool {
         && isset($GLOBALS['_ac_active_plugins']['ownership']);
 }
 
+/** Cookie of « Beta Deckbuilder » (account menu of the theme): '1' when the visitor turned it on, in this browser. */
+const AC_BETA_COOKIE = 'ac_beta';
+
+function betaModeOn(): bool {
+    return ($_COOKIE[AC_BETA_COOKIE] ?? '') === '1';
+}
+
+/**
+ * SPA pages of active plugins with `beta_slugs` (manifest), as [plugin, page] pairs: the theme shows the
+ * « Beta Deckbuilder » toggle when there is one.
+ */
+function pluginBetaPages(): array {
+    $out = [];
+    foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $plugin) {
+        foreach ($plugin['pages'] ?? [] as $page) {
+            if (($page['type'] ?? 'php') === 'spa' && !empty($page['beta_slugs'])) $out[] = [$plugin, $page];
+        }
+    }
+    return $out;
+}
+
+/**
+ * The SPA page that serves $slug in beta mode (e.g. the site's decks pages), at the same URL, with its own slug
+ * (`own_slug`); null when none does. pluginFindPage() keeps serving the slug otherwise.
+ */
+function pluginFindBetaPage(string $slug): ?array {
+    foreach (pluginBetaPages() as [$plugin, $page]) {
+        if (in_array($slug, (array)$page['beta_slugs'], true)) {
+            return ['slug' => $slug, 'own_slug' => $page['slug'], 'base_path' => BASE_URL . '/pages/'] + spaResolvePage($plugin, $page);
+        }
+    }
+    return null;
+}
+
 function pluginFindPage(string $slug): ?array {
     foreach ($GLOBALS['_ac_active_plugins'] ?? [] as $id => $plugin) {
         foreach ($plugin['pages'] ?? [] as $page) {
             if (($page['slug'] ?? '') !== $slug) continue;
-            $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $page['file']), DIRECTORY_SEPARATOR);
-            if (!file_exists($abs)) continue;
+            // Manifest v2: a prebuilt front-end mounted by the shell (see includes/spa.php).
+            if (($page['type'] ?? 'php') === 'spa') {
+                return spaResolvePage($plugin, $page);
+            }
+            $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $page['file'] ?? ''), DIRECTORY_SEPARATOR);
+            if (!is_file($abs)) continue;
             $css = [];
             $js  = [];
             foreach ($plugin['assets']['css'] ?? [] as $f) {
@@ -98,7 +136,7 @@ function pluginFindPage(string $slug): ?array {
             foreach ($plugin['assets']['js'] ?? [] as $f) {
                 $js[] = BASE_URL . '/plugins/' . $id . '/' . ltrim($f, '/');
             }
-            return ['slug' => $slug, 'plugin_id' => $id, 'abs_file' => $abs, 'plugin_css' => $css, 'plugin_js' => $js, '_table_prefix' => $plugin['_table_prefix'] ?? '', 'title_en' => $page['title_en'] ?? '', 'title_fr' => $page['title_fr'] ?? ''];
+            return ['slug' => $slug, 'type' => 'php', 'plugin_id' => $id, 'abs_file' => $abs, 'plugin_css' => $css, 'plugin_js' => $js, '_table_prefix' => $plugin['_table_prefix'] ?? '', 'title_en' => $page['title_en'] ?? '', 'title_fr' => $page['title_fr'] ?? '', 'fullwidth' => !empty($page['fullwidth'])];
         }
     }
     return null;
@@ -144,9 +182,154 @@ function pluginFindApi(string $pluginId, string $endpoint): ?array {
         if (($entry['endpoint'] ?? '') !== $endpoint) continue;
         $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $entry['file']), DIRECTORY_SEPARATOR);
         if (!file_exists($abs)) continue;
-        return ['plugin_id' => $pluginId, 'endpoint' => $endpoint, 'abs_file' => $abs, '_table_prefix' => $plugin['_table_prefix'] ?? ''];
+        return [
+            'plugin_id' => $pluginId, 'endpoint' => $endpoint, 'abs_file' => $abs, '_table_prefix' => $plugin['_table_prefix'] ?? '',
+            'methods'   => isset($entry['methods']) ? array_map('strtoupper', (array)$entry['methods']) : null,
+            'auth'      => in_array($entry['auth'] ?? null, ['user', 'admin'], true) ? $entry['auth'] : null,
+            'csrf'      => ($entry['csrf'] ?? true) !== false,
+        ];
     }
     return null;
+}
+
+/**
+ * Decoded JSON body of the current plugin API request ([] when absent or not JSON). Read once:
+ * the router uses it for the CSRF check, endpoints call it instead of reading php://input.
+ */
+function pluginApiBody(): array {
+    static $body = null;
+    if ($body === null) {
+        $type = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
+        $data = strpos($type, 'json') !== false ? json_decode((string)file_get_contents('php://input'), true) : null;
+        $body = is_array($data) ? $data : [];
+    }
+    return $body;
+}
+
+/**
+ * Checks the router applies before a plugin API endpoint runs, from its manifest entry:
+ *   "methods": ["GET", "POST"]   other methods → 405 (default: any method)
+ *   "auth": "user" | "admin"     signed-in user → else 401; site admin → else 403 (default: public)
+ *   "csrf": false                opt out of the CSRF check (e.g. a webhook with its own signature)
+ * Every request other than GET / HEAD / OPTIONS needs the session's CSRF token, sent as the
+ * X-CSRF-Token header or as a csrf_token field (form or JSON body) → else 403.
+ * Returns null when the request may proceed, else [status, error code, extra headers].
+ */
+function pluginApiGuard(array $api): ?array {
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if ($api['methods'] !== null && !in_array($method, $api['methods'], true)) {
+        return [405, 'method_not_allowed', ['Allow: ' . implode(', ', $api['methods'])]];
+    }
+    if (!in_array($method, ['GET', 'HEAD', 'OPTIONS'], true) && $api['csrf']) {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? pluginApiBody()['csrf_token'] ?? null;
+        if (!csrfValid(is_string($token) ? $token : null)) return [403, 'csrf', []];
+    }
+    if ($api['auth'] === 'user' && !kcIsLoggedIn()) return [401, 'unauthenticated', []];
+    if ($api['auth'] === 'admin' && !isAdminUser()) return [kcIsLoggedIn() ? 403 : 401, kcIsLoggedIn() ? 'forbidden' : 'unauthenticated', []];
+    return null;
+}
+
+// Suggested menu entries (manifest v2 "menu"). Adds each entry to {nav_items} unless an
+// item with the same URL already exists, so admins keep control of labels, order and
+// visibility after the first activation. An entry with `children` becomes a dropdown
+// (URL "#", matched on its English label); its missing children are added under it. An entry
+// with `parent_url` goes inside the existing top-level menu that has this URL.
+// Returns the number of items inserted.
+function pluginMenuEntryUrl(array $entry): string {
+    if (empty($entry['page'])) return (string)($entry['url'] ?? '');
+    $url  = '/pages/' . preg_replace('/[^a-z0-9_-]/', '', $entry['page']);
+    $path = trim(preg_replace('#[^a-z0-9_/-]#', '', (string)($entry['path'] ?? '')), '/');
+    return $path !== '' ? $url . '/' . $path : $url;
+}
+
+function pluginApplyMenuSuggestions(array $manifest): int {
+    $added  = 0;
+    $db     = getDB();
+    $insert = $db->prepare(q("INSERT INTO {nav_items} (parent_id, label_en, label_fr, url, icon, sort_order, is_visible) VALUES (:parent, :en, :fr, :url, :icon, :sort, 1)"));
+    $exists = $db->prepare(q("SELECT COUNT(*) FROM {nav_items} WHERE url = :url"));
+    foreach ($manifest['menu'] ?? [] as $entry) {
+        if (!is_array($entry) || empty($entry['label_en']) || empty($entry['label_fr'])) continue;
+        $children = array_values(array_filter((array)($entry['children'] ?? []), 'is_array'));
+        $sort = isset($entry['sort_order']) ? (int)$entry['sort_order']
+              : (int)$db->query(q("SELECT COALESCE(MAX(sort_order), 0) FROM {nav_items} WHERE parent_id IS NULL AND sort_order < 900"))->fetchColumn() + 5;
+
+        if ($children === []) {
+            $url = pluginMenuEntryUrl($entry);
+            if ($url === '' || $url === '/pages/') continue;
+            $exists->execute([':url' => $url]);
+            if ((int)$exists->fetchColumn() > 0) continue;
+            // "parent_url": inside an existing top-level menu (last, unless sort_order says
+            // otherwise); top level when the site has no such menu.
+            $parentId = null;
+            if (!empty($entry['parent_url'])) {
+                $find = $db->prepare(q("SELECT id FROM {nav_items} WHERE parent_id IS NULL AND url = :url ORDER BY id LIMIT 1"));
+                $find->execute([':url' => (string)$entry['parent_url']]);
+                $parentId = $find->fetchColumn() ?: null;
+            }
+            if ($parentId !== null && !isset($entry['sort_order'])) {
+                $last = $db->prepare(q("SELECT COALESCE(MAX(sort_order), 0) FROM {nav_items} WHERE parent_id = :p"));
+                $last->execute([':p' => (int)$parentId]);
+                $sort = (int)$last->fetchColumn() + 10;
+            }
+            $insert->execute([':parent' => $parentId !== null ? (int)$parentId : null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => $url, ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+            $added++;
+            continue;
+        }
+
+        $find = $db->prepare(q("SELECT id FROM {nav_items} WHERE parent_id IS NULL AND url = '#' AND label_en = :en ORDER BY id LIMIT 1"));
+        $find->execute([':en' => $entry['label_en']]);
+        $parentId = $find->fetchColumn();
+        if ($parentId === false) {
+            $insert->execute([':parent' => null, ':en' => $entry['label_en'], ':fr' => $entry['label_fr'], ':url' => '#', ':icon' => $entry['icon'] ?? null, ':sort' => $sort]);
+            $parentId = $db->lastInsertId();
+            $added++;
+        }
+        foreach ($children as $i => $child) {
+            $url = pluginMenuEntryUrl($child);
+            if (empty($child['label_en']) || empty($child['label_fr']) || $url === '' || $url === '/pages/') continue;
+            $exists->execute([':url' => $url]);
+            if ((int)$exists->fetchColumn() > 0) continue;
+            $insert->execute([':parent' => (int)$parentId, ':en' => $child['label_en'], ':fr' => $child['label_fr'], ':url' => $url, ':icon' => $child['icon'] ?? null, ':sort' => isset($child['sort_order']) ? (int)$child['sort_order'] : ($i + 1) * 10]);
+            $added++;
+        }
+    }
+    return $added;
+}
+
+// Activation shared by admin/plugins.php and bin/plugins.php: conflict check, DB row,
+// install SQL on first activation, menu suggestions. Returns a list of error strings.
+function pluginActivate(string $pluginId): array {
+    $all = pluginsGetAll();
+    if (!isset($all[$pluginId])) return ['Plugin not found.'];
+    $m = $all[$pluginId];
+    $conflictErrors = pluginCheckConflicts($m, $pluginId);
+    if (!empty($conflictErrors)) return array_map(fn($e) => 'Slug conflict: ' . $e, $conflictErrors);
+
+    $db = getDB();
+    // Ensure a DB row exists (covers plugins present on disk but not uploaded via ZIP)
+    $db->prepare(q("INSERT IGNORE INTO {plugins} (id, version) VALUES (:id, :v)"))
+       ->execute([':id' => $pluginId, ':v' => $m['version'] ?? null]);
+    // Run SQL on first activation
+    $row = $db->prepare(q("SELECT sql_installed_at FROM {plugins} WHERE id = :id"));
+    $row->execute([':id' => $pluginId]);
+    $existing = $row->fetch();
+    if ($existing && $existing['sql_installed_at'] === null && !empty($m['sql'])) {
+        $sqlFile = $m['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $m['sql']), DIRECTORY_SEPARATOR);
+        if (file_exists($sqlFile)) {
+            try {
+                $GLOBALS['_ac_current_plugin_prefix'] = $m['_table_prefix'] ?? '';
+                $db->exec(qp(file_get_contents($sqlFile)));
+                unset($GLOBALS['_ac_current_plugin_prefix']);
+                $db->prepare(q("UPDATE {plugins} SET sql_installed_at = NOW() WHERE id = :id"))->execute([':id' => $pluginId]);
+            } catch (Exception $e) {
+                return ['SQL install error: ' . $e->getMessage()];
+            }
+        }
+    }
+    $db->prepare(q("UPDATE {plugins} SET is_active = 1, version = :v, activated_at = NOW() WHERE id = :id"))
+       ->execute([':v' => $m['version'] ?? null, ':id' => $pluginId]);
+    try { pluginApplyMenuSuggestions($m); } catch (Exception $e) { /* menu is a convenience */ }
+    return [];
 }
 
 // conflict detection
@@ -246,7 +429,14 @@ function pluginValidateZip(ZipArchive $zip, array $manifest, string $prefix): ar
                 } elseif (!preg_match('/^[a-z0-9][a-z0-9_-]*$/', $page['slug'])) {
                     $errors[] = "pages[$n]: invalid slug '{$page['slug']}'.";
                 }
-                if (empty($page['file'])) {
+                if (($page['type'] ?? 'php') === 'spa') {
+                    // The build output must be inside the ZIP: the shell never builds plugins.
+                    if (empty($page['entry'])) {
+                        $errors[] = "pages[$n]: SPA page needs an 'entry' (build manifest).";
+                    } elseif (!$zipHasFile($page['entry'])) {
+                        $errors[] = "pages[$n]: build manifest '{$page['entry']}' not found in ZIP (build the plugin before zipping it).";
+                    }
+                } elseif (empty($page['file'])) {
                     $errors[] = "pages[$n]: missing required field 'file'.";
                 } elseif (!$zipHasFile($page['file'])) {
                     $errors[] = "pages[$n]: file '{$page['file']}' not found in ZIP.";

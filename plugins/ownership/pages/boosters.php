@@ -35,18 +35,18 @@ $ownEnabled   = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $ownLoggedIn  = kcIsLoggedIn();
 $ownActiveTab = 'boosters';
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
     <?php if (!$ownEnabled): ?>
-    <div class="alert alert-warning"><?= h($txt['unavailable']) ?></div>
+    <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['unavailable']) ?></div></div>
     <?php else: ?>
 
     <?php require __DIR__ . '/../includes/subnav.php'; ?>
 
     <?php if (!$ownLoggedIn): ?>
-    <div class="card-altered p-4">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['anon_login']) ?>
+    <div class="ac-card">
+        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
         </a>
     </div>
     <?php else: ?>
@@ -63,17 +63,17 @@ $ownActiveTab = 'boosters';
                 <div id="own-opener-rotator" class="own-opener-cover-art"></div>
             </div>
             <div id="own-opener-loading" class="own-opener-loading" hidden>
-                <span class="own-opener-spinner" role="status" aria-label="<?= h($txt['loading']) ?>"></span>
+                <span class="ac-spinner" role="status" aria-label="<?= h($txt['loading']) ?>"></span>
             </div>
-            <button type="button" id="own-opener-prev" class="own-opener-nav own-opener-nav--prev" aria-label="<?= h($txt['previousBooster']) ?>">&lsaquo;</button>
-            <button type="button" id="own-opener-next" class="own-opener-nav own-opener-nav--next" aria-label="<?= h($txt['nextBooster']) ?>">&rsaquo;</button>
+            <button type="button" id="own-opener-prev" class="own-opener-nav own-opener-nav--prev" aria-label="<?= h($txt['previousBooster']) ?>"><?= ac_icon('chevron-left') ?></button>
+            <button type="button" id="own-opener-next" class="own-opener-nav own-opener-nav--next" aria-label="<?= h($txt['nextBooster']) ?>"><?= ac_icon('chevron-right') ?></button>
         </div>
         <div id="own-opener-info" class="own-opener-info">
             <div>
-                <div id="own-opener-name" class="fw-semibold"></div>
-                <div id="own-opener-qty" class="text-white-50 small"></div>
+                <div id="own-opener-name" class="own-opener-name"></div>
+                <div id="own-opener-qty" class="own-opener-qty"></div>
             </div>
-            <button type="button" id="own-opener-open-btn" class="own-opener-open-btn"><?= h($txt['open']) ?></button>
+            <button type="button" id="own-opener-open-btn" class="ac-button"><?= h($txt['open']) ?></button>
         </div>
     </div>
 

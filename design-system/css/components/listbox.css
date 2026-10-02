@@ -1,0 +1,249 @@
+/*
+ * Listbox — a select whose list is drawn by the design system instead of the browser: search
+ * field from 8 options, groups with sticky headers, optional colour dot per option.
+ * Docs: design-system/docs/components/listbox.md
+ *
+ * PHP pages keep writing a <select class="ac-select"> (or form-select): js/ac.js builds this
+ * markup next to it and keeps the <select> in sync, so forms and change listeners still work.
+ *
+ * <div class="ac-listbox">
+ *   <button type="button" class="ac-listbox__trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+ *     <span class="ac-listbox__value"><span class="ac-listbox__dot" style="--ac-listbox-dot: var(--ac-faction-muna)"></span>Teija &amp; Nauraa</span>
+ *     {chevron-down icon}
+ *   </button>
+ * </div>
+ * <div class="ac-listbox__panel">                         (top layer or overlay container)
+ *   <div class="ac-listbox__search">{search icon}<input type="search"></div>
+ *   <div class="ac-listbox__list" role="listbox">
+ *     <div class="ac-listbox__option" role="option" aria-selected="true">All heroes {check icon}</div>
+ *     <div class="ac-listbox__divider" role="presentation"></div>
+ *     <div class="ac-listbox__group" role="group" aria-labelledby="g1">
+ *       <div class="ac-listbox__group-label" id="g1">{dot} Muna <span class="ac-listbox__count">1</span></div>
+ *       <div class="ac-listbox__option" role="option" aria-selected="false">…</div>
+ *     </div>
+ *   </div>
+ * </div>
+ */
+.ac-listbox {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+/* ---- Trigger: same box as .ac-select ---- */
+.ac-listbox__trigger {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ac-control-md);
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  padding: 0 var(--ac-space-2-5) 0 var(--ac-space-3);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  font-family: var(--ac-font-family);
+  font-size: var(--ac-select-font-size);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+}
+.ac-listbox--sm .ac-listbox__trigger { height: var(--ac-control-sm); }
+.ac-listbox__trigger:focus-visible,
+.ac-listbox__trigger[aria-expanded='true'] {
+  outline: none;
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+}
+.ac-listbox__trigger[aria-invalid='true'] { border-color: var(--ac-color-required); }
+.ac-listbox__trigger:disabled {
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text-disabled);
+  cursor: default;
+}
+.ac-listbox__value {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ac-listbox__value > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+/* The "all / none" choice (empty value) reads as a placeholder. */
+.ac-listbox__value--empty { color: var(--ac-color-text-2); }
+.ac-listbox__trigger .ac-icon {
+  --ac-icon-size: 16px;
+  color: var(--ac-color-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--ac-duration-fast);
+}
+.ac-listbox__trigger[aria-expanded='true'] .ac-icon { transform: rotate(180deg); }
+
+/* The native <select> kept for forms (js/ac.js): invisible, over the trigger, so that the
+   browser's "required" bubble points at the right place. */
+.ac-listbox__native {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Panel: .ac-menu look ---- */
+.ac-listbox__panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  max-width: min(360px, calc(100vw - 2 * var(--ac-space-4)));
+  max-height: 360px;
+  margin: 0;
+  padding: 0;
+  inset: auto;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e2);
+  color: var(--ac-color-text);
+  font-family: var(--ac-font-family);
+  overflow: hidden;
+  z-index: var(--ac-z-overlay);
+}
+.ac-listbox__panel:popover-open { position: fixed; }
+/* display: flex above would override the browser's hiding of a closed popover. */
+.ac-listbox__panel[popover]:not(:popover-open),
+.ac-listbox__panel[hidden] { display: none; }
+.ac-listbox__search {
+  position: relative;
+  flex-shrink: 0;
+  padding: var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-color-border);
+}
+.ac-listbox__search .ac-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  --ac-icon-size: 16px;
+  color: var(--ac-color-text-muted);
+  pointer-events: none;
+}
+.ac-listbox__search input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ac-control-sm);
+  margin: 0;
+  padding: 0 var(--ac-space-2-5) 0 32px;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text);
+  font-family: var(--ac-font-family);
+  font-size: var(--ac-field-font-size);
+  font-weight: 500;
+  outline: none;
+}
+.ac-listbox__search input::placeholder { color: var(--ac-color-text-muted); }
+.ac-listbox__search input:focus {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
+}
+.ac-listbox__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ac-space-1);
+}
+
+/* ---- Groups ---- */
+.ac-listbox__group-label {
+  position: sticky;
+  top: calc(-1 * var(--ac-space-1));
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-2-5) var(--ac-space-2-5) var(--ac-space-1);
+  background: var(--ac-color-surface);
+  font: var(--ac-font-overline);
+  text-transform: uppercase;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  color: var(--ac-color-text-muted);
+}
+.ac-listbox__count {
+  margin-left: auto;
+  font: var(--ac-font-caption);
+  text-transform: none;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ac-listbox__divider {
+  height: 1px;
+  margin: var(--ac-space-1) var(--ac-space-1-5);
+  background: var(--ac-color-divider);
+}
+
+/* Colour dot (faction, user group…): set --ac-listbox-dot on the element. */
+.ac-listbox__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--ac-listbox-dot, var(--ac-color-text-disabled));
+}
+
+/* ---- Options ---- */
+.ac-listbox__option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2-5);
+  min-height: max(36px, var(--ac-hit-min));
+  padding: var(--ac-space-1-5) var(--ac-space-2-5);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-color-text);
+  font: var(--ac-font-body);
+  font-size: var(--ac-field-font-size);
+  cursor: pointer;
+  user-select: none;
+}
+.ac-listbox__label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ac-listbox__label mark {
+  background: none;
+  color: var(--ac-color-primary-strong);
+  font-weight: 800;
+}
+.ac-listbox__option .ac-icon {
+  --ac-icon-size: 16px;
+  color: var(--ac-color-primary);
+  visibility: hidden;
+  flex-shrink: 0;
+}
+/* Keyboard / pointer position (aria-activedescendant): a class, ARIA has no attribute on the option. */
+.ac-listbox__option.is-active { background: var(--ac-color-bg-subtle); }
+.ac-listbox__option[aria-selected='true'] { color: var(--ac-color-primary-strong); font-weight: 700; }
+.ac-listbox__option[aria-selected='true'] .ac-icon { visibility: visible; }
+.ac-listbox__option[aria-disabled='true'] {
+  color: var(--ac-color-text-disabled);
+  cursor: default;
+}
+.ac-listbox__empty {
+  padding: var(--ac-space-4) var(--ac-space-3);
+  text-align: center;
+  font: var(--ac-font-small);
+  font-weight: 500;
+  color: var(--ac-color-text-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ac-listbox__panel { animation: ac-listbox-in var(--ac-duration-fast) ease-out; }
+}
+@keyframes ac-listbox-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}

@@ -35,21 +35,22 @@ $greeting = $db->query(qp("SELECT value FROM {settings} WHERE `key` = 'greeting'
 ?>
 
 <div class="admin-header-bar">
-    <h1><i class="fa-solid fa-gear me-2"></i><?= h($txt['title']) ?></h1>
+    <h1><?= ac_icon('settings', 'me-2') ?><?= h($txt['title']) ?></h1>
 </div>
 
-<div class="card-altered p-4" style="max-width:480px">
-    <form method="post">
+<div class="ac-card" style="max-width:480px">
+    <form method="post" class="ac-stack">
         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <div class="mb-3">
-            <label class="form-label fw-semibold"><?= h($txt['label']) ?></label>
-            <input type="text" name="greeting" class="form-control"
+        <div class="ac-field">
+            <label class="ac-field__label" for="hw-greeting"><?= h($txt['label']) ?></label>
+            <input type="text" id="hw-greeting" name="greeting" class="ac-input"
                    value="<?= h($greeting ?: '') ?>"
                    placeholder="<?= h($txt['placeholder']) ?>">
         </div>
-        <button type="submit" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-floppy-disk me-1"></i>
-            <?= h($txt['btn_save']) ?>
-        </button>
+        <div>
+            <button type="submit" class="ac-button ac-button--sm">
+                <?= ac_icon('save') ?><?= h($txt['btn_save']) ?>
+            </button>
+        </div>
     </form>
 </div>

@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+}
+nav {
+  height: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom));
+  padding: 0 4px calc(6px + env(safe-area-inset-bottom));
+  background: var(--ac-color-surface);
+  border-top: 1px solid var(--ac-color-border);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+}
+a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--ac-color-text-2);
+  font-size: var(--ac-font-size-small);
+  font-weight: 600;
+}
+a.active {
+  color: var(--ac-color-primary-strong);
+  font-weight: 700;
+}
+.ico {
+  position: relative;
+  display: flex;
+}
+.badge {
+  position: absolute;
+  top: -6px;
+  left: 14px;
+  display: flex;
+}

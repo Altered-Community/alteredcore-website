@@ -1,0 +1,180 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+.picked {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+  padding: 7px 8px 7px 10px;
+  border: 1px solid var(--ac-color-primary-border);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  border-radius: var(--ac-radius-control);
+  font-size: var(--ac-select-font-size);
+  font-weight: 700;
+  line-height: 1.35;
+}
+.picked button {
+  border: none;
+  background: none;
+  color: var(--ac-color-primary-strong);
+  display: flex;
+  padding: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.or {
+  font-size: var(--ac-font-size-micro);
+  font-weight: 800;
+  color: var(--ac-color-text-muted);
+  text-transform: uppercase;
+  padding: 5px 8px;
+}
+.field {
+  position: relative;
+}
+.toggle {
+  width: 100%;
+  height: var(--ac-control-md);
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-muted);
+  font: inherit;
+  font-size: var(--ac-field-font-size);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+.toggle:focus-visible,
+.toggle[aria-expanded='true'] {
+  border: 2px solid var(--ac-color-primary);
+  padding-left: 11px;
+}
+.label {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.chev {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ac-color-text-muted);
+  display: flex;
+  pointer-events: none;
+}
+.chev.up {
+  transform: translateY(-50%) rotate(180deg);
+}
+.glyph {
+  display: inline-block;
+  width: 1.4em;
+  font-family: var(--ac-card-icons);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.15em;
+  line-height: 1;
+  text-align: center;
+  margin-right: var(--ac-space-1-5);
+  vertical-align: -0.12em;
+}
+/* In the CDK overlay container (plugin shadow root), sized to the button (matchWidth). */
+.panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e2);
+  overflow: hidden;
+}
+.search {
+  position: relative;
+  padding: var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-color-border);
+}
+.search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ac-color-text-muted);
+  display: flex;
+  pointer-events: none;
+}
+.search input {
+  width: 100%;
+  height: var(--ac-control-sm);
+  padding: 0 10px 0 32px;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-bg-app);
+  font: inherit;
+  font-size: var(--ac-field-font-size);
+  outline: none;
+}
+.search input:focus {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.empty {
+  padding: 10px 12px;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}
+.option {
+  display: flex;
+  align-items: center;
+  min-height: max(36px, var(--ac-hit-min));
+  padding: 8px 12px;
+  border: none;
+  background: var(--ac-color-surface);
+  font-size: var(--ac-field-font-size);
+  text-align: left;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.group {
+  padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-1);
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+  flex-shrink: 0;
+}
+.thumb {
+  width: 28px;
+  aspect-ratio: 5 / 7;
+  margin-right: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.option.cdk-option-active {
+  background: var(--ac-color-bg-app);
+}
+@media (hover: hover) {
+  .option:hover {
+    background: var(--ac-color-bg-app);
+  }
+}
+.option:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: -2px;
+}

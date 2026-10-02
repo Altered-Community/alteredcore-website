@@ -185,7 +185,7 @@ $noUniqueSets = array_values(array_keys(array_filter($setsData, fn($s) => ($s['u
 // reverse-of-file-order convention as the quick-filter set bar.
 $playsetFactions = [];
 foreach ($factionsData as $_fk => $_fv) {
-    $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? '#888'];
+    $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? 'var(--ac-color-text-muted)'];
 }
 // The playset API merges the Kickstarter edition (COREKS) into CORE, so only a
 // single "Au-delà des Portes" column appears — flagged with an explanatory note.

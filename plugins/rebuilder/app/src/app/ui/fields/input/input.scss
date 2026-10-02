@@ -1,0 +1,31 @@
+/*
+ * Field, label and input are drawn by .ac-field / .ac-input / .ac-input-icon
+ * (design-system/css/components/field.css). Here: the leading icon, whose <svg> sits inside the
+ * <ac-icon> element (the design system expects it as a direct child), and the clear button.
+ */
+.wrap {
+  position: relative;
+}
+.ac-input-icon ::ng-deep .ac-icon {
+  position: absolute;
+  left: var(--ac-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ac-color-text-muted);
+  pointer-events: none;
+}
+.clear {
+  position: absolute;
+  right: var(--ac-space-1);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
+  border: none;
+  background: none;
+  color: var(--ac-color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}

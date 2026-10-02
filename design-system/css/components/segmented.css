@@ -1,0 +1,62 @@
+/*
+ * Segmented control — one choice among 2 to 5 options.
+ * <div class="ac-segmented" role="group" aria-label="…">
+ *   <button type="button" aria-pressed="true">Grid</button><button type="button" aria-pressed="false">List</button>
+ * </div>
+ * Links work too (<a aria-current="page">) for filters that change the URL.
+ * Docs: design-system/docs/components/segmented.md
+ */
+.ac-segmented {
+  display: inline-flex;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-1);
+  background: var(--ac-color-track);
+  border-radius: var(--ac-radius-lg);
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.ac-segmented--full {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  width: 100%;
+}
+.ac-segmented > :is(button, a) {
+  height: var(--ac-segment-height);
+  padding: 0 var(--ac-space-3);
+  border: none;
+  border-radius: var(--ac-radius-md);
+  background: transparent;
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-body);
+  font-size: var(--ac-segment-font-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1-5);
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 0;
+  text-decoration: none;
+}
+.ac-segmented--lg > :is(button, a) {
+  height: var(--ac-control-md);
+  padding: 0 14px;
+  font-size: var(--ac-font-size-body);
+}
+.ac-segmented > .ac-segmented__icon-only {
+  width: var(--ac-icon-button-segment);
+  height: var(--ac-icon-button-segment);
+  padding: 0;
+}
+.ac-segmented > :is([aria-pressed='true'], [aria-current], [aria-selected='true'], .is-active) {
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e1);
+  color: var(--ac-color-primary-strong);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .ac-segmented > :is(button, a):hover:not([aria-pressed='true'], [aria-current], [aria-selected='true'], .is-active) {
+    color: var(--ac-color-text);
+  }
+}

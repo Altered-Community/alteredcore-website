@@ -1,0 +1,113 @@
+@if (bp.compact()) {
+  <div class="search-head" [class.condensed]="condensed()">
+    <div class="search-row">
+      <ac-input
+        class="q"
+        icon="search"
+        ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+        placeholder="Rechercher une carte…" i18n-placeholder="@@search.card.placeholder"
+        enterkeyhint="search"
+        [clearable]="true"
+        [value]="draft().q"
+        (valueChange)="setQuery($event)"
+      />
+      <button class="filters-btn" acIconButton="sliders-horizontal" variant="primary" [ariaLabel]="filtersLabel()" [iconSize]="20" (click)="openFilters()">
+        @if (activeCount()) {
+          <span class="badge"><ac-count [value]="activeCount()" /></span>
+        }
+      </button>
+    </div>
+    @if (condensed()) {
+      <div class="summary-line">
+        <span><strong>{{ totalLabel() }}</strong> · {{ sourceLabel() }}</span>
+        @if (sortable()) {
+          <span>{{ orderLabel() }}</span>
+        }
+      </div>
+    }
+  </div>
+}
+
+<ac-tabs
+  ariaLabel="Source des cartes" i18n-ariaLabel="@@search.card.sources"
+  [maxTabs]="bp.compact() ? compactSourceTabs : null"
+  [tabs]="sources()"
+  [active]="search.source()"
+  (activeChange)="setSource($event)"
+/>
+
+<div class="search-body">
+  @if (bp.expanded()) {
+    @if (filters.open()) {
+      <div class="filters-drawer" [class.ac-drawer-leave--start]="filters.leaving()" [animate.enter]="filters.enter()" (animationend)="filters.left($event)">
+        <aside id="search-filters" class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
+          <div class="filters-scroll">
+            <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+          </div>
+          <div class="filters-foot">
+            <button acButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
+            <button acButton class="go" (click)="applyNow()" i18n="@@search.card.submit">Rechercher</button>
+          </div>
+        </aside>
+        <button acDrawerHandle="end" aria-controls="search-filters" ariaLabel="Masquer les filtres" i18n-ariaLabel="@@search.card.hideFilters" (click)="filters.set(false)"></button>
+      </div>
+    } @else {
+      <button class="filters-tab" acDrawerTab="start" [class.ac-drawer-leave--start]="filters.leaving()" [animate.enter]="filters.enter()" (animationend)="filters.left($event)" aria-controls="search-filters" [ariaLabel]="showFiltersLabel()" (click)="filters.set(true)">
+        <span class="ac-drawer-tab__label" i18n="@@search.card.filters">Filtres</span>
+        @if (activeCount()) {
+          <ac-count [value]="activeCount()" />
+        }
+      </button>
+    }
+  }
+
+  <section class="results" aria-label="Résultats" i18n-aria-label="@@search.card.results">
+    @if (bp.compact()) {
+      <ac-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        <span class="tools">
+          @if (sortable()) {
+            <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
+          <button
+            acIconButton="layout-grid"
+            variant="ghost"
+            size="sm"
+            [ariaLabel]="resultsLayout() === 'grid' ? labels.showList : labels.showGrid"
+            [iconSize]="18"
+            (click)="resultsLayout.set(resultsLayout() === 'grid' ? 'list' : 'grid')"
+          ></button>
+        </span>
+      </div>
+    } @else {
+      <div class="toolbar">
+        <span class="total">{{ totalLabel() }}</span>
+        @if (!bp.expanded()) {
+          <button acButton variant="secondary" icon="sliders-horizontal" (click)="openFilters()">
+            <ng-container i18n="@@search.card.filters">Filtres</ng-container>
+            @if (activeCount()) {
+              <ac-count [value]="activeCount()" />
+            }
+          </button>
+        }
+        <ac-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
+        <span class="tools">
+          @if (sortable()) {
+            <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+          }
+          <ac-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
+        </span>
+      </div>
+    }
+    <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+    <!-- Desktop: at the bottom right of the results column, clear of the editor's deck panel. -->
+    @if (!bp.compact() && condensed()) {
+      <button class="to-top in-column" acIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+    }
+  </section>
+</div>
+
+@if (bp.compact() && condensed()) {
+  <button class="to-top" acIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
+}

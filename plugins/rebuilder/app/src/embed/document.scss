@@ -1,0 +1,35 @@
+/*
+ * Embedded build: the part that must live in the site's <head>. Browsers ignore @font-face
+ * declared in a shadow root, so the printed-card fonts of ac-unique-card are declared here
+ * (Figtree, the UI font, comes from the site: design-system/fonts). Only downloaded when used.
+ */
+
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../public/assets/unique-card/fonts/HapticPro-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Haptic';
+  font-weight: 800;
+  font-display: swap;
+  src: url('../../public/assets/unique-card/fonts/HapticPro-Extrabold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Icons';
+  font-display: block;
+  src: url('../../public/assets/unique-card/fonts/alteredicons.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Altered Circled';
+  font-display: block;
+  src: url('../../public/assets/unique-card/fonts/NotoSansSymbols-circled.woff2') format('woff2');
+}
+
+/* CDK dialogs block the page scroll with this class on <html>; its rule in the shadow root cannot reach it. */
+html.cdk-global-scrollblock {
+  position: fixed;
+  width: 100%;
+  overflow-y: scroll;
+}

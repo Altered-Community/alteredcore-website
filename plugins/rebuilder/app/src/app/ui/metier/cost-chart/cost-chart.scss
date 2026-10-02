@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+  min-width: 0;
+  --bar: var(--ac-color-chart-main);
+}
+:host(.reserve) {
+  --bar: var(--ac-color-chart-reserve);
+}
+.label {
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+.bars,
+.axis {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.bars {
+  border-bottom: 1px solid var(--ac-color-chart-axis);
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 50px;
+}
+.n {
+  font-size: 10px;
+  font-weight: 700;
+}
+.n.zero {
+  color: var(--ac-color-text-disabled);
+}
+.bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: var(--bar);
+}
+.axis span {
+  text-align: center;
+  font-size: 10px;
+  color: var(--ac-color-text-muted);
+}

@@ -25,16 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $lid    = (int)($_POST['item_id'] ?? 0);
 
-    if ($action === 'save_config') {
-        if (!adminCanEdit()) { flash('Permission denied.', 'error'); redirect(BASE_URL . '/admin/sidebar'); }
-        $side = in_array($_POST['sidebar_side'] ?? '', ['left', 'right']) ? $_POST['sidebar_side'] : 'left';
-        saveSetting('sidebar_side', $side);
-        $btnPos = in_array($_POST['sidebar_btn_position'] ?? '', ['nav', 'brand']) ? $_POST['sidebar_btn_position'] : 'nav';
-        saveSetting('sidebar_btn_position', $btnPos);
-        flash('Configuration saved.');
-        redirect(BASE_URL . '/admin/sidebar');
-    }
-
     if ($action === 'delete') {
         if (!adminCanDelete()) { flash('Permission denied.', 'error'); redirect(BASE_URL . '/admin/sidebar'); }
         if ($lid) {
@@ -76,8 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $items          = $db->query(q("SELECT * FROM {sidebar_items} ORDER BY sort_order, id"))->fetchAll();
 $total          = count($items);
-$sidebarSide    = getSetting('sidebar_side', 'left');
-$sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
 ?>
 
 <div class="admin-header-bar">
@@ -89,66 +77,11 @@ $sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
     <?php endif; ?>
 </div>
 
-<!-- Config block -->
-<?php if (adminCanEdit()): ?>
-<div class="card-altered p-3 mb-4" style="max-width:480px">
-    <h2 class="h6 mb-3"><i class="fa-solid fa-gear me-1"></i> Configuration</h2>
-    <form method="post">
-        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-        <input type="hidden" name="action" value="save_config">
-        <div class="row g-3">
-            <div class="col-12">
-                <label class="form-label fw-semibold mb-1">Slide in from</label>
-                <div class="d-flex gap-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sidebar_side" id="side_left" value="left"
-                               <?= $sidebarSide === 'left' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="side_left">
-                            <i class="fa-solid fa-arrow-left me-1"></i> Left
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sidebar_side" id="side_right" value="right"
-                               <?= $sidebarSide === 'right' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="side_right">
-                            <i class="fa-solid fa-arrow-right me-1"></i> Right
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <label class="form-label fw-semibold mb-1">Button placement</label>
-                <div class="d-flex gap-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sidebar_btn_position" id="pos_nav" value="nav"
-                               <?= $sidebarBtnPos === 'nav' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="pos_nav">
-                            <i class="fa-solid fa-bars me-1"></i> Navigation menu
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sidebar_btn_position" id="pos_brand" value="brand"
-                               <?= $sidebarBtnPos === 'brand' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="pos_brand">
-                            <i class="fa-solid fa-house me-1"></i> Next to site name
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-sm btn-primary-altered">
-                    <i class="fa-solid fa-floppy-disk me-1"></i> Save
-                </button>
-            </div>
-        </div>
-    </form>
-    <p class="text-muted small mt-2 mb-0">
-        The sidebar nav button is managed in
-        <a href="<?= BASE_URL ?>/admin/nav">Navigation</a>
-        (icon, label, position, visibility).
-    </p>
-</div>
-<?php endif; ?>
+<p class="text-muted small mb-4">
+    The sidebar nav button is managed in
+    <a href="<?= BASE_URL ?>/admin/nav">Navigation</a>
+    (icon, label, position, visibility).
+</p>
 
 <!-- Item list -->
 <?php if (empty($items)): ?>
@@ -173,7 +106,7 @@ $sidebarBtnPos  = getSetting('sidebar_btn_position', 'nav');
                     <?php if (!empty($item['is_separator']) || !empty($item['is_section_header'])): ?>
                         <span class="text-muted">—</span>
                     <?php elseif (!empty($item['icon'])): ?>
-                        <i class="<?= h($item['icon']) ?>"></i>
+                        <?= ac_icon((string)($item['icon'])) ?>
                     <?php endif; ?>
                 </td>
                 <td>

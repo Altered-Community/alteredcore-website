@@ -13,8 +13,8 @@
     .effect-row {
         position: relative;
         padding: 6px;
-        border-radius: 8px;
-        border: 1px solid var(--panel-border, var(--sand-200));
+        border-radius: var(--ac-radius-md);
+        border: 1px solid var(--ac-color-border);
     }
     .effect-row > div { flex-basis: 100% !important; }
     .effect-row:has(> .effect-rm-btn:not([style*="none"])) > div:first-child { padding-right: 40px; }

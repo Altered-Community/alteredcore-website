@@ -1,0 +1,151 @@
+/*
+ * Embedded build (AlteredCore site, plugin `rebuilder`): loaded inside the plugin's shadow root,
+ * after the design system's base.css and ac-* component styles that the shell injects there
+ * (js/altered-core-host.js). The plugin root is the shell's `.ac-plugin-root` container, styled by
+ * base.css; the --ac-* tokens, data-theme and data-density come from <html>. The site's Bootstrap
+ * and css/style.css never reach these rules, and these never reach the site.
+ */
+
+@use '@angular/cdk/overlay-prebuilt.css';
+
+/* Inherited properties (font, color, line-height…) cross the shadow boundary: reset them. */
+:host {
+  all: initial;
+  display: block;
+}
+
+.ac-plugin-root a {
+  text-decoration: none;
+}
+
+.ac-plugin-root button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ac-plugin-root img {
+  max-width: 100%;
+}
+
+/* Thin scroll bars on the plugin's scrolling areas (panels, windows, lists); the page's own is the site's.
+   Zero specificity (:where), so a component that hides its scroll bar (.ac-tabs--pill…) keeps it hidden. */
+:where(.ac-plugin-root *) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ac-color-scrollbar) transparent;
+}
+
+/* Browsers without `scrollbar-color` (Safari before 18.2). */
+@supports not (scrollbar-color: auto) {
+  :where(.ac-plugin-root) ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  :where(.ac-plugin-root) ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  :where(.ac-plugin-root) ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background: var(--ac-color-scrollbar) padding-box;
+  }
+  @media (hover: hover) {
+    :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--ac-color-scrollbar-hover);
+    }
+  }
+}
+
+/* Placeholder hatching for card / hero / extension visuals while art loads. */
+.ac-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ac-color-on-strong) 8%, transparent) 0 2px,
+    transparent 2px 11px
+  );
+}
+
+/* CDK overlay: scrim + panel classes used by AcOverlayService. */
+.ac-overlay-backdrop {
+  background: var(--ac-color-scrim);
+}
+
+.cdk-overlay-pane.ac-overlay-pane--sheet {
+  align-self: flex-end;
+}
+
+/* AcOverlayService panes (CDK dialog container wraps ac-overlay-container). */
+.ac-overlay-pane .cdk-dialog-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: inherit;
+  outline: none;
+}
+
+.ac-overlay-pane--dialog {
+  max-height: min(90vh, 900px);
+}
+
+.ac-overlay-pane--dialog.ac-overlay-pane--fill {
+  max-height: none;
+}
+
+.ac-overlay-pane--sheet {
+  max-height: calc(100dvh - 48px);
+}
+
+.ac-overlay-pane ac-overlay-container {
+  flex: 1 1 auto;
+}
+
+/* Content components: host + scrolling body + footer, identical in window and sheet. */
+.ac-overlay-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.ac-overlay-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ac-space-4) var(--ac-space-5);
+}
+
+.ac-overlay-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-3) var(--ac-space-5);
+  border-top: 1px solid var(--ac-color-border);
+}
+
+.ac-overlay-footer .note {
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+  margin-right: auto;
+}
+
+.ac-overlay--sheet .ac-overlay-footer,
+.ac-overlay--fullscreen .ac-overlay-footer {
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--ac-space-3) var(--ac-space-4) var(--ac-space-5);
+}
+
+.ac-overlay--sheet .ac-overlay-footer .note,
+.ac-overlay--fullscreen .ac-overlay-footer .note {
+  margin: 0;
+  text-align: center;
+}
+
+/* Compact: the secondary action (« Annuler », « Réinitialiser »…) stays, full width under the others. */
+.ac-overlay--sheet .ac-overlay-footer .secondary-action,
+.ac-overlay--fullscreen .ac-overlay-footer .secondary-action {
+  order: 1;
+  height: var(--ac-control-lg);
+}

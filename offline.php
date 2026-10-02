@@ -13,6 +13,8 @@ header('Cache-Control: no-cache');
 header('X-Robots-Tag: noindex');
 
 $_offSiteName = getSiteName();
+// Design system files the page needs; sw.php precaches the same list (offlineStylesheets()).
+require_once __DIR__ . '/includes/offline-assets.php';
 $_offTxt = [
     'en' => [
         'title' => 'You are offline',
@@ -35,25 +37,26 @@ $_offTxt = [
     <title><?= h($_offTxt['en']['title']) ?> — <?= h($_offSiteName) ?></title>
     <link rel="icon" type="image/png" sizes="192x192" href="<?= BASE_URL ?>/assets/favicon/web-app-manifest-192x192.png">
     <script>(function(){try{if(localStorage.getItem('acTheme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}}());</script>
-    <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css?v=<?= (int)@filemtime(__DIR__ . '/css/style.css') ?>">
+    <?php foreach (offlineStylesheets() as $_offCss): ?>
+    <link rel="stylesheet" href="<?= h(dsUrl($_offCss)) ?>">
+    <?php endforeach; ?>
     <style>
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
                padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right))
                         max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
                box-sizing: border-box; }
-        .offline-card { max-width: 420px; width: 100%; padding: 2rem 1.75rem; text-align: center; }
-        .offline-card img { width: 96px; height: 96px; margin-bottom: 1rem; }
-        .offline-card h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .75rem; color: var(--neutral-800); }
-        .offline-card p { font-size: .95rem; line-height: 1.55; margin: 0 0 1.5rem; color: var(--neutral-600); }
-        .offline-card .btn-primary-altered { display: inline-block; padding: .55rem 1.4rem; font-size: 1rem; cursor: pointer; }
+        .offline-card { max-width: 420px; width: 100%; padding: var(--ac-space-8) var(--ac-space-6); text-align: center; }
+        .offline-card img { width: 96px; height: 96px; margin-bottom: var(--ac-space-4); }
+        .offline-card h1 { font: var(--ac-font-title); margin: 0 0 var(--ac-space-3); color: var(--ac-color-text); }
+        .offline-card p { font: var(--ac-font-body); line-height: 1.55; margin: 0 0 var(--ac-space-6); color: var(--ac-color-text-2); }
     </style>
 </head>
 <body>
-    <main class="offline-card card-altered">
+    <main class="offline-card ac-card">
         <img src="<?= BASE_URL ?>/assets/favicon/web-app-manifest-192x192.png" alt="<?= h($_offSiteName) ?>">
         <h1 id="offline-title"><?= h($_offTxt['en']['title']) ?></h1>
         <p id="offline-text"><?= h($_offTxt['en']['text']) ?></p>
-        <button type="button" id="offline-retry" class="btn-primary-altered"><?= h($_offTxt['en']['retry']) ?></button>
+        <button type="button" id="offline-retry" class="ac-button"><?= h($_offTxt['en']['retry']) ?></button>
     </main>
     <script>
     (function () {

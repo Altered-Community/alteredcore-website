@@ -1,0 +1,45 @@
+<ng-template #savedLine>
+  @if (saved) {
+    <p class="saved" role="status"><ac-icon name="check" [size]="16" [strokeWidth]="2.4" />{{ saved }}</p>
+  }
+</ng-template>
+
+@if (step() === 'private') {
+  <div class="ac-overlay-body">
+    <ng-container [ngTemplateOutlet]="savedLine" />
+    <p class="private-title"><ac-icon name="lock" [size]="16" /><strong i18n="@@deck.share.privateTitle">Ce deck est privé</strong></p>
+    <p class="muted" i18n="@@deck.share.privateBody">Le lien ne fonctionne que pour vous. Rendez le deck public pour que les autres puissent y accéder.</p>
+    @if (error(); as e) {
+      <p class="error" role="alert">{{ e }}</p>
+    }
+  </div>
+  <div class="ac-overlay-footer">
+    <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@deck.share.cancel">Annuler</button>
+    <button acButton icon="eye" [disabled]="busy()" (click)="makePublic()">
+      @if (busy()) {
+        <ng-container i18n="@@deck.share.makingPublic">Publication…</ng-container>
+      } @else {
+        <ng-container i18n="@@deck.share.makePublic">Rendre public & partager</ng-container>
+      }
+    </button>
+  </div>
+} @else {
+  <div class="ac-overlay-body">
+    <div class="link">
+      <ac-input class="url" label="Lien" i18n-label="@@deck.share.link" [value]="url" [readonly]="true" />
+      <button acButton [icon]="copied() ? 'check' : 'copy'" (click)="copy()">
+        @if (copied()) {
+          <ng-container i18n="@@deck.share.copied">Copié !</ng-container>
+        } @else {
+          <ng-container i18n="@@deck.share.copy">Copier</ng-container>
+        }
+      </button>
+    </div>
+    <ng-container [ngTemplateOutlet]="savedLine" />
+    <div class="qr">
+      <svg role="img" [attr.aria-label]="qrLabel" [attr.viewBox]="'-2 -2 ' + (qr().size + 4) + ' ' + (qr().size + 4)" shape-rendering="crispEdges">
+        <path [attr.d]="qr().path" />
+      </svg>
+    </div>
+  </div>
+}

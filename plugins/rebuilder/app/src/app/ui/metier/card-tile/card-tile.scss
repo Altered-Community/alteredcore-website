@@ -1,0 +1,118 @@
+:host {
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  contain: layout style;
+}
+.visual {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  max-height: var(--ac-card-tile-max-h, none);
+  border-radius: var(--ac-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--ac-shadow-card);
+  background: var(--ac-color-text-2);
+}
+button.visual {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+button.visual:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.action {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+.blocked {
+  display: flex;
+  cursor: help;
+  box-shadow: var(--ac-shadow-fab);
+  border-radius: var(--ac-radius-pill);
+}
+.qty {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
+  font-size: var(--ac-font-size-body);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--ac-shadow-fab);
+}
+/* Narrow tiles (5-column deck views, compact 3-column grids). */
+@container (max-width: 150px) {
+  .qty {
+    right: 6px;
+    bottom: 6px;
+    min-width: 28px;
+    height: 24px;
+    font-size: var(--ac-font-size-caption);
+  }
+}
+/* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */
+.favorite {
+  position: absolute;
+  top: var(--ac-space-1-5);
+  right: var(--ac-space-1-5);
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.favorite:focus-visible,
+.favorite.on {
+  opacity: 1;
+}
+@media (hover: hover) {
+  :host(:hover) .favorite {
+    opacity: 1;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .favorite {
+    opacity: 1;
+  }
+}
+.favorite.on {
+  color: var(--ac-cards-favorite);
+}
+/* Hit area of at least --ac-hit-min around the 28 px star. */
+.favorite::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.favorite.on ac-icon ::ng-deep svg {
+  fill: currentColor;
+}
+.favorite:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}

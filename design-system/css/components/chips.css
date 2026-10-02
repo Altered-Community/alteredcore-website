@@ -1,0 +1,128 @@
+/*
+ * Chips, badges, tags, counters.
+ * Docs: design-system/docs/components/chips.md
+ */
+
+/* Chip: toggleable filter. <button class="ac-chip" aria-pressed="true">Axiom</button> */
+.ac-chip {
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-3);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-small);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  position: relative;
+}
+/* Tap area of at least --ac-hit-min (44 px in touch density) while the chip is drawn at --ac-control-sm.
+   The insets start inside the 1px border, hence the extra -1px. */
+.ac-chip::after {
+  content: '';
+  position: absolute;
+  inset: min(-1px, calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2 - 1px)) -1px;
+}
+@media (hover: hover) { .ac-chip:hover { color: var(--ac-color-text); } }
+.ac-chip--square {
+  border-radius: var(--ac-radius-md);
+  padding: 0 var(--ac-space-2-5);
+}
+.ac-chip:is([aria-pressed='true'], [aria-current], .is-on) {
+  border-color: var(--ac-color-primary-border);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+}
+.ac-chip--square:is([aria-pressed='true'], [aria-current], .is-on) { border-color: var(--ac-color-primary); }
+.ac-chip__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ac-chip-dot, currentColor);
+}
+.ac-chip__remove {
+  display: inline-flex;
+  margin-right: calc(-1 * var(--ac-space-1));
+  color: var(--ac-color-text-muted);
+}
+
+/* Badge: status or category. <span class="ac-badge ac-badge--green">Public</span> */
+.ac-badge {
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--ac-radius-pill);
+  font: var(--ac-font-caption);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--ac-color-track);
+  color: var(--ac-color-text-2);
+  text-decoration: none;
+}
+.ac-badge--lg { height: 28px; }
+.ac-badge--blue { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
+.ac-badge--green { background: var(--ac-color-success-soft); color: var(--ac-color-success); }
+.ac-badge--violet { background: var(--ac-color-accent-soft); color: var(--ac-color-accent); }
+.ac-badge--red { background: var(--ac-color-danger-soft); color: var(--ac-color-danger); }
+.ac-badge--orange { background: var(--ac-color-warning-soft); color: var(--ac-color-warning); }
+
+/* Tag: small square label on a tile. */
+.ac-tag {
+  height: 22px;
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  font: var(--ac-font-micro);
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--ac-color-track);
+  color: var(--ac-color-text-2);
+}
+.ac-tag--green { background: var(--ac-color-success-soft); color: var(--ac-color-success); }
+.ac-tag--violet { background: var(--ac-color-accent-soft); color: var(--ac-color-accent); }
+.ac-tag--red { background: var(--ac-color-danger-soft); color: var(--ac-color-danger); }
+.ac-tag--orange { background: var(--ac-color-warning-soft); color: var(--ac-color-warning); }
+
+/* Count: number bubble. */
+.ac-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+  font: var(--ac-font-micro);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ac-count--success { background: var(--ac-color-success); color: var(--ac-color-on-strong); }
+.ac-count--soft { background: var(--ac-color-track); color: var(--ac-color-text-2); }
+
+/* Avatar: initials in a circle. */
+.ac-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  font: var(--ac-font-caption);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.ac-avatar--lg { width: 32px; height: 32px; font-size: var(--ac-font-size-small); }
+.ac-avatar img { width: 100%; height: 100%; object-fit: cover; }

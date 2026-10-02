@@ -10,7 +10,7 @@
                  },
     "formats":  {
                     "standard": {
-                        "en": "Standard All Uniques", "fr": "Standard All Uniques", "color": "var(--primary-400)",
+                        "en": "Standard All Uniques", "fr": "Standard All Uniques", "color": "var(--ac-color-primary)",
                         "gg_format": "STANDARD", "bgalegal": true,
                         "minCards": 39, "maxCards": 59, "heroRequired": true,
                         "maxCopiesPerRef": 3, "maxCopiesPerName": 3, "maxCopiesPerNameRarity": null, "maxCopiesPerUnique": 1,

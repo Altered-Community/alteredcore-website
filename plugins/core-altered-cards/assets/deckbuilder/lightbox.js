@@ -22,12 +22,12 @@
             cardEl = document.createElement('altered-card');
             cardEl.setAttribute('ref', ref);
             cardEl.setAttribute('locale', AlteredDB.uniqueLocale);
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:var(--ac-radius-lg);overflow:hidden;box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         } else {
             cardEl = document.createElement('img');
             cardEl.src = cdnUrl(ref);
             cardEl.alt = ref;
-            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);cursor:pointer';
+            cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:var(--ac-radius-lg);box-shadow:var(--ac-shadow-dialog);cursor:pointer';
         }
         cardEl.addEventListener('click', closeDbCardModal);
         if (window.OWN_CARD_MODAL_ENHANCE) {
@@ -54,9 +54,9 @@
             } : { cardReference: ref };
         }
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;background:rgba(0,0,0,.32);border-radius:8px;padding:5px 10px';
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;background:color-mix(in srgb, var(--ac-color-overlay-control) 32%, transparent);border-radius:var(--ac-radius-md);padding:5px 10px';
         var lbl = document.createElement('span');
-        lbl.style.cssText = 'color:rgba(255,255,255,.7);font-size:.76rem;white-space:nowrap';
+        lbl.style.cssText = 'color:color-mix(in srgb, var(--ac-color-on-strong) 70%, transparent);font-size:.76rem;white-space:nowrap';
         lbl.innerHTML = '<i class="fa-solid fa-layer-group" style="margin-right:3px"></i>' + AlteredDB.txt.tab_deck;
         var ctrl = document.createElement('div');
         ctrl.style.cssText = 'display:flex;align-items:center;gap:6px';
@@ -64,7 +64,7 @@
         btnM.type = 'button'; btnM.className = 'btn btn-sm btn-outline-secondary';
         btnM.style.cssText = 'padding:1px 8px;font-size:.9rem'; btnM.textContent = '−';
         var qtyEl = document.createElement('span');
-        qtyEl.style.cssText = 'color:#fff;font-weight:700;font-size:.9rem;min-width:22px;text-align:center';
+        qtyEl.style.cssText = 'color:var(--ac-color-on-strong);font-weight:700;font-size:.9rem;min-width:22px;text-align:center';
         var btnP = document.createElement('button');
         btnP.type = 'button'; btnP.className = 'btn btn-sm btn-outline-secondary';
         btnP.style.cssText = 'padding:1px 8px;font-size:.9rem'; btnP.textContent = '+';
@@ -117,7 +117,7 @@
         chooseBtn.addEventListener('click', function () {
             chooseBtn.disabled = true;
             panel.style.display = '';
-            panel.innerHTML = '<div style="color:#fff;font-size:.8rem;text-align:center">' + AlteredDB.txt.loading + '</div>';
+            panel.innerHTML = '<div style="color:var(--ac-color-on-strong);font-size:.8rem;text-align:center">' + AlteredDB.txt.loading + '</div>';
 
             fetchAltArtData([ref]).then(function (data) {
                 chooseBtn.disabled = false;
@@ -126,7 +126,7 @@
                 var opt = key && data.options[key];
 
                 if (!opt || !opt.options || !opt.options.length) {
-                    panel.innerHTML = '<div style="color:#fff;font-size:.8rem;text-align:center">'
+                    panel.innerHTML = '<div style="color:var(--ac-color-on-strong);font-size:.8rem;text-align:center">'
                         + AlteredDB.txt.no_other_illustration + '</div>';
                     return;
                 }

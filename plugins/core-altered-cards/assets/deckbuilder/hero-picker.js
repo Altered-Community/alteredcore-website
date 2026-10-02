@@ -201,7 +201,7 @@
             .then(function(allCards) {
                 loading.style.display = 'none';
                 if (!allCards || !allCards.length) {
-                    grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
+                    grid.innerHTML = '<div style="color:var(--ac-color-text-muted);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
                 var groups = {};
@@ -243,7 +243,7 @@
 
                 var list = Object.keys(groups).map(function(k) { return groups[k]; });
                 if (!list.length) {
-                    grid.innerHTML = '<div style="color:var(--neutral-400);padding:10px;text-align:center;grid-column:1/-1">—</div>';
+                    grid.innerHTML = '<div style="color:var(--ac-color-text-muted);padding:10px;text-align:center;grid-column:1/-1">—</div>';
                     return;
                 }
                 list.forEach(function(g) {
@@ -324,6 +324,6 @@
             .catch(function(err) {
                 loading.style.display = 'none';
                 console.error('Hero load error:', err);
-                grid.innerHTML = '<div style="color:red;padding:10px;grid-column:1/-1">' + (err && err.message ? err.message : 'Load error') + '</div>';
+                grid.innerHTML = '<div style="color:var(--ac-color-required);padding:10px;grid-column:1/-1">' + (err && err.message ? err.message : 'Load error') + '</div>';
             });
     };

@@ -1,0 +1,41 @@
+{
+    "$schema":          "../plugin.schema.json",
+    "manifest_version": 2,
+    "id":               "rebuilder",
+    "name":             "Re:Builder",
+    "version":          "0.3.0",
+    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular). With « Beta Deckbuilder » on, it serves the site's decks pages (/pages/decks, /pages/deck, /pages/deckbuilder) at their URLs.",
+    "author":           "Yutsa",
+    "icon":             "fa-solid fa-pen-ruler",
+
+    "pages": [
+        {
+            "slug":     "rebuilder",
+            "type":     "spa",
+            "entry":    "dist/embed-manifest.json",
+            "mount":    "shadow",
+            "fullwidth": false,
+            "meta":     "meta.php",
+            "beta_slugs": ["decks", "deck", "deckbuilder"],
+            "title_en": "Re:Builder",
+            "title_fr": "Re:Builder"
+        }
+    ],
+
+    "api": [
+        { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] }
+    ],
+
+    "build": {
+        "workdir": "app",
+        "install": "npm ci --no-audit --no-fund",
+        "lint":    "npm run lint",
+        "test":    "npm test",
+        "build":   "npm run build",
+        "output":  "dist"
+    },
+
+    "tests": {
+        "e2e": "e2e"
+    }
+}

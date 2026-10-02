@@ -1,0 +1,33 @@
+.skeleton {
+  display: none;
+}
+@media (min-width: 768px) {
+  .skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-4);
+    padding: var(--ac-space-6);
+    height: calc(100dvh - var(--ac-sticky-top));
+  }
+  .bar {
+    height: 34px;
+    border-radius: var(--ac-radius-control);
+    background: var(--ac-color-track);
+  }
+  .w30 {
+    width: 30%;
+  }
+  .w70 {
+    width: 70%;
+  }
+  .cols {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 190px 1fr 240px;
+    gap: var(--ac-space-4);
+  }
+  .cols span {
+    border-radius: var(--ac-radius-card);
+    background: var(--ac-color-track);
+  }
+}

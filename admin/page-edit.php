@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <i class="fa-solid <?= $type === 'content' ? 'fa-file-lines' : 'fa-file-code' ?> me-2"></i>
         <?php if ($page['id']): ?>
             Edit: <code><?= h($page['slug']) ?></code>
-            <span class="badge ms-2" style="font-size:.65rem;background:<?= $type === 'content' ? '#0891b2' : '#6366f1' ?>;color:#fff;border-radius:20px;padding:2px 8px">
+            <span class="ac-badge <?= $type === 'content' ? 'ac-badge--blue' : 'ac-badge--violet' ?> ms-2">
                 <?= $type === 'content' ? 'Content' : 'Code' ?>
             </span>
         <?php else: ?>
@@ -260,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="card-altered p-3 mb-3">
         <label class="form-label fw-semibold mb-1">
-            <span class="badge me-1" style="font-size:.7rem;background:#1d4ed8">FR</span> French content
+            <span class="badge text-bg-primary me-1" style="font-size:.7rem">FR</span> French content
         </label>
         <textarea name="content_fr" class="tinymce-editor"><?= h($page['content_fr'] ?? '') ?></textarea>
     </div>
@@ -268,14 +268,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php else: ?>
 
     <!-- Code editor -->
-    <div class="card-altered p-0 mb-3" style="border-radius:8px;overflow:hidden">
+    <div class="card-altered p-0 mb-3" style="border-radius:var(--ac-radius-md);overflow:hidden">
         <div class="d-flex align-items-center justify-content-between px-3 py-2"
-             style="background:var(--neutral-800,#1e1e2e);border-bottom:1px solid var(--neutral-700,#313244)">
-            <span style="font-size:.8rem;color:var(--neutral-400,#a6adc8)">
+             style="background:var(--ac-color-inverse);color:var(--ac-color-on-inverse)">
+            <span style="font-size:.8rem">
                 <i class="fa-solid fa-code me-1"></i>
                 pages/<?= h($page['slug'] ?: '…') ?>.php
             </span>
-            <span style="font-size:.75rem;color:var(--neutral-500,#6c7086)">PHP · CodeMirror · Ctrl+/ to toggle comment</span>
+            <span style="font-size:.75rem;opacity:.75">PHP · CodeMirror · Ctrl+/ to toggle comment</span>
         </div>
         <textarea id="page-code-editor" name="code"><?= h($fileContent) ?></textarea>
     </div>

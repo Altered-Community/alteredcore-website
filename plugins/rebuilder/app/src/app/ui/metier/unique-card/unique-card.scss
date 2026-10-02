@@ -1,0 +1,238 @@
+@use 'sass:math';
+
+/*
+ * Geometry of Altered-Card-Renderer (cdn.alteredcore.org/forge/config: elements.json, biomes.json,
+ * framedata.json): x / y in % of the 744 × 1039 card, text anchored on its middle, sizes in px of
+ * that card. `card(px)` turns them into cqw so the card scales with the tile like an image.
+ */
+@function card($px) {
+  @return math.div(math.round(math.div($px, 7.44) * 1000), 1000) * 1cqw;
+}
+
+$print-shadow: 0 card(5) card(10) var(--ac-card-ink);
+
+:host {
+  position: absolute;
+  inset: 0;
+  display: block;
+  container-type: inline-size;
+  overflow: hidden;
+  border-radius: inherit;
+  font-family: var(--ac-card-font);
+  color: var(--ac-card-paper);
+  line-height: 1;
+  /* Its own alignment: the tile opening the zoom is a <button>, which centers its text. */
+  text-align: left;
+  /* Keeps the frame and the effect text above the illustration, without covering the tile’s controls. */
+  isolation: isolate;
+  /* The face is a fixed layer: scrolling the list repaints the page, not each glyph. */
+  contain: layout paint style;
+}
+
+ac-card-art {
+  z-index: 0;
+}
+.frame,
+.badge,
+.set,
+.name,
+.type,
+.cost,
+.powers,
+.text,
+.qr,
+.qr-logo,
+.foot {
+  position: absolute;
+  z-index: 1;
+}
+
+.frame {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Under the frame, like the renderer. */
+.badge {
+  left: 14.75%;
+  width: 25.5cqw;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 card(6) card(12) var(--ac-card-ink));
+  &.f { top: 23.5%; }
+  &.m { top: 30.25%; }
+  &.o { top: 37%; }
+}
+
+.name,
+.type,
+.cost,
+.foot {
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+.name {
+  left: 50%;
+  top: 8.25%;
+  font-size: card(34);
+  font-weight: 800;
+}
+/*
+ * The renderer centres text on the em box (canvas `middle` baseline), a CSS line box sits a little
+ * higher with these fonts: the nudges below are measured against the site's renders.
+ */
+.type {
+  left: 50%;
+  top: calc(12.25% + 0.04em);
+  font-size: card(28);
+  color: var(--ac-card-ink);
+}
+.cost {
+  font-weight: 800;
+  text-shadow: $print-shadow;
+}
+.main {
+  left: 10.3%;
+  top: 8.25%;
+  font-size: card(58);
+}
+.recall {
+  left: 17.3%;
+  top: 12%;
+  font-size: card(48);
+}
+
+.powers {
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.powers li {
+  position: absolute;
+  left: 10.5%;
+  transform: translateY(-50%);
+  font-size: card(46);
+  text-shadow: $print-shadow;
+  &.f { top: 24%; }
+  &.m { top: 30.5%; }
+  &.o { top: 37%; }
+}
+
+.text {
+  left: 8%;
+  line-height: 1.2;
+}
+/* `y` is the middle of the first line. */
+.main-text {
+  width: 85%;
+  top: calc(var(--effect-y) - 0.6em + 0.045em);
+  font-size: var(--main-fs);
+}
+.support {
+  width: 65%;
+  top: calc(85.5% - 0.6em + 0.08em);
+  font-size: var(--support-fs);
+}
+/*
+ * Effect markup is one innerHTML string, so it does not get the emulated `_ngcontent` attribute.
+ * These rules have to pierce that, or keywords lose their weight and lines lose `pre-wrap`.
+ */
+:host ::ng-deep {
+  .text p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+  /* After two lines the text narrows to 64 % to clear the QR code (`maxLines` / `maxWidth2`). */
+  .gap-top {
+    float: right;
+    width: 0;
+    height: 2.4em;
+  }
+  .gap {
+    float: right;
+    clear: right;
+    width: 21cqw;
+    height: 100cqw;
+  }
+  .b {
+    font-weight: 800;
+  }
+  .i {
+    font-style: italic;
+  }
+  .u {
+    text-decoration: underline;
+  }
+  .gold {
+    color: var(--ac-card-gold);
+  }
+  .glyph {
+    position: relative;
+    top: card(-4);
+    font-family: var(--ac-card-icons);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 0;
+  }
+  .num {
+    font-family: var(--ac-card-circled);
+    font-size: 1.3em;
+    line-height: 0;
+  }
+}
+
+.qr {
+  left: 84.5%;
+  top: calc(86.75% + #{card(1)});
+  width: 18.5cqw;
+  height: 18.5cqw;
+  transform: translate(-50%, -50%);
+}
+.qr-light {
+  fill: var(--ac-card-paper);
+}
+.qr-dark {
+  fill: var(--ac-card-ink);
+}
+/* Logo at 22 % of the code on a white pad of 12 % of the logo. */
+.qr-logo {
+  left: 84.5%;
+  top: 86.75%;
+  width: calc(18.5cqw * 0.22 * 1.24);
+  height: calc(18.5cqw * 0.22 * 1.24);
+  padding: calc(18.5cqw * 0.22 * 0.12);
+  transform: translate(-50%, -50%);
+  background: var(--ac-card-paper);
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.set {
+  left: 7%;
+  top: 96%;
+  width: 6cqw;
+  height: 3.5%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  filter: brightness(0) invert(1);
+}
+.foot {
+  left: 52%;
+  top: 95.25%;
+  font-size: card(20);
+  white-space: pre;
+  /* Single-line texts draw icons without the rich-text offset. */
+  .glyph {
+    top: 0;
+  }
+}
+:host(.bravos) {
+  .set { top: 95.25%; }
+  .foot { top: 95.5%; }
+}

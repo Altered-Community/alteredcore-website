@@ -46,7 +46,7 @@ if ((empty($_SESSION['admin_logged_in']) || saIsPreviewingGroup()) && !($GLOBALS
                         $__pageAllowed = true; break;
                     }
                 } else {
-                    if ($currentPage === basename(parse_url($__nr['url'], PHP_URL_PATH) ?: '', '.php')) {
+                    if ($currentPage === navUrlPage((string)$__nr['url'])) {
                         $__pageAllowed = true; break;
                     }
                 }
@@ -88,6 +88,10 @@ $_hTxt = [
         'light'      => 'Light',
         'dark'       => 'Dark',
         'language'   => 'Language',
+        'account_btn' => 'Account',
+        'beta'       => 'Beta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'The Deck and Deck Builder pages open in the new builder, in beta.',
     ],
     'fr' => [
         'dark_mode'  => 'Mode sombre',
@@ -103,12 +107,20 @@ $_hTxt = [
         'light'      => 'Clair',
         'dark'       => 'Sombre',
         'language'   => 'Langue',
+        'account_btn' => 'Compte',
+        'beta'       => 'Bêta',
+        'beta_deckbuilder'      => 'Beta Deckbuilder',
+        'beta_deckbuilder_desc' => 'Les pages Deck et Deck Builder s\'ouvrent avec le nouveau Builder en mode bêta.',
     ],
 ][getUiLang()];
 
 // Nav items (loaded once here, available in nav.php via $__navItems)
 $__navItems    = getNavItems();
 $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
+
+// Before any output: an expired session comes back from the kc_remember cookie here, which sets
+// a cookie and regenerates the session id (nav.php only reads the result afterwards).
+kcIsLoggedIn();
 ?>
 <!DOCTYPE html>
 <html lang="<?= h($lang) ?>">
@@ -117,9 +129,12 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover">
     <?php
     // SEO / OG — $pageTitle, $pageDescription, $pageImage, $pageRobots, $pageKeywords
-    // may be set by the including page before requiring header.php
+    // may be set by the including page before requiring header.php, and for link previews
+    // $pageOgTitle (og:title without the site's name), $pageThemeColor (theme-color, the
+    // embed's side bar on Discord) and $pageOembedUrl (oEmbed: author line on Discord).
     $_metaLang    = getLang();
     $_metaTitle   = isset($pageTitle) ? $pageTitle . ' — ' . getSiteName() : getSiteName();
+    $_ogTitle     = isset($pageOgTitle) && $pageOgTitle !== '' ? $pageOgTitle : $_metaTitle;
     $_descKey     = 'meta_description_' . $_metaLang;
     $_defaultDesc = $_metaLang === 'fr' ? SITE_DESCRIPTION_FR : SITE_DESCRIPTION_EN;
     $_metaDesc    = isset($pageDescription) && $pageDescription !== ''
@@ -131,10 +146,10 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
                      ? $pageKeywords
                      : (getSetting('meta_keywords') ?: '');
     $_robots      = isset($pageRobots) && $pageRobots !== '' ? $pageRobots : 'index, follow';
-    // theme-color (browser/status bar): an explicit theme_color setting wins; otherwise
-    // it matches the page background and js/pwa.js keeps it in sync with the dark theme.
-    $_themeColorSetting = getSetting('theme_color');
-    $_themeColor        = $_themeColorSetting ?: '#FAF5E8';
+    // theme-color (browser / status bar): the header's background, so the title bar blends with the
+    // header; js/pwa.js keeps it in sync with the dark theme. A page's own colour ($pageThemeColor) is
+    // only read by link-preview bots: with data-ac-auto, js/pwa.js replaces it in browsers.
+    $_themeColor  = isset($pageThemeColor) && $pageThemeColor !== '' ? $pageThemeColor : dsToken('--ac-header-bg');
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
     $_scheme      = request_scheme();
@@ -174,7 +189,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <!-- Open Graph -->
     <meta property="og:type"        content="<?= isset($pageTitle) ? 'article' : 'website' ?>">
     <meta property="og:site_name"   content="<?= h(getSiteName()) ?>">
-    <meta property="og:title"       content="<?= h($_metaTitle) ?>">
+    <meta property="og:title"       content="<?= h($_ogTitle) ?>">
     <meta property="og:description" content="<?= h($_metaDesc) ?>">
     <meta property="og:url"         content="<?= h($_ogUrl) ?>">
     <meta property="og:locale"      content="<?= $_metaLang === 'fr' ? 'fr_FR' : 'en_US' ?>">
@@ -182,9 +197,13 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <meta property="og:image"       content="<?= h($_ogImage) ?>">
     <?php endif; ?>
 
+    <?php if (isset($pageOembedUrl) && $pageOembedUrl !== ''): ?>
+    <link rel="alternate" type="application/json+oembed" href="<?= h(strpos($pageOembedUrl, '//') !== false ? $pageOembedUrl : $_host . $pageOembedUrl) ?>">
+    <?php endif; ?>
+
     <!-- Twitter Card -->
     <meta name="twitter:card"        content="<?= $_ogImage ? 'summary_large_image' : 'summary' ?>">
-    <meta name="twitter:title"       content="<?= h($_metaTitle) ?>">
+    <meta name="twitter:title"       content="<?= h($_ogTitle) ?>">
     <meta name="twitter:description" content="<?= h($_metaDesc) ?>">
     <?php if ($_ogImage): ?>
     <meta name="twitter:image"       content="<?= h($_ogImage) ?>">
@@ -207,7 +226,10 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable"                content="yes">
     <meta name="application-name"                      content="<?= h(getSiteName()) ?>">
-    <meta name="theme-color"                           content="<?= h($_themeColor) ?>"<?= $_themeColorSetting === '' ? ' data-ac-auto' : '' ?>>
+    <meta name="theme-color"                           content="<?= h($_themeColor) ?>" data-ac-auto>
+
+    <!-- Density (pointer | touch) before the first paint: control heights follow it -->
+    <script><?= dsDensityScript() ?></script>
 
     <!-- Apply saved theme before CSS loads to prevent flash of wrong theme -->
     <?php if (isset($pageForceTheme) && $pageForceTheme === 'dark'): ?>
@@ -220,9 +242,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 
     <!-- Preconnect hints: start DNS+TCP+TLS handshakes before the browser hits the link elements -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
     <?php if (!empty($_preloadImage)): ?>
     <link rel="preload" as="image" fetchpriority="high" href="<?= h($_preloadImage) ?>">
@@ -232,10 +252,13 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <!-- Bootstrap CSS — render-blocking (controls layout, must load before paint) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 
-    <!-- Font Awesome — non-blocking: preload starts fetch immediately, onload swaps rel to stylesheet -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin>
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+    <!-- Design system (design-system/README.md): fonts, tokens, base, ac-* components, Lucide
+         rendering of the legacy Font Awesome classes, then the Bootstrap and legacy bridges -->
+    <link rel="preload" href="<?= BASE_URL ?>/design-system/fonts/figtree/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <?php foreach (dsDocumentStylesheets() as $_dsCss): ?>
+    <link rel="stylesheet" href="<?= h(dsUrl($_dsCss)) ?>">
+    <?php endforeach; ?>
+    <script src="<?= h(dsUrl('js/ac.js')) ?>" defer></script>
 
     <!-- Flag Icons — non-blocking -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"
@@ -253,70 +276,7 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
     <!-- Active theme stylesheet (theme-specific overrides only) -->
     <link rel="stylesheet" href="<?= themeUrl('style.css') ?>?v=<?= filemtime(themeFile('style.css')) ?>">
 
-    <?php
-    // Background color / image from admin settings
-    $_bgColor = getSetting('bg_color');
-    // Only allow CSS hex colors — reject anything else to prevent CSS injection
-    if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $_bgColor)) $_bgColor = '';
-    $_bgImage = getSetting('bg_image');
-    $_hasBg   = ($_bgColor !== '' || $_bgImage !== '');
-    if ($_hasBg):
-        $_bgCss  = 'body{';
-        if ($_bgColor !== '') $_bgCss .= 'background-color:' . $_bgColor . ';';
-        if ($_bgImage !== '') {
-            $_bgMode = getSetting('bg_image_mode') ?: 'cover';
-            $_bgCss .= 'background-image:url("' . addslashes(BASE_URL . '/' . $_bgImage) . '");';
-            if ($_bgMode === 'repeat') {
-                $_bgCss .= 'background-size:auto;background-repeat:repeat;background-attachment:scroll;';
-            } else {
-                $_bgCss .= 'background-size:cover;background-position:center top;background-repeat:no-repeat;background-attachment:fixed;';
-            }
-        }
-        $_bgCss .= '}';
-        // Fixed attachment causes resize/jump on iOS/Android — disable on mobile
-        if ($_bgImage !== '' && (getSetting('bg_image_mode') ?: 'cover') === 'cover') {
-            $_bgCss .= '@media(max-width:767.98px){body{background-attachment:scroll;}}';
-        }
-        // body.has-bg prefix gives higher specificity than .site-header alone in style.css
-        $_bgCss .= 'body.has-bg .site-header{background:transparent;}';
-        $_bgCss .= 'body.has-bg .site-footer{background:rgba(250,245,232,0.80);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}';
-    ?>
-    <style><?= $_bgCss ?></style>
-    <?php endif; ?>
 
-    <?php
-    // Custom fonts from admin settings.
-    // Selectors use class names common to all themes (.site-header, .site-footer, etc.).
-    // Themes may override per-element font targeting via head-extra.php.
-    $_fontSlots = [
-        'font_body'      => 'body',
-        'font_titles'    => 'h1, h2, h3, h4, h5, h6, .section-title span',
-        'font_nav'       => '.site-header',
-        'font_user_menu' => '.site-header .dropdown-menu',
-        'font_footer'    => '.site-footer',
-    ];
-    $_fontCss = '';
-    foreach ($_fontSlots as $_fKey => $_fSel) {
-        $_fFile = getSetting($_fKey);
-        if (!$_fFile) continue;
-        $_fFamily = 'SiteFont_' . $_fKey;
-        $_fUrl    = BASE_URL . '/assets/font/' . $_fFile;
-        $_fFmt    = fontCssFormat($_fFile);
-        // addslashes() not h(): inside a CSS <style> block, HTML entities break url() syntax
-        $_fontCss .= "@font-face{font-family:'{$_fFamily}';src:url('" . addslashes($_fUrl) . "')format('{$_fFmt}');font-display:swap;}";
-        $_fontCss .= "{$_fSel}{font-family:'{$_fFamily}',sans-serif;}";
-    }
-    foreach ($_fontSlots as $_fPreloadKey => $_) {
-        $_fPreloadFile = getSetting($_fPreloadKey);
-        if (!$_fPreloadFile) continue;
-        $_fPreloadExt = strtolower(pathinfo($_fPreloadFile, PATHINFO_EXTENSION));
-        if (!in_array($_fPreloadExt, ['woff2', 'woff'], true)) continue;
-        echo '    <link rel="preload" href="' . h(BASE_URL . '/assets/font/' . $_fPreloadFile)
-           . '" as="font" type="font/' . $_fPreloadExt . '" crossorigin>' . "\n";
-    }
-    if ($_fontCss): ?>
-    <style><?= $_fontCss ?></style>
-    <?php endif; ?>
 
     <?php if (isset($pageBodyBg) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $pageBodyBg)): ?>
     <style>body{background:<?= $pageBodyBg ?> !important;background-image:none !important;}</style>
@@ -357,16 +317,18 @@ $__mobileCompact = defined('MOBILE_HEADER_MODE') && MOBILE_HEADER_MODE === 1;
 $__isCurrent    = basename($_SERVER['PHP_SELF'], '.php');
 $__iframeNavId  = ($__isCurrent === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
 $_pageFullwidth = isset($pageFullwidth) && $pageFullwidth;
+// As before SPA pages: an empty or "#" URL (dropdown parent) never matches, not even the home page.
+$__fwMatch = fn(string $url): bool => navUrlPage($url) === $__isCurrent && navUrlIsCurrent($url, $__isCurrent);
 if (!$_pageFullwidth) {
     foreach ($__navItems as $__fni) {
         $__match = !empty($__fni['is_iframe'])
             ? ($__iframeNavId === (int)$__fni['id'])
-            : ($__isCurrent === basename(parse_url($__fni['url'], PHP_URL_PATH) ?: '', '.php'));
+            : $__fwMatch((string)$__fni['url']);
         if ($__match && !empty($__fni['is_fullwidth'])) { $_pageFullwidth = true; break; }
         foreach ($__fni['children'] as $__fnc) {
             $__match = !empty($__fnc['is_iframe'])
                 ? ($__iframeNavId === (int)$__fnc['id'])
-                : ($__isCurrent === basename(parse_url($__fnc['url'], PHP_URL_PATH) ?: '', '.php'));
+                : $__fwMatch((string)$__fnc['url']);
             if ($__match && !empty($__fnc['is_fullwidth'])) { $_pageFullwidth = true; break 2; }
         }
     }
@@ -374,7 +336,6 @@ if (!$_pageFullwidth) {
 // Pages created in Admin → Pages (neither core nor plugin pages) keep a reading-width column
 $_pageCms = !isset($__corePages[$currentPage]) && !($GLOBALS['_ac_is_plugin_page'] ?? false);
 $__bodyClass = array_filter([
-    'has-bg'         => $_hasBg,
     'page-fullwidth' => $_pageFullwidth,
     'page-cms'       => $_pageCms && !$_pageFullwidth,
 ]);
@@ -390,7 +351,7 @@ if (!empty($__extraBodyClasses) && is_array($__extraBodyClasses)) {
 <?php
 // Theme navigation: the visible <header> and <main> opening tag.
 // Available variables: $lang, $currentPage, $__navItems, $__iframeNavId,
-// $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact, $_hasBg, $_pageFullwidth
+// $_langFlags, $_langNames, $_langUrls, $_hTxt, $__mobileCompact, $_pageFullwidth
 require themeFile('nav.php');
 $__flash = getFlash();
 if ($__flash): ?>

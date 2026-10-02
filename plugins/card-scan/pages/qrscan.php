@@ -39,16 +39,16 @@ $pageFullwidth = true;
 ?>
 <style>
 /* card-scan qrscan page — hero only. The scanner overlay itself lives in the global
-   scanner.css (window.CardScan). Layout uses Bootstrap; colour uses the site palette. */
-.cs-hero      { min-height: 55vh; }
-.cs-hero-icon { font-size: 3.5rem; line-height: 1; color: var(--primary-400); }
+   scanner.css (window.CardScan). Colours come from the design system tokens. */
+.cs-hero      { min-height: 55vh; padding-inline: var(--ac-page-padding); }
+.cs-hero-icon { --ac-icon-size: 56px; color: var(--ac-color-primary); }
 </style>
 
 <div class="cs-hero d-flex flex-column align-items-center justify-content-center text-center gap-3 py-5">
-    <div class="cs-hero-icon"><i class="fa-solid fa-qrcode" aria-hidden="true"></i></div>
-    <h1 class="h4 fw-bold mb-0"><?= h($txt['heading']) ?></h1>
-    <button class="btn btn-primary-altered d-inline-flex align-items-center gap-2" id="cs-btn-scan" type="button">
-        <i class="fa-solid fa-camera" aria-hidden="true"></i>
+    <?= ac_icon('qr-code', 'cs-hero-icon') ?>
+    <h1 class="ac-text-title mb-0"><?= h($txt['heading']) ?></h1>
+    <button class="ac-button" id="cs-btn-scan" type="button">
+        <?= ac_icon('camera') ?>
         <?= h($txt['scan_btn']) ?>
     </button>
 </div>

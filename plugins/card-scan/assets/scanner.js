@@ -42,6 +42,8 @@
 
     // ── DOM (built once, reused) ────────────────────────────────────────
     var el = null;   // cached elements
+    // Lucide icon from the design system (design-system/js/ac.js, loaded by the shell).
+    function icon(name) { return typeof window.acIcon === 'function' ? window.acIcon(name) : ''; }
     function buildDom() {
         if (el) return el;
         var o = document.createElement('div');
@@ -58,16 +60,16 @@
                 '<div id="cs-toast"></div>' +
             '</div>' +
             '<div id="cs-scan-controls" class="gap-2 align-items-center" style="display:none" aria-label="Camera controls">' +
-                '<button class="cs-ctrl" id="cs-zoom-out" type="button" aria-label="Zoom out">&minus;</button>' +
-                '<button class="cs-ctrl" id="cs-torch"    type="button" aria-label="Torch"><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>' +
-                '<button class="cs-ctrl" id="cs-zoom-in"  type="button" aria-label="Zoom in">+</button>' +
+                '<button class="cs-ctrl ac-icon-button ac-icon-button--lg" id="cs-zoom-out" type="button" aria-label="Zoom out">' + icon('zoom-out') + '</button>' +
+                '<button class="cs-ctrl ac-icon-button ac-icon-button--lg" id="cs-torch"    type="button" aria-label="Torch">' + icon('zap') + '</button>' +
+                '<button class="cs-ctrl ac-icon-button ac-icon-button--lg" id="cs-zoom-in"  type="button" aria-label="Zoom in">' + icon('zoom-in') + '</button>' +
             '</div>' +
             '<p id="cs-error" class="cs-overlay-error small text-center mb-0"></p>' +
             '<div class="d-flex gap-2">' +
-                '<button class="btn btn-outline-secondary" id="cs-btn-cancel" type="button"></button>' +
-                '<button class="btn btn-primary-altered" id="cs-btn-done" type="button" style="display:none"></button>' +
+                '<button class="ac-button ac-button--secondary" id="cs-btn-cancel" type="button"></button>' +
+                '<button class="ac-button" id="cs-btn-done" type="button" style="display:none"></button>' +
             '</div>' +
-            '<div id="cs-busy"><div class="cs-spinner"></div><div id="cs-busy-msg"></div></div>';
+            '<div id="cs-busy"><div class="ac-spinner" role="presentation"></div><div id="cs-busy-msg"></div></div>';
         document.body.appendChild(o);
         el = {
             overlay:  o,

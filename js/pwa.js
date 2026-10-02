@@ -1,7 +1,7 @@
 /*
  * PWA support for the site shell (loaded on every front-end page by includes/pwa.php):
  *   1. registers the site's single service worker (sw.php);
- *   2. keeps <meta name="theme-color"> in sync with the light/dark page background;
+ *   2. keeps <meta name="theme-color"> in sync with the light/dark header background;
  *   3. shows a small install toast in a browser tab:
  *        - Chromium: captures `beforeinstallprompt` and calls prompt() on "Install";
  *        - iOS Safari (no install API): short "Share → Add to Home Screen" instructions.
@@ -39,11 +39,11 @@
         });
     }
 
-    // ── theme-color follows the page background (light / dark theme) ────
-    // Only when no explicit theme_color setting is configured (data-ac-auto).
+    // ── theme-color follows the header background (light / dark theme) ────
+    // The header's background token (design-system/tokens/tokens.css), light or dark.
     var themeMeta = document.querySelector('meta[name="theme-color"][data-ac-auto]');
     function syncThemeColor() {
-        var bg = getComputedStyle(document.documentElement).getPropertyValue('--sand-100').trim();
+        var bg = getComputedStyle(document.documentElement).getPropertyValue('--ac-header-bg').trim();
         if (bg) themeMeta.setAttribute('content', bg);
     }
     if (themeMeta) {

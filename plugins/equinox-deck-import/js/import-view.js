@@ -12,6 +12,8 @@
     var esc = EDI.util.escHtml;
     var t   = EDI.util.t;
     var tf  = EDI.util.tf;
+    // Lucide icon from the design system (design-system/js/ac.js, loaded by the shell).
+    function icon(name, cls) { return typeof window.acIcon === 'function' ? window.acIcon(name, cls) : ''; }
 
     function create(opts) {
         var $form      = opts.form;
@@ -27,7 +29,7 @@
             if (btn) {
                 btn._ediOriginalHTML = btn.innerHTML;
                 btn.disabled  = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>' + esc(t('q_parsing'));
+                btn.innerHTML = icon('loader-circle', 'ac-icon--spin') + esc(t('q_parsing'));
             }
             $form.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = true; });
         }
@@ -36,57 +38,62 @@
             var btn = $form.querySelector('button[type="submit"]');
             if (btn) {
                 btn.disabled  = false;
-                btn.innerHTML = btn._ediOriginalHTML || '<i class="fa-solid fa-file-import me-1"></i>' + esc(t('submit'));
+                btn.innerHTML = btn._ediOriginalHTML || icon('file-input') + esc(t('submit'));
             }
             $form.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = false; });
             var prev = $container.querySelector('.edi-parse-error');
             if (prev) { prev.remove(); }
             var el = document.createElement('div');
-            el.className = 'alert alert-danger py-2 mb-4 edi-parse-error';
-            el.innerHTML = '<i class="fa-solid fa-circle-exclamation me-2"></i>' + esc(msg);
-            var formCard = $form.closest('.card-altered');
+            el.className = 'ac-notice ac-notice--danger edi-parse-error';
+            el.setAttribute('role', 'alert');
+            el.innerHTML = icon('circle-alert') + '<div>' + esc(msg) + '</div>';
+            var formCard = $form.closest('.edi-form-card');
             if (formCard) { formCard.insertAdjacentElement('beforebegin', el); }
         }
 
         // ── Build the queue UI once ───────────────────────────────────────────
         function build(snapshot) {
-            var formCard = $form.closest('.card-altered');
+            var formCard = $form.closest('.edi-form-card');
             if (formCard) { formCard.style.display = 'none'; }
+            var prevError = $container.querySelector('.edi-parse-error');
+            if (prevError) { prevError.remove(); }
 
             var old = document.getElementById('edi-queue-ui');
             if (old) { old.remove(); }
 
             var wrap = document.createElement('div');
             wrap.id = 'edi-queue-ui';
+            wrap.className = 'ac-stack';
 
             if (snapshot.dedupWarn) {
                 var warn = document.createElement('div');
-                warn.className = 'alert alert-warning py-2 mb-3 small';
-                warn.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i>' + esc(t('q_dedup_warn'));
+                warn.className = 'ac-notice ac-notice--warning';
+                warn.setAttribute('role', 'status');
+                warn.innerHTML = icon('triangle-alert') + '<div>' + esc(t('q_dedup_warn')) + '</div>';
                 wrap.appendChild(warn);
             }
 
             if (EDI.util.debugOn() && snapshot.parseDebug) {
                 var dbgEl = document.createElement('div');
-                dbgEl.className = 'edi-debug mb-3';
+                dbgEl.className = 'edi-debug';
                 dbgEl.innerHTML = EDI.Debug.parsePanelHTML(snapshot.parseDebug);
                 wrap.appendChild(dbgEl);
             }
 
             var header = document.createElement('div');
             header.id        = 'edi-progress-header';
-            header.className = 'card-altered p-3 mb-3';
+            header.className = 'ac-card';
             header.innerHTML =
-                '<div class="d-flex justify-content-between align-items-center mb-2">'
-              +   '<span id="edi-progress-text" class="fw-semibold"></span>'
-              +   '<span id="edi-eta-text" class="small text-muted"></span>'
+                '<div class="ac-row ac-row--between edi-progress-line">'
+              +   '<span id="edi-progress-text" class="ac-text-strong"></span>'
+              +   '<span id="edi-eta-text" class="ac-text-small ac-text-muted"></span>'
               + '</div>'
-              + '<div class="progress mb-3" style="height:8px" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">'
+              + '<div class="progress edi-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">'
               +   '<div id="edi-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>'
               + '</div>'
-              + '<div class="d-flex gap-2">'
-              +   '<button id="edi-btn-pause" type="button" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pause me-1"></i>' + esc(t('q_pause')) + '</button>'
-              +   '<button id="edi-btn-cancel" type="button" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-xmark me-1"></i>' + esc(t('q_cancel')) + '</button>'
+              + '<div class="ac-row">'
+              +   '<button id="edi-btn-pause" type="button" class="ac-button ac-button--secondary ac-button--sm">' + icon('pause') + esc(t('q_pause')) + '</button>'
+              +   '<button id="edi-btn-cancel" type="button" class="ac-button ac-button--danger ac-button--sm">' + icon('x') + esc(t('q_cancel')) + '</button>'
               + '</div>';
             wrap.appendChild(header);
 
@@ -96,9 +103,9 @@
             wrap.appendChild(summary);
 
             var tableWrap = document.createElement('div');
-            tableWrap.className = 'card-altered mb-4 edi-list-scroll';
+            tableWrap.className = 'ac-table-wrap edi-list-scroll';
             tableWrap.innerHTML =
-                '<table class="table table-sm table-altered mb-0 edi-queue-table"><thead><tr>'
+                '<table class="ac-table edi-queue-table"><thead><tr>'
               +   '<th>' + esc(t('col_deck')) + '</th>'
               +   '<th class="edi-status-col">' + esc(t('col_status')) + '</th>'
               + '</tr></thead><tbody id="edi-deck-tbody"></tbody></table>';
@@ -107,9 +114,9 @@
             var resetBtn = document.createElement('button');
             resetBtn.id            = 'edi-btn-reset';
             resetBtn.type          = 'button';
-            resetBtn.className     = 'btn btn-primary-altered btn-sm mb-4';
+            resetBtn.className     = 'ac-button ac-button--sm edi-reset';
             resetBtn.style.display = 'none';
-            resetBtn.innerHTML     = '<i class="fa-solid fa-plus me-1"></i>' + esc(t('q_reset'));
+            resetBtn.innerHTML     = icon('plus') + esc(t('q_reset'));
             resetBtn.addEventListener('click', function () {
                 if (handlers.onReset) { handlers.onReset(); } else { window.location.reload(); }
             });
@@ -168,8 +175,8 @@
             if ($btnPause) {
                 $btnPause.style.display = snapshot.finished ? 'none' : '';
                 $btnPause.innerHTML = snapshot.state === 'paused'
-                    ? '<i class="fa-solid fa-play me-1"></i>' + esc(t('q_resume'))
-                    : '<i class="fa-solid fa-pause me-1"></i>' + esc(t('q_pause'));
+                    ? icon('play') + esc(t('q_resume'))
+                    : icon('pause') + esc(t('q_pause'));
             }
             if ($btnCancel) { $btnCancel.style.display = snapshot.finished ? 'none' : ''; }
 
@@ -190,12 +197,12 @@
             var detail = '';
             if (item.status === 'failed') {
                 var left = maxRetries - item.attempts;
-                detail = '<div class="mt-1 small text-danger">' + esc(item.error_msg)
-                       + ' <button type="button" class="btn btn-link btn-sm p-0 edi-retry-btn" data-idx="' + idx + '">'
-                       + '<i class="fa-solid fa-rotate-left me-1"></i>' + esc(t('q_retry'))
+                detail = '<div class="edi-row-error">' + esc(item.error_msg)
+                       + ' <button type="button" class="edi-retry-btn" data-idx="' + idx + '">'
+                       + icon('rotate-ccw') + esc(t('q_retry'))
                        + ' (' + esc(tf(left === 1 ? 'q_retry_left_1' : 'q_retry_left_n', left)) + ')</button></div>';
             } else if (item.status === 'failed_final') {
-                detail = '<div class="mt-1 small text-danger">' + esc(item.error_msg) + '</div>';
+                detail = '<div class="edi-row-error">' + esc(item.error_msg) + '</div>';
             }
             if (EDI.util.debugOn() && item.debug) {
                 detail += EDI.Debug.deckPanelHTML(item.debug);
@@ -205,13 +212,13 @@
 
         function statusBadge(item) {
             switch (item.status) {
-                case 'done':         return '<span class="badge bg-success">' + esc(t('deck_ok')) + '</span>';
-                case 'skip':         return '<span class="badge bg-secondary">' + esc(t('deck_skip')) + '</span>';
-                case 'current':      return '<span class="badge bg-primary"><span class="spinner-border spinner-border-sm me-1" style="width:.65rem;height:.65rem" role="status"></span>' + esc(t('q_current')) + '</span>';
-                case 'failed':       return '<span class="badge bg-warning text-dark">' + esc(t('deck_err')) + '</span>';
-                case 'failed_final': return '<span class="badge bg-danger">' + esc(t('q_failed_final')) + '</span>';
-                case 'cancelled':    return '<span class="badge bg-secondary">' + esc(t('q_cancelled_item')) + '</span>';
-                default:             return '<span class="badge badge-pending">' + esc(t('q_pending')) + '</span>';
+                case 'done':         return '<span class="ac-badge ac-badge--green">' + esc(t('deck_ok')) + '</span>';
+                case 'skip':         return '<span class="ac-badge">' + esc(t('deck_skip')) + '</span>';
+                case 'current':      return '<span class="ac-badge ac-badge--blue">' + icon('loader-circle', 'ac-icon--spin') + esc(t('q_current')) + '</span>';
+                case 'failed':       return '<span class="ac-badge ac-badge--orange">' + esc(t('deck_err')) + '</span>';
+                case 'failed_final': return '<span class="ac-badge ac-badge--red">' + esc(t('q_failed_final')) + '</span>';
+                case 'cancelled':    return '<span class="ac-badge">' + esc(t('q_cancelled_item')) + '</span>';
+                default:             return '<span class="ac-badge edi-badge-pending">' + esc(t('q_pending')) + '</span>';
             }
         }
 
@@ -222,14 +229,15 @@
             var type        = c.failed > 0
                 ? (c.done > 0 || c.skip > 0 ? 'warning' : 'danger')
                 : (isCancelled ? 'warning' : 'success');
-            var icon  = (c.failed > 0 || isCancelled) ? 'triangle-exclamation' : 'check';
+            var iconName = (c.failed > 0 || isCancelled) ? 'triangle-alert' : 'check';
             var parts = [];
             if (c.done      > 0) { parts.push(tf(c.done      === 1 ? 'q_sum_imported_1'  : 'q_sum_imported_n',  c.done)); }
             if (c.skip      > 0) { parts.push(tf(c.skip      === 1 ? 'q_sum_skip_1'      : 'q_sum_skip_n',      c.skip)); }
             if (c.failed    > 0) { parts.push(tf(c.failed    === 1 ? 'q_sum_failed_1'    : 'q_sum_failed_n',    c.failed)); }
             if (c.cancelled > 0) { parts.push(tf(c.cancelled === 1 ? 'q_sum_cancelled_1' : 'q_sum_cancelled_n', c.cancelled)); }
-            $summaryWrap.className     = 'alert alert-' + type + ' py-2 mb-3';
-            $summaryWrap.innerHTML     = '<i class="fa-solid fa-' + icon + ' me-2"></i>' + esc(parts.join(' · '));
+            $summaryWrap.className     = 'ac-notice ac-notice--' + type;
+            $summaryWrap.setAttribute('role', 'status');
+            $summaryWrap.innerHTML     = icon(iconName) + '<div>' + esc(parts.join(' · ')) + '</div>';
             $summaryWrap.style.display = '';
         }
 

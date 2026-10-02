@@ -1,0 +1,30 @@
+@if (content.mode === 'sheet') {
+  <div class="handle" aria-hidden="true"><span></span></div>
+}
+@let r = top().ref;
+<div class="head">
+  @if (r.isStep || r.back() || (r.leading() === 'back' && content.mode !== 'dialog')) {
+    <button type="button" class="icon-btn" aria-label="Retour" i18n-aria-label="@@ui.overlay.back" (click)="goBack()"><ac-icon name="chevron-left" [size]="22" /></button>
+  } @else if (content.mode === 'fullscreen') {
+    <button type="button" class="icon-btn" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.dismiss()"><ac-icon name="x" [size]="22" /></button>
+  }
+  <div class="titles">
+    <h2 #title class="title" tabindex="-1" [id]="content.titleId">
+      {{ r.title() }}@if (r.subtitle()) {<span class="sub"> · {{ r.subtitle() }}</span>}
+    </h2>
+    @if (r.description() && content.mode === 'dialog') {
+      <p class="desc">{{ r.description() }}</p>
+    }
+  </div>
+  @if (r.headerAction(); as a) {
+    <button type="button" class="head-action" (click)="a.run()">{{ a.label }}</button>
+  }
+  @if ((content.mode === 'dialog' && !content.bare) || ((content.mode === 'sheet' || content.mode === 'drawer') && r.leading() !== 'back' && !r.isStep)) {
+    <button type="button" class="icon-btn close" aria-label="Fermer" i18n-aria-label="@@ui.overlay.close" (click)="root.dismiss()"><ac-icon name="x" [size]="20" /></button>
+  }
+</div>
+@for (v of root.views(); track v.ref) {
+  <div class="view" [hidden]="v !== top()">
+    <ng-container *ngComponentOutlet="v.component; injector: v.injector" />
+  </div>
+}

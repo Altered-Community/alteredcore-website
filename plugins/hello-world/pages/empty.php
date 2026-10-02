@@ -15,12 +15,14 @@ $txt = [
 
 ?>
 
-<div class="container py-4">
+<div class="ac-page">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($txt['page_title']) ?></span></div>
-    </div>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($txt['page_title']) ?></h1>
+        </div>
+    </header>
 
-    <!-- YOUR HTML CODE HERE -->
+    <!-- YOUR HTML CODE HERE: ac-* components, ac_icon(), tokens in assets/style.css -->
 
 </div>

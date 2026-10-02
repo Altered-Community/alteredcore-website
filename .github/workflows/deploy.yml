@@ -30,6 +30,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ─── Plugins front (manifest v2, "build" dans plugin.json) ────────────────
+      # Les bundles ne sont pas versionnés : on les construit ici, puis on retire le
+      # dossier source (workdir, node_modules compris) pour n'envoyer que la sortie.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22' # dernière 22.x (Angular 22 demande ≥ 22.22)
+      - name: Build front-end plugins
+        run: |
+          set -euo pipefail
+          php bin/plugins.php plan > /tmp/plan.json
+          for id in $(jq -r '.[] | select(.build != null) | .id' /tmp/plan.json); do
+            workdir="$(jq -r --arg id "$id" '.[] | select(.id == $id) | .build.workdir' /tmp/plan.json)"
+            php bin/plugins.php run install "$id"
+            php bin/plugins.php run build "$id"
+            rm -rf "plugins/$id/$workdir"
+          done
+
       # ─── Transfert (lftp : ftp / ftps / sftp) ───────────────────────────────
       # APPROCHE LISTE BLANCHE : on ne synchronise QUE les dossiers/fichiers
       # explicitement listés. Tout le reste du serveur (staticpages, files,
@@ -71,8 +92,10 @@ jobs:
           echo "lftp → protocol=$PROTO port=$PORT path=$RP parallel=$PARALLEL"
 
           # ── Liste blanche ────────────────────────────────────────────────────
-          MIRROR_DIRS=(admin assets auth css includes js sql themes)
-          PUSH_DIRS=(pages)
+          MIRROR_DIRS=(admin assets auth css design-system includes js sql themes)
+          # api/ : push (pas de --delete), le serveur y a des fichiers hors dépôt
+          # (index.php, nav.php, footer.php) qu'un miroir supprimerait.
+          PUSH_DIRS=(pages api)
           ROOT_FILES=(index.php .htaccess config.php config.php.example config.local.php.example sw.php offline.php)
           PLUGIN_TOP_FILES=(plugins/.htaccess plugins/plugin.schema.json plugins/README.html)
           cp data/tinymce_shortcodes.json data/tinymce_shortcodes.json.dist

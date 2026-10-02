@@ -1,0 +1,113 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-5);
+}
+:host(.sheet) {
+  gap: 22px;
+}
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ac-space-2);
+}
+:host(.sheet) .two {
+  gap: var(--ac-space-2-5);
+}
+.two ::ng-deep .ac-field__label {
+  font-weight: 600;
+}
+.sets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ac-space-1-5);
+}
+:host(.sheet) .sets {
+  gap: var(--ac-space-2);
+}
+.types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-1-5);
+}
+.adv {
+  margin-top: var(--ac-space-2);
+}
+.fold {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-bg-subtle);
+  font-size: var(--ac-font-size-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+.fold-l {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+.pill {
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  font-size: var(--ac-font-size-caption);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+.chev {
+  display: flex;
+  transition: transform 0.15s;
+}
+.chev.open {
+  transform: rotate(180deg);
+}
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+  color: var(--ac-color-primary);
+  cursor: pointer;
+  min-height: 32px;
+}
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+.adv-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  margin-top: var(--ac-space-3);
+}
+.adv-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+}
+.adv-label {
+  font-size: var(--ac-font-size-small);
+  font-weight: 600;
+}
+.three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ac-space-2);
+}
+:host(.sheet) .three {
+  gap: var(--ac-space-2-5);
+}
+.three ::ng-deep .label {
+  font-weight: 600;
+}

@@ -1,0 +1,17 @@
+@for (o of options(); track o.value) {
+  <button
+    type="button"
+    [attr.aria-pressed]="o.value === value()"
+    [attr.aria-label]="o.ariaLabel || null"
+    [attr.title]="o.ariaLabel || null"
+    [class.ac-segmented__icon-only]="iconOnly()"
+    (click)="value.set(o.value)"
+  >
+    @if (o.icon) {
+      <ac-icon [name]="o.icon" [size]="16" />
+    }
+    @if (o.label) {
+      <span>{{ o.label }}</span>
+    }
+  </button>
+}

@@ -1,0 +1,7 @@
+// Breakpoints of the AlteredCore design system (literal values: CSS cannot read variables in
+// media queries). Keep in sync with breakpoints.ts — tests/DesignSystemTest.php checks it.
+//   compact  < 768px      bottom sheets, touch density
+//   medium   768–1199px
+//   expanded ≥ 1200px
+$medium: 768px;
+$expanded: 1200px;

@@ -1,0 +1,241 @@
+:host {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.like {
+  position: absolute;
+  right: var(--ac-space-2);
+  top: var(--ac-space-2);
+}
+:host(.ac-deck-card--row) .like {
+  right: auto;
+  top: auto;
+  left: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+}
+a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  overflow: hidden;
+  color: var(--ac-color-text);
+  transition: box-shadow 0.15s;
+}
+@media (hover: hover) {
+  a:hover {
+    box-shadow: var(--ac-shadow-card);
+    color: var(--ac-color-text);
+  }
+}
+.visual {
+  position: relative;
+  height: 106px;
+  display: block;
+  background: var(--ac-color-text-2);
+}
+.ph {
+  position: absolute;
+  inset: 0;
+}
+.badges {
+  position: absolute;
+  left: var(--ac-space-2);
+  top: var(--ac-space-2);
+  display: flex;
+  gap: var(--ac-space-1-5);
+  flex-wrap: wrap;
+  right: 44px;
+}
+.badges ac-badge {
+  background: var(--ac-color-surface);
+}
+/* Same spot as `.badges` inside the link (+ its 1px border); only the « Illégal » button takes the clicks. */
+.badges--over {
+  left: calc(var(--ac-space-2) + 1px);
+  top: calc(var(--ac-space-2) + 1px);
+  pointer-events: none;
+}
+.illegal {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: var(--ac-radius-pill);
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* Hit area of at least --ac-hit-min around the 24 px badge. */
+.illegal::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.illegal:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.illegal--row {
+  position: absolute;
+  left: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+}
+/* Community rows keep the bottom corner for the like button. */
+.illegal--top {
+  bottom: auto;
+  top: var(--ac-space-1-5);
+}
+.vis {
+  position: absolute;
+  right: var(--ac-space-2);
+  top: var(--ac-space-2);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 2px;
+  padding: var(--ac-space-3);
+  min-width: 0;
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+.name {
+  font: var(--ac-font-heading);
+  flex-grow: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-text-muted);
+}
+.faction {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.hero-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  min-width: 0;
+  margin-top: var(--ac-space-2);
+  font-size: var(--ac-font-size-small);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Pinned to the bottom so the lines align across a grid row. */
+.updated {
+  margin-top: auto;
+  padding-top: var(--ac-space-2-5);
+}
+.updated time {
+  display: block;
+  padding-top: var(--ac-space-2);
+  border-top: 1px solid var(--ac-color-divider);
+  font: var(--ac-font-caption);
+  font-weight: 600;
+  color: var(--ac-color-text-muted);
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--ac-space-2);
+}
+.total {
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+}
+/* row layout (compact list) */
+:host(.ac-deck-card--row) a {
+  flex-direction: row;
+  min-height: 136px;
+}
+:host(.ac-deck-card--row) .visual {
+  width: 96px;
+  height: auto;
+  flex-shrink: 0;
+}
+:host(.ac-deck-card--row) .body {
+  flex-grow: 1;
+  padding: var(--ac-space-3) var(--ac-space-3) var(--ac-space-3) 14px;
+  gap: var(--ac-space-1);
+}
+:host(.ac-deck-card--row) .name {
+  font-size: var(--ac-font-size-heading);
+}
+:host(.ac-deck-card--row) .hero {
+  font-size: var(--ac-font-size-body);
+}
+:host(.ac-deck-card--row) .faction {
+  width: 18px;
+  height: 18px;
+}
+:host(.ac-deck-card--row) .updated {
+  padding-top: var(--ac-space-1-5);
+}
+:host(.ac-deck-card--row) .updated time {
+  padding-top: var(--ac-space-1-5);
+  font-size: var(--ac-font-size-small);
+}
+:host(.ac-deck-card--row) .author {
+  margin-top: var(--ac-space-1);
+  font-size: var(--ac-font-size-body);
+}
+.vis-inline {
+  color: var(--ac-color-text-muted);
+  display: flex;
+}
+.badges-inline {
+  display: flex;
+  gap: var(--ac-space-1-5);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+:host(.ac-deck-card--row) .foot {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: var(--ac-space-1);
+}
+:host(.ac-deck-card--row) .total {
+  font-size: var(--ac-font-size-body);
+}

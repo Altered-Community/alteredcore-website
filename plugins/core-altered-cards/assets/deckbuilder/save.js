@@ -54,15 +54,16 @@
                     if (onDone) onDone(true);
                 } else {
                     var parts = (data.error || 'Error').split('\n');
-                    showSaveError(escHtml(parts[0]) + (parts[1] ? '<br><small style="opacity:.85">' + escHtml(parts[1]) + '</small>' : ''));
-                    if (onDone) onDone(false);
+                    var errHtml = escHtml(parts[0]) + (parts[1] ? '<br><small style="opacity:.85">' + escHtml(parts[1]) + '</small>' : '');
+                    showSaveError(errHtml);
+                    if (onDone) onDone(false, errHtml);
                 }
             })
             .catch(function() {
                 elSaveBtn.innerHTML = saveBtnHtml;
                 elSaveBtn.disabled = false;
                 showSaveError(escHtml(AlteredDB.txt.err_connect || 'Connection error'));
-                if (onDone) onDone(false);
+                if (onDone) onDone(false, escHtml(AlteredDB.txt.err_connect || 'Connection error'));
             });
     }
 

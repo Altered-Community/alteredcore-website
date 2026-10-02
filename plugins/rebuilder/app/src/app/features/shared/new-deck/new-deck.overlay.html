@@ -1,0 +1,85 @@
+<div class="ac-overlay-body new-deck-body">
+  <section #heroesCol class="heroes" [class.narrow]="narrow()" aria-labelledby="new-deck-hero-label">
+    <div class="heroes-head">
+      <span class="label" id="new-deck-hero-label" i18n="@@newDeck.hero">Héros <span class="req" aria-hidden="true">*</span></span>
+      @if (!bp.compact()) {
+        <span class="hint" i18n="@@newDeck.heroHint">Détermine la faction et les cartes disponibles</span>
+      }
+    </div>
+    <ac-faction-tabs
+      size="sm"
+      [layout]="bp.compact() ? 'scroll' : 'grid'"
+      [columns]="narrow() ? 3 : 6"
+      controls="new-deck-heroes"
+      [(active)]="faction"
+    />
+    @if (!global()) {
+      <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
+        <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+        @if (altArts()) {
+          <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+        }
+      </div>
+    }
+    <ac-hero-selector
+      panelId="new-deck-heroes"
+      [layout]="bp.compact() ? 'carousel' : 'grid'"
+      [columns]="narrow() ? 3 : 4"
+      [heroes]="heroes()"
+      [error]="error()"
+      [faction]="faction()"
+      [selected]="form.hero()"
+      (selectedChange)="form.selectHero($event)"
+    />
+  </section>
+  <div class="side">
+    <ac-input
+      label="Nom du deck" i18n-label="@@newDeck.name"
+      [required]="true"
+      placeholder="ex : Moyo Embrasement" i18n-placeholder="@@newDeck.namePlaceholder"
+      enterkeyhint="done"
+      [value]="form.name()"
+      (valueChange)="form.editName($event)"
+      (enter)="create()"
+    />
+    <div class="field">
+      <span class="label" i18n="@@newDeck.visibility">Visibilité</span>
+      <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@newDeck.visibility" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
+    </div>
+    <fieldset>
+      <legend class="label" i18n="@@newDeck.formatRequired">Format <span class="req" aria-hidden="true">*</span></legend>
+      <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@newDeck.format">
+        @for (f of formats; track f.value) {
+          <ac-radio-card
+            name="new-deck-format"
+            layout="compact"
+            [title]="f.label"
+            [description]="f.short"
+            [tag]="tagOf(f)"
+            [checked]="form.format() === f.value"
+            (choose)="form.format.set(f.value)"
+          />
+        }
+      </div>
+    </fieldset>
+    <ac-textarea
+      label="Description (facultatif)" i18n-label="@@newDeck.description"
+      placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@newDeck.descriptionPlaceholder"
+      [rows]="3"
+      [(value)]="form.description"
+    />
+  </div>
+</div>
+<div class="ac-overlay-footer new-deck-footer">
+  @if (!bp.compact()) {
+    <span class="note" aria-live="polite">
+      @if (form.hero(); as h) {
+        <ng-container i18n="@@newDeck.selection">Sélection : <strong>{{ h.name }}</strong> · {{ factionLabel(h.faction) }}</ng-container>
+      } @else {
+        <ng-container i18n="@@newDeck.pickHero">Choisissez un héros pour continuer.</ng-container>
+      }
+    </span>
+  }
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@newDeck.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()" i18n="@@newDeck.create">Créer le deck</button>
+</div>

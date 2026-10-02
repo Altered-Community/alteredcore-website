@@ -77,9 +77,9 @@ $groups = $db->query(q(
         <?php foreach ($groups as $g): ?>
             <tr>
                 <td>
-                    <span class="badge" style="background:<?= h($g['color']) ?>;color:#fff;font-size:.78rem;padding:3px 10px;border-radius:20px">
+                    <span class="badge" style="background:<?= h($g['color']) ?>;color:var(--ac-color-on-strong);font-size:.78rem;padding:3px 10px;border-radius:var(--ac-radius-pill)">
                         <?php if (!empty($g['icon'])): ?>
-                        <i class="<?= h($g['icon']) ?> me-1"></i>
+                        <?= ac_icon((string)($g['icon']), 'me-1') ?>
                         <?php endif; ?>
                         <?= h($g['name']) ?>
                     </span>

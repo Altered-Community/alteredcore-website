@@ -1,19 +1,18 @@
-/* hello-world — global demo badge (example of global_css) */
+/* hello-world — global demo badge (example of global_css), tokens only. */
 #hw-global-badge {
     position: fixed;
-    bottom: 24px;
-    left: 24px;
-    z-index: 900;
+    bottom: var(--ac-space-6);
+    left: var(--ac-space-6);
+    z-index: var(--ac-z-sticky);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--primary-400, #C9A84C);
-    color: #fff;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    gap: var(--ac-space-1-5);
+    padding: var(--ac-space-2) var(--ac-space-4);
+    background: var(--ac-color-primary);
+    color: var(--ac-color-on-primary);
+    border-radius: var(--ac-radius-pill);
+    font: var(--ac-font-caption);
+    box-shadow: var(--ac-shadow-fab);
     pointer-events: none;
     user-select: none;
     opacity: .85;

@@ -1,0 +1,15 @@
+@let s = state();
+@if (s !== 'idle') {
+  @switch (s) {
+    @case ('saved') {
+      <ac-icon name="check" [size]="14" [strokeWidth]="2.4" />
+    }
+    @case ('error') {
+      <ac-icon name="circle-alert" [size]="14" [strokeWidth]="2.4" />
+    }
+    @default {
+      <span class="dot" aria-hidden="true"></span>
+    }
+  }
+  <span [class.ac-sr-only]="iconOnly()">{{ label() }}</span>
+}

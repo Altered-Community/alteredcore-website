@@ -1,0 +1,269 @@
+/* The host page pads the content with `var(--ac-space-3) var(--ac-page-padding)` on compact screens;
+   the sticky search head bleeds into that padding. `--app-search-bottom-inset` lifts the « back to top »
+   button above a bottom navigation. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+.search-head {
+  position: sticky;
+  top: var(--ac-page-top);
+  z-index: 15;
+  margin: calc(-1 * var(--ac-space-3)) calc(-1 * var(--ac-page-padding)) 0;
+  padding: var(--ac-space-3) var(--ac-page-padding) 0;
+  background: var(--ac-color-bg-app);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-head.condensed {
+  padding: var(--ac-space-2) var(--ac-page-padding) 6px;
+  background: var(--ac-color-surface);
+  border-bottom: 1px solid var(--ac-color-border);
+  box-shadow: var(--ac-shadow-e2);
+  padding-top: calc(var(--ac-space-2) + env(safe-area-inset-top));
+}
+
+.search-row {
+  display: flex;
+  gap: var(--ac-space-2);
+}
+
+.search-row .q {
+  flex-grow: 1;
+}
+
+.search-row .q ::ng-deep input {
+  border-radius: var(--ac-radius-lg);
+  height: 44px;
+}
+
+.filters-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ac-radius-lg);
+}
+
+.filters-btn .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  border: 2px solid var(--ac-color-bg-app);
+  border-radius: var(--ac-radius-pill);
+}
+
+.summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
+}
+
+.summary-line strong {
+  color: var(--ac-color-text);
+}
+
+.search-body {
+  display: flex;
+  gap: var(--ac-space-6);
+  align-items: flex-start;
+}
+
+.results {
+  container: results / inline-size;
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+.chips {
+  margin: 0 calc(-1 * var(--ac-page-padding));
+}
+
+:host(.compact) .chips ::ng-deep .scroller {
+  padding-left: var(--ac-page-padding);
+}
+
+:host(.compact) .chips ::ng-deep .clear {
+  padding-right: var(--ac-page-padding);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+}
+
+.total {
+  font-size: var(--ac-font-size-body-strong);
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  flex-shrink: 0;
+}
+
+.tools ac-select ::ng-deep select {
+  height: 36px;
+}
+
+.to-top {
+  position: fixed;
+  right: var(--ac-space-4);
+  bottom: calc(var(--app-search-bottom-inset, env(safe-area-inset-bottom)) + var(--ac-space-3));
+  z-index: 18;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: var(--ac-shadow-e2);
+  color: var(--ac-color-text);
+}
+
+/* Sticks to the bottom of the viewport inside the results column; takes no room below the list. */
+.to-top.in-column {
+  position: sticky;
+  right: auto;
+  bottom: var(--ac-space-5);
+  align-self: flex-end;
+  margin-top: calc(-48px - var(--ac-space-4));
+}
+
+/* ---------- medium and up ---------- */
+@media (min-width: 768px) {
+  :host {
+    gap: var(--ac-space-4);
+  }
+
+  .chips {
+    margin: 0;
+    --ac-filter-bar-bg: var(--ac-color-bg-app);
+  }
+
+  .toolbar {
+    gap: var(--ac-space-3) var(--ac-space-4);
+    flex-wrap: wrap;
+  }
+
+  .toolbar .chips {
+    order: 10;
+    flex-basis: 100%;
+  }
+
+  .toolbar .total {
+    font-size: var(--ac-font-size-prose);
+    margin-right: 6px;
+  }
+
+  .tools {
+    gap: var(--ac-space-2);
+  }
+
+  .tools ac-select ::ng-deep select {
+    height: var(--ac-control-md);
+  }
+
+  .results {
+    gap: var(--ac-space-4);
+  }
+}
+
+/* Space above the filters panel at the top of the page, below its sticky position. */
+$filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
+
+@media (min-width: 1200px) {
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+
+  .toolbar .chips {
+    order: 0;
+    flex-basis: auto;
+  }
+
+  /* The panel and its « Masquer » handle, which sits on the panel's right edge (not clipped). */
+  .filters-drawer {
+    /* Wider than the 264px token so « Réinitialiser » and « Rechercher »
+       (label, padding, and the filter-count badge) both fit without clipping. */
+    width: calc(var(--ac-filter-panel-width) + var(--ac-space-8) + var(--ac-space-6));
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    /* Stay inside the viewport under the page header. At the top of the page the panel sits
+       136px below its sticky position; `--app-filters-grow` (the page scroll, set by the component) grows it
+       as the page scrolls, up to the whole height under the header. The footer is a flex sibling
+       of the scroller, so the action row is never scrolled away. */
+    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - 136px + var(--app-filters-grow, 0px));
+    max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+    transition: height 120ms ease-out;
+  }
+
+  .filters {
+    height: 100%;
+    box-sizing: border-box;
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Filters hidden: the tab takes the panel's place, against the page edge
+     (`--app-drawer-bleed`: the host page's side padding). */
+  .filters-tab {
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    margin-left: calc(-1 * var(--app-drawer-bleed, 0px));
+  }
+
+  .filters-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--ac-space-4);
+  }
+
+  .filters-foot {
+    flex-shrink: 0;
+    padding: var(--ac-space-3) var(--ac-space-4);
+    border-top: 1px solid var(--ac-color-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-2);
+  }
+
+  .filters-foot .go {
+    flex: 1 1 auto;
+    min-width: max-content;
+    max-width: 100%;
+  }
+}
+
+/* A narrow results column (e.g. embedded in a site layout narrower than the window): the active
+   filters go to their own row instead of being squeezed between the count and the tools. */
+@container results (max-width: 640px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar .chips {
+    order: 10;
+    flex-basis: 100%;
+  }
+}
