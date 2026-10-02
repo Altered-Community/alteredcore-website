@@ -274,7 +274,10 @@ export class DecksPage {
   protected readonly activeFilters = computed(() => {
     const f = this.filters();
     const tab = this.tab();
-    return (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + f.factions.length;
+    // « Légaux uniquement » is on by default: turned off, it counts as a filter.
+    return (
+      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + f.factions.length
+    );
   });
   protected readonly countLabel = computed(() => {
     const community = this.tab() === 'community';
