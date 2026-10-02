@@ -168,9 +168,11 @@
   cursor: pointer;
 }
 
-.new-tile:hover {
-  border-color: var(--ac-color-primary);
-  background: var(--ac-color-primary-tint);
+@media (hover: hover) {
+  .new-tile:hover {
+    border-color: var(--ac-color-primary);
+    background: var(--ac-color-primary-tint);
+  }
 }
 
 .plus {

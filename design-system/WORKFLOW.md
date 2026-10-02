@@ -20,8 +20,10 @@ exist for the code.
 ## Designing a new screen (most common case)
 
 1. **Brief.** In Claude Code, at the repo root: `/design <the screen, who uses it, what it shows>`.
-   Say which plugin it belongs to. The design reuses the `ac-*` components; ask it to flag
-   anything the design system does not have yet.
+   Say which plugin it belongs to. Add to the brief: « Load `design-system/tokens/tokens.css`,
+   `design-system/css/base.css` and `design-system/css/components/*.css` as the artboard's
+   stylesheets, use only `ac-*` classes and `var(--ac-*)` tokens, and list what the design system
+   does not have yet. » The artboards then render with the real CSS instead of an imitation of it.
 2. **Iterate** on the artboards (edit texts, move elements) until the screen is right. Check both
    themes and a phone width.
 3. **Handoff.** Ask for a handoff (`design:design-handoff` skill): layout, components used,
@@ -29,7 +31,10 @@ exist for the code.
 4. **Implement** in the same session: the plugin's page uses `ac-*` classes (PHP) or the
    framework components (Angular, React). No new hex colour, no new pixel height.
 5. **Check**: `/pages/design-system` for the components, the page itself in light, dark, and at
-   375 px wide; `design:accessibility-review` on the result if the screen is new.
+   375 px wide; `design:accessibility-review` on the result if the screen is new. Then compare the
+   implemented screen with the artboard: a scenario in `tests/e2e/variants/` (next section) with
+   one variant `''` gives the real screen at the artboard's widths; differences are fixed in the
+   code, or the artboard was wrong and the decision is noted in the PR.
 
 ## Adjusting an existing pattern (variants in the real app)
 
@@ -58,7 +63,10 @@ real components, data and CSS.
    - `docs/components/<family>.md` (markup, variants, accessibility);
    - `pages/design-system.php` (the reference page);
    - the framework components that render it (Angular: `plugins/rebuilder/app/src/app/ui/`).
-3. `php tests/run.php` (in Docker: `docker compose exec web php tests/run.php`).
+3. `php tests/run.php` (in Docker: `docker compose exec web php tests/run.php`): it fails when a
+   class of `css/components/` is missing from the docs or the reference page, or when a `:hover`
+   sits outside `@media (hover: hover)`. The mobile e2e checks the tap areas of Re:Builder's
+   windows (`--ac-hit-min`).
 
 ## Changing tokens (colours, radii…)
 

@@ -194,6 +194,75 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(browserDialogs).toEqual([]);
   });
 
+  test('touch: every control of the windows is at least --ac-hit-min (44 px) on each side', async ({ page, compact }, testInfo) => {
+    test.skip(!compact, 'touch density: mobile project');
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    const name = `E2E touch ${testInfo.project.name} ${Date.now()}`;
+    await createDeck(page, name);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=[0-9a-f-]{36}$/);
+    const id = new URL(page.url()).searchParams.get('id')!;
+    const hitMin = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ac-hit-min')));
+    expect(hitMin).toBe(44);
+
+    /**
+     * Visible controls of the open window whose tap area is smaller than hitMin, as « label: width×height ». The
+     * tap area is what `elementFromPoint` finds at the edges of a hitMin box centred on the control, so a control
+     * drawn smaller with a wider hit area (chips) passes.
+     */
+    const tooSmall = (dialog: ReturnType<Page['getByRole']>) =>
+      dialog.locator('button, a[href], [role="tab"], [role="menuitem"], [role="option"], input:not([type="hidden"]), select').evaluateAll(
+        (els, min) =>
+          els
+            .filter((el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).visibility !== 'hidden')
+            // Links inside a sentence are exempt (WCAG 2.5.8 « inline »).
+            .filter((el) => !(el.tagName === 'A' && getComputedStyle(el).display === 'inline'))
+            .filter((el) => {
+              el.scrollIntoView({ block: 'center', inline: 'center' });
+              const r = el.getBoundingClientRect();
+              const root = el.getRootNode() as Document | ShadowRoot;
+              const [cx, cy, half] = [r.left + r.width / 2, r.top + r.height / 2, min / 2 - 1];
+              const halfX = Math.max(half, r.width / 2 - 1);
+              const halfY = Math.max(half, r.height / 2 - 1);
+              const points = [[cx - halfX, cy], [cx + halfX, cy], [cx, cy - halfY], [cx, cy + halfY]];
+              return points.some(([x, y]) => {
+                const hit = root.elementFromPoint(x, y);
+                return !hit || (hit !== el && !el.contains(hit));
+              });
+            })
+            .map((el) => {
+              const r = el.getBoundingClientRect();
+              return `${(el.getAttribute('aria-label') ?? el.textContent ?? el.tagName).trim().slice(0, 40)}: ${Math.round(r.width)}×${Math.round(r.height)}`;
+            }),
+        hitMin,
+      );
+    const check = async (name: string, open: () => Promise<void>) => {
+      await open();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      expect(await tooSmall(dialog), name).toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    };
+
+    await page.goto(DECK(id));
+    await expect(page.locator('app-deck-page')).toContainText(name);
+    const more = page.locator('app-deck-page').getByRole('button', { name: /^Plus d’actions/ });
+    await check('deck actions', () => more.click());
+    await check('delete confirmation', async () => {
+      await more.click();
+      await page.getByRole('menuitem', { name: 'Supprimer' }).click();
+      await expect(page.getByRole('dialog', { name: 'Supprimer le deck ?' })).toBeVisible();
+    });
+    await check('duplicate', async () => {
+      await more.click();
+      await page.getByRole('menuitem', { name: /Dupliquer/ }).click();
+      await expect(page.getByRole('dialog', { name: 'Dupliquer le deck' })).toBeVisible();
+    });
+    await page.goto(`${DECKS}?lang=fr`);
+    await check('deck filters', () => page.getByRole('button', { name: /^Filtres/ }).first().click());
+    await check('import', () => page.getByRole('button', { name: 'Importer un deck' }).click());
+  });
+
   test('lists community decks from the public API, through the relay', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     // The list goes through the relay. The app may cancel a request and send a new one (query

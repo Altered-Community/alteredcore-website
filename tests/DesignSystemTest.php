@@ -138,6 +138,77 @@ foreach (dsComponentFiles() as $rel) {
     assertSame(true, is_file($doc), 'design-system/docs/components/' . basename($doc) . ' documents ' . $rel);
 }
 
+// ---- Every component class is documented and shown on the reference page ----
+// Docs: every class of css/components (block, element, modifier). Reference page: the same, or built by js/ac.js
+// from markup the page has (the listbox draws its panel from a <select>).
+$docs = '';
+foreach (glob($ds . '/docs/components/*.md') ?: [] as $f) $docs .= (string)file_get_contents($f);
+$reference = (string)file_get_contents($root . '/pages/design-system.php') . (string)file_get_contents($ds . '/js/ac.js');
+$classes = [];
+foreach (dsComponentFiles() as $rel) {
+    $css = preg_replace('#/\*.*?\*/#s', '', (string)file_get_contents($ds . '/' . $rel));
+    preg_match_all('/\.(ac-[a-z0-9]+(?:-[a-z0-9]+)*(?:__[a-z0-9-]+)?(?:--[a-z0-9-]+)?)/', $css, $m);
+    foreach ($m[1] as $class) $classes[$class] = $rel;
+}
+$mentions = function (string $text, string $class): bool {
+    return (bool)preg_match('/(?<![\w-])' . preg_quote($class, '/') . '(?![\w-])/', $text);
+};
+$undocumented = $unshown = [];
+foreach ($classes as $class => $rel) {
+    if (!$mentions($docs, $class)) $undocumented[] = "{$class} ({$rel})";
+    if (!$mentions($reference, $class)) $unshown[] = "{$class} ({$rel})";
+}
+assertSame([], $undocumented, 'every ac-* class of css/components is in docs/components/*.md');
+assertSame([], $unshown, 'every ac-* class of css/components is on pages/design-system.php (or drawn by js/ac.js)');
+
+// ---- Hover only where the pointer can hover (touch screens keep :hover after a tap) ----
+/** Selectors with :hover outside `@media (hover: hover)`, as "file:line". Handles nesting (SCSS). */
+function dsStrayHovers(string $path, string $root): array {
+    $text = (string)file_get_contents($path);
+    $text = preg_replace_callback('#/\*.*?\*/#s', function ($m) { return preg_replace('/[^\n]/', ' ', $m[0]); }, $text);
+    $text = preg_replace('#//[^\n]*#', '', $text);
+    $stack = [];
+    $prelude = '';
+    $line = 1;
+    $preludeLine = 1;
+    $stray = [];
+    $len = strlen($text);
+    for ($i = 0; $i < $len; $i++) {
+        $c = $text[$i];
+        if ($c === "\n") $line++;
+        if ($c === '{') {
+            $sel = trim($prelude);
+            $inHoverMedia = false;
+            foreach ($stack as $outer) {
+                if (preg_match('/^@media\b.*\(\s*hover\s*:\s*hover\s*\)/', $outer)) $inHoverMedia = true;
+            }
+            if ($sel !== '' && $sel[0] !== '@' && strpos($sel, ':hover') !== false && !$inHoverMedia) {
+                $stray[] = substr($path, strlen($root) + 1) . ':' . $preludeLine;
+            }
+            $stack[] = $sel;
+            $prelude = '';
+        } elseif ($c === '}') {
+            array_pop($stack);
+            $prelude = '';
+        } elseif ($c === ';') {
+            $prelude = '';
+        } else {
+            if (trim($prelude) === '' && !ctype_space($c)) $preludeLine = $line;
+            $prelude .= $c;
+        }
+    }
+    return $stray;
+}
+$hoverFiles = array_merge(glob($ds . '/css/*.css') ?: [], glob($ds . '/css/components/*.css') ?: []);
+if (is_dir($rebuilderSrc)) {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($rebuilderSrc, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if (preg_match('/\.(css|scss)$/', $file->getFilename())) $hoverFiles[] = str_replace('\\', '/', $file->getPathname());
+    }
+}
+$stray = [];
+foreach ($hoverFiles as $f) $stray = array_merge($stray, dsStrayHovers($f, $root));
+assertSame([], $stray, ':hover styles of the design system and Re:Builder sit in @media (hover: hover)');
+
 // ---- The look has no admin setting: nothing reads a colour, background, font or layout setting ----
 $lookKeys = '/getSetting\(\s*[\'"](theme_color|bg_color|bg_image|bg_image_mode|footer_bg_image|footer_bg_mode|footer_deco_[a-z_]+|font_[a-z_]+|active_theme|navbar_width|sidebar_side|sidebar_btn_position)[\'"]/';
 $reads = [];

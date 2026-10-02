@@ -48,8 +48,10 @@
     border-radius: 4px;
     background: var(--ac-color-scrollbar) padding-box;
   }
-  :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--ac-color-scrollbar-hover);
+  @media (hover: hover) {
+    :where(.ac-plugin-root) ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--ac-color-scrollbar-hover);
+    }
   }
 }
 

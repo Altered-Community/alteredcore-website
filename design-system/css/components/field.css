@@ -208,9 +208,7 @@
 /* The native input covers the control: a click anywhere opens the file dialog. */
 .ac-file-input__control input {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: -1px; /* over the border too: the whole --ac-control-md box opens the dialog */
   opacity: 0;
   cursor: pointer;
 }

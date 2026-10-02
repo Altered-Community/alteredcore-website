@@ -18,7 +18,7 @@ control](segmented.md)).
 
 ## Chip — `ac-chip`
 
-Pill, `--ac-control-sm` tall, surface with a control border, 13 px text.
+Pill, `--ac-control-sm` tall, surface with a control border, 13 px text. Its tap area reaches `--ac-hit-min` (44 px in touch density) above and below the drawn pill: leave at least `--ac-space-2` between rows of chips.
 
 ```php
 <div class="ac-row" role="group" aria-label="<?= h(t('cards.factions')) ?>">

@@ -23,6 +23,7 @@ often. Multiple selection is not covered: the card filters keep TomSelect.
 Nothing to call. `js/ac.js` draws every `select.ac-select` and `select.form-select` of the page,
 including those added later by scripts. The `<select>` stays in the form, invisible:
 
+- it gets `ac-listbox__native` (invisible, over the trigger);
 - its value is submitted with the form, `required` still blocks the submit;
 - picking an option sets it and dispatches `input` and `change`, so existing listeners run;
 - what other scripts do to it is shown on the trigger: `sel.value = …`, `selectedIndex`, options

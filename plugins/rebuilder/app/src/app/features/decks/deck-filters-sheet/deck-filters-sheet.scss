@@ -15,5 +15,6 @@
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ac-space-1-5);
+  /* Leaves room for the chips' tap area (--ac-hit-min, wider than the chip in touch density). */
+  gap: var(--ac-space-2);
 }

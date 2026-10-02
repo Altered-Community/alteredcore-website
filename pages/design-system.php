@@ -399,6 +399,12 @@ include dirname(__DIR__) . '/includes/header.php';
                 <button type="button" role="tab" aria-selected="false">Community</button>
                 <button type="button" role="tab" aria-selected="false">Favourites</button>
             </div>
+            <div class="ac-tabs ac-tabs--underline ac-tabs--fill" role="tablist">
+                <button type="button" role="tab" aria-selected="true">Cards</button>
+                <button type="button" role="tab" aria-selected="false">Decklist</button>
+                <button type="button" role="tab" aria-selected="false">Stats</button>
+                <button type="button" role="tab" aria-selected="false">More <?= ac_icon('chevron-down', 'ac-icon--16') ?></button>
+            </div>
             <div class="ac-tabs ac-tabs--pill" role="tablist">
                 <button type="button" role="tab" aria-selected="true">All</button>
                 <button type="button" role="tab" aria-selected="false">Public</button>
@@ -471,8 +477,8 @@ include dirname(__DIR__) . '/includes/header.php';
         <h2 class="ac-section-title" id="ds-icons">Icons — Lucide</h2>
         <p class="ac-text-muted">PHP <code>ac_icon('name')</code>, site JS <code>acIcon('name')</code>, Angular <code>&lt;ac-icon name="…"&gt;</code>. All names: <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">lucide.dev/icons</a>.</p>
         <div class="ac-card ds-demo" style="margin-bottom: var(--ac-space-3)">
-            <?php foreach (['14', '16', '18', '20', '24'] as $sz): ?>
-            <span class="ac-row"><?= ac_icon('star', 'ac-icon--' . $sz) ?><code>ac-icon--<?= h($sz) ?></code></span>
+            <?php foreach (['ac-icon--14', 'ac-icon--16', 'ac-icon--18', 'ac-icon--20', 'ac-icon--24'] as $size): ?>
+            <span class="ac-row"><?= ac_icon('star', $size) ?><code><?= h($size) ?></code></span>
             <?php endforeach; ?>
             <span class="ac-row"><?= ac_icon('loader-circle', 'ac-icon--spin') ?><code>ac-icon--spin</code></span>
         </div>
