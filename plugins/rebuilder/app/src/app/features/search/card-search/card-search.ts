@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -8,6 +8,8 @@ import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
+import { AcDrawerHandle, AcDrawerTab } from '../../../ui/containers';
+import { storedFlag } from '../../../core/stored-flag';
 import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcTabs } from '../../../ui/nav';
@@ -48,7 +50,7 @@ const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPow
  */
 @Component({
   selector: 'app-card-search',
-  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
@@ -60,6 +62,8 @@ export class CardSearch {
   private readonly uniquesApi = inject(UniquesApiService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
+  private readonly injector = inject(Injector);
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
   protected readonly compactSourceTabs = COMPACT_SOURCE_TABS;
@@ -95,6 +99,20 @@ export class CardSearch {
 
   protected readonly activeCount = computed(() => activeFilterCount(this.search.filters(), this.search.source()));
   protected readonly filtersLabel = computed(() => $localize`:@@search.card.filtersActive:Filtres, ${this.activeCount()}:count: actifs`);
+  /** Wide screens: the filters panel can be hidden (a tab on the page edge brings it back), remembered in this browser. */
+  protected readonly filtersOpen = storedFlag('rebuilder.search.filtersOpen', true);
+  protected readonly showFiltersLabel = computed(() =>
+    this.activeCount()
+      ? $localize`:@@search.card.showFiltersActive:Afficher les filtres, ${this.activeCount()}:count: actifs`
+      : $localize`:@@search.card.showFilters:Afficher les filtres`,
+  );
+  /** Hides or shows the filters; the focus moves to the control that undoes it. */
+  protected setFiltersOpen(open: boolean): void {
+    this.filtersOpen.set(open);
+    afterNextRender(() => this.el.querySelector<HTMLElement>(open ? '.filters-drawer .ac-drawer-handle' : '.filters-tab')?.focus(), {
+      injector: this.injector,
+    });
+  }
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
   /** The Uniques search API returns its own order, with no sort parameter. */

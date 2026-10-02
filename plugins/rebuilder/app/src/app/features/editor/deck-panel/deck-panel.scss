@@ -37,6 +37,7 @@
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
+/* Part of the Stats block, above its bottom border: space on both sides of the button. */
 .tokens {
-  padding: 0 var(--ac-space-4) var(--ac-space-3);
+  padding: var(--ac-space-1) var(--ac-space-4) var(--ac-space-4);
 }

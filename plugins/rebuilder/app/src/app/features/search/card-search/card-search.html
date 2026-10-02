@@ -38,15 +38,27 @@
 
 <div class="search-body">
   @if (bp.expanded()) {
-    <aside class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
-      <div class="filters-scroll">
-        <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+    @if (filtersOpen()) {
+      <div class="filters-drawer">
+        <aside id="search-filters" class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
+          <div class="filters-scroll">
+            <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+          </div>
+          <div class="filters-foot">
+            <button acButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
+            <button acButton class="go" (click)="applyNow()" i18n="@@search.card.submit">Rechercher</button>
+          </div>
+        </aside>
+        <button acDrawerHandle="end" aria-controls="search-filters" ariaLabel="Masquer les filtres" i18n-ariaLabel="@@search.card.hideFilters" (click)="setFiltersOpen(false)"></button>
       </div>
-      <div class="filters-foot">
-        <button acButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>
-        <button acButton class="go" (click)="applyNow()" i18n="@@search.card.submit">Rechercher</button>
-      </div>
-    </aside>
+    } @else {
+      <button class="filters-tab" acDrawerTab="start" aria-controls="search-filters" [ariaLabel]="showFiltersLabel()" (click)="setFiltersOpen(true)">
+        <span class="ac-drawer-tab__label" i18n="@@search.card.filters">Filtres</span>
+        @if (activeCount()) {
+          <ac-count [value]="activeCount()" />
+        }
+      </button>
+    }
   }
 
   <section class="results" aria-label="Résultats" i18n-aria-label="@@search.card.results">

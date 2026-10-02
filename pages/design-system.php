@@ -390,6 +390,32 @@ include dirname(__DIR__) . '/includes/header.php';
         </div>
     </section>
 
+    <section class="ds-section" aria-labelledby="ds-drawer">
+        <h2 class="ac-section-title" id="ds-drawer">Drawer handle and tab</h2>
+        <div class="ac-card ds-sheet">
+            <div style="display: flex; gap: var(--ac-space-8); align-items: center; flex-wrap: wrap">
+                <div id="ds-drawer-panel" class="ac-card" style="position: relative; width: 12rem; min-height: 8rem">
+                    <p>Open panel</p>
+                    <button type="button" class="ac-drawer-handle ac-drawer-handle--end" aria-expanded="true" aria-controls="ds-drawer-panel" aria-label="Hide the panel"><?= ac_icon('chevron-left', 'ac-icon--16') ?></button>
+                </div>
+                <div class="ac-card" style="position: relative; width: 12rem; min-height: 8rem; margin-left: var(--ac-space-4)">
+                    <p>Panel at the end of the page</p>
+                    <button type="button" class="ac-drawer-handle ac-drawer-handle--start" aria-expanded="true" aria-controls="ds-drawer-panel" aria-label="Hide the panel"><?= ac_icon('chevron-right', 'ac-icon--16') ?></button>
+                </div>
+                <button type="button" class="ac-drawer-tab ac-drawer-tab--start" aria-expanded="false" aria-controls="ds-drawer-panel" aria-label="Show the filters, 3 active">
+                    <?= ac_icon('chevron-right', 'ac-icon--16') ?>
+                    <span class="ac-drawer-tab__label">Filters</span>
+                    <span class="ac-count">3</span>
+                </button>
+                <button type="button" class="ac-drawer-tab ac-drawer-tab--end" aria-expanded="false" aria-controls="ds-drawer-panel" aria-label="Show the deck, 39 cards">
+                    <?= ac_icon('chevron-left', 'ac-icon--16') ?>
+                    <span class="ac-drawer-tab__label">Deck · 39 cards</span>
+                    <?= ac_icon('circle-check', 'ac-icon--16') ?>
+                </button>
+            </div>
+        </div>
+    </section>
+
     <section class="ds-section" aria-labelledby="ds-nav">
         <h2 class="ac-section-title" id="ds-nav">Navigation</h2>
         <div class="ac-card ds-sheet">

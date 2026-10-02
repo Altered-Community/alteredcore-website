@@ -194,7 +194,8 @@ $filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
     flex-basis: auto;
   }
 
-  .filters {
+  /* The panel and its « Masquer » handle, which sits on the panel's right edge (not clipped). */
+  .filters-drawer {
     /* Wider than the 264px token so « Réinitialiser » and « Rechercher »
        (label, padding, and the filter-count badge) both fit without clipping. */
     width: calc(var(--ac-filter-panel-width) + var(--ac-space-8) + var(--ac-space-6));
@@ -208,12 +209,26 @@ $filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
     height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - 136px + var(--app-filters-grow, 0px));
     max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
     transition: height 120ms ease-out;
+  }
+
+  .filters {
+    height: 100%;
+    box-sizing: border-box;
     background: var(--ac-color-surface);
     border: 1px solid var(--ac-color-border);
     border-radius: var(--ac-radius-card);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+
+  /* Filters hidden: the tab takes the panel's place, against the page edge
+     (`--app-drawer-bleed`: the host page's side padding). */
+  .filters-tab {
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    margin-left: calc(-1 * var(--app-drawer-bleed, 0px));
   }
 
   .filters-scroll {

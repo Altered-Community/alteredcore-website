@@ -808,3 +808,40 @@ test.describe('ReBuilder in the shell · « Partager » and « Terminer » in th
     await expect(page.locator('app-editor-page')).toContainText('2');
   });
 });
+
+test.describe('ReBuilder in the shell · side panels of the editor', () => {
+  test('hides the filters and the deck panel behind tabs on the page edges, remembered after a reload', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'compact screens have no side panels: filters in a sheet, deck in the bottom navigation');
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E panneaux ${Date.now()}`);
+    await addTwoCards(page);
+    const editor = page.locator('app-editor-page');
+    const filters = editor.getByRole('complementary', { name: 'Filtres' });
+    const deckPanel = editor.locator('app-deck-panel');
+    await expect(filters).toBeVisible();
+    await expect(deckPanel).toBeVisible();
+    await evidence(page, testInfo, '50-panels-open');
+
+    await editor.getByRole('button', { name: 'Masquer les filtres' }).click();
+    await editor.getByRole('button', { name: 'Masquer le deck' }).click();
+    await expect(filters).toBeHidden();
+    await expect(deckPanel).toBeHidden();
+    const filtersTab = editor.getByRole('button', { name: /^Afficher les filtres/ });
+    const deckTab = editor.getByRole('button', { name: /^Afficher le deck : 2 cartes/ });
+    await expect(filtersTab).toBeVisible();
+    await expect(deckTab).toBeVisible();
+    // The focus goes to the control that brings the panel back.
+    await expect(deckTab).toBeFocused();
+    await evidence(page, testInfo, '51-panels-closed');
+
+    await page.reload();
+    await expect(deckTab).toBeVisible();
+    await expect(filters).toBeHidden();
+
+    await filtersTab.click();
+    await deckTab.click();
+    await expect(filters).toBeVisible();
+    await expect(deckPanel).toBeVisible();
+    await expect(editor.getByRole('button', { name: 'Masquer le deck' })).toBeFocused();
+  });
+});

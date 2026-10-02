@@ -1,0 +1,86 @@
+/*
+ * Drawer — hide and show a side panel. Panel open: a round handle on its inner edge. Panel
+ * closed: a vertical tab on the page edge, with the panel's name and a short summary.
+ * Docs: design-system/docs/components/drawer.md
+ *
+ *   <div class="filters" id="filters" style="position: relative">
+ *     …
+ *     <button type="button" class="ac-drawer-handle ac-drawer-handle--end"
+ *             aria-expanded="true" aria-controls="filters" aria-label="Masquer les filtres">{chevron-left}</button>
+ *   </div>
+ *
+ *   <button type="button" class="ac-drawer-tab ac-drawer-tab--start" aria-expanded="false" aria-controls="filters">
+ *     {chevron-right} <span class="ac-drawer-tab__label">Filtres</span> <span class="ac-count">3</span>
+ *   </button>
+ *
+ * The handle is placed by the panel (position: relative on it, no overflow: hidden). The tab sits
+ * where the panel was; the page decides its vertical position (sticky under the header).
+ */
+
+/* Round handle, centred on the panel's border at mid-height. */
+.ac-drawer-handle {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: var(--ac-control-sm);
+  height: var(--ac-control-sm);
+  margin-top: calc(var(--ac-control-sm) / -2);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-muted);
+  box-shadow: var(--ac-shadow-e1);
+  cursor: pointer;
+  transition: background-color var(--ac-duration-fast), color var(--ac-duration-fast);
+}
+/* --end: on the right edge (a panel at the start of the page); --start: on the left edge. */
+.ac-drawer-handle--end { right: calc(var(--ac-control-sm) / -2); }
+.ac-drawer-handle--start { left: calc(var(--ac-control-sm) / -2); }
+
+/* Vertical tab: --start on the left page edge, --end on the right one. */
+.ac-drawer-tab {
+  width: var(--ac-control-sm);
+  padding: var(--ac-space-3) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-2-5);
+  border: 1px solid var(--ac-color-border);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  box-shadow: var(--ac-shadow-e1);
+  font-family: inherit;
+  font-size: var(--ac-font-size-body);
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color var(--ac-duration-fast);
+}
+.ac-drawer-tab--start {
+  border-left: none;
+  border-radius: 0 var(--ac-radius-pill) var(--ac-radius-pill) 0;
+}
+.ac-drawer-tab--end {
+  border-right: none;
+  border-radius: var(--ac-radius-pill) 0 0 var(--ac-radius-pill);
+}
+.ac-drawer-tab .ac-icon {
+  flex-shrink: 0;
+  color: var(--ac-color-text-muted);
+}
+.ac-drawer-tab__label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .ac-drawer-handle:hover {
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-text);
+  }
+  .ac-drawer-tab:hover { background: var(--ac-color-bg-subtle); }
+}

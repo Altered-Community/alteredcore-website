@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LocationStrategy } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,7 +10,8 @@ import { formatInfo } from '../../../core/formats';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
-import { AcToast } from '../../../ui/containers';
+import { AcDrawerHandle, AcDrawerTab, AcToast } from '../../../ui/containers';
+import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
 import { AcSaveStatus } from '../../../ui/metier';
@@ -42,6 +43,8 @@ export type EditorAction = 'share' | 'done';
   providers: [CardSearchStore, EditorAltArts],
   imports: [
     AcToast,
+    AcDrawerHandle,
+    AcDrawerTab,
     RouterLink,
     AcAppBar,
     AcBackButton,
@@ -78,6 +81,8 @@ export class EditorPage {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
+  private readonly injector = inject(Injector);
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   protected readonly id = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly view = toSignal(this.route.data.pipe(map((d) => (d['view'] as EditorView) ?? 'search')), {
@@ -106,6 +111,21 @@ export class EditorPage {
     { value: 'main' as const, label: $localize`:@@editor.hand:Main de départ`, icon: 'hand' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
+  /** From 768 px: the deck panel can be hidden (a tab on the page edge brings it back), remembered in this browser. */
+  protected readonly deckOpen = storedFlag('rebuilder.editor.deckOpen', true);
+  protected readonly legal = computed(() => editorLegality(this.deck).state === 'legal');
+  protected readonly deckTabLabel = computed(() =>
+    this.legal()
+      ? $localize`:@@editor.showDeckLegal:Afficher le deck : ${this.deck.total()}:count: cartes, valide`
+      : $localize`:@@editor.showDeckIssues:Afficher le deck : ${this.deck.total()}:count: cartes, à corriger`,
+  );
+  /** Hides or shows the deck panel; the focus moves to the control that undoes it. */
+  protected setDeckOpen(open: boolean): void {
+    this.deckOpen.set(open);
+    afterNextRender(() => this.el.querySelector<HTMLElement>(open ? '.panel > .ac-drawer-handle' : '.deck-tab')?.focus(), {
+      injector: this.injector,
+    });
+  }
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
