@@ -4,9 +4,9 @@
 // the PHP version of Re:Builder's `ar-unique-card` (plugins/rebuilder/app/src/app/ui/metier/unique-card/), itself
 // laid out like Altered-Card-Renderer: positions in % of the card, sizes in px of the 744 px wide card.
 //
-// Assets: frames and fonts of Re:Builder (plugins/rebuilder/app/public/assets/unique-card/), biome badges and set
-// logos rasterised from its SVGs (this plugin's assets/deck-image/). Italics are drawn upright: Haptic Pro has no
-// italic face.
+// Assets, in this plugin's assets/deck-image/: Re:Builder's frames and icon fonts (copied from
+// plugins/rebuilder/app/public/assets/unique-card/, a folder the deploy removes once Re:Builder is built), its biome
+// badges and set logos rasterised from its SVGs. Italics are drawn upright: Haptic Pro has no italic face.
 require_once __DIR__ . '/preview.php';
 require_once __DIR__ . '/qr-code.php';
 
@@ -22,10 +22,10 @@ const DECK_UNIQUE_ICONS = [
 const DECK_UNIQUE_CIRCLED = ["\u{24ea}", "\u{2776}", "\u{2777}", "\u{2778}", "\u{2779}", "\u{277a}", "\u{277b}", "\u{277c}", "\u{277d}", "\u{277e}"];
 
 function deckUniqueFonts(): array {
-    $rb = DECK_PREVIEW_SITE . '/plugins/rebuilder/app/public/assets/unique-card/fonts/';
+    $dir = DECK_PREVIEW_PLUGIN . '/assets/deck-image/fonts/';
     $site = DECK_PREVIEW_SITE . '/assets/font/';
     return ['regular' => $site . 'HapticPro-Regular.ttf', 'bold' => $site . 'HapticPro-Extrabold.ttf',
-            'icons' => $rb . 'alteredicons.woff2', 'circled' => $rb . 'NotoSansSymbols-circled.woff2'];
+            'icons' => $dir . 'alteredicons.woff2', 'circled' => $dir . 'NotoSansSymbols-circled.woff2'];
 }
 
 /** True when the frames and fonts are there; without them the image falls back to the common card. */
@@ -35,7 +35,7 @@ function deckUniqueAvailable(): bool {
 }
 
 function deckUniqueFramePath(string $faction, string $frame): string {
-    return DECK_PREVIEW_SITE . '/plugins/rebuilder/app/public/assets/unique-card/frames/' . $faction . '_' . $frame . '.webp';
+    return DECK_PREVIEW_PLUGIN . '/assets/deck-image/frames/' . $faction . '_' . $frame . '.webp';
 }
 
 /** The uniques' data from the cards API (cacCardsApiBatch): [reference => card]. */
