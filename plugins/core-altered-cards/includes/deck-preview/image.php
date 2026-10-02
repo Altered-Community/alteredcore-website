@@ -28,7 +28,7 @@ const DECK_IMAGE_RATIO   = 1.395;        // card height / width
 const DECK_IMAGE_FADE    = 110;          // width of the hero illustration's fade into the banner
 const DECK_IMAGE_STACK   = 0.09;         // offset of a stacked copy / card width: its name band shows
 const DECK_IMAGE_UNIQUE  = 1.6;          // the Uniques' cards / the other cards' width, where it fits
-const DECK_IMAGE_VERSION = 12;           // bump to redraw every cached image after a layout change
+const DECK_IMAGE_VERSION = 13;           // bump to redraw every cached image after a layout change
 
 /**
  * Labels of the image, in English for languages without a translation. Types and biomes are named as in
