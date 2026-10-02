@@ -83,10 +83,20 @@
         });
     }
 
+    // Back from the login after « Partager » on a guest deck (share.js): the browser deck opens, to be saved to the account.
+    var _guestToShare = null;
+    if (!AlteredDB.isGuest && !AlteredDB.deckId && new URLSearchParams(location.search).get('share_guest') === '1') {
+        try { _guestToShare = JSON.parse(localStorage.getItem(GUEST_DECK_KEY) || 'null'); } catch (e) {}
+    }
+
     if (AlteredDB.isGuest) {
         var _saved = localStorage.getItem(GUEST_DECK_KEY);
         if (_saved) { try { initFromGuest(JSON.parse(_saved)); } catch (e) {} }
         else { updateDeckDisplay(); }
+    } else if (_guestToShare) {
+        initFromGuest(_guestToShare);
+        markDirty();
+        window._dbShareGuest = true;
     } else {
         initFromExisting();
         updateDeckDisplay();

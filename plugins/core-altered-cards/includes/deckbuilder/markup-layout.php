@@ -3,11 +3,36 @@
 ?>
 <div class="container py-4">
 
-    <div class="section-title mb-3"><span><?= h($pageTitle) ?></span></div>
+    <?php $_dbActions = $isGuest || $token; ?>
+    <div class="db-title-row">
+        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
+        <?php if ($_dbActions): ?>
+        <div class="db-title-actions">
+            <?php // « Partager »: here from 768 px; below, an icon in the status strip (status-strip.js). ?>
+            <button type="button" id="db-share-btn" class="ac-button ac-button--secondary ac-button--sm db-share-btn" data-db-action="share">
+                <?= ac_icon('share-2') ?><span class="db-action-label"><?= h($txt['share_btn']) ?></span>
+            </button>
+            <?php if (!$isGuest): // A guest deck has no deck page to go back to. ?>
+            <button type="button" id="db-done-btn" class="ac-button ac-button--sm db-done-btn" data-db-action="done">
+                <?= ac_icon('check') ?><span class="db-action-label"><?= h($txt['done_btn']) ?></span>
+            </button>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <?php if (!$isGuest && !$token): ?>
     <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-2"></i><?= h($txt['err_token']) ?></div>
     <?php else: ?>
+
+    <?php // « Partager » / « Terminer » stopped by a failed save: shown here, visible from every tab (share.js). ?>
+    <div id="db-action-error" class="ac-notice ac-notice--danger db-action-error" role="alert" hidden>
+        <div class="db-action-error-text">
+            <span id="db-action-error-msg"></span>
+            <span id="db-action-error-then" class="db-action-error-then"></span>
+        </div>
+        <button type="button" id="db-action-retry" class="ac-button ac-button--danger ac-button--sm"><?= ac_icon('rotate-ccw') ?><?= h($txt['save_retry']) ?></button>
+    </div>
 
     <!-- Mobile bottom navbar -->
     <div class="db-mobile-tabs">
@@ -131,7 +156,8 @@
                 <i class="fa-solid fa-circle-info me-1"></i>
                 <?= h($txt['guest_banner']) ?>
                 <br>
-                <a href="<?= h(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? '/pages/deckbuilder')) ?>" class="db-guest-link"><?= h($txt['guest_login']) ?></a>
+                <?php // /pages/login has no return URL: Keycloak's login takes `return` (same-site), as the share login does. ?>
+                <a href="<?= h((defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-login?return=' . rawurlencode($_SERVER['REQUEST_URI'] ?? BASE_URL . '/pages/deckbuilder') : BASE_URL . '/pages/login') ?>" class="db-guest-link"><?= h($txt['guest_login']) ?></a>
                 <?= h($txt['guest_login_why']) ?>
             </div>
             <?php endif; ?>
