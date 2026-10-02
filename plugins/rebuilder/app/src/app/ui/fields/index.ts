@@ -1,3 +1,4 @@
+export * from './checkbox/checkbox';
 export * from './combobox/combobox';
 export * from './editable-title/editable-title';
 export * from './file-input/file-input';

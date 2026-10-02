@@ -319,7 +319,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
       await page.getByRole('button', { name: /^Filtres/ }).first().click();
       const sheet = page.getByRole('dialog', { name: 'Filtres' });
       await evidence(page, testInfo, '05c-community-legal-only');
-      await sheet.getByRole('switch', { name: 'Légaux uniquement' }).click();
+      await sheet.getByRole('checkbox', { name: 'Légaux uniquement' }).click();
       await sheet.getByRole('button', { name: 'Appliquer' }).click();
     } else {
       await evidence(page, testInfo, '05c-community-legal-only');

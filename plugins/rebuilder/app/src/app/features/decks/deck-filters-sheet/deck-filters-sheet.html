@@ -12,7 +12,7 @@
     </div>
   }
   @if (ref.data.showLegalOnly) {
-    <ac-switch label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="draft().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
+    <ac-checkbox label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="draft().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
   }
   <div class="field">
     <span class="label">Faction</span>
