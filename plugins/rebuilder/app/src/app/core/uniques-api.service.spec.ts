@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -39,6 +39,65 @@ describe('effectMatchCounts', () => {
     // {H} or {J} does not cover {H} or {R}: a {R} ability matches the second one only.
     expect(effectMatchCounts([fx([22, 24], [], []), fx([22, 1], [], [])])).toEqual([1, 1]);
     expect(effectMatchCounts([fx([], [], [90]), fx([], [], [90]), fx([], [], [90]), fx([], [], [90])])).toEqual([3, 3, 3, 3]);
+  });
+});
+
+describe('buildEffectsFilteredParams', () => {
+  const fx = (triggers: number[], conditions: number[], effects: number[]): UniquesEffect => ({ triggers, conditions, effects });
+  const params = (query: UniquesQuery, index: number, block: UniquesEffect, kind: 'triggers' | 'conditions' | 'effects') => {
+    const hp = buildEffectsFilteredParams(query, index, block, kind);
+    return Object.fromEntries(hp.keys().map((k) => [k, hp.getAll(k)!.join('|')]));
+  };
+
+  it('sends the other criteria and puts the edited block last, in the slot `editing` names', () => {
+    const query: UniquesQuery = { ...QUERY, name: 'kelon', sets: ['CORE'], mainCosts: [3], format: 'frontier', effects: [fx([22], [], []), fx([], [], [90])] };
+    expect(params(query, 0, fx([22, 24], [], []), 'conditions')).toEqual({
+      name: 'kelon',
+      'faction[]': 'AX',
+      'set[]': 'CORE',
+      'mainCost[]': '3',
+      format: 'frontier',
+      'effect[0][o]': '90',
+      'effect[1][t]': '22,24',
+      effectMode: 'and',
+      editing: 'condition:1',
+    });
+  });
+
+  it('numbers the slot from the blocks actually sent: empty blocks and the edited one do not shift it', () => {
+    // The first block is empty and the edited one is in the middle: the legacy search sent `editing=…:2` for slot 1.
+    const query: UniquesQuery = { ...QUERY, effects: [fx([], [], []), fx([], [], [90]), fx([24], [], []), fx([1], [], [])] };
+    expect(params(query, 2, fx([24], [], []), 'triggers')).toEqual({
+      'faction[]': 'AX',
+      'effect[0][o]': '90',
+      'effect[1][t]': '1',
+      'effect[2][t]': '24',
+      effectMode: 'and',
+      editing: 'trigger:2',
+    });
+  });
+
+  it('reads the edited block from what is picked, not from the search, and names an empty one too', () => {
+    const query: UniquesQuery = { ...QUERY, effects: [fx([], [], [90])] };
+    expect(params(query, 0, fx([], [], []), 'effects')).toEqual({ 'faction[]': 'AX', editing: 'output:0' });
+    expect(params(query, 0, fx([], [191], []), 'effects')).toEqual({ 'faction[]': 'AX', 'effect[0][c]': '191', editing: 'output:0' });
+  });
+
+  it('keeps the matchCount the other blocks have among themselves, and none on the edited one', () => {
+    // Searched, the first « Piochez » would cover the edited « {J} · Piochez » and need 3 abilities;
+    // with « Ravitaillez » picked instead it needs 2. Narrowing asks for 2, so « Ravitaillez » stays offered.
+    const query: UniquesQuery = { ...QUERY, effects: [fx([], [], [90]), fx([], [], [90]), fx([24], [], [90])] };
+    expect(params(query, 2, fx([24], [], [90]), 'effects')).toEqual({
+      'faction[]': 'AX',
+      'effect[0][o]': '90',
+      'effect[0][matchCount]': '2',
+      'effect[1][o]': '90',
+      'effect[1][matchCount]': '2',
+      'effect[2][t]': '24',
+      'effect[2][o]': '90',
+      effectMode: 'and',
+      editing: 'output:2',
+    });
   });
 });
 

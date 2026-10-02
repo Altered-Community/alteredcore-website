@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { of, type Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { NO_CONDITION, UniquesApiService, toAbilityRefs, type AbilityKind } from '../../../core/uniques-api.service';
+import { NO_CONDITION, UniquesApiService, toAbilityRefs, type AbilityKind, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
 import { AcOverlayRef } from '../../../ui/overlay';
 import { EffectEditorOverlay, type EffectEditorData } from './effect-editor.overlay';
 
@@ -35,13 +35,19 @@ const ROWS: Record<AbilityKind, { alteredId: number; text: { fr: string } }[]> =
   effects: [{ alteredId: 3, text: { fr: '[Ravitaillez].' } }],
 };
 
-function setup(effect: EffectBlock, abilities: (kind: AbilityKind) => Observable<AbilityRef[]> = () => of([])) {
-  const ref = new AcOverlayRef<EffectBlock, EffectEditorData>({ effect, index: 0 });
+type Narrow = (query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind) => Observable<Set<number>>;
+
+function setup(
+  effect: EffectBlock,
+  abilities: (kind: AbilityKind) => Observable<AbilityRef[]> = () => of([]),
+  narrow?: { query: UniquesQuery; index: number; narrowAbilities: Narrow },
+) {
+  const ref = new AcOverlayRef<EffectBlock, EffectEditorData>({ effect, index: narrow?.index ?? 0, query: narrow?.query });
   TestBed.configureTestingModule({
     imports: [EffectEditorOverlay],
     providers: [
       { provide: AcOverlayRef, useValue: ref },
-      { provide: UniquesApiService, useValue: { abilities } },
+      { provide: UniquesApiService, useValue: { abilities, narrowAbilities: narrow?.narrowAbilities } },
     ],
   });
   const fixture = TestBed.createComponent(EffectEditorOverlay);
@@ -164,5 +170,70 @@ describe('EffectEditorOverlay pickers', () => {
     expect([...el.querySelectorAll('[role=combobox]')].map((t) => t.getAttribute('aria-expanded'))).toEqual(['false', 'false', 'false']);
     expect(document.querySelectorAll('.cdk-overlay-container .panel')).toHaveLength(0);
     expect(document.activeElement).toBe(toggle);
+  });
+});
+
+describe('EffectEditorOverlay narrowing', () => {
+  const api = (kind: AbilityKind) => of(toAbilityRefs(ROWS[kind], kind === 'conditions' ? NO_CONDITION : undefined));
+  const query: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
+
+  function listed(el: HTMLElement, name: string, fixture: { detectChanges(): void }): string[] {
+    const toggle = el.querySelector<HTMLButtonElement>(`[role=combobox][aria-label="${name}"]`)!;
+    toggle.click();
+    fixture.detectChanges();
+    const out = [...document.querySelectorAll<HTMLElement>('.cdk-overlay-container .panel [role=option]')].map((o) =>
+      o.textContent!.replace(/^[\ue000-\uf8ff]/, ''),
+    );
+    toggle.click();
+    fixture.detectChanges();
+    return out;
+  }
+
+  it('lists only the values the API says still give a card, with the block as picked', () => {
+    const calls: { index: number; block: UniquesEffect; kind: AbilityKind }[] = [];
+    const allowed: Record<AbilityKind, number[]> = { triggers: [24, 17], conditions: [188], effects: [] };
+    const narrowAbilities: Narrow = (_q, index, block, kind) => {
+      calls.push({ index, block, kind });
+      return of(new Set(allowed[kind]));
+    };
+    const { el, fixture } = setup({ id: 'e1', triggers: [], conditions: [], effects: [{ id: 3, text: 'Ravitaillez' }] }, api, { query, index: 1, narrowAbilities });
+    expect(listed(el, 'Ajouter un déclencheur…', fixture)).toEqual(['Au Crépuscule', 'Joué de partout']);
+    expect(listed(el, 'Ajouter une condition…', fixture)).toEqual(['Si vous contrôlez un jeton']);
+    // A picked value stays as a chip even when the API no longer offers it.
+    expect(el.querySelectorAll('ac-combobox')[2].textContent).toContain('Ravitaillez');
+    expect(calls).toEqual(
+      (['triggers', 'conditions', 'effects'] as AbilityKind[]).map((kind) => ({ index: 1, block: { triggers: [], conditions: [], effects: [3] }, kind })),
+    );
+  });
+
+  it('asks again when a pick changes, and keeps a whole list when the API fails for it', () => {
+    const blocks: UniquesEffect[] = [];
+    const narrowAbilities: Narrow = (_q, _i, block, kind) => {
+      if (kind === 'triggers') blocks.push(block);
+      return kind === 'conditions' ? throwError(() => new Error('down')) : of(new Set(kind === 'triggers' ? [24] : []));
+    };
+    const { el, fixture } = setup({ id: 'e1', triggers: [], conditions: [], effects: [] }, api, { query, index: 0, narrowAbilities });
+    expect(listed(el, 'Ajouter une condition…', fixture)).toEqual(['Sans condition', 'Si vous contrôlez un jeton']);
+    const toggle = el.querySelector<HTMLButtonElement>('[role=combobox][aria-label="Ajouter un déclencheur…"]')!;
+    toggle.click();
+    fixture.detectChanges();
+    document.querySelector<HTMLElement>('.cdk-overlay-container .panel [role=option]')!.click();
+    fixture.detectChanges();
+    expect(blocks).toEqual([
+      { triggers: [], conditions: [], effects: [] },
+      { triggers: [24], conditions: [], effects: [] },
+    ]);
+  });
+
+  it('shows every value without the search it belongs to, or for an exact reference', () => {
+    const narrowAbilities: Narrow = () => {
+      throw new Error('not called');
+    };
+    const { el, fixture } = setup({ id: 'e1', triggers: [], conditions: [], effects: [] }, api, {
+      query: { ...query, reference: 'ALT_CORE_B_AX_04_U_1' },
+      index: 0,
+      narrowAbilities,
+    });
+    expect(listed(el, 'Ajouter un déclencheur…', fixture)).toHaveLength(4);
   });
 });

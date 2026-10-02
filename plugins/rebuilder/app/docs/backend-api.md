@@ -94,6 +94,7 @@ The Uniques tab (`src/app/core/uniques-api.service.ts`), like the site's own car
 | GET | `/api/v2/cards` | `limit` (≤ 200), `cursor` (from `iter.cursor`, absent on the last page), `name`, `faction[]`, `set[]`, `mainCost[]`, `recallCost[]`, `format=frontier`, `effect[N][t\|c\|o]=id,id…` (OR list per part), `effectMode=and\|or` between blocks. Response `{ iter: { total, cursor? }, cards: CardV2[] }`, text fields as locale maps `fr_FR`, `en_US`… |
 | GET | `/api/v2/card/{reference}` | One `CardV2`; 400 / 404 for an unknown reference |
 | GET | `/api/v2/effects` | `{ triggers, conditions, output }`, items `{ idGd, text, isMain, isEcho, duplicatedIdGd }`: the effect editor keeps the `isMain` ones. `idGd` are the cards API `alteredId`, with duplicates of the same text merged |
+| GET | `/api/v2/effects/filtered` | The `/api/v2/cards` filters plus `editing=<trigger\|condition\|output>:<slot>`; `{ editing, idGds }`, the ids of that box that still give a card. The effect editor narrows its three lists to them (`buildEffectsFilteredParams`): the edited block is sent last, so `slot` is its position among the blocks actually sent |
 
 No sort parameter (the tab hides « Trier par »), no « Sans effet » / « Effet d’écho » (hidden on Uniques already),
 an unknown set is a 400 (`FUGUE` has no uniques and is not offered). Measures and gaps:

@@ -476,6 +476,75 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
   });
+
+  test('narrows each effect list to the values that still give a card, for the effect being edited', async ({ page, compact }, testInfo) => {
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques narrowing ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Uniques' }).click();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+
+    const narrowing = (editing: string) =>
+      page.waitForResponse((r) => r.url().includes('/api/v2/effects/filtered') && new URL(r.url()).searchParams.get('editing') === editing);
+    const idGds = async (res: Promise<{ json(): Promise<unknown> }>) => ((await (await res).json()) as { idGds: number[] }).idGds;
+    /** Options of the criterion `index` of the open effect window, list closed again. */
+    const listed = async (index: number) => {
+      const combo = page.getByRole('dialog').getByRole('combobox').nth(index);
+      await combo.click();
+      const options = page.locator('.cdk-overlay-container .panel [role=option]');
+      await options.first().waitFor();
+      const texts = await options.allTextContents();
+      await combo.click();
+      await expect(page.locator('.cdk-overlay-container .panel')).toHaveCount(0);
+      return texts;
+    };
+    const apply = async () => {
+      await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
+      if (!compact) await expect(page.getByRole('dialog')).toBeHidden();
+    };
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+
+    // Effect 1, nothing else picked: its triggers are those of the hero's faction.
+    const first = narrowing('trigger:0');
+    await addEffect();
+    const factionIds = await idGds(first);
+    expect(factionIds.length).toBeGreaterThan(0);
+    // The whole list shows until the answer comes, then only the ids it holds.
+    await expect.poll(async () => (await listed(0)).length).toBeLessThanOrEqual(factionIds.length);
+    const allTriggers = await listed(0);
+    await page.getByRole('dialog').getByRole('combobox').nth(2).click();
+    await page.locator('.cdk-overlay-container .panel input').fill('Piochez deux cartes.');
+    await page.getByRole('option', { name: 'Piochez deux cartes.', exact: true }).click();
+    await apply();
+
+    // Effect 2: slot 1, effect 1 sent as a constraint, the new block empty.
+    const second = narrowing('trigger:1');
+    await addEffect();
+    const req = new URL((await second).url());
+    expect(req.searchParams.get('effect[0][o]')).toBeTruthy();
+    expect([...req.searchParams.keys()].filter((k) => k.startsWith('effect[1]'))).toEqual([]);
+    const ids = await idGds(second);
+    await expect.poll(async () => (await listed(0)).length).toBeLessThanOrEqual(ids.length);
+    const narrowed = await listed(0);
+    expect(narrowed.length).toBeGreaterThan(0);
+    expect(narrowed.length).toBeLessThan(allTriggers.length);
+    await page.getByRole('dialog').getByRole('combobox').nth(0).click();
+    await evidence(page, testInfo, '14-uniques-effect-narrowed');
+    await page.locator('.cdk-overlay-container .panel [role=option]').first().click();
+    await apply();
+
+    // Effect 1 removed: the one left is slot 0 again, and its own trigger does not narrow its trigger list.
+    await page.locator('ac-effect-summary').first().getByRole('button', { name: /^Supprimer/ }).click();
+    await expect(page.locator('ac-effect-summary')).toHaveCount(1);
+    const again = narrowing('trigger:0');
+    await page.locator('ac-effect-summary').first().getByRole('button').first().click();
+    const reqAgain = new URL((await again).url());
+    expect(reqAgain.searchParams.get('effect[0][t]')).toBeTruthy();
+    expect([...reqAgain.searchParams.keys()].filter((k) => k.startsWith('effect[1]'))).toEqual([]);
+    await again;
+    await expect.poll(async () => (await listed(0)).length).toBe(allTriggers.length - 1);
+  });
 });
 
 test.describe('ReBuilder in the shell · Starter Deck Contest', () => {

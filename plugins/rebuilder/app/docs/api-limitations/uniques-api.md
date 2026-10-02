@@ -40,6 +40,12 @@ les blocs couverts sont emboîtés (blocs identiques, « Piochez » après « {J
 ci-dessus. Deux blocs qui se recoupent sans que l’un couvre l’autre (« Quand {J} · Alors Piochez » et
 « Si Y · Alors Piochez ») restent approximatifs.
 
+**Listes de l’éditeur d’effet.** `/api/v2/effects/filtered` réduit chaque liste aux valeurs qui donnent encore une
+carte. Les autres blocs y gardent le `matchCount` qu’ils ont entre eux, sans le bloc édité : la recherche peut leur en
+demander plus une fois la valeur choisie, jamais moins. Aucune valeur possible n’est cachée (vérifié le 2026-10-02 sur
+24 cas, chaque valeur du catalogue cherchée une à une), mais quand un bloc en couvre un autre, quelques valeurs
+proposées ne donnent aucune carte.
+
 **À faire côté API.** Un mode qui exige des capacités distinctes pour les blocs (issue à ouvrir sur
 Altered-Re-Union/uniques-search-api).
 

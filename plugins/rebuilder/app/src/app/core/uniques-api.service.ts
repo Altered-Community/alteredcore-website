@@ -149,6 +149,17 @@ export class UniquesApiService {
     );
   }
 
+  /**
+   * Ids of `kind` that still give a card once set in `block`, the effect block at `index` of `query.effects`
+   * (see `buildEffectsFilteredParams`). The editor narrows its lists to them.
+   */
+  narrowAbilities(query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
+    const params = buildEffectsFilteredParams(query, index, block, kind);
+    return this.http
+      .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
+      .pipe(map((res) => new Set(res.idGds ?? [])));
+  }
+
   private byReference(reference: string): Observable<UniquesPage> {
     return this.http.get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.toUpperCase())}`).pipe(
       map((card): UniquesPage => ({ member: [toCard(card)], totalItems: 1, next: null })),
@@ -163,6 +174,36 @@ export class UniquesApiService {
 export function buildUniquesParams(query: UniquesQuery, cursor: number | null, limit: number): HttpParams {
   let hp = new HttpParams().set('limit', String(limit));
   if (cursor !== null) hp = hp.set('cursor', String(cursor));
+  hp = appendCriteria(hp, query);
+  const effects = query.effects.filter(hasCriteria);
+  return appendEffects(hp, effects, effectMatchCounts(effects));
+}
+
+/**
+ * Query string of `GET /api/v2/effects/filtered`: the `kind` ids that, set in `block` (the effect
+ * block at `index` of `query.effects`, being edited), still give at least one card.
+ *
+ * The edited block goes last and `editing` names that slot, so the slot is right whatever the
+ * position of the block and the empty blocks around it. The server leaves the edited box out and
+ * keeps the block's two other boxes as constraints on the same ability. The other blocks keep the
+ * `matchCount` they have among themselves: the search may ask more of them once the edited block
+ * is filled (`effectMatchCounts`), never less, so no id that gives a card is left out.
+ */
+export function buildEffectsFilteredParams(query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind): HttpParams {
+  const others = query.effects.filter((e, i) => i !== index && hasCriteria(e));
+  let hp = appendCriteria(new HttpParams(), query);
+  hp = appendEffects(hp, [...others, block], [...effectMatchCounts(others), 1]);
+  return hp.set('editing', `${EDITING_PART[kind]}:${others.length}`);
+}
+
+const EDITING_PART: Record<AbilityKind, string> = { triggers: 'trigger', conditions: 'condition', effects: 'output' };
+
+function hasCriteria(e: UniquesEffect): boolean {
+  return e.triggers.length > 0 || e.conditions.length > 0 || e.effects.length > 0;
+}
+
+/** Name, factions, sets, costs and format. */
+function appendCriteria(hp: HttpParams, query: UniquesQuery): HttpParams {
   const name = query.name?.trim();
   if (name) hp = hp.set('name', name);
   for (const f of query.factions) hp = hp.append('faction[]', f);
@@ -170,8 +211,11 @@ export function buildUniquesParams(query: UniquesQuery, cursor: number | null, l
   for (const c of query.mainCosts) hp = hp.append('mainCost[]', String(c));
   for (const c of query.recallCosts) hp = hp.append('recallCost[]', String(c));
   if (query.format) hp = hp.set('format', query.format);
-  const effects = query.effects.filter((e) => e.triggers.length || e.conditions.length || e.effects.length);
-  const counts = effectMatchCounts(effects);
+  return hp;
+}
+
+/** `effect[N][t|c|o]` for each block, empty parts left out, with its `matchCount` above 1. */
+function appendEffects(hp: HttpParams, effects: UniquesEffect[], counts: number[]): HttpParams {
   effects.forEach((e, i) => {
     if (e.triggers.length) hp = hp.set(`effect[${i}][t]`, e.triggers.join(','));
     if (e.conditions.length) hp = hp.set(`effect[${i}][c]`, e.conditions.join(','));
