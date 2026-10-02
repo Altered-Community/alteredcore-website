@@ -7,12 +7,13 @@ export const COMMUNITY_PAGE_SIZE = 24;
 /**
  * Query of the community tab. `GET /api/decks/public` takes a single `faction`: with two factions or more, none is
  * sent and `factions` filters the loaded pages here (the infinite scroll keeps loading pages while the list is short).
+ * The API has no legality filter either: `legalOnly` drops the illegal decks of the loaded pages here.
  */
-export type CommunityQuery = PublicDeckQuery & { factions?: string[] };
+export type CommunityQuery = PublicDeckQuery & { factions?: string[]; legalOnly?: boolean };
 
 export interface CommunityState {
   items: DeckListItem[];
-  /** API total minus the illegal decks dropped from the pages loaded so far; `null` when unknown (several factions). */
+  /** API total minus the illegal decks dropped from the pages loaded so far (`legalOnly`); `null` when unknown (several factions). */
   total: number | null;
   dropped: number;
   page: number;
@@ -40,17 +41,18 @@ export function toCommunityQuery(f: DeckFilters): CommunityQuery {
     factions: f.factions.length > 1 ? [...f.factions].sort() : undefined,
     hero: f.hero || undefined,
     format: f.format || undefined,
+    legalOnly: f.legalOnly || undefined,
     ...API_ORDER[f.sort],
   };
 }
 
-/** Adds a loaded page to the list of `query`. The API has no legality filter: illegal decks are dropped here (the server-computed `legal` flag). */
+/** Adds a loaded page to the list of `query`. With `legalOnly`, illegal decks are dropped here (the server-computed `legal` flag). */
 export function addCommunityPage(current: CommunityState, query: CommunityQuery | undefined, page: number, res: PublicDeckPage): CommunityState {
   const members = res.member ?? [];
-  const legal = members.filter((d) => d.legal).map(toDeckListItem);
+  const shown = members.filter((d) => !query?.legalOnly || d.legal).map(toDeckListItem);
   const factions = query?.factions;
-  const kept = factions ? legal.filter((d) => !!d.hero && factions.includes(d.hero.faction)) : legal;
-  const dropped = (page === 1 ? 0 : current.dropped) + members.length - legal.length;
+  const kept = factions ? shown.filter((d) => !!d.hero && factions.includes(d.hero.faction)) : shown;
+  const dropped = (page === 1 ? 0 : current.dropped) + members.length - shown.length;
   const seen = new Set(page === 1 ? [] : current.items.map((d) => d.id));
   const items = [...(page === 1 ? [] : current.items), ...kept.filter((d) => !seen.has(d.id))];
   return {

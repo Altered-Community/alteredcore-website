@@ -11,6 +11,9 @@
       <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
   }
+  @if (ref.data.showLegalOnly) {
+    <ac-checkbox label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="draft().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
+  }
   <div class="field">
     <span class="label">Faction</span>
     <div class="chips">

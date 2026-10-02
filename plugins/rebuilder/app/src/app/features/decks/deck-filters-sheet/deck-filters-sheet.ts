@@ -1,15 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { AcButton } from '../../../ui/buttons';
 import { AcChip } from '../../../ui/chips';
-import { type AcOption, AcSegmented, AcSelect } from '../../../ui/fields';
+import { type AcOption, AcCheckbox, AcSegmented, AcSelect } from '../../../ui/fields';
 import { FACTIONS } from '../../../ui/metier';
 import { AcOverlayRef } from '../../../ui/overlay';
 import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
 
-/** Mobile filter sheet of the decks page (format, héros, visibilité, faction: what the tab supports). */
+/** Mobile filter sheet of the decks page (format, héros, visibilité, légalité, faction: what the tab supports). */
 @Component({
   selector: 'app-deck-filters-sheet',
-  imports: [AcSelect, AcSegmented, AcChip, AcButton],
+  imports: [AcSelect, AcSegmented, AcCheckbox, AcChip, AcButton],
   host: { class: 'ac-overlay-content' },
   templateUrl: './deck-filters-sheet.html',
   styleUrl: './deck-filters-sheet.scss',
@@ -30,6 +30,8 @@ export class DeckFiltersSheet {
         showFormat: boolean;
         showHero: boolean;
         showVisibility: boolean;
+        /** « Légaux uniquement » (community tab). */
+        showLegalOnly?: boolean;
       }
     >
   >(AcOverlayRef);

@@ -88,6 +88,11 @@ a {
   left: var(--ac-space-1-5);
   bottom: var(--ac-space-1-5);
 }
+/* Community rows keep the bottom corner for the like button. */
+.illegal--top {
+  bottom: auto;
+  top: var(--ac-space-1-5);
+}
 .vis {
   position: absolute;
   right: var(--ac-space-2);

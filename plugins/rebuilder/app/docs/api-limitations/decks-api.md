@@ -48,10 +48,14 @@ statut : tant que le deck n'a pas changé depuis la vérification du serveur, `b
 `hero`, `cardName`, `cardReference`, `name`, `faction`, `format` et `order[…]`. Environ 4 % des decks publics sont
 illégaux.
 
-**Contournement.** L'onglet Communauté (`src/app/features/decks/community-pages.ts`) retire les decks où
-`legal` est faux, page par page. Conséquences : une page affiche parfois moins de 24 decks, et le total
+**Contournement.** L'onglet Communauté a un filtre « Légaux uniquement », actif par défaut
+(`legal=all` dans l'URL quand il est désactivé). Actif, `src/app/features/decks/community-pages.ts` retire les
+decks où `legal` est faux, page par page. Conséquences : une page affiche parfois moins de 24 decks, et le total
 « N decks » (`totalItems` moins les decks retirés jusque-là) reste surestimé tant que toutes les pages ne sont pas
-chargées.
+chargées. Désactivé, les decks illégaux s'affichent avec le badge « Non légal ».
+
+Depuis le passage au pool 3 de Frontier, la part de decks publics illégaux n'est plus de 4 % : une recherche peut
+afficher 2 decks sur 15 trouvés.
 
 **À faire côté backend.** Paramètre `legal` dans `PublicDeckController` et condition `AND d.legal = true` dans
 `DeckRepository::buildPublicFilters` (utilisée à la fois par `findPublic` et `countPublic`). Retirer ensuite le

@@ -137,6 +137,7 @@
     "decks.page.sortBy": "Sort by",
     "decks.page.hero": "Hero",
     "decks.page.visibility": "Visibility",
+    "decks.page.legalOnly": "Legal only",
     "decks.page.guestNotice": "{$START_TAG_AC_ICON}{$CLOSE_TAG_AC_ICON} Guest mode: your decks are saved on this device. {$START_LINK}Sign in{$CLOSE_LINK}",
     "decks.page.newDeckTile": "{$START_TAG_SPAN}{$START_TAG_AC_ICON}{$CLOSE_TAG_AC_ICON}{$CLOSE_TAG_SPAN} New deck ",
     "decks.page.noMatch": "No decks match these filters.",

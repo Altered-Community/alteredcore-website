@@ -84,7 +84,7 @@
       </button>
     </span>
   } @else {
-    <button type="button" class="illegal illegal--row" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
+    <button type="button" class="illegal illegal--row" [class.illegal--top]="variant() === 'community'" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
       <ac-badge tone="orange" icon="circle-alert" i18n="@@ui.deckCard.illegal">Non légal</ac-badge>
     </button>
   }
