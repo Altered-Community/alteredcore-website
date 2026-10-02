@@ -151,6 +151,50 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
+  test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
+    const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
+    const browserDialogs: string[] = [];
+    page.on('dialog', (d) => {
+      browserDialogs.push(d.message());
+      void d.dismiss();
+    });
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, name);
+    await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=[0-9a-f-]{36}$/);
+    const id = new URL(page.url()).searchParams.get('id')!;
+    await page.goto(DECK(id));
+    const deckPage = page.locator('app-deck-page');
+    await expect(deckPage).toContainText(name);
+
+    // Desktop: « Supprimer » in the side panel; mobile: in the « Plus d’actions » sheet.
+    const askDelete = async () => {
+      if (compact) {
+        await deckPage.getByRole('button', { name: /^Plus d’actions/ }).click();
+        await page.getByRole('menuitem', { name: 'Supprimer' }).click();
+      } else {
+        await deckPage.getByRole('button', { name: 'Supprimer' }).click();
+      }
+    };
+    const confirm = page.getByRole('dialog', { name: 'Supprimer le deck ?' });
+
+    await askDelete();
+    await expect(confirm).toBeVisible();
+    await expect(confirm).toContainText(`« ${name} » sera supprimé.`);
+    await evidence(page, testInfo, '04c-delete-confirm');
+    // The bottom sheet (mobile) has no « Annuler »: its cross closes it.
+    await confirm.getByRole('button', { name: compact ? 'Fermer' : 'Annuler' }).click();
+    await expect(confirm).toBeHidden();
+    await expect(page).toHaveURL(at(DECK(id)));
+
+    await askDelete();
+    const deleted = page.waitForResponse((r) => r.request().method() === 'DELETE' && r.url().includes(`/api/decks/${id}`));
+    await confirm.getByRole('button', { name: 'Supprimer' }).click();
+    expect((await deleted).ok()).toBe(true);
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+    await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name })).toHaveCount(0);
+    expect(browserDialogs).toEqual([]);
+  });
+
   test('lists community decks from the public API, through the relay', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     // The list goes through the relay. The app may cancel a request and send a new one (query

@@ -20,6 +20,7 @@ import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcDeckCard, FACTIONS } from '../../../ui/metier';
 import { AcAppBar, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
+import { openConfirm } from '../../shared/confirm/confirm.overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCommunityBuilders } from '../community-builders/community-builders.overlay';
@@ -542,12 +543,20 @@ export class DecksPage {
 
   /** « Ignorer »: the guest decks are deleted from this device, after a confirmation (as on the site). */
   protected discardLocalDecks(): void {
-    if (!confirm($localize`:@@decks.local.discardConfirm:Supprimer les decks locaux ? Cette action est irréversible.`)) return;
-    for (const d of this.localDecks()) {
-      // As « Enregistrer sur mon compte »: the site builder's copy goes too, or it comes back with its next edit.
-      this.guests.forgetSiteDeck(d.id);
-      this.guests.delete(d.id);
-    }
+    openConfirm(this.overlay, {
+      title: $localize`:@@decks.local.discardTitle:Supprimer les decks locaux ?`,
+      message: $localize`:@@decks.local.discardConfirm:Les decks enregistrés sur cet appareil seront supprimés. Cette action est irréversible.`,
+      confirmLabel: $localize`:@@decks.local.discardAction:Supprimer`,
+      icon: 'trash-2',
+      danger: true,
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      for (const d of this.localDecks()) {
+        // As « Enregistrer sur mon compte »: the site builder's copy goes too, or it comes back with its next edit.
+        this.guests.forgetSiteDeck(d.id);
+        this.guests.delete(d.id);
+      }
+    });
   }
 
   protected showBuilders(): void {
