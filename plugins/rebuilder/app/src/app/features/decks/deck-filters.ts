@@ -14,9 +14,11 @@ export interface DeckFilters {
   visibility: Visibility;
   factions: string[];
   sort: DeckSort;
+  /** Community tab: illegal decks are hidden (on by default). */
+  legalOnly: boolean;
 }
 
-export const EMPTY_DECK_FILTERS: DeckFilters = { q: '', format: '', hero: '', visibility: 'all', factions: [], sort: 'updated' };
+export const EMPTY_DECK_FILTERS: DeckFilters = { q: '', format: '', hero: '', visibility: 'all', factions: [], sort: 'updated', legalOnly: true };
 
 /** The decks that match the filters, in the order of `items` (`f.sort` is not used). */
 export function matchDecks(items: DeckListItem[], f: DeckFilters): DeckListItem[] {

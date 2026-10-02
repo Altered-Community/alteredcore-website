@@ -300,7 +300,7 @@ export class DecksPage {
     this.guests.reload();
     // Filters and sort come from the URL and are kept there, so a filtered list can be shared, as on the site's decks
     // page. The site's links are understood too: `set=collection`, `hero=` a hero reference, `visibility=1|0`,
-    // `sort=field:dir`, `tab=my|public`.
+    // `sort=field:dir`, `tab=my|public`. `legal=all` shows the illegal community decks too.
     const initial = this.route.snapshot.queryParamMap;
     const factions = (initial.get('faction') ?? '').toUpperCase().split(',').filter((c) => FACTIONS.some((f) => f.code === c));
     const hero = initial.get('hero') ?? '';
@@ -319,6 +319,7 @@ export class DecksPage {
         visibility: this.tab() === 'mine' ? visibility : 'all',
         factions,
         sort: sortFromParam(initial.get('sort')) ?? 'updated',
+        legalOnly: initial.get('legal') !== 'all',
       });
     }
     // « Mes decks »: a hero reference of the URL (site link) becomes the name of that hero once the decks are loaded.
@@ -380,6 +381,7 @@ export class DecksPage {
               ...common,
               visibility: tab === 'mine' && f.visibility !== 'all' ? f.visibility : null,
               sort: f.sort !== 'updated' ? f.sort : null,
+              legal: tab === 'community' && !f.legalOnly ? 'all' : null,
             };
       untracked(() => {
         if (!isDecksListUrl(this.router.url)) return;
@@ -577,6 +579,7 @@ export class DecksPage {
           showFormat: this.tab() !== 'contest',
           showHero: true,
           showVisibility: this.tab() === 'mine',
+          showLegalOnly: this.tab() === 'community',
         },
       })
       .afterClosed.subscribe((f) => f && this.filters.set(f));

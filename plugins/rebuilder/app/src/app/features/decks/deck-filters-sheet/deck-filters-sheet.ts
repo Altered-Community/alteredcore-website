@@ -6,7 +6,7 @@ import { FACTIONS } from '../../../ui/metier';
 import { AcOverlayRef } from '../../../ui/overlay';
 import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
 
-/** Mobile filter sheet of the decks page (format, héros, visibilité, faction: what the tab supports). */
+/** Mobile filter sheet of the decks page (format, héros, visibilité, légalité, faction: what the tab supports). */
 @Component({
   selector: 'app-deck-filters-sheet',
   imports: [AcSelect, AcSegmented, AcChip, AcButton],
@@ -30,6 +30,8 @@ export class DeckFiltersSheet {
         showFormat: boolean;
         showHero: boolean;
         showVisibility: boolean;
+        /** « Légaux uniquement » (community tab). */
+        showLegalOnly?: boolean;
       }
     >
   >(AcOverlayRef);

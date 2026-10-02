@@ -56,6 +56,9 @@
           <ac-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
         }
         <ac-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
+        @if (tab() === 'community') {
+          <ac-chip label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [selected]="filters().legalOnly" (selectedChange)="patch({ legalOnly: $event })" />
+        }
         @if (tab() === 'mine') {
           <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
         }

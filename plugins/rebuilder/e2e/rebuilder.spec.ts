@@ -294,6 +294,44 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await evidence(page, testInfo, '05b-community-deck');
   });
 
+  test('hides illegal community decks by default, and shows them with « Non légal » once « Légaux uniquement » is off', async ({ page, compact }, testInfo) => {
+    // The seeded decks are legal: the first deck of each page comes back illegal (Frontier Uniques of an old pool).
+    let illegalName = '';
+    await page.route(/\/api\/v1\/services\/decks\/api\/decks\/public(\?|$)/, async (route) => {
+      const res = await route.fetch();
+      const body = (await res.json()) as { member: { name: string; legal: boolean; legalityDetail?: Record<string, boolean> }[] };
+      const first = body.member[0];
+      if (first) {
+        illegalName = first.name;
+        first.legal = false;
+        first.legalityDetail = { ...first.legalityDetail, global: false, frontierUniques: false };
+      }
+      await route.fulfill({ response: res, json: body });
+    });
+    await login(page, 'alice', `${DECKS}?lang=fr&tab=community`);
+    const list = page.getByRole('list', { name: 'Decks de la communauté' });
+    await expect(list.locator('ac-deck-card').first()).toBeVisible();
+    expect(illegalName).not.toBe('');
+    await expect(list.locator('ac-deck-card', { hasText: illegalName })).toHaveCount(0);
+    await expect(list.getByText('Non légal')).toHaveCount(0);
+
+    if (compact) {
+      await page.getByRole('button', { name: /^Filtres/ }).first().click();
+      const sheet = page.getByRole('dialog', { name: 'Filtres' });
+      await sheet.getByRole('button', { name: 'Légaux uniquement' }).click();
+      await evidence(page, testInfo, '05c-community-legal-only-sheet');
+      await sheet.getByRole('button', { name: 'Appliquer' }).click();
+    } else {
+      await evidence(page, testInfo, '05c-community-legal-only');
+      await page.getByRole('button', { name: 'Légaux uniquement' }).click();
+    }
+    await expect(page).toHaveURL(/[?&]legal=all(&|$)/);
+    const illegal = list.locator('ac-deck-card', { hasText: illegalName });
+    await expect(illegal).toHaveCount(1);
+    await expect(illegal.getByText('Non légal')).toBeVisible();
+    await evidence(page, testInfo, '05d-community-with-illegal');
+  });
+
   test('follows the site theme live and the site language', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${NEW_DECK}?lang=en&theme=light`);
     await createDeck(page, `E2E theme ${testInfo.project.name} ${Date.now()}`, 'en');

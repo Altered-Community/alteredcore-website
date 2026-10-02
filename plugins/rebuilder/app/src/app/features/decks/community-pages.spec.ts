@@ -33,6 +33,14 @@ describe('addCommunityPage', () => {
     expect(state.total).toBe(9);
   });
 
+  it('keeps illegal decks and the API total when the legality filter is off', () => {
+    const query = toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'likes', legalOnly: false });
+    expect(query.legalOnly).toBeUndefined();
+    const state = addCommunityPage(EMPTY_COMMUNITY, query, 1, { member: [deck('a', 'AX'), deck('b', 'YZ', false)], totalItems: 10, currentPage: 1, lastPage: 5 });
+    expect(state.items.map((d) => d.id)).toEqual(['a', 'b']);
+    expect(state.total).toBe(10);
+  });
+
   it('keeps the decks of the selected factions across pages, with no total', () => {
     const query = toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'likes', factions: ['AX', 'LY'] });
     const p1 = addCommunityPage(EMPTY_COMMUNITY, query, 1, { member: [deck('a', 'AX'), deck('b', 'YZ'), deck('c', 'LY', false)], totalItems: 6, currentPage: 1, lastPage: 2 });
