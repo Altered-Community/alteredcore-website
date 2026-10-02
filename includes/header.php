@@ -129,9 +129,12 @@ kcIsLoggedIn();
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover">
     <?php
     // SEO / OG — $pageTitle, $pageDescription, $pageImage, $pageRobots, $pageKeywords
-    // may be set by the including page before requiring header.php
+    // may be set by the including page before requiring header.php, and for link previews
+    // $pageOgTitle (og:title without the site's name), $pageThemeColor (theme-color, the
+    // embed's side bar on Discord) and $pageOembedUrl (oEmbed: author line on Discord).
     $_metaLang    = getLang();
     $_metaTitle   = isset($pageTitle) ? $pageTitle . ' — ' . getSiteName() : getSiteName();
+    $_ogTitle     = isset($pageOgTitle) && $pageOgTitle !== '' ? $pageOgTitle : $_metaTitle;
     $_descKey     = 'meta_description_' . $_metaLang;
     $_defaultDesc = $_metaLang === 'fr' ? SITE_DESCRIPTION_FR : SITE_DESCRIPTION_EN;
     $_metaDesc    = isset($pageDescription) && $pageDescription !== ''
@@ -145,8 +148,10 @@ kcIsLoggedIn();
     $_robots      = isset($pageRobots) && $pageRobots !== '' ? $pageRobots : 'index, follow';
     // theme-color (browser/status bar): an explicit theme_color setting wins; otherwise
     // it matches the page background and js/pwa.js keeps it in sync with the dark theme.
+    // A page's own colour ($pageThemeColor) is only read by link-preview bots: with data-ac-auto,
+    // js/pwa.js replaces it with the page background in browsers.
     $_themeColorSetting = getSetting('theme_color');
-    $_themeColor        = $_themeColorSetting ?: '#FAF5E8';
+    $_themeColor        = $_themeColorSetting ?: (isset($pageThemeColor) && $pageThemeColor !== '' ? $pageThemeColor : '#FAF5E8');
 
     // Canonical + hreflang: strip lang param from canonical, add per-language alternates
     $_scheme      = request_scheme();
@@ -186,7 +191,7 @@ kcIsLoggedIn();
     <!-- Open Graph -->
     <meta property="og:type"        content="<?= isset($pageTitle) ? 'article' : 'website' ?>">
     <meta property="og:site_name"   content="<?= h(getSiteName()) ?>">
-    <meta property="og:title"       content="<?= h($_metaTitle) ?>">
+    <meta property="og:title"       content="<?= h($_ogTitle) ?>">
     <meta property="og:description" content="<?= h($_metaDesc) ?>">
     <meta property="og:url"         content="<?= h($_ogUrl) ?>">
     <meta property="og:locale"      content="<?= $_metaLang === 'fr' ? 'fr_FR' : 'en_US' ?>">
@@ -194,9 +199,13 @@ kcIsLoggedIn();
     <meta property="og:image"       content="<?= h($_ogImage) ?>">
     <?php endif; ?>
 
+    <?php if (isset($pageOembedUrl) && $pageOembedUrl !== ''): ?>
+    <link rel="alternate" type="application/json+oembed" href="<?= h(strpos($pageOembedUrl, '//') !== false ? $pageOembedUrl : $_host . $pageOembedUrl) ?>">
+    <?php endif; ?>
+
     <!-- Twitter Card -->
     <meta name="twitter:card"        content="<?= $_ogImage ? 'summary_large_image' : 'summary' ?>">
-    <meta name="twitter:title"       content="<?= h($_metaTitle) ?>">
+    <meta name="twitter:title"       content="<?= h($_ogTitle) ?>">
     <meta name="twitter:description" content="<?= h($_metaDesc) ?>">
     <?php if ($_ogImage): ?>
     <meta name="twitter:image"       content="<?= h($_ogImage) ?>">

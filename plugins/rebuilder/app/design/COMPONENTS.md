@@ -32,6 +32,7 @@ Principes communs :
 | `ar-icon-button` | `icon` (requis), `ariaLabel` (requis), `variant: 'secondary' \| 'ghost' \| 'primary'`, `size` | clic natif | barres, réglages, fermer |
 | `ar-card-add` | — | `add` | tuiles de carte (recherche, aperçu) |
 | `ar-like-button` | sur `<button arLikeButton>` : `count` (affiché en notation courte, « 1,2 k »), `liked` (cœur plein, fond blanc, `--ar-color-like`), `ariaLabel` (requis, ex. « J’aime Kojo Havre, 128 j’aime ») ; `aria-pressed` ; pastille 28 px (32 px en touch) posée sur un visuel, zone cliquable ≥ `--ar-hit-min` | clic natif | cartes de deck (Communauté) |
+| `ar-split-button` | contenu = libellé du bouton principal, `icon?`, `busy` (pastille de chargement à la place de l’icône, les deux parties désactivées), `items: ArSplitButtonItem[]` (`id`, `icon`, `label`, `hint?` 2e ligne grisée, `badge?` pastille « Par défaut »), `moreLabel` (aria-label de la flèche, requis), `menuLabel` (requis) ; aspect `secondary`, menu du CDK (`cdk/menu` : flèches, Échap) au moins aussi large que le bouton, sous lui (au-dessus s’il manque la place) | `press` (partie principale), `pick` (id de l’entrée) | page de deck (« Copier en image ») |
 | `ar-stepper` | `value = model<number>()`, `min = 0`, `max`, `appearance: 'overlay' \| 'inline'` | `valueChange` | `overlay` : sur les cartes ; `inline` : lignes de deck |
 
 Spécifications : bouton rayon `--ar-radius-control` (14 px en `lg` tactile), police 14/700 (13 en `sm`, 16 en `lg` tactile),

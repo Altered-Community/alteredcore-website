@@ -105,6 +105,9 @@ define('ERROR_LOG_TARGET', 'php://stderr');
 
 // ─── Deployment ───────────────────────────────────────────────────────────────
 define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
+// Site origin printed in the QR code of deck link previews (api/deck-image.php), e.g. 'https://altered.re'.
+// Optional: without it, the request's host is used (and the image cached per host).
+// define('SITE_URL', 'https://altered.re');
 define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)
 
 // Behind a TLS-terminating reverse proxy, PHP may see the request as plain HTTP,

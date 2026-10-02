@@ -11,7 +11,7 @@ its single **Decks** entry. The pages it replaces keep answering their own calls
 | Path | Content |
 |---|---|
 | `plugin.json` | Manifest v2: SPA page and its `beta_slugs`, API endpoints, build and e2e declarations |
-| `meta.php` | Manifest `meta`: the deck's name as page title and link preview (`og:title`) on `deck?id=` and `deckbuilder?id=` |
+| `meta.php` | Manifest `meta`: the deck's name as page title and its link preview (title, hero · format, decklist image, faction colour: core-altered-cards `includes/deck-preview/preview.php`, shared with the site's deck page) on `deck?id=` and `deckbuilder?id=` |
 | `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
 | `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |

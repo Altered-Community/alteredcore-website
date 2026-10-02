@@ -153,6 +153,9 @@
           @if (deck.owned()) {
             <button arButton icon="pencil" [fullWidth]="true" (click)="edit()" i18n="@@deck.page.edit">Modifier le deck</button>
           }
+          @if (imageSource(); as source) {
+            <app-deck-image-export class="image-export" [source]="source" [name]="deck.name()" (notice)="flash($event)" />
+          }
           <div class="actions">
             <button arButton variant="secondary" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
             <button arButton variant="secondary" icon="share" (click)="share()" i18n="@@deck.page.share">Partager</button>

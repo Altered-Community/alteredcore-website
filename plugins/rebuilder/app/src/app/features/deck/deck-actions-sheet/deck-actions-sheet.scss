@@ -19,3 +19,9 @@ button {
 .danger {
   color: var(--ar-color-required);
 }
+hr {
+  width: 100%;
+  margin: var(--ar-space-1) 0;
+  border: 0;
+  border-top: 1px solid var(--ar-color-border);
+}
