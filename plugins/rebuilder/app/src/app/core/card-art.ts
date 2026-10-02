@@ -45,6 +45,15 @@ export function uniqueArtSources(ref: string, frame = 'T1'): string[] {
   return out;
 }
 
+/**
+ * Hero illustration without the card frame, for small portraits: the frameless cut
+ * (`illustrations/`, every hero), then `cards/assets/` (the art with the Altered logo), then the card.
+ */
+export function heroArtSources(ref: string, locale: Locale = contentLocale()): string[] {
+  const set = setOfReference(ref);
+  return [`${CDN}/illustrations/${set}/${ref}_FRAMELESS_T1.webp`, `${CDN}/cards/assets/${set}/${ref}.webp`, cardImageUrl(ref, locale), CARD_BACK];
+}
+
 /** Ordered sources for an <img>: the card image (the unique illustration for uniques), then the card back. */
 export function cardImageSources(ref: string, locale: Locale = contentLocale()): string[] {
   return isUniqueReference(ref) ? uniqueArtSources(ref) : [cardImageUrl(ref, locale), CARD_BACK];

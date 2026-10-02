@@ -152,12 +152,34 @@ ac-app-bar.static {
     flex-shrink: 0;
   }
 
+  /* The deck panel and its « Masquer » handle, on the panel's left edge. */
   .panel {
     width: 300px;
     flex-shrink: 0;
     position: sticky;
     top: calc(var(--ac-sticky-top) + var(--ac-space-6));
     height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+  }
+
+  .panel app-deck-panel {
+    height: 100%;
+  }
+
+  /* Deck hidden: the tab takes its place, against the right edge of the page. */
+  .deck-tab {
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    margin-right: calc(-1 * var(--ac-space-6));
+  }
+
+  .deck-tab ac-icon.legal {
+    color: var(--ac-color-success);
+  }
+
+  /* The filters tab of the card search reaches the left edge of the page the same way. */
+  .search {
+    --app-drawer-bleed: var(--ac-space-6);
   }
 }
 

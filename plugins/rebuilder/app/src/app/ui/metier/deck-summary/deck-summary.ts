@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { heroArtSources } from '../../../core/card-art';
 import { type RarityCounts } from '../../../core/deck-rules';
 import type { DeckHero } from '../../../core/models';
 import { AcIconButton } from '../../buttons';
@@ -29,6 +30,11 @@ export class AcDeckSummary {
   /** Click on the validity badge: the format's rules, passed or failed. */
   readonly showLegality = output<void>();
 
+  /** Frameless art: the card image shrunk to the thumbnail shows its frame and text. */
+  protected readonly heroArt = computed(() => {
+    const ref = this.hero()?.reference;
+    return ref ? heroArtSources(ref) : null;
+  });
   protected readonly noHero = $localize`:@@ui.deckSummary.noHero:Aucun héros`;
   protected readonly publicLabel = $localize`:@@ui.deckSummary.public:Public`;
   protected readonly privateLabel = $localize`:@@ui.deckSummary.private:Privé`;
