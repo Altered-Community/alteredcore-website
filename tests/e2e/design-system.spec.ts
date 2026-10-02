@@ -23,14 +23,14 @@ test.describe('Design system', () => {
     const light = await read();
     expect(light.theme).toBeNull();
     expect(light.density).toMatch(/^(pointer|touch)$/);
-    expect(light.bg).toBe('rgb(243, 245, 249)'); // --ac-color-bg-app, light
+    expect(light.bg).toBe('rgb(240, 246, 255)'); // --ac-color-bg-app, light
     expect(light.font).toContain('Figtree');
     await evidence(page, testInfo, 'design-system-light');
 
     await page.locator('.ds-toolbar [data-theme-toggle]').click();
     const dark = await read();
     expect(dark.theme).toBe('dark');
-    expect(dark.bg).toBe('rgb(15, 18, 24)'); // --ac-color-bg-app, dark
+    expect(dark.bg).toBe('rgb(17, 31, 54)'); // --ac-color-bg-app, dark
     await evidence(page, testInfo, 'design-system-dark');
     await page.locator('.ds-toolbar [data-theme-toggle]').click();
 
@@ -65,7 +65,7 @@ test.describe('Design system', () => {
     await page.reload();
     expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
     const header = await page.evaluate(() => getComputedStyle(document.querySelector('.site-header')!).backgroundColor);
-    expect(header).toBe('rgb(23, 27, 35)'); // --ac-color-surface, dark
+    expect(header).toBe('rgb(26, 95, 200)'); // --ac-header-bg, dark: a deeper blue
   });
 
   test('the site header is the production blue in the light theme', async ({ page }) => {
