@@ -19,6 +19,14 @@
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-danger);
 }
+.saved {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  font: var(--ac-font-small);
+  color: var(--ac-color-success);
+}
 .link {
   display: flex;
   align-items: flex-end;
