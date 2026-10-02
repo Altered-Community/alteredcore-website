@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import type { DeckImageSource } from '../../../core/deck-image';
-import { ArIcon } from '../../../ui/icon';
-import { ArOverlayRef } from '../../../ui/overlay';
+import { AcIcon } from '../../../ui/icon';
+import { AcOverlayRef } from '../../../ui/overlay';
 import { runDeckImageAction, type DeckImageAction } from '../deck-image-actions';
 
 export interface DeckActionsData {
@@ -21,13 +21,13 @@ export type DeckActionsResult = 'copy' | 'duplicate' | 'delete' | { image: Promi
 /** « Plus d'actions » sheet on mobile. */
 @Component({
   selector: 'app-deck-actions',
-  imports: [ArIcon],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcIcon],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './deck-actions-sheet.html',
   styleUrl: './deck-actions-sheet.scss',
 })
 export class DeckActionsSheet {
-  protected readonly ref = inject<ArOverlayRef<DeckActionsResult, DeckActionsData>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<DeckActionsResult, DeckActionsData>>(AcOverlayRef);
   /** « Supprimer » only for the user's own decks. */
   protected readonly canDelete = this.ref.data?.canDelete !== false;
   protected readonly imageSource = this.ref.data?.image ?? null;

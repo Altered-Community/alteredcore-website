@@ -9,9 +9,6 @@ Rarity gems (`gems/C.png`, `R.png`, `U.png`, `E.png`) and faction marks
 They are vendored here so Re:Builder does not depend on hotlinking the PHP
 app. Do not modify the website repo from this project.
 
-The fan-content mark (`img/altered-fan-content.png`) is copied from
-`design/assets/img/altered-fan-content.png` and shown in `ar-site-footer`.
-
 Set marks (`set-logos/{SET}.svg`) are the small monochrome glyphs from
 [alteredicons](https://github.com/Altered-Community/alteredcore-website/blob/preprod/assets/font/alteredicons.css),
 the same `icon` each set carries in `plugins/core-altered-cards/data/altered.json`

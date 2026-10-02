@@ -1,25 +1,25 @@
 :host {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
   min-height: 51px;
-  padding: 0 var(--ar-space-1);
-  border-bottom: 1px solid var(--ar-color-divider);
+  padding: 0 var(--ac-space-1);
+  border-bottom: 1px solid var(--ac-color-divider);
 }
 :host(.panel) {
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
   min-height: 36px;
   border-bottom: none;
-  border-radius: var(--ar-radius-md);
+  border-radius: var(--ac-radius-md);
 }
 :host(.panel:hover) {
-  background: var(--ar-color-bg-subtle);
+  background: var(--ac-color-bg-subtle);
 }
 :host(:last-child) {
   border-bottom: none;
 }
 .qty {
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   font-weight: 800;
   min-width: 26px;
 }
@@ -32,13 +32,13 @@
 .name {
   flex-grow: 1;
   min-width: 0;
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 :host(.panel) .name {
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
 }
 .costs {
   display: flex;
@@ -49,33 +49,33 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .c.main {
-  background: var(--ar-color-inverse);
-  color: var(--ar-color-on-inverse);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
 }
 .c.res {
-  border: 1.5px solid var(--ar-color-text);
-  color: var(--ar-color-text);
+  border: 1.5px solid var(--ac-color-text);
+  color: var(--ac-color-text);
 }
 :host(.invalid) .name {
-  color: var(--ar-color-danger);
+  color: var(--ac-color-danger);
 }
 .issue {
   display: flex;
   flex-shrink: 0;
-  color: var(--ar-color-danger);
+  color: var(--ac-color-danger);
   cursor: help;
 }
 .warning {
   display: flex;
   flex-shrink: 0;
-  color: var(--ar-color-warning);
+  color: var(--ac-color-warning);
   cursor: help;
 }
 .blocked {

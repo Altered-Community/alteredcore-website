@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { defaultFilters, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { openEffectEditorStep } from '../effect-editor/effect-editor.overlay';
 import { FiltersPanel } from '../filters-panel/filters-panel';
 
@@ -27,12 +27,12 @@ const FILTERS_TITLE = $localize`:@@search.card.filters:Filtres`;
 /** Mobile « Filtres » sheet: edits a draft and applies it when the user searches. */
 @Component({
   selector: 'app-filters-sheet',
-  imports: [FiltersPanel, ArButton],
-  host: { class: 'ar-overlay-content' },
+  imports: [FiltersPanel, AcButton],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './filters-sheet.overlay.html',
 })
 export class FiltersSheetOverlay {
-  protected readonly ref = inject<ArOverlayRef<SearchFilters, FiltersSheetData>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<SearchFilters, FiltersSheetData>>(AcOverlayRef);
   protected readonly draft = signal<SearchFilters>(this.ref.data.filters);
 
   constructor() {
@@ -55,7 +55,7 @@ export class FiltersSheetOverlay {
   }
 }
 
-export function openFiltersSheet(overlay: ArOverlayService, data: FiltersSheetData) {
+export function openFiltersSheet(overlay: AcOverlayService, data: FiltersSheetData) {
   return overlay.open<FiltersSheetOverlay, SearchFilters, FiltersSheetData>(FiltersSheetOverlay, {
     title: FILTERS_TITLE,
     data,

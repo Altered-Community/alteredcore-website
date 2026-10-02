@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ArOverlayRef, ArOverlayService } from './overlay';
+import { AcOverlayRef, AcOverlayService } from './overlay';
 
-@Component({ selector: 'ar-test-content', template: '<p>content</p>' })
+@Component({ selector: 'ac-test-content', template: '<p>content</p>' })
 class TestContent {}
 
-describe('ArOverlayRef close guard', () => {
-  function open(): { ref: ArOverlayRef; closed: () => boolean } {
+describe('AcOverlayRef close guard', () => {
+  function open(): { ref: AcOverlayRef; closed: () => boolean } {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const ref = TestBed.inject(ArOverlayService).open(TestContent, { title: 'Test' });
+    const ref = TestBed.inject(AcOverlayService).open(TestContent, { title: 'Test' });
     TestBed.tick();
     let closed = false;
     ref.dialogRef = { close: () => (closed = true) };

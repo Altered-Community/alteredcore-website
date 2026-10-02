@@ -2,6 +2,7 @@
 $adminPageTitle = 'User menu link';
 $adminSection   = 'user-menu';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db  = getDB();
 $id  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -100,12 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="number" name="sort_order" class="form-control" value="<?= (int)$row['sort_order'] ?>">
             </div>
             <div class="col-12">
-                <label class="form-label">Font Awesome icon</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i id="icon-preview" class="<?= h($row['icon'] ?: 'fa-solid fa-link') ?>"></i></span>
-                    <input type="text" name="icon" id="icon-input" class="form-control"
-                           value="<?= h($row['icon']) ?>" placeholder="fa-solid fa-link">
-                </div>
+                <?php adminIconField((string)$row['icon'], ['fallback' => 'link', 'placeholder' => 'link']); ?>
             </div>
         </div>
         <div class="d-flex gap-2">
@@ -116,11 +112,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 </div>
-
-<script>
-document.getElementById('icon-input').addEventListener('input', function() {
-    document.getElementById('icon-preview').className = this.value || 'fa-solid fa-link';
-});
-</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

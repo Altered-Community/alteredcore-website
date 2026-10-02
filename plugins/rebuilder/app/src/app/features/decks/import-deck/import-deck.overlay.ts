@@ -10,12 +10,12 @@ import { visibleFormats } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import type { DeckCardLine, DeckFormat, DeckHero } from '../../../core/models';
 import { localizedText } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
+import { AcButton } from '../../../ui/buttons';
 import { contentLocale } from '../../../core/locale';
-import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
+import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
 import { EquinoxImport } from '../equinox/equinox-import';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 /** Copies of one card at most, as the Equinox import (`equinox-csv.ts`) and the decks API allow. */
 const MAX_QUANTITY = 99;
@@ -45,19 +45,19 @@ export interface ImportResult {
 /** Import window: a decklist into an account deck (a guest deck when signed out), or the altered.gg export (Equinox ZIP) into the account. */
 @Component({
   selector: 'app-import-deck',
-  imports: [ArButton, ArInput, ArSegmented, ArSelect, EquinoxImport],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput, AcSegmented, AcSelect, EquinoxImport],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './import-deck.overlay.html',
   styleUrl: './import-deck.overlay.scss',
 })
 export class ImportDeckOverlay {
-  protected readonly ref = inject<ArOverlayRef<ImportResult, { mode: ImportMode }>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<ImportResult, { mode: ImportMode }>>(AcOverlayRef);
   private readonly router = inject(Router);
   private readonly api = inject(CardsApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly decksApi = inject(DecksApiService);
   private readonly auth = inject(AuthSession);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly name = signal('');
   protected readonly format = signal<DeckFormat>('standard');
   private readonly formatList = visibleFormats();
@@ -165,7 +165,7 @@ function importErrorMessage(err: unknown): string {
   return $localize`:@@decks.import.errServer:Le deck n’a pas pu être créé sur votre compte. Réessayez.`;
 }
 
-export function openImportDeck(overlay: ArOverlayService, mode: ImportMode = 'list') {
+export function openImportDeck(overlay: AcOverlayService, mode: ImportMode = 'list') {
   return overlay.open<ImportDeckOverlay, ImportResult>(ImportDeckOverlay, {
     title: $localize`:@@decks.import.titleDecks:Importer des decks`,
     width: 560,

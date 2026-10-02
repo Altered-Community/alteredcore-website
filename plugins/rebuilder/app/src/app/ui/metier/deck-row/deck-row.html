@@ -5,12 +5,12 @@
 <span class="name">{{ name() }}</span>
 @if (issues().length) {
   <span class="issue" role="img" [attr.aria-label]="issuesLabel()" [title]="issuesLabel()">
-    <ar-icon name="alert" [size]="16" [strokeWidth]="2.4" />
+    <ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" />
   </span>
 }
 @if (warning(); as w) {
   <span class="warning" role="img" [attr.aria-label]="w" [title]="w">
-    <ar-icon name="alert" [size]="16" [strokeWidth]="2.4" />
+    <ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" />
   </span>
 }
 @if (readonly() || plain()) {
@@ -20,11 +20,11 @@
   </span>
 } @else if (blocked()) {
   <span class="blocked" [title]="blockedReason()">
-    <ar-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ar-badge>
-    <span class="ar-sr-only">{{ blockedReason() }}</span>
+    <ac-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ac-badge>
+    <span class="ac-sr-only">{{ blockedReason() }}</span>
   </span>
 } @else {
-  <ar-stepper
+  <ac-stepper
     [appearance]="appearance() === 'panel' ? 'box' : 'inline'"
     [itemName]="name()"
     [value]="quantity()"

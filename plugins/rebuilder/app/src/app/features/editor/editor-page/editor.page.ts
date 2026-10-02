@@ -4,17 +4,16 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
-import { ArButton } from '../../../ui/buttons';
-import { ArEditableTitle, ArSegmented } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArToast } from '../../../ui/containers';
+import { AcButton } from '../../../ui/buttons';
+import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcToast } from '../../../ui/containers';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
-import { ArSaveStatus } from '../../../ui/metier';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArAppBar, ArAvatar, ArBackButton, ArBottomNav, ArBreadcrumb, type ArBottomNavItem } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
-import { AuthSession } from '../../../core/auth-session';
+import { AcSaveStatus } from '../../../ui/metier';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcAppBar, AcBackButton, AcBottomNav, AcBreadcrumb, type AcBottomNavItem } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { EditorAltArts } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
@@ -33,18 +32,17 @@ export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
   selector: 'app-editor-page',
   providers: [CardSearchStore, EditorAltArts],
   imports: [
-    ArToast,
+    AcToast,
     RouterLink,
-    ArAppBar,
-    ArAvatar,
-    ArBackButton,
-    ArBottomNav,
-    ArBreadcrumb,
-    ArEditableTitle,
-    ArSegmented,
-    ArButton,
-    ArIcon,
-    ArSaveStatus,
+    AcAppBar,
+    AcBackButton,
+    AcBottomNav,
+    AcBreadcrumb,
+    AcEditableTitle,
+    AcSegmented,
+    AcButton,
+    AcIcon,
+    AcSaveStatus,
     CardSearch,
     DeckPanel,
     DeckPreview,
@@ -64,10 +62,9 @@ export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
 export class EditorPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
-  protected readonly bp = inject(ArBreakpointService);
+  private readonly overlay = inject(AcOverlayService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
-  protected readonly auth = inject(AuthSession);
 
   protected readonly id = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly view = toSignal(this.route.data.pipe(map((d) => (d['view'] as EditorView) ?? 'search')), {
@@ -75,8 +72,6 @@ export class EditorPage {
   });
   protected readonly labels = {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
-    account: $localize`:@@editor.account:Compte`,
-    signIn: $localize`:@@editor.signIn:Se connecter`,
     public: $localize`:@@editor.public:Public`,
     private: $localize`:@@editor.private:Privé`,
     breadcrumb: [{ label: $localize`:@@editor.myDecks:Mes decks`, route: '/decks' }, { label: $localize`:@@editor.edit:Modifier` }],
@@ -90,7 +85,7 @@ export class EditorPage {
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
-  protected readonly navItems = computed<ArBottomNavItem[]>(() => [
+  protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: this.base(), icon: 'search', label: $localize`:@@editor.search:Recherche` },
     { route: `${this.base()}/apercu`, icon: 'eye', label: $localize`:@@editor.preview:Aperçu` },
     {

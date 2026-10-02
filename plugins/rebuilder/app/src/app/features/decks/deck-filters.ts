@@ -1,6 +1,6 @@
 import { type DeckListItem } from '../../core/deck-view';
 import { uiLocale } from '../../core/i18n';
-import type { ArOption } from '../../ui/fields';
+import type { AcOption } from '../../ui/fields';
 import { FACTIONS } from '../../ui/metier';
 
 export type Visibility = 'all' | 'public' | 'private';
@@ -66,9 +66,9 @@ export interface HeroChoice {
  * Hero filter options, grouped by faction in the order of the faction chips (as on the site's decks page), limited to
  * `factions` when some are selected. `choices` keep their order inside a faction.
  */
-export function heroOptions(choices: HeroChoice[], factions: string[], allLabel: string): ArOption[] {
+export function heroOptions(choices: HeroChoice[], factions: string[], allLabel: string): AcOption[] {
   const grouped = FACTIONS.filter((f) => !factions.length || factions.includes(f.code)).flatMap((f) =>
-    choices.filter((h) => h.faction === f.code).map((h) => ({ value: h.value, label: h.label, group: f.name })),
+    choices.filter((h) => h.faction === f.code).map((h) => ({ value: h.value, label: h.label, group: f.name, color: f.color })),
   );
   return [{ value: '', label: allLabel }, ...grouped];
 }

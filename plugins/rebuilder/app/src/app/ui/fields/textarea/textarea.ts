@@ -2,14 +2,14 @@ import { Component, forwardRef, input, model } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { nextId, ValueAccessor } from '../value-accessor';
 
-/** Multi-line text field with a label, same look as `ar-input` — DS-Champs. */
+/** Multi-line text field with a label, same look as `ac-input`: `ac-field` / `ac-textarea` (design-system/css/components/field.css). */
 @Component({
-  selector: 'ar-textarea',
-  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ArTextarea), multi: true }],
+  selector: 'ac-textarea',
+  host: { class: 'ac-field' },
+  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => AcTextarea), multi: true }],
   templateUrl: './textarea.html',
-  styleUrl: './textarea.scss',
 })
-export class ArTextarea extends ValueAccessor<string> {
+export class AcTextarea extends ValueAccessor<string> {
   readonly value = model('');
   readonly label = input('');
   readonly ariaLabel = input('');
@@ -18,5 +18,5 @@ export class ArTextarea extends ValueAccessor<string> {
   readonly rows = input(4);
   readonly maxlength = input<number | null>(null);
   readonly invalid = input(false);
-  protected readonly id = nextId('ar-textarea');
+  protected readonly id = nextId('ac-textarea');
 }

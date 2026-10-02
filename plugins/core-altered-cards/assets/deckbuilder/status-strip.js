@@ -78,7 +78,7 @@
             + '</div>'
             + '<div class="db-ss-strip-chips"></div>';
         strip.querySelector('.db-ss-strip-valid').addEventListener('click', function() {
-            var badge = elValidation.querySelector('.badge');
+            var badge = elValidation.querySelector('.ac-badge');
             if (badge) badge.click();
         });
         strip.querySelector('.db-ss-strip-savebtn').addEventListener('click', function() { elSaveBtn.click(); });

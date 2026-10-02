@@ -123,7 +123,7 @@ if ($collEnabled && $loggedIn && ($_GET['tab'] ?? '') !== 'playset') {
     // main-set columns ordered chronologically descending (recent first).
     $playsetFactions = [];
     foreach ($factionsData as $_fk => $_fv) {
-        $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? '#888'];
+        $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? 'var(--ac-color-text-muted)'];
     }
     $_psCoreNote = $_sharedTxt['playset']['core_note'] ?? ($uiLang === 'fr'
         ? 'Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS).'

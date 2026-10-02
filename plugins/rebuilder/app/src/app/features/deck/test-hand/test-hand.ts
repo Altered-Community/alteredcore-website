@@ -19,11 +19,11 @@ import {
   type PlayState,
   type PlayZone,
 } from '../../../core/test-hand';
-import { ArButton } from '../../../ui/buttons';
-import { ArIcon } from '../../../ui/icon';
-import { ArCardTile } from '../../../ui/metier';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcIcon } from '../../../ui/icon';
+import { AcCardTile } from '../../../ui/metier';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { PlayActionsSheet, type PlayAction } from '../play-actions/play-actions.sheet';
 import { openPlayZone } from '../play-zone/play-zone.overlay';
@@ -35,14 +35,14 @@ import { openPlayZone } from '../play-zone/play-zone.overlay';
  */
 @Component({
   selector: 'app-test-hand',
-  imports: [ArButton, ArCardTile, ArIcon, CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder],
+  imports: [AcButton, AcCardTile, AcIcon, CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder],
   templateUrl: './test-hand.html',
   styleUrl: './test-hand.scss',
 })
 export class TestHand {
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   /** « Mode jeu » is desktop only: hidden in the compact layout. */
-  protected readonly compact = inject(ArBreakpointService).compact;
+  protected readonly compact = inject(AcBreakpointService).compact;
   readonly lines = input.required<HydratedLine[]>();
   /** Draw order: indexes into `pool`. Kept by index so late card data (unique faces) shows in the hand. */
   private readonly order = signal<number[]>([]);

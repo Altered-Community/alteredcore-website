@@ -8,7 +8,6 @@ import { PageTitle } from '../core/page-title';
 import { DeckCreateFailurePrompt } from '../core/deck-create-failure';
 import { DecksListReuseStrategy } from '../features/decks/decks-list-reuse';
 import { OverlayDeckCreateFailurePrompt } from '../features/shared/create-deck-failed/create-deck-failed.overlay';
-import { AR_DENSITY_TARGET } from '../ui/layout.services';
 import { embedRoutes } from './embed.routes';
 import { EmbedTitleStrategy } from './embed-title.strategy';
 import { ALTERED_CORE, EMBED_MOUNT, type AlteredCoreHost, type AlteredCoreMount } from './host';
@@ -35,7 +34,6 @@ export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): App
       { provide: AuthSession, useClass: HostAuthSession },
       { provide: DeckCreateFailurePrompt, useClass: OverlayDeckCreateFailurePrompt },
       { provide: OverlayContainer, useClass: ShadowOverlayContainer },
-      { provide: AR_DENSITY_TARGET, useValue: mount.container },
       { provide: SHARED_STYLES_HOST, useClass: ShadowStylesHost },
     ],
   };

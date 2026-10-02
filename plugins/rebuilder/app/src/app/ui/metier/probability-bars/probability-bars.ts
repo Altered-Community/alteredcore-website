@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 import { formatPercent, formatPrecisePercent } from '../../../core/hand-odds';
 import { uiLocale } from '../../../core/i18n';
 
-export interface ArProbabilityBar {
+export interface AcProbabilityBar {
   key: string;
   label: string;
   /** 0…1; `null` = nothing to compute yet (empty bar, no figure). */
@@ -13,13 +13,13 @@ export interface ArProbabilityBar {
 
 /** Probability bars: label, bar filled to p, rounded percentage (two decimals on hover). */
 @Component({
-  selector: 'ar-probability-bars',
+  selector: 'ac-probability-bars',
   host: { '[class.wide]': "labelWidth() === 'wide'" },
   templateUrl: './probability-bars.html',
   styleUrl: './probability-bars.scss',
 })
-export class ArProbabilityBars {
-  readonly rows = input.required<ArProbabilityBar[]>();
+export class AcProbabilityBars {
+  readonly rows = input.required<AcProbabilityBar[]>();
   readonly ariaLabel = input('');
   /** Label column: `narrow` (« 2+ », « 3 mana ») or `wide` (« Les 2 Expéditions »). */
   readonly labelWidth = input<'narrow' | 'wide'>('narrow');

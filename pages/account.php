@@ -243,11 +243,11 @@ include dirname(__DIR__) . '/includes/header.php';
     <?php if ($newsletterOn): ?>
     <!-- Newsletter -->
     <div class="card-altered p-4 mb-4">
-        <h6 class="fw-bold mb-3"><i class="fa-solid fa-envelope me-1" style="color:var(--primary-500)"></i> <?= $txt['newsletter_title'] ?></h6>
+        <h6 class="fw-bold mb-3"><span class="me-1" style="color:var(--ac-color-primary)"><?= ac_icon('mail') ?></span> <?= $txt['newsletter_title'] ?></h6>
         <?php if ($newsletterSub === null): ?>
-            <p class="small mb-0" style="color:var(--neutral-500)"><?= $txt['newsletter_unavailable'] ?></p>
+            <p class="small mb-0" style="color:var(--ac-color-text-muted)"><?= $txt['newsletter_unavailable'] ?></p>
         <?php elseif (($newsletterSub['status'] ?? '') === 'blocklisted'): ?>
-            <p class="small mb-0" style="color:var(--neutral-500)"><?= $txt['newsletter_blocked'] ?></p>
+            <p class="small mb-0" style="color:var(--ac-color-text-muted)"><?= $txt['newsletter_blocked'] ?></p>
         <?php else: ?>
             <?php $nlSubscribed = !empty($newsletterSub['subscribed']); ?>
             <p class="small mb-3"><?= $nlSubscribed ? sprintf($txt['newsletter_on'], '<strong>' . h($accountEmail) . '</strong>') : $txt['newsletter_off'] ?></p>
@@ -256,12 +256,12 @@ include dirname(__DIR__) . '/includes/header.php';
                 <?php if ($nlSubscribed): ?>
                     <input type="hidden" name="action" value="newsletter_unsubscribe">
                     <button type="submit" class="btn btn-outline-secondary btn-sm">
-                        <i class="fa-solid fa-bell-slash me-1"></i> <?= $txt['newsletter_unsubscribe'] ?>
+                        <?= ac_icon('bell-off', 'me-1') ?> <?= $txt['newsletter_unsubscribe'] ?>
                     </button>
                 <?php else: ?>
                     <input type="hidden" name="action" value="newsletter_subscribe">
                     <button type="submit" class="btn btn-primary-altered btn-sm">
-                        <i class="fa-solid fa-bell me-1"></i> <?= $txt['newsletter_subscribe'] ?>
+                        <?= ac_icon('bell', 'me-1') ?> <?= $txt['newsletter_subscribe'] ?>
                     </button>
                 <?php endif; ?>
             </form>
@@ -286,7 +286,7 @@ include dirname(__DIR__) . '/includes/header.php';
         <div class="modal-content" style="border-radius:1rem;border:none">
             <div class="modal-body p-4 text-center" style="background:var(--sand-100)">
                 <div style="font-size:2.5rem;margin-bottom:.75rem">
-                    <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
+                    <?= ac_icon('triangle-alert', 'text-danger') ?>
                 </div>
                 <h5 style="font-weight:800;color:var(--neutral-800)"><?= $txt['account_delete_title'] ?></h5>
                 <p style="color:var(--neutral-600);font-size:.9rem;margin:.75rem 0 .5rem">

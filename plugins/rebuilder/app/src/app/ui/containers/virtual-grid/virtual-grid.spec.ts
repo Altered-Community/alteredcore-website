@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ArVirtualGrid, visibleRows } from './virtual-grid';
+import { AcVirtualGrid, visibleRows } from './virtual-grid';
 
 describe('visibleRows', () => {
   const base = { viewport: 800, rowHeight: 200, overscan: 1, rowCount: 100 };
@@ -21,23 +21,23 @@ describe('visibleRows', () => {
 });
 
 @Component({
-  imports: [ArVirtualGrid],
+  imports: [AcVirtualGrid],
   template: `
-    <ar-virtual-grid #grid [items]="items()" [initial]="4">
+    <ac-virtual-grid #grid [items]="items()" [initial]="4">
       @for (n of grid.slice(); track n) {
         <span class="cell" [attr.data-pos]="grid.first() + $index + 1 + '/' + items().length">{{ n }}</span>
       }
       @if (grid.atEnd()) {
         <span class="tail">…</span>
       }
-    </ar-virtual-grid>
+    </ac-virtual-grid>
   `,
 })
 class Host {
   readonly items = signal(Array.from({ length: 10 }, (_, i) => i * 10));
 }
 
-describe('ArVirtualGrid', () => {
+describe('AcVirtualGrid', () => {
   it('renders the first cells with their position in the whole list until it is measured', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();

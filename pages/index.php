@@ -34,11 +34,11 @@ include dirname(__DIR__) . '/includes/header.php';
 
 <!-- Hero + announcement wrapper -->
 <div class="hero-stack<?= $announcement ? ' has-announcement' : '' ?>">
-<section class="hero"<?= $banner['bg_image'] ? ' style="background-image:url(' . h(BASE_URL . '/' . $banner['bg_image']) . ');background-size:cover;background-position:center center;background-repeat:no-repeat"' : '' ?>>
-    <?php if ($banner['overlay_opacity'] > 0): ?>
-    <div class="hero-overlay" style="background-color:<?= h($banner['overlay_color']) ?>;opacity:<?= round($banner['overlay_opacity'] / 100, 2) ?>"></div>
+<section class="hero<?= $banner['bg_image'] ? ' hero--image' : '' ?>"<?= $banner['bg_image'] ? ' style="background-image:url(' . h(BASE_URL . '/' . $banner['bg_image']) . ')"' : '' ?>>
+    <?php if ($banner['bg_image']): ?>
+    <div class="hero-overlay"></div>
     <?php endif; ?>
-    <div class="hero-content container" style="position:relative;z-index:1">
+    <div class="hero-content container">
         <h1><?= h($banner['title']) ?></h1>
         <p><?= h($banner['subtitle']) ?></p>
         <?php if ($banner['btn_label'] && $banner['btn_url']): ?>
@@ -63,7 +63,7 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
 <div class="hero-announcement alert-<?= h($announcement['color']) ?>" role="alert">
     <div class="container d-flex align-items-start gap-3">
         <?php if ($announcement['icon'] !== ''): ?>
-        <i class="<?= h($announcement['icon']) ?> flex-shrink-0 mt-1"></i>
+        <?= ac_icon((string)$announcement['icon'], 'flex-shrink-0 mt-1') ?>
         <?php endif; ?>
         <div>
             <?php if ($announcement['title'] !== ''): ?>

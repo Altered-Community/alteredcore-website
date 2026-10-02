@@ -1,18 +1,14 @@
 import { DOCUMENT } from '@angular/common';
-import { Service, InjectionToken, computed, effect, inject, signal } from '@angular/core';
-import { densityFor, windowSizeFor, type WindowSize } from '../core/breakpoints';
+import { Service, computed, inject, signal } from '@angular/core';
+import { windowSizeFor, type WindowSize } from '../core/breakpoints';
 
 function readWidth(): number {
   return typeof window === 'undefined' ? 1440 : window.innerWidth;
 }
 
-function coarse(): boolean {
-  return typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
-}
-
 /** Logical window size: compact < 768, medium 768–1199, expanded ≥ 1200. */
 @Service()
-export class ArBreakpointService {
+export class AcBreakpointService {
   readonly width = signal(readWidth());
   readonly size = computed<WindowSize>(() => windowSizeFor(this.width()));
   readonly compact = computed(() => this.size() === 'compact');
@@ -38,29 +34,26 @@ export class ArBreakpointService {
 }
 
 /**
- * Element that carries `data-density`: `<html>` by default. In the plugin's shadow root,
- * selectors cannot see `<html>`, so the plugin root carries it instead (`embedConfig`).
+ * Density chosen by the site: the shell sets `data-density="pointer|touch"` on `<html>` (coarse
+ * pointer or window < 768 px) and the --ac-* density tokens follow. Read-only mirror for the few
+ * components that change layout, not only sizes, with the density.
  */
-export const AR_DENSITY_TARGET = new InjectionToken<HTMLElement>('AR_DENSITY_TARGET');
-
-/** Sets `data-density="pointer|touch"` on <html>; control heights follow via tokens. */
 @Service()
-export class ArDensityService {
-  private readonly breakpoints = inject(ArBreakpointService);
-  private readonly doc = inject(DOCUMENT);
-  private readonly target = inject(AR_DENSITY_TARGET, { optional: true });
-  private readonly coarsePointer = signal(coarse());
+export class AcDensityService {
+  private readonly root = inject(DOCUMENT).documentElement;
+  private readonly value = signal(readDensity(this.root));
 
-  readonly density = computed(() => densityFor(this.breakpoints.width(), this.coarsePointer()));
+  readonly density = this.value.asReadonly();
 
   constructor() {
-    if (typeof matchMedia !== 'undefined') {
-      matchMedia('(pointer: coarse)').addEventListener('change', (e) =>
-        this.coarsePointer.set(e.matches),
-      );
-    }
-    effect(() => {
-      (this.target ?? this.doc.documentElement).setAttribute('data-density', this.density());
+    if (typeof MutationObserver === 'undefined') return;
+    new MutationObserver(() => this.value.set(readDensity(this.root))).observe(this.root, {
+      attributes: true,
+      attributeFilter: ['data-density'],
     });
   }
+}
+
+function readDensity(root: HTMLElement): 'pointer' | 'touch' {
+  return root.getAttribute('data-density') === 'touch' ? 'touch' : 'pointer';
 }

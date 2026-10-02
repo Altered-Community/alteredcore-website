@@ -95,12 +95,12 @@ $standings = $live['standings'];
 
 <div class="d-flex align-items-center mb-4">
     <a href="<?= $backUrl ?>" class="text-decoration-none me-3">
-        <i class="fa-solid fa-arrow-left"></i>
+        <?= ac_icon('arrow-left') ?>
     </a>
-    <h1 class="mb-0"><i class="fa-solid fa-ranking-star me-2"></i><?= sprintf($txt['title'], h($tournamentName)) ?></h1>
+    <h1 class="mb-0"><?= ac_icon('medal', 'me-2') ?><?= sprintf($txt['title'], h($tournamentName)) ?></h1>
 </div>
 
-<div class="card-altered p-4 mb-4">
+<div class="ac-card mb-4">
     <?php if (empty($standings)): ?>
     <p class="text-muted mb-0"><?= h($txt['players_empty']) ?></p>
     <?php else: ?>
@@ -124,7 +124,7 @@ $standings = $live['standings'];
                     <td class="text-center"><?= h($p['games_played']) ?></td>
                     <td class="text-end">
                         <button type="button" class="btn btn-sm btn-outline-secondary tr-correct-toggle" data-pid="<?= h($p['id']) ?>">
-                            <i class="fa-solid fa-pen"></i> <?= h($txt['correct']) ?>
+                            <?= ac_icon('pen') ?> <?= h($txt['correct']) ?>
                         </button>
                     </td>
                 </tr>
@@ -155,7 +155,7 @@ $standings = $live['standings'];
                                        value="<?= h($p['admin_adjustment_note'] ?? '') ?>">
                             </div>
                             <div class="col-md-3 d-flex gap-2">
-                                <button type="submit" name="save_adjustment" class="btn btn-sm btn-primary-altered">
+                                <button type="submit" name="save_adjustment" class="ac-button ac-button--sm">
                                     <?= h($txt['save']) ?>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary tr-correct-cancel" data-pid="<?= h($p['id']) ?>">

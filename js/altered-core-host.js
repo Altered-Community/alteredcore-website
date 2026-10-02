@@ -7,6 +7,9 @@
  *   version, baseUrl, siteName, lang ('en' | 'fr'), theme ('light' | 'dark'),
  *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, uniques, decks, collection, ownership }),
  *   page ({ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount })
+ *   Design system: getMount() injects the design system's base and ac-* component stylesheets
+ *   into the plugin's shadow root before the plugin's CSS; the --ac-* tokens inherit from
+ *   <html>, which carries data-theme and data-density (design-system/README.md).
  *   services.cards / .cdn / .uniques are public and called directly; services.decks / .collection / .ownership are
  *   the site's relay (/api/v1/services/…), which adds the session's Keycloak token server-side:
  *   the browser never holds a token. page.apiUrl is the plugin's own PHP endpoints
@@ -96,7 +99,9 @@
             var shadow = el.getAttribute('data-ac-mount') !== 'light';
             var mountRoot = shadow ? (el.shadowRoot || el.attachShadow({ mode: 'open' })) : el;
             if (shadow) {
-                ((host.page.plugin === pluginId && host.page.css) || []).forEach(function (href) {
+                // Design system first (base + ac-* components), then the plugin's own styles.
+                var ds = (config.designSystem && config.designSystem.css) || [];
+                ds.concat((host.page.plugin === pluginId && host.page.css) || []).forEach(function (href) {
                     var link = document.createElement('link');
                     link.rel = 'stylesheet';
                     link.href = href;

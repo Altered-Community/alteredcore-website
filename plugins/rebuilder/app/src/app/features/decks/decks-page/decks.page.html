@@ -1,7 +1,7 @@
 @if (bp.compact()) {
-  <ar-app-bar title="Decks">
-    <button actions class="new-compact" arIconButton="plus" variant="primary" ariaLabel="Nouveau deck" i18n-ariaLabel="@@decks.page.newDeck" [iconSize]="22" (click)="newDeck()"></button>
-  </ar-app-bar>
+  <ac-app-bar title="Decks">
+    <button actions class="new-compact" acIconButton="plus" variant="primary" ariaLabel="Nouveau deck" i18n-ariaLabel="@@decks.page.newDeck" [iconSize]="22" (click)="newDeck()"></button>
+  </ac-app-bar>
 }
 
 <main class="page" [class.with-nav]="bp.compact()">
@@ -9,65 +9,65 @@
     <div class="head">
       <h1>Decks</h1>
       <div class="actions">
-        <button arButton variant="secondary" icon="upload" (click)="importDeck()" i18n="@@decks.page.import">Importer</button>
-        <button arButton icon="plus" (click)="newDeck()" i18n="@@decks.page.newDeck">Nouveau deck</button>
+        <button acButton variant="secondary" icon="upload" (click)="importDeck()" i18n="@@decks.page.import">Importer</button>
+        <button acButton icon="plus" (click)="newDeck()" i18n="@@decks.page.newDeck">Nouveau deck</button>
       </div>
     </div>
   }
 
   @if (!bp.compact() && builders().length) {
     <div class="builders-banner">
-      <p><ar-icon name="info" [size]="16" /><span i18n="@@decks.builders.info">D’autres deck builders partagent la même base de données. Créez, modifiez ou importez vos decks dans l’un d’eux et continuez sur un autre. Tous les decks apparaissent sur BGA.</span></p>
-      <button arButton variant="secondary" size="sm" icon="external-link" aria-haspopup="dialog" (click)="showBuilders()" i18n="@@decks.builders.show">Voir les deckbuilders</button>
+      <p><ac-icon name="info" [size]="16" /><span i18n="@@decks.builders.info">D’autres deck builders partagent la même base de données. Créez, modifiez ou importez vos decks dans l’un d’eux et continuez sur un autre. Tous les decks apparaissent sur BGA.</span></p>
+      <button acButton variant="secondary" size="sm" icon="external-link" aria-haspopup="dialog" (click)="showBuilders()" i18n="@@decks.builders.show">Voir les deckbuilders</button>
     </div>
   }
 
   @if (!bp.compact()) {
-    <ar-tabs ariaLabel="Decks" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
+    <ac-tabs ariaLabel="Decks" [tabs]="tabs()" [active]="tab()" (activeChange)="setTab($event)" />
   }
 
   @if (tab() === 'contest') {
     <div class="contest-head">
       <p class="contest-intro" i18n="@@decks.contest.intro">Les decks Standard No Unique du concours de deck de démarrage : les gagnants, ou toutes les decklists proposées.</p>
-      <ar-segmented ariaLabel="Decks du concours" i18n-ariaLabel="@@decks.contest.set" [fullWidth]="bp.compact()" [options]="contestSets" [value]="contestSet()" (valueChange)="setContestSet($event)" />
+      <ac-segmented ariaLabel="Decks du concours" i18n-ariaLabel="@@decks.contest.set" [fullWidth]="bp.compact()" [options]="contestSets" [value]="contestSet()" (valueChange)="setContestSet($event)" />
     </div>
   }
 
   @if (bp.compact()) {
     <div class="search-row">
-      <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
-      <button arIconButton="sliders" [ariaLabel]="filtersLabel()" [iconSize]="20" class="filters-btn" (click)="openFilters()">
+      <ac-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
+      <button acIconButton="sliders-horizontal" [ariaLabel]="filtersLabel()" [iconSize]="20" class="filters-btn" (click)="openFilters()">
         @if (activeFilters()) {
-          <span class="badge"><ar-count [value]="activeFilters()" /></span>
+          <span class="badge"><ac-count [value]="activeFilters()" /></span>
         }
       </button>
     </div>
     <div class="count-row">
       <strong>{{ countLabel() }}</strong>
       @if (tab() !== 'contest') {
-        <ar-select ariaLabel="Trier par" i18n-ariaLabel="@@decks.page.sortBy" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+        <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@decks.page.sortBy" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
       }
     </div>
   } @else {
     <div class="filters">
       <div class="row">
-        <ar-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
+        <ac-input class="q" icon="search" ariaLabel="Rechercher un deck" i18n-ariaLabel="@@decks.page.search" placeholder="Rechercher un deck…" i18n-placeholder="@@decks.page.searchPlaceholder" [clearable]="true" [value]="filters().q" (valueChange)="patch({ q: $event })" />
         @if (tab() !== 'contest') {
-          <ar-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
+          <ac-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
         }
-        <ar-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
+        <ac-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
         @if (tab() === 'mine') {
-          <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+          <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
         }
         <span class="grow"></span>
         @if (tab() !== 'contest') {
-          <ar-select label="Trier par" i18n-label="@@decks.page.sortBy" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
+          <ac-select label="Trier par" i18n-label="@@decks.page.sortBy" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
         }
       </div>
       <div class="row factions" role="group" aria-label="Faction">
         <span class="overline">Faction</span>
         @for (f of factions; track f.code) {
-          <ar-chip [label]="f.name" [dot]="f.color" [selected]="filters().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
+          <ac-chip [label]="f.name" [dot]="f.color" [selected]="filters().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
         }
       </div>
     </div>
@@ -75,10 +75,10 @@
 
   @if (tab() === 'mine' && localDecks().length) {
     <div class="local-decks" role="region" aria-label="Decks locaux" i18n-aria-label="@@decks.local.region">
-      <p><ar-icon name="hard-drive" [size]="16" />{{ localDecksLabel() }}</p>
+      <p><ac-icon name="hard-drive" [size]="16" />{{ localDecksLabel() }}</p>
       <div class="local-actions">
-        <button arButton variant="secondary" size="sm" [disabled]="localSaving()" (click)="discardLocalDecks()" i18n="@@decks.local.discard">Ignorer</button>
-        <button arButton size="sm" icon="upload" [disabled]="localSaving()" (click)="saveLocalDecks()" i18n="@@decks.local.save">Enregistrer sur mon compte</button>
+        <button acButton variant="secondary" size="sm" [disabled]="localSaving()" (click)="discardLocalDecks()" i18n="@@decks.local.discard">Ignorer</button>
+        <button acButton size="sm" icon="upload" [disabled]="localSaving()" (click)="saveLocalDecks()" i18n="@@decks.local.save">Enregistrer sur mon compte</button>
       </div>
       @if (localError(); as e) {
         <p class="local-error" role="alert">{{ e }}</p>
@@ -87,7 +87,7 @@
   }
   @if (tab() === 'mine' && mineLoading()) {
     <p class="notice loading" role="status">
-      <ar-icon class="spin" name="loader" [size]="14" /><span i18n="@@decks.page.mineLoading">Chargement de vos decks… Cela peut prendre un moment si vous en avez beaucoup.</span>
+      <ac-icon class="spin" name="loader-circle" [size]="14" /><span i18n="@@decks.page.mineLoading">Chargement de vos decks… Cela peut prendre un moment si vous en avez beaucoup.</span>
     </p>
   }
   @if (tab() === 'mine' && (serverError() || auth.sessionNotice())) {
@@ -95,18 +95,18 @@
   }
   @if (tab() === 'mine' && !auth.isLoggedIn() && !auth.sessionRestoring()) {
     <p class="notice guest" role="note" i18n="@@decks.page.guestNotice">
-      <ar-icon name="lock" [size]="14" />
+      <ac-icon name="lock" [size]="14" />
       Mode invité : vos decks sont enregistrés sur cet appareil. <a routerLink="/login">Se connecter</a>
     </p>
   }
 
   <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()" [attr.aria-busy]="(tab() === 'mine' && mineLoading()) || null">
     @for (d of list(); track d.id) {
-      <ar-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
+      <ac-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
     }
     @if (tab() === 'mine' && !bp.compact()) {
       <button type="button" class="new-tile" (click)="newDeck()" i18n="@@decks.page.newDeckTile">
-        <span class="plus"><ar-icon name="plus" [size]="22" [strokeWidth]="2.4" /></span>
+        <span class="plus"><ac-icon name="plus" [size]="22" [strokeWidth]="2.4" /></span>
         Nouveau deck
       </button>
     }
@@ -125,7 +125,7 @@
         <strong i18n="@@decks.page.noDecks">Aucun deck pour l’instant</strong>
         <p i18n="@@decks.page.noDecksHint">Créez votre premier deck : choisissez un héros, un nom et un format.</p>
         @if (bp.compact()) {
-          <button arButton icon="plus" (click)="newDeck()" i18n="@@decks.page.newDeck">Nouveau deck</button>
+          <button acButton icon="plus" (click)="newDeck()" i18n="@@decks.page.newDeck">Nouveau deck</button>
         }
       }
     </div>
@@ -145,14 +145,14 @@
         <p i18n="@@decks.page.noMatch">Aucun deck ne correspond à ces filtres.</p>
       </div>
     }
-    <div #listSentinel arInfiniteSentinel class="sentinel" (visible)="onSentinel($event)"></div>
+    <div #listSentinel acInfiniteSentinel class="sentinel" (visible)="onSentinel($event)"></div>
   }
 
   @if (bp.compact() && tab() === 'mine') {
-    <button arButton variant="secondary" size="lg" icon="upload" [fullWidth]="true" (click)="importDeck()" i18n="@@decks.page.importDeck">Importer un deck</button>
+    <button acButton variant="secondary" size="lg" icon="upload" [fullWidth]="true" (click)="importDeck()" i18n="@@decks.page.importDeck">Importer un deck</button>
   }
 </main>
 
 @if (bp.compact()) {
-  <ar-bottom-nav ariaLabel="Decks" [items]="navItems()" />
+  <ac-bottom-nav ariaLabel="Decks" [items]="navItems()" />
 }

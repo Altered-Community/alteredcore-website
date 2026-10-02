@@ -2,6 +2,7 @@
 $adminPageTitle = 'Footer link';
 $adminSection   = 'footer';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db  = getDB();
 $id         = isset($_GET['id'])  ? (int)$_GET['id']  : 0;
@@ -114,17 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="number" name="sort_order" class="form-control" value="<?= (int)$row['sort_order'] ?>">
             </div>
             <div class="col-12">
-                <label class="form-label">Font Awesome icon <small class="text-muted">(optional)</small></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i id="icon-preview" class="<?= h($row['icon'] ?: 'fa-solid fa-link') ?>"></i></span>
-                    <input type="text" name="icon" id="icon-input" class="form-control"
-                           value="<?= h($row['icon'] ?? '') ?>"
-                           placeholder="fa-solid fa-link">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="icon-clear" title="No icon">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div class="form-text">Leave blank for no icon. e.g. <code>fa-solid fa-newspaper</code></div>
+                <?php adminIconField((string)($row['icon'] ?? ''), ['optional' => true, 'clearable' => true, 'placeholder' => 'link', 'help' => 'Leave blank for no icon.']); ?>
             </div>
         </div>
 
@@ -136,20 +127,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 </div>
-
-<script>
-(function() {
-    var input   = document.getElementById('icon-input');
-    var preview = document.getElementById('icon-preview');
-    var clear   = document.getElementById('icon-clear');
-    input.addEventListener('input', function() {
-        preview.className = this.value.trim() || 'fa-solid fa-link';
-    });
-    clear.addEventListener('click', function() {
-        input.value = '';
-        preview.className = 'fa-solid fa-link';
-    });
-})();
-</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -2,7 +2,7 @@
 
 This SPA talks to the **same HTTP APIs** the community PHP deckbuilder uses. It does **not** vendor or fork [Yutsa/alteredcore-website](https://github.com/Yutsa/alteredcore-website). Endpoints below were read from that repo (`plugins/core-altered-cards/`, `auth/`, `config.local.php.example`) plus the live OpenAPI docs.
 
-Configure bases in `src/environments/environment.ts` (production build) and `environment.development.ts` (`ng serve`). See `.env.example`.
+The app runs only as the site's `rebuilder` plugin: `main.embed.ts` takes the service URLs from `window.AlteredCore.services` (cards, CDN, and the site's decks relay); `src/environments/environment.ts` only holds fallbacks.
 
 ## Hosts (production / preprod)
 
@@ -31,10 +31,7 @@ The PHP site supports:
 1. **Keycloak SSO** — `GET /auth/keycloak-login.php` → authorization code → `/auth/keycloak-callback.php`. Access token is stored server-side (encrypted in session). `deckApiToken()` returns `kc_get_access_token($userId)` and is sent as `Authorization: Bearer` to `DECKS_API_URL`.
 2. **Local email/password** — `/auth/local-login.php` when `KC_URL` is empty. That path **does not** produce a decks-API JWT; deck save then fails unless Keycloak is configured.
 
-The plugin never holds a Keycloak token: decks calls go to the site's relay
-(`AlteredCore.services.decks`, `/api/v1/services/decks`), which adds the PHP session's access token
-server-side. Signing in is the site's (`AlteredCore.login()`). Display name is the site user's. Guest decks
-stay in `localStorage` (`arb.guest-decks`).
+The plugin holds no token. Deck calls go to the site's relay (`AlteredCore.services.decks`, `/api/v1/services/decks`), which adds the Keycloak access token of the PHP session server-side and renews it; writes carry the session's `X-CSRF-Token` (`siteCsrfInterceptor`). Signing in is the site's (`AlteredCore.login()`). Guest decks stay in `localStorage` (`arb.guest-decks`).
 
 ## CORS (probed 2026-09-23)
 
@@ -44,7 +41,7 @@ Both `cards.alteredcore.org` and `decks.alteredcore.org` answer CORS preflight w
 - `Access-Control-Allow-Headers: content-type, authorization`
 - `Access-Control-Allow-Methods: GET, OPTIONS, POST, PUT, PATCH, DELETE`
 
-The cards API is called directly from the site's origin; decks go through the site's relay. `cdn.alteredcore.org` returns `Access-Control-Allow-Origin: *`.
+The plugin calls the cards API and the CDN directly from the site's origin; decks go through the same-origin relay. `cdn.alteredcore.org` returns `Access-Control-Allow-Origin: *`.
 
 ## Cards API (`CARDS_API_URL`)
 
@@ -82,7 +79,7 @@ CDN art URL used by `card-search.js`:
 Uniques have no image of their own: `cards/{lang}/{SET}/ALT_…_U_374.webp` is 404 and the API `imagePath` (Equinox S3)
 is 403. Every unique of a printed card shares one unique illustration, `{CDN_URL}/cards/assets/{SET}/{CARD}_U.webp`
 (`CARD` = reference without `_U_n`), or `{CDN_URL}/illustrations/{SET}/{CARD}_U_FRAMELESS_T1.webp`. The PHP site draws
-the card (frame, costs, powers, text) in a canvas with Altered-Card-Renderer; this app draws it with `ar-unique-card`.
+the card (frame, costs, powers, text) in a canvas with Altered-Card-Renderer; this app draws it with `ac-unique-card`.
 
 ## Uniques API (`UNIQUES_API_URL`, `AlteredCore.services.uniques`)
 
@@ -142,10 +139,6 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 
 Ownership plugin (when enabled): `/papi/ownership/alt-art-search`, `alt-art-set-preference`.
 
-## Local Aspire / docker
+## Local stack
 
-The PHP example comments describe a local Aspire stack: website in Docker (`docker compose up` → http://localhost:8080), cards/decks/ownership as `*.local.gd` hosts, uniques API on port **8005**.
-
-The plugin takes its service URLs from the site (`AlteredCore.services`, `includes/spa.php`), so it follows the site's configuration; `docker-compose.stack.yml` runs the site with a local decks API and Keycloak.
-
-This repository does not vendor those services.
+The plugin runs in the site's local stack (`docker-compose.stack.yml`, see `../../README.md`): the shell passes the local service URLs through `window.AlteredCore.services`, so nothing is configured in the app.

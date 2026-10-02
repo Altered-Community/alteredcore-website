@@ -1,36 +1,36 @@
 :host {
   display: inline-flex;
   align-items: center;
-  gap: var(--ar-space-1);
+  gap: var(--ac-space-1);
   min-height: 1lh;
-  font: var(--ar-font-caption);
+  font: var(--ac-font-caption);
   font-weight: 600;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   white-space: nowrap;
 }
 
 :host(.icon-only) {
   justify-content: center;
-  min-width: var(--ar-hit-min);
+  min-width: var(--ac-hit-min);
 }
 
-:host(.ar-save-status--saved) {
-  color: var(--ar-color-success);
+:host(.ac-save-status--saved) {
+  color: var(--ac-color-success);
 }
 
-:host(.ar-save-status--error) {
-  color: var(--ar-color-danger);
+:host(.ac-save-status--error) {
+  color: var(--ac-color-danger);
 }
 
 .dot {
-  width: var(--ar-space-2);
-  height: var(--ar-space-2);
+  width: var(--ac-space-2);
+  height: var(--ac-space-2);
   border-radius: 50%;
   background: currentColor;
-  animation: ar-save-pulse 1s ease-in-out infinite alternate;
+  animation: ac-save-pulse 1s ease-in-out infinite alternate;
 }
 
-@keyframes ar-save-pulse {
+@keyframes ac-save-pulse {
   from {
     opacity: 0.3;
   }

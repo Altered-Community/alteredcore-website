@@ -38,7 +38,7 @@
 
     const coverHtml = (booster, sizeClass) => booster.imagePath
         ? '<img src="' + escapeHtml(booster.imagePath) + '" alt="" class="' + sizeClass + '">'
-        : '<div class="own-opener-cover-fallback mx-auto"><i class="fa-solid fa-gift fa-3x"></i></div>';
+        : '<div class="own-opener-cover-fallback mx-auto">' + (window.acIcon ? window.acIcon('gift') : '') + '</div>';
 
     let boosterList = [];
 
@@ -58,11 +58,11 @@
             col.className = 'col-6 col-md-3';
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'own-booster-tile w-100';
+            btn.className = 'own-booster-tile';
             btn.innerHTML =
                 coverHtml(booster, 'own-booster-cover-img') +
-                '<div class="mt-2 fw-semibold">' + escapeHtml(booster.name) + '</div>' +
-                '<div class="text-muted small">×' + booster.quantity + '</div>';
+                '<div class="own-booster-name">' + escapeHtml(booster.name) + '</div>' +
+                '<div class="own-booster-qty">×' + booster.quantity + '</div>';
             btn.addEventListener('click', () => openerAt(index));
             col.appendChild(btn);
             gridEl.appendChild(col);

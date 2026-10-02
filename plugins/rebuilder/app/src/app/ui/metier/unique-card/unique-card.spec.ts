@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { Card } from '../../../core/models';
-import { ArCardTile } from '../card-tile/card-tile';
-import { ArUniqueCard } from './unique-card';
+import { AcCardTile } from '../card-tile/card-tile';
+import { AcUniqueCard } from './unique-card';
 
 /** Shape of `/api/cards` without `locale` (text fields are locale maps). */
 const unique: Card = {
@@ -22,9 +22,9 @@ const unique: Card = {
   echoEffect: [],
 };
 
-describe('ArUniqueCard', () => {
+describe('AcUniqueCard', () => {
   function render(card: Card): HTMLElement {
-    const fixture = TestBed.createComponent(ArUniqueCard);
+    const fixture = TestBed.createComponent(AcUniqueCard);
     fixture.componentRef.setInput('card', card);
     fixture.componentRef.setInput('eager', true);
     fixture.detectChanges();
@@ -47,7 +47,7 @@ describe('ArUniqueCard', () => {
   });
 
   it('draws on the unique illustration, not the common print', () => {
-    const img = render(unique).querySelector('ar-card-art img');
+    const img = render(unique).querySelector('ac-card-art img');
     expect(img?.getAttribute('src')).toBe('https://cdn.alteredcore.org/illustrations/CORE/ALT_CORE_B_OR_17_U_FRAMELESS_T3.webp');
   });
 
@@ -59,14 +59,14 @@ describe('ArUniqueCard', () => {
   });
 });
 
-describe('ArCardTile with a unique', () => {
+describe('AcCardTile with a unique', () => {
   it('renders the unique face and keeps the add button', () => {
-    const fixture = TestBed.createComponent(ArCardTile);
+    const fixture = TestBed.createComponent(AcCardTile);
     fixture.componentRef.setInput('card', unique);
     fixture.componentRef.setInput('max', 1);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('ar-unique-card')).not.toBeNull();
+    expect(el.querySelector('ac-unique-card')).not.toBeNull();
     expect(el.querySelector('button[aria-label="Ajouter Jeanne d’Arc au deck"]')).not.toBeNull();
   });
 });

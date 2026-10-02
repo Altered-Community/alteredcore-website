@@ -3,6 +3,7 @@ $adminSection = 'groups';
 $isNew        = !isset($_GET['id']);
 $adminPageTitle = $isNew ? 'New group' : 'Edit group';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db       = getDB();
 $sections = adminSections();
@@ -16,7 +17,7 @@ foreach (pluginsGetAdminSections() as $_ps) {
     if (!isset($pluginSectionsGrouped[$_pid])) {
         $pluginSectionsGrouped[$_pid] = [
             'name'     => $_allPluginManifests[$_pid]['name'] ?? $_pid,
-            'icon'     => $_allPluginManifests[$_pid]['icon'] ?? 'fa-solid fa-puzzle-piece',
+            'icon'     => $_allPluginManifests[$_pid]['icon'] ?? 'puzzle',
             'sections' => [],
         ];
     }
@@ -154,9 +155,9 @@ $fSections    = $groupSections;
             <div class="d-flex align-items-center gap-3">
                 <input type="color" name="color" class="form-control form-control-color"
                        value="<?= h($fColor) ?>" style="width:60px;height:36px" id="groupColor">
-                <span id="groupColorPreview" class="badge" style="background:<?= h($fColor) ?>;color:#fff;font-size:.85rem;padding:4px 14px;border-radius:20px">
+                <span id="groupColorPreview" class="badge" style="background:<?= h($fColor) ?>;color:var(--ac-color-on-strong);font-size:.85rem;padding:4px 14px;border-radius:var(--ac-radius-pill)">
                     <?php if ($fIcon !== ''): ?>
-                    <i class="<?= h($fIcon) ?>"></i>
+                    <?= adminIconPreview($fIcon) ?>
                     <?php else: ?>
                     <?= $fName !== '' ? h($fName) : 'Preview' ?>
                     <?php endif; ?>
@@ -165,13 +166,7 @@ $fSections    = $groupSections;
         </div>
 
         <div class="mb-3">
-            <label class="form-label fw-semibold">Icon <small class="text-muted fw-normal ms-1">— classe Font Awesome (ex: <code>fa-solid fa-crown</code>)</small></label>
-            <div class="input-group">
-                <span class="input-group-text"><i id="groupIconPreview" class="<?= h($fIcon) ?>"></i></span>
-                <input type="text" name="icon" id="groupIcon" class="form-control"
-                       value="<?= h($fIcon) ?>" placeholder="fa-solid fa-crown" maxlength="100">
-            </div>
-            <div class="form-text">Laissez vide pour afficher le nom dans la pillule.</div>
+            <?php adminIconField($fIcon, ['id' => 'groupIcon', 'maxlength' => 100, 'placeholder' => 'crown', 'help' => 'Leave blank to show the group name in the badge.']); ?>
         </div>
 
         <div id="adminAccessBlock" class="mb-1">
@@ -271,7 +266,7 @@ $fSections    = $groupSections;
             <?php foreach ($pluginSectionsGrouped as $_pid => $_pg): ?>
             <div class="mb-2">
                 <div class="small text-muted mb-1" style="font-size:.8rem;letter-spacing:.02em">
-                    <i class="<?= h($_pg['icon']) ?> me-1"></i>
+                    <?= ac_icon((string)$_pg['icon'], 'me-1') ?>
                     <strong><?= h($_pg['name']) ?></strong>
                 </div>
                 <div class="d-flex flex-column gap-1 ms-3">
@@ -307,18 +302,15 @@ $fSections    = $groupSections;
     var nameInput     = document.querySelector('input[name="name"]');
     var iconInput     = document.getElementById('groupIcon');
     var preview       = document.getElementById('groupColorPreview');
-    var iconPreview   = document.getElementById('groupIconPreview');
     var sectionsBlock = document.getElementById('sectionsBlock');
 
     function updatePreview() {
         var ic = iconInput.value.trim();
         preview.style.background = colorInput.value;
         if (ic) {
-            preview.innerHTML = '<i class="' + ic + '"></i>';
-            iconPreview.className = ic;
+            window.adminRenderIcon(preview, ic);
         } else {
             preview.textContent = nameInput.value.trim() || 'Preview';
-            iconPreview.className = '';
         }
     }
 

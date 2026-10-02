@@ -1,4 +1,4 @@
-<div class="ar-overlay-body new-deck-body">
+<div class="ac-overlay-body new-deck-body">
   <section #heroesCol class="heroes" [class.narrow]="narrow()" aria-labelledby="new-deck-hero-label">
     <div class="heroes-head">
       <span class="label" id="new-deck-hero-label" i18n="@@newDeck.hero">Héros <span class="req" aria-hidden="true">*</span></span>
@@ -6,7 +6,7 @@
         <span class="hint" i18n="@@newDeck.heroHint">Détermine la faction et les cartes disponibles</span>
       }
     </div>
-    <ar-faction-tabs
+    <ac-faction-tabs
       size="sm"
       [layout]="bp.compact() ? 'scroll' : 'grid'"
       [columns]="narrow() ? 3 : 6"
@@ -15,13 +15,13 @@
     />
     @if (!global()) {
       <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
-        <ar-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+        <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
         @if (altArts()) {
-          <ar-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+          <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
         }
       </div>
     }
-    <ar-hero-selector
+    <ac-hero-selector
       panelId="new-deck-heroes"
       [layout]="bp.compact() ? 'carousel' : 'grid'"
       [columns]="narrow() ? 3 : 4"
@@ -33,7 +33,7 @@
     />
   </section>
   <div class="side">
-    <ar-input
+    <ac-input
       label="Nom du deck" i18n-label="@@newDeck.name"
       [required]="true"
       placeholder="ex : Moyo Embrasement" i18n-placeholder="@@newDeck.namePlaceholder"
@@ -44,13 +44,13 @@
     />
     <div class="field">
       <span class="label" i18n="@@newDeck.visibility">Visibilité</span>
-      <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@newDeck.visibility" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
+      <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@newDeck.visibility" [options]="visibility" [fullWidth]="true" [(value)]="form.isPublic" />
     </div>
     <fieldset>
       <legend class="label" i18n="@@newDeck.formatRequired">Format <span class="req" aria-hidden="true">*</span></legend>
       <div class="formats" role="radiogroup" aria-label="Format" i18n-aria-label="@@newDeck.format">
         @for (f of formats; track f.value) {
-          <ar-radio-card
+          <ac-radio-card
             name="new-deck-format"
             layout="compact"
             [title]="f.label"
@@ -62,7 +62,7 @@
         }
       </div>
     </fieldset>
-    <ar-textarea
+    <ac-textarea
       label="Description (facultatif)" i18n-label="@@newDeck.description"
       placeholder="Stratégie, mulligan, choix de cartes…" i18n-placeholder="@@newDeck.descriptionPlaceholder"
       [rows]="3"
@@ -70,7 +70,7 @@
     />
   </div>
 </div>
-<div class="ar-overlay-footer new-deck-footer">
+<div class="ac-overlay-footer new-deck-footer">
   @if (!bp.compact()) {
     <span class="note" aria-live="polite">
       @if (form.hero(); as h) {
@@ -80,6 +80,6 @@
       }
     </span>
   }
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@newDeck.cancel">Annuler</button>
-  <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()" i18n="@@newDeck.create">Créer le deck</button>
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@newDeck.cancel">Annuler</button>
+  <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!form.ready()" (click)="create()" i18n="@@newDeck.create">Créer le deck</button>
 </div>

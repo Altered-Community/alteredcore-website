@@ -1,4 +1,4 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   <section>
     <h3 i18n="@@deck.legality.format">Format du deck</h3>
     <p>{{ format }}</p>
@@ -9,8 +9,8 @@
       <ul class="checks">
         @for (c of checks; track c.rule) {
           <li [class.failed]="!c.ok">
-            <ar-icon [name]="c.ok ? 'check' : 'x'" [size]="16" [strokeWidth]="2.6" />
-            <span class="ar-sr-only">{{ c.ok ? passed : failed }}</span>
+            <ac-icon [name]="c.ok ? 'check' : 'x'" [size]="16" [strokeWidth]="2.6" />
+            <span class="ac-sr-only">{{ c.ok ? passed : failed }}</span>
             <span class="label">{{ c.label }}</span>
             @if (c.detail) {
               <span class="detail">{{ c.detail }}</span>

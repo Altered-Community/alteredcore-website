@@ -1,70 +1,67 @@
 /* card-scan — reusable scanner overlay (window.CardScan).
-   Plugin-specific geometry only; layout/buttons rely on Bootstrap, colours on the
-   site palette variables so the overlay matches the site (and flips in dark mode). */
+   Plugin-specific geometry only; buttons are ac-* components, colours come from the design
+   system tokens (design-system/tokens/tokens.css), which already have dark values.
+   The reticle, its dimming and the "accepted" flash sit on the live camera feed, so they use
+   fixed --ac-card-scan-* tokens that do not change with the theme. */
 
-/* Fullscreen scanner overlay — SOLID/opaque, same background as the site page
-   (var(--sand-100)). NOT the semi-transparent --card-lightbox-bg (used elsewhere). */
-#cs-scanner-overlay        { display: none; position: fixed; inset: 0; z-index: 1060;
-                             background: var(--sand-100); color: var(--neutral-800); }
+/* Fullscreen scanner overlay — opaque, same background as the site page. */
+#cs-scanner-overlay        { display: none; position: fixed; inset: 0; z-index: calc(var(--ac-z-overlay) + 10);
+                             background: var(--ac-color-bg-app); color: var(--ac-color-text); }
 #cs-scanner-overlay.active { display: flex; }
 
 /* Camera viewport + aiming reticle */
-#cs-video-wrap       { position: relative; width: 100%; max-width: 420px; border-radius: 12px;
-                       overflow: hidden; border: 2px solid var(--primary-400); }
-#cs-video-wrap video { width: 100%; display: block; transform-origin: 50% 50%; transition: transform .15s ease; }
-/* White reticle sits over the live camera feed; overflow:hidden on the wrap confines
-   the dimming shadow to the video only, so it works on any page background. */
-/* Square size/position set in JS (layoutReticle) — CSS insets can't force a square
-   inside a non-square container, and QR codes are square. */
-#cs-reticle          { position: absolute; border: 2px solid rgba(255, 255, 255, .85);
-                       box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .28);
-                       pointer-events: none; transition: border-color .15s, box-shadow .15s; }
-#cs-reticle.cs-flash { border-color: #46d17a; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .28), 0 0 18px 2px rgba(70, 209, 122, .6); }
-@media (max-width: 600px) {
+#cs-video-wrap       { position: relative; width: 100%; max-width: 420px; border-radius: var(--ac-radius-lg);
+                       overflow: hidden; border: 2px solid var(--ac-color-primary); }
+#cs-video-wrap video { width: 100%; display: block; transform-origin: 50% 50%; transition: transform var(--ac-duration-fast) ease; }
+/* Reticle over the live camera feed; overflow:hidden on the wrap confines the dimming shadow
+   to the video only. Square size/position set in JS (layoutReticle) — CSS insets can't force a
+   square inside a non-square container, and QR codes are square. */
+#cs-reticle          { position: absolute; border: 2px solid var(--ac-card-scan-reticle);
+                       box-shadow: 0 0 0 100vmax var(--ac-card-scan-dim);
+                       pointer-events: none; transition: border-color var(--ac-duration-fast), box-shadow var(--ac-duration-fast); }
+#cs-reticle.cs-flash { border-color: var(--ac-card-scan-accept);
+                       box-shadow: 0 0 0 100vmax var(--ac-card-scan-dim), 0 0 18px 2px var(--ac-card-scan-accept-glow); }
+@media (max-width: 767.98px) {
     #cs-video-wrap { max-width: 100%; border-radius: 0; border-left: none; border-right: none; }
 }
 
 /* Accept/reject toast, centred over the video */
-#cs-toast            { position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
-                       max-width: 90%; padding: 5px 12px; border-radius: 999px; font-size: .78rem;
-                       font-weight: 600; color: #fff; background: rgba(70, 209, 122, .95);
-                       opacity: 0; transition: opacity .15s; pointer-events: none; white-space: nowrap; }
+#cs-toast            { position: absolute; left: 50%; top: var(--ac-space-2-5); transform: translateX(-50%);
+                       max-width: 90%; padding: var(--ac-space-1) var(--ac-space-3); border-radius: var(--ac-radius-pill);
+                       font: var(--ac-font-caption);
+                       color: var(--ac-color-success); background: var(--ac-color-success-soft);
+                       opacity: 0; transition: opacity var(--ac-duration-fast); pointer-events: none; white-space: nowrap; }
 #cs-toast.active         { opacity: 1; }
-#cs-toast.cs-toast-bad   { background: rgba(179, 57, 47, .95); }
+#cs-toast.cs-toast-bad   { color: var(--ac-color-danger); background: var(--ac-color-danger-soft); }
 
 /* Scanned-cards filmstrip (collect mode) — most recent on the left, scrolls right */
-#cs-strip            { display: none; flex-direction: row; align-items: center; gap: 8px;
+#cs-strip            { display: none; flex-direction: row; align-items: center; gap: var(--ac-space-2);
                        width: 100%; max-width: 420px; height: 96px; overflow-x: auto; overflow-y: hidden;
-                       padding: 4px 2px; scrollbar-width: thin; }
-.cs-strip-item       { flex: 0 0 auto; width: 64px; height: 88px; border-radius: 6px; overflow: hidden;
-                       background: var(--sand-200); display: flex; align-items: center; justify-content: center;
-                       opacity: 0; transform: translateX(-14px); transition: opacity .2s, transform .2s; }
+                       padding: var(--ac-space-1) var(--ac-space-0-5); scrollbar-width: thin; }
+.cs-strip-item       { flex: 0 0 auto; width: 64px; height: 88px; border-radius: var(--ac-radius-sm); overflow: hidden;
+                       background: var(--ac-color-track); display: flex; align-items: center; justify-content: center;
+                       opacity: 0; transform: translateX(-14px); transition: opacity var(--ac-duration-base), transform var(--ac-duration-base); }
 .cs-strip-item.cs-strip-in { opacity: 1; transform: none; }
 .cs-strip-item img,
 .cs-strip-item altered-card,
 .cs-strip-item canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
-.cs-strip-item.cs-strip-text { font-size: .5rem; color: var(--neutral-600); padding: 3px; text-align: center;
-                       word-break: break-all; line-height: 1.15; }
+.cs-strip-item.cs-strip-text { font: var(--ac-font-micro); color: var(--ac-color-text-2); padding: var(--ac-space-1);
+                       text-align: center; word-break: break-all; }
 
-/* Camera control buttons (zoom / torch) — square icon buttons */
-.cs-ctrl          { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
-                    font-size: 1.2rem; font-weight: 700; line-height: 1; color: var(--neutral-600);
-                    background: transparent; border: 1px solid var(--neutral-300); border-radius: 8px;
-                    cursor: pointer; transition: background .12s, color .12s, border-color .12s; }
-.cs-ctrl:hover    { color: var(--neutral-800); border-color: var(--neutral-400); }
-.cs-ctrl.cs-active{ background: var(--primary-400); border-color: transparent; color: var(--neutral-800); }
+/* Camera control buttons (zoom / torch): .ac-icon-button .ac-icon-button--lg; active torch = primary. */
+.cs-ctrl          { font: var(--ac-font-heading); }
+.cs-ctrl.cs-active,
+.cs-ctrl.cs-active:is(:hover, :focus-visible) { border-color: transparent; background: var(--ac-color-primary); color: var(--ac-color-on-primary); }
 
 /* Overlay text */
-.cs-overlay-hint  { color: var(--neutral-600); }
-.cs-overlay-error { color: #b3392f; display: none; }
+.cs-overlay-hint  { color: var(--ac-color-text-2); font: var(--ac-font-small); }
+.cs-overlay-error { color: var(--ac-color-danger); font: var(--ac-font-small); display: none; }
 
 /* Busy / redirect indicator (covers the scanner while resolving) */
 #cs-busy          { display: none; position: absolute; inset: 0; z-index: 5;
-                    flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-                    background: var(--sand-100); }
+                    flex-direction: column; align-items: center; justify-content: center; gap: var(--ac-space-4);
+                    background: var(--ac-color-bg-app); }
 #cs-busy.active   { display: flex; }
-#cs-busy-msg      { color: var(--neutral-600); font-size: .82rem; font-weight: 600;
-                    letter-spacing: .06em; text-transform: uppercase; }
-.cs-spinner       { width: 44px; height: 44px; border: 3px solid var(--neutral-200);
-                    border-top-color: var(--primary-400); border-radius: 50%; animation: cs-spin .8s linear infinite; }
-@keyframes cs-spin { to { transform: rotate(360deg); } }
+#cs-busy-msg      { color: var(--ac-color-text-2); font: var(--ac-font-overline);
+                    letter-spacing: var(--ac-letter-spacing-overline); text-transform: uppercase; }
+#cs-busy .ac-spinner { width: 44px; height: 44px; border-width: 3px; }

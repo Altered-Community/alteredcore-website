@@ -7,11 +7,11 @@
 .visual {
   position: relative;
   aspect-ratio: 5 / 7;
-  max-height: var(--ar-card-tile-max-h, none);
-  border-radius: var(--ar-radius-lg);
+  max-height: var(--ac-card-tile-max-h, none);
+  border-radius: var(--ac-radius-lg);
   overflow: hidden;
-  box-shadow: var(--ar-shadow-card);
-  background: var(--ar-color-text-2);
+  box-shadow: var(--ac-shadow-card);
+  background: var(--ac-color-text-2);
 }
 button.visual {
   display: block;
@@ -21,7 +21,7 @@ button.visual {
   cursor: pointer;
 }
 button.visual:focus-visible {
-  outline: 2px solid var(--ar-color-primary);
+  outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }
 .action {
@@ -32,8 +32,8 @@ button.visual:focus-visible {
 .blocked {
   display: flex;
   cursor: help;
-  box-shadow: var(--ar-shadow-fab);
-  border-radius: var(--ar-radius-pill);
+  box-shadow: var(--ac-shadow-fab);
+  border-radius: var(--ac-radius-pill);
 }
 .qty {
   position: absolute;
@@ -41,16 +41,16 @@ button.visual:focus-visible {
   bottom: 10px;
   min-width: 32px;
   height: 30px;
-  padding: 0 var(--ar-space-2);
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-overlay-control);
-  color: var(--ar-color-on-strong);
-  font-size: 14px;
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
+  font-size: var(--ac-font-size-body);
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--ar-shadow-fab);
+  box-shadow: var(--ac-shadow-fab);
 }
 /* Narrow tiles (5-column deck views, compact 3-column grids). */
 @container (max-width: 150px) {
@@ -59,14 +59,14 @@ button.visual:focus-visible {
     bottom: 6px;
     min-width: 28px;
     height: 24px;
-    font-size: 12px;
+    font-size: var(--ac-font-size-caption);
   }
 }
 /* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */
 .favorite {
   position: absolute;
-  top: var(--ar-space-1-5);
-  right: var(--ar-space-1-5);
+  top: var(--ac-space-1-5);
+  right: var(--ac-space-1-5);
   z-index: 2;
   width: 28px;
   height: 28px;
@@ -75,32 +75,40 @@ button.visual:focus-visible {
   justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-overlay-chip);
-  color: var(--ar-color-on-strong);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
 :host(:hover) .favorite,
 .favorite:focus-visible,
-.favorite.on,
-:host-context([data-density='touch']) .favorite {
+.favorite.on {
   opacity: 1;
 }
-.favorite.on {
-  color: var(--ar-color-favorite);
+@media (hover: none), (pointer: coarse) {
+  .favorite {
+    opacity: 1;
+  }
 }
-/* 44 px touch target around the 28 px star. */
-:host-context([data-density='touch']) .favorite::after {
+.favorite.on {
+  color: var(--ac-cards-favorite);
+}
+/* Hit area of at least --ac-hit-min around the 28 px star. */
+.favorite::after {
   content: '';
   position: absolute;
-  inset: -8px;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
 }
-.favorite.on ar-icon ::ng-deep svg {
+.favorite.on ac-icon ::ng-deep svg {
   fill: currentColor;
 }
 .favorite:focus-visible {
-  outline: 2px solid var(--ar-color-primary);
+  outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }

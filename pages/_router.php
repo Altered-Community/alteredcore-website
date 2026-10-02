@@ -102,5 +102,16 @@ if ($_pluginPage !== null) {
     exit;
 }
 
+// Content page (Admin → Pages) without its stub file in pages/, e.g. a database copied without
+// the server's pages/ folder (docker/stack/mirror-prod.php).
+if ($_subPath === '') {
+    $_cpStmt = getDB()->prepare(q("SELECT 1 FROM {pages} WHERE slug = :slug AND type = 'content' LIMIT 1"));
+    $_cpStmt->execute([':slug' => $_slug]);
+    if ($_cpStmt->fetchColumn()) {
+        include dirname(__DIR__) . '/includes/content-page.php';
+        exit;
+    }
+}
+
 // Not found
 include __DIR__ . '/404.php';

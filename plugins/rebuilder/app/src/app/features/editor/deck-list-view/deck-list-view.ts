@@ -1,18 +1,18 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
-import { ArCollapsible } from '../../../ui/containers';
-import { ArDeckRow, ArDeckSection, ArDeckStats, ArDeckSummary } from '../../../ui/metier';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcCollapsible } from '../../../ui/containers';
+import { AcDeckRow, AcDeckSection, AcDeckStats, AcDeckSummary } from '../../../ui/metier';
+import { AcOverlayService } from '../../../ui/overlay';
 import { EditorAltArts } from '../editor-alt-arts';
 import { openTokenArts } from '../token-arts/token-arts.overlay';
-import { ArButton } from '../../../ui/buttons';
+import { AcButton } from '../../../ui/buttons';
 import { editorLegality, lineIssues, openEditorLegality } from '../editor-legality';
 
 /** Mobile « Mon deck »: summary card, Stats card, flat grouped lists (steppers or read-only). */
 @Component({
   selector: 'app-deck-list-view',
-  imports: [ArDeckSummary, ArCollapsible, ArDeckStats, ArDeckRow, ArDeckSection, ArButton],
+  imports: [AcDeckSummary, AcCollapsible, AcDeckStats, AcDeckRow, AcDeckSection, AcButton],
   templateUrl: './deck-list-view.html',
   styleUrl: './deck-list-view.scss',
 })
@@ -20,7 +20,7 @@ export class DeckListView {
   /** Editor only (not the deck page): illustrations used more times than owned. */
   protected readonly altArts = inject(EditorAltArts, { optional: true });
   protected readonly deck = inject(DeckStore);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   readonly readonly = input(false);
   readonly openSettings = output<void>();
   protected readonly statsOpen = signal(true);

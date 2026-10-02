@@ -20,7 +20,7 @@ export function visibleRows(opts: { top: number; viewport: number; rowHeight: nu
  * class. Cells must all have the height of the first one (card tiles). Scrolls with the window.
  */
 @Component({
-  selector: 'ar-virtual-grid',
+  selector: 'ac-virtual-grid',
   host: {
     '[style.padding-top.px]': 'padTop()',
     '[style.padding-bottom.px]': 'padBottom()',
@@ -28,7 +28,7 @@ export function visibleRows(opts: { top: number; viewport: number; rowHeight: nu
   templateUrl: './virtual-grid.html',
   styleUrl: './virtual-grid.scss',
 })
-export class ArVirtualGrid<T> {
+export class AcVirtualGrid<T> {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly items = input.required<readonly T[]>();
   /** Viewports of rows kept above and below the screen. */

@@ -92,7 +92,7 @@ jobs:
           echo "lftp → protocol=$PROTO port=$PORT path=$RP parallel=$PARALLEL"
 
           # ── Liste blanche ────────────────────────────────────────────────────
-          MIRROR_DIRS=(admin assets auth css includes js sql themes)
+          MIRROR_DIRS=(admin assets auth css design-system includes js sql themes)
           # api/ : push (pas de --delete), le serveur y a des fichiers hors dépôt
           # (index.php, nav.php, footer.php) qu'un miroir supprimerait.
           PUSH_DIRS=(pages api)

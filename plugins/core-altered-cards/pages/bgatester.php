@@ -41,7 +41,7 @@ $pageTitle = $txt['page_title'];
     <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
             <div class="card-altered p-4 text-center">
-                <i class="fa-solid fa-flask fa-2x mb-3" style="color:var(--primary-400)"></i>
+                <i class="fa-solid fa-flask fa-2x mb-3" style="color:var(--ac-color-primary)"></i>
                 <h1 class="h4 mb-3"><?= h($txt['page_title']) ?></h1>
                 <p class="mb-4"><?= h($txt['welcome']) ?></p>
 

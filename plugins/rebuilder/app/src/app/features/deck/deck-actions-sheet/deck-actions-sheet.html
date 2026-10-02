@@ -1,13 +1,13 @@
-<div class="ar-overlay-body" role="menu">
+<div class="ac-overlay-body" role="menu">
   @if (imageSource) {
-    <button role="menuitem" type="button" (click)="image('copy')" i18n="@@deck.actions.imageCopy"><ar-icon name="image" [size]="20" />Copier en image</button>
-    <button role="menuitem" type="button" (click)="image('save')" i18n="@@deck.actions.imageSave"><ar-icon name="download" [size]="20" />Enregistrer l’image</button>
-    <button role="menuitem" type="button" (click)="image('open')" i18n="@@deck.actions.imageOpen"><ar-icon name="external-link" [size]="20" />Ouvrir l’image dans un nouvel onglet</button>
+    <button role="menuitem" type="button" (click)="image('copy')" i18n="@@deck.actions.imageCopy"><ac-icon name="image" [size]="20" />Copier en image</button>
+    <button role="menuitem" type="button" (click)="image('save')" i18n="@@deck.actions.imageSave"><ac-icon name="download" [size]="20" />Enregistrer l’image</button>
+    <button role="menuitem" type="button" (click)="image('open')" i18n="@@deck.actions.imageOpen"><ac-icon name="external-link" [size]="20" />Ouvrir l’image dans un nouvel onglet</button>
     <hr aria-hidden="true" />
   }
-  <button role="menuitem" type="button" (click)="ref.close('copy')" i18n="@@deck.actions.copy"><ar-icon name="copy" [size]="20" />Copier la liste</button>
-  <button role="menuitem" type="button" (click)="ref.close('duplicate')" i18n="@@deck.actions.duplicate"><ar-icon name="duplicate" [size]="20" />Dupliquer</button>
+  <button role="menuitem" type="button" (click)="ref.close('copy')" i18n="@@deck.actions.copy"><ac-icon name="copy" [size]="20" />Copier la liste</button>
+  <button role="menuitem" type="button" (click)="ref.close('duplicate')" i18n="@@deck.actions.duplicate"><ac-icon name="copy-plus" [size]="20" />Dupliquer</button>
   @if (canDelete) {
-    <button role="menuitem" type="button" class="danger" (click)="ref.close('delete')" i18n="@@deck.actions.delete"><ar-icon name="trash" [size]="20" />Supprimer</button>
+    <button role="menuitem" type="button" class="danger" (click)="ref.close('delete')" i18n="@@deck.actions.delete"><ac-icon name="trash-2" [size]="20" />Supprimer</button>
   }
 </div>

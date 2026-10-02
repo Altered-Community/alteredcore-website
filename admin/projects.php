@@ -188,14 +188,14 @@ function projectsPageUrl(int $p): string {
             <?php else: ?>
                 <?php foreach ($rows as $i => $row): ?>
                 <tr>
-                    <td style="width:44px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="width:44px;color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td><?= h($row['title']) ?></td>
                     <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem">
                         <a href="<?= h($row['url']) ?>" target="_blank" rel="noopener noreferrer" class="text-muted">
                             <?= h($row['url']) ?>
                         </a>
                     </td>
-                    <td style="font-size:.85rem;color:var(--neutral-500)"><?= $row['category_name'] ? h($row['category_name']) : '—' ?></td>
+                    <td style="font-size:.85rem;color:var(--ac-color-text-muted)"><?= $row['category_name'] ? h($row['category_name']) : '—' ?></td>
                     <td>
                         <?php if ($row['source'] === 'user'): ?>
                             <span class="badge bg-info text-dark">User</span>
@@ -203,7 +203,7 @@ function projectsPageUrl(int $p): string {
                             <span class="badge bg-secondary">Admin</span>
                         <?php endif; ?>
                     </td>
-                    <td style="font-size:.85rem;color:var(--neutral-500)"><?= h($row['submitted_by'] ?? '—') ?></td>
+                    <td style="font-size:.85rem;color:var(--ac-color-text-muted)"><?= h($row['submitted_by'] ?? '—') ?></td>
                     <td>
                         <?php if (!$row['is_approved']): ?>
                             <span class="badge bg-warning text-dark">Pending</span>

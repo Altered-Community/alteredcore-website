@@ -26,22 +26,22 @@ $cacAvailable = is_file($cacDir . '/includes/functions.php') && is_file($cacDir 
 
 $ownActiveTab = 'collection';
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
     <?php if (!$ownEnabled): ?>
-    <div class="alert alert-warning"><?= h($txt['unavailable']) ?></div>
+    <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['unavailable']) ?></div></div>
     <?php else: ?>
 
     <?php require __DIR__ . '/../includes/subnav.php'; ?>
 
     <?php if (!$ownLoggedIn): ?>
-    <div class="card-altered p-4">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['anon_login']) ?>
+    <div class="ac-card">
+        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
         </a>
     </div>
     <?php elseif (!$cacAvailable): ?>
-    <div class="alert alert-warning"><?= h($txt['cards_plugin_missing']) ?></div>
+    <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['cards_plugin_missing']) ?></div></div>
     <?php else:
 
     require_once $cacDir . '/includes/functions.php';

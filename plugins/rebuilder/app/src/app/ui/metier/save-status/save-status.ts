@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import type { DeckSaveState } from '../../../core/deck-store';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
 /**
  * Discreet autosave indicator: « Enregistrement… », « Enregistré » or « Non enregistré » (the
@@ -8,18 +8,18 @@ import { ArIcon } from '../../icon';
  * `iconOnly`: the text is kept for screen readers only (compact app bar).
  */
 @Component({
-  selector: 'ar-save-status',
-  imports: [ArIcon],
+  selector: 'ac-save-status',
+  imports: [AcIcon],
   host: {
     role: 'status',
-    '[class]': "'ar-save-status--' + state()",
+    '[class]': "'ac-save-status--' + state()",
     '[class.icon-only]': 'iconOnly()',
     '[attr.title]': 'iconOnly() ? label() : null',
   },
   templateUrl: './save-status.html',
   styleUrl: './save-status.scss',
 })
-export class ArSaveStatus {
+export class AcSaveStatus {
   readonly state = input.required<DeckSaveState>();
   readonly iconOnly = input(false);
 

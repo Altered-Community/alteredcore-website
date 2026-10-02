@@ -122,15 +122,15 @@ function usersPageUrl(int $p): string {
 <div class="modal fade" id="forceLogoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border:none;border-radius:1rem;overflow:hidden">
-            <div class="modal-header" style="border-bottom:1px solid var(--sand-300)">
+            <div class="modal-header" style="border-bottom:1px solid var(--ac-color-border)">
                 <h5 class="modal-title"><i class="fa-solid fa-power-off text-danger me-2"></i>Force logout — all users</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="background:var(--sand-50)">
+            <div class="modal-body" style="background:var(--ac-color-surface)">
                 <p>This will <strong>immediately invalidate all active user sessions</strong> and clear stored refresh tokens.</p>
                 <p class="mb-0 text-muted small">Users will be redirected to the login page on their next request. Their accounts are <strong>not</strong> deleted.</p>
             </div>
-            <div class="modal-footer" style="border-top:1px solid var(--sand-300);background:var(--sand-50)">
+            <div class="modal-footer" style="border-top:1px solid var(--ac-color-border);background:var(--ac-color-surface)">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post" class="d-inline">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
@@ -199,7 +199,7 @@ function usersPageUrl(int $p): string {
                 <td class="text-muted small"><?= $u['email'] !== null && $u['email'] !== '' ? h($u['email']) : '—' ?></td>
                 <td>
                     <?php if ($u['group_name']): ?>
-                        <span class="badge" style="background:<?= h($u['group_color'] ?? '') ?>;color:#fff;font-size:.72rem;padding:2px 8px;border-radius:20px">
+                        <span class="badge" style="background:<?= h($u['group_color'] ?? '') ?>;color:var(--ac-color-on-strong);font-size:.72rem;padding:2px 8px;border-radius:var(--ac-radius-pill)">
                             <?= h($u['group_name']) ?>
                         </span>
                     <?php else: ?>

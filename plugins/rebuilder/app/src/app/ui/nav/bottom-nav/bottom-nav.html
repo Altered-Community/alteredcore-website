@@ -21,9 +21,9 @@
 
 <ng-template #content let-it>
   <span class="ico">
-    <ar-icon [name]="it.icon" [size]="22" />
+    <ac-icon [name]="it.icon" [size]="22" />
     @if (it.badge !== undefined) {
-      <span class="badge"><ar-count [value]="it.badge" [tone]="it.badgeTone ?? 'success'" /></span>
+      <span class="badge"><ac-count [value]="it.badge" [tone]="it.badgeTone ?? 'success'" /></span>
     }
   </span>
   {{ it.label }}

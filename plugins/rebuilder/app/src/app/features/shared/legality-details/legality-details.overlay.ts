@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { legalityCheckDetail, legalityCheckLabel, legalityRuleLabel, type DeckLegality } from '../../../core/deck-legality';
-import { ArIcon } from '../../../ui/icon';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcIcon } from '../../../ui/icon';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface LegalityDetailsData {
   format: string;
@@ -14,13 +14,13 @@ export interface LegalityDetailsData {
  */
 @Component({
   selector: 'app-legality-details',
-  imports: [ArIcon],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcIcon],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './legality-details.overlay.html',
   styleUrl: './legality-details.overlay.scss',
 })
 export class LegalityDetailsOverlay {
-  protected readonly ref = inject<ArOverlayRef<void, LegalityDetailsData>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<void, LegalityDetailsData>>(AcOverlayRef);
   protected readonly format = this.ref.data.format;
   protected readonly checks = (this.ref.data.legality.checks ?? []).map((c) => ({
     rule: c.rule,
@@ -34,7 +34,7 @@ export class LegalityDetailsOverlay {
   protected readonly failed = $localize`:@@deck.legality.failed:Non respectée`;
 }
 
-export function openLegalityDetails(overlay: ArOverlayService, data: LegalityDetailsData): ArOverlayRef<void, LegalityDetailsData> {
+export function openLegalityDetails(overlay: AcOverlayService, data: LegalityDetailsData): AcOverlayRef<void, LegalityDetailsData> {
   return overlay.open<LegalityDetailsOverlay, void, LegalityDetailsData>(LegalityDetailsOverlay, {
     title: $localize`:@@deck.legality.title:Légalité du deck`,
     data,

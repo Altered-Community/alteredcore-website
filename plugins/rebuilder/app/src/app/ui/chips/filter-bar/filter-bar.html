@@ -1,6 +1,6 @@
 <div class="scroller" role="list" aria-label="Filtres actifs" i18n-aria-label="@@ui.filterBar.active">
   @for (c of chips(); track c.id) {
-    <ar-chip role="listitem" [label]="c.label" [removable]="true" (remove)="remove.emit(c.id)" />
+    <ac-chip role="listitem" [label]="c.label" [removable]="true" (remove)="remove.emit(c.id)" />
   }
 </div>
 @if (chips().length) {

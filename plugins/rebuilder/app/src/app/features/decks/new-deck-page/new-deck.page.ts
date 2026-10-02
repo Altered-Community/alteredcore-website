@@ -2,8 +2,8 @@ import { Component, afterNextRender, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { DeckStore } from '../../../core/deck-store';
-import { ArNavigationHistory } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcNavigationHistory } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 
 /** `/decks/new`: skeleton backdrop + « Nouveau deck » overlay (full screen on mobile). */
@@ -13,10 +13,10 @@ import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
   styleUrl: './new-deck.page.scss',
 })
 export class NewDeckPage {
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly router = inject(Router);
   private readonly store = inject(DeckStore);
-  private readonly history = inject(ArNavigationHistory);
+  private readonly history = inject(AcNavigationHistory);
   private readonly location = inject(Location);
 
   constructor() {

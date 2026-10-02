@@ -244,18 +244,18 @@ try {
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border:none;border-radius:1rem;overflow:hidden">
-            <div class="modal-header" style="border-bottom:1px solid var(--sand-300)">
+            <div class="modal-header" style="border-bottom:1px solid var(--ac-color-border)">
                 <h5 class="modal-title"><i class="fa-solid fa-upload me-2"></i>Install plugin from ZIP</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" enctype="multipart/form-data">
-                <div class="modal-body" style="background:var(--sand-50)">
+                <div class="modal-body" style="background:var(--ac-color-surface)">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="action" value="upload">
                     <p class="text-muted small mb-3">The ZIP must contain a <code>plugin.json</code> manifest at its root (or inside a single top-level folder). If the plugin is already installed and the ZIP has a higher version number, it will be updated automatically.</p>
                     <input type="file" name="plugin_zip" accept=".zip" class="form-control" required>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--sand-300);background:var(--sand-50)">
+                <div class="modal-footer" style="border-top:1px solid var(--ac-color-border);background:var(--ac-color-surface)">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-primary-altered">
                         <i class="fa-solid fa-upload me-1"></i> Install
@@ -270,12 +270,12 @@ try {
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border:none;border-radius:1rem;overflow:hidden">
-            <div class="modal-header" style="border-bottom:1px solid var(--sand-300)">
+            <div class="modal-header" style="border-bottom:1px solid var(--ac-color-border)">
                 <h5 class="modal-title"><i class="fa-solid fa-trash me-2"></i>Delete plugin</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post">
-                <div class="modal-body" style="background:var(--sand-50)">
+                <div class="modal-body" style="background:var(--ac-color-surface)">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="plugin_id" id="deletePluginId">
@@ -293,7 +293,7 @@ try {
                         <p class="small text-danger mt-1 ms-4 mb-0">This is irreversible — all data in these tables will be lost.</p>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--sand-300);background:var(--sand-50)">
+                <div class="modal-footer" style="border-top:1px solid var(--ac-color-border);background:var(--ac-color-surface)">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-danger">
                         <i class="fa-solid fa-trash me-1"></i> Delete
@@ -348,7 +348,7 @@ document.getElementById('deleteModal').addEventListener('show.bs.modal', functio
         ?>
         <tr>
             <td class="text-center">
-                <i class="<?= h($plugin['icon'] ?? 'fa-solid fa-puzzle-piece') ?> text-muted"></i>
+                <?= ac_icon((string)($plugin['icon'] ?? 'puzzle'), 'text-muted') ?>
             </td>
             <td>
                 <div class="fw-semibold"><?= h($plugin['name']) ?></div>

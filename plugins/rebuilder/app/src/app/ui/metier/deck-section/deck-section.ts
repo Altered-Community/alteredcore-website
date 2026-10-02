@@ -1,16 +1,16 @@
 import { Component, input, model } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
 /** Titled group of deck cards (Personnages 19 · 9 cartes différentes), optionally foldable. */
 @Component({
-  selector: 'ar-deck-section',
-  imports: [ArIcon, NgTemplateOutlet],
+  selector: 'ac-deck-section',
+  imports: [AcIcon, NgTemplateOutlet],
   host: { '[class.flat]': "appearance() === 'flat'" },
   templateUrl: './deck-section.html',
   styleUrl: './deck-section.scss',
 })
-export class ArDeckSection {
+export class AcDeckSection {
   readonly title = input.required<string>();
   readonly count = input(0);
   readonly distinct = input<number | null>(null);

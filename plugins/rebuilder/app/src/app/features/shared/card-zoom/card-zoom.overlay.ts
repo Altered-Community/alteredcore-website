@@ -6,11 +6,11 @@ import { contentLocale } from '../../../core/locale';
 import { cardImageUrl } from '../../../core/card-art';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
-import { ArButton, ArStepper } from '../../../ui/buttons';
-import { ArCardTile } from '../../../ui/metier';
+import { AcButton, AcStepper } from '../../../ui/buttons';
+import { AcCardTile } from '../../../ui/metier';
 import { OwnershipApiService, type AltArtChoice } from '../../../core/ownership-api.service';
 import { AltArtSlots } from '../alt-art-slots/alt-art-slots';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface CardZoomData {
   card: Card;
@@ -23,13 +23,13 @@ export interface CardZoomData {
 /** A card shown large, with a link to its sheet on the site (the site's card lightbox); in the editor, its copies. */
 @Component({
   selector: 'app-card-zoom',
-  imports: [ArCardTile, ArStepper, ArButton, AltArtSlots],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcCardTile, AcStepper, AcButton, AltArtSlots],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './card-zoom.overlay.html',
   styleUrl: './card-zoom.overlay.scss',
 })
 export class CardZoomOverlay {
-  private readonly ref = inject<ArOverlayRef<void, CardZoomData>>(ArOverlayRef);
+  private readonly ref = inject<AcOverlayRef<void, CardZoomData>>(AcOverlayRef);
   private readonly ownership = inject(OwnershipApiService);
   protected readonly data = this.ref.data;
   /**
@@ -77,7 +77,7 @@ export class CardZoomOverlay {
   }
 }
 
-export function openCardZoom(overlay: ArOverlayService, data: CardZoomData): ArOverlayRef<void, CardZoomData> {
+export function openCardZoom(overlay: AcOverlayService, data: CardZoomData): AcOverlayRef<void, CardZoomData> {
   return overlay.open<CardZoomOverlay, void, CardZoomData>(CardZoomOverlay, {
     title: localizedText(data.card.name, contentLocale()) || data.card.reference,
     data,

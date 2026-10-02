@@ -99,7 +99,7 @@ function esc(text: string): string {
   return text.replace(/[&<>"']/g, (ch) => ESC[ch]);
 }
 
-/** The same markup `ar-unique-card` used to build one node at a time. Spaces are not added between parts. */
+/** The same markup `ac-unique-card` used to build one node at a time. Spaces are not added between parts. */
 export function linesHtml(lines: EffectLine[]): string {
   return lines.map((line) => `<p>${line.map(partHtml).join('')}</p>`).join('');
 }

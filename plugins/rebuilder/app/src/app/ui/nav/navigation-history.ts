@@ -3,22 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 /**
- * `replaceUrl` normally updates the current entry (query change, overlay handoff that does
- * *not* move to a new page). The site menu reuses the drawer entry for a real page change:
- * pass this as `info` so « Retour » still counts that step.
- */
-export const COUNT_REPLACE_AS_PUSH = { countReplaceAsPush: true } as const;
-
-function countsReplaceAsPush(info: unknown): boolean {
-  return !!info && typeof info === 'object' && (info as { countReplaceAsPush?: boolean }).countReplaceAsPush === true;
-}
-
-/**
  * Counts the history entries the app pushed since it booted, so that « Retour » can go back
- * within the app, or fall back to a parent route on a deep link. Inject it at startup (`App`).
+ * within the app, or fall back to a parent route on a deep link. Injected at startup (`EmbedApp`).
  */
 @Service()
-export class ArNavigationHistory {
+export class AcNavigationHistory {
   private readonly router = inject(Router);
   private depth = 0;
   private started = false;
@@ -28,9 +17,8 @@ export class ArNavigationHistory {
     this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (e instanceof NavigationStart) {
         const extras = this.router.currentNavigation()?.extras;
-        const replaceIsPush = !!extras?.replaceUrl && countsReplaceAsPush(extras.info);
-        this.pending =
-          e.navigationTrigger === 'popstate' ? 'pop' : extras?.skipLocationChange || (extras?.replaceUrl && !replaceIsPush) ? 'none' : 'push';
+        // replaceUrl updates the current entry (query change, overlay handoff): not a new step.
+        this.pending = e.navigationTrigger === 'popstate' ? 'pop' : extras?.skipLocationChange || extras?.replaceUrl ? 'none' : 'push';
       } else if (e instanceof NavigationEnd) {
         if (!this.started) this.started = true;
         else if (this.pending === 'push') this.depth++;

@@ -8,7 +8,7 @@ import { CardsApiService } from '../../../core/cards-api.service';
 import { DecksApiService } from '../../../core/decks-api.service';
 import { GUEST_DECKS_KEY, GuestDeckService } from '../../../core/guest-deck.service';
 import type { Card, Deck, DeckFormat, DeckWrite } from '../../../core/models';
-import { ArOverlayRef } from '../../../ui/overlay';
+import { AcOverlayRef } from '../../../ui/overlay';
 import { ImportDeckOverlay, parseDecklist, type ImportResult } from './import-deck.overlay';
 
 const HERO: Card = { reference: 'ALT_CORE_B_YZ_01_C', name: 'Moyo & Silk', cardType: { reference: 'HERO' }, faction: { code: 'YZ', name: 'Yzmir' } };
@@ -46,13 +46,13 @@ describe('ImportDeckOverlay (list)', () => {
   function setup(signedIn: boolean): Harness {
     created = [];
     closed = [];
-    const ref = new ArOverlayRef<ImportResult, { mode: 'list' }>({ mode: 'list' });
+    const ref = new AcOverlayRef<ImportResult, { mode: 'list' }>({ mode: 'list' });
     ref.dialogRef = { close: (r) => closed.push(r as ImportResult | undefined) };
     Session.signedIn = signedIn;
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: ArOverlayRef, useValue: ref },
+        { provide: AcOverlayRef, useValue: ref },
         // An instance: `useClass` would run the factory `Session` inherits from `@Service` (a guest).
         { provide: AuthSession, useValue: new Session() },
         { provide: CardsApiService, useValue: { batch: () => batch() } },

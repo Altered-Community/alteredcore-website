@@ -2,7 +2,7 @@ import { CdkListbox, CdkOption, type ListboxValueChangeEvent } from '@angular/cd
 import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, type ConnectedPosition } from '@angular/cdk/overlay';
 import { _getEventTarget } from '@angular/cdk/platform';
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 import { nextId } from '../value-accessor';
 
 export interface ComboOption {
@@ -30,12 +30,12 @@ const POSITIONS: ConnectedPosition[] = [
  * the key into it.
  */
 @Component({
-  selector: 'ar-combobox',
-  imports: [ArIcon, CdkOverlayOrigin, CdkConnectedOverlay, CdkListbox, CdkOption],
+  selector: 'ac-combobox',
+  imports: [AcIcon, CdkOverlayOrigin, CdkConnectedOverlay, CdkListbox, CdkOption],
   templateUrl: './combobox.html',
   styleUrl: './combobox.scss',
 })
-export class ArCombobox {
+export class AcCombobox {
   private readonly injector = inject(Injector);
   readonly options = input<ComboOption[]>([]);
   readonly values = model<ComboOption[]>([]);
@@ -52,7 +52,7 @@ export class ArCombobox {
   /** Picked options leave the list, so the listbox itself never keeps a selection. */
   protected readonly noSelection: readonly ComboOption[] = [];
   protected readonly scrollStrategy = createRepositionScrollStrategy(this.injector);
-  protected readonly listId = nextId('ar-combo');
+  protected readonly listId = nextId('ac-combo');
   protected removeLabel(v: ComboOption): string {
     return $localize`:@@ui.combobox.remove:Retirer ${v.text}:value:`;
   }

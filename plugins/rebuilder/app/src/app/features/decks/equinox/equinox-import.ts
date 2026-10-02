@@ -5,12 +5,12 @@ import { AuthSession } from '../../../core/auth-session';
 import { DecksApiService } from '../../../core/decks-api.service';
 import { deckLines, type Deck, type DeckFormat } from '../../../core/models';
 import { ZipError, readZipText } from '../../../core/zip';
-import { ArButton } from '../../../ui/buttons';
-import { ArBadge } from '../../../ui/chips';
-import { ArProgressBar } from '../../../ui/containers';
-import { ArFileInput } from '../../../ui/fields';
+import { AcButton } from '../../../ui/buttons';
+import { AcBadge } from '../../../ui/chips';
+import { AcProgressBar } from '../../../ui/containers';
+import { AcFileInput } from '../../../ui/fields';
 import { uiLocale } from '../../../core/i18n';
-import { ArBreakpointService } from '../../../ui/layout.services';
+import { AcBreakpointService } from '../../../ui/layout.services';
 import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, validCards, withHero } from './equinox-csv';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
 
@@ -68,7 +68,7 @@ const DONE: readonly ImportStatus[] = ['imported', 'skipped', 'failedFinal', 'ca
  */
 @Component({
   selector: 'app-equinox-import',
-  imports: [ArButton, ArBadge, ArFileInput, ArProgressBar],
+  imports: [AcButton, AcBadge, AcFileInput, AcProgressBar],
   host: { style: 'display: contents' },
   templateUrl: './equinox-import.html',
   styleUrl: './equinox-import.scss',
@@ -77,7 +77,7 @@ export class EquinoxImport {
   private readonly decksApi = inject(DecksApiService);
   private readonly ownership = inject(OwnershipApiService);
   protected readonly auth = inject(AuthSession);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
 
   /** « Annuler » or « Terminer ». */
   readonly closed = output<void>();

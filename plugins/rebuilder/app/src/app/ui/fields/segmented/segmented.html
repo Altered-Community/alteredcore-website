@@ -4,11 +4,11 @@
     [attr.aria-pressed]="o.value === value()"
     [attr.aria-label]="o.ariaLabel || null"
     [attr.title]="o.ariaLabel || null"
-    [class.icon-only]="iconOnly()"
+    [class.ac-segmented__icon-only]="iconOnly()"
     (click)="value.set(o.value)"
   >
     @if (o.icon) {
-      <ar-icon [name]="o.icon" [size]="16" />
+      <ac-icon [name]="o.icon" [size]="16" />
     }
     @if (o.label) {
       <span>{{ o.label }}</span>

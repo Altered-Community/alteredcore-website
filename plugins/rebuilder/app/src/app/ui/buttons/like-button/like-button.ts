@@ -1,18 +1,18 @@
 import { Component, computed, input } from '@angular/core';
 import { uiLocale } from '../../../core/i18n';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
 const compact = new Intl.NumberFormat(uiLocale(), { notation: 'compact', maximumFractionDigits: 1 });
 
 /** Like count pill laid over a visual (deck card): heart + count, filled when `liked`; `ariaLabel` is required. */
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector -- styles a native <button> so it keeps its semantics
-  selector: 'button[arLikeButton]',
-  imports: [ArIcon],
+  selector: 'button[acLikeButton]',
+  imports: [AcIcon],
   host: {
     type: 'button',
-    class: 'ar-like-button',
-    '[class.ar-like-button--liked]': 'liked()',
+    class: 'ac-like-button',
+    '[class.ac-like-button--liked]': 'liked()',
     '[attr.aria-pressed]': 'liked()',
     '[attr.aria-label]': 'ariaLabel()',
     '[attr.title]': 'ariaLabel()',
@@ -20,7 +20,7 @@ const compact = new Intl.NumberFormat(uiLocale(), { notation: 'compact', maximum
   templateUrl: './like-button.html',
   styleUrl: './like-button.scss',
 })
-export class ArLikeButton {
+export class AcLikeButton {
   readonly count = input(0);
   readonly liked = input(false);
   /** Accessible name, e.g. « J’aime Kojo Havre, 128 j’aime ». */

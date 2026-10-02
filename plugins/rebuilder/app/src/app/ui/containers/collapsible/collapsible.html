@@ -1,8 +1,8 @@
-<button type="button" class="head" [attr.aria-expanded]="open()" [attr.aria-controls]="id" (click)="open.set(!open())">
-  <span class="chev"><ar-icon name="chevron-down" [size]="16" [strokeWidth]="2.4" /></span>
-  <span class="title">{{ title() }}</span>
+<button type="button" class="ac-collapsible__head" [attr.aria-expanded]="open()" [attr.aria-controls]="id" (click)="open.set(!open())">
+  <span class="ac-collapsible__chevron"><ac-icon name="chevron-down" [size]="16" [strokeWidth]="2.4" /></span>
+  <span class="ac-collapsible__title">{{ title() }}</span>
   <ng-content select="[summary]" />
 </button>
 @if (open()) {
-  <div class="body" [id]="id"><ng-content /></div>
+  <div class="ac-collapsible__body" [id]="id"><ng-content /></div>
 }

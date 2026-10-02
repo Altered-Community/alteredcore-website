@@ -1,21 +1,21 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, ElementRef, afterRenderEffect, computed, inject, viewChild } from '@angular/core';
 import { _getFocusedElementPierceShadowDom } from '@angular/cdk/platform';
-import { ArIcon } from '../../icon';
-import { AR_OVERLAY_CONTENT } from '../overlay';
+import { AcIcon } from '../../icon';
+import { AC_OVERLAY_CONTENT } from '../overlay';
 
 @Component({
-  selector: 'ar-overlay-container',
-  imports: [NgComponentOutlet, ArIcon],
+  selector: 'ac-overlay-container',
+  imports: [NgComponentOutlet, AcIcon],
   host: {
-    '[class]': "'ar-overlay ar-overlay--' + content.mode + (content.fill ? ' ar-overlay--fill' : '') + (content.bare ? ' ar-overlay--bare' : '')",
+    '[class]': "'ac-overlay ac-overlay--' + content.mode + (content.fill ? ' ac-overlay--fill' : '') + (content.bare ? ' ac-overlay--bare' : '')",
     role: 'presentation',
   },
   templateUrl: './overlay-container.html',
   styleUrl: './overlay-container.scss',
 })
-export class ArOverlayContainer {
-  protected readonly content = inject(AR_OVERLAY_CONTENT);
+export class AcOverlayContainer {
+  protected readonly content = inject(AC_OVERLAY_CONTENT);
   protected readonly root = this.content.ref;
   protected readonly top = computed(() => this.root.views().at(-1)!);
   private readonly titleEl = viewChild<ElementRef<HTMLElement>>('title');

@@ -1,11 +1,11 @@
 <div class="bar">
   <p class="count"><strong i18n="@@editor.preview.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong> · <ng-container i18n="@@editor.preview.distinct">{deck.distinct(), plural, =1 {1 différente} other {{{ deck.distinct() }} différentes}}</ng-container></p>
   @if (deck.groups().length) {
-    <button arButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? labels.expandAll : labels.collapseAll }}</button>
+    <button acButton variant="secondary" size="sm" (click)="toggleAll()">{{ allClosed() ? labels.expandAll : labels.collapseAll }}</button>
   }
 </div>
 @for (g of deck.groups(); track g.id) {
-  <ar-deck-section
+  <ac-deck-section
     [title]="g.label"
     [count]="g.count"
     [distinct]="g.distinct"
@@ -15,7 +15,7 @@
   >
     <div class="grid" [class.dense]="dense()">
       @for (l of g.lines; track l.card.reference) {
-        <ar-card-tile
+        <ac-card-tile
           [card]="l.card"
           [quantity]="l.quantity"
           [max]="deck.maxFor(l.card)"
@@ -28,7 +28,7 @@
         />
       }
     </div>
-  </ar-deck-section>
+  </ac-deck-section>
 } @empty {
   <div class="empty">
     <strong i18n="@@editor.preview.emptyTitle">Deck vide</strong>

@@ -1,29 +1,29 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ArButton } from '../../../ui/buttons';
-import { ArChip } from '../../../ui/chips';
-import { type ArOption, ArSegmented, ArSelect } from '../../../ui/fields';
+import { AcButton } from '../../../ui/buttons';
+import { AcChip } from '../../../ui/chips';
+import { type AcOption, AcSegmented, AcSelect } from '../../../ui/fields';
 import { FACTIONS } from '../../../ui/metier';
-import { ArOverlayRef } from '../../../ui/overlay';
+import { AcOverlayRef } from '../../../ui/overlay';
 import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
 
 /** Mobile filter sheet of the decks page (format, héros, visibilité, faction: what the tab supports). */
 @Component({
   selector: 'app-deck-filters-sheet',
-  imports: [ArSelect, ArSegmented, ArChip, ArButton],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcSelect, AcSegmented, AcChip, AcButton],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './deck-filters-sheet.html',
   styleUrl: './deck-filters-sheet.scss',
 })
 export class DeckFiltersSheet {
   protected readonly ref = inject<
-    ArOverlayRef<
+    AcOverlayRef<
       DeckFilters,
       {
         filters: DeckFilters;
         formats: { value: string; label: string }[];
-        heroes: ArOption[];
+        heroes: AcOption[];
         /** Hero options for the factions chosen in the sheet. */
-        heroesFor?: (factions: string[]) => ArOption[];
+        heroesFor?: (factions: string[]) => AcOption[];
         /** A faction change clears the hero (contest tab, as on the site). */
         clearHeroOnFaction?: boolean;
         visibilities: { value: Visibility; label: string }[];
@@ -32,7 +32,7 @@ export class DeckFiltersSheet {
         showVisibility: boolean;
       }
     >
-  >(ArOverlayRef);
+  >(AcOverlayRef);
   protected readonly draft = signal<DeckFilters>(this.ref.data.filters);
   protected readonly heroes = computed(() => this.ref.data.heroesFor?.(this.draft().factions) ?? this.ref.data.heroes);
   protected readonly factions = FACTIONS;

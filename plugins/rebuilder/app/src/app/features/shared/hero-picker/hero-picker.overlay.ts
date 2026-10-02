@@ -4,14 +4,14 @@ import { catchError, of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
 import { heroOnBga } from '../../../core/formats';
-import { ArChip } from '../../../ui/chips';
+import { AcChip } from '../../../ui/chips';
 import type { DeckHero } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
-import { ArFactionTabs, ArHeroSelector, factionName, type ArHeroOption } from '../../../ui/metier';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArOverlayRef } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcFactionTabs, AcHeroSelector, factionName, type AcHeroOption } from '../../../ui/metier';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcOverlayRef } from '../../../ui/overlay';
 
-/** Heroes from the cards API for `ar-hero-selector`: `heroes` is null while loading; `error` on failure. */
+/** Heroes from the cards API for `ac-hero-selector`: `heroes` is null while loading; `error` on failure. */
 export function injectHeroes(): { heroes: Signal<HeroGroup[] | null>; error: Signal<boolean> } {
   const api = inject(CardsApiService);
   const error = signal(false);
@@ -43,9 +43,9 @@ function isPlaceholderPrint(ref: string): boolean {
  * Heroes to choose from: one per hero, or with « Alt arts » every other print as its own choice (numbered copies with
  * « Numérotées » only), as the site's hero picker.
  */
-export function heroChoices(heroes: readonly HeroGroup[] | null, options: { altArts: boolean; serialized: boolean }): ArHeroOption[] | null {
+export function heroChoices(heroes: readonly HeroGroup[] | null, options: { altArts: boolean; serialized: boolean }): AcHeroOption[] | null {
   if (!heroes) return null;
-  const standard = (h: HeroGroup): ArHeroOption => ({ ...h, unavailableOnBga: !heroOnBga(h.prints.length ? h.prints.map((p) => p.reference) : [h.reference]) });
+  const standard = (h: HeroGroup): AcHeroOption => ({ ...h, unavailableOnBga: !heroOnBga(h.prints.length ? h.prints.map((p) => p.reference) : [h.reference]) });
   if (!options.altArts) return heroes.map(standard);
   return heroes.flatMap((h) => [
     standard(h),
@@ -72,15 +72,15 @@ export interface HeroPickerData {
 /** « Choisir un héros » — a step of « Réglages du deck », shown in the same window / sheet. */
 @Component({
   selector: 'app-hero-picker',
-  imports: [ArFactionTabs, ArHeroSelector, ArButton, ArChip],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcFactionTabs, AcHeroSelector, AcButton, AcChip],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './hero-picker.overlay.html',
   styleUrl: './hero-picker.overlay.scss',
 })
 export class HeroPickerOverlay {
   private readonly ownership = inject(OwnershipApiService);
-  protected readonly ref = inject<ArOverlayRef<DeckHero, HeroPickerData>>(ArOverlayRef);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly ref = inject<AcOverlayRef<DeckHero, HeroPickerData>>(AcOverlayRef);
+  protected readonly bp = inject(AcBreakpointService);
   private readonly load = injectHeroes();
   protected readonly altArts = signal(false);
   protected readonly serialized = signal(false);
@@ -88,7 +88,7 @@ export class HeroPickerOverlay {
   /** « Alt arts » is hidden in « Global » alt-art mode: the preferred print comes from the player's preferences. */
   protected readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
   protected readonly error = this.load.error;
-  protected readonly picked = signal<ArHeroOption | null>(this.ref.data?.selected ?? null);
+  protected readonly picked = signal<AcHeroOption | null>(this.ref.data?.selected ?? null);
   protected readonly faction = signal(this.ref.data?.selected?.faction || 'AX');
 
   constructor() {
@@ -107,7 +107,7 @@ export class HeroPickerOverlay {
 }
 
 /** Shows « Choisir un héros » in place of the content of `parent` (no second window). */
-export function openHeroPickerStep(parent: Pick<ArOverlayRef, 'openStep'>, selected?: DeckHero | null): ArOverlayRef<DeckHero, HeroPickerData> {
+export function openHeroPickerStep(parent: Pick<AcOverlayRef, 'openStep'>, selected?: DeckHero | null): AcOverlayRef<DeckHero, HeroPickerData> {
   return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, {
     title: heroPickerTitle(),
     data: { selected },

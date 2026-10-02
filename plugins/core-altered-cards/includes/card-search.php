@@ -553,7 +553,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             </div>
             <?php if ($_csShowCols): ?>
             <div class="d-flex align-items-center gap-1">
-                <i class="fa-solid fa-table-cells" style="font-size:.8rem;color:var(--neutral-400)"></i>
+                <i class="fa-solid fa-table-cells" style="font-size:.8rem;color:var(--ac-color-text-muted)"></i>
                 <select id="<?= h($_csP) ?>-cols" class="form-select form-select-sm" style="width:auto">
                     <?php foreach ($_csColOpt as $_cv): ?>
                     <option value="<?= (int)$_cv ?>"<?= (int)$_cv === $_csDefCols ? ' selected' : '' ?>><?= (int)$_cv ?></option>
@@ -567,7 +567,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     <!-- Loading -->
     <div id="<?= h($_csP) ?>-loading" class="ac-state-pane" style="display:none">
         <div class="spinner-border" role="status"
-             style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--primary-400)"></div>
+             style="width:1.4rem;height:1.4rem;border-width:3px;color:var(--ac-color-primary)"></div>
         <div class="mt-2 small text-muted"><?= h($_csTxt['loading'] ?? '') ?></div>
     </div>
 
@@ -585,7 +585,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
     <!-- Error -->
     <div id="<?= h($_csP) ?>-error" class="ac-state-pane" style="display:none">
-        <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:#f87171"></i>
+        <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:var(--ac-color-required)"></i>
         <p class="small text-muted mb-1"><?= h($_csTxt['err_api'] ?? 'Could not load cards.') ?></p>
         <p class="small text-muted"><?= h($_csTxt['api_later'] ?? '') ?></p>
     </div>

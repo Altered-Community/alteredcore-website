@@ -4,10 +4,10 @@ import type { HydratedLine } from '../../../core/models';
 import { cardImageSources } from '../../../core/card-art';
 import { GROUP_LABELS, groupIdOfType } from '../../../core/deck-view';
 import { HAND_SIZE } from '../../../core/test-hand';
-import { ArCardSurface } from '../../../ui/containers';
-import { ArCombobox, ArInput, type ComboOption } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArProbabilityBars, type ArProbabilityBar } from '../../../ui/metier';
+import { AcCardSurface } from '../../../ui/containers';
+import { AcCombobox, AcInput, type ComboOption } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcProbabilityBars, type AcProbabilityBar } from '../../../ui/metier';
 
 /**
  * « Calculateurs »: odds of drawing chosen cards among n (1 to the deck size, 6 by default),
@@ -15,7 +15,7 @@ import { ArProbabilityBars, type ArProbabilityBar } from '../../../ui/metier';
  */
 @Component({
   selector: 'app-hand-calculators',
-  imports: [ArCardSurface, ArCombobox, ArInput, ArIcon, ArProbabilityBars],
+  imports: [AcCardSurface, AcCombobox, AcInput, AcIcon, AcProbabilityBars],
   templateUrl: './hand-calculators.html',
   styleUrl: './hand-calculators.scss',
 })
@@ -39,7 +39,7 @@ export class HandCalculators {
   protected readonly groupA = signal<ComboOption[]>([]);
   protected readonly groupB = signal<ComboOption[]>([]);
 
-  protected readonly cardBars = computed<ArProbabilityBar[]>(() => {
+  protected readonly cardBars = computed<AcProbabilityBar[]>(() => {
     const K = this.copies(this.cards());
     const N = this.deckSize();
     const n = this.drawn();
@@ -62,7 +62,7 @@ export class HandCalculators {
     const inA = new Set(a.map((o) => o.id));
     return { a: this.copies(a), b: this.copies(this.groupB().filter((o) => !inA.has(o.id))) };
   });
-  protected readonly comboBars = computed<ArProbabilityBar[]>(() => {
+  protected readonly comboBars = computed<AcProbabilityBar[]>(() => {
     const { a, b } = this.comboCopies();
     const N = this.deckSize();
     const n = this.drawn();

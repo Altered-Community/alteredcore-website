@@ -5,7 +5,7 @@ import type { HydratedLine } from '../../../core/models';
 import { contentLocale } from '../../../core/locale';
 import { localizedText } from '../../../core/models';
 import { rarityIcon } from '../../../ui/chips';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
 /** Desktop decklist card: Qté · Carte · Coût · Forêt / Montagne / Océan. */
@@ -15,7 +15,7 @@ import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
   styleUrl: './decklist-table.scss',
 })
 export class DecklistTable {
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   readonly group = input.required<DeckGroup>();
   protected readonly rows = computed(() => this.group().lines.map(toRow));
 

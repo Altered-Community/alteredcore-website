@@ -1,20 +1,20 @@
 import { Component, computed, input, output } from '@angular/core';
 import { type RarityCounts } from '../../../core/deck-rules';
 import type { DeckHero } from '../../../core/models';
-import { ArIconButton } from '../../buttons';
-import { ArBadge, ArRaritySummary } from '../../chips';
-import { ArIcon } from '../../icon';
-import { ArCardArt } from '../card-art/card-art';
+import { AcIconButton } from '../../buttons';
+import { AcBadge, AcRaritySummary } from '../../chips';
+import { AcIcon } from '../../icon';
+import { AcCardArt } from '../card-art/card-art';
 
 /** Hero thumbnail + deck meta + counters; the settings button opens « Réglages du deck ». */
 @Component({
-  selector: 'ar-deck-summary',
-  imports: [ArCardArt, ArIcon, ArIconButton, ArRaritySummary, ArBadge],
-  host: { '[class]': "'ar-deck-summary--' + appearance()" },
+  selector: 'ac-deck-summary',
+  imports: [AcCardArt, AcIcon, AcIconButton, AcRaritySummary, AcBadge],
+  host: { '[class]': "'ac-deck-summary--' + appearance()" },
   templateUrl: './deck-summary.html',
   styleUrl: './deck-summary.scss',
 })
-export class ArDeckSummary {
+export class AcDeckSummary {
   readonly name = input('');
   readonly hero = input<DeckHero | null>(null);
   readonly formatLabel = input('');

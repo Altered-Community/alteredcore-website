@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}site_settings` (
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- theme_settings table removed: all visual settings are now global in site_settings.
+-- No visual settings: the look comes from the design system (design-system/).
 
 
 
@@ -377,12 +377,10 @@ INSERT INTO `{prefix}footer_links` (`id`, `label_en`, `label_fr`, `url`, `icon`,
 INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (1, 1, 'altered-json'),
 (2, 1, 'announcement'),
-(3, 1, 'background'),
 (4, 1, 'banner'),
 (5, 1, 'categories'),
 (6, 1, 'community-builders'),
 (7, 1, 'dashboard'),
-(8, 1, 'font'),
 (9, 1, 'footer'),
 (10, 1, 'groups'),
 (11, 1, 'homepage'),
@@ -398,7 +396,6 @@ INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (21, 1, 'projects'),
 (22, 1, 'settings'),
 (23, 1, 'sidebar'),
-(24, 1, 'themes'),
 (25, 1, 'user-menu'),
 (26, 1, 'users'),
 (27, 1, 'rss'),
@@ -425,8 +422,6 @@ INSERT INTO `{prefix}sidebar_items` (`id`, `label_en`, `label_fr`, `url`, `icon`
 (3, 'How to Play', 'Comment jouer ?', 'https://www.altered.gg/the-game/how-to-play', 'fa-solid fa-graduation-cap', 3, 1, 0, 0, 1, '2026-05-13 18:06:46'),
 (4, 'Play Altered Online', 'Joue à Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12');
 
-INSERT INTO `{prefix}site_settings` (`key`, `value`, `updated_at`) VALUES
-('active_theme', 'azure', '2026-05-13 14:21:02');
 
 INSERT INTO `{prefix}user_groups` (`id`, `name`, `slug`, `color`, `icon`, `can_access_admin`, `can_delete`, `can_publish`, `can_create`, `can_edit`, `can_readonly_all`, `can_preview`, `created_at`) VALUES
 (1, 'Admin', 'admin', '#f59e0b', 'fa-solid fa-crown', 1, 1, 1, 1, 1, 0, 1, '2026-05-13 14:21:02'),

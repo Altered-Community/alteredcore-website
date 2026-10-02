@@ -13,39 +13,43 @@ var SITE_BASE = <?= json_encode($siteBase, JSON_UNESCAPED_SLASHES) ?>;
 var EDI_CSRF = <?= json_encode($csrf) ?>;
 var EDI_TXT = <?= json_encode($jsTxt, JSON_UNESCAPED_UNICODE) ?>;
 </script>
-<div class="container py-4" style="max-width:680px">
+<div class="ac-page edi-page">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-    </div>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($pageTitle) ?></h1>
+        </div>
+    </header>
 
     <noscript>
-        <div class="alert alert-warning py-2 mb-4">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i><?= h($noscript) ?>
+        <div class="ac-notice ac-notice--warning edi-noscript" role="status">
+            <?= ac_icon('triangle-alert') ?><div><?= h($noscript) ?></div>
         </div>
     </noscript>
 
-    <div class="card-altered p-4">
+    <div class="ac-card edi-form-card">
         <ol class="edi-steps">
             <li><span><?= $step1 ?></span></li>
             <li><span><?= $step2 ?></span></li>
         </ol>
 
-        <p class="text-muted small mb-4"><?= $intro ?></p>
+        <p class="edi-intro"><?= $intro ?></p>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" class="ac-stack">
             <input type="hidden" name="csrf_token" value="<?= h($csrf) ?>">
 
-            <div class="mb-4">
-                <label class="form-label fw-semibold">
-                    <i class="fa-solid fa-file-zipper me-1"></i><?= h($fileLabel) ?>
+            <div class="ac-field">
+                <label class="ac-field__label" for="edi-zip">
+                    <?= ac_icon('file-archive') ?> <?= h($fileLabel) ?>
                 </label>
-                <input type="file" name="equinox_zip" class="form-control" accept=".zip,application/zip">
+                <input type="file" id="edi-zip" name="equinox_zip" class="form-control" accept=".zip,application/zip">
             </div>
 
-            <button type="submit" class="btn btn-primary-altered btn-sm">
-                <i class="fa-solid fa-file-import me-1"></i><?= h($submit) ?>
-            </button>
+            <div>
+                <button type="submit" class="ac-button ac-button--sm">
+                    <?= ac_icon('file-input') ?><?= h($submit) ?>
+                </button>
+            </div>
         </form>
     </div>
 

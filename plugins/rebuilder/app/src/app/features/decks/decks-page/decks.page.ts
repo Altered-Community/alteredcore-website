@@ -11,15 +11,15 @@ import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton, ArIconButton } from '../../../ui/buttons';
-import { ArChip, ArCount } from '../../../ui/chips';
-import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArInfiniteSentinel } from '../../../ui/infinite';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArDeckCard, FACTIONS } from '../../../ui/metier';
-import { ArAppBar, ArBottomNav, ArTabs, type ArBottomNavItem } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcChip, AcCount } from '../../../ui/chips';
+import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcInfiniteSentinel } from '../../../ui/infinite';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcDeckCard, FACTIONS } from '../../../ui/metier';
+import { AcAppBar, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCommunityBuilders } from '../community-builders/community-builders.overlay';
@@ -73,19 +73,19 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, ArAppBar, ArBottomNav, ArTabs, ArButton, ArIconButton, ArInput, ArSelect, ArSegmented, ArChip, ArDeckCard, ArIcon, ArCount, ArInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
 export class DecksPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
   /** The site's community deckbuilders: a banner above the tabs on wide screens, as on the site's decks page. */
   protected readonly builders = toSignal(inject(CommunityBuildersService).list(), { initialValue: [] });
 
@@ -218,8 +218,8 @@ export class DecksPage {
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
   /** Compact: the tabs are a bottom navigation, as in the editor and the deck page. */
-  protected readonly navItems = computed<ArBottomNavItem[]>(() => {
-    const item = (tab: Tab, icon: ArBottomNavItem['icon'], label: string): ArBottomNavItem => ({
+  protected readonly navItems = computed<AcBottomNavItem[]>(() => {
+    const item = (tab: Tab, icon: AcBottomNavItem['icon'], label: string): AcBottomNavItem => ({
       route: '.',
       queryParams: this.tabParams(tab),
       active: this.tab() === tab,

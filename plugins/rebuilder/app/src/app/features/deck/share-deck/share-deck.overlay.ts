@@ -1,10 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import qrcode from 'qrcode-generator';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton } from '../../../ui/buttons';
-import { ArInput } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcInput } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface ShareDeckData {
   url: string;
@@ -33,13 +33,13 @@ export function qrPath(text: string): { size: number; path: string } {
 /** « Partager ce deck »: the link, « Copier », and a QR code (the site's share window). */
 @Component({
   selector: 'app-share-deck',
-  imports: [ArButton, ArInput, ArIcon],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput, AcIcon],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './share-deck.overlay.html',
   styleUrl: './share-deck.overlay.scss',
 })
 export class ShareDeckOverlay {
-  protected readonly ref = inject<ArOverlayRef<void, ShareDeckData>>(ArOverlayRef);
+  protected readonly ref = inject<AcOverlayRef<void, ShareDeckData>>(AcOverlayRef);
   private readonly deck = inject(DeckStore);
   protected readonly url = this.ref.data.url;
   protected readonly step = signal<'private' | 'share'>(this.ref.data.privateOwned ? 'private' : 'share');
@@ -72,7 +72,7 @@ export class ShareDeckOverlay {
   }
 }
 
-export function openShareDeck(overlay: ArOverlayService, data: ShareDeckData): ArOverlayRef<void, ShareDeckData> {
+export function openShareDeck(overlay: AcOverlayService, data: ShareDeckData): AcOverlayRef<void, ShareDeckData> {
   return overlay.open<ShareDeckOverlay, void, ShareDeckData>(ShareDeckOverlay, {
     title: $localize`:@@deck.share.title:Partager ce deck`,
     data,

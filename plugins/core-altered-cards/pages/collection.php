@@ -386,8 +386,8 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     <!-- Physical collection disclaimer -->
     <div class="card-altered p-3 mb-3 coll-card-success">
         <div class="d-flex align-items-start gap-2">
-            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0" style="color:#22c55e"></i>
-            <p class="mb-0 small" style="color:var(--neutral-600);line-height:1.55">
+            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0" style="color:var(--ac-color-success)"></i>
+            <p class="mb-0 small" style="color:var(--ac-color-text-2);line-height:1.55">
                 <?= h($txt['physical_disclaimer']) ?>
             </p>
         </div>
@@ -406,10 +406,10 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
                 </div>
             </div>
             <div>
-                <div class="fw-bold small mb-1" style="color:var(--neutral-700)">
-                    <i class="fa-solid fa-circle-info me-1" style="color:var(--primary-400)"></i><?= h($txt['qty_tip_title'] ?? 'Adjusting card quantities') ?>
+                <div class="fw-bold small mb-1" style="color:var(--ac-color-text)">
+                    <i class="fa-solid fa-circle-info me-1" style="color:var(--ac-color-primary)"></i><?= h($txt['qty_tip_title'] ?? 'Adjusting card quantities') ?>
                 </div>
-                <p class="mb-0 small" style="color:var(--neutral-600);line-height:1.55">
+                <p class="mb-0 small" style="color:var(--ac-color-text-2);line-height:1.55">
                     <?= h($txt['qty_tip'] ?? '') ?>
                 </p>
             </div>
@@ -419,10 +419,10 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     <!-- Altered.gg ZIP import -->
     <div class="card-altered p-3 mb-3 coll-card-primary">
         <div class="d-flex align-items-center gap-2 mb-2">
-            <i class="fa-solid fa-file-zipper" style="color:var(--primary-400)"></i>
-            <span class="fw-bold small" style="color:var(--neutral-700)"><?= h($txt['import_title']) ?></span>
+            <i class="fa-solid fa-file-zipper" style="color:var(--ac-color-primary)"></i>
+            <span class="fw-bold small" style="color:var(--ac-color-text)"><?= h($txt['import_title']) ?></span>
         </div>
-        <p class="mb-3 small" style="color:var(--neutral-500);line-height:1.55">
+        <p class="mb-3 small" style="color:var(--ac-color-text-muted);line-height:1.55">
             <?= $txt['import_intro'] ?>
         </p>
         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -436,8 +436,8 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     </div>
 
     <div id="coll-disclaimer" class="card-altered p-3 mb-3 coll-card-warning">
-        <p class="mb-3 small" style="color:var(--neutral-600);line-height:1.55">
-            <i class="fa-solid fa-circle-info me-2" style="color:var(--bs-warning,#ffc107)"></i><?= h($txt['disclaimer'] ?? '') ?>
+        <p class="mb-3 small" style="color:var(--ac-color-text-2);line-height:1.55">
+            <i class="fa-solid fa-circle-info me-2" style="color:var(--ac-color-warning)"></i><?= h($txt['disclaimer'] ?? '') ?>
         </p>
         <button type="button" id="coll-disclaimer-btn" class="btn btn-sm btn-outline-secondary">
             <i class="fa-solid fa-check me-1"></i><?= h($txt['disclaimer_btn'] ?? 'I understand') ?>
@@ -446,7 +446,7 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
 
     <div id="coll-form-wrap" class="card-altered p-4 mb-3" style="display:none">
         <p class="text-muted mb-1" style="font-size:.88rem"><?= h($txt['intro'] ?? '') ?></p>
-        <p class="mb-3" style="font-size:.82rem;color:var(--neutral-400)">
+        <p class="mb-3" style="font-size:.82rem;color:var(--ac-color-text-muted)">
             <code><?= h($txt['format_hint'] ?? '') ?></code>
         </p>
 
@@ -454,8 +454,8 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
             <input type="hidden" name="action" value="save">
 
-            <textarea name="collection" class="form-control font-monospace mb-3"
-                      rows="10" style="font-size:.82rem;resize:vertical"
+            <textarea name="collection" class="form-control mb-3"
+                      rows="10" style="font-size:.82rem;resize:vertical;font-variant-numeric:tabular-nums"
                       placeholder="<?= h($txt['textarea_ph'] ?? '') ?>"><?= h($collection) ?></textarea>
 
             <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -565,7 +565,7 @@ $pageTitle = $txt['page_title'] ?? 'Collection';
     function showStatus(msg, isErr) {
         if (!zipStatus) return;
         zipStatus.textContent = msg;
-        zipStatus.style.color = isErr ? '#ef4444' : '#22c55e';
+        zipStatus.style.color = isErr ? 'var(--ac-color-required)' : 'var(--ac-color-success)';
         zipStatus.style.display = '';
     }
 

@@ -20,7 +20,7 @@
             <button type="button" onclick="dbLoadHeroes('<?= $fCode ?>')"
                     class="db-faction-btn<?= $fCode === $_heroDefaultFaction ? ' active' : '' ?>"
                     data-faction="<?= $fCode ?>"
-                    style="--faction-color:<?= h($fData['color'] ?? '#888') ?>">
+                    style="--faction-color:<?= h($fData['color'] ?? 'var(--ac-color-text-muted)') ?>">
                 <img src="<?= $pluginAssetsUrl ?>/faction/<?= $fCode ?>.png" alt="">
                 <span><?= h($fData[$uiLang] ?? $fData['en']) ?></span>
             </button>
@@ -123,7 +123,7 @@ usort($_fmtKeys, function ($a, $b) use ($formatsData, $uiLang, $_bgaArenaFormat)
             <div class="filter-label mb-1"><?= h($txt['format']) ?> <span class="db-new-req">*</span></div>
             <div class="db-new-formats mb-3">
                 <?php foreach ($_fmtKeys as $fmtKey): $fmtData = $formatsData[$fmtKey]; ?>
-                <label class="db-new-format" style="--format-color:<?= h($fmtData['color'] ?? 'var(--neutral-300)') ?>">
+                <label class="db-new-format" style="--format-color:<?= h($fmtData['color'] ?? 'var(--ac-color-text-disabled)') ?>">
                     <input type="radio" name="db-new-format" value="<?= h($fmtKey) ?>">
                     <span class="db-new-format-txt">
                         <span class="db-new-format-head">

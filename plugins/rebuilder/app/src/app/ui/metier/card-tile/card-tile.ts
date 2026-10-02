@@ -4,22 +4,22 @@ import { Component, ElementRef, Injector, afterNextRender, computed, inject, inp
 import { isUniqueReference } from '../../../core/card-art';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
-import { ArCardAdd, ArStepper } from '../../buttons';
-import { ArBadge } from '../../chips';
-import { ArIcon } from '../../icon';
-import { ArCardArt } from '../card-art/card-art';
-import { ArUniqueCard } from '../unique-card/unique-card';
+import { AcCardAdd, AcStepper } from '../../buttons';
+import { AcBadge } from '../../chips';
+import { AcIcon } from '../../icon';
+import { AcCardArt } from '../card-art/card-art';
+import { AcUniqueCard } from '../unique-card/unique-card';
 import { contentLocale } from '../../../core/locale';
 
-/** Search / preview / consultation tile — ar-card-tile (DS-Metier). */
+/** Search / preview / consultation tile — ac-card-tile (DS-Metier). */
 @Component({
-  selector: 'ar-card-tile',
-  imports: [NgTemplateOutlet, ArCardArt, ArCardAdd, ArStepper, ArUniqueCard, ArBadge, ArIcon],
+  selector: 'ac-card-tile',
+  imports: [NgTemplateOutlet, AcCardArt, AcCardAdd, AcStepper, AcUniqueCard, AcBadge, AcIcon],
   host: { role: 'article', '[attr.aria-label]': 'name()' },
   templateUrl: './card-tile.html',
   styleUrl: './card-tile.scss',
 })
-export class ArCardTile {
+export class AcCardTile {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   readonly card = input.required<Card>();

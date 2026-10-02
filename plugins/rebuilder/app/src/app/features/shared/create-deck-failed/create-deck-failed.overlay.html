@@ -1,9 +1,9 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   <p class="error" role="alert">{{ ref.data }}</p>
   <p class="note" i18n="@@shared.createFailed.note">Vous pouvez réessayer, ou créer le deck sur cet appareil seulement : il ne sera pas sur votre compte.</p>
 </div>
-<div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.createFailed.cancel">Annuler</button>
-  <button arButton variant="secondary" (click)="ref.close('local')" i18n="@@shared.createFailed.local">Créer sur cet appareil</button>
-  <button arButton icon="rotate" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="ref.close('retry')" i18n="@@shared.createFailed.retry">Réessayer</button>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@shared.createFailed.cancel">Annuler</button>
+  <button acButton variant="secondary" (click)="ref.close('local')" i18n="@@shared.createFailed.local">Créer sur cet appareil</button>
+  <button acButton icon="rotate-ccw" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="ref.close('retry')" i18n="@@shared.createFailed.retry">Réessayer</button>
 </div>

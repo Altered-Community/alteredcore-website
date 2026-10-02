@@ -22,86 +22,84 @@ button[aria-disabled="true"] {
   border-radius: 50%;
 }
 /* overlay (on card) */
-.group.ar-stepper--overlay {
+.group.ac-stepper--overlay {
   padding: 2px;
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-overlay-control);
-  color: var(--ar-color-on-strong);
-  box-shadow: var(--ar-shadow-e3);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
+  box-shadow: var(--ac-shadow-e3);
 }
-.ar-stepper--overlay .ring {
-  width: 36px;
-  height: 36px;
+.ac-stepper--overlay .ring {
+  width: max(36px, var(--ac-hit-min));
+  height: max(36px, var(--ac-hit-min));
 }
-:host-context([data-density='touch']) .ar-stepper--overlay .ring {
-  width: 44px;
-  height: 44px;
+.ac-stepper--overlay .dec .ring {
+  background: color-mix(in srgb, var(--ac-color-on-strong) 12%, transparent);
 }
-.ar-stepper--overlay .dec .ring {
-  background: rgb(255 255 255 / 0.12);
+.ac-stepper--overlay .inc .ring {
+  background: var(--ac-color-primary);
 }
-.ar-stepper--overlay .inc .ring {
-  background: var(--ar-color-primary);
+.ac-stepper--overlay .inc .ring {
+  background: var(--ac-color-primary);
 }
-.ar-stepper--overlay .inc[aria-disabled="true"] .ring {
+.ac-stepper--overlay .inc[aria-disabled="true"] .ring {
   opacity: 0.4;
 }
-.ar-stepper--overlay .dec[aria-disabled="true"] .ring {
+.ac-stepper--overlay .dec[aria-disabled="true"] .ring {
   opacity: 0.5;
 }
-.ar-stepper--overlay .value {
+.ac-stepper--overlay .value {
   min-width: 30px;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   font-weight: 800;
 }
 /* inline (deck rows) */
-.group.ar-stepper--inline {
-  color: var(--ar-color-text-2);
+.group.ac-stepper--inline {
+  color: var(--ac-color-text-2);
 }
-.ar-stepper--inline button {
-  width: var(--ar-hit-min);
-  height: var(--ar-hit-min);
+.ac-stepper--inline button {
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
 }
-.ar-stepper--inline .ring {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--ar-color-border-control);
+.ac-stepper--inline .ring {
+  width: calc(var(--ac-control-sm) - 4px);
+  height: calc(var(--ac-control-sm) - 4px);
+  border: 1px solid var(--ac-color-border-control);
 }
-:host-context([data-density='touch']) .ar-stepper--inline .ring {
-  width: 30px;
-  height: 30px;
+.ac-stepper--inline button:hover:not(:disabled) .ring {
+  background: var(--ac-color-bg-subtle);
 }
-.ar-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
-  background: var(--ar-color-bg-subtle);
+.ac-stepper--inline button:hover:not([aria-disabled="true"]) .ring {
+  background: var(--ac-color-bg-subtle);
 }
-.ar-stepper--inline button[aria-disabled="true"] .ring {
+.ac-stepper--inline button[aria-disabled="true"] .ring {
   opacity: 0.45;
 }
-.ar-stepper--inline .value {
+.ac-stepper--inline .value {
   width: 18px;
   text-align: center;
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   font-weight: 800;
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }
 /* compact box variant used in the desktop deck panel */
-.group.ar-stepper--box {
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-md);
-  color: var(--ar-color-text-2);
+.group.ac-stepper--box {
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-color-text-2);
 }
-.ar-stepper--box button {
+.ac-stepper--box button {
   width: 28px;
   height: 28px;
 }
-.ar-stepper--box button[aria-disabled="true"] {
+.ac-stepper--box button[aria-disabled="true"] {
   opacity: 0.4;
 }
-.ar-stepper--box .value {
+.ac-stepper--box .value {
   width: 18px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 700;
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }

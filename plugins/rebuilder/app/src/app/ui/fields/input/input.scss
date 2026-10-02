@@ -1,72 +1,29 @@
-:host {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ar-space-1-5);
-  min-width: 0;
-}
-.label {
-  font: var(--ar-font-small);
-  font-weight: 700;
-}
-.req {
-  color: var(--ar-color-required);
-}
+/*
+ * Field, label and input are drawn by .ac-field / .ac-input / .ac-input-icon
+ * (design-system/css/components/field.css). Here: the leading icon, whose <svg> sits inside the
+ * <ac-icon> element (the design system expects it as a direct child), and the clear button.
+ */
 .wrap {
   position: relative;
 }
-.icon {
+.ac-input-icon ::ng-deep .ac-icon {
   position: absolute;
-  left: var(--ar-space-3);
+  left: var(--ac-space-3);
   top: 50%;
   transform: translateY(-50%);
-  display: flex;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   pointer-events: none;
-}
-input {
-  width: 100%;
-  height: var(--ar-control-md);
-  padding: 0 var(--ar-space-3);
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--ar-color-text);
-  outline: none;
-}
-:host-context([data-density='touch']) input {
-  font-size: 16px;
-}
-input.subtle {
-  background: var(--ar-color-bg-subtle);
-}
-input.with-icon {
-  padding-left: 38px;
-}
-input::placeholder {
-  color: var(--ar-color-text-muted);
-}
-input:focus {
-  border: 2px solid var(--ar-color-primary);
-  padding-inline: calc(var(--ar-space-3) - 1px);
-}
-input.with-icon:focus {
-  padding-left: 37px;
-}
-input[aria-invalid='true'] {
-  border-color: var(--ar-color-required);
 }
 .clear {
   position: absolute;
-  right: 4px;
+  right: var(--ac-space-1);
   top: 50%;
   transform: translateY(-50%);
-  width: var(--ar-hit-min);
-  height: var(--ar-hit-min);
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
   border: none;
   background: none;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -11,7 +11,7 @@
 } @else {
   <div #track class="track" role="group" [attr.id]="panelId() || null" [attr.aria-label]="ariaLabel()">
     @for (h of visible(); track h.reference) {
-      <ar-hero-tile
+      <ac-hero-tile
         class="slot"
         [hero]="h"
         [size]="layout() === 'carousel' ? 'sm' : 'md'"

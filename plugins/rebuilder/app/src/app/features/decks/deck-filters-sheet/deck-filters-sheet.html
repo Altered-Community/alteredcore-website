@@ -1,26 +1,26 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   @if (ref.data.showFormat) {
-    <ar-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
+    <ac-select label="Format" [options]="ref.data.formats" [value]="draft().format" (valueChange)="patch({ format: $event })" />
   }
   @if (ref.data.showHero) {
-    <ar-select label="Héros" i18n-label="@@decks.filters.hero" [options]="heroes()" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
+    <ac-select label="Héros" i18n-label="@@decks.filters.hero" [options]="heroes()" [value]="draft().hero" (valueChange)="patch({ hero: $event })" />
   }
   @if (ref.data.showVisibility) {
     <div class="field">
       <span class="label" i18n="@@decks.filters.visibility">Visibilité</span>
-      <ar-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+      <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
   }
   <div class="field">
     <span class="label">Faction</span>
     <div class="chips">
       @for (f of factions; track f.code) {
-        <ar-chip [label]="f.name" [dot]="f.color" [selected]="draft().factions.includes(f.code)" (selectedChange)="toggle(f.code, $event)" />
+        <ac-chip [label]="f.name" [dot]="f.color" [selected]="draft().factions.includes(f.code)" (selectedChange)="toggle(f.code, $event)" />
       }
     </div>
   </div>
 </div>
-<div class="ar-overlay-footer">
-  <button arButton variant="secondary" class="secondary-action" (click)="draft.set(empty)" i18n="@@decks.filters.reset">Réinitialiser</button>
-  <button arButton size="lg" [fullWidth]="true" (click)="ref.close(draft())" i18n="@@decks.filters.apply">Appliquer</button>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="draft.set(empty)" i18n="@@decks.filters.reset">Réinitialiser</button>
+  <button acButton size="lg" [fullWidth]="true" (click)="ref.close(draft())" i18n="@@decks.filters.apply">Appliquer</button>
 </div>

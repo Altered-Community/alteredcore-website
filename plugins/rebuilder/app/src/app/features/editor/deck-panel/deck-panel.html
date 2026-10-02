@@ -1,5 +1,5 @@
 <div class="summary">
-  <ar-deck-summary
+  <ac-deck-summary
     appearance="embedded"
     [hero]="deck.hero()"
     [formatLabel]="formatLabel()"
@@ -13,12 +13,12 @@
     (showLegality)="showLegality()"
   />
 </div>
-<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
-  <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-</ar-collapsible>
+<ac-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
+  <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+</ac-collapsible>
 @if (altArts?.canChooseTokens()) {
   <div class="tokens">
-    <button arButton variant="secondary" size="sm" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+    <button acButton variant="secondary" size="sm" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
   </div>
 }
 <div class="rows">
@@ -26,7 +26,7 @@
     <div class="group">
       <div class="group-head"><span>{{ g.label }}</span><span>{{ g.count }}</span></div>
       @for (l of g.lines; track l.card.reference) {
-        <ar-deck-row
+        <ac-deck-row
           appearance="panel"
           [card]="l.card"
           [quantity]="l.quantity"

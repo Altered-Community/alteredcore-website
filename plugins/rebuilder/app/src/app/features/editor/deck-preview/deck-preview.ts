@@ -1,8 +1,8 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton } from '../../../ui/buttons';
-import { ArCardTile, ArDeckSection } from '../../../ui/metier';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcCardTile, AcDeckSection } from '../../../ui/metier';
+import { AcOverlayService } from '../../../ui/overlay';
 import { FavoritesService } from '../../../core/favorites.service';
 import { EditorAltArts } from '../editor-alt-arts';
 import type { Card } from '../../../core/models';
@@ -11,13 +11,13 @@ import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 /** « Aperçu » / « Cartes »: count line, « Tout replier », one section per type with tiles. */
 @Component({
   selector: 'app-deck-preview',
-  imports: [ArDeckSection, ArCardTile, ArButton],
+  imports: [AcDeckSection, AcCardTile, AcButton],
   templateUrl: './deck-preview.html',
   styleUrl: './deck-preview.scss',
 })
 export class DeckPreview {
   protected readonly deck = inject(DeckStore);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   protected readonly favorites = inject(FavoritesService);
   /** Editor only: prints of the deck's cards (per-deck alt-art mode). */
   private readonly altArts = inject(EditorAltArts, { optional: true });

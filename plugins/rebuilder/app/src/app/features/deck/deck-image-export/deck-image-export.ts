@@ -1,6 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { deckImageFileName, type DeckImageSource } from '../../../core/deck-image';
-import { ArSplitButton, type ArSplitButtonItem } from '../../../ui/buttons';
+import { AcSplitButton, type AcSplitButtonItem } from '../../../ui/buttons';
 import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '../deck-image-actions';
 
 /**
@@ -9,7 +9,7 @@ import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '
  */
 @Component({
   selector: 'app-deck-image-export',
-  imports: [ArSplitButton],
+  imports: [AcSplitButton],
   templateUrl: './deck-image-export.html',
 })
 export class DeckImageExport {
@@ -20,7 +20,7 @@ export class DeckImageExport {
 
   protected readonly busy = signal(false);
   protected readonly busyLabel = deckImageBusyMessage();
-  protected readonly items = computed<ArSplitButtonItem[]>(() => [
+  protected readonly items = computed<AcSplitButtonItem[]>(() => [
     {
       id: 'copy',
       icon: 'clipboard',

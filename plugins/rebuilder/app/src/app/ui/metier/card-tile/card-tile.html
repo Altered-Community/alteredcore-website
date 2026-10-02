@@ -1,8 +1,8 @@
 <ng-template #face>
   @if (unique()) {
-    <ar-unique-card [card]="card()" [eager]="eager()" />
+    <ac-unique-card [card]="card()" [eager]="eager()" />
   } @else {
-    <ar-card-art [reference]="card().reference" [eager]="eager()" [neutral]="true" />
+    <ac-card-art [reference]="card().reference" [eager]="eager()" [neutral]="true" />
   }
 </ng-template>
 @if (zoomable()) {
@@ -16,7 +16,7 @@
 }
 @if (favorite() !== null) {
   <button type="button" class="favorite" [class.on]="favorite()" [attr.aria-pressed]="favorite()" [attr.aria-label]="favoriteLabel()" [title]="favoriteLabel()" (click)="favoriteToggle.emit()">
-    <ar-icon name="star" [size]="15" />
+    <ac-icon name="star" [size]="15" />
   </button>
 }
 @if (plain()) {
@@ -25,13 +25,13 @@
   <span class="qty" [attr.aria-label]="quantityLabel()">×{{ quantity() }}</span>
 } @else if (quantity() === 0 && max() === 0 && blockedReason()) {
   <span class="action blocked" [title]="blockedReason()">
-    <ar-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ar-badge>
-    <span class="ar-sr-only">{{ blockedReason() }}</span>
+    <ac-badge tone="neutral" icon="lock" aria-hidden="true">{{ blockedShort }}</ac-badge>
+    <span class="ac-sr-only">{{ blockedReason() }}</span>
   </span>
 } @else if (quantity() === 0) {
-  <ar-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="changeQuantity(1)" />
+  <ac-card-add class="action" [label]="addLabel()" [disabled]="max() === 0" (add)="changeQuantity(1)" />
 } @else {
-  <ar-stepper
+  <ac-stepper
     class="action"
     appearance="overlay"
     [label]="copiesLabel()"

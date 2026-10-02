@@ -1,21 +1,21 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
 }
 .overline {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
-  letter-spacing: var(--ar-letter-spacing-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 /* Three cards, then two, on a 6-column grid; one column on a phone. */
 .grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 .third {
   grid-column: span 2;
@@ -38,26 +38,26 @@
 .block {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1);
+  gap: var(--ac-space-1);
 }
 h3 {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 700;
-  letter-spacing: var(--ar-letter-spacing-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-primary-strong);
+  color: var(--ac-color-primary-strong);
 }
 p {
   margin: 0;
 }
 .sub {
-  font-size: 13px;
-  color: var(--ar-color-text-2);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
 }
 .body {
   flex-grow: 1;
-  padding: var(--ar-space-3) 0;
+  padding: var(--ac-space-3) 0;
 }
 .big {
   font-size: 32px;
@@ -66,26 +66,26 @@ p {
   font-variant-numeric: tabular-nums;
 }
 .note {
-  font-size: 13px;
-  color: var(--ar-color-text-2);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
 }
 .highlights {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
   align-items: stretch;
 }
 .tile {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-1);
-  padding: var(--ar-space-3);
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-primary-tint);
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-3);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-primary-tint);
 }
 .tile-label {
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .tile-value {
   font-size: 24px;
@@ -93,23 +93,23 @@ p {
   font-variant-numeric: tabular-nums;
 }
 .tile.warn .tile-value {
-  color: var(--ar-color-primary);
+  color: var(--ac-color-primary);
 }
 .tile-note {
-  font-size: 12px;
-  color: var(--ar-color-text-2);
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-text-2);
 }
 .detail {
-  border-top: 1px solid var(--ar-color-divider);
+  border-top: 1px solid var(--ac-color-divider);
   /* Full card width: undo the card padding (space-3 on a phone, space-4 above). */
-  margin: 0 calc(-1 * var(--ar-space-3)) calc(-1 * var(--ar-space-3));
+  margin: 0 calc(-1 * var(--ac-space-3)) calc(-1 * var(--ac-space-3));
 }
 @media (min-width: 768px) {
   .detail {
-    margin: 0 calc(-1 * var(--ar-space-4)) calc(-1 * var(--ar-space-4));
+    margin: 0 calc(-1 * var(--ac-space-4)) calc(-1 * var(--ac-space-4));
   }
 }
 .detail-label {
-  font-size: 12px;
-  color: var(--ar-color-text-muted);
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-text-muted);
 }

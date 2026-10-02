@@ -1,11 +1,11 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { BGA_LABEL, bgaTag, heroOnBga, visibleFormats, type FormatInfo } from '../../../core/formats';
-import { ArButton } from '../../../ui/buttons';
-import { ArChip } from '../../../ui/chips';
-import { ArInput, ArRadioCard, ArSegmented, ArTextarea } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArFactionTabs, ArHeroSelector, factionName } from '../../../ui/metier';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcChip } from '../../../ui/chips';
+import { AcInput, AcRadioCard, AcSegmented, AcTextarea } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcFactionTabs, AcHeroSelector, factionName } from '../../../ui/metier';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { heroChoices, injectHeroes } from '../hero-picker/hero-picker.overlay';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -28,16 +28,16 @@ export const VISIBILITY_OPTIONS = [
  */
 @Component({
   selector: 'app-new-deck',
-  imports: [ArButton, ArInput, ArRadioCard, ArSegmented, ArTextarea, ArFactionTabs, ArHeroSelector, ArChip],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput, AcRadioCard, AcSegmented, AcTextarea, AcFactionTabs, AcHeroSelector, AcChip],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './new-deck.overlay.html',
   styleUrl: './new-deck.overlay.scss',
 })
 export class NewDeckOverlay {
   private readonly ownership = inject(OwnershipApiService);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly ref = inject<ArOverlayRef<NewDeckResult>>(ArOverlayRef);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly ref = inject<AcOverlayRef<NewDeckResult>>(AcOverlayRef);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly formats = visibleFormats();
   protected readonly bga = BGA_LABEL;
   /** BGA tag of a format, « Héros indispo. BGA » when the chosen hero is not on Board Game Arena (as on the site). */
@@ -88,7 +88,7 @@ export class NewDeckOverlay {
   }
 }
 
-export function openNewDeck(overlay: ArOverlayService): ArOverlayRef<NewDeckResult> {
+export function openNewDeck(overlay: AcOverlayService): AcOverlayRef<NewDeckResult> {
   return overlay.open<NewDeckOverlay, NewDeckResult>(NewDeckOverlay, {
     title: $localize`:@@title.newDeck:Nouveau deck`,
     width: 1080,

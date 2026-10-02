@@ -1281,7 +1281,7 @@ function CardSearch(cfg) {
 
         if (total > 5) {
             var sep = document.createElement('span');
-            sep.style.cssText = 'width:1px;background:var(--neutral-300);align-self:stretch;margin:0 4px';
+            sep.style.cssText = 'width:1px;background:var(--ac-color-border-dashed);align-self:stretch;margin:0 4px';
             elPagin.appendChild(sep);
 
             var inp = document.createElement('input');
@@ -1314,7 +1314,7 @@ function CardSearch(cfg) {
         btn1.disabled = true;
         btn2.disabled = true;
         fbEl.textContent = '…';
-        fbEl.style.color = 'rgba(255,255,255,.5)';
+        fbEl.style.color = 'color-mix(in srgb, var(--ac-color-on-strong) 50%, transparent)';
 
         var body = new URLSearchParams();
         body.append('csrf_token', cfg.collectionCsrf || '');
@@ -1337,19 +1337,19 @@ function CardSearch(cfg) {
                 if (cfg.collectionData)    cfg.collectionData[ref]    = newQty;
                 if (cfg.collectionEntries) cfg.collectionEntries[ref] = newEid;
                 fbEl.textContent = '✓';
-                fbEl.style.color = '#4ade80';
+                fbEl.style.color = 'var(--ac-cards-status-complete)';
                 setTimeout(function() { fbEl.textContent = ''; }, 2000);
                 onSuccess(newQty, newEid);
             } else {
                 fbEl.textContent = '✗';
-                fbEl.style.color = '#f87171';
+                fbEl.style.color = 'var(--ac-cards-status-missing)';
             }
         })
         .catch(function() {
             btn1.disabled = false;
             btn2.disabled = false;
             fbEl.textContent = '✗';
-            fbEl.style.color = '#f87171';
+            fbEl.style.color = 'var(--ac-cards-status-missing)';
         });
     }
 
@@ -2124,7 +2124,7 @@ function CardSearch(cfg) {
             },
             optgroup_header: function(d) {
                 if (d.value === 'sub') {
-                    return '<div style="border-top:1px solid var(--sand-200,#dee2e6);margin:4px 0;padding:0;height:0;overflow:hidden"></div>';
+                    return '<div style="border-top:1px solid var(--ac-color-border);margin:4px 0;padding:0;height:0;overflow:hidden"></div>';
                 }
                 return '<div style="display:none"></div>';
             },
@@ -2393,17 +2393,17 @@ function CardSearch(cfg) {
             var entryId     = collEntries[ref] || 0;
 
             var wrap = document.createElement('div');
-            wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:rgba(0,0,0,.55);border-radius:8px';
+            wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:var(--ac-color-overlay-label);border-radius:var(--ac-radius-md)';
 
             var icon = document.createElement('i');
             icon.className = 'fa-solid fa-box-archive';
-            icon.style.cssText = 'color:rgba(255,255,255,.65);font-size:.85rem';
+            icon.style.cssText = 'color:color-mix(in srgb, var(--ac-color-on-strong) 65%, transparent);font-size:.85rem';
 
             var label = document.createElement('span');
-            label.style.cssText = 'color:rgba(255,255,255,.65);font-size:.82rem;flex:1';
+            label.style.cssText = 'color:color-mix(in srgb, var(--ac-color-on-strong) 65%, transparent);font-size:.82rem;flex:1';
             label.textContent = 'Collection';
 
-            var btnStyle = 'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:5px;min-width:2.25rem;min-height:2.25rem;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;cursor:pointer;flex-shrink:0';
+            var btnStyle = 'border:1px solid color-mix(in srgb, var(--ac-color-on-strong) 30%, transparent);background:color-mix(in srgb, var(--ac-color-on-strong) 10%, transparent);color:var(--ac-color-on-strong);border-radius:var(--ac-radius-xs);min-width:2.25rem;min-height:2.25rem;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;cursor:pointer;flex-shrink:0';
 
             var btnMinus = document.createElement('button');
             btnMinus.type = 'button';
@@ -2411,7 +2411,7 @@ function CardSearch(cfg) {
             btnMinus.style.cssText = btnStyle;
 
             var qtyEl = document.createElement('span');
-            qtyEl.style.cssText = 'color:#fff;font-weight:700;font-size:1rem;min-width:1.5em;text-align:center;flex-shrink:0';
+            qtyEl.style.cssText = 'color:var(--ac-color-on-strong);font-weight:700;font-size:1rem;min-width:1.5em;text-align:center;flex-shrink:0';
             qtyEl.textContent = qty;
 
             var btnPlus = document.createElement('button');
@@ -2459,11 +2459,11 @@ function CardSearch(cfg) {
                 cardEl = document.createElement('altered-card');
                 cardEl.setAttribute('ref', ref);
                 cardEl.setAttribute('locale', rendererLocale());
-                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)';
+                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;border-radius:var(--ac-radius-lg);overflow:hidden;box-shadow:var(--ac-shadow-dialog)';
             } else {
                 cardEl = document.createElement('img');
                 cardEl.src = cdnUrl(ref);
-                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6)';
+                cardEl.style.cssText = 'display:block;width:100%;max-height:80vh;object-fit:contain;border-radius:var(--ac-radius-lg);box-shadow:var(--ac-shadow-dialog)';
             }
             cardEl.addEventListener('click', closeModal);
             if (window.OWN_CARD_MODAL_ENHANCE) {

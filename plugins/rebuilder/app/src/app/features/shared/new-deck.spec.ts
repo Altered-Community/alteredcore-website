@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../core/cards-api.service';
-import { ArOverlayRef } from '../../ui/overlay';
+import { AcOverlayRef } from '../../ui/overlay';
 import { NewDeckForm } from './new-deck.form';
 import { NewDeckOverlay, type NewDeckResult } from './new-deck/new-deck.overlay';
 import { heroChoices } from './hero-picker/hero-picker.overlay';
@@ -89,13 +89,13 @@ describe('NewDeckOverlay', () => {
 
   function setup() {
     closed = [];
-    const ref = new ArOverlayRef<NewDeckResult>(undefined);
+    const ref = new AcOverlayRef<NewDeckResult>(undefined);
     ref.dialogRef = { close: (r?: unknown) => closed.push(r as NewDeckResult | undefined) };
     TestBed.configureTestingModule({
       imports: [NewDeckOverlay],
       providers: [
         provideRouter([]),
-        { provide: ArOverlayRef, useValue: ref },
+        { provide: AcOverlayRef, useValue: ref },
         { provide: CardsApiService, useValue: { heroes: () => of(heroes) } },
       ],
     });
@@ -103,8 +103,8 @@ describe('NewDeckOverlay', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const create = () => [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Créer le deck'))!;
-    const tile = (name: string) => [...el.querySelectorAll<HTMLButtonElement>('ar-hero-tile button')].find((b) => b.textContent?.includes(name))!;
-    const nameInput = () => el.querySelector<HTMLInputElement>('ar-input input')!;
+    const tile = (name: string) => [...el.querySelectorAll<HTMLButtonElement>('ac-hero-tile button')].find((b) => b.textContent?.includes(name))!;
+    const nameInput = () => el.querySelector<HTMLInputElement>('ac-input input')!;
     return { fixture, el, create, tile, nameInput };
   }
 

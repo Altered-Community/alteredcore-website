@@ -1,10 +1,10 @@
-<div class="ar-overlay-body" role="menu">
+<div class="ac-overlay-body" role="menu">
   @if (zone === 'board') {
-    <button role="menuitem" type="button" (click)="ref.close('hand')" i18n="@@deck.play.actionReturnHand"><ar-icon name="rotate" [size]="20" />Remettre en main</button>
+    <button role="menuitem" type="button" (click)="ref.close('hand')" i18n="@@deck.play.actionReturnHand"><ac-icon name="rotate-ccw" [size]="20" />Remettre en main</button>
   } @else {
-    <button role="menuitem" type="button" (click)="ref.close('board')" i18n="@@deck.play.actionToBoard"><ar-icon name="layers" [size]="20" />Jouer sur le plateau</button>
+    <button role="menuitem" type="button" (click)="ref.close('board')" i18n="@@deck.play.actionToBoard"><ac-icon name="layers" [size]="20" />Jouer sur le plateau</button>
   }
-  <button role="menuitem" type="button" (click)="ref.close('mana')" i18n="@@deck.play.actionToMana"><ar-icon name="droplet" [size]="20" />En mana</button>
-  <button role="menuitem" type="button" (click)="ref.close('discard')" i18n="@@deck.play.actionDiscard"><ar-icon name="trash" [size]="20" />Défausser</button>
-  <button role="menuitem" type="button" (click)="ref.close('zoom')" i18n="@@deck.play.actionZoom"><ar-icon name="search" [size]="20" />Agrandir</button>
+  <button role="menuitem" type="button" (click)="ref.close('mana')" i18n="@@deck.play.actionToMana"><ac-icon name="droplet" [size]="20" />En mana</button>
+  <button role="menuitem" type="button" (click)="ref.close('discard')" i18n="@@deck.play.actionDiscard"><ac-icon name="trash-2" [size]="20" />Défausser</button>
+  <button role="menuitem" type="button" (click)="ref.close('zoom')" i18n="@@deck.play.actionZoom"><ac-icon name="search" [size]="20" />Agrandir</button>
 </div>

@@ -1,8 +1,9 @@
 @if (label()) {
-  <label [for]="id" class="label">{{ label() }}</label>
+  <label [for]="id" class="ac-field__label">{{ label() }}</label>
 }
 <textarea
   #field
+  class="ac-textarea"
   [id]="id"
   [rows]="rows()"
   [attr.maxlength]="maxlength()"

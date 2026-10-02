@@ -1,44 +1,41 @@
-/* card-scan — floating QR-scan button, mobile only. */
+/* card-scan — floating QR-scan button, mobile only. Tokens only (design-system/tokens/tokens.css). */
 
 #cs-fab { display: none; }
 
 @media (max-width: 767.98px) {
     #cs-fab {
         position: fixed;
-        bottom: 14px;
-        right: 14px;
+        bottom: var(--ac-space-3);
+        right: var(--ac-space-3);
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        padding: 11px 18px;
-        border-radius: 999px;
-        background: var(--primary-400);
-        color: var(--neutral-800);
-        font-weight: 600;
-        font-size: 1rem;
+        gap: var(--ac-space-2);
+        height: var(--ac-control-lg);
+        padding: 0 var(--ac-space-5);
+        border-radius: var(--ac-radius-pill);
+        background: var(--ac-color-primary);
+        color: var(--ac-color-on-primary);
+        font: var(--ac-font-body-strong);
         text-decoration: none;
         white-space: nowrap;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, .32);
+        box-shadow: var(--ac-shadow-fab);
         z-index: 8000;
-        transition: transform .15s ease, box-shadow .15s ease;
-        line-height: 1;
+        transition: transform var(--ac-duration-fast) ease, background-color var(--ac-duration-fast) ease;
     }
 
     #cs-fab:hover,
     #cs-fab:focus-visible {
         transform: translateY(-2px);
-        box-shadow: 0 7px 22px rgba(0, 0, 0, .38);
-        color: var(--neutral-800);
+        background: var(--ac-color-primary-strong);
+        color: var(--ac-color-on-primary);
         text-decoration: none;
     }
 
     #cs-fab:active {
         transform: translateY(0);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, .28);
     }
 
-    #cs-fab i {
-        font-size: 1rem;
-        flex-shrink: 0;
+    #cs-fab .ac-icon {
+        --ac-icon-size: 18px;
     }
 }

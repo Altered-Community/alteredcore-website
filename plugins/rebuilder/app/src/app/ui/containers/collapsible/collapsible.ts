@@ -1,17 +1,16 @@
 import { Component, input, model } from '@angular/core';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
-/** Section that folds (closed by default; the Stats sections open it). */
+/** Section that folds (closed by default; the Stats sections open it): `ac-collapsible`. */
 @Component({
-  selector: 'ar-collapsible',
-  imports: [ArIcon],
-  host: { '[class.bare]': 'bare()', '[class.open]': 'open()' },
+  selector: 'ac-collapsible',
+  imports: [AcIcon],
+  host: { class: 'ac-collapsible', '[class.ac-collapsible--bare]': 'bare()' },
   templateUrl: './collapsible.html',
-  styleUrl: './collapsible.scss',
 })
-export class ArCollapsible {
+export class AcCollapsible {
   readonly title = input.required<string>();
   readonly open = model(false);
   readonly bare = input(false);
-  protected readonly id = `ar-col-${Math.random().toString(36).slice(2, 8)}`;
+  protected readonly id = `ac-col-${Math.random().toString(36).slice(2, 8)}`;
 }

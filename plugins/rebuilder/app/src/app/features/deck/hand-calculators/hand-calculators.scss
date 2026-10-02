@@ -1,28 +1,28 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2-5);
+  gap: var(--ac-space-2-5);
 }
 .overline {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
-  letter-spacing: var(--ar-letter-spacing-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .head {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ar-space-6);
+  gap: var(--ac-space-6);
 }
 .deck,
 .draw {
   display: inline-flex;
   align-items: center;
-  gap: var(--ar-space-2);
-  font-size: 14px;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-font-size-body);
 }
 .drawn {
   width: 80px;
@@ -30,29 +30,29 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 .calc {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 h3 {
   margin: 0;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--ac-font-size-body);
   font-weight: 600;
 }
 p {
   margin: 0;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
 }
 .mid {
-  color: var(--ar-color-primary-strong);
+  color: var(--ac-color-primary-strong);
 }
 .foot {
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
 }
 .ratio {
   font-weight: 600;
@@ -61,13 +61,13 @@ p {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr);
   align-items: start;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 .group-label {
-  min-height: var(--ar-control-md);
+  min-height: var(--ac-control-md);
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--ac-font-size-small);
   font-weight: 700;
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
 }

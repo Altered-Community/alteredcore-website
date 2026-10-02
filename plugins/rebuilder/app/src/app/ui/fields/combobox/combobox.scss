@@ -6,33 +6,29 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   padding: 7px 8px 7px 10px;
-  border: 1px solid var(--ar-color-primary-border);
-  background: var(--ar-color-primary-soft);
-  color: var(--ar-color-primary-strong);
-  border-radius: var(--ar-radius-control);
-  font-size: 13px;
+  border: 1px solid var(--ac-color-primary-border);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  border-radius: var(--ac-radius-control);
+  font-size: var(--ac-select-font-size);
   font-weight: 700;
   line-height: 1.35;
-}
-:host-context([data-density='touch']) .picked {
-  font-size: 15px;
-  padding: 9px 8px 9px 12px;
 }
 .picked button {
   border: none;
   background: none;
-  color: var(--ar-color-primary-strong);
+  color: var(--ac-color-primary-strong);
   display: flex;
   padding: 2px;
   cursor: pointer;
   flex-shrink: 0;
 }
 .or {
-  font-size: 11px;
+  font-size: var(--ac-font-size-micro);
   font-weight: 800;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   text-transform: uppercase;
   padding: 5px 8px;
 }
@@ -41,25 +37,22 @@
 }
 .toggle {
   width: 100%;
-  height: var(--ar-control-md);
+  height: var(--ac-control-md);
   padding: 0 34px 0 12px;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  color: var(--ar-color-text-muted);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-muted);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   outline: none;
 }
-:host-context([data-density='touch']) .toggle {
-  font-size: 16px;
-}
 .toggle:focus-visible,
 .toggle[aria-expanded='true'] {
-  border: 2px solid var(--ar-color-primary);
+  border: 2px solid var(--ac-color-primary);
   padding-left: 11px;
 }
 .label {
@@ -73,7 +66,7 @@
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   display: flex;
   pointer-events: none;
 }
@@ -83,13 +76,13 @@
 .glyph {
   display: inline-block;
   width: 1.4em;
-  font-family: var(--ar-card-icons);
+  font-family: var(--ac-card-icons);
   font-style: normal;
   font-weight: 400;
   font-size: 1.15em;
   line-height: 1;
   text-align: center;
-  margin-right: var(--ar-space-1-5);
+  margin-right: var(--ac-space-1-5);
   vertical-align: -0.12em;
 }
 /* In the CDK overlay container (plugin shadow root), sized to the button (matchWidth). */
@@ -97,43 +90,40 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-control);
-  background: var(--ar-color-surface);
-  box-shadow: var(--ar-shadow-e2);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e2);
   overflow: hidden;
 }
 .search {
   position: relative;
-  padding: var(--ar-space-2);
-  border-bottom: 1px solid var(--ar-color-border);
+  padding: var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-color-border);
 }
 .search-icon {
   position: absolute;
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   display: flex;
   pointer-events: none;
 }
 .search input {
   width: 100%;
-  height: var(--ar-control-sm);
+  height: var(--ac-control-sm);
   padding: 0 10px 0 32px;
-  border: 1px solid var(--ar-color-border-control);
-  border-radius: var(--ar-radius-sm);
-  background: var(--ar-color-bg-app);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-bg-app);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--ac-field-font-size);
   outline: none;
 }
-:host-context([data-density='touch']) .search input {
-  font-size: 16px;
-}
 .search input:focus {
-  border-color: var(--ar-color-primary);
-  background: var(--ar-color-surface);
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-surface);
 }
 .list {
   display: flex;
@@ -144,47 +134,43 @@
 }
 .empty {
   padding: 10px 12px;
-  font-size: 13px;
-  color: var(--ar-color-text-muted);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
 }
 .option {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: max(36px, var(--ac-hit-min));
   padding: 8px 12px;
   border: none;
-  background: var(--ar-color-surface);
-  font-size: 14px;
+  background: var(--ac-color-surface);
+  font-size: var(--ac-field-font-size);
   text-align: left;
   cursor: pointer;
   flex-shrink: 0;
 }
-:host-context([data-density='touch']) .option {
-  min-height: 44px;
-  font-size: 15px;
-}
 .group {
-  padding: var(--ar-space-2) var(--ar-space-3) var(--ar-space-1);
-  font-size: 11px;
+  padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-1);
+  font-size: var(--ac-font-size-micro);
   font-weight: 700;
-  letter-spacing: var(--ar-letter-spacing-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   flex-shrink: 0;
 }
 .thumb {
   width: 28px;
   aspect-ratio: 5 / 7;
-  margin-right: var(--ar-space-2);
-  border-radius: var(--ar-radius-sm);
+  margin-right: var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
   object-fit: cover;
   flex-shrink: 0;
 }
 .option:hover,
 .option.cdk-option-active {
-  background: var(--ar-color-bg-app);
+  background: var(--ac-color-bg-app);
 }
 .option:focus-visible {
-  outline: 2px solid var(--ar-color-primary);
+  outline: 2px solid var(--ac-color-primary);
   outline-offset: -2px;
 }

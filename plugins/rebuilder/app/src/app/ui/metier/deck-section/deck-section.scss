@@ -1,15 +1,15 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
-  background: var(--ar-color-surface);
-  border: 1px solid var(--ar-color-border);
-  border-radius: var(--ar-radius-card);
-  padding: var(--ar-space-3);
+  gap: var(--ac-space-3);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-3);
 }
 @media (min-width: 768px) {
   :host {
-    padding: var(--ar-space-4);
+    padding: var(--ac-space-4);
   }
 }
 :host(.flat) {
@@ -18,50 +18,48 @@
 .flat-head {
   display: flex;
   justify-content: space-between;
-  padding: var(--ar-space-1) var(--ar-space-1) var(--ar-space-2);
+  padding: var(--ac-space-1) var(--ac-space-1) var(--ac-space-2);
 }
 .overline {
-  font: var(--ar-font-overline);
-  letter-spacing: var(--ar-letter-spacing-overline);
+  font: var(--ac-font-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
   text-transform: uppercase;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }
 .head {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 .toggle {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-  min-height: var(--ar-hit-min);
+  min-height: var(--ac-hit-min);
 }
 .chev {
   display: flex;
-  color: var(--ar-color-text-2);
+  color: var(--ac-color-text-2);
   transition: transform 0.15s;
 }
 .chev.closed {
   transform: rotate(-90deg);
 }
 .title {
-  font: var(--ar-font-heading);
-}
-:host-context([data-density='touch']) .title {
-  font-size: 19px;
+  font: var(--ac-font-heading);
+  font-size: calc(var(--ac-field-font-size) + 3px); /* 17 px, 19 px in touch */
 }
 .count {
   min-width: 24px;
   height: 22px;
   padding: 0 7px;
-  border-radius: var(--ar-radius-pill);
-  background: var(--ar-color-track);
-  font-size: 12px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-track);
+  font-size: var(--ac-font-size-caption);
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -69,8 +67,8 @@
 }
 .distinct {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--ac-font-size-caption);
   font-weight: 700;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
   text-align: right;
 }

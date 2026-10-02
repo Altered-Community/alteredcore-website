@@ -1,16 +1,16 @@
-.ar-overlay-body {
+.ac-overlay-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
   padding: 0;
 }
 .controls {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
-  padding: var(--ar-space-3) var(--ar-space-4);
-  border-radius: var(--ar-radius-dialog);
-  background: var(--ar-color-surface);
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border-radius: var(--ac-radius-dialog);
+  background: var(--ac-color-surface);
 }
 .stage {
   align-self: center;
@@ -26,8 +26,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ar-space-2);
-  font-size: 13px;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-font-size-small);
   font-weight: 700;
 }
 .prints {
@@ -36,16 +36,16 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 .print {
   display: block;
   width: 100%;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: var(--ar-radius-md);
+  border-radius: var(--ac-radius-md);
   overflow: hidden;
-  background: var(--ar-color-track);
+  background: var(--ac-color-track);
   cursor: pointer;
 }
 .print img {
@@ -55,12 +55,12 @@
   object-fit: cover;
 }
 .print.selected {
-  border-color: var(--ar-color-primary);
+  border-color: var(--ac-color-primary);
 }
 .print.unowned {
   opacity: 0.5;
 }
 .print:focus-visible {
-  outline: 2px solid var(--ar-color-primary);
+  outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }

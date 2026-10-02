@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import type { Card } from '../../../core/models';
-import { ArDeckRow } from './deck-row';
+import { AcDeckRow } from './deck-row';
 
 const card: Card = { reference: 'ALT_CORE_B_LY_10_C', name: 'Chanteuse', cardType: { reference: 'CHARACTER' } };
 
-describe('ArDeckRow', () => {
+describe('AcDeckRow', () => {
   function render(inputs: Record<string, unknown>): HTMLElement {
-    const fixture = TestBed.createComponent(ArDeckRow);
+    const fixture = TestBed.createComponent(AcDeckRow);
     fixture.componentRef.setInput('card', card);
     for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
     fixture.detectChanges();
@@ -27,7 +27,7 @@ describe('ArDeckRow', () => {
 
   it('replaces the stepper by the reason when the card cannot be added', () => {
     const el = render({ max: 0, blockedReason: 'Cartes uniques interdites en Standard No Unique' });
-    expect(el.querySelector('ar-stepper')).toBeNull();
+    expect(el.querySelector('ac-stepper')).toBeNull();
     expect(el.querySelector('.blocked')?.getAttribute('title')).toBe('Cartes uniques interdites en Standard No Unique');
   });
 });

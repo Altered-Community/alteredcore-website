@@ -12,15 +12,15 @@ import { decklistText, groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
-import { ArButton, ArIconButton } from '../../../ui/buttons';
-import { ArBadge, ArRaritySummary } from '../../../ui/chips';
-import { ArCollapsible } from '../../../ui/containers';
-import { ArSegmented } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArCardArt, ArDeckStats, factionName } from '../../../ui/metier';
-import { ArAppBar, ArBackButton, ArBottomNav, ArTabs, type ArBottomNavItem } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcBadge, AcRaritySummary } from '../../../ui/chips';
+import { AcCollapsible } from '../../../ui/containers';
+import { AcSegmented } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcCardArt, AcDeckStats, factionName } from '../../../ui/metier';
+import { AcAppBar, AcBackButton, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { DeckListView } from '../../editor/deck-list-view/deck-list-view';
 import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
@@ -46,20 +46,20 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
   selector: 'app-deck-page',
   imports: [
     NgTemplateOutlet,
-    ArBackButton,
+    AcBackButton,
     RouterLink,
-    ArAppBar,
-    ArBottomNav,
-    ArTabs,
-    ArSegmented,
-    ArButton,
-    ArIconButton,
-    ArIcon,
-    ArBadge,
-    ArRaritySummary,
-    ArCollapsible,
-    ArDeckStats,
-    ArCardArt,
+    AcAppBar,
+    AcBottomNav,
+    AcTabs,
+    AcSegmented,
+    AcButton,
+    AcIconButton,
+    AcIcon,
+    AcBadge,
+    AcRaritySummary,
+    AcCollapsible,
+    AcDeckStats,
+    AcCardArt,
     DeckPreview,
     DeckListView,
     DecklistTable,
@@ -74,12 +74,12 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
 export class DeckPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly locationStrategy = inject(LocationStrategy);
   private readonly guestDecks = inject(GuestDeckService);
   protected readonly auth = inject(AuthSession);
   protected readonly deck = inject(DeckStore);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
 
   protected readonly id = toSignal(this.route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly tab = toSignal(this.route.data.pipe(map((d) => (d['tab'] as DeckTab) ?? 'cartes')), {
@@ -117,7 +117,7 @@ export class DeckPage {
     const d = this.deck.createdAt();
     return d ? new Date(d).toLocaleDateString(uiLocale()) : '';
   });
-  protected readonly navItems = computed<ArBottomNavItem[]>(() => [
+  protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
     { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
     { route: `/decks/${this.id()}/description`, icon: 'text', label: $localize`:@@deck.page.navDescription:Infos` },

@@ -14,7 +14,7 @@ describe('TestHand', () => {
     fixture.componentRef.setInput('lines', lines);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const tiles = () => el.querySelectorAll('ar-card-tile').length;
+    const tiles = () => el.querySelectorAll('ac-card-tile').length;
     expect(tiles()).toBe(6);
     expect(el.textContent).toContain('1 carte dans le deck');
 

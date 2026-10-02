@@ -1,14 +1,14 @@
 import { Component, computed, input, model } from '@angular/core';
-import { ArIcon } from '../../icon';
+import { AcIcon } from '../../icon';
 
 /** Copy counter: `overlay` sits on card tiles, `inline` in deck rows. */
 @Component({
-  selector: 'ar-stepper',
-  imports: [ArIcon],
+  selector: 'ac-stepper',
+  imports: [AcIcon],
   templateUrl: './stepper.html',
   styleUrl: './stepper.scss',
 })
-export class ArStepper {
+export class AcStepper {
   readonly value = model(0);
   readonly min = input(0);
   readonly max = input(3);

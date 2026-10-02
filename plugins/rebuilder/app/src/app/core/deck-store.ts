@@ -670,7 +670,7 @@ export class DeckStore {
   /**
    * Deck lines from the decks API (and guest lines saved before effects were kept) have costs and
    * powers but not the printed effect. Commons carry that text in their image; a unique is drawn
-   * by `ar-unique-card`, so the face is fetched from the cards API.
+   * by `ac-unique-card`, so the face is fetched from the cards API.
    */
   private fillUniqueFaces(deckId: string): void {
     this.uniqueFaces?.unsubscribe();

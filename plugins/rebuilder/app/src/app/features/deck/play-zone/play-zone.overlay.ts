@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import type { DrawnCard } from '../../../core/test-hand';
-import { ArButton } from '../../../ui/buttons';
-import { ArCardTile } from '../../../ui/metier';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcCardTile } from '../../../ui/metier';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface PlayZoneData {
   cards: DrawnCard[];
@@ -13,13 +13,13 @@ export interface PlayZoneData {
 /** Game mode: the cards of a zone (mana, discard pile), as the site's card list window. */
 @Component({
   selector: 'app-play-zone',
-  imports: [ArCardTile, ArButton],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcCardTile, AcButton],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './play-zone.overlay.html',
   styleUrl: './play-zone.overlay.scss',
 })
 export class PlayZoneOverlay {
-  private readonly data = inject<ArOverlayRef<void, PlayZoneData>>(ArOverlayRef).data;
+  private readonly data = inject<AcOverlayRef<void, PlayZoneData>>(AcOverlayRef).data;
   protected readonly cards = signal(this.data.cards);
   protected readonly canReturn = !!this.data.returnToHand;
 
@@ -29,6 +29,6 @@ export class PlayZoneOverlay {
   }
 }
 
-export function openPlayZone(overlay: ArOverlayService, title: string, data: PlayZoneData): ArOverlayRef<void, PlayZoneData> {
+export function openPlayZone(overlay: AcOverlayService, title: string, data: PlayZoneData): AcOverlayRef<void, PlayZoneData> {
   return overlay.open<PlayZoneOverlay, void, PlayZoneData>(PlayZoneOverlay, { title, data, width: 640 });
 }

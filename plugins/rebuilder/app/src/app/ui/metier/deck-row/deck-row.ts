@@ -2,15 +2,15 @@ import { Component, computed, input, output } from '@angular/core';
 import { rarityOf } from '../../../core/deck-rules';
 import type { Card } from '../../../core/models';
 import { localizedText } from '../../../core/models';
-import { ArStepper } from '../../buttons';
-import { ArBadge, rarityIcon } from '../../chips';
-import { ArIcon } from '../../icon';
+import { AcStepper } from '../../buttons';
+import { AcBadge, rarityIcon } from '../../chips';
+import { AcIcon } from '../../icon';
 import { contentLocale } from '../../../core/locale';
 
 /** Deck row: rarity icon, name, rule marker, stepper (edit) or ×n + costs (read-only). */
 @Component({
-  selector: 'ar-deck-row',
-  imports: [ArStepper, ArIcon, ArBadge],
+  selector: 'ac-deck-row',
+  imports: [AcStepper, AcIcon, AcBadge],
   host: {
     '[class.readonly]': 'readonly() || plain()',
     '[class.panel]': "appearance() === 'panel'",
@@ -19,7 +19,7 @@ import { contentLocale } from '../../../core/locale';
   templateUrl: './deck-row.html',
   styleUrl: './deck-row.scss',
 })
-export class ArDeckRow {
+export class AcDeckRow {
   readonly card = input.required<Card>();
   readonly quantity = input(0);
   readonly max = input(3);

@@ -16,8 +16,10 @@ services:
       - .:/var/www/html
       - ./docker/stack/config.stack.php:/var/www/html/config.local.php:ro
     environment:
-      AC_ACTIVATE_PLUGINS: "core-altered-cards rebuilder ownership"
+      AC_ACTIVATE_PLUGINS: "${AC_ACTIVATE_PLUGINS:-core-altered-cards rebuilder ownership}"
       AC_STACK_SEED: "1"
+      # 1: copy production's public content once (docker/stack/mirror-prod.php).
+      AC_STACK_MIRROR: "${AC_STACK_MIRROR:-}"
     depends_on:
       db:
         condition: service_healthy

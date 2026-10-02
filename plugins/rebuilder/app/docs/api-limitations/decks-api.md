@@ -9,7 +9,7 @@ Constaté le 2026-09-25 sur la production et dans le code de
 dans le groupe de sérialisation `deck:read` (schéma OpenAPI `User-deck.read` vide).
 
 **Contournement.** `toDeckListItem` (`src/app/core/deck-view.ts`) lit `user.username` s'il existe ;
-`ar-deck-card` en variante `community` affiche l'auteur seulement quand il est présent. Aujourd'hui, rien ne s'affiche.
+`ac-deck-card` en variante `community` affiche l'auteur seulement quand il est présent. Aujourd'hui, rien ne s'affiche.
 
 **Correction en cours.** Trois changements, dans l'ordre de déploiement :
 
@@ -22,7 +22,7 @@ dans le groupe de sérialisation `deck:read` (schéma OpenAPI `User-deck.read` v
 
 ## Texte imprimé d'une Unique absent de la ligne
 
-**Constat.** `GET /api/decks/{id}` embarque coûts, puissances et un tableau `effects` (déclencheur, condition, effet). Ce tableau n'est pas le texte imprimé (`mainEffect` / `echoEffect` de `/api/cards`) : l'ordre des morceaux et les séparateurs (`  `, `—`) diffèrent. Une commune s'affiche quand même, son image CDN contient le texte. Une Unique est dessinée par `ar-unique-card`, qui n'a alors pas de cartouche.
+**Constat.** `GET /api/decks/{id}` embarque coûts, puissances et un tableau `effects` (déclencheur, condition, effet). Ce tableau n'est pas le texte imprimé (`mainEffect` / `echoEffect` de `/api/cards`) : l'ordre des morceaux et les séparateurs (`  `, `—`) diffèrent. Une commune s'affiche quand même, son image CDN contient le texte. Une Unique est dessinée par `ac-unique-card`, qui n'a alors pas de cartouche.
 
 **Contournement.** `cardToLine` garde `mainEffect` et `echoEffect` sur les lignes invité. À l'ouverture d'un deck dont une Unique n'a pas ce texte, `DeckStore` appelle `POST /api/cards/batch?locale=fr` et complète la face.
 

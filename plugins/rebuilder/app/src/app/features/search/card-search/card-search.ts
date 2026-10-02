@@ -6,12 +6,12 @@ import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
-import { ArButton, ArIconButton } from '../../../ui/buttons';
-import { ArCount, ArFilterBar } from '../../../ui/chips';
-import { ArInput, ArSegmented, ArSelect } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArTabs } from '../../../ui/nav';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcCount, AcFilterBar } from '../../../ui/chips';
+import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcTabs } from '../../../ui/nav';
+import { AcOverlayService } from '../../../ui/overlay';
 import { CardSearchStore } from '../card-search.store';
 import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
 import { FiltersPanel } from '../filters-panel/filters-panel';
@@ -21,15 +21,20 @@ import { SearchResults } from '../search-results/search-results';
 export interface CardSourceTab {
   id: CardSource;
   label: string;
+  /** Label in the compact tab row. */
+  short?: string;
 }
 
 export const CARD_SOURCES: CardSourceTab[] = [
-  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes` },
+  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
   { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
-  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique` },
-  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique` },
   { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
+  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
+  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
 ];
+
+/** Compact screens: tabs in the row, the others under « Plus ». */
+const COMPACT_SOURCE_TABS = 4;
 
 /** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
 const FILTERS_GROW_MAX = 136;
@@ -43,7 +48,7 @@ const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPow
  */
 @Component({
   selector: 'app-card-search',
-  imports: [ArTabs, ArSegmented, ArSelect, ArInput, ArIconButton, ArButton, ArCount, ArFilterBar, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
@@ -51,12 +56,13 @@ const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPow
 export class CardSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   private readonly uniquesApi = inject(UniquesApiService);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
+  protected readonly compactSourceTabs = COMPACT_SOURCE_TABS;
   readonly faction = input<string | null>(null);
   /** Editor: the deck's format (Favoris show the cards it allows by default). */
   readonly format = input<DeckFormat | null>(null);
@@ -73,7 +79,7 @@ export class CardSearch {
   protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
   protected readonly layoutOptions = [
-    { value: 'grid' as const, icon: 'grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },
+    { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },
     { value: 'list' as const, icon: 'list' as const, ariaLabel: $localize`:@@search.card.list:Liste` },
   ];
   protected readonly labels = {

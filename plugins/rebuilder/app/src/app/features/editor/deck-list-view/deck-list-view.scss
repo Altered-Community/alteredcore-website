@@ -1,12 +1,12 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-4);
+  gap: var(--ac-space-4);
 }
 .stats {
-  border-radius: var(--ar-radius-card);
+  border-radius: var(--ac-radius-card);
 }
 .empty {
   text-align: center;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }

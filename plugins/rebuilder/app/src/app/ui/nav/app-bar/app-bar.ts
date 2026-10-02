@@ -5,11 +5,11 @@ import { Component, input } from '@angular/core';
  * title / subtitle, projected `[actions]`.
  */
 @Component({
-  selector: 'ar-app-bar',
+  selector: 'ac-app-bar',
   templateUrl: './app-bar.html',
   styleUrl: './app-bar.scss',
 })
-export class ArAppBar {
+export class AcAppBar {
   readonly title = input('');
   readonly subtitle = input('');
 }

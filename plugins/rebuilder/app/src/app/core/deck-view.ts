@@ -32,7 +32,7 @@ export function uniqueNeedsPrintedEffect(card: Card): boolean {
 }
 
 /**
- * Fills the face `ar-unique-card` draws from a cards API payload, without replacing stats or text
+ * Fills the face `ac-unique-card` draws from a cards API payload, without replacing stats or text
  * the deck line already has.
  */
 export function mergeUniqueFace(current: Card, full: Card): Card {

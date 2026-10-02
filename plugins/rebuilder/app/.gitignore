@@ -67,9 +67,3 @@ ngrok.yml
 
 
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/artifacts/

@@ -1,6 +1,6 @@
 <ng-content select="[summary]" />
 @if (!readonly()) {
-  <ar-deck-summary
+  <ac-deck-summary
     [name]="deck.name()"
     [hero]="deck.hero()"
     [formatLabel]="formatLabel()"
@@ -14,16 +14,16 @@
     (showLegality)="showLegality()"
   />
 }
-<ar-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
-  <ar-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-</ar-collapsible>
+<ac-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
+  <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+</ac-collapsible>
 @if (!readonly() && altArts?.canChooseTokens()) {
-  <button arButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+  <button acButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
 }
 @for (g of deck.groups(); track g.id) {
-  <ar-deck-section appearance="flat" [title]="g.label" [count]="g.count">
+  <ac-deck-section appearance="flat" [title]="g.label" [count]="g.count">
     @for (l of g.lines; track l.card.reference) {
-      <ar-deck-row
+      <ac-deck-row
         [card]="l.card"
         [quantity]="l.quantity"
         [max]="deck.maxFor(l.card)"
@@ -33,7 +33,7 @@
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />
     }
-  </ar-deck-section>
+  </ac-deck-section>
 } @empty {
   <p class="empty" i18n="@@editor.list.empty">Aucune carte pour l’instant.</p>
 }

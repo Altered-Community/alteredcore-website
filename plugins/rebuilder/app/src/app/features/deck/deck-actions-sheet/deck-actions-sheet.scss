@@ -1,27 +1,27 @@
-.ar-overlay-body {
+.ac-overlay-body {
   display: flex;
   flex-direction: column;
-  padding-top: var(--ar-space-2);
+  padding-top: var(--ac-space-2);
 }
 button {
   min-height: 52px;
   display: flex;
   align-items: center;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
   border: none;
   background: none;
-  font-size: 16px;
+  font-size: var(--ac-font-size-prose);
   font-weight: 600;
   cursor: pointer;
   text-align: left;
-  padding: 0 var(--ar-space-1);
+  padding: 0 var(--ac-space-1);
 }
 .danger {
-  color: var(--ar-color-required);
+  color: var(--ac-color-required);
 }
 hr {
   width: 100%;
-  margin: var(--ar-space-1) 0;
+  margin: var(--ac-space-1) 0;
   border: 0;
-  border-top: 1px solid var(--ar-color-border);
+  border-top: 1px solid var(--ac-color-border);
 }

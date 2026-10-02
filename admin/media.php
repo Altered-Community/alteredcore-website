@@ -35,11 +35,11 @@ $csrf = csrfToken();
 
 <!-- Upload bar -->
 <?php if (adminCanCreate()): ?>
-<div class="card-altered p-3 mb-3" id="uploadZone" style="border:2px dashed var(--sand-300);cursor:pointer;transition:border-color .15s">
+<div class="card-altered p-3 mb-3" id="uploadZone" style="border:2px dashed var(--ac-color-border-dashed);cursor:pointer;transition:border-color .15s">
     <div class="d-flex align-items-center gap-3 flex-wrap">
-        <div id="dropMsg" style="flex:1;color:var(--neutral-500);font-size:.875rem">
+        <div id="dropMsg" style="flex:1;color:var(--ac-color-text-muted);font-size:.875rem">
             <i class="fa-solid fa-cloud-arrow-up me-2"></i>
-            Drag & drop images here, or <label for="fileInput" style="color:var(--primary-500);cursor:pointer;text-decoration:underline">browse</label>
+            Drag & drop images here, or <label for="fileInput" style="color:var(--ac-color-primary-strong);cursor:pointer;text-decoration:underline">browse</label>
             <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" style="display:none">
         </div>
         <div id="uploadProgress" style="display:none;flex:1">
@@ -156,7 +156,7 @@ $csrf = csrfToken();
         col.dataset.imgPath = img.path;
 
         var card = '<div class="card-altered h-100" style="overflow:hidden">'
-            + '<div style="height:130px;overflow:hidden;background:var(--sand-200);display:flex;align-items:center;justify-content:center;position:relative">'
+            + '<div style="height:130px;overflow:hidden;background:var(--ac-color-track);display:flex;align-items:center;justify-content:center;position:relative">'
             + '<img src="' + escH(img.url) + '" alt="' + escH(img.name) + '" loading="lazy"'
             + ' style="max-width:100%;max-height:130px;object-fit:cover;cursor:pointer"'
             + ' title="' + escH(img.name) + '">'
@@ -224,11 +224,11 @@ $csrf = csrfToken();
         var bar      = document.getElementById('progressBar');
         var status   = document.getElementById('uploadStatus');
 
-        zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.style.borderColor = 'var(--primary-400)'; });
-        zone.addEventListener('dragleave', function () { zone.style.borderColor = 'var(--sand-300)'; });
+        zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.style.borderColor = 'var(--ac-color-primary)'; });
+        zone.addEventListener('dragleave', function () { zone.style.borderColor = 'var(--ac-color-border-dashed)'; });
         zone.addEventListener('drop', function (e) {
             e.preventDefault();
-            zone.style.borderColor = 'var(--sand-300)';
+            zone.style.borderColor = 'var(--ac-color-border-dashed)';
             if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
         });
         zone.addEventListener('click', function (e) { if (e.target !== fileInput) fileInput.click(); });

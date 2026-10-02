@@ -3,18 +3,18 @@ import { COST_RELATIONS, TYPE_OPTIONS, rarityOptionsFor, newEffectBlock, parseCo
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
 import type { DeckFormat } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
+import { AcButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
-import { ArChip, ArIconToggleGroup, ArLogicDivider } from '../../../ui/chips';
-import { ArFilterSection } from '../../../ui/containers';
-import { ArCombobox, ArInput, ArSegmented, ArSelect, type ComboOption } from '../../../ui/fields';
-import { ArIcon } from '../../../ui/icon';
-import { ArEffectSummary, ArExtensionTile, FACTIONS } from '../../../ui/metier';
+import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
+import { AcFilterSection } from '../../../ui/containers';
+import { AcCombobox, AcInput, AcSegmented, AcSelect, type ComboOption } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
+import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
 
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  imports: [ArInput, ArSelect, ArCombobox, ArFilterSection, ArExtensionTile, ArIconToggleGroup, ArChip, ArSegmented, ArEffectSummary, ArLogicDivider, ArButton, ArIcon],
+  imports: [AcInput, AcSelect, AcCombobox, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',
   styleUrl: './filters-panel.scss',

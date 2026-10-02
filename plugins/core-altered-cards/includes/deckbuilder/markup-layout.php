@@ -141,8 +141,8 @@
                 <div class="mb-3">
                     <div class="filter-label mb-1"><?= h($txt['hero_label']) ?></div>
                     <div id="db-hero-banner" class="hero-banner" onclick="dbSelectHero()">
-                        <i class="fa-solid fa-person-rays" style="font-size:1.5rem;color:var(--neutral-300);flex-shrink:0"></i>
-                        <span id="db-hero-label" style="font-size:.85rem;color:var(--neutral-400)"><?= h($txt['hero_slot']) ?></span>
+                        <i class="fa-solid fa-person-rays" style="font-size:1.5rem;color:var(--ac-color-text-disabled);flex-shrink:0"></i>
+                        <span id="db-hero-label" style="font-size:.85rem;color:var(--ac-color-text-muted)"><?= h($txt['hero_slot']) ?></span>
                     </div>
                 </div>
 

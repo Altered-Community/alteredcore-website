@@ -11,9 +11,9 @@ $lang = (isset($_GET['lang']) && $_GET['lang'] === 'fr') ? 'fr' : 'en';
 
 $name        = getSiteName();
 $description = getSetting('meta_description_' . $lang) ?: ($lang === 'fr' ? SITE_DESCRIPTION_FR : SITE_DESCRIPTION_EN);
-// Light-theme page background: the splash screen and title bar blend with the
-// header. An explicit theme_color site setting still wins.
-$themeColor  = getSetting('theme_color') ?: '#FAF5E8';
+// Light theme, from the design system: the title bar blends with the header background,
+// the splash screen with the page background.
+$themeColor  = dsToken('--ac-header-bg');
 $iconDir     = BASE_URL . '/assets/favicon';
 
 $shortcutLabels = [
@@ -32,7 +32,7 @@ echo json_encode([
     'scope'            => BASE_URL . '/',
     'display'          => 'standalone',
     'theme_color'      => $themeColor,
-    'background_color' => '#FAF5E8',
+    'background_color' => dsToken('--ac-color-bg-app'),
     'icons'            => [
         // Transparent round logo, shown as-is (browser UI, desktop launchers).
         ['src' => $iconDir . '/web-app-manifest-192x192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],

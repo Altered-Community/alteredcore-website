@@ -2,11 +2,11 @@ import { Component, computed, input } from '@angular/core';
 import { assetUrl } from '../../../core/asset-url';
 
 @Component({
-  selector: 'ar-terrain-totals',
+  selector: 'ac-terrain-totals',
   templateUrl: './terrain-totals.html',
   styleUrl: './terrain-totals.scss',
 })
-export class ArTerrainTotals {
+export class AcTerrainTotals {
   readonly totals = input.required<{ foret: number; montagne: number; ocean: number }>();
   protected readonly items = computed(() =>
     [

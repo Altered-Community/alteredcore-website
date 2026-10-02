@@ -1,4 +1,4 @@
-@for (t of tabs(); track t.id) {
+@for (t of shown(); track t.id) {
   <button
     #tab
     type="button"
@@ -7,7 +7,36 @@
     [attr.aria-selected]="t.id === active()"
     [attr.tabindex]="t.id === active() ? 0 : -1"
     (click)="active.set(t.id)"
-    (keydown.arrowRight)="step(1)"
-    (keydown.arrowLeft)="step(-1)"
-  >{{ t.label }}@if (t.count !== undefined) {<span class="count"> · {{ t.count }}</span>}</button>
+    (keydown.arrowRight)="step($index, 1)"
+    (keydown.arrowLeft)="step($index, -1)"
+  >{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · {{ t.count }}</span>}</button>
 }
+@if (overflow().length) {
+  @let p = picked();
+  <!-- The trigger is a tab of the list: the binding replaces the role="button" that CdkMenuTrigger sets. -->
+  <button
+    #tab
+    type="button"
+    [attr.role]="'tab'"
+    [id]="idPrefix + '-more'"
+    [attr.aria-selected]="p !== null"
+    [attr.tabindex]="p !== null ? 0 : -1"
+    [cdkMenuTriggerFor]="menu"
+    (keydown.arrowRight)="step(shown().length, 1)"
+    (keydown.arrowLeft)="step(shown().length, -1)"
+  >{{ p ? (p.short ?? p.label) : moreLabel() }}<ac-icon name="chevron-down" [size]="16" /></button>
+}
+<ng-template #menu>
+  <div class="ac-menu" cdkMenu>
+    @for (t of overflow(); track t.id) {
+      <button
+        type="button"
+        class="ac-menu__item"
+        cdkMenuItemRadio
+        [cdkMenuItemChecked]="t.id === active()"
+        [class.is-active]="t.id === active()"
+        (cdkMenuItemTriggered)="active.set(t.id)"
+      >{{ t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · {{ t.count }}</span>}</button>
+    }
+  </div>
+</ng-template>

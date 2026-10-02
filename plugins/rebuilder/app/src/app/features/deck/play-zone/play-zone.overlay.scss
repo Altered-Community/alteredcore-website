@@ -4,14 +4,14 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 li {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 .empty {
   margin: 0;
-  color: var(--ar-color-text-muted);
+  color: var(--ac-color-text-muted);
 }

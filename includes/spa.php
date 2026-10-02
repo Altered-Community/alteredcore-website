@@ -170,6 +170,11 @@ function spaHostConfig(array $page): array {
             'mount'     => $page['spa']['mount'],
             'css'       => $page['spa']['css'],
         ],
+        // Design system stylesheets the runtime injects into the plugin's shadow root, before the
+        // plugin's own CSS: base rules and ac-* components (tokens inherit from <html>).
+        'designSystem' => [
+            'css' => array_map('dsUrl', dsShadowStylesheets()),
+        ],
     ];
 }
 

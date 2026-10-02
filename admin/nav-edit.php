@@ -2,11 +2,12 @@
 $adminPageTitle = 'Navigation item';
 $adminSection   = 'nav';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db  = getDB();
 $id  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $row = ['id' => 0, 'parent_id' => null, 'label_en' => '', 'label_fr' => '', 'description_en' => '', 'description_fr' => '', 'url' => '#',
-        'icon' => 'fa-solid fa-link', 'sort_order' => 0, 'is_visible' => 1, 'is_iframe' => 0, 'is_blank' => 0,
+        'icon' => 'link', 'sort_order' => 0, 'is_visible' => 1, 'is_iframe' => 0, 'is_blank' => 0,
         'is_fullwidth' => 0, 'hide_label' => 0, 'is_separator' => 0, 'is_section_header' => 0];
 $topLevelItems = $db->query(q("SELECT id, label_en FROM {nav_items} WHERE parent_id IS NULL ORDER BY sort_order, id"))->fetchAll();
 if (!$id) {
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':description_en'    => $isSep || $isHdr ? '' : mb_substr(trim($_POST['description_en'] ?? ''), 0, 160),
             ':description_fr'    => $isSep || $isHdr ? '' : mb_substr(trim($_POST['description_fr'] ?? ''), 0, 160),
             ':url'               => $isSep ? '#' : trim($_POST['url'] ?? ''),
-            ':icon'              => trim($_POST['icon']       ?? 'fa-solid fa-link'),
+            ':icon'              => trim($_POST['icon']       ?? 'link'),
             ':sort_order'        => (int)($_POST['sort_order'] ?? 0),
             ':is_visible'        => isset($_POST['is_visible'])   ? 1 : 0,
             ':is_iframe'         => $isSep || $isHdr ? 0 : (isset($_POST['is_iframe'])   ? 1 : 0),
@@ -185,14 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="number" name="sort_order" class="form-control" value="<?= (int)$row['sort_order'] ?>">
             </div>
             <div class="col-12">
-                <label class="form-label">Font Awesome icon</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i id="icon-preview" class="<?= h($row['icon']) ?>"></i></span>
-                    <input type="text" name="icon" id="icon-input" class="form-control"
-                           value="<?= h($row['icon']) ?>"
-                           placeholder="fa-solid fa-house">
-                </div>
-                <div class="form-text">e.g. <code>fa-solid fa-house</code>, <code>fa-solid fa-newspaper</code> — or Altered icons: <code>fak fa-collection</code>, <code>fak fa-booster-pack</code></div>
+                <?php adminIconField((string)$row['icon']); ?>
             </div>
             <div class="col-12">
                 <div class="form-check mb-2">
@@ -243,10 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-document.getElementById('icon-input').addEventListener('input', function() {
-    document.getElementById('icon-preview').className = this.value;
-});
-
 (function() {
     var radios   = document.querySelectorAll('[name="item_type_radio"]');
     var hidden   = document.getElementById('item_type_val');

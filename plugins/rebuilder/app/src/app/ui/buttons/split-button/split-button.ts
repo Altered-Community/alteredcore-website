@@ -1,12 +1,12 @@
 import { Component, input, output, signal } from '@angular/core';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import type { ConnectedPosition } from '@angular/cdk/overlay';
-import { ArIcon, type ArIconName } from '../../icon';
+import { AcIcon, type AcIconName } from '../../icon';
 
 /** An entry of the arrow's menu. */
-export interface ArSplitButtonItem {
+export interface AcSplitButtonItem {
   id: string;
-  icon: ArIconName;
+  icon: AcIconName;
   label: string;
   /** Second line, muted. */
   hint?: string;
@@ -26,16 +26,16 @@ const POSITIONS: ConnectedPosition[] = [
  * at least as wide as the whole button.
  */
 @Component({
-  selector: 'ar-split-button',
-  imports: [ArIcon, CdkMenuTrigger, CdkMenu, CdkMenuItem],
+  selector: 'ac-split-button',
+  imports: [AcIcon, CdkMenuTrigger, CdkMenu, CdkMenuItem],
   templateUrl: './split-button.html',
   styleUrl: './split-button.scss',
 })
-export class ArSplitButton {
-  readonly icon = input<ArIconName | undefined>(undefined);
+export class AcSplitButton {
+  readonly icon = input<AcIconName | undefined>(undefined);
   /** Working: a spinner instead of the icon, both parts disabled (the label is the caller's, e.g. « Génération… »). */
   readonly busy = input(false);
-  readonly items = input.required<ArSplitButtonItem[]>();
+  readonly items = input.required<AcSplitButtonItem[]>();
   /** The arrow's aria-label. */
   readonly moreLabel = input.required<string>();
   /** The menu's aria-label. */

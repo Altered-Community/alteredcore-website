@@ -109,65 +109,65 @@ if (!$isGlobalMode) {
 
 $uiLang = getUiLang();
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
     <?php if (!$ownEnabled): ?>
-    <div class="alert alert-warning"><?= h($txt['unavailable']) ?></div>
+    <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['unavailable']) ?></div></div>
     <?php else: ?>
 
     <?php require __DIR__ . '/../includes/subnav.php'; ?>
 
     <?php if (!$ownLoggedIn): ?>
-    <div class="card-altered p-4">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-right-to-bracket me-1"></i><?= h($txt['anon_login']) ?>
+    <div class="ac-card">
+        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
         </a>
     </div>
     <?php else: ?>
 
     <!-- core-altered-cards' stylesheet isn't auto-loaded on this plugin's own pages —
          only this plugin's assets/style.css is (see plugin.json) — but .filter-row/
-         .filter-toggle/.card-altered below all come from it. -->
+         .filter-toggle below come from it. -->
     <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/style.css">
 
-    <div class="card-altered p-3 mb-3 d-flex flex-wrap align-items-center gap-2">
-        <div class="btn-group btn-group-sm" role="group" aria-label="alt-art mode">
-            <button type="button" id="own-aa-mode-perdeck" class="btn btn-outline-secondary<?= $isGlobalMode ? '' : ' active' ?>">
+    <div class="ac-card own-aa-modebar mb-3">
+        <div class="ac-segmented" role="group" aria-label="alt-art mode">
+            <button type="button" id="own-aa-mode-perdeck" aria-pressed="<?= $isGlobalMode ? 'false' : 'true' ?>">
                 <?= h($txt['modePerDeck']) ?>
             </button>
-            <button type="button" id="own-aa-mode-global" class="btn btn-outline-secondary<?= $isGlobalMode ? ' active' : '' ?>">
+            <button type="button" id="own-aa-mode-global" aria-pressed="<?= $isGlobalMode ? 'true' : 'false' ?>">
                 <?= h($txt['modeGlobal']) ?>
             </button>
         </div>
-        <button type="button" id="own-aa-mode-info-btn" class="btn btn-sm btn-link text-decoration-none">
-            <i class="fa-solid fa-circle-info me-1"></i><?= h($txt['modeInfoBtn']) ?>
+        <button type="button" id="own-aa-mode-info-btn" class="ac-button ac-button--ghost ac-button--sm">
+            <?= ac_icon('info') ?><?= h($txt['modeInfoBtn']) ?>
         </button>
     </div>
 
     <?php if (!$isGlobalMode): ?>
-    <div class="alert alert-secondary py-2 small"><?= h($txt['perDeckNotice']) ?></div>
+    <div class="ac-notice ac-notice--neutral mb-3" role="note"><?= ac_icon('info') ?><div><?= h($txt['perDeckNotice']) ?></div></div>
     <?php endif; ?>
 
     <div id="own-aa-mode-info-modal" class="own-aa-modal-overlay" hidden>
-        <div class="own-aa-modal card-altered p-3">
-            <h5 class="mb-3"><?= h($txt['modeInfoTitle']) ?></h5>
-            <p class="mb-1"><strong><?= h($txt['modePerDeckTitle']) ?></strong></p>
-            <p class="text-muted small mb-3"><?= h($txt['modePerDeckDesc']) ?></p>
-            <p class="mb-1"><strong><?= h($txt['modeGlobalTitle']) ?></strong></p>
-            <p class="text-muted small mb-3"><?= h($txt['modeGlobalDesc']) ?></p>
+        <div class="own-aa-modal ac-card" role="dialog" aria-modal="true" aria-labelledby="own-aa-mode-info-title">
+            <h2 id="own-aa-mode-info-title" class="ac-section-title"><?= h($txt['modeInfoTitle']) ?></h2>
+            <p class="ac-card__title"><?= h($txt['modePerDeckTitle']) ?></p>
+            <p class="ac-card__meta"><?= h($txt['modePerDeckDesc']) ?></p>
+            <p class="ac-card__title"><?= h($txt['modeGlobalTitle']) ?></p>
+            <p class="ac-card__meta"><?= h($txt['modeGlobalDesc']) ?></p>
             <div class="text-end">
-                <button type="button" id="own-aa-mode-info-close" class="btn btn-sm btn-primary-altered">
+                <button type="button" id="own-aa-mode-info-close" class="ac-button ac-button--sm">
                     <?= h($txt['modeClose']) ?>
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="card-altered p-3 mb-3">
+    <div class="ac-card mb-3">
         <div class="filter-row mb-2">
-            <input type="text" id="own-aa-search" class="form-control form-control-sm"
-                   style="max-width:260px" placeholder="<?= h($txt['search_ph']) ?>">
-            <button type="button" id="own-aa-search-btn" class="btn btn-sm btn-primary-altered">
+            <input type="text" id="own-aa-search" class="ac-input own-aa-search"
+                   aria-label="<?= h($txt['search_ph']) ?>" placeholder="<?= h($txt['search_ph']) ?>">
+            <button type="button" id="own-aa-search-btn" class="ac-button ac-button--sm">
                 <?= h($txt['search_btn']) ?>
             </button>
         </div>
@@ -194,7 +194,7 @@ $uiLang = getUiLang();
             <?php foreach ($raritiesData as $rCode => $rData): ?>
             <button type="button" class="filter-toggle" data-filter="rarity" data-value="<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>">
                 <img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/gems/<?= h($rData['gem'] ?? substr($rCode, 0, 1)) ?>.png"
-                     alt="<?= h($rCode) ?>" style="width:15px;height:15px">
+                     alt="<?= h($rCode) ?>" class="own-aa-gem">
                 <?= h($rData[$uiLang] ?? $rData['en'] ?? $rCode) ?>
             </button>
             <?php endforeach; ?>
@@ -209,19 +209,19 @@ $uiLang = getUiLang();
         </div>
         <div class="filter-row mb-0">
             <button type="button" id="own-aa-hide-non-choices" class="filter-toggle active" data-bool-filter="hideNonChoices">
-                <i class="fa-solid fa-eye-slash"></i> <?= h($txt['hideNonChoices']) ?>
+                <?= ac_icon('eye-off') ?> <?= h($txt['hideNonChoices']) ?>
             </button>
         </div>
     </div>
 
-    <div class="text-muted small mb-2"><?= h($txt['markerHint']) ?></div>
+    <p class="ac-text-small ac-text-muted mb-2"><?= h($txt['markerHint']) ?></p>
 
     <div id="own-aa-loading" class="text-muted"><?= h($txt['loading']) ?></div>
     <div id="own-aa-empty" class="text-muted" hidden><?= h($txt['empty']) ?></div>
     <div id="own-aa-error" class="alert alert-danger" hidden></div>
     <div id="own-aa-results"></div>
     <div class="text-center my-3">
-        <button type="button" id="own-aa-load-more" class="btn btn-sm btn-outline-secondary" hidden>
+        <button type="button" id="own-aa-load-more" class="ac-button ac-button--secondary ac-button--sm" hidden>
             <?= h($txt['loadMore']) ?>
         </button>
     </div>

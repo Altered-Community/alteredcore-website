@@ -1,17 +1,17 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   <ul class="builders">
     @for (b of builders; track b.url) {
       <li>
-        <ar-card padding="none">
+        <ac-card padding="none">
           @if (b.image) {
             <img class="image" [src]="b.image" [alt]="b.title" />
           }
           <div class="body">
             <h3>{{ b.title }}</h3>
             <p>{{ b.description }}</p>
-            <a arButton size="sm" icon="external-link" [href]="b.url" target="_blank" rel="noopener" i18n="@@decks.builders.visit">Visiter</a>
+            <a acButton size="sm" icon="external-link" [href]="b.url" target="_blank" rel="noopener" i18n="@@decks.builders.visit">Visiter</a>
           </div>
-        </ar-card>
+        </ac-card>
       </li>
     }
   </ul>

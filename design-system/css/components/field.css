@@ -1,0 +1,299 @@
+/*
+ * Form fields — field wrapper, input, textarea, select, checkbox / radio, switch.
+ * Docs: design-system/docs/components/field.md
+ *
+ * <div class="ac-field">
+ *   <label class="ac-field__label" for="name">Name <span class="ac-field__required">*</span></label>
+ *   <input class="ac-input" id="name">
+ *   <p class="ac-field__hint">…</p>
+ * </div>
+ */
+.ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+.ac-field__label {
+  font: var(--ac-font-small);
+  font-weight: 700;
+  color: var(--ac-color-text);
+}
+.ac-field__required { color: var(--ac-color-required); }
+.ac-field__hint {
+  font: var(--ac-font-small);
+  font-weight: 500;
+  color: var(--ac-color-text-muted);
+  margin: 0;
+}
+.ac-field__error {
+  font: var(--ac-font-small);
+  color: var(--ac-color-required);
+  margin: 0;
+}
+
+/* ---- Input / textarea ---- */
+.ac-input,
+.ac-textarea {
+  width: 100%;
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  font-family: var(--ac-font-family);
+  font-size: var(--ac-field-font-size);
+  font-weight: 400;
+  outline: none;
+}
+.ac-textarea {
+  height: auto;
+  min-height: calc(var(--ac-control-md) * 2.5);
+  padding: var(--ac-space-2-5) var(--ac-space-3);
+  line-height: 1.5;
+  resize: vertical;
+}
+.ac-input::placeholder,
+.ac-textarea::placeholder { color: var(--ac-color-text-muted); }
+.ac-input:focus,
+.ac-textarea:focus {
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+}
+.ac-input--subtle { background: var(--ac-color-bg-subtle); }
+.ac-input[aria-invalid='true'],
+.ac-textarea[aria-invalid='true'] { border-color: var(--ac-color-required); }
+.ac-input:disabled,
+.ac-textarea:disabled {
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text-disabled);
+}
+
+/* Input with a leading icon: <div class="ac-input-icon">{icon}<input class="ac-input"></div> */
+.ac-input-icon {
+  position: relative;
+  display: block;
+}
+.ac-input-icon .ac-icon {
+  position: absolute;
+  left: var(--ac-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  --ac-icon-size: 18px;
+  color: var(--ac-color-text-muted);
+  pointer-events: none;
+}
+.ac-input-icon > .ac-input { padding-left: 38px; }
+
+/* ---- Select ---- */
+.ac-select {
+  width: 100%;
+  height: var(--ac-control-md);
+  padding: 0 32px 0 var(--ac-space-2-5);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background-color: var(--ac-color-surface);
+  /* <select> has no pseudo-element: the chevron is a background image (token, one per theme). */
+  background-image: var(--ac-select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  color: var(--ac-color-text);
+  font-family: var(--ac-font-family);
+  font-size: var(--ac-select-font-size);
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+.ac-select:focus {
+  outline: none;
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+}
+/* ---- Checkbox / radio ---- */
+.ac-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  min-height: var(--ac-hit-min);
+  font: var(--ac-font-body);
+  cursor: pointer;
+}
+.ac-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ac-color-primary);
+  cursor: pointer;
+}
+
+/* ---- Switch: <label class="ac-switch"><input type="checkbox" role="switch"> Label</label> ---- */
+.ac-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  min-height: var(--ac-hit-min);
+  font: var(--ac-font-body);
+  cursor: pointer;
+}
+.ac-switch input {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-border-control);
+  position: relative;
+  cursor: pointer;
+  transition: background-color var(--ac-duration-fast);
+  flex-shrink: 0;
+}
+.ac-switch input::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e1);
+  transition: transform var(--ac-duration-fast);
+}
+.ac-switch input:checked { background: var(--ac-color-primary); }
+.ac-switch input:checked::after { transform: translateX(16px); }
+
+/* ---- File input: a real <input type="file"> stretched over a dashed control ----
+ *   <div class="ac-file-input">
+ *     <label class="ac-field__label" for="zip">Collection export</label>
+ *     <span class="ac-file-input__control">
+ *       {upload icon}<span class="ac-file-input__name ac-file-input__name--empty">Choose a file…</span>
+ *       <input type="file" id="zip" accept=".zip">
+ *     </span>
+ *   </div>
+ * js/ac.js writes the chosen file name into __name on change. */
+.ac-file-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+.ac-file-input__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: 1px dashed var(--ac-color-border-dashed);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text-2);
+  font-size: var(--ac-font-size-body);
+}
+.ac-file-input__control:focus-within {
+  border: 2px solid var(--ac-color-primary);
+  padding-inline: calc(var(--ac-space-3) - 1px);
+}
+.ac-file-input__control:has(input:disabled) { color: var(--ac-color-text-disabled); }
+.ac-file-input__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ac-color-text);
+}
+.ac-file-input__name--empty { color: var(--ac-color-text-muted); }
+/* The native input covers the control: a click anywhere opens the file dialog. */
+.ac-file-input__control input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.ac-file-input__control input:disabled { cursor: default; }
+
+/* ---- Radio card: a rich radio choice (format, deck type) ----
+ *   <div role="radiogroup" aria-label="Format">
+ *     <label class="ac-radio-card">
+ *       <input type="radio" name="format" value="standard" checked>
+ *       <span class="ac-radio-card__body">
+ *         <span class="ac-radio-card__head"><span class="ac-radio-card__title">Standard</span><span class="ac-tag ac-tag--green">Ranked</span></span>
+ *         <span class="ac-radio-card__desc">The official format.</span>
+ *       </span>
+ *     </label>
+ *   </div>
+ * --stacked: tag under the description; --compact: one-line description, tag centred on the right.
+ * Selected: the checked input (no class). */
+.ac-radio-card {
+  display: flex;
+  gap: var(--ac-space-2-5);
+  align-items: center;
+  height: 100%;
+  padding: var(--ac-space-2-5) var(--ac-space-3);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-surface);
+  cursor: pointer;
+}
+.ac-radio-card:has(input:checked) {
+  border: 2px solid var(--ac-color-primary);
+  background: var(--ac-color-primary-tint);
+  padding: calc(var(--ac-space-2-5) - 1px) calc(var(--ac-space-3) - 1px);
+}
+.ac-radio-card:has(input:focus-visible) {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.ac-radio-card input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ac-color-primary);
+  flex-shrink: 0;
+}
+.ac-radio-card input:focus-visible { outline: none; }
+.ac-radio-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-0-5);
+  min-width: 0;
+  flex-grow: 1;
+}
+.ac-radio-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+}
+.ac-radio-card__title { font: var(--ac-font-body-strong); }
+.ac-radio-card__desc {
+  font-size: var(--ac-font-size-caption);
+  line-height: 1.35;
+  color: var(--ac-color-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-radio-card .ac-tag { align-self: flex-start; }
+
+.ac-radio-card--stacked {
+  align-items: flex-start;
+  gap: var(--ac-space-3);
+  padding: 14px;
+}
+.ac-radio-card--stacked:has(input:checked) { padding: 13px; }
+.ac-radio-card--stacked input { width: 18px; height: 18px; margin-top: 2px; }
+.ac-radio-card--stacked .ac-radio-card__body { gap: var(--ac-space-1-5); }
+.ac-radio-card--stacked .ac-radio-card__desc { font-size: var(--ac-font-size-small); }
+.ac-radio-card--stacked .ac-tag { font-size: var(--ac-font-size-caption); }
+
+.ac-radio-card--compact { padding: var(--ac-space-2) var(--ac-space-2-5); }
+.ac-radio-card--compact:has(input:checked) { padding: calc(var(--ac-space-2) - 1px) calc(var(--ac-space-2-5) - 1px); }
+.ac-radio-card--compact input { width: 18px; height: 18px; }
+.ac-radio-card--compact .ac-radio-card__body { gap: 1px; }
+.ac-radio-card--compact .ac-radio-card__title { font-size: var(--ac-field-font-size); font-weight: 700; line-height: 1.2; }
+.ac-radio-card--compact .ac-radio-card__desc { white-space: nowrap; line-height: 1.2; }
+.ac-radio-card--compact .ac-tag { align-self: center; }

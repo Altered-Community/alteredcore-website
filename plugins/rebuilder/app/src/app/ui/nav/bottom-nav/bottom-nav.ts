@@ -1,10 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive, type Params } from '@angular/router';
-import { ArCount } from '../../chips';
-import { ArIcon, type ArIconName } from '../../icon';
+import { AcCount } from '../../chips';
+import { AcIcon, type AcIconName } from '../../icon';
 
-export interface ArBottomNavItem {
+export interface AcBottomNavItem {
   route: string;
   /**
    * Set by the page when the router cannot tell (tabs of one page, `?tab=`): replaces `routerLinkActive`,
@@ -12,7 +12,7 @@ export interface ArBottomNavItem {
    */
   active?: boolean;
   queryParams?: Params;
-  icon: ArIconName;
+  icon: AcIconName;
   label: string;
   badge?: number;
   badgeTone?: 'success' | 'dark';
@@ -21,12 +21,12 @@ export interface ArBottomNavItem {
 
 /** Bottom navigation (compact only), above the gesture area. */
 @Component({
-  selector: 'ar-bottom-nav',
-  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, ArIcon, ArCount],
+  selector: 'ac-bottom-nav',
+  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, AcIcon, AcCount],
   templateUrl: './bottom-nav.html',
   styleUrl: './bottom-nav.scss',
 })
-export class ArBottomNav {
-  readonly items = input<ArBottomNavItem[]>([]);
+export class AcBottomNav {
+  readonly items = input<AcBottomNavItem[]>([]);
   readonly ariaLabel = input('Navigation');
 }

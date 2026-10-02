@@ -402,9 +402,13 @@ $bgaJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE;
 $frontierSeasons = reLoadFrontierSeasons();
 $eventBrandsForJs = reEventBrandsForJs();
 ?>
-<div class="container py-4">
+<div class="ac-page">
 
-    <div class="section-title mb-4"><span><?= h($pageTitle) ?></span></div>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($pageTitle) ?></h1>
+        </div>
+    </header>
 
     <?php
     $unifiedCount = $physicalCount + $bgaCount;
@@ -415,10 +419,10 @@ $eventBrandsForJs = reEventBrandsForJs();
                 <button class="nav-link<?= $calendarDefault ? ' active' : '' ?>" id="re-tab-calendar-btn" data-bs-toggle="tab"
                         data-bs-target="#re-tab-calendar" type="button" role="tab" aria-controls="re-tab-calendar"
                         aria-selected="<?= $calendarDefault ? 'true' : 'false' ?>">
-                    <i class="fa-solid fa-calendar-days re-events-tab-icon" aria-hidden="true"></i>
+                    <?= ac_icon('calendar-days', 're-events-tab-icon') ?>
                     <span class="re-events-tab-label"><?= h($txt['tab_calendar']) ?></span>
                     <?php if ($unifiedCount > 0): ?>
-                    <span class="badge re-events-tab-badge"><?= h($unifiedCount) ?></span>
+                    <span class="ac-count re-events-tab-badge"><?= h($unifiedCount) ?></span>
                     <?php endif; ?>
                 </button>
             </li>
@@ -426,20 +430,20 @@ $eventBrandsForJs = reEventBrandsForJs();
                 <button class="nav-link<?= !$calendarDefault ? ' active' : '' ?>" id="re-tab-physical-btn" data-bs-toggle="tab"
                         data-bs-target="#re-tab-physical" type="button" role="tab" aria-controls="re-tab-physical"
                         aria-selected="<?= !$calendarDefault ? 'true' : 'false' ?>">
-                    <i class="fa-solid fa-location-dot re-events-tab-icon" aria-hidden="true"></i>
+                    <?= ac_icon('map-pin', 're-events-tab-icon') ?>
                     <span class="re-events-tab-label"><?= h($txt['tab_physical']) ?></span>
                     <?php if ($physicalCount > 0): ?>
-                    <span class="badge re-events-tab-badge"><?= h($physicalCount) ?></span>
+                    <span class="ac-count re-events-tab-badge"><?= h($physicalCount) ?></span>
                     <?php endif; ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="re-tab-bga-btn" data-bs-toggle="tab"
                         data-bs-target="#re-tab-bga" type="button" role="tab" aria-controls="re-tab-bga" aria-selected="false">
-                    <i class="fa-solid fa-globe re-events-tab-icon" aria-hidden="true"></i>
+                    <?= ac_icon('globe', 're-events-tab-icon') ?>
                     <span class="re-events-tab-label"><?= h($txt['tab_bga']) ?></span>
                     <?php if ($bgaCount > 0): ?>
-                    <span class="badge re-events-tab-badge"><?= h($bgaCount) ?></span>
+                    <span class="ac-count re-events-tab-badge"><?= h($bgaCount) ?></span>
                     <?php endif; ?>
                 </button>
             </li>
@@ -449,14 +453,14 @@ $eventBrandsForJs = reEventBrandsForJs();
     <div class="tab-content">
     <div class="tab-pane fade<?= $calendarDefault ? ' show active' : '' ?>" id="re-tab-calendar" role="tabpanel">
         <p class="text-muted small mb-3">
-            <i class="fa-solid fa-info-circle me-1" aria-hidden="true"></i><?= h($txt['cal_legend']) ?>
+            <?= ac_icon('info', 'me-1') ?><?= h($txt['cal_legend']) ?>
         </p>
         <div class="re-cal-source-filters mb-3" id="re-cal-source-filters" role="group" aria-label="<?= h($txt['cal_legend']) ?>">
-            <button type="button" class="re-cal-source-btn active" data-source="all"><?= h($txt['cal_filter_all']) ?></button>
-            <button type="button" class="re-cal-source-btn" data-source="physical">
+            <button type="button" class="ac-chip re-cal-source-btn active" data-source="all"><?= h($txt['cal_filter_all']) ?></button>
+            <button type="button" class="ac-chip re-cal-source-btn" data-source="physical">
                 <span class="re-cal-dot re-cal-dot-physical" aria-hidden="true"></span><?= h($txt['source_physical']) ?>
             </button>
-            <button type="button" class="re-cal-source-btn" data-source="bga">
+            <button type="button" class="ac-chip re-cal-source-btn" data-source="bga">
                 <span class="re-cal-dot re-cal-dot-bga" aria-hidden="true"></span><?= h($txt['source_bga']) ?>
             </button>
         </div>
@@ -489,35 +493,35 @@ $eventBrandsForJs = reEventBrandsForJs();
 
     <div class="d-flex align-items-center justify-content-end mb-4">
         <a href="https://altered-tournament-tools.com/tournaments/create"
-           class="btn btn-primary-altered btn-sm"
+           class="ac-button ac-button--sm"
            target="_blank"
            rel="noopener">
-            <i class="fa-solid fa-plus me-2"></i><?= h($txt['create_tournament']) ?>
+            <?= ac_icon('plus', 'me-2') ?><?= h($txt['create_tournament']) ?>
         </a>
     </div>
 
     <?php if ($error): ?>
-    <div class="alert alert-danger">
-        <i class="fa-solid fa-circle-xmark me-2"></i>
-        <?= h($txt['error_loading']) ?>
+    <div class="ac-notice ac-notice--danger" role="alert">
+        <?= ac_icon('circle-x') ?>
+        <div><?= h($txt['error_loading']) ?></div>
     </div>
     <script>window._reEvents = [];</script>
 
     <?php else: ?>
 
     <!-- Search Form -->
-    <div class="card-altered p-4 mb-4">
-        <h5 class="mb-3">
-            <i class="fa-solid fa-magnifying-glass me-2"></i>
+    <div class="ac-card mb-4">
+        <h2 class="ac-section-title">
+            <?= ac_icon('search', 'me-1') ?>
             <?= h($txt['search_title']) ?>
-        </h5>
+        </h2>
         <form method="post" id="search-form">
             <input type="hidden" name="action" value="search">
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label small fw-semibold"><?= h($txt['search_city']) ?></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fa-solid fa-location-dot"></i></span>
+                        <span class="input-group-text"><?= ac_icon('map-pin') ?></span>
                         <input type="text"
                                name="city"
                                id="search-city"
@@ -531,7 +535,7 @@ $eventBrandsForJs = reEventBrandsForJs();
                                 title="<?= h($txt['geolocate']) ?>"
                                 data-error="<?= h($txt['geolocate_error']) ?>"
                                 data-unsupported="<?= h($txt['geolocate_unsupported']) ?>">
-                            <i class="fa-solid fa-crosshairs"></i>
+                            <?= ac_icon('crosshair') ?>
                         </button>
                     </div>
                 </div>
@@ -569,12 +573,12 @@ $eventBrandsForJs = reEventBrandsForJs();
                            value="<?= h($searchParams['dateTo'] ?? '') ?>">
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary-altered flex-grow-1">
-                        <i class="fa-solid fa-search me-1"></i>
+                    <button type="submit" class="ac-button flex-grow-1">
+                        <?= ac_icon('search', 'me-1') ?>
                         <?= h($txt['search_btn']) ?>
                     </button>
                     <a href="<?= BASE_URL ?>/pages/events" class="btn btn-outline-secondary" title="<?= h($txt['search_reset']) ?>">
-                        <i class="fa-solid fa-rotate-left"></i>
+                        <?= ac_icon('rotate-ccw') ?>
                     </a>
                 </div>
             </div>
@@ -583,20 +587,22 @@ $eventBrandsForJs = reEventBrandsForJs();
 
     <?php if ($isSearch): ?>
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="mb-0">
-            <i class="fa-solid fa-list me-2"></i>
+        <h2 class="ac-section-title mb-0">
+            <?= ac_icon('list', 'me-1') ?>
             <?= h($txt['search_results']) ?>
-        </h5>
-        <span class="badge bg-primary"><?= h($totalResults) ?> <?= h($txt['results_count']) ?></span>
+        </h2>
+        <span class="ac-badge ac-badge--blue"><?= h($totalResults) ?> <?= h($txt['results_count']) ?></span>
     </div>
     <?php endif; ?>
 
     <!-- Liste -->
     <div id="view-list">
         <?php if (empty($tournaments)): ?>
-        <div class="card-altered p-4 text-center">
-            <i class="fa-solid fa-calendar-xmark fa-3x text-muted mb-3"></i>
-            <p class="text-muted mb-0"><?= h($isSearch ? $txt['no_results'] : $txt['no_events']) ?></p>
+        <div class="ac-card">
+            <div class="ac-empty">
+                <?= ac_icon('calendar-x') ?>
+                <p class="mb-0"><?= h($isSearch ? $txt['no_results'] : $txt['no_events']) ?></p>
+            </div>
         </div>
         <?php else: ?>
         <div class="events-list">
@@ -605,13 +611,13 @@ $eventBrandsForJs = reEventBrandsForJs();
                 $eventUrl = RE_TOURNAMENT_BASE_URL . ($event['id'] ?? '');
                 $physDateRaw = $event['date'] ?? $event['startDate'] ?? '';
             ?>
-            <a href="<?= h($eventUrl) ?>" class="event-card card-altered p-4" target="_blank" rel="noopener">
+            <a href="<?= h($eventUrl) ?>" class="event-card ac-card" target="_blank" rel="noopener">
                 <div class="event-card-inner">
                     <div class="event-info">
-                        <h5 class="event-title mb-1">
-                            <i class="fa-solid fa-trophy text-warning me-2"></i>
+                        <h3 class="event-title mb-1">
+                            <?= ac_icon('trophy', 'event-title-icon me-1') ?>
                             <?= h($event['name'] ?? 'Unnamed Event') ?>
-                        </h5>
+                        </h3>
 
                         <div class="event-details">
                             <?php
@@ -620,7 +626,7 @@ $eventBrandsForJs = reEventBrandsForJs();
                             $physHasTime  = (bool) preg_match('/T\d{2}:\d{2}/', $physDateRaw);
                             ?>
                             <?php if ($physDateRaw !== ''): ?>
-                            <span><i class="fa-solid fa-calendar"></i>
+                            <span><?= ac_icon('calendar') ?>
                                 <?php if ($physInstant): ?>
                                 <time class="re-phys-start-dt"
                                       datetime="<?= h($physInstant) ?>"
@@ -634,22 +640,22 @@ $eventBrandsForJs = reEventBrandsForJs();
                             <?php endif; ?>
 
                             <?php if (!empty($event['location']) || !empty($event['venue'])): ?>
-                            <span><i class="fa-solid fa-location-dot"></i><?= h($event['location'] ?? $event['venue']) ?></span>
+                            <span><?= ac_icon('map-pin') ?><?= h($event['location'] ?? $event['venue']) ?></span>
                             <?php endif; ?>
 
                             <?php if (!empty($event['format'])): ?>
-                            <span><i class="fa-solid fa-layer-group"></i><?= h(reFormatTournamentFormat($event['format'], $lang)) ?></span>
+                            <span><?= ac_icon('layers') ?><?= h(reFormatTournamentFormat($event['format'], $lang)) ?></span>
                             <?php endif; ?>
 
                             <?php if (isset($event['playerCount']) || isset($event['maxPlayers'])): ?>
                             <span>
-                                <i class="fa-solid fa-users"></i>
+                                <?= ac_icon('users') ?>
                                 <?= h($event['playerCount'] ?? 0) ?><?= !empty($event['maxPlayers']) ? ' / ' . h($event['maxPlayers']) : '' ?>
                             </span>
                             <?php endif; ?>
 
                             <?php if (!empty($event['distance'])): ?>
-                            <span><i class="fa-solid fa-route"></i><?= h(round($event['distance'], 1)) ?> km</span>
+                            <span><?= ac_icon('route', 're-distance-icon') ?><?= h(round($event['distance'], 1)) ?> km</span>
                             <?php endif; ?>
                         </div>
 
@@ -661,7 +667,7 @@ $eventBrandsForJs = reEventBrandsForJs();
                     </div>
 
                     <div class="event-actions">
-                        <i class="fa-solid fa-arrow-up-right-from-square text-muted"></i>
+                        <?= ac_icon('external-link', 'text-muted') ?>
                     </div>
                 </div>
             </a>
@@ -700,7 +706,7 @@ $eventBrandsForJs = reEventBrandsForJs();
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
                 <?php if ($bgaCount > 0): ?>
-                <span class="badge bg-primary"><?= h($bgaCount) ?> <?= h($txt['bga_count']) ?></span>
+                <span class="ac-badge ac-badge--blue"><?= h($bgaCount) ?> <?= h($txt['bga_count']) ?></span>
                 <?php if (!empty($bgaExportedAt)): ?>
                 <span class="small text-muted ms-2">
                     <?= h($txt['bga_updated']) ?> — <?= h($bgaExportedAt) ?>
@@ -709,25 +715,27 @@ $eventBrandsForJs = reEventBrandsForJs();
                 <?php endif; ?>
             </div>
             <a href="<?= h($bgaListUrl) ?>"
-               class="btn btn-outline-secondary btn-sm"
+               class="ac-button ac-button--secondary ac-button--sm"
                target="_blank"
                rel="noopener">
-                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?= h($txt['bga_open_bga']) ?>
+                <?= ac_icon('external-link', 'me-1') ?><?= h($txt['bga_open_bga']) ?>
             </a>
         </div>
 
         <?php if ($bgaCount === 0): ?>
-        <div class="card-altered p-4 text-center">
-            <i class="fa-solid fa-cloud-arrow-down fa-3x text-muted mb-3"></i>
-            <p class="text-muted mb-0"><?= h($txt['bga_no_data']) ?></p>
+        <div class="ac-card">
+            <div class="ac-empty">
+                <?= ac_icon('cloud-download') ?>
+                <p class="mb-0"><?= h($txt['bga_no_data']) ?></p>
+            </div>
         </div>
         <?php else: ?>
         <script type="application/json" id="re-bga-events-json"><?= json_encode($bgaForJs, $bgaJsonFlags) ?></script>
 
-        <div class="card-altered p-4 mb-4" id="bga-filter-panel">
-            <h5 class="mb-3">
-                <i class="fa-solid fa-filter me-2"></i><?= h($txt['bga_filter_title']) ?>
-            </h5>
+        <div class="ac-card mb-4" id="bga-filter-panel">
+            <h2 class="ac-section-title">
+                <?= ac_icon('filter', 'me-1') ?><?= h($txt['bga_filter_title']) ?>
+            </h2>
             <form id="bga-filter-form" action="#" method="get" autocomplete="off">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -758,11 +766,11 @@ $eventBrandsForJs = reEventBrandsForJs();
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary-altered flex-grow-1" id="bga-filter-search">
-                        <i class="fa-solid fa-search me-1"></i><?= h($txt['search_btn']) ?>
+                    <button type="submit" class="ac-button flex-grow-1" id="bga-filter-search">
+                        <?= ac_icon('search', 'me-1') ?><?= h($txt['search_btn']) ?>
                     </button>
                     <button type="button" class="btn btn-outline-secondary" id="bga-filter-reset" title="<?= h($txt['search_reset']) ?>">
-                        <i class="fa-solid fa-rotate-left"></i>
+                        <?= ac_icon('rotate-ccw') ?>
                     </button>
                 </div>
             </div>
@@ -770,9 +778,11 @@ $eventBrandsForJs = reEventBrandsForJs();
         </div>
 
         <div id="bga-view-list">
-        <div class="card-altered p-4 text-center d-none mb-3" id="bga-filter-empty">
-            <i class="fa-solid fa-filter-circle-xmark fa-2x text-muted mb-2"></i>
-            <p class="text-muted mb-0"><?= h($txt['bga_no_results']) ?></p>
+        <div class="ac-card d-none mb-3" id="bga-filter-empty">
+            <div class="ac-empty">
+                <?= ac_icon('funnel-x') ?>
+                <p class="mb-0"><?= h($txt['bga_no_results']) ?></p>
+            </div>
         </div>
         <div class="events-list" id="bga-events-list">
             <?php foreach ($bgaTournaments as $bga): ?>
@@ -788,7 +798,7 @@ $eventBrandsForJs = reEventBrandsForJs();
                     : null;
             ?>
             <a href="<?= h($bga['url']) ?>"
-               class="event-card card-altered p-4 bga-event-card<?= $bgaSeason ? ' re-event-card-frontier' : '' ?>"
+               class="event-card ac-card bga-event-card<?= $bgaSeason ? ' re-event-card-frontier' : '' ?>"
                <?php if ($bgaSeason): ?>style="--re-frontier-color: <?= h($bgaSeason['color']) ?>"<?php endif; ?>
                target="_blank"
                rel="noopener"
@@ -797,17 +807,17 @@ $eventBrandsForJs = reEventBrandsForJs();
                data-bga-pace="<?= h($bga['game_pace'] ?? '') ?>">
                 <div class="event-card-inner">
                     <div class="event-info">
-                        <h5 class="event-title mb-1">
-                            <i class="fa-solid fa-trophy text-warning me-2"></i>
+                        <h3 class="event-title mb-1">
+                            <?= ac_icon('trophy', 'event-title-icon me-1') ?>
                             <?= h($bga['name'] ?: 'Tournament') ?>
-                        </h5>
+                        </h3>
                         <?php if (!empty($bga['championship_name'])): ?>
                         <p class="small text-muted mb-2"><?= h($bga['championship_name']) ?></p>
                         <?php endif; ?>
                         <div class="event-details">
                             <?php if (!empty($bga['start_instant_iso']) || $bgaStartDisplay !== ''): ?>
                             <span>
-                                <i class="fa-solid fa-calendar"></i><?= h($txt['bga_starts']) ?>:
+                                <?= ac_icon('calendar') ?><?= h($txt['bga_starts']) ?>:
                                 <time class="re-bga-start-dt"
                                       datetime="<?= h($bga['start_instant_iso'] ?? '') ?>"
                                       data-has-time="<?= !empty($bga['start_has_time']) ? '1' : '0' ?>">
@@ -816,39 +826,39 @@ $eventBrandsForJs = reEventBrandsForJs();
                             </span>
                             <?php endif; ?>
                             <?php if (!empty($bga['format'])): ?>
-                            <span><i class="fa-solid fa-layer-group"></i><?= h($bga['format']) ?></span>
+                            <span><?= ac_icon('layers') ?><?= h($bga['format']) ?></span>
                             <?php endif; ?>
                             <?php if ($bgaDeckLabel !== ''): ?>
                             <span>
-                                <i class="fa-solid fa-clone"></i>
+                                <?= ac_icon('copy') ?>
                                 <?= h($txt['bga_deck_format']) ?>: <?= h($bgaDeckLabel) ?>
                             </span>
                             <?php endif; ?>
                             <?php if (!empty($bga['game_mode'])): ?>
-                            <span><i class="fa-solid fa-gamepad"></i><?= h($bga['game_mode']) ?></span>
+                            <span><?= ac_icon('gamepad-2') ?><?= h($bga['game_mode']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($bga['game_pace'])): ?>
-                            <span><i class="fa-solid fa-clock"></i><?= h($txt['bga_pace']) ?>: <?= h($bga['game_pace']) ?></span>
+                            <span><?= ac_icon('clock') ?><?= h($txt['bga_pace']) ?>: <?= h($bga['game_pace']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($bga['max_players'])): ?>
                             <span>
-                                <i class="fa-solid fa-users"></i>
+                                <?= ac_icon('users') ?>
                                 <?= h($txt['bga_max_players']) ?>: <?= h((int)$bga['max_players']) ?>
                             </span>
                             <?php endif; ?>
                             <?php if (isset($bga['allow_undo']) && $bga['allow_undo'] === false): ?>
-                            <span><i class="fa-solid fa-rotate-left"></i><?= h($txt['bga_undo_off']) ?></span>
+                            <span><?= ac_icon('rotate-ccw') ?><?= h($txt['bga_undo_off']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($bga['game_duration'])): ?>
-                            <span><i class="fa-solid fa-hourglass-half"></i><?= h($txt['bga_duration']) ?>: <?= h($bga['game_duration']) ?></span>
+                            <span><?= ac_icon('hourglass') ?><?= h($txt['bga_duration']) ?>: <?= h($bga['game_duration']) ?></span>
                             <?php endif; ?>
                             <?php if (isset($bga['progress']) && $bga['status'] === 'progress'): ?>
-                            <span><i class="fa-solid fa-chart-line"></i><?= h(round($bga['progress'] * 100)) ?>%</span>
+                            <span><?= ac_icon('chart-line') ?><?= h(round($bga['progress'] * 100)) ?>%</span>
                             <?php endif; ?>
                         </div>
                     </div>
                     <div class="event-actions">
-                        <i class="fa-solid fa-arrow-up-right-from-square text-muted"></i>
+                        <?= ac_icon('external-link', 'text-muted') ?>
                     </div>
                 </div>
             </a>

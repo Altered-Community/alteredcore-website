@@ -10,13 +10,13 @@
       <strong i18n="@@search.source.favorites">Favoris</strong>
       <p i18n="@@search.results.favoritesLogin">Connectez-vous pour retrouver vos cartes favorites.</p>
     }
-    <a arButton variant="secondary" routerLink="/login" i18n="@@search.results.signIn">Se connecter</a>
+    <a acButton variant="secondary" routerLink="/login" i18n="@@search.results.signIn">Se connecter</a>
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ar-virtual-grid #grid class="grid" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+    <ac-virtual-grid #grid class="grid" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
       @for (c of grid.slice(); track c.reference) {
-        <ar-card-tile
+        <ac-card-tile
           role="listitem"
           [attr.aria-posinset]="grid.first() + $index + 1"
           [attr.aria-setsize]="search.cards().length"
@@ -38,11 +38,11 @@
           <span class="skeleton" aria-hidden="true"></span>
         }
       }
-    </ar-virtual-grid>
+    </ac-virtual-grid>
   } @else {
     <div class="list" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards">
       @for (c of search.cards(); track c.reference) {
-        <ar-deck-row
+        <ac-deck-row
           role="listitem"
           appearance="panel"
           [plain]="browse()"
@@ -64,16 +64,16 @@
   @if (search.error(); as e) {
     <div class="state" role="alert">
       <p>{{ e }}</p>
-      <button arButton variant="secondary" (click)="search.retry()" i18n="@@search.results.retry">Réessayer</button>
+      <button acButton variant="secondary" (click)="search.retry()" i18n="@@search.results.retry">Réessayer</button>
     </div>
   } @else if (!search.loading() && search.total() === 0) {
     <div class="state">
       <strong i18n="@@search.results.emptyTitle">Aucune carte</strong>
       <p i18n="@@search.results.empty">Aucune carte ne correspond à ces filtres.</p>
-      <button arButton variant="secondary" (click)="search.reset()" i18n="@@search.results.resetFilters">Réinitialiser les filtres</button>
+      <button acButton variant="secondary" (click)="search.reset()" i18n="@@search.results.resetFilters">Réinitialiser les filtres</button>
     </div>
   } @else if (!search.hasMore() && search.cards().length) {
     <p class="end" i18n="@@search.results.end">{search.cards().length, plural, =1 {1 carte affichée · fin des résultats} other {{{ search.cards().length }} cartes affichées · fin des résultats}}</p>
   }
-  <div class="sentinel" arInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
+  <div class="sentinel" acInfiniteSentinel [lookahead]="3" (visible)="search.setWantMore($event)"></div>
 }

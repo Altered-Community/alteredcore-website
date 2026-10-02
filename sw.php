@@ -9,7 +9,7 @@
 //   • HTML navigations  → network only; offline fallback page when the network fails.
 //                         Pages are never cached: they carry the session and CSRF token.
 //   • /auth, /admin, /api, /papi, non-GET → not handled at all (browser default).
-//   • Same-origin static assets (/css, /js, /assets, /themes, /plugins/{id}/…):
+//   • Same-origin static assets (/css, /js, /assets, /themes, /design-system, /plugins/{id}/…):
 //       – versioned (?v=…) or images/fonts → stale-while-revalidate
 //       – unversioned .js/.css            → network first, cache as fallback
 //         (avoids running stale plugin JS against freshly rendered HTML)
@@ -18,18 +18,18 @@
 // CACHE_VERSION is a hash of the files the precache depends on, so a deploy that
 // changes them installs a new worker and drops the old caches.
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/design-system/php/ui.php';
+require_once __DIR__ . '/includes/offline-assets.php';
 
 header('Content-Type: application/javascript; charset=utf-8');
 header('Cache-Control: no-cache');
 header('X-Content-Type-Options: nosniff');
 
-$_swStyleMtime = (int)@filemtime(__DIR__ . '/css/style.css');
-$_swVersionFiles = [
+$_swVersionFiles = array_merge([
     __FILE__,
     __DIR__ . '/offline.php',
-    __DIR__ . '/css/style.css',
     __DIR__ . '/assets/favicon/web-app-manifest-192x192.png',
-];
+], array_map(function ($f) { return dsDir() . '/' . $f; }, offlineStylesheets()));
 $_swHash = '';
 foreach ($_swVersionFiles as $_swFile) {
     $_swHash .= is_file($_swFile) ? md5_file($_swFile) : '-';
@@ -40,11 +40,10 @@ $_swConfig = [
     'version'  => $_swVersion,
     'base'     => BASE_URL,
     'offline'  => BASE_URL . '/offline',
-    'precache' => [
+    'precache' => array_merge([
         BASE_URL . '/offline',
-        BASE_URL . '/css/style.css?v=' . $_swStyleMtime,
         BASE_URL . '/assets/favicon/web-app-manifest-192x192.png',
-    ],
+    ], array_map('dsUrl', offlineStylesheets())),
 ];
 ?>
 'use strict';
@@ -61,7 +60,7 @@ const CDN_MAX_ENTRIES     = 60;
 // Paths below BASE_URL that the worker never touches.
 const BYPASS_RE = /^\/(?:auth|admin|api|papi)(?:\/|$)/;
 // Same-origin static asset locations and file types.
-const STATIC_DIR_RE = /^\/(?:css|js|assets|themes|plugins\/[a-z0-9_-]+)\//;
+const STATIC_DIR_RE = /^\/(?:css|js|assets|themes|design-system|plugins\/[a-z0-9_-]+)\//;
 const STATIC_EXT_RE = /\.(?:css|js|mjs|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
 const CODE_EXT_RE   = /\.(?:css|js|mjs)$/i;
 // CDN URLs with an exact x.y.z version in the path.

@@ -19,7 +19,7 @@ export class NewDeckForm {
   readonly description = signal('');
   readonly hero = signal<DeckHero | null>(null);
   readonly format = signal<DeckFormat>('standard');
-  /** `boolean | undefined` to bind `ar-segmented [(value)]` directly. */
+  /** `boolean | undefined` to bind `ac-segmented [(value)]` directly. */
   readonly isPublic = signal<boolean | undefined>(false);
   readonly ready = computed(() => !!this.hero() && !!this.name().trim());
   private generatedName = '';

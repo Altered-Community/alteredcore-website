@@ -1,24 +1,30 @@
 import { Component, input } from '@angular/core';
-import { ArIcon, type ArIconName } from '../../icon';
-import { type ArSize } from '../types';
+import { AcIcon, type AcIconName } from '../../icon';
+import { type AcSize } from '../types';
 
-/** Square icon button; `ariaLabel` is required. */
+/**
+ * Square icon button (`ac-icon-button`, design-system/css/components/button.css); `ariaLabel` is
+ * required.
+ */
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector -- styles native <button>/<a> so they keep their semantics
-  selector: 'button[arIconButton], a[arIconButton]',
-  imports: [ArIcon],
+  selector: 'button[acIconButton], a[acIconButton]',
+  imports: [AcIcon],
   host: {
-    '[class]': "'ar-icon-button ar-icon-button--' + variant() + ' ar-icon-button--' + size()",
+    class: 'ac-icon-button',
+    '[class.ac-icon-button--ghost]': "variant() === 'ghost'",
+    '[class.ac-icon-button--primary]': "variant() === 'primary'",
+    '[class.ac-icon-button--sm]': "size() === 'sm'",
+    '[class.ac-icon-button--lg]': "size() === 'lg'",
     '[attr.aria-label]': 'ariaLabel()',
     '[attr.title]': 'ariaLabel()',
   },
   templateUrl: './icon-button.html',
-  styleUrl: './icon-button.scss',
 })
-export class ArIconButton {
-  readonly arIconButton = input.required<ArIconName>();
+export class AcIconButton {
+  readonly acIconButton = input.required<AcIconName>();
   readonly ariaLabel = input.required<string>();
   readonly variant = input<'secondary' | 'ghost' | 'primary'>('secondary');
-  readonly size = input<ArSize>('md');
+  readonly size = input<AcSize>('md');
   readonly iconSize = input(20);
 }

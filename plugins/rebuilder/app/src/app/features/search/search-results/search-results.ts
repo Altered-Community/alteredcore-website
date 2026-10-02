@@ -4,18 +4,18 @@ import { addBlockedReason } from '../../../core/deck-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { AuthSession } from '../../../core/auth-session';
 import type { Card } from '../../../core/models';
-import { ArButton } from '../../../ui/buttons';
-import { ArVirtualGrid } from '../../../ui/containers';
-import { ArInfiniteSentinel } from '../../../ui/infinite';
-import { ArCardTile, ArDeckRow } from '../../../ui/metier';
-import { ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcVirtualGrid } from '../../../ui/containers';
+import { AcInfiniteSentinel } from '../../../ui/infinite';
+import { AcCardTile, AcDeckRow } from '../../../ui/metier';
+import { AcOverlayService } from '../../../ui/overlay';
 import { FavoritesService } from '../../../core/favorites.service';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { CardSearchStore } from '../card-search.store';
 
 @Component({
   selector: 'app-search-results',
-  imports: [ArCardTile, ArDeckRow, ArInfiniteSentinel, ArButton, RouterLink, ArVirtualGrid],
+  imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
 })
@@ -23,7 +23,7 @@ export class SearchResults {
   protected readonly search = inject(CardSearchStore);
   protected readonly deck = inject(DeckStore);
   protected readonly auth = inject(AuthSession);
-  private readonly overlay = inject(ArOverlayService);
+  private readonly overlay = inject(AcOverlayService);
   protected readonly favorites = inject(FavoritesService);
   readonly layout = input<'grid' | 'list'>('grid');
   /** Card browser: cards without quantity controls. */

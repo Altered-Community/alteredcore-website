@@ -1,10 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
-import { ArButton } from '../../../ui/buttons';
-import { ArInput } from '../../../ui/fields';
-import { ArBreakpointService } from '../../../ui/layout.services';
-import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
+import { AcButton } from '../../../ui/buttons';
+import { AcInput } from '../../../ui/fields';
+import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 /**
  * « Dupliquer le deck »: name of the copy, pre-filled « <nom> (copie) ». Signed in, the copy is a
@@ -12,14 +12,14 @@ import { ArOverlayRef, ArOverlayService } from '../../../ui/overlay';
  */
 @Component({
   selector: 'app-duplicate-deck',
-  imports: [ArButton, ArInput],
-  host: { class: 'ar-overlay-content' },
+  imports: [AcButton, AcInput],
+  host: { class: 'ac-overlay-content' },
   templateUrl: './duplicate-deck.overlay.html',
   styleUrl: './duplicate-deck.overlay.scss',
 })
 export class DuplicateDeckOverlay {
-  protected readonly ref = inject<ArOverlayRef<string>>(ArOverlayRef);
-  protected readonly bp = inject(ArBreakpointService);
+  protected readonly ref = inject<AcOverlayRef<string>>(AcOverlayRef);
+  protected readonly bp = inject(AcBreakpointService);
   protected readonly auth = inject(AuthSession);
   private readonly deck = inject(DeckStore);
 
@@ -46,7 +46,7 @@ export class DuplicateDeckOverlay {
   }
 }
 
-export function openDuplicateDeck(overlay: ArOverlayService): ArOverlayRef<string> {
+export function openDuplicateDeck(overlay: AcOverlayService): AcOverlayRef<string> {
   return overlay.open<DuplicateDeckOverlay, string>(DuplicateDeckOverlay, {
     title: $localize`:@@deck.duplicate.title:Dupliquer le deck`,
     width: 440,

@@ -3,8 +3,8 @@ import { formatPercent, formatPrecisePercent, handStats, oddsCards } from '../..
 import { uiLocale } from '../../../core/i18n';
 import type { HydratedLine } from '../../../core/models';
 import { HAND_SIZE } from '../../../core/test-hand';
-import { ArCardSurface, ArCollapsible } from '../../../ui/containers';
-import { ArDonutChart, ArProbabilityBars, type ArDonutSegment, type ArProbabilityBar } from '../../../ui/metier';
+import { AcCardSurface, AcCollapsible } from '../../../ui/containers';
+import { AcDonutChart, AcProbabilityBars, type AcDonutSegment, type AcProbabilityBar } from '../../../ui/metier';
 
 /** A headline figure: rounded, two decimals on hover. */
 interface Figure {
@@ -18,7 +18,7 @@ interface Figure {
  */
 @Component({
   selector: 'app-hand-stats',
-  imports: [ArCardSurface, ArCollapsible, ArDonutChart, ArProbabilityBars],
+  imports: [AcCardSurface, AcCollapsible, AcDonutChart, AcProbabilityBars],
   templateUrl: './hand-stats.html',
   styleUrl: './hand-stats.scss',
 })
@@ -28,7 +28,7 @@ export class HandStats {
   private readonly cards = computed(() => oddsCards(this.lines()));
   private readonly stats = computed(() => handStats(this.cards(), HAND_SIZE));
 
-  protected readonly composition = computed<ArDonutSegment[]>(() => {
+  protected readonly composition = computed<AcDonutSegment[]>(() => {
     const t = { character: 0, spell: 0, permanent: 0 };
     let total = 0;
     for (const l of this.lines()) {
@@ -58,12 +58,12 @@ export class HandStats {
     };
   });
 
-  protected readonly manaBars = computed<ArProbabilityBar[]>(() => {
+  protected readonly manaBars = computed<AcProbabilityBar[]>(() => {
     const m = this.stats().manaSpent;
     return [3, 2, 1, 0].map((k) => ({ key: `${k}`, label: $localize`:@@deck.handStats.mana:${k}:count: mana`, p: m[k], warn: k === 0 }));
   });
 
-  protected readonly expensiveBars = computed<ArProbabilityBar[]>(() =>
+  protected readonly expensiveBars = computed<AcProbabilityBar[]>(() =>
     this.stats().expensive.map((p, k) => ({
       key: `${k}`,
       label: k === 1 ? $localize`:@@deck.handStats.cardOne:${k}:count: carte` : $localize`:@@deck.handStats.cards:${k}:count: cartes`,
@@ -72,7 +72,7 @@ export class HandStats {
     })),
   );
 
-  protected readonly playBars = computed<ArProbabilityBar[]>(() =>
+  protected readonly playBars = computed<AcProbabilityBar[]>(() =>
     this.stats().plays.map((p, k) => ({
       key: `${k}`,
       label: k === 1 ? $localize`:@@deck.handStats.playOne:${k}:count: play` : $localize`:@@deck.handStats.plays:${k}:count: plays`,
@@ -81,7 +81,7 @@ export class HandStats {
     })),
   );
 
-  protected readonly expeditionBars = computed<ArProbabilityBar[]>(() => {
+  protected readonly expeditionBars = computed<AcProbabilityBar[]>(() => {
     const x = this.stats().expeditions;
     return [
       { key: 'none', label: $localize`:@@deck.handStats.expNone:Aucun personnage`, p: x[0] },

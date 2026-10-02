@@ -45,7 +45,7 @@ module.exports = defineConfig([
         'error',
         {
           type: 'attribute',
-          prefix: ['app', 'ar'],
+          prefix: ['app', 'ac'],
           style: 'camelCase',
         },
       ],
@@ -53,14 +53,14 @@ module.exports = defineConfig([
         'error',
         {
           type: 'element',
-          prefix: ['app', 'ar'],
+          prefix: ['app', 'ac'],
           style: 'kebab-case',
         },
       ],
     },
   },
   {
-    // One component per folder with its .html and .scss (CLAUDE.md); test hosts may stay inline.
+    // One component per folder with its .html and .scss (AGENTS.md); test hosts may stay inline.
     files: ['**/*.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {
@@ -72,8 +72,8 @@ module.exports = defineConfig([
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {
-      // arIconButton renders its icon and sets aria-label from its ariaLabel input.
-      '@angular-eslint/template/elements-content': ['error', { allowList: ['arIconButton', 'ariaLabel'] }],
+      // acIconButton renders its icon and sets aria-label from its ariaLabel input.
+      '@angular-eslint/template/elements-content': ['error', { allowList: ['acIconButton', 'ariaLabel'] }],
       // Control flow.
       '@angular-eslint/template/no-empty-control-flow': 'error',
       '@angular-eslint/template/prefer-at-else': 'error',

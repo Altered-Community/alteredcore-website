@@ -1,4 +1,4 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   @if (phase() === 'pick' || phase() === 'reading') {
     <!-- The source switch: only before an import, so an import is never left by it. -->
     <ng-content />
@@ -13,7 +13,7 @@
       <li i18n="@@decks.equinox.step2">Demandez l’export de vos données, puis téléchargez l’archive ZIP. Gardez-la telle quelle, sans l’extraire.</li>
       <li i18n="@@decks.equinox.step3">Choisissez l’archive : ses decks sont créés dans votre compte, en privé. Ceux qui y sont déjà (même nom, mêmes cartes) sont ignorés.</li>
     </ol>
-    <ar-file-input label="Export altered.gg (.zip)" i18n-label="@@decks.equinox.fileLabel" accept=".zip,application/zip" [disabled]="phase() === 'reading'" [file]="file()" (fileChange)="pickFile($event)" />
+    <ac-file-input label="Export altered.gg (.zip)" i18n-label="@@decks.equinox.fileLabel" accept=".zip,application/zip" [disabled]="phase() === 'reading'" [file]="file()" (fileChange)="pickFile($event)" />
     @if (error(); as e) {
       <p class="error" role="alert">{{ e }}</p>
     }
@@ -35,19 +35,19 @@
           }
         </span>
       }
-      <ar-progress-bar [value]="progress()" [ariaLabel]="progressLabel()" />
+      <ac-progress-bar [value]="progress()" [ariaLabel]="progressLabel()" />
     </div>
     <ul #list class="rows" aria-label="Decks de l’export" i18n-aria-label="@@decks.equinox.rows">
       @for (r of rows(); track $index) {
         <li [class.current]="r.status === 'current'">
           <span class="name">{{ r.deck.name }}</span>
-          <ar-badge [tone]="statusTones[r.status]">{{ statusLabels[r.status] }}</ar-badge>
+          <ac-badge [tone]="statusTones[r.status]">{{ statusLabels[r.status] }}</ac-badge>
           @if (r.error; as e) {
             <span class="row-error">{{ e }}</span>
           }
           @if (r.status === 'failed' && isRunning()) {
             <span class="row-retry">
-              <button arButton variant="secondary" size="sm" (click)="retry($index)" i18n="@@decks.equinox.retry">Réessayer</button>
+              <button acButton variant="secondary" size="sm" (click)="retry($index)" i18n="@@decks.equinox.retry">Réessayer</button>
               <span class="muted" i18n="@@decks.equinox.attemptsLeft">{maxAttempts - r.attempts, plural, =1 {1 essai restant} other {{{ maxAttempts - r.attempts }} essais restants}}</span>
             </span>
           }
@@ -59,14 +59,14 @@
     }
   }
 </div>
-<div class="ar-overlay-footer">
+<div class="ac-overlay-footer">
   @if (isRunning()) {
     @if (confirmCancel()) {
-      <button arButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(false)" i18n="@@decks.equinox.keepGoing">Continuer</button>
-      <button arButton variant="danger" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="cancel()" i18n="@@decks.equinox.cancelYes">Annuler l’import</button>
+      <button acButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(false)" i18n="@@decks.equinox.keepGoing">Continuer</button>
+      <button acButton variant="danger" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="cancel()" i18n="@@decks.equinox.cancelYes">Annuler l’import</button>
     } @else {
-      <button arButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(true)" i18n="@@decks.equinox.cancel">Annuler</button>
-      <button arButton variant="secondary" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="togglePause()">
+      <button acButton variant="secondary" class="secondary-action" (click)="confirmCancel.set(true)" i18n="@@decks.equinox.cancel">Annuler</button>
+      <button acButton variant="secondary" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="togglePause()">
         @if (phase() === 'paused') {
           <ng-container i18n="@@decks.equinox.resume">Reprendre</ng-container>
         } @else {
@@ -75,11 +75,11 @@
       </button>
     }
   } @else if (phase() === 'done') {
-    <button arButton variant="secondary" class="secondary-action" (click)="reset()" i18n="@@decks.equinox.another">Importer un autre fichier</button>
-    <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="close()" i18n="@@decks.equinox.done">Terminer</button>
+    <button acButton variant="secondary" class="secondary-action" (click)="reset()" i18n="@@decks.equinox.another">Importer un autre fichier</button>
+    <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="close()" i18n="@@decks.equinox.done">Terminer</button>
   } @else {
-    <button arButton variant="secondary" class="secondary-action" (click)="close()" i18n="@@decks.import.cancel">Annuler</button>
-    <button arButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!file() || phase() === 'reading' || !auth.isLoggedIn()" (click)="start()">
+    <button acButton variant="secondary" class="secondary-action" (click)="close()" i18n="@@decks.import.cancel">Annuler</button>
+    <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" [disabled]="!file() || phase() === 'reading' || !auth.isLoggedIn()" (click)="start()">
       @if (phase() === 'reading') {
         <ng-container i18n="@@decks.equinox.reading">Lecture du fichier…</ng-container>
       } @else {

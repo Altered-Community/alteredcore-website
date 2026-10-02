@@ -1,7 +1,9 @@
 # rebuilder — Altered Re:Builder as an SPA plugin
 
-The decks section of [Altered Re:Builder](https://github.com/Yutsa/altered-re-builder) (Angular 22), an
-SPA page of the shell (manifest v2, `"type": "spa"`, Shadow DOM). It replaces the site's decks pages for the
+The decks section of Altered Re:Builder (Angular 22), an SPA page of the shell (manifest v2, `"type": "spa"`,
+Shadow DOM). Re:Builder only exists as this plugin: there is no standalone app any more (no `index.html`, no
+Capacitor build, no auth BFF); it uses the site's session, header, menu and design system. It replaces the
+site's decks pages for the
 visitors who turn on **Beta Deckbuilder** in the account menu (cookie `ac_beta`, this browser only), at the
 same URLs: `/pages/decks`, `/pages/deck?id=…` and `/pages/deckbuilder?id=…` (manifest `beta_slugs`). Without
 it, those URLs stay the pages of `core-altered-cards`. Shared links, QR codes and the site's own links
@@ -13,9 +15,9 @@ its single **Decks** entry. The pages it replaces keep answering their own calls
 | `plugin.json` | Manifest v2: SPA page and its `beta_slugs`, API endpoints, build and e2e declarations |
 | `meta.php` | Manifest `meta`: the deck's name as page title and its link preview (title, hero · format, decklist image, faction colour: core-altered-cards `includes/deck-preview/preview.php`, shared with the site's deck page) on `deck?id=` and `deckbuilder?id=` |
 | `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
-| `app/` | Angular sources, from Yutsa/altered-re-builder@8677b37 (see `app/CLAUDE.md` for the code rules) |
+| `app/` | Angular sources (see `app/AGENTS.md` for the code rules, `app/design/COMPONENTS.md` for the components) |
 | `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
-| `app/src/embed/` | Styles (shadow root, and `<head>` for fonts) |
+| `app/src/embed/` | Global styles: `embed.scss` (shadow root, after the design system), `document.scss` (`<head>`: printed-card fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |
 | `dist/` | Build output (`npm run build`), not committed |
 
@@ -29,6 +31,30 @@ npm run build   # → ../dist/browser + ../dist/embed-manifest.json
 npm run lint && npm test
 ```
 
+`build` is the only build (`ng build`, production configuration, then `scripts/embed-manifest.mjs`).
+The app is not served on its own: run it in the site's stack (`docker-compose.stack.yml`).
+
+## Design system
+
+The look comes from the site's design system, `design-system/` at the repository root
+([README](../../design-system/README.md), [WORKFLOW](../../design-system/WORKFLOW.md)):
+
+- Tokens are the site's `--ac-*` custom properties (`design-system/tokens/tokens.css`), defined on `:root`
+  with the dark theme (`data-theme`) and the touch density (`data-density`, set on `<html>` by the shell).
+  They inherit into the shadow root; the plugin defines none. A value no token covers goes in the
+  `/* rebuilder */` slots of `tokens.css`.
+- The shell injects `design-system/css/base.css` and `design-system/css/components/*.css` into the shadow
+  root before the plugin's CSS. The container it creates (`.ac-plugin-root`) is the plugin root.
+- Everything uses the `ac-` prefix (selectors, CSS classes, `Ac*` classes). Generic components (button, icon
+  button, chip, badge, tag, count, avatar, card, input, select, segmented control, tabs, breadcrumb, icon)
+  only set the design system's classes; their styles live in `design-system/css/components/`. To change one
+  or add one, change the design system first (CSS, `design-system/docs/components/`, the
+  `/pages/design-system` reference page), then the Angular component. Domain components (card tiles, deck
+  rows, overlays…) keep their own SCSS, written with tokens only.
+- Icons use Lucide names (`trash-2`, `ellipsis`, `sliders-horizontal`, `brand-discord`…), the same as
+  `ac_icon()` on the site. `AcIcon` inlines the markup it needs and renders `<svg class="ac-icon">`.
+- `app/src/app/core/breakpoints.ts` imports `BREAKPOINTS` from `design-system/tokens/breakpoints.ts`.
+- `php tests/run.php` (repository root) fails on hex / `rgb()` / `hsl()` colours in the plugin's SCSS.
 
 ## What is embedded
 
@@ -47,7 +73,7 @@ Signed in, decks are listed, created and saved on the decks API through the site
 (`/api/v1/services/decks`), which adds the Keycloak token of the PHP session server-side: the browser
 never holds a token. They are the same decks as the site's (`/pages/decks` lists them too). As a guest
 they stay in `localStorage` (`arb.guest-decks`). Sign-in is the site's (`AlteredCore.login()`), and the
-site draws the navigation: the app's own menu button is hidden. The page keeps the site's content
+site draws the navigation. The page keeps the site's content
 width (`"fullwidth": false`), and each route tells the shell which menu entry is current
 (route data `nav`, `AlteredCore.setActiveNav()`): the site's **Decks** entry.
 
@@ -80,5 +106,5 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 ## Known gaps
 
 - « Importer » › *Liste de cartes* creates a guest deck when signed out.
-- Theme: neutrals and brand colour follow the site (`--ac-*`); faction, rarity and printed-card colours
-  keep ReBuilder's values.
+- Theme: every colour comes from the site's tokens (`--ac-*`), including factions, terrains and the printed
+  Unique card.

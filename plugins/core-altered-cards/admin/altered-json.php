@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function setStatus(msg, ok) {
         status.style.display = '';
-        status.style.color   = ok ? 'var(--bs-success)' : 'var(--bs-danger)';
+        status.style.color   = ok ? 'var(--ac-color-success)' : 'var(--ac-color-required)';
         status.textContent   = msg;
     }
 

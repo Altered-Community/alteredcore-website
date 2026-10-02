@@ -3,8 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ALTERED_CORE } from '../host';
-import { ArDensityService } from '../../ui/layout.services';
-import { ArNavigationHistory } from '../../ui/nav';
+import { AcNavigationHistory } from '../../ui/nav';
 
 /** Root of the embedded editor: no app bar, site menu or footer — the AlteredCore site draws them. */
 @Component({
@@ -14,8 +13,7 @@ import { ArNavigationHistory } from '../../ui/nav';
 })
 export class EmbedApp {
   constructor() {
-    inject(ArDensityService);
-    inject(ArNavigationHistory);
+    inject(AcNavigationHistory);
     // The site menu entry of the plugin stays current on every client route that declares it.
     const host = inject(ALTERED_CORE);
     const route = inject(ActivatedRoute);

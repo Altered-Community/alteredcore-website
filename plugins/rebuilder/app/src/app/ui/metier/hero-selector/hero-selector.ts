@@ -1,8 +1,8 @@
 import { Component, ElementRef, afterRenderEffect, computed, input, model, viewChild } from '@angular/core';
-import { ArHeroTile } from '../hero-tile/hero-tile';
+import { AcHeroTile } from '../hero-tile/hero-tile';
 import { scrollIntoViewInline } from '../scroll';
 
-export interface ArHeroOption {
+export interface AcHeroOption {
   reference: string;
   name: string;
   faction: string;
@@ -15,26 +15,26 @@ export interface ArHeroOption {
  * « Nouveau deck » and « Choisir un héros ».
  */
 @Component({
-  selector: 'ar-hero-selector',
-  imports: [ArHeroTile],
+  selector: 'ac-hero-selector',
+  imports: [AcHeroTile],
   host: {
     '[class]': "'layout-' + layout()",
-    '[style.--ar-hero-cols]': 'columns()',
+    '[style.--ac-hero-cols]': 'columns()',
   },
   templateUrl: './hero-selector.html',
   styleUrl: './hero-selector.scss',
 })
-export class ArHeroSelector {
+export class AcHeroSelector {
   /** All heroes (filtered here by `faction`); `null` while loading. */
-  readonly heroes = input<readonly ArHeroOption[] | null>(null);
+  readonly heroes = input<readonly AcHeroOption[] | null>(null);
   readonly faction = input('AX');
-  readonly selected = model<ArHeroOption | null>(null);
+  readonly selected = model<AcHeroOption | null>(null);
   readonly layout = input<'grid' | 'carousel'>('grid');
   /** Grid columns (`layout="grid"`); also the number of loading skeletons. */
   readonly columns = input(4);
   readonly error = input(false);
   readonly ariaLabel = input($localize`:@@ui.heroSelector.label:Héros`);
-  /** Id of the tile group, referenced by `ar-faction-tabs [controls]`. */
+  /** Id of the tile group, referenced by `ac-faction-tabs [controls]`. */
   readonly panelId = input('');
 
   protected readonly visible = computed(() => (this.heroes() ?? []).filter((h) => h.faction === this.faction()));
@@ -54,7 +54,7 @@ export class ArHeroSelector {
     });
   }
 
-  protected pick(h: ArHeroOption): void {
+  protected pick(h: AcHeroOption): void {
     this.selected.set(h);
   }
 }

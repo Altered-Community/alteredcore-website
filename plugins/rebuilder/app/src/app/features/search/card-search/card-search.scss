@@ -1,35 +1,35 @@
-/* The host page pads the content with `var(--ar-space-3) var(--ar-page-padding)` on compact screens;
+/* The host page pads the content with `var(--ac-space-3) var(--ac-page-padding)` on compact screens;
    the sticky search head bleeds into that padding. `--app-search-bottom-inset` lifts the « back to top »
    button above a bottom navigation. */
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 
 .search-head {
   position: sticky;
-  top: var(--ar-page-top);
+  top: var(--ac-page-top);
   z-index: 15;
-  margin: calc(-1 * var(--ar-space-3)) calc(-1 * var(--ar-page-padding)) 0;
-  padding: var(--ar-space-3) var(--ar-page-padding) 0;
-  background: var(--ar-color-bg-app);
+  margin: calc(-1 * var(--ac-space-3)) calc(-1 * var(--ac-page-padding)) 0;
+  padding: var(--ac-space-3) var(--ac-page-padding) 0;
+  background: var(--ac-color-bg-app);
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .search-head.condensed {
-  padding: var(--ar-space-2) var(--ar-page-padding) 6px;
-  background: var(--ar-color-surface);
-  border-bottom: 1px solid var(--ar-color-border);
-  box-shadow: var(--ar-shadow-e2);
-  padding-top: calc(var(--ar-space-2) + env(safe-area-inset-top));
+  padding: var(--ac-space-2) var(--ac-page-padding) 6px;
+  background: var(--ac-color-surface);
+  border-bottom: 1px solid var(--ac-color-border);
+  box-shadow: var(--ac-shadow-e2);
+  padding-top: calc(var(--ac-space-2) + env(safe-area-inset-top));
 }
 
 .search-row {
   display: flex;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 
 .search-row .q {
@@ -37,14 +37,14 @@
 }
 
 .search-row .q ::ng-deep input {
-  border-radius: var(--ar-radius-lg);
+  border-radius: var(--ac-radius-lg);
   height: 44px;
 }
 
 .filters-btn {
   width: 44px;
   height: 44px;
-  border-radius: var(--ar-radius-lg);
+  border-radius: var(--ac-radius-lg);
 }
 
 .filters-btn .badge {
@@ -52,8 +52,8 @@
   top: -5px;
   right: -5px;
   display: flex;
-  border: 2px solid var(--ar-color-bg-app);
-  border-radius: var(--ar-radius-pill);
+  border: 2px solid var(--ac-color-bg-app);
+  border-radius: var(--ac-radius-pill);
 }
 
 .summary-line {
@@ -61,17 +61,17 @@
   align-items: center;
   justify-content: space-between;
   height: 24px;
-  font-size: 13px;
-  color: var(--ar-color-text-2);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
 }
 
 .summary-line strong {
-  color: var(--ar-color-text);
+  color: var(--ac-color-text);
 }
 
 .search-body {
   display: flex;
-  gap: var(--ar-space-6);
+  gap: var(--ac-space-6);
   align-items: flex-start;
 }
 
@@ -81,30 +81,30 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--ar-space-3);
+  gap: var(--ac-space-3);
 }
 
 .chips {
-  margin: 0 calc(-1 * var(--ar-page-padding));
+  margin: 0 calc(-1 * var(--ac-page-padding));
 }
 
 :host(.compact) .chips ::ng-deep .scroller {
-  padding-left: var(--ar-page-padding);
+  padding-left: var(--ac-page-padding);
 }
 
 :host(.compact) .chips ::ng-deep .clear {
-  padding-right: var(--ar-page-padding);
+  padding-right: var(--ac-page-padding);
 }
 
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ar-space-2);
+  gap: var(--ac-space-2);
 }
 
 .total {
-  font-size: 15px;
+  font-size: var(--ac-font-size-body-strong);
   font-weight: 800;
   white-space: nowrap;
   flex-shrink: 0;
@@ -113,48 +113,48 @@
 .tools {
   display: flex;
   align-items: center;
-  gap: var(--ar-space-1);
+  gap: var(--ac-space-1);
   flex-shrink: 0;
 }
 
-.tools ar-select ::ng-deep select {
+.tools ac-select ::ng-deep select {
   height: 36px;
 }
 
 .to-top {
   position: fixed;
-  right: var(--ar-space-4);
-  bottom: calc(var(--app-search-bottom-inset, env(safe-area-inset-bottom)) + var(--ar-space-3));
+  right: var(--ac-space-4);
+  bottom: calc(var(--app-search-bottom-inset, env(safe-area-inset-bottom)) + var(--ac-space-3));
   z-index: 18;
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  box-shadow: var(--ar-shadow-e2);
-  color: var(--ar-color-text);
+  box-shadow: var(--ac-shadow-e2);
+  color: var(--ac-color-text);
 }
 
 /* Sticks to the bottom of the viewport inside the results column; takes no room below the list. */
 .to-top.in-column {
   position: sticky;
   right: auto;
-  bottom: var(--ar-space-5);
+  bottom: var(--ac-space-5);
   align-self: flex-end;
-  margin-top: calc(-48px - var(--ar-space-4));
+  margin-top: calc(-48px - var(--ac-space-4));
 }
 
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
   :host {
-    gap: var(--ar-space-4);
+    gap: var(--ac-space-4);
   }
 
   .chips {
     margin: 0;
-    --ar-filter-bar-bg: var(--ar-color-bg-app);
+    --ac-filter-bar-bg: var(--ac-color-bg-app);
   }
 
   .toolbar {
-    gap: var(--ar-space-3) var(--ar-space-4);
+    gap: var(--ac-space-3) var(--ac-space-4);
     flex-wrap: wrap;
   }
 
@@ -164,25 +164,25 @@
   }
 
   .toolbar .total {
-    font-size: 16px;
+    font-size: var(--ac-font-size-prose);
     margin-right: 6px;
   }
 
   .tools {
-    gap: var(--ar-space-2);
+    gap: var(--ac-space-2);
   }
 
-  .tools ar-select ::ng-deep select {
-    height: var(--ar-control-md);
+  .tools ac-select ::ng-deep select {
+    height: var(--ac-control-md);
   }
 
   .results {
-    gap: var(--ar-space-4);
+    gap: var(--ac-space-4);
   }
 }
 
 /* Space above the filters panel at the top of the page, below its sticky position. */
-$filters-offset: calc(60px + var(--ar-space-4) * 2 + 44px);
+$filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
 
 @media (min-width: 1200px) {
   .toolbar {
@@ -197,20 +197,20 @@ $filters-offset: calc(60px + var(--ar-space-4) * 2 + 44px);
   .filters {
     /* Wider than the 264px token so « Réinitialiser » and « Rechercher »
        (label, padding, and the filter-count badge) both fit without clipping. */
-    width: calc(var(--ar-filter-panel-width) + var(--ar-space-8) + var(--ar-space-6));
+    width: calc(var(--ac-filter-panel-width) + var(--ac-space-8) + var(--ac-space-6));
     flex-shrink: 0;
     position: sticky;
-    top: calc(var(--ar-sticky-top) + var(--ar-space-6));
+    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
     /* Stay inside the viewport under the page header. At the top of the page the panel sits
        136px below its sticky position; `--app-filters-grow` (the page scroll, set by the component) grows it
        as the page scrolls, up to the whole height under the header. The footer is a flex sibling
        of the scroller, so the action row is never scrolled away. */
-    height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6) - 136px + var(--app-filters-grow, 0px));
-    max-height: calc(100dvh - var(--ar-sticky-top) - 2 * var(--ar-space-6));
+    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - 136px + var(--app-filters-grow, 0px));
+    max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
     transition: height 120ms ease-out;
-    background: var(--ar-color-surface);
-    border: 1px solid var(--ar-color-border);
-    border-radius: var(--ar-radius-card);
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -221,16 +221,16 @@ $filters-offset: calc(60px + var(--ar-space-4) * 2 + 44px);
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: var(--ar-space-4);
+    padding: var(--ac-space-4);
   }
 
   .filters-foot {
     flex-shrink: 0;
-    padding: var(--ar-space-3) var(--ar-space-4);
-    border-top: 1px solid var(--ar-color-border);
+    padding: var(--ac-space-3) var(--ac-space-4);
+    border-top: 1px solid var(--ac-color-border);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ar-space-2);
+    gap: var(--ac-space-2);
   }
 
   .filters-foot .go {

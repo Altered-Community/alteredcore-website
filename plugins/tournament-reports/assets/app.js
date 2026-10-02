@@ -64,12 +64,19 @@
         return map[f] || f || '';
     }
 
+    // Faction colours are design system tokens (--ac-faction-*, design-system/tokens/tokens.css):
+    // the value is a CSS var() string, used in inline backgrounds and gradients.
     function factionColor(f) {
         var map = {
-            'YZ': '#764891', 'BR': '#c32637', 'OR': '#0f6593',
-            'LY': '#cf4171', 'MU': '#3d6b42', 'AX': '#8c432a'
+            'YZ': 'yzmir', 'BR': 'bravos', 'OR': 'ordis',
+            'LY': 'lyra', 'MU': 'muna', 'AX': 'axiom'
         };
-        return map[f] || '';
+        return map[f] ? 'var(--ac-faction-' + map[f] + ')' : '';
+    }
+
+    // Lucide icon from the design system (design-system/js/ac.js, loaded by the shell).
+    function icon(name, cls) {
+        return typeof window.acIcon === 'function' ? window.acIcon(name, cls) : '';
     }
 
     function formatDate(iso) {
@@ -306,19 +313,19 @@
         document.getElementById('tr-tournament-name').textContent = data.tournamentName || ('Tournament #' + data.tournamentId);
 
         if (data.format) {
-            document.getElementById('tr-tournament-format').innerHTML = '<i class="fa-solid fa-shield me-1"></i>' + esc(data.format);
+            document.getElementById('tr-tournament-format').innerHTML = icon('shield', 'me-1') + esc(data.format);
         }
         if (data.receivedAt) {
-            document.getElementById('tr-tournament-date').innerHTML = '<i class="fa-regular fa-calendar me-1"></i>' + esc(formatDate(data.receivedAt));
+            document.getElementById('tr-tournament-date').innerHTML = icon('calendar', 'me-1') + esc(formatDate(data.receivedAt));
         }
 
         if (TR_LOCALIZATION) {
-            document.getElementById('tr-tournament-loc').innerHTML = '<i class="fa-solid fa-location-dot me-1"></i>' + esc(TR_LOCALIZATION);
+            document.getElementById('tr-tournament-loc').innerHTML = icon('map-pin', 'me-1') + esc(TR_LOCALIZATION);
         }
 
         var playerCount = Object.keys(playerDecks).length;
         if (playerCount) {
-            document.getElementById('tr-tournament-players').innerHTML = '<i class="fa-solid fa-users me-1"></i>' + esc(TR_TXT.players_count.replace('%d', playerCount));
+            document.getElementById('tr-tournament-players').innerHTML = icon('users', 'me-1') + esc(TR_TXT.players_count.replace('%d', playerCount));
         }
 
         // Prefetch all translated card names up front.
@@ -371,7 +378,7 @@
             var ref = c.reference;
             var qty = c.quantity || 1;
             html += '<tr data-ref="' + esc(ref) + '">';
-            html += '<td style="white-space:nowrap;font-weight:700">\u00d7' + qty + '</td>';
+            html += '<td class="tr-decklist-qty">\u00d7' + qty + '</td>';
             html += '<td class="tr-deck-name">' + esc(resolveCardName(ref)) + '</td>';
             html += '</tr>';
         });
@@ -384,8 +391,8 @@
     function heroBannerGradient(faction) {
         var color = factionColor(faction);
         return color
-            ? 'linear-gradient(to right,' + color + ' 5%,' + color + '00 100%),'
-            : 'linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.05)),';
+            ? 'linear-gradient(to right,' + color + ' 5%,transparent 100%),'
+            : 'linear-gradient(to right,var(--ac-color-overlay-label),transparent),';
     }
 
     function heroBannerBackground(ref, faction) {
@@ -470,9 +477,9 @@
         var badge = '';
         if (deck) {
             if (multipleDecks) {
-                badge = ' <span class="tr-badge tr-badge-multi" title="' + esc(TR_TXT.multiple_decks) + '">' + esc(TR_TXT.multiple_decks) + '</span>';
+                badge = ' <span class="ac-badge ac-badge--orange tr-badge tr-badge-multi" title="' + esc(TR_TXT.multiple_decks) + '">' + esc(TR_TXT.multiple_decks) + '</span>';
             } else if (noData) {
-                badge = ' <span class="tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
+                badge = ' <span class="ac-badge tr-badge tr-badge-nodata" title="' + esc(TR_TXT.no_data) + '">' + esc(TR_TXT.no_data) + '</span>';
             }
         }
         var clickable = isGameApi ? !!hero || hasDecklist : hasDecklist;
@@ -562,11 +569,11 @@
 
         html += '<div class="tr-view-toggle">';
         if (TR_LOGGED_IN) {
-            html += '<button type="button" class="tr-view-export" id="tr-deck-duplicate" title="' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '"><i class="fa-solid fa-copy"></i> ' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '</button>';
+            html += '<button type="button" class="tr-view-export" id="tr-deck-duplicate" title="' + esc(TR_TXT.duplicate_btn || 'Duplicate') + '">' + icon('copy') + esc(TR_TXT.duplicate_btn || 'Duplicate') + '</button>';
         }
-        html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '"><i class="fa-solid fa-clipboard-list"></i> ' + esc(TR_TXT.copy_btn || 'Copy decklist') + '</button>';
-        html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'list' ? ' active' : '') + '" data-view="list" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-list"></i> ' + esc(TR_TXT.view_list) + '</button>';
-        html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'images' ? ' active' : '') + '" data-view="images" data-pid="' + esc(viewId) + '"><i class="fa-solid fa-grip"></i> ' + esc(TR_TXT.view_images) + '</button>';
+        html += '<button type="button" class="tr-view-export" id="tr-player-panel-export" title="' + esc(TR_TXT.copy_btn || 'Copy decklist') + '">' + icon('clipboard-list') + esc(TR_TXT.copy_btn || 'Copy decklist') + '</button>';
+        html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'list' ? ' active' : '') + '" data-view="list" data-pid="' + esc(viewId) + '">' + icon('list') + esc(TR_TXT.view_list) + '</button>';
+        html += '<button type="button" class="tr-view-btn' + (currentView[viewId] === 'images' ? ' active' : '') + '" data-view="images" data-pid="' + esc(viewId) + '">' + icon('grip') + esc(TR_TXT.view_images) + '</button>';
         html += '</div>';
 
         // Hero shown as a banner, the rest of the deck in the grid/list.
@@ -655,12 +662,12 @@
         var copiedLabel = TR_TXT.copy_ok || 'Copied!';
         function restore() {
             if (!btn) return;
-            btn.innerHTML = '<i class="fa-solid fa-clipboard-list"></i> ' + esc(copyLabel);
+            btn.innerHTML = icon('clipboard-list') + esc(copyLabel);
             btn.title = copyLabel;
         }
         function success() {
             if (!btn) return;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> ' + esc(copiedLabel);
+            btn.innerHTML = icon('check') + esc(copiedLabel);
             btn.title = copiedLabel;
             setTimeout(restore, 2000);
         }
@@ -712,8 +719,13 @@
     });
 
     /* ── Panel close ────────────────────────────────────────────────────── */
-    document.getElementById('tr-player-panel-close').addEventListener('click', closePlayerPanel);
-    document.getElementById('tr-player-panel-backdrop').addEventListener('click', closePlayerPanel);
+    // The player panel, like the lightbox, only exists on the tournament page.
+    function onId(id, type, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener(type, fn);
+    }
+    onId('tr-player-panel-close', 'click', closePlayerPanel);
+    onId('tr-player-panel-backdrop', 'click', closePlayerPanel);
     document.addEventListener('click', function (e) {
         if (e.target.closest('#tr-player-panel-export')) copyDecklist();
     });
@@ -731,7 +743,7 @@
 
         var btn = document.getElementById('tr-deck-duplicate');
         var originalHtml = btn ? btn.innerHTML : '';
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = icon('loader-circle', 'ac-icon--spin'); }
 
         var body = 'csrf_token=' + encodeURIComponent(TR_CSRF)
             + '&name=' + encodeURIComponent(name)
@@ -779,7 +791,7 @@
         var uniq  = isUnique(ref);
         var inner = '';
         if (uniq) {
-            inner = '<altered-card ref="' + esc(ref) + '" locale="' + esc(lang) + '" style="width:100%;border-radius:8px;overflow:hidden"></altered-card>';
+            inner = '<altered-card ref="' + esc(ref) + '" locale="' + esc(lang) + '" style="width:100%;border-radius:var(--ac-radius-md);overflow:hidden"></altered-card>';
         } else {
             inner = '<img src="' + esc(cardImgUrl(ref, lang)) + '" alt="' + esc(ref) + '">';
         }
@@ -793,7 +805,7 @@
         zoomEl.innerHTML = '';
     }
 
-    document.getElementById('tr-player-panel-body').addEventListener('mouseover', function (e) {
+    onId('tr-player-panel-body', 'mouseover', function (e) {
         var cardWrap = e.target.closest('.tr-card-wrap');
         if (cardWrap) {
             showZoom(cardWrap.dataset.ref);
@@ -805,7 +817,7 @@
         }
     });
 
-    document.getElementById('tr-player-panel-body').addEventListener('mouseout', function (e) {
+    onId('tr-player-panel-body', 'mouseout', function (e) {
         var cardWrap = e.target.closest('.tr-card-wrap');
         if (cardWrap) { hideZoom(); return; }
         var listRow = e.target.closest('.tr-decklist-table tbody tr');
@@ -826,11 +838,11 @@
         function showLightbox() {
             var inner;
             if (uniq) {
-                inner = '<altered-card ref="' + esc(ref) + '" locale="' + esc(lang) + '" style="max-width:420px;width:88vw;border-radius:10px;overflow:hidden"></altered-card>';
+                inner = '<altered-card ref="' + esc(ref) + '" locale="' + esc(lang) + '" class="tr-lightbox-card"></altered-card>';
             } else {
-                inner = '<img src="' + esc(cardImgUrl(ref, lang)) + '" style="max-width:420px;width:88vw;border-radius:10px">';
+                inner = '<img src="' + esc(cardImgUrl(ref, lang)) + '" class="tr-lightbox-card" alt="">';
             }
-            inner += '<a href="' + esc(cardDetailUrl(ref, lang)) + '" class="btn btn-sm btn-primary-altered" style="display:block;width:100%;margin-top:8px;text-decoration:none"><i class="fa-solid fa-circle-info me-1"></i>' + esc(TR_TXT.detail_label || 'View detail') + '</a>';
+            inner += '<a href="' + esc(cardDetailUrl(ref, lang)) + '" class="ac-button ac-button--sm ac-button--full tr-lightbox-detail">' + icon('info') + esc(TR_TXT.detail_label || 'View detail') + '</a>';
             lightboxInner.innerHTML = inner;
             lightboxEl.style.display = 'flex';
         }
@@ -859,18 +871,21 @@
             }
         }
     });
-    lightboxEl.addEventListener('click', function (e) {
-        if (e.target === lightboxEl || e.target === lightboxInner) {
-            lightboxEl.style.display = 'none';
-            lightboxInner.innerHTML = '';
-        }
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && lightboxEl.style.display !== 'none') {
-            lightboxEl.style.display = 'none';
-            lightboxInner.innerHTML = '';
-        }
-    });
+    // The lightbox only exists on the tournament page, not on the list.
+    if (lightboxEl) {
+        lightboxEl.addEventListener('click', function (e) {
+            if (e.target === lightboxEl || e.target === lightboxInner) {
+                lightboxEl.style.display = 'none';
+                lightboxInner.innerHTML = '';
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && lightboxEl.style.display !== 'none') {
+                lightboxEl.style.display = 'none';
+                lightboxInner.innerHTML = '';
+            }
+        });
+    }
 
     if (chartModalEl) {
         var chartModalCloseBtn = document.getElementById('tr-chart-modal-close');
@@ -891,20 +906,14 @@
        color-alone (this site's faction palette isn't fully CVD-safe by
        hue alone — see the icon+label pairing here and everywhere else
        faction color is used on this site). ──────────────────────────────── */
-    var CHART_OTHER_COLOR = '#9ca3af';
+    var CHART_OTHER_COLOR = 'var(--ac-color-text-disabled)';
 
-    // Lighten (positive percent) or darken (negative) a hex color toward
+    // Lighten (positive percent) or darken (negative) a colour toward
     // white/black — used to give each hero a shade of its own faction's
-    // color instead of an unrelated hue, per the user's request.
-    function shadeColor(hex, percent) {
-        var num = parseInt(hex.replace('#', ''), 16);
-        var target = percent < 0 ? 0 : 255;
-        var p = Math.abs(percent) / 100;
-        var r = (num >> 16) & 0xFF, g = (num >> 8) & 0xFF, b = num & 0xFF;
-        r = Math.round((target - r) * p) + r;
-        g = Math.round((target - g) * p) + g;
-        b = Math.round((target - b) * p) + b;
-        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    // color instead of an unrelated hue, per the user's request. The colour
+    // is a CSS value (a token var()), so the mix is done by the browser.
+    function shadeColor(color, percent) {
+        return 'color-mix(in srgb, ' + color + ', ' + (percent < 0 ? 'black' : 'white') + ' ' + Math.abs(percent) + '%)';
     }
 
     // Every hero belongs to exactly one faction — use whichever player row
@@ -1035,7 +1044,7 @@
         var rest = allSegments.slice(HERO_TOP_COUNT);
         var title = TR_TXT.chart_hero_title || 'Heroes';
         var footer = rest.length
-            ? '<button type="button" class="btn btn-sm btn-outline-secondary tr-chart-detail-btn">' + esc(TR_TXT.chart_detail_btn || 'Details') + '</button>'
+            ? '<button type="button" class="ac-button ac-button--secondary ac-button--sm tr-chart-detail-btn">' + esc(TR_TXT.chart_detail_btn || 'Details') + '</button>'
             : '';
         el.innerHTML = renderDonutHtml(allSegments, title, {
             legendSegments: top,

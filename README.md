@@ -81,6 +81,16 @@ define('BASE_URL', '/alteredcore'); // leave empty if at domain root
 
 ---
 
+## Design system
+
+One look for the shell, the core pages and every plugin (PHP or SPA): `design-system/` holds the
+tokens (light and dark themes, pointer and touch densities), the `ac-*` components, Lucide icons,
+the Bootstrap bridge and the docs. Plain CSS, no build. Reference page: `/pages/design-system`.
+Start with [design-system/README.md](design-system/README.md); designing with Claude Code and
+Claude Design: [design-system/WORKFLOW.md](design-system/WORKFLOW.md).
+
+---
+
 ## Plugins
 
 Drop a plugin folder into `plugins/` and activate it from the admin panel. See `plugins/hello-world/` for a minimal example and `plugins/README.html` for full documentation.
@@ -95,6 +105,15 @@ docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build -
 ```
 
 Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
+
+**Like production.** To get the plugins active on https://altered.re and its public content (news, content pages, side menu, footer, fonts, logo, home page text, images):
+
+```bash
+AC_STACK_MIRROR=1 AC_ACTIVATE_PLUGINS="card-scan core-altered-cards equinox-deck-import ownership reunion-events tournament-reports rebuilder" \
+  docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
+```
+
+The copy runs once (`docker/stack/mirror-prod.php`); copy again with `docker compose -f docker-compose.yml -f docker-compose.stack.yml exec web php docker/stack/mirror-prod.php --force`, or from preprod with `--source=https://website-preprod.altered.re`. It reads the public pages only: users, plugin data and plugin settings stay local.
 
 ---
 

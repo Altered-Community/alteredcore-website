@@ -1,4 +1,4 @@
-<div class="ar-overlay-body">
+<div class="ac-overlay-body">
   <p class="note" i18n="@@editor.tokenArts.warning">Les préférences d’illustration des jetons sont communes à tous les decks : elles ne font pas partie de la liste de cartes de ce deck.</p>
   @if (families(); as list) {
     @for (f of list; track f.family.familyId + f.family.faction + f.family.rarity) {
@@ -15,6 +15,6 @@
     <p class="note" aria-busy="true" i18n="@@editor.tokenArts.loading">Chargement…</p>
   }
 </div>
-<div class="ar-overlay-footer">
-  <button arButton (click)="ref.close()" i18n="@@editor.tokenArts.close">Fermer</button>
+<div class="ac-overlay-footer">
+  <button acButton (click)="ref.close()" i18n="@@editor.tokenArts.close">Fermer</button>
 </div>
