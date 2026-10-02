@@ -141,7 +141,9 @@
   text-align: center;
 }
 
+/* Compact: the secondary action (« Annuler », « Réinitialiser »…) stays, full width under the others. */
 .ac-overlay--sheet .ac-overlay-footer .secondary-action,
 .ac-overlay--fullscreen .ac-overlay-footer .secondary-action {
-  display: none;
+  order: 1;
+  height: var(--ac-control-lg);
 }

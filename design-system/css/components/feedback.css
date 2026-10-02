@@ -66,6 +66,9 @@
     border-radius: var(--ac-radius-sheet) var(--ac-radius-sheet) 0 0;
     box-shadow: var(--ac-shadow-sheet);
   }
+  /* Actions stacked full width, the primary one (last in the markup) on top. */
+  .ac-dialog__footer { flex-direction: column-reverse; }
+  .ac-dialog__footer > .ac-button { width: 100%; height: var(--ac-control-lg); }
 }
 
 /* ---- Spinner ---- */

@@ -82,6 +82,11 @@ composants s'adaptent à la taille d'écran et à la densité : pas d'écrans «
   sur `<html>`). Overlays via `AcOverlayService` (fenêtre ≥ 768 px, feuille en dessous).
   Jamais une fenêtre ouverte par-dessus une autre : depuis un contenu d'overlay, ouvrir l'écran suivant comme étape
   (`ref.openStep(...)`, même fenêtre, flèche retour).
+  Pied d'overlay (`ac-overlay-footer`) : action principale en dernier ; l'action secondaire (« Annuler »,
+  « Réinitialiser », « Plus tard »…) porte la classe `secondary-action`. En compact (feuille, plein écran), les
+  boutons s'empilent en pleine largeur et l'action secondaire passe en dessous.
+- Jamais de `alert()`, `confirm()` ni `prompt()` du navigateur (bloqué par ESLint) : une confirmation passe par
+  `openConfirm()` (`features/shared/confirm/`), un message par `ac-toast` (`ui/containers/toast`).
 - Accessibilité : passer les contrôles AXE et les minimums WCAG AA (focus, contrastes, ARIA). Vrais
   `<button>`/`<a>`/`<input>` avec label, `aria-label` sur les boutons icône, cibles ≥ 44 px en touch, focus visible.
 - Icônes : `ac-icon` (`src/app/ui/icon/icon.ts`), noms Lucide (les mêmes que `ac_icon()` / `acIcon()` sur le site :
@@ -109,7 +114,7 @@ composants s'adaptent à la taille d'écran et à la densité : pas d'écrans «
 |---|---|
 | `design/COMPONENTS.md` | Inventaire des composants Angular `ac-*`. |
 | `src/app/ui/` | Composants Angular `ac-*`, un dossier par groupe avec un `index.ts` (barrel, à utiliser depuis les écrans) et un sous-dossier par composant : `buttons/`, `fields/` (champs, `ac-radio-card`), `chips/`, `containers/`, `nav/` (dont `ac-back-button` et `navigation-history.ts`), `metier/` (composants métier : tuiles de carte / héros, onglets de faction, sélecteur de héros…), `overlay/` (`AcOverlayService` dans `overlay.ts`, `overlay-container/`), `icon/` ; `layout.services.ts` (`AcBreakpointService`, `AcDensityService`). |
-| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `search/` (recherche de cartes de l'éditeur : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck). |
+| `src/app/features/` | Écrans, un sous-dossier par composant (`decks-page/`, `import-deck/`…) : `search/` (recherche de cartes de l'éditeur : `card-search/`, filtres, résultats, `CardSearchStore`), `decks/` (Mes decks, `/decks/new`, import), `deck/` (consultation), `editor/` (édition), `shared/` (overlays partagés : Nouveau deck, Choisir un héros, Réglages du deck, Confirmation). |
 | `src/app/core/` | Services backend et logique : `cards-api.service.ts`, `decks-api.service.ts`, `uniques-api.service.ts`, `auth-session.ts` (invité par défaut, sans hôte : tests unitaires), `guest-deck.service.ts` (mode invité, `localStorage`), `deck-store.ts`, modèles (`models.ts`), formats, règles de deck, `i18n.ts`. |
 | `src/main.ts`, `src/app/embed/` | Démarrage : lecture de `window.AlteredCore`, langue, routes de la section decks, session du site, overlays et styles dans le shadow root. |
 | `src/embed/` | Styles globaux : `embed.scss` (shadow root, après le design system), `document.scss` (`<head>` : polices des cartes imprimées). |

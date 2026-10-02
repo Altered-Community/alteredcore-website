@@ -181,8 +181,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(confirm).toBeVisible();
     await expect(confirm).toContainText(`« ${name} » sera supprimé.`);
     await evidence(page, testInfo, '04c-delete-confirm');
-    // The bottom sheet (mobile) has no « Annuler »: its cross closes it.
-    await confirm.getByRole('button', { name: compact ? 'Fermer' : 'Annuler' }).click();
+    await confirm.getByRole('button', { name: 'Annuler' }).click();
     await expect(confirm).toBeHidden();
     await expect(page).toHaveURL(at(DECK(id)));
 

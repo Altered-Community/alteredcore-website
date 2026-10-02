@@ -28,6 +28,17 @@ module.exports = defineConfig([
       '@angular-eslint/prefer-output-emitter-ref': 'error',
       '@angular-eslint/prefer-output-readonly': 'error',
       '@angular-eslint/prefer-host-metadata-property': 'error',
+      // The browser's dialogs ignore the theme and the mobile layout: openConfirm() (features/shared/confirm), a toast or a notice.
+      'no-restricted-globals': [
+        'error',
+        ...['alert', 'confirm', 'prompt'].map((name) => ({ name, message: 'Use openConfirm() (features/shared/confirm), a toast or a notice.' })),
+      ],
+      'no-restricted-properties': [
+        'error',
+        ...['alert', 'confirm', 'prompt'].flatMap((property) =>
+          ['window', 'globalThis'].map((object) => ({ object, property, message: 'Use openConfirm() (features/shared/confirm), a toast or a notice.' })),
+        ),
+      ],
       // DI and lifecycle.
       '@angular-eslint/inject-at-top': 'error',
       '@angular-eslint/no-implicit-take-until-destroyed': 'error',

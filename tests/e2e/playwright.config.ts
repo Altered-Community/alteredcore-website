@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { join, resolve } from 'node:path';
 
 /**
  * Shell and plugin end-to-end tests, run against the full stack (docker-compose.stack.yml):
@@ -8,11 +9,15 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * E2E_BASE_URL (default http://localhost:8080) · E2E_EVIDENCE_DIR: named screenshots for review.
  */
+const ROOT = resolve(__dirname, '../..');
+const escape = (path: string) => path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export default defineConfig({
-  testDir: '../..',
+  testDir: ROOT,
   testMatch: ['tests/e2e/**/*.spec.ts', 'plugins/*/e2e/**/*.spec.ts'],
-  // .claude/worktrees: other checkouts of the repo (agent worktrees), with their own specs.
-  testIgnore: ['**/node_modules/**', '**/.claude/**'],
+  // <root>/.claude/worktrees: other checkouts of the repo (agent worktrees), with their own specs. Matched from this
+  // checkout's root only, so that a run from inside a worktree still finds its own specs.
+  testIgnore: ['**/node_modules/**', new RegExp(`^${escape(join(ROOT, '.claude'))}[\\\\/]`)],
   outputDir: './test-results',
   timeout: 90_000,
   expect: { timeout: 20_000 },
