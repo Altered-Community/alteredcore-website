@@ -13,7 +13,7 @@ import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcChip, AcCount } from '../../../ui/chips';
-import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcBreakpointService } from '../../../ui/layout.services';
@@ -74,7 +74,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })

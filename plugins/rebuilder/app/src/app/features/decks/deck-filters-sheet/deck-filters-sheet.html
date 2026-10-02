@@ -12,12 +12,7 @@
     </div>
   }
   @if (ref.data.showLegalOnly) {
-    <div class="field">
-      <span class="label" i18n="@@decks.filters.legality">Légalité</span>
-      <div class="chips">
-        <ac-chip label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [selected]="draft().legalOnly" (selectedChange)="patch({ legalOnly: $event })" />
-      </div>
-    </div>
+    <ac-switch label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="draft().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
   }
   <div class="field">
     <span class="label">Faction</span>
