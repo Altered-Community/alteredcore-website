@@ -44,6 +44,7 @@ Principes communs :
 | `ac-icon-button` (attribut `acIconButton`), CSS DS (`button.css`) | `acIconButton` (icône, requis), `ariaLabel` (requis), `variant: 'secondary' \| 'ghost' \| 'primary'`, `size` | clic natif | barres, réglages, fermer |
 | `ac-card-add` | — | `add` | tuiles de carte (recherche, aperçu) |
 | `ac-like-button` | sur `<button acLikeButton>` : `count` (affiché en notation courte, « 1,2 k »), `liked` (cœur plein, fond blanc, `--ac-color-like`), `ariaLabel` (requis, ex. « J’aime Kojo Havre, 128 j’aime ») ; `aria-pressed` ; pastille `--ac-control-sm` − 4 px (28 px, 32 px en touch) posée sur un visuel, zone cliquable ≥ `--ac-hit-min` | clic natif | cartes de deck (Communauté) |
+| `ac-split-button` | contenu = libellé du bouton principal, `icon?`, `busy` (pastille de chargement à la place de l’icône, les deux parties désactivées), `items: AcSplitButtonItem[]` (`id`, `icon`, `label`, `hint?` 2e ligne grisée, `badge?` pastille « Par défaut »), `moreLabel` (aria-label de la flèche, requis), `menuLabel` (requis) ; aspect `secondary`, menu du CDK (`cdk/menu` : flèches, Échap) au moins aussi large que le bouton, sous lui (au-dessus s’il manque la place) | `press` (partie principale), `pick` (id de l’entrée) | page de deck (« Copier en image ») |
 | `ac-stepper` | `value = model<number>()`, `min = 0`, `max`, `appearance: 'overlay' \| 'inline'` | `valueChange` | `overlay` : sur les cartes ; `inline` : lignes de deck |
 
 Classes et états des boutons : `design-system/docs/components/button.md`.
