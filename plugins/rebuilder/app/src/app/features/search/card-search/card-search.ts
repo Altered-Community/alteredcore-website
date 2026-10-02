@@ -8,7 +8,7 @@ import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
-import { AcDrawerHandle, AcDrawerTab } from '../../../ui/containers';
+import { AcDrawerHandle, AcDrawerState, AcDrawerTab } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
 import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
@@ -106,13 +106,12 @@ export class CardSearch {
       ? $localize`:@@search.card.showFiltersActive:Afficher les filtres, ${this.activeCount()}:count: actifs`
       : $localize`:@@search.card.showFilters:Afficher les filtres`,
   );
-  /** Hides or shows the filters; the focus moves to the control that undoes it. */
-  protected setFiltersOpen(open: boolean): void {
-    this.filtersOpen.set(open);
+  /** Hides or shows the filters, with their motion; the focus moves to the control that undoes it. */
+  protected readonly filters = new AcDrawerState(this.filtersOpen, 'start', (open) =>
     afterNextRender(() => this.el.querySelector<HTMLElement>(open ? '.filters-drawer .ac-drawer-handle' : '.filters-tab')?.focus(), {
       injector: this.injector,
-    });
-  }
+    }),
+  );
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
   /** The Uniques search API returns its own order, with no sort parameter. */

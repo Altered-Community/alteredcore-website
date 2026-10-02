@@ -53,6 +53,24 @@ then a summary (an [`ac-count`](chips.md), a status icon).
 | `ac-drawer-tab--end` | Against the right page edge, rounded on the left. |
 | `ac-drawer-tab__label` | The panel's name, vertical. |
 
+## Motion
+
+The panel and the tab slide and fade, one after the other: the element on screen leaves toward
+its page edge (`--ac-duration-fast`, 0.12 s), then, on its `animationend`, it is removed and the
+other one comes in from that edge (`--ac-duration-base`, 0.2 s). They are never in the layout
+together, so the content next to them reflows once. Do not animate the panel's width: the content
+would reflow on every frame.
+
+| Class | Effect |
+|---|---|
+| `ac-drawer-enter--start` | Comes in from the left edge (filters panel, its tab). |
+| `ac-drawer-enter--end` | Comes in from the right edge (deck panel, its tab). |
+| `ac-drawer-leave--start` | Leaves toward the left edge. |
+| `ac-drawer-leave--end` | Leaves toward the right edge. |
+
+With `prefers-reduced-motion: reduce`, nothing moves. Do not play the enter motion on page load,
+only after the user opens or closes a panel.
+
 ## Accessibility
 
 - Both are real `<button>`s with `aria-expanded` and `aria-controls` pointing at the panel.
@@ -63,4 +81,6 @@ then a summary (an [`ac-count`](chips.md), a status icon).
 ## Angular
 
 `<button acDrawerHandle="end">` and `<button acDrawerTab="start">` (`ui/containers/drawer`),
-content projected into the tab.
+content projected into the tab. `AcDrawerState` runs the motion in sequence: it wraps the open flag,
+sets the leave class, waits for `animationend` (with a fallback timeout), then flips the flag; the
+entering element gets the enter class through `[animate.enter]`, only after a user toggle.

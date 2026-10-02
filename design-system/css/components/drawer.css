@@ -77,6 +77,29 @@
   white-space: nowrap;
 }
 
+/* Motion, in sequence: the element on screen (panel or tab) leaves toward its page edge, then,
+   on its animationend, it is removed and the other one comes in from that edge. Never both in the
+   layout at once, so the content next to them reflows once.
+   --start: an element at the start of the page (filters panel, its tab), --end: the reverse. */
+.ac-drawer-enter--start { animation: ac-drawer-from-start var(--ac-duration-base) ease-out both; }
+.ac-drawer-enter--end { animation: ac-drawer-from-end var(--ac-duration-base) ease-out both; }
+.ac-drawer-leave--start { animation: ac-drawer-from-start var(--ac-duration-fast) ease-in reverse both; }
+.ac-drawer-leave--end { animation: ac-drawer-from-end var(--ac-duration-fast) ease-in reverse both; }
+
+@keyframes ac-drawer-from-start {
+  from { opacity: 0; transform: translateX(calc(-1 * var(--ac-space-8))); }
+}
+@keyframes ac-drawer-from-end {
+  from { opacity: 0; transform: translateX(var(--ac-space-8)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-drawer-enter--start,
+  .ac-drawer-enter--end,
+  .ac-drawer-leave--start,
+  .ac-drawer-leave--end { animation: none; }
+}
+
 @media (hover: hover) {
   .ac-drawer-handle:hover {
     background: var(--ac-color-bg-subtle);

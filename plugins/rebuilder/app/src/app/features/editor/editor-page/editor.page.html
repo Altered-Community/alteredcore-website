@@ -114,13 +114,13 @@
     </main>
 
     @if (!bp.compact()) {
-      @if (deckOpen()) {
-        <div class="panel">
+      @if (deckDrawer.open()) {
+        <div class="panel" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)">
           <app-deck-panel id="editor-deck-panel" (openSettings)="openSettings()" />
-          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="setDeckOpen(false)"></button>
+          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="deckDrawer.set(false)"></button>
         </div>
       } @else {
-        <button class="deck-tab" acDrawerTab="end" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="setDeckOpen(true)">
+        <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="deckDrawer.set(true)">
           <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
           <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
         </button>

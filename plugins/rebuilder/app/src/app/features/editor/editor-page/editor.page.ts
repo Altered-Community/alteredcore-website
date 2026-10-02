@@ -10,7 +10,7 @@ import { formatInfo } from '../../../core/formats';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
-import { AcDrawerHandle, AcDrawerTab, AcToast } from '../../../ui/containers';
+import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcToast } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
@@ -119,13 +119,12 @@ export class EditorPage {
       ? $localize`:@@editor.showDeckLegal:Afficher le deck : ${this.deck.total()}:count: cartes, valide`
       : $localize`:@@editor.showDeckIssues:Afficher le deck : ${this.deck.total()}:count: cartes, à corriger`,
   );
-  /** Hides or shows the deck panel; the focus moves to the control that undoes it. */
-  protected setDeckOpen(open: boolean): void {
-    this.deckOpen.set(open);
+  /** Hides or shows the deck panel, with its motion; the focus moves to the control that undoes it. */
+  protected readonly deckDrawer = new AcDrawerState(this.deckOpen, 'end', (open) =>
     afterNextRender(() => this.el.querySelector<HTMLElement>(open ? '.panel > .ac-drawer-handle' : '.deck-tab')?.focus(), {
       injector: this.injector,
-    });
-  }
+    }),
+  );
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);

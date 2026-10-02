@@ -414,6 +414,28 @@ include dirname(__DIR__) . '/includes/header.php';
                 </button>
             </div>
         </div>
+        <div class="ac-card ds-sheet" style="margin-top: var(--ac-space-4)">
+            <p>Motion: hide the panel with its handle, bring it back with the tab.</p>
+            <div style="display: flex; gap: var(--ac-space-6); align-items: flex-start; min-height: 8rem">
+                <div id="ds-drawer-live" class="ac-card" style="position: relative; width: 12rem; min-height: 8rem">
+                    <p>Filters</p>
+                    <button type="button" id="ds-drawer-hide" class="ac-drawer-handle ac-drawer-handle--end" aria-expanded="true" aria-controls="ds-drawer-live" aria-label="Hide the filters"><?= ac_icon('chevron-left', 'ac-icon--16') ?></button>
+                </div>
+                <button type="button" id="ds-drawer-show" class="ac-drawer-tab ac-drawer-tab--start" aria-expanded="false" aria-controls="ds-drawer-live" aria-label="Show the filters" hidden>
+                    <?= ac_icon('chevron-right', 'ac-icon--16') ?>
+                    <span class="ac-drawer-tab__label">Filters</span>
+                </button>
+                <p style="flex-grow: 1">Results</p>
+                <button type="button" id="ds-drawer-show-end" class="ac-drawer-tab ac-drawer-tab--end" aria-expanded="false" aria-controls="ds-drawer-live-end" aria-label="Show the deck" hidden>
+                    <?= ac_icon('chevron-left', 'ac-icon--16') ?>
+                    <span class="ac-drawer-tab__label">Deck</span>
+                </button>
+                <div id="ds-drawer-live-end" class="ac-card" style="position: relative; width: 12rem; min-height: 8rem">
+                    <p>Deck</p>
+                    <button type="button" id="ds-drawer-hide-end" class="ac-drawer-handle ac-drawer-handle--start" aria-expanded="true" aria-controls="ds-drawer-live-end" aria-label="Hide the deck"><?= ac_icon('chevron-right', 'ac-icon--16') ?></button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section class="ds-section" aria-labelledby="ds-nav">
@@ -535,6 +557,35 @@ include dirname(__DIR__) . '/includes/header.php';
 </div>
 
 <script>
+(function () {
+    // Drawer motion: the leaving element gets the leave class and is hidden on animationend,
+    // then the other one comes in with the enter class.
+    var motion = {
+        start: { leave: 'ac-drawer-leave--start', enter: 'ac-drawer-enter--start' },
+        end: { leave: 'ac-drawer-leave--end', enter: 'ac-drawer-enter--end' }
+    };
+    var swap = function (out, into, side, focus) {
+        var m = motion[side];
+        var done = function () {
+            out.hidden = true;
+            out.classList.remove(m.leave);
+            into.hidden = false;
+            into.classList.add(m.enter);
+            into.addEventListener('animationend', function () { into.classList.remove(m.enter); }, { once: true });
+            focus.focus();
+        };
+        out.classList.add(m.leave);
+        if (getComputedStyle(out).animationName === 'none') done();
+        else out.addEventListener('animationend', done, { once: true });
+    };
+    [['', 'start'], ['-end', 'end']].forEach(function (d) {
+        var panel = document.getElementById('ds-drawer-live' + d[0]);
+        var hide = document.getElementById('ds-drawer-hide' + d[0]);
+        var tab = document.getElementById('ds-drawer-show' + d[0]);
+        hide.addEventListener('click', function () { swap(panel, tab, d[1], tab); });
+        tab.addEventListener('click', function () { swap(tab, panel, d[1], hide); });
+    });
+})();
 document.getElementById('ds-toast-demo').addEventListener('click', function () {
     acToast('Deck deleted.', { actionLabel: 'Undo', onAction: function () { acToast('Deck restored.'); } });
 });
