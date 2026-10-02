@@ -20,7 +20,7 @@
   flex-shrink: 0;
   text-decoration: none;
 }
-.ac-chip:hover { color: var(--ac-color-text); }
+@media (hover: hover) { .ac-chip:hover { color: var(--ac-color-text); } }
 .ac-chip--square {
   border-radius: var(--ac-radius-md);
   padding: 0 var(--ac-space-2-5);

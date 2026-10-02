@@ -74,7 +74,7 @@ Centred list; items are `<a>` (other pages) or `<span>` (current page, ellipsis)
 </nav>
 ```
 
-Links get the track background on hover.
+Links get the track background on hover (devices that can hover).
 
 ## Menu — `ac-menu`
 

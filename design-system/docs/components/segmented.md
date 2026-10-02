@@ -55,7 +55,7 @@ Icon only:
 The selected option is marked by one of: `aria-pressed="true"` (buttons), `aria-current`
 (links), `aria-selected="true"` (when the control implements the ARIA tab pattern), or the
 `.is-active` class. It gets the surface background, the `--ac-shadow-e1` shadow, primary-strong
-text and bold weight. Other options darken their text on hover.
+text and bold weight. Other options darken their text on hover (devices that can hover).
 
 There is no disabled style; hide an option that does not apply rather than disabling it.
 

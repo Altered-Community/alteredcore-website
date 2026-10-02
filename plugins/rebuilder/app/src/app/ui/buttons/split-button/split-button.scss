@@ -42,10 +42,14 @@
   flex-shrink: 0;
 }
 
-.main:hover:not(:disabled),
-.more:hover:not(:disabled),
 .more[aria-expanded='true'] {
   background: var(--ac-color-bg-subtle);
+}
+@media (hover: hover) {
+  .main:hover:not(:disabled),
+  .more:hover:not(:disabled) {
+    background: var(--ac-color-bg-subtle);
+  }
 }
 
 .main:disabled {
@@ -88,10 +92,14 @@
   cursor: pointer;
 }
 
-.item:hover,
 .item:focus-visible {
   background: var(--ac-color-bg-subtle);
   outline: none;
+}
+@media (hover: hover) {
+  .item:hover {
+    background: var(--ac-color-bg-subtle);
+  }
 }
 
 .item > ac-icon {

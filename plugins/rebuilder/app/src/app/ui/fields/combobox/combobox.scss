@@ -166,9 +166,13 @@
   object-fit: cover;
   flex-shrink: 0;
 }
-.option:hover,
 .option.cdk-option-active {
   background: var(--ac-color-bg-app);
+}
+@media (hover: hover) {
+  .option:hover {
+    background: var(--ac-color-bg-app);
+  }
 }
 .option:focus-visible {
   outline: 2px solid var(--ac-color-primary);

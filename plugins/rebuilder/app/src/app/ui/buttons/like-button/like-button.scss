@@ -29,8 +29,10 @@
   height: max(100%, var(--ac-hit-min));
   transform: translate(-50%, -50%);
 }
-:host(:hover) {
-  background: var(--ac-color-overlay-control);
+@media (hover: hover) {
+  :host(:hover) {
+    background: var(--ac-color-overlay-control);
+  }
 }
 :host(:active) {
   transform: scale(0.94);
