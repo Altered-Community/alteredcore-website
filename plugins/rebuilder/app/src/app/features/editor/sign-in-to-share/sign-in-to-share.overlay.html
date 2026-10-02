@@ -1,0 +1,11 @@
+<div class="ac-overlay-body">
+  <span class="badge" aria-hidden="true"><ac-icon name="cloud-upload" [size]="20" /></span>
+  <div class="texts">
+    <p class="lead" i18n="@@editor.signInToShare.body">Pour partager ce deck et l’enregistrer sur le serveur, connectez-vous.</p>
+    <p class="note" i18n="@@editor.signInToShare.note">Une fois connecté, le deck est enregistré sur votre compte et le lien de partage s’ouvre.</p>
+  </div>
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@editor.signInToShare.later">Plus tard</button>
+  <button acButton icon="log-in" [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="ref.close(true)" i18n="@@editor.signInToShare.signIn">Se connecter</button>
+</div>

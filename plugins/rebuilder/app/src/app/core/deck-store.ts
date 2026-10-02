@@ -1,8 +1,8 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, Subscription, of, throwError } from 'rxjs';
+import { EMPTY, Observable, Subject, Subscription, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt } from './deck-create-failure';
@@ -161,6 +161,8 @@ export class DeckStore {
    * older one answers last, it may have been written last too, so the current state is sent again.
    */
   private acked: { id: string; revision: number } | null = null;
+  /** A save request answered (and the next queued one, if any, was sent): `saveNow()` checks whether it is done. */
+  private readonly settled = new Subject<void>();
 
   constructor() {
     // Frontier: the Uniques of the deck not checked yet go to the uniques search API (as the site's deck builder).
@@ -486,6 +488,71 @@ export class DeckStore {
     return failed || (this.dirty() && !this.saving());
   }
 
+  /**
+   * Writes the open deck now, without waiting for the save delay, and emits once: `true` when every change is saved,
+   * `false` when the save fails (message in `saveError`). « Partager » and « Terminer » wait for it, so the shared link
+   * and the deck page show the latest changes. A failed save is sent again.
+   */
+  saveNow(): Observable<boolean> {
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+    }
+    if (this.dirty() || this.saveError()) this.save();
+    const id = this.deckId();
+    // Signed out meanwhile (session expired): the changes cannot be sent, say so instead of failing silently.
+    if (this.dirty() && id && !GuestDeckService.isGuestId(id) && !this.auth.isLoggedIn()) this.saveError.set(saveErrorHead(401));
+    const done = () => !this.saveTimer && this.inFlight === null;
+    const saved = () => !this.saveError() && !this.dirty();
+    if (done()) return of(saved());
+    return this.settled.pipe(filter(done), take(1), map(saved));
+  }
+
+  /**
+   * The open guest deck goes to the signed-in user's account (« Partager » after signing in): it is created there, then
+   * removed from this device, and the account deck replaces it in the editor. Emits the new id, or `null` when the decks
+   * API refused it (message in `saveError`; the guest deck stays on this device).
+   */
+  moveToAccount(): Observable<string | null> {
+    const id = this.deckId();
+    if (!id || !GuestDeckService.isGuestId(id) || !this.auth.isLoggedIn()) return of(null);
+    // The guest copy is written first: it is what stays on this device if the account refuses the deck.
+    this.flush();
+    const description = this.description().trim();
+    const lines = this.serializeLines();
+    const body: DeckWrite = {
+      name: this.name().trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
+      format: this.format(),
+      isPublic: this.isPublic(),
+      isDraft: this.legality().state !== 'legal',
+      ...(description ? { description } : {}),
+      deckCards: lines.map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+    };
+    this.saveError.set(null);
+    this.saving.set(true);
+    return this.decksApi.create(body).pipe(
+      map((created) => {
+        this.saving.set(false);
+        // As « Enregistrer sur mon compte » on the decks page: the site builder's copy goes too, or it comes back.
+        this.guests.forgetSiteDeck(id);
+        this.guests.delete(id);
+        this.createdIds.update((ids) => new Set([...ids, created.id]));
+        // A change made during the request would be written to the deleted guest deck.
+        if (this.saveTimer) clearTimeout(this.saveTimer);
+        this.saveTimer = null;
+        this.dirty.set(false);
+        this.serverId.set(null);
+        this.apply({ ...created, hero: created.hero ?? this.hero(), deckCards: created.deckCards ?? lines, guest: false });
+        return created.id;
+      }),
+      catchError((err: unknown) => {
+        this.saving.set(false);
+        this.saveError.set(apiErrorMessage(err, moveErrorHead));
+        return of(null);
+      }),
+    );
+  }
+
   /** Sends the deck again after a failed save (« Réessayer »). */
   retrySave(): void {
     if (this.saveTimer) clearTimeout(this.saveTimer);
@@ -552,6 +619,8 @@ export class DeckStore {
       });
       this.dirty.set(false);
       this.saved.set(true);
+      // Written on this device: a refused move to the account (`moveToAccount`) is no longer the last word.
+      this.saveError.set(null);
       return;
     }
     if (!this.auth.isLoggedIn()) return;
@@ -604,6 +673,7 @@ export class DeckStore {
         }
         // Also when the deck was left meanwhile: a queued save may be another deck's.
         this.sendQueued();
+        this.settled.next();
       },
       error: (err: unknown) => {
         if (this.settle(id, revision)) {
@@ -612,6 +682,7 @@ export class DeckStore {
           this.saveError.set(apiErrorMessage(err, saveErrorHead));
         }
         this.sendQueued();
+        this.settled.next();
       },
     });
   }
@@ -728,6 +799,8 @@ const deleteErrorHead = (status: number) =>
   status === 401 || status === 403
     ? $localize`:@@core.deckStore.deleteRefused:Suppression refusée : connexion requise.`
     : $localize`:@@core.deckStore.deleteFailed:Impossible de supprimer ce deck (HTTP ${status}:status:).`;
+const moveErrorHead = (status: number) =>
+  $localize`:@@core.deckStore.moveFailed:Impossible d’enregistrer le deck sur votre compte (HTTP ${status}:status:).`;
 const duplicateErrorHead = (status: number) => $localize`:@@core.deckStore.duplicateFailed:Impossible de dupliquer ce deck (HTTP ${status}:status:).`;
 
 /**
