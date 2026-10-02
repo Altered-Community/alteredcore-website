@@ -43,6 +43,9 @@ Both modes are attributes set on `<html>` by the shell.
 
 ## Colours · neutrals
 
+The neutrals are blue-tinted, from the site's former azure theme: a very light blue page
+(`--ac-color-bg-app`) under blue-white surfaces in the light theme, a deep navy in the dark theme.
+
 | Token | Role |
 |---|---|
 | `--ac-color-text` | Main text, headings, icons that carry meaning. |
@@ -103,7 +106,11 @@ Both modes are attributes set on `<html>` by the shell.
 |---|---|
 | `--ac-color-hero-from`, `--ac-color-hero-to` | Gradient of the home hero banner. |
 | `--ac-color-on-hero`, `--ac-color-on-hero-muted` | Text on the hero (gradient or the admin's banner image). |
+| `--ac-color-hero-button`, `--ac-color-hero-button-hover`, `--ac-color-hero-button-border`, `--ac-color-on-hero-button` | Hero call to action (`.btn-hero`): a brighter blue than the gradient, with a light blue border. |
 | `--ac-color-hero-scrim` | Veil over the banner image, under the hero text. |
+| `--ac-color-placeholder-from`, `--ac-color-placeholder-to` | Gradient of an image placeholder (news card without a picture). |
+| `--ac-header-*` | Site header (`themes/azure`): the brand blue bar with white text in both themes (a deeper blue in the dark theme), its menu items, icon buttons and account button. |
+| `--ac-footer-bg`, `--ac-footer-border` | Site footer: a shade darker than the page, and its top border. |
 | `--ac-shadow-on-image` | Text shadow for text over artwork. |
 | `--ac-color-scrim` | Backdrop behind dialogs, drawers, the loader. |
 | `--ac-select-chevron` | Chevron image of `.ac-select` (an SVG data URL in the muted colour, one per theme). |

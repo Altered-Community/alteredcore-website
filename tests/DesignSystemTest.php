@@ -150,7 +150,7 @@ foreach ($it as $file) {
     }
 }
 assertSame([], $reads, 'no look setting is read (theme and look come from the design system only)');
-assertSame('#1463d6', dsToken('--ac-color-primary'), "dsToken() reads tokens.css (:root)");
+assertSame('#1868d0', dsToken('--ac-color-primary'), "dsToken() reads tokens.css (:root)");
 assertSame(true, dsToken('--ac-color-primary', 'dark') !== null && dsToken('--ac-color-primary', 'dark') !== dsToken('--ac-color-primary'), "dsToken() reads the dark theme block");
-assertSame('#0f4fb0', dsToken('--ac-header-border'), "dsToken() resolves a var() value (light header border = primary-strong)");
-assertSame(dsToken('--ac-color-surface', 'dark'), dsToken('--ac-header-bg', 'dark'), "dsToken() resolves a var() value in the dark theme");
+assertSame('#1050aa', dsToken('--ac-header-border'), "dsToken() resolves a var() value (light header border = primary-strong)");
+assertSame(dsToken('--ac-color-primary-strong', 'dark'), dsToken('--ac-color-link', 'dark'), "dsToken() resolves a var() value in the dark theme");

@@ -23,39 +23,39 @@
   color-scheme: light;
 
   /* ---------- Colours · neutrals ---------- */
-  --ac-color-text: #14171f;
-  --ac-color-text-2: #4a5263;
-  --ac-color-text-muted: #5b6475;
-  --ac-color-text-disabled: #9aa3b2;
-  --ac-color-border-dashed: #b9c2d0;
-  --ac-color-border-control: #d5dbe5;
-  --ac-color-border: #e3e7ee;
-  --ac-color-divider: #eef1f5;
-  --ac-color-chart-axis: #cfd5df;
-  --ac-color-track: #e6eaf1;          /* segmented control track, neutral fills */
+  --ac-color-text: #0c1a32;
+  --ac-color-text-2: #2c4a72;
+  --ac-color-text-muted: #3f5f94;
+  --ac-color-text-disabled: #8fa8cb;
+  --ac-color-border-dashed: #a4bed6;
+  --ac-color-border-control: #b8d0ee;
+  --ac-color-border: #d6e8f8;
+  --ac-color-divider: #e4eefa;
+  --ac-color-chart-axis: #c0d4ec;
+  --ac-color-track: #e4eefa;          /* segmented control track, neutral fills */
   /* Scroll bar thumb, from the muted text: follows the light and dark themes. */
   --ac-color-scrollbar: color-mix(in srgb, var(--ac-color-text-muted) 40%, transparent);
   --ac-color-scrollbar-hover: color-mix(in srgb, var(--ac-color-text-muted) 65%, transparent);
-  --ac-color-bg-app: #f3f5f9;         /* page background */
-  --ac-color-bg-subtle: #f8f9fb;      /* hovered row, subtle field */
-  --ac-color-surface: #ffffff;        /* cards, panels, menus, dialogs */
-  --ac-color-inverse: #14171f;        /* counters, active pill tab, cost badge */
+  --ac-color-bg-app: #f0f6ff;         /* page background: very light blue */
+  --ac-color-bg-subtle: #eaf2fd;      /* hovered row, subtle field */
+  --ac-color-surface: #fafcff;        /* cards, panels, menus, dialogs: blue-white */
+  --ac-color-inverse: #0c1a32;        /* counters, active pill tab, cost badge */
   --ac-color-on-inverse: #ffffff;
   --ac-color-on-strong: #ffffff;      /* text on artwork, faction colour, dark control on a card */
 
   /* ---------- Colours · brand ---------- */
-  --ac-color-primary: #1463d6;
-  --ac-color-primary-strong: #0f4fb0;  /* hover, text on primary-soft, active tab */
-  --ac-color-primary-border: #b8cdf3;
-  --ac-color-primary-soft: #e8f0fd;
-  --ac-color-primary-tint: #f4f8ff;    /* selected radio card */
+  --ac-color-primary: #1868d0;
+  --ac-color-primary-strong: #1050aa;  /* hover, text on primary-soft, active tab */
+  --ac-color-primary-border: #b8d0ee;
+  --ac-color-primary-soft: #e0ecfc;
+  --ac-color-primary-tint: #eaf3ff;    /* selected radio card */
   --ac-color-on-primary: #ffffff;
   --ac-color-link: var(--ac-color-primary);
   --ac-color-link-hover: var(--ac-color-primary-strong);
   --ac-color-focus: var(--ac-color-primary);
 
   /* ---------- Colours · site header (themes/azure) ----------
-   * Light: the brand blue bar with white text. Dark: the surface, like the rest of the shell. */
+   * The brand blue bar with white text, a deeper blue in the dark theme. */
   --ac-header-bg: #1a6fd9;              /* production header blue */
   --ac-header-border: var(--ac-color-primary-strong);
   --ac-header-divider: #4a86e0;         /* brand | menu separator */
@@ -76,6 +76,10 @@
   --ac-header-control-border: transparent;
   --ac-header-control-caret: var(--ac-color-primary-strong);
 
+  /* ---------- Colours · site footer (themes/azure) ---------- */
+  --ac-footer-bg: #ebf4ff;              /* a shade darker than the page */
+  --ac-footer-border: #d6e8f8;
+
   /* ---------- Colours · semantic ---------- */
   --ac-color-success: #166534;
   --ac-color-success-soft: #e3f4e8;
@@ -92,7 +96,7 @@
   --ac-color-discord: #5865f2;         /* Discord logo only, never text */
 
   /* ---------- Colours · data ---------- */
-  --ac-color-chart-main: #1463d6;      /* hand cost histogram */
+  --ac-color-chart-main: #1868d0;      /* hand cost histogram */
   --ac-color-chart-reserve: #6f45a6;   /* reserve cost histogram */
 
   /* ---------- Colours · factions ---------- */
@@ -117,17 +121,24 @@
   --ac-card-circled: 'Altered Circled';
 
   /* ---------- Shell: home hero banner (text sits on the gradient or on the admin's banner image) ---------- */
-  --ac-color-hero-from: #0f4fb0;
-  --ac-color-hero-to: #1463d6;
+  --ac-color-hero-from: #1050aa;
+  --ac-color-hero-to: #1976d2;
   --ac-color-on-hero: #ffffff;
   --ac-color-on-hero-muted: rgba(255, 255, 255, 0.84);
+  --ac-color-hero-button: #2577e6;                 /* hero call to action: a brighter blue than the gradient */
+  --ac-color-hero-button-hover: #1a6ad6;
+  --ac-color-hero-button-border: #72b4f6;
+  --ac-color-on-hero-button: #ffffff;
+  /* image placeholder (news card without a picture) */
+  --ac-color-placeholder-from: #d6e8f8;
+  --ac-color-placeholder-to: #72b4f6;
   --ac-color-hero-scrim: rgba(0, 0, 0, 0.25);      /* veil over the banner image, under the text */
   --ac-shadow-on-image: 0 1px 3px rgba(0, 0, 0, 0.6);  /* text-shadow for text on artwork */
 
   /* ---------- Overlays ---------- */
   --ac-color-scrim: rgba(12, 16, 24, 0.45);
   /* chevron of .ac-select, muted text colour */
-  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6475' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233f5f94' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   --ac-color-overlay-control: #14171f;             /* dark counter on a card */
   --ac-color-overlay-chip: rgba(10, 12, 18, 0.72); /* cost chips on artwork */
   --ac-color-overlay-label: rgba(10, 12, 18, 0.55);
@@ -308,49 +319,54 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --ac-color-text: #e8ebf2;
-  --ac-color-text-2: #c3c9d6;
-  --ac-color-text-muted: #98a1b3;
-  --ac-color-text-disabled: #636c7e;
-  --ac-color-border-dashed: #4a5468;
-  --ac-color-border-control: #3a4356;
-  --ac-color-border: #2b3240;
-  --ac-color-divider: #222834;
-  --ac-color-chart-axis: #3a4356;
-  --ac-color-track: #232935;
-  --ac-color-bg-app: #0f1218;
-  --ac-color-bg-subtle: #1c212b;
-  --ac-color-surface: #171b23;
-  --ac-color-inverse: #e8ebf2;
-  --ac-color-on-inverse: #0f1218;
+  --ac-color-text: #f2f7ff;
+  --ac-color-text-2: #c6d6ee;
+  --ac-color-text-muted: #a3b8da;
+  --ac-color-text-disabled: #5e7aa6;
+  --ac-color-border-dashed: #4a6796;
+  --ac-color-border-control: #34507e;
+  --ac-color-border: #2a4369;
+  --ac-color-divider: #213759;
+  --ac-color-chart-axis: #34507e;
+  --ac-color-track: #243a5e;
+  --ac-color-bg-app: #111f36;
+  --ac-color-bg-subtle: #243a5e;
+  --ac-color-surface: #1a2d4c;
+  --ac-color-inverse: #f2f7ff;
+  --ac-color-on-inverse: #111f36;
   --ac-color-on-strong: #ffffff;
 
-  --ac-color-primary: #5b9bff;
-  --ac-color-primary-strong: #8ab8ff;
-  --ac-color-primary-border: #2f4c7c;
-  --ac-color-primary-soft: #1b2b47;
-  --ac-color-primary-tint: #151f31;
-  --ac-color-on-primary: #0b1220;
+  --ac-color-primary: #4c9bf5;
+  --ac-color-primary-strong: #7bbbff;
+  --ac-color-primary-border: #2f5a9a;
+  --ac-color-primary-soft: #1d3a66;
+  --ac-color-primary-tint: #172a48;
+  --ac-color-on-primary: #0c1a32;
+  --ac-color-link: var(--ac-color-primary-strong);
+  --ac-color-link-hover: #a8d2ff;
 
-  --ac-header-bg: var(--ac-color-surface);
-  --ac-header-border: var(--ac-color-border);
-  --ac-header-divider: var(--ac-color-divider);
-  --ac-header-text: var(--ac-color-text);
-  --ac-header-text-2: var(--ac-color-text-2);
-  --ac-header-icon: var(--ac-color-text-muted);
-  --ac-header-button-text: var(--ac-color-text-2);
-  --ac-header-hover-bg: var(--ac-color-bg-subtle);
-  --ac-header-active-text: var(--ac-color-primary-strong);
-  --ac-header-active-line: var(--ac-color-primary);
-  --ac-header-button-border: var(--ac-color-border);
-  --ac-header-button-avatar-bg: var(--ac-color-primary);
-  --ac-header-button-avatar-text: var(--ac-color-on-primary);
-  --ac-header-focus: var(--ac-color-focus);
-  --ac-header-control-bg: var(--ac-color-surface);
-  --ac-header-control-hover-bg: var(--ac-color-bg-subtle);
-  --ac-header-control-text: var(--ac-color-text);
-  --ac-header-control-border: var(--ac-color-border-control);
-  --ac-header-control-caret: var(--ac-color-text-muted);
+  --ac-header-bg: #1a5fc8;              /* deeper brand blue */
+  --ac-header-border: #1550b0;
+  --ac-header-divider: #3d7ad6;
+  --ac-header-text: #ffffff;
+  --ac-header-text-2: #ffffff;
+  --ac-header-icon: #b8d0ee;
+  --ac-header-button-text: #ffffff;
+  --ac-header-hover-bg: #1550b0;
+  --ac-header-active-text: #ffffff;
+  --ac-header-active-line: #ffffff;
+  --ac-header-button-border: #3d7ad6;
+  --ac-header-button-avatar-bg: #ffffff;
+  --ac-header-button-avatar-text: #1a5fc8;
+  --ac-header-focus: #ffffff;
+  --ac-header-control-bg: #f2f7ff;
+  --ac-header-control-hover-bg: #dbe8fb;
+  --ac-header-control-text: #1550b0;
+  --ac-header-control-border: transparent;
+  --ac-header-control-caret: #1550b0;
+
+  --ac-footer-bg: #0c172a;              /* darker than the page */
+  --ac-footer-border: #1d2f4c;
 
   --ac-color-success: #6cc990;
   --ac-color-success-soft: #15301f;
@@ -363,16 +379,19 @@
   --ac-color-warning-soft: #36260f;
   --ac-color-like: #f27a6c;
 
-  --ac-color-chart-main: #5b9bff;
+  --ac-color-chart-main: #4c9bf5;
   --ac-color-chart-reserve: #a07ddb;
 
   --ac-color-scrim: rgba(0, 0, 0, 0.6);
-  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a1b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --ac-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3b8da' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 
-  --ac-color-hero-from: #13244a;
-  --ac-color-hero-to: #1b3a6b;
-  --ac-color-on-hero: #e8ebf2;
-  --ac-color-on-hero-muted: rgba(232, 235, 242, 0.8);
+  --ac-color-hero-from: #173e86;
+  --ac-color-hero-to: #2256ae;
+  --ac-color-on-hero: #ffffff;
+  --ac-color-on-hero-muted: #d3e2f8;
+  --ac-color-hero-button-border: #3b8ef0;
+  --ac-color-placeholder-from: #243a5e;
+  --ac-color-placeholder-to: #4a7fc4;
 
   /* Plugin-specific dark values (see the light block) */
   /* core-altered-cards */

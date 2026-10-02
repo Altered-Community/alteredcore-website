@@ -12,7 +12,7 @@ $colourGroups = [
     'Brand'    => ['primary', 'primary-strong', 'primary-border', 'primary-soft', 'primary-tint', 'on-primary', 'link', 'link-hover', 'focus'],
     'Semantic' => ['success', 'success-soft', 'danger', 'danger-soft', 'required', 'warning', 'warning-soft', 'accent', 'accent-soft', 'info', 'info-soft', 'like', 'discord'],
     'Charts'   => ['chart-main', 'chart-reserve', 'chart-axis'],
-    'Hero banner and overlays' => ['hero-from', 'hero-to', 'on-hero', 'on-hero-muted', 'hero-scrim', 'scrim', 'overlay-control', 'overlay-chip', 'overlay-label', 'overlay-strong', 'overlay-light'],
+    'Hero banner and overlays' => ['hero-from', 'hero-to', 'on-hero', 'on-hero-muted', 'hero-button', 'hero-button-hover', 'hero-button-border', 'on-hero-button', 'hero-scrim', 'placeholder-from', 'placeholder-to', 'scrim', 'overlay-control', 'overlay-chip', 'overlay-label', 'overlay-strong', 'overlay-light'],
 ];
 $factions = ['axiom', 'bravos', 'lyra', 'muna', 'ordis', 'yzmir'];
 $fonts    = ['display' => 'Page title', 'title' => 'Large title', 'heading' => 'Section heading', 'body-strong' => 'Strong body', 'body' => 'Body — controls, lists, cards', 'prose' => 'Prose — news and rules, for long reading', 'small' => 'Small', 'caption' => 'Caption', 'micro' => 'Micro', 'overline' => 'Overline'];
