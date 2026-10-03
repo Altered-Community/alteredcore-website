@@ -137,6 +137,10 @@ function newsPageUrl(int $p): string {
                            target="_blank" class="btn btn-sm btn-outline-secondary me-1" title="Preview">
                             <i class="fa-solid fa-eye"></i>
                         </a>
+                        <a href="<?= BASE_URL ?>/admin/news-newsletter?id=<?= $row['id'] ?>"
+                           class="btn btn-sm btn-outline-secondary me-1" title="Newsletter e-mail" aria-label="Newsletter e-mail">
+                            <?= ac_icon('mail') ?>
+                        </a>
                         <?php if (adminCanEdit()): ?>
                         <a href="?toggle_pin=<?= $row['id'] ?>&<?= http_build_query(array_filter(['q'=>$search,'date'=>$dateQ,'page'=>$page>1?$page:''])) ?>"
                            class="btn btn-sm <?= $row['is_pinned'] ? 'btn-warning' : 'btn-outline-secondary' ?> me-1"

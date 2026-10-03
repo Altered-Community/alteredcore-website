@@ -3,6 +3,7 @@ $adminPageTitle = 'Edit News';
 $adminSection   = 'news';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/content-sanitize.php';
+require_once __DIR__ . '/includes/import-images.php';
 
 $db = getDB();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -67,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($data['content_fr'] === '') $errors[] = 'French content is required.';
 
         if (empty($errors)) {
+            // Images pasted from elsewhere (Google Docs…) are copied into uploads/editor/.
+            $failedImages = 0;
+            $data['content_en'] = importExternalImages($data['content_en'], $failedImages);
+            $data['content_fr'] = importExternalImages($data['content_fr'], $failedImages);
+
             // Slug: generate if new, or if existing article has no slug yet
             $needSlug = false;
             if ($id) {
@@ -107,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         :excerpt_en,:excerpt_fr,:image,:youtube_url,:published_at,:is_published)";
                 $db->prepare(q($sql))->execute($data);
                 flash('News created successfully.');
+            }
+            if ($failedImages) {
+                flash(($id ? 'News updated' : 'News created') . ", but $failedImages external image(s) could not be copied to the site:"
+                    . ' they are still loaded from their original address, which may stop working.', 'error');
             }
             redirect(BASE_URL . '/admin/news');
         }
