@@ -10,7 +10,7 @@
 // subscribers:get_all, subscribers:manage, subscribers:sql_query (the lookup by
 // e-mail is an SQL expression) and lists:get_all / lists:manage_all, plus
 // campaigns:get_all / campaigns:manage_all for the news e-mails
-// (listmonkSaveDraftCampaign, admin/news-newsletter.php).
+// (listmonkSaveNewsCampaign, admin/news-newsletter.php).
 //
 // Every call returns null on a transport or API error (logged), so a Listmonk
 // outage only hides the block instead of breaking the page.
@@ -122,42 +122,68 @@ function listmonkSubscribe(string $email, string $name, string $lang, array $att
 }
 
 /**
- * Creates a draft campaign, or updates the existing one whose name starts with
- * $key (re-generating a news e-mail after editing it). Never sends anything: sending is
- * done from Listmonk. Needs LISTMONK_TEMPLATE_ID (a passthrough template) and the
+ * Saves the e-mail of news $newsId in $lang as a draft campaign: creates it, or
+ * updates the draft this news already has in that language (re-generating it
+ * after editing the news). Never sends anything: sending is done from Listmonk.
+ * Needs LISTMONK_TEMPLATE_ID (a passthrough template) and the
  * campaigns:get_all / campaigns:manage_all permissions.
- * Returns ['id' => int, 'updated' => bool], or ['error' => message].
+ *
+ * Campaigns are found by their tags (news-<id> and the language), not by name.
+ * The name carries the newsletter number, "Newsletter #N (FR) – title": N counts
+ * the news whose e-mail was sent (running, paused or finished campaign), so the
+ * many drafts never sent do not raise it, and both languages of one news share
+ * it. A draft takes the next number; a news already sent in one language keeps
+ * its number for the other. A draft saved before another newsletter goes out
+ * keeps its old number until it is saved again.
+ *
+ * Returns ['id' => int, 'number' => int, 'updated' => bool], or ['error' => message].
  */
-function listmonkSaveDraftCampaign(string $key, string $name, string $subject, int $listId, string $body): array
+function listmonkSaveNewsCampaign(int $newsId, string $lang, string $title, int $listId, string $body): array
 {
     if (!defined('LISTMONK_TEMPLATE_ID') || (int)LISTMONK_TEMPLATE_ID <= 0) {
         return ['error' => 'LISTMONK_TEMPLATE_ID is not configured.'];
     }
-    // Matched locally: the API `query` is a full-text search, not an exact match.
-    $res = listmonkRequest('GET', '/api/campaigns?no_body=true&per_page=100&order_by=created_at&order=DESC');
+    $res = listmonkRequest('GET', '/api/campaigns?no_body=true&per_page=all');
     if ($res === null) {
         return ['error' => 'Listmonk did not answer (see the PHP error log).'];
     }
+
+    $tag      = 'news-' . $newsId;
+    $sent     = ['running', 'paused', 'finished'];
     $existing = null;
+    $sentNews = [];   // tag => number in the name, of every news with a sent e-mail
     foreach ($res['data']['results'] ?? [] as $c) {
-        if (strpos($c['name'] ?? '', $key) === 0) {
+        $tags = $c['tags'] ?? [];
+        // Drafts saved before the tags were used: "[news #<id> <lang>] title".
+        if (!$tags && preg_match('/^\[news #(\d+) (en|fr)\]/', $c['name'] ?? '', $m)) {
+            $tags = ['news-' . $m[1], $m[2]];
+        }
+        if (in_array($tag, $tags, true) && in_array($lang, $tags, true)) {
             $existing = $c;
-            break;
+        }
+        if (in_array($c['status'] ?? '', $sent, true)) {
+            foreach ($tags as $t) {
+                if (strpos($t, 'news-') === 0) {
+                    $sentNews[$t] = preg_match('/^Newsletter #(\d+)/', $c['name'] ?? '', $m) ? (int)$m[1] : 0;
+                }
+            }
         }
     }
-    if ($existing && !in_array($existing['status'] ?? '', ['draft', 'scheduled', 'paused'], true)) {
+    if ($existing && !in_array($existing['status'] ?? '', ['draft', 'scheduled'], true)) {
         return ['error' => "The campaign \"{$existing['name']}\" is {$existing['status']}: left untouched."];
     }
 
+    $number = !empty($sentNews[$tag]) ? $sentNews[$tag] : count(array_diff_key($sentNews, [$tag => 0])) + 1;
     $payload = [
-        'name'         => $name,
-        'subject'      => $subject,
+        'name'         => 'Newsletter #' . $number . ' (' . strtoupper($lang) . ') – ' . $title,
+        'subject'      => $title,
         'lists'        => [$listId],
         'type'         => 'regular',
         'content_type' => 'html',
         'body'         => $body,
         'messenger'    => 'email',
         'template_id'  => (int)LISTMONK_TEMPLATE_ID,
+        'tags'         => [$tag, $lang],
     ];
     $saved = $existing
         ? listmonkRequest('PUT', '/api/campaigns/' . (int)$existing['id'], $payload)
@@ -165,7 +191,7 @@ function listmonkSaveDraftCampaign(string $key, string $name, string $subject, i
     if ($saved === null) {
         return ['error' => 'Listmonk refused the campaign (see the PHP error log).'];
     }
-    return ['id' => (int)($saved['data']['id'] ?? $existing['id'] ?? 0), 'updated' => (bool)$existing];
+    return ['id' => (int)($saved['data']['id'] ?? $existing['id'] ?? 0), 'number' => $number, 'updated' => (bool)$existing];
 }
 
 /** Unsubscribes $email from both lists; true when there was nothing to do. */

@@ -32,13 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ((array)($_POST['langs'] ?? []) as $lang) {
             if (!isset($langs[$lang])) continue;
             $title = ($news['title_' . $lang] ?? '') ?: $news['title_en'];
-            $key   = '[news #' . $id . ' ' . $lang . ']';
-            $res   = listmonkSaveDraftCampaign($key, $key . ' ' . $title, $title, $langs[$lang],
-                newsletterEmailHtml($news, $lang));
+            $res   = listmonkSaveNewsCampaign($id, $lang, $title, $langs[$lang], newsletterEmailHtml($news, $lang));
             if (isset($res['error'])) {
                 $errs[] = strtoupper($lang) . ': ' . $res['error'];
             } else {
-                $done[] = strtoupper($lang) . ' (#' . $res['id'] . ($res['updated'] ? ', updated' : ', created') . ')';
+                $done[] = strtoupper($lang) . ' (newsletter #' . $res['number'] . ($res['updated'] ? ', updated' : ', created') . ')';
             }
         }
         $msg = $done ? 'Listmonk draft campaigns saved: ' . implode(', ', $done) . '. Review and send them from Listmonk.' : '';
@@ -90,7 +88,7 @@ $previews = ['fr' => newsletterEmailHtml($news, 'fr', true), 'en' => newsletterE
             Open Listmonk <?= ac_icon('external-link') ?>
         </a>
     </form>
-    <p class="ac-field__hint">Creates one draft campaign per language, or updates it if this news already has one (saving again after editing the news is safe). Nothing is sent: review and send from Listmonk.</p>
+    <p class="ac-field__hint">Creates one draft campaign per language, or updates it if this news already has one (saving again after editing the news is safe). The number counts the newsletters already sent: save again right before sending if another one went out meanwhile. Nothing is sent: review and send from Listmonk.</p>
     <?php elseif (!adminCanPublish()): ?>
     <p class="ac-field__hint">Saving to Listmonk needs the <em>Can publish</em> permission.</p>
     <?php else: ?>
