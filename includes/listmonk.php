@@ -129,7 +129,7 @@ function listmonkSubscribe(string $email, string $name, string $lang, array $att
  * campaigns:get_all / campaigns:manage_all permissions.
  *
  * Campaigns are found by their tags (news-<id> and the language), not by name.
- * The name carries the newsletter number, "Newsletter #N (FR) – title": N counts
+ * The name ends with the newsletter number, "title – Newsletter #N": N counts
  * the news whose e-mail was sent (running, paused or finished campaign), so the
  * many drafts never sent do not raise it, and both languages of one news share
  * it. A draft takes the next number; a news already sent in one language keeps
@@ -164,7 +164,8 @@ function listmonkSaveNewsCampaign(int $newsId, string $lang, string $title, int 
         if (in_array($c['status'] ?? '', $sent, true)) {
             foreach ($tags as $t) {
                 if (strpos($t, 'news-') === 0) {
-                    $sentNews[$t] = preg_match('/^Newsletter #(\d+)/', $c['name'] ?? '', $m) ? (int)$m[1] : 0;
+                    // Last "Newsletter #N" of the name (a title may contain one too).
+                    $sentNews[$t] = preg_match('/.*Newsletter #(\d+)/s', $c['name'] ?? '', $m) ? (int)$m[1] : 0;
                 }
             }
         }
@@ -175,7 +176,7 @@ function listmonkSaveNewsCampaign(int $newsId, string $lang, string $title, int 
 
     $number = !empty($sentNews[$tag]) ? $sentNews[$tag] : count(array_diff_key($sentNews, [$tag => 0])) + 1;
     $payload = [
-        'name'         => 'Newsletter #' . $number . ' (' . strtoupper($lang) . ') – ' . $title,
+        'name'         => $title . ' – Newsletter #' . $number,
         'subject'      => $title,
         'lists'        => [$listId],
         'type'         => 'regular',
