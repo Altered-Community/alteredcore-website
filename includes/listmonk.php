@@ -8,7 +8,9 @@
 // no newsletter block, and the homepage form falls back to the local
 // newsletter_sub table. The API user needs a Listmonk role with
 // subscribers:get_all, subscribers:manage, subscribers:sql_query (the lookup by
-// e-mail is an SQL expression) and lists:get_all / lists:manage_all.
+// e-mail is an SQL expression) and lists:get_all / lists:manage_all, plus
+// campaigns:get_all / campaigns:manage_all for the news e-mails
+// (listmonkSaveDraftCampaign, admin/news-newsletter.php).
 //
 // Every call returns null on a transport or API error (logged), so a Listmonk
 // outage only hides the block instead of breaking the page.
@@ -117,6 +119,53 @@ function listmonkSubscribe(string $email, string $name, string $lang, array $att
         ]) !== null;
     }
     return $ok ? 'subscribed' : 'error';
+}
+
+/**
+ * Creates a draft campaign, or updates the existing one whose name starts with
+ * $key (re-generating a news e-mail after editing it). Never sends anything: sending is
+ * done from Listmonk. Needs LISTMONK_TEMPLATE_ID (a passthrough template) and the
+ * campaigns:get_all / campaigns:manage_all permissions.
+ * Returns ['id' => int, 'updated' => bool], or ['error' => message].
+ */
+function listmonkSaveDraftCampaign(string $key, string $name, string $subject, int $listId, string $body): array
+{
+    if (!defined('LISTMONK_TEMPLATE_ID') || (int)LISTMONK_TEMPLATE_ID <= 0) {
+        return ['error' => 'LISTMONK_TEMPLATE_ID is not configured.'];
+    }
+    // Matched locally: the API `query` is a full-text search, not an exact match.
+    $res = listmonkRequest('GET', '/api/campaigns?no_body=true&per_page=100&order_by=created_at&order=DESC');
+    if ($res === null) {
+        return ['error' => 'Listmonk did not answer (see the PHP error log).'];
+    }
+    $existing = null;
+    foreach ($res['data']['results'] ?? [] as $c) {
+        if (strpos($c['name'] ?? '', $key) === 0) {
+            $existing = $c;
+            break;
+        }
+    }
+    if ($existing && !in_array($existing['status'] ?? '', ['draft', 'scheduled', 'paused'], true)) {
+        return ['error' => "The campaign \"{$existing['name']}\" is {$existing['status']}: left untouched."];
+    }
+
+    $payload = [
+        'name'         => $name,
+        'subject'      => $subject,
+        'lists'        => [$listId],
+        'type'         => 'regular',
+        'content_type' => 'html',
+        'body'         => $body,
+        'messenger'    => 'email',
+        'template_id'  => (int)LISTMONK_TEMPLATE_ID,
+    ];
+    $saved = $existing
+        ? listmonkRequest('PUT', '/api/campaigns/' . (int)$existing['id'], $payload)
+        : listmonkRequest('POST', '/api/campaigns', $payload);
+    if ($saved === null) {
+        return ['error' => 'Listmonk refused the campaign (see the PHP error log).'];
+    }
+    return ['id' => (int)($saved['data']['id'] ?? $existing['id'] ?? 0), 'updated' => (bool)$existing];
 }
 
 /** Unsubscribes $email from both lists; true when there was nothing to do. */

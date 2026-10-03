@@ -122,10 +122,19 @@ define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridde
 // of the local newsletter_sub table. Leave LISTMONK_URL empty to hide the
 // account block and keep the homepage form on newsletter_sub. The API user (Listmonk admin ->
 // Users -> API) needs a role with subscribers:get_all, subscribers:manage,
-// subscribers:sql_query, lists:get_all and lists:manage_all.
+// subscribers:sql_query, lists:get_all and lists:manage_all, plus campaigns:get_all
+// and campaigns:manage_all to save news e-mails as draft campaigns (admin -> News
+// -> envelope button).
 define('LISTMONK_URL',       '');        // e.g. 'https://newsletter.altered.re'
 define('LISTMONK_API_USER',  '');        // e.g. 'website'
 define('LISTMONK_API_TOKEN', '');
 // Numeric list ids (Lists page, "ID"), NOT the UUIDs.
 define('LISTMONK_LIST_EN',   0);         // id of the "Newsletter EN" list
 define('LISTMONK_LIST_FR',   0);         // id of the "Newsletter FR" list
+// News e-mails are fully built by the website; Listmonk wraps them in this
+// template, which must be a bare passthrough: Campaigns -> Templates -> New,
+// type "Campaign", body exactly {{ template "content" . }}. Numeric id.
+define('LISTMONK_TEMPLATE_ID', 0);
+// Absolute site URL used for the links and images of the e-mails. Empty: the
+// URL the admin is browsed from (wrong when generating from a local install).
+define('NEWSLETTER_SITE_URL', '');       // e.g. 'https://altered.re'
