@@ -110,6 +110,9 @@ services:
       MERCURE_SUBSCRIBER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
       MERCURE_PUBLISHER_JWT_ALG: HS256
       MERCURE_SUBSCRIBER_JWT_ALG: HS256
+      # The image's Mercure now refuses publisher_jwt / subscriber_jwt outside compatibility mode (the build pulls
+      # the latest FrankenPHP base, so the pinned commit no longer pins it).
+      MERCURE_EXTRA_DIRECTIVES: "protocol_version_compatibility 8"
     ports:
       - "127.0.0.1:8001:80"
     depends_on:
