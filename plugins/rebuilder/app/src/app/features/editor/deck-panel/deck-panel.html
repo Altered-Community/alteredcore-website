@@ -1,28 +1,3 @@
-<div class="summary">
-  <ac-deck-summary
-    appearance="embedded"
-    [hero]="deck.hero()"
-    [formatLabel]="formatLabel()"
-    [isPublic]="deck.isPublic()"
-    [total]="deck.total()"
-    [legal]="legality().state === 'legal'"
-    [issues]="deck.status().issues"
-    [rarity]="deck.stats().rarity"
-    [editable]="deck.editable()"
-    (openSettings)="openSettings.emit()"
-    (showLegality)="showLegality()"
-  />
-</div>
-<div class="stats">
-  <ac-collapsible title="Stats" i18n-title="@@panel.stats" [bare]="true" [(open)]="statsOpen">
-    <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-  </ac-collapsible>
-  @if (altArts?.canChooseTokens()) {
-    <div class="tokens">
-      <button acButton variant="secondary" size="sm" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
-    </div>
-  }
-</div>
 <div class="rows">
   @for (g of deck.groups(); track g.id) {
     <div class="group">

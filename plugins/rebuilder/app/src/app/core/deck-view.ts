@@ -207,7 +207,7 @@ export interface DeckGroup {
   lines: HydratedLine[];
 }
 
-function groupIdOf(card: Card): DeckGroupId {
+export function groupIdOf(card: Card): DeckGroupId {
   return groupIdOfType(typeOf(card));
 }
 
@@ -217,6 +217,12 @@ export function groupIdOfType(t: string): DeckGroupId {
   if (t === 'SPELL') return 'spells';
   if (t.includes('PERMANENT')) return 'permanents';
   return 'other';
+}
+
+/** Decklist order: main cost, then name in the content language. */
+export function compareLines(a: HydratedLine, b: HydratedLine): number {
+  const locale = contentLocale();
+  return (a.card.mainCost ?? 99) - (b.card.mainCost ?? 99) || localizedText(a.card.name, locale).localeCompare(localizedText(b.card.name, locale), locale);
 }
 
 /** Groups non-hero lines by type, sorted by main cost then name (decklist order). */
@@ -231,11 +237,7 @@ export function groupLines(lines: HydratedLine[]): DeckGroup[] {
   return order
     .filter((id) => buckets.has(id))
     .map((id) => {
-      const rows = [...(buckets.get(id) ?? [])].sort(
-        (a, b) =>
-          (a.card.mainCost ?? 99) - (b.card.mainCost ?? 99) ||
-          localizedText(a.card.name, contentLocale()).localeCompare(localizedText(b.card.name, contentLocale()), contentLocale()),
-      );
+      const rows = [...(buckets.get(id) ?? [])].sort(compareLines);
       return {
         id,
         label: GROUP_LABELS[id].label,

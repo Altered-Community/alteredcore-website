@@ -105,7 +105,7 @@
 
   <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()" [attr.aria-busy]="(tab() === 'mine' && mineLoading()) || null">
     @for (d of list(); track d.id) {
-      <ac-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
+      <ac-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" [openInEditor]="openInEditor()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
     }
     @if (tab() === 'mine' && !bp.compact()) {
       <button type="button" class="new-tile" (click)="newDeck()" i18n="@@decks.page.newDeckTile">

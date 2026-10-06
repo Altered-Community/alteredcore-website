@@ -97,6 +97,8 @@ export class DecksPage {
     !this.auth.isLoggedIn() && !this.auth.sessionRestoring() && !this.guests.decks().length ? 'community' : 'mine',
   );
   protected readonly tab = computed<Tab>(() => this.queryTab() ?? this.defaultTab());
+  /** « Mes decks » from 768 px: a deck opens in the editor, on « Aperçu »; elsewhere on its page. */
+  protected readonly openInEditor = computed(() => this.tab() === 'mine' && !this.bp.compact());
   /** Bumped when the list is shown again, so its filters go back to the URL. */
   private readonly urlSync = signal(0);
   protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);

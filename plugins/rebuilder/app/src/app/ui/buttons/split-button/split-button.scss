@@ -61,6 +61,17 @@
   cursor: progress;
 }
 
+:host(.sm) .split {
+  height: var(--ac-control-sm);
+}
+:host(.sm) .main {
+  gap: var(--ac-space-1-5);
+  font-size: var(--ac-font-size-small);
+}
+:host(.sm) .more {
+  width: var(--ac-control-sm);
+}
+
 .sep {
   width: 1px;
   background: var(--ac-color-border-control);

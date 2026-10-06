@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LocationStrategy } from '@angular/common';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -7,8 +8,8 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { AcButton, AcIconButton } from '../../../ui/buttons';
-import { AcEditableTitle, AcSegmented } from '../../../ui/fields';
+import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
+import { AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcToast } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
@@ -16,7 +17,7 @@ import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
 import { AcSaveStatus } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
-import { AcAppBar, AcBackButton, AcBottomNav, AcBreadcrumb, type AcBottomNavItem } from '../../../ui/nav';
+import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { EditorAltArts } from '../editor-alt-arts';
@@ -28,7 +29,14 @@ import { DeckPreview } from '../deck-preview/deck-preview';
 import { TestHand } from '../../deck/test-hand/test-hand';
 import { HandStats } from '../../deck/hand-stats/hand-stats';
 import { HandCalculators } from '../../deck/hand-calculators/hand-calculators';
-import { editorLegality } from '../editor-legality';
+import { editorLegality, openEditorLegality } from '../editor-legality';
+import { DeckBar } from '../../deck/deck-bar/deck-bar';
+import { DeckBoard } from '../../deck/deck-board/deck-board';
+import { DeckImageExport } from '../../deck/deck-image-export/deck-image-export';
+import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '../../deck/deck-image-actions';
+import { confirmDeleteDeck, copyDecklist, deckImageSourceFor } from '../../deck/deck-actions';
+import { openDuplicateDeck } from '../../deck/duplicate-deck/duplicate-deck.overlay';
+import { openTokenArts } from '../token-arts/token-arts.overlay';
 import { openShareDeck } from '../../deck/share-deck/share-deck.overlay';
 import { deckShareUrl } from '../../deck/deck-page/share-url';
 import { openSignInToShare } from '../sign-in-to-share/sign-in-to-share.overlay';
@@ -49,8 +57,12 @@ export type EditorAction = 'share' | 'done';
     AcAppBar,
     AcBackButton,
     AcBottomNav,
-    AcBreadcrumb,
-    AcEditableTitle,
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuTrigger,
+    DeckBar,
+    DeckBoard,
+    DeckImageExport,
     AcSegmented,
     AcButton,
     AcIconButton,
@@ -78,9 +90,11 @@ export class EditorPage {
   private readonly overlay = inject(AcOverlayService);
   private readonly locationStrategy = inject(LocationStrategy);
   private readonly auth = inject(AuthSession);
+  private readonly guestDecks = inject(GuestDeckService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly deck = inject(DeckStore);
+  protected readonly altArts = inject(EditorAltArts);
   private readonly injector = inject(Injector);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
@@ -92,39 +106,51 @@ export class EditorPage {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
     public: $localize`:@@editor.public:Public`,
     private: $localize`:@@editor.private:Privé`,
-    myDecks: $localize`:@@editor.myDecks:Mes decks`,
-    edit: $localize`:@@editor.edit:Modifier`,
     share: $localize`:@@editor.share:Partager`,
     saving: $localize`:@@editor.savingFirst:Enregistrement…`,
     saved: $localize`:@@editor.share.saved:Deck enregistré : le lien affiche la dernière version.`,
     savedToAccount: $localize`:@@editor.share.savedToAccount:Deck enregistré sur votre compte : vous pouvez le partager.`,
+    doneHint: $localize`:@@editor.doneHint:Retour à Mes decks`,
+    more: $localize`:@@editor.moreActions:Plus d’actions`,
+    imageBusy: deckImageBusyMessage(),
   };
-  /** « Mes decks / <deck> / Modifier »: the deck's name leads to its page too. */
-  protected readonly breadcrumb = computed(() => [
-    { label: this.labels.myDecks, route: '/decks' },
-    { label: this.deck.name() || 'Deck', route: `/decks/${this.id()}` },
-    { label: this.labels.edit },
-  ]);
+  /** The « ⋯ » menu: placed as the split buttons' menus. */
+  protected readonly menuPositions = MENU_POSITIONS;
   protected readonly modeOptions = [
     { value: 'search' as const, label: $localize`:@@editor.search:Recherche`, icon: 'search' as const },
-    { value: 'apercu' as const, label: $localize`:@@editor.viewDeck:Voir le deck`, icon: 'eye' as const },
+    { value: 'apercu' as const, label: $localize`:@@editor.preview:Aperçu`, icon: 'eye' as const },
     { value: 'main' as const, label: $localize`:@@editor.hand:Main de départ`, icon: 'hand' as const },
   ];
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   /** From 768 px: the deck panel can be hidden (a tab on the page edge brings it back), remembered in this browser. */
   protected readonly deckOpen = storedFlag('rebuilder.editor.deckOpen', true);
-  protected readonly legal = computed(() => editorLegality(this.deck).state === 'legal');
+  protected readonly legality = computed(() => editorLegality(this.deck));
+  protected readonly legal = computed(() => this.legality().state === 'legal');
+  /** Mini curve of the reduced bar: the cost of the last card added. */
+  protected readonly highlight = computed(() => {
+    const change = this.deck.lastChange();
+    return change && change.delta > 0 ? Math.min(6, Math.max(0, (change.card.mainCost ?? 1) - 1)) : null;
+  });
+  /** The deck's image (« Copier en image »), once the deck is loaded. */
+  protected readonly imageSource = computed(() => {
+    const id = this.deck.deckId();
+    return id && !this.deck.loading() ? deckImageSourceFor(id, this.guestDecks) : null;
+  });
+  protected readonly imageBusy = signal(false);
   protected readonly deckTabLabel = computed(() =>
     this.legal()
       ? $localize`:@@editor.showDeckLegal:Afficher le deck : ${this.deck.total()}:count: cartes, valide`
       : $localize`:@@editor.showDeckIssues:Afficher le deck : ${this.deck.total()}:count: cartes, à corriger`,
   );
   /** Hides or shows the deck panel, with its motion; the focus moves to the control that undoes it. */
-  protected readonly deckDrawer = new AcDrawerState(this.deckOpen, 'end', (open) =>
+  private readonly drawerFocus = (open: boolean) =>
     afterNextRender(() => this.el.querySelector<HTMLElement>(open ? '.panel > .ac-drawer-handle' : '.deck-tab')?.focus(), {
       injector: this.injector,
-    }),
-  );
+    });
+  private readonly searchDrawer = new AcDrawerState(this.deckOpen, 'end', this.drawerFocus);
+  /** « Aperçu » shows the whole deck already: the panel starts hidden there, behind its tab. */
+  private readonly apercuDrawer = new AcDrawerState(signal(false), 'end', this.drawerFocus);
+  protected readonly deckDrawer = computed(() => (this.effectiveView() === 'apercu' ? this.apercuDrawer : this.searchDrawer));
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
@@ -150,6 +176,9 @@ export class EditorPage {
   protected readonly toast = signal<{ card: Card; name: string; quantity: number; delta: number } | null>(null);
   protected readonly undoLabel = $localize`:@@editor.toast.undo:Annuler`;
   private toastTimer?: ReturnType<typeof setTimeout>;
+  /** A message of the deck bar's actions (copied, image unavailable…), over the card toast. */
+  protected readonly notice = signal<string | null>(null);
+  private noticeTimer?: ReturnType<typeof setTimeout>;
   /** The change « Annuler » makes is not announced again. */
   private undone: unknown = null;
 
@@ -208,7 +237,8 @@ export class EditorPage {
         this.stopped.set(action);
         return;
       }
-      if (action === 'done') void this.router.navigate(['/decks', this.id()]);
+      // From 768 px « Terminer » goes back to the deck list; on phones, to the deck's page.
+      if (action === 'done') void this.router.navigate(this.bp.compact() ? ['/decks', this.id()] : ['/decks']);
       else this.openShare(this.labels.saved);
     });
   }
@@ -259,6 +289,50 @@ export class EditorPage {
     void this.router.navigateByUrl(mode === 'apercu' || mode === 'main' ? `${this.base()}/${mode}` : this.base());
   }
 
+  protected flash(message: string): void {
+    this.notice.set(message);
+    clearTimeout(this.noticeTimer);
+    this.noticeTimer = setTimeout(() => this.notice.set(null), 3200);
+  }
+
+  protected showLegality(): void {
+    openEditorLegality(this.overlay, this.deck);
+  }
+
+  protected chooseTokenArts(): void {
+    openTokenArts(this.overlay);
+  }
+
+  /** The deck's image: copied, saved or opened (reduced bar: the button and its « ⋯ » menu). */
+  protected async image(action: DeckImageAction): Promise<void> {
+    const source = this.imageSource();
+    if (!source || this.imageBusy()) return;
+    this.imageBusy.set(true);
+    const message = await runDeckImageAction(action, source, this.deck.name());
+    this.imageBusy.set(false);
+    if (message) this.flash(message);
+  }
+
+  protected async copyList(): Promise<void> {
+    this.flash(await copyDecklist(this.deck));
+  }
+
+  /** The copy is the user's: it opens in the editor. */
+  protected duplicate(): void {
+    openDuplicateDeck(this.overlay).afterClosed.subscribe((id) => {
+      if (!id) return;
+      this.flash($localize`:@@deck.page.duplicated:Deck dupliqué.`);
+      void this.router.navigate(['/decks', id, 'edit', 'apercu']);
+    });
+  }
+
+  protected remove(): void {
+    confirmDeleteDeck(this.overlay, this.deck).subscribe((result) => {
+      if (result === true) void this.router.navigateByUrl('/decks');
+      else if (result) this.flash(result);
+    });
+  }
+
   protected openSettings(): void {
     openDeckSettings(this.overlay, {
       name: this.deck.name(),
@@ -294,6 +368,6 @@ export class EditorPage {
 
   protected duplicateToGuest(): void {
     const id = this.deck.duplicateToGuest(this.deck.name());
-    void this.router.navigate(['/decks', id, 'edit']);
+    void this.router.navigate(['/decks', id, 'edit', 'apercu']);
   }
 }

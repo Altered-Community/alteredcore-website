@@ -11,18 +11,20 @@ import { evidence, expect, login, setBeta, test, type Page } from '../../../test
 /** Labels in both site languages (the interface follows AlteredCore.lang). */
 const LABELS = {
   fr: {
-    newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler',
+    newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Aperçu', cancel: 'Annuler',
     deckNav: 'Éditeur de deck', decksNav: 'Decks', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
     sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
   },
   en: {
-    newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel',
+    newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'Preview', cancel: 'Cancel',
     deckNav: 'Deck editor', decksNav: 'Decks', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
     sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
   },
 };
 type Lang = keyof typeof LABELS;
 const FR = LABELS.fr;
+/** The deck page's « Modifier » (deck bar, from 768 px) or « Modifier le deck » (app bar, phones). */
+const EDIT_DECK = /^Modifier( le deck)?$/;
 
 /** Opens the new-deck window, picks the first hero, names the deck and creates it. */
 async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<void> {
@@ -38,7 +40,7 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
   await expect(dialog).toBeHidden();
 }
 
-/** « Recherche / Voir le deck » switch (desktop) or bottom navigation (mobile), in `lang`. */
+/** « Recherche / Aperçu » switch (desktop) or bottom navigation (mobile), in `lang`. */
 async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Promise<void> {
   const l = LABELS[lang];
   if (compact) await expect(page.getByRole('navigation', { name: l.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
@@ -69,7 +71,7 @@ async function expectDeckCount(page: Page, compact: boolean, count: number): Pro
   if (compact) {
     await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ })).toContainText(String(count));
   } else {
-    await expect(page.locator('app-deck-panel ac-deck-summary')).toContainText(String(count));
+    await expect(page.locator('app-deck-bar .meta strong')).toHaveText(new RegExp(`^${count} cartes?$`));
   }
 }
 
@@ -121,22 +123,29 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(page).toHaveURL(at(EDITOR(deck.id)));
     await expectDeckCount(page, compact, 2);
     if (!compact) {
-      await expect(page.locator('ac-editable-title input')).toHaveValue(name);
+      await expect(page.locator('app-deck-bar h1')).toHaveText(name);
       for (const card of cards) await expect(page.locator('app-deck-panel')).toContainText(card.replace(/ ×.*$/, ''));
     }
 
-    // Re:Builder's list shows it (account decks through the relay); its card opens the deck page.
+    // Re:Builder's list shows it (account decks through the relay); its card opens the deck page (phones) or, from
+    // 768 px, the editor on « Aperçu »: the deck board.
     await page.goto(DECKS);
     const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
     await expect(item).toBeVisible();
     await evidence(page, testInfo, '03-listed');
     await item.getByRole('link').first().click();
+    if (!compact) {
+      await expect(page).toHaveURL(at(`${EDITOR(deck.id)}&view=apercu`));
+      await expect(page.locator('app-deck-board ac-card-pile')).toHaveCount(2);
+      await evidence(page, testInfo, '04-editor-board');
+      await page.goto(DECK(deck.id));
+    }
     await expect(page).toHaveURL(at(DECK(deck.id)));
     await expect(page.locator('app-deck-page')).toContainText(name);
     await evidence(page, testInfo, '04-deck-page');
     // Alice's own deck: she can edit it.
     const deckPage = page.locator('app-deck-page');
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
+    await expect(deckPage.getByRole('button', { name: EDIT_DECK })).toBeVisible();
 
     // Same decks API: with the beta off, the site's own list sees the deck too, and links to the same editor URL.
     await setBeta(page, false);
@@ -182,7 +191,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E token arts ${Date.now()}`);
     if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
-    await page.getByRole('button', { name: 'Choisir les arts des jetons' }).click();
+    await page.getByRole('button', { name: compact ? 'Choisir les arts des jetons' : 'Arts des jetons' }).click();
     const dialog = page.getByRole('dialog', { name: 'Illustrations des jetons' });
     const families = dialog.locator('app-alt-art-slots');
     await expect(families.first()).toBeVisible();
@@ -208,7 +217,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage).toContainText(name);
 
-    // Desktop: « Supprimer » in the side panel; mobile: in the « Plus d’actions » sheet.
+    // Desktop: « Supprimer » in the deck bar; mobile: in the « Plus d’actions » sheet.
     const askDelete = async () => {
       if (compact) {
         await deckPage.getByRole('button', { name: /^Plus d’actions/ }).click();
@@ -331,7 +340,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage.locator('ac-card-art').first()).toBeVisible();
     await expect(deckPage.getByRole('button', { name: /Plus d’actions|Dupliquer/ }).first()).toBeVisible();
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toHaveCount(0);
+    await expect(deckPage.getByRole('button', { name: EDIT_DECK })).toHaveCount(0);
     await expect(deckPage.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
     await evidence(page, testInfo, '05b-community-deck');
   });
@@ -534,7 +543,11 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
     const pick = async (index: number, text: string) => {
       const dialog = page.getByRole('dialog');
-      await dialog.locator('.card-head').nth(index).click();
+      // Anywhere on the criterion's card opens it, its values too (« Tous les déclencheurs »…), not only its title.
+      const card = dialog.locator('.card').nth(index);
+      const box = (await card.boundingBox())!;
+      await card.click({ position: { x: 24, y: box.height - 12 } });
+      await expect(card.locator('.card-head')).toHaveAttribute('aria-pressed', 'true');
       await dialog.locator('ac-check-list input[type=search]').fill(text);
       await dialog.getByRole('checkbox', { name: text, exact: true }).check();
       await expect(dialog.locator('.card').nth(index).locator('ac-or-values .value').filter({ hasText: text })).toBeVisible();
@@ -869,9 +882,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
     expect(res.status()).toBe(201);
     const copy = (await res.json()) as { id: string; isPublic: boolean };
     expect(copy.isPublic).toBe(false);
-    await expect(page).toHaveURL(at(DECK(copy.id)));
-    await expect(deckPage).toContainText(`${name} bis`);
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
+    // The copy is the user's: it opens in the editor, on « Aperçu ».
+    await expect(page).toHaveURL(at(`${EDITOR(copy.id)}&view=apercu`));
+    await expect(page.locator('app-editor-page')).toContainText(`${name} bis`);
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
   });
@@ -881,7 +894,8 @@ test.describe('ReBuilder in the shell · deck page', () => {
     const unique = 'ALT_ALIZE_B_AX_32_U_2';
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, `E2E unique art ${Date.now()}`, [unique]);
-    const tile = page.locator('ac-card-tile').filter({ has: page.locator('ac-unique-card') });
+    // A pile of the deck board from 768 px, a tile on phones.
+    const tile = page.locator('ac-card-tile, ac-card-pile').filter({ has: page.locator('ac-unique-card') });
     // The cards API answers once the illustration is shown: the deck then replaces the unique's card object.
     await page.route('**/api/cards/batch**', async (route) => {
       await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
@@ -962,7 +976,7 @@ test.describe('ReBuilder in the shell · « Partager » and « Terminer » in th
   const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
   const doneButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Terminer', exact: true });
 
-  test('saves the deck first, then shares it, then goes back to the deck page', async ({ page, compact }, testInfo) => {
+  test('saves the deck first, then shares it, then leaves the editor', async ({ page, compact }, testInfo) => {
     const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'bob', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
@@ -987,10 +1001,15 @@ test.describe('ReBuilder in the shell · « Partager » and « Terminer » in th
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
 
+    // « Terminer »: the deck list from 768 px, the deck's page on phones.
     await doneButton(page).click();
-    await expect(page).toHaveURL(at(DECK(deck.id)));
-    await expect(page.locator('app-deck-page')).toContainText(name);
-    if (!compact) await expect(page.locator('app-deck-page').getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
+    if (compact) {
+      await expect(page).toHaveURL(at(DECK(deck.id)));
+      await expect(page.locator('app-deck-page')).toContainText(name);
+    } else {
+      await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+      await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name })).toBeVisible();
+    }
   });
 
   test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page }, testInfo) => {

@@ -1,0 +1,94 @@
+<div class="identity">
+  <div class="art">
+    @if (deck.hero(); as h) {
+      @if (editable()) {
+        <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
+      } @else {
+        <button type="button" class="zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoomHero()">
+          <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
+        </button>
+      }
+    }
+    @if (editable() && !reduced()) {
+      <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
+        <ac-icon name="sliders-horizontal" [size]="16" />
+      </button>
+    }
+  </div>
+  <div class="text" [style.border-left-color]="border()">
+    @if (!reduced()) {
+      <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="14" />Mes decks</a>
+    }
+    <div class="name-row">
+      @if (renaming()) {
+        <input
+          #field
+          class="rename"
+          [class.long]="long()"
+          [attr.aria-label]="labels.name"
+          [value]="deck.name()"
+          maxlength="120"
+          (keydown.enter)="endRename(field.value)"
+          (keydown.escape)="endRename(null)"
+          (blur)="endRename(field.value)"
+        />
+      } @else {
+        <h1 class="name" [class.long]="long()" [title]="deck.name()">{{ deck.name() }}</h1>
+        @if (editable() && !reduced()) {
+          <button class="rename-button" acIconButton="pencil" variant="ghost" size="sm" [iconSize]="15" [ariaLabel]="labels.rename" (click)="startRename()"></button>
+        }
+      }
+    </div>
+    @if (reduced()) {
+      <span class="meta">
+        <strong i18n="@@deck.bar.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong>
+        @for (g of deck.groups(); track g.id) {
+          <span aria-hidden="true">·</span> {{ g.count }} {{ g.label }}
+        }
+      </span>
+    } @else {
+      <span class="meta">
+        {{ deck.hero()?.name }}<span aria-hidden="true">·</span>{{ formatLabel() }}
+        <ng-container [ngTemplateOutlet]="legalityBadge" />
+        @if (deck.isDraft() && !editable()) {
+          <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>
+        }
+        <ac-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? labels.public : labels.private }}</ac-badge>
+      </span>
+      <span class="counts">
+        @for (g of deck.groups(); track g.id) {
+          <span><strong>{{ g.count }}</strong> {{ g.label }}</span>
+        }
+      </span>
+    }
+  </div>
+</div>
+
+<span class="sep curve" aria-hidden="true"></span>
+<ac-cost-curve [main]="deck.stats().main" [reserve]="deck.stats().reserve" [size]="reduced() ? 'sm' : 'md'" [highlight]="highlight()" />
+<span class="sep" aria-hidden="true"></span>
+<div class="terrain">
+  @if (!reduced()) {
+    <span class="ac-text-overline" i18n="@@deck.bar.power">Puissance totale</span>
+  }
+  <ac-terrain-totals [totals]="deck.stats().terrain" />
+</div>
+@if (reduced()) {
+  <ng-container [ngTemplateOutlet]="legalityBadge" />
+}
+
+<div class="actions">
+  <ng-content select="[barActions]" />
+</div>
+
+<ng-template #legalityBadge>
+  @if (legality().state === 'legal') {
+    <button type="button" class="legality" aria-haspopup="dialog" [attr.aria-label]="labels.legalDetails" (click)="showLegality.emit()">
+      <ac-badge tone="green" icon="check" i18n="@@deck.page.legal">Légal</ac-badge>
+    </button>
+  } @else if (legality().state === 'illegal') {
+    <button type="button" class="legality" aria-haspopup="dialog" [attr.aria-label]="labels.illegalDetails" (click)="showLegality.emit()">
+      <ac-badge tone="orange" icon="circle-alert">{{ illegalLabel() }}</ac-badge>
+    </button>
+  }
+</ng-template>

@@ -278,6 +278,12 @@ export interface FilterChip {
   label: string;
 }
 
+/**
+ * Filters the Favoris tab applies: the site's `favorites-search` filters its table by faction, rarity and set only.
+ * The others are disabled there and give no chip.
+ */
+export const FAVORITES_FILTERS: ReadonlySet<string> = new Set(['factions', 'otherFactions', 'sets', 'rarities']);
+
 export function filterChips(filters: SearchFilters, source: CardSource): FilterChip[] {
   const chips: FilterChip[] = [];
   if (filters.q.trim()) chips.push({ id: 'q', label: $localize`:@@search.filters.chip.query:« ${filters.q.trim()}:query: »` });
@@ -322,7 +328,7 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
     const n = filters.effects.filter((b) => b.triggers.length || b.conditions.length || b.effects.length).length;
     if (n) chips.push({ id: 'effects', label: n === 1 ? $localize`:@@search.filters.chip.oneEffect:1 effet` : $localize`:@@search.filters.chip.effects:${n}:count: effets` });
   }
-  return chips;
+  return source === 'favorites' ? chips.filter((c) => FAVORITES_FILTERS.has(c.id)) : chips;
 }
 
 export function removeChip(filters: SearchFilters, id: string): SearchFilters {

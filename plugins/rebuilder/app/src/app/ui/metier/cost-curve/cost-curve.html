@@ -1,0 +1,28 @@
+@if (size() === 'md') {
+  <div class="legend" aria-hidden="true">
+    <span class="ac-text-overline" i18n="@@ui.costCurve.title">Courbe de coût</span>
+    <span class="key"><span class="dot main"></span><ng-container i18n="@@ui.costCurve.main">Main</ng-container></span>
+    <span class="key"><span class="dot reserve"></span><ng-container i18n="@@ui.costCurve.reserve">Réserve</ng-container></span>
+  </div>
+}
+<div class="buckets" aria-hidden="true">
+  @for (b of buckets(); track b.label) {
+    <div class="bucket" [class.on]="highlight() === $index" [title]="b.title">
+      <div class="bars">
+        <div class="col">
+          @if (size() === 'md') {
+            <span class="n" [class.zero]="!b.m">{{ b.m }}</span>
+          }
+          <span class="bar main" [style.height.px]="b.mh"></span>
+        </div>
+        <div class="col">
+          @if (size() === 'md') {
+            <span class="n" [class.zero]="!b.r">{{ b.r }}</span>
+          }
+          <span class="bar reserve" [style.height.px]="b.rh"></span>
+        </div>
+      </div>
+      <span class="axis">{{ b.label }}</span>
+    </div>
+  }
+</div>

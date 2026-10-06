@@ -125,8 +125,7 @@
   color: var(--ac-color-text-muted);
 }
 
-.m-meta h1,
-.titles h1 {
+.m-meta h1 {
   display: flex;
   align-items: center;
   gap: var(--ac-space-2);
@@ -213,16 +212,6 @@
     gap: var(--ac-space-5);
   }
 
-  .back {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ac-space-1);
-    font-size: var(--ac-font-size-body);
-    font-weight: 700;
-    color: var(--ac-color-text-2);
-    margin-bottom: calc(-1 * var(--ac-space-2));
-  }
-
   .grouping {
     display: flex;
     justify-content: flex-end;
@@ -240,72 +229,15 @@
     bottom: var(--ac-space-6);
   }
 
-  .aside {
-    width: 300px;
-    flex-shrink: 0;
-    background: var(--ac-color-surface);
-    border: 1px solid var(--ac-color-border);
-    border-radius: var(--ac-radius-card);
-    overflow: hidden;
-    position: sticky;
-    top: calc(var(--ac-app-bar-height) + var(--ac-space-6));
-  }
-
-  .banner {
-    position: relative;
-    height: 170px;
-    background: var(--ac-color-text-2);
-  }
-
-  button.banner {
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    cursor: pointer;
-  }
-
-  button.banner:focus-visible {
-    outline: 2px solid var(--ac-color-primary);
-    outline-offset: -2px;
-  }
-
-  .aside-body {
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ac-space-4);
-  }
-
-  .titles {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ac-space-1);
-    font-size: var(--ac-font-size-body);
-    color: var(--ac-color-text-muted);
-  }
-
-  .titles h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: var(--ac-letter-spacing-display);
-    color: var(--ac-color-text);
-  }
-
-  .image-export {
-    margin-top: calc(-1 * var(--ac-space-2));
-  }
-
-  .actions {
+  /* Deck bar actions: two columns of small buttons. */
+  .bar-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ac-space-2);
-    margin-top: calc(-1 * var(--ac-space-2));
+    gap: var(--ac-space-1-5);
   }
 
-  .actions button {
-    padding: 0 var(--ac-space-2);
+  .bar-actions > button {
+    padding: 0 var(--ac-space-2-5);
   }
 }
 
@@ -315,8 +247,4 @@
   }
 }
 
-@media (min-width: 1200px) {
-  .aside {
-    width: 360px;
-  }
-}
+

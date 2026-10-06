@@ -16,6 +16,7 @@ export class DeckImageExport {
   readonly source = input.required<DeckImageSource>();
   /** The deck's name: the saved file's. */
   readonly name = input('');
+  readonly size = input<'md' | 'sm'>('md');
   readonly notice = output<string>();
 
   protected readonly busy = signal(false);

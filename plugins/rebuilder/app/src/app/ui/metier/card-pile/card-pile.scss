@@ -1,0 +1,116 @@
+:host {
+  /* Offset of each copy behind the front one: enough to count them over the cards' dark top edge. */
+  --pile-offset: 16px;
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.stack {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: calc(var(--copies, 0) * var(--pile-offset)) 0 0;
+  border: 0;
+  background: none;
+  border-radius: var(--ac-radius-lg);
+  cursor: zoom-in;
+}
+.stack:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.face {
+  display: block;
+  aspect-ratio: 5 / 7;
+  border-radius: var(--ac-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--ac-shadow-card);
+  background: var(--ac-color-text-2);
+}
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--i) * var(--pile-offset));
+}
+.front {
+  position: relative;
+}
+:host(.zero) .stack {
+  opacity: 0.4;
+}
+:host(.issue) .front {
+  box-shadow: 0 0 0 3px var(--ac-color-warning);
+}
+.marker {
+  position: absolute;
+  left: var(--ac-space-1-5);
+  top: var(--ac-space-1-5);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-warning);
+  color: var(--ac-color-on-strong);
+  box-shadow: var(--ac-shadow-e3);
+  pointer-events: auto;
+}
+.qty {
+  position: absolute;
+  right: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+  min-width: 28px;
+  height: 24px;
+  padding: 0 var(--ac-space-1-5);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-strong);
+  color: var(--ac-color-on-strong);
+  font: var(--ac-font-caption);
+  pointer-events: none;
+}
+/* The stepper: over the card while it is hovered or holds the focus (always shown on touch screens). */
+.stepper {
+  position: absolute;
+  left: 50%;
+  bottom: var(--ac-space-2);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+:host(:focus-within) .stepper {
+  opacity: 1;
+  pointer-events: auto;
+}
+:host(.editable:focus-within) .qty {
+  opacity: 0;
+}
+@media (hover: hover) {
+  :host(:hover) .stepper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  :host(.editable:hover) .qty {
+    opacity: 0;
+  }
+}
+@media (hover: none) {
+  .stepper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  :host(.editable) .qty {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stepper {
+    transition: none;
+  }
+}

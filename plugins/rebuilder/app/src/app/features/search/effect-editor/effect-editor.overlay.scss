@@ -45,7 +45,9 @@
   margin-bottom: var(--ac-space-1);
 }
 .card {
+  position: relative;
   flex-shrink: 0;
+  cursor: pointer;
   border: 1px solid var(--ac-color-border);
   border-radius: var(--ac-radius-lg);
   background: var(--ac-color-surface);
@@ -69,6 +71,26 @@
   text-align: left;
   cursor: pointer;
 }
+/* The head button covers the whole card: a click on the values below opens the criterion too. */
+.card-head::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+@media (hover: hover) {
+  .card:not(.on):hover {
+    border-color: var(--ac-color-border-control);
+    background: var(--ac-color-bg-subtle);
+  }
+}
+.card-head:focus-visible {
+  outline: none;
+}
+.card:has(.card-head:focus-visible) {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
 .card-head .label {
   flex: 1 1 auto;
 }
@@ -79,7 +101,13 @@
   color: var(--ac-color-primary);
 }
 .card-values {
+  position: relative;
   padding: 0 var(--ac-space-3) var(--ac-space-3);
+  /* Above the head's cover for its own buttons (remove a value) only. */
+  pointer-events: none;
+}
+.card-values ::ng-deep :is(button, a, input) {
+  pointer-events: auto;
 }
 .pane {
   display: flex;

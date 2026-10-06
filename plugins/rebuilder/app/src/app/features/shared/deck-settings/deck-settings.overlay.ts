@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { heroArtSources } from '../../../core/card-art';
 import { BGA_LABEL, bgaTag, heroOnBga, visibleFormats, type FormatInfo } from '../../../core/formats';
 import type { DeckFormat, DeckHero } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
@@ -44,6 +45,11 @@ export class DeckSettingsOverlay {
   protected readonly name = signal(this.ref.data.name);
   protected readonly description = signal(this.ref.data.description);
   protected readonly hero = signal<DeckHero | null>(this.ref.data.hero);
+  /** The hero's illustration alone, without the card frame (the deck bar's art). */
+  protected readonly heroArt = computed(() => {
+    const ref = this.hero()?.reference;
+    return ref ? heroArtSources(ref) : null;
+  });
   protected readonly format = signal<DeckFormat>(this.ref.data.format);
   protected readonly isPublic = signal<boolean | undefined>(this.ref.data.isPublic);
 

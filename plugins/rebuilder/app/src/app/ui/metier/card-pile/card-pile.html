@@ -1,0 +1,30 @@
+<ng-template #face>
+  @if (unique()) {
+    <ac-unique-card [card]="card()" />
+  } @else {
+    <ac-card-art [reference]="card().reference" [neutral]="true" />
+  }
+</ng-template>
+<button type="button" class="stack" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" [style.--copies]="behind().length" (click)="zoom.emit()">
+  @for (i of behind(); track i) {
+    <span class="face layer" [style.--i]="i" aria-hidden="true"><ng-container [ngTemplateOutlet]="face" /></span>
+  }
+  <span class="face front"><ng-container [ngTemplateOutlet]="face" /></span>
+</button>
+@if (issues().length && quantity() > 0) {
+  <span class="marker" role="img" [attr.aria-label]="issueLabel()" [title]="issueLabel()"><ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" /></span>
+}
+@if (quantity() > 1) {
+  <span class="qty" aria-hidden="true">×{{ quantity() }}</span>
+}
+@if (!readonly()) {
+  <ac-stepper
+    class="stepper"
+    appearance="overlay"
+    [label]="copiesLabel()"
+    [itemName]="name()"
+    [value]="quantity()"
+    [max]="max()"
+    (valueChange)="quantityChange.emit($event)"
+  />
+}
