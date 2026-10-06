@@ -882,9 +882,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
     expect(res.status()).toBe(201);
     const copy = (await res.json()) as { id: string; isPublic: boolean };
     expect(copy.isPublic).toBe(false);
-    await expect(page).toHaveURL(at(DECK(copy.id)));
-    await expect(deckPage).toContainText(`${name} bis`);
-    await expect(deckPage.getByRole('button', { name: EDIT_DECK }).first()).toBeVisible();
+    // The copy is the user's: it opens in the editor, on « Aperçu ».
+    await expect(page).toHaveURL(at(`${EDITOR(copy.id)}&view=apercu`));
+    await expect(page.locator('app-editor-page')).toContainText(`${name} bis`);
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
   });

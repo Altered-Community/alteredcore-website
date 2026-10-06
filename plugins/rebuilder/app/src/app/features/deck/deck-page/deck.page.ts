@@ -198,8 +198,8 @@ export class DeckPage {
   protected duplicate(): void {
     openDuplicateDeck(this.overlay).afterClosed.subscribe((id) => {
       if (!id) return;
-      this.flash($localize`:@@deck.page.duplicated:Deck dupliqué.`);
-      void this.router.navigate(['/decks', id]);
+      // The copy is the user's: it opens in the editor, on « Aperçu ».
+      void this.router.navigate(['/decks', id, 'edit', 'apercu']);
     });
   }
 
