@@ -40,6 +40,7 @@
   outline-offset: -2px;
 }
 .settings {
+  /* A surface-coloured chip with a border and a shadow: it stands out on a dark or a light hero art alike. */
   position: absolute;
   right: var(--ac-space-2);
   bottom: var(--ac-space-2);
@@ -49,15 +50,17 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 0;
+  border: 1px solid var(--ac-color-border-control);
   border-radius: var(--ac-radius-pill);
-  background: var(--ac-color-overlay-chip);
-  color: var(--ac-color-on-strong);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  box-shadow: var(--ac-shadow-e3);
   cursor: pointer;
 }
 @media (hover: hover) {
   .settings:hover {
-    background: var(--ac-color-overlay-control);
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-primary);
   }
 }
 .text {
