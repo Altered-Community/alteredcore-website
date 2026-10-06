@@ -54,7 +54,7 @@ switch ("$method $path") {
     case 'POST /api/alt-arts/apply-to-deck':
         reply(['lines' => applyToDeck((array)$body, $user)]);
     case 'GET /api/collection':
-        reply([]);
+        reply(collection());
     default:
         reply(['error' => "No mock for $method $path"], 404);
 }
@@ -188,6 +188,25 @@ function search(string $user): array {
         $options[] = options($f, $user);
     }
     return ['families' => $families, 'options' => $options, 'hasMore' => $page * $take < (int)($res['totalItems'] ?? 0)];
+}
+
+/** A few owned cards (the same for every user), filtered as the service does: `key[]` lists, `name` substring. */
+function collection(): array {
+    $owned = [
+        ['reference' => 'ALT_CORE_B_AX_08_C', 'quantity' => 3, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
+        ['reference' => 'ALT_CORE_B_AX_08_R1', 'quantity' => 1, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'CORE'],
+        ['reference' => 'ALT_CORE_B_AX_15_C', 'quantity' => 2, 'name' => 'Brouilleur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
+        ['reference' => 'ALT_ALIZE_B_AX_32_R1', 'quantity' => 1, 'name' => 'La Machine dans la Glace', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'ALIZE'],
+        ['reference' => 'ALT_CORE_B_BR_10_C', 'quantity' => 3, 'name' => 'Red', 'faction' => 'BR', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
+    ];
+    $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));
+    return array_values(array_filter($owned, function ($c) use ($name) {
+        foreach (['faction', 'rarity', 'type', 'set'] as $k) {
+            $wanted = (array)($_GET[$k] ?? []);
+            if ($wanted && !in_array($c[$k], $wanted, true)) return false;
+        }
+        return $name === '' || str_contains(mb_strtolower($c['name']), $name);
+    }));
 }
 
 /** Global mode: each copy takes its slot's print when owned, the standard print otherwise. */

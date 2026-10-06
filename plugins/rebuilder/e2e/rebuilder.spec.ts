@@ -151,6 +151,22 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
+  test('lists the digital collection with every rarity, type and set of the default filters', async ({ page, compact }) => {
+    test.skip(compact, 'the source tabs are checked on desktop');
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E owned ${Date.now()}`);
+    const owned = page.waitForRequest((r) => r.url().includes('/papi/core-altered-cards/ownership-search'));
+    await page.getByRole('tab', { name: 'Propriété numérique' }).click();
+    // The Axiom cards of the stack's ownership mock (docker/stack/ownership-mock): commons, rares, two sets.
+    const tiles = page.locator('app-search-results ac-card-tile');
+    await expect(tiles).toHaveCount(4);
+    await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(1);
+    // Lists in their array form: PHP keeps the last value of a repeated `rarity=…`.
+    const query = new URL((await owned).url()).searchParams;
+    expect(query.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
+  });
+
   test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
     const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
     const browserDialogs: string[] = [];
@@ -670,9 +686,9 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
 });
 
 test.describe('ReBuilder in the shell · deck page', () => {
-  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why). */
-  async function createServerDeck(page: Page, name: string): Promise<string> {
-    return page.evaluate(async (deckName) => {
+  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why), plus `extra` references. */
+  async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {
+    return page.evaluate(async ([deckName, more]) => {
       const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
       const res = await fetch(`${host.services.decks}/api/decks`, {
         method: 'POST',
@@ -687,12 +703,13 @@ test.describe('ReBuilder in the shell · deck page', () => {
             { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
             { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
             { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
+            ...more.map((cardReference) => ({ cardReference, quantity: 1 })),
           ],
         }),
       });
       if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
       return ((await res.json()) as { id: string }).id;
-    }, name);
+    }, [name, extra] as const);
   }
 
   /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
@@ -799,6 +816,25 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
+  });
+
+  test('keeps a unique\'s illustration once its printed effect arrives after it', async ({ page }) => {
+    // No support ability and a short effect: the same frame, so the same illustration URL, before and after the effect.
+    const unique = 'ALT_ALIZE_B_AX_32_U_2';
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E unique art ${Date.now()}`, [unique]);
+    // The cards API answers once the illustration has loaded: the deck then replaces the unique's card object.
+    const art = page.waitForResponse((r) => /ALT_ALIZE_B_AX_32_U_FRAMELESS_T3\.webp$/.test(new URL(r.url()).pathname) && r.ok());
+    await page.route('**/api/cards/batch**', async (route) => {
+      await art;
+      await page.waitForTimeout(300);
+      await route.continue();
+    });
+    await page.goto(DECK(id));
+    const tile = page.locator('ac-card-tile').filter({ has: page.locator('ac-unique-card') });
+    await expect(tile.locator('.main-text')).not.toBeEmpty();
+    await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
+    await expect(tile.locator('ac-card-art img')).toHaveCSS('opacity', '1');
   });
 
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {

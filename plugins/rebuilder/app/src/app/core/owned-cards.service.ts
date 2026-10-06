@@ -70,11 +70,12 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
     add('set[]', f.sets);
     return p;
   }
-  add('faction', factions);
-  add('rarity', rarities);
-  add('cardType', f.types);
-  add('cardSet', f.sets);
-  add('subTypes', f.subtypes);
+  // `key[]`: PHP keeps the last value of a repeated `key=…`, which left one rarity, type and set of the defaults.
+  add('faction[]', factions);
+  add('rarity[]', rarities);
+  add('cardType[]', f.types);
+  add('cardSet[]', f.sets);
+  add('subTypes[]', f.subtypes);
   if (f.q.trim()) p = p.set('name', f.q.trim());
   const costs = parseCostExpression(f.mainCost) ?? [];
   if (costs.length) {
