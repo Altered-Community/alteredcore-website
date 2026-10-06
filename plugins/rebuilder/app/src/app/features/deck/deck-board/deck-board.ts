@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import type { Card, HydratedLine } from '../../../core/models';
 import { AcCardPile } from '../../../ui/metier';
@@ -7,6 +7,11 @@ import { EditorAltArts } from '../../editor/editor-alt-arts';
 import { lineIssues } from '../../editor/editor-legality';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { deckBoard } from './board-layout';
+
+/** Narrowest card column the board aims for (card and gap): a wider board gets more columns, so fewer rows. */
+const MIN_COLUMN = 150;
+/** Columns of a board narrower than measured, or not measured yet. */
+const MIN_COLUMNS = 8;
 
 /**
  * « Aperçu » from 768 px: the whole deck at a glance, as its image. One column group per type, each card a pile of its
@@ -24,6 +29,9 @@ export class DeckBoard {
   /** Editor only: prints of the deck's cards (per-deck alt-art mode). */
   private readonly altArts = inject(EditorAltArts, { optional: true });
   readonly readonly = input(false);
+  /** The board's width, measured: the number of card columns follows it. */
+  private readonly width = signal(0);
+  private readonly maxColumns = computed(() => Math.max(MIN_COLUMNS, Math.floor(this.width() / MIN_COLUMN)));
 
   protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
   /** Cards shown since this view opened, by reference: one removed meanwhile stays at 0 copies. */
@@ -34,12 +42,20 @@ export class DeckBoard {
     if (this.editable()) {
       for (const [ref, card] of this.shown()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
     }
-    return deckBoard(lines);
+    return deckBoard(lines, this.maxColumns());
   });
   protected readonly issues = computed(() => lineIssues(this.deck));
   protected readonly noIssues: readonly string[] = [];
 
   constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(([entry]) => this.width.set(Math.round(entry.contentRect.width)));
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
     // Another deck loaded: its own cards only.
     effect(() => {
       this.deck.deckId();

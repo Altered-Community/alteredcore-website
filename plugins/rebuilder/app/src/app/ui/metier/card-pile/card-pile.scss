@@ -1,6 +1,6 @@
 :host {
-  /* Offset of each copy behind the front one. */
-  --pile-offset: 9px;
+  /* Offset of each copy behind the front one: enough to count them over the cards' dark top edge. */
+  --pile-offset: 16px;
   position: relative;
   display: block;
   min-width: 0;

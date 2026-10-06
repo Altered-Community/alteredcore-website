@@ -6,8 +6,8 @@
   padding: var(--ac-space-5) 0;
 }
 .group {
-  /* Card columns of the same width in every group, 190px at most (a small deck does not get giant cards). */
-  --card-max: 190px;
+  /* Card columns of the same width in every group, 260px at most (a small deck does not get giant cards). */
+  --card-max: 260px;
   /* Grows with its columns from its padding less one gap: every card column gets the same width. */
   flex: var(--columns) 1 calc(2 * var(--ac-space-5) - var(--ac-space-3));
   min-width: 0;
