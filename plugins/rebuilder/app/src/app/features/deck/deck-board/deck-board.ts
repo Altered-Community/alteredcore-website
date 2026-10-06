@@ -6,12 +6,15 @@ import { AcOverlayService } from '../../../ui/overlay';
 import { EditorAltArts } from '../../editor/editor-alt-arts';
 import { lineIssues } from '../../editor/editor-legality';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
-import { deckBoard } from './board-layout';
+import { deckBoard, fitColumns } from './board-layout';
 
-/** Narrowest card column the board aims for (card and gap): a wider board gets more columns, so fewer rows. */
-const MIN_COLUMN = 150;
-/** Columns of a board narrower than measured, or not measured yet. */
-const MIN_COLUMNS = 8;
+/** Narrowest card the board shows, to keep it readable: a wider board gets more columns, so fewer rows. */
+const MIN_CARD = 150;
+/** The board's CSS: a group's side padding (--ac-space-5) and the gap between cards (--ac-space-3). */
+const PADDING = 20;
+const GAP = 12;
+/** Columns before the board is measured. */
+const DEFAULT_COLUMNS = 8;
 
 /**
  * « Aperçu » from 768 px: the whole deck at a glance, as its image. One column group per type, each card a pile of its
@@ -31,7 +34,6 @@ export class DeckBoard {
   readonly readonly = input(false);
   /** The board's width, measured: the number of card columns follows it. */
   private readonly width = signal(0);
-  private readonly maxColumns = computed(() => Math.max(MIN_COLUMNS, Math.floor(this.width() / MIN_COLUMN)));
 
   protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
   /** Cards shown since this view opened, by reference: one removed meanwhile stays at 0 copies. */
@@ -42,7 +44,8 @@ export class DeckBoard {
     if (this.editable()) {
       for (const [ref, card] of this.shown()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
     }
-    return deckBoard(lines, this.maxColumns());
+    const width = this.width();
+    return deckBoard(lines, (groups) => (width ? fitColumns(width, groups, MIN_CARD, PADDING, GAP) : DEFAULT_COLUMNS));
   });
   protected readonly issues = computed(() => lineIssues(this.deck));
   protected readonly noIssues: readonly string[] = [];

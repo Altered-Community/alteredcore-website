@@ -23,7 +23,7 @@ const UNIQUES = $localize`:@@deck.board.uniques:Uniques`;
  * group has the same number of rows, the smallest that fits the board in `maxColumns` card columns. Lines at 0 copies
  * stay (a card just removed in the editor).
  */
-export function deckBoard(lines: readonly HydratedLine[], maxColumns = 12): BoardGroup[] {
+export function deckBoard(lines: readonly HydratedLine[], maxColumns: number | ((groups: number) => number) = 12): BoardGroup[] {
   const buckets = new Map<BoardGroupId, HydratedLine[]>();
   for (const line of lines) {
     if (typeOf(line.card) === 'HERO' || line.quantity < 0) continue;
@@ -39,7 +39,8 @@ export function deckBoard(lines: readonly HydratedLine[], maxColumns = 12): Boar
     );
     return { id, label: id === 'uniques' ? UNIQUES : GROUP_LABELS[id].label, count: rows.reduce((n, l) => n + l.quantity, 0), lines: rows, columns: 1 };
   });
-  const rows = boardRows(groups.map((g) => g.lines.length), maxColumns);
+  const columns = typeof maxColumns === 'number' ? maxColumns : maxColumns(groups.length);
+  const rows = boardRows(groups.map((g) => g.lines.length), columns);
   return groups.map((g) => ({ ...g, columns: Math.max(1, Math.ceil(g.lines.length / rows)) }));
 }
 
@@ -49,4 +50,12 @@ export function boardRows(sizes: readonly number[], maxColumns: number): number 
   let rows = 1;
   while (rows < most && sizes.reduce((n, size) => n + Math.max(1, Math.ceil(size / rows)), 0) > maxColumns) rows++;
   return rows;
+}
+
+/**
+ * Card columns that fit `width` with cards of `minCard` px at least: each group has its padding on both sides less one
+ * gap (the board's CSS), each column a card and a gap.
+ */
+export function fitColumns(width: number, groups: number, minCard: number, padding: number, gap: number): number {
+  return Math.max(1, Math.floor((width - groups * (2 * padding - gap)) / (minCard + gap)));
 }

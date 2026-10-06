@@ -1,5 +1,5 @@
 import type { Card, HydratedLine } from '../../../core/models';
-import { boardRows, deckBoard } from './board-layout';
+import { boardRows, deckBoard, fitColumns } from './board-layout';
 
 const line = (reference: string, type: string, mainCost: number, quantity = 1): HydratedLine => ({
   card: { reference, name: reference, mainCost, cardType: { reference: type } } as unknown as Card,
@@ -33,5 +33,14 @@ describe('deckBoard', () => {
     expect(groups[0].count).toBe(5);
     expect(groups[1].count).toBe(0);
     expect(groups.map((g) => g.columns)).toEqual([2, 1, 1]);
+  });
+});
+
+describe('fitColumns', () => {
+  it('keeps the cards at their minimum width', () => {
+    // 1 940 px, 4 groups: (1940 - 4 × 28) / 162 = 11.3.
+    expect(fitColumns(1940, 4, 150, 20, 12)).toBe(11);
+    expect(fitColumns(1376, 4, 150, 20, 12)).toBe(7);
+    expect(fitColumns(100, 4, 150, 20, 12)).toBe(1);
   });
 });
