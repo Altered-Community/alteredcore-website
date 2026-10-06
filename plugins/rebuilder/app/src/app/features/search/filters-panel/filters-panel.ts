@@ -1,5 +1,5 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
-import { COST_RELATIONS, TYPE_OPTIONS, rarityOptionsFor, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { COST_RELATIONS, TYPE_OPTIONS, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
 import type { DeckFormat } from '../../../core/models';
@@ -113,7 +113,7 @@ export class FiltersPanel {
   /** A copy of effect `i` right after it, with its own id. */
   duplicateEffect(i: number): void {
     const effects = [...this.value().effects];
-    effects.splice(i + 1, 0, { ...effects[i], id: newEffectBlock().id });
+    effects.splice(i + 1, 0, { ...effects[i], id: newEffectId() });
     this.set({ effects });
   }
 

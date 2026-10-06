@@ -369,6 +369,10 @@ export function activeFilterCount(filters: SearchFilters, source: CardSource): n
   return filterChips(filters, source).filter((c) => c.id !== 'environment' || filters.environment !== 'all').length;
 }
 
+export function newEffectId(): string {
+  return `fx-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function newEffectBlock(): EffectBlock {
-  return { id: `fx-${Math.random().toString(36).slice(2, 9)}`, triggers: [], conditions: [], effects: [] };
+  return { id: newEffectId(), triggers: [], conditions: [], effects: [] };
 }

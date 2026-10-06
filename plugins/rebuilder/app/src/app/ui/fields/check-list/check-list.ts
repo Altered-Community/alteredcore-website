@@ -1,7 +1,7 @@
 import { Component, computed, input, model, signal } from '@angular/core';
 import { AcIcon } from '../../icon';
 import type { ComboOption } from '../combobox/combobox';
-import { normalizeSearch } from '../search-text';
+import { groupStarts, normalizeSearch } from '../option-list';
 
 /**
  * Multi-select list that stays on screen: a search field over one checkbox per option, in the order of
@@ -33,15 +33,7 @@ export class AcCheckList {
   });
 
   /** Where a group heading goes: the first listed option of each group. */
-  protected readonly groupStarts = computed(() => {
-    const starts = new Set<number>();
-    let last: string | undefined;
-    for (const o of this.filtered()) {
-      if (o.group && o.group !== last) starts.add(o.id);
-      last = o.group;
-    }
-    return starts;
-  });
+  protected readonly groupStarts = computed(() => groupStarts(this.filtered()));
 
   setChecked(o: ComboOption, on: boolean): void {
     this.values.update((list) => {

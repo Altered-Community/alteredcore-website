@@ -19,7 +19,7 @@
     (keydown)="onToggleKey($event)"
     (focusout)="onFocusOut($event)"
   >
-    <span class="label">{{ label() }}</span>
+    <span class="label">{{ placeholder() }}</span>
     <span class="chev" [class.up]="open()"><ac-icon name="chevron-down" [size]="16" /></span>
   </button>
 </div>

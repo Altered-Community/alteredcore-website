@@ -1,3 +1,5 @@
+@use '../glyph';
+
 /* One value per line, each « ou » on its own line between them. */
 :host {
   display: flex;
@@ -47,16 +49,4 @@
 .empty {
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
-}
-.glyph {
-  display: inline-block;
-  width: 1.4em;
-  font-family: var(--ac-card-icons);
-  font-style: normal;
-  font-weight: 400;
-  font-size: 1.15em;
-  line-height: 1;
-  text-align: center;
-  margin-right: var(--ac-space-1-5);
-  vertical-align: -0.12em;
 }

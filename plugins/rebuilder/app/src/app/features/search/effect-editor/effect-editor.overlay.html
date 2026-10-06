@@ -1,6 +1,6 @@
 @if (bp.compact()) {
   <div class="ac-overlay-body stack">
-    <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+    <ng-container *ngTemplateOutlet="intro" />
     @for (c of criteria; track c.kind) {
       <div class="crit">
         <span class="label">{{ c.label }} <span class="muted">· {{ c.sub }}</span></span>
@@ -10,14 +10,12 @@
         <button acButton variant="add" icon="plus" [fullWidth]="true" class="add" (click)="openPicker(c)">{{ c.add }}</button>
       </div>
     }
-    @if (loadError()) {
-      <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
-    }
+    <ng-container *ngTemplateOutlet="loadErrorMessage" />
   </div>
 } @else {
   <div class="ac-overlay-body cols">
     <div class="side">
-      <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+      <ng-container *ngTemplateOutlet="intro" />
       @for (c of criteria; track c.kind) {
         <section class="card" [class.on]="active() === c.kind">
           <button type="button" class="card-head" [attr.aria-pressed]="active() === c.kind" (click)="active.set(c.kind)">
@@ -33,9 +31,7 @@
         <div class="pane">
           <h3 class="label pane-title">{{ c.label }} <span class="muted">· {{ c.sub }}</span></h3>
           <ac-check-list class="pane-list" [options]="c.options()" [values]="c.picked()" (valuesChange)="c.picked.set($event)" [label]="c.sub" [searchPlaceholder]="c.search" />
-          @if (loadError()) {
-            <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
-          }
+          <ng-container *ngTemplateOutlet="loadErrorMessage" />
         </div>
       }
     }
@@ -45,3 +41,11 @@
   <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@search.effect.cancel">Annuler</button>
   <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="apply()" i18n="@@search.effect.apply">Appliquer</button>
 </div>
+<ng-template #intro>
+  <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+</ng-template>
+<ng-template #loadErrorMessage>
+  @if (loadError()) {
+    <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
+  }
+</ng-template>

@@ -1,3 +1,5 @@
+@use '../glyph';
+
 :host {
   display: flex;
   flex-direction: column;
@@ -72,18 +74,6 @@
 }
 .chev.up {
   transform: translateY(-50%) rotate(180deg);
-}
-.glyph {
-  display: inline-block;
-  width: 1.4em;
-  font-family: var(--ac-card-icons);
-  font-style: normal;
-  font-weight: 400;
-  font-size: 1.15em;
-  line-height: 1;
-  text-align: center;
-  margin-right: var(--ac-space-1-5);
-  vertical-align: -0.12em;
 }
 /* In the CDK overlay container (plugin shadow root), sized to the button (matchWidth). */
 .panel {

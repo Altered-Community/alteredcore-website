@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal, type Signal, type WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, concat, of, switchMap } from 'rxjs';
@@ -22,9 +23,7 @@ export interface EffectEditorData {
 
 const KINDS: AbilityKind[] = ['triggers', 'conditions', 'effects'];
 
-/** One criterion of the block: its texts, the values offered and the values picked. */
-interface Criterion {
-  kind: AbilityKind;
+interface CriterionTexts {
   /** « Quand », « Si », « Alors ». */
   label: string;
   /** « déclencheur », « condition », « effet ». */
@@ -34,6 +33,35 @@ interface Criterion {
   /** Nothing picked: the criterion does not filter. */
   any: string;
   search: string;
+}
+
+const TEXTS: Record<AbilityKind, CriterionTexts> = {
+  triggers: {
+    label: $localize`:@@search.effect.whenLabel:Quand`,
+    sub: $localize`:@@search.effect.triggerSub:déclencheur`,
+    add: $localize`:@@search.effect.addTrigger:Ajouter un déclencheur`,
+    any: $localize`:@@search.effect.anyTrigger:Tous les déclencheurs`,
+    search: $localize`:@@search.effect.searchTrigger:Rechercher un déclencheur…`,
+  },
+  conditions: {
+    label: $localize`:@@search.effect.ifLabel:Si`,
+    sub: $localize`:@@search.effect.conditionSub:condition`,
+    add: $localize`:@@search.effect.addCondition:Ajouter une condition`,
+    any: $localize`:@@search.effect.anyCondition:Toutes les conditions`,
+    search: $localize`:@@search.effect.searchCondition:Rechercher une condition…`,
+  },
+  effects: {
+    label: $localize`:@@search.effect.thenLabel:Alors`,
+    sub: $localize`:@@search.effect.effectSub:effet`,
+    add: $localize`:@@search.effect.addEffect:Ajouter un effet`,
+    any: $localize`:@@search.effect.anyEffect:Tous les effets`,
+    search: $localize`:@@search.effect.searchEffect:Rechercher un effet…`,
+  },
+};
+
+/** One criterion of the block: its texts, the values offered and the values picked. */
+interface Criterion extends CriterionTexts {
+  kind: AbilityKind;
   options: Signal<AbilityRef[]>;
   picked: WritableSignal<AbilityRef[]>;
 }
@@ -45,7 +73,7 @@ interface Criterion {
  */
 @Component({
   selector: 'ac-effect-editor',
-  imports: [AcCheckList, AcOrValues, AcButton, AcIcon],
+  imports: [AcCheckList, AcOrValues, AcButton, AcIcon, NgTemplateOutlet],
   host: { class: 'ac-overlay-content' },
   templateUrl: './effect-editor.overlay.html',
   styleUrl: './effect-editor.overlay.scss',
@@ -62,38 +90,7 @@ export class EffectEditorOverlay {
     effects: signal(this.ref.data.effect.effects),
   };
 
-  protected readonly criteria: Criterion[] = [
-    {
-      kind: 'triggers',
-      label: $localize`:@@search.effect.whenLabel:Quand`,
-      sub: $localize`:@@search.effect.triggerSub:déclencheur`,
-      add: $localize`:@@search.effect.addTrigger:Ajouter un déclencheur`,
-      any: $localize`:@@search.effect.anyTrigger:Tous les déclencheurs`,
-      search: $localize`:@@search.effect.searchTrigger:Rechercher un déclencheur…`,
-      options: this.options('triggers'),
-      picked: this.picked.triggers,
-    },
-    {
-      kind: 'conditions',
-      label: $localize`:@@search.effect.ifLabel:Si`,
-      sub: $localize`:@@search.effect.conditionSub:condition`,
-      add: $localize`:@@search.effect.addCondition:Ajouter une condition`,
-      any: $localize`:@@search.effect.anyCondition:Toutes les conditions`,
-      search: $localize`:@@search.effect.searchCondition:Rechercher une condition…`,
-      options: this.options('conditions'),
-      picked: this.picked.conditions,
-    },
-    {
-      kind: 'effects',
-      label: $localize`:@@search.effect.thenLabel:Alors`,
-      sub: $localize`:@@search.effect.effectSub:effet`,
-      add: $localize`:@@search.effect.addEffect:Ajouter un effet`,
-      any: $localize`:@@search.effect.anyEffect:Tous les effets`,
-      search: $localize`:@@search.effect.searchEffect:Rechercher un effet…`,
-      options: this.options('effects'),
-      picked: this.picked.effects,
-    },
-  ];
+  protected readonly criteria: Criterion[] = KINDS.map((kind) => ({ kind, ...TEXTS[kind], options: this.options(kind), picked: this.picked[kind] }));
 
   /** Window: the criterion whose list is shown. */
   protected readonly active = signal<AbilityKind>('triggers');
@@ -143,34 +140,26 @@ export class EffectEditorOverlay {
   private narrowing(kind: AbilityKind): Signal<Set<number> | null> {
     const { query, index } = this.ref.data;
     if (!query || query.reference) return signal(null);
-    const others = computed(() =>
-      KINDS.filter((k) => k !== kind)
-        .map((k) => this.picked[k]().map((a) => a.id).join(','))
-        .join('|'),
-    );
+    const others = computed(() => KINDS.filter((k) => k !== kind).map((k) => this.picked[k]()));
+    const ids = (values: Record<AbilityKind, AbilityRef[]>): UniquesEffect => ({
+      triggers: values.triggers.map((a) => a.id),
+      conditions: values.conditions.map((a) => a.id),
+      effects: values.effects.map((a) => a.id),
+    });
     return toSignal(
       toObservable(others).pipe(
-        switchMap(() => concat(of(null), this.api.narrowAbilities(query, index, this.block(), kind).pipe(catchError(() => of(null))))),
+        switchMap(() => concat(of(null), this.api.narrowAbilities(query, index, ids(this.values()), kind).pipe(catchError(() => of(null))))),
       ),
       { initialValue: null },
     );
   }
 
-  private block(): UniquesEffect {
-    return {
-      triggers: this.picked.triggers().map((a) => a.id),
-      conditions: this.picked.conditions().map((a) => a.id),
-      effects: this.picked.effects().map((a) => a.id),
-    };
+  private values(): Record<AbilityKind, AbilityRef[]> {
+    return { triggers: this.picked.triggers(), conditions: this.picked.conditions(), effects: this.picked.effects() };
   }
 
   apply(): void {
-    this.ref.close({
-      ...this.ref.data.effect,
-      triggers: this.picked.triggers(),
-      conditions: this.picked.conditions(),
-      effects: this.picked.effects(),
-    });
+    this.ref.close({ ...this.ref.data.effect, ...this.values() });
   }
 }
 
