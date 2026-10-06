@@ -674,6 +674,7 @@
     "ui.cardTile.favorite": "Add {$name} to favorites",
     "altArt.tile": "Illustration {$n}",
     "altArt.marker": "Copy {$n}",
+    "altArt.chosen": "Chosen illustration",
     "altArt.saveError": "Could not save your choice.",
     "core.violation.sets": "Set missing from BGA",
     "core.violation.frontierUniques": "Off the Frontier list",

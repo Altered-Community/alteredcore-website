@@ -56,7 +56,13 @@ li {
   color: var(--ac-color-on-strong);
   font-size: 10px;
   font-weight: 700;
+}
+button.marker {
   cursor: pointer;
+}
+span.marker {
+  display: grid;
+  place-items: center;
 }
 .marker.active {
   background: var(--ac-color-primary);

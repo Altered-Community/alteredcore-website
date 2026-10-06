@@ -122,7 +122,7 @@ function toFamily(array $g): ?array {
         'cardType' => $type,
         'name'     => $g['name'] ?? '',
         'slug'     => $slug,
-        'copies'   => $type === 'HERO' ? 1 : 3,
+        'copies'   => $type === 'HERO' || str_starts_with($type, 'TOKEN') ? 1 : 3,
         'prints'   => $prints,
     ];
     $f['key'] = $f['familyId'] . ':' . $faction . ':' . $rarity;
