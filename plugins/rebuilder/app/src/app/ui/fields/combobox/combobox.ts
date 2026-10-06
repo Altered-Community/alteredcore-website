@@ -3,6 +3,7 @@ import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, 
 import { _getEventTarget } from '@angular/cdk/platform';
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { AcIcon } from '../../icon';
+import { groupStarts, normalizeSearch } from '../option-list';
 import { nextId } from '../value-accessor';
 
 export interface ComboOption {
@@ -40,7 +41,6 @@ export class AcCombobox {
   readonly options = input<ComboOption[]>([]);
   readonly values = model<ComboOption[]>([]);
   readonly placeholder = input($localize`:@@ui.combobox.add:Ajouter…`);
-  readonly emptyPlaceholder = input('');
   readonly searchPlaceholder = input($localize`:@@ui.combobox.search:Rechercher…`);
   readonly searchChange = output<string>();
 
@@ -61,26 +61,16 @@ export class AcCombobox {
   protected readonly query = signal('');
   protected readonly open = signal(false);
 
-  protected readonly label = computed(() => (this.values().length ? this.placeholder() : this.emptyPlaceholder() || this.placeholder()));
-
   /** Where a group heading goes: the first listed option of each group. */
-  protected readonly groupStarts = computed(() => {
-    const starts = new Set<number>();
-    let last: string | undefined;
-    for (const o of this.filtered()) {
-      if (o.group && o.group !== last) starts.add(o.id);
-      last = o.group;
-    }
-    return starts;
-  });
+  protected readonly groupStarts = computed(() => groupStarts(this.filtered()));
 
   protected readonly filtered = computed(() => {
-    const q = normalize(this.query());
+    const q = normalizeSearch(this.query());
     const chosen = new Set(this.values().map((v) => v.id));
     const out: ComboOption[] = [];
     for (const o of this.options()) {
       if (chosen.has(o.id)) continue;
-      if (q && !normalize(o.text).includes(q)) continue;
+      if (q && !normalizeSearch(o.text).includes(q)) continue;
       out.push(o);
       if (out.length >= 50) break;
     }
@@ -178,8 +168,4 @@ export class AcCombobox {
     this.open.set(false);
     this.query.set('');
   }
-}
-
-function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }

@@ -517,13 +517,13 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     await page.getByRole('tab', { name: 'Uniques' }).click();
     await expect(page.locator('ac-unique-card').first()).toBeVisible();
 
-    /** Picks `text` (exact) in the criterion `index` of the open effect window. */
+    /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
     const pick = async (index: number, text: string) => {
       const dialog = page.getByRole('dialog');
-      await dialog.getByRole('combobox').nth(index).click();
-      await page.locator('.cdk-overlay-container .panel input').fill(text);
-      await page.getByRole('option', { name: text, exact: true }).click();
-      await expect(dialog.locator('ac-combobox').nth(index).locator('.picked').filter({ hasText: text })).toBeVisible();
+      await dialog.locator('.card-head').nth(index).click();
+      await dialog.locator('ac-check-list input[type=search]').fill(text);
+      await dialog.getByRole('checkbox', { name: text, exact: true }).check();
+      await expect(dialog.locator('.card').nth(index).locator('ac-or-values .value').filter({ hasText: text })).toBeVisible();
     };
     const editEffect = async (open: () => Promise<void>, picks: [number, string][]) => {
       await open();
@@ -556,6 +556,13 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The count shown is the API's for that request.
     await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
+
+    // « Dupliquer » puts a copy of the effect right after it.
+    const summaries = page.locator('ac-effect-summary');
+    const firstText = await summaries.nth(0).locator('p').allTextContents();
+    await summaries.nth(0).getByRole('button', { name: 'Dupliquer Effet 1' }).click();
+    await expect(summaries).toHaveCount(3);
+    expect(await summaries.nth(1).locator('p').allTextContents()).toEqual(firstText);
   });
 
   test('narrows each effect list to the values that still give a card, for the effect being edited', async ({ page, compact }, testInfo) => {
@@ -569,15 +576,23 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     const narrowing = (editing: string) =>
       page.waitForResponse((r) => r.url().includes('/api/v2/effects/filtered') && new URL(r.url()).searchParams.get('editing') === editing);
     const idGds = async (res: Promise<{ json(): Promise<unknown> }>) => ((await (await res).json()) as { idGds: number[] }).idGds;
-    /** Options of the criterion `index` of the open effect window, list closed again. */
+    const dialog = () => page.getByRole('dialog');
+    /** Shows the checkbox list of the criterion `index`: the right column, or a step in compact. */
+    const openCriterion = async (index: number) => {
+      await dialog().locator(compact ? '.crit .add' : '.card-head').nth(index).click();
+      await expect(dialog().locator('ac-check-list')).toBeVisible();
+    };
+    /** Compact: back from the step to the criteria. */
+    const closeCriterion = async () => {
+      if (compact) await dialog().getByRole('button', { name: 'Valider' }).click();
+    };
+    /** Options of the criterion `index` of the open effect window. */
     const listed = async (index: number) => {
-      const combo = page.getByRole('dialog').getByRole('combobox').nth(index);
-      await combo.click();
-      const options = page.locator('.cdk-overlay-container .panel [role=option]');
+      await openCriterion(index);
+      const options = dialog().locator('ac-check-list .option');
       await options.first().waitFor();
       const texts = await options.allTextContents();
-      await combo.click();
-      await expect(page.locator('.cdk-overlay-container .panel')).toHaveCount(0);
+      await closeCriterion();
       return texts;
     };
     const apply = async () => {
@@ -594,9 +609,10 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The whole list shows until the answer comes, then only the ids it holds.
     await expect.poll(async () => (await listed(0)).length).toBeLessThanOrEqual(factionIds.length);
     const allTriggers = await listed(0);
-    await page.getByRole('dialog').getByRole('combobox').nth(2).click();
-    await page.locator('.cdk-overlay-container .panel input').fill('Piochez deux cartes.');
-    await page.getByRole('option', { name: 'Piochez deux cartes.', exact: true }).click();
+    await openCriterion(2);
+    await dialog().locator('ac-check-list input[type=search]').fill('Piochez deux cartes.');
+    await dialog().getByRole('checkbox', { name: 'Piochez deux cartes.', exact: true }).check();
+    await closeCriterion();
     await apply();
 
     // Effect 2: slot 1, effect 1 sent as a constraint, the new block empty.
@@ -610,12 +626,14 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     const narrowed = await listed(0);
     expect(narrowed.length).toBeGreaterThan(0);
     expect(narrowed.length).toBeLessThan(allTriggers.length);
-    await page.getByRole('dialog').getByRole('combobox').nth(0).click();
+    await openCriterion(0);
     await evidence(page, testInfo, '14-uniques-effect-narrowed');
-    await page.locator('.cdk-overlay-container .panel [role=option]').first().click();
+    await dialog().locator('ac-check-list input[type=checkbox]').first().check();
+    await closeCriterion();
     await apply();
 
-    // Effect 1 removed: the one left is slot 0 again, and its own trigger does not narrow its trigger list.
+    // Effect 1 removed: the one left is slot 0 again, and its own trigger does not narrow its trigger list
+    // (the checked trigger stays in the list, checked).
     await page.locator('ac-effect-summary').first().getByRole('button', { name: /^Supprimer/ }).click();
     await expect(page.locator('ac-effect-summary')).toHaveCount(1);
     const again = narrowing('trigger:0');
@@ -624,7 +642,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     expect(reqAgain.searchParams.get('effect[0][t]')).toBeTruthy();
     expect([...reqAgain.searchParams.keys()].filter((k) => k.startsWith('effect[1]'))).toEqual([]);
     await again;
-    await expect.poll(async () => (await listed(0)).length).toBe(allTriggers.length - 1);
+    await expect.poll(async () => (await listed(0)).length).toBe(allTriggers.length);
   });
 });
 

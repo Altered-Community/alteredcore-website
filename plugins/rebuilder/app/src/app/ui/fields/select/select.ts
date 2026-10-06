@@ -5,6 +5,7 @@ import { Component, ElementRef, Injector, afterNextRender, computed, forwardRef,
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { AcIcon } from '../../icon';
 import { nextId, ValueAccessor } from '../value-accessor';
+import { normalizeSearch } from '../option-list';
 
 export interface AcOption<T = string> {
   value: T;
@@ -90,8 +91,8 @@ export class AcSelect extends ValueAccessor<string> {
 
   /** Options without a group first, then the groups, filtered by the search (names, then group names). */
   protected readonly view = computed(() => {
-    const q = fold(this.query().trim());
-    const match = (o: AcOption) => !q || fold(o.label).includes(q) || (!!o.group && fold(o.group).startsWith(q));
+    const q = normalizeSearch(this.query().trim());
+    const match = (o: AcOption) => !q || normalizeSearch(o.label).includes(q) || (!!o.group && normalizeSearch(o.group).startsWith(q));
     const loose: Row[] = [];
     const groups: Group[] = [];
     let index = 0;
@@ -121,8 +122,8 @@ export class AcSelect extends ValueAccessor<string> {
     return `${this.id}-g${i}`;
   }
   protected highlight(label: string): { before: string; match: string; after: string } {
-    const q = fold(this.query().trim());
-    const i = q ? fold(label).indexOf(q) : -1;
+    const q = normalizeSearch(this.query().trim());
+    const i = q ? normalizeSearch(label).indexOf(q) : -1;
     return i < 0 ? { before: label, match: '', after: '' } : { before: label.slice(0, i), match: label.slice(i, i + q.length), after: label.slice(i + q.length) };
   }
   protected readonly noResults = computed(() => $localize`:@@ui.select.noResults:Aucun résultat pour « ${this.query().trim()}:query: »`);
@@ -287,13 +288,13 @@ export class AcSelect extends ValueAccessor<string> {
 
   private typeahead(ch: string): void {
     const now = Date.now();
-    this.typed = (now - this.typedAt > 700 ? '' : this.typed) + fold(ch);
+    this.typed = (now - this.typedAt > 700 ? '' : this.typed) + normalizeSearch(ch);
     this.typedAt = now;
     const rows = this.view().rows;
     const start = this.typed.length === 1 ? this.active() + 1 : Math.max(this.active(), 0);
     for (let k = 0; k < rows.length; k++) {
       const i = (start + k) % rows.length;
-      if (!rows[i].option.disabled && fold(rows[i].option.label).startsWith(this.typed)) {
+      if (!rows[i].option.disabled && normalizeSearch(rows[i].option.label).startsWith(this.typed)) {
         this.active.set(i);
         afterNextRender(() => this.scrollToActive(), { injector: this.injector });
         return;
@@ -319,9 +320,6 @@ export class AcSelect extends ValueAccessor<string> {
   }
 }
 
-function fold(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-}
 
 function printable(e: KeyboardEvent): boolean {
   return e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
