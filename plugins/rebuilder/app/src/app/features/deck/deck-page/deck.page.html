@@ -53,7 +53,7 @@
   <div class="page">
     <main class="main">
       @if (!bp.compact()) {
-        <app-deck-bar [legality]="legality()" (showLegality)="showLegality()" (zoomHero)="zoomHero()">
+        <app-deck-bar [legality]="legality()" (showLegality)="showLegality()">
           <div barActions class="bar-actions">
             @if (deck.owned()) {
               <button acButton size="sm" icon="pencil" (click)="edit()" i18n="@@deck.bar.edit">Modifier</button>

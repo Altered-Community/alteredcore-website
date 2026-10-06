@@ -143,16 +143,21 @@ export class CardSearch {
     });
 
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    let measuring = 0;
     const onScroll = () => {
       const next = window.scrollY > 170;
       if (next !== this.condensed()) this.condensed.set(next);
       // The desktop filters panel ends at the bottom of the window: its height leaves out how far it still sits below
       // its sticky position (whatever is above it on the page), set on the host, no change detection.
-      const drawer = host.querySelector<HTMLElement>('.filters-drawer');
-      if (drawer) {
+      // Read once a frame at most, and only where the panel exists (from 1200 px).
+      if (measuring || this.bp.compact()) return;
+      measuring = requestAnimationFrame(() => {
+        measuring = 0;
+        const drawer = host.querySelector<HTMLElement>('.filters-drawer');
+        if (!drawer) return;
         const below = drawer.getBoundingClientRect().top - (parseFloat(getComputedStyle(drawer).top) || 0);
         host.style.setProperty('--app-filters-offset', `${Math.max(0, Math.round(below))}px`);
-      }
+      });
     };
     onScroll();
     // Measured again once the panel is on the page: at first, and each time it is shown again from its tab.
@@ -164,6 +169,7 @@ export class CardSearch {
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(measuring);
       clearTimeout(this.applyTimer);
     });
   }

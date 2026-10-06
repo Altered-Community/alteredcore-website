@@ -175,12 +175,6 @@
   flex-direction: column;
   gap: var(--ac-space-1-5);
 }
-.overline {
-  font: var(--ac-font-overline);
-  letter-spacing: var(--ac-letter-spacing-overline);
-  text-transform: uppercase;
-  color: var(--ac-color-text-muted);
-}
 .actions {
   flex-shrink: 0;
   margin-left: auto;
@@ -211,9 +205,6 @@
 }
 :host(.reduced) .name.long {
   font: var(--ac-font-body-strong);
-}
-:host(.reduced) .sep {
-  margin: var(--ac-space-3) 0;
 }
 
 /* Narrower bars (window width, deck panel open): the curve goes first, then the terrain totals. */

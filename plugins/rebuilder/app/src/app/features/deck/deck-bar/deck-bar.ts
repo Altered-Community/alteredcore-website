@@ -9,6 +9,8 @@ import { AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcTerrainTotals } from '../../../ui/chips';
 import { AcIcon } from '../../../ui/icon';
 import { AcCardArt, AcCostCurve, factionColor } from '../../../ui/metier';
+import { AcOverlayService } from '../../../ui/overlay';
+import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
 /** From this length the title takes one type size less, so that two lines keep the bar's height. */
 const LONG_NAME = 40;
@@ -29,6 +31,7 @@ export class DeckBar {
   protected readonly deck = inject(DeckStore);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
+  private readonly overlay = inject(AcOverlayService);
 
   readonly reduced = input(false);
   readonly legality = input.required<DeckLegality>();
@@ -38,8 +41,6 @@ export class DeckBar {
   readonly highlight = input<number | null>(null);
   readonly openSettings = output<void>();
   readonly showLegality = output<void>();
-  /** Read-only: the art was clicked (the page opens the hero large). */
-  readonly zoomHero = output<void>();
 
   protected readonly renaming = signal(false);
   protected readonly heroArt = computed(() => {
@@ -65,6 +66,12 @@ export class DeckBar {
     private: $localize`:@@deck.page.private:Privé`,
   };
   protected readonly zoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
+
+  /** Read-only: the hero's card large. */
+  protected zoomHero(): void {
+    const hero = this.deck.hero();
+    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
+  }
 
   protected startRename(): void {
     this.renaming.set(true);

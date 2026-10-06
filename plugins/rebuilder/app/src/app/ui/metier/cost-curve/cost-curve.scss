@@ -10,12 +10,6 @@
   gap: var(--ac-space-1-5);
   padding-bottom: var(--ac-space-4);
 }
-.overline {
-  font: var(--ac-font-overline);
-  letter-spacing: var(--ac-letter-spacing-overline);
-  text-transform: uppercase;
-  color: var(--ac-color-text-muted);
-}
 .key {
   display: inline-flex;
   align-items: center;

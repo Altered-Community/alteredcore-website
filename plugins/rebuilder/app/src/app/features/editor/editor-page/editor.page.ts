@@ -1,7 +1,6 @@
 import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LocationStrategy } from '@angular/common';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
-import type { ConnectedPosition } from '@angular/cdk/overlay';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
@@ -9,8 +8,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { deckImageSource } from '../../../core/deck-image';
-import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcToast } from '../../../ui/containers';
@@ -36,9 +34,8 @@ import { DeckBar } from '../../deck/deck-bar/deck-bar';
 import { DeckBoard } from '../../deck/deck-board/deck-board';
 import { DeckImageExport } from '../../deck/deck-image-export/deck-image-export';
 import { deckImageBusyMessage, runDeckImageAction, type DeckImageAction } from '../../deck/deck-image-actions';
-import { confirmDeleteDeck, copyDecklist } from '../../deck/deck-actions';
+import { confirmDeleteDeck, copyDecklist, deckImageSourceFor } from '../../deck/deck-actions';
 import { openDuplicateDeck } from '../../deck/duplicate-deck/duplicate-deck.overlay';
-import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openTokenArts } from '../token-arts/token-arts.overlay';
 import { openShareDeck } from '../../deck/share-deck/share-deck.overlay';
 import { deckShareUrl } from '../../deck/deck-page/share-url';
@@ -109,8 +106,6 @@ export class EditorPage {
     myDeck: $localize`:@@title.myDeck:Mon deck`,
     public: $localize`:@@editor.public:Public`,
     private: $localize`:@@editor.private:Privé`,
-    myDecks: $localize`:@@editor.myDecks:Mes decks`,
-    edit: $localize`:@@editor.edit:Modifier`,
     share: $localize`:@@editor.share:Partager`,
     saving: $localize`:@@editor.savingFirst:Enregistrement…`,
     saved: $localize`:@@editor.share.saved:Deck enregistré : le lien affiche la dernière version.`,
@@ -119,11 +114,8 @@ export class EditorPage {
     more: $localize`:@@editor.moreActions:Plus d’actions`,
     imageBusy: deckImageBusyMessage(),
   };
-  /** The « ⋯ » menu: below the button, right edges aligned; above when there is no room below. */
-  protected readonly menuPositions: ConnectedPosition[] = [
-    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 6 },
-    { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -6 },
-  ];
+  /** The « ⋯ » menu: placed as the split buttons' menus. */
+  protected readonly menuPositions = MENU_POSITIONS;
   protected readonly modeOptions = [
     { value: 'search' as const, label: $localize`:@@editor.search:Recherche`, icon: 'search' as const },
     { value: 'apercu' as const, label: $localize`:@@editor.preview:Aperçu`, icon: 'eye' as const },
@@ -139,15 +131,10 @@ export class EditorPage {
     const change = this.deck.lastChange();
     return change && change.delta > 0 ? Math.min(6, Math.max(0, (change.card.mainCost ?? 1) - 1)) : null;
   });
-  /** The deck's image (« Copier en image »): a deck of the decks API by its id, a guest deck by its cards. */
+  /** The deck's image (« Copier en image »), once the deck is loaded. */
   protected readonly imageSource = computed(() => {
     const id = this.deck.deckId();
-    if (!id || this.deck.loading()) return null;
-    if (!GuestDeckService.isGuestId(id)) return deckImageSource(id);
-    // A guest deck is drawn from its cards as saved on this device (they follow each change).
-    this.deck.lines();
-    const guest = this.guestDecks.get(id);
-    return guest ? deckImageSource(id, guest) : null;
+    return id && !this.deck.loading() ? deckImageSourceFor(id, this.guestDecks) : null;
   });
   protected readonly imageBusy = signal(false);
   protected readonly deckTabLabel = computed(() =>
@@ -316,12 +303,6 @@ export class EditorPage {
     openTokenArts(this.overlay);
   }
 
-  /** The hero large (a deck that cannot be edited here: no settings button on the art). */
-  protected zoomHero(): void {
-    const hero = this.deck.hero();
-    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
-  }
-
   /** The deck's image: copied, saved or opened (reduced bar: the button and its « ⋯ » menu). */
   protected async image(action: DeckImageAction): Promise<void> {
     const source = this.imageSource();
@@ -346,9 +327,9 @@ export class EditorPage {
   }
 
   protected remove(): void {
-    confirmDeleteDeck(this.overlay, this.deck).subscribe((ok) => {
-      if (ok) void this.router.navigateByUrl('/decks');
-      else if (ok === false) this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
+    confirmDeleteDeck(this.overlay, this.deck).subscribe((result) => {
+      if (result === true) void this.router.navigateByUrl('/decks');
+      else if (result) this.flash(result);
     });
   }
 

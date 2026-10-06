@@ -39,8 +39,7 @@
           [highlight]="highlight()"
           (openSettings)="openSettings()"
           (showLegality)="showLegality()"
-          (zoomHero)="zoomHero()"
-        >
+          >
           <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
             <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" [title]="labels.doneHint" (click)="act('done')">
               @if (waiting() === 'done') {

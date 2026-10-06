@@ -6,7 +6,7 @@ import { AcOverlayService } from '../../../ui/overlay';
 import { EditorAltArts } from '../../editor/editor-alt-arts';
 import { lineIssues } from '../../editor/editor-legality';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
-import { deckBoard, fitColumns } from './board-layout';
+import { boardGroups, fitColumns, layoutBoard } from './board-layout';
 
 /** Narrowest card the board shows, to keep it readable: a wider board gets more columns, so fewer rows. */
 const MIN_CARD = 150;
@@ -38,15 +38,21 @@ export class DeckBoard {
   protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
   /** Cards brought to 0 with a pile's stepper since this view opened, by reference: they keep their place, faded. */
   private readonly removed = signal(new Map<string, Card>());
-  protected readonly groups = computed(() => {
+  /** The groups, sorted: recomputed when the cards change, not when the board is resized. */
+  private readonly board = computed(() => {
     const lines: HydratedLine[] = this.deck.lines().filter((l) => l.quantity > 0);
     const present = new Set(lines.map((l) => l.card.reference));
     if (this.editable()) {
       for (const [ref, card] of this.removed()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
     }
-    const width = this.width();
-    return deckBoard(lines, (groups) => (width ? fitColumns(width, groups, MIN_CARD, PADDING, GAP) : DEFAULT_COLUMNS));
+    return boardGroups(lines);
   });
+  /** Card columns the width allows: a number, so a resize that keeps it changes nothing downstream. */
+  private readonly columns = computed(() => {
+    const width = this.width();
+    return width ? fitColumns(width, this.board().length, MIN_CARD, PADDING, GAP) : DEFAULT_COLUMNS;
+  });
+  protected readonly groups = computed(() => layoutBoard(this.board(), this.columns()));
   protected readonly issues = computed(() => lineIssues(this.deck));
   protected readonly noIssues: readonly string[] = [];
 

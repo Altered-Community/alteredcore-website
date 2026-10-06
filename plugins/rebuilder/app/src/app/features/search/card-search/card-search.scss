@@ -181,8 +181,6 @@
   }
 }
 
-/* Space above the filters panel at the top of the page, below its sticky position. */
-$filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
 
 @media (min-width: 1200px) {
   .toolbar {

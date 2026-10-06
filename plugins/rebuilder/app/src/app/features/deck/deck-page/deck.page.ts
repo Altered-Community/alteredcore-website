@@ -7,7 +7,6 @@ import { AuthSession } from '../../../core/auth-session';
 import { PageTitle } from '../../../core/page-title';
 import { factionSrc } from '../../../core/assets';
 import { DeckStore } from '../../../core/deck-store';
-import { deckImageSource } from '../../../core/deck-image';
 import { groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
@@ -25,13 +24,12 @@ import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet, type DeckActionsData, type DeckActionsResult } from '../deck-actions-sheet/deck-actions-sheet';
 import { deckImageBusyMessage } from '../deck-image-actions';
-import { confirmDeleteDeck, copyDecklist } from '../deck-actions';
+import { confirmDeleteDeck, copyDecklist, deckImageSourceFor } from '../deck-actions';
 import { DeckImageExport } from '../deck-image-export/deck-image-export';
 import { DeckBar } from '../deck-bar/deck-bar';
 import { DeckBoard } from '../deck-board/deck-board';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
-import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openShareDeck } from '../share-deck/share-deck.overlay';
 import { HandCalculators } from '../hand-calculators/hand-calculators';
 import { HandStats } from '../hand-stats/hand-stats';
@@ -144,22 +142,11 @@ export class DeckPage {
     });
   }
 
-  /** The deck's image (« Copier en image »): a deck of the decks API by its id, a guest deck by its cards. */
-  protected readonly imageSource = computed(() => {
-    const id = this.id();
-    if (!GuestDeckService.isGuestId(id)) return deckImageSource(id);
-    const guest = this.guestDecks.get(id);
-    return guest ? deckImageSource(id, guest) : null;
-  });
+  /** The deck's image (« Copier en image »). */
+  protected readonly imageSource = computed(() => deckImageSourceFor(this.id(), this.guestDecks));
 
   protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
-
-  /** The hero banner: the hero card large, as on the site's deck page. */
-  protected zoomHero(): void {
-    const hero = this.deck.hero();
-    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
-  }
 
   protected setTab(id: string): void {
     const path = TAB_PATHS[id as DeckTab] ?? null;
@@ -204,9 +191,9 @@ export class DeckPage {
   }
 
   protected remove(): void {
-    confirmDeleteDeck(this.overlay, this.deck).subscribe((ok) => {
-      if (ok) void this.router.navigateByUrl('/decks');
-      else if (ok === false) this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
+    confirmDeleteDeck(this.overlay, this.deck).subscribe((result) => {
+      if (result === true) void this.router.navigateByUrl('/decks');
+      else if (result) this.flash(result);
     });
   }
 

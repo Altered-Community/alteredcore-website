@@ -3,17 +3,13 @@
     @if (deck.hero(); as h) {
       @if (editable()) {
         <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
-        @if (!reduced()) {
-          <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
-            <ac-icon name="sliders-horizontal" [size]="16" />
-          </button>
-        }
       } @else {
-        <button type="button" class="zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoomHero.emit()">
+        <button type="button" class="zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoomHero()">
           <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
         </button>
       }
-    } @else if (editable() && !reduced()) {
+    }
+    @if (editable() && !reduced()) {
       <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
         <ac-icon name="sliders-horizontal" [size]="16" />
       </button>
@@ -73,7 +69,7 @@
 <span class="sep" aria-hidden="true"></span>
 <div class="terrain">
   @if (!reduced()) {
-    <span class="overline" i18n="@@deck.bar.power">Puissance totale</span>
+    <span class="ac-text-overline" i18n="@@deck.bar.power">Puissance totale</span>
   }
   <ac-terrain-totals [totals]="deck.stats().terrain" />
 </div>
