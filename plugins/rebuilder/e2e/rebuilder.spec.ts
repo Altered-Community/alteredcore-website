@@ -151,12 +151,17 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('lists the digital collection with every rarity, type and set of the default filters', async ({ page, compact }) => {
-    test.skip(compact, 'the source tabs are checked on desktop');
+  test('lists the digital collection with every rarity, type and set of the default filters', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E owned ${Date.now()}`);
     const owned = page.waitForRequest((r) => r.url().includes('/papi/core-altered-cards/ownership-search'));
-    await page.getByRole('tab', { name: 'Propriété numérique' }).click();
+    if (compact) {
+      // Compact screens: the source is in the « Plus » menu of the tabs.
+      await page.getByRole('tab', { name: 'Plus' }).click();
+      await page.getByRole('menuitemradio', { name: 'Propriété numérique' }).click();
+    } else {
+      await page.getByRole('tab', { name: 'Propriété numérique' }).click();
+    }
     // The Axiom cards of the stack's ownership mock (docker/stack/ownership-mock): commons, rares, two sets.
     const tiles = page.locator('app-search-results ac-card-tile');
     await expect(tiles).toHaveCount(4);
@@ -165,6 +170,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const query = new URL((await owned).url()).searchParams;
     expect(query.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
     expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
+    await evidence(page, testInfo, '15-owned-search');
   });
 
   test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
@@ -818,23 +824,22 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
   });
 
-  test('keeps a unique\'s illustration once its printed effect arrives after it', async ({ page }) => {
+  test('keeps a unique\'s illustration once its printed effect arrives after it', async ({ page }, testInfo) => {
     // No support ability and a short effect: the same frame, so the same illustration URL, before and after the effect.
     const unique = 'ALT_ALIZE_B_AX_32_U_2';
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, `E2E unique art ${Date.now()}`, [unique]);
-    // The cards API answers once the illustration has loaded: the deck then replaces the unique's card object.
-    const art = page.waitForResponse((r) => /ALT_ALIZE_B_AX_32_U_FRAMELESS_T3\.webp$/.test(new URL(r.url()).pathname) && r.ok());
+    const tile = page.locator('ac-card-tile').filter({ has: page.locator('ac-unique-card') });
+    // The cards API answers once the illustration is shown: the deck then replaces the unique's card object.
     await page.route('**/api/cards/batch**', async (route) => {
-      await art;
-      await page.waitForTimeout(300);
+      await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
       await route.continue();
     });
     await page.goto(DECK(id));
-    const tile = page.locator('ac-card-tile').filter({ has: page.locator('ac-unique-card') });
     await expect(tile.locator('.main-text')).not.toBeEmpty();
     await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
     await expect(tile.locator('ac-card-art img')).toHaveCSS('opacity', '1');
+    await evidence(page, testInfo, '26-unique-art');
   });
 
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {

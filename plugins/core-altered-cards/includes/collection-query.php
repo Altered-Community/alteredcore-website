@@ -13,8 +13,9 @@ function cacCollectionQuery(array $get): string
 
     $parts = [];
     foreach ($arrays as $k) {
-        $vals = array_values(array_filter((array)($get[$k] ?? []), fn($v) => is_string($v) && $v !== ''));
-        foreach ($vals as $v) $parts[] = $k . '[]=' . rawurlencode($v);
+        foreach ((array)($get[$k] ?? []) as $v) {
+            if (is_string($v) && $v !== '') $parts[] = $k . '[]=' . rawurlencode($v);
+        }
     }
     foreach ($scalar as $k) {
         $v = $get[$k] ?? null;
