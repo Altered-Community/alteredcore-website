@@ -6,8 +6,12 @@
       </button>
       @if (t.markers.length) {
         <span class="markers">
-          @for (m of t.markers; track m.slotIndex) {
-            <button type="button" class="marker" [class.active]="m.slotIndex === active()" [attr.aria-pressed]="m.slotIndex === active()" [attr.aria-label]="markerLabel(m.slotIndex + 1)" (click)="selectMarker(m.slotIndex, $event)">{{ m.slotIndex + 1 }}</button>
+          @if (single()) {
+            <span class="marker active" role="img" [attr.aria-label]="chosenLabel"><ac-icon name="check" [size]="12" /></span>
+          } @else {
+            @for (m of t.markers; track m.slotIndex) {
+              <button type="button" class="marker" [class.active]="m.slotIndex === active()" [attr.aria-pressed]="m.slotIndex === active()" [attr.aria-label]="markerLabel(m.copy)" (click)="selectMarker(m.slotIndex, $event)">{{ m.copy }}</button>
+            }
           }
         </span>
       }

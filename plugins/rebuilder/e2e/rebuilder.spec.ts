@@ -178,6 +178,23 @@ test.describe('ReBuilder in the shell · signed in', () => {
     });
   }
 
+  test('marks the chosen illustration of each token without a copy number (one copy)', async ({ page, compact }, testInfo) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E token arts ${Date.now()}`);
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    await page.getByRole('button', { name: 'Choisir les arts des jetons' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Illustrations des jetons' });
+    const families = dialog.locator('app-alt-art-slots');
+    await expect(families.first()).toBeVisible();
+    const markers = dialog.locator('.marker');
+    await expect(markers).toHaveCount(await families.count());
+    for (const marker of await markers.all()) {
+      await expect(marker).toHaveAccessibleName('Illustration choisie');
+      await expect(marker).not.toContainText(/\d/);
+    }
+    await evidence(page, testInfo, '16-token-arts');
+  });
+
   test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
     const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
     const browserDialogs: string[] = [];
@@ -845,6 +862,18 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
     await expect(tile.locator('ac-card-art img')).toHaveCSS('opacity', '1');
     await evidence(page, testInfo, '26-unique-art');
+  });
+
+  test('numbers the copies 1, 2, 3 on a card\'s illustrations in Global alt-art mode', async ({ page }, testInfo) => {
+    // Global mode for this page only: the mode is the account's, shared with the other tests.
+    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E alt arts ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    await page.goto(DECK(id));
+    await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).click();
+    const slots = page.locator('app-alt-art-slots');
+    await expect(slots.getByRole('button', { name: /^Exemplaire \d$/ })).toHaveText(['1', '2', '3']);
+    await evidence(page, testInfo, '27-alt-art-copies');
   });
 
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {

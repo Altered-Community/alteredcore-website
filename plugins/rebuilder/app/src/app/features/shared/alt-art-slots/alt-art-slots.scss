@@ -58,6 +58,11 @@ li {
   font-weight: 700;
   cursor: pointer;
 }
+span.marker {
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
 .marker.active {
   background: var(--ac-color-primary);
 }
