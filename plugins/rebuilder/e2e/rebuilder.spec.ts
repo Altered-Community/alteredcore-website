@@ -1015,6 +1015,8 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
     const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
     await addTwoCards(page);
+    // The deck bar counts the rarities the format caps (from 768 px).
+    if (!compact) await expect(page.locator('app-deck-bar').getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
     await shareButton(page).click();
     const patch = await saved;
     expect(((patch.request().postDataJSON() as { deckCards?: unknown[] }).deckCards ?? []).length).toBeGreaterThanOrEqual(2);

@@ -64,12 +64,20 @@
 
 <span class="sep curve" aria-hidden="true"></span>
 <ac-cost-curve [main]="deck.stats().main" [reserve]="deck.stats().reserve" [size]="reduced() ? 'sm' : 'md'" [highlight]="highlight()" />
+@if (reduced() && rarityLimits().length) {
+  <span class="sep" aria-hidden="true"></span>
+  <ac-rarity-limits [limits]="rarityLimits()" />
+}
 <span class="sep" aria-hidden="true"></span>
 <div class="terrain">
   @if (!reduced()) {
-    <span class="ac-text-overline" i18n="@@deck.bar.power">Puissance totale</span>
+    <span class="ac-text-overline power" i18n="@@deck.bar.power">Puissance totale</span>
   }
   <ac-terrain-totals [totals]="deck.stats().terrain" />
+  @if (!reduced() && rarityLimits().length) {
+    <span class="ac-text-overline" i18n="@@deck.bar.rarities">Raretés</span>
+    <ac-rarity-limits [limits]="rarityLimits()" />
+  }
 </div>
 @if (reduced()) {
   <ng-container [ngTemplateOutlet]="legalityBadge" />

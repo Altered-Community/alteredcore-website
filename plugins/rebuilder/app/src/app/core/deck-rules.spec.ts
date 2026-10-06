@@ -1,4 +1,4 @@
-import { DECK_SIZE, addBlockedReason, allowedInFormat, computeDeckStatus, heroKey, maxCopiesFor, rarityCountsFromRefs, uniqueLimit } from './deck-rules';
+import { DECK_SIZE, addBlockedReason, allowedInFormat, computeDeckStatus, heroKey, maxCopiesFor, rarityCountsFromRefs, rarityLimits, uniqueLimit } from './deck-rules';
 import { formatInfo } from './formats';
 import type { Card, HydratedLine } from './models';
 import { rarityFromReference } from './models';
@@ -211,5 +211,27 @@ describe('allowedInFormat (Favoris « légales »)', () => {
     expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'frontier')).toBe(false);
     expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3', { gameplayFormat: [] }), 'standard')).toBe(true);
     expect(allowedInFormat(card('ALT_COREKS_B_AX_04_U_3'), 'frontier')).toBe(true);
+  });
+});
+
+describe('rarityLimits', () => {
+  const line = (reference: string, quantity: number): HydratedLine => ({ quantity, card: { reference, name: reference, cardType: { reference: 'SPELL' } } });
+  const lines = [line('ALT_CORE_B_AX_20_R1', 3), line('ALT_CORE_B_AX_21_R1', 2), line('ALT_CORE_B_AX_22_C', 3), line('ALT_EOLE_B_AX_109_U_374', 1)];
+
+  it('counts Rares, Exalteds and Uniques against the format caps', () => {
+    expect(rarityLimits(computeDeckStatus(lines, 'standard'), 'standard')).toEqual([
+      { key: 'R', count: 5, limit: 15 },
+      { key: 'E', count: 0, limit: 3 },
+      { key: 'U', count: 1, limit: 3 },
+    ]);
+  });
+
+  it('leaves out a rarity without a cap', () => {
+    expect(rarityLimits(computeDeckStatus(lines, 'singleton'), 'singleton').map((r) => r.key)).toEqual(['U']);
+    expect(rarityLimits(computeDeckStatus(lines, 'sandbox'), 'sandbox')).toEqual([]);
+  });
+
+  it('No Unique: 0 Uniques allowed', () => {
+    expect(rarityLimits(computeDeckStatus(lines, 'nuc'), 'nuc').find((r) => r.key === 'U')).toEqual({ key: 'U', count: 1, limit: 0 });
   });
 });

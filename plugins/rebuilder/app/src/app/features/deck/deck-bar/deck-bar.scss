@@ -220,20 +220,39 @@
     display: none;
   }
 }
+/* Then the terrain totals; the rarities under them stay. */
 @container deck-bar (max-width: 960px) {
+  :host(:not(.reduced)) .terrain .power,
+  :host(:not(.reduced)) ac-terrain-totals {
+    display: none;
+  }
+  :host(:not(.reduced)) .terrain:not(:has(ac-rarity-limits)),
+  :host(:not(.reduced)) .sep:not(:has(+ .terrain ac-rarity-limits)) {
+    display: none;
+  }
+}
+/* Then the rarities. */
+@container deck-bar (max-width: 860px) {
   :host(:not(.reduced)) .terrain,
   :host(:not(.reduced)) .sep {
     display: none;
   }
 }
-@container deck-bar (max-width: 1000px) {
+/* Reduced bar: the curve, then the terrain totals, then the rarities. */
+@container deck-bar (max-width: 1320px) {
   :host(.reduced) ac-cost-curve,
   :host(.reduced) .sep.curve {
     display: none;
   }
 }
-@container deck-bar (max-width: 840px) {
+@container deck-bar (max-width: 1060px) {
   :host(.reduced) .terrain,
+  :host(.reduced) .sep:has(+ .terrain) {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 900px) {
+  :host(.reduced) ac-rarity-limits,
   :host(.reduced) .sep {
     display: none;
   }
