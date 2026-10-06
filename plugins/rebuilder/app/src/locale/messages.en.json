@@ -399,6 +399,7 @@
     "ui.effectSummary.empty": "No criteria",
     "ui.effectSummary.title": "Effect 1",
     "ui.effectSummary.edit": "Edit {$title}",
+    "ui.effectSummary.duplicate": "Duplicate {$title}",
     "ui.effectSummary.remove": "Delete {$title}",
     "ui.effectSummary.when": "When",
     "ui.effectSummary.if": "If",

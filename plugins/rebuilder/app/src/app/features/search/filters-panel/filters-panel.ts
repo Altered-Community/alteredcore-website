@@ -110,6 +110,13 @@ export class FiltersPanel {
     this.editEffect.emit(effects.length - 1);
   }
 
+  /** A copy of effect `i` right after it, with its own id. */
+  duplicateEffect(i: number): void {
+    const effects = [...this.value().effects];
+    effects.splice(i + 1, 0, { ...effects[i], id: newEffectBlock().id });
+    this.set({ effects });
+  }
+
   removeEffect(i: number): void {
     this.set({ effects: this.value().effects.filter((_, idx) => idx !== i) });
   }

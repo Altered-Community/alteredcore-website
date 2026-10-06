@@ -556,6 +556,13 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The count shown is the API's for that request.
     await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
+
+    // « Dupliquer » puts a copy of the effect right after it.
+    const summaries = page.locator('ac-effect-summary');
+    const firstText = await summaries.nth(0).locator('p').allTextContents();
+    await summaries.nth(0).getByRole('button', { name: 'Dupliquer Effet 1' }).click();
+    await expect(summaries).toHaveCount(3);
+    expect(await summaries.nth(1).locator('p').allTextContents()).toEqual(firstText);
   });
 
   test('narrows each effect list to the values that still give a card, for the effect being edited', async ({ page, compact }, testInfo) => {
