@@ -38,8 +38,6 @@ export const CARD_SOURCES: CardSourceTab[] = [
 /** Compact screens: tabs in the row, the others under « Plus ». */
 const COMPACT_SOURCE_TABS = 4;
 
-/** Space above the desktop filters panel at the top of the page, below its sticky position (`card-search.scss`). */
-const FILTERS_GROW_MAX = 136;
 /** Filters typed into a text field: a change is applied once the typing pauses. */
 const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as const satisfies readonly (keyof SearchFilters)[];
 
@@ -148,13 +146,21 @@ export class CardSearch {
     const onScroll = () => {
       const next = window.scrollY > 170;
       if (next !== this.condensed()) this.condensed.set(next);
-      // The desktop filters panel grows by the scrolled distance set on the host, no change detection.
-      host.style.setProperty('--app-filters-grow', `${Math.min(window.scrollY, FILTERS_GROW_MAX)}px`);
+      // The desktop filters panel ends at the bottom of the window: its height leaves out how far it still sits below
+      // its sticky position (whatever is above it on the page), set on the host, no change detection.
+      const drawer = host.querySelector<HTMLElement>('.filters-drawer');
+      if (drawer) {
+        const below = drawer.getBoundingClientRect().top - (parseFloat(getComputedStyle(drawer).top) || 0);
+        host.style.setProperty('--app-filters-offset', `${Math.max(0, Math.round(below))}px`);
+      }
     };
     onScroll();
+    afterNextRender(onScroll);
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
       clearTimeout(this.applyTimer);
     });
   }
