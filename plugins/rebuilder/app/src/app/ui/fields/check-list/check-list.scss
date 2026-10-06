@@ -1,0 +1,91 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.search {
+  position: relative;
+  flex-shrink: 0;
+  padding-bottom: var(--ac-space-2);
+}
+.search-icon {
+  position: absolute;
+  left: var(--ac-space-3);
+  top: calc(50% - var(--ac-space-1));
+  transform: translateY(-50%);
+  color: var(--ac-color-text-muted);
+  display: flex;
+  pointer-events: none;
+}
+.search input {
+  width: 100%;
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3) 0 var(--ac-space-10);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-bg-app);
+  font: inherit;
+  font-size: var(--ac-field-font-size);
+  outline: none;
+}
+.search input:focus {
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+  background: var(--ac-color-surface);
+}
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+.option {
+  display: flex;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-2) var(--ac-space-2-5);
+  border-radius: var(--ac-radius-md);
+  font-size: var(--ac-field-font-size);
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+@media (hover: hover) {
+  .option:hover {
+    background: var(--ac-color-primary-tint);
+  }
+}
+.option.on {
+  font-weight: 700;
+  color: var(--ac-color-primary-strong);
+}
+.option input {
+  flex-shrink: 0;
+}
+.group {
+  padding: var(--ac-space-3) var(--ac-space-2-5) var(--ac-space-1);
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+  flex-shrink: 0;
+}
+.empty {
+  margin: 0;
+  padding: var(--ac-space-2-5);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}
+.glyph {
+  display: inline-block;
+  width: 1.4em;
+  font-family: var(--ac-card-icons);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.15em;
+  line-height: 1;
+  text-align: center;
+  margin-right: var(--ac-space-1-5);
+  vertical-align: -0.12em;
+}

@@ -1,8 +1,7 @@
-.ac-overlay-body {
+.stack {
   display: flex;
   flex-direction: column;
-  gap: var(--ac-space-4);
-  min-height: 420px;
+  gap: var(--ac-space-5);
 }
 .intro {
   margin: 0;
@@ -13,15 +12,84 @@
 .crit {
   display: flex;
   flex-direction: column;
-  gap: var(--ac-space-1-5);
+  gap: var(--ac-space-2);
 }
 .label {
+  margin: 0;
   font-size: var(--ac-select-font-size);
   font-weight: 800;
 }
 .muted {
   font-weight: 600;
   color: var(--ac-color-text-muted);
+}
+/* Window: fixed height, so neither column moves while values are checked. */
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  height: min(560px, calc(90vh - 150px));
+  padding: 0;
+  overflow: hidden;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2-5);
+  padding: var(--ac-space-4);
+  background: var(--ac-color-bg-app);
+  border-right: 1px solid var(--ac-color-border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.side .intro {
+  margin-bottom: var(--ac-space-1);
+}
+.card {
+  flex-shrink: 0;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-surface);
+}
+.card.on {
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  width: 100%;
+  min-height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: none;
+  border-radius: var(--ac-radius-lg);
+  background: none;
+  color: var(--ac-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.card-head .label {
+  flex: 1 1 auto;
+}
+.card-head ac-icon {
+  color: var(--ac-color-text-muted);
+}
+.card.on .card-head ac-icon {
+  color: var(--ac-color-primary);
+}
+.card-values {
+  padding: 0 var(--ac-space-3) var(--ac-space-3);
+}
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  min-height: 0;
+  padding: var(--ac-space-4) var(--ac-space-5) 0;
+}
+.pane-list {
+  flex: 1 1 auto;
 }
 .error {
   color: var(--ac-color-danger);

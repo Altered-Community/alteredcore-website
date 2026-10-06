@@ -3,6 +3,7 @@ import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, 
 import { _getEventTarget } from '@angular/cdk/platform';
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { AcIcon } from '../../icon';
+import { normalizeSearch } from '../search-text';
 import { nextId } from '../value-accessor';
 
 export interface ComboOption {
@@ -75,12 +76,12 @@ export class AcCombobox {
   });
 
   protected readonly filtered = computed(() => {
-    const q = normalize(this.query());
+    const q = normalizeSearch(this.query());
     const chosen = new Set(this.values().map((v) => v.id));
     const out: ComboOption[] = [];
     for (const o of this.options()) {
       if (chosen.has(o.id)) continue;
-      if (q && !normalize(o.text).includes(q)) continue;
+      if (q && !normalizeSearch(o.text).includes(q)) continue;
       out.push(o);
       if (out.length >= 50) break;
     }
@@ -178,8 +179,4 @@ export class AcCombobox {
     this.open.set(false);
     this.query.set('');
   }
-}
-
-function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }

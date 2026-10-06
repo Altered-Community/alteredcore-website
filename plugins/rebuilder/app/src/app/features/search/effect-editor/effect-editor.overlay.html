@@ -1,21 +1,46 @@
-<div class="ac-overlay-body">
-  <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
-  <div class="crit">
-    <span class="label" i18n="@@search.effect.when">Quand <span class="muted">· déclencheur</span></span>
-    <ac-combobox [options]="triggerOptions()" [(values)]="pickedTriggers" placeholder="Ajouter un déclencheur…" i18n-placeholder="@@search.effect.addTrigger" />
+@if (bp.compact()) {
+  <div class="ac-overlay-body stack">
+    <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+    @for (c of criteria; track c.kind) {
+      <div class="crit">
+        <span class="label">{{ c.label }} <span class="muted">· {{ c.sub }}</span></span>
+        @if (c.picked().length) {
+          <ac-or-values [values]="c.picked()" (valuesChange)="c.picked.set($event)" />
+        }
+        <button acButton variant="add" icon="plus" [fullWidth]="true" class="add" (click)="openPicker(c)">{{ c.add }}</button>
+      </div>
+    }
+    @if (loadError()) {
+      <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
+    }
   </div>
-  <div class="crit">
-    <span class="label" i18n="@@search.effect.if">Si <span class="muted">· condition</span></span>
-    <ac-combobox [options]="conditionOptions()" [(values)]="pickedConditions" placeholder="Ajouter une condition…" i18n-placeholder="@@search.effect.addCondition" emptyPlaceholder="Toutes · ajouter une condition…" i18n-emptyPlaceholder="@@search.effect.anyCondition" />
+} @else {
+  <div class="ac-overlay-body cols">
+    <div class="side">
+      <p class="intro" i18n="@@search.effect.intro">Une carte correspond si elle a <strong>au moins une</strong> des valeurs de chaque critère rempli.</p>
+      @for (c of criteria; track c.kind) {
+        <section class="card" [class.on]="active() === c.kind">
+          <button type="button" class="card-head" [attr.aria-pressed]="active() === c.kind" (click)="active.set(c.kind)">
+            <span class="label">{{ c.label }} <span class="muted">· {{ c.sub }}</span></span>
+            <ac-icon name="chevron-right" [size]="18" />
+          </button>
+          <ac-or-values class="card-values" [values]="c.picked()" (valuesChange)="c.picked.set($event)" [empty]="c.any" />
+        </section>
+      }
+    </div>
+    @for (c of criteria; track c.kind) {
+      @if (active() === c.kind) {
+        <div class="pane">
+          <h3 class="label pane-title">{{ c.label }} <span class="muted">· {{ c.sub }}</span></h3>
+          <ac-check-list class="pane-list" [options]="c.options()" [values]="c.picked()" (valuesChange)="c.picked.set($event)" [label]="c.sub" [searchPlaceholder]="c.search" />
+          @if (loadError()) {
+            <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
+          }
+        </div>
+      }
+    }
   </div>
-  <div class="crit">
-    <span class="label" i18n="@@search.effect.then">Alors <span class="muted">· effet</span></span>
-    <ac-combobox [options]="effectOptions()" [(values)]="pickedEffects" placeholder="Ajouter un effet…" i18n-placeholder="@@search.effect.addEffect" />
-  </div>
-  @if (loadError()) {
-    <p class="error" role="alert" i18n="@@search.effect.loadError">Impossible de charger les capacités depuis l’API des cartes.</p>
-  }
-</div>
+}
 <div class="ac-overlay-footer">
   <button acButton variant="secondary" class="secondary-action" (click)="ref.close()" i18n="@@search.effect.cancel">Annuler</button>
   <button acButton [size]="bp.compact() ? 'lg' : 'md'" [fullWidth]="bp.compact()" (click)="apply()" i18n="@@search.effect.apply">Appliquer</button>

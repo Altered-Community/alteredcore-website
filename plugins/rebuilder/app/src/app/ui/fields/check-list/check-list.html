@@ -1,0 +1,27 @@
+<div class="search">
+  <span class="search-icon"><ac-icon name="search" [size]="16" /></span>
+  <input
+    #search
+    type="search"
+    enterkeyhint="search"
+    autocomplete="off"
+    [attr.aria-label]="searchPlaceholder()"
+    [placeholder]="searchPlaceholder()"
+    [value]="query()"
+    (input)="query.set(search.value)"
+    (keydown)="onSearchKey($event)"
+  />
+</div>
+<div class="list" role="group" [attr.aria-label]="label()">
+  @for (o of filtered(); track o.id) {
+    @if (groupStarts().has(o.id)) {
+      <div class="group" role="presentation">{{ o.group }}</div>
+    }
+    <label class="ac-check option" [class.on]="checked().has(o.id)">
+      <input type="checkbox" [checked]="checked().has(o.id)" (change)="setChecked(o, $any($event.target).checked)" />
+      <span>@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</span>
+    </label>
+  } @empty {
+    <p class="empty">{{ query() ? noResults : noValues }}</p>
+  }
+</div>

@@ -1,12 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, type Signal, type WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, concat, forkJoin, of, switchMap, type Observable } from 'rxjs';
+import { catchError, concat, of, switchMap } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
 import { UniquesApiService, type AbilityKind, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
-import { AcCombobox } from '../../../ui/fields';
+import { AcCheckList, AcOrValues } from '../../../ui/fields';
+import { AcIcon } from '../../../ui/icon';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
+import { AbilityPickerStep, type AbilityPickerData } from '../ability-picker/ability-picker.overlay';
 
 export interface EffectEditorData {
   effect: EffectBlock;
@@ -18,15 +20,32 @@ export interface EffectEditorData {
   query?: UniquesQuery;
 }
 
-/** Ids each list is narrowed to; `null` keeps the whole list (not loaded yet, or the API failed). */
-type Narrowing = Record<AbilityKind, Set<number> | null>;
+const KINDS: AbilityKind[] = ['triggers', 'conditions', 'effects'];
 
-const NO_NARROWING: Narrowing = { triggers: null, conditions: null, effects: null };
+/** One criterion of the block: its texts, the values offered and the values picked. */
+interface Criterion {
+  kind: AbilityKind;
+  /** « Quand », « Si », « Alors ». */
+  label: string;
+  /** « déclencheur », « condition », « effet ». */
+  sub: string;
+  /** Compact: button that opens the criterion's list. */
+  add: string;
+  /** Nothing picked: the criterion does not filter. */
+  any: string;
+  search: string;
+  options: Signal<AbilityRef[]>;
+  picked: WritableSignal<AbilityRef[]>;
+}
 
-/** ac-effect-editor — one combobox per criterion; values OR-ed, criteria AND-ed. */
+/**
+ * ac-effect-editor — values OR-ed inside a criterion, criteria AND-ed. Window: the three criteria on the
+ * left with their values, the checkbox list of the selected one on the right, so checking never moves
+ * the list. Compact: the criteria, each opening its checkbox list as a step (`ac-ability-picker`).
+ */
 @Component({
   selector: 'ac-effect-editor',
-  imports: [AcCombobox, AcButton],
+  imports: [AcCheckList, AcOrValues, AcButton, AcIcon],
   host: { class: 'ac-overlay-content' },
   templateUrl: './effect-editor.overlay.html',
   styleUrl: './effect-editor.overlay.scss',
@@ -37,43 +56,68 @@ export class EffectEditorOverlay {
   protected readonly bp = inject(AcBreakpointService);
   protected readonly loadError = signal(false);
 
-  protected readonly triggers = this.load('triggers');
-  protected readonly conditions = this.load('conditions');
-  protected readonly effects = this.load('effects');
+  private readonly picked: Record<AbilityKind, WritableSignal<AbilityRef[]>> = {
+    triggers: signal(this.ref.data.effect.triggers),
+    conditions: signal(this.ref.data.effect.conditions),
+    effects: signal(this.ref.data.effect.effects),
+  };
 
-  protected readonly pickedTriggers = signal<AbilityRef[]>(this.ref.data.effect.triggers);
-  protected readonly pickedConditions = signal<AbilityRef[]>(this.ref.data.effect.conditions);
-  protected readonly pickedEffects = signal<AbilityRef[]>(this.ref.data.effect.effects);
+  protected readonly criteria: Criterion[] = [
+    {
+      kind: 'triggers',
+      label: $localize`:@@search.effect.whenLabel:Quand`,
+      sub: $localize`:@@search.effect.triggerSub:déclencheur`,
+      add: $localize`:@@search.effect.addTrigger:Ajouter un déclencheur`,
+      any: $localize`:@@search.effect.anyTrigger:Tous les déclencheurs`,
+      search: $localize`:@@search.effect.searchTrigger:Rechercher un déclencheur…`,
+      options: this.options('triggers'),
+      picked: this.picked.triggers,
+    },
+    {
+      kind: 'conditions',
+      label: $localize`:@@search.effect.ifLabel:Si`,
+      sub: $localize`:@@search.effect.conditionSub:condition`,
+      add: $localize`:@@search.effect.addCondition:Ajouter une condition`,
+      any: $localize`:@@search.effect.anyCondition:Toutes les conditions`,
+      search: $localize`:@@search.effect.searchCondition:Rechercher une condition…`,
+      options: this.options('conditions'),
+      picked: this.picked.conditions,
+    },
+    {
+      kind: 'effects',
+      label: $localize`:@@search.effect.thenLabel:Alors`,
+      sub: $localize`:@@search.effect.effectSub:effet`,
+      add: $localize`:@@search.effect.addEffect:Ajouter un effet`,
+      any: $localize`:@@search.effect.anyEffect:Tous les effets`,
+      search: $localize`:@@search.effect.searchEffect:Rechercher un effet…`,
+      options: this.options('effects'),
+      picked: this.picked.effects,
+    },
+  ];
 
-  private readonly narrowing = toSignal(
-    toObservable(
-      computed<UniquesEffect>(() => ({
-        triggers: this.pickedTriggers().map((a) => a.id),
-        conditions: this.pickedConditions().map((a) => a.id),
-        effects: this.pickedEffects().map((a) => a.id),
-      })),
-    ).pipe(switchMap((block) => this.narrow(block))),
-    { initialValue: NO_NARROWING },
-  );
-
-  protected readonly triggerOptions = computed(() => narrowed(this.triggers(), this.narrowing().triggers));
-  protected readonly conditionOptions = computed(() => narrowed(this.conditions(), this.narrowing().conditions));
-  protected readonly effectOptions = computed(() => narrowed(this.effects(), this.narrowing().effects));
+  /** Window: the criterion whose list is shown. */
+  protected readonly active = signal<AbilityKind>('triggers');
 
   constructor() {
     this.ref.title.set(effectTitle(this.ref.data.index));
     this.ref.headerAction.set({
       label: $localize`:@@search.effect.clear:Effacer`,
-      run: () => {
-        this.pickedTriggers.set([]);
-        this.pickedConditions.set([]);
-        this.pickedEffects.set([]);
-      },
+      run: () => KINDS.forEach((k) => this.picked[k].set([])),
     });
   }
 
-  private load(kind: AbilityKind) {
-    return toSignal(
+  /** Compact: the criterion's checkbox list as a step of the same sheet. */
+  protected openPicker(c: Criterion): void {
+    this.ref.openStep<AbilityPickerStep, void, AbilityPickerData>(AbilityPickerStep, {
+      title: c.label,
+      subtitle: c.sub,
+      data: { options: c.options, picked: c.picked, label: c.sub, searchPlaceholder: c.search },
+    });
+  }
+
+  /** The values of `kind`, narrowed to those that still give a card. */
+  private options(kind: AbilityKind): Signal<AbilityRef[]> {
+    const all = toSignal(
       this.api.abilities(kind).pipe(
         catchError(() => {
           this.loadError.set(true);
@@ -82,32 +126,52 @@ export class EffectEditorOverlay {
       ),
       { initialValue: [] as AbilityRef[] },
     );
+    const ids = this.narrowing(kind);
+    return computed(() => {
+      const keep = ids();
+      return keep ? all().filter((o) => keep.has(o.id)) : all();
+    });
   }
 
   /**
-   * The ids each list keeps with `block` as picked so far. The whole lists come back first, so a
-   * value that a change makes possible again is never missing while the answer is on its way.
-   * An exact reference looks one card up, whatever the other criteria: nothing to narrow.
+   * The ids `kind` keeps with the block as picked, `null` for the whole list. The server leaves the
+   * criterion being narrowed out, so only the two other criteria ask again: checking values in a list
+   * never reshapes that list. The whole list comes back first, so a value that a change makes possible
+   * again is never missing while the answer is on its way. An exact reference looks one card up,
+   * whatever the other criteria: nothing to narrow.
    */
-  private narrow(block: UniquesEffect): Observable<Narrowing> {
+  private narrowing(kind: AbilityKind): Signal<Set<number> | null> {
     const { query, index } = this.ref.data;
-    if (!query || query.reference) return of(NO_NARROWING);
-    const ids = (kind: AbilityKind) => this.api.narrowAbilities(query, index, block, kind).pipe(catchError(() => of(null)));
-    return concat(of(NO_NARROWING), forkJoin({ triggers: ids('triggers'), conditions: ids('conditions'), effects: ids('effects') }));
+    if (!query || query.reference) return signal(null);
+    const others = computed(() =>
+      KINDS.filter((k) => k !== kind)
+        .map((k) => this.picked[k]().map((a) => a.id).join(','))
+        .join('|'),
+    );
+    return toSignal(
+      toObservable(others).pipe(
+        switchMap(() => concat(of(null), this.api.narrowAbilities(query, index, this.block(), kind).pipe(catchError(() => of(null))))),
+      ),
+      { initialValue: null },
+    );
+  }
+
+  private block(): UniquesEffect {
+    return {
+      triggers: this.picked.triggers().map((a) => a.id),
+      conditions: this.picked.conditions().map((a) => a.id),
+      effects: this.picked.effects().map((a) => a.id),
+    };
   }
 
   apply(): void {
     this.ref.close({
       ...this.ref.data.effect,
-      triggers: this.pickedTriggers(),
-      conditions: this.pickedConditions(),
-      effects: this.pickedEffects(),
+      triggers: this.picked.triggers(),
+      conditions: this.picked.conditions(),
+      effects: this.picked.effects(),
     });
   }
-}
-
-function narrowed(options: AbilityRef[], ids: Set<number> | null): AbilityRef[] {
-  return ids ? options.filter((o) => ids.has(o.id)) : options;
 }
 
 /** « Effet n », 1-based. */
@@ -119,7 +183,7 @@ export function openEffectEditor(overlay: AcOverlayService, data: EffectEditorDa
   return overlay.open<EffectEditorOverlay, EffectBlock, EffectEditorData>(EffectEditorOverlay, {
     title: effectTitle(data.index),
     data,
-    width: 520,
+    width: 880,
     sheetHeight: 'full',
   });
 }
