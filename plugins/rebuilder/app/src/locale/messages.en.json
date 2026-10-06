@@ -768,6 +768,7 @@
     "ui.costCurve.main": "Hand",
     "ui.costCurve.reserve": "Reserve",
     "ui.costCurve.bucket": "Cost {$cost}: {$main} in hand, {$reserve} in reserve",
-    "ui.costCurve.label": "Cost curve: hand and reserve"
+    "ui.costCurve.label": "Cost curve: hand and reserve",
+    "search.filters.favoritesLimited": "In favorites, only the faction, set and rarity filter the cards."
   }
 }

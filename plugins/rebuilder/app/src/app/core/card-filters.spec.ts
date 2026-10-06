@@ -180,3 +180,12 @@ describe('faction filter (card browser)', () => {
     expect(defaultFilters('uniques').factions).toEqual([]);
   });
 });
+
+describe('Favoris filters', () => {
+  it('gives chips only for the faction, set and rarity filters the favorites search applies', () => {
+    const f = { ...defaultFilters('favorites'), q: 'kelon', mainCost: '5', types: ['SPELL'], rarities: ['RARE'], sets: ['CORE'], otherFactions: ['BR'] };
+    expect(filterChips(f, 'favorites').map((c) => c.id).sort()).toEqual(['otherFactions', 'rarities', 'sets']);
+    expect(activeFilterCount(f, 'favorites')).toBe(3);
+  });
+});
+

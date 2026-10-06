@@ -1,16 +1,19 @@
 @if (bp.compact()) {
   <div class="search-head" [class.condensed]="condensed()">
     <div class="search-row">
-      <ac-input
-        class="q"
-        icon="search"
-        ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
-        placeholder="Rechercher une carte…" i18n-placeholder="@@search.card.placeholder"
-        enterkeyhint="search"
-        [clearable]="true"
-        [value]="draft().q"
-        (valueChange)="setQuery($event)"
-      />
+      <!-- Favoris: the site's favorites search has no name filter. -->
+      <fieldset class="unsupported" [disabled]="search.source() === 'favorites'" [attr.inert]="search.source() === 'favorites' ? '' : null">
+        <ac-input
+          class="q"
+          icon="search"
+          ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+          placeholder="Rechercher une carte…" i18n-placeholder="@@search.card.placeholder"
+          enterkeyhint="search"
+          [clearable]="true"
+          [value]="draft().q"
+          (valueChange)="setQuery($event)"
+        />
+      </fieldset>
       <button class="filters-btn" acIconButton="sliders-horizontal" variant="primary" [ariaLabel]="filtersLabel()" [iconSize]="20" (click)="openFilters()">
         @if (activeCount()) {
           <span class="badge"><ac-count [value]="activeCount()" /></span>

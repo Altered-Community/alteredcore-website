@@ -266,3 +266,11 @@ $filters-offset: calc(60px + var(--ac-space-4) * 2 + 44px);
     flex-basis: 100%;
   }
 }
+
+/* The query field where the source cannot search by name (Favoris): disabled and faded. */
+.unsupported {
+  display: contents;
+}
+.unsupported:disabled > * {
+  opacity: 0.45;
+}
