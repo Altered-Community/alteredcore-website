@@ -33,7 +33,7 @@ export class AltArtSlots {
       src: cardImageUrl(o.reference),
       owned: o.ownedQuantity === null || o.ownedQuantity > 0,
       markers: this.slots()
-        .map((s, i) => ({ slotIndex: s.slotIndex, copy: i + 1, reference: s.reference }))
+        .map((s, i) => ({ ...s, copy: i + 1 }))
         .filter((s) => s.reference === o.reference),
     })),
   );
