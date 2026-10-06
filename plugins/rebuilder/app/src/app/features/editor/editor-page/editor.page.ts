@@ -43,8 +43,8 @@ import { openSignInToShare } from '../sign-in-to-share/sign-in-to-share.overlay'
 import { rememberShareAfterSignIn, takeShareAfterSignIn } from '../share-after-sign-in';
 
 export type EditorView = 'search' | 'apercu' | 'deck' | 'main';
-/** « Partager » and « Terminer »: both save the deck first, so the link and the deck page show the latest changes. */
-export type EditorAction = 'share' | 'done';
+/** « Partager » saves the deck first, so the link shows the latest changes. */
+export type EditorAction = 'share';
 
 @Component({
   selector: 'app-editor-page',
@@ -110,7 +110,6 @@ export class EditorPage {
     saving: $localize`:@@editor.savingFirst:Enregistrement…`,
     saved: $localize`:@@editor.share.saved:Deck enregistré : le lien affiche la dernière version.`,
     savedToAccount: $localize`:@@editor.share.savedToAccount:Deck enregistré sur votre compte : vous pouvez le partager.`,
-    doneHint: $localize`:@@editor.doneHint:Retour à Mes decks`,
     more: $localize`:@@editor.moreActions:Plus d’actions`,
     imageBusy: deckImageBusyMessage(),
   };
@@ -220,7 +219,7 @@ export class EditorPage {
     });
   }
 
-  /** « Partager » / « Terminer »: saves the deck, then opens the share window or the deck page. */
+  /** « Partager »: saves the deck, then opens the share window. */
   protected act(action: EditorAction): void {
     // Before the deck is loaded, the share window would show the store's defaults (a public deck as private).
     if (this.waiting() || this.deck.loading()) return;
@@ -237,9 +236,7 @@ export class EditorPage {
         this.stopped.set(action);
         return;
       }
-      // From 768 px « Terminer » goes back to the deck list; on phones, to the deck's page.
-      if (action === 'done') void this.router.navigate(this.bp.compact() ? ['/decks', this.id()] : ['/decks']);
-      else this.openShare(this.labels.saved);
+      this.openShare(this.labels.saved);
     });
   }
 

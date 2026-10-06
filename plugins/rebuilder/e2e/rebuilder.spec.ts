@@ -999,12 +999,11 @@ test.describe('ReBuilder in the shell · guest', () => {
   });
 });
 
-test.describe('ReBuilder in the shell · « Partager » and « Terminer » in the editor', () => {
+test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
   /** « Partager »: a button on desktop, an icon in the app bar on mobile. */
   const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
-  const doneButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Terminer', exact: true });
 
-  test('saves the deck first, then shares it, then leaves the editor', async ({ page, compact }, testInfo) => {
+  test('saves the deck first, then shares it', async ({ page, compact }, testInfo) => {
     const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'bob', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
@@ -1029,12 +1028,9 @@ test.describe('ReBuilder in the shell · « Partager » and « Terminer » in th
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
 
-    // « Terminer »: the deck list from 768 px, the deck's page on phones.
-    await doneButton(page).click();
-    if (compact) {
-      await expect(page).toHaveURL(at(DECK(deck.id)));
-      await expect(page.locator('app-deck-page')).toContainText(name);
-    } else {
+    // « Mes decks » of the deck bar leaves the editor (from 768 px; the app bar's back button on phones).
+    if (!compact) {
+      await page.locator('app-deck-bar').getByRole('link', { name: 'Mes decks' }).click();
       await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
       await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name })).toBeVisible();
     }

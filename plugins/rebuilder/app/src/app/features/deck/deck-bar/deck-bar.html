@@ -9,16 +9,14 @@
         </button>
       }
     }
-    @if (editable() && !reduced()) {
+    @if (editable()) {
       <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
         <ac-icon name="sliders-horizontal" [size]="16" />
       </button>
     }
   </div>
   <div class="text" [style.border-left-color]="border()">
-    @if (!reduced()) {
-      <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="14" />Mes decks</a>
-    }
+    <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="14" />Mes decks</a>
     <div class="name-row">
       @if (renaming()) {
         <input

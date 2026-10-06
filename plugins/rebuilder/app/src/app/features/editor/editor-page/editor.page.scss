@@ -66,7 +66,7 @@ ac-app-bar.static {
   white-space: pre-line;
 }
 
-/* « Partager » / « Terminer » while the deck is being saved first. */
+/* « Partager » while the deck is being saved first. */
 .waiting ::ng-deep .ac-icon {
   animation: ac-icon-spin 1s linear infinite;
 }
@@ -75,10 +75,6 @@ ac-app-bar.static {
   .waiting ::ng-deep .ac-icon {
     animation-duration: 3s;
   }
-}
-
-.done {
-  padding-inline: var(--ac-space-2-5);
 }
 
 /* ---------- medium and up ---------- */

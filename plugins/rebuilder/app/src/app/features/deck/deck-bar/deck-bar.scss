@@ -197,6 +197,12 @@
 :host(.reduced) .art {
   flex-basis: 96px;
 }
+:host(.reduced) .settings {
+  right: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+  width: 28px;
+  height: 28px;
+}
 :host(.reduced) .text {
   padding: var(--ac-space-2) var(--ac-space-3);
 }

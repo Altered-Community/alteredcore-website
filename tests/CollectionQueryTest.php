@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../plugins/core-altered-cards/includes/collection-query.php';
 
-// Every value of a list filter reaches the collection API, in its array form.
+// Every value of a list filter reaches the collection API, in its array form; several card types stay with the proxy.
 assertSame(
-    'faction[]=AX&rarity[]=COMMON&rarity[]=RARE&rarity[]=EXALTED&cardType[]=CHARACTER&cardType[]=SPELL&cardSet[]=CORE&cardSet[]=ALIZE&locale=fr',
+    'faction[]=AX&rarity[]=COMMON&rarity[]=RARE&rarity[]=EXALTED&cardSet[]=CORE&cardSet[]=ALIZE&locale=fr',
     cacCollectionQuery([
         'faction' => ['AX'], 'rarity' => ['COMMON', 'RARE', 'EXALTED'], 'cardType' => ['CHARACTER', 'SPELL'],
         'cardSet' => ['CORE', 'ALIZE'], 'locale' => 'fr', 'page' => '2', 'itemsPerPage' => '36',
@@ -13,3 +13,6 @@ assertSame(
 assertSame('faction[]=AX&name=Red%20Axiom', cacCollectionQuery(['faction' => 'AX', 'name' => 'Red Axiom', 'rarity' => ['']]), 'a single value, empty values dropped');
 assertSame('mainCost[gte]=1&mainCost[lte]=3', cacCollectionQuery(['mainCost' => ['gte' => '1', 'lte' => '3', 'eq' => '2']]), 'cost range');
 assertSame('', cacCollectionQuery([]), 'no filter');
+assertSame('cardType[]=SPELL', cacCollectionQuery(['cardType' => ['SPELL', '']]), 'one card type goes to the API');
+assertSame(null, cacCollectionLocalTypes(['cardType' => ['SPELL']]), 'one card type: the API filters');
+assertSame(['CHARACTER', 'SPELL'], cacCollectionLocalTypes(['cardType' => ['CHARACTER', '', 'SPELL']]), 'several card types: the proxy filters');
