@@ -10,7 +10,7 @@
   <div class="hero">
     <span class="thumb">
       @if (hero(); as h) {
-        <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="" position="center 20%" />
+        <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" />
       }
     </span>
     <span class="meta">
