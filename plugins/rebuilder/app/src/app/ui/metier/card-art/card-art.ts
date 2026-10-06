@@ -35,11 +35,17 @@ export class AcCardArt implements OnDestroy {
   /** Replaces the fallback chain derived from `reference`. */
   readonly sources = input<string[] | null>(null);
 
-  private readonly chain = computed(() => this.sources() ?? cardImageSources(this.reference(), contentLocale()));
-  /** Reset with the chain: a new reference shows the placeholder until its own image loads. */
-  protected readonly loaded = linkedSignal({ source: this.chain, computation: () => false });
+  /** Compared by value: a parent that rebuilds the same list must not retry sources that already failed. */
+  private readonly chain = computed(() => this.sources() ?? cardImageSources(this.reference(), contentLocale()), {
+    equal: (a, b) => a.length === b.length && a.every((src, i) => src === b[i]),
+  });
   private readonly attempt = linkedSignal({ source: this.chain, computation: () => 0 });
   protected readonly src = computed(() => this.chain()[this.attempt()] ?? null);
+  /**
+   * Reset with the displayed src only: a new image shows the placeholder until it loads, while an <img> that keeps
+   * its src never fires `load` again (a unique whose card object is replaced once its effect arrives).
+   */
+  protected readonly loaded = linkedSignal({ source: this.src, computation: () => false });
   protected readonly tint = computed(() => factionColor(this.faction()));
 
   constructor() {

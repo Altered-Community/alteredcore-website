@@ -18,3 +18,16 @@ describe('Favoris rarities', () => {
     expect(favoriteRarities({ ...f, rarities: ['UNIQUE'] }, 'nuc')).toEqual([]);
   });
 });
+
+describe('Collection and digital ownership query', () => {
+  it('sends every value of a list filter in the array form', () => {
+    for (const source of ['collection', 'owned'] as const) {
+      const p = ownedParams(source, defaultFilters(source), ['AX', 'BR'], 1, 36);
+      expect(p.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(p.getAll('faction[]')).toEqual(['AX', 'BR']);
+      expect(p.getAll('cardType[]')?.length).toBe(4);
+      expect(p.getAll('cardSet[]')).toEqual(defaultFilters(source).sets);
+      expect(p.has('rarity')).toBe(false);
+    }
+  });
+});

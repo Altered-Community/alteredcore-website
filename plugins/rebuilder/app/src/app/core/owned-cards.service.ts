@@ -57,7 +57,7 @@ export function favoriteRarities(f: SearchFilters, format: DeckFormat | null): s
   return format && f.legalOnly && formatInfo(format).uniqueMax === 0 ? picked.filter((r) => r !== 'UNIQUE') : picked;
 }
 
-/** Query of each endpoint (their names differ: `faction[]` / `faction`, `set[]` / `cardSet`…). */
+/** Query of each endpoint (their names differ: `set[]` / `cardSet[]`…). Lists as `key[]`: PHP keeps the last value of a repeated `key=…`. */
 export function ownedParams(source: OwnedSource, f: SearchFilters, factions: string[], page: number, itemsPerPage: number, format: DeckFormat | null = null): HttpParams {
   let p = new HttpParams().set('page', page).set('itemsPerPage', itemsPerPage).set('locale', contentLocale());
   const rarities = f.rarities.length ? f.rarities : RARITY_OPTIONS.map((r) => r.value);
@@ -70,11 +70,11 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
     add('set[]', f.sets);
     return p;
   }
-  add('faction', factions);
-  add('rarity', rarities);
-  add('cardType', f.types);
-  add('cardSet', f.sets);
-  add('subTypes', f.subtypes);
+  add('faction[]', factions);
+  add('rarity[]', rarities);
+  add('cardType[]', f.types);
+  add('cardSet[]', f.sets);
+  add('subTypes[]', f.subtypes);
   if (f.q.trim()) p = p.set('name', f.q.trim());
   const costs = parseCostExpression(f.mainCost) ?? [];
   if (costs.length) {
