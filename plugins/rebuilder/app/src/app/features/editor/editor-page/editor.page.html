@@ -16,6 +16,9 @@
         [attr.aria-busy]="waiting() === 'share'"
         (click)="act('share')"
       ></button>
+    }
+    <!-- One element per block: content projection (`[actions]`) only takes a block with a single root. -->
+    @if (!deck.loadError()) {
       <button actions acIconButton="ellipsis" variant="ghost" [iconSize]="22" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
     }
   </ac-app-bar>
