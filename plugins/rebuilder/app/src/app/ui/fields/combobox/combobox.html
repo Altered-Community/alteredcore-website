@@ -1,9 +1,14 @@
-@for (v of values(); track v.id) {
+<ng-template #chip let-v>
   <div class="picked">
     <span>@if (v.glyph) {<span class="glyph" aria-hidden="true">{{ v.glyph }}</span>}{{ v.text }}</span>
     <button type="button" [attr.aria-label]="removeLabel(v)" (click)="remove(v)"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
   </div>
-  <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
+</ng-template>
+@if (!keepOpen()) {
+  @for (v of values(); track v.id) {
+    <ng-container *ngTemplateOutlet="chip; context: { $implicit: v }" />
+    <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
+  }
 }
 <div class="field" cdkOverlayOrigin #origin="cdkOverlayOrigin">
   <button
@@ -23,6 +28,14 @@
     <span class="chev" [class.up]="open()"><ac-icon name="chevron-down" [size]="16" /></span>
   </button>
 </div>
+@if (keepOpen()) {
+  @for (v of values(); track v.id) {
+    @if (!$first) {
+      <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
+    }
+    <ng-container *ngTemplateOutlet="chip; context: { $implicit: v }" />
+  }
+}
 <ng-template
   cdkConnectedOverlay
   [cdkConnectedOverlayOrigin]="origin"
@@ -53,12 +66,12 @@
       />
     </div>
     @if (filtered().length) {
-      <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxValue]="noSelection" (cdkListboxValueChange)="onSelect($event)">
+      <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxMultiple]="keepOpen()" [cdkListboxValue]="listValue()" (cdkListboxValueChange)="onSelect($event)">
         @for (o of filtered(); track o.id) {
           @if (groupStarts().has(o.id)) {
             <div class="group" role="presentation">{{ o.group }}</div>
           }
-          <div class="option" [cdkOption]="o" [cdkOptionTypeaheadLabel]="o.text">@if (o.thumb) {<img class="thumb" [src]="o.thumb" alt="" loading="lazy" />}@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</div>
+          <div class="option" [cdkOption]="o" [cdkOptionTypeaheadLabel]="o.text">@if (keepOpen()) {<span class="box" aria-hidden="true"><ac-icon name="check" [size]="14" [strokeWidth]="3" /></span>}@if (o.thumb) {<img class="thumb" [src]="o.thumb" alt="" loading="lazy" />}@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</div>
         }
       </div>
     } @else {
