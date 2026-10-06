@@ -186,12 +186,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const dialog = page.getByRole('dialog', { name: 'Illustrations des jetons' });
     const families = dialog.locator('app-alt-art-slots');
     await expect(families.first()).toBeVisible();
-    const markers = dialog.locator('.marker');
-    await expect(markers).toHaveCount(await families.count());
-    for (const marker of await markers.all()) {
-      await expect(marker).toHaveAccessibleName('Illustration choisie');
-      await expect(marker).not.toContainText(/\d/);
-    }
+    // One marker a token, all of them « Illustration choisie », none numbered.
+    await expect(dialog.getByRole('img', { name: 'Illustration choisie' })).toHaveCount(await families.count());
+    await expect(dialog.locator('.marker')).toHaveCount(await families.count());
+    await expect(dialog.locator('.marker').filter({ hasText: /\d/ })).toHaveCount(0);
     await evidence(page, testInfo, '16-token-arts');
   });
 

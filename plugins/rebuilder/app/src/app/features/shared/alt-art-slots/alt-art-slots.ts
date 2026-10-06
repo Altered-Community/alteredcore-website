@@ -27,16 +27,15 @@ export class AltArtSlots {
   protected readonly error = signal<string | null>(null);
   /** A save is running: the tiles wait for it, so that saves never cross (a late refusal would undo a later choice). */
   protected readonly saving = signal(false);
-  protected readonly tiles = computed(() =>
-    this.choice().options.options.map((o) => ({
+  protected readonly tiles = computed(() => {
+    const copies = this.slots().map((s, i) => ({ ...s, copy: i + 1 }));
+    return this.choice().options.options.map((o) => ({
       reference: o.reference,
       src: cardImageUrl(o.reference),
       owned: o.ownedQuantity === null || o.ownedQuantity > 0,
-      markers: this.slots()
-        .map((s, i) => ({ ...s, copy: i + 1 }))
-        .filter((s) => s.reference === o.reference),
-    })),
-  );
+      markers: copies.filter((s) => s.reference === o.reference),
+    }));
+  });
   protected readonly tileLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
   protected readonly markerLabel = (n: number) => $localize`:@@altArt.marker:Exemplaire ${n}:n:`;
   protected readonly chosenLabel = $localize`:@@altArt.chosen:Illustration choisie`;

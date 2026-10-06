@@ -44,8 +44,7 @@ describe('AltArtSlots', () => {
     el.querySelectorAll<HTMLButtonElement>('.tile')[1].click();
     fixture.detectChanges();
     expect(saved).toEqual([['ALT_CORE_A_AX_04_C', 'ALT_CORE_B_AX_04_C', 'ALT_CORE_B_AX_04_C']]);
-    expect(el.querySelectorAll('li')[1].querySelector('.marker')?.textContent?.trim()).toBe('1');
-    expect(el.querySelectorAll('li')[1].querySelectorAll('.marker')).toHaveLength(1);
+    expect([...el.querySelectorAll('li')[1].querySelectorAll('.marker')].map((m) => m.textContent?.trim())).toEqual(['1']);
     expect(el.querySelectorAll<HTMLButtonElement>('.tile')[2].disabled).toBe(true);
   });
 
