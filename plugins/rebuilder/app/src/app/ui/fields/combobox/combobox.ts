@@ -1,7 +1,8 @@
 import { CdkListbox, CdkOption, type ListboxValueChangeEvent } from '@angular/cdk/listbox';
 import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, type ConnectedPosition } from '@angular/cdk/overlay';
 import { _getEventTarget } from '@angular/cdk/platform';
-import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, ElementRef, booleanAttribute, Injector, afterNextRender, computed, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { AcIcon } from '../../icon';
 import { groupStarts, normalizeSearch } from '../option-list';
 import { nextId } from '../value-accessor';
@@ -29,10 +30,14 @@ const POSITIONS: ConnectedPosition[] = [
  * field and a CDK listbox (arrows, Home / End, Enter, typeahead, ARIA). Opening does not focus the
  * search field, so touch keyboards stay closed until the user taps it; typing on the button moves
  * the key into it.
+ *
+ * `keepOpen`: several values in a row (calculators, subtypes). Each option has a check box, a press checks or
+ * unchecks it and the list stays open; Enter in the search field checks the first unchecked match and
+ * empties the field. The chips go under the button, so checking never moves the button or the list.
  */
 @Component({
   selector: 'ac-combobox',
-  imports: [AcIcon, CdkOverlayOrigin, CdkConnectedOverlay, CdkListbox, CdkOption],
+  imports: [AcIcon, NgTemplateOutlet, CdkOverlayOrigin, CdkConnectedOverlay, CdkListbox, CdkOption],
   templateUrl: './combobox.html',
   styleUrl: './combobox.scss',
 })
@@ -42,6 +47,8 @@ export class AcCombobox {
   readonly values = model<ComboOption[]>([]);
   readonly placeholder = input($localize`:@@ui.combobox.add:Ajouter…`);
   readonly searchPlaceholder = input($localize`:@@ui.combobox.search:Rechercher…`);
+  /** Check several values without the list closing; checked values stay in the list. */
+  readonly keepOpen = input(false, { transform: booleanAttribute });
   readonly searchChange = output<string>();
 
   private readonly toggle = viewChild.required<ElementRef<HTMLButtonElement>>('toggle');
@@ -61,12 +68,22 @@ export class AcCombobox {
   protected readonly query = signal('');
   protected readonly open = signal(false);
 
+  /**
+   * Selection of the listbox: with `keepOpen`, the checked options among those listed (the listbox
+   * rejects a value it has no option for, such as one the search hides); none otherwise.
+   */
+  protected readonly listValue = computed(() => {
+    if (!this.keepOpen()) return this.noSelection;
+    const checked = new Set(this.values().map((v) => v.id));
+    return this.filtered().filter((o) => checked.has(o.id));
+  });
+
   /** Where a group heading goes: the first listed option of each group. */
   protected readonly groupStarts = computed(() => groupStarts(this.filtered()));
 
   protected readonly filtered = computed(() => {
     const q = normalizeSearch(this.query());
-    const chosen = new Set(this.values().map((v) => v.id));
+    const chosen = this.keepOpen() ? new Set<number>() : new Set(this.values().map((v) => v.id));
     const out: ComboOption[] = [];
     for (const o of this.options()) {
       if (chosen.has(o.id)) continue;
@@ -83,11 +100,23 @@ export class AcCombobox {
     this.close();
   }
 
+  /** `keepOpen`: a checked value goes to the end of `values`, the order the user picked them in. */
+  setChecked(o: ComboOption, on: boolean): void {
+    this.values.update((list) => {
+      const without = list.filter((v) => v.id !== o.id);
+      return on ? [...without, o] : without;
+    });
+  }
+
   remove(o: ComboOption): void {
     this.values.update((v) => v.filter((x) => x.id !== o.id));
   }
 
   protected onSelect(e: ListboxValueChangeEvent<ComboOption>): void {
+    if (this.keepOpen()) {
+      if (e.option) this.setChecked(e.option.value, e.option.isSelected());
+      return;
+    }
     const o = e.value[0];
     if (o) this.pick(o);
   }
@@ -111,15 +140,23 @@ export class AcCombobox {
     }
   }
 
-  /** In the search field: arrows go to the list, Enter picks the first match. */
+  /** In the search field: arrows go to the list, Enter picks (checks, with `keepOpen`) the first match. */
   protected onSearchKey(e: KeyboardEvent): void {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       this.focusList();
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      if (!this.query()) return;
+      if (this.keepOpen()) {
+        const checked = new Set(this.values().map((v) => v.id));
+        const first = this.filtered().find((o) => !checked.has(o.id));
+        if (first) this.setChecked(first, true);
+        this.query.set('');
+        return;
+      }
       const first = this.filtered()[0];
-      if (first && this.query()) this.pick(first);
+      if (first) this.pick(first);
     }
   }
 

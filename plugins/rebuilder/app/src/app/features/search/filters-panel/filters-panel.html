@@ -147,7 +147,7 @@
           }
           <div class="adv-field">
             <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
-            <ac-combobox [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
+            <ac-combobox keepOpen [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
           </div>
           <ac-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
         </fieldset>

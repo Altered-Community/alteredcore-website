@@ -168,3 +168,26 @@
   outline: 2px solid var(--ac-color-primary);
   outline-offset: -2px;
 }
+/* `keepOpen`: a check box before each option, filled when the value is checked. */
+.box {
+  width: 18px;
+  height: 18px;
+  margin-right: var(--ac-space-2-5);
+  border: 1.5px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-surface);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.option[aria-selected='true'] {
+  font-weight: 700;
+  color: var(--ac-color-primary-strong);
+}
+.option[aria-selected='true'] .box {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+}

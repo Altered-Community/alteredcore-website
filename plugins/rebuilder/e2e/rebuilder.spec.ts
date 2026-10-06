@@ -673,6 +673,30 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · card filters', () => {
+  test('checks several subtypes in a row: the list stays open', async ({ page, compact }, testInfo) => {
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E sous-types ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
+    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    const subtypes = filters.locator('ac-combobox');
+    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
+    const options = page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option');
+    await options.nth(0).click();
+    await options.nth(1).click();
+    await expect(page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option', { selected: true })).toHaveCount(2);
+    await expect(subtypes.locator('.picked')).toHaveCount(2);
+    await evidence(page, testInfo, '12-subtypes');
+    // The button closes the list; the two subtypes make one filter.
+    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
+    await expect(page.getByRole('listbox', { name: 'Ajouter…' })).toBeHidden();
+    if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
+    await expect(page.getByText('2 sous-types').first()).toBeVisible();
+  });
+});
+
 test.describe('ReBuilder in the shell · Starter Deck Contest', () => {
   test('lists the contest winners, then every entry, with the site filters', async ({ page }, testInfo) => {
     await page.goto(`${DECKS}?tab=contest&lang=fr`);
@@ -832,9 +856,13 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(deckPage.locator('app-hand-stats')).toContainText('Démarrage optimal');
     const calc = deckPage.locator('app-hand-calculators');
     await calc.getByRole('combobox', { name: 'Choisir…', exact: true }).click();
+    // The list stays open: several cards are checked in a row.
     await page.getByRole('option').first().click();
+    await page.getByRole('option').nth(1).click();
+    await expect(page.getByRole('option', { selected: true })).toHaveCount(2);
     await expect(calc.locator('ac-probability-bars').first()).toContainText('%');
     await evidence(page, testInfo, '23-deck-test-hand');
+    await page.keyboard.press('Escape');
     // Game mode (the site's playground, desktop only): 3 cards to mana, then a card played from its menu.
     if (!compact) {
       await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
