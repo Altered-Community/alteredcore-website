@@ -169,6 +169,8 @@ function search(string $user): array {
     $types = array_values(array_filter((array)($_GET['type'] ?? []), 'is_string')) ?: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA'];
     $factions = array_values(array_filter((array)($_GET['faction'] ?? []), 'is_string'));
     $rarities = array_values(array_filter((array)($_GET['rarity'] ?? []), 'is_string'));
+    // The collection API (cardType[], cardSet[]) fails on several card types, like the real one: its proxy filters them.
+    if (count((array)($_GET['cardType'] ?? [])) > 1) reply(['error' => 'several cardType'], 500);
     $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));
     $locale = (string)($_GET['locale'] ?? 'fr');
     $take = max(1, min(100, (int)($_GET['take'] ?? 25)));
@@ -202,6 +204,8 @@ function collection(): array {
         ['reference' => 'ALT_ALIZE_B_AX_32_R1', 'quantity' => 1, 'name' => 'La Machine dans la Glace', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'ALIZE'],
         ['reference' => 'ALT_CORE_B_BR_10_C', 'quantity' => 3, 'name' => 'Red', 'faction' => 'BR', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
     ];
+    // The collection API (cardType[], cardSet[]) fails on several card types, like the real one: its proxy filters them.
+    if (count((array)($_GET['cardType'] ?? [])) > 1) reply(['error' => 'several cardType'], 500);
     $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));
     $filters = ['faction' => ['faction'], 'rarity' => ['rarity'], 'type' => ['type', 'cardType'], 'set' => ['set', 'cardSet']];
     $match = function ($c) use ($name, $filters) {
@@ -213,7 +217,8 @@ function collection(): array {
         }
         return $name === '' || str_contains(mb_strtolower($c['name']), $name);
     };
-    return array_map(fn($c) => $c + ['cardReference' => $c['reference']], array_values(array_filter($owned, $match)));
+    // Both APIs name the card type `cardType`; the collection API names the set `cardSet`, the ownership API `set`.
+    return array_map(fn($c) => $c + ['cardReference' => $c['reference'], 'cardType' => $c['type'], 'cardSet' => $c['set']], array_values(array_filter($owned, $match)));
 }
 
 /** Global mode: each copy takes its slot's print when owned, the standard print otherwise. */
