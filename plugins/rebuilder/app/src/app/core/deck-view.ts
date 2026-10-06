@@ -207,7 +207,7 @@ export interface DeckGroup {
   lines: HydratedLine[];
 }
 
-function groupIdOf(card: Card): DeckGroupId {
+export function groupIdOf(card: Card): DeckGroupId {
   return groupIdOfType(typeOf(card));
 }
 

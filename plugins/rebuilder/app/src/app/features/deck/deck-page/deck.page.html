@@ -53,7 +53,22 @@
   <div class="page">
     <main class="main">
       @if (!bp.compact()) {
-        <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="16" />Mes decks</a>
+        <app-deck-bar [legality]="legality()" (showLegality)="showLegality()" (zoomHero)="zoomHero()">
+          <div barActions class="bar-actions">
+            @if (deck.owned()) {
+              <button acButton size="sm" icon="pencil" (click)="edit()" i18n="@@deck.bar.edit">Modifier</button>
+            }
+            <button acButton variant="secondary" size="sm" icon="share-2" (click)="share()" i18n="@@deck.page.share">Partager</button>
+            @if (imageSource(); as source) {
+              <app-deck-image-export size="sm" [source]="source" [name]="deck.name()" (notice)="flash($event)" />
+            }
+            <button acButton variant="secondary" size="sm" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
+            <button acButton variant="secondary" size="sm" icon="copy-plus" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
+            @if (deck.owned()) {
+              <button acButton variant="danger" size="sm" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
+            }
+          </div>
+        </app-deck-bar>
         <ac-tabs ariaLabel="Vues du deck" i18n-ariaLabel="@@deck.page.views" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
       } @else {
         <section class="m-summary" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
@@ -120,53 +135,16 @@
               <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
             </ac-collapsible>
           }
-          <app-deck-preview [readonly]="true" [dense]="true" />
+          @if (bp.compact()) {
+            <app-deck-preview [readonly]="true" [dense]="true" />
+          } @else {
+            <app-deck-board [readonly]="true" />
+          }
         }
         @default never;
       }
     </main>
 
-    @if (!bp.compact()) {
-      <aside class="aside" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
-        @if (deck.hero(); as h) {
-          <button type="button" class="banner zoom" aria-haspopup="dialog" [attr.aria-label]="heroZoomLabel()" (click)="zoomHero()">
-            <ac-card-art [reference]="h.reference" [faction]="h.faction" placeholder="Visuel du héros" i18n-placeholder="@@deck.page.heroArt" position="center 18%" [eager]="true" />
-          </button>
-        } @else {
-          <div class="banner"></div>
-        }
-        <div class="aside-body">
-          <div class="titles">
-            <h1>
-              @if (factionLogo(); as src) {
-                <img class="faction" [src]="src" [alt]="factionLabel()" [title]="factionLabel()" />
-              }
-              {{ deck.name() }}
-            </h1>
-            <span>{{ deck.hero()?.name }}@if (created()) { · <ng-container i18n="@@deck.page.createdOn">créé le {{ created() }}</ng-container>}</span>
-          </div>
-          <ng-container [ngTemplateOutlet]="badges" />
-          <ac-rarity-summary [counts]="deck.stats().rarity" [gap]="14" />
-          <ac-collapsible title="Stats" [(open)]="statsOpen">
-            <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-          </ac-collapsible>
-          @if (deck.owned()) {
-            <button acButton icon="pencil" [fullWidth]="true" (click)="edit()" i18n="@@deck.page.edit">Modifier le deck</button>
-          }
-          @if (imageSource(); as source) {
-            <app-deck-image-export class="image-export" [source]="source" [name]="deck.name()" (notice)="flash($event)" />
-          }
-          <div class="actions">
-            <button acButton variant="secondary" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
-            <button acButton variant="secondary" icon="share-2" (click)="share()" i18n="@@deck.page.share">Partager</button>
-            <button acButton variant="secondary" icon="copy-plus" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
-            @if (deck.owned()) {
-              <button acButton variant="danger" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
-            }
-          </div>
-        </div>
-      </aside>
-    }
   </div>
 
   @if (bp.compact()) {

@@ -1,0 +1,27 @@
+@for (g of groups(); track g.id) {
+  <section class="group" [style.--columns]="g.columns" [attr.aria-labelledby]="'board-' + g.id">
+    <h2 class="title" [id]="'board-' + g.id">{{ g.label }} · {{ g.count }}</h2>
+    <div class="cards" role="list">
+      @for (l of g.lines; track l.card.reference) {
+        <ac-card-pile
+          [card]="l.card"
+          [quantity]="l.quantity"
+          [max]="deck.maxFor(l.card)"
+          [readonly]="!editable()"
+          [issues]="issues().get(l.card.reference) ?? noIssues"
+          (quantityChange)="deck.setQuantity(l.card, $event)"
+          (zoom)="zoom(l.card)"
+        />
+      }
+    </div>
+  </section>
+} @empty {
+  <div class="empty">
+    <strong i18n="@@editor.preview.emptyTitle">Deck vide</strong>
+    @if (editable()) {
+      <p i18n="@@editor.preview.empty">Ajoutez des cartes depuis la recherche.</p>
+    } @else {
+      <p i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
+    }
+  </div>
+}

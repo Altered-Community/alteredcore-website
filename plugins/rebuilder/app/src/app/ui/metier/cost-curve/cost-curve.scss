@@ -1,0 +1,98 @@
+:host {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ac-space-3);
+  flex-shrink: 0;
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+  padding-bottom: var(--ac-space-4);
+}
+.overline {
+  font: var(--ac-font-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  font: var(--ac-font-caption);
+  color: var(--ac-color-text-2);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.main {
+  background: var(--ac-color-chart-main);
+}
+.reserve {
+  background: var(--ac-color-chart-reserve);
+}
+.buckets {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ac-space-2);
+}
+.bucket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1);
+}
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 62px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.bar {
+  width: 9px;
+  border-radius: 2px 2px 0 0;
+}
+.n {
+  font: var(--ac-font-micro);
+  line-height: 1;
+  color: var(--ac-color-text-muted);
+}
+.n.zero {
+  color: var(--ac-color-text-disabled);
+}
+.axis {
+  font: var(--ac-font-caption);
+  color: var(--ac-color-text-2);
+}
+
+/* Reduced bar: one row high, the bucket of the last card added outlined. */
+:host(.sm) .buckets {
+  gap: 2px;
+}
+:host(.sm) .bucket {
+  gap: 2px;
+  padding: 2px 3px;
+  border-radius: var(--ac-radius-xs);
+}
+:host(.sm) .bucket.on {
+  background: var(--ac-color-primary-soft);
+  box-shadow: 0 0 0 1px var(--ac-color-primary-border);
+}
+:host(.sm) .bars {
+  height: 32px;
+}
+:host(.sm) .bar {
+  width: 6px;
+}
+:host(.sm) .axis {
+  font: var(--ac-font-micro);
+}

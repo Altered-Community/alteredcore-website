@@ -1,9 +1,9 @@
 <div class="split" #split>
   <button type="button" class="main" [disabled]="busy()" [attr.aria-busy]="busy()" (click)="press.emit()">
     @if (busy()) {
-      <ac-icon class="spin" name="loader-circle" [size]="18" />
+      <ac-icon class="spin" name="loader-circle" [size]="size() === 'sm' ? 16 : 18" />
     } @else if (icon(); as name) {
-      <ac-icon [name]="name" [size]="18" />
+      <ac-icon [name]="name" [size]="size() === 'sm' ? 16 : 18" />
     }
     <span class="main-label"><ng-content /></span>
   </button>
@@ -17,7 +17,7 @@
     [attr.aria-label]="moreLabel()"
     (cdkMenuOpened)="opened(split)"
   >
-    <ac-icon name="chevron-down" [size]="18" />
+    <ac-icon name="chevron-down" [size]="size() === 'sm' ? 16 : 18" />
   </button>
 </div>
 

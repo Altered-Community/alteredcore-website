@@ -1,0 +1,235 @@
+:host {
+  container: deck-bar / inline-size;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--ac-space-5);
+  min-height: 108px;
+  padding-right: var(--ac-space-4);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  box-shadow: var(--ac-shadow-card);
+}
+.identity {
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+}
+.art {
+  position: relative;
+  flex: 0 0 150px;
+  overflow: hidden;
+  border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+  background: var(--ac-color-track);
+}
+.zoom {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.zoom:focus-visible,
+.settings:focus-visible,
+.legality:focus-visible,
+.back:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: -2px;
+}
+.settings {
+  position: absolute;
+  right: var(--ac-space-2);
+  bottom: var(--ac-space-2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .settings:hover {
+    background: var(--ac-color-overlay-control);
+  }
+}
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border-left: 4px solid;
+}
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: var(--ac-font-caption);
+  color: var(--ac-color-link);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .back:hover {
+    color: var(--ac-color-link-hover);
+  }
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+/* Two lines at most, the whole name in the tooltip; a long one a size smaller. */
+.name {
+  margin: 0;
+  min-width: 0;
+  font: var(--ac-font-title);
+  color: var(--ac-color-text);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.name.long {
+  font: var(--ac-font-heading);
+}
+.rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 40rem;
+  margin: 0;
+  padding: 0 var(--ac-space-1-5);
+  height: var(--ac-control-md);
+  font: var(--ac-font-title);
+  color: var(--ac-color-text);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+}
+.rename.long {
+  font: var(--ac-font-heading);
+}
+.rename:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 0;
+}
+.rename-button {
+  flex-shrink: 0;
+  color: var(--ac-color-text-muted);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-1) var(--ac-space-2);
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+}
+.meta strong {
+  color: var(--ac-color-text);
+}
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--ac-space-3);
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-2);
+}
+.counts strong {
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+}
+.legality {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--ac-radius-pill);
+}
+.sep {
+  align-self: stretch;
+  width: 1px;
+  flex-shrink: 0;
+  margin: var(--ac-space-3) 0;
+  background: var(--ac-color-divider);
+}
+.terrain {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+}
+.overline {
+  font: var(--ac-font-overline);
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+.actions {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.actions:empty {
+  display: none;
+}
+
+/* Reduced bar (editor search, starting hand): one row. */
+:host(.reduced) {
+  gap: var(--ac-space-4);
+  min-height: 64px;
+  padding-right: var(--ac-space-3);
+}
+:host(.reduced) .art {
+  flex-basis: 96px;
+}
+:host(.reduced) .text {
+  padding: var(--ac-space-2) var(--ac-space-3);
+}
+:host(.reduced) .name {
+  font: var(--ac-font-heading);
+}
+:host(.reduced) .name.long {
+  font: var(--ac-font-body-strong);
+}
+:host(.reduced) .sep {
+  margin: var(--ac-space-3) 0;
+}
+
+/* Narrower bars (window width, deck panel open): the curve goes first, then the terrain totals. */
+@container deck-bar (max-width: 1180px) {
+  :host(:not(.reduced)) ac-cost-curve,
+  :host(:not(.reduced)) .sep.curve {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 960px) {
+  :host(:not(.reduced)) .terrain,
+  :host(:not(.reduced)) .sep {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 1000px) {
+  :host(.reduced) ac-cost-curve,
+  :host(.reduced) .sep.curve {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 840px) {
+  :host(.reduced) .terrain,
+  :host(.reduced) .sep {
+    display: none;
+  }
+}

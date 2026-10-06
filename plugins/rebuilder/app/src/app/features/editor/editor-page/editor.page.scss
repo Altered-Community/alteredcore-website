@@ -83,73 +83,73 @@ ac-app-bar.static {
 
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
+  /* The deck bar and the modes row span the page; the main column and the deck panel share the row below. */
   .editor {
+    flex-wrap: wrap;
+    row-gap: var(--ac-space-4);
     padding: var(--ac-space-6);
     align-items: flex-start;
+  }
+
+  .top {
+    flex: 0 0 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-4);
+  }
+
+  .main {
+    flex: 1 1 0;
   }
 
   .main {
     gap: var(--ac-space-4);
   }
 
-  .head-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ac-space-4);
-    margin-bottom: calc(-1 * var(--ac-space-3));
+  /* Deck bar actions: two columns of small buttons in « Aperçu », one row in the reduced bar. */
+  .bar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ac-space-1-5);
   }
 
-  .head-top .actions {
+  .bar-actions.row {
     display: flex;
     align-items: center;
-    gap: var(--ac-space-2);
+  }
+
+  .bar-actions > button[acButton] {
+    padding: 0 var(--ac-space-2-5);
+  }
+
+  /* Modes, the board's hint, the save state, the tokens' illustrations. */
+  .modes {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ac-space-3) var(--ac-space-6);
+  }
+
+  /* The mode labels stay whole: the segmented control ellipsizes spans once a button may shrink. */
+  .modes ac-segmented {
     flex-shrink: 0;
   }
 
-  .head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: var(--ac-space-6);
-  }
-
-  /* « Recherche » sits next to « Voir le deck ». The label must stay whole:
-     the segmented control ellipsizes spans once a button is allowed to shrink. */
-  .head ac-segmented {
-    flex-shrink: 0;
-  }
-
-  .head ac-segmented ::ng-deep button {
+  .modes ac-segmented ::ng-deep button {
     min-width: max-content;
     overflow: visible;
   }
 
-  .head ac-segmented ::ng-deep button span {
+  .modes ac-segmented ::ng-deep button span {
     overflow: visible;
     text-overflow: clip;
   }
 
-  .title-block {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ac-space-1);
-    min-width: 0;
-  }
-
-  .title-row {
-    display: flex;
-    align-items: center;
-    gap: var(--ac-space-3);
-    min-width: 0;
-  }
-
-  .title-row ac-editable-title {
-    min-width: 0;
-  }
-
-  .title-row ac-save-status {
-    flex-shrink: 0;
+  .hint {
+    flex: 1 1 12rem;
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
   }
 
   /* The deck panel and its « Masquer » handle, on the panel's left edge. */

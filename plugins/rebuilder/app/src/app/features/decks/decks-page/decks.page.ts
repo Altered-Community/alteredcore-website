@@ -589,6 +589,11 @@ export class DecksPage {
   }
 
   /** Optimistic toggle, then the count the API returns; guests go to the login page (the upvote needs a token). */
+  /** « Mes decks » from 768 px: a deck opens in the editor, on « Aperçu »; elsewhere on its page. */
+  protected deckRoute(deck: DeckListItem): string[] | null {
+    return this.tab() === 'mine' && !this.bp.compact() ? ['/decks', deck.id, 'edit', 'apercu'] : null;
+  }
+
   protected toggleLike(deck: DeckListItem): void {
     if (!this.auth.isLoggedIn()) {
       void this.router.navigateByUrl('/login');

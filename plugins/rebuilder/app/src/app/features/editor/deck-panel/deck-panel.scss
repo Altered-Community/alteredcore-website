@@ -7,15 +7,6 @@
   overflow: hidden;
   min-height: 0;
 }
-.summary {
-  padding: var(--ac-space-4);
-  border-bottom: 1px solid var(--ac-color-border);
-  flex-shrink: 0;
-}
-.stats {
-  border-bottom: 1px solid var(--ac-color-border);
-  flex-shrink: 0;
-}
 .rows {
   flex: 1 1 auto;
   min-height: 0;
@@ -36,8 +27,4 @@
   margin: var(--ac-space-4) var(--ac-space-1);
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
-}
-/* Part of the Stats block, above its bottom border: space on both sides of the button. */
-.tokens {
-  padding: var(--ac-space-1) var(--ac-space-4) var(--ac-space-4);
 }

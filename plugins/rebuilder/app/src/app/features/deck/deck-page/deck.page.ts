@@ -8,10 +8,9 @@ import { PageTitle } from '../../../core/page-title';
 import { factionSrc } from '../../../core/assets';
 import { DeckStore } from '../../../core/deck-store';
 import { deckImageSource } from '../../../core/deck-image';
-import { decklistText, groupByCost } from '../../../core/deck-view';
+import { groupByCost } from '../../../core/deck-view';
 import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
-import { uiLocale } from '../../../core/i18n';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcRaritySummary } from '../../../ui/chips';
 import { AcCollapsible } from '../../../ui/containers';
@@ -26,9 +25,11 @@ import { DeckPreview } from '../../editor/deck-preview/deck-preview';
 import { DecklistTable } from '../decklist-table/decklist-table';
 import { DeckActionsSheet, type DeckActionsData, type DeckActionsResult } from '../deck-actions-sheet/deck-actions-sheet';
 import { deckImageBusyMessage } from '../deck-image-actions';
+import { confirmDeleteDeck, copyDecklist } from '../deck-actions';
 import { DeckImageExport } from '../deck-image-export/deck-image-export';
+import { DeckBar } from '../deck-bar/deck-bar';
+import { DeckBoard } from '../deck-board/deck-board';
 import { openDuplicateDeck } from '../duplicate-deck/duplicate-deck.overlay';
-import { openConfirm } from '../../shared/confirm/confirm.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openShareDeck } from '../share-deck/share-deck.overlay';
@@ -42,7 +43,10 @@ type DeckTab = 'cartes' | 'decklist' | 'description' | 'main';
 /** Path of each tab under `/decks/:id` (`cartes` is the deck page itself). */
 const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'deck', description: 'description', main: 'main' };
 
-/** Consultation: Cartes / Decklist / Description / Main de départ tabs, read-only, summary aside with actions. */
+/**
+ * Consultation: Aperçu / Decklist / Description / Main de départ, read-only. From 768 px the deck bar (art, stats,
+ * actions) sits above the tabs and « Aperçu » is the deck board; on phones, the summary and the bottom navigation.
+ */
 @Component({
   selector: 'app-deck-page',
   imports: [
@@ -65,6 +69,8 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     DeckListView,
     DecklistTable,
     DeckImageExport,
+    DeckBar,
+    DeckBoard,
     TestHand,
     HandStats,
     HandCalculators,
@@ -92,7 +98,7 @@ export class DeckPage {
   private toastTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly tabs = [
-    { id: 'cartes', label: $localize`:@@deck.page.tabCards:Cartes` },
+    { id: 'cartes', label: $localize`:@@deck.page.tabPreview:Aperçu` },
     { id: 'decklist', label: 'Decklist' },
     { id: 'description', label: $localize`:@@deck.page.tabDescription:Description` },
     { id: 'main', label: $localize`:@@deck.page.tabHand:Main de départ` },
@@ -114,10 +120,6 @@ export class DeckPage {
   protected readonly legality = this.deck.legality;
   protected readonly legal = computed(() => this.legality().state === 'legal');
   protected readonly groups = computed(() => (this.grouping() === 'type' ? this.deck.groups() : groupByCost(this.deck.lines())));
-  protected readonly created = computed(() => {
-    const d = this.deck.createdAt();
-    return d ? new Date(d).toLocaleDateString(uiLocale()) : '';
-  });
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
     { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
@@ -152,7 +154,6 @@ export class DeckPage {
 
   protected readonly factionLogo = computed(() => factionSrc(this.deck.hero()?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck.hero()?.faction));
-  protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
 
   /** The hero banner: the hero card large, as on the site's deck page. */
   protected zoomHero(): void {
@@ -176,13 +177,7 @@ export class DeckPage {
   }
 
   protected async copyList(): Promise<void> {
-    const text = decklistText(this.deck.lines(), this.deck.hero());
-    try {
-      await navigator.clipboard.writeText(text);
-      this.flash($localize`:@@deck.page.listCopied:Liste copiée dans le presse-papiers.`);
-    } catch {
-      this.flash($localize`:@@deck.page.copyFailed:Copie impossible dans ce navigateur.`);
-    }
+    this.flash(await copyDecklist(this.deck));
   }
 
   /**
@@ -209,18 +204,9 @@ export class DeckPage {
   }
 
   protected remove(): void {
-    openConfirm(this.overlay, {
-      title: $localize`:@@deck.page.deleteTitle:Supprimer le deck ?`,
-      message: $localize`:@@deck.page.deleteConfirm:« ${this.deck.name()}:name: » sera supprimé. Cette action est irréversible.`,
-      confirmLabel: $localize`:@@deck.page.deleteAction:Supprimer`,
-      icon: 'trash-2',
-      danger: true,
-    }).subscribe((confirmed) => {
-      if (!confirmed) return;
-      this.deck.delete().subscribe((ok) => {
-        if (ok) void this.router.navigateByUrl('/decks');
-        else this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
-      });
+    confirmDeleteDeck(this.overlay, this.deck).subscribe((ok) => {
+      if (ok) void this.router.navigateByUrl('/decks');
+      else if (ok === false) this.flash(this.deck.actionError() ?? $localize`:@@deck.page.deleteFailed:Suppression impossible.`);
     });
   }
 

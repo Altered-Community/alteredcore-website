@@ -28,6 +28,8 @@ export class AcDeckCard {
   readonly deck = input.required<DeckListItem>();
   readonly layout = input<'grid' | 'row'>('grid');
   readonly variant = input<'mine' | 'community' | 'contest'>('mine');
+  /** Where the card leads, the deck's page by default (the user's own deck: its editor, from 768 px). */
+  readonly route = input<readonly string[] | null>(null);
   readonly likeToggle = output<void>();
   /** « Non légal » badge clicked: the page opens the deck's rules window. */
   readonly legalityClick = output<void>();
@@ -35,7 +37,7 @@ export class AcDeckCard {
   protected readonly illegal = computed(() => this.deck().legality.state === 'illegal');
   protected readonly showDraft = computed(() => this.variant() === 'mine' && this.deck().draft);
   protected readonly illegalLabel = computed(() => $localize`:@@ui.deckCard.illegalRules:Non légal : voir le détail de ${this.deck().name}:name:`);
-  protected readonly link = computed(() => ['/decks', this.deck().id]);
+  protected readonly link = computed(() => this.route() ?? ['/decks', this.deck().id]);
   protected readonly factionLogo = computed(() => factionSrc(this.deck().hero?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck().hero?.faction));
   protected readonly updatedLabel = computed(() => relativeTime(this.deck().updatedAt));

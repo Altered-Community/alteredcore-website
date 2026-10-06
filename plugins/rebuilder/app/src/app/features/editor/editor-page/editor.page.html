@@ -30,11 +30,25 @@
   </div>
 } @else {
   <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
-    <main class="main">
-      @if (!bp.compact()) {
-        <div class="head-top">
-          <ac-breadcrumb [items]="breadcrumb()" />
-          <div class="actions">
+    @if (!bp.compact()) {
+      <div class="top">
+        <app-deck-bar
+          [reduced]="effectiveView() !== 'apercu'"
+          [editable]="deck.editable()"
+          [legality]="legality()"
+          [highlight]="highlight()"
+          (openSettings)="openSettings()"
+          (showLegality)="showLegality()"
+          (zoomHero)="zoomHero()"
+        >
+          <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
+            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" [title]="labels.doneHint" (click)="act('done')">
+              @if (waiting() === 'done') {
+                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
+              } @else {
+                <ng-container i18n="@@editor.done">Terminer</ng-container>
+              }
+            </button>
             <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
               @if (waiting() === 'share') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
@@ -42,24 +56,45 @@
                 <ng-container i18n="@@editor.share">Partager</ng-container>
               }
             </button>
-            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')">
-              @if (waiting() === 'done') {
-                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
-              } @else {
-                <ng-container i18n="@@editor.done">Terminer</ng-container>
+            @if (effectiveView() === 'apercu') {
+              @if (imageSource(); as source) {
+                <app-deck-image-export size="sm" [source]="source" [name]="deck.name()" (notice)="flash($event)" />
               }
-            </button>
-          </div>
-        </div>
-        <div class="head">
-          <div class="title-block">
-            <div class="title-row">
-              <ac-editable-title [value]="deck.name()" [readonly]="!deck.editable()" (valueChange)="deck.rename($event)" />
+              <button acButton variant="secondary" size="sm" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
+              <button acButton variant="secondary" size="sm" icon="copy-plus" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
               @if (deck.editable()) {
-                <ac-save-status [state]="deck.saveState()" />
+                <button acButton variant="danger" size="sm" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
               }
-            </div>
+            } @else {
+              @if (imageSource()) {
+                <button acButton variant="secondary" size="sm" [icon]="imageBusy() ? 'loader-circle' : 'image'" [class.waiting]="imageBusy()" [disabled]="imageBusy()" (click)="image('copy')">
+                  @if (imageBusy()) {
+                    {{ labels.imageBusy }}
+                  } @else {
+                    <ng-container i18n="@@deck.image.copy">Copier en image</ng-container>
+                  }
+                </button>
+              }
+              <button acIconButton="ellipsis" size="sm" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
+            }
           </div>
+        </app-deck-bar>
+        <ng-template #moreMenu>
+          <div class="ac-menu" cdkMenu [attr.aria-label]="labels.more">
+            @if (imageSource()) {
+              <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('save')"><ac-icon name="download" [size]="18" /><ng-container i18n="@@deck.image.save">Enregistrer l’image</ng-container></button>
+              <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('open')"><ac-icon name="external-link" [size]="18" /><ng-container i18n="@@editor.imageOpen">Ouvrir l’image dans un nouvel onglet</ng-container></button>
+              <hr class="ac-menu__divider" />
+            }
+            <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="copyList()"><ac-icon name="copy" [size]="18" /><ng-container i18n="@@deck.page.copyList">Copier la liste</ng-container></button>
+            <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="duplicate()"><ac-icon name="copy-plus" [size]="18" /><ng-container i18n="@@deck.page.duplicate">Dupliquer</ng-container></button>
+            @if (deck.editable()) {
+              <hr class="ac-menu__divider" />
+              <button type="button" class="ac-menu__item ac-menu__item--danger" cdkMenuItem (cdkMenuItemTriggered)="remove()"><ac-icon name="trash-2" [size]="18" /><ng-container i18n="@@deck.page.delete">Supprimer</ng-container></button>
+            }
+          </div>
+        </ng-template>
+        <div class="modes">
           <ac-segmented
             size="lg"
             ariaLabel="Mode d’affichage" i18n-ariaLabel="@@editor.displayMode"
@@ -67,9 +102,22 @@
             [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
+          <span class="hint">
+            @if (effectiveView() === 'apercu' && deck.editable()) {
+              <ng-container i18n="@@editor.boardHint">Survolez une pile pour changer le nombre d’exemplaires.</ng-container>
+            }
+          </span>
+          @if (deck.editable()) {
+            <ac-save-status [state]="deck.saveState()" />
+          }
+          @if (altArts.canChooseTokens()) {
+            <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
+          }
         </div>
-      }
+      </div>
+    }
 
+    <main class="main">
       @if (deck.saveError(); as saveError) {
         <div class="banner error" role="alert">
           <span class="message">
@@ -97,7 +145,11 @@
           <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.loading()" />
         }
         @case ('apercu') {
-          <app-deck-preview />
+          @if (bp.compact()) {
+            <app-deck-preview />
+          } @else {
+            <app-deck-board />
+          }
         }
         @case ('deck') {
           <app-deck-list-view (openSettings)="openSettings()" />
@@ -114,13 +166,14 @@
     </main>
 
     @if (!bp.compact()) {
-      @if (deckDrawer.open()) {
-        <div class="panel" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)">
-          <app-deck-panel id="editor-deck-panel" (openSettings)="openSettings()" />
-          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="deckDrawer.set(false)"></button>
+      @let drawer = deckDrawer();
+      @if (drawer.open()) {
+        <div class="panel" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)">
+          <app-deck-panel id="editor-deck-panel" />
+          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="drawer.set(false)"></button>
         </div>
       } @else {
-        <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="deckDrawer.set(true)">
+        <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="drawer.set(true)">
           <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
           <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
         </button>
@@ -131,7 +184,9 @@
   @if (bp.compact()) {
     <ac-bottom-nav ariaLabel="Éditeur de deck" i18n-ariaLabel="@@editor.bottomNav" [items]="navItems()" />
   }
-  @if (toast(); as t) {
+  @if (notice(); as n) {
+    <ac-toast>{{ n }}</ac-toast>
+  } @else if (toast(); as t) {
     <ac-toast [actionLabel]="undoLabel" (action)="undo(t.card, t.quantity - t.delta)">
       <ac-icon [name]="t.delta > 0 ? 'plus' : 'minus'" [size]="14" [strokeWidth]="2.6" />{{ t.name }} ×{{ t.quantity }}
     </ac-toast>

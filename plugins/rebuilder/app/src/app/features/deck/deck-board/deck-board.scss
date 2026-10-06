@@ -1,0 +1,46 @@
+:host {
+  display: flex;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-5) 0;
+}
+.group {
+  /* Card columns of the same width in every group, 190px at most (a small deck does not get giant cards). */
+  --card-max: 190px;
+  /* Grows with its columns from its padding less one gap: every card column gets the same width. */
+  flex: var(--columns) 1 calc(2 * var(--ac-space-5) - var(--ac-space-3));
+  min-width: 0;
+  max-width: calc(var(--columns) * var(--card-max) + (var(--columns) - 1) * var(--ac-space-3) + 2 * var(--ac-space-5));
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  padding: 0 var(--ac-space-5);
+}
+.group + .group {
+  border-left: 1px solid var(--ac-color-divider);
+}
+.title {
+  margin: 0;
+  font: var(--ac-font-overline);
+  font-size: var(--ac-font-size-small);
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  column-gap: var(--ac-space-3);
+  row-gap: var(--ac-space-4);
+  align-items: end;
+}
+.empty {
+  flex: 1;
+  text-align: center;
+  padding: var(--ac-space-10) var(--ac-space-4);
+  color: var(--ac-color-text-2);
+}
+.empty p {
+  margin: var(--ac-space-1) 0 0;
+}

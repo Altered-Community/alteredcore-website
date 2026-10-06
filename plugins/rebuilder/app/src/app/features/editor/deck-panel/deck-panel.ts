@@ -1,38 +1,20 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
-import { formatInfo } from '../../../core/formats';
-import { AcCollapsible } from '../../../ui/containers';
-import { AcDeckRow, AcDeckStats, AcDeckSummary } from '../../../ui/metier';
-import { AcOverlayService } from '../../../ui/overlay';
+import { AcDeckRow } from '../../../ui/metier';
 import { EditorAltArts } from '../editor-alt-arts';
-import { openTokenArts } from '../token-arts/token-arts.overlay';
-import { AcButton } from '../../../ui/buttons';
-import { editorLegality, lineIssues, openEditorLegality } from '../editor-legality';
+import { lineIssues } from '../editor-legality';
 
-/** Desktop right-hand panel: embedded summary, Stats, grouped rows with steppers. */
+/** Desktop right-hand panel of the editor: the deck's cards grouped by type, with steppers (the deck bar holds the rest). */
 @Component({
   selector: 'app-deck-panel',
-  imports: [AcButton, AcDeckSummary, AcCollapsible, AcDeckStats, AcDeckRow],
+  imports: [AcDeckRow],
   templateUrl: './deck-panel.html',
   styleUrl: './deck-panel.scss',
 })
 export class DeckPanel {
-  /** Editor only (not the deck page): illustrations used more times than owned. */
+  /** Illustrations used more times than owned. */
   protected readonly altArts = inject(EditorAltArts, { optional: true });
   protected readonly deck = inject(DeckStore);
-  private readonly overlay = inject(AcOverlayService);
-  readonly openSettings = output<void>();
-  protected readonly statsOpen = signal(true);
-  protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
-  protected readonly legality = computed(() => editorLegality(this.deck));
   protected readonly issues = computed(() => lineIssues(this.deck));
   protected readonly noIssues: readonly string[] = [];
-
-  protected showLegality(): void {
-    openEditorLegality(this.overlay, this.deck);
-  }
-
-  protected chooseTokenArts(): void {
-    openTokenArts(this.overlay);
-  }
 }
