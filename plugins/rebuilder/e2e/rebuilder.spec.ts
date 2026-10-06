@@ -543,7 +543,11 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
     const pick = async (index: number, text: string) => {
       const dialog = page.getByRole('dialog');
-      await dialog.locator('.card-head').nth(index).click();
+      // Anywhere on the criterion's card opens it, its values too (« Tous les déclencheurs »…), not only its title.
+      const card = dialog.locator('.card').nth(index);
+      const box = (await card.boundingBox())!;
+      await card.click({ position: { x: 24, y: box.height - 12 } });
+      await expect(card.locator('.card-head')).toHaveAttribute('aria-pressed', 'true');
       await dialog.locator('ac-check-list input[type=search]').fill(text);
       await dialog.getByRole('checkbox', { name: text, exact: true }).check();
       await expect(dialog.locator('.card').nth(index).locator('ac-or-values .value').filter({ hasText: text })).toBeVisible();
