@@ -1,0 +1,3 @@
+@for (r of items(); track r.key) {
+  <ac-badge [tone]="r.tone" [title]="r.label" [attr.aria-label]="r.label"><img [src]="r.icon" alt="" />{{ r.count }}/{{ r.limit }}</ac-badge>
+}

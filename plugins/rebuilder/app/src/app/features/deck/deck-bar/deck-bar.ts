@@ -3,12 +3,13 @@ import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { heroArtSources } from '../../../core/card-art';
 import type { DeckLegality } from '../../../core/deck-legality';
+import { rarityLimits } from '../../../core/deck-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcTerrainTotals } from '../../../ui/chips';
 import { AcIcon } from '../../../ui/icon';
-import { AcCardArt, AcCostCurve, factionColor } from '../../../ui/metier';
+import { AcCardArt, AcCostCurve, AcRarityLimits, factionColor } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
@@ -22,7 +23,7 @@ const LONG_NAME = 40;
  */
 @Component({
   selector: 'app-deck-bar',
-  imports: [NgTemplateOutlet, RouterLink, AcCardArt, AcCostCurve, AcTerrainTotals, AcBadge, AcIcon, AcIconButton],
+  imports: [NgTemplateOutlet, RouterLink, AcCardArt, AcCostCurve, AcRarityLimits, AcTerrainTotals, AcBadge, AcIcon, AcIconButton],
   host: { '[class.reduced]': 'reduced()' },
   templateUrl: './deck-bar.html',
   styleUrl: './deck-bar.scss',
@@ -49,6 +50,8 @@ export class DeckBar {
   });
   protected readonly border = computed(() => factionColor(this.deck.hero()?.faction));
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
+  /** Rares, Exalteds and Uniques against the format's caps. */
+  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly problems = computed(() => this.legality().rules.length + this.legality().errors.length);
   protected readonly illegalLabel = computed(() => {

@@ -17,9 +17,6 @@
         (click)="act('share')"
       ></button>
     }
-    @if (!deck.loadError()) {
-      <button actions class="done" acButton variant="ghost" size="sm" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')" i18n="@@editor.done">Terminer</button>
-    }
   </ac-app-bar>
 }
 
@@ -41,13 +38,6 @@
           (showLegality)="showLegality()"
           >
           <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
-            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" [title]="labels.doneHint" (click)="act('done')">
-              @if (waiting() === 'done') {
-                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
-              } @else {
-                <ng-container i18n="@@editor.done">Terminer</ng-container>
-              }
-            </button>
             <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
               @if (waiting() === 'share') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
@@ -123,8 +113,6 @@
             <span class="text">{{ saveError }}</span>
             @if (stopped() === 'share') {
               <span class="then" i18n="@@editor.stopped.share">Le partage s’ouvrira une fois le deck enregistré.</span>
-            } @else if (stopped() === 'done') {
-              <span class="then" i18n="@@editor.stopped.done">La page du deck s’ouvrira une fois le deck enregistré.</span>
             }
           </span>
           <button acButton variant="secondary" size="sm" icon="rotate-ccw" [disabled]="deck.saving()" (click)="retry()" i18n="@@editor.retrySave">Réessayer</button>

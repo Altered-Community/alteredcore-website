@@ -25,7 +25,11 @@ if ($data === false) {
     exit;
 }
 
-$items    = is_array($data) ? $data : [];
+$items = is_array($data) ? $data : [];
+$types = cacCollectionLocalTypes($_GET);
+if ($types !== null) {
+    $items = array_values(array_filter($items, fn($it) => is_array($it) && in_array($it['cardType'] ?? '', $types, true)));
+}
 $total    = count($items);
 $perPage  = max(1, (int)($_GET['itemsPerPage'] ?? 30));
 $page     = max(1, (int)($_GET['page']         ?? 1));
