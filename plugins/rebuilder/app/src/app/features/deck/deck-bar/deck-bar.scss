@@ -5,7 +5,7 @@
   align-items: center;
   gap: var(--ac-space-5);
   min-height: 108px;
-  padding-right: var(--ac-space-4);
+  padding-right: var(--ac-space-5);
   background: var(--ac-color-surface);
   border: 1px solid var(--ac-color-border);
   border-radius: var(--ac-radius-card);
@@ -184,6 +184,8 @@
 .actions {
   flex-shrink: 0;
   margin-left: auto;
+  /* Space between the buttons and the bar's top and bottom borders. */
+  padding: var(--ac-space-3) 0;
 }
 .actions:empty {
   display: none;
@@ -193,7 +195,10 @@
 :host(.reduced) {
   gap: var(--ac-space-4);
   min-height: 64px;
-  padding-right: var(--ac-space-3);
+  padding-right: var(--ac-space-4);
+}
+:host(.reduced) .actions {
+  padding: var(--ac-space-2) 0;
 }
 :host(.reduced) .art {
   flex-basis: 96px;
