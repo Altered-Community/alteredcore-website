@@ -155,7 +155,10 @@ export class CardSearch {
       }
     };
     onScroll();
-    afterNextRender(onScroll);
+    // Measured again once the panel is on the page: at first, and each time it is shown again from its tab.
+    effect(() => {
+      if (this.filtersOpen()) afterNextRender(onScroll, { injector: this.injector });
+    });
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     inject(DestroyRef).onDestroy(() => {

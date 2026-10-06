@@ -9,7 +9,7 @@
           [max]="deck.maxFor(l.card)"
           [readonly]="!editable()"
           [issues]="issues().get(l.card.reference) ?? noIssues"
-          (quantityChange)="deck.setQuantity(l.card, $event)"
+          (quantityChange)="setQuantity(l.card, $event)"
           (zoom)="zoom(l.card)"
         />
       }

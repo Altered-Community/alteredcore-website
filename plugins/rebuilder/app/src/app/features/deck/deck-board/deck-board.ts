@@ -36,13 +36,13 @@ export class DeckBoard {
   private readonly width = signal(0);
 
   protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
-  /** Cards shown since this view opened, by reference: one removed meanwhile stays at 0 copies. */
-  private readonly shown = signal(new Map<string, Card>());
+  /** Cards brought to 0 with a pile's stepper since this view opened, by reference: they keep their place, faded. */
+  private readonly removed = signal(new Map<string, Card>());
   protected readonly groups = computed(() => {
     const lines: HydratedLine[] = this.deck.lines().filter((l) => l.quantity > 0);
     const present = new Set(lines.map((l) => l.card.reference));
     if (this.editable()) {
-      for (const [ref, card] of this.shown()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
+      for (const [ref, card] of this.removed()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
     }
     const width = this.width();
     return deckBoard(lines, (groups) => (width ? fitColumns(width, groups, MIN_CARD, PADDING, GAP) : DEFAULT_COLUMNS));
@@ -62,21 +62,21 @@ export class DeckBoard {
     // Another deck loaded: its own cards only.
     effect(() => {
       this.deck.deckId();
-      untracked(() => this.shown.set(new Map()));
+      untracked(() => this.removed.set(new Map()));
     });
-    effect(() => {
-      const lines = this.deck.lines();
-      untracked(() => {
-        const next = new Map(this.shown());
-        let changed = false;
-        for (const l of lines) {
-          if (l.quantity > 0 && next.get(l.card.reference) !== l.card) {
-            next.set(l.card.reference, l.card);
-            changed = true;
-          }
-        }
-        if (changed) this.shown.set(next);
-      });
+  }
+
+  /**
+   * A pile's stepper. Only a card removed here stays on the board at 0: a reference that leaves the deck otherwise (an
+   * illustration swapped in the zoom, the preferred prints of Global mode) leaves no faded pile behind.
+   */
+  protected setQuantity(card: Card, quantity: number): void {
+    this.deck.setQuantity(card, quantity);
+    this.removed.update((map) => {
+      const next = new Map(map);
+      if (quantity === 0) next.set(card.reference, card);
+      else next.delete(card.reference);
+      return next;
     });
   }
 
@@ -90,7 +90,7 @@ export class DeckBoard {
     const choice = this.altArts?.choiceFor(card.reference) ?? null;
     openCardZoom(this.overlay, {
       card,
-      quantity: editable ? { value: this.quantityOf(card), max: this.deck.maxFor(card), change: (n) => this.deck.setQuantity(card, n) } : undefined,
+      quantity: editable ? { value: this.quantityOf(card), max: this.deck.maxFor(card), change: (n) => this.setQuantity(card, n) } : undefined,
       illustrations: editable && choice ? { choice, pick: (ref) => this.deck.swapReference(card, ref) } : undefined,
     });
   }
