@@ -190,7 +190,10 @@ function search(string $user): array {
     return ['families' => $families, 'options' => $options, 'hasMore' => $page * $take < (int)($res['totalItems'] ?? 0)];
 }
 
-/** A few owned cards (the same for every user), filtered as the service does: `key[]` lists, `name` substring. */
+/**
+ * A few owned cards (the same for every user), filtered as the services do: `key[]` lists, `name` substring. Also the
+ * stack's collection API (COLLECTION_API_URL, same path): its filters are named `cardType` / `cardSet`.
+ */
 function collection(): array {
     $owned = [
         ['reference' => 'ALT_CORE_B_AX_08_C', 'quantity' => 3, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
@@ -200,13 +203,17 @@ function collection(): array {
         ['reference' => 'ALT_CORE_B_BR_10_C', 'quantity' => 3, 'name' => 'Red', 'faction' => 'BR', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
     ];
     $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));
-    return array_values(array_filter($owned, function ($c) use ($name) {
-        foreach (['faction', 'rarity', 'type', 'set'] as $k) {
-            $wanted = (array)($_GET[$k] ?? []);
-            if ($wanted && !in_array($c[$k], $wanted, true)) return false;
+    $filters = ['faction' => ['faction'], 'rarity' => ['rarity'], 'type' => ['type', 'cardType'], 'set' => ['set', 'cardSet']];
+    $match = function ($c) use ($name, $filters) {
+        foreach ($filters as $field => $params) {
+            foreach ($params as $k) {
+                $wanted = (array)($_GET[$k] ?? []);
+                if ($wanted && !in_array($c[$field], $wanted, true)) return false;
+            }
         }
         return $name === '' || str_contains(mb_strtolower($c['name']), $name);
-    }));
+    };
+    return array_map(fn($c) => $c + ['cardReference' => $c['reference']], array_values(array_filter($owned, $match)));
 }
 
 /** Global mode: each copy takes its slot's print when owned, the standard print otherwise. */

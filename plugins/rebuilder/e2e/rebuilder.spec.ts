@@ -151,27 +151,32 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('lists the digital collection with every rarity, type and set of the default filters', async ({ page, compact }, testInfo) => {
-    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
-    await createDeck(page, `E2E owned ${Date.now()}`);
-    const owned = page.waitForRequest((r) => r.url().includes('/papi/core-altered-cards/ownership-search'));
-    if (compact) {
-      // Compact screens: the source is in the « Plus » menu of the tabs.
-      await page.getByRole('tab', { name: 'Plus' }).click();
-      await page.getByRole('menuitemradio', { name: 'Propriété numérique' }).click();
-    } else {
-      await page.getByRole('tab', { name: 'Propriété numérique' }).click();
-    }
-    // The Axiom cards of the stack's ownership mock (docker/stack/ownership-mock): commons, rares, two sets.
-    const tiles = page.locator('app-search-results ac-card-tile');
-    await expect(tiles).toHaveCount(4);
-    await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(1);
-    // Lists in their array form: PHP keeps the last value of a repeated `rarity=…`.
-    const query = new URL((await owned).url()).searchParams;
-    expect(query.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
-    expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
-    await evidence(page, testInfo, '15-owned-search');
-  });
+  for (const { tab, short, endpoint, shot } of [
+    { tab: 'Collection physique', short: 'Collection', endpoint: 'collection-search', shot: '15-collection-search' },
+    { tab: 'Propriété numérique', short: null, endpoint: 'ownership-search', shot: '15-owned-search' },
+  ]) {
+    test(`lists « ${tab} » with every rarity, type and set of the default filters`, async ({ page, compact }, testInfo) => {
+      await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+      await createDeck(page, `E2E ${endpoint} ${Date.now()}`);
+      const request = page.waitForRequest((r) => r.url().includes(`/papi/core-altered-cards/${endpoint}`));
+      if (compact && !short) {
+        // Compact screens: the last sources are in the « Plus » menu of the tabs.
+        await page.getByRole('tab', { name: 'Plus' }).click();
+        await page.getByRole('menuitemradio', { name: tab }).click();
+      } else {
+        await page.getByRole('tab', { name: compact && short ? short : tab, exact: true }).click();
+      }
+      // The Axiom cards of the stack's mock (docker/stack/ownership-mock): commons, rares, two sets.
+      const tiles = page.locator('app-search-results ac-card-tile');
+      await expect(tiles).toHaveCount(4);
+      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(1);
+      // Lists in their array form: PHP keeps the last value of a repeated `rarity=…`.
+      const query = new URL((await request).url()).searchParams;
+      expect(query.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
+      await evidence(page, testInfo, shot);
+    });
+  }
 
   test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
     const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
