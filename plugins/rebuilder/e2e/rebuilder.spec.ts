@@ -505,6 +505,20 @@ test.describe('ReBuilder in the shell · languages', () => {
 });
 
 test.describe('ReBuilder in the shell · Uniques search', () => {
+  test('shows the Uniques at most 7 per row, larger, on a very wide window', async ({ page, compact }) => {
+    test.skip(compact, 'a desktop width');
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques grid ${Date.now()}`);
+    const columns = () => page.locator('ac-virtual-grid.grid').evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    const all = await columns();
+    await page.getByRole('tab', { name: 'Uniques' }).click();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    expect(all).toBeGreaterThan(7);
+    await expect.poll(columns).toBe(7);
+  });
+
   test('ORs the values of a criterion and ANDs the effects, on the Uniques search API', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the effect filter is checked on the desktop panel');
     await page.goto(`${NEW_DECK}?lang=fr`);

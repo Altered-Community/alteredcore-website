@@ -14,7 +14,7 @@
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ac-virtual-grid #grid class="grid" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+    <ac-virtual-grid #grid class="grid" [class.grid--readable]="search.source() === 'uniques'" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
       @for (c of grid.slice(); track c.reference) {
         <ac-card-tile
           role="listitem"
