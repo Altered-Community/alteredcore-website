@@ -158,11 +158,15 @@ ac-app-bar.static {
     flex-shrink: 0;
     position: sticky;
     top: calc(var(--ac-sticky-top) + var(--ac-space-6));
-    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+    /* As tall as its cards, the window's height at most (then its list scrolls). */
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
   }
 
   .panel app-deck-panel {
-    height: 100%;
+    flex: 0 1 auto;
+    min-height: 0;
   }
 
   /* Deck hidden: the tab takes its place, against the right edge of the page. */
