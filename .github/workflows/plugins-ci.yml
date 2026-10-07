@@ -151,20 +151,20 @@ jobs:
           nohup bash -c 'bash "$RUNNER_TEMP/frontends.sh"; echo $? > "$RUNNER_TEMP/frontends.exit"' > "$RUNNER_TEMP/frontends.log" 2>&1 &
       - uses: docker/setup-buildx-action@v3
       - name: Build the stack images
-        # From the GitHub Actions cache (one scope per image): rebuilt only when the Dockerfile or
-        # the pinned decks API commit changes.
+        # From preprod's GitHub Actions cache (one scope per image, written by stack-images.yml): rebuilt only when
+        # the pull request changes the Dockerfile or the pinned decks API commit. Read only: a cache written here
+        # would be scoped to this pull request, unreadable by the others, and would fill the repository's 10 GB.
         uses: docker/bake-action@v6
         with:
           source: .
           files: |
             docker-compose.yml
             docker-compose.stack.yml
+          targets: web,decks-api
           load: true
           set: |
             web.cache-from=type=gha,scope=stack-web
-            web.cache-to=type=gha,scope=stack-web,mode=max
             decks-api.cache-from=type=gha,scope=stack-decks-api
-            decks-api.cache-to=type=gha,scope=stack-decks-api,mode=max
       - name: Start the stack
         run: $COMPOSE up -d --no-build --wait --wait-timeout 600
       - name: Wait for the front-end builds
