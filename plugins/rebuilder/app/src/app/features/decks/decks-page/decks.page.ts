@@ -443,7 +443,8 @@ export class DecksPage {
         // Decks created, edited, duplicated or deleted meanwhile: the kept list is refreshed in place.
         if (this.auth.isLoggedIn()) this.serverRes.reload();
         const y = this.listScroll;
-        const apply = () => window.scrollTo(0, y);
+        // Instant: the site's Bootstrap makes the root scroll smooth, and the app scrolls to the top of each page it opens.
+        const apply = () => window.scrollTo({ top: y, behavior: 'instant' });
         apply();
         requestAnimationFrame(() => {
           apply();
