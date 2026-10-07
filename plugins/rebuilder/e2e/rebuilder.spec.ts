@@ -1128,6 +1128,30 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
     await evidence(page, testInfo, '25-deck-not-found');
   });
+
+  test('back from a deck opened far down the list puts the list where it was', { tag: '@mobile' }, async ({ page }, testInfo) => {
+    const name = `E2E back ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(DECKS);
+    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
+    await expect(item).toBeVisible();
+    // Room below the page, as with a long list.
+    await page.evaluate(() => (document.body.style.paddingBottom = '200vh'));
+    await item.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    // Phones: just below the sticky app bar. Under it, the click would scroll the page back to the top before opening the deck.
+    const barBottom = await page.locator('ac-app-bar').evaluateAll((bars) => Math.max(0, ...bars.map((b) => b.getBoundingClientRect().bottom)));
+    await page.evaluate((dy) => window.scrollBy({ top: -dy, behavior: 'instant' }), barBottom + 8);
+    const scrollY = () => page.evaluate(() => window.scrollY);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+    const before = await scrollY();
+    await item.getByRole('link').first().click();
+    await expect(page).toHaveURL(new RegExp(`id=${id}`));
+    await page.goBack();
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+    await expect.poll(scrollY).toBe(before);
+    await expect(item).toBeInViewport();
+  });
 });
 
 test.describe('ReBuilder in the shell · guest', () => {
