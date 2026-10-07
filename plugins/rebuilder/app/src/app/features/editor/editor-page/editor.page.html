@@ -46,6 +46,7 @@
           [legality]="legality()"
           [highlight]="highlight()"
           (openSettings)="openSettings()"
+          (changeHero)="changeHero()"
           (showLegality)="showLegality()"
           >
           <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
@@ -148,7 +149,7 @@
           }
         }
         @case ('deck') {
-          <app-deck-list-view (openSettings)="openSettings()" />
+          <app-deck-list-view (openSettings)="openSettings()" (changeHero)="changeHero()" />
         }
         @case ('main') {
           @if (deck.opening()) {

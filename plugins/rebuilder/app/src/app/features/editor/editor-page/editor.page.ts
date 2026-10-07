@@ -20,6 +20,7 @@ import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
+import { openHeroPicker } from '../../shared/hero-picker/hero-picker.overlay';
 import { EditorAltArts } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
 import { CardSearch } from '../../search/card-search/card-search';
@@ -344,6 +345,13 @@ export class EditorPage {
     }).afterClosed.subscribe((s) => {
       if (!s) return;
       this.deck.updateSettings({ name: s.name, description: s.description, hero: s.hero ?? undefined, format: s.format, isPublic: s.isPublic });
+    });
+  }
+
+  /** The hero portrait's shortcut: « Choisir un héros » alone, the other settings stay behind the settings button. */
+  protected changeHero(): void {
+    openHeroPicker(this.overlay, this.deck.hero()).afterClosed.subscribe((hero) => {
+      if (hero) this.deck.updateSettings({ hero });
     });
   }
 

@@ -1,9 +1,16 @@
 <div class="top">
-  <span class="thumb">
+  @if (editable()) {
+    <button type="button" class="thumb" aria-haspopup="dialog" [attr.aria-label]="changeHeroLabel" [title]="changeHeroLabel" (click)="changeHero.emit()">
+      <ng-container [ngTemplateOutlet]="art" />
+    </button>
+  } @else {
+    <span class="thumb"><ng-container [ngTemplateOutlet]="art" /></span>
+  }
+  <ng-template #art>
     @if (hero(); as h) {
       <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 25%" />
     }
-  </span>
+  </ng-template>
   <div class="meta">
     @if (appearance() === 'embedded') {
       <span class="overline" i18n="@@ui.deckSummary.hero">Héros</span>

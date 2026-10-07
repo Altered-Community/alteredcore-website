@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { heroArtSources } from '../../../core/card-art';
 import { type RarityCounts } from '../../../core/deck-rules';
 import type { DeckHero } from '../../../core/models';
@@ -7,10 +8,10 @@ import { AcBadge, AcRaritySummary } from '../../chips';
 import { AcIcon } from '../../icon';
 import { AcCardArt } from '../card-art/card-art';
 
-/** Hero thumbnail + deck meta + counters; the settings button opens « Réglages du deck ». */
+/** Hero thumbnail + deck meta + counters; the thumbnail opens « Choisir un héros », the settings button « Réglages du deck ». */
 @Component({
   selector: 'ac-deck-summary',
-  imports: [AcCardArt, AcIcon, AcIconButton, AcRaritySummary, AcBadge],
+  imports: [NgTemplateOutlet, AcCardArt, AcIcon, AcIconButton, AcRaritySummary, AcBadge],
   host: { '[class]': "'ac-deck-summary--' + appearance()" },
   templateUrl: './deck-summary.html',
   styleUrl: './deck-summary.scss',
@@ -27,6 +28,8 @@ export class AcDeckSummary {
   readonly appearance = input<'card' | 'embedded'>('card');
   readonly editable = input(true);
   readonly openSettings = output<void>();
+  /** Click on the hero thumbnail (editable only). */
+  readonly changeHero = output<void>();
   /** Click on the validity badge: the format's rules, passed or failed. */
   readonly showLegality = output<void>();
 
@@ -35,6 +38,7 @@ export class AcDeckSummary {
     const ref = this.hero()?.reference;
     return ref ? heroArtSources(ref) : null;
   });
+  protected readonly changeHeroLabel = $localize`:@@ui.deckSummary.changeHero:Changer de héros`;
   protected readonly noHero = $localize`:@@ui.deckSummary.noHero:Aucun héros`;
   protected readonly publicLabel = $localize`:@@ui.deckSummary.public:Public`;
   protected readonly privateLabel = $localize`:@@ui.deckSummary.private:Privé`;
