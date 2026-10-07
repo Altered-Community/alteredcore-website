@@ -154,11 +154,16 @@
           @if (deck.opening()) {
             <app-hand-skeleton />
           } @else {
-          <div class="hand">
-            <app-test-hand [lines]="deck.lines()" />
-            <app-hand-stats [lines]="deck.lines()" />
-            <app-hand-calculators [lines]="deck.lines()" />
-          </div>
+          <!-- Test hand (with the CDK's drag and drop), odds and calculators: their own chunk, loaded with the view. -->
+          @defer (on immediate) {
+            <div class="hand">
+              <app-test-hand [lines]="deck.lines()" />
+              <app-hand-stats [lines]="deck.lines()" />
+              <app-hand-calculators [lines]="deck.lines()" />
+            </div>
+          } @placeholder {
+            <app-hand-skeleton />
+          }
           }
         }
         @default never;

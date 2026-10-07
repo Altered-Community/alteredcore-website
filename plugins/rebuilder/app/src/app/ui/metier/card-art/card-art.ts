@@ -69,6 +69,18 @@ export class AcCardArt implements OnDestroy {
  * the lookahead zone for DWELL_MS, so tiles skipped by a fast flick never download their image.
  */
 const DWELL_MS = 150;
+/** Art loads up to half a screen above and a screen and a half below the viewport… */
+const LOOKAHEAD = '50% 0px 150% 0px';
+/**
+ * …or half a screen below on a slow connection (3G or slower, or data saver): there, the art of the next screens
+ * takes the bandwidth of the art on screen, seconds later on a 3G network.
+ */
+const SLOW_LOOKAHEAD = '0px 0px 50% 0px';
+
+function slowNetwork(): boolean {
+  const connection = (globalThis.navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } } | undefined)?.connection;
+  return !!connection && (connection.saveData === true || ['slow-2g', '2g', '3g'].includes(connection.effectiveType ?? ''));
+}
 
 @Service()
 export class AcViewportLoader {
@@ -97,7 +109,7 @@ export class AcViewportLoader {
           );
         }
       },
-      { rootMargin: '50% 0px 150% 0px' },
+      { rootMargin: slowNetwork() ? SLOW_LOOKAHEAD : LOOKAHEAD },
     );
     this.callbacks.set(el, onVisible);
     this.observer.observe(el);

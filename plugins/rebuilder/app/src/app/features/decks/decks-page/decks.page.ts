@@ -119,8 +119,14 @@ export class DecksPage {
     const tab = this.tab();
     return (tab === 'mine' && this.mineLoading()) || (tab === 'community' && this.communityLoading()) || (tab === 'contest' && this.contestLoading());
   });
-  /** Two rows of deck cards from 768 px, a screen of rows on phones. */
-  protected readonly skeletons = computed(() => Array.from({ length: this.bp.compact() ? 5 : 10 }, (_, i) => i));
+  /**
+   * Two rows of deck cards from 768 px, a screen of rows on phones. Keyed by the list's length: decks that arrive
+   * above them take new skeletons below, rather than pushing the same ones down (a layout shift for the browser).
+   */
+  protected readonly skeletons = computed(() => {
+    const listed = this.list().length;
+    return Array.from({ length: this.bp.compact() ? 5 : 10 }, (_, i) => `${listed}-${i}`);
+  });
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();

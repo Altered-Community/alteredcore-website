@@ -164,9 +164,14 @@
           @if (deck.opening()) {
             <app-hand-skeleton />
           } @else {
-            <app-test-hand [lines]="deck.lines()" />
-            <app-hand-stats [lines]="deck.lines()" />
-            <app-hand-calculators [lines]="deck.lines()" />
+            <!-- Test hand (with the CDK's drag and drop), odds and calculators: their own chunk, loaded with the tab. -->
+            @defer (on immediate) {
+              <app-test-hand [lines]="deck.lines()" />
+              <app-hand-stats [lines]="deck.lines()" />
+              <app-hand-calculators [lines]="deck.lines()" />
+            } @placeholder {
+              <app-hand-skeleton />
+            }
           }
         }
         @case ('cartes') {
