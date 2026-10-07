@@ -4,6 +4,9 @@
   top: var(--ac-page-top);
   z-index: 20;
 }
+:host(.static) {
+  position: static;
+}
 header {
   height: var(--ac-app-bar-height);
   padding-inline: var(--ac-space-1-5);

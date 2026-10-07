@@ -209,6 +209,7 @@ on touch screens.
 |---|---|
 | `--ac-header-height` | Height of the sticky site header, measured at runtime by `js/altered-core-host.js`. |
 | `--ac-page-top`, `--ac-sticky-top` | Top of the page content and of sticky panels (under the site header). |
+| `--ac-scroll-top-offset` | Height of a sticky bar a plugin draws under the site header, `0px` by default. A plugin sets it on `<html>` while its bar is stuck (Re:Builder: `ac-app-bar`); `<html>`'s `scroll-padding-top` is `--ac-page-top` plus this offset, so keyboard focus, `scrollIntoView` and anchors stop below both bars. |
 | `--ac-page-max-width`, `--ac-page-max-width-wide` | Content column (1200 px), wide tools (1600 px). |
 | `--ac-site-max-width` | Header, footer and tool pages: they follow the screen width up to 2400 px. |
 | `--ac-app-bar-height`, `--ac-bottom-nav-height` | Re:Builder app bar and bottom navigation (add `env(safe-area-inset-bottom)` to the latter). |

@@ -120,6 +120,11 @@ the density.
   Choose the heading level for the structure and the class for the look.
 - `ac-row--between` and `ac-grid` change the visual order only by wrapping; keep the source order
   equal to the reading order.
+- `<html>` has `scroll-padding-top: calc(var(--ac-page-top) + var(--ac-scroll-top-offset))`
+  (`css/base.css`): an element the browser scrolls to the top (keyboard focus, `scrollIntoView`,
+  `#anchor`, find in page) stops under the sticky site header, not behind it. A plugin that adds
+  its own sticky bar sets `--ac-scroll-top-offset` on `<html>` while the bar is stuck; do not put
+  `scroll-margin-top` on content elements (nested scrollers would be misaligned).
 
 ## Frameworks
 
