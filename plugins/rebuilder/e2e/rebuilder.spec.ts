@@ -1136,20 +1136,20 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await page.goto(DECKS);
     const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
     await expect(item).toBeVisible();
-    // Room below the page, as with a long list.
-    await page.evaluate(() => (document.body.style.paddingBottom = '200vh'));
-    await item.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
-    // Phones: just below the sticky app bar. Under it, the click would scroll the page back to the top before opening the deck.
-    const barBottom = await page.locator('ac-app-bar').evaluateAll((bars) => Math.max(0, ...bars.map((b) => b.getBoundingClientRect().bottom)));
-    await page.evaluate((dy) => window.scrollBy({ top: -dy, behavior: 'instant' }), barBottom + 8);
-    const scrollY = () => page.evaluate(() => window.scrollY);
-    await expect.poll(scrollY).toBeGreaterThan(0);
-    const before = await scrollY();
+    // Room below the page, as with a long list. The card goes just below the sticky app bar (phones): under it, the
+    // click would scroll the page back to the top before opening the deck.
+    const before = await item.evaluate((el) => {
+      document.body.style.paddingBottom = '200vh';
+      const bars = [...(el.getRootNode() as ParentNode).querySelectorAll('ac-app-bar')].map((b) => b.getBoundingClientRect().bottom);
+      window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - Math.max(0, ...bars) - 8, behavior: 'instant' });
+      return window.scrollY;
+    });
+    expect(before).toBeGreaterThan(0);
     await item.getByRole('link').first().click();
-    await expect(page).toHaveURL(new RegExp(`id=${id}`));
+    await expect(page).toHaveURL(at(`${EDITOR(id)}&view=apercu`));
     await page.goBack();
-    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
-    await expect.poll(scrollY).toBe(before);
+    await expect(page).toHaveURL(at(DECKS));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
     await expect(item).toBeInViewport();
   });
 });
