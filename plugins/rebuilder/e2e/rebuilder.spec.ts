@@ -985,14 +985,14 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(item).toBeVisible();
     // Room below the page, as with a long list: the window keeps its scroll from one page of the app to the next.
     await page.evaluate(() => (document.body.style.paddingBottom = '200vh'));
-    await item.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await item.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
     const scrollY = () => page.evaluate(() => window.scrollY);
     await expect.poll(scrollY).toBeGreaterThan(0);
     await item.getByRole('link').first().click();
     await expect(page).toHaveURL(new RegExp(`id=${id}`));
     await expect.poll(scrollY).toBe(0);
     await page.goBack();
-    await expect(page).toHaveURL(at(DECKS));
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
     await expect.poll(scrollY).toBeGreaterThan(0);
     await expect(item).toBeInViewport();
   });

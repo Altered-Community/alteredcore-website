@@ -84,10 +84,10 @@ export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'AL
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 /**
  * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except where
- * Uniques are listed (Uniques, Favoris).
+ * Uniques are listed (Uniques, Favoris, Propriété numérique).
  */
 function setsOffByDefault(source: CardSource): string[] {
-  return source === 'uniques' || source === 'favorites' ? ['FUGUE'] : ['FUGUE', 'COREKS'];
+  return source === 'uniques' || listsUniques(source) ? ['FUGUE'] : ['FUGUE', 'COREKS'];
 }
 
 export const RARITY_OPTIONS = [

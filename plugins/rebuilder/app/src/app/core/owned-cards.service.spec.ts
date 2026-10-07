@@ -9,6 +9,7 @@ describe('Favoris and Propriété numérique rarities', () => {
       expect(ownedParams(source, f, ['AX'], 1, 36, 'standard').getAll('rarity[]')).toBeNull();
     }
     expect(defaultFilters('favorites').sets).toContain('COREKS');
+    expect(defaultFilters('owned').sets).toContain('COREKS');
     expect(defaultFilters('all').sets).not.toContain('COREKS');
   });
 
