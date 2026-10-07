@@ -1,13 +1,20 @@
 <div class="identity">
   <div class="art" [class.ac-skeleton]="deck.opening()">
-    @if (deck.hero(); as h) {
-      @if (editable()) {
-        <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
-      } @else {
-        <button type="button" class="zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoomHero()">
+    <!-- One button for both uses, so that the art stays in place when `editable` arrives after the hero. -->
+    @if (editable() || deck.hero()) {
+      <button
+        type="button"
+        class="portrait"
+        [class.zoom]="!editable()"
+        aria-haspopup="dialog"
+        [attr.aria-label]="editable() ? labels.changeHero : zoomLabel()"
+        [title]="editable() ? labels.changeHero : ''"
+        (click)="editable() ? changeHero.emit() : zoomHero()"
+      >
+        @if (deck.hero(); as h) {
           <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
-        </button>
-      }
+        }
+      </button>
     }
     @if (editable()) {
       <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">

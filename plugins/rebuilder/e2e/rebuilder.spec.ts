@@ -822,6 +822,36 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · hero portrait', () => {
+  test('the hero portrait opens « Choisir un héros » alone; the chosen hero replaces the deck\'s', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E hero ${testInfo.project.name} ${Date.now()}`);
+    // The portrait: in the deck bar from 768 px, in the « Deck » view's summary on phones.
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    const portrait = page.getByRole('button', { name: 'Changer de héros' });
+    await expect(portrait.locator('img').first()).toBeVisible();
+    await portrait.click();
+
+    const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
+    await expect(picker).toBeVisible();
+    // The other settings stay behind the settings button: the picker comes alone, without « Réglages du deck ».
+    await expect(page.getByRole('dialog', { name: 'Réglages du deck' })).toHaveCount(0);
+    const other = picker.locator('ac-hero-tile button[aria-pressed="false"]').first();
+    const name = ((await other.locator('.name').textContent()) ?? '').trim();
+    await other.click();
+    await evidence(page, testInfo, '01-hero-picker-from-portrait');
+    await picker.getByRole('button', { name: 'Choisir ce héros' }).click();
+    await expect(picker).toBeHidden();
+    if (compact) await expect(page.locator('ac-deck-summary')).toContainText(name);
+    else {
+      // The reduced bar of « Recherche » has no hero name: « Aperçu » shows it.
+      await page.locator('ac-segmented').getByText(FR.viewDeck, { exact: true }).click();
+      await expect(page.locator('app-deck-bar .meta')).toContainText(name);
+    }
+  });
+});
+
 test.describe('ReBuilder in the shell · deck page', () => {
   /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why), plus `extra` references. */
   async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {

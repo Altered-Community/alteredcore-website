@@ -1,9 +1,17 @@
 <div class="top">
-  <span class="thumb">
-    @if (hero(); as h) {
-      <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 25%" />
-    }
-  </span>
+  @if (editable()) {
+    <button type="button" class="thumb" aria-haspopup="dialog" [attr.aria-label]="changeHeroLabel" [title]="changeHeroLabel" (click)="changeHero.emit()">
+      @if (hero(); as h) {
+        <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 25%" />
+      }
+    </button>
+  } @else {
+    <span class="thumb">
+      @if (hero(); as h) {
+        <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 25%" />
+      }
+    </span>
+  }
   <div class="meta">
     @if (appearance() === 'embedded') {
       <span class="overline" i18n="@@ui.deckSummary.hero">Héros</span>

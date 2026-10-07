@@ -377,6 +377,7 @@
     "ui.deckSummary.hero": "Hero",
     "ui.deckSummary.heroName": "Hero: {$INTERPOLATION}",
     "ui.deckSummary.settings": "Deck settings: hero, format, visibility",
+    "ui.deckSummary.changeHero": "Change hero",
     "ui.deckSummary.cards": "{VAR_PLURAL, plural, =1 {card} other {cards}}",
     "ui.deckSummary.valid": "Valid",
     "ui.deckSummary.noHero": "No hero",
