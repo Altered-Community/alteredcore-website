@@ -65,6 +65,11 @@ function heroPickerTitle(): string {
   return $localize`:@@shared.heroPicker.title:Choisir un héros`;
 }
 
+/** Same title and data for the step and the window. */
+function heroPickerConfig(selected?: DeckHero | null): { title: string; data: HeroPickerData } {
+  return { title: heroPickerTitle(), data: { selected } };
+}
+
 export interface HeroPickerData {
   selected?: DeckHero | null;
 }
@@ -108,17 +113,10 @@ export class HeroPickerOverlay {
 
 /** Shows « Choisir un héros » in place of the content of `parent` (no second window). */
 export function openHeroPickerStep(parent: Pick<AcOverlayRef, 'openStep'>, selected?: DeckHero | null): AcOverlayRef<DeckHero, HeroPickerData> {
-  return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, {
-    title: heroPickerTitle(),
-    data: { selected },
-  });
+  return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, heroPickerConfig(selected));
 }
 
 /** « Choisir un héros » in its own window / sheet: the shortcut of the hero portrait in the editor. */
 export function openHeroPicker(overlay: AcOverlayService, selected?: DeckHero | null): AcOverlayRef<DeckHero, HeroPickerData> {
-  return overlay.open<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, {
-    title: heroPickerTitle(),
-    data: { selected },
-    width: 520,
-  });
+  return overlay.open<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, { ...heroPickerConfig(selected), width: 520 });
 }

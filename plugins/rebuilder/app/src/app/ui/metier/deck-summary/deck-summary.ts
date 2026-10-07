@@ -1,5 +1,4 @@
 import { Component, computed, input, output } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { heroArtSources } from '../../../core/card-art';
 import { type RarityCounts } from '../../../core/deck-rules';
 import type { DeckHero } from '../../../core/models';
@@ -11,7 +10,7 @@ import { AcCardArt } from '../card-art/card-art';
 /** Hero thumbnail + deck meta + counters; the thumbnail opens « Choisir un héros », the settings button « Réglages du deck ». */
 @Component({
   selector: 'ac-deck-summary',
-  imports: [NgTemplateOutlet, AcCardArt, AcIcon, AcIconButton, AcRaritySummary, AcBadge],
+  imports: [AcCardArt, AcIcon, AcIconButton, AcRaritySummary, AcBadge],
   host: { '[class]': "'ac-deck-summary--' + appearance()" },
   templateUrl: './deck-summary.html',
   styleUrl: './deck-summary.scss',
