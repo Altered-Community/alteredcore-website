@@ -53,7 +53,7 @@ const saveRequest = (page: Page) =>
 
 test.describe('Site deck builder · « Partager » and « Terminer »', () => {
   for (const theme of ['light', 'dark'] as const) {
-    test(`saves the deck first, shares it, then opens the deck page (${theme})`, async ({ page, compact }, testInfo) => {
+    test(`saves the deck first, shares it, then opens the deck page (${theme})`, { tag: theme === 'light' ? '@mobile' : [] }, async ({ page, compact }, testInfo) => {
       const name = `E2E legacy ${testInfo.project.name} ${theme} ${Date.now()}`;
       await login(page, 'bob', '/pages/decks?lang=fr');
       const id = await createServerDeck(page, name);
@@ -92,7 +92,7 @@ test.describe('Site deck builder · « Partager » and « Terminer »', () => {
     });
   }
 
-  test('stops on a failed save and carries the action on with « Réessayer »', async ({ page, compact }, testInfo) => {
+  test('stops on a failed save and carries the action on with « Réessayer »', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E legacy error ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'bob', '/pages/decks?lang=fr');
     const id = await createServerDeck(page, name);
@@ -113,7 +113,7 @@ test.describe('Site deck builder · « Partager » and « Terminer »', () => {
     await expect(error).toBeHidden();
   });
 
-  test('a guest signs in to share: the browser deck moves to the account, then the share window opens', async ({ page, compact }, testInfo) => {
+  test('a guest signs in to share: the browser deck moves to the account, then the share window opens', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E legacy guest ${testInfo.project.name} ${Date.now()}`;
     await setBeta(page, false);
     await page.addInitScript(([deckName, hero]) => {

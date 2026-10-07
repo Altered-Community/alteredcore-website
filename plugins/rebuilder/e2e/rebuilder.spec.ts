@@ -86,7 +86,7 @@ const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '
 test.beforeEach(async ({ page }) => setBeta(page, true));
 
 test.describe('ReBuilder in the shell · signed in', () => {
-  test('creates a deck from the decks list, edits it, finds it in the list and opens its page', async ({ page, compact }, testInfo) => {
+  test('creates a deck from the decks list, edits it, finds it in the list and opens its page', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E ${testInfo.project.name} ${Date.now()}`;
     // The browser talks to the site only (relay) for decks, and never sends a bearer token.
     const leaks: string[] = [];
@@ -202,7 +202,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await evidence(page, testInfo, '16-token-arts');
   });
 
-  test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
+  test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
     const browserDialogs: string[] = [];
     page.on('dialog', (d) => {
@@ -245,7 +245,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(browserDialogs).toEqual([]);
   });
 
-  test('touch: every control of the windows is at least --ac-hit-min (44 px) on each side', async ({ page, compact }, testInfo) => {
+  test('touch: every control of the windows is at least --ac-hit-min (44 px) on each side', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     test.skip(!compact, 'touch density: mobile project');
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     const name = `E2E touch ${testInfo.project.name} ${Date.now()}`;
@@ -483,7 +483,7 @@ test.describe('ReBuilder in the shell · languages', () => {
   // Decks list, community tab, editor search and deck summary, in each site language; the switch
   // goes through the site's ?lang= (a change reloads the page, translations load before the app).
   for (const lang of ['en', 'fr'] as const) {
-    test(`shows its interface in the site language (${lang})`, async ({ page, compact }, testInfo) => {
+    test(`shows its interface in the site language (${lang})`, { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
       const l = LABELS[lang];
       const other = LABELS[lang === 'en' ? 'fr' : 'en'];
       await page.goto(`${DECKS}?tab=mine&lang=${lang}`);
@@ -592,7 +592,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     expect(await summaries.nth(1).locator('p').allTextContents()).toEqual(firstText);
   });
 
-  test('narrows each effect list to the values that still give a card, for the effect being edited', async ({ page, compact }, testInfo) => {
+  test('narrows each effect list to the values that still give a card, for the effect being edited', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E uniques narrowing ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
@@ -674,7 +674,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
 });
 
 test.describe('ReBuilder in the shell · card filters', () => {
-  test('checks several subtypes in a row: the list stays open', async ({ page, compact }, testInfo) => {
+  test('checks several subtypes in a row: the list stays open', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E sous-types ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
@@ -813,7 +813,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     else await page.getByRole('tab', { name: tab }).click();
   }
 
-  test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
+  test('shows the API legality, description and a test hand; shares and duplicates on the account', { tag: '@mobile' }, async ({ page, compact, baseURL }, testInfo) => {
     // navigator.share is recorded: sharing must never use the system share sheet.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'share', {
@@ -1003,7 +1003,7 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
   /** « Partager »: a button on desktop, an icon in the app bar on mobile. */
   const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
 
-  test('saves the deck first, then shares it', async ({ page, compact }, testInfo) => {
+  test('saves the deck first, then shares it', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'bob', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
