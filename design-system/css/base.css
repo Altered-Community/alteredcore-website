@@ -4,6 +4,12 @@
  * (js/altered-core-host.js), so .ac-plugin-root gets the same defaults as the page.
  */
 
+/* What the browser scrolls to the top (keyboard focus, scrollIntoView, #anchors, find in page) stops under the
+   sticky site header and a plugin's sticky bar instead of behind them (WCAG 2.4.11 Focus Not Obscured). */
+html {
+  scroll-padding-top: calc(var(--ac-page-top) + var(--ac-scroll-top-offset));
+}
+
 body,
 .ac-plugin-root {
   background: var(--ac-color-bg-app);

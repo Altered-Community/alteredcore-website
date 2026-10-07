@@ -3,7 +3,7 @@
   <ac-app-bar
     [title]="appBarTitle()"
     [subtitle]="appBarSubtitle()"
-    [class.static]="effectiveView() === 'search' && !deckTitle"
+    [sticky]="effectiveView() !== 'search' || deckTitle"
   >
     <ac-back-button leading fallback="/decks" />
     <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->

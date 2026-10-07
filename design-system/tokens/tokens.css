@@ -235,6 +235,7 @@
   --ac-drawer-width: 320px;
   --ac-page-top: var(--ac-header-height);   /* top of the page content, under the site header */
   --ac-sticky-top: var(--ac-header-height); /* top edge of sticky panels */
+  --ac-scroll-top-offset: 0px;     /* sticky bar a plugin draws under the site header (Re:Builder app bar) */
 
   /* ---------- Plugin-specific values (game data, artwork overlays…) ----------
    * Only for values no semantic token covers. Name them --ac-<plugin>-<role> and give a dark

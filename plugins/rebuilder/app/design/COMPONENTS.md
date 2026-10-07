@@ -89,7 +89,7 @@ Classes et états des champs et du contrôle segmenté : `design-system/docs/com
 
 | Composant | Entrées | Écrans |
 |---|---|---|
-| `ac-app-bar` | `title?`, `subtitle?` ; slots `[leading]` / `[titles]` (titre propre quand `title` et `subtitle` sont vides) / `[actions]` ; barre des écrans compacts (< 768 px), collante sous l'en-tête du site | Decks, éditeur, consultation (compact) |
+| `ac-app-bar` | `title?`, `subtitle?`, `sticky?` (vrai par défaut) ; slots `[leading]` / `[titles]` (titre propre quand `title` et `subtitle` sont vides) / `[actions]` ; barre des écrans compacts (< 768 px), collante sous l'en-tête du site | Decks, éditeur, consultation (compact) |
 | `ac-avatar`, CSS DS (`chips.css`) | `name` (initiale), `size: 28 \| 32` | éditeur (barre compacte) |
 | `ac-back-button` | `fallback` (route si la page a été ouverte directement), `label = 'Retour'` ; revient à la page précédente de l'app (`AcNavigationHistory`, injecté au démarrage dans `EmbedApp`) | barres compactes des pages imbriquées : éditeur, consultation |
 | `ac-tabs`, CSS DS (`navigation.css`) ; débord des pastilles dans la gouttière dans le SCSS | `tabs: {id,label,short?,count?}[]`, `active = model<string>()`, `appearance: 'underline' \| 'pill'`, `maxTabs?` (onglets qui se partagent la ligne, `ac-tabs--fill`, libellés `short` ; les suivants dans un menu « Plus » CDK `ac-menu`), `moreLabel = 'Plus'` | source des cartes, Mes decks / Communauté, Cartes / Decklist |
