@@ -2,8 +2,8 @@
 // AlteredCore shell loads (see includes/spa.php in the site). The polyfills and main modules have hashed names;
 // the non-injected style bundles do not, so they get a content hash as query string.
 //
-// `preload`: the modules each page needs before it can draw, which the shell announces in <head>
-// (<link rel="modulepreload">). Without it the browser discovers them one level at a time (main → bootstrap →
+// `preload`: the modules each page needs before it can draw, which the shell requests all at once
+// (<link rel="modulepreload">, includes/spa.php). Without it the browser discovers them one level at a time (main → bootstrap →
 // shared chunks → route component → its chunks), one round trip per level. Read from esbuild's metafile
 // (../dist/stats.json), removed afterwards: it is not served.
 import { createHash } from 'node:crypto';

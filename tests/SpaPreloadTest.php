@@ -1,5 +1,5 @@
 <?php
-// SPA plugin pages: the build manifest's `preload` (includes/spa.php) and what <head> announces for a page.
+// SPA plugin pages: the build manifest's `preload` (includes/spa.php) and what a page requests up front.
 if (!defined('BASE_URL')) define('BASE_URL', '');
 if (!function_exists('getUiLang')) {
     function getUiLang(): string { return $GLOBALS['__test_ui_lang'] ?? 'fr'; }
@@ -37,10 +37,10 @@ assertSame([
     ['href' => $assets . 'chunk-shared.js', 'as' => 'module'],
     ['href' => $assets . 'chunk-deck.js', 'as' => 'module'],
     ['href' => $assets . 'embed.css?v=1', 'as' => 'style'],
-], spaHeadPreloads($deck), 'deck page, French: entry modules, "*" and its slug\'s modules once each, then the shadow root CSS');
+], spaPreloads($deck), 'deck page, French: entry modules, "*" and its slug\'s modules once each, then the shadow root CSS');
 
 $GLOBALS['__test_ui_lang'] = 'en';
-$hrefs = array_column(spaHeadPreloads($deck), 'href');
+$hrefs = array_column(spaPreloads($deck), 'href');
 assertSame(true, in_array($assets . 'chunk-en.js', $hrefs, true), 'English: the translations module');
 assertSame(true, !in_array($assets . 'chunk-decks.js', $hrefs, true), 'another slug\'s modules are left out');
 
@@ -49,17 +49,17 @@ assertSame([], $bad, 'paths outside the build, absolute paths and non-modules ar
 
 // Light DOM: the plugin's CSS is not loaded by the runtime, no style preload.
 $light = ['slug' => 'demo'] + spaResolvePage($plugin, ['mount' => 'light'] + $page);
-assertSame([], array_values(array_filter(spaHeadPreloads($light), fn($p) => $p['as'] === 'style')), 'light mount: no style preload');
+assertSame([], array_values(array_filter(spaPreloads($light), fn($p) => $p['as'] === 'style')), 'light mount: no style preload');
 
 // A manifest without `preload` (older builds) still renders: entry modules only.
 $writeManifest(['version' => 1, 'js' => ['main.js'], 'css' => [], 'documentCss' => []]);
 $plain = ['slug' => 'demo'] + spaResolvePage($plugin, $page);
-assertSame([['href' => '/plugins/demo/dist/main.js', 'as' => 'module']], spaHeadPreloads($plain), 'no preload key: entry modules only');
+assertSame([['href' => '/plugins/demo/dist/main.js', 'as' => 'module']], spaPreloads($plain), 'no preload key: entry modules only');
 
 // A page that cannot render announces nothing.
 @unlink($dir . '/dist/embed-manifest.json');
 $broken = ['slug' => 'demo'] + spaResolvePage($plugin, $page);
-assertSame([], spaHeadPreloads($broken), 'missing build: no preload');
+assertSame([], spaPreloads($broken), 'missing build: no preload');
 
 @rmdir($dir . '/dist');
 @rmdir($dir);

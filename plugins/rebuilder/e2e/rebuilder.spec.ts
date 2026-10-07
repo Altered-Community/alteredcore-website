@@ -1176,6 +1176,7 @@ test.describe('ReBuilder in the shell · loading', () => {
     expect(await (await deckAnswer).headerValue('content-encoding')).toBe('gzip');
     // The owner's actions replace their skeletons once the account's deck ids are in.
     await expect(page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
     await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
 
@@ -1187,7 +1188,8 @@ test.describe('ReBuilder in the shell · loading', () => {
     expect(paths.filter((r) => r.path === '/papi/rebuilder/my-deck-ids')).toHaveLength(1);
     expect(paths.filter((r) => r.path === '/api/v1/services/decks/api/decks' && r.method === 'GET')).toHaveLength(0);
 
-    // The test hand comes with its own chunk, when its view opens.
+    // The test hand comes with its own chunk, when its view opens (once the two cards are saved).
+    await saved;
     await page.goto(`${EDITOR(id)}&view=main&lang=fr`);
     await expect(page.locator('app-editor-page').getByRole('list', { name: 'Main de départ' })).toBeVisible();
   });

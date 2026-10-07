@@ -33,7 +33,7 @@ npm run lint && npm test
 
 `build` is the only build (`ng build --stats-json`, production configuration, then `scripts/embed-manifest.mjs`,
 which also lists in the manifest's `preload` the chunks each page imports before it can draw, read from esbuild's
-metafile: the shell announces them in `<head>`).
+metafile: the shell requests them right after the skeleton).
 The app is not served on its own: run it in the site's stack (`docker-compose.stack.yml`).
 
 ## Design system
@@ -109,8 +109,8 @@ English translation, and on a translation left over. Vocabulary: the site's deck
 
 On a slow network the pages are bound by bytes and round trips. What keeps them fast:
 
-- The shell requests every module a page needs from `<head>` (manifest `preload`, see Build), once the page's
-  stylesheets have loaded; nothing is discovered one import at a time.
+- The shell requests every module a page needs at once (manifest `preload`, see Build), once the skeleton can be
+  painted (its stylesheet loaded); nothing is discovered one import at a time.
 - `main.ts` requests the page's deck while the modules download (`src/app/embed/prefetch.ts`).
 - The editor learns whether the deck is the user's from `papi/my-deck-ids` (ids only), not from the account's full
   deck list.

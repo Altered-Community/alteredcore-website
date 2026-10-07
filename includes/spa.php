@@ -14,7 +14,7 @@
 //     "js": ["main-HASH.js"],        ES modules, loaded in order
 //     "css": ["embed-HASH.css"],     loaded inside the shadow root
 //     "documentCss": ["doc-HASH.css"], loaded in <head> (@font-face does not work in a shadow root)
-//     "preload": {                   optional: modules the page needs before it can draw, requested from <head>
+//     "preload": {                   optional: modules the page needs before it can draw, requested together
 //       "*": ["chunk-HASH.js"],       (<link rel="modulepreload">) so the browser fetches them with the entry
 //       "{slug}": [...],              modules instead of discovering them import after import: "*" on every
 //       "lang:{en|fr}": [...]         page, "{slug}" on the page served at that slug, "lang:…" in that language
@@ -222,13 +222,12 @@ function spaRenderPlaceholder(array $page): void {
 }
 
 /**
- * What the page's <head> requests (includes/header.php, once the page's stylesheets have loaded) so the browser fetches
- * it with the page instead of when the runtime or a module asks for it: the entry modules and the manifest's `preload`
- * modules for this page (slug and language) as <link rel="modulepreload">, the shadow root's stylesheets as
- * <link rel="preload" as="style">.
+ * What the page requests before the runtime or a module asks for it (spaRenderPage(), right after the placeholder): the
+ * entry modules and the manifest's `preload` modules for this page (slug and language) as <link rel="modulepreload">,
+ * the shadow root's stylesheets as <link rel="preload" as="style">.
  * Returns [['href' => …, 'as' => 'module' | 'style'], …], empty for a page that cannot render.
  */
-function spaHeadPreloads(array $page): array {
+function spaPreloads(array $page): array {
     $spa = $page['spa'];
     if ($spa['error'] !== null) return [];
     $modules = $spa['js'];
@@ -263,6 +262,14 @@ function spaRenderPage(array $page): void {
     <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
     <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
 </div>
+<?php
+    // The page's modules, all at once instead of one import after another. From an inline script after the
+    // placeholder: it runs once the stylesheets above it have loaded (the page's and the placeholder's), so the
+    // modules do not take the bandwidth of the skeleton's first paint.
+    $preloads = spaPreloads($page);
+    if ($preloads): ?>
+<script>(<?= json_encode($preloads, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>).forEach(function(p){var l=document.createElement('link');if(p.as==='module'){l.rel='modulepreload';}else{l.rel='preload';l.as=p.as;}l.href=p.href;document.head.appendChild(l);});</script>
+<?php endif; ?>
 <script type="application/json" id="ac-host-config"><?= $json ?></script>
 <script src="<?= h(BASE_URL) ?>/js/altered-core-host.js?v=<?= is_file($runtime) ? filemtime($runtime) : 0 ?>"></script>
 <?php foreach ($spa['js'] as $src): ?>
