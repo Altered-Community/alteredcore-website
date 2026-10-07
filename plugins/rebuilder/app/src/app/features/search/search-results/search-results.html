@@ -1,4 +1,4 @@
-@if ((search.source() === 'collection' || search.source() === 'owned' || search.source() === 'favorites') && !auth.isLoggedIn()) {
+@if (accountTab() && !auth.isLoggedIn()) {
   <div class="state">
     @if (search.source() === 'collection') {
       <strong i18n="@@search.source.collection">Collection physique</strong>

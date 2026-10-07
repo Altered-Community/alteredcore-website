@@ -243,12 +243,18 @@ test.describe('ReBuilder in the shell · signed in', () => {
       // The Axiom cards of the stack's mock (docker/stack/ownership-mock): commons, rares, a Unique, two sets.
       const tiles = page.locator('app-search-results ac-card-tile');
       await expect(tiles).toHaveCount(5);
-      // The rare and the Unique.
-      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(2);
-      // Every rarity chosen: no rarity filter, so the Uniques come too. Lists in their array form (`cardType[]=…`).
+      // The rare and the Unique (named « La machine dans la glace » by the cards API).
+      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace" i]'))).toHaveCount(2);
+      // Every rarity chosen, Unique included: no rarity filter, so the Uniques come too. Lists in their array form (`cardType[]=…`).
       const query = new URL((await request).url()).searchParams;
       expect(query.getAll('rarity[]')).toEqual([]);
       expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
+      if (!compact) await expect(page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      // The APIs give the Unique's costs only: its stats and effects come from the cards API (ALT_ALIZE_B_AX_32_U_2).
+      const unique = tiles.locator('ac-unique-card');
+      await expect(unique.locator('.main-text')).toContainText('Au Crépuscule');
+      await expect(unique.getByRole('list', { name: 'Puissances' }).getByRole('listitem')).toHaveText(['3', '2', '2']);
+      await unique.scrollIntoViewIfNeeded();
       await evidence(page, testInfo, shot);
     });
   }

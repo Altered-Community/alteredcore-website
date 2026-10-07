@@ -759,24 +759,15 @@ export class DeckStore {
    */
   private fillUniqueFaces(deckId: string): void {
     this.uniqueFaces?.unsubscribe();
-    const refs = [...new Set(this.lines().filter((l) => uniqueNeedsPrintedEffect(l.card)).map((l) => l.card.reference))];
-    if (!refs.length) {
-      this.uniqueFaces = undefined;
-      return;
-    }
-    this.uniqueFaces = this.cardsApi
-      .batch(refs, contentLocale())
-      .pipe(catchError(() => of([] as Card[])))
-      .subscribe((cards) => {
-        if (this.deckId() !== deckId || !cards.length) return;
-        const byRef = new Map(cards.map((c) => [c.reference, c]));
-        this.lines.update((lines) =>
-          lines.map((l) => {
-            const full = byRef.get(l.card.reference);
-            return full && uniqueNeedsPrintedEffect(l.card) ? { ...l, card: mergeUniqueFace(l.card, full) } : l;
-          }),
-        );
-      });
+    this.uniqueFaces = this.cardsApi.uniqueFaces(this.lines().map((l) => l.card)).subscribe((faces) => {
+      if (this.deckId() !== deckId || !faces.size) return;
+      this.lines.update((lines) =>
+        lines.map((l) => {
+          const full = faces.get(l.card.reference);
+          return full && uniqueNeedsPrintedEffect(l.card) ? { ...l, card: mergeUniqueFace(l.card, full) } : l;
+        }),
+      );
+    });
   }
 }
 

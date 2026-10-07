@@ -1,5 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { isAccountSource } from '../../../core/card-filters';
 import { addBlockedReason } from '../../../core/deck-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { AuthSession } from '../../../core/auth-session';
@@ -28,6 +29,7 @@ export class SearchResults {
   readonly layout = input<'grid' | 'list'>('grid');
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
+  protected readonly accountTab = computed(() => isAccountSource(this.search.source()));
   protected readonly skeletons = computed(() => Array.from({ length: this.search.cards().length ? 3 : 6 }));
 
   /** Why a card cannot be added in the deck's format (a Unique in a No Unique format). */
