@@ -23,6 +23,7 @@ export class DeckListView {
   private readonly overlay = inject(AcOverlayService);
   readonly readonly = input(false);
   readonly openSettings = output<void>();
+  readonly changeHero = output<void>();
   protected readonly statsOpen = signal(true);
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly legality = computed(() => editorLegality(this.deck));

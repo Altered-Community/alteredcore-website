@@ -119,6 +119,9 @@
 /* ---- Progress bar ---- */
 .ac-progress { height: 6px; border-radius: var(--ac-radius-pill); background: var(--ac-color-track); overflow: hidden; }
 .ac-progress__bar { height: 100%; width: 0%; border-radius: var(--ac-radius-pill); background: var(--ac-color-primary); transition: width 0.3s ease; }
+/* A bar measured against a cap: green when it is reached, red when it is exceeded. */
+.ac-progress--success .ac-progress__bar { background: var(--ac-color-success); }
+.ac-progress--danger .ac-progress__bar { background: var(--ac-color-danger); }
 
 /* ---- Table ---- */
 .ac-table-wrap {

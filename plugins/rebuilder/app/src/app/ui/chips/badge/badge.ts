@@ -14,6 +14,7 @@ import type { AcTone } from '../../fields';
     '[class.ac-badge--red]': "tone() === 'red'",
     '[class.ac-badge--orange]': "tone() === 'orange'",
     '[class.ac-badge--lg]': 'size() === 28',
+    '[class.ac-badge--dense]': 'dense()',
   },
   templateUrl: './badge.html',
 })
@@ -21,4 +22,6 @@ export class AcBadge {
   readonly tone = input<AcTone>('blue');
   readonly icon = input<AcIconName | undefined>(undefined);
   readonly size = input<24 | 28>(24);
+  /** Tighter padding and gap, for a row of badges where room is short. */
+  readonly dense = input(false);
 }

@@ -9,7 +9,7 @@ import type { DeckHero } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcFactionTabs, AcHeroSelector, factionName, type AcHeroOption } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
-import { AcOverlayRef } from '../../../ui/overlay';
+import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 /** Heroes from the cards API for `ac-hero-selector`: `heroes` is null while loading; `error` on failure. */
 export function injectHeroes(): { heroes: Signal<HeroGroup[] | null>; error: Signal<boolean> } {
@@ -65,11 +65,16 @@ function heroPickerTitle(): string {
   return $localize`:@@shared.heroPicker.title:Choisir un héros`;
 }
 
+/** Same title and data for the step and the window. */
+function heroPickerConfig(selected?: DeckHero | null): { title: string; data: HeroPickerData } {
+  return { title: heroPickerTitle(), data: { selected } };
+}
+
 export interface HeroPickerData {
   selected?: DeckHero | null;
 }
 
-/** « Choisir un héros » — a step of « Réglages du deck », shown in the same window / sheet. */
+/** « Choisir un héros » — a step of « Réglages du deck », or its own window from the hero portrait. */
 @Component({
   selector: 'app-hero-picker',
   imports: [AcFactionTabs, AcHeroSelector, AcButton, AcChip],
@@ -108,8 +113,10 @@ export class HeroPickerOverlay {
 
 /** Shows « Choisir un héros » in place of the content of `parent` (no second window). */
 export function openHeroPickerStep(parent: Pick<AcOverlayRef, 'openStep'>, selected?: DeckHero | null): AcOverlayRef<DeckHero, HeroPickerData> {
-  return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, {
-    title: heroPickerTitle(),
-    data: { selected },
-  });
+  return parent.openStep<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, heroPickerConfig(selected));
+}
+
+/** « Choisir un héros » in its own window / sheet: the shortcut of the hero portrait in the editor. */
+export function openHeroPicker(overlay: AcOverlayService, selected?: DeckHero | null): AcOverlayRef<DeckHero, HeroPickerData> {
+  return overlay.open<HeroPickerOverlay, DeckHero, HeroPickerData>(HeroPickerOverlay, { ...heroPickerConfig(selected), width: 520 });
 }

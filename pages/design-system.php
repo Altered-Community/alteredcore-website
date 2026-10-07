@@ -315,6 +315,7 @@ include dirname(__DIR__) . '/includes/header.php';
                 <span class="ac-badge ac-badge--red">Invalid</span>
                 <span class="ac-badge">Neutral</span>
                 <span class="ac-badge ac-badge--lg ac-badge--blue">Large</span>
+                <span class="ac-badge ac-badge--dense">Dense</span>
                 <span class="ac-tag ac-tag--green">NEW</span>
                 <span class="ac-tag ac-tag--violet">UNIQUE</span>
                 <span class="ac-tag ac-tag--red">BANNED</span>
@@ -498,6 +499,8 @@ include dirname(__DIR__) . '/includes/header.php';
                 <div class="ac-card ac-stack">
                     <div class="ac-row"><span class="ac-spinner" aria-hidden="true"></span> Loading…</div>
                     <div class="ac-progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><div class="ac-progress__bar" style="width: 60%"></div></div>
+                    <div class="ac-progress ac-progress--success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Rares: 15 of 15"><div class="ac-progress__bar" style="width: 100%"></div></div>
+                    <div class="ac-progress ac-progress--danger" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Uniques: 4 of 3"><div class="ac-progress__bar" style="width: 100%"></div></div>
                 </div>
                 <div class="ac-card ac-stack" aria-busy="true">
                     <span class="ac-sr-only" role="status">Loading…</span>

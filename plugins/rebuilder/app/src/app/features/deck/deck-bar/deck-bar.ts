@@ -1,8 +1,7 @@
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { heroArtSources } from '../../../core/card-art';
-import type { DeckLegality } from '../../../core/deck-legality';
+import { illegalLabel, type DeckLegality } from '../../../core/deck-legality';
 import { rarityLimits } from '../../../core/deck-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
@@ -37,33 +36,27 @@ export class DeckBar {
 
   readonly reduced = input(false);
   readonly legality = input.required<DeckLegality>();
-  /** Editor: the settings button on the art, the rename button next to the name, the number of problems. */
+  /** Editor: the art opens « Choisir un héros », the settings button on it, the rename button next to the name, the number of problems. */
   readonly editable = input(false);
   /** Bucket of the mini curve outlined (cost of the last card added). */
   readonly highlight = input<number | null>(null);
   readonly openSettings = output<void>();
+  readonly changeHero = output<void>();
   readonly showLegality = output<void>();
 
   protected readonly renaming = signal(false);
-  protected readonly heroArt = computed(() => {
-    const ref = this.deck.hero()?.reference;
-    return ref ? heroArtSources(ref) : null;
-  });
   protected readonly border = computed(() => factionColor(this.deck.hero()?.faction));
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
   /** Rares, Exalteds and Uniques against the format's caps. */
   protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly problems = computed(() => this.legality().rules.length + this.legality().errors.length);
-  protected readonly illegalLabel = computed(() => {
-    const n = this.problems();
-    if (!this.editable() || !n) return $localize`:@@deck.page.illegal:Non légal`;
-    return n === 1 ? $localize`:@@deck.bar.illegalOne:Non légal · ${n}:count: problème` : $localize`:@@deck.bar.illegalMany:Non légal · ${n}:count: problèmes`;
-  });
+  protected readonly illegalLabel = computed(() => illegalLabel(this.editable() ? this.problems() : 0));
   protected readonly labels = {
     legalDetails: $localize`:@@deck.bar.legalDetails:Légal : voir les règles du format`,
     illegalDetails: $localize`:@@deck.page.illegalDetails:Non légal : voir le détail`,
     settings: $localize`:@@ui.deckSummary.settings:Réglages du deck : héros, format, visibilité`,
+    changeHero: $localize`:@@ui.deckSummary.changeHero:Changer de héros`,
     rename: $localize`:@@ui.editableTitle.rename:Renommer le deck`,
     name: $localize`:@@ui.editableTitle.label:Nom du deck`,
     public: $localize`:@@deck.page.public:Public`,

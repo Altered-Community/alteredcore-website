@@ -24,15 +24,18 @@
   border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
   background: var(--ac-color-track);
 }
-.zoom {
+.portrait {
   position: absolute;
   inset: 0;
   padding: 0;
   border: 0;
   background: none;
+  cursor: pointer;
+}
+.zoom {
   cursor: zoom-in;
 }
-.zoom:focus-visible,
+.portrait:focus-visible,
 .settings:focus-visible,
 .legality:focus-visible,
 .back:focus-visible {

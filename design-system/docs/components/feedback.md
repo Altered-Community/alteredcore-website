@@ -218,6 +218,14 @@ over 0.3 s.
 </div>
 ```
 
+A bar measured against a cap (cards of a rarity against the format's maximum) takes a tone:
+`ac-progress--success` when the cap is reached, `ac-progress--danger` when it is exceeded.
+
+| Class | Use |
+|---|---|
+| `ac-progress--success` | Green bar: the cap is reached. |
+| `ac-progress--danger` | Red bar: the cap is exceeded. |
+
 ## Table — `ac-table`
 
 Wrap the table in `ac-table-wrap` (border, 14 px radius, surface, horizontal scroll on narrow

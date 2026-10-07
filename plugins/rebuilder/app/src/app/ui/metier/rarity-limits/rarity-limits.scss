@@ -4,8 +4,14 @@
   gap: var(--ac-space-1-5);
   flex-shrink: 0;
 }
+:host(.dense) {
+  gap: var(--ac-space-1);
+}
 img {
   height: 13px;
   width: auto;
   display: block;
+}
+:host(.dense) img {
+  height: 10px;
 }

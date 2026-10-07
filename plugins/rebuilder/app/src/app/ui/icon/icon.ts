@@ -13,6 +13,7 @@ export const AC_ICONS = {
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
   minus: '<path d="M5 12h14"/>',
   'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'arrow-left-right': '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
   'chevron-up': '<path d="m18 15-6-6-6 6"/>',
   'chevron-left': '<path d="m15 18-6-6 6-6"/>',
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',

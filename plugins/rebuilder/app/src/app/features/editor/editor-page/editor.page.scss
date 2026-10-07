@@ -35,6 +35,12 @@ ac-app-bar.static {
   --app-search-bottom-inset: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom));
 }
 
+/* The app bar stays on screen with the hero and the rarities (phones, editable deck): the search head sticks below it. */
+.search.under-app-bar {
+  --app-search-top: var(--ac-app-bar-height);
+  --app-search-safe-top: 0px;
+}
+
 .banner {
   display: flex;
   align-items: center;
@@ -189,4 +195,84 @@ ac-app-bar.static {
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-6);
+}
+
+/* ---------- App bar of the search and « Aperçu » views (phones) ---------- */
+/* Projected into ac-app-bar: the hero opens « Choisir un héros », the title « Résumé du deck ». */
+.bar-hero {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.bar-hero-art {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ac-radius-pill);
+  overflow: hidden;
+  background: var(--ac-color-track);
+  box-shadow: 0 0 0 2px var(--ac-color-surface), 0 0 0 3px var(--ac-color-border-control);
+}
+.bar-hero-swap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  color: var(--ac-color-primary-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bar-deck {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  min-height: var(--ac-hit-min);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 var(--ac-space-1);
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: none;
+  color: var(--ac-color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.bar-deck-name {
+  max-width: 100%;
+  font-size: var(--ac-font-size-heading);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-deck-sub {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+  white-space: nowrap;
+}
+.bar-hero:focus-visible,
+.bar-deck:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: -2px;
 }

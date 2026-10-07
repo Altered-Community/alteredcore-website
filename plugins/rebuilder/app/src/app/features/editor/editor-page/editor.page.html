@@ -1,6 +1,34 @@
 @if (bp.compact()) {
-  <ac-app-bar [title]="deck.opening() ? labels.loading : view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' || deck.opening() ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
+  @let deckTitle = deckAppBar();
+  <ac-app-bar
+    [title]="appBarTitle()"
+    [subtitle]="appBarSubtitle()"
+    [class.static]="effectiveView() === 'search' && !deckTitle"
+  >
     <ac-back-button leading fallback="/decks" />
+    <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->
+    @if (deckTitle) {
+      <button leading type="button" class="bar-hero" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
+        <span class="bar-hero-art">
+          @if (deck.hero(); as h) {
+            <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 22%" [eager]="true" />
+          }
+        </span>
+        <span class="bar-hero-swap" aria-hidden="true"><ac-icon name="arrow-left-right" [size]="12" [strokeWidth]="2.4" /></span>
+      </button>
+    }
+    @if (deckTitle) {
+      <button titles type="button" class="bar-deck" aria-haspopup="dialog" [attr.aria-label]="overviewLabel()" (click)="openOverview()">
+        <span class="bar-deck-name">{{ deck.name() || 'Deck' }}</span>
+        <span class="bar-deck-sub">
+          @if (rarityLimits().length) {
+            <ac-rarity-limits [limits]="rarityLimits()" [dense]="true" />
+          } @else {
+            {{ subtitle() }}
+          }
+        </span>
+      </button>
+    }
     @if (deck.editable()) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
@@ -8,7 +36,8 @@
     @for (i of deck.owned() === null && !deck.loadError() ? [0, 1] : []; track i) {
       <span actions acSkeleton="circle"></span>
     }
-    @if (deck.owned() !== null && !deck.loadError()) {
+    <!-- With the deck title, « Partager » moves to the « ⋯ » menu to leave room for the rarities. -->
+    @if (deck.owned() !== null && !deck.loadError() && !deckTitle) {
       <button
         actions
         [acIconButton]="waiting() === 'share' ? 'loader-circle' : 'share-2'"
@@ -46,6 +75,7 @@
           [legality]="legality()"
           [highlight]="highlight()"
           (openSettings)="openSettings()"
+          (changeHero)="changeHero()"
           (showLegality)="showLegality()"
           >
           <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
@@ -138,7 +168,7 @@
       @let view = effectiveView();
       @switch (view) {
         @case ('search') {
-          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.opening()" />
+          <app-card-search class="search" [class.under-app-bar]="deckAppBar()" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.opening()" />
         }
         @case ('apercu') {
           @if (bp.compact()) {
@@ -148,7 +178,7 @@
           }
         }
         @case ('deck') {
-          <app-deck-list-view (openSettings)="openSettings()" />
+          <app-deck-list-view (openSettings)="openSettings()" (changeHero)="changeHero()" />
         }
         @case ('main') {
           @if (deck.opening()) {
@@ -205,6 +235,10 @@
 <!-- « ⋯ » of the deck bar (from 768 px) and of the app bar (phones). -->
 <ng-template #moreMenu>
   <div class="ac-menu" cdkMenu [attr.aria-label]="labels.more">
+    @if (deckAppBar()) {
+      <button type="button" class="ac-menu__item" cdkMenuItem [disabled]="!!waiting() || deck.loading()" (cdkMenuItemTriggered)="act('share')"><ac-icon name="share-2" [size]="18" />{{ labels.share }}</button>
+      <hr class="ac-menu__divider" />
+    }
     @if (imageSource()) {
       <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('save')"><ac-icon name="download" [size]="18" /><ng-container i18n="@@deck.image.save">Enregistrer l’image</ng-container></button>
       <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('open')"><ac-icon name="external-link" [size]="18" /><ng-container i18n="@@editor.imageOpen">Ouvrir l’image dans un nouvel onglet</ng-container></button>

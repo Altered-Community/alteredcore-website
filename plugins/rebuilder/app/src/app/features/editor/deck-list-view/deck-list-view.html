@@ -23,6 +23,7 @@
     [rarity]="deck.stats().rarity"
     [editable]="deck.editable()"
     (openSettings)="openSettings.emit()"
+    (changeHero)="changeHero.emit()"
     (showLegality)="showLegality()"
   />
 }
