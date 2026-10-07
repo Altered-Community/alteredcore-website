@@ -80,6 +80,15 @@ const NEW_DECK = '/pages/deckbuilder';
 const DECK = (id: string) => `/pages/deck?id=${id}`;
 const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
 /** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
+/**
+ * The id of the account deck the editor opened. Read from the URL rather than from the POST's body: Chrome may have
+ * dropped that body (the editor's images fill its buffer) by the time the test asks for it.
+ */
+async function editorDeckId(page: Page): Promise<string> {
+  await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=(?!guest-)[^&]+$/);
+  return new URL(page.url()).searchParams.get('id')!;
+}
+
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
@@ -102,10 +111,8 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
     await createDeck(page, name);
-    const res = await created;
-    expect(res.status()).toBe(201);
-    const deck = (await res.json()) as { id: string };
-    await expect(page).toHaveURL(at(EDITOR(deck.id)));
+    expect((await created).status()).toBe(201);
+    const deck = { id: await editorDeckId(page) };
 
     // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
     const saved = page.waitForResponse((r) => {
@@ -1153,8 +1160,8 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
     await createDeck(page, name);
-    const deck = (await (await created).json()) as { id: string };
-    await expect(page).toHaveURL(at(EDITOR(deck.id)));
+    expect((await created).status()).toBe(201);
+    const deck = { id: await editorDeckId(page) };
 
     // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
     const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
