@@ -941,6 +941,49 @@ test.describe('ReBuilder in the shell · app bar of the search and « Aperçu »
     await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Recherche/ }).click();
     await expect(bar.locator('.bar-hero ac-card-art')).toHaveClass(/\binstant\b/);
   });
+
+  test('a result reached with Tab is not hidden under the app bar and the condensed search head', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    test.skip(!compact, 'from 768 px the search head does not stick');
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E focus ${testInfo.project.name} ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+
+    await page.mouse.wheel(0, 1500);
+    const head = page.locator('.search-head.condensed');
+    await expect(head).toBeVisible();
+    // A result in view, well below the head (a virtual grid: found again by its name after the page scrolls).
+    const name = await head.evaluate((h) => {
+      const below = h.getBoundingClientRect().bottom + 50;
+      const tiles = [...(h.getRootNode() as ParentNode).querySelectorAll('ac-card-tile')];
+      return tiles.find((t) => t.getBoundingClientRect().top > below)?.getAttribute('aria-label') ?? '';
+    });
+    expect(name).not.toBe('');
+    const result = page.locator(`ac-card-tile[aria-label="${name.replace(/"/g, '\\"')}"]`).first().locator('button.zoom');
+
+    // The page scrolls until the result's top is halfway up the head; the control before it in the tab order takes the
+    // focus without scrolling, then Tab moves to the result.
+    await result.evaluate((el) => {
+      const root = el.getRootNode() as ParentNode;
+      const h = root.querySelector('.search-head')!.getBoundingClientRect();
+      window.scrollBy({ top: el.getBoundingClientRect().top - (h.top + h.height / 2), behavior: 'instant' });
+      const order = [...root.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]')].filter(
+        (c) => c.tabIndex >= 0 && !c.matches(':disabled'),
+      );
+      order[order.indexOf(el) - 1].focus({ preventScroll: true });
+    });
+    await page.keyboard.press('Tab');
+    await expect(result).toBeFocused();
+
+    // The browser scrolled it below the head (<html>'s scroll-padding-top counts the app bar and the head).
+    const below = async () => {
+      const [r, h] = [await result.boundingBox(), await head.boundingBox()];
+      return r!.y - (h!.y + h!.height);
+    };
+    await expect.poll(below).toBeGreaterThanOrEqual(-1);
+    await expect(page.locator('ac-app-bar')).toBeInViewport();
+    await evidence(page, testInfo, '64-search-focus-below-head');
+  });
 });
 
 test.describe('ReBuilder in the shell · deck page', () => {

@@ -123,7 +123,8 @@ the density.
 - `<html>` has `scroll-padding-top: calc(var(--ac-page-top) + var(--ac-scroll-top-offset))`
   (`css/base.css`): an element the browser scrolls to the top (keyboard focus, `scrollIntoView`,
   `#anchor`, find in page) stops under the sticky site header, not behind it. A plugin that adds
-  its own sticky bar sets `--ac-scroll-top-offset` on `<html>` while the bar is stuck; do not put
+  its own sticky bars sets `--ac-scroll-top-offset` on `<html>` to how far the lowest one reaches
+  below `--ac-page-top`, measured while they stick (Re:Builder: `acStickyOffset`); do not put
   `scroll-margin-top` on content elements (nested scrollers would be misaligned).
 
 ## Frameworks
