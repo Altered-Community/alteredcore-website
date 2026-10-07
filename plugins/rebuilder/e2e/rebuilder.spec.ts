@@ -127,19 +127,24 @@ test.describe('ReBuilder in the shell · signed in', () => {
       for (const card of cards) await expect(page.locator('app-deck-panel')).toContainText(card.replace(/ ×.*$/, ''));
     }
 
-    // Re:Builder's list shows it (account decks through the relay); its card opens the deck page (phones) or, from
-    // 768 px, the editor on « Aperçu »: the deck board.
+    // Re:Builder's list shows it (account decks through the relay); its card opens the editor on « Aperçu »: the deck
+    // board from 768 px, the deck preview on phones.
     await page.goto(DECKS);
     const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
     await expect(item).toBeVisible();
     await evidence(page, testInfo, '03-listed');
     await item.getByRole('link').first().click();
-    if (!compact) {
-      await expect(page).toHaveURL(at(`${EDITOR(deck.id)}&view=apercu`));
-      await expect(page.locator('app-deck-board ac-card-pile')).toHaveCount(2);
-      await evidence(page, testInfo, '04-editor-board');
-      await page.goto(DECK(deck.id));
+    await expect(page).toHaveURL(at(`${EDITOR(deck.id)}&view=apercu`));
+    // Phones: the deck page's actions (image, copy, duplicate, delete) are in the app bar's « ⋯ ».
+    if (compact) {
+      await expect(page.locator('app-deck-preview')).toBeVisible();
+      await page.getByRole('button', { name: 'Plus d’actions' }).click();
+      await expect(page.getByRole('menuitem', { name: 'Supprimer' })).toBeVisible();
+      await page.keyboard.press('Escape');
     }
+    else await expect(page.locator('app-deck-board ac-card-pile')).toHaveCount(2);
+    await evidence(page, testInfo, '04-editor-board');
+    await page.goto(DECK(deck.id));
     await expect(page).toHaveURL(at(DECK(deck.id)));
     await expect(page.locator('app-deck-page')).toContainText(name);
     await evidence(page, testInfo, '04-deck-page');

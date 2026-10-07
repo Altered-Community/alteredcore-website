@@ -17,6 +17,10 @@
         (click)="act('share')"
       ></button>
     }
+    <!-- One element per block: content projection (`[actions]`) only takes a block with a single root. -->
+    @if (!deck.loadError()) {
+      <button actions acIconButton="ellipsis" variant="ghost" [iconSize]="22" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
+    }
   </ac-app-bar>
 }
 
@@ -68,21 +72,6 @@
             }
           </div>
         </app-deck-bar>
-        <ng-template #moreMenu>
-          <div class="ac-menu" cdkMenu [attr.aria-label]="labels.more">
-            @if (imageSource()) {
-              <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('save')"><ac-icon name="download" [size]="18" /><ng-container i18n="@@deck.image.save">Enregistrer l’image</ng-container></button>
-              <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('open')"><ac-icon name="external-link" [size]="18" /><ng-container i18n="@@editor.imageOpen">Ouvrir l’image dans un nouvel onglet</ng-container></button>
-              <hr class="ac-menu__divider" />
-            }
-            <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="copyList()"><ac-icon name="copy" [size]="18" /><ng-container i18n="@@deck.page.copyList">Copier la liste</ng-container></button>
-            <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="duplicate()"><ac-icon name="copy-plus" [size]="18" /><ng-container i18n="@@deck.page.duplicate">Dupliquer</ng-container></button>
-            @if (deck.editable()) {
-              <hr class="ac-menu__divider" />
-              <button type="button" class="ac-menu__item ac-menu__item--danger" cdkMenuItem (cdkMenuItemTriggered)="remove()"><ac-icon name="trash-2" [size]="18" /><ng-container i18n="@@deck.page.delete">Supprimer</ng-container></button>
-            }
-          </div>
-        </ng-template>
         <div class="modes">
           <ac-segmented
             size="lg"
@@ -179,3 +168,20 @@
     </ac-toast>
   }
 }
+
+<!-- « ⋯ » of the deck bar (from 768 px) and of the app bar (phones). -->
+<ng-template #moreMenu>
+  <div class="ac-menu" cdkMenu [attr.aria-label]="labels.more">
+    @if (imageSource()) {
+      <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('save')"><ac-icon name="download" [size]="18" /><ng-container i18n="@@deck.image.save">Enregistrer l’image</ng-container></button>
+      <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('open')"><ac-icon name="external-link" [size]="18" /><ng-container i18n="@@editor.imageOpen">Ouvrir l’image dans un nouvel onglet</ng-container></button>
+      <hr class="ac-menu__divider" />
+    }
+    <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="copyList()"><ac-icon name="copy" [size]="18" /><ng-container i18n="@@deck.page.copyList">Copier la liste</ng-container></button>
+    <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="duplicate()"><ac-icon name="copy-plus" [size]="18" /><ng-container i18n="@@deck.page.duplicate">Dupliquer</ng-container></button>
+    @if (deck.editable()) {
+      <hr class="ac-menu__divider" />
+      <button type="button" class="ac-menu__item ac-menu__item--danger" cdkMenuItem (cdkMenuItemTriggered)="remove()"><ac-icon name="trash-2" [size]="18" /><ng-container i18n="@@deck.page.delete">Supprimer</ng-container></button>
+    }
+  </div>
+</ng-template>
