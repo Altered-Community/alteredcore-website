@@ -5,6 +5,7 @@ import { CardsApiService } from '../../core/cards-api.service';
 import {
   defaultFilters,
   filterChips,
+  listsUniques,
   removeChip,
   toSearchParams,
   toUniquesQuery,
@@ -234,8 +235,8 @@ export class CardSearchStore {
     const page = request.from ?? 1;
     if (query.source === 'collection' || query.source === 'owned' || query.source === 'favorites') {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
-      // Favoris « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
-      const format = query.source === 'favorites' && query.filters.legalOnly ? query.format : null;
+      // Favoris and Propriété numérique « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
+      const format = listsUniques(query.source) && query.filters.legalOnly ? query.format : null;
       return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
         map((res): ResultPage => {
           const member = format ? res.member.filter((c) => allowedInFormat(c, format)) : res.member;

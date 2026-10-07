@@ -96,11 +96,16 @@ export const RARITY_OPTIONS = [
   { value: 'EXALTED', short: 'E', label: $localize`:@@search.filters.rarity.exalted:Exaltée`, icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
 
-/** The Favoris tab also lists the favorite Uniques. */
+/** The Favoris and Propriété numérique tabs also list the Uniques (favorites, digital Uniques owned). */
 export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@search.filters.rarity.unique:Unique`, icon: assetUrl('assets/icons/rarete-unique.png') };
 
 export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
-  return source === 'favorites' ? [...RARITY_OPTIONS, UNIQUE_RARITY] : RARITY_OPTIONS;
+  return listsUniques(source) ? [...RARITY_OPTIONS, UNIQUE_RARITY] : RARITY_OPTIONS;
+}
+
+/** Account lists holding Uniques among the other cards: their « légales » filter leaves them out in a No Unique format. */
+export function listsUniques(source: CardSource): source is 'favorites' | 'owned' {
+  return source === 'favorites' || source === 'owned';
 }
 
 export const TYPE_OPTIONS = [
