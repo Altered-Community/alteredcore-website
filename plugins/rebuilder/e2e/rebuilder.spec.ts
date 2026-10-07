@@ -81,6 +81,13 @@ const DECK = (id: string) => `/pages/deck?id=${id}`;
 const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
 /** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Turns the browser cache off (Chromium), so that routes see the requests a page served from its memory cache. */
+async function disableBrowserCache(page: Page): Promise<void> {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+}
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
@@ -184,7 +191,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
       if (route.request().method() === 'GET') await deckAnswer;
       await route.continue();
     });
-    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'domcontentloaded' });
+    // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
+    // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
+    await disableBrowserCache(page);
+    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
     const placeholder = page.locator('.ac-spa-placeholder');
     await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await expect(placeholder.getByRole('status')).toHaveText('Chargement…');
@@ -1164,6 +1174,8 @@ test.describe('ReBuilder in the shell · loading', () => {
     requests.length = 0;
     await page.goto(`${EDITOR(id)}&lang=fr`);
     expect(await (await deckAnswer).headerValue('content-encoding')).toBe('gzip');
+    // The owner's actions replace their skeletons once the account's deck ids are in.
+    await expect(page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
     await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
 
@@ -1195,7 +1207,8 @@ test.describe('ReBuilder in the shell · loading', () => {
       await scripts;
       await route.continue();
     });
-    await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'domcontentloaded' });
+    await disableBrowserCache(page);
+    await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await page.waitForTimeout(300);
     releaseScripts();

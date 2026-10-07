@@ -10,19 +10,17 @@ export const prefetchInterceptor: HttpInterceptorFn = (req, next) => {
   if (req.method !== 'GET' || req.responseType !== 'json') return next(req);
   const answer = takePrefetched(req.urlWithParams);
   if (!answer) return next(req);
-  return from(answer.then(async (res) => (res ? { res, text: await res.text() } : null)).catch(() => null)).pipe(
+  return from(answer).pipe(
     switchMap((got) => {
       if (!got) return next(req);
-      const names: Record<string, string> = {};
-      got.res.headers.forEach((value, name) => (names[name] = value));
-      const headers = new HttpHeaders(names);
       let body: unknown;
       try {
-        body = got.text === '' ? null : JSON.parse(got.text);
+        body = got.body === '' ? null : JSON.parse(got.body);
       } catch {
         return next(req);
       }
-      return [new HttpResponse({ body, headers, status: got.res.status, statusText: got.res.statusText, url: got.res.url || req.urlWithParams })];
+      const headers = new HttpHeaders(got.headers);
+      return [new HttpResponse({ body, headers, status: got.status, statusText: got.statusText, url: got.url || req.urlWithParams })];
     }),
   );
 };
