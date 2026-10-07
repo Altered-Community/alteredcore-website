@@ -32,17 +32,6 @@
     grid-template-columns: repeat(auto-fill, minmax(max(210px, calc((100% - 6 * var(--ac-space-2)) / 7)), 1fr));
   }
 }
-.skeleton {
-  aspect-ratio: 5 / 7;
-  border-radius: var(--ac-radius-lg);
-  background: var(--ac-color-track);
-  animation: pulse 1.2s ease-in-out infinite alternate;
-}
-@keyframes pulse {
-  to {
-    opacity: 0.55;
-  }
-}
 .list {
   display: flex;
   flex-direction: column;

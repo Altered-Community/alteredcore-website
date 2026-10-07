@@ -1,10 +1,14 @@
 @if (bp.compact()) {
-  <ac-app-bar [title]="view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
+  <ac-app-bar [title]="deck.opening() ? labels.loading : view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' || deck.opening() ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
     <ac-back-button leading fallback="/decks" />
     @if (deck.editable()) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
-    @if (!deck.loadError()) {
+    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton. -->
+    @for (i of deck.owned() === null && !deck.loadError() ? [0, 1] : []; track i) {
+      <span actions acSkeleton="circle"></span>
+    }
+    @if (deck.owned() !== null && !deck.loadError()) {
       <button
         actions
         [acIconButton]="waiting() === 'share' ? 'loader-circle' : 'share-2'"
@@ -18,7 +22,7 @@
       ></button>
     }
     <!-- One element per block: content projection (`[actions]`) only takes a block with a single root. -->
-    @if (!deck.loadError()) {
+    @if (deck.owned() !== null && !deck.loadError()) {
       <button actions acIconButton="ellipsis" variant="ghost" [iconSize]="22" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
     }
   </ac-app-bar>
@@ -30,7 +34,10 @@
     <a acButton variant="secondary" routerLink="/decks" i18n="@@editor.backToDecks">Retour à mes decks</a>
   </div>
 } @else {
-  <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
+  @if (deck.opening()) {
+    <span class="ac-sr-only" role="status">{{ labels.loading }}</span>
+  }
+  <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()" [attr.aria-busy]="deck.opening() || null">
     @if (!bp.compact()) {
       <div class="top">
         <app-deck-bar
@@ -42,6 +49,18 @@
           (showLegality)="showLegality()"
           >
           <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
+            <!-- Until the owner is known: the actions in skeleton, rather than « Supprimer » appearing once it is. -->
+            @if (deck.owned() === null) {
+              @if (effectiveView() === 'apercu') {
+                @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+                  <span acSkeleton="control-sm" width="110px"></span>
+                }
+              } @else {
+                <span acSkeleton="control-sm" width="110px"></span>
+                <span acSkeleton="control-sm" width="110px"></span>
+                <span acSkeleton="control-sm" width="var(--ac-control-sm)"></span>
+              }
+            } @else {
             <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
               @if (waiting() === 'share') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
@@ -69,6 +88,7 @@
                 </button>
               }
               <button acIconButton="ellipsis" size="sm" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
+            }
             }
           </div>
         </app-deck-bar>
@@ -118,7 +138,7 @@
       @let view = effectiveView();
       @switch (view) {
         @case ('search') {
-          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.loading()" />
+          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.opening()" />
         }
         @case ('apercu') {
           @if (bp.compact()) {
@@ -131,11 +151,15 @@
           <app-deck-list-view (openSettings)="openSettings()" />
         }
         @case ('main') {
+          @if (deck.opening()) {
+            <app-hand-skeleton />
+          } @else {
           <div class="hand">
             <app-test-hand [lines]="deck.lines()" />
             <app-hand-stats [lines]="deck.lines()" />
             <app-hand-calculators [lines]="deck.lines()" />
           </div>
+          }
         }
         @default never;
       }
@@ -150,8 +174,12 @@
         </div>
       } @else {
         <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="drawer.set(true)">
-          <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
-          <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
+          @if (deck.opening()) {
+            <span class="ac-drawer-tab__label" i18n="@@editor.deckTabLoading">Deck · …</span>
+          } @else {
+            <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
+            <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
+          }
         </button>
       }
     }

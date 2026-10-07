@@ -185,21 +185,13 @@
   justify-content: center;
 }
 
+/* A deck card's height: grid tile from 768 px, row on phones. */
 .skeleton {
-  height: 188px;
-  border-radius: var(--ac-radius-card);
-  background: var(--ac-color-track);
-  animation: pulse 1.4s ease-in-out infinite;
+  height: 227px;
 }
 
 .spin {
   animation: spin 0.9s linear infinite;
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.55;
-  }
 }
 
 @keyframes spin {
@@ -209,7 +201,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton,
   .spin {
     animation: none;
   }
@@ -294,4 +285,19 @@
     color: var(--ac-color-text-muted);
     margin-right: var(--ac-space-1);
   }
+}
+
+.grid.rows .skeleton {
+  height: 149px;
+}
+
+.counting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+}
+
+/* The loading notice in the factions row: on its right, without taking a row of its own. */
+.factions .notice {
+  margin-left: auto;
 }

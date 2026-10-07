@@ -113,6 +113,23 @@
             container.setAttribute('data-theme', host.theme);
             container.setAttribute('lang', host.lang);
             mountRoot.appendChild(container);
+            // The server's placeholder (skeleton of the page) stays in view, through a slot in a shadow root, until
+            // the plugin draws its first screen: until the container, without its min-height meanwhile, takes some height.
+            // After the container, so that the first screen sits at its place (layouts measure it) the frame both show.
+            var placeholder = el.querySelector('.ac-spa-placeholder');
+            if (placeholder) {
+                var slot = shadow ? mountRoot.appendChild(document.createElement('slot')) : null;
+                if (!shadow) el.appendChild(placeholder);
+                container.style.minHeight = '0';
+                var drawn = new ResizeObserver(function (entries) {
+                    if (entries[0].contentRect.height < 1) return;
+                    drawn.disconnect();
+                    container.style.minHeight = '';
+                    placeholder.remove();
+                    if (slot) slot.remove();
+                });
+                drawn.observe(container);
+            }
             mounts[pluginId] = { host: el, root: mountRoot, container: container };
             return mounts[pluginId];
         },
@@ -134,6 +151,21 @@
         Object.keys(mounts).forEach(function (id) { mounts[id].container.setAttribute('data-theme', next); });
         emit('theme', { theme: next });
     }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // A plugin module that fails to load (network, missing build): its page would show the server's placeholder
+    // (skeleton) for ever. Script errors do not bubble: listened to in the capture phase, before the modules' tags
+    // (includes/spa.php marks them with their plugin).
+    document.addEventListener('error', function (event) {
+        var plugin = event.target && event.target.tagName === 'SCRIPT' && event.target.getAttribute('data-ac-plugin-module');
+        if (!plugin) return;
+        document.querySelectorAll('[data-ac-plugin="' + plugin + '"] > .ac-spa-placeholder').forEach(function (placeholder) {
+            var alert = document.createElement('div');
+            alert.className = 'ac-notice ac-notice--warning';
+            alert.setAttribute('role', 'alert');
+            alert.textContent = host.lang === 'fr' ? 'Cette page n’est pas disponible pour le moment.' : 'This page is not available right now.';
+            placeholder.replaceWith(alert);
+        });
+    }, true);
 
     // Sticky offset for plugin layouts: the site header is sticky at the top of the page.
     var header = document.querySelector('.site-header');

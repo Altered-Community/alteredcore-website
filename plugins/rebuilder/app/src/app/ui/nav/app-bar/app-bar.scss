@@ -18,6 +18,12 @@ header {
   align-items: center;
   padding-right: 4px;
 }
+/* An action in skeleton (`<span actions acSkeleton="circle">`, owner not known yet): the size of a ghost icon button's
+   round, in its slot. Projected content keeps its page's scope, hence ::ng-deep. */
+.actions ::ng-deep > .ac-skeleton--circle {
+  --ac-skeleton-width: 36px;
+  margin: 0 var(--ac-space-1);
+}
 .titles {
   flex-grow: 1;
   min-width: 0;

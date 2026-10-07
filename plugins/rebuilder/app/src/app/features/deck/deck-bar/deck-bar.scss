@@ -257,3 +257,36 @@
     display: none;
   }
 }
+
+/* While the deck opens: blocks of the size of the curve, the rarity limits and the terrain totals, so that nothing moves
+   when the deck arrives. */
+:host(.opening) {
+  min-height: 100px;
+}
+:host(.opening:not(.reduced)) {
+  /* The page sets the height of its full bar (actions differ): editor « Aperçu », deck page. */
+  min-height: var(--deck-bar-opening-height, 206px);
+}
+:host(.opening) .text {
+  gap: var(--ac-space-1-5);
+}
+.curve-skeleton {
+  flex: 0 0 145px;
+  height: 51px;
+}
+.limits-skeleton {
+  flex: 0 1 230px;
+  height: 30px;
+}
+.terrain-skeleton {
+  flex: 0 0 162px;
+  height: 30px;
+}
+:host(:not(.reduced)) .curve-skeleton {
+  flex-basis: 306px;
+  height: 82px;
+}
+:host(:not(.reduced)) .terrain-skeleton {
+  flex-basis: 216px;
+  height: 103px;
+}

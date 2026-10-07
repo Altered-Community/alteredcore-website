@@ -1,0 +1,183 @@
+<?php
+// Manifest `placeholder` of the Re:Builder page, included by spaRenderPage() inside the mount point with $slug and $subPath
+// in scope: a skeleton of the screen the URL opens (decks list, deck page, editor and its views, new deck), from 768 px
+// and on phones, shown while the scripts load. The runtime removes it once the app draws its first screen, whose loading
+// state (deck bar, deck panel, board, preview… in skeleton) has the same layout: blocks here sit where the app's are
+// (sizes measured on the app at 1440 and 390 px wide). Shapes only (ac-skeleton, aria-hidden): spaRenderPlaceholder()
+// announces the loading.
+
+$id   = (string)($_GET['id'] ?? '');
+$view = (string)($_GET['view'] ?? '');
+$tab  = (string)($_GET['tab'] ?? '');
+if ($slug === 'deck' && $id !== '')            $screen = 'deck';
+elseif ($slug === 'deckbuilder' && $id !== '') $screen = 'editor';
+elseif ($slug === 'deckbuilder')               $screen = 'new';
+else                                           $screen = 'decks';
+if ($screen === 'editor' && !in_array($view, ['apercu', 'deck', 'main'], true)) $view = 'search';
+if ($screen === 'deck') $view = ['deck' => 'decklist', 'description' => 'description', 'main' => 'main'][$tab] ?? 'cartes';
+
+/** `$n` skeletons with `$class` (variants and layout classes) and an optional `--ac-skeleton-width`. */
+$sk = function (string $class = '', int $n = 1, string $width = ''): string {
+    $style = $width !== '' ? ' style="--ac-skeleton-width: ' . $width . '"' : '';
+    return str_repeat('<span class="ac-skeleton ' . $class . '"' . $style . '></span>', $n);
+};
+/** Grid of card illustrations (5:7). */
+$cards = function (string $class, int $n) use ($sk): string {
+    return '<div class="' . $class . '">' . $sk('ac-skeleton--card', $n) . '</div>';
+};
+/** Deck bar (from 768 px): hero art, name, curve, rarity limits, terrain totals, actions; `reduced` in the editor. */
+$deckBar = function (bool $reduced, int $actions) use ($sk): string {
+    return '<div class="rbph-bar' . ($reduced ? ' rbph-bar--reduced' : '') . '">'
+        . '<span class="ac-skeleton rbph-bar__art"></span>'
+        . '<div class="rbph-bar__text">' . $sk('ac-skeleton--text', 1, '70px') . $sk('ac-skeleton--title', 1, '80%')
+        . ($reduced ? $sk('ac-skeleton--text', 1, '60%') : $sk('ac-skeleton--title', 1, '50%') . $sk('ac-skeleton--text', 1, '70%') . $sk('ac-skeleton--text', 1, '50%') . $sk('ac-skeleton--text', 1, '40%'))
+        . '</div>'
+        . '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__curve"></span>'
+        . ($reduced ? '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__limits"></span>' : '')
+        . '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__terrain"></span>'
+        . '<div class="rbph-bar__actions">' . $sk('ac-skeleton--control-sm', $actions) . '</div>'
+        . '</div>';
+};
+/** Phones: app bar (back, title and subtitle, icon buttons). */
+$appBar = function (int $icons, bool $back = true) use ($sk): string {
+    return '<div class="rbph-appbar">' . ($back ? $sk('ac-skeleton--circle rbph-icon') : '')
+        . '<div class="rbph-appbar__titles">' . $sk('ac-skeleton--title', 1, '65%') . ($back ? $sk('ac-skeleton--text', 1, '45%') : '') . '</div>'
+        . $sk('ac-skeleton--circle rbph-icon', $icons) . '</div>';
+};
+/** Phones: bottom navigation with `$n` entries. */
+$bottomNav = function (int $n) use ($sk): string {
+    return '<div class="rbph-nav">' . str_repeat('<span class="rbph-nav__item">' . $sk('ac-skeleton--circle') . $sk('ac-skeleton--text') . '</span>', $n) . '</div>';
+};
+/** A row of tabs on a divider. */
+$tabs = function (array $widths, string $class = '') use ($sk): string {
+    $out = '<div class="rbph-tabs' . ($class !== '' ? ' ' . $class : '') . '">';
+    foreach ($widths as $w) $out .= $sk('ac-skeleton--text', 1, $w);
+    return $out . '</div>';
+};
+/** Deck panel (editor, from 768 px): a type and its rows. */
+$deckPanel = function () use ($sk): string {
+    $rows = str_repeat('<div class="rbph-row36">' . $sk('ac-skeleton--text', 1, '60%') . $sk('ac-skeleton--text', 1, '56px') . '</div>', 5);
+    return '<div class="rbph-panel rbph-deckpanel"><div class="rbph-row34">' . $sk('ac-skeleton--text', 1, '35%') . '</div>' . $rows . '</div>';
+};
+/** « Main de départ »: toolbar, summary, hand, stats panels (features/shared/hand-skeleton). */
+$hand = function (bool $compact) use ($sk): string {
+    return '<div class="rbph-hand"><div class="rbph-col12"><div class="rbph-row rbph-wrap">' . $sk('ac-skeleton--control', 1, '150px') . $sk('ac-skeleton--control', 1, '170px') . ($compact ? '' : $sk('ac-skeleton--control', 1, '120px')) . '</div>'
+        . $sk('ac-skeleton--text', 1, 'min(320px, 80%)') . '<div class="rbph-hand__cards">' . $sk('ac-skeleton--card', 6) . '</div></div>'
+        . '<div class="rbph-col12">' . $sk('ac-skeleton--text', 1, '200px') . '<div class="rbph-hand__panels">' . $sk('ac-skeleton--panel rbph-h200', 3) . '</div></div></div>';
+};
+/** Phones: a type and its card rows (« Deck » / « Decklist »). */
+$listSection = function () use ($sk): string {
+    return '<div class="rbph-panel rbph-msection">' . $sk('ac-skeleton--text', 1, '35%') . '<div>'
+        . str_repeat('<div class="rbph-row51">' . $sk('ac-skeleton--text', 1, '55%') . $sk('ac-skeleton--text', 1, '80px') . '</div>', 4) . '</div></div>';
+};
+/** Board (« Aperçu » from 768 px): one group of four piles. */
+$board = function () use ($sk): string {
+    return '<div class="rbph-panel rbph-board"><div class="rbph-board__group">' . $sk('ac-skeleton--text', 1, '140px') . '<div class="rbph-board__cards">' . $sk('ac-skeleton--card', 4) . '</div></div></div>';
+};
+?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/rebuilder/placeholder.css?v=<?= (int)@filemtime(__DIR__ . '/placeholder.css') ?>">
+<div class="rbph" aria-hidden="true">
+<?php if ($screen === 'decks'): ?>
+  <div class="rbph-desktop rbph-decks">
+    <div class="rbph-decks__head"><?= $sk('ac-skeleton--title', 1, '120px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '110px') . $sk('ac-skeleton--control', 1, '150px') ?></div>
+    <?= $tabs(['110px', '100px', '180px']) ?>
+    <div class="rbph-decks__filters"><?= $sk('ac-skeleton--control', 1, '300px') . $sk('ac-skeleton--control', 2, '140px') . $sk('ac-skeleton--control', 1, '200px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '220px') ?></div>
+    <div class="rbph-decks__factions"><?= $sk('ac-skeleton--text', 1, '56px') . $sk('rbph-chip', 7, '76px') ?></div>
+    <div class="rbph-decks__grid"><?= $sk('ac-skeleton--panel', 10) ?></div>
+  </div>
+  <div class="rbph-compact">
+    <?= $appBar(1, false) ?>
+    <div class="rbph-mpage rbph-mpage--decks">
+      <div class="rbph-row"><?= $sk('rbph-h44 rbph-grow') . $sk('rbph-h44', 1, '44px') ?></div>
+      <div class="rbph-row rbph-row44"><?= $sk('ac-skeleton--text', 1, '110px') ?><span class="rbph-grow"></span><?= $sk('rbph-h44', 1, '186px') ?></div>
+      <div class="rbph-mlist"><?= $sk('ac-skeleton--panel', 5) ?></div>
+    </div>
+    <?= $bottomNav(3) ?>
+  </div>
+<?php elseif ($screen === 'new'): ?>
+  <div class="rbph-dialog">
+    <div class="rbph-col12"><?= $sk('ac-skeleton--title', 1, '40%') . '<div class="rbph-row rbph-wrap">' . $sk('rbph-chip', 6, '80px') . '</div>' ?><div><?= $sk('ac-skeleton--card', 4) ?></div></div>
+    <div class="rbph-col12"><?= $sk('ac-skeleton--text', 1, '30%') . $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '30%') . $sk('ac-skeleton--control', 4) ?></div>
+  </div>
+<?php elseif ($screen === 'deck'): ?>
+  <div class="rbph-desktop rbph-deckpage">
+    <?= $deckBar(false, 6) ?>
+    <?= $tabs(['70px', '70px', '90px', '120px']) ?>
+<?php if ($view === 'main'): ?>
+    <?= $hand(false) ?>
+<?php elseif ($view === 'cartes'): ?>
+    <?= $board() ?>
+<?php else: ?>
+    <div class="rbph-panel rbph-h320"></div>
+<?php endif; ?>
+  </div>
+  <div class="rbph-compact">
+    <?= $appBar(3, true) ?>
+    <div class="rbph-mpage rbph-gap3">
+<?php if ($view === 'main'): ?>
+      <?= $hand(true) ?>
+<?php elseif ($view === 'cartes'): ?>
+      <div class="rbph-panel rbph-msection rbph-summary"><div class="rbph-row"><?= $sk('rbph-h44', 1, '44px') ?><div class="rbph-col12 rbph-summary__meta"><?= $sk('ac-skeleton--title', 1, '70%') . $sk('ac-skeleton--text', 1, '40%') ?></div></div><?= $sk('rbph-chip', 1, '60%') . $sk('ac-skeleton--text', 1, '60%') ?></div>
+      <?= $sk('ac-skeleton--panel rbph-h190', 1) ?>
+      <div class="rbph-row rbph-row36"><?= $sk('ac-skeleton--text', 1, '150px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control-sm', 1, '96px') ?></div>
+      <div class="rbph-panel rbph-msection"><div class="rbph-mhead"><?= $sk('ac-skeleton--title', 1, '150px') ?></div><div class="rbph-dense"><?= $sk('ac-skeleton--card', 3) ?></div></div>
+<?php else: ?>
+      <?= $sk('ac-skeleton--panel rbph-h190', 1) ?>
+      <?= $listSection() ?>
+<?php endif; ?>
+    </div>
+    <?= $bottomNav(4) ?>
+  </div>
+<?php else: /* editor */ ?>
+  <div class="rbph-desktop rbph-editor">
+    <div class="rbph-editor__top">
+      <?= $deckBar($view !== 'apercu', $view === 'apercu' ? 4 : 2) ?>
+      <div class="rbph-modes"><span class="ac-skeleton rbph-modes__segmented"></span><?= $sk('ac-skeleton--control-sm', 1, '120px') ?></div>
+    </div>
+<?php if ($view === 'apercu'): ?>
+    <?= $board() ?>
+    <span class="ac-skeleton rbph-decktab"></span>
+<?php else: ?>
+    <div class="rbph-editor__main">
+<?php if ($view === 'main'): ?>
+      <?= $hand(false) ?>
+<?php else: ?>
+      <?= $tabs(['110px', '70px', '60px', '140px', '150px']) ?>
+      <div class="rbph-search">
+        <div class="rbph-panel rbph-filters"><?= $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow') . $sk('ac-skeleton--control rbph-grow') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow', 3) . '</div>' . $sk('ac-skeleton--text', 1, '30%') . $sk('rbph-h200') ?></div>
+        <div class="rbph-results">
+          <div class="rbph-row rbph-toolbar"><?= $sk('ac-skeleton--text', 1, '80px') . $sk('rbph-chip', 1, '110px') . $sk('rbph-chip', 1, '70px') . $sk('rbph-chip', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '110px') . $sk('ac-skeleton--control', 1, '72px') ?></div>
+          <div class="rbph-results__cards"><?= $sk('ac-skeleton--card', 6) ?></div>
+        </div>
+      </div>
+<?php endif; ?>
+    </div>
+    <?= $deckPanel() ?>
+<?php endif; ?>
+  </div>
+  <div class="rbph-compact">
+    <?= $appBar(2, true) ?>
+    <div class="rbph-mpage">
+<?php if ($view === 'search'): ?>
+      <div class="rbph-row"><?= $sk('rbph-h44 rbph-grow') . $sk('rbph-h44', 1, '44px') ?></div>
+      <?= $tabs(['56px', '62px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
+      <div class="rbph-mchips rbph-bleed rbph-mt12"><?= $sk('', 1, '116px') . $sk('', 1, '86px') . $sk('', 1, '80px') ?></div>
+      <div class="rbph-row rbph-row44"><?= $sk('ac-skeleton--text', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('rbph-h44', 1, '150px') . $sk('rbph-icon24') ?></div>
+      <?= $cards('rbph-mcards', 4) ?>
+<?php elseif ($view === 'apercu'): ?>
+      <div class="rbph-row rbph-row36 rbph-mb16"><?= $sk('ac-skeleton--text', 1, '150px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control-sm', 1, '96px') ?></div>
+      <div class="rbph-panel rbph-msection"><div class="rbph-mhead"><?= $sk('ac-skeleton--title', 1, '150px') ?></div><?= $cards('rbph-mcards', 4) ?></div>
+<?php elseif ($view === 'deck'): ?>
+      <div class="rbph-col12 rbph-gap4">
+        <?= $sk('ac-skeleton--panel rbph-h159') ?>
+        <?= $sk('ac-skeleton--panel rbph-h190') ?>
+        <?= $listSection() ?>
+      </div>
+<?php else: ?>
+      <?= $hand(true) ?>
+<?php endif; ?>
+    </div>
+    <?= $bottomNav(4) ?>
+  </div>
+<?php endif; ?>
+</div>

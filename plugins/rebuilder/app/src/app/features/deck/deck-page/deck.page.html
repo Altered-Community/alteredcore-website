@@ -1,14 +1,18 @@
 @if (bp.compact()) {
   <ac-app-bar title="Deck">
     <ac-back-button leading fallback="/decks" />
-    <!-- Nothing to act on when the deck could not be opened (one node per @if, for the [actions] slot). -->
+    <!-- Nothing to act on when the deck could not be opened (one node per block, for the [actions] slot). Until the owner
+         is known (deck opening, account list loading), skeletons: a « Modifier » shown then removed would mislead. -->
+    @for (i of deck.owned() === null && !deck.error() ? [0, 1, 2] : []; track i) {
+      <span actions acSkeleton="circle"></span>
+    }
     @if (!deck.error() && deck.owned()) {
       <button actions class="edit" acIconButton="pencil" variant="ghost" ariaLabel="Modifier le deck" i18n-ariaLabel="@@deck.page.edit" [iconSize]="22" (click)="edit()"></button>
     }
-    @if (!deck.error()) {
+    @if (!deck.error() && deck.owned() !== null) {
       <button actions acIconButton="share-2" variant="ghost" ariaLabel="Partager" i18n-ariaLabel="@@deck.page.share" [iconSize]="22" (click)="share()"></button>
     }
-    @if (!deck.error()) {
+    @if (!deck.error() && deck.owned() !== null) {
       <button actions acIconButton="ellipsis" variant="ghost" [ariaLabel]="moreLabel()" [iconSize]="22" (click)="more()"></button>
     }
   </ac-app-bar>
@@ -47,14 +51,23 @@
       <a acButton variant="secondary" routerLink="/decks" i18n="@@deck.page.backToDecks">Retour à mes decks</a>
     </div>
   </div>
-} @else if (deck.loading()) {
-  <div class="state" aria-busy="true"><p i18n="@@deck.page.loading">Chargement du deck…</p></div>
 } @else {
-  <div class="page">
+  <!-- While the deck opens: the page's layout with skeletons in place of the deck (DeckStore.opening). -->
+  <div class="page" [attr.aria-busy]="deck.opening() || null">
+    @if (deck.opening()) {
+      <span class="ac-sr-only" role="status">{{ loadingLabel }}</span>
+    }
     <main class="main">
       @if (!bp.compact()) {
         <app-deck-bar [legality]="legality()" (showLegality)="showLegality()">
           <div barActions class="bar-actions">
+            <!-- Until the owner is known: the actions in skeleton, rather than « Modifier » and « Supprimer » appearing or
+                 disappearing once it is. -->
+            @if (deck.owned() === null) {
+              @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+                <span acSkeleton="control-sm" width="120px"></span>
+              }
+            } @else {
             @if (deck.owned()) {
               <button acButton size="sm" icon="pencil" (click)="edit()" i18n="@@deck.bar.edit">Modifier</button>
             }
@@ -67,11 +80,27 @@
             @if (deck.owned()) {
               <button acButton variant="danger" size="sm" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
             }
+            }
           </div>
         </app-deck-bar>
         <ac-tabs ariaLabel="Vues du deck" i18n-ariaLabel="@@deck.page.views" [tabs]="tabs" [active]="tab()" (activeChange)="setTab($event)" />
       } @else {
         <section class="m-summary" aria-label="Résumé du deck" i18n-aria-label="@@deck.page.summary">
+          @if (deck.opening()) {
+          <div class="m-top">
+            <span class="m-thumb ac-skeleton"></span>
+            <div class="m-meta skeleton-meta">
+              <span acSkeleton="title" width="70%"></span>
+              <span acSkeleton="text" width="40%"></span>
+            </div>
+          </div>
+          <div class="badges">
+            <span acSkeleton class="badge-skeleton" width="120px"></span>
+            <span acSkeleton class="badge-skeleton" width="80px"></span>
+            <span acSkeleton class="badge-skeleton" width="64px"></span>
+          </div>
+          <div class="m-counts"><span acSkeleton="text" width="60%"></span></div>
+          } @else {
           <div class="m-top">
             <span class="m-thumb">
               @if (deck.hero(); as h) {
@@ -94,6 +123,7 @@
             <span class="sep" aria-hidden="true"></span>
             <ac-rarity-summary [counts]="deck.stats().rarity" [gap]="12" />
           </div>
+          }
         </section>
       }
 
@@ -102,6 +132,8 @@
         @case ('decklist') {
           @if (bp.compact()) {
             <app-deck-list-view [readonly]="true" />
+          } @else if (deck.opening()) {
+            <span acSkeleton="panel" class="tables-skeleton"></span>
           } @else {
             <div class="grouping">
               <ac-segmented ariaLabel="Regrouper par" i18n-ariaLabel="@@deck.page.groupBy" [options]="groupingOptions" [(value)]="grouping" />
@@ -117,7 +149,11 @@
         }
         @case ('description') {
           <section class="description" aria-label="Description" i18n-aria-label="@@deck.page.tabDescription">
-            @if (deck.description().trim(); as text) {
+            @if (deck.opening()) {
+              <span acSkeleton="text"></span>
+              <span acSkeleton="text" width="80%"></span>
+              <span acSkeleton="text" width="60%"></span>
+            } @else if (deck.description().trim(); as text) {
               <p class="description-text">{{ text }}</p>
             } @else {
               <p class="empty" i18n="@@deck.page.noDescription">Aucune description pour ce deck.</p>
@@ -125,17 +161,23 @@
           </section>
         }
         @case ('main') {
-          <app-test-hand [lines]="deck.lines()" />
-          <app-hand-stats [lines]="deck.lines()" />
-          <app-hand-calculators [lines]="deck.lines()" />
+          @if (deck.opening()) {
+            <app-hand-skeleton />
+          } @else {
+            <app-test-hand [lines]="deck.lines()" />
+            <app-hand-stats [lines]="deck.lines()" />
+            <app-hand-calculators [lines]="deck.lines()" />
+          }
         }
         @case ('cartes') {
           @if (bp.compact()) {
-            <ac-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
-              <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
-            </ac-collapsible>
-          }
-          @if (bp.compact()) {
+            @if (deck.opening()) {
+              <span acSkeleton="panel" class="stats-skeleton"></span>
+            } @else {
+              <ac-collapsible title="Stats" class="m-stats" [(open)]="statsOpen">
+                <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
+              </ac-collapsible>
+            }
             <app-deck-preview [readonly]="true" [dense]="true" />
           } @else {
             <app-deck-board [readonly]="true" />

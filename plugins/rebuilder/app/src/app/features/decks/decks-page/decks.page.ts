@@ -12,6 +12,7 @@ import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcSkeleton } from '../../../ui/containers';
 import { AcChip, AcCount } from '../../../ui/chips';
 import { AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -74,7 +75,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel, AcSkeleton],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
@@ -113,6 +114,13 @@ export class DecksPage {
   });
   /** Account decks on their way (first load, or another session): skeletons instead of the empty state. A reload keeps the list. */
   protected readonly mineLoading = computed(() => this.serverRes.status() === 'loading');
+  /** The open tab's list is loading: skeletons in its place, « Chargement… » for its count. */
+  protected readonly listLoading = computed(() => {
+    const tab = this.tab();
+    return (tab === 'mine' && this.mineLoading()) || (tab === 'community' && this.communityLoading()) || (tab === 'contest' && this.contestLoading());
+  });
+  /** Two rows of deck cards from 768 px, a screen of rows on phones. */
+  protected readonly skeletons = computed(() => Array.from({ length: this.bp.compact() ? 5 : 10 }, (_, i) => i));
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();

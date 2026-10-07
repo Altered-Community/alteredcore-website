@@ -499,6 +499,16 @@ include dirname(__DIR__) . '/includes/header.php';
                     <div class="ac-row"><span class="ac-spinner" aria-hidden="true"></span> Loading…</div>
                     <div class="ac-progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><div class="ac-progress__bar" style="width: 60%"></div></div>
                 </div>
+                <div class="ac-card ac-stack" aria-busy="true">
+                    <span class="ac-sr-only" role="status">Loading…</span>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--circle" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--title" style="--ac-skeleton-width: 50%" aria-hidden="true"></span></div>
+                    <span class="ac-skeleton ac-skeleton--text" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 70%" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--control" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--control-sm" style="--ac-skeleton-width: 120px" aria-hidden="true"></span>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span></div>
+                    <span class="ac-skeleton ac-skeleton--panel" style="height: 4rem" aria-hidden="true"></span>
+                </div>
                 <div class="ds-loader-preview">
                     <div class="ac-scrim ac-loader" role="status" aria-live="polite">
                         <div class="ac-loader__panel">

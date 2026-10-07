@@ -5,7 +5,7 @@ import { DeckStore } from '../../../core/deck-store';
 import { AuthSession } from '../../../core/auth-session';
 import type { Card } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
-import { AcVirtualGrid } from '../../../ui/containers';
+import { AcSkeleton, AcVirtualGrid } from '../../../ui/containers';
 import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcCardTile, AcDeckRow } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -15,7 +15,7 @@ import { CardSearchStore } from '../card-search.store';
 
 @Component({
   selector: 'app-search-results',
-  imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid],
+  imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid, AcSkeleton],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
 })

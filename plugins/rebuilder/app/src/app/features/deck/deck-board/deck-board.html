@@ -1,3 +1,13 @@
+@if (deck.opening()) {
+  <section class="group" style="--columns: 4" aria-busy="true">
+    <span class="title"><span acSkeleton="text" width="140px"></span></span>
+    <div class="cards">
+      @for (c of [0, 1, 2, 3]; track c) {
+        <span acSkeleton="card"></span>
+      }
+    </div>
+  </section>
+} @else {
 @for (g of groups(); track g.id) {
   <section class="group" [style.--columns]="g.columns" [attr.aria-labelledby]="'board-' + g.id">
     <h2 class="title" [id]="'board-' + g.id">{{ g.label }} · {{ g.count }}</h2>
@@ -24,4 +34,5 @@
       <p i18n="@@deck.page.noCards">Ce deck ne contient encore aucune carte.</p>
     }
   </div>
+}
 }

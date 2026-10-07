@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DeckStore } from '../../../core/deck-store';
 import { AcButton } from '../../../ui/buttons';
+import { AcSkeleton } from '../../../ui/containers';
 import { AcCardTile, AcDeckSection } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
 import { FavoritesService } from '../../../core/favorites.service';
@@ -11,7 +12,7 @@ import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 /** « Aperçu » / « Cartes »: count line, « Tout replier », one section per type with tiles. */
 @Component({
   selector: 'app-deck-preview',
-  imports: [AcDeckSection, AcCardTile, AcButton],
+  imports: [AcDeckSection, AcCardTile, AcButton, AcSkeleton],
   templateUrl: './deck-preview.html',
   styleUrl: './deck-preview.scss',
 })

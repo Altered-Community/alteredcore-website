@@ -3,11 +3,12 @@ import { DeckStore } from '../../../core/deck-store';
 import { AcDeckRow } from '../../../ui/metier';
 import { EditorAltArts } from '../editor-alt-arts';
 import { lineIssues } from '../editor-legality';
+import { AcSkeleton } from '../../../ui/containers';
 
 /** Desktop right-hand panel of the editor: the deck's cards grouped by type, with steppers (the deck bar holds the rest). */
 @Component({
   selector: 'app-deck-panel',
-  imports: [AcDeckRow],
+  imports: [AcDeckRow, AcSkeleton],
   templateUrl: './deck-panel.html',
   styleUrl: './deck-panel.scss',
 })

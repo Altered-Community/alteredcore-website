@@ -43,7 +43,11 @@
       </button>
     </div>
     <div class="count-row">
-      <strong>{{ countLabel() }}</strong>
+      @if (listLoading() && !list().length) {
+        <strong class="counting" role="status"><ac-icon class="spin" name="loader-circle" [size]="16" /><ng-container i18n="@@decks.page.countLoading">Chargement…</ng-container></strong>
+      } @else {
+        <strong>{{ countLabel() }}</strong>
+      }
       @if (tab() !== 'contest') {
         <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@decks.page.sortBy" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
       }
@@ -72,6 +76,12 @@
         @for (f of factions; track f.code) {
           <ac-chip [label]="f.name" [dot]="f.color" [selected]="filters().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
         }
+        <!-- In this row's free space, so that the list does not move when the loading ends. -->
+        @if (tab() === 'mine' && mineLoading()) {
+          <p class="notice loading" role="status">
+            <ac-icon class="spin" name="loader-circle" [size]="14" /><span i18n="@@decks.page.mineLoading">Chargement de vos decks… Cela peut prendre un moment si vous en avez beaucoup.</span>
+          </p>
+        }
       </div>
     </div>
   }
@@ -88,11 +98,6 @@
       }
     </div>
   }
-  @if (tab() === 'mine' && mineLoading()) {
-    <p class="notice loading" role="status">
-      <ac-icon class="spin" name="loader-circle" [size]="14" /><span i18n="@@decks.page.mineLoading">Chargement de vos decks… Cela peut prendre un moment si vous en avez beaucoup.</span>
-    </p>
-  }
   @if (tab() === 'mine' && (serverError() || auth.sessionNotice())) {
     <p class="notice" role="status">{{ serverError() || auth.sessionNotice() }}</p>
   }
@@ -103,20 +108,21 @@
     </p>
   }
 
-  <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()" [attr.aria-busy]="(tab() === 'mine' && mineLoading()) || null">
+  <div class="grid" [class.rows]="bp.compact()" role="list" [attr.aria-label]="listLabel()" [attr.aria-busy]="listLoading() || null">
     @for (d of list(); track d.id) {
       <ac-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" [openInEditor]="openInEditor()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
+    }
+    <!-- Where the decks will be, before « Nouveau deck » (the list's last tile), at a deck card's size. -->
+    @if (listLoading()) {
+      @for (i of skeletons(); track i) {
+        <span acSkeleton="panel" class="skeleton"></span>
+      }
     }
     @if (tab() === 'mine' && !bp.compact()) {
       <button type="button" class="new-tile" (click)="newDeck()" i18n="@@decks.page.newDeckTile">
         <span class="plus"><ac-icon name="plus" [size]="22" [strokeWidth]="2.4" /></span>
         Nouveau deck
       </button>
-    }
-    @if ((tab() === 'mine' && mineLoading()) || (tab() === 'community' && communityLoading()) || (tab() === 'contest' && contestLoading())) {
-      @for (i of [1, 2, 3, 4]; track i) {
-        <span class="skeleton" aria-hidden="true"></span>
-      }
     }
   </div>
 

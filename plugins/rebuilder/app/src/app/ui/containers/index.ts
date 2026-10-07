@@ -5,3 +5,4 @@ export * from './virtual-grid/virtual-grid';
 export * from './progress-bar/progress-bar';
 export * from './toast/toast';
 export * from './drawer/drawer';
+export * from './skeleton/skeleton';

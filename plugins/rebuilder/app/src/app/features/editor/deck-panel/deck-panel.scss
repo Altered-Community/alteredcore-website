@@ -28,3 +28,15 @@
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
+.group-head .ac-skeleton {
+  margin: 0.2em 0;
+}
+/* While the deck opens: a card row's height (ac-deck-row, panel appearance). */
+.row-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  height: 36px;
+  padding: 0 var(--ac-space-1);
+}

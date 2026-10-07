@@ -10,3 +10,24 @@
   text-align: center;
   color: var(--ac-color-text-muted);
 }
+/* While the deck opens: the summary, the stats and one section of rows, at their sizes. */
+.summary-skeleton {
+  height: 159px;
+}
+.stats-skeleton {
+  height: 190px;
+}
+.section-skeleton {
+  display: flex;
+  flex-direction: column;
+}
+.section-skeleton > .ac-skeleton {
+  margin: var(--ac-space-2) var(--ac-space-1) var(--ac-space-3);
+}
+.row-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  height: 51px;
+}
