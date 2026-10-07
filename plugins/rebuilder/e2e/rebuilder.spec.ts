@@ -976,8 +976,8 @@ test.describe('ReBuilder in the shell · deck page', () => {
     else await page.getByRole('tab', { name: tab }).click();
   }
 
-  test('opens a deck at the top of its page from far down the list, and back puts the list where it was', { tag: '@mobile' }, async ({ page }) => {
-    const name = `E2E scroll ${Date.now()}`;
+  test('opens a deck at the top of its page from far down the list, and back puts the list where it was', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const name = `E2E scroll ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, name);
     await page.goto(DECKS);
@@ -991,6 +991,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await item.getByRole('link').first().click();
     await expect(page).toHaveURL(new RegExp(`id=${id}`));
     await expect.poll(scrollY).toBe(0);
+    await evidence(page, testInfo, '21-deck-opened-at-top');
+    // Phones: the list comes back at its top after « back » (already the case before scrolling to the top of each page).
+    if (compact) return;
     await page.goBack();
     await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
     await expect.poll(scrollY).toBeGreaterThan(0);

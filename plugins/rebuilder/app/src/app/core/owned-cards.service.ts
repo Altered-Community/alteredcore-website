@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { map, of, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { listsUniques, parseCostExpression, rarityOptionsFor, type SearchFilters } from './card-filters';
+import { parseCostExpression, rarityOptionsFor, type SearchFilters } from './card-filters';
 import { formatInfo } from './formats';
 import { contentLocale } from './locale';
 import type { Card, DeckFormat } from './models';
@@ -51,10 +51,10 @@ export class OwnedCardsService {
   }
 }
 
-/** Rarities a tab lists: the chosen ones (all when none), without the Uniques in a No Unique format (« légales »). */
+/** Rarities a tab lists: the chosen ones (all when none), without the Uniques when `format` (see legalFormat()) forbids them. */
 export function listedRarities(source: OwnedSource, f: SearchFilters, format: DeckFormat | null): string[] {
   const picked = f.rarities.length ? f.rarities : rarityOptionsFor(source).map((r) => r.value);
-  return listsUniques(source) && format && f.legalOnly && formatInfo(format).uniqueMax === 0 ? picked.filter((r) => r !== 'UNIQUE') : picked;
+  return format && formatInfo(format).uniqueMax === 0 ? picked.filter((r) => r !== 'UNIQUE') : picked;
 }
 
 /** Query of each endpoint (their names differ: `set[]` / `cardSet[]`…). Lists as `key[]`: PHP keeps the last value of a repeated `key=…`. */

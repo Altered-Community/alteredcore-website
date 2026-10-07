@@ -1,4 +1,4 @@
-import { defaultFilters } from './card-filters';
+import { defaultFilters, legalFormat } from './card-filters';
 import { listedRarities, ownedParams } from './owned-cards.service';
 
 describe('Favoris and Propriété numérique rarities', () => {
@@ -7,9 +7,8 @@ describe('Favoris and Propriété numérique rarities', () => {
       const f = defaultFilters(source);
       expect(f.rarities).toEqual(['COMMON', 'RARE', 'EXALTED', 'UNIQUE']);
       expect(ownedParams(source, f, ['AX'], 1, 36, 'standard').getAll('rarity[]')).toBeNull();
+      expect(f.sets).toContain('COREKS');
     }
-    expect(defaultFilters('favorites').sets).toContain('COREKS');
-    expect(defaultFilters('owned').sets).toContain('COREKS');
     expect(defaultFilters('all').sets).not.toContain('COREKS');
   });
 
@@ -19,11 +18,13 @@ describe('Favoris and Propriété numérique rarities', () => {
   });
 
   it('leaves the Uniques out in a No Unique format while « légales » is on', () => {
+    expect(legalFormat('collection', defaultFilters('collection'), 'nuc')).toBeNull();
     for (const source of ['favorites', 'owned'] as const) {
       const f = defaultFilters(source);
       expect(listedRarities(source, f, 'nuc')).toEqual(['COMMON', 'RARE', 'EXALTED']);
       expect(ownedParams(source, f, ['AX'], 1, 36, 'nuc').getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
-      expect(listedRarities(source, { ...f, legalOnly: false }, 'nuc')).toContain('UNIQUE');
+      expect(legalFormat(source, f, 'nuc')).toBe('nuc');
+      expect(legalFormat(source, { ...f, legalOnly: false }, 'nuc')).toBeNull();
       expect(listedRarities(source, { ...f, rarities: ['UNIQUE'] }, 'nuc')).toEqual([]);
     }
   });
