@@ -1,9 +1,11 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { map, of, type Observable } from 'rxjs';
+import { map, of, switchMap, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { CardsApiService } from './cards-api.service';
 import { parseCostExpression, rarityOptionsFor, type SearchFilters } from './card-filters';
 import { formatInfo } from './formats';
+import { mergeUniqueFace } from './deck-view';
 import { contentLocale } from './locale';
 import type { Card, DeckFormat } from './models';
 
@@ -22,6 +24,10 @@ interface CollectionItem {
   reference?: string;
   name?: string | Record<string, string>;
   quantity?: number;
+  /** Powers of the ownership API. */
+  forest?: number | null;
+  mountain?: number | null;
+  ocean?: number | null;
 }
 
 const ENDPOINT: Record<OwnedSource, string> = {
@@ -37,6 +43,7 @@ const ENDPOINT: Record<OwnedSource, string> = {
 @Service()
 export class OwnedCardsService {
   private readonly http = inject(HttpClient);
+  private readonly cards = inject(CardsApiService);
 
   search(source: OwnedSource, filters: SearchFilters, factions: string[], page: number, itemsPerPage: number, format: DeckFormat | null = null): Observable<OwnedPage> {
     if (!listedRarities(source, filters, format).length) return of({ member: [], totalItems: 0, lastPage: 1 });
@@ -47,6 +54,11 @@ export class OwnedCardsService {
         totalItems: res.totalItems ?? 0,
         lastPage: res.lastPage ?? 1,
       })),
+      switchMap((page) =>
+        this.cards.uniqueFaces(page.member).pipe(
+          map((faces) => ({ ...page, member: page.member.map((c) => (faces.has(c.reference) ? mergeUniqueFace(c, faces.get(c.reference)!) : c)) })),
+        ),
+      ),
     );
   }
 }
@@ -84,5 +96,6 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
 
 function collectionCard(c: Card & CollectionItem): Card {
   const reference = c.cardReference || c.reference || '';
-  return { ...c, reference, name: c.name ?? reference } as Card;
+  const powers = c.forest === undefined ? {} : { forestPower: c.forest, mountainPower: c.mountain, oceanPower: c.ocean };
+  return { ...c, ...powers, reference, name: c.name ?? reference } as Card;
 }

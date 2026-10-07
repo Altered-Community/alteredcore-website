@@ -5,6 +5,7 @@ import { CardsApiService } from '../../core/cards-api.service';
 import {
   defaultFilters,
   filterChips,
+  isAccountSource,
   legalFormat,
   removeChip,
   toSearchParams,
@@ -24,8 +25,6 @@ export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, col
 export const SLOW_MS = 3000;
 
 /** Sources of the user's own cards (the site's endpoints): nothing to fetch for a guest. */
-const LOGIN_ONLY: readonly CardSource[] = ['collection', 'owned', 'favorites'];
-
 interface SearchQuery {
   source: CardSource;
   faction: string | null;
@@ -70,7 +69,7 @@ interface SearchState {
 const FIRST_PAGE: PageRequest = { page: 1, from: null };
 
 function emptyState(source: CardSource, guest: boolean): SearchState {
-  return guest && LOGIN_ONLY.includes(source)
+  return guest && isAccountSource(source)
     ? { cards: [], total: 0, page: 0, next: null, timings: [] }
     : { cards: [], total: null, page: 0, next: null, timings: [] };
 }
@@ -113,7 +112,7 @@ export class CardSearchStore {
     params: () => {
       const query = this.query();
       if (!this.configured()) return undefined;
-      return LOGIN_ONLY.includes(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
+      return isAccountSource(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
     },
     stream: ({ params: { query, request } }) => {
       const started = performance.now();
@@ -233,9 +232,9 @@ export class CardSearchStore {
     const size = PAGE_SIZE[query.source];
     if (query.source === 'uniques') return this.uniquesApi.search(toUniquesQuery(query.filters, query.faction), request.from, size);
     const page = request.from ?? 1;
-    if (query.source === 'collection' || query.source === 'owned' || query.source === 'favorites') {
+    if (isAccountSource(query.source)) {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
-      // Favoris and Propriété numérique « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
+      // Account tabs « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
       const format = legalFormat(query.source, query.filters, query.format);
       return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
         map((res): ResultPage => {
