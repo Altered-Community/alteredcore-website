@@ -254,7 +254,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
       const unique = tiles.locator('ac-unique-card');
       await expect(unique.locator('.main-text')).toContainText('Au Crépuscule');
       await expect(unique.getByRole('list', { name: 'Puissances' }).getByRole('listitem')).toHaveText(['3', '2', '2']);
-      await unique.scrollIntoViewIfNeeded();
+      await unique.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
       await evidence(page, testInfo, shot);
     });
   }
