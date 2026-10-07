@@ -1,6 +1,7 @@
 /* The host page pads the content with `var(--ac-space-3) var(--ac-page-padding)` on compact screens;
    the sticky search head bleeds into that padding. `--app-search-bottom-inset` lifts the « back to top »
-   button above a bottom navigation. */
+   button above a bottom navigation; `--app-search-top` sticks the head below a sticky bar of the host page, which then
+   keeps clear of the notch (`--app-search-safe-top: 0px`). */
 :host {
   display: flex;
   flex-direction: column;
@@ -9,7 +10,7 @@
 
 .search-head {
   position: sticky;
-  top: var(--ac-page-top);
+  top: calc(var(--ac-page-top) + var(--app-search-top, 0px));
   z-index: 15;
   margin: calc(-1 * var(--ac-space-3)) calc(-1 * var(--ac-page-padding)) 0;
   padding: var(--ac-space-3) var(--ac-page-padding) 0;
@@ -24,7 +25,7 @@
   background: var(--ac-color-surface);
   border-bottom: 1px solid var(--ac-color-border);
   box-shadow: var(--ac-shadow-e2);
-  padding-top: calc(var(--ac-space-2) + env(safe-area-inset-top));
+  padding-top: calc(var(--ac-space-2) + var(--app-search-safe-top, env(safe-area-inset-top)));
 }
 
 .search-row {

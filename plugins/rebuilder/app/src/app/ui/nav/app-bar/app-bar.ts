@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 
 /**
  * Application bar of compact screens (the site draws its own header above): projected `[leading]`,
- * title / subtitle, projected `[actions]`.
+ * title / subtitle (or a projected `[titles]` when both are empty), projected `[actions]`.
  */
 @Component({
   selector: 'ac-app-bar',
