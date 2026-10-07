@@ -12,6 +12,7 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab } from '../../../ui/containe
 import { storedFlag } from '../../../core/stored-flag';
 import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
+import { AcStickyOffset } from '../../../ui/sticky-offset';
 import { AcTabs } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { CardSearchStore } from '../card-search.store';
@@ -48,7 +49,7 @@ const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPow
  */
 @Component({
   selector: 'app-card-search',
-  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, AcStickyOffset, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',

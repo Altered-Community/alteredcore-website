@@ -1,5 +1,5 @@
 @if (bp.compact()) {
-  <div class="search-head" [class.condensed]="condensed()">
+  <div class="search-head" acStickyOffset [class.condensed]="condensed()">
     <div class="search-row">
       <!-- Favoris: the site's favorites search has no name filter. -->
       <fieldset class="unsupported" [disabled]="search.source() === 'favorites'" [attr.inert]="search.source() === 'favorites' ? '' : null">

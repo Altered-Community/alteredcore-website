@@ -1,7 +1,8 @@
 /* The host page pads the content with `var(--ac-space-3) var(--ac-page-padding)` on compact screens;
    the sticky search head bleeds into that padding. `--app-search-bottom-inset` lifts the « back to top »
    button above a bottom navigation; `--app-search-top` sticks the head below a sticky bar of the host page, which then
-   keeps clear of the notch (`--app-search-safe-top: 0px`). */
+   keeps clear of the notch (`--app-search-safe-top: 0px`). The head counts in the scroll offset (`acStickyOffset`):
+   keyboard focus and scrollIntoView stop below it, whatever its height (`.condensed`). */
 :host {
   display: flex;
   flex-direction: column;
