@@ -14,7 +14,7 @@
 //     "js": ["main-HASH.js"],        ES modules, loaded in order
 //     "css": ["embed-HASH.css"],     loaded inside the shadow root
 //     "documentCss": ["doc-HASH.css"], loaded in <head> (@font-face does not work in a shadow root)
-//     "preload": {                   optional: modules the page needs before it can draw, announced in <head>
+//     "preload": {                   optional: modules the page needs before it can draw, requested from <head>
 //       "*": ["chunk-HASH.js"],       (<link rel="modulepreload">) so the browser fetches them with the entry
 //       "{slug}": [...],              modules instead of discovering them import after import: "*" on every
 //       "lang:{en|fr}": [...]         page, "{slug}" on the page served at that slug, "lang:…" in that language
@@ -222,9 +222,10 @@ function spaRenderPlaceholder(array $page): void {
 }
 
 /**
- * What the page's <head> announces (includes/header.php) so the browser fetches it with the HTML instead of when the
- * runtime or a module asks for it: the entry modules and the manifest's `preload` modules for this page (slug and
- * language) as <link rel="modulepreload">, the shadow root's stylesheets as <link rel="preload" as="style">.
+ * What the page's <head> requests (includes/header.php, once the page's stylesheets have loaded) so the browser fetches
+ * it with the page instead of when the runtime or a module asks for it: the entry modules and the manifest's `preload`
+ * modules for this page (slug and language) as <link rel="modulepreload">, the shadow root's stylesheets as
+ * <link rel="preload" as="style">.
  * Returns [['href' => …, 'as' => 'module' | 'style'], …], empty for a page that cannot render.
  */
 function spaHeadPreloads(array $page): array {

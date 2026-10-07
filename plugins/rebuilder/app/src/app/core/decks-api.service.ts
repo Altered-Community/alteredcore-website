@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { EMPTY, Observable, catchError, expand, map, reduce, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, defer, expand, map, reduce, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthSession } from './auth-session';
 import type { Deck, DeckWrite } from './models';
@@ -42,6 +42,28 @@ export class DecksApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthSession);
   readonly baseUrl = environment.decksApiUrl.replace(/\/$/, '');
+
+  /**
+   * Ids of the caller's decks, to tell whether a deck is theirs. In the site, from the plugin's endpoint `my-deck-ids`,
+   * which reads the account list server side and sends the ids only: `GET /api/decks` sends every deck of the
+   * account in full, unpaginated (docs/api-limitations/decks-api.md), seconds of download on a slow network for a
+   * large account. Outside the site, or when the endpoint fails, from that list.
+   */
+  mineIds(): Observable<Set<string>> {
+    const fromList = defer(() => this.listMine(1, 1000)).pipe(
+      map((body) => new Set((Array.isArray(body) ? body : (body.member ?? [])).map((d) => d.id))),
+    );
+    if (!environment.pluginApiUrl) return fromList;
+    const url = `${environment.pluginApiUrl.replace(/\/?$/, '/')}my-deck-ids`;
+    return this.http.get<{ ids?: unknown }>(url, { headers: new HttpHeaders({ Accept: 'application/json' }) }).pipe(
+      map((body) => {
+        const ids = body?.ids;
+        if (!Array.isArray(ids)) throw new Error('my-deck-ids: no ids');
+        return new Set(ids.filter((id): id is string => typeof id === 'string'));
+      }),
+      catchError(() => fromList),
+    );
+  }
 
   listMine(page = 1, itemsPerPage = 30): Observable<Deck[] | { member: Deck[] }> {
     return this.send(() =>

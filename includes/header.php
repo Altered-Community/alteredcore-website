@@ -260,15 +260,6 @@ kcIsLoggedIn();
     <?php endforeach; ?>
     <script src="<?= h(dsUrl('js/ac.js')) ?>" defer></script>
 
-    <!-- SPA plugin page (includes/spa.php, spaHeadPreloads()): its modules and shadow-root stylesheets, fetched with
-         the page instead of one import after another -->
-    <?php foreach ($GLOBALS['_ac_plugin_preload'] ?? [] as $_pre): ?>
-    <?php if ($_pre['as'] === 'module'): ?>
-    <link rel="modulepreload" href="<?= h($_pre['href']) ?>">
-    <?php else: ?>
-    <link rel="preload" href="<?= h($_pre['href']) ?>" as="style">
-    <?php endif; ?>
-    <?php endforeach; ?>
 
     <!-- Flag Icons — non-blocking -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"
@@ -321,6 +312,12 @@ kcIsLoggedIn();
     $_headExtra = themeFile('head-extra.php');
     if (file_exists($_headExtra)) require $_headExtra;
     ?>
+    <?php if (!empty($GLOBALS['_ac_plugin_preload'])): ?>
+    <!-- SPA plugin page (includes/spa.php, spaHeadPreloads()): its modules and shadow-root stylesheets, requested
+         together instead of one import after another. An inline script after the stylesheets above runs once they
+         have loaded: the first paint keeps the bandwidth they need. -->
+    <script>(<?= json_encode($GLOBALS['_ac_plugin_preload'], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>).forEach(function(p){var l=document.createElement('link');if(p.as==='module'){l.rel='modulepreload';}else{l.rel='preload';l.as=p.as;}l.href=p.href;document.head.appendChild(l);});</script>
+    <?php endif; ?>
 </head>
 <?php
 // Detect full-width flag from active nav item or $pageFullwidth set by the page

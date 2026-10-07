@@ -117,6 +117,8 @@ if ($res !== null && $res[0] === 401 && $token !== null) {
 
 if ($res === null) serviceProxyReply(502, ['error' => 'service_unreachable', 'service' => $service]);
 [$status, $type, $out] = $res;
+require_once dirname(__DIR__, 3) . '/includes/json-gzip.php';
+jsonGzipStart();
 http_response_code($status);
 header('Content-Type: ' . ($type !== '' ? $type : 'application/json'));
 echo $out;

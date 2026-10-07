@@ -14,9 +14,9 @@ its single **Decks** entry. The pages it replaces keep answering their own calls
 |---|---|
 | `plugin.json` | Manifest v2: SPA page and its `beta_slugs`, API endpoints, build and e2e declarations |
 | `meta.php` | Manifest `meta`: the deck's name as page title and its link preview (title, hero · format, decklist image, faction colour: core-altered-cards `includes/deck-preview/preview.php`, shared with the site's deck page) on `deck?id=` and `deckbuilder?id=` |
-| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
+| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders), `my-deck-ids` (ids of the user's decks, for the editor's ownership check, without downloading every deck) |
 | `app/` | Angular sources (see `app/AGENTS.md` for the code rules, `app/design/COMPONENTS.md` for the components) |
-| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
+| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, requests the page's deck while the modules download (`prefetch.ts`), routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Global styles: `embed.scss` (shadow root, after the design system), `document.scss` (`<head>`: printed-card fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |
 | `dist/` | Build output (`npm run build`), not committed |
@@ -31,7 +31,9 @@ npm run build   # → ../dist/browser + ../dist/embed-manifest.json
 npm run lint && npm test
 ```
 
-`build` is the only build (`ng build`, production configuration, then `scripts/embed-manifest.mjs`).
+`build` is the only build (`ng build --stats-json`, production configuration, then `scripts/embed-manifest.mjs`,
+which also lists in the manifest's `preload` the chunks each page imports before it can draw, read from esbuild's
+metafile: the shell announces them in `<head>`).
 The app is not served on its own: run it in the site's stack (`docker-compose.stack.yml`).
 
 ## Design system

@@ -124,16 +124,15 @@ export class DeckStore {
   readonly distinct = computed(() => this.lines().filter((l) => l.quantity > 0).length);
   readonly quantities = computed(() => new Map(this.lines().map((l) => [l.card.reference, l.quantity])));
   /**
-   * Account decks of the signed-in user, to tell whether the open deck is theirs: the decks API
-   * does not say who owns a deck (`user` is `[]`), but `GET /api/decks` only lists the caller's.
-   * Fetched when the first server deck is opened and when the account changes, not for every deck
-   * opened: the list is large. Decks created from this tab meanwhile are in `createdIds`.
+   * Ids of the signed-in user's decks, to tell whether the open deck is theirs: the decks API
+   * does not say who owns a deck (`user` is `[]`), but `GET /api/decks` only lists the caller's
+   * (DecksApiService.mineIds). Fetched when the first server deck is opened and when the account
+   * changes, not for every deck opened. Decks created from this tab meanwhile are in `createdIds`.
    */
   private readonly mineWanted = signal(false);
   private readonly mineIds = rxResource({
     params: () => (this.mineWanted() && this.auth.isLoggedIn() ? { user: this.auth.username(), token: this.auth.token() } : undefined),
-    stream: () =>
-      this.decksApi.listMine(1, 1000).pipe(map((body) => new Set((Array.isArray(body) ? body : (body.member ?? [])).map((d) => d.id)))),
+    stream: () => this.decksApi.mineIds(),
   });
   /** Decks created on the account from this tab: theirs before the account list is refetched. */
   private readonly createdIds = signal<ReadonlySet<string>>(new Set());

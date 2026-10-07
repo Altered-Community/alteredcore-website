@@ -36,5 +36,7 @@ if ($_denied !== null) {
 }
 
 $GLOBALS['_ac_current_plugin_prefix'] = $_apiEntry['_table_prefix'];
+require_once __DIR__ . '/json-gzip.php';
+jsonGzipStart();
 include $_apiEntry['abs_file'];
 unset($GLOBALS['_ac_current_plugin_prefix']);

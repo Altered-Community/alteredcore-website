@@ -14,6 +14,7 @@ import { ALTERED_CORE, EMBED_MOUNT, type AlteredCoreHost, type AlteredCoreMount 
 import { HostAuthSession } from './host-auth.session';
 import { HostPageTitle } from './host-page-title';
 import { LegacyUrlSerializer } from './legacy-url.serializer';
+import { prefetchInterceptor } from './prefetch.interceptor';
 import { siteCsrfInterceptor } from './site-csrf.interceptor';
 import { ShadowOverlayContainer } from './shadow-overlay-container';
 import { ShadowStylesHost } from './shadow-styles.host';
@@ -30,7 +31,7 @@ export function embedConfig(host: AlteredCoreHost, mount: AlteredCoreMount): App
       { provide: UrlSerializer, useValue: new LegacyUrlSerializer() },
       { provide: TitleStrategy, useClass: EmbedTitleStrategy },
       { provide: PageTitle, useClass: HostPageTitle },
-      provideHttpClient(withFetch(), withInterceptors([siteCsrfInterceptor])),
+      provideHttpClient(withFetch(), withInterceptors([siteCsrfInterceptor, prefetchInterceptor])),
       { provide: AuthSession, useClass: HostAuthSession },
       { provide: DeckCreateFailurePrompt, useClass: OverlayDeckCreateFailurePrompt },
       { provide: OverlayContainer, useClass: ShadowOverlayContainer },
