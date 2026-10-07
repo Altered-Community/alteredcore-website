@@ -105,6 +105,25 @@ English. `npm run lint` runs `npm run i18n:check`, which fails on a message with
 English translation, and on a translation left over. Vocabulary: the site's deck builder
 (`plugins/core-altered-cards/includes/deckbuilder/i18n.php`, `data/search_settings.json`).
 
+## Load performance
+
+On a slow network the pages are bound by bytes and round trips. What keeps them fast:
+
+- The shell requests every module a page needs from `<head>` (manifest `preload`, see Build), once the page's
+  stylesheets have loaded; nothing is discovered one import at a time.
+- `main.ts` requests the page's deck while the modules download (`src/app/embed/prefetch.ts`).
+- The editor learns whether the deck is the user's from `papi/my-deck-ids` (ids only), not from the account's full
+  deck list.
+- JSON of the relay and of the plugin endpoints is gzipped (`includes/json-gzip.php`); the hashed build files are
+  cached for a year (`.htaccess`, with `mod_headers`).
+- Card art loads half a screen ahead on 3G or with the data saver (`AcViewportLoader`), and the test hand's code
+  (with the CDK's drag and drop) only with its view (`@defer`).
+- The runtime draws the first screen in the server skeleton's grid cell: no layout shift (CLS) when it replaces it.
+
+`tests/e2e/perf-ab.mjs` measures two versions of the site side by side on an emulated 3G / slow 4G phone (FCP,
+LCP, app drawn, page ready, images on screen, TTI, CLS, bytes; cold, warm and just-deployed cache): see its header.
+Run it before and after a change that touches the load path.
+
 ## Known gaps
 
 - « Importer » › *Liste de cartes* creates a guest deck when signed out.
