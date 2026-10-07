@@ -93,7 +93,7 @@
     <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
   </ac-filter-section>
 
-  @if (source() === 'favorites' && format()) {
+  @if (legalFilter() && format()) {
     <ac-filter-section title="Format" i18n-title="@@search.filters.format">
       <div class="types">
         <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />

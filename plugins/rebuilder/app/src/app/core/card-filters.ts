@@ -1,4 +1,4 @@
-import type { CardOrder, CardSearchParams } from './models';
+import type { CardOrder, CardSearchParams, DeckFormat } from './models';
 import type { UniquesQuery } from './uniques-api.service';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
@@ -84,10 +84,10 @@ export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'AL
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 /**
  * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except where
- * Uniques are listed (Uniques, Favoris).
+ * Uniques are listed (Uniques, Favoris, Propriété numérique).
  */
 function setsOffByDefault(source: CardSource): string[] {
-  return source === 'uniques' || source === 'favorites' ? ['FUGUE'] : ['FUGUE', 'COREKS'];
+  return source === 'uniques' || listsUniques(source) ? ['FUGUE'] : ['FUGUE', 'COREKS'];
 }
 
 export const RARITY_OPTIONS = [
@@ -96,11 +96,23 @@ export const RARITY_OPTIONS = [
   { value: 'EXALTED', short: 'E', label: $localize`:@@search.filters.rarity.exalted:Exaltée`, icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
 
-/** The Favoris tab also lists the favorite Uniques. */
+/** The Favoris and Propriété numérique tabs also list the Uniques (favorites, digital Uniques owned). */
 export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@search.filters.rarity.unique:Unique`, icon: assetUrl('assets/icons/rarete-unique.png') };
 
+const RARITY_OPTIONS_WITH_UNIQUE = [...RARITY_OPTIONS, UNIQUE_RARITY];
+
 export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
-  return source === 'favorites' ? [...RARITY_OPTIONS, UNIQUE_RARITY] : RARITY_OPTIONS;
+  return listsUniques(source) ? RARITY_OPTIONS_WITH_UNIQUE : RARITY_OPTIONS;
+}
+
+/** Account lists holding Uniques among the other cards: their « légales » filter leaves them out in a No Unique format. */
+export function listsUniques(source: CardSource): source is 'favorites' | 'owned' {
+  return source === 'favorites' || source === 'owned';
+}
+
+/** The format a tab's cards must be legal in: the deck's while « légales » is on, in the tabs that offer it. */
+export function legalFormat(source: CardSource, filters: SearchFilters, format: DeckFormat | null): DeckFormat | null {
+  return listsUniques(source) && filters.legalOnly ? format : null;
 }
 
 export const TYPE_OPTIONS = [

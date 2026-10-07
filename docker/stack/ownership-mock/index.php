@@ -202,6 +202,7 @@ function collection(): array {
         ['reference' => 'ALT_CORE_B_AX_08_R1', 'quantity' => 1, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'CORE'],
         ['reference' => 'ALT_CORE_B_AX_15_C', 'quantity' => 2, 'name' => 'Brouilleur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
         ['reference' => 'ALT_ALIZE_B_AX_32_R1', 'quantity' => 1, 'name' => 'La Machine dans la Glace', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'ALIZE'],
+        ['reference' => 'ALT_ALIZE_B_AX_32_U_2', 'quantity' => 1, 'name' => 'La Machine dans la Glace', 'faction' => 'AX', 'rarity' => 'UNIQUE', 'type' => 'CHARACTER', 'set' => 'ALIZE'],
         ['reference' => 'ALT_CORE_B_BR_10_C', 'quantity' => 3, 'name' => 'Red', 'faction' => 'BR', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
     ];
     // The collection API (cardType[], cardSet[]) fails on several card types, like the real one: its proxy filters them.

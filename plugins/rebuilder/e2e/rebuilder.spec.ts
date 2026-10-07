@@ -229,7 +229,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     { tab: 'Collection physique', short: 'Collection', endpoint: 'collection-search', shot: '15-collection-search' },
     { tab: 'Propriété numérique', short: null, endpoint: 'ownership-search', shot: '15-owned-search' },
   ]) {
-    test(`lists « ${tab} » with every rarity, type and set of the default filters`, async ({ page, compact }, testInfo) => {
+    test(`lists « ${tab} » with every rarity (Uniques included), type and set of the default filters`, async ({ page, compact }, testInfo) => {
       await login(page, 'alice', `${NEW_DECK}?lang=fr`);
       await createDeck(page, `E2E ${endpoint} ${Date.now()}`);
       const request = page.waitForRequest((r) => r.url().includes(`/papi/core-altered-cards/${endpoint}`));
@@ -240,13 +240,14 @@ test.describe('ReBuilder in the shell · signed in', () => {
       } else {
         await page.getByRole('tab', { name: compact && short ? short : tab, exact: true }).click();
       }
-      // The Axiom cards of the stack's mock (docker/stack/ownership-mock): commons, rares, two sets.
+      // The Axiom cards of the stack's mock (docker/stack/ownership-mock): commons, rares, a Unique, two sets.
       const tiles = page.locator('app-search-results ac-card-tile');
-      await expect(tiles).toHaveCount(4);
-      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(1);
-      // Lists in their array form: PHP keeps the last value of a repeated `rarity=…`.
+      await expect(tiles).toHaveCount(5);
+      // The rare and the Unique.
+      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace"]'))).toHaveCount(2);
+      // Every rarity chosen: no rarity filter, so the Uniques come too. Lists in their array form (`cardType[]=…`).
       const query = new URL((await request).url()).searchParams;
-      expect(query.getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(query.getAll('rarity[]')).toEqual([]);
       expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
       await evidence(page, testInfo, shot);
     });
@@ -974,6 +975,30 @@ test.describe('ReBuilder in the shell · deck page', () => {
     if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
     else await page.getByRole('tab', { name: tab }).click();
   }
+
+  test('opens a deck at the top of its page from far down the list, and back puts the list where it was', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const name = `E2E scroll ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(DECKS);
+    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
+    await expect(item).toBeVisible();
+    // Room below the page, as with a long list: the window keeps its scroll from one page of the app to the next.
+    await page.evaluate(() => (document.body.style.paddingBottom = '200vh'));
+    await item.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    const scrollY = () => page.evaluate(() => window.scrollY);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+    await item.getByRole('link').first().click();
+    await expect(page).toHaveURL(new RegExp(`id=${id}`));
+    await expect.poll(scrollY).toBe(0);
+    await evidence(page, testInfo, '21-deck-opened-at-top');
+    // Phones: the list comes back at its top after « back » (already the case before scrolling to the top of each page).
+    if (compact) return;
+    await page.goBack();
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+    await expect(item).toBeInViewport();
+  });
 
   test('shows the API legality, description and a test hand; shares and duplicates on the account', { tag: '@mobile' }, async ({ page, compact, baseURL }, testInfo) => {
     // navigator.share is recorded: sharing must never use the system share sheet.
