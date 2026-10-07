@@ -82,6 +82,7 @@ if ($_pluginPage !== null) {
     if ($_pluginPage['type'] === 'spa') {
         $_pluginPage['sub_path'] = $_subPath;
         $pageFullwidth = $_pluginPage['fullwidth'];
+        $GLOBALS['_ac_plugin_preload'] = spaHeadPreloads($_pluginPage);
         // Manifest `meta`: title and link preview of the client route ($slug, $subPath), set before the header
         // (variables of includes/header.php).
         if (!empty($_pluginPage['meta_file'])) {

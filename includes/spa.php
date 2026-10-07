@@ -13,7 +13,12 @@
 //     "base": "browser/",            directory of the files below, relative to the manifest
 //     "js": ["main-HASH.js"],        ES modules, loaded in order
 //     "css": ["embed-HASH.css"],     loaded inside the shadow root
-//     "documentCss": ["doc-HASH.css"] loaded in <head> (@font-face does not work in a shadow root)
+//     "documentCss": ["doc-HASH.css"], loaded in <head> (@font-face does not work in a shadow root)
+//     "preload": {                   optional: modules the page needs before it can draw, announced in <head>
+//       "*": ["chunk-HASH.js"],       (<link rel="modulepreload">) so the browser fetches them with the entry
+//       "{slug}": [...],              modules instead of discovering them import after import: "*" on every
+//       "lang:{en|fr}": [...]         page, "{slug}" on the page served at that slug, "lang:…" in that language
+//     }
 //   }
 
 const SPA_HOST_CONTRACT_VERSION = 1;
@@ -48,7 +53,16 @@ function spaReadBuildManifest(string $pluginDir, string $entry, ?string &$error 
             $files[$key][] = $f;
         }
     }
-    return ['base' => $baseRel, 'files' => $files];
+    // Preloads are hints: an unusable entry is dropped, never an error.
+    $preload = [];
+    foreach ((is_array($m['preload'] ?? null) ? $m['preload'] : []) as $key => $list) {
+        if (!is_string($key) || !is_array($list)) continue;
+        foreach ($list as $f) {
+            $f = is_string($f) && substr($f, -3) === '.js' ? spaSafeRelPath($f) : null;
+            if ($f !== null) $preload[$key][] = $f;
+        }
+    }
+    return ['base' => $baseRel, 'files' => $files, 'preload' => $preload];
 }
 
 /**
@@ -63,13 +77,14 @@ function spaResolvePage(array $plugin, array $page): array {
     if (empty($page['entry'])) $error = 'missing "entry" in plugin.json';
 
     $spa = ['mount' => ($page['mount'] ?? 'shadow') === 'light' ? 'light' : 'shadow', 'error' => $error,
-            'assets_url' => '', 'js' => [], 'css' => [], 'document_css' => []];
+            'assets_url' => '', 'js' => [], 'css' => [], 'document_css' => [], 'preload' => []];
     if ($build !== null) {
         $assets = BASE_URL . '/plugins/' . rawurlencode($id) . '/' . ($build['base'] !== '' ? $build['base'] . '/' : '');
         $spa['assets_url']   = $assets;
         $spa['js']           = array_map(fn($f) => $assets . $f, $build['files']['js']);
         $spa['css']          = array_map(fn($f) => $assets . $f, $build['files']['css']);
         $spa['document_css'] = array_map(fn($f) => $assets . $f, $build['files']['documentCss']);
+        $spa['preload']      = array_map(fn($list) => array_map(fn($f) => $assets . $f, $list), $build['preload']);
     }
 
     return [
@@ -204,6 +219,27 @@ function spaRenderPlaceholder(array $page): void {
             . '</div>';
     }
     echo '</div>';
+}
+
+/**
+ * What the page's <head> announces (includes/header.php) so the browser fetches it with the HTML instead of when the
+ * runtime or a module asks for it: the entry modules and the manifest's `preload` modules for this page (slug and
+ * language) as <link rel="modulepreload">, the shadow root's stylesheets as <link rel="preload" as="style">.
+ * Returns [['href' => …, 'as' => 'module' | 'style'], …], empty for a page that cannot render.
+ */
+function spaHeadPreloads(array $page): array {
+    $spa = $page['spa'];
+    if ($spa['error'] !== null) return [];
+    $modules = $spa['js'];
+    foreach (['*', $page['slug'], 'lang:' . getUiLang()] as $key) {
+        $modules = array_merge($modules, $spa['preload'][$key] ?? []);
+    }
+    $out = [];
+    foreach (array_values(array_unique($modules)) as $href) $out[] = ['href' => $href, 'as' => 'module'];
+    if ($spa['mount'] === 'shadow') {
+        foreach ($spa['css'] as $href) $out[] = ['href' => $href, 'as' => 'style'];
+    }
+    return $out;
 }
 
 /** Body of an SPA page: mount point, host contract, runtime and plugin modules. */

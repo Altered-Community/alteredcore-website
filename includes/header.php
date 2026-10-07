@@ -260,6 +260,16 @@ kcIsLoggedIn();
     <?php endforeach; ?>
     <script src="<?= h(dsUrl('js/ac.js')) ?>" defer></script>
 
+    <!-- SPA plugin page (includes/spa.php, spaHeadPreloads()): its modules and shadow-root stylesheets, fetched with
+         the page instead of one import after another -->
+    <?php foreach ($GLOBALS['_ac_plugin_preload'] ?? [] as $_pre): ?>
+    <?php if ($_pre['as'] === 'module'): ?>
+    <link rel="modulepreload" href="<?= h($_pre['href']) ?>">
+    <?php else: ?>
+    <link rel="preload" href="<?= h($_pre['href']) ?>" as="style">
+    <?php endif; ?>
+    <?php endforeach; ?>
+
     <!-- Flag Icons — non-blocking -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"
           as="style" onload="this.onload=null;this.rel='stylesheet'">
