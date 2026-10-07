@@ -91,8 +91,14 @@ async function editorDeckId(page: Page): Promise<string> {
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Turns the browser cache off (Chromium), so that routes see the requests a page served from its memory cache. */
-async function disableBrowserCache(page: Page): Promise<void> {
+/**
+ * Sends the page's next requests to the network, where routes see them: the site's service worker (installed by the
+ * first visit, it would answer the scripts itself) is unregistered and the browser cache (Chromium) turned off.
+ */
+async function bypassCaches(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    for (const registration of (await navigator.serviceWorker?.getRegistrations()) ?? []) await registration.unregister();
+  });
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
@@ -200,7 +206,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     });
     // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
     // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
-    await disableBrowserCache(page);
+    await bypassCaches(page);
     await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
     const placeholder = page.locator('.ac-spa-placeholder');
     await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
@@ -1283,8 +1289,10 @@ test.describe('ReBuilder in the shell · loading', () => {
     requests.length = 0;
     await page.goto(`${EDITOR(id)}&lang=fr`);
     expect(await (await deckAnswer).headerValue('content-encoding')).toBe('gzip');
-    // The owner's actions replace their skeletons once the account's deck ids are in.
-    await expect(page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
+    // Once the account's deck ids are in, the owner's actions replace their skeletons: « Partager » on desktop, on phones
+    // the hero of the app bar (« Partager » moves to its « ⋯ » menu).
+    const editor = page.locator('app-editor-page');
+    await expect(compact ? editor.locator('ac-app-bar').getByRole('button', { name: /^Changer de héros/ }) : editor.getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
     const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
     await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
@@ -1318,7 +1326,7 @@ test.describe('ReBuilder in the shell · loading', () => {
       await scripts;
       await route.continue();
     });
-    await disableBrowserCache(page);
+    await bypassCaches(page);
     await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await page.waitForTimeout(300);
