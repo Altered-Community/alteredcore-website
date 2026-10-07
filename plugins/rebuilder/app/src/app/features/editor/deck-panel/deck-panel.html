@@ -1,4 +1,12 @@
 <div class="rows">
+  @if (deck.opening()) {
+    <div class="group" aria-busy="true">
+      <div class="group-head"><span acSkeleton="text" width="35%"></span></div>
+      @for (r of [0, 1, 2, 3, 4]; track r) {
+        <div class="row-skeleton"><span acSkeleton="text" width="60%"></span><span acSkeleton="text" width="56px"></span></div>
+      }
+    </div>
+  } @else {
   @for (g of deck.groups(); track g.id) {
     <div class="group">
       <div class="group-head"><span>{{ g.label }}</span><span>{{ g.count }}</span></div>
@@ -17,5 +25,6 @@
     </div>
   } @empty {
     <p class="empty" i18n="@@panel.empty">Ajoutez des cartes depuis la recherche avec le bouton « + ».</p>
+  }
   }
 </div>

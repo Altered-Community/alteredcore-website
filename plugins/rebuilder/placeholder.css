@@ -1,0 +1,101 @@
+/* Skeleton of the Re:Builder screens while the scripts load (placeholder.php). Sizes follow the app's layout
+   (deck-bar.scss, decks.page.scss, deck-list-view.scss, hand-skeleton.scss…): keep them in step. */
+.rbph { --rbph-panel-width: 300px; }
+@media (min-width: 1200px) { .rbph { --rbph-panel-width: var(--ac-deck-panel-width); } }
+.rbph-desktop, .rbph-compact { display: flex; flex-direction: column; }
+.rbph-row { display: flex; align-items: center; gap: var(--ac-space-2); }
+.rbph-row > .ac-skeleton, .rbph-wrap > .ac-skeleton { flex: 0 0 auto; }
+.rbph-wrap { flex-wrap: wrap; }
+.rbph-grow { flex: 1 1 auto !important; }
+.rbph-col12 { display: flex; flex-direction: column; gap: var(--ac-space-3); }
+.rbph-h44 { height: 44px; border-radius: var(--ac-radius-lg); }
+.rbph-h159 { height: 159px; }
+.rbph-h190 { height: 190px; }
+.rbph-h200 { height: 200px; }
+.rbph-h320 { height: 320px; }
+.rbph-mt12 { margin-top: var(--ac-space-3); }
+.rbph-icon { --ac-skeleton-width: 36px; }
+.rbph-icon24 { width: 24px; height: 24px; }
+.rbph-panel { background: var(--ac-color-surface); border: 1px solid var(--ac-color-border); border-radius: var(--ac-radius-card); }
+.rbph-tabs { display: flex; align-items: center; gap: var(--ac-space-6); height: 44px; padding: 0 var(--ac-space-3); overflow: hidden; border-bottom: 1px solid var(--ac-color-divider); }
+.rbph-tabs > .ac-skeleton { flex: 0 0 auto; }
+/* Deck bar (features/deck/deck-bar) and its loading state. */
+.rbph-bar { display: flex; align-items: center; gap: var(--ac-space-5); min-height: 206px; padding-right: var(--ac-space-5); background: var(--ac-color-surface); border: 1px solid var(--ac-color-border); border-radius: var(--ac-radius-card); box-shadow: var(--ac-shadow-card); }
+.rbph-bar--reduced { min-height: 100px; }
+.rbph-bar__art { align-self: stretch; flex: 0 0 150px; border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card); }
+.rbph-bar--reduced .rbph-bar__art { flex-basis: 96px; }
+.rbph-bar__text { flex: 0 1 260px; display: flex; flex-direction: column; justify-content: center; gap: var(--ac-space-1-5); align-self: stretch; padding: var(--ac-space-2) var(--ac-space-4); border-left: 4px solid var(--ac-color-track); }
+.rbph-bar__sep { align-self: stretch; width: 1px; margin: var(--ac-space-4) 0; background: var(--ac-color-divider); }
+.rbph-bar__curve { flex: 0 0 306px; height: 82px; }
+.rbph-bar__terrain { flex: 0 0 216px; height: 103px; }
+.rbph-bar--reduced .rbph-bar__curve { flex-basis: 145px; height: 51px; }
+.rbph-bar__limits { flex: 0 1 230px; height: 30px; }
+.rbph-bar--reduced .rbph-bar__terrain { flex-basis: 162px; height: 30px; }
+.rbph-bar__actions { margin-left: auto; display: grid; grid-template-columns: repeat(2, 120px); gap: var(--ac-space-1-5); }
+.rbph-bar--reduced .rbph-bar__actions { display: flex; }
+.rbph-bar--reduced .rbph-bar__actions > .ac-skeleton { width: 95px; }
+/* Editor (features/editor/editor-page) from 768 px. */
+.rbph-editor { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: var(--ac-space-4) var(--ac-space-6); padding: var(--ac-space-6); }
+.rbph-editor__top { flex: 0 0 100%; display: flex; flex-direction: column; gap: var(--ac-space-4); }
+.rbph-modes { display: flex; align-items: center; justify-content: space-between; height: 48px; }
+.rbph-modes__segmented { width: 377px; height: 48px; border-radius: var(--ac-radius-lg); }
+.rbph-editor__main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--ac-space-4); }
+.rbph-deckpanel { width: var(--rbph-panel-width); flex-shrink: 0; padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-4); }
+.rbph-row34 { display: flex; align-items: center; height: 34px; padding: 0 var(--ac-space-1); }
+.rbph-row36 { display: flex; align-items: center; justify-content: space-between; gap: var(--ac-space-3); height: 36px; padding: 0 var(--ac-space-1); }
+.rbph-search { display: flex; gap: var(--ac-space-6); align-items: flex-start; }
+.rbph-filters { width: 320px; flex-shrink: 0; height: calc(100vh - 384px); min-height: 360px; padding: var(--ac-space-4); display: flex; flex-direction: column; gap: var(--ac-space-4); }
+.rbph-results { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--ac-space-4); }
+.rbph-toolbar { height: 40px; }
+.rbph-chip { height: 32px; border-radius: var(--ac-radius-pill); }
+.rbph-results__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--ac-space-2); }
+.rbph-board { flex: 1 1 0; min-width: 0; padding: var(--ac-space-5) 0; }
+.rbph-board__group { display: flex; flex-direction: column; gap: var(--ac-space-3); padding: 0 var(--ac-space-5); max-width: calc(4 * 260px + 3 * var(--ac-space-3) + 2 * var(--ac-space-5)); }
+.rbph-board__cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ac-space-4) var(--ac-space-3); }
+.rbph-decktab { width: 32px; height: 175px; flex-shrink: 0; margin-right: calc(-1 * var(--ac-space-6)); border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card); }
+.rbph-hand { display: flex; flex-direction: column; gap: var(--ac-space-6); }
+.rbph-hand__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(100px, 28vw, 150px), 1fr)); gap: var(--ac-space-3); }
+.rbph-hand__panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--ac-space-3); }
+/* Deck page from 768 px. */
+.rbph-deckpage { display: flex; flex-direction: column; gap: var(--ac-space-5); padding: var(--ac-space-6); }
+.rbph-deckpage .rbph-board { flex: none; }
+.rbph-deckpage .rbph-bar { min-height: 184px; }
+/* Decks list (features/decks/decks-page) from 768 px. */
+.rbph-decks { display: flex; flex-direction: column; padding: 28px 32px var(--ac-space-8); max-width: 1600px; margin: 0 auto; }
+.rbph-decks__head { display: flex; align-items: center; gap: var(--ac-space-2); height: 40px; margin-bottom: 20px; }
+.rbph-decks__filters { display: flex; align-items: center; gap: var(--ac-space-2); height: 40px; margin: 16px 0 12px; }
+.rbph-decks__factions { display: flex; align-items: center; gap: var(--ac-space-2); height: 32px; margin-bottom: 20px; }
+.rbph-decks__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--ac-space-4); }
+.rbph-decks__grid > .ac-skeleton { height: 227px; }
+/* New deck: the window over the page. */
+.rbph-dialog { max-width: 960px; width: calc(100% - 2 * var(--ac-page-padding)); margin: 10vh auto 0; display: grid; grid-template-columns: 3fr 2fr; gap: var(--ac-space-6); padding: var(--ac-space-6); border-radius: var(--ac-radius-dialog); background: var(--ac-color-surface); box-shadow: var(--ac-shadow-dialog); }
+.rbph-dialog .rbph-col12 > div:last-child { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ac-space-3); }
+/* Phones. */
+.rbph-appbar { display: flex; align-items: center; gap: var(--ac-space-1); height: var(--ac-app-bar-height); padding: 0 var(--ac-space-3); background: var(--ac-color-surface); border-bottom: 1px solid var(--ac-color-border); }
+.rbph-appbar__titles { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--ac-space-1); padding-left: var(--ac-space-1); }
+.rbph-mpage { display: flex; flex-direction: column; padding: var(--ac-space-3) var(--ac-page-padding) calc(var(--ac-bottom-nav-height) + var(--ac-space-4)); }
+.rbph-bleed { margin-inline: calc(-1 * var(--ac-page-padding)); }
+.rbph-mchips { display: flex; gap: var(--ac-space-2); height: 36px; padding: 0 var(--ac-page-padding); overflow: hidden; }
+.rbph-mchips > .ac-skeleton { flex: 0 0 auto; height: 36px; border-radius: var(--ac-radius-pill); }
+.rbph-mcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ac-space-3); }
+.rbph-msection { display: flex; flex-direction: column; gap: var(--ac-space-3); padding: var(--ac-space-3); }
+.rbph-msection .rbph-mcards { gap: var(--ac-space-2-5); }
+.rbph-msection .rbph-dense { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ac-space-2); }
+.rbph-mhead { display: flex; align-items: center; height: 44px; }
+.rbph-mlist { display: flex; flex-direction: column; gap: var(--ac-space-3); }
+.rbph-mlist > .ac-skeleton { height: 149px; }
+.rbph-row51 { display: flex; align-items: center; justify-content: space-between; height: 51px; }
+.rbph-nav { position: fixed; z-index: 1; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around; align-items: center; height: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--ac-color-surface); border-top: 1px solid var(--ac-color-border); }
+.rbph-nav__item { display: flex; flex-direction: column; align-items: center; gap: var(--ac-space-1); width: 56px; }
+.rbph-nav__item .ac-skeleton--circle { --ac-skeleton-width: 24px; }
+@media (max-width: 767.98px) { .rbph-desktop { display: none; } }
+@media (min-width: 768px) { .rbph-compact { display: none; } }
+/* Rows and stacks of the phone screens (sizes of the app's search toolbar, preview bar, deck summary). */
+.rbph-row44 { height: 44px; margin: var(--ac-space-3) 0; }
+.rbph-decks .rbph-row44, .rbph-mpage--decks .rbph-row44 { margin: var(--ac-space-4) 0; }
+.rbph-row36 { height: 36px; }
+.rbph-mb16 { margin-bottom: var(--ac-space-4); }
+.rbph-gap3 { gap: var(--ac-space-3); }
+.rbph-gap4 { gap: var(--ac-space-4); }
+.rbph-summary { height: 132px; }
+.rbph-summary__meta { flex: 1; gap: var(--ac-space-1-5); }

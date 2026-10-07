@@ -1,4 +1,16 @@
 <ng-content select="[summary]" />
+@if (deck.opening()) {
+  @if (!readonly()) {
+    <span acSkeleton="panel" class="summary-skeleton"></span>
+  }
+  <span acSkeleton="panel" class="stats-skeleton"></span>
+  <div class="ac-card ac-card--sm section-skeleton" aria-hidden="true">
+    <span acSkeleton="text" width="35%"></span>
+    @for (r of [0, 1, 2, 3]; track r) {
+      <div class="row-skeleton"><span acSkeleton="text" width="55%"></span><span acSkeleton="text" width="80px"></span></div>
+    }
+  </div>
+} @else {
 @if (!readonly()) {
   <ac-deck-summary
     [name]="deck.name()"
@@ -36,4 +48,5 @@
   </ac-deck-section>
 } @empty {
   <p class="empty" i18n="@@editor.list.empty">Aucune carte pour l’instant.</p>
+}
 }

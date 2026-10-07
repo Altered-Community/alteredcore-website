@@ -89,6 +89,10 @@
             "type": "boolean",
             "description": "Full-width layout (default true for spa pages, false for php pages)."
                 },
+                "placeholder": {
+                    "type": "string",
+                    "description": "spa: PHP file, relative to the plugin, rendered by the server inside the mount point with $slug (the requested page) and $subPath (client route) in scope: what the page shows while its scripts load, usually a skeleton of the screen (ac-skeleton). The runtime keeps it until the plugin draws its first screen. Without it, a generic skeleton."
+                },
                 "meta": {
                     "type": "string",
                     "description": "spa: PHP file, relative to the plugin, included before the site header with $slug (the requested page) and $subPath (client route under /pages/{slug}/) in scope; it may set $pageTitle, $pageDescription and $pageImage (title and link previews of a client route)."

@@ -16,6 +16,7 @@
             "mount":    "shadow",
             "fullwidth": false,
             "meta":     "meta.php",
+            "placeholder": "placeholder.php",
             "beta_slugs": ["decks", "deck", "deckbuilder"],
             "title_en": "Re:Builder",
             "title_fr": "Re:Builder"

@@ -186,6 +186,21 @@ describe('DeckStore (guest mode)', () => {
     expect(store.total()).toBe(2);
   });
 
+  it('is opening from the request to the answer, and not after an error', async () => {
+    store.load('slow');
+    TestBed.tick();
+    expect(store.opening()).toBe(true);
+    http.expectOne((r) => r.url.endsWith('/api/decks/slow')).flush({ id: 'slow', name: 'Lent', format: 'standard', cards: [] });
+    await settle();
+    expect(store.opening()).toBe(false);
+    store.load('gone');
+    TestBed.tick();
+    expect(store.opening()).toBe(true);
+    http.expectOne((r) => r.url.endsWith('/api/decks/gone')).flush({}, { status: 404, statusText: 'Not Found' });
+    await settle();
+    expect(store.opening()).toBe(false);
+  });
+
   it('shows a login hint for private decks', async () => {
     store.load('private-id');
     TestBed.tick();

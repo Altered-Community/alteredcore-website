@@ -1,3 +1,17 @@
+@if (deck.opening()) {
+  <div class="bar" aria-hidden="true">
+    <span acSkeleton="text" width="150px"></span>
+    <span acSkeleton="control-sm" width="96px"></span>
+  </div>
+  <div class="ac-card section-skeleton" aria-hidden="true">
+    <div class="head-skeleton"><span acSkeleton="title" width="150px"></span></div>
+    <div class="grid" [class.dense]="dense()">
+      @for (c of [0, 1, 2, 3]; track c) {
+        <span acSkeleton="card"></span>
+      }
+    </div>
+  </div>
+} @else {
 <div class="bar">
   <p class="count"><strong i18n="@@editor.preview.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong> · <ng-container i18n="@@editor.preview.distinct">{deck.distinct(), plural, =1 {1 différente} other {{{ deck.distinct() }} différentes}}</ng-container></p>
   @if (deck.groups().length) {
@@ -34,4 +48,5 @@
     <strong i18n="@@editor.preview.emptyTitle">Deck vide</strong>
     <p i18n="@@editor.preview.empty">Ajoutez des cartes depuis la recherche.</p>
   </div>
+}
 }

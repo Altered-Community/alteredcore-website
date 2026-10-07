@@ -248,3 +248,23 @@
 }
 
 
+
+/* While the deck opens: blocks of the size of what they stand for. */
+.skeleton-meta {
+  flex: 1 1 auto;
+  gap: var(--ac-space-1-5);
+}
+.badge-skeleton {
+  height: 26px;
+  border-radius: var(--ac-radius-pill);
+}
+.stats-skeleton {
+  height: 190px;
+}
+.tables-skeleton {
+  height: 320px;
+}
+
+app-deck-bar {
+  --deck-bar-opening-height: 184px;
+}

@@ -8,6 +8,7 @@ import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcTerrainTotals } from '../../../ui/chips';
+import { AcSkeleton } from '../../../ui/containers';
 import { AcIcon } from '../../../ui/icon';
 import { AcCardArt, AcCostCurve, AcRarityLimits, factionColor } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -23,8 +24,8 @@ const LONG_NAME = 40;
  */
 @Component({
   selector: 'app-deck-bar',
-  imports: [NgTemplateOutlet, RouterLink, AcCardArt, AcCostCurve, AcRarityLimits, AcTerrainTotals, AcBadge, AcIcon, AcIconButton],
-  host: { '[class.reduced]': 'reduced()' },
+  imports: [NgTemplateOutlet, RouterLink, AcCardArt, AcCostCurve, AcRarityLimits, AcTerrainTotals, AcBadge, AcIcon, AcIconButton, AcSkeleton],
+  host: { '[class.reduced]': 'reduced()', '[class.opening]': 'deck.opening()', '[attr.aria-busy]': 'deck.opening() || null' },
   templateUrl: './deck-bar.html',
   styleUrl: './deck-bar.scss',
 })

@@ -197,6 +197,8 @@
     "editor.share": "Share",
     "editor.hideDeck": "Hide the deck",
     "editor.deckTab": "Deck · {$INTERPOLATION} cards",
+    "editor.deckTabLoading": "Deck · …",
+    "decks.page.countLoading": "Loading…",
     "editor.showDeckLegal": "Show the deck: {$count} cards, valid",
     "editor.showDeckIssues": "Show the deck: {$count} cards, to fix",
     "editor.savingFirst": "Saving…",

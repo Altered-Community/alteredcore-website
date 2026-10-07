@@ -2,6 +2,7 @@ import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, i
 import { DeckStore } from '../../../core/deck-store';
 import type { Card, HydratedLine } from '../../../core/models';
 import { AcCardPile } from '../../../ui/metier';
+import { AcSkeleton } from '../../../ui/containers';
 import { AcOverlayService } from '../../../ui/overlay';
 import { EditorAltArts } from '../../editor/editor-alt-arts';
 import { lineIssues } from '../../editor/editor-legality';
@@ -22,7 +23,7 @@ const DEFAULT_COLUMNS = 8;
  */
 @Component({
   selector: 'app-deck-board',
-  imports: [AcCardPile],
+  imports: [AcCardPile, AcSkeleton],
   templateUrl: './deck-board.html',
   styleUrl: './deck-board.scss',
 })

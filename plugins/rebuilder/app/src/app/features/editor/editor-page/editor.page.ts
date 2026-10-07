@@ -11,7 +11,7 @@ import { formatInfo } from '../../../core/formats';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
-import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcToast } from '../../../ui/containers';
+import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
@@ -26,6 +26,7 @@ import { CardSearch } from '../../search/card-search/card-search';
 import { DeckListView } from '../deck-list-view/deck-list-view';
 import { DeckPanel } from '../deck-panel/deck-panel';
 import { DeckPreview } from '../deck-preview/deck-preview';
+import { HandSkeleton } from '../../shared/hand-skeleton/hand-skeleton';
 import { TestHand } from '../../deck/test-hand/test-hand';
 import { HandStats } from '../../deck/hand-stats/hand-stats';
 import { HandCalculators } from '../../deck/hand-calculators/hand-calculators';
@@ -75,6 +76,8 @@ export type EditorAction = 'share';
     HandStats,
     HandCalculators,
     DeckListView,
+    HandSkeleton,
+    AcSkeleton,
   ],
   host: {
     '(window:beforeunload)': 'beforeUnload($event)',
@@ -112,6 +115,7 @@ export class EditorPage {
     savedToAccount: $localize`:@@editor.share.savedToAccount:Deck enregistré sur votre compte : vous pouvez le partager.`,
     more: $localize`:@@editor.moreActions:Plus d’actions`,
     imageBusy: deckImageBusyMessage(),
+    loading: $localize`:@@deck.page.loading:Chargement du deck…`,
   };
   /** The « ⋯ » menu: placed as the split buttons' menus. */
   protected readonly menuPositions = MENU_POSITIONS;
@@ -160,7 +164,7 @@ export class EditorPage {
       route: `${this.base()}/deck`,
       icon: 'layers',
       label: $localize`:@@editor.deck:Deck`,
-      badge: this.deck.total(),
+      badge: this.deck.opening() ? undefined : this.deck.total(),
       badgeTone: editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
     },
     { route: `${this.base()}/main`, icon: 'hand', label: $localize`:@@editor.handShort:Main` },

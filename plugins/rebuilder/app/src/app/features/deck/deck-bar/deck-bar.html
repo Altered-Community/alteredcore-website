@@ -1,5 +1,5 @@
 <div class="identity">
-  <div class="art">
+  <div class="art" [class.ac-skeleton]="deck.opening()">
     @if (deck.hero(); as h) {
       @if (editable()) {
         <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
@@ -17,6 +17,17 @@
   </div>
   <div class="text" [style.border-left-color]="border()">
     <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="14" />Mes decks</a>
+    @if (deck.opening()) {
+      <span acSkeleton="title" width="80%"></span>
+      @if (reduced()) {
+        <span acSkeleton="text" width="60%"></span>
+      } @else {
+        <span acSkeleton="title" width="50%"></span>
+        <span acSkeleton="text" width="70%"></span>
+        <span acSkeleton="text" width="50%"></span>
+        <span acSkeleton="text" width="40%"></span>
+      }
+    } @else {
     <div class="name-row">
       @if (renaming()) {
         <input
@@ -59,10 +70,20 @@
         }
       </span>
     }
+    }
   </div>
 </div>
 
 <span class="sep curve" aria-hidden="true"></span>
+@if (deck.opening()) {
+  <span acSkeleton class="curve-skeleton"></span>
+  @if (reduced()) {
+    <span class="sep" aria-hidden="true"></span>
+    <span acSkeleton class="limits-skeleton"></span>
+  }
+  <span class="sep" aria-hidden="true"></span>
+  <span acSkeleton class="terrain-skeleton"></span>
+} @else {
 <ac-cost-curve [main]="deck.stats().main" [reserve]="deck.stats().reserve" [size]="reduced() ? 'sm' : 'md'" [highlight]="highlight()" />
 @if (reduced() && rarityLimits().length) {
   <span class="sep" aria-hidden="true"></span>
@@ -81,6 +102,7 @@
 </div>
 @if (reduced()) {
   <ng-container [ngTemplateOutlet]="legalityBadge" />
+}
 }
 
 <div class="actions">

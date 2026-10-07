@@ -72,6 +72,11 @@ export class DeckStore {
   });
 
   readonly loading = computed(() => this.serverDeck.isLoading());
+  /**
+   * The deck is being opened (fetched, or not chosen yet): its views show skeletons, never the empty deck the store
+   * holds meanwhile (« 0 cartes », « Deck vide », « Non légal »).
+   */
+  readonly opening = computed(() => !this.loadError() && (this.loading() || !this.deckId()));
   /** A save request to the decks API is running. */
   readonly saving = signal(false);
   /** Why the deck could not be opened; a failed save goes to `saveError`, a failed delete or « Rendre public » to `actionError`. */
@@ -132,8 +137,12 @@ export class DeckStore {
   });
   /** Decks created on the account from this tab: theirs before the account list is refetched. */
   private readonly createdIds = signal<ReadonlySet<string>>(new Set());
-  /** The open deck belongs to the user: `true` for guest decks, `null` while the account list loads. */
+  /**
+   * The open deck belongs to the user: `true` for guest decks, `null` while the deck opens (the store holds an empty guest
+   * deck meanwhile) or the account list loads.
+   */
   readonly owned = computed<boolean | null>(() => {
+    if (this.opening()) return null;
     if (this.isGuest()) return true;
     const id = this.deckId();
     if (!id || !this.auth.isLoggedIn()) return false;

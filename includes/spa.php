@@ -84,6 +84,7 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
         'meta_file'     => spaMetaFile($plugin, $page),
+        'placeholder_file' => spaPluginFile($plugin, $page['placeholder'] ?? null),
         // Base href of the client routes (pluginFindBetaPage(): /pages/, the routes being the slugs it takes over)
         'base_path'     => BASE_URL . '/pages/' . $slug . '/',
         'spa'           => $spa,
@@ -95,7 +96,12 @@ function spaResolvePage(array $plugin, array $page): array {
  * before the header, so a client route can set its title and link preview ($pageTitle, $pageDescription, $pageImage).
  */
 function spaMetaFile(array $plugin, array $page): ?string {
-    $rel = isset($page['meta']) && is_string($page['meta']) ? spaSafeRelPath($page['meta']) : null;
+    return spaPluginFile($plugin, $page['meta'] ?? null);
+}
+
+/** Absolute path of a file named by the manifest, relative to the plugin; null when absent or outside the plugin. */
+function spaPluginFile(array $plugin, $path): ?string {
+    $rel = is_string($path) ? spaSafeRelPath($path) : null;
     if ($rel === null) return null;
     $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
     return is_file($abs) ? $abs : null;
@@ -178,6 +184,28 @@ function spaHostConfig(array $page): array {
     ];
 }
 
+/**
+ * Manifest `placeholder`: what the page shows while its scripts load (a skeleton of the page), rendered by the server
+ * inside the mount point with $slug (the requested page) and $subPath (client route) in scope, the query in $_GET. The
+ * runtime keeps it until the plugin draws its first screen (js/altered-core-host.js). Without one, a generic skeleton.
+ */
+function spaRenderPlaceholder(array $page): void {
+    $label = getUiLang() === 'fr' ? 'Chargement…' : 'Loading…';
+    echo '<div class="ac-spa-placeholder" aria-busy="true"><span class="ac-sr-only" role="status">' . h($label) . '</span>';
+    if (!empty($page['placeholder_file'])) {
+        (function (string $slug, string $subPath) use ($page) {
+            include $page['placeholder_file'];
+        })($page['slug'], (string)($page['sub_path'] ?? ''));
+    } else {
+        echo '<div class="ac-stack" aria-hidden="true">'
+            . '<span class="ac-skeleton ac-skeleton--title" style="--ac-skeleton-width: 30%"></span>'
+            . '<span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 60%"></span>'
+            . '<span class="ac-skeleton ac-skeleton--panel" style="height: 50vh"></span>'
+            . '</div>';
+    }
+    echo '</div>';
+}
+
 /** Body of an SPA page: mount point, host contract, runtime and plugin modules. */
 function spaRenderPage(array $page): void {
     $spa   = $page['spa'];
@@ -195,12 +223,12 @@ function spaRenderPage(array $page): void {
     $noscript = $lang === 'fr' ? 'Cette page nécessite JavaScript.' : 'This page requires JavaScript.';
     ?>
 <div class="ac-spa-page" data-ac-page="<?= h($page['slug']) ?>">
-    <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"></div>
+    <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
     <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
 </div>
 <script type="application/json" id="ac-host-config"><?= $json ?></script>
 <script src="<?= h(BASE_URL) ?>/js/altered-core-host.js?v=<?= is_file($runtime) ? filemtime($runtime) : 0 ?>"></script>
 <?php foreach ($spa['js'] as $src): ?>
-<script type="module" src="<?= h($src) ?>"></script>
+<script type="module" src="<?= h($src) ?>" data-ac-plugin-module="<?= h($id) ?>"></script>
 <?php endforeach;
 }

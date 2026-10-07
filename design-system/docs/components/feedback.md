@@ -1,7 +1,7 @@
 # Feedback and data
 
-`css/components/feedback.css`: notice, toast, scrim, dialog, spinner, blocking loader, progress
-bar, table.
+`css/components/feedback.css`: notice, toast, scrim, dialog, spinner, skeleton, blocking loader,
+progress bar, table.
 
 | Component | Use | Not for |
 |---|---|---|
@@ -10,6 +10,7 @@ bar, table.
 | Dialog `ac-dialog` | A task or a confirmation that needs an answer before going on. | Long content or navigation (use a page). |
 | Scrim `ac-scrim` | The dimmed layer behind a dialog, drawer or loader. | — |
 | Spinner `ac-spinner` | A short wait inside a component (button, panel). | Waits the user should not interrupt (use the loader). |
+| Skeleton `ac-skeleton` | Content that is loading, in the place and shape it will take: the page stays readable and nothing jumps when it arrives. | An empty state or a « 0 »: never show them before the data is there. |
 | Loader `ac-loader` | A blocking wait with a message (import, generation), optionally with progress. | Background loading of part of a page. |
 | Progress `ac-progress` | Known progress of a task (0–100 %). | Unknown duration (use the spinner). |
 | Table `ac-table` | Tabular data with columns to compare. | Layout; lists of items with one or two values (use a [list](card.md)). |
@@ -136,6 +137,40 @@ openConfirm(this.overlay, {
 <span class="ac-spinner" aria-hidden="true"></span>
 <span class="ac-sr-only" role="status"><?= h(t('common.loading')) ?></span>
 ```
+
+## Skeleton — `ac-skeleton`
+
+A track-coloured shape that pulses (still with `prefers-reduced-motion`). It takes the size the
+layout gives it: width 100 % by default (or `--ac-skeleton-width`), height from the variant, the
+layout or the content it replaces. Mark the loading region `aria-busy="true"` and give it a text
+for screen readers; the shapes themselves are `aria-hidden`.
+
+```php
+<div class="ac-stack" aria-busy="true">
+  <span class="ac-sr-only" role="status"><?= h(t('common.loading')) ?></span>
+  <span class="ac-skeleton ac-skeleton--title" style="--ac-skeleton-width: 40%" aria-hidden="true"></span>
+  <span class="ac-skeleton ac-skeleton--text" aria-hidden="true"></span>
+  <span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 70%" aria-hidden="true"></span>
+  <div class="ac-grid" style="--ac-grid-min: 120px">
+    <span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span>
+    <span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span>
+  </div>
+</div>
+```
+
+| Variant | Shape |
+|---|---|
+| (none) | A block, 8 px radius; the layout sets its height. |
+| `ac-skeleton--text` | A line of body text (0.8 em, pill). |
+| `ac-skeleton--title` | A heading line (1.1 em, pill). |
+| `ac-skeleton--control` | A field or a button (`--ac-control-md`). |
+| `ac-skeleton--control-sm` | A small button (`--ac-control-sm`). |
+| `ac-skeleton--circle` | An avatar or an icon button (`--ac-control-md` square, round). |
+| `ac-skeleton--card` | A card illustration (5 : 7, 12 px radius). |
+| `ac-skeleton--panel` | A card or panel (14 px radius); the layout sets its height. |
+
+SPA pages: the plugin's manifest `placeholder` renders a skeleton of the page from the server,
+shown until the plugin draws its first screen (see `plugins/README.html`).
 
 ## Blocking loader — `ac-loader`
 

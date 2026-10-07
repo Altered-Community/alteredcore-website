@@ -35,7 +35,7 @@
       }
       @if (search.loading() && grid.atEnd()) {
         @for (s of skeletons(); track $index) {
-          <span class="skeleton" aria-hidden="true"></span>
+          <span acSkeleton="card"></span>
         }
       }
     </ac-virtual-grid>

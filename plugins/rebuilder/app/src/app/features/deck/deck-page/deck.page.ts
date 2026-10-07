@@ -12,7 +12,7 @@ import { formatInfo } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcBadge, AcRaritySummary } from '../../../ui/chips';
-import { AcCollapsible } from '../../../ui/containers';
+import { AcCollapsible, AcSkeleton } from '../../../ui/containers';
 import { AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcBreakpointService } from '../../../ui/layout.services';
@@ -35,6 +35,7 @@ import { HandCalculators } from '../hand-calculators/hand-calculators';
 import { HandStats } from '../hand-stats/hand-stats';
 import { TestHand } from '../test-hand/test-hand';
 import { deckShareUrl } from './share-url';
+import { HandSkeleton } from '../../shared/hand-skeleton/hand-skeleton';
 
 type DeckTab = 'cartes' | 'decklist' | 'description' | 'main';
 
@@ -72,6 +73,8 @@ const TAB_PATHS: Record<DeckTab, string | null> = { cartes: null, decklist: 'dec
     TestHand,
     HandStats,
     HandCalculators,
+    HandSkeleton,
+    AcSkeleton,
   ],
   templateUrl: './deck.page.html',
   styleUrl: './deck.page.scss',
@@ -118,9 +121,10 @@ export class DeckPage {
   protected readonly legality = this.deck.legality;
   protected readonly legal = computed(() => this.legality().state === 'legal');
   protected readonly groups = computed(() => (this.grouping() === 'type' ? this.deck.groups() : groupByCost(this.deck.lines())));
+  protected readonly loadingLabel = $localize`:@@deck.page.loading:Chargement du deck…`;
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: `/decks/${this.id()}`, icon: 'eye', label: $localize`:@@deck.page.navPreview:Aperçu` },
-    { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
+    { route: `/decks/${this.id()}/deck`, icon: 'layers', label: 'Deck', badge: this.deck.opening() ? undefined : this.deck.total(), badgeTone: this.legal() ? 'success' : 'dark' },
     { route: `/decks/${this.id()}/description`, icon: 'text', label: $localize`:@@deck.page.navDescription:Infos` },
     { route: `/decks/${this.id()}/main`, icon: 'hand', label: $localize`:@@deck.page.navHand:Main` },
   ]);

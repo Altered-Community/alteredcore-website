@@ -91,6 +91,11 @@ export class CardSearchStore {
   readonly format = signal<DeckFormat | null>(null);
   readonly filters = signal<SearchFilters>(defaultFilters('all'));
   private readonly run = signal(0);
+  /**
+   * `configure()` has run: no request before, since the query depends on the context (the editor's deck: its hero's
+   * faction and its format, known once the deck is open). Meanwhile the search reads as loading.
+   */
+  readonly configured = signal(false);
   private readonly wantMore = signal(false);
 
   private readonly query = computed<SearchQuery>(() => ({
@@ -106,6 +111,7 @@ export class CardSearchStore {
   private readonly pageRes = rxResource({
     params: () => {
       const query = this.query();
+      if (!this.configured()) return undefined;
       return LOGIN_ONLY.includes(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
     },
     stream: ({ params: { query, request } }) => {
@@ -135,7 +141,7 @@ export class CardSearchStore {
   readonly cards = computed(() => this.state().cards);
   readonly total = computed(() => this.state().total);
   readonly page = computed(() => this.state().page);
-  readonly loading = computed(() => this.pageRes.isLoading());
+  readonly loading = computed(() => !this.configured() || this.pageRes.isLoading());
   readonly error = computed(() => {
     const err = this.pageRes.error();
     if (!err) return null;
@@ -161,7 +167,7 @@ export class CardSearchStore {
 
     effect((onCleanup) => {
       this.slow.set(false);
-      if (!this.loading()) return;
+      if (!this.pageRes.isLoading()) return;
       const timer = setTimeout(() => this.slow.set(true), SLOW_MS);
       onCleanup(() => clearTimeout(timer));
     });
@@ -173,6 +179,7 @@ export class CardSearchStore {
     this.faction.set(faction);
     this.format.set(format);
     if (changedSource) this.filters.set(defaultFilters(source));
+    this.configured.set(true);
     this.restart();
   }
 

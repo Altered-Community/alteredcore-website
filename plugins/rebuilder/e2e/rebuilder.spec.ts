@@ -165,6 +165,43 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
+  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page }) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E skeleton ${Date.now()}`);
+    await expect(page).toHaveURL(/[?&]id=/);
+    const id = new URL(page.url()).searchParams.get('id')!;
+
+    // The app's scripts and the deck are held: the server's skeleton stands for the page meanwhile.
+    let releaseScripts!: () => void;
+    const scripts = new Promise<void>((resolve) => (releaseScripts = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/main-[^/]+\.js/, async (route) => {
+      await scripts;
+      await route.continue();
+    });
+    let releaseDeck!: () => void;
+    const deckAnswer = new Promise<void>((resolve) => (releaseDeck = resolve));
+    await page.route(new RegExp(`/api/v1/services/decks/api/decks/${id}(\\?|$)`), async (route) => {
+      if (route.request().method() === 'GET') await deckAnswer;
+      await route.continue();
+    });
+    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'domcontentloaded' });
+    const placeholder = page.locator('.ac-spa-placeholder');
+    await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await expect(placeholder.getByRole('status')).toHaveText('Chargement…');
+
+    // The app draws the editor: the deck skeleton replaces the server's, the store's empty deck never shows.
+    releaseScripts();
+    await expect(placeholder).toHaveCount(0);
+    const deckView = page.locator('app-deck-board, app-deck-preview');
+    await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
+    await expect(page.getByText('Deck vide')).toHaveCount(0);
+    await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
+
+    releaseDeck();
+    await expect(deckView.locator('.ac-skeleton')).toHaveCount(0);
+    await expect(page.getByText('Deck vide')).toBeVisible();
+  });
+
   for (const { tab, short, endpoint, shot } of [
     { tab: 'Collection physique', short: 'Collection', endpoint: 'collection-search', shot: '15-collection-search' },
     { tab: 'Propriété numérique', short: null, endpoint: 'ownership-search', shot: '15-owned-search' },

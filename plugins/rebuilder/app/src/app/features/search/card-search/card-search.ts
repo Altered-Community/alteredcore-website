@@ -130,7 +130,7 @@ export class CardSearch {
       const format = this.format();
       if (!this.ready()) return;
       untracked(() => {
-        if (source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
+        if (!this.search.configured() || source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
           this.search.configure(source, faction, format);
           this.draft.set(this.search.filters());
         }
