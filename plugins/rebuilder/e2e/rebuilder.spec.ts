@@ -852,6 +852,73 @@ test.describe('ReBuilder in the shell · hero portrait', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · app bar of the search and « Aperçu » views (phones)', () => {
+  test('the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    test.skip(!compact, 'from 768 px the deck bar shows the hero and the rarities');
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E barre ${testInfo.project.name} ${Date.now()}`);
+    await addTwoCards(page);
+
+    // The app bar: the hero, then the deck name over the rarities the format caps.
+    const bar = page.locator('ac-app-bar');
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
+    await evidence(page, testInfo, '60-app-bar-search');
+
+    // Down the results the bar stays, and the condensed search head sticks below it.
+    await page.mouse.wheel(0, 1500);
+    await expect(page.locator('.search-head.condensed')).toBeVisible();
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toBeInViewport();
+    const barBox = await bar.boundingBox();
+    const headBox = await page.locator('.search-head').boundingBox();
+    expect(headBox!.y).toBeGreaterThanOrEqual(barBox!.y + barBox!.height - 1);
+    await evidence(page, testInfo, '62-app-bar-scrolled');
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    await bar.getByRole('button', { name: /^Changer de héros/ }).click();
+    const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
+    await expect(picker).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(picker).toBeHidden();
+
+    // « Résumé du deck »: hero, legality, a bar per capped rarity, counts per type.
+    await bar.getByRole('button', { name: /^Résumé du deck/ }).click();
+    const overview = page.getByRole('dialog', { name: 'Résumé du deck' });
+    await expect(overview).toContainText('Raretés · Standard All Uniques');
+    await expect(overview.getByRole('progressbar', { name: /^Rare : \d+ sur 15 maximum$/ })).toBeVisible();
+    await expect(overview).toContainText('2 cartes');
+    await evidence(page, testInfo, '61-deck-overview');
+
+    // « Changer de héros » closes the summary for the picker (no window over another); the new hero shows in the bar.
+    await overview.getByRole('button', { name: 'Changer de héros' }).click();
+    await expect(overview).toBeHidden();
+    await expect(picker).toBeVisible();
+    const other = picker.locator('ac-hero-tile button[aria-pressed="false"]').first();
+    const name = ((await other.locator('.name').textContent()) ?? '').trim();
+    await other.click();
+    await picker.getByRole('button', { name: 'Choisir ce héros' }).click();
+    await expect(picker).toBeHidden();
+    await expect(bar.getByRole('button', { name: `Changer de héros (${name})` })).toBeVisible();
+
+    // « Ouvrir l’onglet Deck » leads to the deck view.
+    await bar.getByRole('button', { name: /^Résumé du deck/ }).click();
+    await overview.getByRole('button', { name: 'Ouvrir l’onglet Deck' }).click();
+    await expect(page.locator('ac-deck-summary')).toContainText(name);
+
+    // « Aperçu » has the same bar, kept on screen down the deck.
+    await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Aperçu/ }).click();
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
+    await expect(bar.getByRole('button', { name: `Changer de héros (${name})` })).toBeVisible();
+    await page.mouse.wheel(0, 800);
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toBeInViewport();
+    await evidence(page, testInfo, '63-app-bar-apercu');
+
+    // Back to « Recherche »: the page renders again, the hero's art comes from the cache at once (no placeholder, no fade).
+    await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Recherche/ }).click();
+    await expect(bar.locator('.bar-hero ac-card-art')).toHaveClass(/\binstant\b/);
+  });
+});
+
 test.describe('ReBuilder in the shell · deck page', () => {
   /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why), plus `extra` references. */
   async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {
@@ -1072,8 +1139,13 @@ test.describe('ReBuilder in the shell · guest', () => {
 });
 
 test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
-  /** « Partager »: a button on desktop, an icon in the app bar on mobile. */
-  const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
+  /** « Partager »: a button on desktop; on phones, in the app bar's « ⋯ » menu (the search view's title takes the room). */
+  const share = async (page: Page, compact: boolean) => {
+    const editor = page.locator('app-editor-page');
+    if (!compact) return editor.getByRole('button', { name: 'Partager', exact: true }).click();
+    await page.locator('ac-app-bar').getByRole('button', { name: 'Plus d’actions' }).click();
+    await page.getByRole('menuitem', { name: 'Partager' }).click();
+  };
 
   test('saves the deck first, then shares it', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
@@ -1089,7 +1161,7 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     await addTwoCards(page);
     // The deck bar counts the rarities the format caps (from 768 px).
     if (!compact) await expect(page.locator('app-deck-bar').getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
-    await shareButton(page).click();
+    await share(page, compact);
     const patch = await saved;
     expect(((patch.request().postDataJSON() as { deckCards?: unknown[] }).deckCards ?? []).length).toBeGreaterThanOrEqual(2);
     const dialog = page.getByRole('dialog', { name: 'Partager ce deck' });
@@ -1110,14 +1182,14 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     }
   });
 
-  test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page }, testInfo) => {
+  test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page, compact }, testInfo) => {
     const name = `E2E invité ${testInfo.project.name} ${Date.now()}`;
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, name);
     await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=guest-[^&]+$/);
     await addTwoCards(page);
 
-    await shareButton(page).click();
+    await share(page, compact);
     const prompt = page.getByRole('dialog', { name: 'Connectez-vous pour partager' });
     await expect(prompt).toContainText('Pour partager ce deck et l’enregistrer sur le serveur, connectez-vous.');
     await evidence(page, testInfo, '41-editor-share-sign-in');

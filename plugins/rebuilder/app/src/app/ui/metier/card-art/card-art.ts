@@ -1,4 +1,4 @@
-import { Component, ElementRef, Service, afterNextRender, computed, inject, input, linkedSignal, signal, type OnDestroy } from '@angular/core';
+import { Component, ElementRef, Service, afterNextRender, afterRenderEffect, computed, inject, input, linkedSignal, signal, viewChild, type OnDestroy } from '@angular/core';
 import { cardImageSources } from '../../../core/card-art';
 import { factionColor } from '../factions';
 import { contentLocale } from '../../../core/locale';
@@ -16,6 +16,7 @@ import { contentLocale } from '../../../core/locale';
     '[class.neutral]': 'neutral()',
     '[style.background-color]': 'neutral() ? null : tint()',
     '[class.loaded]': 'loaded()',
+    '[class.instant]': 'instant()',
   },
   templateUrl: './card-art.html',
   styleUrl: './card-art.scss',
@@ -24,7 +25,7 @@ export class AcCardArt implements OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly viewport = inject(AcViewportLoader);
   /** Art starts downloading once the tile is ~1.5 screens from the viewport (or immediately when eager). */
-  protected readonly visible = signal(false);
+  private readonly inView = signal(false);
   readonly reference = input.required<string>();
   readonly faction = input<string | null | undefined>(null);
   readonly placeholder = input($localize`:@@ui.cardArt.placeholder:Visuel de la carte`);
@@ -47,11 +48,26 @@ export class AcCardArt implements OnDestroy {
    */
   protected readonly loaded = linkedSignal({ source: this.src, computation: () => false });
   protected readonly tint = computed(() => factionColor(this.faction()));
+  /** Eager art is in the first render: no frame of placeholder before it. */
+  protected readonly visible = computed(() => this.eager() || this.inView());
+  private readonly img = viewChild<ElementRef<HTMLImageElement>>('img');
+  /**
+   * Eager art already in the browser's cache (the same hero after the editor's view changed, which renders the page
+   * again): shown at once, without the placeholder and the fade of an image that downloads.
+   */
+  protected readonly instant = linkedSignal({ source: this.src, computation: () => false });
 
   constructor() {
     afterNextRender(() => {
-      if (this.eager()) this.visible.set(true);
-      else this.viewport.observe(this.host.nativeElement, () => this.visible.set(true));
+      if (!this.eager()) this.viewport.observe(this.host.nativeElement, () => this.inView.set(true));
+    });
+    // Eager art only (portraits): the tiles of a grid load lazily and keep their fade, without this check each.
+    afterRenderEffect(() => {
+      if (!this.eager()) return;
+      const img = this.img()?.nativeElement;
+      if (!img || this.loaded() || !img.complete || !img.naturalWidth) return;
+      this.instant.set(true);
+      this.loaded.set(true);
     });
   }
 

@@ -25,6 +25,7 @@ import {
   localizedText,
 } from './models';
 import { contentLocale } from './locale';
+import { heroArtSources } from './card-art';
 
 export interface NewDeckInput {
   name: string;
@@ -105,6 +106,11 @@ export class DeckStore {
   readonly format = signal<DeckFormat>('standard');
   readonly isPublic = signal(false);
   readonly hero = signal<DeckHero | null>(null);
+  /** The hero's frameless art, with its fallbacks: the portrait of the deck bar, the app bar and « Résumé du deck ». */
+  readonly heroArt = computed(() => {
+    const ref = this.hero()?.reference;
+    return ref ? heroArtSources(ref) : null;
+  });
   readonly createdAt = signal<string | null>(null);
   readonly isGuest = signal(true);
   /** Non-hero lines. */

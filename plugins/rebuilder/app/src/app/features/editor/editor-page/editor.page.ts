@@ -8,6 +8,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
+import { rarityLimits } from '../../../core/deck-rules';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -15,12 +16,13 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from 
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
-import { AcSaveStatus } from '../../../ui/metier';
+import { AcCardArt, AcRarityLimits, AcSaveStatus, rarityLimitItems } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { openHeroPicker } from '../../shared/hero-picker/hero-picker.overlay';
+import { openDeckOverview } from '../deck-overview/deck-overview.overlay';
 import { EditorAltArts } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
 import { CardSearch } from '../../search/card-search/card-search';
@@ -70,6 +72,8 @@ export type EditorAction = 'share';
     AcIconButton,
     AcIcon,
     AcSaveStatus,
+    AcCardArt,
+    AcRarityLimits,
     CardSearch,
     DeckPanel,
     DeckPreview,
@@ -156,6 +160,30 @@ export class EditorPage {
   private readonly apercuDrawer = new AcDrawerState(signal(false), 'end', this.drawerFocus);
   protected readonly deckDrawer = computed(() => (this.effectiveView() === 'apercu' ? this.apercuDrawer : this.searchDrawer));
   protected readonly subtitle = computed(() => `${this.formatLabel()} · ${this.deck.isPublic() ? this.labels.public : this.labels.private}`);
+  /**
+   * Phones, search and « Aperçu » views of an editable deck: the app bar takes the hero (« Choisir un héros ») and, as its title, the deck
+   * name over the rarities against the format's caps (« Résumé du deck »), what the deck bar shows from 768 px.
+   */
+  protected readonly deckAppBar = computed(() => this.bp.compact() && (this.view() === 'search' || this.view() === 'apercu') && this.deck.editable() && !this.deck.opening() && !this.deck.loadError());
+  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
+  protected readonly heroButtonLabel = computed(() => {
+    const name = this.deck.hero()?.name;
+    return name ? $localize`:@@editor.changeHeroOf:Changer de héros (${name}:name:)` : $localize`:@@ui.deckSummary.changeHero:Changer de héros`;
+  });
+  /** The button's name replaces its content: it carries the rarities too, as the badges' labels. */
+  /** With the deck title (`deckAppBar`), the app bar's own title and subtitle are left empty. */
+  protected readonly appBarTitle = computed(() => {
+    if (this.deckAppBar()) return '';
+    if (this.deck.opening()) return this.labels.loading;
+    return this.view() === 'deck' ? this.labels.myDeck : this.deck.name() || 'Deck';
+  });
+  protected readonly appBarSubtitle = computed(() => (this.deckAppBar() || this.view() === 'deck' || this.deck.opening() ? '' : this.subtitle()));
+  protected readonly overviewLabel = computed(() =>
+    [
+      $localize`:@@editor.overviewOf:Résumé du deck ${this.deck.name()}:name:`,
+      ...rarityLimitItems(this.rarityLimits()).map((r) => r.label),
+    ].join(', '),
+  );
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
@@ -352,6 +380,15 @@ export class EditorPage {
   protected changeHero(): void {
     openHeroPicker(this.overlay, this.deck.hero()).afterClosed.subscribe((hero) => {
       if (hero) this.deck.updateSettings({ hero });
+    });
+  }
+
+  /** « Résumé du deck » (phones, from the app bar's title): it closes on the hero picker, the legality or the « Deck » view. */
+  protected openOverview(): void {
+    openDeckOverview(this.overlay).afterClosed.subscribe((action) => {
+      if (action === 'hero') this.changeHero();
+      else if (action === 'legality') this.showLegality();
+      else if (action === 'deck') void this.router.navigateByUrl(`${this.base()}/deck`);
     });
   }
 

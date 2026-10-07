@@ -3,6 +3,7 @@
 }
 @if (visible() && src(); as s) {
   <img
+    #img
     [src]="s"
     alt=""
     [attr.fetchpriority]="eager() ? 'high' : null"

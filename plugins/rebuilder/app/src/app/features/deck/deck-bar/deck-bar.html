@@ -12,7 +12,7 @@
         (click)="editable() ? changeHero.emit() : zoomHero()"
       >
         @if (deck.hero(); as h) {
-          <ac-card-art [reference]="h.reference" [sources]="heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
+          <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
         }
       </button>
     }

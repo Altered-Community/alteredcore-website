@@ -1,0 +1,136 @@
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-5);
+  padding-bottom: var(--ac-space-5);
+}
+section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
+h3 {
+  margin: 0;
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+
+/* Hero: the card's art, then its name, « faction · format · visibility » and « Changer de héros ». */
+.hero {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ac-space-4);
+}
+.art {
+  position: relative;
+  width: 76px;
+  aspect-ratio: 63 / 88;
+  flex-shrink: 0;
+  border-radius: var(--ac-radius-card);
+  overflow: hidden;
+  background: var(--ac-color-track);
+  box-shadow: var(--ac-shadow-card);
+}
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ac-space-1);
+}
+.name {
+  font: var(--ac-font-heading);
+}
+.meta {
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
+  margin-bottom: var(--ac-space-1);
+}
+
+/* Legality: the badge opens the format's rules; the failed ones are listed below. */
+.legality {
+  padding: var(--ac-space-3);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-warning-soft);
+}
+.legality.ok {
+  background: var(--ac-color-success-soft);
+}
+.legality-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  min-height: var(--ac-hit-min);
+  margin: calc(-1 * var(--ac-space-2)) 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-small);
+  text-align: left;
+  cursor: pointer;
+}
+.legality-head:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: 2px;
+  border-radius: var(--ac-radius-sm);
+}
+.details {
+  flex-grow: 1;
+  text-align: right;
+}
+.legality ul {
+  margin: 0;
+  padding-left: var(--ac-space-5);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text);
+}
+
+/* Rarities against the caps: icon, name, bar, count. */
+.limits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+.limits li {
+  display: grid;
+  grid-template-columns: 28px 72px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-font-size-small);
+}
+.limits img {
+  height: 14px;
+  width: auto;
+  max-width: 100%;
+  justify-self: center;
+  display: block;
+}
+.limits strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.limits .at strong {
+  color: var(--ac-color-success);
+}
+.limits .over strong {
+  color: var(--ac-color-danger);
+}
+
+.counts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-1) var(--ac-space-4);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-2);
+}
+.counts strong {
+  color: var(--ac-color-text);
+}

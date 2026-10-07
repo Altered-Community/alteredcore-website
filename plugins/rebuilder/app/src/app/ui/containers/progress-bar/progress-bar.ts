@@ -10,6 +10,8 @@ import { Component, input } from '@angular/core';
     'aria-valuemax': '100',
     '[attr.aria-valuenow]': 'value()',
     '[attr.aria-label]': 'ariaLabel() || null',
+    '[class.ac-progress--success]': "tone() === 'success'",
+    '[class.ac-progress--danger]': "tone() === 'danger'",
   },
   templateUrl: './progress-bar.html',
   styleUrl: './progress-bar.scss',
@@ -17,4 +19,6 @@ import { Component, input } from '@angular/core';
 export class AcProgressBar {
   readonly value = input(0);
   readonly ariaLabel = input('');
+  /** A bar measured against a cap: `success` when it is reached, `danger` when it is exceeded. */
+  readonly tone = input<'primary' | 'success' | 'danger'>('primary');
 }
