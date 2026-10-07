@@ -14,9 +14,9 @@ its single **Decks** entry. The pages it replaces keep answering their own calls
 |---|---|
 | `plugin.json` | Manifest v2: SPA page and its `beta_slugs`, API endpoints, build and e2e declarations |
 | `meta.php` | Manifest `meta`: the deck's name as page title and its link preview (title, hero · format, decklist image, faction colour: core-altered-cards `includes/deck-preview/preview.php`, shared with the site's deck page) on `deck?id=` and `deckbuilder?id=` |
-| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders) |
+| `papi/` | PHP endpoints of the plugin (`/papi/rebuilder/…`, `AlteredCore.page.apiUrl`): `community-builders` (the site's community deckbuilders), `my-deck-ids` (ids of the user's decks, for the editor's ownership check, without downloading every deck) |
 | `app/` | Angular sources (see `app/AGENTS.md` for the code rules, `app/design/COMPONENTS.md` for the components) |
-| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, routes of the decks section, host session, shadow-root overlays and styles |
+| `app/src/main.ts`, `app/src/app/embed/` | Start-up: reads `window.AlteredCore`, requests the page's deck while the modules download (`prefetch.ts`), routes of the decks section, host session, shadow-root overlays and styles |
 | `app/src/embed/` | Global styles: `embed.scss` (shadow root, after the design system), `document.scss` (`<head>`: printed-card fonts) |
 | `e2e/` | Playwright scenarios run by CI against the full stack |
 | `dist/` | Build output (`npm run build`), not committed |
@@ -31,7 +31,9 @@ npm run build   # → ../dist/browser + ../dist/embed-manifest.json
 npm run lint && npm test
 ```
 
-`build` is the only build (`ng build`, production configuration, then `scripts/embed-manifest.mjs`).
+`build` is the only build (`ng build --stats-json`, production configuration, then `scripts/embed-manifest.mjs`,
+which also lists in the manifest's `preload` the chunks each page imports before it can draw, read from esbuild's
+metafile: the shell requests them right after the skeleton).
 The app is not served on its own: run it in the site's stack (`docker-compose.stack.yml`).
 
 ## Design system
@@ -102,6 +104,25 @@ translations are in `app/src/locale/messages.en.json`, loaded before the app mod
 English. `npm run lint` runs `npm run i18n:check`, which fails on a message without a custom id or an
 English translation, and on a translation left over. Vocabulary: the site's deck builder
 (`plugins/core-altered-cards/includes/deckbuilder/i18n.php`, `data/search_settings.json`).
+
+## Load performance
+
+On a slow network the pages are bound by bytes and round trips. What keeps them fast:
+
+- The shell requests every module a page needs at once (manifest `preload`, see Build), once the skeleton can be
+  painted (its stylesheet loaded); nothing is discovered one import at a time.
+- `main.ts` requests the page's deck while the modules download (`src/app/embed/prefetch.ts`).
+- The editor learns whether the deck is the user's from `papi/my-deck-ids` (ids only), not from the account's full
+  deck list.
+- JSON of the relay and of the plugin endpoints is gzipped (`includes/json-gzip.php`); the hashed build files are
+  cached for a year (`.htaccess`, with `mod_headers`).
+- Card art loads half a screen ahead on 3G or with the data saver (`AcViewportLoader`), and the test hand's code
+  (with the CDK's drag and drop) only with its view (`@defer`).
+- The runtime draws the first screen in the server skeleton's grid cell: no layout shift (CLS) when it replaces it.
+
+`tests/e2e/perf-ab.mjs` measures two versions of the site side by side on an emulated 3G / slow 4G phone (FCP,
+LCP, app drawn, page ready, images on screen, TTI, CLS, bytes; cold, warm and just-deployed cache): see its header.
+Run it before and after a change that touches the load path.
 
 ## Known gaps
 

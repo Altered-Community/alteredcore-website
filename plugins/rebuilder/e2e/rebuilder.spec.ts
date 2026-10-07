@@ -90,6 +90,19 @@ async function editorDeckId(page: Page): Promise<string> {
 }
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Sends the page's next requests to the network, where routes see them: the site's service worker (installed by the
+ * first visit, it would answer the scripts itself) is unregistered and the browser cache (Chromium) turned off.
+ */
+async function bypassCaches(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    for (const registration of (await navigator.serviceWorker?.getRegistrations()) ?? []) await registration.unregister();
+  });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+}
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
@@ -191,7 +204,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
       if (route.request().method() === 'GET') await deckAnswer;
       await route.continue();
     });
-    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'domcontentloaded' });
+    // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
+    // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
+    await bypassCaches(page);
+    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
     const placeholder = page.locator('.ac-spa-placeholder');
     await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await expect(placeholder.getByRole('status')).toHaveText('Chargement…');
@@ -1252,5 +1268,72 @@ test.describe('ReBuilder in the shell · side panels of the editor', () => {
     await expect(filters).toBeVisible();
     await expect(deckPanel).toBeVisible();
     await expect(editor.getByRole('button', { name: 'Masquer le deck' })).toBeFocused();
+  });
+});
+
+test.describe('ReBuilder in the shell · loading', () => {
+  test('requests its modules from <head>, the deck once while they load, and the ownership from the deck ids', async ({ page, compact }) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E chargement ${Date.now()}`);
+    await expect(page).toHaveURL(/[?&]id=/);
+    const id = new URL(page.url()).searchParams.get('id')!;
+
+    const requests: { url: string; method: string }[] = [];
+    page.on('request', (r) => requests.push({ url: r.url(), method: r.method() }));
+    const failed: string[] = [];
+    page.on('response', (r) => {
+      if (r.url().includes('/plugins/rebuilder/') && r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
+    });
+    const deckAnswer = page.waitForResponse((r) => new URL(r.url()).pathname === `/api/v1/services/decks/api/decks/${id}` && r.request().method() === 'GET');
+    // A fresh load of the editor: the deck was created in this tab before, now only the account says it is alice's.
+    requests.length = 0;
+    await page.goto(`${EDITOR(id)}&lang=fr`);
+    expect(await (await deckAnswer).headerValue('content-encoding')).toBe('gzip');
+    // Once the account's deck ids are in, the owner's actions replace their skeletons: « Partager » on desktop, on phones
+    // the hero of the app bar (« Partager » moves to its « ⋯ » menu).
+    const editor = page.locator('app-editor-page');
+    await expect(compact ? editor.locator('ac-app-bar').getByRole('button', { name: /^Changer de héros/ }) : editor.getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
+    await addTwoCards(page);
+    await expectDeckCount(page, compact, 2);
+
+    // The page's modules, preloaded once its stylesheets are in: entry, bootstrap, shared chunks and the editor's.
+    expect(await page.locator('head link[rel="modulepreload"]').count()).toBeGreaterThanOrEqual(5);
+    expect(failed).toEqual([]);
+    const paths = requests.map((r) => ({ ...r, path: new URL(r.url).pathname, query: new URL(r.url).searchParams }));
+    expect(paths.filter((r) => r.method === 'GET' && r.path === `/api/v1/services/decks/api/decks/${id}`)).toHaveLength(1);
+    expect(paths.filter((r) => r.path === '/papi/rebuilder/my-deck-ids')).toHaveLength(1);
+    expect(paths.filter((r) => r.path === '/api/v1/services/decks/api/decks' && r.method === 'GET')).toHaveLength(0);
+
+    // The test hand comes with its own chunk, when its view opens (once the two cards are saved).
+    await saved;
+    await page.goto(`${EDITOR(id)}&view=main&lang=fr`);
+    await expect(page.locator('app-editor-page').getByRole('list', { name: 'Main de départ' })).toBeVisible();
+  });
+
+  test('draws its first screen in place of the server\'s skeleton, without moving it (layout shift)', { tag: '@mobile' }, async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cls: number };
+      w.__cls = 0;
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) if (!e.hadRecentInput) w.__cls += e.value;
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    // The app's scripts wait until the server's skeleton is on screen.
+    let releaseScripts!: () => void;
+    const scripts = new Promise<void>((resolve) => (releaseScripts = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/main-[^/]+\.js/, async (route) => {
+      await scripts;
+      await route.continue();
+    });
+    await bypassCaches(page);
+    await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await page.waitForTimeout(300);
+    releaseScripts();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('ac-deck-card').first()).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => (window as unknown as { __cls: number }).__cls)).toBeLessThan(0.1);
   });
 });

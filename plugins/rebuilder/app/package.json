@@ -9,7 +9,7 @@
   },
   "scripts": {
     "ng": "ng",
-    "build": "ng build && node scripts/embed-manifest.mjs",
+    "build": "ng build --stats-json && node scripts/embed-manifest.mjs",
     "test": "ng test --watch=false",
     "lint": "ng lint && npm run i18n:check",
     "i18n:extract": "ng extract-i18n",

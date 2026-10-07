@@ -24,7 +24,8 @@
     ],
 
     "api": [
-        { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] }
+        { "endpoint": "community-builders", "file": "papi/community-builders.php", "methods": ["GET"] },
+        { "endpoint": "my-deck-ids",        "file": "papi/my-deck-ids.php",        "methods": ["GET"], "auth": "user" }
     ],
 
     "build": {

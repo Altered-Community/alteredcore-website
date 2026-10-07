@@ -121,10 +121,17 @@
                 var slot = shadow ? mountRoot.appendChild(document.createElement('slot')) : null;
                 if (!shadow) el.appendChild(placeholder);
                 container.style.minHeight = '0';
+                // Container and placeholder share one grid cell: the first screen draws over the placeholder, which
+                // never moves (a placeholder pushed down by the first screen, even for the frame before it goes, is a
+                // layout shift for the browser).
+                el.style.display = 'grid';
+                container.style.gridArea = placeholder.style.gridArea = '1 / 1';
+                container.style.minWidth = placeholder.style.minWidth = '0';
                 var drawn = new ResizeObserver(function (entries) {
                     if (entries[0].contentRect.height < 1) return;
                     drawn.disconnect();
-                    container.style.minHeight = '';
+                    container.style.minHeight = container.style.gridArea = container.style.minWidth = '';
+                    el.style.display = '';
                     placeholder.remove();
                     if (slot) slot.remove();
                 });
