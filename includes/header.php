@@ -293,6 +293,10 @@ kcIsLoggedIn();
     <link rel="preload" href="<?= h($_gcss) ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="<?= h($_gcss) ?>"></noscript>
     <?php endforeach; ?>
+    <?php if (!empty($GLOBALS['_ac_render_expect'])): ?>
+    <!-- SPA page: first paint once its skeleton is parsed (spaMountId()) -->
+    <link rel="expect" href="#<?= h($GLOBALS['_ac_render_expect']) ?>" blocking="render">
+    <?php endif; ?>
     <!-- Plugin page CSS (non-blocking — plugin controls own layout) -->
     <?php foreach ($GLOBALS['_ac_plugin_css'] ?? [] as $_pcss): ?>
     <link rel="preload" href="<?= h($_pcss) ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">

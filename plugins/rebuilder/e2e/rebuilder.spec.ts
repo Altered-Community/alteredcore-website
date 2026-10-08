@@ -1472,6 +1472,10 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    // The first paint waits for the skeleton (not the site header over an empty page): <head> names its mount point.
+    const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
+    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder');
+    await expect(page.locator('#ac-spa-rebuilder > .ac-spa-placeholder')).toHaveCount(1);
 
     releasePage();
     await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
