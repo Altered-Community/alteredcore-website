@@ -178,7 +178,8 @@ $board = function () use ($sk): string {
     </div>
 <?php if ($view === 'apercu'): ?>
     <?= $board() ?>
-    <span class="ac-skeleton rbph-decktab"></span>
+    <?php /* The editor's deck tab while the deck opens: its label in skeleton, at its length (editor.page.html). */ ?>
+    <span class="ac-drawer-tab ac-drawer-tab--end rbph-decktab"><?= ac_icon('chevron-left', 'rbph-icon16') ?><span class="ac-drawer-tab__label ac-skeleton">Deck · <span class="rbph-decktab__count">00</span> <?= getUiLang() === 'fr' ? 'cartes' : 'cards' ?></span><?= $sk('ac-skeleton--circle', 1, '16px') ?></span>
 <?php else: ?>
     <div class="rbph-editor__main">
 <?php if ($view === 'main'): ?>

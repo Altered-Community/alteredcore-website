@@ -46,13 +46,14 @@ export const PROFILES = {
 } as const;
 export type Profile = keyof typeof PROFILES;
 
-/** Phones, tablets, laptops and desktops on both sides of the breakpoints (768 medium, 1200 expanded). */
+/** Phones, tablets, laptops and desktops on both sides of the breakpoints (768 medium, 1200 expanded, the editor's 1440). */
 export const VIEWPORTS: Record<string, BrowserContextOptions> = {
   'phone-s': { viewport: { width: 360, height: 740 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
   phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
   tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   'laptop-s': { viewport: { width: 1024, height: 768 } },
   laptop: { viewport: { width: 1280, height: 800 } },
+  'laptop-m': { viewport: { width: 1366, height: 768 } },
   desktop: { viewport: { width: 1440, height: 900 } },
   wide: { viewport: { width: 1920, height: 1080 } },
 };

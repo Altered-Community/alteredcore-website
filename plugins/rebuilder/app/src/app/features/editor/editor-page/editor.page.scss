@@ -181,13 +181,29 @@
     color: var(--ac-color-success);
   }
 
+  /* The count takes two digits' room, so the tab keeps its length from 0 to 99 cards. */
+  .deck-tab .count {
+    display: inline-block;
+    min-inline-size: 2ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* While the deck opens: the label's text hidden in its skeleton, which keeps the label's length. */
+  .deck-tab .ac-drawer-tab__label.ac-skeleton {
+    width: auto;
+    color: transparent;
+    border-radius: var(--ac-radius-pill);
+  }
+
   /* The filters tab of the card search reaches the left edge of the page the same way. */
   .search {
     --app-drawer-bleed: var(--ac-space-6);
   }
 }
 
-@media (min-width: 1200px) {
+/* 300 px up to 1440 px: the search results keep three columns of cards from 1332 px (1366 px laptops). */
+@media (min-width: 1440px) {
   .panel {
     width: var(--ac-deck-panel-width);
   }

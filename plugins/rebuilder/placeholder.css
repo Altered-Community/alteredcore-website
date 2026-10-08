@@ -1,7 +1,7 @@
 /* Skeleton of the Re:Builder screens while the scripts load (placeholder.php). Sizes follow the app's layout
    (deck-bar.scss, decks.page.scss, deck-list-view.scss, hand-skeleton.scss…): keep them in step. */
 .rbph { --rbph-panel-width: 300px; }
-@media (min-width: 1200px) { .rbph { --rbph-panel-width: var(--ac-deck-panel-width); } }
+@media (min-width: 1440px) { .rbph { --rbph-panel-width: var(--ac-deck-panel-width); } }
 .rbph-desktop, .rbph-compact { display: flex; flex-direction: column; }
 .rbph-row { display: flex; align-items: center; gap: var(--ac-space-2); }
 .rbph-row > .ac-skeleton, .rbph-wrap > .ac-skeleton { flex: 0 0 auto; }
@@ -62,7 +62,10 @@
 .rbph-board { flex: 1 1 0; min-width: 0; padding: var(--ac-space-5) 0; }
 .rbph-board__group { display: flex; flex-direction: column; gap: var(--ac-space-3); padding: 0 var(--ac-space-5); max-width: calc(4 * 260px + 3 * var(--ac-space-3) + 2 * var(--ac-space-5)); }
 .rbph-board__cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ac-space-4) var(--ac-space-3); }
-.rbph-decktab { width: 32px; height: 175px; flex-shrink: 0; margin-right: calc(-1 * var(--ac-space-6)); border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card); }
+.rbph-decktab { flex-shrink: 0; margin-right: calc(-1 * var(--ac-space-6)); cursor: default; }
+.rbph-decktab .ac-drawer-tab__label { width: auto; color: transparent; border-radius: var(--ac-radius-pill); }
+.rbph-icon16 { width: 16px; height: 16px; }
+.rbph-decktab__count { display: inline-block; min-inline-size: 2ch; text-align: center; font-variant-numeric: tabular-nums; }
 .rbph-hand { display: flex; flex-direction: column; gap: var(--ac-space-6); }
 .rbph-hand__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(100px, 28vw, 150px), 1fr)); gap: var(--ac-space-3); }
 .rbph-hand__panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--ac-space-3); }
