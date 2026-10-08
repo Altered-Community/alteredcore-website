@@ -188,8 +188,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
   test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page }) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E skeleton ${Date.now()}`);
-    await expect(page).toHaveURL(/[?&]id=/);
-    const id = new URL(page.url()).searchParams.get('id')!;
+    const id = await editorDeckId(page);
 
     // The app's scripts and the deck are held: the server's skeleton stands for the page meanwhile.
     let releaseScripts!: () => void;
@@ -1388,8 +1387,7 @@ test.describe('ReBuilder in the shell · loading', () => {
   test('requests its modules from <head>, the deck once while they load, and the ownership from the deck ids', async ({ page, compact }) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E chargement ${Date.now()}`);
-    await expect(page).toHaveURL(/[?&]id=/);
-    const id = new URL(page.url()).searchParams.get('id')!;
+    const id = await editorDeckId(page);
 
     const requests: { url: string; method: string }[] = [];
     page.on('request', (r) => requests.push({ url: r.url(), method: r.method() }));
@@ -1448,5 +1446,39 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(page.locator('ac-deck-card').first()).toBeVisible();
     await page.waitForTimeout(500);
     expect(await page.evaluate(() => (window as unknown as { __cls: number }).__cls)).toBeLessThan(0.1);
+  });
+
+  test('keeps the server\'s skeleton until the page draws, never an empty frame in between', { tag: '@mobile' }, async ({ page }) => {
+    // A public deck seeded by the stack (docker/stack/seed-decks.php).
+    const [decks, manifestRes] = await Promise.all([
+      page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } }),
+      page.request.get('/plugins/rebuilder/dist/embed-manifest.json'),
+    ]);
+    const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];
+
+    // The deck page's own modules are held: the app starts (its root, its router) but cannot draw the page yet.
+    const manifest = (await manifestRes.json()) as { preload: Record<string, string[]> };
+    const pageChunks = manifest.preload['deck'].filter((chunk) => !manifest.preload['*'].includes(chunk));
+    expect(pageChunks.length).toBeGreaterThan(0);
+    let releasePage!: () => void;
+    const pageModules = new Promise<void>((resolve) => (releasePage = resolve));
+    await page.route((url) => pageChunks.some((chunk) => url.pathname.endsWith(`/${chunk}`)), async (route) => {
+      await pageModules;
+      await route.continue();
+    });
+    await bypassCaches(page);
+    await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
+    // The app's root is drawn: a placeholder taken for the first screen would go at the next frame.
+    await expect(page.locator('app-rebuilder-embed')).toBeAttached();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    // The first paint waits for the skeleton (not the site header over an empty page): <head> names its mount point.
+    const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
+    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder');
+    await expect(page.locator('#ac-spa-rebuilder > .ac-spa-placeholder')).toHaveCount(1);
+
+    releasePage();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 });

@@ -123,14 +123,16 @@
                 container.style.minHeight = '0';
                 // Container and placeholder share one grid cell: the first screen draws over the placeholder, which
                 // never moves (a placeholder pushed down by the first screen, even for the frame before it goes, is a
-                // layout shift for the browser).
+                // layout shift for the browser). The container is not stretched to the cell (align-self): it would take
+                // the placeholder's height at once, and the placeholder would go before the first screen.
                 el.style.display = 'grid';
                 container.style.gridArea = placeholder.style.gridArea = '1 / 1';
                 container.style.minWidth = placeholder.style.minWidth = '0';
+                container.style.alignSelf = 'start';
                 var drawn = new ResizeObserver(function (entries) {
                     if (entries[0].contentRect.height < 1) return;
                     drawn.disconnect();
-                    container.style.minHeight = container.style.gridArea = container.style.minWidth = '';
+                    container.style.minHeight = container.style.gridArea = container.style.minWidth = container.style.alignSelf = '';
                     el.style.display = '';
                     placeholder.remove();
                     if (slot) slot.remove();

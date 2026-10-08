@@ -242,6 +242,16 @@ function spaPreloads(array $page): array {
     return $out;
 }
 
+/**
+ * Id of the page's mount point (spaRenderPage()), which holds the server's placeholder; null for a page that cannot
+ * render. The header names it in <link rel="expect" blocking="render">: the browser paints nothing before it has
+ * parsed the placeholder, so the first frame is the page's skeleton, not the site header over an empty page (the
+ * site's menus come first in the HTML).
+ */
+function spaMountId(array $page): ?string {
+    return $page['spa']['error'] === null ? 'ac-spa-' . $page['plugin_id'] : null;
+}
+
 /** Body of an SPA page: mount point, host contract, runtime and plugin modules. */
 function spaRenderPage(array $page): void {
     $spa   = $page['spa'];
@@ -259,7 +269,7 @@ function spaRenderPage(array $page): void {
     $noscript = $lang === 'fr' ? 'Cette page nécessite JavaScript.' : 'This page requires JavaScript.';
     ?>
 <div class="ac-spa-page" data-ac-page="<?= h($page['slug']) ?>">
-    <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
+    <div class="ac-spa-host" id="<?= h(spaMountId($page)) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
     <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
 </div>
 <?php
