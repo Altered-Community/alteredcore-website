@@ -1,7 +1,7 @@
 import { CdkDrag, CdkDropList, CdkDropListGroup, type CdkDragDrop } from '@angular/cdk/drag-drop';
 import { Component, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { slotChoices, slotDefaults } from '../../../core/alt-art-defaults';
+import { defaultPrints, slotChoices, slotDefaults } from '../../../core/alt-art-defaults';
 import { cardImageUrl } from '../../../core/card-art';
 import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
@@ -17,10 +17,10 @@ export interface AltArtPickerData {
 }
 
 /**
- * The brush of a card: the illustration of each of its copies in this deck. A copy left free shows, faded, its default
- * alt art (the player's slot for that copy, within the copies owned), which the deck takes. A touched illustration goes
- * on the first free copy; one dragged onto a copy goes on that copy; a touched copy is free again. An illustration whose
- * owned copies are all chosen waits. Each change is saved with the deck.
+ * The brush of a card: the illustration of each of its copies in this deck, the default alt arts as chosen as the
+ * others. A touched copy is freed (it keeps its default alt art in the deck until it gets another illustration); a
+ * touched illustration goes on the first free copy, one dragged onto a copy on that copy. An illustration whose owned
+ * copies are all placed waits. Each change is saved with the deck.
  */
 @Component({
   selector: 'app-alt-art-picker',
@@ -32,8 +32,8 @@ export interface AltArtPickerData {
 export class AltArtPickerOverlay {
   protected readonly ref = inject<AcOverlayRef<void, AltArtPickerData>>(AcOverlayRef);
   private readonly data = this.ref.data!;
-  /** Each copy's illustration chosen in this deck, `null` for a copy left to its default alt art. */
-  protected readonly chosen = signal(slotChoices(this.data.choice, this.data.prints()));
+  /** Each copy's illustration, `null` for a freed copy (its default alt art in the deck); copy 1 the deck's own choice. */
+  protected readonly chosen = signal<(string | null)[]>(slotDefaults(this.data.choice, slotChoices(this.data.choice, this.data.prints())));
   /** Each copy's illustration in the deck. */
   private readonly prints = computed(() => slotDefaults(this.data.choice, this.chosen()));
   protected readonly slots = computed(() => {
@@ -41,7 +41,7 @@ export class AltArtPickerOverlay {
     return this.prints().map((reference, i) => ({
       src: cardImageUrl(reference),
       label: copyLabel(i + 1),
-      chosen: chosen[i] !== null,
+      free: chosen[i] === null,
       freeLabel: freeLabel(i + 1),
     }));
   });
@@ -61,7 +61,7 @@ export class AltArtPickerOverlay {
       };
     });
   });
-  protected readonly allDefault = computed(() => this.chosen().every((c) => c === null));
+  protected readonly allDefault = computed(() => this.chosen().join() === defaultPrints(this.data.choice, this.chosen().length).join());
   /** The site's « Arts alternatifs par défaut » page (plugin ownership). */
   protected readonly settingsUrl = `${environment.siteUrl.replace(/\/$/, '')}/pages/ownership-alt-arts`;
   /** A long press starts a drag on touch screens, so that a swipe still scrolls the illustrations. */
@@ -80,13 +80,13 @@ export class AltArtPickerOverlay {
     if (event.container !== event.previousContainer) this.choose(event.container.data, event.item.data);
   }
 
-  /** A touched copy: back to its default alt art. */
+  /** A touched copy: free for the next illustration touched. */
   protected free(index: number): void {
     this.update(this.chosen().map((c, i) => (i === index ? null : c)));
   }
 
   protected resetToDefaults(): void {
-    this.update(this.chosen().map(() => null));
+    this.update(defaultPrints(this.data.choice, this.chosen().length));
   }
 
   private choose(index: number, reference: string): void {
@@ -109,7 +109,7 @@ export class AltArtPickerOverlay {
 
 const copyLabel = (n: number) => $localize`:@@altArt.marker:Exemplaire ${n}:n:`;
 const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
-const freeLabel = (n: number) => $localize`:@@editor.altArtPicker.free:Exemplaire ${n}:n:, illustration choisie : rendre l’art par défaut`;
+const freeLabel = (n: number) => $localize`:@@editor.altArtPicker.free:Exemplaire ${n}:n: : le libérer`;
 const unlimited = () => $localize`:@@editor.altArtPicker.unlimited:Illimitée`;
 const notOwned = () => $localize`:@@editor.altArtPicker.notOwned:Non possédée`;
 const placedLabel = (placed: number, owned: number) =>

@@ -1,24 +1,21 @@
 <div class="ac-overlay-body" cdkDropListGroup>
   @if (full()) {
-    <p class="hint" i18n="@@editor.altArtPicker.hintFull">Chaque exemplaire a son illustration. Touchez un exemplaire pour lui rendre son art par défaut, ou glissez une illustration dessus.</p>
+    <p class="hint" i18n="@@editor.altArtPicker.hintFull">Touchez un exemplaire pour le libérer, ou glissez une illustration dessus.</p>
   } @else {
-    <p class="hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour la poser sur le prochain exemplaire, ou glissez-la sur l’exemplaire voulu. En transparence : l’art par défaut.</p>
+    <p class="hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour la poser sur l’exemplaire libre, ou glissez-la sur l’exemplaire voulu.</p>
   }
   <ul class="slots" [style.--copies]="slots().length" aria-label="Exemplaires" i18n-aria-label="@@editor.altArtPicker.copies">
     @for (s of slots(); track $index) {
       <li>
         <span class="slot-label">{{ s.label }}</span>
         <div class="slot-drop" cdkDropList [cdkDropListData]="$index" cdkDropListSortingDisabled (cdkDropListDropped)="drop($event)">
-          @if (s.chosen) {
+          @if (s.free) {
+            <div class="slot empty"><span i18n="@@editor.altArtPicker.empty">Libre</span></div>
+          } @else {
             <button type="button" class="slot" [attr.aria-label]="s.freeLabel" (click)="free($index)">
               <img [src]="s.src" alt="" />
               <span class="free" aria-hidden="true"><ac-icon name="x" [size]="16" /></span>
             </button>
-          } @else {
-            <div class="slot default">
-              <img [src]="s.src" alt="" />
-              <span class="default-tag" i18n="@@editor.altArtPicker.default">Par défaut</span>
-            </div>
           }
         </div>
       </li>

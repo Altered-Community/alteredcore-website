@@ -79,25 +79,19 @@ ul {
   object-fit: cover;
   border-radius: var(--ac-radius-md);
 }
-/* A copy left to its default alt art: faded. */
-.slot.default img {
-  opacity: 0.4;
-}
-.default-tag {
-  position: absolute;
-  left: 50%;
-  bottom: var(--ac-space-2);
-  transform: translateX(-50%);
-  padding: var(--ac-space-1) var(--ac-space-2);
-  border-radius: var(--ac-radius-pill);
+/* A freed copy: waiting for an illustration. */
+.slot.empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 5 / 7;
+  box-sizing: border-box;
+  border: 2px dashed var(--ac-color-border);
   background: var(--ac-color-surface);
-  box-shadow: var(--ac-shadow-e3);
-  font-size: var(--ac-font-size-caption);
+  font-size: var(--ac-font-size-small);
   font-weight: 700;
-  white-space: nowrap;
   color: var(--ac-color-text-muted);
 }
-/* A chosen copy: touched, it goes back to its default alt art. */
+/* A copy's ✕: touched, the copy is free. */
 .free {
   position: absolute;
   top: var(--ac-space-1);
