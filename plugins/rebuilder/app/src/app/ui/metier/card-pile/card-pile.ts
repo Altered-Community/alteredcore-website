@@ -30,6 +30,8 @@ import { AcUniqueCard } from '../unique-card/unique-card';
 export class AcCardPile {
   readonly card = input.required<Card>();
   readonly quantity = input(1);
+  /** The copies' prints, front first (a pile of a card's illustrations); `null`: every copy shows `card`. */
+  readonly prints = input<readonly string[] | null>(null);
   readonly max = input(3);
   readonly readonly = input(true);
   /** Why the line is not legal (the deck panel's tooltips). */
@@ -45,6 +47,8 @@ export class AcCardPile {
   protected readonly unique = computed(() => isUniqueReference(this.card().reference));
   /** Copies behind the front one (a pile at 0 shows one card). */
   protected readonly behind = computed(() => Array.from({ length: Math.max(0, Math.min(this.quantity(), 3) - 1) }, (_, i) => i));
+  /** The print of each copy behind the front one. */
+  protected readonly layers = computed(() => this.behind().map((i) => ({ i, reference: this.prints()?.[i + 1] ?? this.card().reference })));
   protected readonly zoomLabel = computed(() => {
     const n = this.quantity();
     return n === 1

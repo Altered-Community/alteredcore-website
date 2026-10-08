@@ -53,25 +53,28 @@ export function slotDefaults(choice: AltArtChoice, chosen: readonly (string | nu
 
 /**
  * The deck's copies of a family (`prints`) as copies chosen in the deck or left to the defaults (`null`), so that
- * `slotDefaults` gives the same prints: a copy on its slot's default is free, the other prints go on the other copies.
+ * `slotDefaults` gives the same prints. The deck stores no order: the prints its defaults do not explain are chosen and
+ * come first (copy 1 is the deck's own choice, the front of its pile), the other copies are free when their slot's
+ * default matches, chosen otherwise.
  */
 export function slotChoices(choice: AltArtChoice, prints: readonly string[]): (string | null)[] {
   const left = counts(prints);
-  const defaults = defaultPrints(choice, prints.length);
-  const free = defaults.map((d) => {
+  for (const d of defaultPrints(choice, prints.length)) {
     const n = left.get(d) ?? 0;
     if (n) left.set(d, n - 1);
-    return n > 0;
-  });
-  const rest = [...left].flatMap(([print, n]) => Array<string>(n).fill(print));
-  const assigned = defaults.map((d, i) => (free[i] ? d : rest.shift()!));
-  const chosen = assigned.map((a, i) => (free[i] ? null : a));
-  // A chosen copy can take an owned print from a free copy after it: that copy is chosen too.
+  }
+  const own = [...left].flatMap(([print, n]) => Array<string>(n).fill(print));
+  const chosen: (string | null)[] = [...own, ...Array<null>(prints.length - own.length).fill(null)];
+  // A free copy whose default is not one of the deck's prints left (an owned print the chosen copies took): chosen.
   for (;;) {
+    const missing = counts(prints);
     const shown = slotDefaults(choice, chosen);
-    const moved = shown.findIndex((s, i) => s !== assigned[i]);
-    if (moved === -1) return chosen;
-    chosen[moved] = assigned[moved];
+    for (const s of shown) missing.set(s, (missing.get(s) ?? 0) - 1);
+    if ([...missing.values()].every((n) => n === 0)) return chosen;
+    const extra = shown.findIndex((s, i) => chosen[i] === null && (missing.get(s) ?? 0) < 0);
+    const lacking = [...missing].find(([, n]) => n > 0)?.[0];
+    if (extra === -1 || lacking === undefined) return [...prints];
+    chosen[extra] = lacking;
   }
 }
 

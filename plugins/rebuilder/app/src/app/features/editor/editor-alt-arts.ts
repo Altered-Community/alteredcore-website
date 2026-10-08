@@ -2,8 +2,9 @@ import { Service, computed, effect, inject, signal, untracked } from '@angular/c
 import { type Observable, filter, map, of, switchMap, take } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
-import { basePrint, familyPrints } from '../../core/alt-art-defaults';
+import { basePrint, familyPrints, slotChoices, slotDefaults } from '../../core/alt-art-defaults';
 import { DeckStore } from '../../core/deck-store';
+import { storedFlag } from '../../core/stored-flag';
 import type { Card } from '../../core/models';
 import { OwnershipApiService, familyKey, type AltArtChoice } from '../../core/ownership-api.service';
 import type { AltArtPickerData } from './alt-art-picker/alt-art-picker.overlay';
@@ -64,6 +65,9 @@ export class EditorAltArts {
     }
     return out;
   });
+
+  /** The deck board (« Aperçu »): the prints of a card on one pile, copy 1 in front. Remembered in this browser. */
+  readonly stackPrints = storedFlag('rebuilder.board.stackPrints', true);
 
   /** « Arts des jetons » and « Arts par défaut »: on an editable deck. */
   readonly canChoose = computed(() => this.enabled() && this.deck.editable());
@@ -160,6 +164,23 @@ export class EditorAltArts {
     return familyPrints(this.deck.lines(), this.members(choice)).length;
   }
 
+  /**
+   * The copies of `card`'s family in the deck, one print a copy, in the brush's order (copy 1 first: the copies on
+   * their default alt art on their slot); `null` when its family is not known.
+   */
+  copyPrints(card: Card): string[] | null {
+    const choice = this.choiceFor(card.reference);
+    if (!choice) return null;
+    return slotDefaults(choice, slotChoices(choice, familyPrints(this.deck.lines(), this.members(choice))));
+  }
+
+  /** Copies of `card`'s whole family (a pile of its prints): an added copy takes its default alt art. */
+  setFamilyQuantity(card: Card, quantity: number): void {
+    const choice = this.choiceFor(card.reference);
+    if (choice) this.deck.setFamilyQuantity(card, choice, this.members(choice), quantity);
+    else this.deck.setQuantity(card, quantity);
+  }
+
   /** `card` stands for its whole family: the plain print of a multi-art card. */
   isFamilyCard(card: Card): boolean {
     const choice = this.choiceFor(card.reference);
@@ -220,3 +241,4 @@ export function confirmAltArtDefaults(overlay: AcOverlayService, altArts: Editor
     }),
   );
 }
+

@@ -1209,6 +1209,38 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(kelon).toHaveCount(0);
   });
 
+  test('puts a card’s illustrations on one pile of the deck board, copy 1 in front, or on a pile each', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'the deck board is from 768 px');
+    const kelon = await routeAltArts(page, 1, [0, 0, 0]);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E stack ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    // The alt art on copy 1 (the brush): the deck has two prints of the card.
+    await page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' }).click();
+    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
+    await page.getByRole('dialog').getByRole('button', { name: /^Illustration 2,/ }).click();
+    await saved;
+    await page.keyboard.press('Escape');
+    // One pile of 3, copy 1 in front.
+    const stack = page.getByRole('switch', { name: 'Regrouper les illustrations' });
+    await expect(stack).toBeChecked();
+    await expect(piles).toHaveCount(1);
+    await expect(piles.locator('.qty')).toHaveText('×3');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    await evidence(page, testInfo, '32-alt-arts-one-pile');
+    // Its stepper adds a copy of the card: back to the deck limit, the pile stays.
+    await piles.hover();
+    await piles.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles.locator('.qty')).toHaveText('×2');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    // Off: a pile each print.
+    await stack.uncheck();
+    await expect(piles).toHaveCount(2);
+    await stack.check();
+    await expect(piles).toHaveCount(1);
+  });
+
   test('adds a card from the search with the default alt art of its copy', { tag: '@mobile' }, async ({ page }, testInfo) => {
     const kelon = await routeAltArts(page, 1, [1, 1, 0]);
     await login(page, 'alice', `${DECKS}?lang=fr`);

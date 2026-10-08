@@ -12,13 +12,15 @@
   <section class="group" [style.--columns]="g.columns" [attr.aria-labelledby]="'board-' + g.id">
     <h2 class="title" [id]="'board-' + g.id">{{ g.label }} · {{ g.count }}</h2>
     <div class="cards" role="list">
-      @for (l of g.lines; track l.card.reference) {
+      @for (l of g.lines; track trackOf(l)) {
+        @let stack = stacks().get(l.card.reference);
         <ac-card-pile
           [card]="l.card"
           [quantity]="l.quantity"
-          [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
+          [prints]="stack?.prints ?? null"
+          [max]="maxOf(l.card)"
           [readonly]="!editable()"
-          [issues]="issues().get(l.card.reference) ?? noIssues"
+          [issues]="stack?.issues ?? issues().get(l.card.reference) ?? noIssues"
           (quantityChange)="setQuantity(l.card, $event)"
           (zoom)="zoom(l.card)"
           [illustrations]="canIllustrate(l.card)"

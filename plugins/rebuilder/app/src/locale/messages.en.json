@@ -755,6 +755,7 @@
     "deck.page.tabPreview": "Preview",
     "editor.imageOpen": "Open the image in a new tab",
     "editor.boardHint": "Hover a pile to change its number of copies.",
+    "editor.stackPrints": "Group illustrations",
     "editor.tokenArts.short": "Token illustrations",
     "editor.moreActions": "More actions",
     "deck.bar.rarities": "Rarities",

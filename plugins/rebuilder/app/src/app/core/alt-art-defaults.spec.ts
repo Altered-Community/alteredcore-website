@@ -56,16 +56,17 @@ describe('slotDefaults', () => {
 describe('slotChoices', () => {
   const back = (choice: AltArtChoice, prints: string[]) => slotDefaults(choice, slotChoices(choice, prints));
 
-  it('leaves free the copies on their default, the other prints chosen', () => {
+  it('leaves free the copies on their default, the other prints chosen and first', () => {
     expect(slotChoices(fee([ALT, ALT, MUSUBI]), [ALT, ALT, MUSUBI])).toEqual([null, null, null]);
-    expect(slotChoices(fee([ALT, ALT, MUSUBI]), [MUSUBI, ALT, BASE])).toEqual([null, BASE, null]);
+    expect(slotChoices(fee([ALT, ALT, MUSUBI]), [MUSUBI, ALT, BASE])).toEqual([BASE, null, null]);
+    expect(slotChoices(fee([BASE, BASE, BASE]), [BASE, ALT, BASE])).toEqual([ALT, null, null]);
     expect(slotChoices(fee([ALT, MUSUBI, MUSUBI]), [BASE, BASE, BASE])).toEqual([BASE, BASE, BASE]);
   });
 
   it('gives back the deck’s copies, an owned print taken by a chosen copy included', () => {
     const choice = fee([ALT, ALT, ALT], 1);
     expect(slotChoices(choice, [BASE, BASE, BASE])).toEqual([BASE, BASE, BASE]);
-    for (const prints of [[BASE, BASE, BASE], [ALT, BASE, BASE], [MUSUBI, BASE, ALT], [MUSUBI, MUSUBI, MUSUBI]]) {
+    for (const prints of [[BASE, BASE, BASE], [ALT, BASE, BASE], [MUSUBI, BASE, ALT], [MUSUBI, MUSUBI, MUSUBI], [ALT, ALT, BASE]]) {
       expect(sameCopies(back(choice, prints), prints)).toBe(true);
     }
   });

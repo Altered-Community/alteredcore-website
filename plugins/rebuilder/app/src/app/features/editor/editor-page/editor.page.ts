@@ -10,7 +10,7 @@ import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
 import { rarityLimits } from '../../../core/deck-rules';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
-import { AcSegmented } from '../../../ui/fields';
+import { AcSegmented, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
@@ -54,6 +54,7 @@ export type EditorAction = 'share';
   selector: 'app-editor-page',
   providers: [CardSearchStore, EditorAltArts],
   imports: [
+    AcSwitch,
     AcToast,
     AcDrawerHandle,
     AcDrawerTab,
