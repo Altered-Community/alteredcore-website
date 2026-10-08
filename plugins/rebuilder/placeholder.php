@@ -187,6 +187,7 @@ $board = function () use ($sk): string {
       <div class="rbph-col12 rbph-gap4">
         <?= $sk('ac-skeleton--panel rbph-h159') ?>
         <?= $sk('ac-skeleton--panel rbph-h190') ?>
+        <?= isset(spaProxyServices()['ownership']) ? $sk('ac-skeleton--control') : '' /* « Choisir les arts des jetons » */ ?>
         <?= $listSection() ?>
       </div>
 <?php else: ?>

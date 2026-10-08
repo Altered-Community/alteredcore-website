@@ -1496,6 +1496,35 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 
+  test('« Mon deck » on a phone: nothing moves while the owner, the alt-art mode and the rarity icons arrive', { tag: '@mobile' }, async ({ page, compact }) => {
+    test.skip(!compact, 'the « Deck » view is a phone view');
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E mon deck ${Date.now()}`);
+    const id = await editorDeckId(page);
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
+    await addTwoCards(page);
+    await saved;
+
+    // Held: the account's deck ids (the owner, which shows « Choisir les arts des jetons »), the alt-art mode and the
+    // rarity icons of the summary (sized by their height only).
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/papi\/rebuilder\/my-deck-ids|\/alt-arts\/preference-mode|\/assets\/icons\/rarete-/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await bypassCaches(page);
+    await page.goto(`${EDITOR(id)}&view=deck&lang=fr`);
+    const section = page.locator('app-deck-list-view ac-deck-section').first();
+    await expect(section).toBeVisible();
+    const before = await section.boundingBox();
+
+    release();
+    await expect(page.getByRole('button', { name: 'Choisir les arts des jetons' })).toBeVisible();
+    await expect(page.locator('ac-rarity-summary img').first()).toHaveJSProperty('complete', true);
+    expect((await section.boundingBox())?.y).toBe(before?.y);
+  });
+
   test('draws its first screen with its styles: the server\'s skeleton stays while they load', { tag: '@mobile' }, async ({ page }) => {
     const decks = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
     const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];

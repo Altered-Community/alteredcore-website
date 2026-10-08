@@ -4,6 +4,9 @@
     <span acSkeleton="panel" class="summary-skeleton"></span>
   }
   <span acSkeleton="panel" class="stats-skeleton"></span>
+  @if (!readonly() && altArts && altArts.tokensChoice() !== false) {
+    <span acSkeleton="control"></span>
+  }
   <div class="ac-card ac-card--sm section-skeleton" aria-hidden="true">
     <span acSkeleton="text" width="35%"></span>
     @for (r of [0, 1, 2, 3]; track r) {
@@ -30,8 +33,10 @@
 <ac-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
   <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ac-collapsible>
-@if (!readonly() && altArts?.canChooseTokens()) {
+@if (!readonly() && altArts?.tokensChoice()) {
   <button acButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+} @else if (!readonly() && altArts?.tokensChoice() === null) {
+  <span acSkeleton="control"></span>
 }
 @for (g of deck.groups(); track g.id) {
   <ac-deck-section appearance="flat" [title]="g.label" [count]="g.count">

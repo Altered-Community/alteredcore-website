@@ -10,7 +10,8 @@
   text-align: center;
   color: var(--ac-color-text-muted);
 }
-/* While the deck opens: the summary, the stats and one section of rows, at their sizes. */
+/* While the deck opens: the summary, the stats, « Choisir les arts des jetons » (when it may come) and one section of
+   rows, at their sizes. */
 .summary-skeleton {
   height: 159px;
 }
