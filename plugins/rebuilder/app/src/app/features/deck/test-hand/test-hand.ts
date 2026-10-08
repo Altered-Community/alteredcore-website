@@ -1,5 +1,5 @@
 import { CdkDrag, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, type CdkDragDrop } from '@angular/cdk/drag-drop';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { localizedText } from '../../../core/models';
@@ -44,13 +44,16 @@ export class TestHand {
   /** « Mode jeu » is desktop only: hidden in the compact layout. */
   protected readonly compact = inject(AcBreakpointService).compact;
   readonly lines = input.required<HydratedLine[]>();
-  /** Draw order: indexes into `pool`. Kept by index so late card data (unique faces) shows in the hand. */
-  private readonly order = signal<number[]>([]);
-  private readonly drawn = signal(0);
-
   private readonly pool = computed(() => handPool(this.lines()));
   /** Changes with the deck contents only, not with late card data (a new `pool` array each time). */
   private readonly poolSize = computed(() => this.pool().length);
+  /**
+   * Draw order: indexes into `pool`, kept by index so late card data (unique faces) shows in the hand. Dealt again
+   * when the deck contents change (loaded, or another deck), and already on the first render: an effect would deal
+   * after it, and a frame could show the hand empty, then the cards push the stats down.
+   */
+  private readonly order = linkedSignal(() => shuffled([...Array(this.poolSize()).keys()]));
+  private readonly drawn = linkedSignal(() => Math.min(HAND_SIZE, this.poolSize()));
   protected readonly hand = computed(() => {
     const pool = this.pool();
     const ids = this.game()?.hand ?? this.order().slice(0, this.drawn());
@@ -78,10 +81,12 @@ export class TestHand {
   };
 
   constructor() {
-    // New deck contents (loaded, or another deck): deal again.
+    // New deck contents during a game (`order` is dealt again): a new game.
     effect(() => {
-      const size = this.poolSize();
-      untracked(() => (size ? this.newHand() : this.order.set([])));
+      this.poolSize();
+      untracked(() => {
+        if (this.game()) this.game.set(newGame(this.order()));
+      });
     });
     // Window narrowed to the compact layout during a game: back to the plain hand.
     effect(() => {
