@@ -135,11 +135,11 @@
               <ng-container i18n="@@editor.boardHint">Survolez une pile pour changer le nombre d’exemplaires.</ng-container>
             }
           </span>
-          @if (effectiveView() === 'apercu' && !bp.compact() && altArts.canChoose()) {
-            <ac-switch label="Regrouper les illustrations" i18n-label="@@editor.stackPrints" [checked]="altArts.stackPrints()" (checkedChange)="altArts.stackPrints.set($event)" />
-          }
           @if (deck.editable()) {
             <ac-save-status [state]="deck.saveState()" />
+          }
+          @if (effectiveView() === 'apercu' && !bp.compact() && altArts.canChoose()) {
+            <ac-switch label="Regrouper les illustrations" i18n-label="@@editor.stackPrints" [checked]="altArts.stackPrints()" (checkedChange)="altArts.stackPrints.set($event)" />
           }
           @if (altArts.canChoose()) {
             <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
