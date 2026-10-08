@@ -1163,16 +1163,50 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await page.goto(`${EDITOR(id)}&view=apercu`);
     await page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' }).click();
     const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
-    await expect(dialog.getByRole('button', { name: /^Exemplaire \d$/ })).toHaveCount(3);
-    // The 2nd copy takes the alt art (one owned): the deck is saved with it.
-    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
-    await dialog.getByRole('button', { name: 'Exemplaire 2' }).click();
+    const copies = dialog.getByRole('list', { name: 'Exemplaires' }).getByRole('listitem');
+    const chosen = (n: number) => dialog.getByRole('button', { name: `Exemplaire ${n}, illustration choisie : rendre l’art par défaut` });
+    // Three copies on their default alt art (the plain print here), faded.
+    await expect(copies).toHaveCount(3);
+    await expect(copies.getByText('Par défaut', { exact: true })).toHaveCount(3);
+    // A touched illustration goes on the first free copy: the deck is saved with it.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
     await dialog.getByRole('button', { name: /^Illustration 2,/ }).click();
     await saved;
-    // The 3rd copy is selected next: the only alt art owned is on the 2nd one already.
-    await expect(dialog.getByRole('button', { name: 'Exemplaire 3' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(chosen(1)).toBeVisible();
+    await expect(copies.getByText('Par défaut', { exact: true })).toHaveCount(2);
+    // The only alt art owned is placed: it waits.
     await expect(dialog.getByRole('button', { name: /^Illustration 2,/ })).toHaveAttribute('aria-disabled', 'true');
     await evidence(page, testInfo, '30-alt-art-brush');
+    // A touched copy goes back to its default alt art.
+    saved = savedCards(page, id, (c) => !c.has(kelon.alt()) && c.get(kelon.base) === 3);
+    await chosen(1).click();
+    await saved;
+    await expect(copies.getByText('Par défaut', { exact: true })).toHaveCount(3);
+    // An illustration dragged onto a copy goes on that copy.
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
+    const from = (await dialog.getByRole('button', { name: /^Illustration 2,/ }).boundingBox())!;
+    const to = (await copies.nth(2).locator('.slot-drop').boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+    await page.mouse.up();
+    await saved;
+    await expect(chosen(3)).toBeVisible();
+    await expect(chosen(1)).toHaveCount(0);
+  });
+
+  test('takes a card brought to 0 off the deck board', async ({ page, compact }) => {
+    test.skip(compact, 'the deck board is from 768 px');
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E board ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile');
+    const kelon = piles.filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await expect(piles).toHaveCount(4);
+    await kelon.hover();
+    await kelon.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles).toHaveCount(3);
+    await expect(kelon).toHaveCount(0);
   });
 
   test('adds a card from the search with the default alt art of its copy', { tag: '@mobile' }, async ({ page }, testInfo) => {

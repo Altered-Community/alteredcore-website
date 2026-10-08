@@ -1,4 +1,4 @@
-import { addedCopyPrint, defaultPrints, familyPrints, linesWithDefaults, removedCopyPrint, sameCopies, withFamilyPrints } from './alt-art-defaults';
+import { addedCopyPrint, defaultPrints, familyPrints, linesWithDefaults, removedCopyPrint, sameCopies, slotChoices, slotDefaults, withFamilyPrints } from './alt-art-defaults';
 import type { HydratedLine } from './models';
 import type { AltArtChoice } from './ownership-api.service';
 
@@ -41,6 +41,33 @@ describe('defaultPrints', () => {
       { slotIndex: 1, reference: MUSUBI },
     ];
     expect(defaultPrints(choice, 2)).toEqual([MUSUBI, ALT]);
+  });
+});
+
+describe('slotDefaults', () => {
+  it('gives a free copy its slot’s default, the copies chosen in the deck taking the owned copies first', () => {
+    expect(slotDefaults(fee([ALT, ALT, MUSUBI], 2), [null, null, null])).toEqual([ALT, ALT, MUSUBI]);
+    expect(slotDefaults(fee([ALT, ALT, MUSUBI], 2), [BASE, null, null])).toEqual([BASE, ALT, MUSUBI]);
+    expect(slotDefaults(fee([ALT, ALT, ALT], 2), [null, ALT, null])).toEqual([ALT, ALT, BASE]);
+    expect(slotDefaults(fee([ALT, ALT, ALT], 1), [null, null, ALT])).toEqual([BASE, BASE, ALT]);
+  });
+});
+
+describe('slotChoices', () => {
+  const back = (choice: AltArtChoice, prints: string[]) => slotDefaults(choice, slotChoices(choice, prints));
+
+  it('leaves free the copies on their default, the other prints chosen', () => {
+    expect(slotChoices(fee([ALT, ALT, MUSUBI]), [ALT, ALT, MUSUBI])).toEqual([null, null, null]);
+    expect(slotChoices(fee([ALT, ALT, MUSUBI]), [MUSUBI, ALT, BASE])).toEqual([null, BASE, null]);
+    expect(slotChoices(fee([ALT, MUSUBI, MUSUBI]), [BASE, BASE, BASE])).toEqual([BASE, BASE, BASE]);
+  });
+
+  it('gives back the deck’s copies, an owned print taken by a chosen copy included', () => {
+    const choice = fee([ALT, ALT, ALT], 1);
+    expect(slotChoices(choice, [BASE, BASE, BASE])).toEqual([BASE, BASE, BASE]);
+    for (const prints of [[BASE, BASE, BASE], [ALT, BASE, BASE], [MUSUBI, BASE, ALT], [MUSUBI, MUSUBI, MUSUBI]]) {
+      expect(sameCopies(back(choice, prints), prints)).toBe(true);
+    }
   });
 });
 

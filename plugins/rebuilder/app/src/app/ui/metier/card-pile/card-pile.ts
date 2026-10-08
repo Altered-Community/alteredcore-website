@@ -11,7 +11,7 @@ import { AcUniqueCard } from '../unique-card/unique-card';
 
 /**
  * A card of the deck board (« Aperçu »): its copies stacked, each one a few pixels lower, « ×n » from 2 copies. Editable:
- * the « − n + » stepper over the card on hover or focus; at 0 the pile stays, faded, until the view is left. A line
+ * the « − n + » stepper over the card on hover or focus; faded at 0. A line
  * with legality issues gets an orange ring and marker.
  */
 @Component({

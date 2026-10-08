@@ -1,6 +1,6 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { DeckStore, displayName } from '../../../core/deck-store';
-import type { Card, HydratedLine } from '../../../core/models';
+import type { Card } from '../../../core/models';
 import { AcCardPile } from '../../../ui/metier';
 import { AcSkeleton } from '../../../ui/containers';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -20,7 +20,7 @@ const DEFAULT_COLUMNS = 8;
 
 /**
  * « Aperçu » from 768 px: the whole deck at a glance, as its image. One column group per type, each card a pile of its
- * copies. Editable (editor): a stepper on each pile; a card brought to 0 keeps its place, faded, until the view is left.
+ * copies. Editable (editor): a stepper on each pile; a card brought to 0 leaves the board (« Annuler » in the toast).
  */
 @Component({
   selector: 'app-deck-board',
@@ -38,17 +38,8 @@ export class DeckBoard {
   private readonly width = signal(0);
 
   protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
-  /** Cards brought to 0 with a pile's stepper since this view opened, by reference: they keep their place, faded. */
-  private readonly removed = signal(new Map<string, Card>());
   /** The groups, sorted: recomputed when the cards change, not when the board is resized. */
-  private readonly board = computed(() => {
-    const lines: HydratedLine[] = this.deck.lines().filter((l) => l.quantity > 0);
-    const present = new Set(lines.map((l) => l.card.reference));
-    if (this.editable()) {
-      for (const [ref, card] of this.removed()) if (!present.has(ref)) lines.push({ card, quantity: 0 });
-    }
-    return boardGroups(lines);
-  });
+  private readonly board = computed(() => boardGroups(this.deck.lines().filter((l) => l.quantity > 0)));
   /** Card columns the width allows: a number, so a resize that keeps it changes nothing downstream. */
   private readonly columns = computed(() => {
     const width = this.width();
@@ -67,25 +58,10 @@ export class DeckBoard {
       observer.observe(host);
       destroyRef.onDestroy(() => observer.disconnect());
     });
-    // Another deck loaded: its own cards only.
-    effect(() => {
-      this.deck.deckId();
-      untracked(() => this.removed.set(new Map()));
-    });
   }
 
-  /**
-   * A pile's stepper. Only a card removed here stays on the board at 0: a reference that leaves the deck otherwise (an
-   * illustration swapped in the zoom, the preferred prints of Global mode) leaves no faded pile behind.
-   */
   protected setQuantity(card: Card, quantity: number): void {
     this.deck.setQuantity(card, quantity);
-    this.removed.update((map) => {
-      const next = new Map(map);
-      if (quantity === 0) next.set(card.reference, card);
-      else next.delete(card.reference);
-      return next;
-    });
   }
 
   protected quantityOf(card: Card): number {

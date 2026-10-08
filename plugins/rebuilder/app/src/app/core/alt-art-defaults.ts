@@ -29,18 +29,50 @@ export function slotPrints(choice: AltArtChoice): string[] {
  * last one), or the base print once the copies owned of that print are used.
  */
 export function defaultPrints(choice: AltArtChoice, count: number): string[] {
+  return slotDefaults(choice, Array<string | null>(count).fill(null));
+}
+
+/**
+ * The prints of copies whose illustration is chosen in the deck (`chosen[i]`) or left to the defaults (`null`): a free
+ * copy i takes slot i (the copies past the last slot take the last one), or the base print once the copies owned of
+ * that print are used, the chosen copies first.
+ */
+export function slotDefaults(choice: AltArtChoice, chosen: readonly (string | null)[]): string[] {
   const slots = slotPrints(choice);
   const base = basePrint(choice);
-  const used = new Map<string, number>();
-  const out: string[] = [];
-  for (let i = 0; i < count; i++) {
+  const used = counts(chosen.filter((c): c is string => c !== null));
+  return chosen.map((c, i) => {
+    if (c !== null) return c;
     const wanted = slots.length ? slots[Math.min(i, slots.length - 1)] : base;
     const owned = ownedOf(choice, wanted);
     const print = owned === null || (used.get(wanted) ?? 0) < owned ? wanted : base;
     used.set(print, (used.get(print) ?? 0) + 1);
-    out.push(print);
+    return print;
+  });
+}
+
+/**
+ * The deck's copies of a family (`prints`) as copies chosen in the deck or left to the defaults (`null`), so that
+ * `slotDefaults` gives the same prints: a copy on its slot's default is free, the other prints go on the other copies.
+ */
+export function slotChoices(choice: AltArtChoice, prints: readonly string[]): (string | null)[] {
+  const left = counts(prints);
+  const defaults = defaultPrints(choice, prints.length);
+  const free = defaults.map((d) => {
+    const n = left.get(d) ?? 0;
+    if (n) left.set(d, n - 1);
+    return n > 0;
+  });
+  const rest = [...left].flatMap(([print, n]) => Array<string>(n).fill(print));
+  const assigned = defaults.map((d, i) => (free[i] ? d : rest.shift()!));
+  const chosen = assigned.map((a, i) => (free[i] ? null : a));
+  // A chosen copy can take an owned print from a free copy after it: that copy is chosen too.
+  for (;;) {
+    const shown = slotDefaults(choice, chosen);
+    const moved = shown.findIndex((s, i) => s !== assigned[i]);
+    if (moved === -1) return chosen;
+    chosen[moved] = assigned[moved];
   }
-  return out;
 }
 
 /**

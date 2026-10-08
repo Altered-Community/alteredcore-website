@@ -48,11 +48,29 @@ ul {
   font: inherit;
   color: inherit;
 }
-.slot {
+/* A copy: its illustration, a drop target for the illustrations below. */
+.slot-drop {
+  position: relative;
   width: 100%;
   border-radius: var(--ac-radius-md);
-  outline: 2px solid transparent;
+  outline: 2px dashed transparent;
   outline-offset: 2px;
+}
+.slot-drop.cdk-drop-list-dragging {
+  outline-color: var(--ac-color-primary);
+}
+/* The dragged illustration's place holder: out of the copy's layout. */
+.slot-drop .cdk-drag-placeholder {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.slot {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: var(--ac-radius-md);
 }
 .slot img {
   display: block;
@@ -61,8 +79,37 @@ ul {
   object-fit: cover;
   border-radius: var(--ac-radius-md);
 }
-.slot.active {
-  outline-color: var(--ac-color-primary);
+/* A copy left to its default alt art: faded. */
+.slot.default img {
+  opacity: 0.4;
+}
+.default-tag {
+  position: absolute;
+  left: 50%;
+  bottom: var(--ac-space-2);
+  transform: translateX(-50%);
+  padding: var(--ac-space-1) var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e3);
+  font-size: var(--ac-font-size-caption);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ac-color-text-muted);
+}
+/* A chosen copy: touched, it goes back to its default alt art. */
+.free {
+  position: absolute;
+  top: var(--ac-space-1);
+  right: var(--ac-space-1);
+  display: grid;
+  place-items: center;
+  width: var(--ac-control-sm);
+  height: var(--ac-control-sm);
+  border-radius: 50%;
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-e3);
+  color: var(--ac-color-text);
 }
 .pool-title {
   margin: 0;
@@ -105,6 +152,13 @@ ul {
 }
 .print.off img {
   opacity: 0.4;
+}
+.pool .cdk-drag-preview .print,
+.pool .cdk-drag-placeholder .print {
+  box-shadow: var(--ac-shadow-e2);
+}
+.pool .cdk-drag-placeholder {
+  opacity: 0.5;
 }
 .note {
   font-size: var(--ac-font-size-caption);

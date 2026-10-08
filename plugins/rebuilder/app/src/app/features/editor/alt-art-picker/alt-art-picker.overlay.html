@@ -1,20 +1,34 @@
-<div class="ac-overlay-body">
-  <p class="hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour la poser sur l’exemplaire sélectionné.</p>
+<div class="ac-overlay-body" cdkDropListGroup>
+  @if (full()) {
+    <p class="hint" i18n="@@editor.altArtPicker.hintFull">Chaque exemplaire a son illustration. Touchez un exemplaire pour lui rendre son art par défaut, ou glissez une illustration dessus.</p>
+  } @else {
+    <p class="hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour la poser sur le prochain exemplaire, ou glissez-la sur l’exemplaire voulu. En transparence : l’art par défaut.</p>
+  }
   <ul class="slots" [style.--copies]="slots().length" aria-label="Exemplaires" i18n-aria-label="@@editor.altArtPicker.copies">
     @for (s of slots(); track $index) {
       <li>
         <span class="slot-label">{{ s.label }}</span>
-        <button type="button" class="slot" [class.active]="$index === active()" [attr.aria-pressed]="$index === active()" [attr.aria-label]="s.label" (click)="select($index)">
-          <img [src]="s.src" alt="" />
-        </button>
+        <div class="slot-drop" cdkDropList [cdkDropListData]="$index" cdkDropListSortingDisabled (cdkDropListDropped)="drop($event)">
+          @if (s.chosen) {
+            <button type="button" class="slot" [attr.aria-label]="s.freeLabel" (click)="free($index)">
+              <img [src]="s.src" alt="" />
+              <span class="free" aria-hidden="true"><ac-icon name="x" [size]="16" /></span>
+            </button>
+          } @else {
+            <div class="slot default">
+              <img [src]="s.src" alt="" />
+              <span class="default-tag" i18n="@@editor.altArtPicker.default">Par défaut</span>
+            </div>
+          }
+        </div>
       </li>
     }
   </ul>
   <h3 class="pool-title" i18n="@@editor.altArtPicker.available">Illustrations disponibles</h3>
-  <ul class="pool">
+  <ul class="pool" cdkDropList cdkDropListOrientation="horizontal" cdkDropListSortingDisabled [cdkDropListEnterPredicate]="noDrop">
     @for (p of pool(); track p.reference) {
-      <li>
-        <button type="button" class="print" [class.off]="p.off" [attr.aria-disabled]="p.off" [attr.aria-label]="p.label + ', ' + p.note" (click)="place(p.reference, p.off)">
+      <li cdkDrag cdkDragPreviewContainer="parent" [cdkDragData]="p.reference" [cdkDragDisabled]="p.off" [cdkDragStartDelay]="dragDelay">
+        <button type="button" class="print" [class.off]="p.off" [attr.aria-disabled]="p.off || full()" [attr.aria-label]="p.label + ', ' + p.note" (click)="place(p.reference)">
           <img [src]="p.src" alt="" loading="lazy" />
           <span class="note">{{ p.note }}</span>
         </button>
@@ -24,6 +38,6 @@
 </div>
 <div class="ac-overlay-footer">
   <a class="settings" [href]="settingsUrl" i18n="@@editor.altArtPicker.settings">Modifier mes arts par défaut</a>
-  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="isDefault()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
+  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="allDefault()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
   <button acButton (click)="ref.close()" i18n="@@editor.altArtPicker.close">Fermer</button>
 </div>
