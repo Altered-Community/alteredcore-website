@@ -215,6 +215,7 @@
   --ac-control-sm: 32px;
   --ac-control-md: 40px;
   --ac-control-lg: 48px;
+  --ac-badge-height: 24px;         /* ac-badge and its skeleton (ac-skeleton--badge) */
   --ac-hit-min: 32px;              /* minimum clickable area */
   --ac-field-font-size: 14px;      /* 16px in touch: iOS zooms on smaller inputs */
   --ac-select-font-size: 13px;

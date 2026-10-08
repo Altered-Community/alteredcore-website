@@ -10,8 +10,12 @@ html {
   scroll-padding-top: calc(var(--ac-page-top) + var(--ac-scroll-top-offset));
 }
 
+/* .ac-spa-placeholder: the server's skeleton of an SPA page (includes/spa.php), shown through a slot of the plugin's
+   shadow root while the plugin loads. A plugin stylesheet that resets its host (`:host { all: initial }`) cuts what the
+   skeleton inherits from the page: without its own font and colour it turns serif once that stylesheet loads. */
 body,
-.ac-plugin-root {
+.ac-plugin-root,
+.ac-spa-placeholder {
   background: var(--ac-color-bg-app);
   color: var(--ac-color-text);
   font: var(--ac-font-body);

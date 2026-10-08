@@ -71,8 +71,16 @@
 .rbph-dialog { max-width: 960px; width: calc(100% - 2 * var(--ac-page-padding)); margin: 10vh auto 0; display: grid; grid-template-columns: 3fr 2fr; gap: var(--ac-space-6); padding: var(--ac-space-6); border-radius: var(--ac-radius-dialog); background: var(--ac-color-surface); box-shadow: var(--ac-shadow-dialog); }
 .rbph-dialog .rbph-col12 > div:last-child { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ac-space-3); }
 /* Phones. */
-.rbph-appbar { display: flex; align-items: center; gap: var(--ac-space-1); height: var(--ac-app-bar-height); padding: 0 var(--ac-space-3); background: var(--ac-color-surface); border-bottom: 1px solid var(--ac-color-border); }
-.rbph-appbar__titles { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--ac-space-1); padding-left: var(--ac-space-1); }
+.rbph-appbar { display: flex; align-items: center; gap: var(--ac-space-1); height: var(--ac-app-bar-height); padding-inline: var(--ac-space-1-5); background: var(--ac-color-surface); border-bottom: 1px solid var(--ac-color-border); }
+.rbph-back { --ac-icon-size: 22px; flex-shrink: 0; }
+.rbph-hero { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: var(--ac-hit-min); height: var(--ac-hit-min); }
+.rbph-hero__art { width: 36px; height: 36px; border-radius: var(--ac-radius-pill); box-shadow: 0 0 0 2px var(--ac-color-surface), 0 0 0 3px var(--ac-color-border-control); }
+.rbph-appbar__titles { flex: 1 1 auto; min-width: 0; min-height: var(--ac-hit-min); display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 var(--ac-space-1); }
+.rbph-appbar__title { font-size: var(--ac-font-size-title-sm); font-weight: 800; line-height: 1.2; white-space: nowrap; }
+.rbph-limits { display: flex; gap: var(--ac-space-1); }
+.rbph-appbar__actions { display: flex; align-items: center; padding-right: 4px; }
+.rbph-appbar__actions > .ac-skeleton { margin: 0 var(--ac-space-1); }
+.rbph-save { min-width: var(--ac-hit-min); }
 .rbph-mpage { display: flex; flex-direction: column; padding: var(--ac-space-3) var(--ac-page-padding) calc(var(--ac-bottom-nav-height) + var(--ac-space-4)); }
 .rbph-bleed { margin-inline: calc(-1 * var(--ac-page-padding)); }
 .rbph-mchips { display: flex; gap: var(--ac-space-2); height: 36px; padding: 0 var(--ac-page-padding); overflow: hidden; }

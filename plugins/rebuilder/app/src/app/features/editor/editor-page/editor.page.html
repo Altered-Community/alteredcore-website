@@ -6,6 +6,25 @@
     [sticky]="effectiveView() !== 'search' || deckTitle"
   >
     <ac-back-button leading fallback="/decks" />
+    <!-- The title not known yet (appBarPending): its skeleton in the final layout (hero, name and rarities on the search and
+         « Aperçu » views; name and format otherwise). -->
+    @if (appBarPending() && deckTitleView()) {
+      <span leading class="bar-hero" aria-hidden="true"><span class="bar-hero-art ac-skeleton"></span></span>
+    }
+    @if (appBarPending()) {
+      <span titles class="bar-deck bar-deck--pending" aria-hidden="true">
+        <span acSkeleton="title" width="70%"></span>
+        @if (deckTitleView()) {
+          <span class="bar-deck-sub">
+            @for (i of [0, 1, 2]; track i) {
+              <span acSkeleton="badge" width="52px"></span>
+            }
+          </span>
+        } @else {
+          <span acSkeleton="text" width="50%"></span>
+        }
+      </span>
+    }
     <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->
     @if (deckTitle) {
       <button leading type="button" class="bar-hero" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
@@ -29,11 +48,13 @@
         </span>
       </button>
     }
-    @if (deck.editable()) {
+    <!-- Also while the owner is not known (idle: an empty slot), so the title keeps its width when the actions arrive. -->
+    @if (deck.editable() || (deck.owned() === null && !deck.loadError())) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
-    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton. -->
-    @for (i of deck.owned() === null && !deck.loadError() ? [0, 1] : []; track i) {
+    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton, where the final ones go
+         (« ⋯ » only beside the deck title). -->
+    @for (i of deck.owned() === null && !deck.loadError() ? (deckTitleView() ? [0] : [0, 1]) : []; track i) {
       <span actions acSkeleton="circle"></span>
     }
     <!-- With the deck title, « Partager » moves to the « ⋯ » menu to leave room for the rarities. -->

@@ -185,9 +185,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page }) => {
+  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page, compact }) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
-    await createDeck(page, `E2E skeleton ${Date.now()}`);
+    const name = `E2E skeleton ${Date.now()}`;
+    await createDeck(page, name);
     const id = await editorDeckId(page);
 
     // The app's scripts and the deck are held: the server's skeleton stands for the page meanwhile.
@@ -218,10 +219,20 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
     await expect(page.getByText('Deck vide')).toHaveCount(0);
     await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
+    // Phones: the app bar in skeleton in its final layout (hero, name over the rarities), not « Chargement du deck… ».
+    const bar = page.locator('ac-app-bar');
+    if (compact) {
+      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(4);
+      await expect(bar).not.toContainText('Chargement');
+    }
 
     releaseDeck();
     await expect(deckView.locator('.ac-skeleton')).toHaveCount(0);
     await expect(page.getByText('Deck vide')).toBeVisible();
+    if (compact) {
+      await expect(bar.locator('.bar-deck-name')).toHaveText(name);
+      await expect(bar.locator('.ac-skeleton')).toHaveCount(0);
+    }
   });
 
   for (const { tab, short, endpoint, shot } of [
@@ -1476,9 +1487,36 @@ test.describe('ReBuilder in the shell · loading', () => {
     const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
     await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder');
     await expect(page.locator('#ac-spa-rebuilder > .ac-spa-placeholder')).toHaveCount(1);
+    // Once the plugin's stylesheets reset its shadow host (`:host { all: initial }`), the skeleton keeps the site's font.
+    await expect.poll(() => page.evaluate(() => [...document.querySelector('#ac-spa-rebuilder')!.shadowRoot!.querySelectorAll('link[rel="stylesheet"]')].every((l) => (l as HTMLLinkElement).sheet))).toBe(true);
+    expect(await page.locator('.ac-spa-placeholder').evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Figtree');
 
     releasePage();
     await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
+  });
+
+  test('draws its first screen with its styles: the server\'s skeleton stays while they load', { tag: '@mobile' }, async ({ page }) => {
+    const decks = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];
+    // The plugin's own stylesheet (shadow root) is held: the app draws its page, unstyled, which must not show.
+    let releaseStyles!: () => void;
+    const styles = new Promise<void>((resolve) => (releaseStyles = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/embed\.css/, async (route) => {
+      await styles;
+      await route.continue();
+    });
+    await bypassCaches(page);
+    await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
+    const root = page.locator('.ac-plugin-root');
+    await expect(page.locator('app-deck-page ac-app-bar, app-deck-page app-deck-bar').first()).toBeAttached();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await expect(root).toHaveCSS('visibility', 'hidden');
+
+    releaseStyles();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(root).toHaveCSS('visibility', 'visible');
     await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 });
