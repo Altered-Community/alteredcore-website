@@ -42,8 +42,13 @@ The rules that matter most:
     the skeleton losing the site's font, a « Chargement… » title, or a CLS over the screen's budget
     (`plugins/rebuilder/e2e/loading-budgets.json`: 0.01, or today's value for a known shift; lower a budget when a fix
     lands, never raise one to pass).
-  - `npm run loading:timeline -- <screen> [--desktop] [--first-visit] [--compare <other stack>]`: the loading frame by
-    frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare` puts the base
-    branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts` for the options.
+  - `npm run loading:timeline -- <screen> [--viewport <size> | --desktop] [--first-visit] [--frames] [--compare <other stack>]`:
+    the loading frame by frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare`
+    puts the base branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts`
+    for the options.
+  - `npm run loading:matrix [-- --screens a,b --viewports a,b --runs n]`: the CLS of every screen at seven sizes (phones,
+    tablet, laptops, desktops: `VIEWPORTS` in `tests/e2e/loading.ts`), on both sides of the breakpoints, in one table
+    with what moved. Run it after a layout change that depends on the width (a breakpoint, a container query, a skeleton
+    whose size is set for one width).
   - A new screen or a new loading state: add it to `plugins/rebuilder/e2e/screens.ts`; the recorder
     (`tests/e2e/loading.ts`) works for any SPA plugin.

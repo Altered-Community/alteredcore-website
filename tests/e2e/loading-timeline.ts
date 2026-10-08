@@ -8,17 +8,20 @@
 //                       main, new; the screens of a deck use a new deck of the account
 //     --base <url>      site to load (default E2E_BASE_URL or http://localhost:8080)
 //     --compare <url>   a second site (another checkout's stack: before / after), drawn as a second row
-//     --desktop         1440×900 (default: phone, 390×844)
+//     --viewport <v>    a size of VIEWPORTS in loading.ts: phone-s, phone (default, 390×844), tablet, laptop-s, laptop,
+//                       desktop, wide
+//     --desktop         --viewport desktop (1440×900)
 //     --first-visit     empty cache (default: second visit, the page loaded once before)
 //     --profile <p>     phone (default: 150 ms, 1.6 Mbit/s, CPU 4×), slowPhone (300 ms, 750 kbit/s, CPU 6×), fast
 //     --user <u>        alice (default), bob, or none (signed out)
 //     --out <dir>       default test-results/loading; writes <name>.png and <name>.json
+//     --frames          also writes the frames of the image at full size: <name>/<ms>.png
 //
 // Node ≥ 22.18 (TypeScript type stripping). Run from tests/e2e (its node_modules) against the full stack.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium, type Browser } from '@playwright/test';
-import { emptyCache, loadingReport, throttle, watchLoading, type LoadingReport, type Profile } from './loading.ts';
+import { VIEWPORTS, emptyCache, loadingReport, throttle, watchLoading, type LoadingReport, type Profile } from './loading.ts';
 import { createServerDeck } from '../../plugins/rebuilder/e2e/decks.ts';
 import { FORBIDDEN_TEXTS, SCREENS } from '../../plugins/rebuilder/e2e/screens.ts';
 
@@ -30,28 +33,28 @@ const option = (name: string, fallback?: string) => {
 };
 const target = args[0];
 if (!target || target.startsWith('--')) {
-  console.error('usage: node tests/e2e/loading-timeline.ts <screen | /path> [--base url] [--compare url] [--desktop] [--first-visit] [--profile phone|slowPhone|fast] [--user alice|bob|none] [--out dir]');
+  console.error('usage: node tests/e2e/loading-timeline.ts <screen | /path> [--base url] [--compare url] [--viewport v | --desktop] [--first-visit] [--profile phone|slowPhone|fast] [--user alice|bob|none] [--out dir]');
   console.error(`screens: ${SCREENS.map((s) => s.key).join(', ')}`);
   process.exit(1);
 }
 const screen = SCREENS.find((s) => s.key === target);
 if (!screen && !target.startsWith('/')) throw new Error(`unknown screen ${target} (${SCREENS.map((s) => s.key).join(', ')}), or a path starting with /`);
 const bases = [option('base', process.env['E2E_BASE_URL'] ?? 'http://localhost:8080')!, option('compare')].filter((b): b is string => !!b);
-const desktop = flag('desktop');
+const size = flag('desktop') ? 'desktop' : option('viewport', 'phone')!;
+if (!VIEWPORTS[size]) throw new Error(`unknown viewport ${size} (${Object.keys(VIEWPORTS).join(', ')})`);
+const wide = (VIEWPORTS[size].viewport?.width ?? 0) >= 768;
 const firstVisit = flag('first-visit');
 const profile = option('profile', 'phone') as Profile;
 const user = option('user', 'alice')!;
 const out = resolve(option('out', 'test-results/loading')!);
-const name = `${screen?.key ?? 'page'}-${desktop ? 'desktop' : 'mobile'}-${firstVisit ? 'first' : 'second'}-visit`;
+const name = `${screen?.key ?? 'page'}-${size}-${firstVisit ? 'first' : 'second'}-visit`;
 const PASSWORD = 'TestPassword1234'; // docker/stack/players-realm.json
 
 interface Frame { ms: number; png: Buffer }
 interface Run { base: string; url: string; frames: Frame[]; report: LoadingReport }
 
 async function capture(browser: Browser, base: string): Promise<Run> {
-  const context = await browser.newContext(desktop
-    ? { viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' }
-    : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
+  const context = await browser.newContext({ ...VIEWPORTS[size], deviceScaleFactor: Math.min(VIEWPORTS[size].deviceScaleFactor ?? 1, 2), serviceWorkers: 'block' });
   await context.addCookies([{ name: 'alteredcore_consent', value: '1', url: base }, { name: 'ac_beta', value: '1', url: base }]);
   const page = await context.newPage();
   if (user !== 'none') {
@@ -96,6 +99,7 @@ async function capture(browser: Browser, base: string): Promise<Run> {
 
 /** One row per run: the frames where the screen changes, empty content framed in red, shifts marked under the frame. */
 async function compose(browser: Browser, runs: Run[], file: string): Promise<void> {
+  const framesDir = flag('frames') ? file.replace(/\.png$/, '') : null;
   const page = await browser.newPage({ deviceScaleFactor: 1 });
   await page.setContent('<!doctype html><body style="margin:0;background:#fff"></body>');
   const rows = await page.evaluate(async (input) => {
@@ -133,7 +137,15 @@ async function compose(browser: Browser, runs: Run[], file: string): Promise<voi
     }
     return out;
   }, { runs: runs.map((r, i) => ({ label: runs.length > 1 ? (i === 0 ? 'A' : 'B') + ` · ${new URL(r.base).host}` : new URL(r.base).host, shifts: r.report.shifts, frames: r.frames.map((f) => ({ ms: f.ms, src: `data:image/png;base64,${f.png.toString('base64')}` })) })) });
-  const frameWidth = desktop ? 360 : 195;
+  if (framesDir) {
+    rmSync(framesDir, { recursive: true, force: true });
+    rows.forEach((r, i) => {
+      const dir = rows.length > 1 ? join(framesDir, String.fromCharCode(65 + i)) : framesDir;
+      mkdirSync(dir, { recursive: true });
+      for (const f of r.frames) writeFileSync(join(dir, `${f.ms}.png`), Buffer.from(f.src.split(',')[1], 'base64'));
+    });
+  }
+  const frameWidth = wide ? 360 : 195;
   await page.setContent(`<!doctype html><style>
       body { margin: 0; background: #fff; font: 600 15px system-ui, sans-serif; color: #0c1a32; }
       main { display: inline-flex; flex-direction: column; gap: 24px; padding: 20px; }
