@@ -1,5 +1,7 @@
 import { deflateRawSync } from 'node:zlib';
 import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
+import { emptyCache } from '../../../tests/e2e/loading';
+import { createServerDeck } from './decks';
 
 /**
  * Re:Builder's decks section (plugin `rebuilder`): with « Beta Deckbuilder » on (cookie ac_beta), the shell serves it
@@ -91,18 +93,6 @@ async function editorDeckId(page: Page): Promise<string> {
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/**
- * Sends the page's next requests to the network, where routes see them: the site's service worker (installed by the
- * first visit, it would answer the scripts itself) is unregistered and the browser cache (Chromium) turned off.
- */
-async function bypassCaches(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    for (const registration of (await navigator.serviceWorker?.getRegistrations()) ?? []) await registration.unregister();
-  });
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Network.enable');
-  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-}
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
@@ -185,9 +175,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page }) => {
+  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page, compact }) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
-    await createDeck(page, `E2E skeleton ${Date.now()}`);
+    const name = `E2E skeleton ${Date.now()}`;
+    await createDeck(page, name);
     const id = await editorDeckId(page);
 
     // The app's scripts and the deck are held: the server's skeleton stands for the page meanwhile.
@@ -205,7 +196,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     });
     // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
     // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
     const placeholder = page.locator('.ac-spa-placeholder');
     await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
@@ -218,10 +209,20 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
     await expect(page.getByText('Deck vide')).toHaveCount(0);
     await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
+    // Phones: the app bar in skeleton in its final layout (hero, name over the rarities), not « Chargement du deck… ».
+    const bar = page.locator('ac-app-bar');
+    if (compact) {
+      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(4);
+      await expect(bar).not.toContainText('Chargement');
+    }
 
     releaseDeck();
     await expect(deckView.locator('.ac-skeleton')).toHaveCount(0);
     await expect(page.getByText('Deck vide')).toBeVisible();
+    if (compact) {
+      await expect(bar.locator('.bar-deck-name')).toHaveText(name);
+      await expect(bar.locator('.ac-skeleton')).toHaveCount(0);
+    }
   });
 
   for (const { tab, short, endpoint, shot } of [
@@ -949,32 +950,6 @@ test.describe('ReBuilder in the shell · app bar of the search and « Aperçu »
 });
 
 test.describe('ReBuilder in the shell · deck page', () => {
-  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why), plus `extra` references. */
-  async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {
-    return page.evaluate(async ([deckName, more]) => {
-      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
-      const res = await fetch(`${host.services.decks}/api/decks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
-        body: JSON.stringify({
-          name: deckName,
-          description: 'Première ligne\nDeuxième ligne',
-          format: 'standard',
-          isPublic: false,
-          deckCards: [
-            { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
-            { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
-            ...more.map((cardReference) => ({ cardReference, quantity: 1 })),
-          ],
-        }),
-      });
-      if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
-      return ((await res.json()) as { id: string }).id;
-    }, [name, extra] as const);
-  }
-
   /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
   async function openView(page: Page, compact: boolean, tab: string, nav: string): Promise<void> {
     if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
@@ -1437,7 +1412,7 @@ test.describe('ReBuilder in the shell · loading', () => {
       await scripts;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await page.waitForTimeout(300);
@@ -1466,19 +1441,78 @@ test.describe('ReBuilder in the shell · loading', () => {
       await pageModules;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
     // The app's root is drawn: a placeholder taken for the first screen would go at the next frame.
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
-    // The first paint waits for the skeleton (not the site header over an empty page): <head> names its mount point.
+    // The first paint waits for the skeleton (not the site header over an empty page): <head> names an element after it.
     const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
-    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder');
-    await expect(page.locator('#ac-spa-rebuilder > .ac-spa-placeholder')).toHaveCount(1);
+    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder-parsed');
+    await expect(page.locator('#ac-spa-rebuilder:has(> .ac-spa-placeholder) + #ac-spa-rebuilder-parsed')).toHaveCount(1);
+    // Once the plugin's stylesheets reset its shadow host (`:host { all: initial }`), the skeleton keeps the site's font.
+    await expect.poll(() => page.evaluate(() => [...document.querySelector('#ac-spa-rebuilder')!.shadowRoot!.querySelectorAll('link[rel="stylesheet"]')].every((l) => (l as HTMLLinkElement).sheet))).toBe(true);
+    expect(await page.locator('.ac-spa-placeholder').evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Figtree');
 
     releasePage();
     await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
+  });
+
+  test('« Mon deck » on a phone: nothing moves or changes look while the owner, the alt-art mode and the rarity icons arrive', { tag: '@mobile' }, async ({ page, compact }) => {
+    test.skip(!compact, 'the « Deck » view is a phone view');
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E mon deck ${Date.now()}`);
+    const id = await editorDeckId(page);
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
+    await addTwoCards(page);
+    await saved;
+
+    // Held: the account's deck ids (the owner, which shows « Choisir les arts des jetons »), the alt-art mode and the
+    // rarity icons of the summary (sized by their height only).
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/papi\/rebuilder\/my-deck-ids|\/alt-arts\/preference-mode|\/assets\/icons\/rarete-/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${EDITOR(id)}&view=deck&lang=fr`);
+    const section = page.locator('app-deck-list-view ac-deck-section').first();
+    await expect(section).toBeVisible();
+    const before = await section.boundingBox();
+    // The rows have their steppers already, not a read-only « ×1 » replaced once the owner is known.
+    await expect(section.locator('ac-deck-row ac-stepper')).toHaveCount(2);
+    await expect(section.locator('ac-deck-row .qty')).toHaveCount(0);
+
+    release();
+    await expect(page.getByRole('button', { name: 'Choisir les arts des jetons' })).toBeVisible();
+    await expect(page.locator('ac-rarity-summary img').first()).toHaveJSProperty('complete', true);
+    expect((await section.boundingBox())?.y).toBe(before?.y);
+  });
+
+  test('draws its first screen with its styles: the server\'s skeleton stays while they load', { tag: '@mobile' }, async ({ page }) => {
+    const decks = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];
+    // The plugin's own stylesheet (shadow root) is held: the app draws its page, unstyled, which must not show.
+    let releaseStyles!: () => void;
+    const styles = new Promise<void>((resolve) => (releaseStyles = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/embed\.css/, async (route) => {
+      await styles;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
+    const root = page.locator('.ac-plugin-root');
+    await expect(page.locator('app-deck-page ac-app-bar, app-deck-page app-deck-bar').first()).toBeAttached();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await expect(root).toHaveCSS('visibility', 'hidden');
+
+    releaseStyles();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(root).toHaveCSS('visibility', 'visible');
     await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 });

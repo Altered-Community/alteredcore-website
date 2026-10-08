@@ -33,7 +33,7 @@
           [card]="l.card"
           [quantity]="l.quantity"
           [max]="deck.maxFor(l.card)"
-          [readonly]="readonly() || !deck.editable()"
+          [readonly]="readonly() || !deck.steppersShown()"
           [zoomable]="true"
           (quantityChange)="deck.setQuantity(l.card, $event)"
           (zoom)="zoom(l.card)"

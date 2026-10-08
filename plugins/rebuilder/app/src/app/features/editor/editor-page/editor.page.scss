@@ -267,6 +267,11 @@
   color: var(--ac-color-text-muted);
   white-space: nowrap;
 }
+/* The hero and the deck title in skeleton (appBarPending): nothing to click yet. */
+.bar-hero:not(button),
+.bar-deck--pending {
+  cursor: default;
+}
 .bar-hero:focus-visible,
 .bar-deck:focus-visible {
   outline: 2px solid var(--ac-color-focus);

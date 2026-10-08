@@ -242,14 +242,21 @@ function spaPreloads(array $page): array {
     return $out;
 }
 
-/**
- * Id of the page's mount point (spaRenderPage()), which holds the server's placeholder; null for a page that cannot
- * render. The header names it in <link rel="expect" blocking="render">: the browser paints nothing before it has
- * parsed the placeholder, so the first frame is the page's skeleton, not the site header over an empty page (the
- * site's menus come first in the HTML).
- */
+/** Id of the page's mount point (spaRenderPage()), which holds the server's placeholder; null for a page that cannot render. */
 function spaMountId(array $page): ?string {
     return $page['spa']['error'] === null ? 'ac-spa-' . $page['plugin_id'] : null;
+}
+
+/**
+ * Id of an empty element right after the mount point (spaRenderPage()), named by the header's
+ * <link rel="expect" blocking="render">: the browser paints nothing before it has parsed it, so the first frame is the
+ * page's skeleton, not the site header over an empty page (the site's menus come first in the HTML). After the mount
+ * point, not the mount point itself: Chromium paints as soon as the expected element is inserted, and the parser may
+ * stop inside the placeholder (about 1 load in 25 showed the header alone). Null for a page that cannot render.
+ */
+function spaFirstPaintId(array $page): ?string {
+    $mount = spaMountId($page);
+    return $mount === null ? null : $mount . '-parsed';
 }
 
 /** Body of an SPA page: mount point, host contract, runtime and plugin modules. */
@@ -270,6 +277,7 @@ function spaRenderPage(array $page): void {
     ?>
 <div class="ac-spa-page" data-ac-page="<?= h($page['slug']) ?>">
     <div class="ac-spa-host" id="<?= h(spaMountId($page)) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
+    <span id="<?= h(spaFirstPaintId($page)) ?>" hidden></span>
     <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
 </div>
 <?php

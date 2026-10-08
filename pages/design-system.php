@@ -509,6 +509,7 @@ include dirname(__DIR__) . '/includes/header.php';
                     <span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 70%" aria-hidden="true"></span>
                     <span class="ac-skeleton ac-skeleton--control" aria-hidden="true"></span>
                     <span class="ac-skeleton ac-skeleton--control-sm" style="--ac-skeleton-width: 120px" aria-hidden="true"></span>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--badge" style="--ac-skeleton-width: 56px" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--badge" style="--ac-skeleton-width: 56px" aria-hidden="true"></span></div>
                     <div class="ac-row"><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span></div>
                     <span class="ac-skeleton ac-skeleton--panel" style="height: 4rem" aria-hidden="true"></span>
                 </div>

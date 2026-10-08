@@ -13,7 +13,9 @@ import { OwnershipApiService, familyKey, type AltArtChoice } from '../../core/ow
 export class EditorAltArts {
   private readonly deck = inject(DeckStore);
   private readonly ownership = inject(OwnershipApiService);
-  readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
+  /** Alt-art preference mode: `undefined` until the ownership service has answered. */
+  private readonly mode = toSignal(this.ownership.globalAltArts());
+  readonly global = computed(() => this.mode() === true);
 
   /** References of the deck (hero included), sorted: the families are fetched again only when they change. */
   private readonly refs = computed(
@@ -61,8 +63,16 @@ export class EditorAltArts {
     });
   }
 
-  /** « Choisir les arts des jetons »: per-deck mode with the ownership service, on an editable deck. */
-  readonly canChooseTokens = computed(() => !!this.ownership.baseUrl && !this.global() && this.deck.editable());
+  /**
+   * « Choisir les arts des jetons »: per-deck mode with the ownership service, on an editable deck. `null` while the
+   * owner or the mode is not known yet: the button's place is kept (in skeleton), so the list under it does not move
+   * when it comes.
+   */
+  readonly tokensChoice = computed<boolean | null>(() => {
+    if (!this.ownership.baseUrl || this.deck.owned() === false || this.mode() === true) return false;
+    return this.deck.owned() === null || this.mode() === undefined ? null : true;
+  });
+  readonly canChooseTokens = computed(() => this.tokensChoice() === true);
 
   /** Per-deck mode: the prints a card of the deck can take (`null`: one illustration only, or Global mode). */
   choiceFor(reference: string): AltArtChoice | null {

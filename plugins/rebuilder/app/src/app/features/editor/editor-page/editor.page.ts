@@ -164,20 +164,29 @@ export class EditorPage {
    * Phones, search and « Aperçu » views of an editable deck: the app bar takes the hero (« Choisir un héros ») and, as its title, the deck
    * name over the rarities against the format's caps (« Résumé du deck »), what the deck bar shows from 768 px.
    */
-  protected readonly deckAppBar = computed(() => this.bp.compact() && (this.view() === 'search' || this.view() === 'apercu') && this.deck.editable() && !this.deck.opening() && !this.deck.loadError());
+  protected readonly deckAppBar = computed(() => this.deckTitleView() && this.deck.editable() && !this.deck.loadError());
   protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
   protected readonly heroButtonLabel = computed(() => {
     const name = this.deck.hero()?.name;
     return name ? $localize`:@@editor.changeHeroOf:Changer de héros (${name}:name:)` : $localize`:@@ui.deckSummary.changeHero:Changer de héros`;
   });
+  /** Phones, search and « Aperçu » views: the app bar shows the deck title (`deckAppBar`) once the deck is the user's. */
+  protected readonly deckTitleView = computed(() => this.bp.compact() && (this.view() === 'search' || this.view() === 'apercu'));
+  /**
+   * Phones: the app bar's title is not known yet (the deck opens; search and « Aperçu »: until its owner is known, which
+   * picks the deck title or the plain one). Its skeleton meanwhile, in the final layout, not a « Chargement du deck… »
+   * title then another layout.
+   */
+  protected readonly appBarPending = computed(
+    () => !this.deck.loadError() && this.view() !== 'deck' && (this.deckTitleView() ? this.deck.owned() === null : this.deck.opening()),
+  );
   /** The button's name replaces its content: it carries the rarities too, as the badges' labels. */
-  /** With the deck title (`deckAppBar`), the app bar's own title and subtitle are left empty. */
+  /** With the deck title (`deckAppBar`) or its skeleton, the app bar's own title and subtitle are left empty. */
   protected readonly appBarTitle = computed(() => {
-    if (this.deckAppBar()) return '';
-    if (this.deck.opening()) return this.labels.loading;
+    if (this.deckAppBar() || this.appBarPending()) return '';
     return this.view() === 'deck' ? this.labels.myDeck : this.deck.name() || 'Deck';
   });
-  protected readonly appBarSubtitle = computed(() => (this.deckAppBar() || this.view() === 'deck' || this.deck.opening() ? '' : this.subtitle()));
+  protected readonly appBarSubtitle = computed(() => (this.deckAppBar() || this.appBarPending() || this.view() === 'deck' ? '' : this.subtitle()));
   protected readonly overviewLabel = computed(() =>
     [
       $localize`:@@editor.overviewOf:Résumé du deck ${this.deck.name()}:name:`,

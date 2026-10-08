@@ -104,7 +104,7 @@ The core stays build-free. Front-end plugins (manifest v2, `"type": "spa"`, e.g.
 docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
 ```
 
-Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
+Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`). Loading checks (skeletons, layout shifts): `npm run loading` and `npm run loading:timeline -- <screen>` in `tests/e2e` (`AGENTS.md` § Checks).
 
 **Like production.** To get the plugins active on https://altered.re and its public content (news, content pages, side menu, footer, fonts, logo, home page text, images):
 
