@@ -682,6 +682,7 @@
     "altArt.marker": "Copy {$n}",
     "altArt.chosen": "Chosen illustration",
     "altArt.saveError": "Could not save your choice.",
+    "altArt.notEnoughCopies": "You don’t have enough copies of this alt art.",
     "core.violation.sets": "Set missing from BGA",
     "core.violation.frontierUniques": "Off the Frontier list",
     "search.filters.costRelation.any": "Cost management",

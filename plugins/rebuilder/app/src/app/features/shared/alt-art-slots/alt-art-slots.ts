@@ -29,19 +29,24 @@ export class AltArtSlots {
   protected readonly saving = signal(false);
   protected readonly tiles = computed(() => {
     const copies = this.slots().map((s, i) => ({ ...s, copy: i + 1 }));
-    return this.choice().options.options.map((o) => ({
-      reference: o.reference,
-      src: cardImageUrl(o.reference),
-      owned: o.ownedQuantity === null || o.ownedQuantity > 0,
-      markers: copies.filter((s) => s.reference === o.reference),
-    }));
+    return this.choice().options.options.map((o) => {
+      const markers = copies.filter((s) => s.reference === o.reference);
+      return {
+        reference: o.reference,
+        src: cardImageUrl(o.reference),
+        owned: o.ownedQuantity === null || o.ownedQuantity > 0,
+        /** Every owned copy of this illustration is already on a copy of the deck. */
+        full: o.ownedQuantity !== null && markers.length >= o.ownedQuantity,
+        markers,
+      };
+    });
   });
   protected readonly tileLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
   protected readonly markerLabel = (n: number) => $localize`:@@altArt.marker:Exemplaire ${n}:n:`;
   protected readonly chosenLabel = $localize`:@@altArt.chosen:Illustration choisie`;
 
   /** An owned illustration: the active marker (or the next one not already there) moves onto it. */
-  protected pick(reference: string, owned: boolean): void {
+  protected pick({ reference, owned, full }: { reference: string; owned: boolean; full: boolean }): void {
     if (!owned || this.saving()) return;
     const slots = this.slots();
     const start = Math.max(0, slots.findIndex((s) => s.slotIndex === this.active()));
@@ -54,6 +59,10 @@ export class AltArtSlots {
       }
     }
     if (!moved) return;
+    if (full) {
+      this.error.set(notEnoughCopies());
+      return;
+    }
     const before = slots;
     const beforeActive = this.active();
     const next = slots.map((s) => (s.slotIndex === moved.slotIndex ? { ...s, reference } : s));
@@ -77,13 +86,9 @@ export class AltArtSlots {
   }
 }
 
+const notEnoughCopies = () => $localize`:@@altArt.notEnoughCopies:Vous n’avez pas assez d’exemplaires de cet art alternatif.`;
+
+/** A refusal for copies the player does not own (409) says so; any other error, that the choice was not saved. */
 function saveError(err: unknown): string {
-  const head = $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
-  if (err instanceof HttpErrorResponse && err.status === 409 && Array.isArray(err.error)) {
-    const detail = (err.error as { reference?: string; requested?: number; owned?: number }[])
-      .map((s) => `${s.reference} (${s.requested}/${s.owned})`)
-      .join(', ');
-    return detail ? `${head} — ${detail}` : head;
-  }
-  return head;
+  return err instanceof HttpErrorResponse && err.status === 409 ? notEnoughCopies() : $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 }

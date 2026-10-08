@@ -1141,6 +1141,65 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await evidence(page, testInfo, '27-alt-art-copies');
   });
 
+  test('says the player lacks copies of an alt art when they pick it once more than they own', async ({ page }, testInfo) => {
+    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
+    // The card's own illustrations, with one copy of the second; three copies of the card in the deck.
+    type Options = { options: { reference: string; ownedQuantity: number | null }[]; slots: { slotIndex: number; reference: string }[] };
+    await page.route('**/papi/core-altered-cards/deck-alt-arts**', async (route) => {
+      const body = (await (await route.fetch()).json()) as { options: Record<string, Options> };
+      for (const family of Object.values(body.options)) {
+        family.options = family.options.slice(0, 2).map((o, i) => ({ ...o, ownedQuantity: i === 0 ? null : 1 }));
+        family.slots = family.slots.map((s) => ({ ...s, reference: family.options[0].reference }));
+      }
+      await route.fulfill({ json: body });
+    });
+    // The first pick is saved; the second never reaches the service.
+    const saves: unknown[] = [];
+    await page.route('**/api/alt-arts/preferences', (route) => {
+      saves.push(route.request().postDataJSON());
+      return route.fulfill({ status: 204 });
+    });
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E alt art copies ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    await page.goto(DECK(id));
+    await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).click();
+    const tile = page.locator('app-alt-art-slots').getByRole('button', { name: 'Illustration 2' });
+    const markers = page.locator('app-alt-art-slots li').nth(1).getByRole('button', { name: /^Exemplaire \d$/ });
+    await tile.click();
+    await expect(markers).toHaveText(['1']);
+    await tile.click();
+    await expect(page.locator('app-alt-art-slots').getByRole('alert')).toHaveText('Vous n’avez pas assez d’exemplaires de cet art alternatif.');
+    await expect(markers).toHaveText(['1']);
+    expect(saves).toHaveLength(1);
+    await evidence(page, testInfo, '28-alt-art-not-enough-copies');
+  });
+
+  test('shows the whole card window on a short phone screen (browser bars): the card shrinks, the buttons stay visible', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    // 390 × 640: a phone whose browser shows its address bar and its navigation bar.
+    await page.setViewportSize(compact ? { width: 390, height: 640 } : { width: 1440, height: 640 });
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E zoom fits ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    const fits = async (shot: string) => {
+      await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
+      const detail = dialog.getByRole('link', { name: 'Accéder au détail' });
+      await expect(detail).toBeVisible();
+      await evidence(page, testInfo, shot);
+      await expect(detail).toBeInViewport({ ratio: 1 });
+      // The card's 3D stage may round its edge by a fraction of a pixel.
+      await expect(dialog.locator('ac-card-tile')).toBeInViewport({ ratio: 0.99 });
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    };
+    // Per-deck mode, editor: copies and « Choisir une illustration ».
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    await fits('29-card-zoom-short-screen');
+    // Global mode: the illustrations strip above the copies.
+    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
+    await page.reload();
+    await fits('29b-card-zoom-short-screen-global');
+  });
+
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {
     const res = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
     const deck = ((await res.json()) as { member: { id: string; name: string }[] }).member[0];
