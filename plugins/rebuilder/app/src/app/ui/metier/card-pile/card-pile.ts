@@ -22,6 +22,7 @@ import { AcUniqueCard } from '../unique-card/unique-card';
     '[class.zero]': 'quantity() === 0',
     '[class.issue]': 'issues().length > 0 && quantity() > 0',
     '[class.editable]': '!readonly()',
+    '[style.--pile-behind]': 'behind().length',
   },
   templateUrl: './card-pile.html',
   styleUrl: './card-pile.scss',
@@ -36,6 +37,9 @@ export class AcCardPile {
   readonly quantityChange = output<number>();
   /** The card was clicked: the page opens it large. */
   readonly zoom = output<void>();
+  /** Brush over the front card (a card with several illustrations, in an editable deck): emits `illustrate`. */
+  readonly illustrations = input(false);
+  readonly illustrate = output<void>();
 
   protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
   protected readonly unique = computed(() => isUniqueReference(this.card().reference));
@@ -49,4 +53,5 @@ export class AcCardPile {
   });
   protected readonly copiesLabel = computed(() => $localize`:@@ui.cardTile.copiesInDeck:Exemplaires de ${this.name()}:name: dans le deck`);
   protected readonly issueLabel = computed(() => this.issues().join(' · '));
+  protected readonly illustrateLabel = computed(() => $localize`:@@ui.cardTile.illustrate:Choisir les illustrations de ${this.name()}:name:`);
 }

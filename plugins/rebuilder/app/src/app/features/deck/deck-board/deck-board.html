@@ -16,11 +16,13 @@
         <ac-card-pile
           [card]="l.card"
           [quantity]="l.quantity"
-          [max]="deck.maxFor(l.card)"
+          [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
           [readonly]="!editable()"
           [issues]="issues().get(l.card.reference) ?? noIssues"
           (quantityChange)="setQuantity(l.card, $event)"
           (zoom)="zoom(l.card)"
+          [illustrations]="canIllustrate(l.card)"
+          (illustrate)="illustrate(l.card)"
         />
       }
     </div>

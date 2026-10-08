@@ -38,6 +38,11 @@ export class AcCardTile {
   /** The visual is a button that emits `zoom` (the page opens the card large). */
   readonly zoomable = input(false);
   readonly zoom = output<void>();
+  /** Brush over the visual (a card with several illustrations, in an editable deck): emits `illustrate`. */
+  readonly illustrations = input(false);
+  readonly illustrate = output<void>();
+  /** Short label over the visual, framed (an owned alt art in the search: « 2 possédées »). */
+  readonly note = input<string | null>(null);
 
   protected readonly blockedShort = $localize`:@@ui.deckRow.blocked:Interdite`;
   protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);
@@ -45,6 +50,7 @@ export class AcCardTile {
     this.favorite() ? $localize`:@@ui.cardTile.unfavorite:Retirer ${this.name()}:name: des favoris` : $localize`:@@ui.cardTile.favorite:Ajouter ${this.name()}:name: aux favoris`,
   );
   protected readonly zoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.name()}:name:`);
+  protected readonly illustrateLabel = computed(() => $localize`:@@ui.cardTile.illustrate:Choisir les illustrations de ${this.name()}:name:`);
   protected readonly addLabel = computed(() => $localize`:@@ui.cardTile.add:Ajouter ${this.name()}:name: au deck`);
   protected readonly copiesLabel = computed(() => $localize`:@@ui.cardTile.copiesInDeck:Exemplaires de ${this.name()}:name: dans le deck`);
   protected readonly quantityLabel = computed(() => {

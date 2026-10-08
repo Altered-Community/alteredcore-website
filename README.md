@@ -106,6 +106,14 @@ docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build -
 
 Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
 
+**Alt arts with the real ownership service.** The stack's digital ownership is a mock (`docker/stack/ownership-mock`). To try the default alt arts with [AlteredOwnership](https://github.com/Altered-Re-Union/AlteredOwnership) itself, built from GitHub (alice and bob own Axiom alt arts and have default alt arts; alice starts in the old « Global » mode, with a deck to see its switch):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.stack.yml -f docker-compose.ownership.yml up -d --build --wait
+```
+
+Sign in again after its first start (the service needs the `read-collection` scope in the site's tokens). Details in `docker-compose.ownership.yml` and `docker/stack/ownership-real/`.
+
 **Like production.** To get the plugins active on https://altered.re and its public content (news, content pages, side menu, footer, fonts, logo, home page text, images):
 
 ```bash

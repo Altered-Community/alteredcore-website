@@ -89,8 +89,8 @@ decks API, opened by id. The local stack's decks API does not have them: their p
 
 « Importer » › *Export altered.gg* imports the decks of an altered.gg personal-data export (the Equinox
 ZIP) into the account, with the behaviour of the site's `equinox-deck-import` plugin: the ZIP is read
-in the browser (`decks.csv`, `DecompressionStream`); with the « Global » alt-art preference of the
-ownership API (relay `services.ownership`), the user's alt arts replace the exported cards; each deck is
+in the browser (`decks.csv`, `DecompressionStream`); with the ownership service (relay `services.ownership`), the
+cards and the hero take the user's default alt arts; each deck is
 created private with `POST /api/decks` through the relay, one per second, and a deck already in the
 account (same name, same cards) is skipped. A failed deck stops the queue until « Réessayer » (3
 attempts, then it is given up); the import can be paused or cancelled.

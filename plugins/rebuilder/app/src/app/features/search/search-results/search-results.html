@@ -14,20 +14,21 @@
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ac-virtual-grid #grid class="grid" [class.grid--readable]="search.source() === 'uniques'" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
+    <ac-virtual-grid #grid class="grid" [class.grid--readable]="search.source() === 'uniques'" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="cards()">
       @for (c of grid.slice(); track c.reference) {
         <ac-card-tile
           role="listitem"
           [attr.aria-posinset]="grid.first() + $index + 1"
-          [attr.aria-setsize]="search.cards().length"
+          [attr.aria-setsize]="cards().length"
           [card]="c"
           [eager]="grid.first() + $index < 6"
           [plain]="browse()"
-          [quantity]="deck.quantities().get(c.reference) ?? 0"
-          [max]="deck.maxFor(c)"
+          [quantity]="quantityOf(c)"
+          [max]="maxOf(c)"
           [blockedReason]="blockedReason(c)"
           [zoomable]="true"
-          (quantityChange)="deck.setQuantity(c, $event)"
+          [note]="noteOf(c)"
+          (quantityChange)="setQuantity(c, $event)"
           (zoom)="zoom(c)"
           [favorite]="favorites.enabled() ? favorites.has(c.reference) : null"
           (favoriteToggle)="favorites.toggle(c)"
@@ -41,16 +42,16 @@
     </ac-virtual-grid>
   } @else {
     <div class="list" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards">
-      @for (c of search.cards(); track c.reference) {
+      @for (c of cards(); track c.reference) {
         <ac-deck-row
           role="listitem"
           appearance="panel"
           [plain]="browse()"
           [card]="c"
-          [quantity]="deck.quantities().get(c.reference) ?? 0"
-          [max]="deck.maxFor(c)"
+          [quantity]="quantityOf(c)"
+          [max]="maxOf(c)"
           [blockedReason]="blockedReason(c)"
-          (quantityChange)="deck.setQuantity(c, $event)"
+          (quantityChange)="setQuantity(c, $event)"
         />
       }
     </div>

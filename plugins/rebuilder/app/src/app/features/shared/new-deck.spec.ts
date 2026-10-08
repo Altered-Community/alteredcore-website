@@ -131,7 +131,8 @@ describe('NewDeckOverlay', () => {
     input.value = 'Mon deck';
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    expect(closed).toEqual([{ name: 'Mon deck', hero: TREYST, format: 'standard', isPublic: false, description: '' }]);
+    // Picked without « Alt arts »: the deck takes the player's default alt art for the hero.
+    expect(closed).toEqual([{ name: 'Mon deck', hero: { ...TREYST, defaultArt: true }, format: 'standard', isPublic: false, description: '' }]);
   });
 });
 

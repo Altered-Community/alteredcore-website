@@ -7,8 +7,6 @@ import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcFactionTabs, AcHeroSelector, factionName } from '../../../ui/metier';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { heroChoices, injectHeroes } from '../hero-picker/hero-picker.overlay';
-import { OwnershipApiService } from '../../../core/ownership-api.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { NewDeckForm, type NewDeckResult } from '../new-deck.form';
 
 export type { NewDeckResult } from '../new-deck.form';
@@ -34,7 +32,6 @@ export const VISIBILITY_OPTIONS = [
   styleUrl: './new-deck.overlay.scss',
 })
 export class NewDeckOverlay {
-  private readonly ownership = inject(OwnershipApiService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly ref = inject<AcOverlayRef<NewDeckResult>>(AcOverlayRef);
   protected readonly bp = inject(AcBreakpointService);
@@ -50,7 +47,6 @@ export class NewDeckOverlay {
   protected readonly altArts = signal(false);
   protected readonly serialized = signal(false);
   protected readonly heroes = computed(() => heroChoices(this.load.heroes(), { altArts: this.altArts(), serialized: this.serialized() }));
-  protected readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
   protected readonly error = this.load.error;
 
   readonly form = new NewDeckForm();

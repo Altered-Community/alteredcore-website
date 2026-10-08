@@ -15,7 +15,7 @@
           appearance="panel"
           [card]="l.card"
           [quantity]="l.quantity"
-          [max]="deck.maxFor(l.card)"
+          [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
           [issues]="issues().get(l.card.reference) ?? noIssues"
           [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
           [readonly]="!deck.editable()"

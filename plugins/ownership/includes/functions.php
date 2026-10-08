@@ -64,9 +64,9 @@ function ownApiRequestRaw(string $method, string $path, int $userId, $body = nul
  * The player's alt-art preference mode ("PerDeck", the default, or "Global") — see
  * AltArtPreferenceMode on the ownership service. Cached in the session for
  * ALT_ART_MODE_CACHE_TTL seconds so pages that need it (alt-arts.php, the deckbuilder,
- * the card-detail modal on every page) don't each cost a round trip; refreshed
- * immediately whenever the mode is changed (see api/alt-art-preference-mode.php) rather
- * than waiting out the TTL.
+ * the card-detail modal on every page) don't each cost a round trip. A player still in
+ * "Global" is switched to "PerDeck" here, once (see includes/func.alt-arts.php): default
+ * alt arts replace the mode.
  */
 const ALT_ART_MODE_CACHE_TTL = 300;
 
@@ -82,6 +82,8 @@ function ownGetAltArtPreferenceMode(int $userId): string {
         if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
             $mode = $data['mode'];
         }
+        require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+        if ($mode === 'Global' && altArtLeaveGlobalMode($userId)) $mode = 'PerDeck';
     }
 
     $_SESSION['alt_art_mode'] = $mode;

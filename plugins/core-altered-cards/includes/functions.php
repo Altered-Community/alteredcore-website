@@ -277,6 +277,9 @@ function cacGetAltArtPreferenceMode(int $userId): string {
         if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
             $mode = $data['mode'];
         }
+        // Default alt arts replace the "Global" mode: a player still in it is switched once.
+        require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+        if ($mode === 'Global' && altArtLeaveGlobalMode($userId)) $mode = 'PerDeck';
     }
 
     $_SESSION['alt_art_mode'] = $mode;

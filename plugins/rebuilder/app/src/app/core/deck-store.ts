@@ -13,7 +13,8 @@ import { formatInfo } from './formats';
 import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
 import { GuestDeckService } from './guest-deck.service';
-import { OwnershipApiService } from './ownership-api.service';
+import { OwnershipApiService, type AltArtChoice } from './ownership-api.service';
+import { addedCopyPrint, defaultPrints, familyPrints, linesWithDefaults, removedCopyPrint, sameCopies, withFamilyPrints } from './alt-art-defaults';
 import {
   type Card,
   type Deck,
@@ -246,7 +247,8 @@ export class DeckStore {
    * whether to try again or keep the deck in this browser; cancelling completes without a deck.
    */
   createDeck(input: NewDeckInput): Observable<Deck> {
-    if (!this.auth.isLoggedIn()) return of(this.create(input));
+    if (!this.auth.isLoggedIn()) return of(this.create({ ...input, hero: plainHero(input.hero) }));
+    if (input.hero.defaultArt) return this.heroWithDefaultArt(input.hero).pipe(switchMap((hero) => this.createDeck({ ...input, hero })));
     const description = input.description?.trim() ?? '';
     const body: DeckWrite = {
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
@@ -332,25 +334,53 @@ export class DeckStore {
   }
 
   /**
-   * « Choisir une illustration »: the copies of `card` take the print `reference` (another illustration of the same
-   * card), merged with that print's line when the deck has one already.
+   * The copies of a family (lines whose reference is in `members`) become `prints`, one print a copy: the brush of a
+   * card. New lines copy `template`.
    */
-  swapReference(card: Card, reference: string): void {
-    if (!this.editable() || card.reference === reference) return;
-    this.lines.set(swapLines(this.lines(), card.reference, reference));
+  setFamilyPrints(members: ReadonlySet<string>, template: Card, prints: readonly string[]): void {
+    if (!this.editable()) return;
+    const current = familyPrints(this.lines(), members);
+    if (sameCopies(current, prints)) return;
+    this.lines.set(withFamilyPrints(this.lines(), members, template, prints));
     this.touch();
   }
 
   /**
-   * « Global » alt-art mode: every card of a multi-art family takes the player's preferred prints, copy after copy
-   * (the site's deck builder does it on load and after each change); the hero takes the first slot. `false` when
-   * nothing changes.
+   * A family's copies as one card (a search result, « Arts alternatifs » off): an added copy takes the player's default
+   * alt art for its copy (`addedCopyPrint`), a removed one leaves the prints chosen in the deck (`removedCopyPrint`).
    */
-  applyAltArtSlots(slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): boolean {
+  setFamilyQuantity(card: Card, choice: AltArtChoice, members: ReadonlySet<string>, quantity: number): void {
+    if (!this.editable()) return;
+    const prints = familyPrints(this.lines(), members);
+    const target = Math.max(0, Math.min(this.maxFor(card), Math.round(quantity)));
+    let changed: { reference: string; delta: number } | null = null;
+    while (prints.length < target) {
+      const reference = addedCopyPrint(choice, prints);
+      prints.push(reference);
+      changed = { reference, delta: 1 };
+    }
+    while (prints.length > target) {
+      const reference = removedCopyPrint(choice, prints);
+      prints.splice(prints.lastIndexOf(reference), 1);
+      changed = { reference, delta: -1 };
+    }
+    if (!changed) return;
+    const after = prints.filter((p) => p === changed.reference).length;
+    this.lastChange.set({ card: printOf(card, changed.reference), quantity: after, delta: changed.delta });
+    this.lines.set(withFamilyPrints(this.lines(), members, card, prints));
+    this.touch();
+  }
+
+  /**
+   * « Appliquer les arts par défaut »: the copies of every multi-art card of the deck, and the hero, take the player's
+   * default alt arts (`choices`: families by reference). `false` when nothing changes.
+   */
+  applyAltArtDefaults(choices: Readonly<Record<string, AltArtChoice>>): boolean {
     if (!this.editable()) return false;
-    const lines = distributeSlots(this.lines(), slotsByRef);
+    const lines = linesWithDefaults(this.lines(), choices);
     const hero = this.hero();
-    const heroRef = hero ? slotsByRef.get(hero.reference)?.slots[0] : undefined;
+    const heroChoice = hero ? choices[hero.reference] : undefined;
+    const heroRef = heroChoice ? defaultPrints(heroChoice, 1)[0] : undefined;
     const heroChanged = !!hero && !!heroRef && heroRef !== hero.reference;
     if (!lines && !heroChanged) return false;
     if (lines) this.lines.set(lines);
@@ -371,7 +401,18 @@ export class DeckStore {
   /** A blank `name` keeps the current one. */
   updateSettings(settings: { hero?: DeckHero; format?: DeckFormat; isPublic?: boolean; name?: string; description?: string }): void {
     if (!this.editable()) return;
-    if (settings.hero) this.hero.set(settings.hero);
+    const hero = settings.hero;
+    if (hero) {
+      this.hero.set(plainHero(hero));
+      // Then its default alt art, unless another hero was picked meanwhile.
+      if (hero.defaultArt) {
+        this.heroWithDefaultArt(hero).subscribe((h) => {
+          if (h.reference === hero.reference || this.hero()?.reference !== hero.reference) return;
+          this.hero.set(h);
+          this.touch();
+        });
+      }
+    }
     if (settings.format) this.format.set(settings.format);
     if (settings.isPublic !== undefined) this.isPublic.set(settings.isPublic);
     if (settings.name?.trim()) this.name.set(settings.name.trim());
@@ -397,6 +438,16 @@ export class DeckStore {
     return this.guests.create({ name, description, format: this.format(), isPublic: false, hero: this.hero(), deckCards: this.serializeLines() }).id;
   }
 
+  /** `hero` with the player's default alt art for it (itself without one, or on an error). */
+  private heroWithDefaultArt(hero: DeckHero): Observable<DeckHero> {
+    return this.ownership.altArtChoices([hero.reference]).pipe(
+      map((choices) => {
+        const choice = choices[hero.reference];
+        return { ...plainHero(hero), reference: choice ? defaultPrints(choice, 1)[0] : hero.reference };
+      }),
+    );
+  }
+
   /**
    * Copies the open deck, private, and emits the copy's id: on the account when the user is signed
    * in (like the site's « Dupliquer »), in this browser otherwise. Fails with a displayable message.
@@ -413,9 +464,10 @@ export class DeckStore {
       ...(description ? { description } : {}),
       deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
     };
-    // « Global » alt-art preference: the copy takes the user's preferred illustrations (the site's duplicate does too).
-    return this.ownership.globalAltArts().pipe(
-      switchMap((global) => (global ? this.ownership.applyAltArts(body.deckCards ?? []) : of(body.deckCards ?? []))),
+    // Someone else's deck: the copy takes the user's default alt arts (their own deck keeps its prints).
+    const cards = body.deckCards ?? [];
+    const withDefaults = this.owned() === true ? of(cards) : this.ownership.altArtChoices(cards.map((c) => c.cardReference)).pipe(map((choices) => cardsWithDefaults(cards, choices)));
+    return withDefaults.pipe(
       switchMap((deckCards) => this.decksApi.create({ ...body, deckCards })),
       map((created) => {
         this.createdIds.update((ids) => new Set([...ids, created.id]));
@@ -831,43 +883,25 @@ export function displayName(card: Card): string {
   return localizedText(card.name, contentLocale()) || card.reference;
 }
 
-/** `from`'s copies become `to`'s (merged with an existing `to` line). */
-export function swapLines(lines: HydratedLine[], from: string, to: string): HydratedLine[] {
-  const moving = lines.find((l) => l.card.reference === from);
-  if (!moving) return lines;
-  const existing = lines.find((l) => l.card.reference === to);
-  const rest = lines.filter((l) => l.card.reference !== from);
-  if (existing) return rest.map((l) => (l === existing ? { ...l, quantity: l.quantity + moving.quantity } : l));
-  return [...rest, { card: { ...moving.card, reference: to }, quantity: moving.quantity }];
+/** The hero as the deck stores it (without how it was picked). */
+function plainHero(hero: DeckHero): DeckHero {
+  return { reference: hero.reference, name: hero.name, faction: hero.faction };
+}
+
+/** `card` as another print of the same card (`reference`). */
+function printOf(card: Card, reference: string): Card {
+  return reference === card.reference ? card : { ...card, reference, imagePath: undefined };
 }
 
 /**
- * The copies of each family (all its lines together) spread over the player's slots: copy i takes slot i, the copies
- * past the last slot repeat it (the site's `distributeAcrossSlots`). `null` when every line already matches.
+ * Deck lines to write (reference and quantity, with the rest of the line) with the player's default alt arts, families
+ * by reference in `choices`: an imported deck, or a copy of someone else's deck, takes the user's own illustrations. A
+ * new print copies its family's first line.
  */
-export function distributeSlots(lines: HydratedLine[], slotsByRef: ReadonlyMap<string, { key: string; slots: string[] }>): HydratedLine[] | null {
-  const families = new Map<string, { slots: string[]; qty: number; lines: HydratedLine[] }>();
-  for (const l of lines) {
-    const f = slotsByRef.get(l.card.reference);
-    if (!f || !f.slots.length) continue;
-    const g = families.get(f.key) ?? { slots: f.slots, qty: 0, lines: [] };
-    g.qty += l.quantity;
-    g.lines.push(l);
-    families.set(f.key, g);
-  }
-  let changed = false;
-  let out = lines;
-  for (const g of families.values()) {
-    const counts = new Map<string, number>();
-    for (let i = 0; i < g.qty; i++) {
-      const ref = g.slots[Math.min(i, g.slots.length - 1)];
-      counts.set(ref, (counts.get(ref) ?? 0) + 1);
-    }
-    const same = g.lines.length === counts.size && g.lines.every((l) => counts.get(l.card.reference) === l.quantity);
-    if (same) continue;
-    changed = true;
-    const template = g.lines[0].card;
-    out = out.filter((l) => !g.lines.includes(l)).concat([...counts].map(([reference, quantity]) => ({ card: { ...template, reference }, quantity })));
-  }
-  return changed ? out : null;
+export function cardsWithDefaults<T extends { cardReference: string; quantity: number }>(cards: readonly T[], choices: Readonly<Record<string, AltArtChoice>>): T[] {
+  // Each line rides along in its card: `withFamilyPrints` copies a family's first card for its new prints.
+  const lines = cards.map((line) => ({ card: { reference: line.cardReference, line } as Card & { line: T }, quantity: line.quantity }));
+  const next = linesWithDefaults(lines, choices);
+  if (!next) return [...cards];
+  return next.map((l) => ({ ...(l.card as Card & { line: T }).line, cardReference: l.card.reference, quantity: l.quantity }));
 }

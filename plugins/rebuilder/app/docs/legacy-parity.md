@@ -41,8 +41,8 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Stats : répartition par type, puissances moyennes (le plugin affiche des totaux) | ❌ écarté volontairement (jugé inutile) |
 | Main de test en mode jeu (mana, plateau, défausse, glisser-déposer) | ✅ (glisser-déposer du CDK, menu d’actions au clic ; masqué sur mobile) |
 | Calculateurs : vignettes et groupes par type dans le choix des cartes | ✅ |
-| Duplication avec les illustrations préférées (mode Global) | ✅ |
-| Étoile favori sur les cartes, widget possession / tilt dans le zoom | ✅ (favoris du site ; widget et tilt en mode Global, comme le site) |
+| Duplication avec les illustrations préférées | ✅ (le deck d’un autre joueur prend les arts par défaut ; une copie de son propre deck garde ses illustrations) |
+| Étoile favori sur les cartes, widget possession / tilt dans le zoom | ✅ (favoris du site) ; le widget et le tilt du mode Global disparaissent avec ce mode |
 | Groupes fins (Repères, Permanents d'expédition, Jetons) ; faction et puissances de toutes les cartes dans la decklist | 🟡 |
 
 ## Éditeur
@@ -64,7 +64,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Onglets Collection physique, Possession numérique, Favoris | ✅ (endpoints du plugin core-altered-cards ; collection et possession demandent leurs API) |
 | Favoris : Uniques (rareté U) et filtre « Légales en <format du deck> » par défaut | ✅ (ajout Re:Builder ; liste Frontier lue dans `gameplayFormat`) |
 | Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
-| Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ (service ownership requis, sauf les héros alt-art) |
+| Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ Arts par défaut à la place du mode Global : une carte ajoutée prend l’art par défaut de son exemplaire, le pinceau change les illustrations d’une carte pour ce deck, « Arts par défaut » réapplique les défauts, « Arts alternatifs » (recherche) montre les arts possédés (service ownership requis, sauf les héros alt-art) |
 | Toast « Annuler » après un ajout ou un retrait | ✅ |
 | Bandeau d'état avec progression vers le minimum | ❌ écarté volontairement (jugé inutile) |
 | Main de départ dans l'éditeur | ✅ (vue « Main de départ », `/edit/main`) |

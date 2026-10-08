@@ -6,9 +6,9 @@ import { of, type Observable } from 'rxjs';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
-import { DeckStore, distributeSlots, swapLines } from './deck-store';
+import { DeckStore, cardsWithDefaults } from './deck-store';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
-import { OwnershipApiService, type CardQuantity } from './ownership-api.service';
+import { OwnershipApiService, type AltArtChoice } from './ownership-api.service';
 import type { Card, Deck } from './models';
 import { localizedText } from './models';
 
@@ -719,25 +719,34 @@ describe('GuestDeckService', () => {
   });
 });
 
-describe('DeckStore (signed in, « Global » alt arts)', () => {
-  it('duplicates with the preferred illustrations, as the site does', async () => {
+describe('DeckStore (signed in, default alt arts)', () => {
+  const martengale: AltArtChoice = {
+    family: { familyId: 9, faction: 'LY', rarity: 'C' },
+    options: {
+      options: [
+        { reference: 'ALT_CORE_B_LY_04_C', ownedQuantity: null },
+        { reference: 'ALT_CORE_A_LY_04_C', ownedQuantity: 3 },
+      ],
+      slots: [1, 2, 3].map((slotIndex) => ({ slotIndex, reference: 'ALT_CORE_A_LY_04_C' })),
+    },
+  };
+
+  function setup(mine: string[]) {
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthSession, useValue: new SignedIn() },
-        {
-          provide: OwnershipApiService,
-          useValue: {
-            globalAltArts: () => of(true),
-            applyAltArts: (cards: CardQuantity[]) => of(cards.map((c) => (c.cardReference === 'ALT_CORE_B_LY_04_C' ? { ...c, cardReference: 'ALT_CORE_A_LY_04_C' } : c))),
-          },
-        },
+        { provide: OwnershipApiService, useValue: { altArtChoices: (refs: string[]) => of(refs.includes('ALT_CORE_B_LY_04_C') ? { ALT_CORE_B_LY_04_C: martengale } : {}) } },
       ],
     });
     const store = TestBed.inject(DeckStore);
     const http = TestBed.inject(HttpTestingController);
+    return { store, http, mine: mine.map((id) => ({ id })) };
+  }
+
+  async function open(store: DeckStore, http: HttpTestingController, mine: { id: string }[]) {
     store.load('source');
     TestBed.tick();
     http.expectOne((r) => r.url.endsWith('/api/decks/source')).flush({
@@ -751,34 +760,63 @@ describe('DeckStore (signed in, « Global » alt arts)', () => {
     });
     await Promise.resolve();
     TestBed.tick();
-    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush([]);
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush(mine);
     await settle();
+  }
+
+  it('copies someone else’s deck with the user’s default alt arts', async () => {
+    const { store, http, mine } = setup([]);
+    await open(store, http, mine);
     store.duplicate('Copie').subscribe();
     const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
-    expect(req.request.body.deckCards).toEqual([
-      { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
-      { cardReference: 'ALT_CORE_A_LY_04_C', quantity: 2 },
+    expect(req.request.body.deckCards.map((c: { cardReference: string; quantity: number }) => [c.cardReference, c.quantity])).toEqual([
+      ['ALT_CORE_B_LY_03_C', 1],
+      ['ALT_CORE_A_LY_04_C', 2],
     ]);
     req.flush({ id: 'copy' });
     http.verify();
   });
-});
 
-describe('illustrations of the deck lines', () => {
-  const line = (reference: string, quantity: number) => ({ card: { reference, name: 'X' }, quantity });
-
-  it('swaps a card for another print, merged with an existing line', () => {
-    expect(swapLines([line('A_B', 2), line('C', 1)], 'A_B', 'A_P').map((l) => [l.card.reference, l.quantity])).toEqual([['C', 1], ['A_P', 2]]);
-    expect(swapLines([line('A_B', 2), line('A_P', 1)], 'A_B', 'A_P').map((l) => [l.card.reference, l.quantity])).toEqual([['A_P', 3]]);
+  it('copies the user’s own deck with its illustrations', async () => {
+    const { store, http, mine } = setup(['source']);
+    await open(store, http, mine);
+    store.duplicate('Copie').subscribe();
+    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
+    expect(req.request.body.deckCards.map((c: { cardReference: string }) => c.cardReference)).toEqual(['ALT_CORE_B_LY_03_C', 'ALT_CORE_B_LY_04_C']);
+    req.flush({ id: 'copy' });
+    http.verify();
   });
 
-  it('spreads the copies of a family over the slots (Global mode)', () => {
-    const slots = new Map([
-      ['A_B', { key: 'f', slots: ['A_P', 'A_B'] }],
-      ['A_P', { key: 'f', slots: ['A_P', 'A_B'] }],
+  it('adds and removes the copies of a family by the defaults, and applies them to the whole deck', async () => {
+    const { store, http, mine } = setup(['source']);
+    await open(store, http, mine);
+    const card = store.lines().find((l) => l.card.reference === 'ALT_CORE_B_LY_04_C')!.card;
+    const members = new Set(['ALT_CORE_B_LY_04_C', 'ALT_CORE_A_LY_04_C']);
+    // 2 plain copies in the deck: the 3rd copy takes the 3rd default.
+    store.setFamilyQuantity(card, martengale, members, 3);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([
+      ['ALT_CORE_B_LY_04_C', 2],
+      ['ALT_CORE_A_LY_04_C', 1],
     ]);
-    const out = distributeSlots([line('A_B', 3), line('C', 1)], slots);
-    expect(out?.map((l) => [l.card.reference, l.quantity])).toEqual([['C', 1], ['A_P', 1], ['A_B', 2]]);
-    expect(distributeSlots(out ?? [], slots)).toBeNull();
+    expect(store.lastChange()).toMatchObject({ card: { reference: 'ALT_CORE_A_LY_04_C' }, quantity: 1, delta: 1 });
+    expect(store.applyAltArtDefaults({ ALT_CORE_B_LY_04_C: martengale, ALT_CORE_A_LY_04_C: martengale })).toBe(true);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([['ALT_CORE_A_LY_04_C', 3]]);
+    store.setFamilyQuantity(card, martengale, members, 1);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([['ALT_CORE_A_LY_04_C', 1]]);
+    store.flush();
+    http.match(() => true);
+  });
+});
+
+describe('cardsWithDefaults', () => {
+  it('rewrites deck lines with the defaults, a new print copying its family’s line', () => {
+    const choice: AltArtChoice = {
+      family: { familyId: 1, faction: 'AX', rarity: 'C' },
+      options: { options: [{ reference: 'ALT_B', ownedQuantity: null }, { reference: 'ALT_A', ownedQuantity: 1 }], slots: [{ slotIndex: 1, reference: 'ALT_A' }] },
+    };
+    expect(cardsWithDefaults([{ cardReference: 'ALT_B', quantity: 2, name: 'X' }], { ALT_B: choice })).toEqual([
+      { cardReference: 'ALT_A', quantity: 1, name: 'X' },
+      { cardReference: 'ALT_B', quantity: 1, name: 'X' },
+    ]);
   });
 });

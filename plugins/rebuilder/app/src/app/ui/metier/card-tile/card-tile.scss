@@ -62,6 +62,60 @@ button.visual:focus-visible {
     font-size: var(--ac-font-size-caption);
   }
 }
+/* An owned alt art in the search: framed, with its label above the copies controls. */
+.visual.noted {
+  outline: 3px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.note {
+  position: absolute;
+  left: 8px;
+  bottom: calc(10px + var(--ac-hit-min) + var(--ac-space-1));
+  z-index: 1;
+  height: 24px;
+  padding: 0 var(--ac-space-2);
+  display: flex;
+  align-items: center;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary-strong);
+  font-size: var(--ac-font-size-caption);
+  font-weight: 700;
+  box-shadow: var(--ac-shadow-fab);
+  pointer-events: none;
+}
+/* Brush: top left, always shown (the card has several illustrations). */
+.illustrate {
+  position: absolute;
+  top: var(--ac-space-1-5);
+  left: var(--ac-space-1-5);
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary);
+  box-shadow: var(--ac-shadow-fab);
+  cursor: pointer;
+}
+.illustrate::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.illustrate:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
 /* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */
 .favorite {
   position: absolute;
