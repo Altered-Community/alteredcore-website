@@ -1,5 +1,7 @@
 import { deflateRawSync } from 'node:zlib';
 import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
+import { emptyCache } from '../../../tests/e2e/loading';
+import { createServerDeck } from './decks';
 
 /**
  * Re:Builder's decks section (plugin `rebuilder`): with « Beta Deckbuilder » on (cookie ac_beta), the shell serves it
@@ -91,18 +93,6 @@ async function editorDeckId(page: Page): Promise<string> {
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/**
- * Sends the page's next requests to the network, where routes see them: the site's service worker (installed by the
- * first visit, it would answer the scripts itself) is unregistered and the browser cache (Chromium) turned off.
- */
-async function bypassCaches(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    for (const registration of (await navigator.serviceWorker?.getRegistrations()) ?? []) await registration.unregister();
-  });
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Network.enable');
-  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
-}
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
@@ -206,7 +196,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     });
     // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
     // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
     const placeholder = page.locator('.ac-spa-placeholder');
     await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
@@ -960,32 +950,6 @@ test.describe('ReBuilder in the shell · app bar of the search and « Aperçu »
 });
 
 test.describe('ReBuilder in the shell · deck page', () => {
-  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why), plus `extra` references. */
-  async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {
-    return page.evaluate(async ([deckName, more]) => {
-      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
-      const res = await fetch(`${host.services.decks}/api/decks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
-        body: JSON.stringify({
-          name: deckName,
-          description: 'Première ligne\nDeuxième ligne',
-          format: 'standard',
-          isPublic: false,
-          deckCards: [
-            { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
-            { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
-            ...more.map((cardReference) => ({ cardReference, quantity: 1 })),
-          ],
-        }),
-      });
-      if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
-      return ((await res.json()) as { id: string }).id;
-    }, [name, extra] as const);
-  }
-
   /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
   async function openView(page: Page, compact: boolean, tab: string, nav: string): Promise<void> {
     if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
@@ -1448,7 +1412,7 @@ test.describe('ReBuilder in the shell · loading', () => {
       await scripts;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
     await page.waitForTimeout(300);
@@ -1477,16 +1441,16 @@ test.describe('ReBuilder in the shell · loading', () => {
       await pageModules;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
     // The app's root is drawn: a placeholder taken for the first screen would go at the next frame.
     await expect(page.locator('app-rebuilder-embed')).toBeAttached();
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
-    // The first paint waits for the skeleton (not the site header over an empty page): <head> names its mount point.
+    // The first paint waits for the skeleton (not the site header over an empty page): <head> names an element after it.
     const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
-    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder');
-    await expect(page.locator('#ac-spa-rebuilder > .ac-spa-placeholder')).toHaveCount(1);
+    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder-parsed');
+    await expect(page.locator('#ac-spa-rebuilder:has(> .ac-spa-placeholder) + #ac-spa-rebuilder-parsed')).toHaveCount(1);
     // Once the plugin's stylesheets reset its shadow host (`:host { all: initial }`), the skeleton keeps the site's font.
     await expect.poll(() => page.evaluate(() => [...document.querySelector('#ac-spa-rebuilder')!.shadowRoot!.querySelectorAll('link[rel="stylesheet"]')].every((l) => (l as HTMLLinkElement).sheet))).toBe(true);
     expect(await page.locator('.ac-spa-placeholder').evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Figtree');
@@ -1513,7 +1477,7 @@ test.describe('ReBuilder in the shell · loading', () => {
       await held;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${EDITOR(id)}&view=deck&lang=fr`);
     const section = page.locator('app-deck-list-view ac-deck-section').first();
     await expect(section).toBeVisible();
@@ -1538,7 +1502,7 @@ test.describe('ReBuilder in the shell · loading', () => {
       await styles;
       await route.continue();
     });
-    await bypassCaches(page);
+    await emptyCache(page);
     await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
     const root = page.locator('.ac-plugin-root');
     await expect(page.locator('app-deck-page ac-app-bar, app-deck-page app-deck-bar').first()).toBeAttached();

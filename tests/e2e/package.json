@@ -3,7 +3,9 @@
   "private": true,
   "description": "Playwright tests of the shell (tests/e2e/*.spec.ts) and of every plugin (plugins/*/e2e/*.spec.ts), run against docker-compose.stack.yml. Dev tooling only: not deployed.",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "loading": "playwright test loading.spec",
+    "loading:timeline": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON loading-timeline.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

@@ -294,7 +294,7 @@ kcIsLoggedIn();
     <noscript><link rel="stylesheet" href="<?= h($_gcss) ?>"></noscript>
     <?php endforeach; ?>
     <?php if (!empty($GLOBALS['_ac_render_expect'])): ?>
-    <!-- SPA page: first paint once its skeleton is parsed (spaMountId()) -->
+    <!-- SPA page: first paint once its skeleton is parsed (spaFirstPaintId()) -->
     <link rel="expect" href="#<?= h($GLOBALS['_ac_render_expect']) ?>" blocking="render">
     <?php endif; ?>
     <!-- Plugin page CSS (non-blocking — plugin controls own layout) -->

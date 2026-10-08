@@ -1,0 +1,70 @@
+{
+  "_doc": "Largest CLS each screen may reach in loading.spec.ts (key: <project>/<screen key>/<first|second>), measured with the « phone » profile. Default 0.01. Known shifts get a budget a little above today's value and a reason; lower a budget when a fix lands, never raise it to make a test pass.",
+  "default": 0.01,
+  "screens": {
+    "desktop/decks/first": {
+      "max": 0.045,
+      "why": "site header items move when its fonts load (0.0014); the toolbar moves 15 px right and the footer is pushed down (0.04)"
+    },
+    "desktop/decks/second": {
+      "max": 0.045,
+      "why": "the toolbar moves 15 px right and the footer is pushed down (0.04)"
+    },
+    "desktop/deck/first": {
+      "max": 0.06,
+      "why": "the board moves down 44 px once the deck is drawn (0.05)"
+    },
+    "desktop/deck/second": {
+      "max": 0.08,
+      "why": "the board moves up 50 px, then down 44 px (0.07)"
+    },
+    "desktop/search/first": {
+      "max": 0.05,
+      "why": "site header items move when its fonts load (0.0014), then a series of small moves while the editor draws (to investigate)"
+    },
+    "desktop/search/second": {
+      "max": 0.095,
+      "why": "the editor moves up 22 px, then down 44 px (0.09)"
+    },
+    "desktop/apercu/first": {
+      "max": 0.07,
+      "why": "the board moves down 72 px once the deck is drawn (0.06)"
+    },
+    "desktop/apercu/second": {
+      "max": 0.1,
+      "why": "the board moves up 72 px, then down 72 px (0.09)"
+    },
+    "desktop/mon-deck/first": {
+      "max": 0.05,
+      "why": "from 768 px the « Mon deck » view is « Recherche »: same moves"
+    },
+    "desktop/mon-deck/second": {
+      "max": 0.095,
+      "why": "from 768 px the « Mon deck » view is « Recherche »: same moves"
+    },
+    "desktop/main/first": {
+      "max": 0.045,
+      "why": "the hand moves down 44 px (0.04)"
+    },
+    "desktop/main/second": {
+      "max": 0.09,
+      "why": "the editor moves up 22 px, then down 44 px (0.08)"
+    },
+    "desktop/new/first": {
+      "max": 0.075,
+      "why": "the server's window skeleton is not where the app's window opens (0.07)"
+    },
+    "desktop/new/second": {
+      "max": 0.075,
+      "why": "the server's window skeleton is not where the app's window opens (0.07)"
+    },
+    "mobile/new/first": {
+      "max": 0.16,
+      "why": "the server's skeleton is a desktop window, the app opens a full-screen form (0.16)"
+    },
+    "mobile/new/second": {
+      "max": 0.015,
+      "why": "the form's hero tiles move (0.012)"
+    }
+  }
+}

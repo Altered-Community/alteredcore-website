@@ -35,3 +35,15 @@ The rules that matter most:
 - PHP tests: `php tests/run.php` (in Docker: `docker compose exec web php tests/run.php`).
 - SPA plugins: `plugins/<id>/plugin.json` → `build` (lint, test, build); e2e with Playwright in
   `tests/e2e` and `plugins/<id>/e2e` against the full stack (`README.md` § Full stack).
+- Loading (skeletons, layout shifts): after any change to what a screen shows while it loads (placeholder, skeletons,
+  data or images arriving after the first screen, the runtime), in `tests/e2e`:
+  - `npm run loading`: every Re:Builder screen on a slow phone network, first and second visit, desktop and mobile
+    (`plugins/rebuilder/e2e/loading.spec.ts`, also run by the CI). It fails on an empty frame, the app shown unstyled,
+    the skeleton losing the site's font, a « Chargement… » title, or a CLS over the screen's budget
+    (`plugins/rebuilder/e2e/loading-budgets.json`: 0.01, or today's value for a known shift; lower a budget when a fix
+    lands, never raise one to pass).
+  - `npm run loading:timeline -- <screen> [--desktop] [--first-visit] [--compare <other stack>]`: the loading frame by
+    frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare` puts the base
+    branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts` for the options.
+  - A new screen or a new loading state: add it to `plugins/rebuilder/e2e/screens.ts`; the recorder
+    (`tests/e2e/loading.ts`) works for any SPA plugin.
