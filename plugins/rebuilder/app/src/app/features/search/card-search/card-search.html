@@ -70,6 +70,9 @@
       <div class="toolbar">
         <span class="total">{{ totalLabel() }}</span>
         <span class="tools">
+          @if (printsSwitch() && altArts; as a) {
+            <ac-switch label="Arts alternatifs" i18n-label="@@search.altArts.switch" [checked]="a.searchPrints()" (checkedChange)="a.searchPrints.set($event)" />
+          }
           @if (sortable()) {
             <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
@@ -96,6 +99,9 @@
         }
         <ac-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
         <span class="tools">
+          @if (printsSwitch() && altArts; as a) {
+            <ac-switch label="Arts alternatifs" i18n-label="@@search.altArts.switch" [checked]="a.searchPrints()" (checkedChange)="a.searchPrints.set($event)" />
+          }
           @if (sortable()) {
             <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }

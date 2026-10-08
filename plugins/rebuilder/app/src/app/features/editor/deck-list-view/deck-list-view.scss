@@ -6,6 +6,11 @@
 .stats {
   border-radius: var(--ac-radius-card);
 }
+.alt-arts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
 .empty {
   text-align: center;
   color: var(--ac-color-text-muted);

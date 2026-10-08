@@ -1,0 +1,108 @@
+# Local testing of the alt arts with the real AlteredOwnership service (Altered-Re-Union/AlteredOwnership) instead of
+# the mock (docker/stack/ownership-mock, which stays the collection API). On top of the full stack:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.stack.yml -f docker-compose.ownership.yml up -d --build --wait
+#
+# docker/stack/ownership-real/seed.sql gives alice and bob owned alt arts and default alt arts, and alice the « Global »
+# mode (to try its switch to « par deck »); seed-decks.php a deck of hers built in that mode and one of bob's;
+# keycloak-scopes.sh the `read-collection` scope the service requires in the site's tokens (sign in again after a first
+# start). Service: http://localhost:8003 (health: /health). To try the switch again:
+#   docker compose -f docker-compose.yml -f docker-compose.stack.yml -f docker-compose.ownership.yml run --rm ownership-seed
+#   docker compose -f docker-compose.yml -f docker-compose.stack.yml -f docker-compose.ownership.yml run --rm alice-decks
+services:
+  web:
+    volumes:
+      - ./docker/stack/ownership-real/config.php:/var/www/html/config.local.php:ro
+    depends_on:
+      ownership-seed:
+        condition: service_completed_successfully
+
+  ownership-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ownership
+      POSTGRES_PASSWORD: ownership
+      POSTGRES_DB: ownershipdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ownership -d ownershipdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  ownership-redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  ownership-real:
+    # Pinned: bump the commit to follow the service.
+    image: alteredcore-stack-ownership
+    build:
+      context: https://github.com/Altered-Re-Union/AlteredOwnership.git#41e6248e643ccdb1161775cdec921441a8db91ec
+      dockerfile: build/Dockerfile
+      target: app
+    environment:
+      # Development: plain HTTP to Keycloak, /health mapped. The schema and the alt-art catalog come from its migrations.
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ownershipdb: Host=ownership-db;Database=ownershipdb;Username=ownership;Password=ownership
+      ConnectionStrings__cache: ownership-redis:6379
+      Keycloak__Authority: http://auth.altered.local.gd:18080/realms/players
+      Keycloak__ClientId: main-site
+      Keycloak__ClientSecret: dev-main-site-secret
+      ExternalHosts__AuthBase: http://auth.altered.local.gd:18080
+    ports:
+      - "127.0.0.1:8003:8080"
+    depends_on:
+      ownership-db:
+        condition: service_healthy
+      ownership-redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      # The image has no curl: HTTP over bash.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q 'Healthy' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  keycloak-scopes:
+    image: quay.io/keycloak/keycloak:26.0
+    entrypoint: ["/bin/bash", "/setup/keycloak-scopes.sh"]
+    environment:
+      # kcadm is a plain JVM: JDK 21 dies with SIGILL on recent Apple Silicon (SVE), as the Keycloak service.
+      JAVA_TOOL_OPTIONS: "-XX:+IgnoreUnrecognizedVMOptions -XX:UseSVE=0"
+    volumes:
+      - ./docker/stack/ownership-real:/setup:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  ownership-seed:
+    image: postgres:16-alpine
+    entrypoint: ["psql", "-v", "ON_ERROR_STOP=1", "-f", "/setup/seed.sql"]
+    environment:
+      PGHOST: ownership-db
+      PGUSER: ownership
+      PGPASSWORD: ownership
+      PGDATABASE: ownershipdb
+    volumes:
+      - ./docker/stack/ownership-real:/setup:ro
+    depends_on:
+      ownership-real:
+        condition: service_healthy
+      keycloak-scopes:
+        condition: service_completed_successfully
+
+  alice-decks:
+    image: alteredcore-stack-web
+    entrypoint: ["php", "/var/www/html/docker/stack/ownership-real/seed-decks.php"]
+    volumes:
+      - .:/var/www/html
+      - ./docker/stack/ownership-real/config.php:/var/www/html/config.local.php:ro
+    depends_on:
+      web:
+        condition: service_healthy

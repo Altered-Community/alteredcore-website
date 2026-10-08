@@ -346,6 +346,17 @@ CREATE TABLE IF NOT EXISTS `{prefix}newsletter_sub` (
     UNIQUE KEY `uq_newsletter_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ─── Default alt arts ─────────────────────────────────────────────────────────
+-- Decks of a player switched from the « Global » alt-art mode, waiting for their default alt arts
+-- (includes/func.alt-arts.php).
+
+CREATE TABLE IF NOT EXISTS `{prefix}alt_art_pending_decks` (
+    `user_id`    INT          NOT NULL,
+    `deck_id`    VARCHAR(64)  NOT NULL,
+    `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_id`, `deck_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ─── Plugins ──────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS `{prefix}plugins` (

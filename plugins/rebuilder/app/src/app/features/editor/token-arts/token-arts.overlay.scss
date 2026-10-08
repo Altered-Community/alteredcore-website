@@ -8,8 +8,90 @@
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
+/* One token: its illustration large, then the illustrations to choose from. */
+.token {
+  display: flex;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-3);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  background: var(--ac-color-surface);
+}
+.preview {
+  flex-shrink: 0;
+  align-self: center;
+  width: 200px;
+  height: auto;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-control);
+  box-shadow: var(--ac-shadow-card);
+}
+.side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
 h3 {
-  margin: 0 0 var(--ac-space-2);
+  margin: 0;
   font-size: var(--ac-font-size-body);
-  font-weight: 700;
+  font-weight: 800;
+}
+.prints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+.print {
+  width: 84px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-track);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-sm);
+}
+.print.on {
+  border-color: var(--ac-color-primary);
+  transform: translateY(-4px);
+}
+.print:disabled {
+  cursor: not-allowed;
+}
+.print:disabled img {
+  opacity: 0.35;
+}
+.print:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: 2px;
+}
+.error {
+  margin: 0;
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-danger);
+}
+@media (max-width: 767px) {
+  .token {
+    gap: var(--ac-space-3);
+  }
+  .preview {
+    width: 110px;
+  }
+  .print {
+    width: 64px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .print {
+    transition: none;
+  }
 }

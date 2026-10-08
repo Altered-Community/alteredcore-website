@@ -194,6 +194,8 @@ export interface DeckHero {
   reference: string;
   name: string;
   faction: string;
+  /** Picked without « Alt arts »: the deck takes the player's default alt art for it (`DeckStore`). */
+  defaultArt?: boolean;
 }
 
 export interface DeckWrite {

@@ -14,8 +14,8 @@ $ownActiveTab = $ownActiveTab ?? '';
 // physical-collection tab elsewhere on the site (core-altered-cards/pages/collection.php);
 // keeping "Digital Ownership"/"Propriété numérique" here avoids the two being confused.
 $ownSubnavTxt = [
-    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'altArts' => 'Alt Arts BGA', 'import' => 'Equinox Import'],
-    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'altArts' => 'Alt Arts BGA', 'import' => 'Import Equinox'],
+    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'altArts' => 'Default alt arts', 'import' => 'Equinox Import'],
+    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'altArts' => 'Arts alternatifs par défaut', 'import' => 'Import Equinox'],
 ][getUiLang()];
 
 $ownBoosterCount = null;

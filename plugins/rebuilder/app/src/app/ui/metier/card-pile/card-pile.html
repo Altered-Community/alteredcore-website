@@ -14,6 +14,11 @@
 @if (issues().length && quantity() > 0) {
   <span class="marker" role="img" [attr.aria-label]="issueLabel()" [title]="issueLabel()"><ac-icon name="circle-alert" [size]="16" [strokeWidth]="2.4" /></span>
 }
+@if (illustrations()) {
+  <button type="button" class="illustrate" aria-haspopup="dialog" [attr.aria-label]="illustrateLabel()" [title]="illustrateLabel()" (click)="illustrate.emit()">
+    <ac-icon name="brush" [size]="18" />
+  </button>
+}
 @if (quantity() > 1) {
   <span class="qty" aria-hidden="true">×{{ quantity() }}</span>
 }

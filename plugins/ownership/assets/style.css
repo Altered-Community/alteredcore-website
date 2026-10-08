@@ -419,7 +419,7 @@
     margin: var(--ac-space-3) 0;
 }
 
-/* Per-deck vs. global alt-art mode toggle + its explanation panel (pages/alt-arts.php) */
+/* Window over the page (the legacy deckbuilder's token illustrations, assets/deckbuilder/token-arts.js) */
 .own-aa-modal-overlay {
     position: fixed;
     inset: 0;
@@ -437,17 +437,8 @@
     overflow-y: auto;
     box-shadow: var(--ac-shadow-dialog);
 }
-.own-aa-modal .ac-card__meta {
-    margin-bottom: var(--ac-space-3);
-}
 
-/* Mode switch bar and search field (pages/alt-arts.php) */
-.own-aa-modebar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ac-space-2);
-}
+/* Search field (pages/alt-arts.php) */
 .own-aa-search {
     max-width: 260px;
 }

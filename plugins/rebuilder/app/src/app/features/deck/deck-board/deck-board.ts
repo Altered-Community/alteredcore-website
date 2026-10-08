@@ -1,5 +1,5 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { DeckStore } from '../../../core/deck-store';
+import { DeckStore, displayName } from '../../../core/deck-store';
 import type { Card, HydratedLine } from '../../../core/models';
 import { AcCardPile } from '../../../ui/metier';
 import { AcSkeleton } from '../../../ui/containers';
@@ -7,6 +7,7 @@ import { AcOverlayService } from '../../../ui/overlay';
 import { EditorAltArts } from '../../editor/editor-alt-arts';
 import { lineIssues } from '../../editor/editor-legality';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
+import { openAltArtPicker } from '../../editor/alt-art-picker/alt-art-picker.overlay';
 import { boardGroups, fitColumns, layoutBoard } from './board-layout';
 
 /** Narrowest card the board shows, to keep it readable: a wider board gets more columns, so fewer rows. */
@@ -31,7 +32,7 @@ export class DeckBoard {
   protected readonly deck = inject(DeckStore);
   private readonly overlay = inject(AcOverlayService);
   /** Editor only: prints of the deck's cards (per-deck alt-art mode). */
-  private readonly altArts = inject(EditorAltArts, { optional: true });
+  protected readonly altArts = inject(EditorAltArts, { optional: true });
   readonly readonly = input(false);
   /** The board's width, measured: the number of card columns follows it. */
   private readonly width = signal(0);
@@ -91,14 +92,24 @@ export class DeckBoard {
     return this.deck.quantities().get(card.reference) ?? 0;
   }
 
+  /** `card` has a brush (several illustrations, the deck editable). */
+  protected canIllustrate(card: Card): boolean {
+    return this.editable() && !!this.altArts?.canIllustrate(card);
+  }
+
+  /** The brush of a card: its illustrations in this deck. */
+  protected illustrate(card: Card): void {
+    const data = this.altArts?.pickerFor(card);
+    if (data) openAltArtPicker(this.overlay, displayName(card), data);
+  }
+
   /** The card large, with its copies and prints when the deck can be edited (the site's card lightbox). */
   protected zoom(card: Card): void {
     const editable = this.editable();
-    const choice = this.altArts?.choiceFor(card.reference) ?? null;
     openCardZoom(this.overlay, {
       card,
       quantity: editable ? { value: this.quantityOf(card), max: this.deck.maxFor(card), change: (n) => this.setQuantity(card, n) } : undefined,
-      illustrations: editable && choice ? { choice, pick: (ref) => this.deck.swapReference(card, ref) } : undefined,
+      illustrations: editable ? (this.altArts?.pickerFor(card) ?? undefined) : undefined,
     });
   }
 }

@@ -10,7 +10,7 @@ import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
 import { AcDrawerHandle, AcDrawerState, AcDrawerTab } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
-import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcTabs } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -19,6 +19,7 @@ import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
 import { FiltersPanel } from '../filters-panel/filters-panel';
 import { openFiltersSheet } from '../filters-sheet/filters-sheet.overlay';
 import { SearchResults } from '../search-results/search-results';
+import { EditorAltArts } from '../../editor/editor-alt-arts';
 
 export interface CardSourceTab {
   id: CardSource;
@@ -48,7 +49,7 @@ const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPow
  */
 @Component({
   selector: 'app-card-search',
-  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults, AcSwitch],
   host: { '[class.compact]': 'bp.compact()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
@@ -60,6 +61,8 @@ export class CardSearch {
   private readonly uniquesApi = inject(UniquesApiService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
+  /** Editor: « Arts alternatifs » (the alt arts the player owns, after their card). */
+  protected readonly altArts = inject(EditorAltArts, { optional: true });
   private readonly injector = inject(Injector);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
@@ -72,6 +75,7 @@ export class CardSearch {
   readonly ready = input(true);
   /** Card browser: faction filter, no quantity controls on the cards. */
   readonly browse = input(false);
+  protected readonly printsSwitch = computed(() => !this.browse() && !!this.altArts?.enabled());
 
   protected readonly source = toSignal(
     this.route.queryParamMap.pipe(map((q) => (q.get('source') as CardSource) || 'all')),

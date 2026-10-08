@@ -157,7 +157,10 @@ function owned(array $print, string $user): ?int {
 function options(array $f, string $user): array {
     $chosen = state($user)['slots'][$f['key']] ?? [];
     $slots = [];
-    for ($i = 0; $i < $f['copies']; $i++) $slots[] = ['slotIndex' => $i, 'reference' => $chosen[$i] ?? $f['prints'][0]['reference']];
+    // As the service: slots numbered from 1, the plain print where the player chose nothing.
+    for ($i = 0; $i < $f['copies']; $i++) {
+        $slots[] = ['slotIndex' => $i + 1, 'reference' => $chosen[$i] ?? $f['prints'][0]['reference'], 'isExplicitChoice' => isset($chosen[$i])];
+    }
     return key3($f) + [
         'options' => array_map(fn($p) => ['reference' => $p['reference'], 'ownedQuantity' => owned($p, $user)], $f['prints']),
         'slots'   => $slots,

@@ -135,10 +135,10 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 | `ownership-search` | Digital ownership scope |
 | `favorites-search` / `favorites-toggle` | Per-user favorites (local PHP DB) |
 | `deck-add-card` | Incremental add: GET deck + PATCH full `deckCards` |
-| `deck-alt-arts` | Alt-art options for a card in a deck |
+| `deck-alt-arts` | Families of illustrations of deck and search references: prints, copies owned, the player's default alt arts (`core/alt-art-defaults.ts`) |
 | `playset` / `playset-cards` | Physical playset dashboard |
 
-Ownership plugin (when enabled): `/papi/ownership/alt-art-search`, `alt-art-set-preference`.
+Ownership plugin (when enabled): `/papi/ownership/alt-art-search` (token illustrations), `alt-art-pending` (`GET ?deck=`: the deck of a player switched from the « Global » mode waits for their default alt arts; `POST {deck}`: it took them). Token illustrations are saved through the relay (`PUT /api/alt-arts/preferences`).
 
 ## Local stack
 

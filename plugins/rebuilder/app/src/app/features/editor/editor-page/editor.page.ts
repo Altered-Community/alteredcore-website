@@ -23,7 +23,7 @@ import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { openHeroPicker } from '../../shared/hero-picker/hero-picker.overlay';
 import { openDeckOverview } from '../deck-overview/deck-overview.overlay';
-import { EditorAltArts } from '../editor-alt-arts';
+import { EditorAltArts, confirmAltArtDefaults } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
 import { CardSearch } from '../../search/card-search/card-search';
 import { DeckListView } from '../deck-list-view/deck-list-view';
@@ -331,6 +331,12 @@ export class EditorPage {
 
   protected chooseTokenArts(): void {
     openTokenArts(this.overlay);
+  }
+
+  protected applyAltArtDefaults(): void {
+    confirmAltArtDefaults(this.overlay, this.altArts).subscribe((message) => {
+      if (message) this.flash(message);
+    });
   }
 
   /** The deck's image: copied, saved or opened (reduced bar: the button and its « ⋯ » menu). */

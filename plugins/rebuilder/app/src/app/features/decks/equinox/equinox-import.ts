@@ -13,6 +13,7 @@ import { uiLocale } from '../../../core/i18n';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, validCards, withHero } from './equinox-csv';
 import { OwnershipApiService } from '../../../core/ownership-api.service';
+import { cardsWithDefaults } from '../../../core/deck-store';
 
 export type ImportStatus = 'pending' | 'current' | 'imported' | 'skipped' | 'failed' | 'failedFinal' | 'cancelled';
 
@@ -304,15 +305,12 @@ export class EquinoxImport {
     // A cancel, or a new file, while the request was in flight: its answer is dropped.
     const stale = () => this.cancelled() || run !== this.run;
     try {
-      // « Global » alt-art preference (read for each deck, as the site's importer does): the user's
-      // alt arts replace the exported cards, unless the answer holds an invalid card; the hero is
-      // added afterwards, as it was exported.
-      let exported = row.deck.cards;
-      if (await lastValueFrom(this.ownership.globalAltArts())) {
-        const applied = await lastValueFrom(this.ownership.applyAltArts(exported));
-        if (validCards(applied)) exported = applied;
-      }
-      const deck = { name: row.deck.name, cards: withHero(row.deck.hero, exported) };
+      // The cards and the hero take the user's default alt arts (`cardsWithDefaults`), unless that gives an invalid card.
+      let cards = withHero(row.deck.hero, row.deck.cards);
+      const choices = await lastValueFrom(this.ownership.altArtChoices(cards.map((c) => c.cardReference)));
+      const applied = cardsWithDefaults(cards, choices);
+      if (validCards(applied)) cards = applied;
+      const deck = { name: row.deck.name, cards };
       let status: ImportStatus = 'skipped';
       if (!(await this.alreadyThere(deck))) {
         await lastValueFrom(

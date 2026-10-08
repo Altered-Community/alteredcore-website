@@ -12,7 +12,7 @@
         {"slug": "ownership-collection", "file": "pages/collection.php", "title_en": "Collection",        "title_fr": "Collection"},
         {"slug": "boosters",             "file": "pages/boosters.php",   "title_en": "Boosters",          "title_fr": "Boosters"},
         {"slug": "ownership-history",    "file": "pages/history.php",    "title_en": "History",           "title_fr": "Historique"},
-        {"slug": "ownership-alt-arts",   "file": "pages/alt-arts.php",   "title_en": "Alt Arts BGA",       "title_fr": "Alt Arts BGA"}
+        {"slug": "ownership-alt-arts",   "file": "pages/alt-arts.php",   "title_en": "Default alt arts",   "title_fr": "Arts alternatifs par défaut"}
     ],
 
     "api": [
@@ -22,7 +22,8 @@
         {"endpoint": "history-detail",      "file": "api/history-detail.php"},
         {"endpoint": "alt-art-search",      "file": "api/alt-art-search.php"},
         {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"},
-        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php"}
+        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php", "methods": ["GET"]},
+        {"endpoint": "alt-art-pending",     "file": "api/alt-art-pending.php", "methods": ["GET", "POST"], "auth": "user"}
     ],
 
     "assets": {

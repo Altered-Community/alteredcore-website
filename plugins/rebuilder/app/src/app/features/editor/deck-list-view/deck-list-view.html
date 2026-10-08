@@ -30,8 +30,11 @@
 <ac-collapsible class="stats" title="Stats" i18n-title="@@panel.stats" [(open)]="statsOpen">
   <ac-deck-stats [main]="deck.stats().main" [reserve]="deck.stats().reserve" [terrain]="deck.stats().terrain" />
 </ac-collapsible>
-@if (!readonly() && altArts?.canChooseTokens()) {
-  <button acButton variant="secondary" icon="layers" [fullWidth]="true" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Choisir les arts des jetons</button>
+@if (!readonly() && altArts?.canChoose()) {
+  <div class="alt-arts">
+    <button acButton variant="secondary" icon="layers" [fullWidth]="true" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Illustrations des jetons</button>
+    <button acButton variant="secondary" icon="wand-sparkles" [fullWidth]="true" aria-haspopup="dialog" (click)="applyDefaults()" i18n="@@editor.altArtDefaults.open">Appliquer les arts par défaut</button>
+  </div>
 }
 @for (g of deck.groups(); track g.id) {
   <ac-deck-section appearance="flat" [title]="g.label" [count]="g.count">
@@ -39,7 +42,7 @@
       <ac-deck-row
         [card]="l.card"
         [quantity]="l.quantity"
-        [max]="deck.maxFor(l.card)"
+        [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
         [issues]="issues().get(l.card.reference) ?? noIssues"
         [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
         [readonly]="readonly() || !deck.editable()"

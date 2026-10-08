@@ -1,0 +1,131 @@
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+.hint {
+  margin: 0;
+  text-align: center;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The copies, large: up to 200 px each, narrower on a phone. */
+.slots {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(var(--copies, 1), minmax(0, 200px));
+  justify-content: center;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-2);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-primary-tint);
+  box-sizing: border-box;
+}
+.slots li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1);
+  min-width: 0;
+}
+.slot-label {
+  font-size: var(--ac-font-size-caption);
+  font-weight: 700;
+  color: var(--ac-color-text-muted);
+}
+.slot,
+.print {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.slot {
+  width: 100%;
+  border-radius: var(--ac-radius-md);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.slot img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-md);
+}
+.slot.active {
+  outline-color: var(--ac-color-primary);
+}
+.pool-title {
+  margin: 0;
+  font-size: var(--ac-font-size-caption);
+  font-weight: 700;
+  color: var(--ac-color-text-muted);
+}
+/* The prints in one row, scrolled sideways when they do not fit. */
+.pool {
+  max-width: 100%;
+  display: flex;
+  justify-content: safe center;
+  gap: var(--ac-space-2);
+  overflow-x: auto;
+  padding-bottom: var(--ac-space-1);
+}
+.pool li {
+  flex-shrink: 0;
+}
+.print {
+  width: 126px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-2) var(--ac-space-1) var(--ac-space-1);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-surface);
+}
+.print img {
+  display: block;
+  width: 110px;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-sm);
+}
+.print.off {
+  cursor: not-allowed;
+}
+.print.off img {
+  opacity: 0.4;
+}
+.note {
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-text-muted);
+}
+.slot:focus-visible,
+.print:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: 2px;
+}
+.settings {
+  margin-right: auto;
+  align-self: center;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-link);
+}
+@media (max-width: 767px) {
+  .print {
+    width: 96px;
+  }
+  .print img {
+    width: 84px;
+  }
+}
