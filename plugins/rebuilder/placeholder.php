@@ -25,17 +25,18 @@ $sk = function (string $class = '', int $n = 1, string $width = ''): string {
 $cards = function (string $class, int $n) use ($sk): string {
     return '<div class="' . $class . '">' . $sk('ac-skeleton--card', $n) . '</div>';
 };
-/** Deck bar (from 768 px): hero art, name, curve, rarity limits, terrain totals, actions; `reduced` in the editor. */
-$deckBar = function (bool $reduced, int $actions) use ($sk): string {
+/** Deck bar (from 768 px): hero art, name, curve, rarity limits, terrain totals, actions (six in two columns of 170 px,
+ * or the reduced bar's « Partager », « Copier en image », « ⋯ » at their width); `reduced` in the editor. */
+$deckBar = function (bool $reduced) use ($sk): string {
     return '<div class="rbph-bar' . ($reduced ? ' rbph-bar--reduced' : '') . '">'
         . '<span class="ac-skeleton rbph-bar__art"></span>'
-        . '<div class="rbph-bar__text">' . $sk('ac-skeleton--text', 1, '70px') . $sk('ac-skeleton--title', 1, '80%')
-        . ($reduced ? $sk('ac-skeleton--text', 1, '60%') : $sk('ac-skeleton--title', 1, '50%') . $sk('ac-skeleton--text', 1, '70%') . $sk('ac-skeleton--text', 1, '50%') . $sk('ac-skeleton--text', 1, '40%'))
+        . '<div class="rbph-bar__text">' . $sk('ac-skeleton--text', 1, '70px') . '<div class="rbph-bar__name">' . $sk('ac-skeleton--title', 1, '70%') . '</div>' . $sk('ac-skeleton--text', 1, '60%')
+        . ($reduced ? '' : '<div class="rbph-bar__badges">' . $sk('ac-skeleton--badge', 1, '90px') . $sk('ac-skeleton--badge', 1, '64px') . '</div>' . $sk('ac-skeleton--text', 1, '50%'))
         . '</div>'
-        . '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__curve"></span>'
+        . '<span class="rbph-bar__sep rbph-bar__sep--curve"></span><span class="ac-skeleton rbph-bar__curve"></span>'
         . ($reduced ? '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__limits"></span>' : '')
-        . '<span class="rbph-bar__sep"></span><span class="ac-skeleton rbph-bar__terrain"></span>'
-        . '<div class="rbph-bar__actions">' . $sk('ac-skeleton--control-sm', $actions) . '</div>'
+        . '<span class="rbph-bar__sep rbph-bar__sep--terrain"></span><span class="ac-skeleton rbph-bar__terrain"></span>'
+        . '<div class="rbph-bar__actions">' . ($reduced ? $sk('ac-skeleton--control-sm', 1, '95px') . $sk('ac-skeleton--control-sm', 1, '141px') . $sk('ac-skeleton--control-sm', 1, 'var(--ac-control-sm)') : $sk('ac-skeleton--control-sm', 6)) . '</div>'
         . '</div>';
 };
 /**
@@ -89,9 +90,27 @@ $board = function () use ($sk): string {
       // alone on screen meanwhile on a first visit. ?>
 <style><?php readfile(__DIR__ . '/placeholder.css'); ?></style>
 <div class="rbph" aria-hidden="true">
-<?php if ($screen === 'decks'): ?>
+<?php if ($screen === 'decks'):
+    // The community deckbuilders' banner (from 768 px), with its text: the app reads the list from the script below and
+    // draws the banner on its first screen, where it would otherwise push the page down when the list arrives. Its texts
+    // are the app's (decks.builders.info and decks.builders.show in app/src/locale).
+    require_once __DIR__ . '/includes/community-builders.php';
+    try {
+        $builders = rebuilderCommunityBuilders(getUiLang());
+    } catch (Throwable $e) {
+        $builders = [];
+    }
+    $fr = getUiLang() === 'fr';
+?>
   <div class="rbph-desktop rbph-decks">
     <div class="rbph-decks__head"><?= $sk('ac-skeleton--title', 1, '120px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '110px') . $sk('ac-skeleton--control', 1, '150px') ?></div>
+<?php if ($builders): ?>
+    <div class="rbph-builders">
+      <p><?= ac_icon('info') ?><span><?= h($fr ? 'D’autres deck builders partagent la même base de données. Créez, modifiez ou importez vos decks dans l’un d’eux et continuez sur un autre. Tous les decks apparaissent sur BGA.' : 'Other deck builders share the same database. Create, edit, or import decks in any of them and continue anywhere. All decks appear on BGA.') ?></span></p>
+      <span class="ac-button ac-button--secondary ac-button--sm"><?= ac_icon('external-link') ?><?= h($fr ? 'Voir les deckbuilders' : 'View deckbuilders') ?></span>
+    </div>
+    <script type="application/json" id="rebuilder-community-builders"><?= json_encode($builders, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<?php endif; ?>
     <?= $tabs(['110px', '100px', '180px']) ?>
     <div class="rbph-decks__filters"><?= $sk('ac-skeleton--control', 1, '300px') . $sk('ac-skeleton--control', 2, '140px') . $sk('ac-skeleton--control', 1, '200px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '220px') ?></div>
     <div class="rbph-decks__factions"><?= $sk('ac-skeleton--text', 1, '56px') . $sk('rbph-chip', 7, '76px') ?></div>
@@ -107,13 +126,24 @@ $board = function () use ($sk): string {
     <?= $bottomNav(3) ?>
   </div>
 <?php elseif ($screen === 'new'): ?>
-  <div class="rbph-dialog">
-    <div class="rbph-col12"><?= $sk('ac-skeleton--title', 1, '40%') . '<div class="rbph-row rbph-wrap">' . $sk('rbph-chip', 6, '80px') . '</div>' ?><div><?= $sk('ac-skeleton--card', 4) ?></div></div>
-    <div class="rbph-col12"><?= $sk('ac-skeleton--text', 1, '30%') . $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '30%') . $sk('ac-skeleton--control', 4) ?></div>
+  <?php // In the page, what the app draws there (features/decks/new-deck-page): a block of the window's height, its
+        // backdrop skeleton from 768 px. Over it, where the app's overlay opens (ui/overlay: a 1080 px window, full
+        // screen on phones), the form in skeleton. ?>
+  <div class="rbph-new">
+    <div class="rbph-desktop rbph-new__backdrop"><span class="rbph-new__bar"></span><span class="rbph-new__bar rbph-new__bar--wide"></span><div class="rbph-new__cols"><span></span><span></span><span></span></div></div>
+    <div class="rbph-new__scrim"></div>
+    <div class="rbph-new__window">
+      <div class="rbph-new__head"><?= $sk('ac-skeleton--circle rbph-compact-only', 1, '24px') . $sk('ac-skeleton--title', 1, '140px') ?></div>
+      <div class="rbph-new__body">
+        <div class="rbph-new__heroes"><?= $sk('ac-skeleton--text', 1, '60px') . '<div class="rbph-new__chips">' . $sk('rbph-chip', 6, '84px') . '</div>' . $sk('rbph-chip', 1, '72px') ?><div class="rbph-new__cards"><?= $sk('ac-skeleton--card', 4) ?></div></div>
+        <div class="rbph-new__side"><?= $sk('ac-skeleton--text', 1, '110px') . $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '80px') . $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '70px') . $sk('ac-skeleton--control rbph-h56', 3) ?></div>
+      </div>
+      <div class="rbph-new__foot"><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '96px') . $sk('ac-skeleton--control', 1, '120px') ?></div>
+    </div>
   </div>
 <?php elseif ($screen === 'deck'): ?>
   <div class="rbph-desktop rbph-deckpage">
-    <?= $deckBar(false, 6) ?>
+    <?= $deckBar(false) ?>
     <?= $tabs(['70px', '70px', '90px', '120px']) ?>
 <?php if ($view === 'main'): ?>
     <?= $hand(false) ?>
@@ -143,8 +173,8 @@ $board = function () use ($sk): string {
 <?php else: /* editor */ ?>
   <div class="rbph-desktop rbph-editor">
     <div class="rbph-editor__top">
-      <?= $deckBar($view !== 'apercu', $view === 'apercu' ? 4 : 2) ?>
-      <div class="rbph-modes"><span class="ac-skeleton rbph-modes__segmented"></span><?= $sk('ac-skeleton--control-sm', 1, '120px') ?></div>
+      <?= $deckBar($view !== 'apercu') ?>
+      <div class="rbph-modes"><span class="ac-skeleton rbph-modes__segmented"></span><?= $sk('ac-skeleton--control-sm', 1, '136px') /* « Arts des jetons » */ ?></div>
     </div>
 <?php if ($view === 'apercu'): ?>
     <?= $board() ?>

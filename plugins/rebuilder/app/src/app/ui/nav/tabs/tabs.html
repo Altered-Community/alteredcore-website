@@ -9,7 +9,7 @@
     (click)="active.set(t.id)"
     (keydown.arrowRight)="step($index, 1)"
     (keydown.arrowLeft)="step($index, -1)"
-  >{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · {{ t.count }}</span>}</button>
+  >{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
 }
 @if (overflow().length) {
   @let p = picked();
@@ -36,7 +36,7 @@
         [cdkMenuItemChecked]="t.id === active()"
         [class.is-active]="t.id === active()"
         (cdkMenuItemTriggered)="active.set(t.id)"
-      >{{ t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · {{ t.count }}</span>}</button>
+      >{{ t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
     }
   </div>
 </ng-template>

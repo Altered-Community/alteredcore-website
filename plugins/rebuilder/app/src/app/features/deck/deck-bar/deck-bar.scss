@@ -1,10 +1,21 @@
 :host {
+  /* Width of a column of the full bar's actions (two columns of small buttons, deck page and editor « Aperçu »): the
+     same for the actions in skeleton and the buttons (« Copier en image ▾ », the widest, is 170 px), so that the name
+     column keeps its width, and its lines, when the owner is known. */
+  --deck-bar-action-width: 170px;
   container: deck-bar / inline-size;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: var(--ac-space-5);
-  min-height: 108px;
+  /* One height for every deck, from its skeleton (placeholder.php, then the deck opening) to the deck: the tallest
+     column, three rows of actions or the text (back link, name with its rename button, meta, badges, counts), whose rows
+     never wrap. */
+  min-height: max(
+    calc(3 * var(--ac-control-sm) + 2 * var(--ac-space-1-5) + 2 * var(--ac-space-3) + 2px),
+    calc(1.3 * var(--ac-font-size-caption) + var(--ac-control-sm) + 1.4 * var(--ac-font-size-small) + var(--ac-badge-height)
+      + 1.35 * var(--ac-font-size-body-strong) + 4 * 2px + 2 * var(--ac-space-2) + 2px)
+  );
   padding-right: var(--ac-space-5);
   background: var(--ac-color-surface);
   border: 1px solid var(--ac-color-border);
@@ -95,18 +106,18 @@
   align-items: center;
   gap: var(--ac-space-1-5);
   min-width: 0;
+  /* The rename button's height, with or without it. */
+  min-height: var(--ac-control-sm);
 }
-/* Two lines at most, the whole name in the tooltip; a long one a size smaller. */
+/* One line, the whole name in the tooltip; a long one a size smaller. */
 .name {
   margin: 0;
   min-width: 0;
   font: var(--ac-font-title);
   color: var(--ac-color-text);
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 .name.long {
   font: var(--ac-font-heading);
@@ -136,12 +147,23 @@
   color: var(--ac-color-text-muted);
 }
 .meta {
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dot {
+  margin-inline: var(--ac-space-2);
+}
+/* One row of whole badges, and of whole counts: what does not fit goes to a second row, hidden. */
+.badges {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ac-space-1) var(--ac-space-2);
-  font: var(--ac-font-small);
-  color: var(--ac-color-text-muted);
+  gap: var(--ac-space-1-5);
+  height: var(--ac-badge-height);
+  overflow: hidden;
 }
 .meta strong {
   color: var(--ac-color-text);
@@ -149,7 +171,10 @@
 .counts {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px var(--ac-space-3);
+  gap: 0 var(--ac-space-3);
+  height: calc(1.35 * var(--ac-font-size-body-strong));
+  overflow: hidden;
+  white-space: nowrap;
   font: var(--ac-font-small);
   color: var(--ac-color-text-2);
 }
@@ -191,7 +216,9 @@
 /* Reduced bar (editor search, starting hand): one row. */
 :host(.reduced) {
   gap: var(--ac-space-4);
-  min-height: 64px;
+  /* The text: back link, name, meta. */
+  min-height: calc(1.3 * var(--ac-font-size-caption) + 1.3 * var(--ac-font-size-heading) + 1.4 * var(--ac-font-size-small) + 2 * 2px
+    + 2 * var(--ac-space-2) + 2px);
   padding-right: var(--ac-space-4);
 }
 :host(.reduced) .actions {
@@ -209,6 +236,9 @@
 :host(.reduced) .text {
   padding: var(--ac-space-2) var(--ac-space-3);
 }
+:host(.reduced) .name-row {
+  min-height: 0;
+}
 :host(.reduced) .name {
   font: var(--ac-font-heading);
 }
@@ -216,61 +246,44 @@
   font: var(--ac-font-body-strong);
 }
 
-/* Narrower bars (window width, deck panel open): the curve goes first, then the terrain totals. */
-@container deck-bar (max-width: 1180px) {
-  :host(:not(.reduced)) ac-cost-curve,
-  :host(:not(.reduced)) .sep.curve {
+/* Narrower bars (window width, deck panel open): the curve goes first, then the terrain totals and the rarities, so that
+   the name keeps at least 210 px (its column is 1017 px narrower than the bar with everything, 795 px without the curve).
+   Same widths in placeholder.css, as window widths. */
+@container deck-bar (max-width: 1204px) {
+  :host(:not(.reduced)) :is(ac-cost-curve, .curve-skeleton, .sep.curve) {
     display: none;
   }
 }
-/* Then the terrain totals; the rarities under them stay. */
-@container deck-bar (max-width: 960px) {
-  :host(:not(.reduced)) .terrain .power,
-  :host(:not(.reduced)) ac-terrain-totals {
-    display: none;
-  }
-  :host(:not(.reduced)) .terrain:not(:has(ac-rarity-limits)),
-  :host(:not(.reduced)) .sep:not(:has(+ .terrain ac-rarity-limits)) {
-    display: none;
-  }
-}
-/* Then the rarities. */
-@container deck-bar (max-width: 860px) {
-  :host(:not(.reduced)) .terrain,
+@container deck-bar (max-width: 993px) {
+  :host(:not(.reduced)) :is(.terrain, .terrain-skeleton),
   :host(:not(.reduced)) .sep {
     display: none;
   }
 }
-/* Reduced bar: the curve, then the terrain totals, then the rarities. */
-@container deck-bar (max-width: 1320px) {
-  :host(.reduced) ac-cost-curve,
-  :host(.reduced) .sep.curve {
+/* Reduced bar: the curve, then the terrain totals, then the rarities; the name keeps about 200 px (1228, 1050 and 839 px
+   narrower than the bar). */
+@container deck-bar (max-width: 1409px) {
+  :host(.reduced) :is(ac-cost-curve, .curve-skeleton, .sep.curve) {
     display: none;
   }
 }
-@container deck-bar (max-width: 1060px) {
-  :host(.reduced) .terrain,
-  :host(.reduced) .sep:has(+ .terrain) {
+@container deck-bar (max-width: 1231px) {
+  :host(.reduced) :is(.terrain, .terrain-skeleton),
+  :host(.reduced) .sep:has(+ :is(.terrain, .terrain-skeleton)) {
     display: none;
   }
 }
-@container deck-bar (max-width: 900px) {
-  :host(.reduced) ac-rarity-limits,
+@container deck-bar (max-width: 1020px) {
+  :host(.reduced) :is(ac-rarity-limits, .limits-skeleton),
   :host(.reduced) .sep {
     display: none;
   }
 }
 
-/* While the deck opens: blocks of the size of the curve, the rarity limits and the terrain totals, so that nothing moves
-   when the deck arrives. */
-:host(.opening) {
-  min-height: 100px;
-}
-:host(.opening:not(.reduced)) {
-  /* The page sets the height of its full bar (actions differ): editor « Aperçu », deck page. */
-  min-height: var(--deck-bar-opening-height, 206px);
-}
-:host(.opening) .text {
+/* While the deck opens: the text's rows, and blocks of the size of the curve, the rarity limits and the terrain totals,
+   so that nothing moves when the deck arrives. */
+.badges-skeleton {
+  display: flex;
   gap: var(--ac-space-1-5);
 }
 .curve-skeleton {
@@ -286,8 +299,8 @@
   height: 30px;
 }
 :host(:not(.reduced)) .curve-skeleton {
-  flex-basis: 306px;
-  height: 82px;
+  flex-basis: 181px;
+  height: 125px;
 }
 :host(:not(.reduced)) .terrain-skeleton {
   flex-basis: 216px;
