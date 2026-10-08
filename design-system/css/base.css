@@ -24,7 +24,10 @@ body,
   -webkit-tap-highlight-color: transparent;
 }
 
-.ac-plugin-root {
+/* The page fills the window under the site header, and so does its skeleton: the site footer is never on the first
+   screen while the page loads, where the page's content would push it down (a layout shift). */
+.ac-plugin-root,
+.ac-spa-placeholder {
   display: block;
   min-height: calc(100dvh - var(--ac-page-top));
 }

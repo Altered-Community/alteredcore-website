@@ -104,11 +104,12 @@
             @if (deck.owned() === null) {
               @if (effectiveView() === 'apercu') {
                 @for (i of [0, 1, 2, 3, 4, 5]; track i) {
-                  <span acSkeleton="control-sm" width="110px"></span>
+                  <span acSkeleton="control-sm"></span>
                 }
               } @else {
-                <span acSkeleton="control-sm" width="110px"></span>
-                <span acSkeleton="control-sm" width="110px"></span>
+                <!-- « Partager », « Copier en image » (their width in French), « ⋯ ». -->
+                <span acSkeleton="control-sm" width="95px"></span>
+                <span acSkeleton="control-sm" width="141px"></span>
                 <span acSkeleton="control-sm" width="var(--ac-control-sm)"></span>
               }
             } @else {
@@ -151,16 +152,21 @@
             [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
+          <!-- The hint and the save state as the steppers (DeckStore.steppersShown): there while the owner is unknown, so
+               that the row does not wrap, and the page move, when it is known. -->
           <span class="hint">
-            @if (effectiveView() === 'apercu' && deck.editable()) {
+            @if (effectiveView() === 'apercu' && deck.steppersShown()) {
               <ng-container i18n="@@editor.boardHint">Survolez une pile pour changer le nombre d’exemplaires.</ng-container>
             }
           </span>
-          @if (deck.editable()) {
+          @if (deck.steppersShown()) {
             <ac-save-status [state]="deck.saveState()" />
           }
           @if (altArts.canChooseTokens()) {
             <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
+          } @else if (altArts.tokensChoice() === null) {
+            <!-- Until the owner and the alt-art mode are known: its place, so that the row does not wrap when it comes. -->
+            <span acSkeleton="control-sm" width="136px"></span>
           }
         </div>
       </div>

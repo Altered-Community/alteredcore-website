@@ -112,13 +112,14 @@
     @for (d of list(); track d.id) {
       <ac-deck-card role="listitem" [deck]="d" [layout]="bp.compact() ? 'row' : 'grid'" [variant]="tab()" [openInEditor]="openInEditor()" (likeToggle)="toggleLike(d)" (legalityClick)="showLegality(d)" />
     }
-    <!-- Where the decks will be, before « Nouveau deck » (the list's last tile), at a deck card's size. -->
+    <!-- Where the decks will be, at a deck card’s size. -->
     @if (listLoading()) {
       @for (i of skeletons(); track i) {
         <span acSkeleton="panel" class="skeleton"></span>
       }
     }
-    @if (tab() === 'mine' && !bp.compact()) {
+    <!-- After the list once it has loaded: drawn after the skeletons, it would move as the decks replace them. -->
+    @if (tab() === 'mine' && !bp.compact() && !listLoading()) {
       <button type="button" class="new-tile" (click)="newDeck()" i18n="@@decks.page.newDeckTile">
         <span class="plus"><ac-icon name="plus" [size]="22" [strokeWidth]="2.4" /></span>
         Nouveau deck

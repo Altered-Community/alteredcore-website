@@ -32,8 +32,11 @@ if (!function_exists('__nav_active')) {
 
             <!-- Logo and site name -->
             <a class="az-brand" href="<?= BASE_URL ?>/" title="<?= h(getSiteName()) ?>">
-                <?php $__logoPath = getSetting('logo_path'); if ($__logoPath): ?>
-                <img src="<?= h(assetUrl($__logoPath)) ?>" alt="<?= h(getSiteName()) ?>" class="navbar-logo-custom">
+                <?php $__logoPath = getSetting('logo_path'); if ($__logoPath):
+                    // Its size (a local raster image), so that the site name does not move once the image has loaded.
+                    $__logoFile = preg_match('#^https?://#', $__logoPath) ? '' : dirname(__DIR__, 2) . '/' . ltrim($__logoPath, '/');
+                    $__logoSize = $__logoFile !== '' && is_file($__logoFile) ? @getimagesize($__logoFile) : false; ?>
+                <img src="<?= h(assetUrl($__logoPath)) ?>" alt="<?= h(getSiteName()) ?>"<?= $__logoSize ? ' width="' . (int)$__logoSize[0] . '" height="' . (int)$__logoSize[1] . '"' : '' ?> class="navbar-logo-custom">
                 <?php else: ?>
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" fill="none">
                     <path fill="currentColor" d="M23.845 24.384c.756-.806 1.266-1.678 1.431-2.774.191-1.29.092-2.67-.12-3.981-.236-1.445-1.063-2.544-2.06-3.567-.207-.215-.471-.395-.623-.639-.641-1.047-1.83-1.28-2.826-1.782l-.921-.591c-1.764-.44-3.515-.131-5.26.073-.257.029-.516.227-.726.4-.67.563-1.316 1.15-1.97 1.728-.063.054-.134.143-.2.143-.709 0-.874.537-1.046 1.021-.191.531-.312 1.084-.448 1.57.131.163.327.306.382.492.176.584.367 1.136.987 1.432.084.04.139.152.194.238.445.696 1.19.856 1.944.427.134-.076.301-.176.437-.157.668.078 1.102-.21 1.222-.856.348-1.856 2.212-2.863 4.154-2.664 1.044.107 1.724.489 2.476.96.554.346 1.248 1.102 1.706 1.6 1.227 1.334 1.766 2.839 1.596 4.425-.068.62-.384 1.813-.33 2.507z"/>

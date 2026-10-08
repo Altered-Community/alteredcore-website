@@ -5,7 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "loading": "playwright test loading.spec",
-    "loading:timeline": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON loading-timeline.ts"
+    "loading:timeline": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON loading-timeline.ts",
+    "loading:matrix": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON loading-matrix.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

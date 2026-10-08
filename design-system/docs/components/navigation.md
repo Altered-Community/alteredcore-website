@@ -37,7 +37,8 @@ In-page tabs (ARIA tab pattern):
 | `ac-tabs--underline` | 44 px tabs on a bottom border; the active tab has a 2 px primary underline, primary-strong bold text. Scrolls horizontally (scrollbar hidden) when it overflows. |
 | `ac-tabs--pill` | `--ac-control-sm` pills with a control border; the active pill is inverse (dark in light theme). Scrolls horizontally. Suited to compact screens. |
 | `ac-tabs--fill` | With `--underline`: the tabs share the row (centred labels, 8 px side padding) instead of scrolling. On a phone, keep 4 short labels and put the others in a « Plus » tab (`chevron-down` icon) that opens an `ac-menu`; when one of them is active, the « Plus » tab shows its label and the active style. |
-| `ac-tabs__count` | Muted number after the label. |
+| `ac-tabs__count` | Muted number after the label (tabular figures). |
+| `ac-tabs__count-value` | The number in `ac-tabs__count`, at least three digits wide: a count that loads (« … ») or changes does not move the next tabs. |
 
 Active tab: `aria-selected="true"` (tab pattern), `aria-current` (links), or `.is-active`.
 
@@ -133,7 +134,7 @@ The Bootstrap `.dropdown-menu` is restyled to look the same (see
 <ac-breadcrumb [items]="[{ label: 'Decks', route: '/decks' }, { label: deck.name }]" />
 ```
 
-`ac-tabs`: `tabs` (`{ id, label, count? }[]`), two-way `active`, `appearance` (`underline` |
+`ac-tabs`: `tabs` (`{ id, label, count? }[]`, `count: null` while it loads), two-way `active`, `appearance` (`underline` |
 `pill`), `ariaLabel`. Menus are built with the overlay service (`ui/overlay/`) and the
 `ac-menu` classes.
 

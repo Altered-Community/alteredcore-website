@@ -72,7 +72,9 @@
   color: var(--ac-color-on-inverse);
   font-weight: 700;
 }
-.ac-tabs__count { color: var(--ac-color-text-muted); font-weight: 600; }
+.ac-tabs__count { color: var(--ac-color-text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* A count still loading (« … ») and a count of up to three digits take the same width: the next tabs do not move. */
+.ac-tabs__count-value { display: inline-block; min-width: 3ch; }
 
 /* ---- Breadcrumb ---- */
 .ac-breadcrumb {

@@ -13,7 +13,7 @@
  *
  * Self-contained (types only from Playwright): tests/e2e/loading-timeline.ts runs it with Node's type stripping.
  */
-import type { Page } from '@playwright/test';
+import type { BrowserContextOptions, Page } from '@playwright/test';
 
 export interface LoadingShift {
   t: number;
@@ -45,6 +45,17 @@ export const PROFILES = {
   fast: { cpu: 1, latency: 0, down: -1, up: -1 },
 } as const;
 export type Profile = keyof typeof PROFILES;
+
+/** Phones, tablets, laptops and desktops on both sides of the breakpoints (768 medium, 1200 expanded). */
+export const VIEWPORTS: Record<string, BrowserContextOptions> = {
+  'phone-s': { viewport: { width: 360, height: 740 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  'laptop-s': { viewport: { width: 1024, height: 768 } },
+  laptop: { viewport: { width: 1280, height: 800 } },
+  desktop: { viewport: { width: 1440, height: 900 } },
+  wide: { viewport: { width: 1920, height: 1080 } },
+};
 
 /** Installs the recorder for the next navigations of `page` (call it before page.goto()). */
 export async function watchLoading(page: Page, forbidden: ForbiddenText[] = []): Promise<void> {
@@ -99,12 +110,30 @@ function recorder(forbidden: ForbiddenText[]): void {
     state.issues.push({ t: now(), kind, detail });
   };
 
-  type ShiftEntry = PerformanceEntry & { value: number; hadRecentInput: boolean; sources: { previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[] };
+  // The element now in a box that moved: the entry's node, or (a node of a shadow root, which the entry leaves out) the
+  // element at the box's centre in the plugin's shadow root. `ac-select.q < div.row`: the element and two ancestors.
+  const describe = (node: Node | null | undefined, r: DOMRectReadOnly) => {
+    let el = node instanceof Element ? node : (node?.parentElement ?? null);
+    if (!el && r.width && r.height) {
+      const host = document.querySelector('[data-ac-plugin]');
+      el = (host?.shadowRoot ?? document).elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    }
+    const names: string[] = [];
+    for (let e = el; e && names.length < 3; e = e.parentElement ?? ((e.getRootNode() as ShadowRoot).host ?? null)) {
+      names.push(e.localName + [...e.classList].slice(0, 2).map((c) => `.${c}`).join(''));
+    }
+    return names.length ? ` (${names.join(' < ')})` : '';
+  };
+  type ShiftEntry = PerformanceEntry & { value: number; hadRecentInput: boolean; sources: { node?: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[] };
   new PerformanceObserver((list) => {
     for (const e of list.getEntries() as ShiftEntry[]) {
       if (e.hadRecentInput) continue;
       const box = (r: DOMRectReadOnly) => `x${Math.round(r.x)} y${Math.round(r.y)} ${Math.round(r.width)}×${Math.round(r.height)}`;
-      state.shifts.push({ t: Math.round(e.startTime), value: Math.round(e.value * 10000) / 10000, boxes: e.sources.map((s) => `${box(s.previousRect)} → ${box(s.currentRect)}`) });
+      state.shifts.push({
+        t: Math.round(e.startTime),
+        value: Math.round(e.value * 10000) / 10000,
+        boxes: e.sources.map((s) => `${box(s.previousRect)} → ${box(s.currentRect)}${describe(s.node, s.currentRect)}`),
+      });
     }
   }).observe({ type: 'layout-shift', buffered: true });
 

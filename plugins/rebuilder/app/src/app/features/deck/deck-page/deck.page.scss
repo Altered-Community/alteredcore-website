@@ -232,7 +232,7 @@
   /* Deck bar actions: two columns of small buttons. */
   .bar-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(var(--deck-bar-action-width), max-content));
     gap: var(--ac-space-1-5);
   }
 
@@ -265,6 +265,3 @@
   height: 320px;
 }
 
-app-deck-bar {
-  --deck-bar-opening-height: 184px;
-}

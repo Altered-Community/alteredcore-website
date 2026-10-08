@@ -20,20 +20,30 @@
 .rbph-tabs { display: flex; align-items: center; gap: var(--ac-space-6); height: 44px; padding: 0 var(--ac-space-3); overflow: hidden; border-bottom: 1px solid var(--ac-color-divider); }
 .rbph-tabs > .ac-skeleton { flex: 0 0 auto; }
 /* Deck bar (features/deck/deck-bar) and its loading state. */
-.rbph-bar { display: flex; align-items: center; gap: var(--ac-space-5); min-height: 206px; padding-right: var(--ac-space-5); background: var(--ac-color-surface); border: 1px solid var(--ac-color-border); border-radius: var(--ac-radius-card); box-shadow: var(--ac-shadow-card); }
-.rbph-bar--reduced { min-height: 100px; }
+/* Deck bar: the heights and the widths where the curve, the terrain totals and the rarities go of features/deck/deck-bar
+   (its container widths + 70 px, + 66 px reduced: the page's padding, the bar's border and padding). */
+.rbph-bar { display: flex; align-items: center; gap: var(--ac-space-5); min-height: max(calc(3 * var(--ac-control-sm) + 2 * var(--ac-space-1-5) + 2 * var(--ac-space-3) + 2px), calc(1.3 * var(--ac-font-size-caption) + var(--ac-control-sm) + 1.4 * var(--ac-font-size-small) + var(--ac-badge-height) + 1.35 * var(--ac-font-size-body-strong) + 4 * 2px + 2 * var(--ac-space-2) + 2px)); padding-right: var(--ac-space-5); background: var(--ac-color-surface); border: 1px solid var(--ac-color-border); border-radius: var(--ac-radius-card); box-shadow: var(--ac-shadow-card); }
+.rbph-bar--reduced { gap: var(--ac-space-4); min-height: calc(1.3 * var(--ac-font-size-caption) + 1.3 * var(--ac-font-size-heading) + 1.4 * var(--ac-font-size-small) + 2 * 2px + 2 * var(--ac-space-2) + 2px); padding-right: var(--ac-space-4); }
 .rbph-bar__art { align-self: stretch; flex: 0 0 150px; border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card); }
 .rbph-bar--reduced .rbph-bar__art { flex-basis: 96px; }
-.rbph-bar__text { flex: 0 1 260px; display: flex; flex-direction: column; justify-content: center; gap: var(--ac-space-1-5); align-self: stretch; padding: var(--ac-space-2) var(--ac-space-4); border-left: 4px solid var(--ac-color-track); }
-.rbph-bar__sep { align-self: stretch; width: 1px; margin: var(--ac-space-4) 0; background: var(--ac-color-divider); }
-.rbph-bar__curve { flex: 0 0 306px; height: 82px; }
+.rbph-bar__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; align-self: stretch; padding: var(--ac-space-2) var(--ac-space-4); border-left: 4px solid var(--ac-color-track); }
+.rbph-bar--reduced .rbph-bar__text { padding-inline: var(--ac-space-3); }
+.rbph-bar__name { display: flex; align-items: center; min-height: var(--ac-control-sm); }
+.rbph-bar--reduced .rbph-bar__name { min-height: 0; }
+.rbph-bar__badges { display: flex; gap: var(--ac-space-1-5); }
+.rbph-bar__sep { align-self: stretch; width: 1px; flex-shrink: 0; margin: var(--ac-space-3) 0; background: var(--ac-color-divider); }
+.rbph-bar__curve { flex: 0 0 181px; height: 125px; }
 .rbph-bar__terrain { flex: 0 0 216px; height: 103px; }
 .rbph-bar--reduced .rbph-bar__curve { flex-basis: 145px; height: 51px; }
 .rbph-bar__limits { flex: 0 1 230px; height: 30px; }
 .rbph-bar--reduced .rbph-bar__terrain { flex-basis: 162px; height: 30px; }
-.rbph-bar__actions { margin-left: auto; display: grid; grid-template-columns: repeat(2, 120px); gap: var(--ac-space-1-5); }
-.rbph-bar--reduced .rbph-bar__actions { display: flex; }
-.rbph-bar--reduced .rbph-bar__actions > .ac-skeleton { width: 95px; }
+.rbph-bar__actions { flex-shrink: 0; margin-left: auto; padding: var(--ac-space-3) 0; display: grid; grid-template-columns: repeat(2, 170px); gap: var(--ac-space-1-5); }
+.rbph-bar--reduced .rbph-bar__actions { display: flex; padding: var(--ac-space-2) 0; }
+@media (max-width: 1274px) { .rbph-bar:not(.rbph-bar--reduced) :is(.rbph-bar__curve, .rbph-bar__sep--curve) { display: none; } }
+@media (max-width: 1063px) { .rbph-bar:not(.rbph-bar--reduced) :is(.rbph-bar__terrain, .rbph-bar__sep) { display: none; } }
+@media (max-width: 1475px) { .rbph-bar--reduced :is(.rbph-bar__curve, .rbph-bar__sep--curve) { display: none; } }
+@media (max-width: 1297px) { .rbph-bar--reduced :is(.rbph-bar__terrain, .rbph-bar__sep--terrain) { display: none; } }
+@media (max-width: 1086px) { .rbph-bar--reduced :is(.rbph-bar__limits, .rbph-bar__sep) { display: none; } }
 /* Editor (features/editor/editor-page) from 768 px. */
 .rbph-editor { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: var(--ac-space-4) var(--ac-space-6); padding: var(--ac-space-6); }
 .rbph-editor__top { flex: 0 0 100%; display: flex; flex-direction: column; gap: var(--ac-space-4); }
@@ -59,17 +69,50 @@
 /* Deck page from 768 px. */
 .rbph-deckpage { display: flex; flex-direction: column; gap: var(--ac-space-5); padding: var(--ac-space-6); }
 .rbph-deckpage .rbph-board { flex: none; }
-.rbph-deckpage .rbph-bar { min-height: 184px; }
 /* Decks list (features/decks/decks-page) from 768 px. */
 .rbph-decks { display: flex; flex-direction: column; padding: 28px 32px var(--ac-space-8); max-width: 1600px; margin: 0 auto; }
 .rbph-decks__head { display: flex; align-items: center; gap: var(--ac-space-2); height: 40px; margin-bottom: 20px; }
+/* features/decks/decks-page .builders-banner */
+.rbph-builders { display: flex; align-items: center; gap: var(--ac-space-4); margin-bottom: 20px; padding: var(--ac-space-3) var(--ac-space-4); border: 1px solid var(--ac-color-border); border-left: 3px solid var(--ac-color-primary); border-radius: var(--ac-radius-md); background: var(--ac-color-bg-subtle); font-size: var(--ac-font-size-small); color: var(--ac-color-text-2); }
+.rbph-builders p { flex: 1; margin: 0; display: flex; align-items: center; gap: var(--ac-space-2); }
+.rbph-builders p > svg { --ac-icon-size: 16px; flex-shrink: 0; color: var(--ac-color-primary); }
 .rbph-decks__filters { display: flex; align-items: center; gap: var(--ac-space-2); height: 40px; margin: 16px 0 12px; }
 .rbph-decks__factions { display: flex; align-items: center; gap: var(--ac-space-2); height: 32px; margin-bottom: 20px; }
 .rbph-decks__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--ac-space-4); }
 .rbph-decks__grid > .ac-skeleton { height: 227px; }
 /* New deck: the window over the page. */
-.rbph-dialog { max-width: 960px; width: calc(100% - 2 * var(--ac-page-padding)); margin: 10vh auto 0; display: grid; grid-template-columns: 3fr 2fr; gap: var(--ac-space-6); padding: var(--ac-space-6); border-radius: var(--ac-radius-dialog); background: var(--ac-color-surface); box-shadow: var(--ac-shadow-dialog); }
-.rbph-dialog .rbph-col12 > div:last-child { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ac-space-3); }
+/* « Nouveau deck »: the page's block (new-deck.page.scss) and the overlay's window (ui/overlay, new-deck.overlay.scss). */
+.rbph-new { height: calc(100dvh - var(--ac-sticky-top)); }
+.rbph-new__backdrop { height: 100%; gap: var(--ac-space-4); padding: var(--ac-space-6); }
+.rbph-new__bar { width: 30%; height: 34px; border-radius: var(--ac-radius-control); background: var(--ac-color-track); }
+.rbph-new__bar--wide { width: 70%; }
+.rbph-new__cols { flex-grow: 1; display: grid; grid-template-columns: 190px 1fr 240px; gap: var(--ac-space-4); }
+.rbph-new__cols > span { border-radius: var(--ac-radius-card); background: var(--ac-color-track); }
+.rbph-new__scrim { position: fixed; inset: 0; z-index: var(--ac-z-overlay); background: var(--ac-color-scrim); }
+.rbph-new__window { position: fixed; z-index: var(--ac-z-overlay); top: var(--ac-space-10); left: 50%; transform: translateX(-50%); width: min(1080px, calc(100vw - 32px)); height: calc(100dvh - 2 * var(--ac-space-10)); display: flex; flex-direction: column; overflow: hidden; border-radius: var(--ac-radius-dialog); background: var(--ac-color-surface); box-shadow: var(--ac-shadow-dialog); }
+.rbph-new__head { display: flex; align-items: center; gap: var(--ac-space-3); flex-shrink: 0; min-height: 57px; padding: 14px 12px 14px 20px; border-bottom: 1px solid var(--ac-color-border); }
+.rbph-new__body { flex: 1 1 auto; min-height: 0; display: flex; overflow: hidden; }
+.rbph-new__heroes, .rbph-new__side { display: flex; flex-direction: column; gap: 14px; padding: var(--ac-space-5) var(--ac-space-6); }
+.rbph-new__heroes { flex: 1 1 auto; min-width: 0; border-right: 1px solid var(--ac-color-border); }
+.rbph-new__side { flex: 0 0 calc(360px + 2 * var(--ac-space-6)); gap: var(--ac-space-3); }
+.rbph-new__chips { display: flex; flex-wrap: wrap; gap: var(--ac-space-2); }
+.rbph-new__cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.rbph-new__foot { display: flex; align-items: center; gap: var(--ac-space-2); flex-shrink: 0; padding: 14px var(--ac-space-6); border-top: 1px solid var(--ac-color-border); background: var(--ac-color-bg-subtle); }
+.rbph-h56 { height: 56px; }
+@media (max-width: 767.98px) {
+  .rbph-new__scrim { display: none; }
+  .rbph-new__window { inset: 0; transform: none; width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .rbph-new__body { flex-direction: column; gap: 18px; padding: var(--ac-space-4); }
+  .rbph-new__heroes, .rbph-new__side { padding: 0; border: 0; flex: none; }
+  .rbph-new__chips { flex-wrap: nowrap; overflow: hidden; }
+  .rbph-new__chips > * { flex-shrink: 0; }
+  .rbph-new__cards { display: flex; gap: var(--ac-space-3); overflow: hidden; }
+  .rbph-new__cards > * { flex: 0 0 112px; }
+  .rbph-new__foot { flex-direction: column-reverse; align-items: stretch; background: none; padding: var(--ac-space-3) var(--ac-space-4); }
+  .rbph-new__foot > .ac-skeleton { width: 100%; }
+  .rbph-new__foot > .rbph-grow { display: none; }
+}
+@media (min-width: 768px) { .rbph-compact-only { display: none; } }
 /* Phones. */
 .rbph-appbar { display: flex; align-items: center; gap: var(--ac-space-1); height: var(--ac-app-bar-height); padding-inline: var(--ac-space-1-5); background: var(--ac-color-surface); border-bottom: 1px solid var(--ac-color-border); }
 .rbph-back { --ac-icon-size: 22px; flex-shrink: 0; }

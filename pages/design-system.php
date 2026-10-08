@@ -444,7 +444,7 @@ include dirname(__DIR__) . '/includes/header.php';
         <div class="ac-card ds-sheet">
             <nav class="ac-breadcrumb" aria-label="Breadcrumb"><a href="#design-system">Decks</a> <?= ac_icon('chevron-right', 'ac-icon--14') ?> <span aria-current="page">Sierra & Oddball</span></nav>
             <div class="ac-tabs ac-tabs--underline" role="tablist">
-                <button type="button" role="tab" aria-selected="true">My decks <span class="ac-tabs__count">· 12</span></button>
+                <button type="button" role="tab" aria-selected="true">My decks <span class="ac-tabs__count">· <span class="ac-tabs__count-value">12</span></span></button>
                 <button type="button" role="tab" aria-selected="false">Community</button>
                 <button type="button" role="tab" aria-selected="false">Favourites</button>
             </div>
