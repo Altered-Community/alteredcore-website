@@ -1175,8 +1175,8 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await evidence(page, testInfo, '30-alt-art-brush');
   });
 
-  test('adds a card with the default alt art, or as shown with « Arts alternatifs », which lists the owned ones', { tag: '@mobile' }, async ({ page }, testInfo) => {
-    const kelon = await routeAltArts(page, 2, [1, 1, 0]);
+  test('adds a card from the search with the default alt art of its copy', { tag: '@mobile' }, async ({ page }, testInfo) => {
+    const kelon = await routeAltArts(page, 1, [1, 1, 0]);
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, `E2E alt arts search ${Date.now()}`);
     await page.goto(EDITOR(id));
@@ -1186,21 +1186,18 @@ test.describe('ReBuilder in the shell · deck page', () => {
       await page.getByRole('textbox', { name: 'Rechercher par nom' }).first().fill(kelon.base);
       await expect(tiles).toHaveCount(1, { timeout: 5000 });
     }).toPass();
-    // « Arts alternatifs » off: the card's tile stands for all its prints; a copy takes the 1st default, the alt art.
+    // The card's tile stands for all its prints: the 1st copy takes the 1st default, the alt art.
     let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && !c.has(kelon.base));
     await tiles.first().getByRole('button', { name: 'Ajouter Élémentaire de Kélon au deck' }).click();
     await saved;
     await expect(tiles.first().locator('ac-stepper .value')).toHaveText('1');
-    // On: the alt art owned follows its card, framed, with its copies owned; a copy is added as shown.
-    const toggle = page.getByRole('switch', { name: 'Arts alternatifs' });
-    await toggle.check();
-    await expect(tiles).toHaveCount(2);
-    await expect(tiles.nth(1).locator('.note')).toHaveText('2 possédées');
-    saved = savedCards(page, id, (c) => c.get(kelon.base) === 1 && c.get(kelon.alt()) === 1);
-    await tiles.first().getByRole('button', { name: 'Ajouter Élémentaire de Kélon au deck' }).click();
+    // The 2nd default is the alt art too, but its only copy owned is placed: the plain print.
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    await tiles.first().locator('ac-stepper .inc').click();
     await saved;
+    await expect(tiles.first().locator('ac-stepper .value')).toHaveText('2');
+    await expect(page.getByRole('switch', { name: 'Arts alternatifs' })).toHaveCount(0);
     await evidence(page, testInfo, '31-alt-arts-search');
-    await toggle.uncheck();
   });
 
   test('applies the default alt arts to the whole deck after a confirmation', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {

@@ -64,7 +64,7 @@ Légende : ✅ fait · 🟡 partiel · ❌ manquant. « Fait dans #106 » = corr
 | Onglets Collection physique, Possession numérique, Favoris | ✅ (endpoints du plugin core-altered-cards ; collection et possession demandent leurs API) |
 | Favoris : Uniques (rareté U) et filtre « Légales en <format du deck> » par défaut | ✅ (ajout Re:Builder ; liste Frontier lue dans `gameplayFormat`) |
 | Zoom d'une carte avec quantité et lien vers la fiche | ✅ (recherche et aperçu) |
-| Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ Arts par défaut à la place du mode Global : une carte ajoutée prend l’art par défaut de son exemplaire, le pinceau change les illustrations d’une carte pour ce deck, « Arts par défaut » réapplique les défauts, « Arts alternatifs » (recherche) montre les arts possédés (service ownership requis, sauf les héros alt-art) |
+| Illustrations : choix par carte, préférence Global, illustrations des jetons, avertissements de possession ; héros alt-art / sérialisés | ✅ Arts par défaut à la place du mode Global : une carte ajoutée prend l’art par défaut de son exemplaire, le pinceau change les illustrations d’une carte pour ce deck, « Arts par défaut » réapplique les défauts (service ownership requis, sauf les héros alt-art) |
 | Toast « Annuler » après un ajout ou un retrait | ✅ |
 | Bandeau d'état avec progression vers le minimum | ❌ écarté volontairement (jugé inutile) |
 | Main de départ dans l'éditeur | ✅ (vue « Main de départ », `/edit/main`) |

@@ -59,21 +59,10 @@ describe('EditorAltArts', () => {
   it('waits for a card’s family before adding a copy, so that it takes its default alt art', () => {
     const alt = setup();
     alt.request([BASE]);
-    alt.setQuantity(card(BASE), 1, true);
+    alt.setQuantity(card(BASE), 1);
     expect(familyAdds).toEqual([]);
     answers.next({ [BASE]: kelon });
     expect(familyAdds).toEqual([1]);
-  });
-
-  it('follows a card with the alt arts the player owns, unlimited ones included, labelled', () => {
-    const alt = setup();
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    const { cards, notes } = alt.withOwnedPrints([card(BASE), card('OTHER')]);
-    expect(cards.map((c) => c.reference)).toEqual([BASE, ALT, 'OTHER']);
-    expect(notes.get(ALT)).toBe('2 possédées');
-    // A print the results show already is not added twice.
-    expect(alt.withOwnedPrints([card(BASE), card(ALT)]).cards.map((c) => c.reference)).toEqual([BASE, ALT]);
   });
 
   it('gives a print the copies its family leaves, and a family card the whole limit', () => {

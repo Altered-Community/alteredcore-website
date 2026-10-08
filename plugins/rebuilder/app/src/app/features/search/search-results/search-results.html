@@ -14,12 +14,12 @@
   </div>
 } @else {
   @if (layout() === 'grid') {
-    <ac-virtual-grid #grid class="grid" [class.grid--readable]="search.source() === 'uniques'" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="cards()">
+    <ac-virtual-grid #grid class="grid" [class.grid--readable]="search.source() === 'uniques'" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards" [attr.aria-busy]="search.loading()" [items]="search.cards()">
       @for (c of grid.slice(); track c.reference) {
         <ac-card-tile
           role="listitem"
           [attr.aria-posinset]="grid.first() + $index + 1"
-          [attr.aria-setsize]="cards().length"
+          [attr.aria-setsize]="search.cards().length"
           [card]="c"
           [eager]="grid.first() + $index < 6"
           [plain]="browse()"
@@ -27,7 +27,6 @@
           [max]="maxOf(c)"
           [blockedReason]="blockedReason(c)"
           [zoomable]="true"
-          [note]="noteOf(c)"
           (quantityChange)="setQuantity(c, $event)"
           (zoom)="zoom(c)"
           [favorite]="favorites.enabled() ? favorites.has(c.reference) : null"
@@ -42,7 +41,7 @@
     </ac-virtual-grid>
   } @else {
     <div class="list" role="list" aria-label="Cartes" i18n-aria-label="@@search.results.cards">
-      @for (c of cards(); track c.reference) {
+      @for (c of search.cards(); track c.reference) {
         <ac-deck-row
           role="listitem"
           appearance="panel"

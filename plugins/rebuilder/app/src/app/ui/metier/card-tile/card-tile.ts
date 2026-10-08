@@ -41,8 +41,6 @@ export class AcCardTile {
   /** Brush over the visual (a card with several illustrations, in an editable deck): emits `illustrate`. */
   readonly illustrations = input(false);
   readonly illustrate = output<void>();
-  /** Short label over the visual, framed (an owned alt art in the search: « 2 possédées »). */
-  readonly note = input<string | null>(null);
 
   protected readonly blockedShort = $localize`:@@ui.deckRow.blocked:Interdite`;
   protected readonly name = computed(() => localizedText(this.card().name, contentLocale()) || this.card().reference);

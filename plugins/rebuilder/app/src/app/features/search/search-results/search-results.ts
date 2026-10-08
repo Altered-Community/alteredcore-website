@@ -27,43 +27,34 @@ export class SearchResults {
   protected readonly auth = inject(AuthSession);
   private readonly overlay = inject(AcOverlayService);
   protected readonly favorites = inject(FavoritesService);
-  /** Editor: illustrations (default alt arts, « Arts alternatifs »). */
+  /** Editor: a card's plain print stands for all its prints, a copy added takes its default alt art. */
   private readonly altArts = inject(EditorAltArts, { optional: true });
   readonly layout = input<'grid' | 'list'>('grid');
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
   protected readonly accountTab = computed(() => isAccountSource(this.search.source()));
   protected readonly skeletons = computed(() => Array.from({ length: this.search.cards().length ? 3 : 6 }));
-  /** « Arts alternatifs » on: cards added as shown; off: a card's plain print stands for all its prints. */
-  private readonly prints = computed(() => !this.browse() && !!this.altArts?.enabled() && this.altArts.searchPrints());
-  /** The results, with the owned alt arts after their card when « Arts alternatifs » is on. */
-  private readonly shown = computed(() => (this.prints() && this.altArts ? this.altArts.withOwnedPrints(this.search.cards()) : { cards: this.search.cards(), notes: new Map<string, string>() }));
-  protected readonly cards = computed(() => this.shown().cards);
 
   constructor() {
-    // The families of the results: the copies a card counts and the alt arts the player owns.
+    // The families of the results: the copies a card counts and the print an added copy takes.
     effect(() => {
       const cards = this.search.cards();
       if (!this.browse() && this.altArts?.enabled()) untracked(() => this.altArts?.request(cards.map((c) => c.reference)));
     });
   }
 
-  protected noteOf(card: Card): string | null {
-    return this.shown().notes.get(card.reference) ?? null;
-  }
-
-  /** Copies in the deck: the whole family for a plain print with « Arts alternatifs » off, that print otherwise. */
+  /** Copies in the deck: the whole family for a plain print, that print otherwise. */
   protected quantityOf(card: Card): number {
-    if (this.altArts && !this.prints() && this.altArts.isFamilyCard(card)) return this.altArts.familyQuantity(card);
+    if (this.altArts?.isFamilyCard(card)) return this.altArts.familyQuantity(card);
     return this.deck.quantities().get(card.reference) ?? 0;
   }
 
   protected maxOf(card: Card): number {
-    return this.altArts ? this.altArts.maxFor(card, !this.prints()) : this.deck.maxFor(card);
+    return this.altArts ? this.altArts.maxFor(card, true) : this.deck.maxFor(card);
   }
 
   protected setQuantity(card: Card, quantity: number): void {
-    if (this.altArts) this.altArts.setQuantity(card, quantity, !this.prints());
+    if (this.altArts) this.altArts.setQuantity(card, quantity);
     else this.deck.setQuantity(card, quantity);
   }
 

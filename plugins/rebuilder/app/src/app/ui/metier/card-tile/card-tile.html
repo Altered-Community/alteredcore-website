@@ -6,16 +6,13 @@
   }
 </ng-template>
 @if (zoomable()) {
-  <button type="button" class="visual zoom" [class.noted]="note()" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoom.emit()">
+  <button type="button" class="visual zoom" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoom.emit()">
     <ng-container [ngTemplateOutlet]="face" />
   </button>
 } @else {
-  <div class="visual" [class.noted]="note()">
+  <div class="visual">
     <ng-container [ngTemplateOutlet]="face" />
   </div>
-}
-@if (note(); as n) {
-  <span class="note">{{ n }}</span>
 }
 @if (illustrations()) {
   <button type="button" class="illustrate" aria-haspopup="dialog" [attr.aria-label]="illustrateLabel()" [title]="illustrateLabel()" (click)="illustrate.emit()">

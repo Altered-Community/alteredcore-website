@@ -3,7 +3,6 @@ import { type Observable, filter, map, of, switchMap, take } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
 import { basePrint, familyPrints } from '../../core/alt-art-defaults';
-import { storedFlag } from '../../core/stored-flag';
 import { DeckStore } from '../../core/deck-store';
 import type { Card } from '../../core/models';
 import { OwnershipApiService, familyKey, type AltArtChoice } from '../../core/ownership-api.service';
@@ -65,9 +64,6 @@ export class EditorAltArts {
     }
     return out;
   });
-
-  /** Search, « Arts alternatifs » on: each card is followed by the alt arts the player owns, added as they are. */
-  readonly searchPrints = storedFlag('rebuilder.search.altArtPrints', false);
 
   /** « Arts des jetons » and « Arts par défaut »: on an editable deck. */
   readonly canChoose = computed(() => this.enabled() && this.deck.editable());
@@ -146,28 +142,6 @@ export class EditorAltArts {
   }
 
   /**
-   * Search results with « Arts alternatifs » on: after a card's plain print, the alt arts the player owns (unlimited
-   * ones too), unless the results show them already; `notes` labels them (« 2 possédées »).
-   */
-  withOwnedPrints(cards: readonly Card[]): { cards: Card[]; notes: Map<string, string> } {
-    const notes = new Map<string, string>();
-    const shown = new Set(cards.map((c) => c.reference));
-    const out: Card[] = [];
-    for (const card of cards) {
-      out.push(card);
-      const choice = this.choiceFor(card.reference);
-      if (!choice || basePrint(choice) !== card.reference) continue;
-      for (const o of choice.options.options) {
-        if (o.reference === card.reference || shown.has(o.reference) || o.ownedQuantity === 0) continue;
-        shown.add(o.reference);
-        out.push({ ...card, reference: o.reference, imagePath: undefined });
-        notes.set(o.reference, o.ownedQuantity === null ? unlimitedNote() : ownedNote(o.ownedQuantity));
-      }
-    }
-    return { cards: out, notes };
-  }
-
-  /**
    * Copies `card` can have: a print shares its family's limit with the other prints in the deck (never under the copies
    * it has); a family card (`asFamily`, its plain print) has the whole limit.
    */
@@ -193,14 +167,14 @@ export class EditorAltArts {
   }
 
   /** Copies of `card` from the search: by the defaults for a family card (`setFamilyQuantity`), that print otherwise. */
-  setQuantity(card: Card, quantity: number, asFamily: boolean): void {
+  setQuantity(card: Card, quantity: number): void {
     // Asked but not answered yet: the change waits for the family, so that the copy takes its default alt art.
-    if (asFamily && this.asked.has(card.reference) && !this.known().has(card.reference)) {
-      this.waiting.set(card.reference, [...(this.waiting.get(card.reference) ?? []), () => this.setQuantity(card, quantity, asFamily)]);
+    if (this.asked.has(card.reference) && !this.known().has(card.reference)) {
+      this.waiting.set(card.reference, [...(this.waiting.get(card.reference) ?? []), () => this.setQuantity(card, quantity)]);
       return;
     }
     const choice = this.choiceFor(card.reference);
-    if (asFamily && choice && basePrint(choice) === card.reference) this.deck.setFamilyQuantity(card, choice, this.members(choice), quantity);
+    if (choice && basePrint(choice) === card.reference) this.deck.setFamilyQuantity(card, choice, this.members(choice), quantity);
     else this.deck.setQuantity(card, quantity);
   }
 
@@ -225,9 +199,6 @@ export class EditorAltArts {
     return this.ready$.pipe(map(() => this.deck.applyAltArtDefaults(this.choices())));
   }
 }
-
-const unlimitedNote = () => $localize`:@@search.altArts.unlimited:Illimitée`;
-const ownedNote = (n: number) => (n > 1 ? $localize`:@@search.altArts.ownedMany:${n}:n: possédées` : $localize`:@@search.altArts.ownedOne:${n}:n: possédée`);
 
 /**
  * « Arts par défaut » (deck bar, « Mon deck »): after a confirmation, the deck takes the player's default alt arts.
