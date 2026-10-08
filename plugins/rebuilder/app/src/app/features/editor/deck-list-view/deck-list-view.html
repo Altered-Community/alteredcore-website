@@ -47,7 +47,7 @@
         [max]="deck.maxFor(l.card)"
         [issues]="issues().get(l.card.reference) ?? noIssues"
         [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
-        [readonly]="readonly() || !deck.editable()"
+        [readonly]="readonly() || !deck.steppersShown()"
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />
     }

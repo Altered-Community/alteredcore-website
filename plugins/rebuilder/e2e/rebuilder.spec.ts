@@ -1496,7 +1496,7 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 
-  test('« Mon deck » on a phone: nothing moves while the owner, the alt-art mode and the rarity icons arrive', { tag: '@mobile' }, async ({ page, compact }) => {
+  test('« Mon deck » on a phone: nothing moves or changes look while the owner, the alt-art mode and the rarity icons arrive', { tag: '@mobile' }, async ({ page, compact }) => {
     test.skip(!compact, 'the « Deck » view is a phone view');
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E mon deck ${Date.now()}`);
@@ -1518,6 +1518,9 @@ test.describe('ReBuilder in the shell · loading', () => {
     const section = page.locator('app-deck-list-view ac-deck-section').first();
     await expect(section).toBeVisible();
     const before = await section.boundingBox();
+    // The rows have their steppers already, not a read-only « ×1 » replaced once the owner is known.
+    await expect(section.locator('ac-deck-row ac-stepper')).toHaveCount(2);
+    await expect(section.locator('ac-deck-row .qty')).toHaveCount(0);
 
     release();
     await expect(page.getByRole('button', { name: 'Choisir les arts des jetons' })).toBeVisible();

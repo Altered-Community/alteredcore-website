@@ -157,6 +157,12 @@ export class DeckStore {
     return this.mineIds.hasValue() ? this.mineIds.value().has(id) : null;
   });
   readonly editable = computed(() => this.owned() === true);
+  /**
+   * The editor draws the quantity steppers unless the deck is known not to be the user's: its owner (the account's deck
+   * ids) often comes after the deck, and a read-only « ×1 » replaced by the steppers a moment later looks broken. A
+   * change waits for `editable()` all the same (setQuantity…).
+   */
+  readonly steppersShown = computed(() => this.owned() !== false);
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   /** Bumped by each change; a save only marks the deck clean when no change came after what it sent. */

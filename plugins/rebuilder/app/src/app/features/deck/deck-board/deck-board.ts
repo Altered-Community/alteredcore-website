@@ -36,7 +36,8 @@ export class DeckBoard {
   /** The board's width, measured: the number of card columns follows it. */
   private readonly width = signal(0);
 
-  protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
+  /** Steppers on the piles (the editor's board): DeckStore.steppersShown. */
+  protected readonly editable = computed(() => !this.readonly() && this.deck.steppersShown());
   /** Cards brought to 0 with a pile's stepper since this view opened, by reference: they keep their place, faded. */
   private readonly removed = signal(new Map<string, Card>());
   /** The groups, sorted: recomputed when the cards change, not when the board is resized. */
@@ -78,6 +79,7 @@ export class DeckBoard {
    * illustration swapped in the zoom, the preferred prints of Global mode) leaves no faded pile behind.
    */
   protected setQuantity(card: Card, quantity: number): void {
+    if (!this.deck.editable()) return;
     this.deck.setQuantity(card, quantity);
     this.removed.update((map) => {
       const next = new Map(map);
