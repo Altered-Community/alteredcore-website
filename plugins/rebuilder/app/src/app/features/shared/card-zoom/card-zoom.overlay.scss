@@ -3,6 +3,12 @@
   flex-direction: column;
   gap: var(--ac-space-3);
   padding: 0;
+  container-type: inline-size;
+}
+/* The card gives way to the controls and the link, which always show whole (phone browsers' bars eat the height). */
+.controls,
+.detail {
+  flex-shrink: 0;
 }
 .controls {
   display: flex;
@@ -13,12 +19,16 @@
   background: var(--ac-color-surface);
 }
 .stage {
-  align-self: center;
-  width: 100%;
+  flex: 0 1 calc(100cqw * 7 / 5);
+  /* Never smaller than 40 % of the screen: below that, the window scrolls. */
+  min-height: min(40dvh, 100cqw * 7 / 5);
+  container-type: size;
   perspective: 900px;
 }
 .card {
   display: block;
+  width: min(100cqw, 100cqh * 5 / 7);
+  margin-inline: auto;
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 0.12s ease-out;
 }

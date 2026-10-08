@@ -27,7 +27,7 @@
 .cols {
   display: grid;
   grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
-  height: min(560px, calc(90vh - 150px));
+  height: min(560px, calc(90dvh - 150px));
   padding: 0;
   overflow: hidden;
 }

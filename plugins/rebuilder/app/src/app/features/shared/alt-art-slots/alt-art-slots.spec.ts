@@ -53,7 +53,22 @@ describe('AltArtSlots', () => {
     el.querySelectorAll<HTMLButtonElement>('.tile')[1].click();
     fixture.detectChanges();
     expect(el.querySelectorAll('li')[1].querySelectorAll('.marker')).toHaveLength(0);
-    expect(el.querySelector('.error')?.textContent).toContain('ALT_CORE_A_AX_04_C (3/2)');
+    expect(el.querySelector('.error')?.textContent?.trim()).toBe('Vous n’avez pas assez d’exemplaires de cet art alternatif.');
+  });
+
+  it('says the player lacks copies, without saving, when they pick an illustration once more than they own', () => {
+    const { fixture, el, saved } = setup('ok');
+    const altArt = el.querySelectorAll<HTMLButtonElement>('.tile')[1];
+    altArt.click();
+    fixture.detectChanges();
+    altArt.click();
+    fixture.detectChanges();
+    expect(saved).toHaveLength(2);
+    altArt.click();
+    fixture.detectChanges();
+    expect(saved).toHaveLength(2);
+    expect([...el.querySelectorAll('li')[1].querySelectorAll('.marker')].map((m) => m.textContent?.trim())).toEqual(['1', '2']);
+    expect(el.querySelector('.error')?.textContent?.trim()).toBe('Vous n’avez pas assez d’exemplaires de cet art alternatif.');
   });
 
   it('numbers the copies 1, 2, 3 whatever the API\'s slot indexes', () => {
