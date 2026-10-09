@@ -47,7 +47,7 @@ The rules that matter most:
     the loading frame by frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare`
     puts the base branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts`
     for the options.
-  - `npm run loading:matrix [-- --screens a,b --viewports a,b --runs n]`: the CLS of every screen at seven sizes (phones,
+  - `npm run loading:matrix [-- --screens a,b --viewports a,b --runs n]`: the CLS of every screen at eight sizes (phones,
     tablet, laptops, desktops: `VIEWPORTS` in `tests/e2e/loading.ts`), on both sides of the breakpoints, in one table
     with what moved. Run it after a layout change that depends on the width (a breakpoint, a container query, a skeleton
     whose size is set for one width).
