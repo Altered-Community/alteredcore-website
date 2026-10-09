@@ -1184,7 +1184,7 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await saved;
     expect(preferences).toEqual([[kelon.alt(), kelon.base, kelon.base]]);
     await expect(dialog.getByRole('button', { name: 'Illustration 2, 1er choix : choisir son rang' })).toBeVisible();
-    await expect(dialog.getByRole('listitem').filter({ hasText: 'Exemplaire 1' })).toContainText('1er choix · Illustration 2');
+    await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
     await evidence(page, testInfo, '30-alt-art-brush');
     // Its only copy owned holds the 1st choice: the other choices cannot take it.
     await dialog.getByRole('button', { name: 'Illustration 2, 1er choix : choisir son rang' }).click();

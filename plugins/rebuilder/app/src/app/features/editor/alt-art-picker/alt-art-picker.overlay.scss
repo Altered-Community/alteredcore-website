@@ -195,22 +195,6 @@ ol {
   font: var(--ac-font-body-strong);
   color: var(--ac-color-text);
 }
-.uses {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ac-space-1);
-}
-.uses li {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--ac-space-2);
-  font: var(--ac-font-small);
-  color: var(--ac-color-text-2);
-}
-.use {
-  color: var(--ac-color-text);
-  text-align: right;
-}
 .settings {
   margin-right: auto;
   align-self: center;

@@ -44,22 +44,12 @@
     <h3 id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</h3>
     @if (preview().length) {
       <div class="fan" aria-hidden="true" [style.--n]="preview().length">
-        @for (p of preview(); track $index) {
-          <img [src]="p.src" alt="" [style.--i]="$index" />
+        @for (src of preview(); track $index) {
+          <img [src]="src" alt="" [style.--i]="$index" />
         }
       </div>
     }
     <p class="summary">{{ summary() }}</p>
-    @if (preview().length) {
-      <ol class="uses">
-        @for (p of preview(); track $index) {
-          <li>
-            <span>{{ p.copy }}</span>
-            <span class="use">{{ p.use }}</span>
-          </li>
-        }
-      </ol>
-    }
   </aside>
 </div>
 <div class="ac-overlay-footer">

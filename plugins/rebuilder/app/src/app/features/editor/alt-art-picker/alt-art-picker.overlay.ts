@@ -95,21 +95,10 @@ export class AltArtPickerOverlay {
   protected readonly menuFor = signal<string | null>(null);
   protected readonly menuArt = computed(() => this.arts().find((a) => a.reference === this.menuFor()) ?? null);
 
-  /** The deck's copies, copy 1 first (as on the deck board), with the choice each one takes. */
+  /** The deck's copies, copy 1 first (as on the deck board). */
   protected readonly preview = computed(() => {
     const choice = this.choice();
-    const ranks = this.ranks();
-    const follows = this.followsDefaults();
-    const options = choice.options.options;
-    return slotDefaults(choice, slotChoices(choice, this.data.prints())).map((print, i) => {
-      const rank = Math.min(i, ranks.length - 1);
-      const label = printLabel(options.findIndex((o) => o.reference === print) + 1);
-      return {
-        src: cardImageUrl(print),
-        copy: copyLabel(i + 1),
-        use: follows && ranks[rank] === print ? `${rankLabel(rank)} · ${label}` : label,
-      };
-    });
+    return slotDefaults(choice, slotChoices(choice, this.data.prints())).map((print) => cardImageUrl(print));
   });
 
   protected readonly summary = computed(() => {
@@ -141,7 +130,6 @@ export class AltArtPickerOverlay {
   }
 }
 
-const copyLabel = (n: number) => $localize`:@@altArt.marker:Exemplaire ${n}:n:`;
 const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
 const rankLabel = (k: number) =>
   k === 0
