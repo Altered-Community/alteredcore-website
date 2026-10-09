@@ -7,6 +7,8 @@ name: Plugins CI
 #   • front-end plugins ("build" in plugin.json): install, lint, unit tests, build;
 #   • Playwright (tests/e2e + plugins/*/e2e) against the full stack (docker-compose.stack.yml).
 # Nothing here is plugin-specific: a new plugin is picked up from its manifest.
+# A pull request that only changes files under plugins/<id>/ checks only those plugins (their PHP, Node, front-end and
+# Playwright tests); a change anywhere else (core, design system, tests/e2e, Docker, this workflow…) checks them all.
 # Make the "Plugins CI" check required in the branch protection of preprod and main.
 on:
   pull_request:
@@ -25,26 +27,68 @@ jobs:
     name: Discover plugins
     runs-on: ubuntu-latest
     outputs:
+      ids: ${{ steps.plan.outputs.ids }}
       frontends: ${{ steps.plan.outputs.frontends }}
+      all_frontends: ${{ steps.plan.outputs.all_frontends }}
+      e2e: ${{ steps.plan.outputs.e2e }}
+      e2e_specs: ${{ steps.plan.outputs.e2e_specs }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # the pull request's merge commit and its first parent, the base branch
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '7.4'
           coverage: none
       - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
         run: |
           php bin/plugins.php plan | tee plan.json
-          echo "frontends=$(jq -c '[.[] | select(.build != null) | {id, dir, workdir: .build.workdir, output: .build.output, nvmrc: (.build.nvmrc // "")}]' plan.json)" >> "$GITHUB_OUTPUT"
+          # Files changed by the pull request; null (check every plugin) on a manual run.
+          if [ "$EVENT" = pull_request ]; then
+            git diff --name-only HEAD^1 HEAD | tee changed.txt
+            changed="$(jq -R . changed.txt | jq -sc .)"
+          else
+            changed=null
+          fi
+          # A file under plugins/<id>/ belongs to that plugin; any other file is shared and affects every plugin.
+          jq --argjson changed "$changed" '
+            [.[].id] as $ids
+            | def owner: (capture("^plugins/(?<id>[^/]+)/").id // null) | select(. != null and IN($ids[]));
+              ($changed == null or any($changed[]; [owner] == [])) as $shared
+            | (if $shared then $ids else [$changed[] | owner] | unique end) as $affected
+            | {shared: $shared, plan: [.[] | .checked = (.id | IN($affected[]))]}
+          ' plan.json > affected.json
+          shared="$(jq '.shared' affected.json)"
+          frontend='{id, dir, workdir: .build.workdir, output: .build.output, nvmrc: (.build.nvmrc // "")}'
+          {
+            echo "ids=$(jq -r '[.plan[] | select(.checked) | .id] | join(" ")' affected.json)"
+            echo "frontends=$(jq -c "[.plan[] | select(.checked and .build != null) | $frontend]" affected.json)"
+            echo "all_frontends=$(jq -c "[.plan[] | select(.build != null) | $frontend]" affected.json)"
+            if [ "$shared" = true ]; then
+              # Shell specs (tests/e2e) and every plugin's specs: no filter.
+              echo "e2e=true"
+              echo "e2e_specs="
+            else
+              specs="$(jq -r '[.plan[] | select(.checked and .e2e != null) | "\(.dir)/\(.e2e)/"] | join(" ")' affected.json)"
+              echo "e2e=$([ -n "$specs" ] && echo true || echo false)"
+              echo "e2e_specs=$specs"
+            fi
+          } | tee -a "$GITHUB_OUTPUT"
           {
             echo '### Plugins'
-            echo '| Plugin | PHP tests | Node tests | Front-end build | E2E |'
-            echo '|---|---|---|---|---|'
-            jq -r '.[] | "| \(.id) | \(.php_tests | length) | \(.node_tests | length) | \(if .build then "yes" else "—" end) | \(.e2e // "—") |"' plan.json
+            if [ "$shared" = true ]; then echo 'Shared files changed (or manual run): every plugin is checked.'
+            else echo 'Only plugin files changed: only those plugins are checked.'; fi
+            echo
+            echo '| Plugin | Checked | PHP tests | Node tests | Front-end build | E2E |'
+            echo '|---|---|---|---|---|---|'
+            jq -r '.plan[] | "| \(.id) | \(if .checked then "yes" else "—" end) | \(.php_tests | length) | \(.node_tests | length) | \(if .build then "yes" else "—" end) | \(.e2e // "—") |"' affected.json
           } >> "$GITHUB_STEP_SUMMARY"
 
   php:
     name: PHP lint and plugin PHP tests
+    needs: plan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,10 +104,13 @@ jobs:
       - name: Core PHP tests (helpers, design system)
         run: php tests/run.php
       - name: Plugin PHP tests
-        run: php bin/plugins.php run php-tests
+        if: needs.plan.outputs.ids != ''
+        run: php bin/plugins.php run php-tests ${{ needs.plan.outputs.ids }}
 
   node:
     name: Plugin Node tests
+    needs: plan
+    if: needs.plan.outputs.ids != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +121,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: php bin/plugins.php run node-tests
+      - run: php bin/plugins.php run node-tests ${{ needs.plan.outputs.ids }}
 
   frontend:
     name: Front-end ${{ matrix.plugin.id }}
@@ -110,6 +157,7 @@ jobs:
     name: Playwright (shell and plugins)
     # Does not wait for the front-end jobs: it builds the bundles itself, while the stack starts.
     needs: [plan, php]
+    if: needs.plan.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -137,8 +185,10 @@ jobs:
             tests/e2e/package-lock.json
       - name: Build front-end plugins (background)
         # The web container mounts the checkout: the bundles only have to exist before the tests.
+        # Every front-end, not only the checked ones: a plugin's specs can go through another plugin's pages
+        # (core-altered-cards creates its decks through Re:Builder's relay).
         env:
-          FRONTENDS: ${{ needs.plan.outputs.frontends }}
+          FRONTENDS: ${{ needs.plan.outputs.all_frontends }}
         run: |
           cat > "$RUNNER_TEMP/frontends.sh" <<'EOF'
           set -euo pipefail
@@ -176,8 +226,9 @@ jobs:
         working-directory: tests/e2e
         run: npm ci && npx playwright install --with-deps chromium
       - name: Run Playwright
+        # Every spec when shared files changed, otherwise only the specs of the changed plugins.
         working-directory: tests/e2e
-        run: npx playwright test
+        run: npx playwright test ${{ needs.plan.outputs.e2e_specs }}
       - name: Stack logs
         if: failure()
         run: $COMPOSE logs --no-color --tail=200
@@ -202,4 +253,4 @@ jobs:
         run: |
           echo '${{ toJSON(needs) }}' | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
           echo '${{ toJSON(needs) }}' | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
-          [ "${{ needs.e2e.result }}" = "success" ]
+          [ "${{ needs.e2e.result }}" = "success" ] || [ "${{ needs.plan.outputs.e2e }}" = "false" ]
