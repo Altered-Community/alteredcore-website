@@ -1,8 +1,8 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
-import { type Observable, filter, map, of, switchMap, take } from 'rxjs';
+import { EMPTY, type Observable, catchError, filter, map, of, switchMap, take, throwError } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
-import { basePrint, familyPrints, slotChoices, slotDefaults } from '../../core/alt-art-defaults';
+import { basePrint, defaultPrints, familyPrints, slotChoices, slotDefaults, withRanks } from '../../core/alt-art-defaults';
 import { DeckStore } from '../../core/deck-store';
 import { storedFlag } from '../../core/stored-flag';
 import type { Card } from '../../core/models';
@@ -16,9 +16,9 @@ const CHUNK = 60;
 
 /**
  * Illustrations in the editor (`core/alt-art-defaults.ts`): a card added from the search takes the player's default alt
- * art for its copy, the brush of a card changes its prints for this deck, « Appliquer les arts par défaut » rewrites the
- * deck with the defaults, and a print used more times than owned is flagged (Board Game Arena shows the base art for the
- * missing copies). Needs the ownership service and a signed-in player; nothing happens without.
+ * art for its copy, the brush of a card sets its default alt arts (this deck's copies take them), « Appliquer les arts
+ * par défaut » rewrites the deck with the defaults, and a print used more times than owned is flagged (Board Game Arena
+ * shows the base art for the missing copies). Needs the ownership service and a signed-in player; nothing happens without.
  */
 @Service({ autoProvided: false })
 export class EditorAltArts {
@@ -209,10 +209,37 @@ export class EditorAltArts {
     const choice = this.choiceFor(card.reference);
     if (!choice || !this.canIllustrate(card)) return null;
     return {
-      choice,
+      choice: () => this.choiceFor(card.reference) ?? choice,
       prints: () => familyPrints(this.deck.lines(), this.members(choice)),
       set: (prints) => this.deck.setFamilyPrints(this.members(choice), card, prints),
+      setDefaults: (ranks) => this.setDefaults(card, ranks),
     };
+  }
+
+  /**
+   * The default alt arts of `card`'s family become `ranks` (1st choice first): this deck's copies of the family take them
+   * at once, then the ownership service saves them; on an error, the previous defaults and copies come back.
+   */
+  setDefaults(card: Card, ranks: readonly string[]): Observable<void> {
+    const choice = this.choiceFor(card.reference);
+    if (!choice) return EMPTY;
+    const before = familyPrints(this.deck.lines(), this.members(choice));
+    const next = withRanks(choice, ranks);
+    this.replaceChoice(next);
+    this.deck.setFamilyPrints(this.members(choice), card, defaultPrints(next, before.length));
+    return this.ownership.setAltArtPreference(choice.family, [...ranks]).pipe(
+      catchError((err: unknown) => {
+        this.replaceChoice(choice);
+        this.deck.setFamilyPrints(this.members(choice), card, before);
+        return throwError(() => err);
+      }),
+    );
+  }
+
+  /** Every print of `choice`'s family is known with `choice`. */
+  private replaceChoice(choice: AltArtChoice): void {
+    const key = familyKey(choice.family);
+    this.known.update((m) => new Map([...m].map(([ref, c]) => [ref, c && familyKey(c.family) === key ? choice : c])));
   }
 
   /** « Appliquer les arts par défaut », once the deck's families are known: `false` when the deck already has them. */

@@ -24,6 +24,31 @@ export function slotPrints(choice: AltArtChoice): string[] {
   return [...choice.options.slots].sort((a, b) => a.slotIndex - b.slotIndex).map((s) => s.reference);
 }
 
+/** Choices of the brush (1st, 2nd, 3rd): one a copy slot of the ownership service. */
+export const RANK_COUNT = 3;
+
+/**
+ * The player's default alt arts of the family as choices, 1st first: its slots (the last one repeated), the base print
+ * without any.
+ */
+export function rankPrints(choice: AltArtChoice): string[] {
+  const slots = slotPrints(choice);
+  const base = basePrint(choice);
+  return Array.from({ length: RANK_COUNT }, (_, i) => (slots.length ? slots[Math.min(i, slots.length - 1)] : base));
+}
+
+/** `choice` with the default alt arts `ranks` (1st choice first). */
+export function withRanks(choice: AltArtChoice, ranks: readonly string[]): AltArtChoice {
+  const slots = ranks.map((reference, i) => ({ slotIndex: i + 1, reference, isExplicitChoice: true }));
+  return { ...choice, options: { ...choice.options, slots } };
+}
+
+/** Choice `rank` can take `reference`: the player owns more copies of it than the other choices hold (`null`: unlimited). */
+export function canRank(choice: AltArtChoice, ranks: readonly string[], rank: number, reference: string): boolean {
+  const owned = ownedOf(choice, reference);
+  return owned === null || ranks.filter((r, i) => i !== rank && r === reference).length < owned;
+}
+
 /**
  * The prints of `count` copies by the player's defaults: copy i takes slot i (the copies past the last slot take the
  * last one), or the base print once the copies owned of that print are used.

@@ -1,40 +1,93 @@
-<div class="ac-overlay-body" cdkDropListGroup>
-  @if (full()) {
-    <p class="hint" i18n="@@editor.altArtPicker.hintFull">Touchez un exemplaire pour le libérer, ou glissez une illustration dessus.</p>
-  } @else {
-    <p class="hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour la poser sur l’exemplaire libre, ou glissez-la sur l’exemplaire voulu.</p>
-  }
-  <ul class="slots" [style.--copies]="slots().length" aria-label="Exemplaires" i18n-aria-label="@@editor.altArtPicker.copies">
-    @for (s of slots(); track $index) {
-      <li>
-        <span class="slot-label">{{ s.label }}</span>
-        <div class="slot-drop" cdkDropList [cdkDropListData]="$index" cdkDropListSortingDisabled (cdkDropListDropped)="drop($event)">
-          @if (s.free) {
-            <div class="slot empty"><span i18n="@@editor.altArtPicker.empty">Libre</span></div>
-          } @else {
-            <button type="button" class="slot" [attr.aria-label]="s.freeLabel" (click)="free($index)">
-              <img [src]="s.src" alt="" />
-              <span class="free" aria-hidden="true"><ac-icon name="x" [size]="16" /></span>
-            </button>
+<div class="ac-overlay-body">
+  <section class="pool" aria-labelledby="alt-art-picker-hint">
+    <div class="intro">
+      <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour choisir son rang. Le deck prend les choix dans l’ordre, un par exemplaire.</p>
+      <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
+    </div>
+    <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
+      @for (a of arts(); track a.reference) {
+        <li class="print">
+          <button
+            type="button"
+            class="art"
+            [cdkMenuTriggerFor]="menu"
+            [cdkMenuPosition]="positions"
+            (cdkMenuOpened)="menuFor.set(a.reference)"
+            [disabled]="a.unowned"
+            [attr.aria-label]="a.ariaLabel"
+          >
+            <img [src]="a.src" alt="" />
+          </button>
+          @if (a.ribbons.length) {
+            <span class="ribbons" aria-hidden="true">
+              @for (r of a.ribbons; track r.rank) {
+                <span class="ribbon" [class.unused]="!r.used" [attr.title]="r.title">
+                  <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
+                  <span class="ribbon-text">
+                    <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
+                    <span class="ribbon-word">{{ choiceWord }}</span>
+                  </span>
+                </span>
+              }
+            </span>
           }
-        </div>
-      </li>
+          <span class="print-label">{{ a.label }}</span>
+          <span class="print-note">{{ a.note }}</span>
+        </li>
+      }
+    </ul>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
     }
-  </ul>
-  <h3 class="pool-title" i18n="@@editor.altArtPicker.available">Illustrations disponibles</h3>
-  <ul class="pool" cdkDropList cdkDropListOrientation="horizontal" cdkDropListSortingDisabled [cdkDropListEnterPredicate]="noDrop">
-    @for (p of pool(); track p.reference) {
-      <li cdkDrag cdkDragPreviewContainer="parent" [cdkDragData]="p.reference" [cdkDragDisabled]="p.off" [cdkDragStartDelay]="dragDelay">
-        <button type="button" class="print" [class.off]="p.off" [attr.aria-disabled]="p.off || full()" [attr.aria-label]="p.label + ', ' + p.note" (click)="place(p.reference)">
-          <img [src]="p.src" alt="" loading="lazy" />
-          <span class="note">{{ p.note }}</span>
-        </button>
-      </li>
+  </section>
+  <aside class="deck" aria-labelledby="alt-art-picker-deck">
+    <h3 id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</h3>
+    @if (preview().length) {
+      <div class="fan" aria-hidden="true" [style.--n]="preview().length">
+        @for (p of preview(); track $index) {
+          <img [src]="p.src" alt="" [style.--i]="$index" />
+        }
+      </div>
     }
-  </ul>
+    <p class="summary">{{ summary() }}</p>
+    @if (preview().length) {
+      <ol class="uses">
+        @for (p of preview(); track $index) {
+          <li>
+            <span>{{ p.copy }}</span>
+            <span class="use">{{ p.use }}</span>
+          </li>
+        }
+      </ol>
+    }
+  </aside>
 </div>
 <div class="ac-overlay-footer">
   <a class="settings" [href]="settingsUrl" i18n="@@editor.altArtPicker.settings">Modifier mes arts par défaut</a>
-  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="allDefault()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
+  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="followsDefaults()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
   <button acButton (click)="ref.close()" i18n="@@editor.altArtPicker.close">Fermer</button>
 </div>
+
+<ng-template #menu>
+  @let a = menuArt();
+  <div class="menu" cdkMenu [attr.aria-label]="a?.menuLabel">
+    <span class="menu-title" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser comme…</span>
+    @for (o of a?.options; track o.rank) {
+      <button
+        type="button"
+        class="item"
+        cdkMenuItemRadio
+        [cdkMenuItemChecked]="o.checked"
+        [cdkMenuItemDisabled]="o.disabled || saving()"
+        (cdkMenuItemTriggered)="choose(o.rank)"
+      >
+        <span class="item-label" [class.unused]="!o.used">{{ o.label }}</span>
+        @if (o.checked) {
+          <ac-icon name="check" [size]="18" />
+        } @else {
+          <img class="holder" [src]="o.holder" alt="" />
+        }
+      </button>
+    }
+  </div>
+</ng-template>

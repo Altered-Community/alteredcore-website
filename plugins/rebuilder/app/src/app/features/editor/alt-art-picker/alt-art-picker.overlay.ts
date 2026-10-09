@@ -1,7 +1,10 @@
-import { CdkDrag, CdkDropList, CdkDropListGroup, type CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkMenu, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
+import type { ConnectedPosition } from '@angular/cdk/overlay';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
+import type { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { defaultPrints, slotChoices, slotDefaults } from '../../../core/alt-art-defaults';
+import { canRank, defaultPrints, rankPrints, sameCopies, slotChoices, slotDefaults } from '../../../core/alt-art-defaults';
 import { cardImageUrl } from '../../../core/card-art';
 import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
@@ -9,22 +12,31 @@ import { AcIcon } from '../../../ui/icon';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface AltArtPickerData {
-  choice: AltArtChoice;
+  /** The card's family, with the player's default alt arts as they are now. */
+  choice: () => AltArtChoice;
   /** The family's copies in the deck, one print a copy. */
   prints: () => readonly string[];
   /** The family's copies take `prints`, one print a copy. */
   set: (prints: readonly string[]) => void;
+  /** The family's default alt arts become `ranks` (1st choice first) and the deck's copies take them; errors reach the caller. */
+  setDefaults: (ranks: readonly string[]) => Observable<void>;
 }
 
+/** The choices' menu: over the bottom of the illustration, under it when there is no room. */
+const MENU_POSITIONS: ConnectedPosition[] = [
+  { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'bottom', offsetY: -8 },
+  { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: 8 },
+];
+
 /**
- * The brush of a card: the illustration of each of its copies in this deck, the default alt arts as chosen as the
- * others. A touched copy is freed (it keeps its default alt art in the deck until it gets another illustration); a
- * touched illustration goes on the first free copy, one dragged onto a copy on that copy. An illustration whose owned
- * copies are all placed waits. Each change is saved with the deck.
+ * The brush of a card: its illustrations, each with the choices it holds (1st, 2nd, 3rd: the player's default alt arts
+ * for the card, one a copy), and what the deck uses. A deck takes the choices in order, one a copy: with 2 copies, the
+ * 1st and 2nd; the 3rd choice shows apart. A choice changed here is saved as a default alt art (ownership service) and
+ * the deck's copies take the defaults at once.
  */
 @Component({
   selector: 'app-alt-art-picker',
-  imports: [AcButton, AcIcon, CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [AcButton, AcIcon, CdkMenuTrigger, CdkMenu, CdkMenuItemRadio],
   host: { class: 'ac-overlay-content' },
   templateUrl: './alt-art-picker.overlay.html',
   styleUrl: './alt-art-picker.overlay.scss',
@@ -32,90 +44,137 @@ export interface AltArtPickerData {
 export class AltArtPickerOverlay {
   protected readonly ref = inject<AcOverlayRef<void, AltArtPickerData>>(AcOverlayRef);
   private readonly data = this.ref.data!;
-  /** Each copy's illustration, `null` for a freed copy (its default alt art in the deck); copy 1 the deck's own choice. */
-  protected readonly chosen = signal<(string | null)[]>(slotDefaults(this.data.choice, slotChoices(this.data.choice, this.data.prints())));
-  /** Each copy's illustration in the deck. */
-  private readonly prints = computed(() => slotDefaults(this.data.choice, this.chosen()));
-  protected readonly slots = computed(() => {
-    const chosen = this.chosen();
-    return this.prints().map((reference, i) => ({
-      src: cardImageUrl(reference),
-      label: copyLabel(i + 1),
-      free: chosen[i] === null,
-      freeLabel: freeLabel(i + 1),
-    }));
-  });
-  protected readonly full = computed(() => !this.chosen().includes(null));
-  protected readonly pool = computed(() => {
-    const prints = this.prints();
-    const chosen = this.chosen();
-    return this.data.choice.options.options.map((o, i) => {
-      const placed = prints.filter((p) => p === o.reference).length;
-      const owned = o.ownedQuantity;
+  private readonly choice = computed(() => this.data.choice());
+  /** The illustration of each choice, 1st first. */
+  private readonly ranks = computed(() => rankPrints(this.choice()));
+  private readonly copies = computed(() => this.data.prints().length);
+  /** The deck's copies follow the default alt arts. */
+  protected readonly followsDefaults = computed(() => sameCopies(this.data.prints(), defaultPrints(this.choice(), this.copies())));
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly positions = MENU_POSITIONS;
+  protected readonly choiceWord = choiceWord();
+  /** The site's « Arts alternatifs par défaut » page (plugin ownership). */
+  protected readonly settingsUrl = `${environment.siteUrl.replace(/\/$/, '')}/pages/ownership-alt-arts`;
+
+  protected readonly arts = computed(() => {
+    const choice = this.choice();
+    const ranks = this.ranks();
+    const copies = this.copies();
+    return choice.options.options.map((o, i) => {
+      const label = printLabel(i + 1);
+      const held = ranks.flatMap((r, k) => (r === o.reference ? [k] : []));
       return {
         reference: o.reference,
         src: cardImageUrl(o.reference),
-        label: printLabel(i + 1),
-        off: this.taken(o.reference, chosen),
-        note: owned === null ? unlimited() : owned === 0 ? notOwned() : placedLabel(placed, owned),
+        label,
+        note: o.ownedQuantity === null ? unlimited() : o.ownedQuantity === 0 ? notOwned() : ownedLabel(o.ownedQuantity),
+        unowned: o.ownedQuantity === 0,
+        ariaLabel: artLabel([label, ...held.map(rankLabel)].join(', ')),
+        menuLabel: menuLabel(label),
+        ribbons: held.map((k) => ({
+          rank: k,
+          num: k + 1,
+          suffix: rankSuffix(k),
+          used: k < copies,
+          title: k < copies ? rankLabel(k) : unusedLabel(rankLabel(k), copies),
+        })),
+        options: ranks.map((r, k) => ({
+          rank: k,
+          label: rankLabel(k),
+          used: k < copies,
+          checked: r === o.reference,
+          disabled: !canRank(choice, ranks, k, o.reference),
+          holder: cardImageUrl(r),
+        })),
       };
     });
   });
-  protected readonly allDefault = computed(() => this.chosen().join() === defaultPrints(this.data.choice, this.chosen().length).join());
-  /** The site's « Arts alternatifs par défaut » page (plugin ownership). */
-  protected readonly settingsUrl = `${environment.siteUrl.replace(/\/$/, '')}/pages/ownership-alt-arts`;
-  /** A long press starts a drag on touch screens, so that a swipe still scrolls the illustrations. */
-  protected readonly dragDelay = { touch: 300, mouse: 0 };
-  /** Nothing is dropped on the illustrations. */
-  protected readonly noDrop = () => false;
 
-  /** A touched illustration: on the first free copy. */
-  protected place(reference: string): void {
-    const index = this.chosen().indexOf(null);
-    if (index !== -1) this.choose(index, reference);
+  /** The illustration whose menu is open (the CDK keeps a menu's first context: the menu reads it from here). */
+  protected readonly menuFor = signal<string | null>(null);
+  protected readonly menuArt = computed(() => this.arts().find((a) => a.reference === this.menuFor()) ?? null);
+
+  /** The deck's copies, copy 1 first (as on the deck board), with the choice each one takes. */
+  protected readonly preview = computed(() => {
+    const choice = this.choice();
+    const ranks = this.ranks();
+    const follows = this.followsDefaults();
+    const options = choice.options.options;
+    return slotDefaults(choice, slotChoices(choice, this.data.prints())).map((print, i) => {
+      const rank = Math.min(i, ranks.length - 1);
+      const label = printLabel(options.findIndex((o) => o.reference === print) + 1);
+      return {
+        src: cardImageUrl(print),
+        copy: copyLabel(i + 1),
+        use: follows && ranks[rank] === print ? `${rankLabel(rank)} · ${label}` : label,
+      };
+    });
+  });
+
+  protected readonly summary = computed(() => {
+    const n = this.copies();
+    if (n === 0) return summaryNone();
+    if (!this.followsDefaults()) return summaryOwn();
+    return n === 1 ? summaryOne() : n === 2 ? summaryTwo() : summaryAll(n);
+  });
+
+  /** Choice `rank` takes the illustration of the open menu: saved as a default alt art, the deck's copies follow. */
+  protected choose(rank: number): void {
+    const reference = this.menuFor();
+    const ranks = this.ranks();
+    if (reference === null || ranks[rank] === reference || this.saving()) return;
+    this.error.set(null);
+    this.saving.set(true);
+    this.data.setDefaults(ranks.map((r, k) => (k === rank ? reference : r))).subscribe({
+      complete: () => this.saving.set(false),
+      error: (err: unknown) => {
+        this.saving.set(false);
+        this.error.set(err instanceof HttpErrorResponse && err.status === 409 ? notEnoughCopies() : saveFailed());
+      },
+    });
   }
 
-  /** An illustration dropped on a copy. */
-  protected drop(event: CdkDragDrop<number, unknown, string>): void {
-    if (event.container !== event.previousContainer) this.choose(event.container.data, event.item.data);
-  }
-
-  /** A touched copy: free for the next illustration touched. */
-  protected free(index: number): void {
-    this.update(this.chosen().map((c, i) => (i === index ? null : c)));
-  }
-
+  /** « Arts par défaut »: the deck's copies take the choices. */
   protected resetToDefaults(): void {
-    this.update(defaultPrints(this.data.choice, this.chosen().length));
-  }
-
-  private choose(index: number, reference: string): void {
-    const chosen = this.chosen();
-    if (chosen[index] === reference || this.taken(reference, chosen.map((c, i) => (i === index ? null : c)))) return;
-    this.update(chosen.map((c, i) => (i === index ? reference : c)));
-  }
-
-  /** Every owned copy of `reference` is chosen (or the player owns none). */
-  private taken(reference: string, chosen: readonly (string | null)[]): boolean {
-    const owned = this.data.choice.options.options.find((o) => o.reference === reference)?.ownedQuantity ?? null;
-    return owned !== null && chosen.filter((c) => c === reference).length >= owned;
-  }
-
-  private update(chosen: (string | null)[]): void {
-    this.chosen.set(chosen);
-    this.data.set(this.prints());
+    this.data.set(defaultPrints(this.choice(), this.copies()));
   }
 }
 
 const copyLabel = (n: number) => $localize`:@@altArt.marker:Exemplaire ${n}:n:`;
 const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
-const freeLabel = (n: number) => $localize`:@@editor.altArtPicker.free:Exemplaire ${n}:n: : le libérer`;
+const rankLabel = (k: number) =>
+  k === 0
+    ? $localize`:@@editor.altArtPicker.rank1:1er choix`
+    : k === 1
+      ? $localize`:@@editor.altArtPicker.rank2:2e choix`
+      : $localize`:@@editor.altArtPicker.rank3:3e choix`;
+/** Ordinal suffix on a ribbon (« 1er », « 2e »). */
+const rankSuffix = (k: number) =>
+  k === 0
+    ? $localize`:@@editor.altArtPicker.suffix1:er`
+    : k === 1
+      ? $localize`:@@editor.altArtPicker.suffix2:e`
+      : $localize`:@@editor.altArtPicker.suffix3:e`;
+const choiceWord = () => $localize`:@@editor.altArtPicker.choiceWord:choix`;
+const unusedLabel = (rank: string, copies: number) =>
+  copies > 1
+    ? $localize`:@@editor.altArtPicker.unusedMany:${rank}:rank: : pas utilisé avec ${copies}:n: exemplaires`
+    : $localize`:@@editor.altArtPicker.unusedOne:${rank}:rank: : pas utilisé avec 1 exemplaire`;
+const artLabel = (text: string) => $localize`:@@editor.altArtPicker.art:${text}:text: : choisir son rang`;
+const menuLabel = (label: string) => $localize`:@@editor.altArtPicker.menu:Rang de ${label}:label:`;
 const unlimited = () => $localize`:@@editor.altArtPicker.unlimited:Illimitée`;
 const notOwned = () => $localize`:@@editor.altArtPicker.notOwned:Non possédée`;
-const placedLabel = (placed: number, owned: number) =>
-  placed > 1
-    ? $localize`:@@editor.altArtPicker.placedMany:${placed}:placed: / ${owned}:owned: placées`
-    : $localize`:@@editor.altArtPicker.placedOne:${placed}:placed: / ${owned}:owned: placée`;
+const ownedLabel = (n: number) =>
+  n > 1 ? $localize`:@@editor.altArtPicker.ownedMany:${n}:n: possédées` : $localize`:@@editor.altArtPicker.ownedOne:1 possédée`;
+const summaryNone = () => $localize`:@@editor.altArtPicker.summaryNone:Ce deck n’a pas encore d’exemplaire de cette carte.`;
+const summaryOwn = () =>
+  $localize`:@@editor.altArtPicker.summaryOwn:Ce deck garde ses propres illustrations : « Arts par défaut » lui applique vos choix.`;
+const summaryOne = () => $localize`:@@editor.altArtPicker.summaryOne:Avec 1 exemplaire, le deck prend le 1er choix.`;
+const summaryTwo = () => $localize`:@@editor.altArtPicker.summaryTwo:Avec 2 exemplaires, le deck prend les 1er et 2e choix.`;
+const summaryAll = (n: number) => $localize`:@@editor.altArtPicker.summaryAll:Avec ${n}:n: exemplaires, le deck prend les trois choix.`;
+const notEnoughCopies = () => $localize`:@@altArt.notEnoughCopies:Vous n’avez pas assez d’exemplaires de cet art alternatif.`;
+const saveFailed = () => $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 
 /** The brush of a card of the deck, in its own window (sheet on a phone). */
 export function openAltArtPicker(overlay: AcOverlayService, name: string, data: AltArtPickerData): AcOverlayRef<void, AltArtPickerData> {

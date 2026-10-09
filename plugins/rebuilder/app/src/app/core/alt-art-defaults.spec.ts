@@ -1,4 +1,4 @@
-import { addedCopyPrint, defaultPrints, familyPrints, linesWithDefaults, removedCopyPrint, sameCopies, slotChoices, slotDefaults, withFamilyPrints } from './alt-art-defaults';
+import { addedCopyPrint, canRank, defaultPrints, familyPrints, linesWithDefaults, rankPrints, removedCopyPrint, sameCopies, slotChoices, slotDefaults, withFamilyPrints, withRanks } from './alt-art-defaults';
 import type { HydratedLine } from './models';
 import type { AltArtChoice } from './ownership-api.service';
 
@@ -41,6 +41,28 @@ describe('defaultPrints', () => {
       { slotIndex: 1, reference: MUSUBI },
     ];
     expect(defaultPrints(choice, 2)).toEqual([MUSUBI, ALT]);
+  });
+});
+
+describe('choices (brush)', () => {
+  it('gives three choices from the slots, the last one repeated, the plain print without any', () => {
+    expect(rankPrints(fee([MUSUBI, ALT, BASE]))).toEqual([MUSUBI, ALT, BASE]);
+    expect(rankPrints(fee([ALT]))).toEqual([ALT, ALT, ALT]);
+    expect(rankPrints(fee([]))).toEqual([BASE, BASE, BASE]);
+  });
+
+  it('turns the choices into the slots of the defaults', () => {
+    const choice = withRanks(fee([]), [ALT, MUSUBI, ALT]);
+    expect(rankPrints(choice)).toEqual([ALT, MUSUBI, ALT]);
+    expect(defaultPrints(choice, 2)).toEqual([ALT, MUSUBI]);
+  });
+
+  it('lets a choice take an alt art while the other choices hold fewer than the copies owned', () => {
+    const choice = fee([ALT, BASE, BASE], 1);
+    expect(canRank(choice, rankPrints(choice), 1, ALT)).toBe(false);
+    expect(canRank(choice, rankPrints(choice), 0, ALT)).toBe(true);
+    expect(canRank(choice, rankPrints(choice), 1, MUSUBI)).toBe(true);
+    expect(canRank(fee([], 0), [BASE, BASE, BASE], 0, ALT)).toBe(false);
   });
 });
 
