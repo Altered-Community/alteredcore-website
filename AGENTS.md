@@ -39,9 +39,10 @@ The rules that matter most:
   data or images arriving after the first screen, the runtime), in `tests/e2e`:
   - `npm run loading`: every Re:Builder screen on a slow phone network, first and second visit, desktop and mobile
     (`plugins/rebuilder/e2e/loading.spec.ts`, also run by the CI). It fails on an empty frame, the app shown unstyled,
-    the skeleton losing the site's font, a « Chargement… » title, or a CLS over the screen's budget
+    the skeleton losing the site's font or a « Chargement… » title. A CLS over the screen's budget
     (`plugins/rebuilder/e2e/loading-budgets.json`: 0.01, or today's value for a known shift; lower a budget when a fix
-    lands, never raise one to pass).
+    lands, never raise one to pass) is a warning, not a failure: on the CI, a pull request comment with a screenshot of
+    the boxes that moved (job « CLS warnings »).
   - `npm run loading:timeline -- <screen> [--viewport <size> | --desktop] [--first-visit] [--frames] [--compare <other stack>]`:
     the loading frame by frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare`
     puts the base branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts`

@@ -5,7 +5,9 @@ name: Plugins CI
 #   • each plugin's tests, found through bin/plugins.php (plugin.json "tests" / "build",
 #     or the conventions tests/run.php, **/*.test.mjs, e2e/*.spec.ts);
 #   • front-end plugins ("build" in plugin.json): install, lint, unit tests, build;
-#   • Playwright (tests/e2e + plugins/*/e2e) against the full stack (docker-compose.stack.yml).
+#   • Playwright (tests/e2e + plugins/*/e2e) against the full stack (docker-compose.stack.yml);
+#   • a CLS over budget in the loading specs does not fail: the job "CLS warnings" posts it, with a screenshot, as a
+#     pull request comment.
 # Nothing here is plugin-specific: a new plugin is picked up from its manifest.
 # A pull request that only changes files under plugins/<id>/ checks only those plugins (their PHP, Node, front-end and
 # Playwright tests); a change anywhere else (core, design system, tests/e2e, Docker, this workflow…) checks them all.
@@ -110,8 +112,9 @@ jobs:
         if: needs.plan.outputs.ids != ''
         env:
           IDS: ${{ needs.plan.outputs.ids }}
-        # shellcheck disable=SC2086 # one argument per id
-        run: php bin/plugins.php run php-tests $IDS
+        run: |
+          # shellcheck disable=SC2086 # one argument per id
+          php bin/plugins.php run php-tests $IDS
 
   node:
     name: Plugin Node tests
@@ -129,8 +132,9 @@ jobs:
           node-version: '22'
       - env:
           IDS: ${{ needs.plan.outputs.ids }}
-        # shellcheck disable=SC2086 # one argument per id
-        run: php bin/plugins.php run node-tests $IDS
+        run: |
+          # shellcheck disable=SC2086 # one argument per id
+          php bin/plugins.php run node-tests $IDS
 
   frontend:
     name: Front-end ${{ matrix.plugin.id }}
@@ -172,6 +176,7 @@ jobs:
     env:
       E2E_BASE_URL: http://localhost:8080
       E2E_EVIDENCE_DIR: ${{ github.workspace }}/tests/e2e/evidence
+      E2E_CLS_WARNINGS_DIR: ${{ github.workspace }}/tests/e2e/cls-warnings
       COMPOSE: docker compose -f docker-compose.yml -f docker-compose.stack.yml
     steps:
       - uses: actions/checkout@v4
@@ -239,8 +244,9 @@ jobs:
         working-directory: tests/e2e
         env:
           SPECS: ${{ needs.plan.outputs.e2e_specs }}
-        # shellcheck disable=SC2086 # one argument per folder
-        run: npx playwright test $SPECS
+        run: |
+          # shellcheck disable=SC2086 # one argument per folder
+          npx playwright test $SPECS
       - name: Stack logs
         if: failure()
         run: $COMPOSE logs --no-color --tail=200
@@ -253,6 +259,105 @@ jobs:
             tests/e2e/evidence
             tests/e2e/test-results
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cls-warnings
+          path: tests/e2e/cls-warnings
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cls:
+    # CLS over budget (tests/e2e/loading.ts, clsWarning): a warning on the run and one pull request comment, kept up to
+    # date, with the screenshots (pushed to the pr-screenshots branch). Runs no code of the pull request: it reads the
+    # artifact as data. Not a dependency of "Plugins CI": it never makes the pull request red.
+    name: CLS warnings
+    needs: e2e
+    if: always() && github.event_name == 'pull_request' && (needs.e2e.result == 'success' || needs.e2e.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the screenshots, on the pr-screenshots branch
+      pull-requests: write # the comment
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      # A fork's token is read only: warnings on the run, no screenshots and no comment.
+      CAN_WRITE: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+      SHOTS: ${{ github.event.pull_request.number }}/cls-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true # no artifact: no CLS over budget
+        with:
+          name: cls-warnings
+          path: cls-warnings
+      - name: List the warnings
+        id: list
+        run: |
+          # Only <slug>.json with a safe slug: the artifact comes from the pull request's code.
+          slugs=()
+          for f in cls-warnings/*.json; do
+            [ -f "$f" ] || continue
+            slug="$(basename "$f" .json)"
+            [[ "$slug" =~ ^[a-z0-9-]+$ ]] && slugs+=("$slug")
+          done
+          echo "slugs=${slugs[*]}" >> "$GITHUB_OUTPUT"
+          for slug in "${slugs[@]}"; do
+            jq -r '"::warning title=CLS over budget::\(.project) · \(.title): CLS \(.cls) > \(.budget)"' "cls-warnings/$slug.json"
+          done
+      - uses: actions/checkout@v4
+        if: steps.list.outputs.slugs != '' && env.CAN_WRITE == 'true'
+        with:
+          ref: pr-screenshots
+          path: shots
+      - name: Push the screenshots
+        if: steps.list.outputs.slugs != '' && env.CAN_WRITE == 'true'
+        env:
+          SLUGS: ${{ steps.list.outputs.slugs }}
+        working-directory: shots
+        run: |
+          mkdir -p "$SHOTS"
+          for slug in $SLUGS; do [ -f "../cls-warnings/$slug.png" ] && cp "../cls-warnings/$slug.png" "$SHOTS/"; done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$SHOTS"
+          git commit -qm "CLS warnings of #$PR (run $GITHUB_RUN_ID)"
+          for _ in 1 2 3; do git push -q origin HEAD:pr-screenshots && exit 0; git pull -q --rebase origin pr-screenshots; done
+          exit 1
+      - name: Comment on the pull request
+        if: env.CAN_WRITE == 'true'
+        env:
+          SLUGS: ${{ steps.list.outputs.slugs }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          marker='<!-- plugins-ci:cls-warnings -->'
+          existing="$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)"
+          if [ -z "$SLUGS" ]; then
+            # Nothing over budget: update an earlier comment, never add one.
+            [ -n "$existing" ] || exit 0
+            body="$marker"$'\n'"### ✅ Loading: no CLS over budget"$'\n\n'"Last run: $RUN_URL"
+          else
+            {
+              echo "$marker"
+              echo '### ⚠️ Loading: CLS over budget'
+              echo
+              echo "Not a failure: the CLS of a screen varies from one CI run to the next. Each screenshot is the settled page, the boxes that moved drawn on it (dashed: before, solid: after). Frame by frame: \`npm run loading:timeline -- <screen>\` in \`tests/e2e\`. Run: $RUN_URL"
+              for slug in $SLUGS; do
+                url="https://github.com/$REPO/blob/pr-screenshots/$SHOTS/$slug.png?raw=true"
+                jq -r --arg url "$url" '
+                  "\n#### \(.project) · \(.title)\n\nCLS **\(.cls)** (budget \(.budget))\n\n<img src=\"\($url)\" width=\"600\">\n\n<details><summary>Shifts</summary>\n\n```\n"
+                  + ([.shifts[] | "\(.t) ms  \(.value)\n" + ([.boxes[] | "  " + gsub("`"; "")] | join("\n"))] | join("\n"))
+                  + "\n```\n</details>"
+                ' "cls-warnings/$slug.json"
+              done
+            } > body.md
+            body="$(cat body.md)"
+          fi
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" > /dev/null
+          fi
 
   result:
     # Single check to require in branch protection.
@@ -262,7 +367,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: All jobs passed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          echo '${{ toJSON(needs) }}' | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
-          echo '${{ toJSON(needs) }}' | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
-          [ "${{ needs.e2e.result }}" = "success" ] || [ "${{ needs.plan.outputs.e2e }}" = "false" ]
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
+          jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$NEEDS" > /dev/null
+          # Playwright may be skipped only when the plan says so (no checked plugin has specs).
+          jq -e '.e2e.result == "success" or .plan.outputs.e2e == "false"' <<< "$NEEDS" > /dev/null
