@@ -98,7 +98,7 @@ ol {
   font: var(--ac-font-caption);
   color: var(--ac-color-text-muted);
 }
-/* The choices an illustration holds, 1st on the left: plain when the deck uses them, dashed otherwise. */
+/* The cards an illustration is chosen for, 1st on the left. */
 .ribbons {
   position: absolute;
   top: 0;
@@ -125,14 +125,6 @@ ol {
   fill: var(--ac-color-primary);
   stroke: var(--ac-color-surface);
   stroke-width: 2;
-}
-.ribbon.unused {
-  color: var(--ac-color-text-muted);
-}
-.ribbon.unused path {
-  fill: var(--ac-color-surface);
-  stroke: var(--ac-color-text-muted);
-  stroke-dasharray: 4 3;
 }
 .ribbon-text {
   position: relative;
@@ -201,7 +193,7 @@ ol {
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-link);
 }
-/* The choices' menu of an illustration. */
+/* The cards' menu of an illustration. */
 .menu {
   box-sizing: border-box;
   min-width: 200px;
@@ -250,9 +242,6 @@ ol {
   .item:not([aria-disabled='true']):hover {
     background: var(--ac-color-bg-subtle);
   }
-}
-.item-label.unused {
-  color: var(--ac-color-text-muted);
 }
 .holder {
   width: 22px;

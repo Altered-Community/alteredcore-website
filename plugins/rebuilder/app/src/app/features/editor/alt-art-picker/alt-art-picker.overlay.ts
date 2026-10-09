@@ -29,10 +29,9 @@ const MENU_POSITIONS: ConnectedPosition[] = [
 ];
 
 /**
- * The brush of a card: its illustrations, each with the choices it holds (1st, 2nd, 3rd: the player's default alt arts
- * for the card, one a copy), and what the deck uses. A deck takes the choices in order, one a copy: with 2 copies, the
- * 1st and 2nd; the 3rd choice shows apart. A choice changed here is saved as a default alt art (ownership service) and
- * the deck's copies take the defaults at once.
+ * The brush of a card: its illustrations, each with the cards it is chosen for (1st, 2nd, 3rd card: the player's
+ * default alt arts for the card, one a copy), and what the deck uses (with 2 copies, the 1st and 2nd cards). A change
+ * here is saved as a default alt art (ownership service) and the deck's copies take the defaults at once.
  */
 @Component({
   selector: 'app-alt-art-picker',
@@ -53,14 +52,13 @@ export class AltArtPickerOverlay {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly positions = MENU_POSITIONS;
-  protected readonly choiceWord = choiceWord();
+  protected readonly cardWord = cardWord();
   /** The site's « Arts alternatifs par défaut » page (plugin ownership). */
   protected readonly settingsUrl = `${environment.siteUrl.replace(/\/$/, '')}/pages/ownership-alt-arts`;
 
   protected readonly arts = computed(() => {
     const choice = this.choice();
     const ranks = this.ranks();
-    const copies = this.copies();
     return choice.options.options.map((o, i) => {
       const label = printLabel(i + 1);
       const held = ranks.flatMap((r, k) => (r === o.reference ? [k] : []));
@@ -70,19 +68,16 @@ export class AltArtPickerOverlay {
         label,
         note: o.ownedQuantity === null ? unlimited() : o.ownedQuantity === 0 ? notOwned() : ownedLabel(o.ownedQuantity),
         unowned: o.ownedQuantity === 0,
-        ariaLabel: artLabel([label, ...held.map(rankLabel)].join(', ')),
+        ariaLabel: artLabel([label, ...held.map(cardLabel)].join(', ')),
         menuLabel: menuLabel(label),
         ribbons: held.map((k) => ({
           rank: k,
           num: k + 1,
-          suffix: rankSuffix(k),
-          used: k < copies,
-          title: k < copies ? rankLabel(k) : unusedLabel(rankLabel(k), copies),
+          suffix: cardSuffix(k),
         })),
         options: ranks.map((r, k) => ({
           rank: k,
-          label: rankLabel(k),
-          used: k < copies,
+          label: cardLabel(k),
           checked: r === o.reference,
           disabled: !canRank(choice, ranks, k, o.reference),
           holder: cardImageUrl(r),
@@ -108,7 +103,7 @@ export class AltArtPickerOverlay {
     return n === 1 ? summaryOne() : n === 2 ? summaryTwo() : summaryAll(n);
   });
 
-  /** Choice `rank` takes the illustration of the open menu: saved as a default alt art, the deck's copies follow. */
+  /** Card `rank` takes the illustration of the open menu: saved as a default alt art, the deck's copies follow. */
   protected choose(rank: number): void {
     const reference = this.menuFor();
     const ranks = this.ranks();
@@ -124,33 +119,29 @@ export class AltArtPickerOverlay {
     });
   }
 
-  /** « Arts par défaut »: the deck's copies take the choices. */
+  /** « Arts par défaut »: the deck's copies take the default alt arts. */
   protected resetToDefaults(): void {
     this.data.set(defaultPrints(this.choice(), this.copies()));
   }
 }
 
 const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
-const rankLabel = (k: number) =>
+const cardLabel = (k: number) =>
   k === 0
-    ? $localize`:@@editor.altArtPicker.rank1:1er choix`
+    ? $localize`:@@editor.altArtPicker.card1:1ère carte`
     : k === 1
-      ? $localize`:@@editor.altArtPicker.rank2:2e choix`
-      : $localize`:@@editor.altArtPicker.rank3:3e choix`;
-/** Ordinal suffix on a ribbon (« 1er », « 2e »). */
-const rankSuffix = (k: number) =>
+      ? $localize`:@@editor.altArtPicker.card2:2ème carte`
+      : $localize`:@@editor.altArtPicker.card3:3ème carte`;
+/** Ordinal suffix on a ribbon (« 1ère », « 2ème »). */
+const cardSuffix = (k: number) =>
   k === 0
-    ? $localize`:@@editor.altArtPicker.suffix1:er`
+    ? $localize`:@@editor.altArtPicker.suffix1:ère`
     : k === 1
-      ? $localize`:@@editor.altArtPicker.suffix2:e`
-      : $localize`:@@editor.altArtPicker.suffix3:e`;
-const choiceWord = () => $localize`:@@editor.altArtPicker.choiceWord:choix`;
-const unusedLabel = (rank: string, copies: number) =>
-  copies > 1
-    ? $localize`:@@editor.altArtPicker.unusedMany:${rank}:rank: : pas utilisé avec ${copies}:n: exemplaires`
-    : $localize`:@@editor.altArtPicker.unusedOne:${rank}:rank: : pas utilisé avec 1 exemplaire`;
-const artLabel = (text: string) => $localize`:@@editor.altArtPicker.art:${text}:text: : choisir son rang`;
-const menuLabel = (label: string) => $localize`:@@editor.altArtPicker.menu:Rang de ${label}:label:`;
+      ? $localize`:@@editor.altArtPicker.suffix2:ème`
+      : $localize`:@@editor.altArtPicker.suffix3:ème`;
+const cardWord = () => $localize`:@@editor.altArtPicker.cardWord:carte`;
+const artLabel = (text: string) => $localize`:@@editor.altArtPicker.art:${text}:text: : choisir ses cartes`;
+const menuLabel = (label: string) => $localize`:@@editor.altArtPicker.menu:Cartes de ${label}:label:`;
 const unlimited = () => $localize`:@@editor.altArtPicker.unlimited:Illimitée`;
 const notOwned = () => $localize`:@@editor.altArtPicker.notOwned:Non possédée`;
 const ownedLabel = (n: number) =>
@@ -158,9 +149,9 @@ const ownedLabel = (n: number) =>
 const summaryNone = () => $localize`:@@editor.altArtPicker.summaryNone:Ce deck n’a pas encore d’exemplaire de cette carte.`;
 const summaryOwn = () =>
   $localize`:@@editor.altArtPicker.summaryOwn:Ce deck garde ses propres illustrations : « Arts par défaut » lui applique vos choix.`;
-const summaryOne = () => $localize`:@@editor.altArtPicker.summaryOne:Avec 1 exemplaire, le deck prend le 1er choix.`;
-const summaryTwo = () => $localize`:@@editor.altArtPicker.summaryTwo:Avec 2 exemplaires, le deck prend les 1er et 2e choix.`;
-const summaryAll = (n: number) => $localize`:@@editor.altArtPicker.summaryAll:Avec ${n}:n: exemplaires, le deck prend les trois choix.`;
+const summaryOne = () => $localize`:@@editor.altArtPicker.summaryOne:Avec 1 exemplaire, le deck prend l’illustration de la 1ère carte.`;
+const summaryTwo = () => $localize`:@@editor.altArtPicker.summaryTwo:Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.`;
+const summaryAll = (n: number) => $localize`:@@editor.altArtPicker.summaryAll:Avec ${n}:n: exemplaires, le deck prend les illustrations des trois cartes.`;
 const notEnoughCopies = () => $localize`:@@altArt.notEnoughCopies:Vous n’avez pas assez d’exemplaires de cet art alternatif.`;
 const saveFailed = () => $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 

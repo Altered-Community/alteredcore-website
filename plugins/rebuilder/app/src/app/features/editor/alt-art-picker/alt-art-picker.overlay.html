@@ -1,7 +1,7 @@
 <div class="ac-overlay-body">
   <section class="pool" aria-labelledby="alt-art-picker-hint">
     <div class="intro">
-      <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Touchez une illustration pour choisir son rang. Le deck prend les choix dans l’ordre, un par exemplaire.</p>
+      <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte : touchez une illustration pour la donner à la 1ère, 2ème ou 3ème carte.</p>
       <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
     </div>
     <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
@@ -21,11 +21,11 @@
           @if (a.ribbons.length) {
             <span class="ribbons" aria-hidden="true">
               @for (r of a.ribbons; track r.rank) {
-                <span class="ribbon" [class.unused]="!r.used" [attr.title]="r.title">
+                <span class="ribbon">
                   <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
                   <span class="ribbon-text">
                     <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
-                    <span class="ribbon-word">{{ choiceWord }}</span>
+                    <span class="ribbon-word">{{ cardWord }}</span>
                   </span>
                 </span>
               }
@@ -61,7 +61,7 @@
 <ng-template #menu>
   @let a = menuArt();
   <div class="menu" cdkMenu [attr.aria-label]="a?.menuLabel">
-    <span class="menu-title" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser comme…</span>
+    <span class="menu-title" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser pour la…</span>
     @for (o of a?.options; track o.rank) {
       <button
         type="button"
@@ -71,7 +71,7 @@
         [cdkMenuItemDisabled]="o.disabled || saving()"
         (cdkMenuItemTriggered)="choose(o.rank)"
       >
-        <span class="item-label" [class.unused]="!o.used">{{ o.label }}</span>
+        <span class="item-label">{{ o.label }}</span>
         @if (o.checked) {
           <ac-icon name="check" [size]="18" />
         } @else {
