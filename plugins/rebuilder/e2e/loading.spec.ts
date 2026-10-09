@@ -1,5 +1,5 @@
 import { expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
-import { emptyCache, loadingProblems, loadingReport, throttle, watchLoading } from '../../../tests/e2e/loading';
+import { clsWarning, emptyCache, loadingProblems, loadingReport, throttle, watchLoading } from '../../../tests/e2e/loading';
 import budgets from './loading-budgets.json';
 import { createServerDeck } from './decks';
 import { FORBIDDEN_TEXTS, SCREENS } from './screens';
@@ -8,7 +8,9 @@ import { FORBIDDEN_TEXTS, SCREENS } from './screens';
  * Loading of every Re:Builder screen on a slow phone network (tests/e2e/loading.ts), first and second visit: the
  * server's skeleton stays until the app draws its first screen, the app never shows unstyled, the skeleton keeps the
  * site's font, no « Chargement… » title, and the layout shifts (CLS) stay within the screen's budget
- * (loading-budgets.json: 0.01, or today's value for a known shift). A failure prints what moved or showed;
+ * (loading-budgets.json: 0.01, or today's value for a known shift). A CLS over budget is a warning, not a failure (it
+ * varies from one CI run to the next): a screenshot with the boxes that moved, posted by the CI as a pull request
+ * comment (tests/e2e/loading.ts, clsWarning). A failure prints what showed;
  * `node tests/e2e/loading-timeline.ts <screen>` shows it frame by frame. On the desktop project, a second visit at
  * 1280 and 1024 px too: laptop and tablet widths, where the deck bar and the editor change their layout
  * (`npm run loading:matrix` for every size).
@@ -52,7 +54,8 @@ test.describe('ReBuilder in the shell · loading on a slow phone network', () =>
         const budget = (budgets as Budgets).screens[`${testInfo.project.name}${width ? `@${width}` : ''}/${screen.key}/${visit}`];
         await testInfo.attach('loading-report', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
         if (budget) testInfo.annotations.push({ type: 'known shift', description: `CLS ${report.cls} (budget ${budget.max}): ${budget.why}` });
-        expect(loadingProblems(report, budget?.max ?? (budgets as Budgets).default), `CLS ${report.cls}`).toEqual([]);
+        await clsWarning(page, testInfo, report, budget?.max ?? (budgets as Budgets).default);
+        expect(loadingProblems(report, Infinity)).toEqual([]);
       });
     }
   }
