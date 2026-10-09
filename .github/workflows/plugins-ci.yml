@@ -60,6 +60,9 @@ jobs:
             | (if $shared then $ids else [$changed[] | owner] | unique end) as $affected
             | {shared: $shared, plan: [.[] | .checked = (.id | IN($affected[]))]}
           ' plan.json > affected.json
+          # Ids and e2e folders come from the manifests and end up as command arguments: allow only safe characters.
+          jq -e '[.plan[] | .id, (.e2e // "e2e")] | all(test("^[A-Za-z0-9_./-]+$"))' affected.json > /dev/null \
+            || { echo "::error::A plugin id or e2e folder contains characters other than A-Z a-z 0-9 _ . / -"; exit 1; }
           shared="$(jq '.shared' affected.json)"
           frontend='{id, dir, workdir: .build.workdir, output: .build.output, nvmrc: (.build.nvmrc // "")}'
           {
@@ -105,7 +108,10 @@ jobs:
         run: php tests/run.php
       - name: Plugin PHP tests
         if: needs.plan.outputs.ids != ''
-        run: php bin/plugins.php run php-tests ${{ needs.plan.outputs.ids }}
+        env:
+          IDS: ${{ needs.plan.outputs.ids }}
+        # shellcheck disable=SC2086 # one argument per id
+        run: php bin/plugins.php run php-tests $IDS
 
   node:
     name: Plugin Node tests
@@ -121,7 +127,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: php bin/plugins.php run node-tests ${{ needs.plan.outputs.ids }}
+      - env:
+          IDS: ${{ needs.plan.outputs.ids }}
+        # shellcheck disable=SC2086 # one argument per id
+        run: php bin/plugins.php run node-tests $IDS
 
   frontend:
     name: Front-end ${{ matrix.plugin.id }}
@@ -228,7 +237,10 @@ jobs:
       - name: Run Playwright
         # Every spec when shared files changed, otherwise only the specs of the changed plugins.
         working-directory: tests/e2e
-        run: npx playwright test ${{ needs.plan.outputs.e2e_specs }}
+        env:
+          SPECS: ${{ needs.plan.outputs.e2e_specs }}
+        # shellcheck disable=SC2086 # one argument per folder
+        run: npx playwright test $SPECS
       - name: Stack logs
         if: failure()
         run: $COMPOSE logs --no-color --tail=200
