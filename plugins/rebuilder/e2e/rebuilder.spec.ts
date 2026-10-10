@@ -1192,8 +1192,8 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await saved;
     expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.base]);
     await expect(dialog.getByRole('button', { name: 'Illustration 2, 1ère carte : choisir ses cartes' })).toBeVisible();
-    // The illustrations in the order of their cards: the 1st card's first.
-    await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 2');
+    // The illustrations keep their order: the plain print stays first.
+    await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 1');
     await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
     await evidence(page, testInfo, '30-alt-art-brush');
     // The 3rd card, past the deck's copies: kept for the deck, its two copies stay.
