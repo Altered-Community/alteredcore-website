@@ -25,7 +25,7 @@ export function slotPrints(choice: AltArtChoice): string[] {
 }
 
 /** Choices of the brush (1st, 2nd, 3rd): one a copy slot of the ownership service. */
-export const RANK_COUNT = 3;
+const RANK_COUNT = 3;
 
 /**
  * The player's default alt arts of the family as choices, 1st first: its slots (the last one repeated), the base print
@@ -39,7 +39,8 @@ export function rankPrints(choice: AltArtChoice): string[] {
 
 /** `choice` with the default alt arts `ranks` (1st choice first). */
 export function withRanks(choice: AltArtChoice, ranks: readonly string[]): AltArtChoice {
-  const slots = ranks.map((reference, i) => ({ slotIndex: i + 1, reference, isExplicitChoice: true }));
+  const base = basePrint(choice);
+  const slots = ranks.map((reference, i) => ({ slotIndex: i + 1, reference, isExplicitChoice: reference !== base }));
   return { ...choice, options: { ...choice.options, slots } };
 }
 

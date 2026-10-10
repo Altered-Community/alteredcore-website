@@ -109,10 +109,17 @@ export class EditorAltArts {
       this.ownership.altArtChoices(chunk).subscribe((found) => {
         this.known.update((m) => {
           const next = new Map(m);
-          for (const ref of chunk) next.set(ref, found[ref] ?? next.get(ref) ?? null);
+          // A family already known keeps its choice: its defaults may have been saved by the brush since this request left.
+          const families = new Map<string, AltArtChoice>();
+          for (const c of m.values()) if (c) families.set(familyKey(c.family), c);
+          const current = (choice: AltArtChoice) => families.get(familyKey(choice.family)) ?? choice;
+          for (const ref of chunk) {
+            const choice = found[ref];
+            next.set(ref, choice ? current(choice) : (next.get(ref) ?? null));
+          }
           // Every print of a family is known with it (a print added by the brush or the search).
           for (const choice of Object.values(found)) {
-            for (const o of choice.options.options) if (!next.get(o.reference)) next.set(o.reference, choice);
+            for (const o of choice.options.options) if (!next.get(o.reference)) next.set(o.reference, current(choice));
           }
           return next;
         });
