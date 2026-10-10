@@ -14,7 +14,7 @@ export function basePrint(choice: AltArtChoice): string {
 }
 
 /** Copies the player owns of `reference`; `null` for unlimited (a print the service does not list, as a reprint). */
-export function ownedOf(choice: AltArtChoice, reference: string): number | null {
+function ownedOf(choice: AltArtChoice, reference: string): number | null {
   const option = choice.options.options.find((o) => o.reference === reference);
   return option ? option.ownedQuantity : null;
 }
@@ -104,6 +104,11 @@ export function slotChoices(choice: AltArtChoice, prints: readonly string[]): (s
   }
 }
 
+/** The family's copies (`prints`) in the brush's order: copy 1 first, the copies on their default alt art on their slot. */
+export function familyCopies(choice: AltArtChoice, prints: readonly string[]): string[] {
+  return slotDefaults(choice, slotChoices(choice, prints));
+}
+
 /**
  * The print of a copy added to a family whose copies show `current`: the first default (by slot) the copies lack,
  * so that a copy chosen in the deck stays and the next copies follow the defaults; the base print otherwise.
@@ -158,7 +163,7 @@ export function withFamilyPrints(lines: readonly HydratedLine[], members: Readon
 }
 
 /** The deck's references grouped by family (multi-art families only), by family key. */
-export function familiesOf(references: Iterable<string>, choices: Readonly<Record<string, AltArtChoice>>): Map<string, Set<string>> {
+function familiesOf(references: Iterable<string>, choices: Readonly<Record<string, AltArtChoice>>): Map<string, Set<string>> {
   const out = new Map<string, Set<string>>();
   for (const ref of references) {
     const choice = choices[ref];

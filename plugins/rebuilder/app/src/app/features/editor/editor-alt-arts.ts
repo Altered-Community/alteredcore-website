@@ -2,7 +2,7 @@ import { Service, computed, effect, inject, signal, untracked } from '@angular/c
 import { EMPTY, type Observable, catchError, filter, map, of, switchMap, take, tap, throwError } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
-import { basePrint, defaultPrints, familyPrints, rankPrints, sameCopies, slotChoices, slotDefaults, withRanks } from '../../core/alt-art-defaults';
+import { basePrint, defaultPrints, familyCopies, familyPrints, rankPrints, sameCopies, withRanks } from '../../core/alt-art-defaults';
 import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
 import { DeckStore } from '../../core/deck-store';
 import { storedFlag } from '../../core/stored-flag';
@@ -76,6 +76,11 @@ export class EditorAltArts {
 
   /** « Arts des jetons » and « Arts par défaut »: on an editable deck. */
   readonly canChoose = computed(() => this.enabled() && this.deck.editable());
+  /** The deck's id when the player's choices for it are kept on the site: a saved deck of theirs; `null` otherwise. */
+  private readonly ownDeckId = computed(() => {
+    const id = this.deck.deckId();
+    return id && this.enabled() && !this.deck.isGuest() && this.deck.editable() === true ? id : null;
+  });
 
   constructor() {
     effect(() => {
@@ -85,8 +90,8 @@ export class EditorAltArts {
     // The brush's choices for the deck. A new deck gets an id on its first save: the choices made before are sent then.
     let cardsOf: string | null = null;
     effect(() => {
-      const id = this.deck.deckId();
-      if (!id || id === cardsOf || !this.enabled() || this.deck.isGuest() || this.deck.editable() !== true) return;
+      const id = this.ownDeckId();
+      if (!id || id === cardsOf) return;
       const previous = cardsOf;
       cardsOf = id;
       untracked(() => {
@@ -103,8 +108,8 @@ export class EditorAltArts {
     // A deck of a player switched from the « Global » mode takes their default alt arts the first time it opens here.
     const checked = new Set<string>();
     effect(() => {
-      const id = this.deck.deckId();
-      if (!id || !this.enabled() || this.deck.isGuest() || this.deck.editable() !== true || checked.has(id)) return;
+      const id = this.ownDeckId();
+      if (!id || checked.has(id)) return;
       checked.add(id);
       untracked(() =>
         this.ownership
@@ -176,7 +181,7 @@ export class EditorAltArts {
   maxFor(card: Card, asFamily: boolean): number {
     const max = this.deck.maxFor(card);
     const choice = this.choiceFor(card.reference);
-    if (!choice || (asFamily && basePrint(choice) === card.reference)) return max;
+    if (!choice || (asFamily && this.isFamilyCard(card))) return max;
     const others = familyPrints(this.deck.lines(), this.members(choice)).filter((r) => r !== card.reference).length;
     return Math.max(this.deck.quantityOf(card.reference), max - others);
   }
@@ -195,8 +200,7 @@ export class EditorAltArts {
   copyPrints(card: Card): string[] | null {
     const choice = this.choiceFor(card.reference);
     if (!choice) return null;
-    const cards = this.deckChoice(choice);
-    return slotDefaults(cards, slotChoices(cards, familyPrints(this.deck.lines(), this.members(choice))));
+    return familyCopies(this.deckChoice(choice), familyPrints(this.deck.lines(), this.members(choice)));
   }
 
   /**
@@ -207,7 +211,7 @@ export class EditorAltArts {
     const prints = familyPrints(this.deck.lines(), this.members(choice));
     const saved = this.deckCards().get(familyKey(choice.family));
     if (saved && sameCopies(prints, defaultPrints(withRanks(choice, saved), prints.length))) return [...saved];
-    const copies = slotDefaults(choice, slotChoices(choice, prints));
+    const copies = familyCopies(choice, prints);
     return rankPrints(choice).map((rank, i) => copies[i] ?? rank);
   }
 
@@ -236,8 +240,7 @@ export class EditorAltArts {
       this.waiting.set(card.reference, [...(this.waiting.get(card.reference) ?? []), () => this.setQuantity(card, quantity)]);
       return;
     }
-    const choice = this.choiceFor(card.reference);
-    if (choice && basePrint(choice) === card.reference) this.deck.setFamilyQuantity(card, this.deckChoice(choice), this.members(choice), quantity);
+    if (this.isFamilyCard(card)) this.setFamilyQuantity(card, quantity);
     else this.deck.setQuantity(card, quantity);
   }
 
@@ -254,6 +257,7 @@ export class EditorAltArts {
       choice: () => this.choiceFor(card.reference) ?? choice,
       prints: () => familyPrints(this.deck.lines(), this.members(choice)),
       cards: () => this.cardsFor(this.choiceFor(card.reference) ?? choice),
+      copies: () => this.copyPrints(card) ?? [],
       setCards: (cards) => this.setCards(card, cards),
       reset: () => this.resetCards(card),
     };
@@ -270,19 +274,14 @@ export class EditorAltArts {
     const key = familyKey(choice.family);
     const members = this.members(choice);
     const before = this.deckCards().get(key);
-    this.deckCards.update((m) => new Map(m).set(key, [...cards]));
+    this.keepCards(key, [...cards]);
     this.deck.setFamilyPrints(members, card, defaultPrints(withRanks(choice, cards), familyPrints(this.deck.lines(), members).length));
-    const id = this.deck.deckId();
-    if (!id || this.deck.isGuest()) return of(undefined);
+    const id = this.ownDeckId();
+    if (!id) return of(undefined);
     const base = basePrint(choice);
     return this.deckAltArts.save(id, key, cards.every((c) => c === base) ? null : cards).pipe(
       catchError((err: unknown) => {
-        this.deckCards.update((m) => {
-          const next = new Map(m);
-          if (before) next.set(key, before);
-          else next.delete(key);
-          return next;
-        });
+        this.keepCards(key, before);
         return throwError(() => err);
       }),
     );
@@ -296,20 +295,26 @@ export class EditorAltArts {
     const members = this.members(choice);
     this.deck.setFamilyPrints(members, card, defaultPrints(choice, familyPrints(this.deck.lines(), members).length));
     if (!this.deckCards().has(key)) return;
+    this.keepCards(key, undefined);
+    const id = this.ownDeckId();
+    if (id) this.deckAltArts.save(id, key, null).subscribe({ error: () => undefined });
+  }
+
+  /** The brush's choices for family `key` in this deck (`undefined`: none, it follows the default alt arts). */
+  private keepCards(key: string, cards: readonly string[] | undefined): void {
     this.deckCards.update((m) => {
       const next = new Map(m);
-      next.delete(key);
+      if (cards) next.set(key, cards);
+      else next.delete(key);
       return next;
     });
-    const id = this.deck.deckId();
-    if (id && !this.deck.isGuest()) this.deckAltArts.save(id, key, null).subscribe({ error: () => undefined });
   }
 
   /** The whole deck follows the default alt arts again: the brush's choices for it are dropped. */
   private clearCards(): void {
     this.deckCards.set(new Map());
-    const id = this.deck.deckId();
-    if (id && !this.deck.isGuest()) this.deckAltArts.clear(id).subscribe();
+    const id = this.ownDeckId();
+    if (id) this.deckAltArts.clear(id).subscribe();
   }
 
   /** « Appliquer les arts par défaut », once the deck's families are known: `false` when the deck already has them. */

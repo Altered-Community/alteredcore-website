@@ -3,7 +3,7 @@ import type { ConnectedPosition } from '@angular/cdk/overlay';
 import { Component, computed, inject, signal } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { canRank, defaultPrints, rankPrints, sameCopies, slotChoices, slotDefaults, withRanks } from '../../../core/alt-art-defaults';
+import { canRank, defaultPrints, rankPrints, sameCopies } from '../../../core/alt-art-defaults';
 import { cardImageUrl } from '../../../core/card-art';
 import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
@@ -17,6 +17,8 @@ export interface AltArtPickerData {
   prints: () => readonly string[];
   /** The illustration of the 1st, 2nd and 3rd card in this deck. */
   cards: () => readonly string[];
+  /** The family's copies in the deck, one print a copy, copy 1 first (as on the deck board). */
+  copies: () => readonly string[];
   /** The 1st, 2nd and 3rd card take `cards` in this deck, its copies too; errors reach the caller. */
   setCards: (cards: readonly string[]) => Observable<void>;
   /** The family follows the default alt arts again in this deck. */
@@ -44,9 +46,9 @@ const MENU_POSITIONS: ConnectedPosition[] = [
 export class AltArtPickerOverlay {
   protected readonly ref = inject<AcOverlayRef<void, AltArtPickerData>>(AcOverlayRef);
   private readonly data = this.ref.data!;
-  private readonly choice = computed(() => this.data.choice());
+  private readonly choice = this.data.choice;
   /** The illustration of each card in this deck, 1st first. */
-  private readonly ranks = computed(() => [...this.data.cards()]);
+  private readonly ranks = this.data.cards;
   private readonly copies = computed(() => this.data.prints().length);
   /** The deck's cards and copies are the default alt arts. */
   protected readonly followsDefaults = computed(
@@ -95,10 +97,7 @@ export class AltArtPickerOverlay {
   protected readonly menuArt = computed(() => this.arts().find((a) => a.reference === this.menuFor()) ?? null);
 
   /** The deck's copies, copy 1 first (as on the deck board). */
-  protected readonly preview = computed(() => {
-    const cards = withRanks(this.choice(), this.ranks());
-    return slotDefaults(cards, slotChoices(cards, this.data.prints())).map((print) => cardImageUrl(print));
-  });
+  protected readonly preview = computed(() => this.data.copies().map((print) => cardImageUrl(print)));
 
   protected readonly summary = computed(() => {
     const n = this.copies();

@@ -14,12 +14,10 @@
 }
 p,
 h3,
-ul,
-ol {
+ul {
   margin: 0;
 }
-ul,
-ol {
+ul {
   padding: 0;
   list-style: none;
 }
@@ -139,7 +137,6 @@ ol {
   font: var(--ac-font-caption);
   color: var(--ac-color-text-muted);
 }
-/* The cards an illustration is chosen for, 1st on the left. */
 /* A place a card: the 1st card on the left, the 2nd in the middle, the 3rd on the right. */
 .ribbons {
   position: absolute;
@@ -252,55 +249,16 @@ ol {
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-link);
 }
-/* The cards' menu of an illustration. */
+/* The cards' menu of an illustration (ac-menu): the check or the card's holder at the end of each item. */
 .menu {
-  box-sizing: border-box;
-  min-width: 200px;
   max-width: calc(100vw - 2 * var(--ac-space-4));
-  padding: var(--ac-space-1-5);
-  display: flex;
-  flex-direction: column;
-  background: var(--ac-color-surface);
-  border: 1px solid var(--ac-color-border);
-  border-radius: var(--ac-radius-lg);
-  box-shadow: var(--ac-shadow-e2);
 }
-.menu-title {
-  padding: var(--ac-space-1) var(--ac-space-2-5);
-  font: var(--ac-font-caption);
-  color: var(--ac-color-text-muted);
+.item-label {
+  flex: 1;
 }
-.item {
-  min-height: var(--ac-control-md);
-  padding: var(--ac-space-1) var(--ac-space-2-5);
-  border: 0;
-  border-radius: var(--ac-radius-md);
-  background: transparent;
-  color: var(--ac-color-text);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ac-space-3);
-  text-align: left;
-  font: var(--ac-font-body);
-  cursor: pointer;
-}
-.item[aria-checked='true'] {
-  background: var(--ac-color-primary-tint);
-  color: var(--ac-color-primary-strong);
-}
-.item[aria-disabled='true'] {
+.ac-menu__item[aria-disabled='true'] {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.item:focus-visible {
-  background: var(--ac-color-bg-subtle);
-  outline: none;
-}
-@media (hover: hover) {
-  .item:not([aria-disabled='true']):hover {
-    background: var(--ac-color-bg-subtle);
-  }
 }
 .holder {
   width: 22px;

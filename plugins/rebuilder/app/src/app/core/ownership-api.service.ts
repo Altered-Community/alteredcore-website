@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Service, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Service, inject } from '@angular/core';
+import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { contentLocale } from './locale';
 
@@ -39,9 +39,6 @@ export class OwnershipApiService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.ownershipApiUrl.replace(/\/$/, '');
   private readonly site = environment.siteUrl.replace(/\/$/, '');
-  private readonly version = signal(0);
-  /** Bumped by each alt-art preference saved: what was read from the service before may be stale. */
-  readonly altArtVersion = this.version.asReadonly();
 
   /**
    * Families and illustrations of `references`, by reference (none for a card with a single illustration), from the
@@ -90,9 +87,7 @@ export class OwnershipApiService {
 
   /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */
   setAltArtPreference(family: AltArtFamily, slotReferences: string[]): Observable<void> {
-    return this.http
-      .put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences })
-      .pipe(tap({ complete: () => this.version.update((v) => v + 1) }));
+    return this.http.put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences });
   }
 
   /**

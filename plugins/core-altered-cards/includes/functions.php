@@ -36,6 +36,29 @@ function deckApiToken(): ?string {
     return $token ?: null;
 }
 
+/**
+ * Deletes a deck of the signed-in player from the decks API: the HTTP status (0 when unreachable). On a 2xx, what the
+ * site keeps about the deck goes too (altArtForgetDeck).
+ */
+function cacDeckApiDelete(string $deckId, string $token): int
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => 'DELETE',
+        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) {
+        require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+        altArtForgetDeck((int)($_SESSION['user_id'] ?? 0), $deckId);
+    }
+    return $code;
+}
+
 /** @return array{upvoteCount: int, hasUpvoted: bool}|null */
 function cacDeckApiUpvote(string $deckId, string $token): ?array
 {

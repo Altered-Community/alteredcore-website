@@ -183,19 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if ($delId) {
         $token = deckApiToken();
         if ($token) {
-            $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($delId));
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CUSTOMREQUEST  => 'DELETE',
-                CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-                CURLOPT_TIMEOUT        => 15,
-            ]);
-            curl_exec($ch);
-            $delCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $delCode = cacDeckApiDelete($delId, $token);
             if ($delCode >= 200 && $delCode < 300) {
-                require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-                altArtForgetDeck($delId);
                 flash($txt['deleted_ok']);
             } else {
                 flash(sprintf($txt['deleted_err'], $delCode), 'error');
@@ -220,17 +209,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
     }
     $action = $_POST['action'] ?? '';
     if ($action === 'delete') {
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => 'DELETE',
-            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+        $c = cacDeckApiDelete((string)$deckId, $token);
         if ($c >= 200 && $c < 300) {
-            require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-            altArtForgetDeck((string)$deckId);
             echo json_encode(['ok' => true]);
         } else {
             echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);

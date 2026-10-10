@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
 @Service()
 export class DeckAltArtsApiService {
   private readonly http = inject(HttpClient);
-  private readonly url = `${environment.siteUrl.replace(/\/$/, '')}/papi/rebuilder/deck-alt-arts`;
+  private readonly url = `${environment.pluginApiUrl.replace(/\/?$/, '/')}deck-alt-arts`;
 
   /** The deck's choices, by family key; none on an error (the deck's references then give them). */
   load(deckId: string): Observable<Record<string, string[]>> {
@@ -23,12 +23,11 @@ export class DeckAltArtsApiService {
 
   /** The cards of family `family` in the deck; `null`: the family follows the default alt arts again. Errors reach the caller. */
   save(deckId: string, family: string, cards: readonly string[] | null): Observable<void> {
-    // The site's CSRF token travels in the body, as for its other endpoints (`FavoritesService`).
-    return this.http.post<void>(this.url, { deck: deckId, family, cards, csrf_token: environment.siteCsrf });
+    return this.http.post<void>(this.url, { deck: deckId, family, cards });
   }
 
   /** Every card of the deck follows the default alt arts again (« Appliquer les arts par défaut »). */
   clear(deckId: string): Observable<void> {
-    return this.http.post<void>(this.url, { deck: deckId, csrf_token: environment.siteCsrf }).pipe(catchError(() => of(undefined)));
+    return this.http.post<void>(this.url, { deck: deckId }).pipe(catchError(() => of(undefined)));
   }
 }

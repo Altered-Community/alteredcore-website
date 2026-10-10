@@ -23,8 +23,10 @@ function altArtLeaveGlobalMode(int $userId): bool {
     if ($status !== 204) return false;
 
     if ($ids) {
-        $insert = getDB()->prepare(q("INSERT IGNORE INTO {alt_art_pending_decks} (user_id, deck_id) VALUES (:u, :d)"));
-        foreach ($ids as $id) $insert->execute([':u' => $userId, ':d' => $id]);
+        $rows = implode(', ', array_fill(0, count($ids), '(?, ?)'));
+        $args = [];
+        foreach ($ids as $id) array_push($args, $userId, $id);
+        getDB()->prepare(q("INSERT IGNORE INTO {alt_art_pending_decks} (user_id, deck_id) VALUES $rows"))->execute($args);
     }
     return true;
 }
@@ -43,15 +45,17 @@ function altArtClearPending(int $userId, string $deckId): void {
 }
 
 /**
- * A deck deleted from the decks API: its Re:Builder brush choices ({rebuilder_deck_alt_arts}) and its wait for the
- * default alt arts go with it. Called after a successful DELETE (the services relay, the site's deck pages).
+ * $deckId, a deck of $userId, deleted from the decks API: its Re:Builder brush choices ({rebuilder_deck_alt_arts}) and
+ * its wait for the default alt arts go with it. Called after a successful DELETE (the services relay, the site's deck
+ * pages).
  */
-function altArtForgetDeck(string $deckId): void {
-    if ($deckId === '') return;
+function altArtForgetDeck(int $userId, string $deckId): void {
+    if ($userId <= 0 || $deckId === '') return;
     try {
         $db = getDB();
-        $db->prepare(q("DELETE FROM {rebuilder_deck_alt_arts} WHERE deck_id = :d"))->execute([':d' => $deckId]);
-        $db->prepare(q("DELETE FROM {alt_art_pending_decks} WHERE deck_id = :d"))->execute([':d' => $deckId]);
+        $args = [':u' => $userId, ':d' => $deckId];
+        $db->prepare(q("DELETE FROM {rebuilder_deck_alt_arts} WHERE user_id = :u AND deck_id = :d"))->execute($args);
+        $db->prepare(q("DELETE FROM {alt_art_pending_decks} WHERE user_id = :u AND deck_id = :d"))->execute($args);
     } catch (Exception $e) {
         // The deck is deleted all the same: left-over rows only waste a few bytes.
         error_log('altArtForgetDeck: ' . $e->getMessage());

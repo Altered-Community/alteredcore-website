@@ -275,19 +275,8 @@ if ($isLoggedIn
     if ($deleteId) {
         $token = deckApiToken();
         if ($token) {
-            $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deleteId));
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CUSTOMREQUEST  => 'DELETE',
-                CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Authorization: Bearer ' . $token],
-                CURLOPT_TIMEOUT        => 10,
-            ]);
-            curl_exec($ch);
-            $deleteCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $deleteCode = cacDeckApiDelete($deleteId, $token);
             if ($deleteCode >= 200 && $deleteCode < 300) {
-                require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-                altArtForgetDeck($deleteId);
                 flash($txt['deleted_ok']);
             } else {
                 flash(sprintf($txt['deleted_err'], $deleteCode), 'error');

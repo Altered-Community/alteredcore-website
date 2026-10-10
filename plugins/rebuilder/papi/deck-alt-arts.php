@@ -1,6 +1,6 @@
 <?php
 // GET  /papi/rebuilder/deck-alt-arts?deck=<id>  → {"families": {"<familyId>:<faction>:<rarity>": ["<ref>", "<ref>", "<ref>"]}}
-// POST /papi/rebuilder/deck-alt-arts {"deck": "<id>", "family": "<key>", "cards": ["<ref>", …]} → 204
+// POST /papi/rebuilder/deck-alt-arts {"deck": "<id>", "family": "<key>", "cards": ["<1st>", "<2nd>", "<3rd>"]} → 204
 // POST … {"deck": "<id>", "family": "<key>", "cards": null} → 204: the card follows the default alt arts again.
 // POST … {"deck": "<id>"} → 204: every card of the deck follows them again (« Appliquer les arts par défaut »).
 // The brush's choices for a deck of the signed-in player: the illustration of the 1st, 2nd and 3rd card (copy) of each
@@ -60,7 +60,7 @@ if ($cards === null) {
     rebuilderDeckAltArtsReply(204);
     return;
 }
-$valid = is_array($cards) && array_values($cards) === $cards && count($cards) >= 1 && count($cards) <= 3;
+$valid = is_array($cards) && array_values($cards) === $cards && count($cards) === 3;
 foreach ($valid ? $cards : [] as $ref) {
     if (!is_string($ref) || !preg_match('/^[A-Za-z0-9_]{1,64}$/', $ref)) $valid = false;
 }
@@ -68,9 +68,6 @@ if (!$valid) {
     rebuilderDeckAltArtsReply(400, ['error' => 'cards']);
     return;
 }
-// Fewer than three: the last one goes on the following cards, as for the default alt arts' slots.
-while (count($cards) < 3) $cards[] = $cards[count($cards) - 1];
-
 $db->prepare(q(
     "INSERT INTO {rebuilder_deck_alt_arts} (user_id, deck_id, family, card1, card2, card3)"
     . " VALUES (:u, :d, :f, :c1, :c2, :c3)"

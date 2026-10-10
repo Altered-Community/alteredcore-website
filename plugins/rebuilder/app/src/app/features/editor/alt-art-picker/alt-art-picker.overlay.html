@@ -68,12 +68,13 @@
 
 <ng-template #menu>
   @let a = menuArt();
-  <div class="menu" cdkMenu [attr.aria-label]="a?.menuLabel">
-    <span class="menu-title" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser pour la…</span>
+  <div class="ac-menu menu" cdkMenu [attr.aria-label]="a?.menuLabel">
+    <div class="ac-menu__label" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser pour la…</div>
     @for (o of a?.options; track o.rank) {
       <button
         type="button"
-        class="item"
+        class="ac-menu__item"
+        [class.is-active]="o.checked"
         cdkMenuItemRadio
         [cdkMenuItemChecked]="o.checked"
         [cdkMenuItemDisabled]="o.disabled || saving()"
@@ -81,7 +82,7 @@
       >
         <span class="item-label">{{ o.label }}</span>
         @if (o.checked) {
-          <ac-icon name="check" [size]="18" />
+          <ac-icon name="check" />
         } @else {
           <img class="holder" [src]="o.holder" alt="" />
         }

@@ -120,7 +120,7 @@ if ($res === null) serviceProxyReply(502, ['error' => 'service_unreachable', 'se
 // A deck deleted: what the site keeps about it goes too (includes/func.alt-arts.php).
 if ($service === 'decks' && $method === 'DELETE' && $status >= 200 && $status < 300 && preg_match('#^api/decks/([A-Za-z0-9-]{1,64})$#', $path, $m)) {
     require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-    altArtForgetDeck($m[1]);
+    altArtForgetDeck($userId, $m[1]);
 }
 require_once dirname(__DIR__, 3) . '/includes/json-gzip.php';
 jsonGzipStart();
