@@ -776,7 +776,7 @@
     "editor.overview.openDeck": "Open the Deck tab",
     "editor.changeHeroOf": "Change hero ({$name})",
     "editor.overviewOf": "Deck summary {$name}",
-    "editor.altArtPicker.hint": "Choose the illustration of each card: touch an illustration to give it to the 1st, 2nd or 3rd card.",
+    "editor.altArtPicker.hint": "Choose the illustration of each card",
     "editor.altArtPicker.defaultsNote": "These choices are your default alt arts for this card: they also apply when you add it to another deck.",
     "editor.altArtPicker.deckTitle": "What the deck uses",
     "editor.altArtPicker.useAs": "Use for the…",

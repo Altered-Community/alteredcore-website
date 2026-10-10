@@ -17,7 +17,6 @@ export const AC_ICONS = {
   'chevron-up': '<path d="m18 15-6-6-6 6"/>',
   'chevron-left': '<path d="m15 18-6-6 6-6"/>',
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
-  'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
   lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',

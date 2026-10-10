@@ -1,10 +1,11 @@
 <div class="ac-overlay-body">
-  <div class="intro">
-    <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte : touchez une illustration pour la donner à la 1ère, 2ème ou 3ème carte.</p>
-    <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
-  </div>
+  <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
   <div class="stage">
     <section class="pool" aria-labelledby="alt-art-picker-hint">
+      <h3 class="step">
+        <span class="step-num" aria-hidden="true">1</span>
+        <span id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte</span>
+      </h3>
       <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
         @for (a of arts(); track a.reference) {
           <li class="print">
@@ -41,17 +42,21 @@
         <p class="error" role="alert">{{ message }}</p>
       }
     </section>
-    <span class="arrow" aria-hidden="true"><ac-icon name="arrow-right" [size]="24" /></span>
     <aside class="deck" aria-labelledby="alt-art-picker-deck">
-      <h3 id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</h3>
-      @if (preview().length) {
-        <div class="fan" aria-hidden="true" [style.--n]="preview().length">
-          @for (src of preview(); track $index) {
-            <img [src]="src" alt="" [style.--i]="$index" />
-          }
-        </div>
-      }
-      <p class="summary">{{ summary() }}</p>
+      <h3 class="step">
+        <span class="step-num" aria-hidden="true">2</span>
+        <span id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</span>
+      </h3>
+      <div class="result">
+        @if (preview().length) {
+          <div class="fan" aria-hidden="true" [style.--n]="preview().length">
+            @for (src of preview(); track $index) {
+              <img [src]="src" alt="" [style.--i]="$index" />
+            }
+          </div>
+        }
+        <p class="summary">{{ summary() }}</p>
+      </div>
     </aside>
   </div>
 </div>
