@@ -9,6 +9,7 @@ import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcIcon } from '../../../ui/icon';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
+import { printLabel, saveFailed } from '../alt-art-labels';
 
 export interface AltArtPickerData {
   /** The card's family, with the player's default alt arts. */
@@ -128,7 +129,6 @@ export class AltArtPickerOverlay {
   }
 }
 
-const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
 const cardLabel = (k: number) =>
   k === 0
     ? $localize`:@@editor.altArtPicker.card1:1ère carte`
@@ -153,7 +153,6 @@ const summaryNone = () => $localize`:@@editor.altArtPicker.summaryNone:Ce deck n
 const summaryOne = () => $localize`:@@editor.altArtPicker.summaryOne:Avec 1 exemplaire, le deck prend l’illustration de la 1ère carte.`;
 const summaryTwo = () => $localize`:@@editor.altArtPicker.summaryTwo:Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.`;
 const summaryAll = (n: number) => $localize`:@@editor.altArtPicker.summaryAll:Avec ${n}:n: exemplaires, le deck prend les illustrations des trois cartes.`;
-const saveFailed = () => $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 
 /** The brush of a card of the deck, in its own window (sheet on a phone). */
 export function openAltArtPicker(overlay: AcOverlayService, name: string, data: AltArtPickerData): AcOverlayRef<void, AltArtPickerData> {

@@ -149,15 +149,16 @@ describe('EditorAltArts', () => {
     expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
   });
 
-  it('puts the deck’s previous cards back when the choice cannot be saved', () => {
+  it('puts the deck’s previous cards and copies back when the choice cannot be saved', () => {
     const alt = setup();
     alt.request([BASE]);
     answers.next({ [BASE]: kelon });
     lines.set([{ card: card(BASE), quantity: 2 }]);
     saveFails = true;
     let failed = false;
-    alt.setCards(card(BASE), [BASE, BASE, BASE]).subscribe({ error: () => (failed = true) });
+    alt.setCards(card(BASE), [ALT, ALT, BASE]).subscribe({ error: () => (failed = true) });
     expect(failed).toBe(true);
     expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
+    expect(lines()).toEqual([{ card: card(BASE), quantity: 2 }]);
   });
 });

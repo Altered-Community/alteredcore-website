@@ -7,6 +7,7 @@ import { cardImageUrl } from '../../../core/card-art';
 import { OwnershipApiService, familyKey, type AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
+import { printLabel, saveFailed } from '../alt-art-labels';
 
 /**
  * « Illustrations des jetons »: one illustration a token, shared by every deck (a token is not a deck card), saved as
@@ -74,11 +75,9 @@ export class TokenArtsOverlay {
 }
 
 const tokenLabel = (n: number) => $localize`:@@editor.tokenArts.token:Jeton ${n}:n:`;
-const printLabel = (n: number) => $localize`:@@altArt.tile:Illustration ${n}:n:`;
 const notOwnedLabel = (n: number) => $localize`:@@editor.tokenArts.notOwned:Illustration ${n}:n: (non possédée)`;
 const availableLabel = (n: number) => $localize`:@@editor.tokenArts.available:${n}:n: illustrations disponibles`;
 const notEnoughCopies = () => $localize`:@@altArt.notEnoughCopies:Vous n’avez pas assez d’exemplaires de cet art alternatif.`;
-const saveFailed = () => $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 
 export function openTokenArts(overlay: AcOverlayService): AcOverlayRef<void> {
   return overlay.open<TokenArtsOverlay, void>(TokenArtsOverlay, {
