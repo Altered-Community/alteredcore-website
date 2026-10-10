@@ -261,7 +261,8 @@ export class EditorAltArts {
 
   /**
    * The 1st, 2nd and 3rd card of `card`'s family take `cards` in this deck: its copies take them at once, then the choice
-   * is saved for the deck (the default alt arts do not change); on an error, the previous choice comes back.
+   * is saved for the deck (the default alt arts do not change; three plain prints are no choice to keep); on an error,
+   * the previous choice comes back.
    */
   setCards(card: Card, cards: readonly string[]): Observable<void> {
     const choice = this.choiceFor(card.reference);
@@ -273,7 +274,8 @@ export class EditorAltArts {
     this.deck.setFamilyPrints(members, card, defaultPrints(withRanks(choice, cards), familyPrints(this.deck.lines(), members).length));
     const id = this.deck.deckId();
     if (!id || this.deck.isGuest()) return of(undefined);
-    return this.deckAltArts.save(id, key, cards).pipe(
+    const base = basePrint(choice);
+    return this.deckAltArts.save(id, key, cards.every((c) => c === base) ? null : cards).pipe(
       catchError((err: unknown) => {
         this.deckCards.update((m) => {
           const next = new Map(m);

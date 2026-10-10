@@ -1220,6 +1220,15 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await pile.hover();
     await pile.getByRole('button', { name: 'Ajouter un exemplaire de Élémentaire de Kélon' }).click();
     await saved;
+    // The deck deleted: its choices go with it.
+    const deckCards = () => page.evaluate((deck) => fetch(`/papi/rebuilder/deck-alt-arts?deck=${deck}`).then((r) => r.json()), id);
+    expect(Object.keys(((await deckCards()) as { families: object }).families)).toHaveLength(1);
+    await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { method: 'DELETE', headers: { 'X-CSRF-Token': host.csrf } });
+      if (!res.ok) throw new Error(`deck deletion: HTTP ${res.status}`);
+    }, id);
+    expect(await deckCards()).toEqual({ families: {} });
   });
 
   test('takes a card brought to 0 off the deck board', async ({ page, compact }) => {

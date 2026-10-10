@@ -286,6 +286,8 @@ if ($isLoggedIn
             $deleteCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
             if ($deleteCode >= 200 && $deleteCode < 300) {
+                require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+                altArtForgetDeck($deleteId);
                 flash($txt['deleted_ok']);
             } else {
                 flash(sprintf($txt['deleted_err'], $deleteCode), 'error');

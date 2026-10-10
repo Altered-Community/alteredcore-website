@@ -42,6 +42,22 @@ function altArtClearPending(int $userId, string $deckId): void {
         ->execute([':u' => $userId, ':d' => $deckId]);
 }
 
+/**
+ * A deck deleted from the decks API: its Re:Builder brush choices ({rebuilder_deck_alt_arts}) and its wait for the
+ * default alt arts go with it. Called after a successful DELETE (the services relay, the site's deck pages).
+ */
+function altArtForgetDeck(string $deckId): void {
+    if ($deckId === '') return;
+    try {
+        $db = getDB();
+        $db->prepare(q("DELETE FROM {rebuilder_deck_alt_arts} WHERE deck_id = :d"))->execute([':d' => $deckId]);
+        $db->prepare(q("DELETE FROM {alt_art_pending_decks} WHERE deck_id = :d"))->execute([':d' => $deckId]);
+    } catch (Exception $e) {
+        // The deck is deleted all the same: left-over rows only waste a few bytes.
+        error_log('altArtForgetDeck: ' . $e->getMessage());
+    }
+}
+
 /** Ids of the decks of the token's player (decks API, every deck of the account in one page); `null` on an error. */
 function altArtUserDeckIds(string $token): ?array {
     if (!defined('DECKS_API_URL') || !DECKS_API_URL) return [];

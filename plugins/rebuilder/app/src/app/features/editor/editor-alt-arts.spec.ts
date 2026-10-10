@@ -124,6 +124,16 @@ describe('EditorAltArts', () => {
     expect(slotsOf(familyChoices[0])).toEqual([ALT, BASE, BASE]);
   });
 
+  it('keeps no choice for the deck when its three cards take the plain print', () => {
+    const alt = setup();
+    alt.request([BASE]);
+    answers.next({ [BASE]: kelon });
+    lines.set([{ card: card(BASE), quantity: 2 }]);
+    alt.setCards(card(BASE), [BASE, BASE, BASE]).subscribe();
+    expect(saved).toEqual([['d1', KEY, null]]);
+    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, BASE]);
+  });
+
   it('reads the deck’s cards, and leaves them while the deck’s copies do not match them', () => {
     const alt = setup({ [KEY]: [BASE, ALT, BASE] });
     alt.request([BASE]);

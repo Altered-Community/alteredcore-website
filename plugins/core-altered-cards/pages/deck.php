@@ -194,6 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
             $delCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
             if ($delCode >= 200 && $delCode < 300) {
+                require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+                altArtForgetDeck($delId);
                 flash($txt['deleted_ok']);
             } else {
                 flash(sprintf($txt['deleted_err'], $delCode), 'error');
@@ -227,6 +229,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         ]);
         $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
         if ($c >= 200 && $c < 300) {
+            require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+            altArtForgetDeck((string)$deckId);
             echo json_encode(['ok' => true]);
         } else {
             echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
