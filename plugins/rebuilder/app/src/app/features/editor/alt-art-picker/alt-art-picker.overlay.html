@@ -1,56 +1,59 @@
 <div class="ac-overlay-body">
-  <section class="pool" aria-labelledby="alt-art-picker-hint">
-    <div class="intro">
-      <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte : touchez une illustration pour la donner à la 1ère, 2ème ou 3ème carte.</p>
-      <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
-    </div>
-    <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
-      @for (a of arts(); track a.reference) {
-        <li class="print">
-          <button
-            type="button"
-            class="art"
-            [cdkMenuTriggerFor]="menu"
-            [cdkMenuPosition]="positions"
-            (cdkMenuOpened)="menuFor.set(a.reference)"
-            [disabled]="a.unowned"
-            [attr.aria-label]="a.ariaLabel"
-          >
-            <img [src]="a.src" alt="" />
-          </button>
-          @if (a.ribbons.length) {
-            <span class="ribbons" aria-hidden="true">
-              @for (r of a.ribbons; track r.rank) {
-                <span class="ribbon">
-                  <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
-                  <span class="ribbon-text">
-                    <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
-                    <span class="ribbon-word">{{ cardWord }}</span>
+  <div class="intro">
+    <p class="hint" id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte : touchez une illustration pour la donner à la 1ère, 2ème ou 3ème carte.</p>
+    <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix sont vos arts par défaut pour cette carte : ils servent aussi quand vous l’ajoutez à un autre deck.</p>
+  </div>
+  <div class="stage">
+    <section class="pool" aria-labelledby="alt-art-picker-hint">
+      <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
+        @for (a of arts(); track a.reference) {
+          <li class="print">
+            <button
+              type="button"
+              class="art"
+              [cdkMenuTriggerFor]="menu"
+              [cdkMenuPosition]="positions"
+              (cdkMenuOpened)="menuFor.set(a.reference)"
+              [disabled]="a.unowned"
+              [attr.aria-label]="a.ariaLabel"
+            >
+              <img [src]="a.src" alt="" />
+            </button>
+            @if (a.ribbons.length) {
+              <span class="ribbons" aria-hidden="true">
+                @for (r of a.ribbons; track r.rank) {
+                  <span class="ribbon">
+                    <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
+                    <span class="ribbon-text">
+                      <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
+                      <span class="ribbon-word">{{ cardWord }}</span>
+                    </span>
                   </span>
-                </span>
-              }
-            </span>
-          }
-          <span class="print-label">{{ a.label }}</span>
-          <span class="print-note">{{ a.note }}</span>
-        </li>
-      }
-    </ul>
-    @if (error(); as message) {
-      <p class="error" role="alert">{{ message }}</p>
-    }
-  </section>
-  <aside class="deck" aria-labelledby="alt-art-picker-deck">
-    <h3 id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</h3>
-    @if (preview().length) {
-      <div class="fan" aria-hidden="true" [style.--n]="preview().length">
-        @for (src of preview(); track $index) {
-          <img [src]="src" alt="" [style.--i]="$index" />
+                }
+              </span>
+            }
+            <span class="print-label">{{ a.label }}</span>
+            <span class="print-note">{{ a.note }}</span>
+          </li>
         }
-      </div>
-    }
-    <p class="summary">{{ summary() }}</p>
-  </aside>
+      </ul>
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+    </section>
+    <span class="arrow" aria-hidden="true"><ac-icon name="arrow-right" [size]="24" /></span>
+    <aside class="deck" aria-labelledby="alt-art-picker-deck">
+      <h3 id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</h3>
+      @if (preview().length) {
+        <div class="fan" aria-hidden="true" [style.--n]="preview().length">
+          @for (src of preview(); track $index) {
+            <img [src]="src" alt="" [style.--i]="$index" />
+          }
+        </div>
+      }
+      <p class="summary">{{ summary() }}</p>
+    </aside>
+  </div>
 </div>
 <div class="ac-overlay-footer">
   <a class="settings" [href]="settingsUrl" i18n="@@editor.altArtPicker.settings">Modifier mes arts par défaut</a>

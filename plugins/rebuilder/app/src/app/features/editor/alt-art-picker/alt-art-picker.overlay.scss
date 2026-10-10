@@ -1,9 +1,23 @@
-/* The illustrations, then what the deck uses: side by side, the deck under the illustrations on a phone. */
+/* The hint, then the illustrations → what the deck uses, on one level; one under the other on a phone. */
 .ac-overlay-body {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--ac-space-6);
+  flex-direction: column;
+  gap: var(--ac-space-5);
+}
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 300px;
+  align-items: center;
+  gap: var(--ac-space-5);
+}
+.arrow {
+  display: grid;
+  place-items: center;
+  width: var(--ac-control-lg);
+  height: var(--ac-control-lg);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
 }
 p,
 h3,
@@ -17,7 +31,6 @@ ol {
   list-style: none;
 }
 .pool {
-  flex: 999 1 420px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -152,7 +165,6 @@ ol {
 }
 /* What the deck uses: its copies fanned out, copy 1 on the left. */
 .deck {
-  flex: 1 1 260px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -250,6 +262,17 @@ ol {
   border-radius: var(--ac-radius-xs);
 }
 @media (max-width: 767px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  .stage .pool,
+  .stage .deck {
+    justify-self: stretch;
+  }
+  .arrow {
+    transform: rotate(90deg);
+  }
   .prints {
     --ribbon-width: 40px;
     gap: var(--ac-space-5) var(--ac-space-4);

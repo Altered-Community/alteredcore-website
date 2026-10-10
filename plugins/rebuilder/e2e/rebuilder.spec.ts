@@ -1184,6 +1184,8 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await saved;
     expect(preferences).toEqual([[kelon.alt(), kelon.base, kelon.base]]);
     await expect(dialog.getByRole('button', { name: 'Illustration 2, 1ère carte : choisir ses cartes' })).toBeVisible();
+    // The illustrations in the order of their cards: the 1st card's first.
+    await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 2');
     await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
     await evidence(page, testInfo, '30-alt-art-brush');
     // Its only copy owned goes to the 1st card: the other cards cannot take it.

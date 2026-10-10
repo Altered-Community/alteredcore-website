@@ -56,10 +56,16 @@ export class AltArtPickerOverlay {
   /** The site's « Arts alternatifs par défaut » page (plugin ownership). */
   protected readonly settingsUrl = `${environment.siteUrl.replace(/\/$/, '')}/pages/ownership-alt-arts`;
 
+  /** The illustrations by the first card they are chosen for (1st card first), the others after, in the service's order. */
   protected readonly arts = computed(() => {
     const choice = this.choice();
     const ranks = this.ranks();
-    return choice.options.options.map((o, i) => {
+    const first = (reference: string) => {
+      const k = ranks.indexOf(reference);
+      return k === -1 ? ranks.length : k;
+    };
+    const ordered = choice.options.options.map((o, i) => ({ o, i })).sort((a, b) => first(a.o.reference) - first(b.o.reference));
+    return ordered.map(({ o, i }) => {
       const label = printLabel(i + 1);
       const held = ranks.flatMap((r, k) => (r === o.reference ? [k] : []));
       return {
