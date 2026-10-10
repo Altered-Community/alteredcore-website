@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Subject, of, throwError } from 'rxjs';
+import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
 import { AuthSession } from '../../core/auth-session';
 import { DeckStore } from '../../core/deck-store';
 import type { Card, HydratedLine } from '../../core/models';
@@ -27,13 +28,17 @@ describe('EditorAltArts', () => {
   let answers: Subject<Record<string, AltArtChoice>>;
   let lines: ReturnType<typeof signal<HydratedLine[]>>;
   let familyAdds: number[];
-  let saved: string[][];
+  let familyChoices: AltArtChoice[];
+  let saved: [string, string, readonly string[] | null][];
   let saveFails: boolean;
+  let loaded: Record<string, string[]>;
 
-  function setup(): EditorAltArts {
+  function setup(cards: Record<string, string[]> = {}): EditorAltArts {
+    loaded = cards;
     answers = new Subject();
     lines = signal<HydratedLine[]>([]);
     familyAdds = [];
+    familyChoices = [];
     saved = [];
     saveFails = false;
     TestBed.configureTestingModule({
@@ -46,7 +51,15 @@ describe('EditorAltArts', () => {
             baseUrl: '/ownership',
             altArtChoices: () => answers,
             pendingDefaults: () => of(false),
-            setAltArtPreference: (_family: unknown, slots: string[]) => (saveFails ? throwError(() => new Error('down')) : (saved.push(slots), of(undefined))),
+          },
+        },
+        {
+          provide: DeckAltArtsApiService,
+          useValue: {
+            load: () => of(loaded),
+            save: (deck: string, family: string, cards: readonly string[] | null) =>
+              saveFails ? throwError(() => new Error('down')) : (saved.push([deck, family, cards]), of(undefined)),
+            clear: () => of(undefined),
           },
         },
         {
@@ -60,7 +73,7 @@ describe('EditorAltArts', () => {
             maxFor: () => 3,
             quantityOf: (ref: string) => lines().find((l) => l.card.reference === ref)?.quantity ?? 0,
             setQuantity: () => undefined,
-            setFamilyQuantity: (_card: Card, _choice: AltArtChoice, _members: Set<string>, n: number) => familyAdds.push(n),
+            setFamilyQuantity: (_card: Card, choice: AltArtChoice, _members: Set<string>, n: number) => (familyAdds.push(n), familyChoices.push(choice)),
             setFamilyPrints: (_members: Set<string>, _card: Card, prints: string[]) =>
               lines.set([...new Set(prints)].map((reference) => ({ card: card(reference), quantity: prints.filter((p) => p === reference).length }))),
           },
@@ -93,27 +106,48 @@ describe('EditorAltArts', () => {
     expect(alt.familyQuantity(card(BASE))).toBe(3);
   });
 
-  it('saves the brush’s choices as the default alt arts, the deck’s copies taking them', () => {
+  const KEY = '302:AX:C';
+  const slotsOf = (choice: AltArtChoice) => choice.options.slots.map((slot) => slot.reference);
+
+  it('keeps the brush’s cards for the deck, its copies taking them, and an added copy takes the next card’s', () => {
     const alt = setup();
     alt.request([BASE]);
     answers.next({ [BASE]: kelon });
     lines.set([{ card: card(BASE), quantity: 2 }]);
-    alt.setDefaults(card(BASE), [ALT, BASE, ALT]).subscribe();
-    expect(saved).toEqual([[ALT, BASE, ALT]]);
+    alt.setCards(card(BASE), [ALT, BASE, BASE]).subscribe();
+    expect(saved).toEqual([['d1', KEY, [ALT, BASE, BASE]]]);
     expect(lines().map((l) => [l.card.reference, l.quantity])).toEqual([[ALT, 1], [BASE, 1]]);
-    expect(alt.pickerFor(card(BASE))!.choice().options.slots.map((s) => s.reference)).toEqual([ALT, BASE, ALT]);
+    expect(alt.cardsFor(kelon)).toEqual([ALT, BASE, BASE]);
+    // The default alt arts (ALT on every slot) do not change; the 3rd copy takes the deck's 3rd card.
+    expect(slotsOf(kelon)).toEqual([ALT, ALT, ALT]);
+    alt.setFamilyQuantity(card(BASE), 3);
+    expect(slotsOf(familyChoices[0])).toEqual([ALT, BASE, BASE]);
   });
 
-  it('puts the defaults and the copies back when the choices cannot be saved', () => {
+  it('reads the deck’s cards, and leaves them while the deck’s copies do not match them', () => {
+    const alt = setup({ [KEY]: [BASE, ALT, BASE] });
+    alt.request([BASE]);
+    answers.next({ [BASE]: kelon });
+    lines.set([
+      { card: card(BASE), quantity: 1 },
+      { card: card(ALT), quantity: 1 },
+    ]);
+    TestBed.tick();
+    expect(alt.cardsFor(kelon)).toEqual([BASE, ALT, BASE]);
+    // Copies changed elsewhere: the cards come from the copies, then the defaults.
+    lines.set([{ card: card(BASE), quantity: 2 }]);
+    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
+  });
+
+  it('puts the deck’s previous cards back when the choice cannot be saved', () => {
     const alt = setup();
     alt.request([BASE]);
     answers.next({ [BASE]: kelon });
     lines.set([{ card: card(BASE), quantity: 2 }]);
     saveFails = true;
     let failed = false;
-    alt.setDefaults(card(BASE), [BASE, BASE, BASE]).subscribe({ error: () => (failed = true) });
+    alt.setCards(card(BASE), [BASE, BASE, BASE]).subscribe({ error: () => (failed = true) });
     expect(failed).toBe(true);
-    expect(lines().map((l) => [l.card.reference, l.quantity])).toEqual([[BASE, 2]]);
-    expect(alt.choiceFor(BASE)).toBe(kelon);
+    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
   });
 });

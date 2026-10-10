@@ -29,7 +29,7 @@ $txt = [
         'saveError'     => 'Could not save your choice.',
         'loadMore'      => 'Load more',
         'markerHint'    => 'Click a marker, then click a card to move it there.',
-        'intro'         => 'Choose the illustration each copy of a card takes when you add it to a deck (1st, 2nd and 3rd copy). In Re:Builder, the brush of a card changes these choices and the open deck takes them; « Default alt arts » applies them to a deck again. A token\'s illustration is the same in all your decks.',
+        'intro'         => 'Choose the illustration each copy of a card takes when you add it to a deck (1st, 2nd and 3rd copy). In Re:Builder, the brush of a card changes its illustrations for one deck, and « Default alt arts » applies these choices to a deck again. A token\'s illustration is the same in all your decks.',
     ],
     'fr' => [
         'unavailable'   => 'Le service de propriété numérique n\'est pas configuré sur ce site.',
@@ -48,7 +48,7 @@ $txt = [
         'saveError'     => 'Impossible d\'enregistrer votre choix.',
         'loadMore'      => 'Charger plus',
         'markerHint'    => 'Cliquez un marqueur, puis une carte pour l\'y déplacer.',
-        'intro'         => 'Choisissez l\'illustration que prend chaque exemplaire d\'une carte quand vous l\'ajoutez à un deck (1er, 2e et 3e exemplaire). Dans Re:Builder, le pinceau d\'une carte modifie ces choix et le deck ouvert les prend ; « Arts par défaut » les réapplique à un deck. L\'illustration d\'un jeton est la même dans tous vos decks.',
+        'intro'         => 'Choisissez l\'illustration que prend chaque exemplaire d\'une carte quand vous l\'ajoutez à un deck (1er, 2e et 3e exemplaire). Dans Re:Builder, le pinceau d\'une carte change ses illustrations pour un deck, et « Arts par défaut » réapplique ces choix à un deck. L\'illustration d\'un jeton est la même dans tous vos decks.',
     ],
 ][getUiLang()];
 

@@ -140,6 +140,8 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 
 Ownership plugin (when enabled): `/papi/ownership/alt-art-search` (token illustrations), `alt-art-pending` (`GET ?deck=`: the deck of a player switched from the « Global » mode waits for their default alt arts; `POST {deck}`: it took them). Token illustrations are saved through the relay (`PUT /api/alt-arts/preferences`).
 
+Rebuilder plugin: `/papi/rebuilder/deck-alt-arts` keeps the brush's choices for a deck of the signed-in player (table `{rebuilder_deck_alt_arts}`, `sql/migration_010`), because the decks API stores only the deck's references (no order, nothing past its copies). `GET ?deck=` → `{"families": {"<familyId>:<faction>:<rarity>": ["<1st card>", "<2nd>", "<3rd>"]}}`; `POST {deck, family, cards}` saves a family's cards (`cards: null`: it follows the default alt arts again); `POST {deck}` drops every family of the deck. The player's default alt arts stay in the ownership service.
+
 ## Local stack
 
 The plugin runs in the site's local stack (`docker-compose.stack.yml`, see `../../README.md`): the shell passes the local service URLs through `window.AlteredCore.services`, so nothing is configured in the app.

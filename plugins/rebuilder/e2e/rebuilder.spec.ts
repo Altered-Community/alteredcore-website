@@ -1166,33 +1166,60 @@ test.describe('ReBuilder in the shell · deck page', () => {
     return saved;
   }
 
-  test('chooses the illustration of each card with the brush, the deck’s copies taking them', { tag: '@mobile' }, async ({ page }, testInfo) => {
-    const kelon = await routeAltArts(page, 1, [0, 0, 0]);
+  /** The next brush choice saved for deck `id` (`POST /papi/rebuilder/deck-alt-arts`): its cards. */
+  async function savedDeckCards(page: Page, id: string): Promise<string[] | null> {
+    const request = await page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/papi/rebuilder/deck-alt-arts') && (r.postDataJSON() as { deck?: string }).deck === id);
+    return (request.postDataJSON() as { cards: string[] | null }).cards;
+  }
+
+  test('chooses the illustration of each card of the deck with the brush, the default alt arts unchanged', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const kelon = await routeAltArts(page, 2, [0, 0, 0]);
     const preferences = await routePreferences(page);
     await login(page, 'alice', `${DECKS}?lang=fr`);
     const id = await createServerDeck(page, `E2E brush ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 2);
     await page.goto(`${EDITOR(id)}&view=apercu`);
-    await page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' }).click();
+    const brush = page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' });
+    await brush.click();
     const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
     // The plain print is chosen for the three cards (the defaults); the deck uses two.
     await expect(dialog.getByRole('button', { name: 'Illustration 1, 1ère carte, 2ème carte, 3ème carte : choisir ses cartes' })).toBeVisible();
     await expect(dialog.getByText('Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.')).toBeVisible();
-    // The alt art for the 1st card: saved as a default alt art, the deck's copy 1 takes it.
-    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    // The alt art for the 1st card: the deck's copy 1 takes it, and the choice is kept for this deck.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    let cards = savedDeckCards(page, id);
     await dialog.getByRole('button', { name: 'Illustration 2 : choisir ses cartes' }).click();
     await page.getByRole('menuitemradio', { name: '1ère carte' }).click();
     await saved;
-    expect(preferences).toEqual([[kelon.alt(), kelon.base, kelon.base]]);
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.base]);
     await expect(dialog.getByRole('button', { name: 'Illustration 2, 1ère carte : choisir ses cartes' })).toBeVisible();
     // The illustrations in the order of their cards: the 1st card's first.
     await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 2');
     await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
     await evidence(page, testInfo, '30-alt-art-brush');
-    // Its only copy owned goes to the 1st card: the other cards cannot take it.
+    // The 3rd card, past the deck's copies: kept for the deck, its two copies stay.
+    cards = savedDeckCards(page, id);
     await dialog.getByRole('button', { name: 'Illustration 2, 1ère carte : choisir ses cartes' }).click();
-    await expect(page.getByRole('menuitemradio', { name: '1ère carte' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('menuitemradio', { name: '3ème carte' }).click();
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.alt()]);
+    // Both copies owned are on cards: the 2nd card cannot take the alt art.
+    await dialog.getByRole('button', { name: 'Illustration 2, 1ère carte, 3ème carte : choisir ses cartes' }).click();
+    await expect(page.getByRole('menuitemradio', { name: '3ème carte' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByRole('menuitemradio', { name: '2ème carte' })).toHaveAttribute('aria-disabled', 'true');
     await evidence(page, testInfo, '30-alt-art-brush-menu');
+    // The default alt arts are not touched.
+    expect(preferences).toEqual([]);
+    // Kept after a reload; a copy added takes the 3rd card's illustration.
+    await page.reload();
+    // On a phone, a tile a print: a brush on each.
+    await brush.first().click();
+    await expect(dialog.getByRole('button', { name: 'Illustration 2, 1ère carte, 3ème carte : choisir ses cartes' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    if (compact) return;
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 2 && c.get(kelon.base) === 1);
+    const pile = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await pile.hover();
+    await pile.getByRole('button', { name: 'Ajouter un exemplaire de Élémentaire de Kélon' }).click();
+    await saved;
   });
 
   test('takes a card brought to 0 off the deck board', async ({ page, compact }) => {

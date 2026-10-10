@@ -1,10 +1,9 @@
 import { CdkMenu, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
 import type { ConnectedPosition } from '@angular/cdk/overlay';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { canRank, defaultPrints, rankPrints, sameCopies, slotChoices, slotDefaults } from '../../../core/alt-art-defaults';
+import { canRank, defaultPrints, rankPrints, sameCopies, slotChoices, slotDefaults, withRanks } from '../../../core/alt-art-defaults';
 import { cardImageUrl } from '../../../core/card-art';
 import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
@@ -12,14 +11,16 @@ import { AcIcon } from '../../../ui/icon';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 export interface AltArtPickerData {
-  /** The card's family, with the player's default alt arts as they are now. */
+  /** The card's family, with the player's default alt arts. */
   choice: () => AltArtChoice;
   /** The family's copies in the deck, one print a copy. */
   prints: () => readonly string[];
-  /** The family's copies take `prints`, one print a copy. */
-  set: (prints: readonly string[]) => void;
-  /** The family's default alt arts become `ranks` (1st choice first) and the deck's copies take them; errors reach the caller. */
-  setDefaults: (ranks: readonly string[]) => Observable<void>;
+  /** The illustration of the 1st, 2nd and 3rd card in this deck. */
+  cards: () => readonly string[];
+  /** The 1st, 2nd and 3rd card take `cards` in this deck, its copies too; errors reach the caller. */
+  setCards: (cards: readonly string[]) => Observable<void>;
+  /** The family follows the default alt arts again in this deck. */
+  reset: () => void;
 }
 
 /** The choices' menu: over the bottom of the illustration, under it when there is no room. */
@@ -29,9 +30,9 @@ const MENU_POSITIONS: ConnectedPosition[] = [
 ];
 
 /**
- * The brush of a card: its illustrations, each with the cards it is chosen for (1st, 2nd, 3rd card: the player's
- * default alt arts for the card, one a copy), and what the deck uses (with 2 copies, the 1st and 2nd cards). A change
- * here is saved as a default alt art (ownership service) and the deck's copies take the defaults at once.
+ * The brush of a card: its illustrations, each with the cards it is chosen for in this deck (1st, 2nd, 3rd card, one a
+ * copy), and what the deck uses (with 2 copies, the 1st and 2nd cards; an added copy takes the 3rd card's). A change
+ * here is for this deck only: its copies take it at once, the player's default alt arts stay as they are.
  */
 @Component({
   selector: 'app-alt-art-picker',
@@ -44,11 +45,13 @@ export class AltArtPickerOverlay {
   protected readonly ref = inject<AcOverlayRef<void, AltArtPickerData>>(AcOverlayRef);
   private readonly data = this.ref.data!;
   private readonly choice = computed(() => this.data.choice());
-  /** The illustration of each choice, 1st first. */
-  private readonly ranks = computed(() => rankPrints(this.choice()));
+  /** The illustration of each card in this deck, 1st first. */
+  private readonly ranks = computed(() => [...this.data.cards()]);
   private readonly copies = computed(() => this.data.prints().length);
-  /** The deck's copies follow the default alt arts. */
-  protected readonly followsDefaults = computed(() => sameCopies(this.data.prints(), defaultPrints(this.choice(), this.copies())));
+  /** The deck's cards and copies are the default alt arts. */
+  protected readonly followsDefaults = computed(
+    () => this.ranks().join() === rankPrints(this.choice()).join() && sameCopies(this.data.prints(), defaultPrints(this.choice(), this.copies())),
+  );
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly positions = MENU_POSITIONS;
@@ -98,36 +101,36 @@ export class AltArtPickerOverlay {
 
   /** The deck's copies, copy 1 first (as on the deck board). */
   protected readonly preview = computed(() => {
-    const choice = this.choice();
-    return slotDefaults(choice, slotChoices(choice, this.data.prints())).map((print) => cardImageUrl(print));
+    const cards = withRanks(this.choice(), this.ranks());
+    return slotDefaults(cards, slotChoices(cards, this.data.prints())).map((print) => cardImageUrl(print));
   });
 
   protected readonly summary = computed(() => {
     const n = this.copies();
     if (n === 0) return summaryNone();
-    if (!this.followsDefaults()) return summaryOwn();
     return n === 1 ? summaryOne() : n === 2 ? summaryTwo() : summaryAll(n);
   });
 
-  /** Card `rank` takes the illustration of the open menu: saved as a default alt art, the deck's copies follow. */
+  /** Card `rank` takes the illustration of the open menu in this deck, its copies too. */
   protected choose(rank: number): void {
     const reference = this.menuFor();
     const ranks = this.ranks();
     if (reference === null || ranks[rank] === reference || this.saving()) return;
     this.error.set(null);
     this.saving.set(true);
-    this.data.setDefaults(ranks.map((r, k) => (k === rank ? reference : r))).subscribe({
+    this.data.setCards(ranks.map((r, k) => (k === rank ? reference : r))).subscribe({
       complete: () => this.saving.set(false),
-      error: (err: unknown) => {
+      error: () => {
         this.saving.set(false);
-        this.error.set(err instanceof HttpErrorResponse && err.status === 409 ? notEnoughCopies() : saveFailed());
+        this.error.set(saveFailed());
       },
     });
   }
 
-  /** « Arts par défaut »: the deck's copies take the default alt arts. */
+  /** « Arts par défaut »: the card follows the default alt arts again in this deck. */
   protected resetToDefaults(): void {
-    this.data.set(defaultPrints(this.choice(), this.copies()));
+    this.error.set(null);
+    this.data.reset();
   }
 }
 
@@ -153,12 +156,9 @@ const notOwned = () => $localize`:@@editor.altArtPicker.notOwned:Non possédée`
 const ownedLabel = (n: number) =>
   n > 1 ? $localize`:@@editor.altArtPicker.ownedMany:${n}:n: possédées` : $localize`:@@editor.altArtPicker.ownedOne:1 possédée`;
 const summaryNone = () => $localize`:@@editor.altArtPicker.summaryNone:Ce deck n’a pas encore d’exemplaire de cette carte.`;
-const summaryOwn = () =>
-  $localize`:@@editor.altArtPicker.summaryOwn:Ce deck garde ses propres illustrations : « Arts par défaut » lui applique vos choix.`;
 const summaryOne = () => $localize`:@@editor.altArtPicker.summaryOne:Avec 1 exemplaire, le deck prend l’illustration de la 1ère carte.`;
 const summaryTwo = () => $localize`:@@editor.altArtPicker.summaryTwo:Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.`;
 const summaryAll = (n: number) => $localize`:@@editor.altArtPicker.summaryAll:Avec ${n}:n: exemplaires, le deck prend les illustrations des trois cartes.`;
-const notEnoughCopies = () => $localize`:@@altArt.notEnoughCopies:Vous n’avez pas assez d’exemplaires de cet art alternatif.`;
 const saveFailed = () => $localize`:@@altArt.saveError:Impossible d’enregistrer votre choix.`;
 
 /** The brush of a card of the deck, in its own window (sheet on a phone). */
