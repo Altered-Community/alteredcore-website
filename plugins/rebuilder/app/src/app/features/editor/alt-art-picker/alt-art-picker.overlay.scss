@@ -140,18 +140,32 @@ ol {
   color: var(--ac-color-text-muted);
 }
 /* The cards an illustration is chosen for, 1st on the left. */
+/* A place a card: the 1st card on the left, the 2nd in the middle, the 3rd on the right. */
 .ribbons {
   position: absolute;
   top: 0;
-  right: var(--ac-space-2-5);
-  display: flex;
-  gap: var(--ac-space-1);
+  left: var(--ac-space-2);
+  right: var(--ac-space-2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   pointer-events: none;
 }
 .ribbon {
   position: relative;
   display: block;
   width: var(--ribbon-width);
+  &--1 {
+    grid-column: 1;
+    justify-self: start;
+  }
+  &--2 {
+    grid-column: 2;
+    justify-self: center;
+  }
+  &--3 {
+    grid-column: 3;
+    justify-self: end;
+  }
   aspect-ratio: 52 / 70;
   color: var(--ac-color-on-primary);
 }

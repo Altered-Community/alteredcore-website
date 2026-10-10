@@ -23,7 +23,7 @@
             @if (a.ribbons.length) {
               <span class="ribbons" aria-hidden="true">
                 @for (r of a.ribbons; track r.rank) {
-                  <span class="ribbon">
+                  <span class="ribbon" [class]="'ribbon--' + r.num">
                     <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
                     <span class="ribbon-text">
                       <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
