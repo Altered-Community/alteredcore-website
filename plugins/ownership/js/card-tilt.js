@@ -79,11 +79,20 @@ window.OWN_CARD_TILT = (() => {
     };
 
     // Resolves once hostEl contains a <canvas> (the <altered-card> web component's
-    // internal render target) or timeoutMs elapses, whichever comes first — so callers
-    // can wait for a just-mounted <altered-card> to actually have something to tilt
-    // before calling attach() on it.
+    // internal render target) or a loaded <img> (plain cards), or timeoutMs elapses,
+    // whichever comes first — so callers can wait for a just-mounted card to actually
+    // have something to tilt before calling attach() on it.
     const waitForReady = (hostEl, timeoutMs = 4000) => new Promise((resolve) => {
         const settle = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
+        const img = hostEl.querySelector(':scope > img');
+        if (img) {
+            if (img.complete) { settle(); return; }
+            const timer = setTimeout(resolve, timeoutMs);
+            const done = () => { clearTimeout(timer); settle(); };
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+            return;
+        }
         if (hostEl.querySelector('canvas')) { settle(); return; }
         const observer = new MutationObserver(() => {
             if (!hostEl.querySelector('canvas')) return;

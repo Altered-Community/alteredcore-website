@@ -78,7 +78,8 @@ $ownActiveTab = 'boosters';
     </div>
 
     <meta name="csrf-token" content="<?= h(csrfToken()) ?>">
-    <script>window.OWN_I18N = { <?= h(getUiLang()) ?>: <?= json_encode($txt, JSON_UNESCAPED_UNICODE) ?> };</script>
+    <script>window.OWN_I18N = { <?= h(getUiLang()) ?>: <?= json_encode($txt, JSON_UNESCAPED_UNICODE) ?> };
+        window.OWN_CDN_URL = <?= json_encode(CDN_URL) ?>;</script>
 
     <?php endif; ?>
     <?php endif; ?>
