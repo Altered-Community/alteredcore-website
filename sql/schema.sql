@@ -347,16 +347,6 @@ CREATE TABLE IF NOT EXISTS `{prefix}newsletter_sub` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ─── Default alt arts ─────────────────────────────────────────────────────────
--- Decks of a player switched from the « Global » alt-art mode, waiting for their default alt arts
--- (includes/func.alt-arts.php).
-
-CREATE TABLE IF NOT EXISTS `{prefix}alt_art_pending_decks` (
-    `user_id`    INT          NOT NULL,
-    `deck_id`    VARCHAR(64)  NOT NULL,
-    `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`user_id`, `deck_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- Re:Builder's brush: the illustration a deck gives the 1st, 2nd and 3rd card of a multi-art card
 -- (papi/rebuilder/deck-alt-arts).
 

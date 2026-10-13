@@ -1320,30 +1320,97 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(page.getByText('Arts par défaut appliqués.')).toBeVisible();
   });
 
-  test('gives a deck its default alt arts the first time it opens after the « Global » mode', async ({ page }, testInfo) => {
-    const kelon = await routeAltArts(page, 3, [1, 1, 1]);
-    // bob: the switch marks all the account's decks, the other tests' decks are alice's.
-    await login(page, 'bob', `${DECKS}?lang=fr`);
-    const id = await createServerDeck(page, `E2E global defaults ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
-    // The account in the ownership service's « Global » mode, as before default alt arts.
-    const status = await page.evaluate(async () => {
-      const host = (window as unknown as { AlteredCore: { csrf: string; services: { ownership: string } } }).AlteredCore;
-      const res = await fetch(`${host.services.ownership}/api/alt-arts/preference-mode`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': host.csrf },
-        body: JSON.stringify({ mode: 'Global' }),
-      });
-      return res.status;
+  /** A call to the ownership service through the site's relay (from a page where Re:Builder runs): status and body. */
+  function ownership(page: Page, method: string, path: string, body?: unknown): Promise<{ status: number; json: unknown }> {
+    return page.evaluate(
+      async ([m, p, b]) => {
+        const host = (window as unknown as { AlteredCore: { csrf: string; services: { ownership: string } } }).AlteredCore;
+        const res = await fetch(`${host.services.ownership}${p}`, {
+          method: m,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
+          body: b === undefined ? undefined : JSON.stringify(b),
+        });
+        const text = await res.text();
+        return { status: res.status, json: text ? (JSON.parse(text) as unknown) : null };
+      },
+      [method, path, body] as const,
+    );
+  }
+
+  /** The cards of deck `id` (reference → copies), from the decks API through the relay. */
+  async function deckCards(page: Page, id: string): Promise<Map<string, number>> {
+    const cards = await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { headers: { Accept: 'application/json' } });
+      const body = (await res.json()) as Record<'deckCards' | 'cards', { cardReference: string; quantity: number }[] | undefined>;
+      return body.deckCards ?? body.cards ?? [];
+    }, id);
+    return new Map(cards.map((c) => [c.cardReference, c.quantity]));
+  }
+
+  // The alt-art mode is bob's account's: these scenarios run one after the other, on one project.
+  test.describe('alt-art mode', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    test('« Global » mode: the deck follows the default alt arts, without a brush', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      const kelon = await routeAltArts(page, 3, [1, 1, 1]);
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      try {
+        const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
+        await page.goto(`${EDITOR(id)}&view=apercu`);
+        await saved;
+        await expect(page.getByRole('button', { name: 'Arts des jetons' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Arts par défaut' })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' })).toHaveCount(0);
+        await evidence(page, testInfo, '36-global-mode');
+      } finally {
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
     });
-    expect(status).toBe(204);
-    // Opened: the account goes « par deck » and the deck takes the defaults, once.
-    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
-    await page.goto(`${EDITOR(id)}&view=apercu`);
-    await saved;
-    await expect.poll(() => page.evaluate((deck) => fetch(`/papi/ownership/alt-art-pending?deck=${deck}`).then((r) => r.json()), id)).toEqual({ pending: false });
-    const mode = await page.evaluate(() => fetch('/papi/ownership/alt-art-preference-mode').then((r) => r.json()));
-    expect(mode).toEqual({ mode: 'PerDeck' });
-    await evidence(page, testInfo, '33-global-defaults');
+
+    test('leaving « Global » writes the default alt arts in every deck, then switches to « par deck »', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      // Every deck of the account is written: a local stack keeps the decks of earlier runs.
+      test.slow();
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E leave global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      // bob's default alt art for Élémentaire de Kélon: an illustration he owns, on the three copies.
+      type Family = { familyId: number; faction: string; rarity: string; options: { reference: string; ownedQuantity: number | null }[] };
+      const [key] = (await ownership(page, 'POST', '/api/alt-arts/resolve-references', ['ALT_CORE_B_AX_04_C'])).json as Family[];
+      const [family] = (await ownership(page, 'POST', '/api/alt-arts/options', [key])).json as Family[];
+      const alt = family.options.find((o) => o.reference !== 'ALT_CORE_B_AX_04_C' && o.ownedQuantity !== 0)?.reference ?? '';
+      expect(alt).not.toBe('');
+      const prefs = { familyId: key.familyId, faction: key.faction, rarity: key.rarity };
+      await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [alt, alt, alt] });
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // What Board Game Arena shows of the deck in « Global » mode.
+      const shown = (await ownership(page, 'POST', '/api/alt-arts/apply-to-deck', [{ reference: 'ALT_CORE_B_AX_04_C', quantity: 3 }])).json as {
+        lines: { reference: string; quantity: number }[][];
+      };
+      const expected = new Map(shown.lines.flat().map((l) => [l.reference, l.quantity]));
+      expect(expected.get('ALT_CORE_B_AX_04_C') ?? 0).toBeLessThan(3);
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await expect(dialog).toBeVisible();
+        await evidence(page, testInfo, '37-leave-global-confirm');
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 120_000 });
+        await evidence(page, testInfo, '38-per-deck-mode');
+        await page.goto(`${DECKS}?lang=fr`);
+        // Élémentaire de Kélon's copies, as Board Game Arena showed them (the deck's other cards have one illustration).
+        const cards = await deckCards(page, id);
+        expect(new Map([...cards].filter(([ref]) => family.options.some((o) => o.reference === ref)))).toEqual(expected);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [] });
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
   });
 
   test('shows the whole card window on a short phone screen (browser bars): the card shrinks, the buttons stay visible', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {

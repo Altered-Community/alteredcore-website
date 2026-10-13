@@ -1,8 +1,8 @@
 <?php
 // docker-compose.ownership.yml only: two demo decks on the local decks API, created again on each run (start of the stack,
-// or `docker compose … run --rm alice-decks`). alice: a deck built while she was in the « Global » alt-art mode
-// (seed.sql): the site switches her to « par deck » on her next visit, and the deck takes her default alt arts the first
-// time Re:Builder opens it. bob (« par deck »): a deck whose prints were chosen in the deck, kept as they are.
+// or `docker compose … run --rm alice-decks`). alice: a deck of plain prints while she is in the « Global » alt-art mode
+// (seed.sql): it takes her default alt arts when the deck builder opens it, or when she switches to « par deck ».
+// bob (« par deck »): a deck whose prints were chosen in the deck, kept as they are.
 
 require_once dirname(__DIR__, 3) . '/includes/functions.php';
 

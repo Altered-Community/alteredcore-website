@@ -143,6 +143,8 @@
           }
           @if (altArts.canChoose()) {
             <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
+          }
+          @if (altArts.canChooseForDeck()) {
             <button acButton variant="secondary" size="sm" icon="wand-sparkles" aria-haspopup="dialog" (click)="applyAltArtDefaults()" i18n="@@editor.altArtDefaults.short">Arts par défaut</button>
           }
         </div>

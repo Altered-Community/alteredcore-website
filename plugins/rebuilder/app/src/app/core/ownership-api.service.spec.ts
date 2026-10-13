@@ -21,24 +21,12 @@ describe('OwnershipApiService', () => {
     env.ownershipApiUrl = '';
   });
 
-  it('asks whether a deck waits for the default alt arts, and treats an error as no', async () => {
-    const env2 = environment as { siteUrl: string };
-    env2.siteUrl = '';
-    const pending = lastValueFrom(api.pendingDefaults('d1'));
-    const req = http.expectOne((r) => r.url === '/papi/ownership/alt-art-pending' && r.params.get('deck') === 'd1');
-    req.flush({ pending: true });
-    expect(await pending).toBe(true);
-    const failed = lastValueFrom(api.pendingDefaults('d1'));
-    http.expectOne((r) => r.url === '/papi/ownership/alt-art-pending').flush('no', { status: 401, statusText: 'Unauthorized' });
+  it('reads the « Global » alt-art mode, and treats an error as « par deck »', async () => {
+    const global = lastValueFrom(api.globalAltArts());
+    http.expectOne('/api/v1/services/ownership/api/alt-arts/preference-mode').flush({ mode: 'Global' });
+    expect(await global).toBe(true);
+    const failed = lastValueFrom(api.globalAltArts());
+    http.expectOne('/api/v1/services/ownership/api/alt-arts/preference-mode').flush('no', { status: 500, statusText: 'Error' });
     expect(await failed).toBe(false);
-  });
-
-  it('tells the site a deck took its default alt arts', async () => {
-    const done = lastValueFrom(api.clearPendingDefaults('d1'), { defaultValue: undefined });
-    const req = http.expectOne('/papi/ownership/alt-art-pending');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toMatchObject({ deck: 'd1' });
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await done;
   });
 });

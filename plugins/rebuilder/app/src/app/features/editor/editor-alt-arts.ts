@@ -1,6 +1,6 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
 import { EMPTY, type Observable, catchError, filter, map, of, switchMap, take, tap, throwError } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
 import { basePrint, defaultPrints, familyCopies, familyPrints, rankPrints, sameCopies, withRanks } from '../../core/alt-art-defaults';
 import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
@@ -20,7 +20,9 @@ const CHUNK = 60;
  * art for its copy, the brush of a card chooses the illustration of its 1st, 2nd and 3rd card in this deck (kept by
  * `DeckAltArtsApiService`; an added copy takes the next card's), « Appliquer les arts par défaut » rewrites the deck
  * with the defaults, and a print used more times than owned is flagged (Board Game Arena shows the base art for the
- * missing copies). Needs the ownership service and a signed-in player; nothing happens without.
+ * missing copies). In the « Global » alt-art mode, the deck follows the defaults instead: they are written in it when
+ * it opens and after each change, and there is no brush. Needs the ownership service and a signed-in player; nothing
+ * happens without.
  */
 @Service({ autoProvided: false })
 export class EditorAltArts {
@@ -29,6 +31,9 @@ export class EditorAltArts {
   private readonly auth = inject(AuthSession);
   private readonly deckAltArts = inject(DeckAltArtsApiService);
   readonly enabled = computed(() => !!this.ownership.baseUrl && this.auth.isLoggedIn());
+  /** Alt-art mode: `true` in « Global », `undefined` until the ownership service has answered. */
+  private readonly mode = toSignal(this.ownership.globalAltArts());
+  readonly global = computed(() => this.mode() === true);
 
   /** Family of each reference asked so far (`null`: one illustration only); the prints of a family share it. */
   private readonly known = signal<ReadonlyMap<string, AltArtChoice | null>>(new Map());
@@ -74,8 +79,10 @@ export class EditorAltArts {
   /** The deck board (« Aperçu »): the prints of a card on one pile, copy 1 in front. Remembered in this browser. */
   readonly stackPrints = storedFlag('rebuilder.board.stackPrints', true);
 
-  /** « Arts des jetons » and « Arts par défaut »: on an editable deck. */
+  /** « Arts des jetons »: on an editable deck. */
   readonly canChoose = computed(() => this.enabled() && this.deck.editable());
+  /** « Arts par défaut » and the brush: on an editable deck, in the « par deck » mode. */
+  readonly canChooseForDeck = computed(() => this.canChoose() && this.mode() === false);
   /** The deck's id when the player's choices for it are kept on the site: a saved deck of theirs; `null` otherwise. */
   private readonly ownDeckId = computed(() => {
     const id = this.deck.deckId();
@@ -105,26 +112,12 @@ export class EditorAltArts {
         });
       });
     });
-    // A deck of a player switched from the « Global » mode takes their default alt arts the first time it opens here.
-    const checked = new Set<string>();
+    // « Global » mode: the deck takes the default alt arts once its families are known, and again after each change.
     effect(() => {
-      const id = this.ownDeckId();
-      if (!id || checked.has(id)) return;
-      checked.add(id);
-      untracked(() =>
-        this.ownership
-          .pendingDefaults(id)
-          .pipe(
-            filter(Boolean),
-            switchMap(() => this.ready$),
-            filter(() => this.deck.deckId() === id),
-          )
-          .subscribe(() => {
-            this.deck.applyAltArtDefaults(this.choices());
-            this.clearCards();
-            this.ownership.clearPendingDefaults(id).subscribe();
-          }),
-      );
+      if (!this.global() || !this.canChoose() || !this.ready()) return;
+      const choices = this.choices();
+      this.deck.lines();
+      untracked(() => this.deck.applyAltArtDefaults(choices));
     });
   }
 
@@ -244,9 +237,9 @@ export class EditorAltArts {
     else this.deck.setQuantity(card, quantity);
   }
 
-  /** `card` has a brush: several illustrations, in an editable deck. */
+  /** `card` has a brush: several illustrations, in an editable deck, in the « par deck » mode. */
   canIllustrate(card: Card): boolean {
-    return this.canChoose() && (this.choiceFor(card.reference)?.options.options.length ?? 0) > 1;
+    return this.canChooseForDeck() && (this.choiceFor(card.reference)?.options.options.length ?? 0) > 1;
   }
 
   /** The brush of `card` (`canIllustrate`), `null` otherwise. */

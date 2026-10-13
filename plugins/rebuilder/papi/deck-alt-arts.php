@@ -4,7 +4,7 @@
 // POST … {"deck": "<id>", "family": "<key>", "cards": null} → 204: the card follows the default alt arts again.
 // POST … {"deck": "<id>"} → 204: every card of the deck follows them again (« Appliquer les arts par défaut »).
 // The brush's choices for a deck of the signed-in player: the illustration of the 1st, 2nd and 3rd card (copy) of each
-// multi-art card, in order (table {rebuilder_deck_alt_arts}, sql/migration_010). The decks API keeps only the deck's
+// multi-art card, in order (table {rebuilder_deck_alt_arts}, sql/migration_009). The decks API keeps only the deck's
 // references; the default alt arts stay in the ownership service. Manifest: "auth": "user"; CSRF checked by the router.
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: private, no-store');

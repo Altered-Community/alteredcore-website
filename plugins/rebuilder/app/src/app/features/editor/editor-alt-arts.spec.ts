@@ -32,9 +32,11 @@ describe('EditorAltArts', () => {
   let saved: [string, string, readonly string[] | null][];
   let saveFails: boolean;
   let loaded: Record<string, string[]>;
+  let applied: Record<string, AltArtChoice>[];
 
-  function setup(cards: Record<string, string[]> = {}): EditorAltArts {
+  function setup(cards: Record<string, string[]> = {}, global = false): EditorAltArts {
     loaded = cards;
+    applied = [];
     answers = new Subject();
     lines = signal<HydratedLine[]>([]);
     familyAdds = [];
@@ -50,7 +52,7 @@ describe('EditorAltArts', () => {
           useValue: {
             baseUrl: '/ownership',
             altArtChoices: () => answers,
-            pendingDefaults: () => of(false),
+            globalAltArts: () => of(global),
           },
         },
         {
@@ -73,6 +75,7 @@ describe('EditorAltArts', () => {
             maxFor: () => 3,
             quantityOf: (ref: string) => lines().find((l) => l.card.reference === ref)?.quantity ?? 0,
             setQuantity: () => undefined,
+            applyAltArtDefaults: (choices: Record<string, AltArtChoice>) => (applied.push(choices), true),
             setFamilyQuantity: (_card: Card, choice: AltArtChoice, _members: Set<string>, n: number) => (familyAdds.push(n), familyChoices.push(choice)),
             setFamilyPrints: (_members: Set<string>, _card: Card, prints: string[]) =>
               lines.set([...new Set(prints)].map((reference) => ({ card: card(reference), quantity: prints.filter((p) => p === reference).length }))),
@@ -160,5 +163,31 @@ describe('EditorAltArts', () => {
     expect(failed).toBe(true);
     expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
     expect(lines()).toEqual([{ card: card(BASE), quantity: 2 }]);
+  });
+
+  it('« par deck » mode: a card with several illustrations has a brush, and the deck keeps its prints', () => {
+    const alt = setup();
+    lines.set([{ card: card(BASE), quantity: 2 }]);
+    TestBed.tick();
+    answers.next({ [BASE]: kelon });
+    TestBed.tick();
+    expect(alt.canChooseForDeck()).toBe(true);
+    expect(alt.canIllustrate(card(BASE))).toBe(true);
+    expect(applied).toEqual([]);
+  });
+
+  it('« Global » mode: the deck takes the default alt arts once its families are known and after each change, without a brush', () => {
+    const alt = setup({}, true);
+    lines.set([{ card: card(BASE), quantity: 2 }]);
+    TestBed.tick();
+    expect(applied).toEqual([]);
+    answers.next({ [BASE]: kelon });
+    TestBed.tick();
+    expect(applied).toEqual([{ [BASE]: kelon }]);
+    lines.set([{ card: card(BASE), quantity: 3 }]);
+    TestBed.tick();
+    expect(applied.length).toBe(2);
+    expect(alt.canChooseForDeck()).toBe(false);
+    expect(alt.canIllustrate(card(BASE))).toBe(false);
   });
 });

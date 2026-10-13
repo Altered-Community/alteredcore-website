@@ -438,7 +438,13 @@
     box-shadow: var(--ac-shadow-dialog);
 }
 
-/* Search field (pages/alt-arts.php) */
+/* Mode switch bar and search field (pages/alt-arts.php) */
+.own-aa-modebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ac-space-2);
+}
 .own-aa-search {
     max-width: 260px;
 }

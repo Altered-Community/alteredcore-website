@@ -91,22 +91,14 @@ export class OwnershipApiService {
   }
 
   /**
-   * Whether the player's deck `deckId` waits for their default alt arts (decks of a player switched from the « Global »
-   * mode, site's `alt-art-pending`, plugin ownership); `false` on an error.
+   * `true` in the « Global » alt-art mode: the ownership service rewrites every deck with the player's default alt
+   * arts, and the deck builders write them in the deck. `false` otherwise or on an error.
    */
-  pendingDefaults(deckId: string): Observable<boolean> {
+  globalAltArts(): Observable<boolean> {
     if (!this.baseUrl) return of(false);
-    return this.http.get<{ pending?: boolean }>(`${this.site}/papi/ownership/alt-art-pending`, { params: { deck: deckId } }).pipe(
-      map((res) => res?.pending === true),
+    return this.http.get<{ mode?: string }>(`${this.baseUrl}/api/alt-arts/preference-mode`).pipe(
+      map((body) => body?.mode === 'Global'),
       catchError(() => of(false)),
     );
-  }
-
-  /** The deck took its default alt arts: it no longer waits for them. */
-  clearPendingDefaults(deckId: string): Observable<void> {
-    // The site's CSRF token travels in the body, as for its other endpoints (`FavoritesService`).
-    return this.http
-      .post<void>(`${this.site}/papi/ownership/alt-art-pending`, { deck: deckId, csrf_token: environment.siteCsrf })
-      .pipe(catchError(() => of(undefined)));
   }
 }

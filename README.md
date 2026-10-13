@@ -106,7 +106,7 @@ docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build -
 
 Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
 
-**Alt arts with the real ownership service.** The stack's digital ownership is a mock (`docker/stack/ownership-mock`). To try the default alt arts with [AlteredOwnership](https://github.com/Altered-Re-Union/AlteredOwnership) itself, built from GitHub (alice and bob own Axiom alt arts and have default alt arts; alice starts in the old « Global » mode, with a deck to see its switch):
+**Alt arts with the real ownership service.** The stack's digital ownership is a mock (`docker/stack/ownership-mock`). To try the default alt arts with [AlteredOwnership](https://github.com/Altered-Re-Union/AlteredOwnership) itself, built from GitHub (alice and bob own Axiom alt arts and have default alt arts; alice is in « Global » mode, with a deck of plain prints that takes her default alt arts):
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.stack.yml -f docker-compose.ownership.yml up -d --build --wait

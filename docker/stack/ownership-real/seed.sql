@@ -2,8 +2,7 @@
 -- AlteredOwnership service, once its migrations ran. Idempotent: run on every start, resets their mode, ownership and
 -- default alt arts.
 --
--- alice: « Global » mode (the site switches it to « par deck » on her next visit and marks her decks to receive her
--- default alt arts). bob: « par deck » already. Both own the same Axiom alt arts, in various quantities, and have the
+-- alice: « Global » mode (her decks follow her default alt arts; leaving it writes them in her decks). bob: « par deck ». Both own the same Axiom alt arts, in various quantities, and have the
 -- same default alt arts.
 -- Most MUSUBI prints (Fée Clochette, Prestidigitatrice de l'Ouroboros, Le Roi-Grenouille…) are everyone's in unlimited
 -- quantity: they need no ownership row.
