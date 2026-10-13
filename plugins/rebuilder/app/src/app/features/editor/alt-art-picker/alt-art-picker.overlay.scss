@@ -109,84 +109,10 @@ ul {
   font: var(--ac-font-caption);
   color: var(--ac-color-text-muted);
 }
-/*
- * The cards' keys: the 1st card on the left, the 2nd in the middle, the 3rd on the right. A key up (a thick bottom
- * edge, faded) is a card this illustration can take; a key pressed down (filled) is a card that takes it.
- */
+/* The cards' keys (ac-keys, design system): the 1st card on the left, the 2nd in the middle, the 3rd on the right. */
 .keys {
-  --key-edge: 4px;
   align-self: stretch;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ac-space-1-5);
   margin-bottom: var(--ac-space-2);
-}
-.key {
-  box-sizing: border-box;
-  height: var(--ac-control-lg);
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ac-space-0-5);
-  padding: 0;
-  border: 1.5px solid var(--ac-color-border-control);
-  border-bottom-width: var(--key-edge);
-  border-radius: var(--ac-radius-control);
-  background: var(--ac-color-surface);
-  color: var(--ac-color-text-2);
-  font-family: var(--ac-font-family);
-  opacity: 0.6;
-  cursor: pointer;
-  transition:
-    opacity var(--ac-duration-fast),
-    color var(--ac-duration-fast),
-    border-color var(--ac-duration-fast),
-    transform var(--ac-duration-fast);
-}
-.key[aria-pressed='true'] {
-  height: calc(var(--ac-control-lg) - var(--key-edge) + 1.5px);
-  margin-top: calc(var(--key-edge) - 1.5px);
-  border-color: var(--ac-color-primary-strong);
-  border-bottom-width: 1.5px;
-  background: var(--ac-color-primary);
-  color: var(--ac-color-on-primary);
-  box-shadow: inset 0 2px 4px var(--ac-color-overlay-label);
-  opacity: 1;
-  cursor: default;
-}
-.key:not([aria-pressed='true']):not(:disabled):active {
-  transform: translateY(2px);
-}
-.key:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-.key:focus-visible {
-  outline: 2px solid var(--ac-color-focus);
-  outline-offset: 2px;
-  opacity: 1;
-}
-@media (hover: hover) {
-  .key:not([aria-pressed='true']):not(:disabled):hover {
-    border-color: var(--ac-color-primary);
-    color: var(--ac-color-primary);
-    opacity: 1;
-    transform: translateY(-1px);
-  }
-}
-.key-num {
-  font-size: var(--ac-font-size-body-strong);
-  font-weight: 800;
-  line-height: 1;
-}
-.key-num sup {
-  font-size: var(--ac-font-size-micro);
-  line-height: 0;
-}
-.key-word {
-  font: var(--ac-font-micro);
 }
 .keys-hint {
   margin-top: calc(-1 * var(--ac-space-2));

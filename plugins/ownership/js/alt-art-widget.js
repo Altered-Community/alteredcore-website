@@ -1,6 +1,6 @@
-// Reusable single-family alt-art marker widget: renders one interactive tile strip
-// (one tile per illustration of a card family) with the player's copy markers,
-// click-to-move, optimistic UI with server-authoritative rollback on a 409 shortfall.
+// Reusable single-family alt-art widget: one illustration per print of a card family, each under its
+// keys (the 1st, 2nd and 3rd card, design system `ac-keys`), optimistic UI with server-authoritative
+// rollback on a 409 shortfall.
 // Extracted from pages/alt-arts.php's per-family rendering so the exact same logic can
 // be embedded in card-detail modals (see card-modal-enhance.js), scoped to one family
 // instead of a paginated multi-family search.
@@ -41,40 +41,36 @@
         return cfg.cdnUrl + '/cards/' + cfg.lang + '/' + (p[1] || '') + '/' + ref + '.webp';
     };
 
-    // Builds one `.own-aa-row` for a single family. cfg = {cdnUrl, lang, markerImg,
-    // setPreferenceUrl, csrfToken, txt:{saveError}}. Returns {el, destroy()}.
+    // Texts of the widget, in the page's language (the card modals that embed it pass only a save error).
+    const TXT = {
+        fr: {
+            cards: ['1ère carte', '2ème carte', '3ème carte'], suffixes: ['ère', 'ème', 'ème'], card: 'carte',
+            choose: 'Choisir', chosen: 'Choisie', illustration: 'Illustration %s', cardsOf: 'Cartes de %s',
+            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées',
+        },
+        en: {
+            cards: ['1st card', '2nd card', '3rd card'], suffixes: ['st', 'nd', 'rd'], card: 'card',
+            choose: 'Choose', chosen: 'Chosen', illustration: 'Illustration %s', cardsOf: 'Cards of %s',
+            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned',
+        },
+    };
+    const texts = () => TXT[(document.documentElement.lang || 'en').slice(0, 2)] || TXT.en;
+
+    // Builds one `.own-aa-row` for a single family: each illustration under its keys, the 1st, 2nd and 3rd card
+    // (one key for a token). A key pressed is a card that takes the illustration; pressing another gives it that
+    // card. cfg = {cdnUrl, lang, setPreferenceUrl, csrfToken, txt:{saveError}, onChange(references)?}.
+    // Returns {el, destroy()}.
     function createFamilyRow(family, optData, cfg) {
         const groupKey = family.familyId + ':' + family.faction + ':' + family.rarity;
+        const txt = texts();
 
-        const state = {
-            slots: optData.slots.slice().sort((a, b) => a.slotIndex - b.slotIndex)
-                .map((s) => ({ slotIndex: s.slotIndex, reference: s.reference })),
-            // Rotation starts at slot 1 so successive clicks fill slots 1, 2, 3 in order.
-            activeSlot: optData.slots.slice().sort((a, b) => a.slotIndex - b.slotIndex)[0].slotIndex,
-        };
+        // One slot a card (1 for a token), 1st first.
+        const slots = optData.slots.slice().sort((a, b) => a.slotIndex - b.slotIndex)
+            .map((s) => ({ slotIndex: s.slotIndex, reference: s.reference }));
+        const single = slots.length === 1;
 
         // Last slot references the server confirmed -- what a failed save rolls back to.
-        let savedRefs = state.slots.map((s) => s.reference);
-
-        const renderTile = (opt) => {
-            const tile = document.createElement('div');
-            tile.className = 'own-aa-tile';
-            tile.dataset.ref = opt.reference;
-            tile.dataset.group = groupKey;
-            const unowned = opt.ownedQuantity !== null && opt.ownedQuantity === 0;
-            if (unowned) tile.classList.add('own-aa-tile--unowned');
-
-            const img = document.createElement('img');
-            img.src = cdnUrl(cfg, opt.reference);
-            img.loading = 'lazy';
-            img.alt = '';
-            tile.appendChild(img);
-
-            const markers = document.createElement('div');
-            markers.className = 'own-aa-markers';
-            tile.appendChild(markers);
-            return tile;
-        };
+        let savedRefs = slots.map((s) => s.reference);
 
         const row = document.createElement('div');
         row.className = 'own-aa-row';
@@ -82,35 +78,90 @@
 
         const strip = document.createElement('div');
         strip.className = 'own-aa-strip';
-        strip.dataset.group = groupKey;
-        optData.options.forEach((opt) => strip.appendChild(renderTile(opt)));
         row.appendChild(strip);
 
         const err = document.createElement('div');
-        err.className = 'own-aa-row-error text-danger small';
+        err.className = 'own-aa-row-error';
+        err.setAttribute('role', 'alert');
         err.hidden = true;
         row.appendChild(err);
 
         const showError = (message) => { err.textContent = message; err.hidden = false; };
         const clearError = () => { err.hidden = true; };
 
-        // Moves each slot's marker <img> into whichever tile currently holds its reference.
-        const applyMarkers = () => {
-            strip.querySelectorAll('.own-aa-markers').forEach((el) => { el.innerHTML = ''; });
-            state.slots.forEach((slot) => {
-                const tile = strip.querySelector('.own-aa-tile[data-ref="' + CSS.escape(slot.reference) + '"]');
-                if (!tile) return;
-                const marker = document.createElement('img');
-                marker.className = 'own-aa-marker' + (slot.slotIndex === state.activeSlot ? ' own-aa-marker--active' : '');
-                marker.src = cfg.markerImg;
-                marker.dataset.slot = String(slot.slotIndex);
-                marker.dataset.group = groupKey;
-                marker.style.setProperty('--slot', slot.slotIndex);
-                marker.alt = '';
-                tile.querySelector('.own-aa-markers').appendChild(marker);
-            });
+        // A card can take this illustration unless the copies owned of it are all on other cards.
+        const canTake = (opt, index) => opt.ownedQuantity === null
+            || slots.filter((s, i) => i !== index && s.reference === opt.reference).length < opt.ownedQuantity;
+
+        const noteOf = (opt) => opt.ownedQuantity === null ? txt.unlimited
+            : opt.ownedQuantity === 0 ? txt.notOwned
+                : opt.ownedQuantity === 1 ? txt.ownedOne : txt.ownedMany.replace('%s', opt.ownedQuantity);
+
+        const keyButton = (opt, index, label) => {
+            const key = document.createElement('button');
+            key.type = 'button';
+            key.className = 'ac-key ac-key--sm';
+            key.dataset.ref = opt.reference;
+            key.dataset.slot = String(index);
+            if (single) {
+                key.setAttribute('aria-label', txt.choose + ' ' + label);
+                key.innerHTML = '<span class="ac-key__label"></span>';
+            } else {
+                key.setAttribute('aria-label', txt.cards[index] || (index + 1) + txt.suffixes[2] + ' ' + txt.card);
+                key.innerHTML = '<span class="ac-key__num">' + (index + 1) + '<sup>' + (txt.suffixes[index] || txt.suffixes[2]) +
+                    '</sup></span><span class="ac-key__word">' + txt.card + '</span>';
+            }
+            return key;
         };
-        applyMarkers();
+
+        optData.options.forEach((opt, i) => {
+            const label = txt.illustration.replace('%s', i + 1);
+            const print = document.createElement('div');
+            print.className = 'own-aa-print';
+            if (opt.ownedQuantity === 0) print.classList.add('own-aa-print--unowned');
+
+            const keys = document.createElement('div');
+            keys.className = 'ac-keys own-aa-keys';
+            keys.style.setProperty('--ac-keys-count', String(slots.length));
+            keys.setAttribute('role', 'group');
+            keys.setAttribute('aria-label', txt.cardsOf.replace('%s', label));
+            slots.forEach((s, index) => keys.appendChild(keyButton(opt, index, label)));
+            print.appendChild(keys);
+
+            const img = document.createElement('img');
+            img.className = 'own-aa-print__art';
+            img.src = cdnUrl(cfg, opt.reference);
+            img.loading = 'lazy';
+            img.alt = '';
+            print.appendChild(img);
+
+            const name = document.createElement('span');
+            name.className = 'own-aa-print__label';
+            name.textContent = label;
+            print.appendChild(name);
+            const note = document.createElement('span');
+            note.className = 'own-aa-print__note';
+            note.textContent = noteOf(opt);
+            print.appendChild(note);
+
+            strip.appendChild(print);
+        });
+
+        const options = new Map(optData.options.map((o) => [o.reference, o]));
+
+        // Each key pressed when its card takes the key's illustration, disabled when it cannot take it.
+        const render = () => {
+            strip.querySelectorAll('.ac-key').forEach((key) => {
+                const index = parseInt(key.dataset.slot, 10);
+                const opt = options.get(key.dataset.ref);
+                const on = slots[index].reference === opt.reference;
+                key.setAttribute('aria-pressed', on ? 'true' : 'false');
+                key.disabled = !on && !canTake(opt, index);
+                if (single) key.querySelector('.ac-key__label').textContent = on ? txt.chosen : txt.choose;
+            });
+            if (cfg.onChange) cfg.onChange(slots.map((s) => s.reference));
+        };
+        render();
 
         const saveGroup = async (slotReferences) => {
             const res = await fetch(cfg.setPreferenceUrl, {
@@ -138,11 +189,9 @@
             throw new Error(saveErrorMsg);
         };
 
-        // One save in flight at a time, always sending the latest marker state: firing a
-        // request per click let two quick clicks race server-side, so the stored slots
-        // could end up on the older click while the markers showed the newer one (e.g.
-        // both top markers on an alt art, yet a 2-copy deck got one alt + one base).
-        // Clicks made while a save is in flight are coalesced into one follow-up save.
+        // One save in flight at a time, always sending the latest key state: firing a request per click let two
+        // quick clicks race server-side, so the stored slots could end up on the older click while the keys showed
+        // the newer one. Clicks made while a save is in flight are coalesced into one follow-up save.
         let saving = false;
         let savePending = false;
         const requestSave = async () => {
@@ -151,7 +200,7 @@
             let lastError = null;
             do {
                 savePending = false;
-                const refs = state.slots.map((s) => s.reference);
+                const refs = slots.map((s) => s.reference);
                 try {
                     await saveGroup(refs);
                     savedRefs = refs;
@@ -163,8 +212,8 @@
             saving = false;
 
             if (lastError) {
-                state.slots.forEach((s, i) => { s.reference = savedRefs[i]; });
-                applyMarkers();
+                slots.forEach((s, i) => { s.reference = savedRefs[i]; });
+                render();
                 showError(lastError.message);
                 return;
             }
@@ -176,48 +225,16 @@
             }));
         };
 
-        // After a successful move, the active slot advances to the next one in sequence
-        // (wrapping around) so consecutive clicks on different cards spread across all the
-        // player's markers instead of always redirecting the same one. Explicitly clicking
-        // a marker still overrides this and pins that slot as the next to move.
-        const advanceActiveSlot = () => {
-            const idx = state.slots.findIndex((s) => s.slotIndex === state.activeSlot);
-            const next = state.slots[(idx + 1) % state.slots.length];
-            state.activeSlot = next.slotIndex;
-        };
-
-        const moveActiveMarker = (newRef) => {
-            // The active slot is only a preferred starting point, not a hard requirement: if
-            // it's already on the clicked tile (e.g. a 2/1 split where the active marker sits
-            // on the minority tile the player just clicked), moving it would be a no-op even
-            // though another marker elsewhere clearly isn't on this tile yet. So walk the
-            // rotation from the active slot and grab the first marker that isn't already here.
-            const startIdx = state.slots.findIndex((s) => s.slotIndex === state.activeSlot);
-            let slot = null;
-            for (let i = 0; i < state.slots.length; i++) {
-                const candidate = state.slots[(startIdx + i) % state.slots.length];
-                if (candidate.reference !== newRef) { slot = candidate; break; }
-            }
-            if (!slot) return; // every marker is already on this tile — nothing to move
-
-            slot.reference = newRef;
-            state.activeSlot = slot.slotIndex;
-            advanceActiveSlot();
-            applyMarkers();
+        // A key: its card takes its illustration.
+        const onClick = (e) => {
+            const key = e.target.closest('.ac-key');
+            if (!key || key.disabled) return;
+            const slot = slots[parseInt(key.dataset.slot, 10)];
+            if (!slot || slot.reference === key.dataset.ref) return;
+            slot.reference = key.dataset.ref;
+            render();
             clearError();
             requestSave();
-        };
-
-        const onClick = (e) => {
-            const marker = e.target.closest('.own-aa-marker');
-            if (marker) {
-                state.activeSlot = parseInt(marker.dataset.slot, 10);
-                applyMarkers();
-                return;
-            }
-            const tile = e.target.closest('.own-aa-tile');
-            if (!tile || tile.classList.contains('own-aa-tile--unowned')) return;
-            moveActiveMarker(tile.dataset.ref);
         };
         row.addEventListener('click', onClick);
 

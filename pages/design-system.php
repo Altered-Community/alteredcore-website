@@ -330,6 +330,27 @@ include dirname(__DIR__) . '/includes/header.php';
         </div>
     </section>
 
+    <section class="ds-section" aria-labelledby="ds-keys">
+        <h2 class="ac-section-title" id="ds-keys">Keys</h2>
+        <div class="ac-card ds-sheet">
+            <div class="ds-demo">
+                <div class="ac-keys" role="group" aria-label="Cards of illustration 1" style="width: 200px">
+                    <button type="button" class="ac-key" aria-pressed="true" aria-label="1st card"><span class="ac-key__num">1<sup>st</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key" aria-pressed="false" aria-label="2nd card"><span class="ac-key__num">2<sup>nd</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key" aria-pressed="false" aria-label="3rd card" disabled><span class="ac-key__num">3<sup>rd</sup></span><span class="ac-key__word">card</span></button>
+                </div>
+                <div class="ac-keys" role="group" aria-label="Cards of illustration 2 (small)" style="width: 140px">
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="false" aria-label="1st card"><span class="ac-key__num">1<sup>st</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true" aria-label="2nd card"><span class="ac-key__num">2<sup>nd</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true" aria-label="3rd card"><span class="ac-key__num">3<sup>rd</sup></span><span class="ac-key__word">card</span></button>
+                </div>
+                <div class="ac-keys" role="group" aria-label="Token illustration" style="--ac-keys-count: 1; width: 140px">
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true"><span class="ac-key__label">Chosen</span></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="ds-section" aria-labelledby="ds-cards">
         <h2 class="ac-section-title" id="ds-cards">Cards, lists, empty state</h2>
         <div class="ac-grid">

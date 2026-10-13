@@ -331,92 +331,127 @@
     --ac-icon-size: 48px;
 }
 
-/* Alt Arts BGA — one row per multi-art family, tiles instead of a paginated grid.
-   .filter-row/.filter-toggle/.card-altered come from core-altered-cards/assets/style.css,
-   linked explicitly by pages/alt-arts.php since this plugin doesn't load it by default. */
-/* 4 tiles per row on desktop, 2 on mobile — a family's strip is its own little grid,
-   wrapping to as many rows as it needs; the <hr> after it (see js/alt-arts.js) is what
-   visually separates one family from the next. */
-.own-aa-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--ac-space-2-5);
-    margin-bottom: var(--ac-space-1-5);
+/* Default alt arts (pages/alt-arts.php): one row per multi-art family, its name and what decks take on the
+   left (its cards fanned out), its illustrations under their keys on the right. */
+.own-aa-list {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    overflow: hidden;
 }
-/* Wide screens: tiles keep the size they had in the 1200px layout (4 across 1176px of
-   content) and the strip fits as many as the row allows — auto-fill rather than auto-fit
-   so every family's tiles stay the same size, even a 2-art family. */
-@media (min-width: 1500px) {
-    .own-aa-strip {
-        grid-template-columns: repeat(auto-fill, minmax(calc(1176px / 4 - var(--ac-space-2-5)), 1fr));
-    }
+.own-aa-list:empty {
+    display: none;
+}
+.own-aa-family {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-4) var(--ac-space-8);
+    padding: var(--ac-space-5) var(--ac-space-6);
+    border-bottom: 1px solid var(--ac-color-divider);
+}
+.own-aa-family:last-child {
+    border-bottom: 0;
+}
+.own-aa-family__info {
+    flex: 1 1 240px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-1);
+}
+.own-aa-family__name {
+    margin: 0;
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text);
+}
+.own-aa-family__meta {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
+}
+.own-aa-family__uses {
+    margin-top: var(--ac-space-3);
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-2);
+}
+/* The family's cards, 1st on the left, fanned out as in Re:Builder's brush. */
+.own-aa-fan {
+    --card: 72px;
+    --step: 46px;
+    position: relative;
+    height: calc(var(--card) * 7 / 5 + var(--ac-space-5));
+    margin-left: var(--ac-space-2);
+}
+.own-aa-fan img {
+    position: absolute;
+    top: var(--ac-space-2);
+    left: calc(var(--i) * var(--step));
+    width: var(--card);
+    aspect-ratio: 5 / 7;
+    object-fit: cover;
+    border-radius: var(--ac-radius-sm);
+    box-shadow: var(--ac-shadow-card);
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
+    transform-origin: 50% 120%;
+}
+.own-aa-family > .own-aa-row {
+    flex: 999 1 420px;
+    min-width: 0;
 }
 @media (max-width: 767.98px) {
+    .own-aa-family {
+        padding: var(--ac-space-4);
+    }
+    .own-aa-family__info {
+        max-width: none;
+    }
     .own-aa-strip {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--ac-space-1-5);
+        gap: var(--ac-space-4);
     }
 }
-.own-aa-tile {
-    position: relative;
-    min-width: 0;
-    cursor: pointer;
+
+/* One family's illustrations, each under its keys (js/alt-art-widget.js; also in the card modals). */
+.own-aa-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-5);
 }
-/* Direct child only — .own-aa-tile also nests the marker <img>s one level deeper
-   inside .own-aa-markers, and a descendant selector here would out-specify
-   .own-aa-marker's own width and blow the markers up to the tile's full size. */
-.own-aa-tile > img {
+.own-aa-print {
+    width: 148px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ac-space-0-5);
+    text-align: center;
+}
+.own-aa-keys {
+    align-self: stretch;
+    margin-bottom: var(--ac-space-1-5);
+}
+.own-aa-print__art {
     display: block;
     width: 100%;
-    border-radius: var(--ac-radius-md);
-    aspect-ratio: 63.5/88;
+    margin-bottom: var(--ac-space-1-5);
+    aspect-ratio: 63.5 / 88;
     object-fit: cover;
-    transition: transform var(--ac-duration-fast);
+    border-radius: var(--ac-radius-md);
     background: var(--ac-color-track);
 }
-.own-aa-tile:hover > img {
-    transform: scale(1.03);
-}
-.own-aa-tile--unowned {
-    cursor: not-allowed;
-}
-.own-aa-tile--unowned > img {
+.own-aa-print--unowned .own-aa-print__art {
     opacity: .35;
     filter: grayscale(1);
 }
-.own-aa-tile--unowned:hover > img {
-    transform: none;
+.own-aa-print__label {
+    font: var(--ac-font-body-strong);
+    color: var(--ac-color-text);
 }
-.own-aa-markers {
-    position: absolute;
-    top: var(--ac-space-1);
-    right: var(--ac-space-1);
-    z-index: 2;
-}
-/* Positioned by --slot (the owned copy's slotIndex, set in JS) rather than stacked in flex/DOM
-   order — that height stays the same copy's height on every tile, so a lone marker on a tile
-   shows at a glance which copy (1st/2nd/3rd, i.e. which deck slot — see distributeAcrossSlots
-   in deckbuilder.php) it is, instead of always looking like "the first one" at the top. */
-.own-aa-marker {
-    position: absolute;
-    top: calc(var(--slot, 0) * 22px);
-    right: 0;
-    width: 20px;
-    height: auto;
-    cursor: pointer;
-    filter: drop-shadow(0 1px 2px var(--ac-color-overlay-label));
-}
-.own-aa-marker--active {
-    outline: 2px solid var(--ac-color-primary);
-    border-radius: var(--ac-radius-xs);
+.own-aa-print__note {
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-muted);
 }
 .own-aa-row-error {
-    margin-top: var(--ac-space-1);
-}
-.own-aa-sep {
-    border: none;
-    border-top: 1px solid var(--ac-color-divider);
-    margin: var(--ac-space-3) 0;
+    margin-top: var(--ac-space-2);
+    font: var(--ac-font-small);
+    color: var(--ac-color-danger);
 }
 
 /* Window over the page (the legacy deckbuilder's token illustrations, assets/deckbuilder/token-arts.js) */

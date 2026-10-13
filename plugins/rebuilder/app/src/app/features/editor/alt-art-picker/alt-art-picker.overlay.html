@@ -10,18 +10,18 @@
       <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
         @for (a of arts(); track a.reference) {
           <li class="print" [class.unowned]="a.unowned">
-            <div class="keys" role="group" [attr.aria-label]="a.keysLabel">
+            <div class="ac-keys keys" role="group" [attr.aria-label]="a.keysLabel">
               @for (k of a.keys; track k.rank) {
                 <button
                   type="button"
-                  class="key"
+                  class="ac-key"
                   [attr.aria-pressed]="k.pressed"
                   [attr.aria-label]="k.label"
                   [disabled]="k.disabled"
                   (click)="choose(a.reference, k.rank)"
                 >
-                  <span class="key-num">{{ k.num }}<sup>{{ k.suffix }}</sup></span>
-                  <span class="key-word">{{ cardWord }}</span>
+                  <span class="ac-key__num">{{ k.num }}<sup>{{ k.suffix }}</sup></span>
+                  <span class="ac-key__word">{{ cardWord }}</span>
                 </button>
               }
             </div>

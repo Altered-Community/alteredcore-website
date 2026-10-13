@@ -1,14 +1,15 @@
 <?php
 // « Arts alternatifs par défaut » tab of the Digital Ownership hub — lets a player browse
 // every card family with more than one known illustration, see which prints they own, and
-// assign their up-to-3 copy markers (1 for heroes/tokens): their default alt arts, and the
+// choose the illustration of the 1st, 2nd and 3rd card (1 for heroes/tokens) with the keys
+// above each print: their default alt arts, and the
 // « par deck / global » mode that says how decks use them (see includes/func.alt-arts.php
 // at the site's root). Talks to the AlteredOwnership /api/alt-arts/* endpoints
 // via the papi proxies in ../api/alt-art-search.php and ../api/alt-art-set-preference.php
 // — never directly (see ownApiRequestRaw()). Deliberately its own lightweight markup
 // (filters + one row per family) rather than core-altered-cards' card-search.php widget,
 // which is built around a paginated grid of individual cards, not per-family rows with
-// marker assignment.
+// keys.
 require_once __DIR__ . '/../includes/functions.php';
 
 $txt = [
@@ -28,8 +29,11 @@ $txt = [
         'networkError'  => 'Network error.',
         'saveError'     => 'Could not save your choice.',
         'loadMore'      => 'Load more',
-        'markerHint'    => 'Click a marker, then click a card to move it there.',
-        'intro'         => 'Choose the illustration of each copy of a card (1st, 2nd and 3rd copy): your default alt arts. A token\'s illustration is the same in all your decks.',
+        'keysHint'      => 'Click a box above an illustration to give it that card.',
+        'intro'         => 'Choose the illustration of the 1st, 2nd and 3rd card of each card: your default alt arts. A token has a single illustration, the same in all your decks.',
+        'usesNew'       => 'A card added to a deck takes',
+        'usesAll'       => 'All your decks use',
+        'results'       => 'Cards',
         'modeLabel'     => 'How your decks use them',
         'modePerDeck'   => 'Per deck',
         'modeGlobal'    => 'Global',
@@ -62,8 +66,11 @@ $txt = [
         'networkError'  => 'Erreur réseau.',
         'saveError'     => 'Impossible d\'enregistrer votre choix.',
         'loadMore'      => 'Charger plus',
-        'markerHint'    => 'Cliquez un marqueur, puis une carte pour l\'y déplacer.',
-        'intro'         => 'Choisissez l\'illustration de chaque exemplaire d\'une carte (1er, 2e et 3e exemplaire) : vos arts alternatifs par défaut. L\'illustration d\'un jeton est la même dans tous vos decks.',
+        'keysHint'      => 'Cliquez sur une case au-dessus d\'une illustration pour la lui attribuer.',
+        'intro'         => 'Choisissez l\'illustration de la 1ère, 2ème et 3ème carte de chaque carte : vos arts alternatifs par défaut. Un jeton a une seule illustration, la même dans tous vos decks.',
+        'usesNew'       => 'Une carte ajoutée à un deck prend',
+        'usesAll'       => 'Tous vos decks utilisent',
+        'results'       => 'Cartes',
         'modeLabel'     => 'Utilisation dans vos decks',
         'modePerDeck'   => 'Par deck',
         'modeGlobal'    => 'Global',
@@ -217,12 +224,12 @@ $uiLang = getUiLang();
         </div>
     </div>
 
-    <p class="ac-text-small ac-text-muted mb-2"><?= h($txt['markerHint']) ?></p>
+    <p class="ac-text-small ac-text-muted mb-2"><?= h($txt['keysHint']) ?></p>
 
     <div id="own-aa-loading" class="text-muted"><?= h($txt['loading']) ?></div>
     <div id="own-aa-empty" class="text-muted" hidden><?= h($txt['empty']) ?></div>
     <div id="own-aa-error" class="alert alert-danger" hidden></div>
-    <div id="own-aa-results"></div>
+    <section id="own-aa-results" class="own-aa-list" aria-label="<?= h($txt['results']) ?>"></section>
     <div class="text-center my-3">
         <button type="button" id="own-aa-load-more" class="ac-button ac-button--secondary ac-button--sm" hidden>
             <?= h($txt['loadMore']) ?>
@@ -238,7 +245,12 @@ $uiLang = getUiLang();
         baseUrl: <?= json_encode(BASE_URL) ?>,
         cdnUrl: <?= json_encode(CDN_URL) ?>,
         lang: <?= json_encode(getLang()) ?>,
-        markerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
+        // Labels of a family's type, faction and rarity (by code, rarity by its gem: C, R…).
+        labels: <?= json_encode([
+            'type'    => array_map(fn($d) => $d[$uiLang] ?? $d['en'] ?? '', $typesData),
+            'faction' => array_map(fn($d) => $d[$uiLang] ?? $d['en'] ?? '', $factionsData),
+            'rarity'  => array_column(array_map(fn($d) => ['gem' => $d['gem'] ?? '', 'label' => $d[$uiLang] ?? $d['en'] ?? ''], $raritiesData), 'label', 'gem'),
+        ], JSON_UNESCAPED_UNICODE) ?>,
         csrfToken: <?= json_encode(csrfToken()) ?>,
         preferenceModeUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-preference-mode') ?>,
         leaveGlobalUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-leave-global') ?>,
