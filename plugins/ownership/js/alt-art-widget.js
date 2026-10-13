@@ -46,19 +46,19 @@
         fr: {
             cards: ['1ère carte', '2ème carte', '3ème carte'], suffixes: ['ère', 'ème', 'ème'], card: 'carte',
             choose: 'Choisir', chosen: 'Choisie', illustration: 'Illustration %s', cardsOf: 'Cartes de %s',
-            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées',
+            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées', colon: ' : ',
         },
         en: {
             cards: ['1st card', '2nd card', '3rd card'], suffixes: ['st', 'nd', 'rd'], card: 'card',
             choose: 'Choose', chosen: 'Chosen', illustration: 'Illustration %s', cardsOf: 'Cards of %s',
-            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned',
+            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned', colon: ': ',
         },
     };
     const texts = () => TXT[(document.documentElement.lang || 'en').slice(0, 2)] || TXT.en;
 
     // Builds one `.own-aa-row` for a single family: each illustration under its keys, the 1st, 2nd and 3rd card
     // (one key for a token). A key pressed is a card that takes the illustration; pressing another gives it that
-    // card. cfg = {cdnUrl, lang, setPreferenceUrl, csrfToken, txt:{saveError}, onChange(references)?}.
+    // card. cfg = {cdnUrl, lang, setPreferenceUrl, csrfToken, txt:{saveError}, onChange(references, description)?}.
     // Returns {el, destroy()}.
     function createFamilyRow(family, optData, cfg) {
         const groupKey = family.familyId + ':' + family.faction + ':' + family.rarity;
@@ -97,14 +97,14 @@
             : opt.ownedQuantity === 0 ? txt.notOwned
                 : opt.ownedQuantity === 1 ? txt.ownedOne : txt.ownedMany.replace('%s', opt.ownedQuantity);
 
-        const keyButton = (opt, index, label) => {
+        const keyButton = (opt, index) => {
             const key = document.createElement('button');
             key.type = 'button';
             key.className = 'ac-key ac-key--sm';
             key.dataset.ref = opt.reference;
             key.dataset.slot = String(index);
             if (single) {
-                key.setAttribute('aria-label', txt.choose + ' ' + label);
+                // Named by its text (« Choisir » / « Choisie ») within the group « Cartes de Illustration n ».
                 key.innerHTML = '<span class="ac-key__label"></span>';
             } else {
                 key.setAttribute('aria-label', txt.cards[index] || (index + 1) + txt.suffixes[2] + ' ' + txt.card);
@@ -125,7 +125,7 @@
             keys.style.setProperty('--ac-keys-count', String(slots.length));
             keys.setAttribute('role', 'group');
             keys.setAttribute('aria-label', txt.cardsOf.replace('%s', label));
-            slots.forEach((s, index) => keys.appendChild(keyButton(opt, index, label)));
+            slots.forEach((s, index) => keys.appendChild(keyButton(opt, index)));
             print.appendChild(keys);
 
             const img = document.createElement('img');
@@ -148,6 +148,11 @@
         });
 
         const options = new Map(optData.options.map((o) => [o.reference, o]));
+        const illustrationOf = (ref) => txt.illustration.replace('%s', optData.options.findIndex((o) => o.reference === ref) + 1);
+
+        // What the cards take, in words (« 1ère carte : Illustration 2, … »): the text of what a host draws of them.
+        const describe = () => single ? illustrationOf(slots[0].reference)
+            : slots.map((s, i) => (txt.cards[i] || '') + txt.colon + illustrationOf(s.reference)).join(', ');
 
         // Each key pressed when its card takes the key's illustration, disabled when it cannot take it.
         const render = () => {
@@ -159,7 +164,7 @@
                 key.disabled = !on && !canTake(opt, index);
                 if (single) key.querySelector('.ac-key__label').textContent = on ? txt.chosen : txt.choose;
             });
-            if (cfg.onChange) cfg.onChange(slots.map((s) => s.reference));
+            if (cfg.onChange) cfg.onChange(slots.map((s) => s.reference), describe());
         };
         render();
 
@@ -228,7 +233,7 @@
         // A key: its card takes its illustration.
         const onClick = (e) => {
             const key = e.target.closest('.ac-key');
-            if (!key || key.disabled) return;
+            if (!key) return;
             const slot = slots[parseInt(key.dataset.slot, 10)];
             if (!slot || slot.reference === key.dataset.ref) return;
             slot.reference = key.dataset.ref;
@@ -243,5 +248,5 @@
         return { el: row, destroy };
     }
 
-    window.OWN_ALT_ART_WIDGET = { hasRealChoice, fetchSingleFamily, createFamilyRow };
+    window.OWN_ALT_ART_WIDGET = { hasRealChoice, fetchSingleFamily, createFamilyRow, cdnUrl };
 })();

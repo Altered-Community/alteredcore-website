@@ -166,11 +166,6 @@
     // ---- Rendering ----
     const labelOf = (map, code) => (cfg.labels && cfg.labels[map] && cfg.labels[map][code]) || code;
 
-    const cdnUrl = (ref) => {
-        const p = ref.split('_');
-        return cfg.cdnUrl + '/cards/' + cfg.lang + '/' + (p[1] || '') + '/' + ref + '.webp';
-    };
-
     // One family: its name and what decks take on the left (its cards fanned out, the 1st on the left), its
     // illustrations and their keys on the right.
     const renderFamilyRow = (family) => {
@@ -197,20 +192,26 @@
             : t('usesNew', 'A card added to a deck takes');
         const fan = document.createElement('div');
         fan.className = 'own-aa-fan';
-        fan.setAttribute('aria-hidden', 'true');
+        fan.setAttribute('role', 'img');
         info.append(name, meta, uses, fan);
         row.appendChild(info);
 
-        const drawFan = (references) => {
+        // One image a card, made once; a change only swaps their sources.
+        const drawFan = (references, description) => {
+            fan.setAttribute('aria-label', description);
             fan.style.setProperty('--n', references.length);
-            fan.replaceChildren(...references.map((ref, i) => {
-                const img = document.createElement('img');
-                img.src = cdnUrl(ref);
-                img.alt = '';
-                img.loading = 'lazy';
-                img.style.setProperty('--i', i);
-                return img;
-            }));
+            references.forEach((ref, i) => {
+                let img = fan.children[i];
+                if (!img) {
+                    img = document.createElement('img');
+                    img.alt = '';
+                    img.loading = 'lazy';
+                    img.style.setProperty('--i', i);
+                    fan.appendChild(img);
+                }
+                const src = window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref);
+                if (img.getAttribute('src') !== src) img.src = src;
+            });
         };
 
         const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan });

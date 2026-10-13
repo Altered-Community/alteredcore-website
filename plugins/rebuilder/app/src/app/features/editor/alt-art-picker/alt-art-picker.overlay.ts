@@ -73,7 +73,7 @@ export class AltArtPickerOverlay {
           suffix: cardSuffix(k),
           label: cardLabel(k),
           pressed: r === o.reference,
-          disabled: !canRank(choice, ranks, k, o.reference),
+          disabled: r !== o.reference && !canRank(choice, ranks, k, o.reference),
         })),
       };
     });
