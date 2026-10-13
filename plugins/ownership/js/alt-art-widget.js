@@ -100,7 +100,7 @@
         const keyButton = (opt, index) => {
             const key = document.createElement('button');
             key.type = 'button';
-            key.className = 'ac-key ac-key--sm';
+            key.className = 'ac-key';
             key.dataset.ref = opt.reference;
             key.dataset.slot = String(index);
             if (single) {

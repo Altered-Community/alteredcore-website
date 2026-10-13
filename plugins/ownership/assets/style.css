@@ -404,9 +404,6 @@
     .own-aa-family__info {
         max-width: none;
     }
-    .own-aa-strip {
-        gap: var(--ac-space-4);
-    }
 }
 
 /* One family's illustrations, each under its keys (js/alt-art-widget.js; also in the card modals). */
@@ -416,7 +413,7 @@
     gap: var(--ac-space-5);
 }
 .own-aa-print {
-    width: 148px;
+    width: 164px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -452,6 +449,17 @@
     margin-top: var(--ac-space-2);
     font: var(--ac-font-small);
     color: var(--ac-color-danger);
+}
+/* Two illustrations a row on a phone. */
+@media (max-width: 767.98px) {
+    .own-aa-strip {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--ac-space-5) var(--ac-space-4);
+    }
+    .own-aa-print {
+        width: auto;
+    }
 }
 
 /* Window over the page (the legacy deckbuilder's token illustrations, assets/deckbuilder/token-arts.js) */
