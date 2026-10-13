@@ -373,25 +373,50 @@
     font: var(--ac-font-caption);
     color: var(--ac-color-text-2);
 }
-/* The family's cards, 1st on the left, fanned out as in Re:Builder's brush. */
+/* The family's cards, 1st on the left, fanned out as in Re:Builder's brush; a token's or a hero's single card large.
+   Each card opens large on a click. */
 .own-aa-fan {
-    --card: 72px;
-    --step: 46px;
+    --card: 100px;
+    --step: 64px;
     position: relative;
     height: calc(var(--card) * 7 / 5 + var(--ac-space-5));
     margin-left: var(--ac-space-2);
 }
-.own-aa-fan img {
+.own-aa-fan--single {
+    --card: 164px;
+}
+.own-aa-fan__card {
     position: absolute;
     top: var(--ac-space-2);
     left: calc(var(--i) * var(--step));
     width: var(--card);
-    aspect-ratio: 5 / 7;
-    object-fit: cover;
+    padding: 0;
+    border: 0;
     border-radius: var(--ac-radius-sm);
-    box-shadow: var(--ac-shadow-card);
+    background: none;
+    cursor: zoom-in;
     transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
     transform-origin: 50% 120%;
+    transition: transform var(--ac-duration-fast);
+}
+.own-aa-fan__card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 7;
+    object-fit: cover;
+    border-radius: inherit;
+    box-shadow: var(--ac-shadow-card);
+}
+.own-aa-fan__card:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+    z-index: 1;
+}
+@media (hover: hover) {
+    .own-aa-fan__card:hover {
+        z-index: 1;
+        transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg)) translateY(calc(-1 * var(--ac-space-1)));
+    }
 }
 .own-aa-family > .own-aa-row {
     flex: 999 1 420px;
@@ -413,7 +438,7 @@
     gap: var(--ac-space-5);
 }
 .own-aa-print {
-    width: 164px;
+    width: 200px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -432,6 +457,25 @@
     object-fit: cover;
     border-radius: var(--ac-radius-md);
     background: var(--ac-color-track);
+    transition: transform var(--ac-duration-fast);
+}
+.own-aa-print__zoom {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ac-radius-md);
+    background: none;
+    cursor: zoom-in;
+}
+.own-aa-print__zoom:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+}
+@media (hover: hover) {
+    .own-aa-print__zoom:hover .own-aa-print__art {
+        transform: translateY(calc(-1 * var(--ac-space-1)));
+    }
 }
 .own-aa-print--unowned .own-aa-print__art {
     opacity: .35;

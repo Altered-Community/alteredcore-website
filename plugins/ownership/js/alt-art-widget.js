@@ -46,19 +46,19 @@
         fr: {
             cards: ['1ère carte', '2ème carte', '3ème carte'], suffixes: ['ère', 'ème', 'ème'], card: 'carte',
             choose: 'Choisir', chosen: 'Choisie', illustration: 'Illustration %s', cardsOf: 'Cartes de %s',
-            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées', colon: ' : ',
+            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées', colon: ' : ', zoom: 'Agrandir %s',
         },
         en: {
             cards: ['1st card', '2nd card', '3rd card'], suffixes: ['st', 'nd', 'rd'], card: 'card',
             choose: 'Choose', chosen: 'Chosen', illustration: 'Illustration %s', cardsOf: 'Cards of %s',
-            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned', colon: ': ',
+            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned', colon: ': ', zoom: 'Enlarge %s',
         },
     };
     const texts = () => TXT[(document.documentElement.lang || 'en').slice(0, 2)] || TXT.en;
 
     // Builds one `.own-aa-row` for a single family: each illustration under its keys, the 1st, 2nd and 3rd card
     // (one key for a token). A key pressed is a card that takes the illustration; pressing another gives it that
-    // card. cfg = {cdnUrl, lang, setPreferenceUrl, csrfToken, txt:{saveError}, onChange(references, description)?}.
+    // card. cfg = {cdnUrl, lang, setPreferenceUrl, csrfToken, txt:{saveError}, onChange(references, labels)?, onZoom(reference)?}.
     // Returns {el, destroy()}.
     function createFamilyRow(family, optData, cfg) {
         const groupKey = family.familyId + ':' + family.faction + ':' + family.rarity;
@@ -133,7 +133,18 @@
             img.src = cdnUrl(cfg, opt.reference);
             img.loading = 'lazy';
             img.alt = '';
-            print.appendChild(img);
+            // With a zoom from the host page, the illustration opens large.
+            if (cfg.onZoom) {
+                const zoom = document.createElement('button');
+                zoom.type = 'button';
+                zoom.className = 'own-aa-print__zoom';
+                zoom.setAttribute('aria-label', txt.zoom.replace('%s', label));
+                zoom.addEventListener('click', () => cfg.onZoom(opt.reference));
+                zoom.appendChild(img);
+                print.appendChild(zoom);
+            } else {
+                print.appendChild(img);
+            }
 
             const name = document.createElement('span');
             name.className = 'own-aa-print__label';
@@ -150,9 +161,11 @@
         const options = new Map(optData.options.map((o) => [o.reference, o]));
         const illustrationOf = (ref) => txt.illustration.replace('%s', optData.options.findIndex((o) => o.reference === ref) + 1);
 
-        // What the cards take, in words (« 1ère carte : Illustration 2, … »): the text of what a host draws of them.
-        const describe = () => single ? illustrationOf(slots[0].reference)
-            : slots.map((s, i) => (txt.cards[i] || '') + txt.colon + illustrationOf(s.reference)).join(', ');
+        // What each card takes, in words (« 1ère carte : Illustration 2 »), and how to name its zoom.
+        const describe = () => slots.map((s, i) => {
+            const text = single ? illustrationOf(s.reference) : (txt.cards[i] || '') + txt.colon + illustrationOf(s.reference);
+            return { text, zoom: txt.zoom.replace('%s', text) };
+        });
 
         // Each key pressed when its card takes the key's illustration, disabled when it cannot take it.
         const render = () => {

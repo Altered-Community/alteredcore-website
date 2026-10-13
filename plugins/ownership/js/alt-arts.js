@@ -192,29 +192,41 @@
             : t('usesNew', 'A card added to a deck takes');
         const fan = document.createElement('div');
         fan.className = 'own-aa-fan';
-        fan.setAttribute('role', 'img');
+        if (optData.slots.length === 1) fan.classList.add('own-aa-fan--single');
         info.append(name, meta, uses, fan);
         row.appendChild(info);
 
-        // One image a card, made once; a change only swaps their sources.
-        const drawFan = (references, description) => {
-            fan.setAttribute('aria-label', description);
+        // A card large, as on the cards pages (pages/_card-zoom-modal.php of core-altered-cards).
+        const zoom = (ref) => {
+            if (window.acOpenCardZoom) window.acOpenCardZoom(ref, false, cfg.lang, window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref));
+        };
+
+        // One button a card, made once; a change only swaps their images and names.
+        const drawFan = (references, labels) => {
             fan.style.setProperty('--n', references.length);
             references.forEach((ref, i) => {
-                let img = fan.children[i];
-                if (!img) {
-                    img = document.createElement('img');
+                let card = fan.children[i];
+                if (!card) {
+                    card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'own-aa-fan__card';
+                    card.style.setProperty('--i', i);
+                    const img = document.createElement('img');
                     img.alt = '';
                     img.loading = 'lazy';
-                    img.style.setProperty('--i', i);
-                    fan.appendChild(img);
+                    card.appendChild(img);
+                    card.addEventListener('click', () => zoom(card.dataset.ref));
+                    fan.appendChild(card);
                 }
+                card.dataset.ref = ref;
+                card.setAttribute('aria-label', labels[i].zoom);
+                const img = card.firstChild;
                 const src = window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref);
                 if (img.getAttribute('src') !== src) img.src = src;
             });
         };
 
-        const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan });
+        const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan, onZoom: zoom });
         row.appendChild(widgetRow.el);
         return row;
     };

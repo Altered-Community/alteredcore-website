@@ -34,6 +34,7 @@ $txt = [
         'usesNew'       => 'A card added to a deck takes',
         'usesAll'       => 'All your decks use',
         'results'       => 'Cards',
+        'detail_label'  => 'View detail',
         'modeLabel'     => 'How your decks use them',
         'modePerDeck'   => 'Per deck',
         'modeGlobal'    => 'Global',
@@ -71,6 +72,7 @@ $txt = [
         'usesNew'       => 'Une carte ajoutée à un deck prend',
         'usesAll'       => 'Tous vos decks utilisent',
         'results'       => 'Cartes',
+        'detail_label'  => 'Accéder au détail',
         'modeLabel'     => 'Utilisation dans vos decks',
         'modePerDeck'   => 'Par deck',
         'modeGlobal'    => 'Global',
@@ -338,6 +340,16 @@ $uiLang = getUiLang();
             });
     })();
     </script>
+
+    <?php
+    // A card opens large, as on the cards pages: core-altered-cards' lightbox, with the tilt and without the alt-art
+    // widget (no deck-alt-arts URL: the keys of this page already choose).
+    if ($cacAvailable) {
+        $lang = getLang();
+        $ownAltArtCfg = ['enabled' => true, 'altArtsUrl' => ''];
+        include $cacDir . '/pages/_card-zoom-modal.php';
+    }
+    ?>
 
     <?php endif; ?>
     <?php endif; ?>

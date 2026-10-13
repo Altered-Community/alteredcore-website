@@ -58,7 +58,19 @@ test('chooses the default alt arts with the keys above each illustration', { tag
   await expect(key(2, '1ère carte')).toHaveAttribute('aria-pressed', 'true');
   await expect(key(1, '1ère carte')).toHaveAttribute('aria-pressed', 'false');
   await expect(fee.locator('.own-aa-fan img').first()).toHaveAttribute('src', new RegExp(FEE.alt));
-  await expect(fee.getByRole('img', { name: '1ère carte : Illustration 2, 2ème carte : Illustration 1, 3ème carte : Illustration 1' })).toBeVisible();
+  await expect(fee.getByRole('button', { name: 'Agrandir 1ère carte : Illustration 2' })).toBeVisible();
+  // A card of the fan, or an illustration, opens large as on the cards pages.
+  const zoom = page.locator('#card-modal');
+  await fee.getByRole('button', { name: 'Agrandir 1ère carte : Illustration 2' }).click();
+  await expect(zoom).toBeVisible();
+  await expect(zoom.locator('img').first()).toHaveAttribute('src', new RegExp(FEE.alt));
+  await expect(zoom.getByRole('link', { name: 'Accéder au détail' })).toBeVisible();
+  await evidence(page, testInfo, '41-default-alt-arts-zoom');
+  await page.keyboard.press('Escape');
+  await expect(zoom).toBeHidden();
+  await fee.getByRole('button', { name: 'Agrandir Illustration 1' }).click();
+  await expect(zoom.locator('img').first()).toHaveAttribute('src', new RegExp(FEE.base));
+  await page.keyboard.press('Escape');
   // Its only copy owned is on the 1st card: the other cards cannot take it.
   await expect(key(2, '2ème carte')).toBeDisabled();
   await expect(key(2, '3ème carte')).toBeDisabled();
