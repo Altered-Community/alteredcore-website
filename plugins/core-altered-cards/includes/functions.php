@@ -337,36 +337,11 @@ function cacHeroPortraitRef(string $ref): string {
  * same failure mode as the rest of this plugin's ownership calls.
  */
 function cacApplyAltArtPreferencesToCards(array $deckCards, int $userId): array {
-    if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL || $userId <= 0) return $deckCards;
-
-    $checkItems = [];
-    foreach ($deckCards as $c) {
-        if (empty($c['cardReference'])) continue;
-        $checkItems[] = ['reference' => (string)$c['cardReference'], 'quantity' => (int)($c['quantity'] ?? 1)];
-    }
-    if (!$checkItems) return $deckCards;
-
-    $result = collApiRequest(rtrim(OWNERSHIP_API_URL, '/'), 'POST', '/api/alt-arts/apply-to-deck', $userId, $checkItems);
-    if (!is_array($result) || !isset($result['lines']) || !is_array($result['lines'])) return $deckCards;
-
-    // Lines[i] is itself a list (a shortfall/preference spread can turn one input line
-    // into several) — flatten, then merge references that ended up repeated across
-    // different input lines (e.g. two printings of the same card both falling back to
-    // the same default art).
-    $merged = [];
-    foreach ($result['lines'] as $lines) {
-        foreach ((array)$lines as $line) {
-            if (!isset($line['reference'], $line['quantity'])) continue;
-            $ref = (string)$line['reference'];
-            $merged[$ref] = ($merged[$ref] ?? 0) + (int)$line['quantity'];
-        }
-    }
-
-    $out = [];
-    foreach ($merged as $ref => $qty) {
-        $out[] = ['cardReference' => $ref, 'quantity' => $qty];
-    }
-    return $out;
+    if ($userId <= 0) return $deckCards;
+    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
+    require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+    $token = kc_get_access_token($userId);
+    return ($token ? altArtApplyToDeck($token, $deckCards) : null) ?: $deckCards;
 }
 
 /**

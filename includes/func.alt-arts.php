@@ -6,86 +6,92 @@
 // - « par deck »: a deck plays the prints of its list; a card added in Re:Builder takes its default alt art, and the
 //   brush changes a card's prints for one deck (table {rebuilder_deck_alt_arts}).
 // Leaving « Global » writes the defaults in every deck first (endpoint papi/ownership/alt-art-leave-global), so that each
-// deck starts from what Board Game Arena showed.
+// deck starts from what Board Game Arena showed, and drops its brush choices.
 
 /**
- * $deckId, a deck of $userId, deleted from the decks API: its Re:Builder brush choices ({rebuilder_deck_alt_arts}) go
- * with it. Called after a successful DELETE (the services relay, the site's deck pages).
+ * The Re:Builder brush choices ({rebuilder_deck_alt_arts}) of deck $deckId, a deck of $userId, go: the deck was deleted
+ * (the services relay, the site's deck pages) or took the defaults on leaving « Global ».
  */
 function altArtForgetDeck(int $userId, string $deckId): void {
     if ($userId <= 0 || $deckId === '') return;
-    altArtDeleteChoices('DELETE FROM {rebuilder_deck_alt_arts} WHERE user_id = :u AND deck_id = :d', [':u' => $userId, ':d' => $deckId]);
-}
-
-/** $userId switched to « Global »: their decks follow the defaults, the brush choices of every deck go. */
-function altArtForgetChoices(int $userId): void {
-    if ($userId <= 0) return;
-    altArtDeleteChoices('DELETE FROM {rebuilder_deck_alt_arts} WHERE user_id = :u', [':u' => $userId]);
-}
-
-function altArtDeleteChoices(string $sql, array $args): void {
     try {
-        getDB()->prepare(q($sql))->execute($args);
+        getDB()->prepare(q('DELETE FROM {rebuilder_deck_alt_arts} WHERE user_id = :u AND deck_id = :d'))
+            ->execute([':u' => $userId, ':d' => $deckId]);
     } catch (Exception $e) {
         // Left-over rows are harmless: Re:Builder ignores a choice that no longer matches the deck's copies.
-        error_log('altArtDeleteChoices: ' . $e->getMessage());
+        error_log('altArtForgetDeck: ' . $e->getMessage());
     }
 }
 
-/** Ids of the decks of the token's player (decks API, every deck of the account in one page); `null` on an error. */
+/** Ids of every deck of the token's player (decks API, 1000 a page: its maximum); `null` on an error. */
 function altArtUserDeckIds(string $token): ?array {
     if (!defined('DECKS_API_URL') || !DECKS_API_URL) return [];
-    [$status, $body] = altArtHttp('GET', rtrim(DECKS_API_URL, '/') . '/api/decks?' . http_build_query(['page' => 1, 'itemsPerPage' => 1000]), $token);
-    if ($status !== 200 || !is_array($body)) return null;
-    $decks = isset($body['member']) && is_array($body['member']) ? $body['member'] : $body;
     $ids = [];
-    foreach ($decks as $deck) {
-        if (is_array($deck) && isset($deck['id']) && is_string($deck['id'])) $ids[] = $deck['id'];
+    for ($page = 1; ; $page++) {
+        [$status, $body] = altArtHttp('GET', rtrim(DECKS_API_URL, '/') . '/api/decks?' . http_build_query(['page' => $page, 'itemsPerPage' => 1000]), $token);
+        if ($status !== 200 || !is_array($body)) return null;
+        $decks = isset($body['member']) && is_array($body['member']) ? $body['member'] : $body;
+        foreach ($decks as $deck) {
+            if (is_array($deck) && isset($deck['id']) && is_string($deck['id'])) $ids[] = $deck['id'];
+        }
+        if (count($decks) < 1000) return $ids;
     }
-    return $ids;
 }
 
 /**
- * Writes in the list of deck $deckId what the ownership service shows of it in « Global » mode (POST
- * /api/alt-arts/apply-to-deck: the defaults, the base art for copies not owned; the hero is one of the deck's cards).
- * `true` when the list changed, `false` when it already had them, `null` on an error (nothing written).
+ * $cards ({cardReference, quantity} lines) as the ownership service shows them in « Global » mode (POST
+ * /api/alt-arts/apply-to-deck: the defaults, the base art for copies not owned), one line a reference; `null` on an error.
  */
-function altArtWriteDefaultsInDeck(string $token, string $deckId): ?bool {
-    if (!defined('DECKS_API_URL') || !DECKS_API_URL || !defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) return null;
-    $deckUrl = rtrim(DECKS_API_URL, '/') . '/api/decks/' . rawurlencode($deckId);
-    [$status, $deck] = altArtHttp('GET', $deckUrl, $token);
-    if ($status !== 200 || !is_array($deck)) return null;
-
-    $before = [];
-    foreach ((array)($deck['deckCards'] ?? $deck['cards'] ?? []) as $c) {
-        if (!is_array($c) || empty($c['cardReference'])) continue;
-        $ref = (string)$c['cardReference'];
-        $before[$ref] = ($before[$ref] ?? 0) + (int)($c['quantity'] ?? 1);
-    }
-    if (!$before) return false;
-
+function altArtApplyToDeck(string $token, array $cards): ?array {
+    if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) return null;
     $items = [];
-    foreach ($before as $ref => $qty) $items[] = ['reference' => $ref, 'quantity' => $qty];
+    foreach ($cards as $c) {
+        if (!empty($c['cardReference'])) $items[] = ['reference' => (string)$c['cardReference'], 'quantity' => (int)($c['quantity'] ?? 1)];
+    }
+    if (!$items) return [];
     [$status, $applied] = altArtHttp('POST', rtrim(OWNERSHIP_API_URL, '/') . '/api/alt-arts/apply-to-deck', $token, $items);
     if ($status !== 200 || !is_array($applied['lines'] ?? null)) return null;
 
-    // lines[i] is a list: a preference spread over several slots, or a shortfall, splits one line into several.
-    $after = [];
+    // lines[i] is a list: a preference spread over several slots, or a shortfall, splits one line into several; two
+    // prints falling back to the same base art are merged.
+    $merged = [];
     foreach ($applied['lines'] as $lines) {
         foreach ((array)$lines as $line) {
             if (!isset($line['reference'], $line['quantity'])) continue;
             $ref = (string)$line['reference'];
-            $after[$ref] = ($after[$ref] ?? 0) + (int)$line['quantity'];
+            $merged[$ref] = ($merged[$ref] ?? 0) + (int)$line['quantity'];
         }
     }
-    if (!$after) return null;
-    ksort($before);
-    ksort($after);
-    if ($after === $before) return false;
+    $out = [];
+    foreach ($merged as $ref => $qty) $out[] = ['cardReference' => $ref, 'quantity' => $qty];
+    return $out;
+}
 
-    $deckCards = [];
-    foreach ($after as $ref => $qty) $deckCards[] = ['cardReference' => $ref, 'quantity' => $qty];
-    [$status] = altArtHttp('PATCH', $deckUrl, $token, ['deckCards' => $deckCards], 'application/merge-patch+json');
+/**
+ * Writes in the list of deck $deckId what the ownership service shows of it in « Global » mode (altArtApplyToDeck; the
+ * hero is one of the deck's cards). `true` when the list changed, `false` when it already had them, `null` on an error
+ * (nothing written).
+ */
+function altArtWriteDefaultsInDeck(string $token, string $deckId): ?bool {
+    if (!defined('DECKS_API_URL') || !DECKS_API_URL) return null;
+    $deckUrl = rtrim(DECKS_API_URL, '/') . '/api/decks/' . rawurlencode($deckId);
+    [$status, $deck] = altArtHttp('GET', $deckUrl, $token);
+    if ($status !== 200 || !is_array($deck)) return null;
+
+    $before = (array)($deck['deckCards'] ?? $deck['cards'] ?? []);
+    $after = altArtApplyToDeck($token, $before);
+    if ($after === null) return null;
+    $count = function (array $lines): array {
+        $n = [];
+        foreach ($lines as $l) {
+            if (!empty($l['cardReference'])) $n[$l['cardReference']] = ($n[$l['cardReference']] ?? 0) + (int)($l['quantity'] ?? 1);
+        }
+        ksort($n);
+        return $n;
+    };
+    if ($count($after) === $count($before)) return false;
+
+    [$status] = altArtHttp('PATCH', $deckUrl, $token, ['deckCards' => $after], 'application/merge-patch+json');
     return $status >= 200 && $status < 300 ? true : null;
 }
 

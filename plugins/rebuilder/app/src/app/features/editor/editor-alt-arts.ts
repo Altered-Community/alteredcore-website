@@ -31,9 +31,8 @@ export class EditorAltArts {
   private readonly auth = inject(AuthSession);
   private readonly deckAltArts = inject(DeckAltArtsApiService);
   readonly enabled = computed(() => !!this.ownership.baseUrl && this.auth.isLoggedIn());
-  /** Alt-art mode: `true` in « Global », `undefined` until the ownership service has answered. */
-  private readonly mode = toSignal(this.ownership.globalAltArts());
-  readonly global = computed(() => this.mode() === true);
+  /** Alt-art mode: `true` in « Global », `undefined` until the ownership service has answered (or without it). */
+  private readonly mode = toSignal(toObservable(this.enabled).pipe(switchMap((on) => (on ? this.ownership.globalAltArts() : of(undefined)))));
 
   /** Family of each reference asked so far (`null`: one illustration only); the prints of a family share it. */
   private readonly known = signal<ReadonlyMap<string, AltArtChoice | null>>(new Map());
@@ -49,16 +48,24 @@ export class EditorAltArts {
     const hero = this.deck.hero()?.reference;
     return hero ? [...refs, hero] : refs;
   });
-  /** Families of the deck's references, by reference. */
-  readonly choices = computed<Record<string, AltArtChoice>>(() => {
-    const known = this.known();
-    const out: Record<string, AltArtChoice> = {};
-    for (const ref of this.deckRefs()) {
-      const choice = known.get(ref);
-      if (choice) out[ref] = choice;
-    }
-    return out;
-  });
+  /** Families of the deck's references, by reference: unchanged while the deck's are (search results add others). */
+  readonly choices = computed<Record<string, AltArtChoice>>(
+    () => {
+      const known = this.known();
+      const out: Record<string, AltArtChoice> = {};
+      for (const ref of this.deckRefs()) {
+        const choice = known.get(ref);
+        if (choice) out[ref] = choice;
+      }
+      return out;
+    },
+    {
+      equal: (a, b) => {
+        const keys = Object.keys(a);
+        return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
+      },
+    },
+  );
   /** Every reference of the deck has been asked to the service. */
   readonly ready = computed(() => this.deckRefs().every((r) => this.known().has(r)));
   private readonly ready$ = toObservable(this.ready).pipe(filter(Boolean), take(1));
@@ -114,7 +121,7 @@ export class EditorAltArts {
     });
     // « Global » mode: the deck takes the default alt arts once its families are known, and again after each change.
     effect(() => {
-      if (!this.global() || !this.canChoose() || !this.ready()) return;
+      if (this.mode() !== true || !this.canChoose() || !this.ready()) return;
       const choices = this.choices();
       this.deck.lines();
       untracked(() => this.deck.applyAltArtDefaults(choices));

@@ -22,7 +22,7 @@
         {"endpoint": "history-detail",      "file": "api/history-detail.php"},
         {"endpoint": "alt-art-search",      "file": "api/alt-art-search.php"},
         {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"},
-        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php"},
+        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php", "methods": ["GET", "PUT"], "auth": "user"},
         {"endpoint": "alt-art-leave-global", "file": "api/alt-art-leave-global.php", "methods": ["GET", "POST"], "auth": "user"}
     ],
 

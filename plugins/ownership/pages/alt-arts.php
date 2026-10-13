@@ -291,7 +291,7 @@ $uiLang = getUiLang();
                 var next = function () {
                     var deck = decks.shift();
                     if (deck === undefined) return Promise.resolve();
-                    return request('POST', cfg.leaveGlobalUrl, { deck: deck, csrf_token: cfg.csrfToken }).then(function () {
+                    return request('POST', cfg.leaveGlobalUrl, { deck: deck }).then(function () {
                         setProgress(++done, total);
                         return next();
                     }, function (e) {
@@ -302,23 +302,19 @@ $uiLang = getUiLang();
                 return Promise.all([next(), next(), next(), next()]);
             });
         };
-        var setMode = function (mode) {
-            return request('PUT', cfg.preferenceModeUrl, { mode: mode, csrf_token: cfg.csrfToken });
-        };
 
         confirmBtn.addEventListener('click', function () {
             error.hidden = true;
             setRunning(true);
-            if (cfg.isGlobalMode) {
-                writeDecks()
-                    .then(function () { return setMode('PerDeck').catch(function () { throw new Error('mode'); }); })
-                    .then(function () { location.reload(); })
-                    .catch(function (e) { fail(e.message === 'mode' ? txt.modeSaveError : txt.leaveError); });
-            } else {
-                setMode('Global')
-                    .then(function () { location.reload(); })
-                    .catch(function () { fail(txt.modeSaveError); });
-            }
+            // Each step fails with its own message.
+            var failWith = function (message) { return function () { throw message; }; };
+            var saveMode = function (mode) {
+                return request('PUT', cfg.preferenceModeUrl, { mode: mode }).then(null, failWith(txt.modeSaveError));
+            };
+            var steps = cfg.isGlobalMode
+                ? writeDecks().then(function () { return saveMode('PerDeck'); }, failWith(txt.leaveError))
+                : saveMode('Global');
+            steps.then(function () { location.reload(); }).catch(fail);
         });
         cancelBtn.addEventListener('click', function () { dialog.close(); });
         dialog.addEventListener('cancel', function (e) { if (running) e.preventDefault(); });
