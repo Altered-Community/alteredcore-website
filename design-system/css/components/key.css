@@ -1,5 +1,6 @@
 /*
- * Keys — a row of toggle buttons drawn as keys: raised and faded when off, pressed down and filled when on.
+ * Keys — a row of toggle buttons drawn as keys: raised when off, pressed down and filled when on, flat and faded
+ * when disabled.
  * Used for the 1st, 2nd and 3rd card that take an illustration (alt arts), one row above each illustration.
  * <div class="ac-keys" role="group" aria-label="…">
  *   <button type="button" class="ac-key" aria-pressed="true" aria-label="1ère carte">
@@ -29,12 +30,11 @@
   justify-content: center;
   gap: var(--ac-space-0-5);
   border: var(--ac-key-border) solid var(--ac-color-border-control);
-  border-bottom-width: var(--ac-key-edge);
+  border-bottom: var(--ac-key-edge) solid var(--ac-color-border-dashed);
   border-radius: var(--ac-radius-control);
   background: var(--ac-color-surface);
   color: var(--ac-color-text-2);
   font-family: var(--ac-font-family);
-  opacity: 0.6;
   cursor: pointer;
   transition:
     opacity var(--ac-duration-fast),
@@ -60,8 +60,13 @@
 .ac-key:not([aria-pressed='true']):not(:disabled):active {
   transform: translateY(2px);
 }
-.ac-key:disabled {
-  opacity: 0.3;
+/* Disabled: flat (no edge), no fill, faded: it cannot be pressed. */
+.ac-key:disabled:not([aria-pressed='true']) {
+  border-bottom-width: var(--ac-key-border);
+  border-color: var(--ac-color-border);
+  background: transparent;
+  color: var(--ac-color-text-disabled);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 .ac-key:focus-visible {

@@ -2,8 +2,9 @@
 
 `css/components/key.css`.
 
-A row of toggle buttons drawn as keys. A key that is off is raised (thick bottom edge) and faded;
-a key that is on is pressed down and filled in primary. Several keys of a row can be on at once.
+A row of toggle buttons drawn as keys. A key that is off is raised (thick bottom edge); a key that
+is on is pressed down and filled in primary; a disabled key is flat and faded. Several keys of a row
+can be on at once.
 
 Used for alt arts: above each illustration of a card, its 1st, 2nd and 3rd card. A key on is a
 card that takes this illustration; pressing another key gives it that card. A token has a single
@@ -35,15 +36,15 @@ Use a [segmented control](segmented.md) instead for one choice among a few optio
 | Class / attribute | Role |
 |---|---|
 | `ac-keys` | Grid of equal keys, `--ac-space-1-5` apart. `--ac-keys-count` sets the number of columns (3 by default). |
-| `ac-key` | A key, `--ac-control-lg` tall (52 px in touch density), raised by a 4 px bottom edge, at 60 % opacity. |
+| `ac-key` | A key, `--ac-control-lg` tall (52 px in touch density), raised by a 4 px bottom edge in `--ac-color-border-dashed`, text in `--ac-color-text-2`. |
 | `ac-key--sm` | Key at `--ac-control-md` (lists with many rows). |
 | `aria-pressed="true"` | Pressed down by its edge, `--ac-color-primary` with an inner shadow, full opacity. |
-| `:disabled` | 30 % opacity, not clickable. |
+| `:disabled` | Flat (no edge), no fill, `--ac-color-border` and `--ac-color-text-disabled` at 60 % opacity: clearly apart from a key that can be pressed. |
 | `ac-key__num` | Number, `--ac-font-size-body-strong`, its `<sup>` (ordinal suffix) at 0.62 em. |
 | `ac-key__word` | Word under the number (« carte »), `--ac-font-micro`. |
 | `ac-key__label` | Single word instead of number and word (« Choisir »), `--ac-font-body-strong`. |
 
-Hover (pointer devices only): border and text in primary, full opacity, the key rises by 1 px.
+Hover (pointer devices only): border and text in primary, the key rises by 1 px.
 A pressed key goes down by 2 px while the button is held.
 
 ## Accessibility
