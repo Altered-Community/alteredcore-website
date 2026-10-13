@@ -6,33 +6,26 @@
         <span class="step-num" aria-hidden="true">1</span>
         <span id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte</span>
       </h3>
+      <p class="keys-hint" i18n="@@editor.altArtPicker.keysHint">Cliquez sur une case au-dessus d’une illustration pour la lui attribuer.</p>
       <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
         @for (a of arts(); track a.reference) {
-          <li class="print">
-            <button
-              type="button"
-              class="art"
-              [cdkMenuTriggerFor]="menu"
-              [cdkMenuPosition]="positions"
-              (cdkMenuOpened)="menuFor.set(a.reference)"
-              [disabled]="a.unowned"
-              [attr.aria-label]="a.ariaLabel"
-            >
-              <img [src]="a.src" alt="" />
-            </button>
-            @if (a.ribbons.length) {
-              <span class="ribbons" aria-hidden="true">
-                @for (r of a.ribbons; track r.rank) {
-                  <span class="ribbon" [class]="'ribbon--' + r.num">
-                    <svg viewBox="0 0 52 70"><path d="M2 1h48v67l-24-12-24 12z" /></svg>
-                    <span class="ribbon-text">
-                      <span class="ribbon-num">{{ r.num }}<sup>{{ r.suffix }}</sup></span>
-                      <span class="ribbon-word">{{ cardWord }}</span>
-                    </span>
-                  </span>
-                }
-              </span>
-            }
+          <li class="print" [class.unowned]="a.unowned">
+            <div class="keys" role="group" [attr.aria-label]="a.keysLabel">
+              @for (k of a.keys; track k.rank) {
+                <button
+                  type="button"
+                  class="key"
+                  [attr.aria-pressed]="k.pressed"
+                  [attr.aria-label]="k.label"
+                  [disabled]="k.disabled"
+                  (click)="choose(a.reference, k.rank)"
+                >
+                  <span class="key-num">{{ k.num }}<sup>{{ k.suffix }}</sup></span>
+                  <span class="key-word">{{ cardWord }}</span>
+                </button>
+              }
+            </div>
+            <img class="art" [src]="a.src" alt="" />
             <span class="print-label">{{ a.label }}</span>
             <span class="print-note">{{ a.note }}</span>
           </li>
@@ -66,27 +59,3 @@
   <button acButton (click)="ref.close()" i18n="@@editor.altArtPicker.close">Fermer</button>
 </div>
 
-<ng-template #menu>
-  @let a = menuArt();
-  <div class="ac-menu menu" cdkMenu [attr.aria-label]="a?.menuLabel">
-    <div class="ac-menu__label" aria-hidden="true" i18n="@@editor.altArtPicker.useAs">Utiliser pour la…</div>
-    @for (o of a?.options; track o.rank) {
-      <button
-        type="button"
-        class="ac-menu__item"
-        [class.is-active]="o.checked"
-        cdkMenuItemRadio
-        [cdkMenuItemChecked]="o.checked"
-        [cdkMenuItemDisabled]="o.disabled || saving()"
-        (cdkMenuItemTriggered)="choose(o.rank)"
-      >
-        <span class="item-label">{{ o.label }}</span>
-        @if (o.checked) {
-          <ac-icon name="check" />
-        } @else {
-          <img class="holder" [src]="o.holder" alt="" />
-        }
-      </button>
-    }
-  </div>
-</ng-template>
