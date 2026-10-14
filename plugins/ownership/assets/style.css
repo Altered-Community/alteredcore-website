@@ -343,9 +343,11 @@
     display: none;
 }
 .own-aa-family {
+    --chevron: 44px;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ac-space-4) var(--ac-space-8);
+    align-items: stretch;
+    gap: var(--ac-space-4) 0;
     padding: var(--ac-space-5) var(--ac-space-6);
     border-bottom: 1px solid var(--ac-color-divider);
 }
@@ -358,17 +360,42 @@
     flex-direction: column;
     gap: var(--ac-space-1);
 }
-/* What decks take, on the right of the choices (below them on a phone), on a panel as « Ce que le deck utilise ». */
+/* As Re:Builder's brush: the choices on a band ending in a chevron, which fits into the notch of what decks take
+   (centred on its right); on a phone, one under the other, the chevron pointing down. */
+.own-aa-family > .own-aa-row,
 .own-aa-family__info {
-    flex: 0 1 280px;
-    align-self: flex-start;
+    position: relative;
+    isolation: isolate;
     box-sizing: border-box;
-    padding: var(--ac-space-4);
-    border-radius: var(--ac-radius-card);
-    background: var(--ac-color-bg-app);
+}
+.own-aa-family > .own-aa-row::before,
+.own-aa-family__info::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+}
+.own-aa-family > .own-aa-row {
+    padding: var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5)) var(--ac-space-4) var(--ac-space-5);
+}
+.own-aa-family > .own-aa-row::before {
+    border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+    background: var(--ac-color-primary-tint);
+    clip-path: polygon(0 0, calc(100% - var(--chevron)) 0, 100% 50%, calc(100% - var(--chevron)) 100%, 0 100%);
+}
+.own-aa-family__info {
+    flex: 0 1 330px;
+    margin-left: calc(var(--ac-space-4) - var(--chevron));
+    padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5));
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: var(--ac-space-1);
+}
+.own-aa-family__info::before {
+    border-radius: 0 var(--ac-radius-card) var(--ac-radius-card) 0;
+    background: var(--ac-color-bg-app);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chevron) 50%);
 }
 .own-aa-family__name {
     margin: 0;
@@ -436,8 +463,25 @@
     .own-aa-family {
         padding: var(--ac-space-4);
     }
+    .own-aa-family {
+        --chevron: 28px;
+    }
+    .own-aa-family > .own-aa-row {
+        flex-basis: 100%;
+        padding: var(--ac-space-4) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-4));
+    }
+    .own-aa-family > .own-aa-row::before {
+        border-radius: var(--ac-radius-card) var(--ac-radius-card) 0 0;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--chevron)), 50% 100%, 0 calc(100% - var(--chevron)));
+    }
     .own-aa-family__info {
         flex-basis: 100%;
+        margin: calc(var(--ac-space-3) - var(--chevron) - var(--ac-space-4)) 0 0;
+        padding: calc(var(--chevron) + var(--ac-space-4)) var(--ac-space-5) var(--ac-space-5);
+    }
+    .own-aa-family__info::before {
+        border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
+        clip-path: polygon(0 0, 50% var(--chevron), 100% 0, 100% 100%, 0 100%);
     }
 }
 
