@@ -51,7 +51,9 @@ test('chooses the default alt arts with the keys above each illustration', { tag
     await expect(key(1, card)).toHaveAttribute('aria-pressed', 'true');
     await expect(key(2, card)).toHaveAttribute('aria-pressed', 'false');
   }
-  await expect(fee.getByText('Une carte ajoutée à un deck prend')).toBeVisible();
+  // Per deck, the defaults go to cards added to a deck; in « Global » (the player's mode, kept by the service), to every deck.
+  const global = await page.evaluate(() => (window as unknown as { OWN_AA_CONFIG: { isGlobalMode: boolean } }).OWN_AA_CONFIG.isGlobalMode);
+  await expect(fee.getByText(global ? 'Tous vos decks utilisent' : 'Une carte ajoutée à un deck prend')).toBeVisible();
   // The 1st card takes the alt art: saved, and the fan shows it first.
   await key(2, '1ère carte').click();
   await expect.poll(() => saved.at(-1)).toEqual([FEE.alt, FEE.base, FEE.base]);

@@ -478,6 +478,13 @@
         flex-basis: 100%;
         margin: calc(var(--ac-space-3) - var(--chevron) - var(--ac-space-4)) 0 0;
         padding: calc(var(--chevron) + var(--ac-space-4)) var(--ac-space-5) var(--ac-space-5);
+        align-items: center;
+        text-align: center;
+    }
+    /* Centred under the chevron: as wide as its cards. */
+    .own-aa-fan {
+        width: calc(var(--card) + (var(--n, 1) - 1) * var(--step));
+        margin-left: 0;
     }
     .own-aa-family__info::before {
         border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
