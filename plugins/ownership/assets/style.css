@@ -505,6 +505,22 @@
     flex: none;
     scroll-snap-align: start;
 }
+/* The illustration cut at an edge fades out while there is more that way (any opaque colour: the mask uses alpha). */
+.own-aa-scroller {
+    --fade-start: 0px;
+    --fade-end: 0px;
+}
+.own-aa-scroller--more-start {
+    --fade-start: min(96px, 10%);
+}
+.own-aa-scroller--more-end {
+    --fade-end: min(96px, 10%);
+}
+.own-aa-scroller--more-start .own-aa-strip,
+.own-aa-scroller--more-end .own-aa-strip {
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+}
 .own-aa-scroller__arrow {
     position: absolute;
     top: 50%;

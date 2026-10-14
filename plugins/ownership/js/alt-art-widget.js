@@ -101,6 +101,9 @@
             const max = strip.scrollWidth - strip.clientWidth;
             prev.hidden = strip.scrollLeft <= 1;
             next.hidden = strip.scrollLeft >= max - 1;
+            // The cut illustration fades out on the side where there is more.
+            scroller.classList.toggle('own-aa-scroller--more-start', !prev.hidden);
+            scroller.classList.toggle('own-aa-scroller--more-end', !next.hidden);
         };
         strip.addEventListener('scroll', updateArrows, { passive: true });
         const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(updateArrows) : null;
