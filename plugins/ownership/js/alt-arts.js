@@ -166,8 +166,8 @@
     // ---- Rendering ----
     const labelOf = (map, code) => (cfg.labels && cfg.labels[map] && cfg.labels[map][code]) || code;
 
-    // One family: its name and what decks take on the left (its cards fanned out, the 1st on the left), its
-    // illustrations and their keys on the right.
+    // One family: its name, its illustrations under their keys, then what decks take (its cards fanned out, the 1st on
+    // the left).
     const renderFamilyRow = (family) => {
         const key = groupKeyOf(family.familyId, family.faction, family.rarity);
         const optData = optionsByKey[key];
@@ -193,8 +193,13 @@
         const fan = document.createElement('div');
         fan.className = 'own-aa-fan';
         if (optData.slots.length === 1) fan.classList.add('own-aa-fan--single');
-        info.append(name, meta, uses, fan);
-        row.appendChild(info);
+        // The card's name on top; its illustrations and their keys on the left, what decks take on the right (as in
+        // Re:Builder's brush: the choices, then the result).
+        const head = document.createElement('div');
+        head.className = 'own-aa-family__head';
+        head.append(name, meta);
+        info.append(uses, fan);
+        row.appendChild(head);
 
         // A card large, as on the cards pages (pages/_card-zoom-modal.php of core-altered-cards).
         const zoom = (ref) => {
@@ -227,7 +232,7 @@
         };
 
         const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan, onZoom: zoom });
-        row.appendChild(widgetRow.el);
+        row.append(widgetRow.el, info);
         return row;
     };
 

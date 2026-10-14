@@ -352,9 +352,20 @@
 .own-aa-family:last-child {
     border-bottom: 0;
 }
+.own-aa-family__head {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-1);
+}
+/* What decks take, on the right of the choices (below them on a phone), on a panel as « Ce que le deck utilise ». */
 .own-aa-family__info {
-    flex: 1 1 240px;
-    max-width: 300px;
+    flex: 0 1 280px;
+    align-self: flex-start;
+    box-sizing: border-box;
+    padding: var(--ac-space-4);
+    border-radius: var(--ac-radius-card);
+    background: var(--ac-color-bg-app);
     display: flex;
     flex-direction: column;
     gap: var(--ac-space-1);
@@ -369,7 +380,6 @@
     color: var(--ac-color-text-muted);
 }
 .own-aa-family__uses {
-    margin-top: var(--ac-space-3);
     font: var(--ac-font-caption);
     color: var(--ac-color-text-2);
 }
@@ -427,7 +437,7 @@
         padding: var(--ac-space-4);
     }
     .own-aa-family__info {
-        max-width: none;
+        flex-basis: 100%;
     }
 }
 
