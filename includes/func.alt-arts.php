@@ -23,19 +23,28 @@ function altArtForgetDeck(int $userId, string $deckId): void {
     }
 }
 
-/** Ids of every deck of the token's player (decks API, 1000 a page: its maximum); `null` on an error. */
+/**
+ * Ids of every deck of the token's player; `null` on an error. `GET /api/decks` ignores `page` and `itemsPerPage` today
+ * and sends every deck at once (docs/api-limitations/decks-api.md of Re:Builder): a page that is not full, or that
+ * brings no new deck, ends the loop, else an account of 1000 decks or more would get the same list again and again.
+ */
 function altArtUserDeckIds(string $token): ?array {
     if (!defined('DECKS_API_URL') || !DECKS_API_URL) return [];
+    $perPage = 1000;
     $ids = [];
-    for ($page = 1; ; $page++) {
-        [$status, $body] = altArtHttp('GET', rtrim(DECKS_API_URL, '/') . '/api/decks?' . http_build_query(['page' => $page, 'itemsPerPage' => 1000]), $token);
+    for ($page = 1; $page <= 50; $page++) {
+        [$status, $body] = altArtHttp('GET', rtrim(DECKS_API_URL, '/') . '/api/decks?' . http_build_query(['page' => $page, 'itemsPerPage' => $perPage]), $token);
         if ($status !== 200 || !is_array($body)) return null;
         $decks = isset($body['member']) && is_array($body['member']) ? $body['member'] : $body;
+        $fresh = 0;
         foreach ($decks as $deck) {
-            if (is_array($deck) && isset($deck['id']) && is_string($deck['id'])) $ids[] = $deck['id'];
+            if (!is_array($deck) || !isset($deck['id']) || !is_string($deck['id']) || isset($ids[$deck['id']])) continue;
+            $ids[$deck['id']] = true;
+            $fresh++;
         }
-        if (count($decks) < 1000) return $ids;
+        if (count($decks) !== $perPage || $fresh === 0) break;
     }
+    return array_map('strval', array_keys($ids));
 }
 
 /**
