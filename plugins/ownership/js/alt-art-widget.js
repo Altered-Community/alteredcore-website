@@ -46,12 +46,12 @@
         fr: {
             cards: ['1ère carte', '2ème carte', '3ème carte'], suffixes: ['ère', 'ème', 'ème'], card: 'carte',
             choose: 'Choisir', chosen: 'Choisie', illustration: 'Illustration %s', cardsOf: 'Cartes de %s',
-            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées', colon: ' : ', zoom: 'Agrandir %s',
+            unlimited: 'Illimitée', notOwned: 'Non possédée', ownedOne: '1 possédée', ownedMany: '%s possédées', colon: ' : ', zoom: 'Agrandir %s', previous: 'Illustrations précédentes', next: 'Illustrations suivantes',
         },
         en: {
             cards: ['1st card', '2nd card', '3rd card'], suffixes: ['st', 'nd', 'rd'], card: 'card',
             choose: 'Choose', chosen: 'Chosen', illustration: 'Illustration %s', cardsOf: 'Cards of %s',
-            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned', colon: ': ', zoom: 'Enlarge %s',
+            unlimited: 'Unlimited', notOwned: 'Not owned', ownedOne: '1 owned', ownedMany: '%s owned', colon: ': ', zoom: 'Enlarge %s', previous: 'Previous illustrations', next: 'Next illustrations',
         },
     };
     const texts = () => TXT[(document.documentElement.lang || 'en').slice(0, 2)] || TXT.en;
@@ -76,9 +76,35 @@
         row.className = 'own-aa-row';
         row.dataset.group = groupKey;
 
+        // The illustrations on one line that scrolls sideways, an arrow on each side while there is more that way.
+        const scroller = document.createElement('div');
+        scroller.className = 'own-aa-scroller';
         const strip = document.createElement('div');
         strip.className = 'own-aa-strip';
-        row.appendChild(strip);
+        const arrow = (dir, icon, label) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ac-icon-button own-aa-scroller__arrow own-aa-scroller__arrow--' + dir;
+            btn.setAttribute('aria-label', label);
+            btn.innerHTML = window.acIcon ? window.acIcon(icon) : (dir === 'prev' ? '‹' : '›');
+            btn.hidden = true;
+            btn.addEventListener('click', () => {
+                strip.scrollBy({ left: (dir === 'prev' ? -1 : 1) * strip.clientWidth * 0.8, behavior: 'smooth' });
+            });
+            return btn;
+        };
+        const prev = arrow('prev', 'chevron-left', txt.previous);
+        const next = arrow('next', 'chevron-right', txt.next);
+        scroller.append(prev, strip, next);
+        row.appendChild(scroller);
+        const updateArrows = () => {
+            const max = strip.scrollWidth - strip.clientWidth;
+            prev.hidden = strip.scrollLeft <= 1;
+            next.hidden = strip.scrollLeft >= max - 1;
+        };
+        strip.addEventListener('scroll', updateArrows, { passive: true });
+        const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(updateArrows) : null;
+        if (resizeObserver) resizeObserver.observe(strip);
 
         const err = document.createElement('div');
         err.className = 'own-aa-row-error';
@@ -256,7 +282,10 @@
         };
         row.addEventListener('click', onClick);
 
-        const destroy = () => { row.removeEventListener('click', onClick); };
+        const destroy = () => {
+            row.removeEventListener('click', onClick);
+            if (resizeObserver) resizeObserver.disconnect();
+        };
 
         return { el: row, destroy };
     }

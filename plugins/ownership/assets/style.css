@@ -485,11 +485,42 @@
     }
 }
 
-/* One family's illustrations, each under its keys (js/alt-art-widget.js; also in the card modals). */
+/* One family's illustrations, each under its keys, on one line that scrolls sideways (js/alt-art-widget.js; also in
+   the card modals). An arrow on each side while there is more that way. */
+.own-aa-scroller {
+    position: relative;
+}
 .own-aa-strip {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--ac-space-5);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--ac-space-1);
+    padding: var(--ac-space-1);
+    margin: calc(-1 * var(--ac-space-1));
+    scrollbar-width: thin;
+}
+.own-aa-strip > .own-aa-print {
+    flex: none;
+    scroll-snap-align: start;
+}
+.own-aa-scroller__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    border-radius: var(--ac-radius-pill);
+    box-shadow: var(--ac-shadow-e2);
+}
+.own-aa-scroller__arrow[hidden] {
+    display: none;
+}
+.own-aa-scroller__arrow--prev {
+    left: calc(-1 * var(--ac-space-3));
+}
+.own-aa-scroller__arrow--next {
+    right: calc(-1 * var(--ac-space-3));
 }
 .own-aa-print {
     width: 200px;
@@ -548,15 +579,13 @@
     font: var(--ac-font-small);
     color: var(--ac-color-danger);
 }
-/* Two illustrations a row on a phone. */
+/* Two illustrations in view on a phone (and a bit of the next one). */
 @media (max-width: 767.98px) {
     .own-aa-strip {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--ac-space-5) var(--ac-space-4);
+        gap: var(--ac-space-4);
     }
-    .own-aa-print {
-        width: auto;
+    .own-aa-strip > .own-aa-print {
+        width: calc((100% - var(--ac-space-4)) / 2.2);
     }
 }
 
