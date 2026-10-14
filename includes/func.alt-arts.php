@@ -50,15 +50,36 @@ function altArtUserDeckIds(string $token): ?array {
 /**
  * $cards ({cardReference, quantity} lines) as the ownership service shows them in « Global » mode (POST
  * /api/alt-arts/apply-to-deck: the defaults, the base art for copies not owned), one line a reference; `null` on an error.
+ * The service fills each line from the family's 1st card: a deck holding one line a print (the alt art for the 1st
+ * card, the plain print for the 2nd and 3rd) would get the 1st card's alt art twice. The lines of a family are sent as
+ * one (POST /api/alt-arts/resolve-references gives each reference its family).
  */
 function altArtApplyToDeck(string $token, array $cards): ?array {
     if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) return null;
-    $items = [];
+    $base = rtrim(OWNERSHIP_API_URL, '/');
+    $quantities = [];
     foreach ($cards as $c) {
-        if (!empty($c['cardReference'])) $items[] = ['reference' => (string)$c['cardReference'], 'quantity' => (int)($c['quantity'] ?? 1)];
+        if (empty($c['cardReference'])) continue;
+        $ref = (string)$c['cardReference'];
+        $quantities[$ref] = ($quantities[$ref] ?? 0) + (int)($c['quantity'] ?? 1);
     }
-    if (!$items) return [];
-    [$status, $applied] = altArtHttp('POST', rtrim(OWNERSHIP_API_URL, '/') . '/api/alt-arts/apply-to-deck', $token, $items);
+    if (!$quantities) return [];
+    [$status, $resolved] = altArtHttp('POST', $base . '/api/alt-arts/resolve-references', $token, array_map('strval', array_keys($quantities)));
+    if ($status !== 200 || !is_array($resolved)) return null;
+    $familyOf = [];
+    foreach ($resolved as $r) {
+        if (is_array($r) && isset($r['reference'], $r['familyId'], $r['faction'], $r['rarity'])) {
+            $familyOf[(string)$r['reference']] = $r['familyId'] . ':' . $r['faction'] . ':' . $r['rarity'];
+        }
+    }
+    // One line a family (its first reference), one line a reference without a family.
+    $items = [];
+    foreach ($quantities as $ref => $qty) {
+        $key = $familyOf[(string)$ref] ?? 'ref:' . $ref;
+        if (isset($items[$key])) $items[$key]['quantity'] += $qty;
+        else $items[$key] = ['reference' => (string)$ref, 'quantity' => $qty];
+    }
+    [$status, $applied] = altArtHttp('POST', $base . '/api/alt-arts/apply-to-deck', $token, array_values($items));
     if ($status !== 200 || !is_array($applied['lines'] ?? null)) return null;
 
     // lines[i] is a list: a preference spread over several slots, or a shortfall, splits one line into several; two
