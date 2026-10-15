@@ -2,17 +2,22 @@
     "$schema":      "../plugin.schema.json",
     "id":           "ownership",
     "name":         "Digital Ownership",
-    "version":      "1.0.0",
+    "version":      "1.1.0",
     "description":  "Opening digital boosters and viewing the ownership transaction history, backed by the AlteredOwnership service.",
     "author":       "AlteredCore",
     "icon":         "fa-solid fa-gift",
+    "table_prefix": "own",
+    "sql":          "sql/install.sql",
+    "tables":       ["prices"],
 
     "pages": [
         {"slug": "ownership",            "file": "pages/ownership.php",  "title_en": "Digital Ownership", "title_fr": "Propriété numérique"},
         {"slug": "ownership-collection", "file": "pages/collection.php", "title_en": "Collection",        "title_fr": "Collection"},
         {"slug": "boosters",             "file": "pages/boosters.php",   "title_en": "Boosters",          "title_fr": "Boosters"},
         {"slug": "ownership-history",    "file": "pages/history.php",    "title_en": "History",           "title_fr": "Historique"},
-        {"slug": "ownership-alt-arts",   "file": "pages/alt-arts.php",   "title_en": "Alt Arts BGA",       "title_fr": "Alt Arts BGA"}
+        {"slug": "ownership-alt-arts",   "file": "pages/alt-arts.php",   "title_en": "Alt Arts BGA",       "title_fr": "Alt Arts BGA"},
+        {"slug": "alt-art-shop",          "file": "pages/shop.php",       "title_en": "Alt Art Shop",       "title_fr": "Boutique d'arts alternatifs"},
+        {"slug": "alt-art-shop-preview",  "file": "pages/shop-preview.php", "title_en": "Alt Art Shop (preview)", "title_fr": "Boutique d'arts alternatifs (aperçu)"}
     ],
 
     "api": [
@@ -22,11 +27,21 @@
         {"endpoint": "history-detail",      "file": "api/history-detail.php"},
         {"endpoint": "alt-art-search",      "file": "api/alt-art-search.php"},
         {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"},
-        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php"}
+        {"endpoint": "alt-art-preference-mode", "file": "api/alt-art-preference-mode.php"},
+        {"endpoint": "shop-list",           "file": "api/shop-list.php", "methods": ["GET", "HEAD"], "auth": "user"},
+        {"endpoint": "shop-preview-list",   "file": "api/shop-preview-list.php", "methods": ["GET", "HEAD"], "auth": "user"}
+    ],
+
+    "admin": [
+        {"section": "shop-prices", "file": "admin/shop-prices.php", "label_en": "Shop Prices", "label_fr": "Prix de la boutique", "icon": "fa-solid fa-tags"}
+    ],
+
+    "menu": [
+        {"label_en": "Alt Art Shop", "label_fr": "Boutique d'arts alternatifs", "page": "alt-art-shop", "icon": "fa-solid fa-store", "parent_url": "/pages/ownership"}
     ],
 
     "assets": {
-        "css": ["assets/style.css"],
-        "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js", "js/alt-arts.js", "js/alt-art-widget.js", "js/card-modal-enhance.js"]
+        "css": ["assets/style.css", "assets/shop.css"],
+        "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js", "js/alt-arts.js", "js/alt-art-widget.js", "js/card-modal-enhance.js", "js/shop.js"]
     }
 }

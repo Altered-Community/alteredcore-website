@@ -1,8 +1,8 @@
 <?php
 // Shared sub-nav for the "Digital Ownership" area — included by pages/ownership.php,
-// pages/collection.php, pages/boosters.php and pages/history.php. Set $ownActiveTab to
-// 'collection', 'boosters', 'history' or 'alt-arts' before including (left unset/''
-// on the hub page, where nothing is active).
+// pages/collection.php, pages/boosters.php, pages/history.php, pages/alt-arts.php and
+// pages/shop.php. Set $ownActiveTab to 'collection', 'boosters', 'history', 'alt-arts' or
+// 'alt-art-shop' before including (left unset/'' on the hub page, where nothing is active).
 //
 // Mirrors AlteredOwnership's own 4-link nav (Collection/Boosters/History/Import), but
 // "Collection" now points at pages/collection.php, which embeds core-altered-cards' own
@@ -14,8 +14,8 @@ $ownActiveTab = $ownActiveTab ?? '';
 // physical-collection tab elsewhere on the site (core-altered-cards/pages/collection.php);
 // keeping "Digital Ownership"/"Propriété numérique" here avoids the two being confused.
 $ownSubnavTxt = [
-    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'altArts' => 'Alt Arts BGA', 'import' => 'Equinox Import'],
-    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'altArts' => 'Alt Arts BGA', 'import' => 'Import Equinox'],
+    'en' => ['collection' => 'Digital Ownership', 'boosters' => 'Boosters', 'history' => 'History', 'altArts' => 'Alt Arts BGA', 'shop' => 'Alt Art Shop', 'import' => 'Equinox Import'],
+    'fr' => ['collection' => 'Propriété numérique', 'boosters' => 'Boosters', 'history' => 'Historique', 'altArts' => 'Alt Arts BGA', 'shop' => 'Boutique d\'arts alternatifs', 'import' => 'Import Equinox'],
 ][getUiLang()];
 
 $ownBoosterCount = null;
@@ -45,6 +45,9 @@ $ownTab = function (string $tab) use ($ownActiveTab): string {
     </a>
     <a href="<?= h(BASE_URL) ?>/pages/ownership-alt-arts"<?= $ownTab('alt-arts') ?>>
         <?= ac_icon('palette') ?><span><?= h($ownSubnavTxt['altArts']) ?></span>
+    </a>
+    <a href="<?= h(BASE_URL) ?>/pages/alt-art-shop"<?= $ownTab('alt-art-shop') ?>>
+        <?= ac_icon('shopping-cart') ?><span><?= h($ownSubnavTxt['shop']) ?></span>
     </a>
     <?php if ($ownImportUrl): ?>
     <a href="<?= h($ownImportUrl) ?>" target="_blank" rel="noopener">
