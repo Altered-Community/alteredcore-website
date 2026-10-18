@@ -1,0 +1,570 @@
+/*
+ * Discover page (pages/discover.php). Layout only: every value comes from the design system.
+ * The contents list itself is the design system's ac-toc.
+ */
+.discover { padding-bottom: var(--ac-space-10); }
+
+/* Header strip */
+.discover-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ac-space-1) var(--ac-space-5);
+  padding: var(--ac-space-6) 0 var(--ac-space-5);
+  border-bottom: 1px solid var(--ac-color-border);
+}
+.discover-header__title {
+  font: var(--ac-font-display);
+  letter-spacing: var(--ac-letter-spacing-display);
+  margin: 0;
+}
+
+/* Body: contents + panels */
+.discover-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-6) 0 var(--ac-space-8);
+}
+.discover-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-6);
+  min-width: 0;
+  flex: 1;
+}
+
+/* Section panels */
+.discover-section {
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-8);
+}
+.discover-section__title {
+  font: var(--ac-font-title);
+  letter-spacing: var(--ac-letter-spacing-display);
+  color: inherit;
+  margin: 0 0 var(--ac-space-4);
+}
+.discover-section__title span {
+  display: inline-block;
+  padding-bottom: var(--ac-space-1);
+  border-bottom: 3px solid var(--ac-color-primary);
+}
+.discover-section__body:empty { display: none; }
+
+/* Contents */
+.discover-toc__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--ac-control-md);
+  padding: 0 var(--ac-space-4);
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  cursor: pointer;
+}
+.discover-toc__toggle[aria-expanded='true'] .ac-icon { transform: rotate(180deg); }
+.discover-toc__panel { display: none; margin-top: var(--ac-space-2); }
+.discover-toc__toggle[aria-expanded='true'] + .discover-toc__panel { display: block; }
+.discover-toc__outs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ac-space-2); }
+.discover-toc__out {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font: var(--ac-font-body);
+  font-weight: 700;
+  color: var(--ac-color-link);
+  text-decoration: none;
+}
+@media (hover: hover) { .discover-toc__out:hover { text-decoration: underline; } }
+
+/* Tablet: contents become a sticky bar under the menu */
+@media (min-width: 768px) {
+  .discover-toc {
+    position: sticky;
+    top: var(--ac-sticky-top);
+    z-index: var(--ac-z-sticky);
+    background: var(--ac-color-bg-app);
+    padding: var(--ac-space-2) 0;
+  }
+  .discover-toc__panel { position: absolute; left: 0; right: 0; box-shadow: var(--ac-shadow-e2); }
+}
+
+/* Desktop: sticky sidebar, list always open */
+@media (min-width: 1200px) {
+  .discover-body { flex-direction: row; align-items: flex-start; gap: var(--ac-space-8); }
+  .discover-toc {
+    flex: 0 0 236px;
+    padding: 0;
+    background: none;
+    top: calc(var(--ac-sticky-top) + var(--ac-space-4));
+  }
+  .discover-toc__toggle { display: none; }
+  .discover-toc__panel { display: block; position: static; margin: 0; box-shadow: none; }
+}
+
+/* ---------- Section 1: How a game plays ---------- */
+.discover-lead { font: var(--ac-font-prose); margin: 0 0 var(--ac-space-6); }
+
+.discover-diff { display: grid; gap: var(--ac-space-3); margin-bottom: var(--ac-space-6); }
+.discover-diff__item {
+  background: var(--ac-color-bg-app);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  padding: var(--ac-space-4) var(--ac-space-5);
+}
+.discover-diff__title { font: var(--ac-font-body-strong); margin: 0 0 var(--ac-space-2); }
+.discover-diff__body { font: var(--ac-font-body); font-weight: 400; line-height: 1.5; color: var(--ac-color-text-2); margin: 0; }
+
+.discover-day {
+  list-style: none;
+  margin: 0 0 var(--ac-space-6);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ac-space-3);
+  counter-reset: day;
+}
+.discover-day__item {
+  counter-increment: day;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  padding: var(--ac-space-4) var(--ac-space-3);
+  text-align: center;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+}
+.discover-day__item:last-child { grid-column: span 2; }
+.discover-day__icon { width: 40px; height: 40px; object-fit: contain; }
+.discover-day__name { font: var(--ac-font-body-strong); }
+.discover-day__name::before { content: counter(day) ' · '; }
+.discover-day__text { font: var(--ac-font-small); font-weight: 500; color: var(--ac-color-text-muted); }
+
+.discover-demo { display: grid; gap: var(--ac-space-4); margin-bottom: var(--ac-space-4); }
+.discover-demo .discover-day { margin-bottom: 0; }
+.discover-visual { margin: 0; }
+.discover-visual__stage { position: relative; }
+.discover-visual__video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1360 / 814;
+  object-fit: cover;
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-overlay-control);
+}
+/* What is happening, in words. Without the script (or under reduced motion) every line is listed under the video;
+   with it, one line at a time in a bar under the video (over it they would hide the hands and Reserves they describe). */
+.discover-visual__cues { list-style: none; margin: var(--ac-space-2) 0 0; padding: 0; display: grid; gap: var(--ac-space-1-5); }
+.discover-visual__cue { font: var(--ac-font-body); font-weight: 500; color: var(--ac-color-text-2); }
+.discover-day__cue { display: none; }
+.discover-visual__cues.is-live {
+  display: block;
+  min-height: 4.5em;
+  padding: var(--ac-space-2) var(--ac-space-3);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-primary-tint);
+}
+.discover-visual__cues.is-live .discover-visual__cue { display: none; }
+.discover-visual__cues.is-live .discover-visual__cue[data-active] { display: block; }
+/* A caption pops in when it changes: it rises a little and fades in. */
+@keyframes discover-cue-in {
+  from { opacity: 0; transform: translateY(var(--ac-space-2)); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .discover-visual__cues.is-live .discover-visual__cue[data-active],
+  .discover-demo .discover-day__item > .discover-day__cue[data-active] {
+    animation: discover-cue-in calc(var(--ac-duration-base) * 2) ease-out;
+  }
+}
+/* The phase the loop is showing. Morning and Noon are not in the loop, so they never get it. */
+.discover-day__item[aria-current='step'] { background: var(--ac-color-primary-soft); border-color: var(--ac-color-primary); }
+.discover-visual__caption {
+  margin-top: var(--ac-space-2);
+  font: var(--ac-font-small);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ac-color-text-muted);
+}
+
+.discover-more { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--ac-space-1) var(--ac-space-3); margin: 0; }
+.discover-more__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-link);
+  text-decoration: none;
+}
+@media (hover: hover) { .discover-more__link:hover { text-decoration: underline; } }
+
+@media (min-width: 768px) {
+  .discover-diff { grid-template-columns: repeat(2, 1fr); }
+  .discover-day { grid-template-columns: repeat(6, 1fr); }
+  .discover-day__item { grid-column: span 2; }
+  .discover-day__item:nth-child(n + 4) { grid-column: span 3; }
+  .discover-day__item:last-child { grid-column: span 3; }
+  .discover-day__name::before { content: none; }
+  .discover-visual { max-width: 760px; margin-inline: auto; }
+}
+@media (min-width: 1200px) {
+  .discover-diff { grid-template-columns: repeat(3, 1fr); }
+  .discover-day { grid-template-columns: repeat(5, 1fr); }
+  .discover-day__item,
+  .discover-day__item:nth-child(n + 4),
+  .discover-day__item:last-child { grid-column: span 1; }
+  /* Phases as a list beside the loop, so each one lights up as the video reaches it. */
+  .discover-demo { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); align-items: start; }
+  .discover-demo .discover-day { grid-template-columns: 1fr; }
+  .discover-demo .discover-day__item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--ac-space-3);
+    align-items: center;
+    text-align: left;
+    padding: var(--ac-space-3);
+  }
+  .discover-demo .discover-day__icon { grid-row: span 2; }
+  .discover-demo .discover-visual { max-width: none; margin: 0; }
+  /* The caption moves from under the video to under the phase being shown. */
+  .discover-demo .discover-day__item > .discover-day__cue[data-active] {
+    display: block;
+    grid-column: 1 / -1;
+    margin-top: var(--ac-space-2);
+    padding-top: var(--ac-space-2);
+    border-top: 1px solid var(--ac-color-border);
+    font: var(--ac-font-body);
+    font-weight: 500;
+    color: var(--ac-color-text-2);
+  }
+  .discover-visual__cues.is-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Section 2: The world and its art ---------- */
+/* Each faction brings its own colour (--ac-faction-*): the chip, the panel border and tint, the name and the link. */
+.discover-world [data-faction='intro']  { --discover-faction: var(--ac-color-primary); }
+.discover-world [data-faction='axiom']  { --discover-faction: var(--ac-faction-axiom); }
+.discover-world [data-faction='bravos'] { --discover-faction: var(--ac-faction-bravos); }
+.discover-world [data-faction='lyra']   { --discover-faction: var(--ac-faction-lyra); }
+.discover-world [data-faction='muna']   { --discover-faction: var(--ac-faction-muna); }
+.discover-world [data-faction='ordis']  { --discover-faction: var(--ac-faction-ordis); }
+.discover-world [data-faction='yzmir']  { --discover-faction: var(--ac-faction-yzmir); }
+
+.discover-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ac-space-2); margin-bottom: var(--ac-space-4); }
+.discover-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-2) var(--ac-space-1);
+  min-height: var(--ac-control-lg);
+  color: var(--ac-color-text);
+  background: var(--ac-color-bg-app);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-lg);
+  font: var(--ac-font-body-strong);
+  cursor: pointer;
+}
+.discover-chip[aria-selected='true'] {
+  background: color-mix(in srgb, var(--discover-faction) 14%, var(--ac-color-surface));
+  border: 2px solid var(--discover-faction);
+}
+.discover-chip__icon { display: grid; place-items: center; width: var(--ac-space-8); height: var(--ac-space-8); font-size: var(--ac-space-6); line-height: 1; color: var(--discover-faction); }
+.discover-chip__logo { width: var(--ac-space-8); height: var(--ac-space-8); object-fit: contain; }
+@media (hover: hover) {
+  .discover-chip:hover { background: color-mix(in srgb, var(--discover-faction) 10%, var(--ac-color-surface)); }
+}
+
+.discover-faction {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-5) var(--ac-space-8);
+  padding: var(--ac-space-8);
+  background: color-mix(in srgb, var(--discover-faction) 6%, var(--ac-color-surface));
+  border: 1px solid color-mix(in srgb, var(--discover-faction) 35%, var(--ac-color-border));
+  border-top: 4px solid var(--discover-faction);
+  border-radius: var(--ac-radius-lg);
+}
+.discover-faction[hidden] { display: none; }
+.discover-faction__text { flex: 1 1 20rem; min-width: 0; }
+.discover-faction__name { font: var(--ac-font-display); letter-spacing: var(--ac-letter-spacing-display); color: var(--discover-faction); margin: 0; }
+.discover-faction__label {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  margin: var(--ac-space-6) 0 var(--ac-space-2);
+  font: var(--ac-font-overline);
+  font-weight: 800;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  /* A muted faction colour: toned toward the muted text colour, still readable on the tinted panel. */
+  color: color-mix(in srgb, var(--discover-faction) 60%, var(--ac-color-text-muted));
+}
+/* A rule after the label, in the faction colour, so the two blocks read as two blocks. */
+.discover-faction__label::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  border-radius: var(--ac-radius-pill);
+  background: color-mix(in srgb, var(--discover-faction) 30%, transparent);
+}
+.discover-faction__name + .discover-faction__label { margin-top: var(--ac-space-4); }
+.discover-faction__text > .discover-faction__label:first-child { margin-top: 0; }
+.discover-faction__copy { font: var(--ac-font-prose); line-height: 1.7; color: var(--ac-color-text); margin: 0; }
+.discover-faction__link,
+.discover-world__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  margin-top: var(--ac-space-6);
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-link);
+  text-decoration: none;
+}
+.discover-faction__link { color: var(--discover-faction); }
+@media (hover: hover) {
+  .discover-faction__link:hover,
+  .discover-world__link:hover { text-decoration: underline; }
+}
+
+/* Introduction tab: key art of a set (729x409 source images) */
+.discover-set { flex: 0 1 24rem; align-self: center; margin: 0; }
+.discover-set__img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--ac-radius-lg); background: var(--ac-color-track); }
+.discover-set__caption { margin-top: var(--ac-space-1-5); text-align: center; font: var(--ac-font-small); color: var(--ac-color-text-muted); }
+
+/* The two illustrations: a Hero (standard version) and another card, side by side */
+.discover-faction__art { display: flex; gap: var(--ac-space-3); align-items: flex-start; justify-content: center; align-self: center; flex: 0 1 28.25rem; }
+.discover-art { flex: 1 1 0; max-width: 16.67rem; margin: 0; }
+.discover-art__frame {
+  aspect-ratio: 63 / 88;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-track);
+  overflow: hidden;
+}
+.discover-art__frame:not(.is-loaded) { animation: ac-skeleton-pulse 1.4s ease-in-out infinite; }
+.discover-art__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.discover-art__credit { text-align: center; margin-top: var(--ac-space-1-5); font: var(--ac-font-small); color: var(--ac-color-text-muted); }
+.discover-art__credit:empty { display: none; }
+.discover-faction__art.is-empty { display: none; }
+
+.discover-world__human { font: var(--ac-font-prose); margin: var(--ac-space-5) 0 0; }
+.discover-world__links { display: flex; flex-wrap: wrap; gap: var(--ac-space-1) var(--ac-space-5); margin: 0; }
+
+@media (min-width: 1200px) {
+  .discover-chips { grid-template-columns: repeat(7, 1fr); }
+}
+
+/* ---------- Section 3: Ways to play ---------- */
+.discover-tracks { display: grid; gap: var(--ac-space-4); align-items: stretch; }
+.discover-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-5);
+  background: var(--ac-color-bg-app);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+}
+.discover-track__title { font: var(--ac-font-body-strong); font-size: var(--ac-font-size-prose); margin: 0; }
+.discover-track__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ac-space-3); counter-reset: step; }
+.discover-track__steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: var(--ac-space-6) 1fr;
+  gap: var(--ac-space-3);
+  align-items: start;
+  font: var(--ac-font-body);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ac-color-text-2);
+}
+/* The number is generated content: the list already says the order. Outlined, except on the recommended track. */
+.discover-track__steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: var(--ac-space-6);
+  height: var(--ac-space-6);
+  border: 1px solid var(--ac-color-primary);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary);
+  font: var(--ac-font-caption);
+}
+.discover-track--primary .discover-track__steps li::before { background: var(--ac-color-primary); color: var(--ac-color-on-primary); }
+.discover-track__note { font: var(--ac-font-caption); font-weight: 500; color: var(--ac-color-text-muted); margin: 0; }
+/* Pinned to the bottom: the buttons line up whatever the content length. */
+.discover-track__cta { margin-top: auto; width: 100%; white-space: normal; text-align: center; }
+
+@media (min-width: 768px) {
+  .discover-tracks { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Section 4: Build your own deck ---------- */
+.discover-decks__top { margin-bottom: var(--ac-space-8); }
+.discover-decks__main .discover-lead { margin-bottom: var(--ac-space-5); }
+
+.discover-features { margin: 0 0 var(--ac-space-5); display: flex; flex-direction: column; gap: var(--ac-space-3); }
+.discover-features__row { display: grid; grid-template-columns: 11rem 1fr; gap: var(--ac-space-1) var(--ac-space-4); align-items: baseline; }
+.discover-features dt { font: var(--ac-font-body-strong); font-weight: 800; }
+.discover-features dd { font: var(--ac-font-body); font-weight: 400; color: var(--ac-color-text-2); margin: 0; }
+
+.discover-figures {
+  list-style: none;
+  margin: 0 0 var(--ac-space-5);
+  padding: var(--ac-space-4) 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ac-space-4);
+  border-top: 1px solid var(--ac-color-border);
+  border-bottom: 1px solid var(--ac-color-border);
+}
+.discover-figures__item { display: flex; flex-direction: column; gap: var(--ac-space-0-5); }
+.discover-figures__value { font: var(--ac-font-display); letter-spacing: var(--ac-letter-spacing-display); color: var(--ac-color-primary-strong); }
+.discover-figures__label { font: var(--ac-font-small); color: var(--ac-color-text-muted); }
+
+/* The four steps, from account to play: two groups ("once", "every time"), a chevron between the steps of a group */
+.discover-flow { display: grid; gap: var(--ac-space-5); }
+.discover-flow__group { display: flex; flex-direction: column; gap: var(--ac-space-2); min-width: 0; }
+.discover-flow__label {
+  margin: 0;
+  font: var(--ac-font-micro);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+.discover-flow__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ac-space-3); counter-reset: flow; }
+.discover-flow__group:nth-child(2) .discover-flow__steps { counter-reset: flow 2; }
+.discover-flow__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-4);
+  background: var(--ac-color-bg-app);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+}
+/* The number is generated content (the list already says the order); the second group carries on from 2. */
+.discover-flow__step { counter-increment: flow; }
+.discover-flow__step::before {
+  content: counter(flow);
+  display: grid;
+  place-items: center;
+  width: var(--ac-space-6);
+  height: var(--ac-space-6);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  font: var(--ac-font-caption);
+}
+.discover-flow__title { font: var(--ac-font-body-strong); font-weight: 800; margin: 0; }
+.discover-flow__text { font: var(--ac-font-body); font-weight: 400; line-height: 1.5; color: var(--ac-color-text-2); margin: 0; }
+.discover-flow__cta { width: 100%; white-space: normal; text-align: center; margin-top: var(--ac-space-1); }
+.discover-flow__aside { margin: 0; font: var(--ac-font-small); color: var(--ac-color-text-muted); align-self: center; text-align: center; }
+.discover-flow__aside a,
+.discover-flow__link { font-weight: 800; color: var(--ac-color-link); }
+.discover-flow__link { display: inline-flex; align-items: center; gap: var(--ac-space-1-5); font: var(--ac-font-body-strong); font-weight: 800; text-decoration: underline; }
+@media (hover: hover) { .discover-flow__aside a:hover, .discover-flow__link:hover { color: var(--ac-color-link-hover); } }
+
+/* Formats picker: the faction picker's pattern, in the primary colour */
+.discover-formats { --discover-faction: var(--ac-color-primary); }
+.discover-formats .discover-chips { grid-template-columns: repeat(2, 1fr); }
+.discover-format__links { display: flex; flex-direction: column; gap: var(--ac-space-1); margin: 0; }
+.discover-table {
+  flex: 0 1 17.5rem;
+  align-self: flex-start;
+  border-collapse: collapse;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-md);
+  overflow: hidden;
+  font: var(--ac-font-body);
+}
+.discover-table th,
+.discover-table td { padding: var(--ac-space-2-5) var(--ac-space-3); text-align: left; border-bottom: 1px solid var(--ac-color-divider); vertical-align: top; }
+.discover-table tr:last-child :is(th, td) { border-bottom: 0; }
+.discover-table th { font: var(--ac-font-small); font-weight: 700; color: var(--ac-color-text-muted); width: 45%; }
+.discover-table td { font-weight: 700; }
+.discover-formats__closing { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--ac-space-1) var(--ac-space-4); margin: var(--ac-space-5) 0 0; font: var(--ac-font-body); color: var(--ac-color-text-muted); }
+.discover-formats__closing .discover-world__link { margin-top: 0; }
+
+@media (min-width: 768px) {
+  .discover-figures { grid-template-columns: repeat(4, 1fr); }
+  .discover-formats .discover-chips { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1200px) {
+  .discover-formats .discover-chips { grid-template-columns: repeat(6, 1fr); }
+}
+@media (max-width: 767.98px) {
+  .discover-features__row { grid-template-columns: 1fr; }
+  .discover-table { flex-basis: 100%; }
+}
+
+/* ---------- Section 5: Who runs Altered now ---------- */
+.discover-project { display: grid; gap: var(--ac-space-6); margin-bottom: var(--ac-space-5); }
+.discover-project__title { font: var(--ac-font-body-strong); font-size: var(--ac-font-size-prose); margin: 0 0 var(--ac-space-3); }
+.discover-project__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ac-space-2); }
+.discover-project__list li {
+  display: grid;
+  grid-template-columns: var(--ac-space-5) 1fr;
+  gap: var(--ac-space-3);
+  align-items: start;
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border-radius: var(--ac-radius-lg);
+  font: var(--ac-font-body);
+  font-weight: 500;
+}
+.discover-project__list .ac-icon { margin-top: var(--ac-space-0-5); }
+/* Shipped: filled cards. In progress: dashed outline. The heading above each list says which is which. */
+.discover-project__list--shipped li { background: var(--ac-color-bg-app); border: 1px solid var(--ac-color-border); }
+.discover-project__list--shipped .ac-icon { color: var(--ac-color-success); }
+.discover-project__list--wip li { background: transparent; border: 1px dashed var(--ac-color-border-dashed); color: var(--ac-color-text-2); }
+.discover-project__list--wip .ac-icon { color: var(--ac-color-text-muted); }
+.discover-project__updated { margin: var(--ac-space-3) 0 0; font: var(--ac-font-small); color: var(--ac-color-text-muted); }
+.discover-project__horizon { margin: var(--ac-space-4) 0 0; font: var(--ac-font-body); font-weight: 500; line-height: 1.6; color: var(--ac-color-text-2); }
+.discover-project__links { display: flex; flex-wrap: wrap; gap: var(--ac-space-2) var(--ac-space-6); margin: 0; }
+.discover-project__links .discover-world__link { margin-top: 0; }
+
+@media (min-width: 1200px) {
+  .discover-project { grid-template-columns: 1fr 1fr; gap: var(--ac-space-8); }
+}
+
+@media (min-width: 768px) {
+  .discover-flow__steps { grid-template-columns: repeat(2, 1fr); gap: var(--ac-space-6); }
+  /* A chevron in the gap after the first step of each group */
+  .discover-flow__step:first-child::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: calc(var(--ac-space-6) / -2 - 4px);
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--ac-color-primary-border);
+    border-right: 2px solid var(--ac-color-primary-border);
+    transform: translateY(-50%) rotate(45deg);
+  }
+}
+@media (min-width: 1200px) {
+  .discover-flow { grid-template-columns: 1fr 1fr; gap: var(--ac-space-6); }
+}

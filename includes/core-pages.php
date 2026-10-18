@@ -6,6 +6,7 @@ $__corePages = [
     '404'           => ['public' => true],
     'account'       => ['public' => true],
     'design-system' => ['public' => true],
+    'discover'      => ['public' => true],
     'feedback'      => ['public' => true],
     'home'          => ['public' => true],
     'iframe'        => ['public' => true],
