@@ -103,6 +103,36 @@ opening are up to the page (a `<details>`, a popover, a script); the class only 
 The Bootstrap `.dropdown-menu` is restyled to look the same (see
 [bootstrap-bridge.md](bootstrap-bridge.md)); new code uses `ac-menu`.
 
+## Contents — `ac-toc`
+
+Panel of in-page links for a long page: a title, a list, optional sub-links. The link of the
+section being read carries `aria-current` (set it from a scroll observer); the list has no numbers
+unless `ac-toc--numbered` is set. Collapsing it on narrow screens is the page's job (a button and a
+panel around it).
+
+```php
+<nav class="ac-toc ac-toc--sticky" aria-label="<?= h(t('rules.contents')) ?>">
+  <p class="ac-toc__title"><?= h(t('rules.contents')) ?></p>
+  <ol class="ac-toc__list">
+    <li><a href="#setup" aria-current="true"><?= h(t('rules.setup')) ?></a></li>
+    <li><a href="#day"><?= h(t('rules.day')) ?></a>
+      <ul class="ac-toc__sub">
+        <li><a href="#morning"><?= ac_icon('sun', 'ac-icon--16') ?> <?= h(t('rules.morning')) ?></a></li>
+      </ul>
+    </li>
+  </ol>
+</nav>
+```
+
+| Class | Effect |
+|---|---|
+| `ac-toc` | Surface panel, border, `--ac-radius-lg`. |
+| `ac-toc--sticky` | Sticks under the site header while the page scrolls. |
+| `ac-toc--numbered` | Two-digit counter before each top-level item. |
+| `ac-toc__title` | Centred overline label; may hold a small image. |
+| `ac-toc__list` | The links; `aria-current` on a link = current section. |
+| `ac-toc__sub` | Sub-links under an item, smaller and muted. |
+
 ## Density
 
 | Element | Pointer | Touch |

@@ -475,6 +475,26 @@ include dirname(__DIR__) . '/includes/header.php';
                     <li><a href="#design-system" aria-label="Next"><?= ac_icon('chevron-right') ?></a></li>
                 </ul></nav>
             </div>
+            <div class="ds-demo" style="align-items: flex-start">
+                <nav class="ac-toc" aria-label="Contents">
+                    <p class="ac-toc__title">Contents</p>
+                    <ol class="ac-toc__list">
+                        <li><a href="#design-system" aria-current="true">Setup</a></li>
+                        <li><a href="#design-system">A day</a>
+                            <ul class="ac-toc__sub"><li><a href="#design-system">Morning</a></li><li><a href="#design-system">Noon</a></li></ul>
+                        </li>
+                        <li><a href="#design-system">Keywords</a></li>
+                    </ol>
+                </nav>
+                <nav class="ac-toc ac-toc--numbered ac-toc--sticky" aria-label="Contents, numbered">
+                    <p class="ac-toc__title">Numbered</p>
+                    <ol class="ac-toc__list">
+                        <li><a href="#design-system" aria-current="true">Setup</a></li>
+                        <li><a href="#design-system">A day</a></li>
+                        <li><a href="#design-system">Keywords</a></li>
+                    </ol>
+                </nav>
+            </div>
         </div>
     </section>
 
