@@ -34,4 +34,11 @@ if [ -n "${AC_ACTIVATE_PLUGINS:-}" ]; then
         || echo "[entrypoint] WARNING: plugin activation failed." >&2
 fi
 
+# Local / CI stack only: test spots of hidden-creatures for its e2e specs, when it is active (its real spots stay in
+# the admin, out of the repository).
+if [ "${AC_STACK_SEED:-}" = "1" ]; then
+    php /var/www/html/plugins/hidden-creatures/e2e/fixtures.php \
+        || echo "[entrypoint] WARNING: hidden-creatures fixtures failed." >&2
+fi
+
 exec apache2-foreground

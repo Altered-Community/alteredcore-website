@@ -1053,7 +1053,11 @@
         });
         var btn = el.querySelector('.tr-chart-detail-btn');
         var modalTitle = TR_TXT.chart_hero_modal_title || title;
-        if (btn) btn.addEventListener('click', function () { openChartModal(allSegments, modalTitle); });
+        if (btn) btn.addEventListener('click', function () {
+            openChartModal(allSegments, modalTitle);
+            // For the site's hidden creatures (plugins/hidden-creatures): a spot can wait for this event.
+            window.dispatchEvent(new CustomEvent('ac-hidden-spot', { detail: 'tournament-heroes' }));
+        });
     }
 
     /* ── Filters (GameApi tournaments only) ───────────────────────────────── */
