@@ -2,7 +2,7 @@
 
 Unofficial community website for the [Altered TCG](https://www.altered.gg/) card game.
 
-Built with plain PHP — no framework, no build step, no Composer. Runs on any standard shared hosting with Apache and PHP 7.4.
+Built with plain PHP — no framework, no build step, no Composer. Runs on any standard shared hosting with Apache and PHP 8.4.
 
 ---
 
@@ -17,7 +17,7 @@ Pull requests that introduce external dependencies or non-standard server requir
 ## Requirements
 
 - Apache with `mod_rewrite` enabled
-- PHP 7.4
+- PHP 8.4 (8.2 and 8.3 also run the code; 7.4 is no longer supported once both environments have switched)
 - MariaDB 10.x
 
 ---
