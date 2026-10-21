@@ -1218,7 +1218,7 @@ fetch('/papi/my-plugin/data')
 
 <h2 id="dev">Local development</h2>
 
-<p>Use the <strong>Docker setup</strong> included in the repository root. It runs the full site locally — Apache, PHP 7.4, MariaDB, and all plugins — so your plugin pages, API endpoints, and admin sections behave exactly as they would in production.</p>
+<p>Use the <strong>Docker setup</strong> included in the repository root. It runs the full site locally — Apache, PHP 8.4, MariaDB, and all plugins — so your plugin pages, API endpoints, and admin sections behave exactly as they would in production.</p>
 
 <pre><code>docker compose up --build</code></pre>
 
@@ -1238,7 +1238,7 @@ fetch('/papi/my-plugin/data')
   <tr><td>Front-end</td><td><code>"build": {…}</code></td><td>install → lint → test → build, per plugin</td></tr>
   <tr><td>End-to-end</td><td><code>"tests": {"e2e": "e2e"}</code></td><td><code>e2e/*.spec.ts</code> (Playwright), importing <code>test</code> from <code>tests/e2e/fixtures.ts</code></td></tr>
 </table>
-<p>Every PHP file also goes through <code>php -l</code> (PHP 7.4). The end-to-end job starts <code>docker-compose.stack.yml</code>
+<p>Every PHP file also goes through <code>php -l</code> (PHP 8.4). The end-to-end job starts <code>docker-compose.stack.yml</code>
 (site, Keycloak, decks API) with the built plugins and runs <code>tests/e2e</code> plus every plugin's <code>e2e/</code>,
 at 1440×900 and 390×844. The check to require is <strong>Plugins CI</strong>.</p>
 <pre><code>php bin/plugins.php plan

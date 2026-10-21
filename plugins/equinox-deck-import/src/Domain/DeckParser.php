@@ -44,7 +44,7 @@ final class DeckParser
                 continue;
             }
 
-            $cols = str_getcsv($line, ';', '"');
+            $cols = str_getcsv($line, ';', '"', '\\');
             if (count($cols) < 8) {
                 continue;
             }
