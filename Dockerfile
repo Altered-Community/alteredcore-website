@@ -1,9 +1,6 @@
-FROM php:7.4-apache
+FROM php:8.4.27-apache
 
-# php:7.4 is Debian 11 (bullseye), whose LTS ended in August 2026: the bullseye-security
-# mirror now 404s on package files and breaks apt-get. Install from bullseye main only.
-RUN sed -i '/bullseye-security/d' /etc/apt/sources.list \
-    && apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
         libpng-dev \
         libjpeg62-turbo-dev \
         libwebp-dev \

@@ -3,7 +3,7 @@
 Instructions for coding agents (Codex, Cursor, Copilot, Claude Code…). Claude Code reads them
 through `CLAUDE.md`, which imports this file.
 
-PHP 7.4 site (no framework, Bootstrap 5 from a CDN) with a plugin system: PHP plugins
+PHP 8.4 site (no framework, Bootstrap 5 from a CDN) with a plugin system: PHP plugins
 (`plugins/<id>/`, manifest `plugin.json`) and SPA plugins (manifest v2, `"type": "spa"`, mounted in
 a Shadow DOM, contract `window.AlteredCore` in `js/altered-core-host.js`). See `README.md`,
 `CONTRIBUTING.md` and `plugins/README.html`.
