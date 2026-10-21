@@ -38,7 +38,7 @@ services:
   # Stand-in for AlteredOwnership (alt-art families, preferences, preference mode), reached by the
   # site only (OWNERSHIP_API_URL); built on the production cards API.
   ownership:
-    image: php:8.3-cli-alpine
+    image: php:8.4-cli-alpine
     command: ["php", "-S", "0.0.0.0:8080", "/app/index.php"]
     volumes:
       - ./docker/stack/ownership-mock:/app:ro

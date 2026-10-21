@@ -19,6 +19,6 @@ before changing anything under `design-system/` or building a screen.
   or the script, then `npm ci && npm run build` in `design-system/icons/`, never the outputs.
 - Bridges (`css/bridges/`) exist for pages not migrated yet. Do not add new legacy names; when a
   page is migrated, it uses `ac-*` classes and `--ac-*` tokens directly.
-- PHP helpers (`php/ui.php`) must stay PHP 7.4 compatible (production runs php:7.4).
+- PHP helpers (`php/ui.php`) must stay PHP 7.4 compatible until preprod has switched to PHP 8.4 (production runs php:8.4.27).
 - After a change: `php tests/run.php` (Docker: `docker compose exec web php tests/run.php`), then
   look at `/pages/design-system` in both themes.

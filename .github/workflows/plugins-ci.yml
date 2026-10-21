@@ -1,7 +1,7 @@
 name: Plugins CI
 
 # Checks every pull request against preprod / main, separately from deploy.yml:
-#   • php -l on all PHP (7.4, the production version);
+#   • php -l on all PHP (8.4, the production version; 7.4 kept until preprod has switched);
 #   • each plugin's tests, found through bin/plugins.php (plugin.json "tests" / "build",
 #     or the conventions tests/run.php, **/*.test.mjs, e2e/*.spec.ts);
 #   • front-end plugins ("build" in plugin.json): install, lint, unit tests, build;
@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 2 # the pull request's merge commit and its first parent, the base branch
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.4'
           coverage: none
       - id: plan
         env:
@@ -92,14 +92,18 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   php:
-    name: PHP lint and plugin PHP tests
+    name: PHP lint and plugin PHP tests (${{ matrix.php }})
     needs: plan
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.4']   # 7.4: preprod runtime until its switch — drop after it
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: ${{ matrix.php }}
           coverage: none
       - name: php -l
         run: |
@@ -125,7 +129,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.4'
           coverage: none
       - uses: actions/setup-node@v4
         with:
@@ -149,7 +153,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.4'
           coverage: none
       - uses: actions/setup-node@v4
         with:
@@ -188,7 +192,7 @@ jobs:
         run: $COMPOSE up -d keycloak db decks-db
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: '8.4'
           coverage: none
       - uses: actions/setup-node@v4
         with:
