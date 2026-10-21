@@ -101,7 +101,7 @@ final class CurlDeckApiClient implements DeckApiClientInterface
 
     /**
      * @param string[] $ids
-     * @return array<string, resource>
+     * @return array<string, resource|\CurlHandle>
      */
     private function openHandles($multi, array $ids): array
     {
@@ -138,7 +138,7 @@ final class CurlDeckApiClient implements DeckApiClientInterface
     }
 
     /**
-     * @param array<string, resource> $handles
+     * @param array<string, resource|\CurlHandle> $handles
      * @param array<string,mixed>     $errors
      * @return array<string, array>
      */

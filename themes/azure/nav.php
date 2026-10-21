@@ -5,16 +5,16 @@
 //   $_langNames, $_langUrls, $_hTxt, $__mobileCompact
 
 $__iframeNavId    = ($currentPage === 'iframe') ? (int)($_GET['nav'] ?? 0) : 0;
-if (!function_exists('__nav_href')) {
-    function __nav_href(array $item): string {
+if (!function_exists('acNavHref')) {
+    function acNavHref(array $item): string {
         if (!empty($item['is_iframe'])) {
             return BASE_URL . '/pages/iframe?nav=' . (int)$item['id'];
         }
         return BASE_URL . resolveUrlLang($item['url']);
     }
 }
-if (!function_exists('__nav_active')) {
-    function __nav_active(array $item, string $currentPage, int $iframeNavId): bool {
+if (!function_exists('acNavActive')) {
+    function acNavActive(array $item, string $currentPage, int $iframeNavId): bool {
         if (!empty($item['is_separator']) || !empty($item['is_section_header'])) return false;
         if (!empty($item['is_iframe'])) return $iframeNavId === (int)$item['id'];
         $__parsed = parse_url($item['url'] ?? '');
@@ -73,10 +73,10 @@ if (!function_exists('__nav_active')) {
         <div class="az-navband-inner">
             <ul class="navbar-nav az-nav-list d-flex flex-row">
                 <?php foreach ($__navItems as $__ni):
-                    $__niActive = empty($__ni['is_sidebar_toggle']) && __nav_active($__ni, $currentPage, $__iframeNavId);
+                    $__niActive = empty($__ni['is_sidebar_toggle']) && acNavActive($__ni, $currentPage, $__iframeNavId);
                     if (!$__niActive && !empty($__ni['children'])) {
                         foreach ($__ni['children'] as $__nc) {
-                            if (__nav_active($__nc, $currentPage, $__iframeNavId)) {
+                            if (acNavActive($__nc, $currentPage, $__iframeNavId)) {
                                 $__niActive = true; break;
                             }
                         }
@@ -129,8 +129,8 @@ if (!function_exists('__nav_active')) {
                                     <div class="az-mega-title"><?= h($__col['title']) ?></div>
                                     <?php endif; ?>
                                     <?php foreach ($__col['items'] as $__nc): ?>
-                                    <a class="dropdown-item az-mega-link <?= __nav_active($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
-                                       href="<?= h(__nav_href($__nc)) ?>"
+                                    <a class="dropdown-item az-mega-link <?= acNavActive($__nc, $currentPage, $__iframeNavId) ? 'active' : '' ?>"
+                                       href="<?= h(acNavHref($__nc)) ?>"
                                        <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
                                         <?php if (!empty($__nc['icon'])): ?>
                                         <span class="az-mega-icon"><?= ac_icon((string)$__nc['icon']) ?></span>
@@ -150,7 +150,7 @@ if (!function_exists('__nav_active')) {
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a href="<?= h(__nav_href($__ni)) ?>"
+                        <a href="<?= h(acNavHref($__ni)) ?>"
                            class="nav-link <?= $__niActive ? 'active' : '' ?>"
                            <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
                            title="<?= h($__ni['label']) ?>">
@@ -182,7 +182,7 @@ foreach ($__navItems as $__ni) {
         <?php if ($__mmLinks): ?>
         <div class="az-mm-links">
             <?php foreach ($__mmLinks as $__ni): ?>
-            <a class="az-mm-pill<?= __nav_active($__ni, $currentPage, $__iframeNavId) ? ' active' : '' ?>" href="<?= h(__nav_href($__ni)) ?>"
+            <a class="az-mm-pill<?= acNavActive($__ni, $currentPage, $__iframeNavId) ? ' active' : '' ?>" href="<?= h(acNavHref($__ni)) ?>"
                <?= (!empty($__ni['is_blank']) && empty($__ni['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
                 <?= !empty($__ni['icon']) ? ac_icon((string)$__ni['icon']) : '' ?>
                 <span><?= h($__ni['label']) ?></span>
@@ -196,8 +196,8 @@ foreach ($__navItems as $__ni) {
             <div class="az-mm-tiles">
                 <?php foreach ($__ni['children'] as $__nc):
                     if (!empty($__nc['is_section_header']) || !empty($__nc['is_separator'])) continue; ?>
-                <a class="az-mm-tile<?= __nav_active($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
-                   href="<?= h(__nav_href($__nc)) ?>"
+                <a class="az-mm-tile<?= acNavActive($__nc, $currentPage, $__iframeNavId) ? ' active' : '' ?>"
+                   href="<?= h(acNavHref($__nc)) ?>"
                    <?= (!empty($__nc['is_blank']) && empty($__nc['is_iframe'])) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
                     <?= !empty($__nc['icon']) ? ac_icon((string)$__nc['icon']) : '' ?>
                     <span><?= h($__nc['label']) ?></span>
