@@ -555,6 +555,17 @@ include dirname(__DIR__) . '/includes/header.php';
         </div>
     </section>
 
+    <section class="ds-section" aria-labelledby="ds-tooltip">
+        <h2 class="ac-section-title" id="ds-tooltip">Tooltip, masked value</h2>
+        <div class="ac-stack">
+            <p>Signed in as <?= ac_masked_email('camille.durand@gmail.com') ?>: point at the address, or focus it (<code>ac_masked_email()</code> renders <code>span.ac-masked.ac-tooltip-host</code>).</p>
+            <div class="ac-row ac-row--lg">
+                <span class="ac-tooltip-host" tabindex="0" aria-describedby="ds-tip-start">Start-aligned <?= ac_icon('info', 'ac-icon--16') ?><span class="ac-tooltip ac-tooltip--start" role="tooltip" id="ds-tip-start">Aligned on the start edge</span></span>
+                <span class="ac-tooltip-host" tabindex="0" aria-describedby="ds-tip-below">Below <?= ac_icon('info', 'ac-icon--16') ?><span class="ac-tooltip ac-tooltip--below" role="tooltip" id="ds-tip-below">Under its host</span></span>
+            </div>
+        </div>
+    </section>
+
     <section class="ds-section" aria-labelledby="ds-icons">
         <h2 class="ac-section-title" id="ds-icons">Icons — Lucide</h2>
         <p class="ac-text-muted">PHP <code>ac_icon('name')</code>, site JS <code>acIcon('name')</code>, Angular <code>&lt;ac-icon name="…"&gt;</code>. All names: <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">lucide.dev/icons</a>.</p>

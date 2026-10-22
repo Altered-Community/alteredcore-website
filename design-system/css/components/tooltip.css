@@ -1,0 +1,82 @@
+/*
+ * AlteredCore design system — tooltip and masked value.
+ *
+ * ac-tooltip: a short text shown next to its host on hover (devices that can hover), and on focus (keyboard, or a tap
+ * on touch screens, where the host takes focus because it has tabindex="0").
+ * ac-masked: a value shown partly hidden (an e-mail address), the full value in a tooltip.
+ */
+
+.ac-tooltip-host {
+  position: relative;
+}
+
+.ac-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--ac-space-2));
+  z-index: var(--ac-z-overlay);
+  transform: translateX(-50%);
+  padding: var(--ac-space-1-5) var(--ac-space-2-5);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+  box-shadow: var(--ac-shadow-e2);
+  font: var(--ac-font-small);
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--ac-duration-fast), visibility var(--ac-duration-fast);
+}
+
+/* Arrow pointing at the host. */
+.ac-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: var(--ac-space-1-5) solid transparent;
+  border-top-color: var(--ac-color-inverse);
+}
+
+/* Aligned on the host's start edge instead of centred: a host near the left edge of a narrow box. */
+.ac-tooltip--start {
+  left: 0;
+  transform: none;
+}
+.ac-tooltip--start::after {
+  left: var(--ac-space-3);
+}
+
+/* Under the host: a host at the top of a box that clips its content (a scrolling menu). */
+.ac-tooltip--below {
+  top: calc(100% + var(--ac-space-2));
+  bottom: auto;
+}
+.ac-tooltip--below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--ac-color-inverse);
+}
+
+.ac-tooltip-host:focus .ac-tooltip,
+.ac-tooltip-host:focus-within .ac-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (hover: hover) {
+  .ac-tooltip-host:hover .ac-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.ac-masked {
+  display: inline-block;
+  border-bottom: 1px dashed var(--ac-color-border-dashed);
+  cursor: help;
+}

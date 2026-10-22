@@ -168,7 +168,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 .az-am-avatar.is-user { background: var(--ac-color-primary); color: var(--ac-color-on-primary); }
 .az-am-who { display: flex; flex-direction: column; gap: var(--ac-space-0-5); min-width: 0; }
 .az-am-name { font: var(--ac-font-body-strong); color: var(--ac-color-text); }
-.az-am-sub { font: var(--ac-font-small); font-weight: 400; color: var(--ac-color-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.az-am-sub { font: var(--ac-font-small); font-weight: 400; color: var(--ac-color-text-2); white-space: nowrap; }
 .az-am-links { display: flex; flex-direction: column; padding: var(--ac-space-1-5) 0; border-bottom: 1px solid var(--ac-color-divider); }
 .az-am-links:empty { display: none; }
 .az-am-link,
