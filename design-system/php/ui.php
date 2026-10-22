@@ -131,6 +131,29 @@ function dsResolveIcon(string $ref, ?array &$extraClasses = null): ?string {
  * The Altered glyph font (fak fa-collection…) is not an SVG icon: those references are
  * rendered as <i class="…"> unchanged. Unknown names render nothing.
  */
+/**
+ * E-mail address with the local part hidden after its first character: "camille@gmail.com" → "c•••@gmail.com".
+ * Anything that is not an address becomes "•••".
+ */
+function dsMaskEmail(string $email): string {
+    $at = strrpos($email, '@');
+    if ($at === false || $at === 0 || $at === strlen($email) - 1) return '•••';
+    return mb_substr($email, 0, 1, 'UTF-8') . '•••' . substr($email, $at);
+}
+
+/**
+ * Masked e-mail address (ac-masked) with the full address in a tooltip, shown on hover or focus: an address on screen
+ * must not be readable by whoever watches it (a stream, a video), only by the user who points at it.
+ * $tooltipClass: ac-tooltip variants ('ac-tooltip--start', 'ac-tooltip--below').
+ */
+function ac_masked_email(string $email, string $tooltipClass = ''): string {
+    static $n = 0;
+    $id = 'ac-masked-' . (++$n);
+    $e  = function (string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); };
+    return '<span class="ac-masked ac-tooltip-host" tabindex="0" aria-describedby="' . $id . '">' . $e(dsMaskEmail($email))
+         . '<span class="' . $e(trim('ac-tooltip ' . $tooltipClass)) . '" role="tooltip" id="' . $id . '">' . $e($email) . '</span></span>';
+}
+
 function ac_icon(string $ref, string $class = '', ?string $label = null): string {
     if (preg_match('/(^|\s)(fak|fa-kit)(\s|$)/', $ref)) {
         return '<i class="' . htmlspecialchars(trim($ref . ' ' . $class), ENT_QUOTES, 'UTF-8') . '" aria-hidden="true"></i>';

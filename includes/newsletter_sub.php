@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nl_subscribe'])) {
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         flash('Invalid form token. Please try again.', 'error');
     } else {
-        $nlEmail = trim($_POST['nl_email'] ?? '');
+        // « Utiliser l'adresse de mon compte »: the address comes from the session, never from the page, so the page
+        // never has to show it.
+        $nlEmail = !empty($_POST['nl_use_account']) ? newsletterAccountEmail() : trim($_POST['nl_email'] ?? '');
         if (!filter_var($nlEmail, FILTER_VALIDATE_EMAIL)) {
             flash($nlLang === 'fr'
                 ? 'Veuillez saisir une adresse e-mail valide.'
@@ -59,6 +61,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nl_subscribe'])) {
     redirect(BASE_URL . '/');
 }
 
+/** E-mail address of the signed-in account (Keycloak or local), '' when signed out. */
+function newsletterAccountEmail(): string
+{
+    if (!empty($_SESSION['kc_logged_in'])) return (string)($_SESSION['kc_email'] ?? '');
+    if (!empty($_SESSION['local_logged_in'])) return (string)($_SESSION['local_email'] ?? '');
+    return '';
+}
+
 function renderNewsletterBlock(): void
 {
     $txt = [
@@ -68,6 +78,7 @@ function renderNewsletterBlock(): void
             'placeholder' => 'Your email address',
             'btn'         => 'Subscribe',
             'privacy'     => 'Your email is only used to send you news. No spam, unsubscribe anytime.',
+            'use_account' => 'Use my account address',
         ],
         'fr' => [
             'title'       => 'Restez informé',
@@ -75,15 +86,12 @@ function renderNewsletterBlock(): void
             'placeholder' => 'Votre adresse e-mail',
             'btn'         => 'S\'abonner',
             'privacy'     => 'Votre e-mail est uniquement utilisé pour vous envoyer les actualités. Pas de spam, désinscription à tout moment.',
+            'use_account' => 'Utiliser l\'adresse de mon compte',
         ],
     ][getUiLang()] ?? [];
 
-    $email = '';
-    if (!empty($_SESSION['kc_logged_in'])) {
-        $email = $_SESSION['kc_email'] ?? '';
-    } elseif (!empty($_SESSION['local_logged_in'])) {
-        $email = $_SESSION['local_email'] ?? '';
-    }
+    // The field is never filled with the account's address: someone filming or streaming the homepage would show it.
+    $hasAccountEmail = filter_var(newsletterAccountEmail(), FILTER_VALIDATE_EMAIL) !== false;
     ?>
     <section class="container py-4">
         <div class="card-altered p-4">
@@ -100,13 +108,19 @@ function renderNewsletterBlock(): void
                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                         <input type="hidden" name="nl_subscribe" value="1">
                         <div class="flex-grow-1" style="min-width:220px">
-                            <input type="email" name="nl_email" class="form-control"
-                                   value="<?= h($email) ?>"
+                            <input type="email" name="nl_email" class="form-control" autocomplete="off"
+                                   aria-label="<?= h($txt['placeholder']) ?>"
                                    placeholder="<?= h($txt['placeholder']) ?>" required>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary-altered px-4">
                             <i class="fa-solid fa-paper-plane me-1"></i> <?= $txt['btn'] ?>
                         </button>
+                        <?php if ($hasAccountEmail): ?>
+                        <div class="w-100">
+                            <button type="submit" name="nl_use_account" value="1"
+                                    class="ac-button ac-button--ghost ac-button--sm"><?= h($txt['use_account']) ?></button>
+                        </div>
+                        <?php endif; ?>
                     </form>
                     <p class="text-muted mt-2 mb-0" style="font-size:.8rem">
                         <i class="fa-solid fa-lock me-1"></i><?= $txt['privacy'] ?>

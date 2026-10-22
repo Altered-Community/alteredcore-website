@@ -221,7 +221,7 @@ foreach ($__navItems as $__ni) {
         <span class="ac-avatar az-am-avatar is-user" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__amUser['username'] ?? '', 0, 1))) ?></span>
         <div class="az-am-who">
             <span class="az-am-name"><?= h($__amUser['username'] ?? '') ?></span>
-            <?php if (!empty($__amUser['email'])): ?><span class="az-am-sub"><?= h($__amUser['email']) ?></span><?php endif; ?>
+            <?php if (!empty($__amUser['email'])): ?><span class="az-am-sub"><?= ac_masked_email($__amUser['email'], 'ac-tooltip--start ac-tooltip--below') ?></span><?php endif; ?>
         </div>
     </div>
     <div class="az-am-links">
