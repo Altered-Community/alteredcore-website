@@ -48,7 +48,6 @@ $txt = [
         'toPerDeckConfirm' => 'Switch to per deck',
         'cancel'        => 'Cancel',
         'progress'      => 'Decks updated: %1$s / %2$s',
-        'leaveError'    => 'A deck could not be updated: you stay in global mode. Try again in a moment.',
         'modeSaveError' => 'Could not save your setting.',
     ],
     'fr' => [
@@ -86,7 +85,6 @@ $txt = [
         'toPerDeckConfirm' => 'Passer en mode par deck',
         'cancel'        => 'Annuler',
         'progress'      => 'Decks mis à jour : %1$s / %2$s',
-        'leaveError'    => 'Un deck n\'a pas pu être mis à jour : vous restez en mode global. Réessayez dans un instant.',
         'modeSaveError' => 'Impossible d\'enregistrer votre choix.',
     ],
 ][getUiLang()];
@@ -259,7 +257,8 @@ $uiLang = getUiLang();
         isGlobalMode: <?= json_encode($isGlobalMode) ?>,
     };
     // « Par deck » / « Global »: after a confirmation. Leaving « Global » first writes the defaults in every deck
-    // (api/alt-art-leave-global.php), and the mode only changes once they all are.
+    // (api/alt-art-leave-global.php), as far as it can: a deck that cannot be written, or a list of decks that cannot
+    // be read, does not keep the player in « Global ».
     (function () {
         var cfg = window.OWN_AA_CONFIG;
         var txt = window.OWN_I18N[<?= json_encode($uiLang) ?>];
@@ -294,7 +293,7 @@ $uiLang = getUiLang();
             error.querySelector('div').textContent = message;
             error.hidden = false;
         };
-        // Four decks at a time; the first error stops the others.
+        // Four decks at a time; a deck that fails is skipped. Never fails.
         var writeDecks = function () {
             return request('GET', cfg.leaveGlobalUrl).then(function (res) {
                 var decks = (res.decks || []).slice();
@@ -305,16 +304,14 @@ $uiLang = getUiLang();
                 var next = function () {
                     var deck = decks.shift();
                     if (deck === undefined) return Promise.resolve();
-                    return request('POST', cfg.leaveGlobalUrl, { deck: deck }).then(function () {
+                    var step = function () {
                         setProgress(++done, total);
                         return next();
-                    }, function (e) {
-                        decks.length = 0;
-                        throw e;
-                    });
+                    };
+                    return request('POST', cfg.leaveGlobalUrl, { deck: deck }).then(step, step);
                 };
                 return Promise.all([next(), next(), next(), next()]);
-            });
+            }).then(null, function () {});
         };
 
         confirmBtn.addEventListener('click', function () {
@@ -326,7 +323,7 @@ $uiLang = getUiLang();
                 return request('PUT', cfg.preferenceModeUrl, { mode: mode }).then(null, failWith(txt.modeSaveError));
             };
             var steps = cfg.isGlobalMode
-                ? writeDecks().then(function () { return saveMode('PerDeck'); }, failWith(txt.leaveError))
+                ? writeDecks().then(function () { return saveMode('PerDeck'); })
                 : saveMode('Global');
             steps.then(function () { location.reload(); }).catch(fail);
         });

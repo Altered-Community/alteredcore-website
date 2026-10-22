@@ -3,7 +3,7 @@
 // POST /papi/ownership/alt-art-leave-global {"deck": "<id>"} → {"changed": bool}
 // « Global » → « par deck » (pages/alt-arts.php): the page lists the player's decks, writes the defaults in each one
 // (what Board Game Arena showed of it, see includes/func.alt-arts.php) and drops its brush choices, then sets the mode
-// (api/alt-art-preference-mode.php).
+// (api/alt-art-preference-mode.php) even when some decks could not be written: best effort.
 // A deck is only written while the player is in « Global » (409 otherwise). Manifest: "auth": "user".
 require_once __DIR__ . '/../includes/functions.php';
 require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';

@@ -1389,6 +1389,31 @@ test.describe('ReBuilder in the shell · deck page', () => {
         await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
       }
     });
+
+    test('leaving « Global » switches to « par deck » even when decks cannot be written', async ({ page, compact }) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      await createServerDeck(page, `E2E leave global failing ${Date.now()}`);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // Every deck fails: best effort, the mode changes all the same.
+      let tried = 0;
+      await page.route('**/papi/ownership/alt-art-leave-global', (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        tried++;
+        return route.fulfill({ status: 502, json: { error: 'write' } });
+      });
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 60_000 });
+        expect(tried).toBeGreaterThan(0);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
   });
 
   test('shows the whole card window on a short phone screen (browser bars): the card shrinks, the buttons stay visible', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
