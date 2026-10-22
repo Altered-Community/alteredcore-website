@@ -17,7 +17,7 @@ Pull requests that introduce external dependencies or non-standard server requir
 ## Requirements
 
 - Apache with `mod_rewrite` enabled
-- PHP 8.4 (8.2 and 8.3 also run the code; 7.4 is no longer supported once both environments have switched)
+- PHP 8.4 (8.2 and 8.3 also run the code)
 - MariaDB 10.x
 
 ---
