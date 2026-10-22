@@ -1,4 +1,4 @@
-import { test, expect, login } from './fixtures';
+import { test, expect, login, evidence } from './fixtures';
 
 // The signed-in user's e-mail address is never readable on screen (a creator filming the site leaked theirs through
 // the prefilled newsletter field): masked, the full address only in a tooltip on hover or focus.
@@ -14,17 +14,19 @@ async function visibleText(page: import('./fixtures').Page): Promise<string> {
   });
 }
 
-test('the homepage newsletter field is empty, and the account address subscribes without being shown', async ({ page }) => {
+test('the homepage newsletter field is empty, and the account address subscribes without being shown', async ({ page }, testInfo) => {
   await login(page, 'alice', '/');
   const field = page.locator('input[name="nl_email"]');
   await expect(field).toHaveValue('');
+  await field.scrollIntoViewIfNeeded();
+  await evidence(page, testInfo, 'home-newsletter');
   expect(await visibleText(page)).not.toContain(EMAIL);
 
   await page.locator('button[name="nl_use_account"]').click();
   await expect(page.getByRole('alert')).toContainText(/Subscription confirmed|already subscribed|Inscription confirmée|déjà inscrite/);
 });
 
-test('the account menu and page show the address masked, in full in a tooltip', async ({ page, compact }) => {
+test('the account menu and page show the address masked, in full in a tooltip', async ({ page }, testInfo) => {
   await login(page, 'alice', '/pages/account');
   expect(await visibleText(page)).not.toContain(EMAIL);
 
@@ -35,11 +37,12 @@ test('the account menu and page show the address masked, in full in a tooltip', 
   await masked.focus();
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toHaveText(EMAIL);
+  await evidence(page, testInfo, 'account-page');
 
-  if (compact) return; // the account menu below is the desktop header's
   await page.locator('#azAccountBtn').click();
   const menuMasked = page.locator('#azAccountMenu .ac-masked');
   await expect(menuMasked).toContainText('a•••@example.test');
-  await menuMasked.hover();
+  await menuMasked.focus();
   await expect(menuMasked.locator('.ac-tooltip')).toBeVisible();
+  await evidence(page, testInfo, 'account-menu');
 });
