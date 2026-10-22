@@ -3,14 +3,12 @@
     <p i18n="@@shared.heroPicker.description">Le héros détermine votre faction et les cartes disponibles.</p>
   }
   <ac-faction-tabs size="sm" [layout]="bp.compact() ? 'scroll' : 'grid'" controls="hero-picker-panel" [(active)]="faction" />
-  @if (!global()) {
-    <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
-      <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
-      @if (altArts()) {
-        <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
-      }
-    </div>
-  }
+  <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
+    <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+    @if (altArts()) {
+      <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+    }
+  </div>
 </div>
 <div class="ac-overlay-body">
   <ac-hero-selector

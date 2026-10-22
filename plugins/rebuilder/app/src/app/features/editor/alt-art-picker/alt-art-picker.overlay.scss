@@ -1,0 +1,198 @@
+/*
+ * Two steps on one level: the illustrations on a band ending in a chevron, which fits into the notch of « Ce que le
+ * deck utilise »; on a phone, one under the other, the chevron pointing down.
+ */
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+.stage {
+  --chevron: 44px;
+  display: flex;
+  align-items: stretch;
+}
+p,
+h3,
+ul {
+  margin: 0;
+}
+ul {
+  padding: 0;
+  list-style: none;
+}
+.pool,
+.deck {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+.pool::before,
+.deck::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.pool {
+  flex: 1;
+  min-width: 0;
+  padding: var(--ac-space-4) calc(var(--chevron) + var(--ac-space-6)) var(--ac-space-4) var(--ac-space-5);
+}
+.pool::before {
+  border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+  background: var(--ac-color-primary-tint);
+  clip-path: polygon(0 0, calc(100% - var(--chevron)) 0, 100% 50%, calc(100% - var(--chevron)) 100%, 0 100%);
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+}
+.step-num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--ac-space-6);
+  aspect-ratio: 1;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  font: var(--ac-font-caption);
+}
+.deck .step-num {
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+}
+.defaults-note {
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+}
+.prints {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: var(--ac-space-6) var(--ac-space-10);
+}
+/* An illustration under its three keys. */
+.print {
+  width: min(200px, calc(50% - var(--ac-space-3)));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-0-5);
+  text-align: center;
+}
+.art {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--ac-space-2);
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-lg);
+}
+.unowned .art {
+  opacity: 0.4;
+}
+.print-label {
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+}
+.print-note {
+  font: var(--ac-font-caption);
+  color: var(--ac-color-text-muted);
+}
+/* The cards' keys (ac-keys, design system): the 1st card on the left, the 2nd in the middle, the 3rd on the right. */
+.keys {
+  align-self: stretch;
+  margin-bottom: var(--ac-space-2);
+}
+.keys-hint {
+  margin-top: calc(-1 * var(--ac-space-2));
+  padding-left: calc(var(--ac-space-6) + var(--ac-space-2));
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+}
+.error {
+  font: var(--ac-font-small);
+  color: var(--ac-color-danger);
+}
+/* What the deck uses: its copies fanned out, copy 1 on the left. */
+.deck {
+  flex: none;
+  width: 300px;
+  margin-left: calc(var(--ac-space-4) - var(--chevron));
+  padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5));
+}
+.deck::before {
+  border-radius: 0 var(--ac-radius-card) var(--ac-radius-card) 0;
+  background: var(--ac-color-bg-app);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chevron) 50%);
+}
+.result {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--ac-space-4);
+}
+.fan {
+  --card: 92px;
+  --step: 62px;
+  position: relative;
+  height: calc(var(--card) * 7 / 5 + var(--ac-space-6));
+}
+.fan img {
+  position: absolute;
+  top: var(--ac-space-3);
+  left: calc(50% - (var(--card) + (var(--n) - 1) * var(--step)) / 2 + var(--i) * var(--step));
+  width: var(--card);
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border-radius: var(--ac-radius-sm);
+  box-shadow: var(--ac-shadow-card);
+  transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
+  transform-origin: 50% 120%;
+}
+.summary {
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+}
+.settings {
+  margin-right: auto;
+  align-self: center;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-link);
+}
+@media (max-width: 767px) {
+  .stage {
+    --chevron: 28px;
+    flex-direction: column;
+  }
+  .pool {
+    padding: var(--ac-space-4) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-4));
+  }
+  .pool::before {
+    border-radius: var(--ac-radius-card) var(--ac-radius-card) 0 0;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--chevron)), 50% 100%, 0 calc(100% - var(--chevron)));
+  }
+  .deck {
+    width: auto;
+    margin: calc(var(--ac-space-3) - var(--chevron)) 0 0;
+    padding: calc(var(--chevron) + var(--ac-space-4)) var(--ac-space-5) var(--ac-space-5);
+  }
+  .deck::before {
+    border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
+    clip-path: polygon(0 0, 50% var(--chevron), 100% 0, 100% 100%, 0 100%);
+  }
+  .prints {
+    gap: var(--ac-space-5) var(--ac-space-4);
+  }
+}

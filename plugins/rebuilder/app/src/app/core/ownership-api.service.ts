@@ -1,13 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Service, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Service, inject } from '@angular/core';
+import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { contentLocale } from './locale';
-
-export interface CardQuantity {
-  cardReference: string;
-  quantity: number;
-}
 
 /** A multi-art family of the ownership catalog. */
 export interface AltArtFamily {
@@ -16,10 +11,13 @@ export interface AltArtFamily {
   rarity: string;
 }
 
-/** The illustrations of a family (`ownedQuantity`: `null` = unlimited) and the player's copy slots (one per copy). */
+/**
+ * The illustrations of a family, the plain one first (`ownedQuantity`: `null` = unlimited), and the player's default
+ * alt arts: one slot a copy (1st, 2nd, 3rd), `isExplicitChoice` when the player chose it (else the plain one).
+ */
 export interface AltArtOptions {
   options: { reference: string; ownedQuantity: number | null }[];
-  slots: { slotIndex: number; reference: string }[];
+  slots: { slotIndex: number; reference: string; isExplicitChoice?: boolean }[];
 }
 
 export interface AltArtChoice {
@@ -32,27 +30,15 @@ export function familyKey(f: AltArtFamily): string {
 }
 
 /**
- * Digital ownership (`OWNERSHIP_API_URL`, through the site's relay `AlteredCore.services.ownership`):
- * the user's alt-art preference. In « Global » mode, the cards of a new deck are swapped for the
- * alt arts the user prefers and owns. Any error leaves the cards as they are: an import never fails
- * because of this service.
+ * Digital ownership (`OWNERSHIP_API_URL`, through the site's relay `AlteredCore.services.ownership`): the families of
+ * illustrations, the copies the player owns and their default alt arts (`core/alt-art-defaults.ts`). Any error leaves
+ * the cards as they are: the deck never fails because of this service.
  */
 @Service()
 export class OwnershipApiService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.ownershipApiUrl.replace(/\/$/, '');
-  private readonly version = signal(0);
-  /** Bumped by each alt-art preference saved: what was read from the service before may be stale. */
-  readonly altArtVersion = this.version.asReadonly();
-
-  /** `true` when the user applies their alt-art preferences to every deck. */
-  globalAltArts(): Observable<boolean> {
-    if (!this.baseUrl) return of(false);
-    return this.http.get<{ mode?: string }>(`${this.baseUrl}/api/alt-arts/preference-mode`).pipe(
-      map((body) => body?.mode === 'Global'),
-      catchError(() => of(false)),
-    );
-  }
+  private readonly site = environment.siteUrl.replace(/\/$/, '');
 
   /**
    * Families and illustrations of `references`, by reference (none for a card with a single illustration), from the
@@ -61,7 +47,7 @@ export class OwnershipApiService {
   altArtChoices(references: string[]): Observable<Record<string, AltArtChoice>> {
     if (!this.baseUrl || !references.length) return of({});
     const params = references.reduce((p, r) => p.append('ref[]', r), new HttpParams());
-    const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/deck-alt-arts`;
+    const url = `${this.site}/papi/core-altered-cards/deck-alt-arts`;
     return this.http.get<{ groups?: Record<string, AltArtFamily>; options?: Record<string, AltArtOptions> }>(url, { params }).pipe(
       map((res) => {
         const out: Record<string, AltArtChoice> = {};
@@ -76,8 +62,8 @@ export class OwnershipApiService {
   }
 
   /**
-   * The token families with several illustrations (per-deck alt-art mode: tokens are not deck cards, their prints are a
-   * preference shared by every deck), from the site's `alt-art-search` (plugin ownership).
+   * The token families with several illustrations (tokens are not deck cards: their prints are a preference shared by
+   * every deck), from the site's `alt-art-search` (plugin ownership).
    */
   tokenAltArts(): Observable<(AltArtChoice & { name: string })[]> {
     if (!this.baseUrl) return of([]);
@@ -85,7 +71,7 @@ export class OwnershipApiService {
       .reduce((p, t) => p.append('type[]', t), new HttpParams())
       .set('hideNonChoices', 'false')
       .set('locale', contentLocale());
-    const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/ownership/alt-art-search`;
+    const url = `${this.site}/papi/ownership/alt-art-search`;
     return this.http
       .get<{ families?: (AltArtFamily & { name?: string | Record<string, string> })[]; options?: Record<string, AltArtOptions> }>(url, { params })
       .pipe(
@@ -101,38 +87,18 @@ export class OwnershipApiService {
 
   /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */
   setAltArtPreference(family: AltArtFamily, slotReferences: string[]): Observable<void> {
-    return this.http
-      .put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences })
-      .pipe(tap({ complete: () => this.version.update((v) => v + 1) }));
+    return this.http.put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences });
   }
 
-  /** The cards with the preferred alt arts, as `POST /api/alt-arts/apply-to-deck` returns them. */
-  applyAltArts(cards: CardQuantity[]): Observable<CardQuantity[]> {
-    if (!this.baseUrl || !cards.length) return of(cards);
-    const body = cards.map((c) => ({ reference: c.cardReference, quantity: c.quantity }));
-    return this.http.post<{ lines?: unknown }>(`${this.baseUrl}/api/alt-arts/apply-to-deck`, body).pipe(
-      map((res) => mergeAltArtLines(res?.lines) ?? cards),
-      catchError(() => of(cards)),
+  /**
+   * `true` in the « Global » alt-art mode: the ownership service rewrites every deck with the player's default alt
+   * arts, and the deck builders write them in the deck. `false` otherwise or on an error.
+   */
+  globalAltArts(): Observable<boolean> {
+    if (!this.baseUrl) return of(false);
+    return this.http.get<{ mode?: string }>(`${this.baseUrl}/api/alt-arts/preference-mode`).pipe(
+      map((body) => body?.mode === 'Global'),
+      catchError(() => of(false)),
     );
   }
-}
-
-/**
- * `lines[i]` is the list of references standing for input line `i` (an owned alt art for part of
- * the copies, the printed card for the rest): flattened, with repeated references summed. `null`
- * when the response has no usable lines.
- */
-export function mergeAltArtLines(lines: unknown): CardQuantity[] | null {
-  if (!Array.isArray(lines)) return null;
-  const sum = new Map<string, number>();
-  for (const group of lines) {
-    for (const line of Array.isArray(group) ? group : [group]) {
-      const { reference, quantity } = (line ?? {}) as { reference?: unknown; quantity?: unknown };
-      // Quantities read like PHP's `(int)` (the site's importer): numeric strings count.
-      const qty = Math.trunc(Number(quantity));
-      if (typeof reference !== 'string' || !reference || !Number.isFinite(qty)) continue;
-      sum.set(reference, (sum.get(reference) ?? 0) + qty);
-    }
-  }
-  return sum.size ? [...sum].map(([cardReference, quantity]) => ({ cardReference, quantity })) : null;
 }

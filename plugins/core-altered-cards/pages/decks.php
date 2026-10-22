@@ -275,16 +275,7 @@ if ($isLoggedIn
     if ($deleteId) {
         $token = deckApiToken();
         if ($token) {
-            $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deleteId));
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CUSTOMREQUEST  => 'DELETE',
-                CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Authorization: Bearer ' . $token],
-                CURLOPT_TIMEOUT        => 10,
-            ]);
-            curl_exec($ch);
-            $deleteCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $deleteCode = cacDeckApiDelete($deleteId, $token);
             if ($deleteCode >= 200 && $deleteCode < 300) {
                 flash($txt['deleted_ok']);
             } else {

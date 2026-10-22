@@ -3,9 +3,9 @@
 import type { Page } from '@playwright/test';
 
 /** Creates a deck of the signed-in account through the site's relay, from an SPA page (9 cards: not legal, the API says
- * why), plus `extra` references. */
-export async function createServerDeck(page: Page, name: string, extra: string[] = []): Promise<string> {
-  return page.evaluate(async ([deckName, more]) => {
+ * why), plus `extra` references, `copies` of each. */
+export async function createServerDeck(page: Page, name: string, extra: string[] = [], copies = 1): Promise<string> {
+  return page.evaluate(async ([deckName, more, n]) => {
     const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
     const res = await fetch(`${host.services.decks}/api/decks`, {
       method: 'POST',
@@ -20,11 +20,11 @@ export async function createServerDeck(page: Page, name: string, extra: string[]
           { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
           { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
           { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
-          ...more.map((cardReference) => ({ cardReference, quantity: 1 })),
+          ...more.map((cardReference) => ({ cardReference, quantity: n })),
         ],
       }),
     });
     if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
     return ((await res.json()) as { id: string }).id;
-  }, [name, extra] as const);
+  }, [name, extra, copies] as const);
 }

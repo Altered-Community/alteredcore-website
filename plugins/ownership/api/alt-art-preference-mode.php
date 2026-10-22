@@ -1,8 +1,9 @@
 <?php
 // GET/PUT /papi/ownership/alt-art-preference-mode — proxies GET/PUT
-// /api/alt-arts/preference-mode on OWNERSHIP_API_URL. Backs the "définir par deck /
-// définir au global" toggle on pages/alt-arts.php. PUT is mutating, so CSRF-checked
-// with this site's own csrf_token, same as alt-art-set-preference.php.
+// /api/alt-arts/preference-mode on OWNERSHIP_API_URL. Backs the « par deck / global »
+// toggle on pages/alt-arts.php. Method, sign-in and CSRF: checked by the router (manifest).
+// Before « Global » → « par deck », the page writes the defaults in every deck
+// (api/alt-art-leave-global.php).
 require_once __DIR__ . '/../includes/functions.php';
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -13,44 +14,21 @@ if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) {
     exit;
 }
 
-if (!kcIsLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
-
 $userId = (int)($_SESSION['user_id'] ?? 0);
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-if ($method === 'GET') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
     echo json_encode(['mode' => ownGetAltArtPreferenceMode($userId)]);
     exit;
 }
 
-if ($method !== 'PUT') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
-}
-
-$body = json_decode(file_get_contents('php://input'), true);
-if (!is_array($body)) $body = [];
-
-if (!csrfValid($body['csrf_token'] ?? null)) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Invalid CSRF token']);
-    exit;
-}
-
-$mode = $body['mode'] ?? null;
+$mode = pluginApiBody()['mode'] ?? null;
 if (!in_array($mode, ['PerDeck', 'Global'], true)) {
     http_response_code(400);
     echo json_encode(['error' => 'mode must be "PerDeck" or "Global"']);
     exit;
 }
 
-[$status, $raw] = ownApiRequestRaw('PUT', '/api/alt-arts/preference-mode', $userId, ['mode' => $mode]);
-
+[$status] = ownApiRequestRaw('PUT', '/api/alt-arts/preference-mode', $userId, ['mode' => $mode]);
 if ($status !== 204) {
     http_response_code($status ?: 502);
     echo json_encode(['error' => 'Ownership API error']);

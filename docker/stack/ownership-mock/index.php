@@ -157,16 +157,23 @@ function owned(array $print, string $user): ?int {
 function options(array $f, string $user): array {
     $chosen = state($user)['slots'][$f['key']] ?? [];
     $slots = [];
-    for ($i = 0; $i < $f['copies']; $i++) $slots[] = ['slotIndex' => $i, 'reference' => $chosen[$i] ?? $f['prints'][0]['reference']];
+    // As the service: slots numbered from 1, the plain print where the player chose nothing.
+    for ($i = 0; $i < $f['copies']; $i++) {
+        $slots[] = ['slotIndex' => $i + 1, 'reference' => $chosen[$i] ?? $f['prints'][0]['reference'], 'isExplicitChoice' => isset($chosen[$i])];
+    }
     return key3($f) + [
         'options' => array_map(fn($p) => ['reference' => $p['reference'], 'ownedQuantity' => owned($p, $user)], $f['prints']),
         'slots'   => $slots,
     ];
 }
 
-/** Families of the chosen types (tokens by default), one page of the cards API per call. */
+/**
+ * Families matching the filters, as the service: every card type by default (Common and Rare groups: Uniques have no
+ * alt art), `skip` / `take` counted in families. The cards API is read 200 groups at a time (about 30 of them have an
+ * alt art), only as far as the page asked for.
+ */
 function search(string $user): array {
-    $types = array_values(array_filter((array)($_GET['type'] ?? []), 'is_string')) ?: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA'];
+    $types = array_values(array_filter((array)($_GET['type'] ?? []), 'is_string'));
     $factions = array_values(array_filter((array)($_GET['faction'] ?? []), 'is_string'));
     $rarities = array_values(array_filter((array)($_GET['rarity'] ?? []), 'is_string'));
     // The collection API (cardType[], cardSet[]) fails on several card types, like the real one: its proxy filters them.
@@ -174,22 +181,30 @@ function search(string $user): array {
     $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));
     $locale = (string)($_GET['locale'] ?? 'fr');
     $take = max(1, min(100, (int)($_GET['take'] ?? 25)));
-    $page = intdiv(max(0, (int)($_GET['skip'] ?? 0)), $take) + 1;
-    $q = 'itemsPerPage=' . $take . '&page=' . $page;
+    $skip = max(0, (int)($_GET['skip'] ?? 0));
+    $q = 'itemsPerPage=200&rarity[]=COMMON&rarity[]=RARE';
     foreach ($types as $t) $q .= '&cardType[]=' . rawurlencode($t);
     foreach ($factions as $fc) $q .= '&faction[]=' . rawurlencode($fc);
-    $res = cardsApi('/api/card_groups?' . $q);
+    $matched = [];
+    $more = true;
+    for ($page = 1; $more && count($matched) <= $skip + $take; $page++) {
+        $res = cardsApi('/api/card_groups?' . $q . '&page=' . $page);
+        foreach ($res['member'] ?? [] as $g) {
+            $f = toFamily($g);
+            if (!$f || ($rarities && !in_array($f['rarity'], $rarities, true))) continue;
+            $label = is_array($f['name']) ? ($f['name'][$locale] ?? $f['name']['en'] ?? reset($f['name'])) : $f['name'];
+            if ($name !== '' && !str_contains(mb_strtolower((string)$label), $name)) continue;
+            $matched[] = [$f, $label];
+        }
+        $more = $page * 200 < (int)($res['totalItems'] ?? 0);
+    }
     $families = [];
     $options = [];
-    foreach ($res['member'] ?? [] as $g) {
-        $f = toFamily($g);
-        if (!$f || ($rarities && !in_array($f['rarity'], $rarities, true))) continue;
-        $label = is_array($f['name']) ? ($f['name'][$locale] ?? $f['name']['en'] ?? reset($f['name'])) : $f['name'];
-        if ($name !== '' && !str_contains(mb_strtolower((string)$label), $name)) continue;
+    foreach (array_slice($matched, $skip, $take) as [$f, $label]) {
         $families[] = key3($f) + ['cardType' => $f['cardType'], 'name' => $label, 'reference' => $f['prints'][0]['reference']];
         $options[] = options($f, $user);
     }
-    return ['families' => $families, 'options' => $options, 'hasMore' => $page * $take < (int)($res['totalItems'] ?? 0)];
+    return ['families' => $families, 'options' => $options, 'hasMore' => $more || count($matched) > $skip + $take];
 }
 
 /**

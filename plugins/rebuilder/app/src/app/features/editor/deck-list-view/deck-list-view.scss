@@ -6,11 +6,16 @@
 .stats {
   border-radius: var(--ac-radius-card);
 }
+.alt-arts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
 .empty {
   text-align: center;
   color: var(--ac-color-text-muted);
 }
-/* While the deck opens: the summary, the stats, « Choisir les arts des jetons » (when it may come) and one section of
+/* While the deck opens: the summary, the stats, « Illustrations des jetons » and « Appliquer les arts par défaut » (when they may come) and one section of
    rows, at their sizes. */
 .summary-skeleton {
   height: 159px;

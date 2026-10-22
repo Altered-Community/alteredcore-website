@@ -259,18 +259,16 @@ test.describe('ReBuilder in the shell · signed in', () => {
     });
   }
 
-  test('marks the chosen illustration of each token without a copy number (one copy)', async ({ page, compact }, testInfo) => {
+  test('shows each token large with its illustrations, one of them chosen for every deck', async ({ page, compact }, testInfo) => {
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E token arts ${Date.now()}`);
     if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
-    await page.getByRole('button', { name: compact ? 'Choisir les arts des jetons' : 'Arts des jetons' }).click();
+    await page.getByRole('button', { name: compact ? 'Illustrations des jetons' : 'Arts des jetons' }).click();
     const dialog = page.getByRole('dialog', { name: 'Illustrations des jetons' });
-    const families = dialog.locator('app-alt-art-slots');
-    await expect(families.first()).toBeVisible();
-    // One marker a token, all of them « Illustration choisie », none numbered.
-    await expect(dialog.getByRole('img', { name: 'Illustration choisie' })).toHaveCount(await families.count());
-    await expect(dialog.locator('.marker')).toHaveCount(await families.count());
-    await expect(dialog.locator('.marker').filter({ hasText: /\d/ })).toHaveCount(0);
+    const tokens = dialog.getByRole('radiogroup');
+    await expect(tokens.first()).toBeVisible();
+    // One illustration chosen a token.
+    for (const token of await tokens.all()) await expect(token.getByRole('radio', { checked: true })).toHaveCount(1);
     await evidence(page, testInfo, '16-token-arts');
   });
 
@@ -950,6 +948,36 @@ test.describe('ReBuilder in the shell · app bar of the search and « Aperçu »
 });
 
 test.describe('ReBuilder in the shell · deck page', () => {
+  /**
+   * The illustrations of every card family, as the site's `deck-alt-arts` gives them, made predictable: the plain print
+   * and one alt art owned `owned` times, the defaults `slots` (0: the plain print, 1: the alt art). Returns the two
+   * references of Élémentaire de Kélon (ALT_CORE_B_AX_04_C) once known.
+   */
+  async function routeAltArts(page: Page, owned: number, slots: (0 | 1)[]): Promise<{ base: string; alt: () => string }> {
+    let alt = '';
+    type Options = { options: { reference: string; ownedQuantity: number | null }[]; slots: { slotIndex: number; reference: string }[] };
+    await page.route('**/papi/core-altered-cards/deck-alt-arts**', async (route) => {
+      const body = (await (await route.fetch()).json()) as { groups: Record<string, { familyId: number; faction: string; rarity: string }>; options: Record<string, Options> };
+      for (const [key, family] of Object.entries(body.options)) {
+        family.options = family.options.slice(0, 2).map((o, i) => ({ ...o, ownedQuantity: i === 0 ? null : owned }));
+        family.slots = slots.map((n, i) => ({ slotIndex: i + 1, reference: family.options[Math.min(n, family.options.length - 1)].reference }));
+        const kelon = body.groups['ALT_CORE_B_AX_04_C'];
+        if (kelon && key === `${kelon.familyId}:${kelon.faction}:${kelon.rarity}`) alt = family.options[1]?.reference ?? '';
+      }
+      await route.fulfill({ json: body });
+    });
+    return { base: 'ALT_CORE_B_AX_04_C', alt: () => alt };
+  }
+
+  /** The next PATCH of deck `id` whose cards satisfy `test` (reference → copies). */
+  function savedCards(page: Page, id: string, test: (cards: Map<string, number>) => boolean) {
+    return page.waitForRequest((r) => {
+      if (r.method() !== 'PATCH' || !r.url().includes(`/api/decks/${id}`)) return false;
+      const body = r.postDataJSON() as { deckCards?: { cardReference: string; quantity: number }[] };
+      return !!body.deckCards && test(new Map(body.deckCards.map((c) => [c.cardReference, c.quantity])));
+    });
+  }
+
   /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
   async function openView(page: Page, compact: boolean, tab: string, nav: string): Promise<void> {
     if (compact) await page.getByRole('navigation', { name: 'Consultation du deck' }).getByRole('link', { name: nav }).click();
@@ -1103,49 +1131,289 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await evidence(page, testInfo, '26-unique-art');
   });
 
-  test('numbers the copies 1, 2, 3 on a card\'s illustrations in Global alt-art mode', async ({ page }, testInfo) => {
-    // Global mode for this page only: the mode is the account's, shared with the other tests.
-    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
+  /** The default alt arts saved by the brush (`PUT /api/alt-arts/preferences`), answered without the service. */
+  async function routePreferences(page: Page): Promise<string[][]> {
+    const saved: string[][] = [];
+    await page.route('**/api/alt-arts/preferences', async (route) => {
+      saved.push((route.request().postDataJSON() as { slotReferences: string[] }).slotReferences);
+      await route.fulfill({ status: 204 });
+    });
+    return saved;
+  }
+
+  /** The next brush choice saved for deck `id` (`POST /papi/rebuilder/deck-alt-arts`): its cards. */
+  async function savedDeckCards(page: Page, id: string): Promise<string[] | null> {
+    const request = await page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/papi/rebuilder/deck-alt-arts') && (r.postDataJSON() as { deck?: string }).deck === id);
+    return (request.postDataJSON() as { cards: string[] | null }).cards;
+  }
+
+  test('chooses the illustration of each card of the deck with the brush, the default alt arts unchanged', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const kelon = await routeAltArts(page, 2, [0, 0, 0]);
+    const preferences = await routePreferences(page);
     await login(page, 'alice', `${DECKS}?lang=fr`);
-    const id = await createServerDeck(page, `E2E alt arts ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
-    await page.goto(DECK(id));
-    await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).click();
-    const slots = page.locator('app-alt-art-slots');
-    await expect(slots.getByRole('button', { name: /^Exemplaire \d$/ })).toHaveText(['1', '2', '3']);
-    await evidence(page, testInfo, '27-alt-art-copies');
+    const id = await createServerDeck(page, `E2E brush ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 2);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const brush = page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' });
+    await brush.click();
+    const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
+    /** Key `card` of illustration `n`: pressed when that card takes the illustration. */
+    const key = (n: number, card: string) => dialog.getByRole('group', { name: `Cartes de Illustration ${n}` }).getByRole('button', { name: card });
+    // The plain print is chosen for the three cards (the defaults); the deck uses two.
+    for (const card of ['1ère carte', '2ème carte', '3ème carte']) {
+      await expect(key(1, card)).toHaveAttribute('aria-pressed', 'true');
+      await expect(key(2, card)).toHaveAttribute('aria-pressed', 'false');
+    }
+    await expect(dialog.getByText('Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.')).toBeVisible();
+    // The alt art for the 1st card: the deck's copy 1 takes it, and the choice is kept for this deck.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    let cards = savedDeckCards(page, id);
+    await key(2, '1ère carte').click();
+    await saved;
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.base]);
+    await expect(key(2, '1ère carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(1, '1ère carte')).toHaveAttribute('aria-pressed', 'false');
+    // The illustrations keep their order: the plain print stays first.
+    await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 1');
+    await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
+    await evidence(page, testInfo, '30-alt-art-brush');
+    // The 3rd card, past the deck's copies: kept for the deck, its two copies stay.
+    cards = savedDeckCards(page, id);
+    await key(2, '3ème carte').click();
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.alt()]);
+    // Both copies owned are on cards: the 2nd card cannot take the alt art.
+    await expect(key(2, '3ème carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(2, '2ème carte')).toBeDisabled();
+    await evidence(page, testInfo, '30-alt-art-brush-keys');
+    // The default alt arts are not touched.
+    expect(preferences).toEqual([]);
+    // Kept after a reload; a copy added takes the 3rd card's illustration.
+    await page.reload();
+    // On a phone, a tile a print: a brush on each.
+    await brush.first().click();
+    await expect(key(2, '1ère carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(2, '3ème carte')).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    if (compact) return;
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 2 && c.get(kelon.base) === 1);
+    const pile = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await pile.hover();
+    await pile.getByRole('button', { name: 'Ajouter un exemplaire de Élémentaire de Kélon' }).click();
+    await saved;
+    // The deck deleted: its choices go with it.
+    const deckCards = () => page.evaluate((deck) => fetch(`/papi/rebuilder/deck-alt-arts?deck=${deck}`).then((r) => r.json()), id);
+    expect(Object.keys(((await deckCards()) as { families: object }).families)).toHaveLength(1);
+    await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { method: 'DELETE', headers: { 'X-CSRF-Token': host.csrf } });
+      if (!res.ok) throw new Error(`deck deletion: HTTP ${res.status}`);
+    }, id);
+    expect(await deckCards()).toEqual({ families: {} });
   });
 
-  test('says the player lacks copies of an alt art when they pick it once more than they own', async ({ page }, testInfo) => {
-    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
-    // The card's own illustrations, with one copy of the second; three copies of the card in the deck.
-    type Options = { options: { reference: string; ownedQuantity: number | null }[]; slots: { slotIndex: number; reference: string }[] };
-    await page.route('**/papi/core-altered-cards/deck-alt-arts**', async (route) => {
-      const body = (await (await route.fetch()).json()) as { options: Record<string, Options> };
-      for (const family of Object.values(body.options)) {
-        family.options = family.options.slice(0, 2).map((o, i) => ({ ...o, ownedQuantity: i === 0 ? null : 1 }));
-        family.slots = family.slots.map((s) => ({ ...s, reference: family.options[0].reference }));
-      }
-      await route.fulfill({ json: body });
-    });
-    // The first pick is saved; the second never reaches the service.
-    const saves: unknown[] = [];
-    await page.route('**/api/alt-arts/preferences', (route) => {
-      saves.push(route.request().postDataJSON());
-      return route.fulfill({ status: 204 });
-    });
+  test('takes a card brought to 0 off the deck board', async ({ page, compact }) => {
+    test.skip(compact, 'the deck board is from 768 px');
     await login(page, 'alice', `${DECKS}?lang=fr`);
-    const id = await createServerDeck(page, `E2E alt art copies ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
-    await page.goto(DECK(id));
-    await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).click();
-    const tile = page.locator('app-alt-art-slots').getByRole('button', { name: 'Illustration 2' });
-    const markers = page.locator('app-alt-art-slots li').nth(1).getByRole('button', { name: /^Exemplaire \d$/ });
-    await tile.click();
-    await expect(markers).toHaveText(['1']);
-    await tile.click();
-    await expect(page.locator('app-alt-art-slots').getByRole('alert')).toHaveText('Vous n’avez pas assez d’exemplaires de cet art alternatif.');
-    await expect(markers).toHaveText(['1']);
-    expect(saves).toHaveLength(1);
-    await evidence(page, testInfo, '28-alt-art-not-enough-copies');
+    const id = await createServerDeck(page, `E2E board ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile');
+    const kelon = piles.filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await expect(piles).toHaveCount(4);
+    await kelon.hover();
+    await kelon.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles).toHaveCount(3);
+    await expect(kelon).toHaveCount(0);
+  });
+
+  test('puts a card’s illustrations on one pile of the deck board, copy 1 in front, or on a pile each', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'the deck board is from 768 px');
+    const kelon = await routeAltArts(page, 1, [0, 0, 0]);
+    await routePreferences(page);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E stack ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    // The alt art for the 1st card (the brush): the deck has two prints of the card.
+    await page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' }).click();
+    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
+    await page.getByRole('dialog').getByRole('group', { name: 'Cartes de Illustration 2' }).getByRole('button', { name: '1ère carte' }).click();
+    await saved;
+    await page.keyboard.press('Escape');
+    // One pile of 3, copy 1 in front.
+    const stack = page.getByRole('switch', { name: 'Regrouper les illustrations' });
+    await expect(stack).toBeChecked();
+    await expect(piles).toHaveCount(1);
+    await expect(piles.locator('.qty')).toHaveText('×3');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    await evidence(page, testInfo, '32-alt-arts-one-pile');
+    // Its stepper adds a copy of the card: back to the deck limit, the pile stays.
+    await piles.hover();
+    await piles.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles.locator('.qty')).toHaveText('×2');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    // Off: a pile each print.
+    await stack.uncheck();
+    await expect(piles).toHaveCount(2);
+    await stack.check();
+    await expect(piles).toHaveCount(1);
+  });
+
+  test('adds a card from the search with the default alt art of its copy', { tag: '@mobile' }, async ({ page }, testInfo) => {
+    const kelon = await routeAltArts(page, 1, [1, 1, 0]);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E alt arts search ${Date.now()}`);
+    await page.goto(EDITOR(id));
+    const tiles = page.locator('app-search-results ac-card-tile');
+    // A reference looks up that card only (typed again if the search was not ready for it).
+    await expect(async () => {
+      await page.getByRole('textbox', { name: 'Rechercher par nom' }).first().fill(kelon.base);
+      await expect(tiles).toHaveCount(1, { timeout: 5000 });
+    }).toPass();
+    // The card's tile stands for all its prints: the 1st copy takes the 1st default, the alt art.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && !c.has(kelon.base));
+    await tiles.first().getByRole('button', { name: 'Ajouter Élémentaire de Kélon au deck' }).click();
+    await saved;
+    await expect(tiles.first().locator('ac-stepper .value')).toHaveText('1');
+    // The 2nd default is the alt art too, but its only copy owned is placed: the plain print.
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    await tiles.first().locator('ac-stepper .inc').click();
+    await saved;
+    await expect(tiles.first().locator('ac-stepper .value')).toHaveText('2');
+    await expect(page.getByRole('switch', { name: 'Arts alternatifs' })).toHaveCount(0);
+    await evidence(page, testInfo, '31-alt-arts-search');
+  });
+
+  test('applies the default alt arts to the whole deck after a confirmation', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const kelon = await routeAltArts(page, 3, [1, 1, 1]);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E default alt arts ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    await expect(page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' })).toBeVisible();
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    await page.getByRole('button', { name: compact ? 'Appliquer les arts par défaut' : 'Arts par défaut' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Appliquer vos arts par défaut ?' });
+    await evidence(page, testInfo, '32-default-alt-arts-confirm');
+    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
+    await dialog.getByRole('button', { name: 'Appliquer' }).click();
+    await saved;
+    await expect(page.getByText('Arts par défaut appliqués.')).toBeVisible();
+  });
+
+  /** A call to the ownership service through the site's relay (from a page where Re:Builder runs): status and body. */
+  function ownership(page: Page, method: string, path: string, body?: unknown): Promise<{ status: number; json: unknown }> {
+    return page.evaluate(
+      async ([m, p, b]) => {
+        const host = (window as unknown as { AlteredCore: { csrf: string; services: { ownership: string } } }).AlteredCore;
+        const res = await fetch(`${host.services.ownership}${p}`, {
+          method: m,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
+          body: b === undefined ? undefined : JSON.stringify(b),
+        });
+        const text = await res.text();
+        return { status: res.status, json: text ? (JSON.parse(text) as unknown) : null };
+      },
+      [method, path, body] as const,
+    );
+  }
+
+  /** The cards of deck `id` (reference → copies), from the decks API through the relay. */
+  async function deckCards(page: Page, id: string): Promise<Map<string, number>> {
+    const cards = await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { headers: { Accept: 'application/json' } });
+      const body = (await res.json()) as Record<'deckCards' | 'cards', { cardReference: string; quantity: number }[] | undefined>;
+      return body.deckCards ?? body.cards ?? [];
+    }, id);
+    return new Map(cards.map((c) => [c.cardReference, c.quantity]));
+  }
+
+  // The alt-art mode is bob's account's: these scenarios run one after the other, on one project.
+  test.describe('alt-art mode', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    test('« Global » mode: the deck follows the default alt arts, without a brush', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      const kelon = await routeAltArts(page, 3, [1, 1, 1]);
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      try {
+        const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
+        await page.goto(`${EDITOR(id)}&view=apercu`);
+        await saved;
+        await expect(page.getByRole('button', { name: 'Arts des jetons' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Arts par défaut' })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' })).toHaveCount(0);
+        await evidence(page, testInfo, '36-global-mode');
+      } finally {
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
+
+    test('leaving « Global » writes the default alt arts in every deck, then switches to « par deck »', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      // Every deck of the account is written: a local stack keeps the decks of earlier runs.
+      test.slow();
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E leave global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      // bob's default alt art for Élémentaire de Kélon: an illustration he owns, on the three copies.
+      type Family = { familyId: number; faction: string; rarity: string; options: { reference: string; ownedQuantity: number | null }[] };
+      const [key] = (await ownership(page, 'POST', '/api/alt-arts/resolve-references', ['ALT_CORE_B_AX_04_C'])).json as Family[];
+      const [family] = (await ownership(page, 'POST', '/api/alt-arts/options', [key])).json as Family[];
+      const alt = family.options.find((o) => o.reference !== 'ALT_CORE_B_AX_04_C' && o.ownedQuantity !== 0)?.reference ?? '';
+      expect(alt).not.toBe('');
+      const prefs = { familyId: key.familyId, faction: key.faction, rarity: key.rarity };
+      await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [alt, alt, alt] });
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // What Board Game Arena shows of the deck in « Global » mode.
+      const shown = (await ownership(page, 'POST', '/api/alt-arts/apply-to-deck', [{ reference: 'ALT_CORE_B_AX_04_C', quantity: 3 }])).json as {
+        lines: { reference: string; quantity: number }[][];
+      };
+      const expected = new Map(shown.lines.flat().map((l) => [l.reference, l.quantity]));
+      expect(expected.get('ALT_CORE_B_AX_04_C') ?? 0).toBeLessThan(3);
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await expect(dialog).toBeVisible();
+        await evidence(page, testInfo, '37-leave-global-confirm');
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 120_000 });
+        await evidence(page, testInfo, '38-per-deck-mode');
+        await page.goto(`${DECKS}?lang=fr`);
+        // Élémentaire de Kélon's copies, as Board Game Arena showed them (the deck's other cards have one illustration).
+        const cards = await deckCards(page, id);
+        expect(new Map([...cards].filter(([ref]) => family.options.some((o) => o.reference === ref)))).toEqual(expected);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [] });
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
+
+    test('leaving « Global » switches to « par deck » even when decks cannot be written', async ({ page, compact }) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      await createServerDeck(page, `E2E leave global failing ${Date.now()}`);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // Every deck fails: best effort, the mode changes all the same.
+      let tried = 0;
+      await page.route('**/papi/ownership/alt-art-leave-global', (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        tried++;
+        return route.fulfill({ status: 502, json: { error: 'write' } });
+      });
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 60_000 });
+        expect(tried).toBeGreaterThan(0);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
   });
 
   test('shows the whole card window on a short phone screen (browser bars): the card shrinks, the buttons stay visible', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
@@ -1165,13 +1433,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
       await page.keyboard.press('Escape');
       await expect(dialog).toBeHidden();
     };
-    // Per-deck mode, editor: copies and « Choisir une illustration ».
+    // Editor: copies and « Choisir les illustrations ».
     await page.goto(`${EDITOR(id)}&view=apercu`);
     await fits('29-card-zoom-short-screen');
-    // Global mode: the illustrations strip above the copies.
-    await page.route('**/api/alt-arts/preference-mode', (route) => route.fulfill({ json: { mode: 'Global' } }));
-    await page.reload();
-    await fits('29b-card-zoom-short-screen-global');
   });
 
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {
@@ -1469,7 +1733,7 @@ test.describe('ReBuilder in the shell · loading', () => {
     await addTwoCards(page);
     await saved;
 
-    // Held: the account's deck ids (the owner, which shows « Choisir les arts des jetons »), the alt-art mode and the
+    // Held: the account's deck ids (the owner, which shows « Illustrations des jetons »), the alt-art mode and the
     // rarity icons of the summary (sized by their height only).
     let release!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
@@ -1487,7 +1751,7 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(section.locator('ac-deck-row .qty')).toHaveCount(0);
 
     release();
-    await expect(page.getByRole('button', { name: 'Choisir les arts des jetons' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Illustrations des jetons' })).toBeVisible();
     await expect(page.locator('ac-rarity-summary img').first()).toHaveJSProperty('complete', true);
     expect((await section.boundingBox())?.y).toBe(before?.y);
   });

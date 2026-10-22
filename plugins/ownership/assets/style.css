@@ -336,95 +336,288 @@
     --ac-icon-size: 48px;
 }
 
-/* Alt Arts BGA — one row per multi-art family, tiles instead of a paginated grid.
-   .filter-row/.filter-toggle/.card-altered come from core-altered-cards/assets/style.css,
-   linked explicitly by pages/alt-arts.php since this plugin doesn't load it by default. */
-/* 4 tiles per row on desktop, 2 on mobile — a family's strip is its own little grid,
-   wrapping to as many rows as it needs; the <hr> after it (see js/alt-arts.js) is what
-   visually separates one family from the next. */
-.own-aa-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--ac-space-2-5);
-    margin-bottom: var(--ac-space-1-5);
+/* Default alt arts (pages/alt-arts.php): one row per multi-art family, its name and what decks take on the
+   left (its cards fanned out), its illustrations under their keys on the right. */
+.own-aa-list {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    overflow: hidden;
 }
-/* Wide screens: tiles keep the size they had in the 1200px layout (4 across 1176px of
-   content) and the strip fits as many as the row allows — auto-fill rather than auto-fit
-   so every family's tiles stay the same size, even a 2-art family. */
-@media (min-width: 1500px) {
-    .own-aa-strip {
-        grid-template-columns: repeat(auto-fill, minmax(calc(1176px / 4 - var(--ac-space-2-5)), 1fr));
-    }
+.own-aa-list:empty {
+    display: none;
 }
-@media (max-width: 767.98px) {
-    .own-aa-strip {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--ac-space-1-5);
-    }
+.own-aa-family {
+    --chevron: 44px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--ac-space-4) 0;
+    padding: var(--ac-space-5) var(--ac-space-6);
+    border-bottom: 1px solid var(--ac-color-divider);
 }
-.own-aa-tile {
+.own-aa-family:last-child {
+    border-bottom: 0;
+}
+.own-aa-family__head {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-1);
+}
+/* As Re:Builder's brush: the choices on a band ending in a chevron, which fits into the notch of what decks take
+   (centred on its right); on a phone, one under the other, the chevron pointing down. */
+.own-aa-family > .own-aa-row,
+.own-aa-family__info {
     position: relative;
-    min-width: 0;
-    cursor: pointer;
+    isolation: isolate;
+    box-sizing: border-box;
 }
-/* Direct child only — .own-aa-tile also nests the marker <img>s one level deeper
-   inside .own-aa-markers, and a descendant selector here would out-specify
-   .own-aa-marker's own width and blow the markers up to the tile's full size. */
-.own-aa-tile > img {
+.own-aa-family > .own-aa-row::before,
+.own-aa-family__info::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+}
+.own-aa-family > .own-aa-row {
+    padding: var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5)) var(--ac-space-4) var(--ac-space-5);
+}
+.own-aa-family > .own-aa-row::before {
+    border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+    background: var(--ac-color-primary-tint);
+    clip-path: polygon(0 0, calc(100% - var(--chevron)) 0, 100% 50%, calc(100% - var(--chevron)) 100%, 0 100%);
+}
+.own-aa-family__info {
+    flex: 0 1 330px;
+    margin-left: calc(var(--ac-space-4) - var(--chevron));
+    padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--ac-space-1);
+}
+.own-aa-family__info::before {
+    border-radius: 0 var(--ac-radius-card) var(--ac-radius-card) 0;
+    background: var(--ac-color-bg-app);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chevron) 50%);
+}
+.own-aa-family__name {
+    margin: 0;
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text);
+}
+.own-aa-family__meta {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
+}
+.own-aa-family__uses {
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-2);
+}
+/* The family's cards, 1st on the left, fanned out as in Re:Builder's brush; a token's or a hero's single card large.
+   Each card opens large on a click. */
+.own-aa-fan {
+    --card: 100px;
+    --step: 64px;
+    position: relative;
+    height: calc(var(--card) * 7 / 5 + var(--ac-space-5));
+    margin-left: var(--ac-space-2);
+}
+.own-aa-fan--single {
+    --card: 164px;
+}
+.own-aa-fan__card {
+    position: absolute;
+    top: var(--ac-space-2);
+    left: calc(var(--i) * var(--step));
+    width: var(--card);
+    padding: 0;
+    border: 0;
+    border-radius: var(--ac-radius-sm);
+    background: none;
+    cursor: zoom-in;
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
+    transform-origin: 50% 120%;
+    transition: transform var(--ac-duration-fast);
+}
+.own-aa-fan__card img {
     display: block;
     width: 100%;
-    border-radius: var(--ac-radius-md);
-    aspect-ratio: 63.5/88;
+    aspect-ratio: 5 / 7;
     object-fit: cover;
-    transition: transform var(--ac-duration-fast);
+    border-radius: inherit;
+    box-shadow: var(--ac-shadow-card);
+}
+.own-aa-fan__card:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+    z-index: 1;
+}
+@media (hover: hover) {
+    .own-aa-fan__card:hover {
+        z-index: 1;
+        transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg)) translateY(calc(-1 * var(--ac-space-1)));
+    }
+}
+.own-aa-family > .own-aa-row {
+    flex: 999 1 420px;
+    min-width: 0;
+}
+@media (max-width: 767.98px) {
+    .own-aa-family {
+        padding: var(--ac-space-4);
+    }
+    .own-aa-family {
+        --chevron: 28px;
+    }
+    .own-aa-family > .own-aa-row {
+        flex-basis: 100%;
+        padding: var(--ac-space-4) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-4));
+    }
+    .own-aa-family > .own-aa-row::before {
+        border-radius: var(--ac-radius-card) var(--ac-radius-card) 0 0;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--chevron)), 50% 100%, 0 calc(100% - var(--chevron)));
+    }
+    .own-aa-family__info {
+        flex-basis: 100%;
+        margin: calc(var(--ac-space-3) - var(--chevron) - var(--ac-space-4)) 0 0;
+        padding: calc(var(--chevron) + var(--ac-space-4)) var(--ac-space-5) var(--ac-space-5);
+        align-items: center;
+        text-align: center;
+    }
+    /* Centred under the chevron: as wide as its cards. */
+    .own-aa-fan {
+        width: calc(var(--card) + (var(--n, 1) - 1) * var(--step));
+        margin-left: 0;
+    }
+    .own-aa-family__info::before {
+        border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
+        clip-path: polygon(0 0, 50% var(--chevron), 100% 0, 100% 100%, 0 100%);
+    }
+}
+
+/* One family's illustrations, each under its keys, on one line that scrolls sideways (js/alt-art-widget.js; also in
+   the card modals). An arrow on each side while there is more that way. */
+.own-aa-scroller {
+    position: relative;
+}
+.own-aa-strip {
+    display: flex;
+    gap: var(--ac-space-5);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--ac-space-1);
+    padding: var(--ac-space-1);
+    margin: calc(-1 * var(--ac-space-1));
+    scrollbar-width: thin;
+}
+.own-aa-strip > .own-aa-print {
+    flex: none;
+    scroll-snap-align: start;
+}
+/* The illustration cut at an edge fades out while there is more that way (any opaque colour: the mask uses alpha). */
+.own-aa-scroller {
+    --fade-start: 0px;
+    --fade-end: 0px;
+}
+.own-aa-scroller--more-start {
+    --fade-start: min(96px, 10%);
+}
+.own-aa-scroller--more-end {
+    --fade-end: min(96px, 10%);
+}
+.own-aa-scroller--more-start .own-aa-strip,
+.own-aa-scroller--more-end .own-aa-strip {
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+}
+.own-aa-scroller__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    border-radius: var(--ac-radius-pill);
+    box-shadow: var(--ac-shadow-e2);
+}
+.own-aa-scroller__arrow[hidden] {
+    display: none;
+}
+.own-aa-scroller__arrow--prev {
+    left: calc(-1 * var(--ac-space-3));
+}
+.own-aa-scroller__arrow--next {
+    right: calc(-1 * var(--ac-space-3));
+}
+.own-aa-print {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ac-space-0-5);
+    text-align: center;
+}
+.own-aa-keys {
+    align-self: stretch;
+    margin-bottom: var(--ac-space-1-5);
+}
+.own-aa-print__art {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--ac-space-1-5);
+    aspect-ratio: 63.5 / 88;
+    object-fit: cover;
+    border-radius: var(--ac-radius-md);
     background: var(--ac-color-track);
+    transition: transform var(--ac-duration-fast);
 }
-.own-aa-tile:hover > img {
-    transform: scale(1.03);
+.own-aa-print__zoom {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ac-radius-md);
+    background: none;
+    cursor: zoom-in;
 }
-.own-aa-tile--unowned {
-    cursor: not-allowed;
+.own-aa-print__zoom:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
 }
-.own-aa-tile--unowned > img {
+@media (hover: hover) {
+    .own-aa-print__zoom:hover .own-aa-print__art {
+        transform: translateY(calc(-1 * var(--ac-space-1)));
+    }
+}
+.own-aa-print--unowned .own-aa-print__art {
     opacity: .35;
     filter: grayscale(1);
 }
-.own-aa-tile--unowned:hover > img {
-    transform: none;
+.own-aa-print__label {
+    font: var(--ac-font-body-strong);
+    color: var(--ac-color-text);
 }
-.own-aa-markers {
-    position: absolute;
-    top: var(--ac-space-1);
-    right: var(--ac-space-1);
-    z-index: 2;
-}
-/* Positioned by --slot (the owned copy's slotIndex, set in JS) rather than stacked in flex/DOM
-   order — that height stays the same copy's height on every tile, so a lone marker on a tile
-   shows at a glance which copy (1st/2nd/3rd, i.e. which deck slot — see distributeAcrossSlots
-   in deckbuilder.php) it is, instead of always looking like "the first one" at the top. */
-.own-aa-marker {
-    position: absolute;
-    top: calc(var(--slot, 0) * 22px);
-    right: 0;
-    width: 20px;
-    height: auto;
-    cursor: pointer;
-    filter: drop-shadow(0 1px 2px var(--ac-color-overlay-label));
-}
-.own-aa-marker--active {
-    outline: 2px solid var(--ac-color-primary);
-    border-radius: var(--ac-radius-xs);
+.own-aa-print__note {
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-muted);
 }
 .own-aa-row-error {
-    margin-top: var(--ac-space-1);
+    margin-top: var(--ac-space-2);
+    font: var(--ac-font-small);
+    color: var(--ac-color-danger);
 }
-.own-aa-sep {
-    border: none;
-    border-top: 1px solid var(--ac-color-divider);
-    margin: var(--ac-space-3) 0;
+/* Two illustrations in view on a phone (and a bit of the next one). */
+@media (max-width: 767.98px) {
+    .own-aa-strip {
+        gap: var(--ac-space-4);
+    }
+    .own-aa-strip > .own-aa-print {
+        width: calc((100% - var(--ac-space-4)) / 2.2);
+    }
 }
 
-/* Per-deck vs. global alt-art mode toggle + its explanation panel (pages/alt-arts.php) */
+/* Window over the page (the legacy deckbuilder's token illustrations, assets/deckbuilder/token-arts.js) */
 .own-aa-modal-overlay {
     position: fixed;
     inset: 0;
@@ -441,9 +634,6 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: var(--ac-shadow-dialog);
-}
-.own-aa-modal .ac-card__meta {
-    margin-bottom: var(--ac-space-3);
 }
 
 /* Mode switch bar and search field (pages/alt-arts.php) */

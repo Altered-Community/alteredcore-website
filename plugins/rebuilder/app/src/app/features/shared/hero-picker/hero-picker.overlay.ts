@@ -2,7 +2,6 @@ import { Component, computed, inject, signal, type Signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
-import { OwnershipApiService } from '../../../core/ownership-api.service';
 import { heroOnBga } from '../../../core/formats';
 import { AcChip } from '../../../ui/chips';
 import type { DeckHero } from '../../../core/models';
@@ -83,15 +82,12 @@ export interface HeroPickerData {
   styleUrl: './hero-picker.overlay.scss',
 })
 export class HeroPickerOverlay {
-  private readonly ownership = inject(OwnershipApiService);
   protected readonly ref = inject<AcOverlayRef<DeckHero, HeroPickerData>>(AcOverlayRef);
   protected readonly bp = inject(AcBreakpointService);
   private readonly load = injectHeroes();
   protected readonly altArts = signal(false);
   protected readonly serialized = signal(false);
   protected readonly heroes = computed(() => heroChoices(this.load.heroes(), { altArts: this.altArts(), serialized: this.serialized() }));
-  /** « Alt arts » is hidden in « Global » alt-art mode: the preferred print comes from the player's preferences. */
-  protected readonly global = toSignal(this.ownership.globalAltArts(), { initialValue: false });
   protected readonly error = this.load.error;
   protected readonly picked = signal<AcHeroOption | null>(this.ref.data?.selected ?? null);
   protected readonly faction = signal(this.ref.data?.selected?.faction || 'AX');
@@ -107,7 +103,8 @@ export class HeroPickerOverlay {
 
   confirm(): void {
     const p = this.picked();
-    if (p) this.ref.close({ reference: p.reference, name: p.name, faction: p.faction });
+    // Without « Alt arts », the hero takes the player's default alt art.
+    if (p) this.ref.close({ reference: p.reference, name: p.name, faction: p.faction, ...(this.altArts() ? {} : { defaultArt: true }) });
   }
 }
 

@@ -23,11 +23,11 @@
           [card]="c"
           [eager]="grid.first() + $index < 6"
           [plain]="browse()"
-          [quantity]="deck.quantities().get(c.reference) ?? 0"
-          [max]="deck.maxFor(c)"
+          [quantity]="quantityOf(c)"
+          [max]="maxOf(c)"
           [blockedReason]="blockedReason(c)"
           [zoomable]="true"
-          (quantityChange)="deck.setQuantity(c, $event)"
+          (quantityChange)="setQuantity(c, $event)"
           (zoom)="zoom(c)"
           [favorite]="favorites.enabled() ? favorites.has(c.reference) : null"
           (favoriteToggle)="favorites.toggle(c)"
@@ -47,10 +47,10 @@
           appearance="panel"
           [plain]="browse()"
           [card]="c"
-          [quantity]="deck.quantities().get(c.reference) ?? 0"
-          [max]="deck.maxFor(c)"
+          [quantity]="quantityOf(c)"
+          [max]="maxOf(c)"
           [blockedReason]="blockedReason(c)"
-          (quantityChange)="deck.setQuantity(c, $event)"
+          (quantityChange)="setQuantity(c, $event)"
         />
       }
     </div>

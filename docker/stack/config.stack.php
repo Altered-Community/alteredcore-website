@@ -35,8 +35,9 @@ define('UNIQUES_API_URL',      'https://search.altered.re');
 define('DECKS_API_URL',        'http://decks-api:80');
 define('CDN_URL',              'https://cdn.alteredcore.org');
 // Mock of the digital-ownership service (docker/stack/ownership-mock): alt arts in the site and Re:Builder. It also
-// answers the collection API's GET /api/collection (the real one only takes altered.re tokens).
-define('OWNERSHIP_API_URL',    'http://ownership:8080');
+// answers the collection API's GET /api/collection (the real one only takes altered.re tokens). The real service
+// (docker-compose.ownership.yml) defines it first.
+if (!defined('OWNERSHIP_API_URL')) define('OWNERSHIP_API_URL', 'http://ownership:8080');
 define('OWNERSHIP_WEB_URL',    '');
 define('COLLECTION_API_URL',   'http://ownership:8080');
 define('COLLECTION_USE_API',   false);

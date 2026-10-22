@@ -1,12 +1,25 @@
 <div class="ac-overlay-body">
-  <p class="note" i18n="@@editor.tokenArts.warning">Les préférences d’illustration des jetons sont communes à tous les decks : elles ne font pas partie de la liste de cartes de ce deck.</p>
-  @if (families(); as list) {
-    @for (f of list; track f.family.familyId + f.family.faction + f.family.rarity) {
-      <section>
-        @if (f.name) {
-          <h3>{{ f.name }}</h3>
-        }
-        <app-alt-art-slots [choice]="f" />
+  <p class="note" i18n="@@editor.tokenArts.intro">Choisissez une illustration par jeton : elle s’applique à tous ses exemplaires, dans tous vos decks.</p>
+  @if (tokens(); as list) {
+    @for (t of list; track t.key) {
+      <section class="token">
+        <img class="preview" [src]="t.src" [alt]="t.name" />
+        <div class="side">
+          <h3>{{ t.name }}</h3>
+          <div class="prints" role="radiogroup" [attr.aria-label]="t.name">
+            @for (p of t.prints; track p.reference) {
+              <button type="button" role="radio" class="print" [class.on]="p.on" [attr.aria-checked]="p.on" [attr.aria-label]="p.label" [disabled]="p.unowned" (click)="pick(t, p.reference)">
+                <img [src]="p.src" alt="" loading="lazy" />
+              </button>
+            }
+          </div>
+          <span class="note">{{ t.count }}</span>
+          @if (error(); as e) {
+            @if (e.key === t.key) {
+              <p class="error" role="alert">{{ e.message }}</p>
+            }
+          }
+        </div>
       </section>
     } @empty {
       <p class="note" i18n="@@editor.tokenArts.empty">Aucun jeton n’a plus d’une illustration.</p>

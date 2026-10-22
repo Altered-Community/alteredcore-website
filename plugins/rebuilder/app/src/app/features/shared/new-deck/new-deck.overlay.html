@@ -13,14 +13,12 @@
       controls="new-deck-heroes"
       [(active)]="faction"
     />
-    @if (!global()) {
-      <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
-        <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
-        @if (altArts()) {
-          <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
-        }
-      </div>
-    }
+    <div class="prints" role="group" aria-label="Illustrations" i18n-aria-label="@@shared.heroPicker.prints">
+      <ac-chip shape="square" label="Alt arts" i18n-label="@@shared.heroPicker.altArts" [(selected)]="altArts" />
+      @if (altArts()) {
+        <ac-chip shape="square" label="Numérotées" i18n-label="@@shared.heroPicker.serialized" [(selected)]="serialized" />
+      }
+    </div>
     <ac-hero-selector
       panelId="new-deck-heroes"
       [layout]="bp.compact() ? 'carousel' : 'grid'"
@@ -29,7 +27,7 @@
       [error]="error()"
       [faction]="faction()"
       [selected]="form.hero()"
-      (selectedChange)="form.selectHero($event)"
+      (selectedChange)="form.selectHero($event, !altArts())"
     />
   </section>
   <div class="side">

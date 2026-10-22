@@ -14,7 +14,6 @@
     const widgetCfg = {
         cdnUrl: cfg.cdnUrl,
         lang: cfg.lang,
-        markerImg: cfg.markerImg,
         setPreferenceUrl: cfg.setPreferenceUrl,
         csrfToken: cfg.csrfToken,
         txt: { saveError: t('saveError', 'Could not save your choice.') },
@@ -165,20 +164,76 @@
     loadMoreBtn?.addEventListener('click', renderMore);
 
     // ---- Rendering ----
+    const labelOf = (map, code) => (cfg.labels && cfg.labels[map] && cfg.labels[map][code]) || code;
+
+    // One family: its name, its illustrations under their keys, then what decks take (its cards fanned out, the 1st on
+    // the left).
     const renderFamilyRow = (family) => {
         const key = groupKeyOf(family.familyId, family.faction, family.rarity);
         const optData = optionsByKey[key];
 
-        const wrap = document.createElement('div');
-        if (!optData || !optData.options || !optData.options.length) return wrap; // shouldn't happen
+        const row = document.createElement('article');
+        row.className = 'own-aa-family';
+        if (!optData || !optData.options || !optData.options.length) return row; // shouldn't happen
 
-        const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, widgetCfg);
-        wrap.appendChild(widgetRow.el);
+        const info = document.createElement('div');
+        info.className = 'own-aa-family__info';
+        const name = document.createElement('h2');
+        name.className = 'own-aa-family__name';
+        name.textContent = family.name || family.reference || '';
+        const meta = document.createElement('span');
+        meta.className = 'own-aa-family__meta';
+        meta.textContent = [labelOf('type', family.cardType), labelOf('faction', family.faction), labelOf('rarity', family.rarity)]
+            .filter(Boolean).join(' · ');
+        const uses = document.createElement('span');
+        uses.className = 'own-aa-family__uses';
+        uses.textContent = optData.slots.length === 1 || cfg.isGlobalMode
+            ? t('usesAll', 'All your decks use')
+            : t('usesNew', 'A card added to a deck takes');
+        const fan = document.createElement('div');
+        fan.className = 'own-aa-fan';
+        if (optData.slots.length === 1) fan.classList.add('own-aa-fan--single');
+        // The card's name on top; its illustrations and their keys on the left, what decks take on the right (as in
+        // Re:Builder's brush: the choices, then the result).
+        const head = document.createElement('div');
+        head.className = 'own-aa-family__head';
+        head.append(name, meta);
+        info.append(uses, fan);
+        row.appendChild(head);
 
-        const sep = document.createElement('hr');
-        sep.className = 'own-aa-sep';
-        wrap.appendChild(sep);
-        return wrap;
+        // A card large, as on the cards pages (pages/_card-zoom-modal.php of core-altered-cards).
+        const zoom = (ref) => {
+            if (window.acOpenCardZoom) window.acOpenCardZoom(ref, false, cfg.lang, window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref));
+        };
+
+        // One button a card, made once; a change only swaps their images and names.
+        const drawFan = (references, labels) => {
+            fan.style.setProperty('--n', references.length);
+            references.forEach((ref, i) => {
+                let card = fan.children[i];
+                if (!card) {
+                    card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'own-aa-fan__card';
+                    card.style.setProperty('--i', i);
+                    const img = document.createElement('img');
+                    img.alt = '';
+                    img.loading = 'lazy';
+                    card.appendChild(img);
+                    card.addEventListener('click', () => zoom(card.dataset.ref));
+                    fan.appendChild(card);
+                }
+                card.dataset.ref = ref;
+                card.setAttribute('aria-label', labels[i].zoom);
+                const img = card.firstChild;
+                const src = window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref);
+                if (img.getAttribute('src') !== src) img.src = src;
+            });
+        };
+
+        const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan, onZoom: zoom });
+        row.append(widgetRow.el, info);
+        return row;
     };
 
     runSearch();
