@@ -162,19 +162,24 @@
           @if (deck.steppersShown()) {
             <ac-save-status [state]="deck.saveState()" />
           }
-          @if (effectiveView() === 'apercu' && !bp.compact() && altArts.canChoose()) {
-            <ac-switch label="Regrouper les illustrations" i18n-label="@@editor.stackPrints" [checked]="altArts.stackPrints()" (checkedChange)="altArts.stackPrints.set($event)" />
+          <!-- Until the owner and the alt-art mode are known, the switch and the buttons have their places (in skeleton,
+               at their widths): the row wraps, at narrow widths, before they come rather than when they do. -->
+          @if (effectiveView() === 'apercu' && !bp.compact()) {
+            @if (altArts.canChoose()) {
+              <ac-switch label="Regrouper les illustrations" i18n-label="@@editor.stackPrints" [checked]="altArts.stackPrints()" (checkedChange)="altArts.stackPrints.set($event)" />
+            } @else if (altArts.tokensChoice() === null) {
+              <span acSkeleton="control-sm" width="210px"></span>
+            }
           }
           @if (altArts.canChoose()) {
             <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
           } @else if (altArts.tokensChoice() === null) {
-            <!-- Until the owner and the alt-art mode are known: its place, so that the row does not wrap when it comes. -->
-            <span acSkeleton="control-sm" width="136px"></span>
+            <span acSkeleton="control-sm" width="137px"></span>
           }
           @if (altArts.canChooseForDeck()) {
             <button acButton variant="secondary" size="sm" icon="wand-sparkles" aria-haspopup="dialog" (click)="applyAltArtDefaults()" i18n="@@editor.altArtDefaults.short">Arts par défaut</button>
           } @else if (altArts.defaultsChoice() === null) {
-            <span acSkeleton="control-sm" width="136px"></span>
+            <span acSkeleton="control-sm" width="138px"></span>
           }
         </div>
       </div>
