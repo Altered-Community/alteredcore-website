@@ -1,6 +1,6 @@
 import { Directive, computed, input } from '@angular/core';
 
-export type AcSkeletonShape = '' | 'text' | 'title' | 'control' | 'control-sm' | 'circle' | 'card' | 'panel';
+export type AcSkeletonShape = '' | 'text' | 'title' | 'control' | 'control-sm' | 'badge' | 'circle' | 'card' | 'panel';
 
 /**
  * Shape of content that is loading (`ac-skeleton`, design system feedback), hidden from screen readers: the loading

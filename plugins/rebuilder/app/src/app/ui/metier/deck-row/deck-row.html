@@ -1,7 +1,7 @@
 @if (readonly() && !plain()) {
   <span class="qty">×{{ quantity() }}</span>
 }
-<img class="rarity" [src]="rarity().src" [alt]="rarity().label" [title]="rarity().label" />
+<img class="rarity" [src]="rarity().src" [alt]="rarity().label" [title]="rarity().label" [width]="rarity().width" [height]="rarity().height" />
 <span class="name">{{ name() }}</span>
 @if (issues().length) {
   <span class="issue" role="img" [attr.aria-label]="issuesLabel()" [title]="issuesLabel()">

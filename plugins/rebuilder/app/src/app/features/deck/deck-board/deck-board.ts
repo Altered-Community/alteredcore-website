@@ -47,7 +47,8 @@ export class DeckBoard {
   /** The board's width, measured: the number of card columns follows it. */
   private readonly width = signal(0);
 
-  protected readonly editable = computed(() => !this.readonly() && this.deck.editable());
+  /** Steppers on the piles (the editor's board): DeckStore.steppersShown. */
+  protected readonly editable = computed(() => !this.readonly() && this.deck.steppersShown());
   protected readonly issues = computed(() => lineIssues(this.deck));
   protected readonly noIssues: readonly string[] = [];
   /** The board's lines, a card's prints on one pile when « Regrouper les illustrations » is on, and those piles. */

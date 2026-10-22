@@ -95,6 +95,7 @@
 .ac-skeleton--title { height: 1.1em; border-radius: var(--ac-radius-pill); }
 .ac-skeleton--control { height: var(--ac-control-md); border-radius: var(--ac-radius-control); }
 .ac-skeleton--control-sm { height: var(--ac-control-sm); border-radius: var(--ac-radius-control); }
+.ac-skeleton--badge { height: var(--ac-badge-height); border-radius: var(--ac-radius-pill); }
 .ac-skeleton--circle { width: var(--ac-skeleton-width, var(--ac-control-md)); aspect-ratio: 1; border-radius: 50%; }
 .ac-skeleton--card { aspect-ratio: 5 / 7; border-radius: var(--ac-radius-lg); }
 .ac-skeleton--panel { border-radius: var(--ac-radius-card); }

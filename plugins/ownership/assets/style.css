@@ -94,9 +94,14 @@
 }
 
 .own-opener-card altered-card,
-.own-tilt-card altered-card {
+.own-tilt-card altered-card,
+.own-opener-card > img {
     display: block;
     width: 100%;
+}
+
+.own-opener-card > img {
+    border-radius: var(--ac-radius-dialog);
 }
 
 .own-card-pending {

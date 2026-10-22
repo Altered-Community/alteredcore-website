@@ -3,7 +3,7 @@
 Instructions for coding agents (Codex, Cursor, Copilot, Claude Code…). Claude Code reads them
 through `CLAUDE.md`, which imports this file.
 
-PHP 7.4 site (no framework, Bootstrap 5 from a CDN) with a plugin system: PHP plugins
+PHP 8.4 site (no framework, Bootstrap 5 from a CDN) with a plugin system: PHP plugins
 (`plugins/<id>/`, manifest `plugin.json`) and SPA plugins (manifest v2, `"type": "spa"`, mounted in
 a Shadow DOM, contract `window.AlteredCore` in `js/altered-core-host.js`). See `README.md`,
 `CONTRIBUTING.md` and `plugins/README.html`.
@@ -35,3 +35,21 @@ The rules that matter most:
 - PHP tests: `php tests/run.php` (in Docker: `docker compose exec web php tests/run.php`).
 - SPA plugins: `plugins/<id>/plugin.json` → `build` (lint, test, build); e2e with Playwright in
   `tests/e2e` and `plugins/<id>/e2e` against the full stack (`README.md` § Full stack).
+- Loading (skeletons, layout shifts): after any change to what a screen shows while it loads (placeholder, skeletons,
+  data or images arriving after the first screen, the runtime), in `tests/e2e`:
+  - `npm run loading`: every Re:Builder screen on a slow phone network, first and second visit, desktop and mobile
+    (`plugins/rebuilder/e2e/loading.spec.ts`, also run by the CI). It fails on an empty frame, the app shown unstyled,
+    the skeleton losing the site's font or a « Chargement… » title. A CLS over the screen's budget
+    (`plugins/rebuilder/e2e/loading-budgets.json`: 0.01, or today's value for a known shift; lower a budget when a fix
+    lands, never raise one to pass) is a warning, not a failure: on the CI, a pull request comment with a screenshot of
+    the boxes that moved (job « CLS warnings »).
+  - `npm run loading:timeline -- <screen> [--viewport <size> | --desktop] [--first-visit] [--frames] [--compare <other stack>]`:
+    the loading frame by frame (empty frames in red, shifts marked) with its report, for the PR's evidence; `--compare`
+    puts the base branch's stack (before) and this one (after) in one image. Header of `tests/e2e/loading-timeline.ts`
+    for the options.
+  - `npm run loading:matrix [-- --screens a,b --viewports a,b --runs n]`: the CLS of every screen at eight sizes (phones,
+    tablet, laptops, desktops: `VIEWPORTS` in `tests/e2e/loading.ts`), on both sides of the breakpoints, in one table
+    with what moved. Run it after a layout change that depends on the width (a breakpoint, a container query, a skeleton
+    whose size is set for one width).
+  - A new screen or a new loading state: add it to `plugins/rebuilder/e2e/screens.ts`; the recorder
+    (`tests/e2e/loading.ts`) works for any SPA plugin.

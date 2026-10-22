@@ -20,16 +20,16 @@
 }
 @media (min-width: 1200px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     column-gap: var(--ac-space-2);
     row-gap: var(--ac-space-5);
   }
 }
 /* Uniques: their text is read, so at most 7 columns; the cards only grow where 7 would be narrower
-   than the usual 210 px (very wide windows). */
+   than the usual 200 px (very wide windows). */
 @media (min-width: 1200px) {
   .grid--readable {
-    grid-template-columns: repeat(auto-fill, minmax(max(210px, calc((100% - 6 * var(--ac-space-2)) / 7)), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - 6 * var(--ac-space-2)) / 7)), 1fr));
   }
 }
 .list {

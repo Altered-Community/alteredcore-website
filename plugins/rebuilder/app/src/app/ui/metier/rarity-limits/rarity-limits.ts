@@ -5,6 +5,9 @@ import { AcBadge, RARITY_ICONS } from '../../chips';
 /** A capped rarity as shown: its icon, its name, `under` / `at` / `over` the cap, and « Rare : 12 sur 15 maximum ». */
 export interface RarityLimitItem extends RarityLimit {
   icon: string;
+  /** The icon file's size (`width` / `height` attributes). */
+  iconWidth: number;
+  iconHeight: number;
   name: string;
   state: 'under' | 'at' | 'over';
   label: string;
@@ -12,10 +15,12 @@ export interface RarityLimitItem extends RarityLimit {
 
 export function rarityLimitItems(limits: readonly RarityLimit[]): RarityLimitItem[] {
   return limits.map((r) => {
-    const { src: icon, label: name } = RARITY_ICONS.find((i) => i.key === r.key)!;
+    const { src: icon, label: name, width: iconWidth, height: iconHeight } = RARITY_ICONS.find((i) => i.key === r.key)!;
     return {
       ...r,
       icon,
+      iconWidth,
+      iconHeight,
       name,
       state: r.count > r.limit ? 'over' : r.count === r.limit ? 'at' : 'under',
       label: $localize`:@@ui.rarityLimits.item:${name}:rarity: : ${r.count}:count: sur ${r.limit}:limit: maximum`,

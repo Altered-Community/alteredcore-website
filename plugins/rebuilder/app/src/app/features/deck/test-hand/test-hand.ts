@@ -1,5 +1,5 @@
 import { CdkDrag, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, type CdkDragDrop } from '@angular/cdk/drag-drop';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, afterNextRender, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { localizedText } from '../../../core/models';
@@ -87,6 +87,8 @@ export class TestHand {
     effect(() => {
       if (this.compact()) untracked(() => this.game.set(null));
     });
+    // For the site's hidden creatures (plugins/hidden-creatures): a spot can wait for this event. No effect otherwise.
+    afterNextRender(() => window.dispatchEvent(new CustomEvent('ac-hidden-spot', { detail: 'test-hand' })));
   }
 
   newHand(): void {

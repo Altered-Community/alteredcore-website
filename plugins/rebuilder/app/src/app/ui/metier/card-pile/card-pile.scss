@@ -1,6 +1,8 @@
 :host {
-  /* Offset of each copy behind the front one: enough to count them over the cards' dark top edge. */
-  --pile-offset: 16px;
+  /* Offset of each copy behind the front one, a share of the card's width: the rarity gem (top centre, down to 8 %
+     of the width) of each copy behind shows whole above the next one. */
+  --pile-offset: 9cqi;
+  container-type: inline-size;
   position: relative;
   display: block;
   min-width: 0;

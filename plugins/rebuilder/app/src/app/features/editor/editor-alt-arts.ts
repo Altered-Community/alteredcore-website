@@ -154,6 +154,20 @@ export class EditorAltArts {
     }
   }
 
+  /**
+   * « Arts des jetons » (`canChoose`): `null` while the deck's owner is not known yet, so that its place is kept (in
+   * skeleton) and the list under it does not move when it comes.
+   */
+  readonly tokensChoice = computed<boolean | null>(() => {
+    if (!this.enabled() || this.deck.owned() === false) return false;
+    return this.deck.owned() === null ? null : true;
+  });
+  /** « Arts par défaut » (`canChooseForDeck`): `null` while the deck's owner or the alt-art mode is not known yet. */
+  readonly defaultsChoice = computed<boolean | null>(() => {
+    if (this.tokensChoice() === false || this.mode() === true) return false;
+    return this.tokensChoice() === null || this.mode() === undefined ? null : true;
+  });
+
   /** The family of `reference` (`null`: one illustration, or not known yet). */
   choiceFor(reference: string): AltArtChoice | null {
     return this.known().get(reference) ?? null;

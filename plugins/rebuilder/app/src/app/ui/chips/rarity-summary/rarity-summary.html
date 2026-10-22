@@ -1,6 +1,6 @@
 @for (r of icons; track r.key) {
   <span class="item" [title]="r.label">
-    <img [src]="r.src" [alt]="r.label" />
+    <img [src]="r.src" [alt]="r.label" [width]="r.width" [height]="r.height" />
     <strong>{{ counts()[r.key] }}</strong>
   </span>
 }

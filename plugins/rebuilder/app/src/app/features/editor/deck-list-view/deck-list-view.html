@@ -4,6 +4,14 @@
     <span acSkeleton="panel" class="summary-skeleton"></span>
   }
   <span acSkeleton="panel" class="stats-skeleton"></span>
+  @if (!readonly() && altArts && altArts.tokensChoice() !== false) {
+    <div class="alt-arts">
+      <span acSkeleton="control"></span>
+      @if (altArts.defaultsChoice() !== false) {
+        <span acSkeleton="control"></span>
+      }
+    </div>
+  }
   <div class="ac-card ac-card--sm section-skeleton" aria-hidden="true">
     <span acSkeleton="text" width="35%"></span>
     @for (r of [0, 1, 2, 3]; track r) {
@@ -33,8 +41,15 @@
 @if (!readonly() && altArts?.canChoose()) {
   <div class="alt-arts">
     <button acButton variant="secondary" icon="layers" [fullWidth]="true" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.open">Illustrations des jetons</button>
-    @if (altArts?.canChooseForDeck()) {
+    @if (altArts.canChooseForDeck()) {
       <button acButton variant="secondary" icon="wand-sparkles" [fullWidth]="true" aria-haspopup="dialog" (click)="applyDefaults()" i18n="@@editor.altArtDefaults.open">Appliquer les arts par défaut</button>
+    }
+  </div>
+} @else if (!readonly() && altArts?.tokensChoice() === null) {
+  <div class="alt-arts">
+    <span acSkeleton="control"></span>
+    @if (altArts.defaultsChoice() !== false) {
+      <span acSkeleton="control"></span>
     }
   </div>
 }
@@ -47,7 +62,7 @@
         [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
         [issues]="issues().get(l.card.reference) ?? noIssues"
         [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
-        [readonly]="readonly() || !deck.editable()"
+        [readonly]="readonly() || !deck.steppersShown()"
         (quantityChange)="deck.setQuantity(l.card, $event)"
       />
     }

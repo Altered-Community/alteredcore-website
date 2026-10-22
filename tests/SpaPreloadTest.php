@@ -47,7 +47,8 @@ assertSame(true, !in_array($assets . 'chunk-decks.js', $hrefs, true), 'another s
 $bad = spaResolvePage($plugin, $page)['spa']['preload']['bad'] ?? [];
 assertSame([], $bad, 'paths outside the build, absolute paths and non-modules are dropped');
 
-assertSame('ac-spa-demo', spaMountId($deck), 'mount point id, named by the header\'s render-blocking <link rel="expect">');
+assertSame('ac-spa-demo', spaMountId($deck), 'mount point id');
+assertSame('ac-spa-demo-parsed', spaFirstPaintId($deck), 'element after the mount point, named by the header\'s render-blocking <link rel="expect">');
 
 // Light DOM: the plugin's CSS is not loaded by the runtime, no style preload.
 $light = ['slug' => 'demo'] + spaResolvePage($plugin, ['mount' => 'light'] + $page);
@@ -62,7 +63,8 @@ assertSame([['href' => '/plugins/demo/dist/main.js', 'as' => 'module']], spaPrel
 @unlink($dir . '/dist/embed-manifest.json');
 $broken = ['slug' => 'demo'] + spaResolvePage($plugin, $page);
 assertSame([], spaPreloads($broken), 'missing build: no preload');
-assertSame(null, spaMountId($broken), 'missing build: no mount point, nothing to wait for before the first paint');
+assertSame(null, spaMountId($broken), 'missing build: no mount point');
+assertSame(null, spaFirstPaintId($broken), 'missing build: nothing to wait for before the first paint');
 
 @rmdir($dir . '/dist');
 @rmdir($dir);

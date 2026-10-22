@@ -25,14 +25,11 @@
   <div class="text" [style.border-left-color]="border()">
     <a class="back" routerLink="/decks" i18n="@@deck.page.myDecks"><ac-icon name="chevron-left" [size]="14" />Mes decks</a>
     @if (deck.opening()) {
-      <span acSkeleton="title" width="80%"></span>
-      @if (reduced()) {
-        <span acSkeleton="text" width="60%"></span>
-      } @else {
-        <span acSkeleton="title" width="50%"></span>
-        <span acSkeleton="text" width="70%"></span>
+      <div class="name-row"><span acSkeleton="title" width="70%"></span></div>
+      <span acSkeleton="text" width="60%"></span>
+      @if (!reduced()) {
+        <span class="badges-skeleton"><span acSkeleton="badge" width="90px"></span><span acSkeleton="badge" width="64px"></span></span>
         <span acSkeleton="text" width="50%"></span>
-        <span acSkeleton="text" width="40%"></span>
       }
     } @else {
     <div class="name-row">
@@ -55,16 +52,18 @@
         }
       }
     </div>
+    <!-- One line each (the rest cut, the name whole in its tooltip): the bar has the same height for every deck, the
+         height of its skeleton while the deck opens. -->
     @if (reduced()) {
       <span class="meta">
         <strong i18n="@@deck.bar.total">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</strong>
         @for (g of deck.groups(); track g.id) {
-          <span aria-hidden="true">·</span> {{ g.count }} {{ g.label }}
+          <span class="dot" aria-hidden="true">·</span>{{ g.count }} {{ g.label }}
         }
       </span>
     } @else {
-      <span class="meta">
-        {{ deck.hero()?.name }}<span aria-hidden="true">·</span>{{ formatLabel() }}
+      <span class="meta">{{ deck.hero()?.name }}<span class="dot" aria-hidden="true">·</span>{{ formatLabel() }}</span>
+      <span class="badges">
         <ng-container [ngTemplateOutlet]="legalityBadge" />
         @if (deck.isDraft() && !editable()) {
           <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>

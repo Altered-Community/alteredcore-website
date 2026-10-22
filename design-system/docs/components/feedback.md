@@ -165,6 +165,7 @@ for screen readers; the shapes themselves are `aria-hidden`.
 | `ac-skeleton--title` | A heading line (1.1 em, pill). |
 | `ac-skeleton--control` | A field or a button (`--ac-control-md`). |
 | `ac-skeleton--control-sm` | A small button (`--ac-control-sm`). |
+| `ac-skeleton--badge` | A badge (`ac-badge`: `--ac-badge-height`, pill); `--ac-skeleton-width` sets its width. |
 | `ac-skeleton--circle` | An avatar or an icon button (`--ac-control-md` square, round). |
 | `ac-skeleton--card` | A card illustration (5 : 7, 12 px radius). |
 | `ac-skeleton--panel` | A card or panel (14 px radius); the layout sets its height. |

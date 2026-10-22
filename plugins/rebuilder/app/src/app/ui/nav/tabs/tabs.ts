@@ -8,7 +8,8 @@ export interface AcTab {
   label: string;
   /** Label in the tab row when `maxTabs` is set (the « Plus » menu shows `label`). */
   short?: string;
-  count?: number;
+  /** A number after the label; `null` while it loads (« … », at the width of a three-digit number). */
+  count?: number | null;
 }
 
 /**

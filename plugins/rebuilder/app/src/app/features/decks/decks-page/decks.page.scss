@@ -298,6 +298,17 @@
 }
 
 /* The loading notice in the factions row: on its right, without taking a row of its own. */
+/* In the row's free space, never on a row of its own (the list would move up when it goes): no width of its own, it
+   takes what the chips leave, its text cut. */
 .factions .notice {
-  margin-left: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+.factions .notice > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

@@ -15,7 +15,7 @@ One page per component family. Each page matches one file of `css/components/` (
 | [chips.md](chips.md) | `chips.css` | Chip, badge, tag, count, avatar |
 | [card.md](card.md) | `card.css` | Card, list, empty state, collapsible |
 | [drawer.md](drawer.md) | `drawer.css` | Drawer handle and tab: hide and show a side panel |
-| [navigation.md](navigation.md) | `navigation.css` | Tabs, breadcrumb, pagination, menu |
+| [navigation.md](navigation.md) | `navigation.css` | Tabs, breadcrumb, pagination, menu, contents (`ac-toc`) |
 | [feedback.md](feedback.md) | `feedback.css` | Notice, toast, scrim, dialog, spinner, blocking loader, progress bar, table |
 | [bootstrap-bridge.md](bootstrap-bridge.md) | `bridges/bootstrap.css` | Which Bootstrap classes are restyled, and when to use them |
 

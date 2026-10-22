@@ -2,7 +2,7 @@
 
 Unofficial community website for the [Altered TCG](https://www.altered.gg/) card game.
 
-Built with plain PHP — no framework, no build step, no Composer. Runs on any standard shared hosting with Apache and PHP 7.4.
+Built with plain PHP — no framework, no build step, no Composer. Runs on any standard shared hosting with Apache and PHP 8.4.
 
 ---
 
@@ -17,7 +17,7 @@ Pull requests that introduce external dependencies or non-standard server requir
 ## Requirements
 
 - Apache with `mod_rewrite` enabled
-- PHP 7.4
+- PHP 8.4 (8.2 and 8.3 also run the code; 7.4 is no longer supported once both environments have switched)
 - MariaDB 10.x
 
 ---
@@ -104,7 +104,7 @@ The core stays build-free. Front-end plugins (manifest v2, `"type": "spa"`, e.g.
 docker compose -f docker-compose.yml -f docker-compose.stack.yml up -d --build --wait
 ```
 
-Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`).
+Site on http://localhost:8080 (`WEB_PORT` to change it), Keycloak users `alice` / `bob` (password `TestPassword1234`), decks API on http://localhost:8001. Playwright: `cd tests/e2e && npm ci && npx playwright test`. CI runs the same on every pull request (`.github/workflows/plugins-ci.yml`). Loading checks (skeletons, layout shifts): `npm run loading` and `npm run loading:timeline -- <screen>` in `tests/e2e` (`AGENTS.md` § Checks).
 
 **Alt arts with the real ownership service.** The stack's digital ownership is a mock (`docker/stack/ownership-mock`). To try the default alt arts with [AlteredOwnership](https://github.com/Altered-Re-Union/AlteredOwnership) itself, built from GitHub (alice and bob own Axiom alt arts and have default alt arts; alice is in « Global » mode, with a deck of plain prints that takes her default alt arts):
 

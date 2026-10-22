@@ -6,6 +6,25 @@
     [sticky]="effectiveView() !== 'search' || deckTitle"
   >
     <ac-back-button leading fallback="/decks" />
+    <!-- The title not known yet (appBarPending): its skeleton in the final layout (hero, name and rarities on the search and
+         « Aperçu » views; name and format otherwise). -->
+    @if (appBarPending() && deckTitleView()) {
+      <span leading class="bar-hero" aria-hidden="true"><span class="bar-hero-art ac-skeleton"></span></span>
+    }
+    @if (appBarPending()) {
+      <span titles class="bar-deck bar-deck--pending" aria-hidden="true">
+        <span acSkeleton="title" width="70%"></span>
+        @if (deckTitleView()) {
+          <span class="bar-deck-sub">
+            @for (i of [0, 1, 2]; track i) {
+              <span acSkeleton="badge" width="52px"></span>
+            }
+          </span>
+        } @else {
+          <span acSkeleton="text" width="50%"></span>
+        }
+      </span>
+    }
     <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->
     @if (deckTitle) {
       <button leading type="button" class="bar-hero" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
@@ -29,11 +48,13 @@
         </span>
       </button>
     }
-    @if (deck.editable()) {
+    <!-- Also while the owner is not known (idle: an empty slot), so the title keeps its width when the actions arrive. -->
+    @if (deck.editable() || (deck.owned() === null && !deck.loadError())) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
-    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton. -->
-    @for (i of deck.owned() === null && !deck.loadError() ? [0, 1] : []; track i) {
+    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton, where the final ones go
+         (« ⋯ » only beside the deck title). -->
+    @for (i of deck.owned() === null && !deck.loadError() ? (deckTitleView() ? [0] : [0, 1]) : []; track i) {
       <span actions acSkeleton="circle"></span>
     }
     <!-- With the deck title, « Partager » moves to the « ⋯ » menu to leave room for the rarities. -->
@@ -83,11 +104,12 @@
             @if (deck.owned() === null) {
               @if (effectiveView() === 'apercu') {
                 @for (i of [0, 1, 2, 3, 4, 5]; track i) {
-                  <span acSkeleton="control-sm" width="110px"></span>
+                  <span acSkeleton="control-sm"></span>
                 }
               } @else {
-                <span acSkeleton="control-sm" width="110px"></span>
-                <span acSkeleton="control-sm" width="110px"></span>
+                <!-- « Partager », « Copier en image » (their width in French), « ⋯ ». -->
+                <span acSkeleton="control-sm" width="95px"></span>
+                <span acSkeleton="control-sm" width="141px"></span>
                 <span acSkeleton="control-sm" width="var(--ac-control-sm)"></span>
               }
             } @else {
@@ -130,12 +152,14 @@
             [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
+          <!-- The hint and the save state as the steppers (DeckStore.steppersShown): there while the owner is unknown, so
+               that the row does not wrap, and the page move, when it is known. -->
           <span class="hint">
-            @if (effectiveView() === 'apercu' && deck.editable()) {
+            @if (effectiveView() === 'apercu' && deck.steppersShown()) {
               <ng-container i18n="@@editor.boardHint">Survolez une pile pour changer le nombre d’exemplaires.</ng-container>
             }
           </span>
-          @if (deck.editable()) {
+          @if (deck.steppersShown()) {
             <ac-save-status [state]="deck.saveState()" />
           }
           @if (effectiveView() === 'apercu' && !bp.compact() && altArts.canChoose()) {
@@ -143,9 +167,14 @@
           }
           @if (altArts.canChoose()) {
             <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
+          } @else if (altArts.tokensChoice() === null) {
+            <!-- Until the owner and the alt-art mode are known: its place, so that the row does not wrap when it comes. -->
+            <span acSkeleton="control-sm" width="136px"></span>
           }
           @if (altArts.canChooseForDeck()) {
             <button acButton variant="secondary" size="sm" icon="wand-sparkles" aria-haspopup="dialog" (click)="applyAltArtDefaults()" i18n="@@editor.altArtDefaults.short">Arts par défaut</button>
+          } @else if (altArts.defaultsChoice() === null) {
+            <span acSkeleton="control-sm" width="136px"></span>
           }
         </div>
       </div>
@@ -215,10 +244,11 @@
         </div>
       } @else {
         <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="drawer.set(true)">
+          <!-- While the deck opens: the label in skeleton, at its final length (the count takes two digits' room). -->
+          <span class="ac-drawer-tab__label" [class.ac-skeleton]="deck.opening()" i18n="@@editor.deckTab">Deck · <span class="count">{{ deck.total() }}</span> cartes</span>
           @if (deck.opening()) {
-            <span class="ac-drawer-tab__label" i18n="@@editor.deckTabLoading">Deck · …</span>
+            <span acSkeleton="circle" width="16px"></span>
           } @else {
-            <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
             <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
           }
         </button>
