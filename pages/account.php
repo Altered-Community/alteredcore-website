@@ -170,7 +170,7 @@ include dirname(__DIR__) . '/includes/header.php';
             </div>
             <div>
                 <div style="font-weight:800;font-size:1.25rem"><?= h($userRow['username'] ?? $kcU['username']) ?></div>
-                <div style="font-size:.85rem;color:var(--neutral-500)"><?= h($userRow['email'] ?? $kcU['email']) ?></div>
+                <div style="font-size:.85rem;color:var(--neutral-500)"><?= ac_masked_email((string)($userRow['email'] ?? $kcU['email'])) ?></div>
             </div>
         </div>
         <dl class="row mb-0" style="font-size:.9rem">
@@ -250,7 +250,7 @@ include dirname(__DIR__) . '/includes/header.php';
             <p class="small mb-0" style="color:var(--ac-color-text-muted)"><?= $txt['newsletter_blocked'] ?></p>
         <?php else: ?>
             <?php $nlSubscribed = !empty($newsletterSub['subscribed']); ?>
-            <p class="small mb-3"><?= $nlSubscribed ? sprintf($txt['newsletter_on'], '<strong>' . h($accountEmail) . '</strong>') : $txt['newsletter_off'] ?></p>
+            <p class="small mb-3"><?= $nlSubscribed ? sprintf($txt['newsletter_on'], '<strong>' . ac_masked_email($accountEmail) . '</strong>') : $txt['newsletter_off'] ?></p>
             <form method="post">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <?php if ($nlSubscribed): ?>

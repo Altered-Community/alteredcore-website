@@ -1,7 +1,8 @@
-import type { CardOrder, CardSearchParams } from './models';
+import type { CardOrder, CardSearchParams, DeckFormat } from './models';
 import type { UniquesQuery } from './uniques-api.service';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
+import type { OwnedSource } from './owned-cards.service';
 import { PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
 
 export type CardSource = 'all' | 'uniques' | 'collection' | 'owned' | 'favorites';
@@ -47,7 +48,7 @@ export interface SearchFilters {
   /** « Alt arts »: every printing, and the promo editions of the chosen sets (`promoSets`). */
   altArts: boolean;
   promoSets: string[];
-  /** Favoris in the editor: only the cards the deck's format allows (`allowedInFormat`). */
+  /** Account tabs in the editor: only the cards the deck's format allows (`allowedInFormat`). */
   legalOnly: boolean;
   /** Editor: « Changer de faction », searched instead of the hero's faction. */
   otherFactions: string[];
@@ -84,10 +85,10 @@ export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'AL
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 /**
  * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except where
- * Uniques are listed (Uniques, Favoris).
+ * Uniques are listed (Uniques and the account tabs).
  */
 function setsOffByDefault(source: CardSource): string[] {
-  return source === 'uniques' || source === 'favorites' ? ['FUGUE'] : ['FUGUE', 'COREKS'];
+  return source === 'uniques' || isAccountSource(source) ? ['FUGUE'] : ['FUGUE', 'COREKS'];
 }
 
 export const RARITY_OPTIONS = [
@@ -96,11 +97,26 @@ export const RARITY_OPTIONS = [
   { value: 'EXALTED', short: 'E', label: $localize`:@@search.filters.rarity.exalted:Exaltée`, icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
 
-/** The Favoris tab also lists the favorite Uniques. */
+/** The account tabs (Favoris, Collection physique, Propriété numérique) also list the Uniques. */
 export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@search.filters.rarity.unique:Unique`, icon: assetUrl('assets/icons/rarete-unique.png') };
 
+const RARITY_OPTIONS_WITH_UNIQUE = [...RARITY_OPTIONS, UNIQUE_RARITY];
+
 export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
-  return source === 'favorites' ? [...RARITY_OPTIONS, UNIQUE_RARITY] : RARITY_OPTIONS;
+  return isAccountSource(source) ? RARITY_OPTIONS_WITH_UNIQUE : RARITY_OPTIONS;
+}
+
+/**
+ * The account tabs (the user's own cards): they hold Uniques among the other cards, and their « légales » filter
+ * leaves them out in a No Unique format.
+ */
+export function isAccountSource(source: CardSource): source is OwnedSource {
+  return source === 'favorites' || source === 'collection' || source === 'owned';
+}
+
+/** The format a tab's cards must be legal in: the deck's while « légales » is on, in the tabs that offer it. */
+export function legalFormat(source: CardSource, filters: SearchFilters, format: DeckFormat | null): DeckFormat | null {
+  return isAccountSource(source) && filters.legalOnly ? format : null;
 }
 
 export const TYPE_OPTIONS = [
@@ -278,6 +294,12 @@ export interface FilterChip {
   label: string;
 }
 
+/**
+ * Filters the Favoris tab applies: the site's `favorites-search` filters its table by faction, rarity and set only.
+ * The others are disabled there and give no chip.
+ */
+export const FAVORITES_FILTERS: ReadonlySet<string> = new Set(['factions', 'otherFactions', 'sets', 'rarities']);
+
 export function filterChips(filters: SearchFilters, source: CardSource): FilterChip[] {
   const chips: FilterChip[] = [];
   if (filters.q.trim()) chips.push({ id: 'q', label: $localize`:@@search.filters.chip.query:« ${filters.q.trim()}:query: »` });
@@ -322,7 +344,7 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
     const n = filters.effects.filter((b) => b.triggers.length || b.conditions.length || b.effects.length).length;
     if (n) chips.push({ id: 'effects', label: n === 1 ? $localize`:@@search.filters.chip.oneEffect:1 effet` : $localize`:@@search.filters.chip.effects:${n}:count: effets` });
   }
-  return chips;
+  return source === 'favorites' ? chips.filter((c) => FAVORITES_FILTERS.has(c.id)) : chips;
 }
 
 export function removeChip(filters: SearchFilters, id: string): SearchFilters {
@@ -369,6 +391,10 @@ export function activeFilterCount(filters: SearchFilters, source: CardSource): n
   return filterChips(filters, source).filter((c) => c.id !== 'environment' || filters.environment !== 'all').length;
 }
 
+export function newEffectId(): string {
+  return `fx-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function newEffectBlock(): EffectBlock {
-  return { id: `fx-${Math.random().toString(36).slice(2, 9)}`, triggers: [], conditions: [], effects: [] };
+  return { id: newEffectId(), triggers: [], conditions: [], effects: [] };
 }

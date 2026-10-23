@@ -203,6 +203,71 @@ describe('AcCombobox picker', () => {
   });
 });
 
+describe('AcCombobox keepOpen', () => {
+  const panel = () => document.querySelector<HTMLElement>('.cdk-overlay-container .panel');
+  const options = () => [...(panel()?.querySelectorAll<HTMLElement>('[role=option]') ?? [])];
+
+  function setup(values: ComboOption[] = []) {
+    const fixture = TestBed.createComponent(AcCombobox);
+    fixture.componentRef.setInput('options', [MAIN, EXPEDITION]);
+    fixture.componentRef.setInput('values', values);
+    fixture.componentRef.setInput('keepOpen', true);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    document.body.appendChild(el);
+    el.querySelector<HTMLButtonElement>('.field [role=combobox]')!.click();
+    fixture.detectChanges();
+    const done = () => {
+      fixture.destroy();
+      el.remove();
+    };
+    return { fixture, el, done };
+  }
+
+  it('checks and unchecks several values without closing the list, chips under the button', () => {
+    const { fixture, el, done } = setup();
+    options()[1].click();
+    fixture.detectChanges();
+    options()[0].click();
+    fixture.detectChanges();
+    expect(panel()).not.toBeNull();
+    expect(fixture.componentInstance.values()).toEqual([EXPEDITION, MAIN]);
+    expect(options().map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'true']);
+    expect(sequence(el)).toEqual(['field', `chip:${EXPEDITION.text}`, 'ou', `chip:${MAIN.text}`]);
+
+    options()[1].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.values()).toEqual([MAIN]);
+    expect(options().map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+    done();
+  });
+
+  it('Enter in the search checks the first unchecked match, empties the field and stays open', () => {
+    const { fixture, done } = setup([MAIN]);
+    const search = panel()!.querySelector('input')!;
+    search.value = 'e'; // both match, MAIN is already checked
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.values()).toEqual([MAIN, EXPEDITION]);
+    expect(search.value).toBe('');
+    expect(panel()).not.toBeNull();
+    done();
+  });
+
+  it('a checked value the search hides stays checked', () => {
+    const { fixture, done } = setup([MAIN]);
+    const search = panel()!.querySelector('input')!;
+    search.value = 'expé';
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(options().map((o) => o.textContent?.trim())).toEqual([EXPEDITION.text]);
+    expect(fixture.componentInstance.values()).toEqual([MAIN]);
+    done();
+  });
+});
+
 /** The component and its CDK overlay container in a shadow root, as in the plugin (`ShadowOverlayContainer`). */
 const shadowHost = document.createElement('div');
 const shadowRoot = shadowHost.attachShadow({ mode: 'open' });

@@ -53,7 +53,7 @@
 
 /* Badge: status or category. <span class="ac-badge ac-badge--green">Public</span> */
 .ac-badge {
-  height: 24px;
+  height: var(--ac-badge-height);
   padding: 0 9px;
   border-radius: var(--ac-radius-pill);
   font: var(--ac-font-caption);
@@ -67,6 +67,8 @@
   text-decoration: none;
 }
 .ac-badge--lg { height: 28px; }
+/* Dense: tighter padding and gap, for a row of badges where room is short (a phone's app bar). */
+.ac-badge--dense { padding: 0 var(--ac-space-1-5); gap: 3px; }
 .ac-badge--blue { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
 .ac-badge--green { background: var(--ac-color-success-soft); color: var(--ac-color-success); }
 .ac-badge--violet { background: var(--ac-color-accent-soft); color: var(--ac-color-accent); }

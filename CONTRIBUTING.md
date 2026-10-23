@@ -109,7 +109,7 @@ git push origin dev:main
 
 ## Code conventions
 
-- **PHP 8.4.** Production runs PHP 8.4.27 (Docker image php:8.4.27-apache). Until preprod has switched too, the preprod CI also lints under 7.4; keep new code free of PHP 8.5-only features.
+- **PHP 8.4.** Production and preprod run PHP 8.4.27 (Docker image php:8.4.27-apache). PHP 8 syntax is fine; keep new code free of PHP 8.5-only features.
 - **No framework, no Composer.** No build step, no external dependencies. The project is intentionally plain PHP — keep it that way.
 - **Comments in English.**
 - **Interface: the design system.** Every screen uses `design-system/` (read its `README.md`): colours, sizes, radii and shadows come from the `--ac-*` tokens (`design-system/tokens/tokens.css`, the only file with raw values), components are the `ac-*` classes, icons are Lucide (`ac_icon('name')`). Light/dark and pointer/touch are handled by the tokens: no `[data-theme]` rule in page, theme or plugin CSS. CSS files: (1) `design-system/`: tokens and shared components; (2) `css/style.css`: shell and core pages; (3) `themes/azure/`: header, menu and footer templates and their CSS; (4) `plugins/*/assets/*.css`: plugin-specific layout, built from tokens. `php tests/run.php` rejects hard-coded colours. Designing with Claude (`/design`): `design-system/WORKFLOW.md`.

@@ -1,0 +1,4 @@
+<ac-check-list class="list" [options]="data.options()" [values]="data.picked()" (valuesChange)="data.picked.set($event)" [label]="data.label" [searchPlaceholder]="data.searchPlaceholder" />
+<div class="ac-overlay-footer">
+  <button acButton size="lg" [fullWidth]="true" (click)="ref.close()" i18n="@@search.effect.done">Valider</button>
+</div>

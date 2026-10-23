@@ -225,3 +225,17 @@ assertSame('#1868d0', dsToken('--ac-color-primary'), "dsToken() reads tokens.css
 assertSame(true, dsToken('--ac-color-primary', 'dark') !== null && dsToken('--ac-color-primary', 'dark') !== dsToken('--ac-color-primary'), "dsToken() reads the dark theme block");
 assertSame('#1050aa', dsToken('--ac-header-border'), "dsToken() resolves a var() value (light header border = primary-strong)");
 assertSame(dsToken('--ac-color-primary-strong', 'dark'), dsToken('--ac-color-link', 'dark'), "dsToken() resolves a var() value in the dark theme");
+
+// ---- Masked e-mail address (tooltip.css) ----
+assertSame('c•••@gmail.com', dsMaskEmail('camille.durand@gmail.com'), 'dsMaskEmail keeps the first character and the domain');
+assertSame('é•••@exemple.fr', dsMaskEmail('élodie@exemple.fr'), 'dsMaskEmail keeps a multibyte first character whole');
+foreach (['', 'camille', '@gmail.com', 'camille@'] as $notAnAddress) {
+    assertSame('•••', dsMaskEmail($notAnAddress), 'dsMaskEmail hides ' . var_export($notAnAddress, true) . ' entirely');
+}
+$masked = ac_masked_email('a<b>@x.fr', 'ac-tooltip--below');
+assertSame(true, strpos($masked, 'a•••@x.fr<span class="ac-tooltip ac-tooltip--below" role="tooltip"') !== false, 'ac_masked_email shows the masked address, the full one in the tooltip');
+assertSame(true, strpos($masked, 'a&lt;b&gt;@x.fr') !== false && strpos($masked, '<b>') === false, 'ac_masked_email escapes the address');
+
+// ---- The newsletter field is never filled with the account's address ----
+$nl = (string)file_get_contents($root . '/includes/newsletter_sub.php');
+assertSame(0, preg_match('/name="nl_email"[^>]*value=/s', $nl), 'the homepage newsletter field has no value');

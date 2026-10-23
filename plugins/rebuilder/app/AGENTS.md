@@ -104,7 +104,9 @@ composants s'adaptent à la taille d'écran et à la densité : pas d'écrans «
 1. `npm run build` et `npm run lint` sans erreur, `npm test` vert ; `php tests/run.php` à la racine du repo
    (couleurs en dur, points de rupture).
 2. E2E dans le site (`tests/e2e` + `plugins/rebuilder/e2e`) sur la stack `docker-compose.stack.yml` : voir
-   `../README.md`.
+   `../README.md`. Un changement de ce qui s'affiche pendant un chargement (squelette, données ou images qui arrivent
+   après le premier écran) : `npm run loading` et une timeline avant / après (`npm run loading:timeline`) dans
+   `tests/e2e`, voir `AGENTS.md` à la racine § Checks.
 3. Capture Playwright de l'écran embarqué à 1440×900 et 390×844.
 4. Recherche de valeurs en dur (`#[0-9a-f]{3,6}`, `px` de hauteur de contrôle) hors `design-system/tokens/tokens.css`.
 

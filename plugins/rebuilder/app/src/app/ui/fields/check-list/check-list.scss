@@ -1,0 +1,55 @@
+@use '../glyph';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.search {
+  flex-shrink: 0;
+  margin-bottom: var(--ac-space-2);
+}
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+.option {
+  display: flex;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-2) var(--ac-space-2-5);
+  border-radius: var(--ac-radius-md);
+  font-size: var(--ac-field-font-size);
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+@media (hover: hover) {
+  .option:hover {
+    background: var(--ac-color-primary-tint);
+  }
+}
+.option.on {
+  font-weight: 700;
+  color: var(--ac-color-primary-strong);
+}
+.option input {
+  flex-shrink: 0;
+}
+.group {
+  padding: var(--ac-space-3) var(--ac-space-2-5) var(--ac-space-1);
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+  flex-shrink: 0;
+}
+.empty {
+  margin: 0;
+  padding: var(--ac-space-2-5);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}

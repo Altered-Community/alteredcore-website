@@ -294,3 +294,21 @@ export function rarityCountsFromRefs(
   }
   return out;
 }
+
+/** A rarity the format caps: its copies in the deck and the cap. */
+export interface RarityLimit {
+  key: 'R' | 'E' | 'U';
+  count: number;
+  limit: number;
+}
+
+/** Rares, Exalteds and Uniques against the format's caps (the hero's for Uniques); a rarity without a cap is left out. */
+export function rarityLimits(status: DeckStatus, format: DeckFormat): RarityLimit[] {
+  const limits = formatInfo(format);
+  const all: { key: RarityLimit['key']; count: number; limit: number | null }[] = [
+    { key: 'R', count: status.rare, limit: limits.rareMax },
+    { key: 'E', count: status.exalted, limit: limits.exaltedMax },
+    { key: 'U', count: status.unique, limit: status.uniqueMax },
+  ];
+  return all.filter((r): r is RarityLimit => r.limit !== null);
+}

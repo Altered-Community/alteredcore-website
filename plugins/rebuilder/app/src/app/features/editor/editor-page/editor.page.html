@@ -1,10 +1,64 @@
 @if (bp.compact()) {
-  <ac-app-bar [title]="view() === 'deck' ? labels.myDeck : deck.name() || 'Deck'" [subtitle]="view() === 'deck' ? '' : subtitle()" [class.static]="effectiveView() === 'search'">
+  @let deckTitle = deckAppBar();
+  <ac-app-bar
+    [title]="appBarTitle()"
+    [subtitle]="appBarSubtitle()"
+    [sticky]="effectiveView() !== 'search' || deckTitle"
+  >
     <ac-back-button leading fallback="/decks" />
-    @if (deck.editable()) {
+    <!-- The title not known yet (appBarPending): its skeleton in the final layout (hero, name and rarities on the search and
+         « Aperçu » views; name and format otherwise). -->
+    @if (appBarPending() && deckTitleView()) {
+      <span leading class="bar-hero" aria-hidden="true"><span class="bar-hero-art ac-skeleton"></span></span>
+    }
+    @if (appBarPending()) {
+      <span titles class="bar-deck bar-deck--pending" aria-hidden="true">
+        <span acSkeleton="title" width="70%"></span>
+        @if (deckTitleView()) {
+          <span class="bar-deck-sub">
+            @for (i of [0, 1, 2]; track i) {
+              <span acSkeleton="badge" width="52px"></span>
+            }
+          </span>
+        } @else {
+          <span acSkeleton="text" width="50%"></span>
+        }
+      </span>
+    }
+    <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->
+    @if (deckTitle) {
+      <button leading type="button" class="bar-hero" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
+        <span class="bar-hero-art">
+          @if (deck.hero(); as h) {
+            <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 22%" [eager]="true" />
+          }
+        </span>
+        <span class="bar-hero-swap" aria-hidden="true"><ac-icon name="arrow-left-right" [size]="12" [strokeWidth]="2.4" /></span>
+      </button>
+    }
+    @if (deckTitle) {
+      <button titles type="button" class="bar-deck" aria-haspopup="dialog" [attr.aria-label]="overviewLabel()" (click)="openOverview()">
+        <span class="bar-deck-name">{{ deck.name() || 'Deck' }}</span>
+        <span class="bar-deck-sub">
+          @if (rarityLimits().length) {
+            <ac-rarity-limits [limits]="rarityLimits()" [dense]="true" />
+          } @else {
+            {{ subtitle() }}
+          }
+        </span>
+      </button>
+    }
+    <!-- Also while the owner is not known (idle: an empty slot), so the title keeps its width when the actions arrive. -->
+    @if (deck.editable() || (deck.owned() === null && !deck.loadError())) {
       <ac-save-status actions [state]="deck.saveState()" [iconOnly]="true" />
     }
-    @if (!deck.loadError()) {
+    <!-- Until the owner is known (deck opening, account list loading): the actions in skeleton, where the final ones go
+         (« ⋯ » only beside the deck title). -->
+    @for (i of deck.owned() === null && !deck.loadError() ? (deckTitleView() ? [0] : [0, 1]) : []; track i) {
+      <span actions acSkeleton="circle"></span>
+    }
+    <!-- With the deck title, « Partager » moves to the « ⋯ » menu to leave room for the rarities. -->
+    @if (deck.owned() !== null && !deck.loadError() && !deckTitle) {
       <button
         actions
         [acIconButton]="waiting() === 'share' ? 'loader-circle' : 'share-2'"
@@ -17,8 +71,9 @@
         (click)="act('share')"
       ></button>
     }
-    @if (!deck.loadError()) {
-      <button actions class="done" acButton variant="ghost" size="sm" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')" i18n="@@editor.done">Terminer</button>
+    <!-- One element per block: content projection (`[actions]`) only takes a block with a single root. -->
+    @if (deck.owned() !== null && !deck.loadError()) {
+      <button actions acIconButton="ellipsis" variant="ghost" [iconSize]="22" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
     }
   </ac-app-bar>
 }
@@ -29,12 +84,35 @@
     <a acButton variant="secondary" routerLink="/decks" i18n="@@editor.backToDecks">Retour à mes decks</a>
   </div>
 } @else {
-  <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()">
-    <main class="main">
-      @if (!bp.compact()) {
-        <div class="head-top">
-          <ac-breadcrumb [items]="breadcrumb()" />
-          <div class="actions">
+  @if (deck.opening()) {
+    <span class="ac-sr-only" role="status">{{ labels.loading }}</span>
+  }
+  <div class="editor" [class.compact]="bp.compact()" [attr.data-view]="effectiveView()" [attr.aria-busy]="deck.opening() || null">
+    @if (!bp.compact()) {
+      <div class="top">
+        <app-deck-bar
+          [reduced]="effectiveView() !== 'apercu'"
+          [editable]="deck.editable()"
+          [legality]="legality()"
+          [highlight]="highlight()"
+          (openSettings)="openSettings()"
+          (changeHero)="changeHero()"
+          (showLegality)="showLegality()"
+          >
+          <div barActions class="bar-actions" [class.row]="effectiveView() !== 'apercu'">
+            <!-- Until the owner is known: the actions in skeleton, rather than « Supprimer » appearing once it is. -->
+            @if (deck.owned() === null) {
+              @if (effectiveView() === 'apercu') {
+                @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+                  <span acSkeleton="control-sm"></span>
+                }
+              } @else {
+                <!-- « Partager », « Copier en image » (their width in French), « ⋯ ». -->
+                <span acSkeleton="control-sm" width="95px"></span>
+                <span acSkeleton="control-sm" width="141px"></span>
+                <span acSkeleton="control-sm" width="var(--ac-control-sm)"></span>
+              }
+            } @else {
             <button acButton variant="secondary" size="sm" [icon]="waiting() === 'share' ? 'loader-circle' : 'share-2'" [class.waiting]="waiting() === 'share'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'share'" (click)="act('share')">
               @if (waiting() === 'share') {
                 <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
@@ -42,24 +120,31 @@
                 <ng-container i18n="@@editor.share">Partager</ng-container>
               }
             </button>
-            <button acButton size="sm" [icon]="waiting() === 'done' ? 'loader-circle' : 'check'" [class.waiting]="waiting() === 'done'" [disabled]="!!waiting() || deck.loading()" [attr.aria-busy]="waiting() === 'done'" (click)="act('done')">
-              @if (waiting() === 'done') {
-                <ng-container i18n="@@editor.savingFirst">Enregistrement…</ng-container>
-              } @else {
-                <ng-container i18n="@@editor.done">Terminer</ng-container>
+            @if (effectiveView() === 'apercu') {
+              @if (imageSource(); as source) {
+                <app-deck-image-export size="sm" [source]="source" [name]="deck.name()" (notice)="flash($event)" />
               }
-            </button>
-          </div>
-        </div>
-        <div class="head">
-          <div class="title-block">
-            <div class="title-row">
-              <ac-editable-title [value]="deck.name()" [readonly]="!deck.editable()" (valueChange)="deck.rename($event)" />
+              <button acButton variant="secondary" size="sm" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
+              <button acButton variant="secondary" size="sm" icon="copy-plus" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
               @if (deck.editable()) {
-                <ac-save-status [state]="deck.saveState()" />
+                <button acButton variant="danger" size="sm" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
               }
-            </div>
+            } @else {
+              @if (imageSource()) {
+                <button acButton variant="secondary" size="sm" [icon]="imageBusy() ? 'loader-circle' : 'image'" [class.waiting]="imageBusy()" [disabled]="imageBusy()" (click)="image('copy')">
+                  @if (imageBusy()) {
+                    {{ labels.imageBusy }}
+                  } @else {
+                    <ng-container i18n="@@deck.image.copy">Copier en image</ng-container>
+                  }
+                </button>
+              }
+              <button acIconButton="ellipsis" size="sm" [ariaLabel]="labels.more" [cdkMenuTriggerFor]="moreMenu" [cdkMenuPosition]="menuPositions"></button>
+            }
+            }
           </div>
+        </app-deck-bar>
+        <div class="modes">
           <ac-segmented
             size="lg"
             ariaLabel="Mode d’affichage" i18n-ariaLabel="@@editor.displayMode"
@@ -67,17 +152,46 @@
             [value]="effectiveView() === 'apercu' || effectiveView() === 'main' ? effectiveView() : 'search'"
             (valueChange)="setMode($event)"
           />
+          <!-- The hint and the save state as the steppers (DeckStore.steppersShown): there while the owner is unknown, so
+               that the row does not wrap, and the page move, when it is known. -->
+          <span class="hint">
+            @if (effectiveView() === 'apercu' && deck.steppersShown()) {
+              <ng-container i18n="@@editor.boardHint">Survolez une pile pour changer le nombre d’exemplaires.</ng-container>
+            }
+          </span>
+          @if (deck.steppersShown()) {
+            <ac-save-status [state]="deck.saveState()" />
+          }
+          <!-- Until the owner and the alt-art mode are known, the switch and the buttons have their places (in skeleton,
+               at their widths): the row wraps, at narrow widths, before they come rather than when they do. -->
+          @if (effectiveView() === 'apercu' && !bp.compact()) {
+            @if (altArts.canChoose()) {
+              <ac-switch label="Regrouper les illustrations" i18n-label="@@editor.stackPrints" [checked]="altArts.stackPrints()" (checkedChange)="altArts.stackPrints.set($event)" />
+            } @else if (altArts.tokensChoice() === null) {
+              <span acSkeleton="control-sm" width="210px"></span>
+            }
+          }
+          @if (altArts.canChoose()) {
+            <button acButton variant="secondary" size="sm" icon="layers" aria-haspopup="dialog" (click)="chooseTokenArts()" i18n="@@editor.tokenArts.short">Arts des jetons</button>
+          } @else if (altArts.tokensChoice() === null) {
+            <span acSkeleton="control-sm" width="137px"></span>
+          }
+          @if (altArts.canChooseForDeck()) {
+            <button acButton variant="secondary" size="sm" icon="wand-sparkles" aria-haspopup="dialog" (click)="applyAltArtDefaults()" i18n="@@editor.altArtDefaults.short">Arts par défaut</button>
+          } @else if (altArts.defaultsChoice() === null) {
+            <span acSkeleton="control-sm" width="138px"></span>
+          }
         </div>
-      }
+      </div>
+    }
 
+    <main class="main">
       @if (deck.saveError(); as saveError) {
         <div class="banner error" role="alert">
           <span class="message">
             <span class="text">{{ saveError }}</span>
             @if (stopped() === 'share') {
               <span class="then" i18n="@@editor.stopped.share">Le partage s’ouvrira une fois le deck enregistré.</span>
-            } @else if (stopped() === 'done') {
-              <span class="then" i18n="@@editor.stopped.done">La page du deck s’ouvrira une fois le deck enregistré.</span>
             }
           </span>
           <button acButton variant="secondary" size="sm" icon="rotate-ccw" [disabled]="deck.saving()" (click)="retry()" i18n="@@editor.retrySave">Réessayer</button>
@@ -94,35 +208,54 @@
       @let view = effectiveView();
       @switch (view) {
         @case ('search') {
-          <app-card-search class="search" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.loading()" />
+          <app-card-search class="search" [class.under-app-bar]="deckAppBar()" [faction]="deck.hero()?.faction ?? null" [format]="deck.format()" [ready]="!deck.opening()" />
         }
         @case ('apercu') {
-          <app-deck-preview />
+          @if (bp.compact()) {
+            <app-deck-preview />
+          } @else {
+            <app-deck-board />
+          }
         }
         @case ('deck') {
-          <app-deck-list-view (openSettings)="openSettings()" />
+          <app-deck-list-view (openSettings)="openSettings()" (changeHero)="changeHero()" (notice)="flash($event)" />
         }
         @case ('main') {
-          <div class="hand">
-            <app-test-hand [lines]="deck.lines()" />
-            <app-hand-stats [lines]="deck.lines()" />
-            <app-hand-calculators [lines]="deck.lines()" />
-          </div>
+          @if (deck.opening()) {
+            <app-hand-skeleton />
+          } @else {
+          <!-- Test hand (with the CDK's drag and drop), odds and calculators: their own chunk, loaded with the view. -->
+          @defer (on immediate) {
+            <div class="hand">
+              <app-test-hand [lines]="deck.lines()" />
+              <app-hand-stats [lines]="deck.lines()" />
+              <app-hand-calculators [lines]="deck.lines()" />
+            </div>
+          } @placeholder {
+            <app-hand-skeleton />
+          }
+          }
         }
         @default never;
       }
     </main>
 
     @if (!bp.compact()) {
-      @if (deckDrawer.open()) {
-        <div class="panel" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)">
-          <app-deck-panel id="editor-deck-panel" (openSettings)="openSettings()" />
-          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="deckDrawer.set(false)"></button>
+      @let drawer = deckDrawer();
+      @if (drawer.open()) {
+        <div class="panel" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)">
+          <app-deck-panel id="editor-deck-panel" />
+          <button acDrawerHandle="start" aria-controls="editor-deck-panel" ariaLabel="Masquer le deck" i18n-ariaLabel="@@editor.hideDeck" (click)="drawer.set(false)"></button>
         </div>
       } @else {
-        <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="deckDrawer.leaving()" [animate.enter]="deckDrawer.enter()" (animationend)="deckDrawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="deckDrawer.set(true)">
-          <span class="ac-drawer-tab__label" i18n="@@editor.deckTab">Deck · {{ deck.total() }} cartes</span>
-          <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
+        <button class="deck-tab" acDrawerTab="end" [class.ac-drawer-leave--end]="drawer.leaving()" [animate.enter]="drawer.enter()" (animationend)="drawer.left($event)" aria-controls="editor-deck-panel" [ariaLabel]="deckTabLabel()" (click)="drawer.set(true)">
+          <!-- While the deck opens: the label in skeleton, at its final length (the count takes two digits' room). -->
+          <span class="ac-drawer-tab__label" [class.ac-skeleton]="deck.opening()" i18n="@@editor.deckTab">Deck · <span class="count">{{ deck.total() }}</span> cartes</span>
+          @if (deck.opening()) {
+            <span acSkeleton="circle" width="16px"></span>
+          } @else {
+            <ac-icon [name]="legal() ? 'circle-check' : 'circle-alert'" [size]="16" [class.legal]="legal()" />
+          }
         </button>
       }
     }
@@ -131,9 +264,32 @@
   @if (bp.compact()) {
     <ac-bottom-nav ariaLabel="Éditeur de deck" i18n-ariaLabel="@@editor.bottomNav" [items]="navItems()" />
   }
-  @if (toast(); as t) {
+  @if (notice(); as n) {
+    <ac-toast>{{ n }}</ac-toast>
+  } @else if (toast(); as t) {
     <ac-toast [actionLabel]="undoLabel" (action)="undo(t.card, t.quantity - t.delta)">
       <ac-icon [name]="t.delta > 0 ? 'plus' : 'minus'" [size]="14" [strokeWidth]="2.6" />{{ t.name }} ×{{ t.quantity }}
     </ac-toast>
   }
 }
+
+<!-- « ⋯ » of the deck bar (from 768 px) and of the app bar (phones). -->
+<ng-template #moreMenu>
+  <div class="ac-menu" cdkMenu [attr.aria-label]="labels.more">
+    @if (deckAppBar()) {
+      <button type="button" class="ac-menu__item" cdkMenuItem [disabled]="!!waiting() || deck.loading()" (cdkMenuItemTriggered)="act('share')"><ac-icon name="share-2" [size]="18" />{{ labels.share }}</button>
+      <hr class="ac-menu__divider" />
+    }
+    @if (imageSource()) {
+      <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('save')"><ac-icon name="download" [size]="18" /><ng-container i18n="@@deck.image.save">Enregistrer l’image</ng-container></button>
+      <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="image('open')"><ac-icon name="external-link" [size]="18" /><ng-container i18n="@@editor.imageOpen">Ouvrir l’image dans un nouvel onglet</ng-container></button>
+      <hr class="ac-menu__divider" />
+    }
+    <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="copyList()"><ac-icon name="copy" [size]="18" /><ng-container i18n="@@deck.page.copyList">Copier la liste</ng-container></button>
+    <button type="button" class="ac-menu__item" cdkMenuItem (cdkMenuItemTriggered)="duplicate()"><ac-icon name="copy-plus" [size]="18" /><ng-container i18n="@@deck.page.duplicate">Dupliquer</ng-container></button>
+    @if (deck.editable()) {
+      <hr class="ac-menu__divider" />
+      <button type="button" class="ac-menu__item ac-menu__item--danger" cdkMenuItem (cdkMenuItemTriggered)="remove()"><ac-icon name="trash-2" [size]="18" /><ng-container i18n="@@deck.page.delete">Supprimer</ng-container></button>
+    }
+  </div>
+</ng-template>

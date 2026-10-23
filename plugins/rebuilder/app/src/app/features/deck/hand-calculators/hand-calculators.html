@@ -11,7 +11,7 @@
     <h3 i18n="@@deck.calc.atLeast">Chances d’avoir</h3>
     <ac-probability-bars [rows]="cardBars()" />
     <p class="mid" i18n="@@deck.calc.among">cartes parmi</p>
-    <ac-combobox [options]="options()" [(values)]="cards" placeholder="Choisir…" i18n-placeholder="@@deck.calc.pick" />
+    <ac-combobox keepOpen [options]="options()" [(values)]="cards" placeholder="Choisir…" i18n-placeholder="@@deck.calc.pick" />
     <p class="foot" i18n="@@deck.calc.drawing">en piochant <strong>{{ drawn() }}</strong> cartes</p>
     @if (cardRatio(); as r) {
       <p class="ratio">{{ r }}</p>
@@ -23,11 +23,11 @@
     <p class="mid" i18n="@@deck.calc.amongCombo">parmi</p>
     <div class="group">
       <span class="group-label" aria-hidden="true">A</span>
-      <ac-combobox [options]="options()" [(values)]="groupA" placeholder="Choisir… (A)" i18n-placeholder="@@deck.calc.pickA" />
+      <ac-combobox keepOpen [options]="options()" [(values)]="groupA" placeholder="Choisir… (A)" i18n-placeholder="@@deck.calc.pickA" />
     </div>
     <div class="group">
       <span class="group-label" aria-hidden="true">B</span>
-      <ac-combobox [options]="options()" [(values)]="groupB" placeholder="Choisir… (B)" i18n-placeholder="@@deck.calc.pickB" />
+      <ac-combobox keepOpen [options]="options()" [(values)]="groupB" placeholder="Choisir… (B)" i18n-placeholder="@@deck.calc.pickB" />
     </div>
     <p class="foot" i18n="@@deck.calc.drawing">en piochant <strong>{{ drawn() }}</strong> cartes</p>
     @if (comboRatio(); as r) {

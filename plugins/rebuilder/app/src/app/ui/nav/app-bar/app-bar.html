@@ -1,10 +1,14 @@
 <header>
   <ng-content select="[leading]" />
-  <div class="titles">
-    <span class="title">{{ title() }}</span>
-    @if (subtitle()) {
-      <span class="subtitle">{{ subtitle() }}</span>
-    }
-  </div>
+  @if (title() || subtitle()) {
+    <div class="titles">
+      <span class="title">{{ title() }}</span>
+      @if (subtitle()) {
+        <span class="subtitle">{{ subtitle() }}</span>
+      }
+    </div>
+  }
+  <!-- A title of its own (a button, badges…) in place of title / subtitle, which are then left empty. -->
+  <ng-content select="[titles]" />
   <div class="actions"><ng-content select="[actions]" /></div>
 </header>

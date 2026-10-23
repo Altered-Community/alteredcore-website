@@ -1,0 +1,58 @@
+<div class="ac-overlay-body">
+  <section class="hero">
+    <span class="art">
+      @if (deck.hero(); as h) {
+        <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 25%" />
+      }
+    </span>
+    <div class="who">
+      <span class="name">{{ deck.hero()?.name || noHero }}</span>
+      <span class="meta">{{ meta() }}</span>
+      <button acButton variant="secondary" size="sm" icon="arrow-left-right" aria-haspopup="dialog" (click)="ref.close('hero')">{{ changeHeroLabel }}</button>
+    </div>
+  </section>
+
+  <section class="legality" [class.ok]="legal()">
+    <button type="button" class="legality-head" aria-haspopup="dialog" (click)="ref.close('legality')">
+      <ac-badge [tone]="legal() ? 'green' : 'orange'" [icon]="legal() ? 'check' : 'circle-alert'">{{ legalityLabel() }}</ac-badge>
+      <span class="details" i18n="@@editor.overview.rules">Règles du format</span>
+      <ac-icon name="chevron-right" [size]="16" />
+    </button>
+    @if (problems().length) {
+      <ul>
+        @for (p of problems(); track $index) {
+          <li>{{ p }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (limits().length) {
+    <section>
+      <h3>{{ rarityTitle() }}</h3>
+      <ul class="limits">
+        @for (r of limits(); track r.key) {
+          <li [class]="r.state">
+            <img [src]="r.icon" alt="" />
+            <span class="rarity">{{ r.name }}</span>
+            <ac-progress-bar [value]="r.value" [tone]="r.tone" [ariaLabel]="r.label" />
+            <strong>{{ r.count }}/{{ r.limit }}</strong>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section>
+    <h3 i18n="@@editor.overview.composition">Composition</h3>
+    <p class="counts">
+      <span><strong>{{ deck.total() }}</strong>&ngsp;<ng-container i18n="@@editor.overview.cards">{deck.total(), plural, =1 {carte} other {cartes}}</ng-container></span>
+      @for (g of deck.groups(); track g.id) {
+        <span><strong>{{ g.count }}</strong> {{ g.label }}</span>
+      }
+    </p>
+  </section>
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" size="lg" [fullWidth]="true" icon="layers" (click)="ref.close('deck')" i18n="@@editor.overview.openDeck">Ouvrir l’onglet Deck</button>
+</div>

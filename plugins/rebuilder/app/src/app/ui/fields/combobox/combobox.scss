@@ -1,3 +1,5 @@
+@use '../glyph';
+
 :host {
   display: flex;
   flex-direction: column;
@@ -72,18 +74,6 @@
 }
 .chev.up {
   transform: translateY(-50%) rotate(180deg);
-}
-.glyph {
-  display: inline-block;
-  width: 1.4em;
-  font-family: var(--ac-card-icons);
-  font-style: normal;
-  font-weight: 400;
-  font-size: 1.15em;
-  line-height: 1;
-  text-align: center;
-  margin-right: var(--ac-space-1-5);
-  vertical-align: -0.12em;
 }
 /* In the CDK overlay container (plugin shadow root), sized to the button (matchWidth). */
 .panel {
@@ -177,4 +167,27 @@
 .option:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: -2px;
+}
+/* `keepOpen`: a check box before each option, filled when the value is checked. */
+.box {
+  width: 18px;
+  height: 18px;
+  margin-right: var(--ac-space-2-5);
+  border: 1.5px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-color-surface);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.option[aria-selected='true'] {
+  font-weight: 700;
+  color: var(--ac-color-primary-strong);
+}
+.option[aria-selected='true'] .box {
+  border-color: var(--ac-color-primary);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
 }

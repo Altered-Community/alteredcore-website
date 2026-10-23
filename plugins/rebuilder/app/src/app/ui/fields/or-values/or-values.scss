@@ -1,0 +1,52 @@
+@use '../glyph';
+
+/* One value per line, each « ou » on its own line between them. */
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ac-space-1);
+  min-width: 0;
+}
+.value {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--ac-space-1);
+  max-width: 100%;
+  padding: var(--ac-space-1) var(--ac-space-1) var(--ac-space-1) var(--ac-space-2-5);
+  border: 1px solid var(--ac-color-primary-border);
+  background: var(--ac-color-primary-soft);
+  color: var(--ac-color-primary-strong);
+  border-radius: var(--ac-radius-md);
+  font-size: var(--ac-select-font-size);
+  font-weight: 700;
+  line-height: 1.35;
+}
+.value button {
+  position: relative;
+  border: none;
+  background: none;
+  color: var(--ac-color-primary-strong);
+  display: flex;
+  padding: 2px;
+  border-radius: var(--ac-radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+/* Tap area of at least --ac-hit-min around the small cross. */
+.value button::after {
+  content: '';
+  position: absolute;
+  inset: min(0px, calc((18px - var(--ac-hit-min)) / 2));
+}
+.or {
+  font-size: var(--ac-font-size-micro);
+  font-weight: 800;
+  color: var(--ac-color-text-muted);
+  text-transform: uppercase;
+  padding-left: var(--ac-space-2-5);
+}
+.empty {
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}

@@ -7,6 +7,7 @@ import { setAssetBase } from './app/core/asset-url';
 import { setUiLocale } from './app/core/i18n';
 import { setContentLocale } from './app/core/locale';
 import { readHost } from './app/embed/host';
+import { prefetchPage } from './app/embed/prefetch';
 import { environment } from './environments/environment';
 
 const host = readHost();
@@ -21,6 +22,8 @@ env.siteUrl = host.baseUrl ?? env.siteUrl;
 env.siteCsrf = host.csrf ?? env.siteCsrf;
 setAssetBase(host.page.assetsUrl);
 setContentLocale(host.lang);
+// The page's data, requested while the app's modules download (embed/prefetch.ts).
+prefetchPage(host);
 
 setUiLocale(host.lang)
   .then(() => import('./app/embed/bootstrap'))

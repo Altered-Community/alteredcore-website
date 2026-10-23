@@ -23,6 +23,15 @@
   flex-shrink: 0;
   background: var(--ac-color-track);
 }
+button.thumb {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+button.thumb:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
 .meta {
   flex-grow: 1;
   min-width: 0;

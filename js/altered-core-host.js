@@ -98,6 +98,14 @@
             if (!el) throw new Error('[AlteredCore] no mount point for plugin ' + pluginId);
             var shadow = el.getAttribute('data-ac-mount') !== 'light';
             var mountRoot = shadow ? (el.shadowRoot || el.attachShadow({ mode: 'open' })) : el;
+            var container = document.createElement('div');
+            container.className = 'ac-plugin-root';
+            container.setAttribute('data-theme', host.theme);
+            container.setAttribute('lang', host.lang);
+            // The plugin's styles before its first screen: until the shadow root's stylesheets have loaded, the container
+            // is hidden (it keeps its place, layouts measure it) and the placeholder stays, so no frame shows the plugin
+            // unstyled. The page requested them up front (includes/spa.php, spaPreloads()).
+            var unstyled = 0;
             if (shadow) {
                 // Design system first (base + ac-* components), then the plugin's own styles.
                 var ds = (config.designSystem && config.designSystem.css) || [];
@@ -105,14 +113,56 @@
                     var link = document.createElement('link');
                     link.rel = 'stylesheet';
                     link.href = href;
+                    link.onload = link.onerror = function () {
+                        link.onload = link.onerror = null;
+                        unstyled--;
+                        reveal();
+                    };
+                    unstyled++;
                     mountRoot.appendChild(link);
                 });
             }
-            var container = document.createElement('div');
-            container.className = 'ac-plugin-root';
-            container.setAttribute('data-theme', host.theme);
-            container.setAttribute('lang', host.lang);
+            if (unstyled) {
+                container.style.visibility = 'hidden';
+                // A stylesheet that never answers (stalled connection) fires neither load nor error: the page shows
+                // anyway after a while, rather than the skeleton for ever.
+                setTimeout(function () { unstyled = 0; reveal(); }, 10000);
+            }
             mountRoot.appendChild(container);
+            // The server's placeholder (skeleton of the page) stays in view, through a slot in a shadow root, until
+            // the plugin draws its first screen: until the container, without its min-height meanwhile, takes some height.
+            // After the container, so that the first screen sits at its place (layouts measure it) the frame both show.
+            var placeholder = el.querySelector('.ac-spa-placeholder');
+            var drawn = !placeholder, slot = null;
+            function reveal() {
+                if (unstyled || !drawn) return;
+                container.style.visibility = '';
+                if (!placeholder) return;
+                container.style.minHeight = container.style.gridArea = container.style.minWidth = container.style.alignSelf = '';
+                el.style.display = '';
+                placeholder.remove();
+                if (slot) slot.remove();
+            }
+            if (placeholder) {
+                slot = shadow ? mountRoot.appendChild(document.createElement('slot')) : null;
+                if (!shadow) el.appendChild(placeholder);
+                container.style.minHeight = '0';
+                // Container and placeholder share one grid cell: the first screen draws over the placeholder, which
+                // never moves (a placeholder pushed down by the first screen, even for the frame before it goes, is a
+                // layout shift for the browser). The container is not stretched to the cell (align-self): it would take
+                // the placeholder's height at once, and the placeholder would go before the first screen.
+                el.style.display = 'grid';
+                container.style.gridArea = placeholder.style.gridArea = '1 / 1';
+                container.style.minWidth = placeholder.style.minWidth = '0';
+                container.style.alignSelf = 'start';
+                var firstScreen = new ResizeObserver(function (entries) {
+                    if (entries[0].contentRect.height < 1) return;
+                    firstScreen.disconnect();
+                    drawn = true;
+                    reveal();
+                });
+                firstScreen.observe(container);
+            }
             mounts[pluginId] = { host: el, root: mountRoot, container: container };
             return mounts[pluginId];
         },
@@ -134,6 +184,21 @@
         Object.keys(mounts).forEach(function (id) { mounts[id].container.setAttribute('data-theme', next); });
         emit('theme', { theme: next });
     }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // A plugin module that fails to load (network, missing build): its page would show the server's placeholder
+    // (skeleton) for ever. Script errors do not bubble: listened to in the capture phase, before the modules' tags
+    // (includes/spa.php marks them with their plugin).
+    document.addEventListener('error', function (event) {
+        var plugin = event.target && event.target.tagName === 'SCRIPT' && event.target.getAttribute('data-ac-plugin-module');
+        if (!plugin) return;
+        document.querySelectorAll('[data-ac-plugin="' + plugin + '"] > .ac-spa-placeholder').forEach(function (placeholder) {
+            var alert = document.createElement('div');
+            alert.className = 'ac-notice ac-notice--warning';
+            alert.setAttribute('role', 'alert');
+            alert.textContent = host.lang === 'fr' ? 'Cette page n’est pas disponible pour le moment.' : 'This page is not available right now.';
+            placeholder.replaceWith(alert);
+        });
+    }, true);
 
     // Sticky offset for plugin layouts: the site header is sticky at the top of the page.
     var header = document.querySelector('.site-header');

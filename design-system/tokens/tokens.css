@@ -215,6 +215,7 @@
   --ac-control-sm: 32px;
   --ac-control-md: 40px;
   --ac-control-lg: 48px;
+  --ac-badge-height: 24px;         /* ac-badge and its skeleton (ac-skeleton--badge) */
   --ac-hit-min: 32px;              /* minimum clickable area */
   --ac-field-font-size: 14px;      /* 16px in touch: iOS zooms on smaller inputs */
   --ac-select-font-size: 13px;
@@ -235,6 +236,7 @@
   --ac-drawer-width: 320px;
   --ac-page-top: var(--ac-header-height);   /* top of the page content, under the site header */
   --ac-sticky-top: var(--ac-header-height); /* top edge of sticky panels */
+  --ac-scroll-top-offset: 0px;     /* sticky bar a plugin draws under the site header (Re:Builder app bar) */
 
   /* ---------- Plugin-specific values (game data, artwork overlays…) ----------
    * Only for values no semantic token covers. Name them --ac-<plugin>-<role> and give a dark

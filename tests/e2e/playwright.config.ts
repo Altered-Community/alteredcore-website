@@ -37,6 +37,10 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
     {
       name: 'mobile',
+      // On the CI, mobile replays only the tests tagged @mobile: those that drive the compact interface (bottom
+      // navigation, sheets, app bar, touch sizes). The others check logic that does not depend on the width.
+      // Locally every test runs on both: pr-screenshots.mjs pairs each desktop evidence with its mobile one.
+      grep: process.env['CI'] ? /@mobile/ : undefined,
       use: { ...devices['Pixel 7'], browserName: 'chromium', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 },
     },
   ],

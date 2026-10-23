@@ -1,13 +1,15 @@
 <?php
-// "Alt Arts BGA" tab of the Digital Ownership hub — lets a player browse every card
-// family with more than one known illustration, see which prints they own, and assign
-// their up-to-3 copy markers (1 for heroes/tokens) to the art shown when that card is
-// played on Board Game Arena. Talks to the AlteredOwnership /api/alt-arts/* endpoints
+// « Arts alternatifs par défaut » tab of the Digital Ownership hub — lets a player browse
+// every card family with more than one known illustration, see which prints they own, and
+// choose the illustration of the 1st, 2nd and 3rd card (1 for heroes/tokens) with the keys
+// above each print: their default alt arts, and the
+// « par deck / global » mode that says how decks use them (see includes/func.alt-arts.php
+// at the site's root). Talks to the AlteredOwnership /api/alt-arts/* endpoints
 // via the papi proxies in ../api/alt-art-search.php and ../api/alt-art-set-preference.php
 // — never directly (see ownApiRequestRaw()). Deliberately its own lightweight markup
 // (filters + one row per family) rather than core-altered-cards' card-search.php widget,
 // which is built around a paginated grid of individual cards, not per-family rows with
-// marker assignment.
+// keys.
 require_once __DIR__ . '/../includes/functions.php';
 
 $txt = [
@@ -27,19 +29,26 @@ $txt = [
         'networkError'  => 'Network error.',
         'saveError'     => 'Could not save your choice.',
         'loadMore'      => 'Load more',
-        'markerHint'    => 'Click a marker, then click a card to move it there.',
-        'modePerDeck'   => 'Set per deck',
-        'modeGlobal'    => 'Set globally',
-        'modeInfoBtn'   => 'What\'s the difference?',
-        'modeInfoTitle' => 'Per deck vs. global illustrations',
-        'modePerDeckTitle' => 'Per deck (default)',
-        'modePerDeckDesc'  => "Clicking a card no longer shows the illustration preference. Only tokens can be changed on this page. In the deckbuilder, you choose each card's and the hero's illustration individually while building the deck.",
-        'modeGlobalTitle'  => 'Global',
-        'modeGlobalDesc'   => 'Your illustration preferences are set here or by clicking a card, and apply automatically everywhere: opening a deck to edit it, duplicating it, importing it, retrieving it from BGA, and whenever you change a card\'s quantity. The deckbuilder no longer lets you change illustrations card by card, and there is no "apply preferences" button — it always applies.',
-        'modeClose'     => 'Close',
-        'modeSaving'    => 'Saving…',
+        'keysHint'      => 'Click a box above an illustration to give it that card.',
+        'intro'         => 'Choose the illustration of the 1st, 2nd and 3rd card of each card: your default alt arts. A token has a single illustration, the same in all your decks.',
+        'usesNew'       => 'A card added to a deck takes',
+        'usesAll'       => 'All your decks use',
+        'results'       => 'Cards',
+        'detail_label'  => 'View detail',
+        'modeLabel'     => 'How your decks use them',
+        'modePerDeck'   => 'Per deck',
+        'modeGlobal'    => 'Global',
+        'modePerDeckDesc' => 'A card added to a deck in the deck builder takes your default alt arts. Each deck then keeps its own illustrations, which you can change card by card for that deck only. Board Game Arena shows each deck\'s illustrations.',
+        'modeGlobalDesc'  => 'Your default alt arts apply to all your decks, on this site and on Board Game Arena, whenever a deck is opened or changed. Illustrations cannot be changed deck by deck.',
+        'toGlobalTitle'   => 'Switch to global mode?',
+        'toGlobalText'    => 'All your decks will follow your default alt arts. The illustrations chosen deck by deck will be replaced.',
+        'toGlobalConfirm' => 'Switch to global',
+        'toPerDeckTitle'   => 'Switch to per-deck mode?',
+        'toPerDeckText'    => 'Your default alt arts will be written in all your decks. Each deck then keeps its illustrations, which you can change in the deck builder.',
+        'toPerDeckConfirm' => 'Switch to per deck',
+        'cancel'        => 'Cancel',
+        'progress'      => 'Decks updated: %1$s / %2$s',
         'modeSaveError' => 'Could not save your setting.',
-        'perDeckNotice' => 'Per-deck mode is on: only token illustrations are managed here. Regular cards\' illustrations are chosen individually in each deck, in the deckbuilder.',
     ],
     'fr' => [
         'unavailable'   => 'Le service de propriété numérique n\'est pas configuré sur ce site.',
@@ -57,19 +66,26 @@ $txt = [
         'networkError'  => 'Erreur réseau.',
         'saveError'     => 'Impossible d\'enregistrer votre choix.',
         'loadMore'      => 'Charger plus',
-        'markerHint'    => 'Cliquez un marqueur, puis une carte pour l\'y déplacer.',
-        'modePerDeck'   => 'Définir par deck',
-        'modeGlobal'    => 'Définir au global',
-        'modeInfoBtn'   => 'Quelle est la différence ?',
-        'modeInfoTitle' => 'Illustrations par deck ou au global',
-        'modePerDeckTitle' => 'Par deck (par défaut)',
-        'modePerDeckDesc'  => "Le changement des préférences d'une carte n'est pas visible lorsque l'on clique sur une carte. Seuls les jetons sont modifiables sur cette page. Dans le deckbuilder, vous choisissez l'illustration de chaque carte et du héros individuellement pendant la construction du deck.",
-        'modeGlobalTitle'  => 'Global',
-        'modeGlobalDesc'   => "Vos préférences d'illustration sont modifiables ici ou en cliquant sur une carte, et s'appliquent automatiquement partout : à l'ouverture d'un deck pour le modifier, à sa duplication, à son import, à sa récupération depuis BGA, et à chaque changement du nombre d'exemplaires d'une carte. Le deckbuilder ne permet plus de changer les illustrations carte par carte, et il n'y a plus de bouton \"appliquer mes préférences\" — c'est toujours appliqué.",
-        'modeClose'     => 'Fermer',
-        'modeSaving'    => 'Enregistrement…',
+        'keysHint'      => 'Cliquez sur une case au-dessus d\'une illustration pour la lui attribuer.',
+        'intro'         => 'Choisissez l\'illustration de la 1ère, 2ème et 3ème carte de chaque carte : vos arts alternatifs par défaut. Un jeton a une seule illustration, la même dans tous vos decks.',
+        'usesNew'       => 'Une carte ajoutée à un deck prend',
+        'usesAll'       => 'Tous vos decks utilisent',
+        'results'       => 'Cartes',
+        'detail_label'  => 'Accéder au détail',
+        'modeLabel'     => 'Utilisation dans vos decks',
+        'modePerDeck'   => 'Par deck',
+        'modeGlobal'    => 'Global',
+        'modePerDeckDesc' => 'Une carte ajoutée à un deck dans le deck builder prend vos arts par défaut. Chaque deck garde ensuite ses propres illustrations, que vous pouvez changer carte par carte pour ce deck seulement. Board Game Arena montre les illustrations de chaque deck.',
+        'modeGlobalDesc'  => 'Vos arts par défaut s\'appliquent à tous vos decks, sur ce site et sur Board Game Arena, à chaque ouverture et à chaque modification d\'un deck. Les illustrations ne se changent pas deck par deck.',
+        'toGlobalTitle'   => 'Passer en mode global ?',
+        'toGlobalText'    => 'Tous vos decks vont suivre vos arts par défaut. Les illustrations choisies deck par deck seront remplacées.',
+        'toGlobalConfirm' => 'Passer en mode global',
+        'toPerDeckTitle'   => 'Passer en mode par deck ?',
+        'toPerDeckText'    => 'Vos arts par défaut vont être écrits dans tous vos decks. Chaque deck garde ensuite ses illustrations, que vous pouvez changer dans le deck builder.',
+        'toPerDeckConfirm' => 'Passer en mode par deck',
+        'cancel'        => 'Annuler',
+        'progress'      => 'Decks mis à jour : %1$s / %2$s',
         'modeSaveError' => 'Impossible d\'enregistrer votre choix.',
-        'perDeckNotice' => 'Le mode par deck est actif : seuls les jetons sont gérés ici. Les illustrations des cartes normales se choisissent individuellement dans chaque deck, dans le deckbuilder.',
     ],
 ][getUiLang()];
 
@@ -78,8 +94,7 @@ $ownLoggedIn = kcIsLoggedIn();
 $ownActiveTab = 'alt-arts';
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
-$altArtMode = ($ownEnabled && $ownLoggedIn) ? ownGetAltArtPreferenceMode($userId) : 'PerDeck';
-$isGlobalMode = $altArtMode === 'Global';
+$isGlobalMode = $ownEnabled && $ownLoggedIn && ownGetAltArtPreferenceMode($userId) === 'Global';
 
 $cacDir = dirname(__DIR__, 2) . '/core-altered-cards';
 $cacAvailable = is_file($cacDir . '/includes/functions.php');
@@ -99,13 +114,6 @@ if ($cacAvailable) {
 // & Puff"), not the unique Hero — see AlteredOwnership's CardArtCatalog — so it stays in
 // the type filter.
 $raritiesData = array_filter($raritiesData, fn($r) => ($r['gem'] ?? '') !== 'U');
-
-// Per-deck mode: this page only manages token illustrations — regular card alt-arts are
-// chosen per deck in the deckbuilder instead. Enforced again server-side in
-// api/alt-art-search.php; this is just what the type-filter row offers.
-if (!$isGlobalMode) {
-    $typesData = array_filter($typesData, fn($code) => strpos($code, 'TOKEN') === 0, ARRAY_FILTER_USE_KEY);
-}
 
 $uiLang = getUiLang();
 ?>
@@ -130,38 +138,40 @@ $uiLang = getUiLang();
          .filter-toggle below come from it. -->
     <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/style.css">
 
-    <div class="ac-card own-aa-modebar mb-3">
-        <div class="ac-segmented" role="group" aria-label="alt-art mode">
-            <button type="button" id="own-aa-mode-perdeck" aria-pressed="<?= $isGlobalMode ? 'false' : 'true' ?>">
-                <?= h($txt['modePerDeck']) ?>
-            </button>
-            <button type="button" id="own-aa-mode-global" aria-pressed="<?= $isGlobalMode ? 'true' : 'false' ?>">
-                <?= h($txt['modeGlobal']) ?>
-            </button>
-        </div>
-        <button type="button" id="own-aa-mode-info-btn" class="ac-button ac-button--ghost ac-button--sm">
-            <?= ac_icon('info') ?><?= h($txt['modeInfoBtn']) ?>
-        </button>
-    </div>
+    <p class="mb-3"><?= h($txt['intro']) ?></p>
 
-    <?php if (!$isGlobalMode): ?>
-    <div class="ac-notice ac-notice--neutral mb-3" role="note"><?= ac_icon('info') ?><div><?= h($txt['perDeckNotice']) ?></div></div>
-    <?php endif; ?>
-
-    <div id="own-aa-mode-info-modal" class="own-aa-modal-overlay" hidden>
-        <div class="own-aa-modal ac-card" role="dialog" aria-modal="true" aria-labelledby="own-aa-mode-info-title">
-            <h2 id="own-aa-mode-info-title" class="ac-section-title"><?= h($txt['modeInfoTitle']) ?></h2>
-            <p class="ac-card__title"><?= h($txt['modePerDeckTitle']) ?></p>
-            <p class="ac-card__meta"><?= h($txt['modePerDeckDesc']) ?></p>
-            <p class="ac-card__title"><?= h($txt['modeGlobalTitle']) ?></p>
-            <p class="ac-card__meta"><?= h($txt['modeGlobalDesc']) ?></p>
-            <div class="text-end">
-                <button type="button" id="own-aa-mode-info-close" class="ac-button ac-button--sm">
-                    <?= h($txt['modeClose']) ?>
+    <div class="ac-card mb-3">
+        <div class="own-aa-modebar">
+            <span class="filter-label" id="own-aa-mode-label"><?= h($txt['modeLabel']) ?></span>
+            <div class="ac-segmented" role="group" aria-labelledby="own-aa-mode-label">
+                <button type="button" id="own-aa-mode-perdeck" aria-pressed="<?= $isGlobalMode ? 'false' : 'true' ?>">
+                    <?= h($txt['modePerDeck']) ?>
+                </button>
+                <button type="button" id="own-aa-mode-global" aria-pressed="<?= $isGlobalMode ? 'true' : 'false' ?>">
+                    <?= h($txt['modeGlobal']) ?>
                 </button>
             </div>
         </div>
+        <p class="ac-text-small ac-text-muted mt-2 mb-0"><?= h($txt[$isGlobalMode ? 'modeGlobalDesc' : 'modePerDeckDesc']) ?></p>
     </div>
+
+    <dialog class="ac-dialog" id="own-aa-mode-dialog" aria-labelledby="own-aa-mode-dialog-title">
+        <div class="ac-dialog__header">
+            <h2 class="ac-dialog__title" id="own-aa-mode-dialog-title"><?= h($txt[$isGlobalMode ? 'toPerDeckTitle' : 'toGlobalTitle']) ?></h2>
+        </div>
+        <div class="ac-dialog__body">
+            <p class="mb-0"><?= h($txt[$isGlobalMode ? 'toPerDeckText' : 'toGlobalText']) ?></p>
+            <div id="own-aa-mode-progress" class="mt-3" hidden>
+                <div class="ac-progress"><div class="ac-progress__bar" id="own-aa-mode-progress-bar"></div></div>
+                <p class="ac-text-small ac-text-muted mt-2 mb-0" id="own-aa-mode-progress-text" role="status"></p>
+            </div>
+            <div id="own-aa-mode-error" class="ac-notice ac-notice--danger mt-3" role="alert" hidden><?= ac_icon('circle-alert') ?><div></div></div>
+        </div>
+        <div class="ac-dialog__footer">
+            <button type="button" class="ac-button ac-button--secondary" id="own-aa-mode-cancel"><?= h($txt['cancel']) ?></button>
+            <button type="button" class="ac-button" id="own-aa-mode-confirm"><?= h($txt[$isGlobalMode ? 'toPerDeckConfirm' : 'toGlobalConfirm']) ?></button>
+        </div>
+    </dialog>
 
     <div class="ac-card mb-3">
         <div class="filter-row mb-2">
@@ -214,12 +224,12 @@ $uiLang = getUiLang();
         </div>
     </div>
 
-    <p class="ac-text-small ac-text-muted mb-2"><?= h($txt['markerHint']) ?></p>
+    <p class="ac-text-small ac-text-muted mb-2"><?= h($txt['keysHint']) ?></p>
 
     <div id="own-aa-loading" class="text-muted"><?= h($txt['loading']) ?></div>
     <div id="own-aa-empty" class="text-muted" hidden><?= h($txt['empty']) ?></div>
     <div id="own-aa-error" class="alert alert-danger" hidden></div>
-    <div id="own-aa-results"></div>
+    <section id="own-aa-results" class="own-aa-list" aria-label="<?= h($txt['results']) ?>"></section>
     <div class="text-center my-3">
         <button type="button" id="own-aa-load-more" class="ac-button ac-button--secondary ac-button--sm" hidden>
             <?= h($txt['loadMore']) ?>
@@ -232,50 +242,111 @@ $uiLang = getUiLang();
     window.OWN_AA_CONFIG = {
         searchUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-search') ?>,
         setPreferenceUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-set-preference') ?>,
-        preferenceModeUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-preference-mode') ?>,
         baseUrl: <?= json_encode(BASE_URL) ?>,
         cdnUrl: <?= json_encode(CDN_URL) ?>,
         lang: <?= json_encode(getLang()) ?>,
-        markerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
+        // Labels of a family's type, faction and rarity (by code, rarity by its gem: C, R…).
+        labels: <?= json_encode([
+            'type'    => array_map(fn($d) => $d[$uiLang] ?? $d['en'] ?? '', $typesData),
+            'faction' => array_map(fn($d) => $d[$uiLang] ?? $d['en'] ?? '', $factionsData),
+            'rarity'  => array_column(array_map(fn($d) => ['gem' => $d['gem'] ?? '', 'label' => $d[$uiLang] ?? $d['en'] ?? ''], $raritiesData), 'label', 'gem'),
+        ], JSON_UNESCAPED_UNICODE) ?>,
         csrfToken: <?= json_encode(csrfToken()) ?>,
+        preferenceModeUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-preference-mode') ?>,
+        leaveGlobalUrl: <?= json_encode(BASE_URL . '/papi/ownership/alt-art-leave-global') ?>,
         isGlobalMode: <?= json_encode($isGlobalMode) ?>,
     };
+    // « Par deck » / « Global »: after a confirmation. Leaving « Global » first writes the defaults in every deck
+    // (api/alt-art-leave-global.php), as far as it can: a deck that cannot be written, or a list of decks that cannot
+    // be read, does not keep the player in « Global ».
     (function () {
         var cfg = window.OWN_AA_CONFIG;
-        var t = function (key, fallback) {
-            var dict = (window.OWN_I18N || {})[document.documentElement.lang] || {};
-            return dict[key] || fallback;
+        var txt = window.OWN_I18N[<?= json_encode($uiLang) ?>];
+        var dialog = document.getElementById('own-aa-mode-dialog');
+        var confirmBtn = document.getElementById('own-aa-mode-confirm');
+        var cancelBtn = document.getElementById('own-aa-mode-cancel');
+        var progress = document.getElementById('own-aa-mode-progress');
+        var bar = document.getElementById('own-aa-mode-progress-bar');
+        var progressText = document.getElementById('own-aa-mode-progress-text');
+        var error = document.getElementById('own-aa-mode-error');
+        var running = false;
+        var headers = { 'Content-Type': 'application/json', 'X-CSRF-Token': cfg.csrfToken };
+
+        var request = function (method, url, body) {
+            return fetch(url, { method: method, credentials: 'same-origin', headers: headers, body: body ? JSON.stringify(body) : undefined })
+                .then(function (res) {
+                    if (!res.ok) throw new Error(method + ' ' + res.status);
+                    return res.status === 204 ? null : res.json();
+                });
+        };
+        var setProgress = function (done, total) {
+            bar.style.width = (total ? Math.round(done * 100 / total) : 100) + '%';
+            progressText.textContent = txt.progress.replace('%1$s', done).replace('%2$s', total);
+        };
+        var setRunning = function (on) {
+            running = on;
+            confirmBtn.disabled = on;
+            cancelBtn.disabled = on;
+        };
+        var fail = function (message) {
+            setRunning(false);
+            error.querySelector('div').textContent = message;
+            error.hidden = false;
+        };
+        // Four decks at a time; a deck that fails is skipped. Never fails.
+        var writeDecks = function () {
+            return request('GET', cfg.leaveGlobalUrl).then(function (res) {
+                var decks = (res.decks || []).slice();
+                var total = decks.length;
+                var done = 0;
+                progress.hidden = false;
+                setProgress(0, total);
+                var next = function () {
+                    var deck = decks.shift();
+                    if (deck === undefined) return Promise.resolve();
+                    var step = function () {
+                        setProgress(++done, total);
+                        return next();
+                    };
+                    return request('POST', cfg.leaveGlobalUrl, { deck: deck }).then(step, step);
+                };
+                return Promise.all([next(), next(), next(), next()]);
+            }).then(null, function () {});
         };
 
-        var infoBtn = document.getElementById('own-aa-mode-info-btn');
-        var infoModal = document.getElementById('own-aa-mode-info-modal');
-        var infoClose = document.getElementById('own-aa-mode-info-close');
-        infoBtn?.addEventListener('click', function () { infoModal.hidden = false; });
-        infoClose?.addEventListener('click', function () { infoModal.hidden = true; });
-        infoModal?.addEventListener('click', function (e) { if (e.target === infoModal) infoModal.hidden = true; });
-
-        var perDeckBtn = document.getElementById('own-aa-mode-perdeck');
-        var globalBtn = document.getElementById('own-aa-mode-global');
-        var setMode = function (mode) {
-            if ((mode === 'Global') === cfg.isGlobalMode) return;
-            [perDeckBtn, globalBtn].forEach(function (b) { b && (b.disabled = true); });
-            fetch(cfg.preferenceModeUrl, {
-                method: 'PUT',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode: mode, csrf_token: cfg.csrfToken }),
-            }).then(function (res) {
-                if (!res.ok) throw new Error('save failed');
-                location.reload();
-            }).catch(function () {
-                [perDeckBtn, globalBtn].forEach(function (b) { b && (b.disabled = false); });
-                alert(t('modeSaveError', 'Could not save your setting.'));
+        confirmBtn.addEventListener('click', function () {
+            error.hidden = true;
+            setRunning(true);
+            // Each step fails with its own message.
+            var failWith = function (message) { return function () { throw message; }; };
+            var saveMode = function (mode) {
+                return request('PUT', cfg.preferenceModeUrl, { mode: mode }).then(null, failWith(txt.modeSaveError));
+            };
+            var steps = cfg.isGlobalMode
+                ? writeDecks().then(function () { return saveMode('PerDeck'); })
+                : saveMode('Global');
+            steps.then(function () { location.reload(); }).catch(fail);
+        });
+        cancelBtn.addEventListener('click', function () { dialog.close(); });
+        dialog.addEventListener('cancel', function (e) { if (running) e.preventDefault(); });
+        document.getElementById(cfg.isGlobalMode ? 'own-aa-mode-perdeck' : 'own-aa-mode-global')
+            .addEventListener('click', function () {
+                error.hidden = true;
+                progress.hidden = true;
+                dialog.showModal();
             });
-        };
-        perDeckBtn?.addEventListener('click', function () { setMode('PerDeck'); });
-        globalBtn?.addEventListener('click', function () { setMode('Global'); });
     })();
     </script>
+
+    <?php
+    // A card opens large, as on the cards pages: core-altered-cards' lightbox, with the tilt and without the alt-art
+    // widget (no deck-alt-arts URL: the keys of this page already choose).
+    if ($cacAvailable) {
+        $lang = getLang();
+        $ownAltArtCfg = ['enabled' => true, 'altArtsUrl' => ''];
+        include $cacDir . '/pages/_card-zoom-modal.php';
+    }
+    ?>
 
     <?php endif; ?>
     <?php endif; ?>

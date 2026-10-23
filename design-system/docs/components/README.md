@@ -11,11 +11,13 @@ One page per component family. Each page matches one file of `css/components/` (
 | [field.md](field.md) | `field.css` | Field wrapper, label, hint, error, input, textarea, input with icon, select, checkbox / radio, radio card, file input, switch |
 | [listbox.md](listbox.md) | `listbox.css`, `js/ac.js` | Select drawn by the design system: search, groups, colour dots |
 | [segmented.md](segmented.md) | `segmented.css` | Segmented control |
+| [key.md](key.md) | `key.css` | Keys: toggle buttons raised when off, pressed down when on (alt-art cards) |
 | [chips.md](chips.md) | `chips.css` | Chip, badge, tag, count, avatar |
 | [card.md](card.md) | `card.css` | Card, list, empty state, collapsible |
 | [drawer.md](drawer.md) | `drawer.css` | Drawer handle and tab: hide and show a side panel |
-| [navigation.md](navigation.md) | `navigation.css` | Tabs, breadcrumb, pagination, menu |
+| [navigation.md](navigation.md) | `navigation.css` | Tabs, breadcrumb, pagination, menu, contents (`ac-toc`) |
 | [feedback.md](feedback.md) | `feedback.css` | Notice, toast, scrim, dialog, spinner, blocking loader, progress bar, table |
+| [tooltip.md](tooltip.md) | `tooltip.css` | Tooltip, masked value (e-mail address shown partly hidden); `ac_masked_email()` |
 | [bootstrap-bridge.md](bootstrap-bridge.md) | `bridges/bootstrap.css` | Which Bootstrap classes are restyled, and when to use them |
 
 Tokens (colours, type scale, spacing, radii, shadows, density, layout, z-index):

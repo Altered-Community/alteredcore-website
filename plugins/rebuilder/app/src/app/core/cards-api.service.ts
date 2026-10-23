@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import type { CardOrder, Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
 import { localizedText } from './models';
 import { contentLocale } from './locale';
+import { uniqueNeedsPrintedEffect } from './deck-view';
 
 export interface HeroGroup {
   slug: string;
@@ -32,6 +33,8 @@ export class CardsApiService {
   readonly baseUrl = environment.cardsApiUrl.replace(/\/$/, '');
   private readonly searchCache = new Map<string, Observable<CardCollection>>();
   private heroes$?: Observable<HeroGroup[]>;
+  /** Unique faces fetched this session, by `locale|reference`. */
+  private readonly faces = new Map<string, Card>();
 
   /**
    * Pages already fetched this session are replayed (tab switches, editor ↔ Cartes, same filters
@@ -67,6 +70,26 @@ export class CardsApiService {
     return this.http.get<Card>(
       `${this.baseUrl}/api/cards/reference/${encodeURIComponent(reference)}`,
       { params: { locale } },
+    );
+  }
+
+  /**
+   * Faces of the Uniques of `cards` that miss their printed effect (`uniqueNeedsPrintedEffect`), by reference: the
+   * decks, collection and ownership APIs give a Unique's costs, not the text `ac-unique-card` prints. Kept for the
+   * session; on error, the faces already known.
+   */
+  uniqueFaces(cards: Card[]): Observable<Map<string, Card>> {
+    const locale = contentLocale();
+    const refs = [...new Set(cards.filter(uniqueNeedsPrintedEffect).map((c) => c.reference))];
+    const known = () => new Map(refs.flatMap((r) => (this.faces.has(`${locale}|${r}`) ? [[r, this.faces.get(`${locale}|${r}`)!] as const] : [])));
+    const missing = refs.filter((r) => !this.faces.has(`${locale}|${r}`));
+    if (!missing.length) return of(known());
+    return this.batch(missing, locale).pipe(
+      map((full) => {
+        full.forEach((c) => this.faces.set(`${locale}|${c.reference}`, c));
+        return known();
+      }),
+      catchError(() => of(known())),
     );
   }
 

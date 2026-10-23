@@ -39,17 +39,6 @@ foreach ((array)($_GET['type'] ?? []) as $ty) {
     if (is_string($ty) && $ty !== '') $types[] = $ty;
 }
 
-// PerDeck mode: this page only manages token illustrations — regular card alt-arts are
-// chosen per deck in the deckbuilder instead (see AltArtPreferenceMode). Enforced here,
-// not just by which filter buttons pages/alt-arts.php renders, so a caller can't bypass
-// it by requesting a non-token type directly.
-if (!ownIsAltArtGlobalMode($userId)) {
-    $types = array_values(array_filter($types, fn($ty) => strpos($ty, 'TOKEN') === 0));
-    if (!$types) {
-        $types = ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA'];
-    }
-}
-
 foreach ($types as $ty) {
     $parts[] = 'type[]=' . rawurlencode($ty);
 }

@@ -51,7 +51,8 @@ Active filter with a remove button (the whole chip removes the filter):
 ## Badge — `ac-badge`
 
 Pill, 24 px tall (`ac-badge--lg`: 28 px), 12 px bold text, soft background with the matching
-text colour.
+text colour. `ac-badge--dense` tightens the padding and the gap, for a row of badges where room is short
+(the rarities in a phone's app bar).
 
 ```php
 <span class="ac-badge ac-badge--green"><?= ac_icon('globe', 'ac-icon--14') ?> <?= h(t('decks.public')) ?></span>

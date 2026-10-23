@@ -111,3 +111,20 @@
 .three ::ng-deep .label {
   font-weight: 600;
 }
+
+/* Fields the source cannot filter by (Favoris): in the flow as if there were no fieldset, disabled and faded. */
+.unsupported {
+  display: contents;
+}
+.unsupported:disabled > *,
+.unsupported:disabled .adv-field {
+  opacity: 0.45;
+}
+.limited {
+  margin: 0;
+  padding: var(--ac-space-2) var(--ac-space-3);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-bg-subtle);
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-2);
+}

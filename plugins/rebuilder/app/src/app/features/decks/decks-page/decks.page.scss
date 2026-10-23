@@ -185,21 +185,13 @@
   justify-content: center;
 }
 
+/* A deck card's height: grid tile from 768 px, row on phones. */
 .skeleton {
-  height: 188px;
-  border-radius: var(--ac-radius-card);
-  background: var(--ac-color-track);
-  animation: pulse 1.4s ease-in-out infinite;
+  height: 227px;
 }
 
 .spin {
   animation: spin 0.9s linear infinite;
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.55;
-  }
 }
 
 @keyframes spin {
@@ -209,7 +201,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton,
   .spin {
     animation: none;
   }
@@ -294,4 +285,30 @@
     color: var(--ac-color-text-muted);
     margin-right: var(--ac-space-1);
   }
+}
+
+.grid.rows .skeleton {
+  height: 149px;
+}
+
+.counting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+}
+
+/* The loading notice in the factions row: on its right, without taking a row of its own. */
+/* In the row's free space, never on a row of its own (the list would move up when it goes): no width of its own, it
+   takes what the chips leave, its text cut. */
+.factions .notice {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+.factions .notice > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

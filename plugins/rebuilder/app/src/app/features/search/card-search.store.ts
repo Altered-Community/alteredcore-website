@@ -5,6 +5,8 @@ import { CardsApiService } from '../../core/cards-api.service';
 import {
   defaultFilters,
   filterChips,
+  isAccountSource,
+  legalFormat,
   removeChip,
   toSearchParams,
   toUniquesQuery,
@@ -23,8 +25,6 @@ export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, col
 export const SLOW_MS = 3000;
 
 /** Sources of the user's own cards (the site's endpoints): nothing to fetch for a guest. */
-const LOGIN_ONLY: readonly CardSource[] = ['collection', 'owned', 'favorites'];
-
 interface SearchQuery {
   source: CardSource;
   faction: string | null;
@@ -69,7 +69,7 @@ interface SearchState {
 const FIRST_PAGE: PageRequest = { page: 1, from: null };
 
 function emptyState(source: CardSource, guest: boolean): SearchState {
-  return guest && LOGIN_ONLY.includes(source)
+  return guest && isAccountSource(source)
     ? { cards: [], total: 0, page: 0, next: null, timings: [] }
     : { cards: [], total: null, page: 0, next: null, timings: [] };
 }
@@ -91,6 +91,11 @@ export class CardSearchStore {
   readonly format = signal<DeckFormat | null>(null);
   readonly filters = signal<SearchFilters>(defaultFilters('all'));
   private readonly run = signal(0);
+  /**
+   * `configure()` has run: no request before, since the query depends on the context (the editor's deck: its hero's
+   * faction and its format, known once the deck is open). Meanwhile the search reads as loading.
+   */
+  readonly configured = signal(false);
   private readonly wantMore = signal(false);
 
   private readonly query = computed<SearchQuery>(() => ({
@@ -106,7 +111,8 @@ export class CardSearchStore {
   private readonly pageRes = rxResource({
     params: () => {
       const query = this.query();
-      return LOGIN_ONLY.includes(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
+      if (!this.configured()) return undefined;
+      return isAccountSource(query.source) && !this.auth.isLoggedIn() ? undefined : { query, request: this.requestedPage() };
     },
     stream: ({ params: { query, request } }) => {
       const started = performance.now();
@@ -135,7 +141,7 @@ export class CardSearchStore {
   readonly cards = computed(() => this.state().cards);
   readonly total = computed(() => this.state().total);
   readonly page = computed(() => this.state().page);
-  readonly loading = computed(() => this.pageRes.isLoading());
+  readonly loading = computed(() => !this.configured() || this.pageRes.isLoading());
   readonly error = computed(() => {
     const err = this.pageRes.error();
     if (!err) return null;
@@ -161,7 +167,7 @@ export class CardSearchStore {
 
     effect((onCleanup) => {
       this.slow.set(false);
-      if (!this.loading()) return;
+      if (!this.pageRes.isLoading()) return;
       const timer = setTimeout(() => this.slow.set(true), SLOW_MS);
       onCleanup(() => clearTimeout(timer));
     });
@@ -173,6 +179,7 @@ export class CardSearchStore {
     this.faction.set(faction);
     this.format.set(format);
     if (changedSource) this.filters.set(defaultFilters(source));
+    this.configured.set(true);
     this.restart();
   }
 
@@ -225,10 +232,10 @@ export class CardSearchStore {
     const size = PAGE_SIZE[query.source];
     if (query.source === 'uniques') return this.uniquesApi.search(toUniquesQuery(query.filters, query.faction), request.from, size);
     const page = request.from ?? 1;
-    if (query.source === 'collection' || query.source === 'owned' || query.source === 'favorites') {
+    if (isAccountSource(query.source)) {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
-      // Favoris « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
-      const format = query.source === 'favorites' && query.filters.legalOnly ? query.format : null;
+      // Account tabs « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
+      const format = legalFormat(query.source, query.filters, query.format);
       return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
         map((res): ResultPage => {
           const member = format ? res.member.filter((c) => allowedInFormat(c, format)) : res.member;

@@ -108,6 +108,11 @@ la page suivante jusqu'à 50 fois, et chaque réponse contenait à nouveau tous 
 `itemsPerPage` ou n'apporte aucun deck nouveau : une seule requête avec l'API actuelle. Pendant le chargement,
 « Mes decks » affiche « Chargement de vos decks… », des squelettes animés et « Mes decks · … » dans l'onglet.
 Filtres et tri restent côté client, sur la liste complète. L'API des decks n'est pas modifiée de notre côté.
+Pour savoir si le deck ouvert appartient à l'utilisateur (`DeckStore.owned`, éditeur), l'app ne télécharge plus cette
+liste complète (plusieurs centaines de ko pour un gros compte, des secondes en 3G pendant lesquelles l'éditeur restait
+en lecture seule) : l'endpoint du plugin `GET /papi/rebuilder/my-deck-ids` (`papi/my-deck-ids.php`) la lit côté
+serveur avec le token de la session et ne renvoie que les ids (`DecksApiService.mineIds`, repli sur la liste
+complète en cas d'échec).
 
 **À faire côté backend.** Paginer `findByUser` (`LIMIT`/`OFFSET`, total pour `totalItems`) et y appliquer les filtres
 et le tri déclarés. « Mes decks » pourra alors charger page par page au défilement, comme l'onglet Communauté.

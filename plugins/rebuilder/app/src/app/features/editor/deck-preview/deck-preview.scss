@@ -57,3 +57,14 @@
   padding: var(--ac-space-10) var(--ac-space-4);
   color: var(--ac-color-text-2);
 }
+/* While the deck opens: the bar and one section (ac-deck-section, an ac-card) of four cards, in place. */
+.section-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+.head-skeleton {
+  display: flex;
+  align-items: center;
+  min-height: var(--ac-hit-min);
+}

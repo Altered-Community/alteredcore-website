@@ -14,6 +14,11 @@
     <ng-container [ngTemplateOutlet]="face" />
   </div>
 }
+@if (illustrations()) {
+  <button type="button" class="illustrate" aria-haspopup="dialog" [attr.aria-label]="illustrateLabel()" [title]="illustrateLabel()" (click)="illustrate.emit()">
+    <ac-icon name="brush" [size]="18" />
+  </button>
+}
 @if (favorite() !== null) {
   <button type="button" class="favorite" [class.on]="favorite()" [attr.aria-pressed]="favorite()" [attr.aria-label]="favoriteLabel()" [title]="favoriteLabel()" (click)="favoriteToggle.emit()">
     <ac-icon name="star" [size]="15" />

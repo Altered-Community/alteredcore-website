@@ -13,7 +13,12 @@
 //     "base": "browser/",            directory of the files below, relative to the manifest
 //     "js": ["main-HASH.js"],        ES modules, loaded in order
 //     "css": ["embed-HASH.css"],     loaded inside the shadow root
-//     "documentCss": ["doc-HASH.css"] loaded in <head> (@font-face does not work in a shadow root)
+//     "documentCss": ["doc-HASH.css"], loaded in <head> (@font-face does not work in a shadow root)
+//     "preload": {                   optional: modules the page needs before it can draw, requested together
+//       "*": ["chunk-HASH.js"],       (<link rel="modulepreload">) so the browser fetches them with the entry
+//       "{slug}": [...],              modules instead of discovering them import after import: "*" on every
+//       "lang:{en|fr}": [...]         page, "{slug}" on the page served at that slug, "lang:…" in that language
+//     }
 //   }
 
 const SPA_HOST_CONTRACT_VERSION = 1;
@@ -48,7 +53,16 @@ function spaReadBuildManifest(string $pluginDir, string $entry, ?string &$error 
             $files[$key][] = $f;
         }
     }
-    return ['base' => $baseRel, 'files' => $files];
+    // Preloads are hints: an unusable entry is dropped, never an error.
+    $preload = [];
+    foreach ((is_array($m['preload'] ?? null) ? $m['preload'] : []) as $key => $list) {
+        if (!is_string($key) || !is_array($list)) continue;
+        foreach ($list as $f) {
+            $f = is_string($f) && substr($f, -3) === '.js' ? spaSafeRelPath($f) : null;
+            if ($f !== null) $preload[$key][] = $f;
+        }
+    }
+    return ['base' => $baseRel, 'files' => $files, 'preload' => $preload];
 }
 
 /**
@@ -63,13 +77,14 @@ function spaResolvePage(array $plugin, array $page): array {
     if (empty($page['entry'])) $error = 'missing "entry" in plugin.json';
 
     $spa = ['mount' => ($page['mount'] ?? 'shadow') === 'light' ? 'light' : 'shadow', 'error' => $error,
-            'assets_url' => '', 'js' => [], 'css' => [], 'document_css' => []];
+            'assets_url' => '', 'js' => [], 'css' => [], 'document_css' => [], 'preload' => []];
     if ($build !== null) {
         $assets = BASE_URL . '/plugins/' . rawurlencode($id) . '/' . ($build['base'] !== '' ? $build['base'] . '/' : '');
         $spa['assets_url']   = $assets;
         $spa['js']           = array_map(fn($f) => $assets . $f, $build['files']['js']);
         $spa['css']          = array_map(fn($f) => $assets . $f, $build['files']['css']);
         $spa['document_css'] = array_map(fn($f) => $assets . $f, $build['files']['documentCss']);
+        $spa['preload']      = array_map(fn($list) => array_map(fn($f) => $assets . $f, $list), $build['preload']);
     }
 
     return [
@@ -84,6 +99,7 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
         'meta_file'     => spaMetaFile($plugin, $page),
+        'placeholder_file' => spaPluginFile($plugin, $page['placeholder'] ?? null),
         // Base href of the client routes (pluginFindBetaPage(): /pages/, the routes being the slugs it takes over)
         'base_path'     => BASE_URL . '/pages/' . $slug . '/',
         'spa'           => $spa,
@@ -95,7 +111,12 @@ function spaResolvePage(array $plugin, array $page): array {
  * before the header, so a client route can set its title and link preview ($pageTitle, $pageDescription, $pageImage).
  */
 function spaMetaFile(array $plugin, array $page): ?string {
-    $rel = isset($page['meta']) && is_string($page['meta']) ? spaSafeRelPath($page['meta']) : null;
+    return spaPluginFile($plugin, $page['meta'] ?? null);
+}
+
+/** Absolute path of a file named by the manifest, relative to the plugin; null when absent or outside the plugin. */
+function spaPluginFile(array $plugin, $path): ?string {
+    $rel = is_string($path) ? spaSafeRelPath($path) : null;
     if ($rel === null) return null;
     $abs = $plugin['_dir'] . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
     return is_file($abs) ? $abs : null;
@@ -178,6 +199,66 @@ function spaHostConfig(array $page): array {
     ];
 }
 
+/**
+ * Manifest `placeholder`: what the page shows while its scripts load (a skeleton of the page), rendered by the server
+ * inside the mount point with $slug (the requested page) and $subPath (client route) in scope, the query in $_GET. The
+ * runtime keeps it until the plugin draws its first screen (js/altered-core-host.js). Without one, a generic skeleton.
+ */
+function spaRenderPlaceholder(array $page): void {
+    $label = getUiLang() === 'fr' ? 'Chargement…' : 'Loading…';
+    echo '<div class="ac-spa-placeholder" aria-busy="true"><span class="ac-sr-only" role="status">' . h($label) . '</span>';
+    if (!empty($page['placeholder_file'])) {
+        (function (string $slug, string $subPath) use ($page) {
+            include $page['placeholder_file'];
+        })($page['slug'], (string)($page['sub_path'] ?? ''));
+    } else {
+        echo '<div class="ac-stack" aria-hidden="true">'
+            . '<span class="ac-skeleton ac-skeleton--title" style="--ac-skeleton-width: 30%"></span>'
+            . '<span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 60%"></span>'
+            . '<span class="ac-skeleton ac-skeleton--panel" style="height: 50vh"></span>'
+            . '</div>';
+    }
+    echo '</div>';
+}
+
+/**
+ * What the page requests before the runtime or a module asks for it (spaRenderPage(), right after the placeholder): the
+ * entry modules and the manifest's `preload` modules for this page (slug and language) as <link rel="modulepreload">,
+ * the shadow root's stylesheets as <link rel="preload" as="style">.
+ * Returns [['href' => …, 'as' => 'module' | 'style'], …], empty for a page that cannot render.
+ */
+function spaPreloads(array $page): array {
+    $spa = $page['spa'];
+    if ($spa['error'] !== null) return [];
+    $modules = $spa['js'];
+    foreach (['*', $page['slug'], 'lang:' . getUiLang()] as $key) {
+        $modules = array_merge($modules, $spa['preload'][$key] ?? []);
+    }
+    $out = [];
+    foreach (array_values(array_unique($modules)) as $href) $out[] = ['href' => $href, 'as' => 'module'];
+    if ($spa['mount'] === 'shadow') {
+        foreach ($spa['css'] as $href) $out[] = ['href' => $href, 'as' => 'style'];
+    }
+    return $out;
+}
+
+/** Id of the page's mount point (spaRenderPage()), which holds the server's placeholder; null for a page that cannot render. */
+function spaMountId(array $page): ?string {
+    return $page['spa']['error'] === null ? 'ac-spa-' . $page['plugin_id'] : null;
+}
+
+/**
+ * Id of an empty element right after the mount point (spaRenderPage()), named by the header's
+ * <link rel="expect" blocking="render">: the browser paints nothing before it has parsed it, so the first frame is the
+ * page's skeleton, not the site header over an empty page (the site's menus come first in the HTML). After the mount
+ * point, not the mount point itself: Chromium paints as soon as the expected element is inserted, and the parser may
+ * stop inside the placeholder (about 1 load in 25 showed the header alone). Null for a page that cannot render.
+ */
+function spaFirstPaintId(array $page): ?string {
+    $mount = spaMountId($page);
+    return $mount === null ? null : $mount . '-parsed';
+}
+
 /** Body of an SPA page: mount point, host contract, runtime and plugin modules. */
 function spaRenderPage(array $page): void {
     $spa   = $page['spa'];
@@ -195,12 +276,21 @@ function spaRenderPage(array $page): void {
     $noscript = $lang === 'fr' ? 'Cette page nécessite JavaScript.' : 'This page requires JavaScript.';
     ?>
 <div class="ac-spa-page" data-ac-page="<?= h($page['slug']) ?>">
-    <div class="ac-spa-host" id="ac-spa-<?= h($id) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"></div>
+    <div class="ac-spa-host" id="<?= h(spaMountId($page)) ?>" data-ac-plugin="<?= h($id) ?>" data-ac-mount="<?= h($spa['mount']) ?>"><?php spaRenderPlaceholder($page); ?></div>
+    <span id="<?= h(spaFirstPaintId($page)) ?>" hidden></span>
     <noscript><div class="container py-5"><div class="alert alert-warning"><?= h($noscript) ?></div></div></noscript>
 </div>
+<?php
+    // The page's modules, all at once instead of one import after another. From an inline script after the
+    // placeholder: it runs once the stylesheets above it have loaded (the page's and the placeholder's), so the
+    // modules do not take the bandwidth of the skeleton's first paint.
+    $preloads = spaPreloads($page);
+    if ($preloads): ?>
+<script>(<?= json_encode($preloads, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>).forEach(function(p){var l=document.createElement('link');if(p.as==='module'){l.rel='modulepreload';}else{l.rel='preload';l.as=p.as;}l.href=p.href;document.head.appendChild(l);});</script>
+<?php endif; ?>
 <script type="application/json" id="ac-host-config"><?= $json ?></script>
 <script src="<?= h(BASE_URL) ?>/js/altered-core-host.js?v=<?= is_file($runtime) ? filemtime($runtime) : 0 ?>"></script>
 <?php foreach ($spa['js'] as $src): ?>
-<script type="module" src="<?= h($src) ?>"></script>
+<script type="module" src="<?= h($src) ?>" data-ac-plugin-module="<?= h($id) ?>"></script>
 <?php endforeach;
 }

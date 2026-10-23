@@ -32,6 +32,15 @@
         return rendererLoading;
     };
 
+    // Same rarity test as core-altered-cards/assets/card-search.js: the 6th segment of the
+    // reference starts with "U" for a Unique (ALT_CORE_B_AX_106_U_530).
+    const isUniqueRef = (ref) => ((ref || '').split('_')[5] || '').charAt(0) === 'U';
+
+    const cardImageUrl = (ref) => {
+        const lang = locale();
+        return (window.OWN_CDN_URL || '') + '/cards/' + lang + '/' + (ref.split('_')[1] || '') + '/' + ref + '.webp';
+    };
+
     const loadingEl = document.getElementById('own-boosters-loading');
     const emptyEl = document.getElementById('own-boosters-empty');
     const errorEl = document.getElementById('own-boosters-error');
@@ -204,10 +213,15 @@
         }
 
         const card = opened[0];
-        if (card) await ensureCardRenderer();
-        cardEl.innerHTML = card
-            ? '<altered-card ref="' + escapeHtml(card.cardReference) + '" locale="' + escapeHtml(locale()) + '"></altered-card>'
-            : '';
+        // Only Uniques go through <altered-card> (it rebuilds them from the uniques API);
+        // every other card is a plain CDN image, like card-search.js does.
+        const unique = card && isUniqueRef(card.cardReference);
+        if (unique) await ensureCardRenderer();
+        cardEl.innerHTML = !card
+            ? ''
+            : unique
+                ? '<altered-card ref="' + escapeHtml(card.cardReference) + '" locale="' + escapeHtml(locale()) + '"></altered-card>'
+                : '<img src="' + escapeHtml(cardImageUrl(card.cardReference)) + '" alt="">';
         const cardArtEl = cardEl.firstElementChild;
         if (card) await window.OWN_CARD_TILT.waitForReady(cardEl);
         openerLoadingEl.hidden = true;

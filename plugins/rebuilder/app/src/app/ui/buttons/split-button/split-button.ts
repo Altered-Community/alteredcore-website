@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import type { ConnectedPosition } from '@angular/cdk/overlay';
 import { AcIcon, type AcIconName } from '../../icon';
@@ -14,8 +14,8 @@ export interface AcSplitButtonItem {
   badge?: string;
 }
 
-/** Below the button, right edges aligned; above when there is no room below. */
-const POSITIONS: ConnectedPosition[] = [
+/** A button's menu: below it, right edges aligned; above when there is no room below. */
+export const MENU_POSITIONS: ConnectedPosition[] = [
   { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 8 },
   { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -8 },
 ];
@@ -28,6 +28,7 @@ const POSITIONS: ConnectedPosition[] = [
 @Component({
   selector: 'ac-split-button',
   imports: [AcIcon, CdkMenuTrigger, CdkMenu, CdkMenuItem],
+  host: { '[class.sm]': "size() === 'sm'" },
   templateUrl: './split-button.html',
   styleUrl: './split-button.scss',
 })
@@ -35,6 +36,9 @@ export class AcSplitButton {
   readonly icon = input<AcIconName | undefined>(undefined);
   /** Working: a spinner instead of the icon, both parts disabled (the label is the caller's, e.g. « Génération… »). */
   readonly busy = input(false);
+  /** `sm`: the height and type of the small buttons (deck bar actions). */
+  readonly size = input<'md' | 'sm'>('md');
+  protected readonly iconSize = computed(() => (this.size() === 'sm' ? 16 : 18));
   readonly items = input.required<AcSplitButtonItem[]>();
   /** The arrow's aria-label. */
   readonly moreLabel = input.required<string>();
@@ -45,7 +49,7 @@ export class AcSplitButton {
 
   /** The whole button's width: the menu's minimum. */
   protected readonly width = signal(0);
-  protected readonly positions = POSITIONS;
+  protected readonly positions = MENU_POSITIONS;
 
   protected opened(split: HTMLElement): void {
     this.width.set(split.offsetWidth);

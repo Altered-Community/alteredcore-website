@@ -1,8 +1,7 @@
-.ac-overlay-body {
+.stack {
   display: flex;
   flex-direction: column;
-  gap: var(--ac-space-4);
-  min-height: 420px;
+  gap: var(--ac-space-5);
 }
 .intro {
   margin: 0;
@@ -13,15 +12,112 @@
 .crit {
   display: flex;
   flex-direction: column;
-  gap: var(--ac-space-1-5);
+  gap: var(--ac-space-2);
 }
 .label {
+  margin: 0;
   font-size: var(--ac-select-font-size);
   font-weight: 800;
 }
 .muted {
   font-weight: 600;
   color: var(--ac-color-text-muted);
+}
+/* Window: fixed height, so neither column moves while values are checked. */
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  height: min(560px, calc(90dvh - 150px));
+  padding: 0;
+  overflow: hidden;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2-5);
+  padding: var(--ac-space-4);
+  background: var(--ac-color-bg-app);
+  border-right: 1px solid var(--ac-color-border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.side .intro {
+  margin-bottom: var(--ac-space-1);
+}
+.card {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  background: var(--ac-color-surface);
+}
+.card.on {
+  border-color: var(--ac-color-primary);
+  box-shadow: 0 0 0 1px var(--ac-color-primary);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  width: 100%;
+  min-height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: none;
+  border-radius: var(--ac-radius-lg);
+  background: none;
+  color: var(--ac-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* The head button covers the whole card: a click on the values below opens the criterion too. */
+.card-head::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+@media (hover: hover) {
+  .card:not(.on):hover {
+    border-color: var(--ac-color-border-control);
+    background: var(--ac-color-bg-subtle);
+  }
+}
+.card-head:focus-visible {
+  outline: none;
+}
+.card:has(.card-head:focus-visible) {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+.card-head .label {
+  flex: 1 1 auto;
+}
+.card-head ac-icon {
+  color: var(--ac-color-text-muted);
+}
+.card.on .card-head ac-icon {
+  color: var(--ac-color-primary);
+}
+.card-values {
+  position: relative;
+  padding: 0 var(--ac-space-3) var(--ac-space-3);
+  /* Above the head's cover for its own buttons (remove a value) only. */
+  pointer-events: none;
+}
+.card-values ::ng-deep :is(button, a, input) {
+  pointer-events: auto;
+}
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  min-height: 0;
+  padding: var(--ac-space-4) var(--ac-space-5) 0;
+}
+.pane-list {
+  flex: 1 1 auto;
 }
 .error {
   color: var(--ac-color-danger);

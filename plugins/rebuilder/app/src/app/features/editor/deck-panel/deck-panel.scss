@@ -7,15 +7,6 @@
   overflow: hidden;
   min-height: 0;
 }
-.summary {
-  padding: var(--ac-space-4);
-  border-bottom: 1px solid var(--ac-color-border);
-  flex-shrink: 0;
-}
-.stats {
-  border-bottom: 1px solid var(--ac-color-border);
-  flex-shrink: 0;
-}
 .rows {
   flex: 1 1 auto;
   min-height: 0;
@@ -37,7 +28,15 @@
   font-size: var(--ac-font-size-small);
   color: var(--ac-color-text-muted);
 }
-/* Part of the Stats block, above its bottom border: space on both sides of the button. */
-.tokens {
-  padding: var(--ac-space-1) var(--ac-space-4) var(--ac-space-4);
+.group-head .ac-skeleton {
+  margin: 0.2em 0;
+}
+/* While the deck opens: a card row's height (ac-deck-row, panel appearance). */
+.row-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  height: 36px;
+  padding: 0 var(--ac-space-1);
 }

@@ -31,6 +31,14 @@ const RULE_LABELS: Record<LegalityRule, string> = {
   frontierUniques: $localize`:@@core.legality.frontierUniques:Cartes uniques hors de la liste Frontier`,
 };
 
+/** « Non légal », with the number of problems when there are some to show (« Non légal · 2 problèmes »). */
+export function illegalLabel(problems: number): string {
+  if (!problems) return $localize`:@@deck.page.illegal:Non légal`;
+  return problems === 1
+    ? $localize`:@@deck.bar.illegalOne:Non légal · ${problems}:count: problème`
+    : $localize`:@@deck.bar.illegalMany:Non légal · ${problems}:count: problèmes`;
+}
+
 /** A rule as a requirement, for the list of passed and failed rules. */
 const CHECK_LABELS: Record<LegalityRule, string> = {
   hero: $localize`:@@core.check.hero:Un héros`,

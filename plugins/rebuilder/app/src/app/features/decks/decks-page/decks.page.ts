@@ -12,6 +12,7 @@ import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
+import { AcSkeleton } from '../../../ui/containers';
 import { AcChip, AcCount } from '../../../ui/chips';
 import { AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -74,7 +75,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel, AcSkeleton],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
@@ -97,6 +98,8 @@ export class DecksPage {
     !this.auth.isLoggedIn() && !this.auth.sessionRestoring() && !this.guests.decks().length ? 'community' : 'mine',
   );
   protected readonly tab = computed<Tab>(() => this.queryTab() ?? this.defaultTab());
+  /** « Mes decks »: a deck opens in the editor, on « Aperçu »; elsewhere on its page. */
+  protected readonly openInEditor = computed(() => this.tab() === 'mine');
   /** Bumped when the list is shown again, so its filters go back to the URL. */
   private readonly urlSync = signal(0);
   protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);
@@ -111,6 +114,19 @@ export class DecksPage {
   });
   /** Account decks on their way (first load, or another session): skeletons instead of the empty state. A reload keeps the list. */
   protected readonly mineLoading = computed(() => this.serverRes.status() === 'loading');
+  /** The open tab's list is loading: skeletons in its place, « Chargement… » for its count. */
+  protected readonly listLoading = computed(() => {
+    const tab = this.tab();
+    return (tab === 'mine' && this.mineLoading()) || (tab === 'community' && this.communityLoading()) || (tab === 'contest' && this.contestLoading());
+  });
+  /**
+   * Two rows of deck cards from 768 px, a screen of rows on phones. Keyed by the list's length: decks that arrive
+   * above them take new skeletons below, rather than pushing the same ones down (a layout shift for the browser).
+   */
+  protected readonly skeletons = computed(() => {
+    const listed = this.list().length;
+    return Array.from({ length: this.bp.compact() ? 5 : 10 }, (_, i) => `${listed}-${i}`);
+  });
   private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
   protected readonly serverError = computed(() => {
     const err = this.serverRes.error();
@@ -214,7 +230,7 @@ export class DecksPage {
     return (tab === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
   });
   protected readonly tabs = computed(() => [
-    { id: 'mine', label: this.mineLoading() ? $localize`:@@decks.page.tabMineLoading:Mes decks · …` : $localize`:@@decks.page.tabMine:Mes decks · ${this.mine().length}:count:` },
+    { id: 'mine', label: $localize`:@@decks.page.tabMine:Mes decks`, count: this.mineLoading() ? null : this.mine().length },
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
     { id: 'contest', label: $localize`:@@decks.page.tabContest:Concours deck de démarrage` },
   ]);
@@ -427,7 +443,8 @@ export class DecksPage {
         // Decks created, edited, duplicated or deleted meanwhile: the kept list is refreshed in place.
         if (this.auth.isLoggedIn()) this.serverRes.reload();
         const y = this.listScroll;
-        const apply = () => window.scrollTo(0, y);
+        // Instant: the site's Bootstrap makes the root scroll smooth, and the app scrolls to the top of each page it opens.
+        const apply = () => window.scrollTo({ top: y, behavior: 'instant' });
         apply();
         requestAnimationFrame(() => {
           apply();

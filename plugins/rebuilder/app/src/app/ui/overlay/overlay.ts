@@ -12,7 +12,7 @@ export interface AcOverlayConfig<D = unknown> {
   data?: D;
   /** Centered window width at ≥ 768 px. */
   width?: number;
-  /** Window height at ≥ 768 px: fit content (default, max 90vh / 900 px) or fill the viewport minus 40 px margins. */
+  /** Window height at ≥ 768 px: fit content (default, max 90dvh / 900 px) or fill the viewport minus 40 px margins. */
   height?: 'auto' | 'fill';
   /** Compact presentation: bottom sheet (default) or full screen page. */
   compact?: 'sheet' | 'fullscreen';

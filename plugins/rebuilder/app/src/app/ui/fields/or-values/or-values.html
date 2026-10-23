@@ -1,0 +1,13 @@
+@for (v of values(); track v.id) {
+  <span class="value">
+    <span>@if (v.glyph) {<span class="glyph" aria-hidden="true">{{ v.glyph }}</span>}{{ v.text }}</span>
+    <button type="button" [attr.aria-label]="removeLabel(v)" (click)="remove(v)"><ac-icon name="x" [size]="14" [strokeWidth]="2.4" /></button>
+  </span>
+  @if (!$last) {
+    <span class="or" aria-hidden="true" i18n="@@ui.combobox.or">ou</span>
+  }
+} @empty {
+  @if (empty()) {
+    <span class="empty">{{ empty() }}</span>
+  }
+}

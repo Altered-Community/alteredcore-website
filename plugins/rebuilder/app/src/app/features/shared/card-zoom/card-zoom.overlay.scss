@@ -3,6 +3,12 @@
   flex-direction: column;
   gap: var(--ac-space-3);
   padding: 0;
+  container-type: inline-size;
+}
+/* The card gives way to the controls and the link, which always show whole (phone browsers' bars eat the height). */
+.controls,
+.detail {
+  flex-shrink: 0;
 }
 .controls {
   display: flex;
@@ -13,14 +19,15 @@
   background: var(--ac-color-surface);
 }
 .stage {
-  align-self: center;
-  width: 100%;
-  perspective: 900px;
+  flex: 0 1 calc(100cqw * 7 / 5);
+  /* Never smaller than 40 % of the screen: below that, the window scrolls. */
+  min-height: min(40dvh, 100cqw * 7 / 5);
+  container-type: size;
 }
 .card {
   display: block;
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.12s ease-out;
+  width: min(100cqw, 100cqh * 5 / 7);
+  margin-inline: auto;
 }
 .qty {
   display: flex;
@@ -29,38 +36,4 @@
   gap: var(--ac-space-2);
   font-size: var(--ac-font-size-small);
   font-weight: 700;
-}
-.prints {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: var(--ac-space-2);
-}
-.print {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: var(--ac-radius-md);
-  overflow: hidden;
-  background: var(--ac-color-track);
-  cursor: pointer;
-}
-.print img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 5 / 7;
-  object-fit: cover;
-}
-.print.selected {
-  border-color: var(--ac-color-primary);
-}
-.print.unowned {
-  opacity: 0.5;
-}
-.print:focus-visible {
-  outline: 2px solid var(--ac-color-primary);
-  outline-offset: 2px;
 }

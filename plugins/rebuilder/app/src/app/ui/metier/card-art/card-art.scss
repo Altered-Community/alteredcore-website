@@ -19,6 +19,9 @@ img {
 :host(.loaded) img {
   opacity: 1;
 }
+:host(.instant) img {
+  transition: none;
+}
 .ph {
   position: absolute;
   left: 50%;

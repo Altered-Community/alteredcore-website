@@ -315,6 +315,7 @@ include dirname(__DIR__) . '/includes/header.php';
                 <span class="ac-badge ac-badge--red">Invalid</span>
                 <span class="ac-badge">Neutral</span>
                 <span class="ac-badge ac-badge--lg ac-badge--blue">Large</span>
+                <span class="ac-badge ac-badge--dense">Dense</span>
                 <span class="ac-tag ac-tag--green">NEW</span>
                 <span class="ac-tag ac-tag--violet">UNIQUE</span>
                 <span class="ac-tag ac-tag--red">BANNED</span>
@@ -325,6 +326,27 @@ include dirname(__DIR__) . '/includes/header.php';
                 <span class="ac-count ac-count--soft">12</span>
                 <span class="ac-avatar">Y</span>
                 <span class="ac-avatar ac-avatar--lg">KH</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="ds-section" aria-labelledby="ds-keys">
+        <h2 class="ac-section-title" id="ds-keys">Keys</h2>
+        <div class="ac-card ds-sheet">
+            <div class="ds-demo">
+                <div class="ac-keys" role="group" aria-label="Cards of illustration 1" style="width: 200px">
+                    <button type="button" class="ac-key" aria-pressed="true" aria-label="1st card"><span class="ac-key__num">1<sup>st</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key" aria-pressed="false" aria-label="2nd card"><span class="ac-key__num">2<sup>nd</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key" aria-pressed="false" aria-label="3rd card" disabled><span class="ac-key__num">3<sup>rd</sup></span><span class="ac-key__word">card</span></button>
+                </div>
+                <div class="ac-keys" role="group" aria-label="Cards of illustration 2 (small)" style="width: 140px">
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="false" aria-label="1st card"><span class="ac-key__num">1<sup>st</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true" aria-label="2nd card"><span class="ac-key__num">2<sup>nd</sup></span><span class="ac-key__word">card</span></button>
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true" aria-label="3rd card"><span class="ac-key__num">3<sup>rd</sup></span><span class="ac-key__word">card</span></button>
+                </div>
+                <div class="ac-keys" role="group" aria-label="Token illustration" style="--ac-keys-count: 1; width: 140px">
+                    <button type="button" class="ac-key ac-key--sm" aria-pressed="true"><span class="ac-key__label">Chosen</span></button>
+                </div>
             </div>
         </div>
     </section>
@@ -443,7 +465,7 @@ include dirname(__DIR__) . '/includes/header.php';
         <div class="ac-card ds-sheet">
             <nav class="ac-breadcrumb" aria-label="Breadcrumb"><a href="#design-system">Decks</a> <?= ac_icon('chevron-right', 'ac-icon--14') ?> <span aria-current="page">Sierra & Oddball</span></nav>
             <div class="ac-tabs ac-tabs--underline" role="tablist">
-                <button type="button" role="tab" aria-selected="true">My decks <span class="ac-tabs__count">· 12</span></button>
+                <button type="button" role="tab" aria-selected="true">My decks <span class="ac-tabs__count">· <span class="ac-tabs__count-value">12</span></span></button>
                 <button type="button" role="tab" aria-selected="false">Community</button>
                 <button type="button" role="tab" aria-selected="false">Favourites</button>
             </div>
@@ -474,6 +496,26 @@ include dirname(__DIR__) . '/includes/header.php';
                     <li><a href="#design-system" aria-label="Next"><?= ac_icon('chevron-right') ?></a></li>
                 </ul></nav>
             </div>
+            <div class="ds-demo" style="align-items: flex-start">
+                <nav class="ac-toc" aria-label="Contents">
+                    <p class="ac-toc__title">Contents</p>
+                    <ol class="ac-toc__list">
+                        <li><a href="#design-system" aria-current="true">Setup</a></li>
+                        <li><a href="#design-system">A day</a>
+                            <ul class="ac-toc__sub"><li><a href="#design-system">Morning</a></li><li><a href="#design-system">Noon</a></li></ul>
+                        </li>
+                        <li><a href="#design-system">Keywords</a></li>
+                    </ol>
+                </nav>
+                <nav class="ac-toc ac-toc--numbered ac-toc--sticky" aria-label="Contents, numbered">
+                    <p class="ac-toc__title">Numbered</p>
+                    <ol class="ac-toc__list">
+                        <li><a href="#design-system" aria-current="true">Setup</a></li>
+                        <li><a href="#design-system">A day</a></li>
+                        <li><a href="#design-system">Keywords</a></li>
+                    </ol>
+                </nav>
+            </div>
         </div>
     </section>
 
@@ -498,6 +540,19 @@ include dirname(__DIR__) . '/includes/header.php';
                 <div class="ac-card ac-stack">
                     <div class="ac-row"><span class="ac-spinner" aria-hidden="true"></span> Loading…</div>
                     <div class="ac-progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><div class="ac-progress__bar" style="width: 60%"></div></div>
+                    <div class="ac-progress ac-progress--success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Rares: 15 of 15"><div class="ac-progress__bar" style="width: 100%"></div></div>
+                    <div class="ac-progress ac-progress--danger" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Uniques: 4 of 3"><div class="ac-progress__bar" style="width: 100%"></div></div>
+                </div>
+                <div class="ac-card ac-stack" aria-busy="true">
+                    <span class="ac-sr-only" role="status">Loading…</span>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--circle" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--title" style="--ac-skeleton-width: 50%" aria-hidden="true"></span></div>
+                    <span class="ac-skeleton ac-skeleton--text" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--text" style="--ac-skeleton-width: 70%" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--control" aria-hidden="true"></span>
+                    <span class="ac-skeleton ac-skeleton--control-sm" style="--ac-skeleton-width: 120px" aria-hidden="true"></span>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--badge" style="--ac-skeleton-width: 56px" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--badge" style="--ac-skeleton-width: 56px" aria-hidden="true"></span></div>
+                    <div class="ac-row"><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span><span class="ac-skeleton ac-skeleton--card" aria-hidden="true"></span></div>
+                    <span class="ac-skeleton ac-skeleton--panel" style="height: 4rem" aria-hidden="true"></span>
                 </div>
                 <div class="ds-loader-preview">
                     <div class="ac-scrim ac-loader" role="status" aria-live="polite">
@@ -517,6 +572,17 @@ include dirname(__DIR__) . '/includes/header.php';
                         <tr><td>Mechanical Menagerie</td><td>Axiom</td><td class="ac-table__num">4</td><td class="ac-table__num">2</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="ds-section" aria-labelledby="ds-tooltip">
+        <h2 class="ac-section-title" id="ds-tooltip">Tooltip, masked value</h2>
+        <div class="ac-stack">
+            <p>Signed in as <?= ac_masked_email('camille.durand@gmail.com') ?>: point at the address, or focus it (<code>ac_masked_email()</code> renders <code>span.ac-masked.ac-tooltip-host</code>).</p>
+            <div class="ac-row ac-row--lg">
+                <span class="ac-tooltip-host" tabindex="0" aria-describedby="ds-tip-start">Start-aligned <?= ac_icon('info', 'ac-icon--16') ?><span class="ac-tooltip ac-tooltip--start" role="tooltip" id="ds-tip-start">Aligned on the start edge</span></span>
+                <span class="ac-tooltip-host" tabindex="0" aria-describedby="ds-tip-below">Below <?= ac_icon('info', 'ac-icon--16') ?><span class="ac-tooltip ac-tooltip--below" role="tooltip" id="ds-tip-below">Under its host</span></span>
             </div>
         </div>
     </section>

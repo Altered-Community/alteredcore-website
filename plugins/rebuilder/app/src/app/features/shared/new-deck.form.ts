@@ -24,9 +24,10 @@ export class NewDeckForm {
   readonly ready = computed(() => !!this.hero() && !!this.name().trim());
   private generatedName = '';
 
-  selectHero(hero: DeckHero | null): void {
+  /** `defaultArt`: picked without « Alt arts », the hero takes the player's default alt art. */
+  selectHero(hero: DeckHero | null, defaultArt = false): void {
     if (!hero) return;
-    this.hero.set({ reference: hero.reference, name: hero.name, faction: hero.faction });
+    this.hero.set({ reference: hero.reference, name: hero.name, faction: hero.faction, ...(defaultArt ? { defaultArt } : {}) });
     const current = this.name();
     if (!current.trim() || current === this.generatedName) {
       this.generatedName = $localize`:@@newDeck.defaultName:Deck ${hero.name}:hero:`;

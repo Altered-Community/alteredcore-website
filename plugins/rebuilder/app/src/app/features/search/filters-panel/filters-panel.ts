@@ -1,5 +1,5 @@
 import { Component, computed, input, model, output, signal } from '@angular/core';
-import { COST_RELATIONS, TYPE_OPTIONS, rarityOptionsFor, newEffectBlock, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { COST_RELATIONS, TYPE_OPTIONS, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
 import type { DeckFormat } from '../../../core/models';
@@ -22,7 +22,7 @@ import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
 export class FiltersPanel {
   readonly source = input<CardSource>('all');
   readonly mode = input<'aside' | 'sheet'>('aside');
-  /** Editor: the deck's format, for the « légales » filter of Favoris. */
+  /** Editor: the deck's format, for the « légales » filter of the account tabs. */
   readonly format = input<DeckFormat | null>(null);
   /** Card browser only: the editor locks the faction to the hero's. */
   readonly factionFilter = input(false);
@@ -30,6 +30,7 @@ export class FiltersPanel {
   readonly editEffect = output<number>();
 
   protected readonly rarities = computed(() => rarityOptionsFor(this.source()).map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
+  protected readonly legalFilter = computed(() => isAccountSource(this.source()));
   protected readonly legalLabel = computed(() => $localize`:@@search.filters.legalOnly:Légales en ${formatInfo(this.format()).label}:format:`);
   protected readonly types = TYPE_OPTIONS;
   protected readonly factions = FACTIONS;
@@ -42,6 +43,8 @@ export class FiltersPanel {
     all: $localize`:@@search.filters.all:Toutes`,
   };
   protected readonly sets = computed(() => setsFor(this.source()));
+  /** Favoris: the site filters them by faction, set and rarity only; the other fields are disabled. */
+  protected readonly limited = computed(() => this.source() === 'favorites');
   protected readonly allSets = computed(() => this.sets().map((s) => s.reference));
   protected readonly setsOpen = signal(false);
   protected readonly advancedOpen = signal(false);
@@ -108,6 +111,13 @@ export class FiltersPanel {
     const effects: EffectBlock[] = [...this.value().effects, newEffectBlock()];
     this.set({ effects });
     this.editEffect.emit(effects.length - 1);
+  }
+
+  /** A copy of effect `i` right after it, with its own id. */
+  duplicateEffect(i: number): void {
+    const effects = [...this.value().effects];
+    effects.splice(i + 1, 0, { ...effects[i], id: newEffectId() });
+    this.set({ effects });
   }
 
   removeEffect(i: number): void {

@@ -1,5 +1,7 @@
 import { deflateRawSync } from 'node:zlib';
 import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
+import { emptyCache } from '../../../tests/e2e/loading';
+import { createServerDeck } from './decks';
 
 /**
  * Re:Builder's decks section (plugin `rebuilder`): with « Beta Deckbuilder » on (cookie ac_beta), the shell serves it
@@ -11,18 +13,20 @@ import { evidence, expect, login, setBeta, test, type Page } from '../../../test
 /** Labels in both site languages (the interface follows AlteredCore.lang). */
 const LABELS = {
   fr: {
-    newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Voir le deck', cancel: 'Annuler',
+    newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Aperçu', cancel: 'Annuler',
     deckNav: 'Éditeur de deck', decksNav: 'Decks', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
     sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
   },
   en: {
-    newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'View deck', cancel: 'Cancel',
+    newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'Preview', cancel: 'Cancel',
     deckNav: 'Deck editor', decksNav: 'Decks', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
     sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
   },
 };
 type Lang = keyof typeof LABELS;
 const FR = LABELS.fr;
+/** The deck page's « Modifier » (deck bar, from 768 px) or « Modifier le deck » (app bar, phones). */
+const EDIT_DECK = /^Modifier( le deck)?$/;
 
 /** Opens the new-deck window, picks the first hero, names the deck and creates it. */
 async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<void> {
@@ -38,7 +42,7 @@ async function createDeck(page: Page, name: string, lang: Lang = 'fr'): Promise<
   await expect(dialog).toBeHidden();
 }
 
-/** « Recherche / Voir le deck » switch (desktop) or bottom navigation (mobile), in `lang`. */
+/** « Recherche / Aperçu » switch (desktop) or bottom navigation (mobile), in `lang`. */
 async function expectEditorLabels(page: Page, compact: boolean, lang: Lang): Promise<void> {
   const l = LABELS[lang];
   if (compact) await expect(page.getByRole('navigation', { name: l.deckNav }).getByRole('link', { name: l.search })).toBeVisible();
@@ -69,7 +73,7 @@ async function expectDeckCount(page: Page, compact: boolean, count: number): Pro
   if (compact) {
     await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ })).toContainText(String(count));
   } else {
-    await expect(page.locator('app-deck-panel ac-deck-summary')).toContainText(String(count));
+    await expect(page.locator('app-deck-bar .meta strong')).toHaveText(new RegExp(`^${count} cartes?$`));
   }
 }
 
@@ -78,13 +82,23 @@ const NEW_DECK = '/pages/deckbuilder';
 const DECK = (id: string) => `/pages/deck?id=${id}`;
 const EDITOR = (id: string) => `/pages/deckbuilder?id=${id}`;
 /** The page URL is `path`, optionally followed by more query parameters (`&lang=…`) when `more`. */
+/**
+ * The id of the account deck the editor opened. Read from the URL rather than from the POST's body: Chrome may have
+ * dropped that body (the editor's images fill its buffer) by the time the test asks for it.
+ */
+async function editorDeckId(page: Page): Promise<string> {
+  await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=(?!guest-)[^&]+$/);
+  return new URL(page.url()).searchParams.get('id')!;
+}
+
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const at = (path: string, more = false) => new RegExp(`${escape(path)}${more ? '(&|$)' : '$'}`);
 
 test.beforeEach(async ({ page }) => setBeta(page, true));
 
 test.describe('ReBuilder in the shell · signed in', () => {
-  test('creates a deck from the decks list, edits it, finds it in the list and opens its page', async ({ page, compact }, testInfo) => {
+  test('creates a deck from the decks list, edits it, finds it in the list and opens its page', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E ${testInfo.project.name} ${Date.now()}`;
     // The browser talks to the site only (relay) for decks, and never sends a bearer token.
     const leaks: string[] = [];
@@ -100,10 +114,8 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
     await createDeck(page, name);
-    const res = await created;
-    expect(res.status()).toBe(201);
-    const deck = (await res.json()) as { id: string };
-    await expect(page).toHaveURL(at(EDITOR(deck.id)));
+    expect((await created).status()).toBe(201);
+    const deck = { id: await editorDeckId(page) };
 
     // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
     const saved = page.waitForResponse((r) => {
@@ -121,22 +133,34 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(page).toHaveURL(at(EDITOR(deck.id)));
     await expectDeckCount(page, compact, 2);
     if (!compact) {
-      await expect(page.locator('ac-editable-title input')).toHaveValue(name);
+      await expect(page.locator('app-deck-bar h1')).toHaveText(name);
       for (const card of cards) await expect(page.locator('app-deck-panel')).toContainText(card.replace(/ ×.*$/, ''));
     }
 
-    // Re:Builder's list shows it (account decks through the relay); its card opens the deck page.
+    // Re:Builder's list shows it (account decks through the relay); its card opens the editor on « Aperçu »: the deck
+    // board from 768 px, the deck preview on phones.
     await page.goto(DECKS);
     const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
     await expect(item).toBeVisible();
     await evidence(page, testInfo, '03-listed');
     await item.getByRole('link').first().click();
+    await expect(page).toHaveURL(at(`${EDITOR(deck.id)}&view=apercu`));
+    // Phones: the deck page's actions (image, copy, duplicate, delete) are in the app bar's « ⋯ ».
+    if (compact) {
+      await expect(page.locator('app-deck-preview')).toBeVisible();
+      await page.getByRole('button', { name: 'Plus d’actions' }).click();
+      await expect(page.getByRole('menuitem', { name: 'Supprimer' })).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
+    else await expect(page.locator('app-deck-board ac-card-pile')).toHaveCount(2);
+    await evidence(page, testInfo, '04-editor-board');
+    await page.goto(DECK(deck.id));
     await expect(page).toHaveURL(at(DECK(deck.id)));
     await expect(page.locator('app-deck-page')).toContainText(name);
     await evidence(page, testInfo, '04-deck-page');
     // Alice's own deck: she can edit it.
     const deckPage = page.locator('app-deck-page');
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
+    await expect(deckPage.getByRole('button', { name: EDIT_DECK })).toBeVisible();
 
     // Same decks API: with the beta off, the site's own list sees the deck too, and links to the same editor URL.
     await setBeta(page, false);
@@ -151,7 +175,104 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', async ({ page, compact }, testInfo) => {
+  test('shows the page skeleton while the scripts load, then the deck skeleton while the deck loads, never an empty deck', { tag: '@mobile' }, async ({ page, compact }) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    const name = `E2E skeleton ${Date.now()}`;
+    await createDeck(page, name);
+    const id = await editorDeckId(page);
+
+    // The app's scripts and the deck are held: the server's skeleton stands for the page meanwhile.
+    let releaseScripts!: () => void;
+    const scripts = new Promise<void>((resolve) => (releaseScripts = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/main-[^/]+\.js/, async (route) => {
+      await scripts;
+      await route.continue();
+    });
+    let releaseDeck!: () => void;
+    const deckAnswer = new Promise<void>((resolve) => (releaseDeck = resolve));
+    await page.route(new RegExp(`/api/v1/services/decks/api/decks/${id}(\\?|$)`), async (route) => {
+      if (route.request().method() === 'GET') await deckAnswer;
+      await route.continue();
+    });
+    // The editor's scripts are in this tab's memory cache since the deck was created: without the cache, they go
+    // through the routes above. A module script holds DOMContentLoaded: wait for the response only.
+    await emptyCache(page);
+    await page.goto(`${EDITOR(id)}&view=apercu&lang=fr`, { waitUntil: 'commit' });
+    const placeholder = page.locator('.ac-spa-placeholder');
+    await expect(placeholder.locator('.ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await expect(placeholder.getByRole('status')).toHaveText('Chargement…');
+
+    // The app draws the editor: the deck skeleton replaces the server's, the store's empty deck never shows.
+    releaseScripts();
+    await expect(placeholder).toHaveCount(0);
+    const deckView = page.locator('app-deck-board, app-deck-preview');
+    await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
+    await expect(page.getByText('Deck vide')).toHaveCount(0);
+    await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
+    // Phones: the app bar in skeleton in its final layout (hero, name over the rarities), not « Chargement du deck… ».
+    const bar = page.locator('ac-app-bar');
+    if (compact) {
+      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(4);
+      await expect(bar).not.toContainText('Chargement');
+    }
+
+    releaseDeck();
+    await expect(deckView.locator('.ac-skeleton')).toHaveCount(0);
+    await expect(page.getByText('Deck vide')).toBeVisible();
+    if (compact) {
+      await expect(bar.locator('.bar-deck-name')).toHaveText(name);
+      await expect(bar.locator('.ac-skeleton')).toHaveCount(0);
+    }
+  });
+
+  for (const { tab, short, endpoint, shot } of [
+    { tab: 'Collection physique', short: 'Collection', endpoint: 'collection-search', shot: '15-collection-search' },
+    { tab: 'Propriété numérique', short: null, endpoint: 'ownership-search', shot: '15-owned-search' },
+  ]) {
+    test(`lists « ${tab} » with every rarity (Uniques included), type and set of the default filters`, async ({ page, compact }, testInfo) => {
+      await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+      await createDeck(page, `E2E ${endpoint} ${Date.now()}`);
+      const request = page.waitForRequest((r) => r.url().includes(`/papi/core-altered-cards/${endpoint}`));
+      if (compact && !short) {
+        // Compact screens: the last sources are in the « Plus » menu of the tabs.
+        await page.getByRole('tab', { name: 'Plus' }).click();
+        await page.getByRole('menuitemradio', { name: tab }).click();
+      } else {
+        await page.getByRole('tab', { name: compact && short ? short : tab, exact: true }).click();
+      }
+      // The Axiom cards of the stack's mock (docker/stack/ownership-mock): commons, rares, a Unique, two sets.
+      const tiles = page.locator('app-search-results ac-card-tile');
+      await expect(tiles).toHaveCount(5);
+      // The rare and the Unique (named « La machine dans la glace » by the cards API).
+      await expect(tiles.and(page.locator('[aria-label*="La Machine dans la Glace" i]'))).toHaveCount(2);
+      // Every rarity chosen, Unique included: no rarity filter, so the Uniques come too. Lists in their array form (`cardType[]=…`).
+      const query = new URL((await request).url()).searchParams;
+      expect(query.getAll('rarity[]')).toEqual([]);
+      expect(query.getAll('cardType[]').length).toBeGreaterThan(1);
+      if (!compact) await expect(page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      // The APIs give the Unique's costs only: its stats and effects come from the cards API (ALT_ALIZE_B_AX_32_U_2).
+      const unique = tiles.locator('ac-unique-card');
+      await expect(unique.locator('.main-text')).toContainText('Au Crépuscule');
+      await expect(unique.getByRole('list', { name: 'Puissances' }).getByRole('listitem')).toHaveText(['3', '2', '2']);
+      await unique.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await evidence(page, testInfo, shot);
+    });
+  }
+
+  test('shows each token large with its illustrations, one of them chosen for every deck', async ({ page, compact }, testInfo) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E token arts ${Date.now()}`);
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    await page.getByRole('button', { name: compact ? 'Illustrations des jetons' : 'Arts des jetons' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Illustrations des jetons' });
+    const tokens = dialog.getByRole('radiogroup');
+    await expect(tokens.first()).toBeVisible();
+    // One illustration chosen a token.
+    for (const token of await tokens.all()) await expect(token.getByRole('radio', { checked: true })).toHaveCount(1);
+    await evidence(page, testInfo, '16-token-arts');
+  });
+
+  test('deletes a deck after a confirmation in a design-system dialog, not the browser’s', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E delete ${testInfo.project.name} ${Date.now()}`;
     const browserDialogs: string[] = [];
     page.on('dialog', (d) => {
@@ -166,7 +287,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage).toContainText(name);
 
-    // Desktop: « Supprimer » in the side panel; mobile: in the « Plus d’actions » sheet.
+    // Desktop: « Supprimer » in the deck bar; mobile: in the « Plus d’actions » sheet.
     const askDelete = async () => {
       if (compact) {
         await deckPage.getByRole('button', { name: /^Plus d’actions/ }).click();
@@ -194,7 +315,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     expect(browserDialogs).toEqual([]);
   });
 
-  test('touch: every control of the windows is at least --ac-hit-min (44 px) on each side', async ({ page, compact }, testInfo) => {
+  test('touch: every control of the windows is at least --ac-hit-min (44 px) on each side', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     test.skip(!compact, 'touch density: mobile project');
     await login(page, 'alice', `${NEW_DECK}?lang=fr`);
     const name = `E2E touch ${testInfo.project.name} ${Date.now()}`;
@@ -289,7 +410,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deckPage = page.locator('app-deck-page');
     await expect(deckPage.locator('ac-card-art').first()).toBeVisible();
     await expect(deckPage.getByRole('button', { name: /Plus d’actions|Dupliquer/ }).first()).toBeVisible();
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' })).toHaveCount(0);
+    await expect(deckPage.getByRole('button', { name: EDIT_DECK })).toHaveCount(0);
     await expect(deckPage.getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
     await evidence(page, testInfo, '05b-community-deck');
   });
@@ -432,7 +553,7 @@ test.describe('ReBuilder in the shell · languages', () => {
   // Decks list, community tab, editor search and deck summary, in each site language; the switch
   // goes through the site's ?lang= (a change reloads the page, translations load before the app).
   for (const lang of ['en', 'fr'] as const) {
-    test(`shows its interface in the site language (${lang})`, async ({ page, compact }, testInfo) => {
+    test(`shows its interface in the site language (${lang})`, { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
       const l = LABELS[lang];
       const other = LABELS[lang === 'en' ? 'fr' : 'en'];
       await page.goto(`${DECKS}?tab=mine&lang=${lang}`);
@@ -463,6 +584,20 @@ test.describe('ReBuilder in the shell · languages', () => {
 });
 
 test.describe('ReBuilder in the shell · Uniques search', () => {
+  test('shows the Uniques at most 7 per row, larger, on a very wide window', async ({ page, compact }) => {
+    test.skip(compact, 'a desktop width');
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques grid ${Date.now()}`);
+    const columns = () => page.locator('ac-virtual-grid.grid').evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    const all = await columns();
+    await page.getByRole('tab', { name: 'Uniques' }).click();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    expect(all).toBeGreaterThan(7);
+    await expect.poll(columns).toBe(7);
+  });
+
   test('ORs the values of a criterion and ANDs the effects, on the Uniques search API', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the effect filter is checked on the desktop panel');
     await page.goto(`${NEW_DECK}?lang=fr`);
@@ -475,13 +610,17 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     await page.getByRole('tab', { name: 'Uniques' }).click();
     await expect(page.locator('ac-unique-card').first()).toBeVisible();
 
-    /** Picks `text` (exact) in the criterion `index` of the open effect window. */
+    /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
     const pick = async (index: number, text: string) => {
       const dialog = page.getByRole('dialog');
-      await dialog.getByRole('combobox').nth(index).click();
-      await page.locator('.cdk-overlay-container .panel input').fill(text);
-      await page.getByRole('option', { name: text, exact: true }).click();
-      await expect(dialog.locator('ac-combobox').nth(index).locator('.picked').filter({ hasText: text })).toBeVisible();
+      // Anywhere on the criterion's card opens it, its values too (« Tous les déclencheurs »…), not only its title.
+      const card = dialog.locator('.card').nth(index);
+      const box = (await card.boundingBox())!;
+      await card.click({ position: { x: 24, y: box.height - 12 } });
+      await expect(card.locator('.card-head')).toHaveAttribute('aria-pressed', 'true');
+      await dialog.locator('ac-check-list input[type=search]').fill(text);
+      await dialog.getByRole('checkbox', { name: text, exact: true }).check();
+      await expect(dialog.locator('.card').nth(index).locator('ac-or-values .value').filter({ hasText: text })).toBeVisible();
     };
     const editEffect = async (open: () => Promise<void>, picks: [number, string][]) => {
       await open();
@@ -514,9 +653,16 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The count shown is the API's for that request.
     await expect(page.locator('.results .total, .results').getByText(new RegExp(`^${both.toLocaleString('fr-FR').replace(/\s/g, '\\s')} cartes?$`))).toBeVisible();
     await evidence(page, testInfo, '11-uniques-effects');
+
+    // « Dupliquer » puts a copy of the effect right after it.
+    const summaries = page.locator('ac-effect-summary');
+    const firstText = await summaries.nth(0).locator('p').allTextContents();
+    await summaries.nth(0).getByRole('button', { name: 'Dupliquer Effet 1' }).click();
+    await expect(summaries).toHaveCount(3);
+    expect(await summaries.nth(1).locator('p').allTextContents()).toEqual(firstText);
   });
 
-  test('narrows each effect list to the values that still give a card, for the effect being edited', async ({ page, compact }, testInfo) => {
+  test('narrows each effect list to the values that still give a card, for the effect being edited', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E uniques narrowing ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
@@ -527,15 +673,23 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     const narrowing = (editing: string) =>
       page.waitForResponse((r) => r.url().includes('/api/v2/effects/filtered') && new URL(r.url()).searchParams.get('editing') === editing);
     const idGds = async (res: Promise<{ json(): Promise<unknown> }>) => ((await (await res).json()) as { idGds: number[] }).idGds;
-    /** Options of the criterion `index` of the open effect window, list closed again. */
+    const dialog = () => page.getByRole('dialog');
+    /** Shows the checkbox list of the criterion `index`: the right column, or a step in compact. */
+    const openCriterion = async (index: number) => {
+      await dialog().locator(compact ? '.crit .add' : '.card-head').nth(index).click();
+      await expect(dialog().locator('ac-check-list')).toBeVisible();
+    };
+    /** Compact: back from the step to the criteria. */
+    const closeCriterion = async () => {
+      if (compact) await dialog().getByRole('button', { name: 'Valider' }).click();
+    };
+    /** Options of the criterion `index` of the open effect window. */
     const listed = async (index: number) => {
-      const combo = page.getByRole('dialog').getByRole('combobox').nth(index);
-      await combo.click();
-      const options = page.locator('.cdk-overlay-container .panel [role=option]');
+      await openCriterion(index);
+      const options = dialog().locator('ac-check-list .option');
       await options.first().waitFor();
       const texts = await options.allTextContents();
-      await combo.click();
-      await expect(page.locator('.cdk-overlay-container .panel')).toHaveCount(0);
+      await closeCriterion();
       return texts;
     };
     const apply = async () => {
@@ -552,9 +706,10 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     // The whole list shows until the answer comes, then only the ids it holds.
     await expect.poll(async () => (await listed(0)).length).toBeLessThanOrEqual(factionIds.length);
     const allTriggers = await listed(0);
-    await page.getByRole('dialog').getByRole('combobox').nth(2).click();
-    await page.locator('.cdk-overlay-container .panel input').fill('Piochez deux cartes.');
-    await page.getByRole('option', { name: 'Piochez deux cartes.', exact: true }).click();
+    await openCriterion(2);
+    await dialog().locator('ac-check-list input[type=search]').fill('Piochez deux cartes.');
+    await dialog().getByRole('checkbox', { name: 'Piochez deux cartes.', exact: true }).check();
+    await closeCriterion();
     await apply();
 
     // Effect 2: slot 1, effect 1 sent as a constraint, the new block empty.
@@ -568,12 +723,14 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     const narrowed = await listed(0);
     expect(narrowed.length).toBeGreaterThan(0);
     expect(narrowed.length).toBeLessThan(allTriggers.length);
-    await page.getByRole('dialog').getByRole('combobox').nth(0).click();
+    await openCriterion(0);
     await evidence(page, testInfo, '14-uniques-effect-narrowed');
-    await page.locator('.cdk-overlay-container .panel [role=option]').first().click();
+    await dialog().locator('ac-check-list input[type=checkbox]').first().check();
+    await closeCriterion();
     await apply();
 
-    // Effect 1 removed: the one left is slot 0 again, and its own trigger does not narrow its trigger list.
+    // Effect 1 removed: the one left is slot 0 again, and its own trigger does not narrow its trigger list
+    // (the checked trigger stays in the list, checked).
     await page.locator('ac-effect-summary').first().getByRole('button', { name: /^Supprimer/ }).click();
     await expect(page.locator('ac-effect-summary')).toHaveCount(1);
     const again = narrowing('trigger:0');
@@ -582,7 +739,31 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     expect(reqAgain.searchParams.get('effect[0][t]')).toBeTruthy();
     expect([...reqAgain.searchParams.keys()].filter((k) => k.startsWith('effect[1]'))).toEqual([]);
     await again;
-    await expect.poll(async () => (await listed(0)).length).toBe(allTriggers.length - 1);
+    await expect.poll(async () => (await listed(0)).length).toBe(allTriggers.length);
+  });
+});
+
+test.describe('ReBuilder in the shell · card filters', () => {
+  test('checks several subtypes in a row: the list stays open', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E sous-types ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
+    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    const subtypes = filters.locator('ac-combobox');
+    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
+    const options = page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option');
+    await options.nth(0).click();
+    await options.nth(1).click();
+    await expect(page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option', { selected: true })).toHaveCount(2);
+    await expect(subtypes.locator('.picked')).toHaveCount(2);
+    await evidence(page, testInfo, '12-subtypes');
+    // The button closes the list; the two subtypes make one filter.
+    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
+    await expect(page.getByRole('listbox', { name: 'Ajouter…' })).toBeHidden();
+    if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
+    await expect(page.getByText('2 sous-types').first()).toBeVisible();
   });
 });
 
@@ -669,30 +850,132 @@ test.describe('ReBuilder in the shell · altered.gg export', () => {
   });
 });
 
+test.describe('ReBuilder in the shell · hero portrait', () => {
+  test('the hero portrait opens « Choisir un héros » alone; the chosen hero replaces the deck\'s', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E hero ${testInfo.project.name} ${Date.now()}`);
+    // The portrait: in the deck bar from 768 px, in the « Deck » view's summary on phones.
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    const portrait = page.getByRole('button', { name: 'Changer de héros' });
+    await expect(portrait.locator('img').first()).toBeVisible();
+    await portrait.click();
+
+    const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
+    await expect(picker).toBeVisible();
+    // The other settings stay behind the settings button: the picker comes alone, without « Réglages du deck ».
+    await expect(page.getByRole('dialog', { name: 'Réglages du deck' })).toHaveCount(0);
+    const other = picker.locator('ac-hero-tile button[aria-pressed="false"]').first();
+    const name = ((await other.locator('.name').textContent()) ?? '').trim();
+    await other.click();
+    await evidence(page, testInfo, '01-hero-picker-from-portrait');
+    await picker.getByRole('button', { name: 'Choisir ce héros' }).click();
+    await expect(picker).toBeHidden();
+    if (compact) await expect(page.locator('ac-deck-summary')).toContainText(name);
+    else {
+      // The reduced bar of « Recherche » has no hero name: « Aperçu » shows it.
+      await page.locator('ac-segmented').getByText(FR.viewDeck, { exact: true }).click();
+      await expect(page.locator('app-deck-bar .meta')).toContainText(name);
+    }
+  });
+});
+
+test.describe('ReBuilder in the shell · app bar of the search and « Aperçu » views (phones)', () => {
+  test('the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    test.skip(!compact, 'from 768 px the deck bar shows the hero and the rarities');
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    await page.getByRole('button', { name: FR.newDeck }).first().click();
+    await createDeck(page, `E2E barre ${testInfo.project.name} ${Date.now()}`);
+    await addTwoCards(page);
+
+    // The app bar: the hero, then the deck name over the rarities the format caps.
+    const bar = page.locator('ac-app-bar');
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
+    await evidence(page, testInfo, '60-app-bar-search');
+
+    // Down the results the bar stays, and the condensed search head sticks below it.
+    await page.mouse.wheel(0, 1500);
+    await expect(page.locator('.search-head.condensed')).toBeVisible();
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toBeInViewport();
+    const barBox = await bar.boundingBox();
+    const headBox = await page.locator('.search-head').boundingBox();
+    expect(headBox!.y).toBeGreaterThanOrEqual(barBox!.y + barBox!.height - 1);
+    await evidence(page, testInfo, '62-app-bar-scrolled');
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    await bar.getByRole('button', { name: /^Changer de héros/ }).click();
+    const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
+    await expect(picker).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(picker).toBeHidden();
+
+    // « Résumé du deck »: hero, legality, a bar per capped rarity, counts per type.
+    await bar.getByRole('button', { name: /^Résumé du deck/ }).click();
+    const overview = page.getByRole('dialog', { name: 'Résumé du deck' });
+    await expect(overview).toContainText('Raretés · Standard All Uniques');
+    await expect(overview.getByRole('progressbar', { name: /^Rare : \d+ sur 15 maximum$/ })).toBeVisible();
+    await expect(overview).toContainText('2 cartes');
+    await evidence(page, testInfo, '61-deck-overview');
+
+    // « Changer de héros » closes the summary for the picker (no window over another); the new hero shows in the bar.
+    await overview.getByRole('button', { name: 'Changer de héros' }).click();
+    await expect(overview).toBeHidden();
+    await expect(picker).toBeVisible();
+    const other = picker.locator('ac-hero-tile button[aria-pressed="false"]').first();
+    const name = ((await other.locator('.name').textContent()) ?? '').trim();
+    await other.click();
+    await picker.getByRole('button', { name: 'Choisir ce héros' }).click();
+    await expect(picker).toBeHidden();
+    await expect(bar.getByRole('button', { name: `Changer de héros (${name})` })).toBeVisible();
+
+    // « Ouvrir l’onglet Deck » leads to the deck view.
+    await bar.getByRole('button', { name: /^Résumé du deck/ }).click();
+    await overview.getByRole('button', { name: 'Ouvrir l’onglet Deck' }).click();
+    await expect(page.locator('ac-deck-summary')).toContainText(name);
+
+    // « Aperçu » has the same bar, kept on screen down the deck.
+    await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Aperçu/ }).click();
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
+    await expect(bar.getByRole('button', { name: `Changer de héros (${name})` })).toBeVisible();
+    await page.mouse.wheel(0, 800);
+    await expect(bar.getByRole('group', { name: 'Raretés limitées par le format' })).toBeInViewport();
+    await evidence(page, testInfo, '63-app-bar-apercu');
+
+    // Back to « Recherche »: the page renders again, the hero's art comes from the cache at once (no placeholder, no fade).
+    await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Recherche/ }).click();
+    await expect(bar.locator('.bar-hero ac-card-art')).toHaveClass(/\binstant\b/);
+  });
+});
+
 test.describe('ReBuilder in the shell · deck page', () => {
-  /** Creates a deck of alice's account through the relay (9 cards: not legal, the API says why). */
-  async function createServerDeck(page: Page, name: string): Promise<string> {
-    return page.evaluate(async (deckName) => {
-      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
-      const res = await fetch(`${host.services.decks}/api/decks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
-        body: JSON.stringify({
-          name: deckName,
-          description: 'Première ligne\nDeuxième ligne',
-          format: 'standard',
-          isPublic: false,
-          deckCards: [
-            { cardReference: 'ALT_CORE_B_AX_01_C', quantity: 1 },
-            { cardReference: 'ALT_CORE_B_AX_08_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_09_C', quantity: 3 },
-            { cardReference: 'ALT_CORE_B_AX_10_C', quantity: 3 },
-          ],
-        }),
-      });
-      if (res.status !== 201) throw new Error(`deck creation: HTTP ${res.status}`);
-      return ((await res.json()) as { id: string }).id;
-    }, name);
+  /**
+   * The illustrations of every card family, as the site's `deck-alt-arts` gives them, made predictable: the plain print
+   * and one alt art owned `owned` times, the defaults `slots` (0: the plain print, 1: the alt art). Returns the two
+   * references of Élémentaire de Kélon (ALT_CORE_B_AX_04_C) once known.
+   */
+  async function routeAltArts(page: Page, owned: number, slots: (0 | 1)[]): Promise<{ base: string; alt: () => string }> {
+    let alt = '';
+    type Options = { options: { reference: string; ownedQuantity: number | null }[]; slots: { slotIndex: number; reference: string }[] };
+    await page.route('**/papi/core-altered-cards/deck-alt-arts**', async (route) => {
+      const body = (await (await route.fetch()).json()) as { groups: Record<string, { familyId: number; faction: string; rarity: string }>; options: Record<string, Options> };
+      for (const [key, family] of Object.entries(body.options)) {
+        family.options = family.options.slice(0, 2).map((o, i) => ({ ...o, ownedQuantity: i === 0 ? null : owned }));
+        family.slots = slots.map((n, i) => ({ slotIndex: i + 1, reference: family.options[Math.min(n, family.options.length - 1)].reference }));
+        const kelon = body.groups['ALT_CORE_B_AX_04_C'];
+        if (kelon && key === `${kelon.familyId}:${kelon.faction}:${kelon.rarity}`) alt = family.options[1]?.reference ?? '';
+      }
+      await route.fulfill({ json: body });
+    });
+    return { base: 'ALT_CORE_B_AX_04_C', alt: () => alt };
+  }
+
+  /** The next PATCH of deck `id` whose cards satisfy `test` (reference → copies). */
+  function savedCards(page: Page, id: string, test: (cards: Map<string, number>) => boolean) {
+    return page.waitForRequest((r) => {
+      if (r.method() !== 'PATCH' || !r.url().includes(`/api/decks/${id}`)) return false;
+      const body = r.postDataJSON() as { deckCards?: { cardReference: string; quantity: number }[] };
+      return !!body.deckCards && test(new Map(body.deckCards.map((c) => [c.cardReference, c.quantity])));
+    });
   }
 
   /** Deck page tab (desktop tabs) or bottom navigation entry (mobile). */
@@ -701,7 +984,31 @@ test.describe('ReBuilder in the shell · deck page', () => {
     else await page.getByRole('tab', { name: tab }).click();
   }
 
-  test('shows the API legality, description and a test hand; shares and duplicates on the account', async ({ page, compact, baseURL }, testInfo) => {
+  test('opens a deck at the top of its page from far down the list, and back puts the list where it was', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const name = `E2E scroll ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(DECKS);
+    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
+    await expect(item).toBeVisible();
+    // Room below the page, as with a long list: the window keeps its scroll from one page of the app to the next.
+    await page.evaluate(() => (document.body.style.paddingBottom = '200vh'));
+    await item.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    const scrollY = () => page.evaluate(() => window.scrollY);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+    await item.getByRole('link').first().click();
+    await expect(page).toHaveURL(new RegExp(`id=${id}`));
+    await expect.poll(scrollY).toBe(0);
+    await evidence(page, testInfo, '21-deck-opened-at-top');
+    // Phones: the list comes back at its top after « back » (already the case before scrolling to the top of each page).
+    if (compact) return;
+    await page.goBack();
+    await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+    await expect.poll(scrollY).toBeGreaterThan(0);
+    await expect(item).toBeInViewport();
+  });
+
+  test('shows the API legality, description and a test hand; shares and duplicates on the account', { tag: '@mobile' }, async ({ page, compact, baseURL }, testInfo) => {
     // navigator.share is recorded: sharing must never use the system share sheet.
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'share', {
@@ -744,9 +1051,13 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await expect(deckPage.locator('app-hand-stats')).toContainText('Démarrage optimal');
     const calc = deckPage.locator('app-hand-calculators');
     await calc.getByRole('combobox', { name: 'Choisir…', exact: true }).click();
+    // The list stays open: several cards are checked in a row.
     await page.getByRole('option').first().click();
+    await page.getByRole('option').nth(1).click();
+    await expect(page.getByRole('option', { selected: true })).toHaveCount(2);
     await expect(calc.locator('ac-probability-bars').first()).toContainText('%');
     await evidence(page, testInfo, '23-deck-test-hand');
+    await page.keyboard.press('Escape');
     // Game mode (the site's playground, desktop only): 3 cards to mana, then a card played from its menu.
     if (!compact) {
       await deckPage.getByRole('button', { name: 'Mode jeu' }).click();
@@ -794,11 +1105,337 @@ test.describe('ReBuilder in the shell · deck page', () => {
     expect(res.status()).toBe(201);
     const copy = (await res.json()) as { id: string; isPublic: boolean };
     expect(copy.isPublic).toBe(false);
-    await expect(page).toHaveURL(at(DECK(copy.id)));
-    await expect(deckPage).toContainText(`${name} bis`);
-    await expect(deckPage.getByRole('button', { name: 'Modifier le deck' }).first()).toBeVisible();
+    // The copy is the user's: it opens in the editor, on « Aperçu ».
+    await expect(page).toHaveURL(at(`${EDITOR(copy.id)}&view=apercu`));
+    await expect(page.locator('app-editor-page')).toContainText(`${name} bis`);
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();
+  });
+
+  test('keeps a unique\'s illustration once its printed effect arrives after it', async ({ page }, testInfo) => {
+    // No support ability and a short effect: the same frame, so the same illustration URL, before and after the effect.
+    const unique = 'ALT_ALIZE_B_AX_32_U_2';
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E unique art ${Date.now()}`, [unique]);
+    // A pile of the deck board from 768 px, a tile on phones.
+    const tile = page.locator('ac-card-tile, ac-card-pile').filter({ has: page.locator('ac-unique-card') });
+    // The cards API answers once the illustration is shown: the deck then replaces the unique's card object.
+    await page.route('**/api/cards/batch**', async (route) => {
+      await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
+      await route.continue();
+    });
+    await page.goto(DECK(id));
+    await expect(tile.locator('.main-text')).not.toBeEmpty();
+    await expect(tile.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
+    await expect(tile.locator('ac-card-art img')).toHaveCSS('opacity', '1');
+    await evidence(page, testInfo, '26-unique-art');
+  });
+
+  /** The default alt arts saved by the brush (`PUT /api/alt-arts/preferences`), answered without the service. */
+  async function routePreferences(page: Page): Promise<string[][]> {
+    const saved: string[][] = [];
+    await page.route('**/api/alt-arts/preferences', async (route) => {
+      saved.push((route.request().postDataJSON() as { slotReferences: string[] }).slotReferences);
+      await route.fulfill({ status: 204 });
+    });
+    return saved;
+  }
+
+  /** The next brush choice saved for deck `id` (`POST /papi/rebuilder/deck-alt-arts`): its cards. */
+  async function savedDeckCards(page: Page, id: string): Promise<string[] | null> {
+    const request = await page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/papi/rebuilder/deck-alt-arts') && (r.postDataJSON() as { deck?: string }).deck === id);
+    return (request.postDataJSON() as { cards: string[] | null }).cards;
+  }
+
+  test('chooses the illustration of each card of the deck with the brush, the default alt arts unchanged', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const kelon = await routeAltArts(page, 2, [0, 0, 0]);
+    const preferences = await routePreferences(page);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E brush ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 2);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const brush = page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' });
+    await brush.click();
+    const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
+    /** Key `card` of illustration `n`: pressed when that card takes the illustration. */
+    const key = (n: number, card: string) => dialog.getByRole('group', { name: `Cartes de Illustration ${n}` }).getByRole('button', { name: card });
+    // The plain print is chosen for the three cards (the defaults); the deck uses two.
+    for (const card of ['1ère carte', '2ème carte', '3ème carte']) {
+      await expect(key(1, card)).toHaveAttribute('aria-pressed', 'true');
+      await expect(key(2, card)).toHaveAttribute('aria-pressed', 'false');
+    }
+    await expect(dialog.getByText('Avec 2 exemplaires, le deck prend les illustrations des 1ère et 2ème cartes.')).toBeVisible();
+    // The alt art for the 1st card: the deck's copy 1 takes it, and the choice is kept for this deck.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    let cards = savedDeckCards(page, id);
+    await key(2, '1ère carte').click();
+    await saved;
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.base]);
+    await expect(key(2, '1ère carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(1, '1ère carte')).toHaveAttribute('aria-pressed', 'false');
+    // The illustrations keep their order: the plain print stays first.
+    await expect(dialog.getByRole('list', { name: 'Illustrations disponibles' }).getByRole('listitem').first()).toContainText('Illustration 1');
+    await expect(dialog.locator('.fan img').first()).toHaveAttribute('src', new RegExp(kelon.alt()));
+    await evidence(page, testInfo, '30-alt-art-brush');
+    // The 3rd card, past the deck's copies: kept for the deck, its two copies stay.
+    cards = savedDeckCards(page, id);
+    await key(2, '3ème carte').click();
+    expect(await cards).toEqual([kelon.alt(), kelon.base, kelon.alt()]);
+    // Both copies owned are on cards: the 2nd card cannot take the alt art.
+    await expect(key(2, '3ème carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(2, '2ème carte')).toBeDisabled();
+    await evidence(page, testInfo, '30-alt-art-brush-keys');
+    // The default alt arts are not touched.
+    expect(preferences).toEqual([]);
+    // Kept after a reload; a copy added takes the 3rd card's illustration.
+    await page.reload();
+    // On a phone, a tile a print: a brush on each.
+    await brush.first().click();
+    await expect(key(2, '1ère carte')).toHaveAttribute('aria-pressed', 'true');
+    await expect(key(2, '3ème carte')).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    if (compact) return;
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 2 && c.get(kelon.base) === 1);
+    const pile = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await pile.hover();
+    await pile.getByRole('button', { name: 'Ajouter un exemplaire de Élémentaire de Kélon' }).click();
+    await saved;
+    // The deck deleted: its choices go with it.
+    const deckCards = () => page.evaluate((deck) => fetch(`/papi/rebuilder/deck-alt-arts?deck=${deck}`).then((r) => r.json()), id);
+    expect(Object.keys(((await deckCards()) as { families: object }).families)).toHaveLength(1);
+    await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { csrf: string; services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { method: 'DELETE', headers: { 'X-CSRF-Token': host.csrf } });
+      if (!res.ok) throw new Error(`deck deletion: HTTP ${res.status}`);
+    }, id);
+    expect(await deckCards()).toEqual({ families: {} });
+  });
+
+  test('takes a card brought to 0 off the deck board', async ({ page, compact }) => {
+    test.skip(compact, 'the deck board is from 768 px');
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E board ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile');
+    const kelon = piles.filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    await expect(piles).toHaveCount(4);
+    await kelon.hover();
+    await kelon.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles).toHaveCount(3);
+    await expect(kelon).toHaveCount(0);
+  });
+
+  test('puts a card’s illustrations on one pile of the deck board, copy 1 in front, or on a pile each', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'the deck board is from 768 px');
+    const kelon = await routeAltArts(page, 1, [0, 0, 0]);
+    await routePreferences(page);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E stack ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    const piles = page.locator('app-deck-board ac-card-pile').filter({ has: page.getByRole('group', { name: 'Exemplaires de Élémentaire de Kélon dans le deck' }) });
+    // The alt art for the 1st card (the brush): the deck has two prints of the card.
+    await page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' }).click();
+    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 2);
+    await page.getByRole('dialog').getByRole('group', { name: 'Cartes de Illustration 2' }).getByRole('button', { name: '1ère carte' }).click();
+    await saved;
+    await page.keyboard.press('Escape');
+    // One pile of 3, copy 1 in front.
+    const stack = page.getByRole('switch', { name: 'Regrouper les illustrations' });
+    await expect(stack).toBeChecked();
+    await expect(piles).toHaveCount(1);
+    await expect(piles.locator('.qty')).toHaveText('×3');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    await evidence(page, testInfo, '32-alt-arts-one-pile');
+    // Its stepper adds a copy of the card: back to the deck limit, the pile stays.
+    await piles.hover();
+    await piles.getByRole('button', { name: 'Retirer un exemplaire de Élémentaire de Kélon' }).click();
+    await expect(piles.locator('.qty')).toHaveText('×2');
+    await expect(piles.locator('.front img')).toHaveAttribute('src', new RegExp(kelon.alt()));
+    // Off: a pile each print.
+    await stack.uncheck();
+    await expect(piles).toHaveCount(2);
+    await stack.check();
+    await expect(piles).toHaveCount(1);
+  });
+
+  test('adds a card from the search with the default alt art of its copy', { tag: '@mobile' }, async ({ page }, testInfo) => {
+    const kelon = await routeAltArts(page, 1, [1, 1, 0]);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E alt arts search ${Date.now()}`);
+    await page.goto(EDITOR(id));
+    const tiles = page.locator('app-search-results ac-card-tile');
+    // A reference looks up that card only (typed again if the search was not ready for it).
+    await expect(async () => {
+      await page.getByRole('textbox', { name: 'Rechercher par nom' }).first().fill(kelon.base);
+      await expect(tiles).toHaveCount(1, { timeout: 5000 });
+    }).toPass();
+    // The card's tile stands for all its prints: the 1st copy takes the 1st default, the alt art.
+    let saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && !c.has(kelon.base));
+    await tiles.first().getByRole('button', { name: 'Ajouter Élémentaire de Kélon au deck' }).click();
+    await saved;
+    await expect(tiles.first().locator('ac-stepper .value')).toHaveText('1');
+    // The 2nd default is the alt art too, but its only copy owned is placed: the plain print.
+    saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 1 && c.get(kelon.base) === 1);
+    await tiles.first().locator('ac-stepper .inc').click();
+    await saved;
+    await expect(tiles.first().locator('ac-stepper .value')).toHaveText('2');
+    await expect(page.getByRole('switch', { name: 'Arts alternatifs' })).toHaveCount(0);
+    await evidence(page, testInfo, '31-alt-arts-search');
+  });
+
+  test('applies the default alt arts to the whole deck after a confirmation', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const kelon = await routeAltArts(page, 3, [1, 1, 1]);
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E default alt arts ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    await expect(page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' })).toBeVisible();
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
+    await page.getByRole('button', { name: compact ? 'Appliquer les arts par défaut' : 'Arts par défaut' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Appliquer vos arts par défaut ?' });
+    await evidence(page, testInfo, '32-default-alt-arts-confirm');
+    const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
+    await dialog.getByRole('button', { name: 'Appliquer' }).click();
+    await saved;
+    await expect(page.getByText('Arts par défaut appliqués.')).toBeVisible();
+  });
+
+  /** A call to the ownership service through the site's relay (from a page where Re:Builder runs): status and body. */
+  function ownership(page: Page, method: string, path: string, body?: unknown): Promise<{ status: number; json: unknown }> {
+    return page.evaluate(
+      async ([m, p, b]) => {
+        const host = (window as unknown as { AlteredCore: { csrf: string; services: { ownership: string } } }).AlteredCore;
+        const res = await fetch(`${host.services.ownership}${p}`, {
+          method: m,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': host.csrf },
+          body: b === undefined ? undefined : JSON.stringify(b),
+        });
+        const text = await res.text();
+        return { status: res.status, json: text ? (JSON.parse(text) as unknown) : null };
+      },
+      [method, path, body] as const,
+    );
+  }
+
+  /** The cards of deck `id` (reference → copies), from the decks API through the relay. */
+  async function deckCards(page: Page, id: string): Promise<Map<string, number>> {
+    const cards = await page.evaluate(async (deck) => {
+      const host = (window as unknown as { AlteredCore: { services: { decks: string } } }).AlteredCore;
+      const res = await fetch(`${host.services.decks}/api/decks/${deck}`, { headers: { Accept: 'application/json' } });
+      const body = (await res.json()) as Record<'deckCards' | 'cards', { cardReference: string; quantity: number }[] | undefined>;
+      return body.deckCards ?? body.cards ?? [];
+    }, id);
+    return new Map(cards.map((c) => [c.cardReference, c.quantity]));
+  }
+
+  // The alt-art mode is bob's account's: these scenarios run one after the other, on one project.
+  test.describe('alt-art mode', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    test('« Global » mode: the deck follows the default alt arts, without a brush', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      const kelon = await routeAltArts(page, 3, [1, 1, 1]);
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      try {
+        const saved = savedCards(page, id, (c) => c.get(kelon.alt()) === 3 && !c.has(kelon.base));
+        await page.goto(`${EDITOR(id)}&view=apercu`);
+        await saved;
+        await expect(page.getByRole('button', { name: 'Arts des jetons' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Arts par défaut' })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Choisir les illustrations de Élémentaire de Kélon' })).toHaveCount(0);
+        await evidence(page, testInfo, '36-global-mode');
+      } finally {
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
+
+    test('leaving « Global » writes the default alt arts in every deck, then switches to « par deck »', async ({ page, compact }, testInfo) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      // Every deck of the account is written: a local stack keeps the decks of earlier runs.
+      test.slow();
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      const id = await createServerDeck(page, `E2E leave global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
+      // bob's default alt art for Élémentaire de Kélon: an illustration he owns, on the three copies.
+      type Family = { familyId: number; faction: string; rarity: string; options: { reference: string; ownedQuantity: number | null }[] };
+      const [key] = (await ownership(page, 'POST', '/api/alt-arts/resolve-references', ['ALT_CORE_B_AX_04_C'])).json as Family[];
+      const [family] = (await ownership(page, 'POST', '/api/alt-arts/options', [key])).json as Family[];
+      const alt = family.options.find((o) => o.reference !== 'ALT_CORE_B_AX_04_C' && o.ownedQuantity !== 0)?.reference ?? '';
+      expect(alt).not.toBe('');
+      const prefs = { familyId: key.familyId, faction: key.faction, rarity: key.rarity };
+      await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [alt, alt, alt] });
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // What Board Game Arena shows of the deck in « Global » mode.
+      const shown = (await ownership(page, 'POST', '/api/alt-arts/apply-to-deck', [{ reference: 'ALT_CORE_B_AX_04_C', quantity: 3 }])).json as {
+        lines: { reference: string; quantity: number }[][];
+      };
+      const expected = new Map(shown.lines.flat().map((l) => [l.reference, l.quantity]));
+      expect(expected.get('ALT_CORE_B_AX_04_C') ?? 0).toBeLessThan(3);
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await expect(dialog).toBeVisible();
+        await evidence(page, testInfo, '37-leave-global-confirm');
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 120_000 });
+        await evidence(page, testInfo, '38-per-deck-mode');
+        await page.goto(`${DECKS}?lang=fr`);
+        // Élémentaire de Kélon's copies, as Board Game Arena showed them (the deck's other cards have one illustration).
+        const cards = await deckCards(page, id);
+        expect(new Map([...cards].filter(([ref]) => family.options.some((o) => o.reference === ref)))).toEqual(expected);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preferences', { ...prefs, slotReferences: [] });
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
+
+    test('leaving « Global » switches to « par deck » even when decks cannot be written', async ({ page, compact }) => {
+      test.skip(compact, 'the mode is the account’s: one project at a time');
+      await login(page, 'bob', `${DECKS}?lang=fr`);
+      await createServerDeck(page, `E2E leave global failing ${Date.now()}`);
+      expect((await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'Global' })).status).toBe(204);
+      // Every deck fails: best effort, the mode changes all the same.
+      let tried = 0;
+      await page.route('**/papi/ownership/alt-art-leave-global', (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        tried++;
+        return route.fulfill({ status: 502, json: { error: 'write' } });
+      });
+      try {
+        await page.goto('/pages/ownership-alt-arts?lang=fr');
+        await page.getByRole('button', { name: 'Par deck', exact: true }).click();
+        const dialog = page.getByRole('dialog', { name: 'Passer en mode par deck ?' });
+        await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
+        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 60_000 });
+        expect(tried).toBeGreaterThan(0);
+      } finally {
+        await page.goto(`${DECKS}?lang=fr`);
+        await ownership(page, 'PUT', '/api/alt-arts/preference-mode', { mode: 'PerDeck' });
+      }
+    });
+  });
+
+  test('shows the whole card window on a short phone screen (browser bars): the card shrinks, the buttons stay visible', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    // 390 × 640: a phone whose browser shows its address bar and its navigation bar.
+    await page.setViewportSize(compact ? { width: 390, height: 640 } : { width: 1440, height: 640 });
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, `E2E zoom fits ${Date.now()}`, ['ALT_CORE_B_AX_04_C']);
+    const fits = async (shot: string) => {
+      await page.getByRole('button', { name: /^Agrandir Élémentaire de Kélon/ }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'Élémentaire de Kélon' });
+      const detail = dialog.getByRole('link', { name: 'Accéder au détail' });
+      await expect(detail).toBeVisible();
+      await evidence(page, testInfo, shot);
+      await expect(detail).toBeInViewport({ ratio: 1 });
+      // The card's 3D stage may round its edge by a fraction of a pixel.
+      await expect(dialog.locator('ac-card-tile')).toBeInViewport({ ratio: 0.99 });
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    };
+    // Editor: copies and « Choisir les illustrations ».
+    await page.goto(`${EDITOR(id)}&view=apercu`);
+    await fits('29-card-zoom-short-screen');
   });
 
   test('names a public deck in the page title and link preview, also from a site-style link', async ({ page }) => {
@@ -818,6 +1455,29 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await page.goto(`${DECK('00000000-0000-0000-0000-000000000000')}&lang=fr`);
     await expect(page.locator('app-deck-page').getByRole('alert')).toContainText('Deck introuvable.');
     await evidence(page, testInfo, '25-deck-not-found');
+  });
+
+  test('back from a deck opened far down the list puts the list where it was', { tag: '@mobile' }, async ({ page }, testInfo) => {
+    const name = `E2E back ${testInfo.project.name} ${Date.now()}`;
+    await login(page, 'alice', `${DECKS}?lang=fr`);
+    const id = await createServerDeck(page, name);
+    await page.goto(DECKS);
+    const item = page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name });
+    await expect(item).toBeVisible();
+    // Room below the page, as with a long list. The scroll stops below the sticky site header and app bar (phones):
+    // <html>'s scroll-padding-top.
+    const before = await item.evaluate((el) => {
+      document.body.style.paddingBottom = '200vh';
+      el.scrollIntoView({ block: 'start', behavior: 'instant' });
+      return window.scrollY;
+    });
+    expect(before).toBeGreaterThan(0);
+    await item.getByRole('link').first().click();
+    await expect(page).toHaveURL(at(`${EDITOR(id)}&view=apercu`));
+    await page.goBack();
+    await expect(page).toHaveURL(at(DECKS));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+    await expect(item).toBeInViewport();
   });
 });
 
@@ -852,24 +1512,30 @@ test.describe('ReBuilder in the shell · guest', () => {
   });
 });
 
-test.describe('ReBuilder in the shell · « Partager » and « Terminer » in the editor', () => {
-  /** « Partager »: a button on desktop, an icon in the app bar on mobile. */
-  const shareButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Partager', exact: true });
-  const doneButton = (page: Page) => page.locator('app-editor-page').getByRole('button', { name: 'Terminer', exact: true });
+test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
+  /** « Partager »: a button on desktop; on phones, in the app bar's « ⋯ » menu (the search view's title takes the room). */
+  const share = async (page: Page, compact: boolean) => {
+    const editor = page.locator('app-editor-page');
+    if (!compact) return editor.getByRole('button', { name: 'Partager', exact: true }).click();
+    await page.locator('ac-app-bar').getByRole('button', { name: 'Plus d’actions' }).click();
+    await page.getByRole('menuitem', { name: 'Partager' }).click();
+  };
 
-  test('saves the deck first, then shares it, then goes back to the deck page', async ({ page, compact }, testInfo) => {
+  test('saves the deck first, then shares it', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
     const name = `E2E share ${testInfo.project.name} ${Date.now()}`;
     await login(page, 'bob', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     const created = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/services/decks/api/decks');
     await createDeck(page, name);
-    const deck = (await (await created).json()) as { id: string };
-    await expect(page).toHaveURL(at(EDITOR(deck.id)));
+    expect((await created).status()).toBe(201);
+    const deck = { id: await editorDeckId(page) };
 
     // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
     const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
     await addTwoCards(page);
-    await shareButton(page).click();
+    // The deck bar counts the rarities the format caps (from 768 px).
+    if (!compact) await expect(page.locator('app-deck-bar').getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
+    await share(page, compact);
     const patch = await saved;
     expect(((patch.request().postDataJSON() as { deckCards?: unknown[] }).deckCards ?? []).length).toBeGreaterThanOrEqual(2);
     const dialog = page.getByRole('dialog', { name: 'Partager ce deck' });
@@ -882,20 +1548,22 @@ test.describe('ReBuilder in the shell · « Partager » and « Terminer » in th
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
 
-    await doneButton(page).click();
-    await expect(page).toHaveURL(at(DECK(deck.id)));
-    await expect(page.locator('app-deck-page')).toContainText(name);
-    if (!compact) await expect(page.locator('app-deck-page').getByRole('button', { name: 'Modifier le deck' })).toBeVisible();
+    // « Mes decks » of the deck bar leaves the editor (from 768 px; the app bar's back button on phones).
+    if (!compact) {
+      await page.locator('app-deck-bar').getByRole('link', { name: 'Mes decks' }).click();
+      await expect(page).toHaveURL(/\/pages\/decks(\?|$)/);
+      await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: name })).toBeVisible();
+    }
   });
 
-  test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page }, testInfo) => {
+  test('a guest signs in to share: the deck moves to the account and the share window opens', async ({ page, compact }, testInfo) => {
     const name = `E2E invité ${testInfo.project.name} ${Date.now()}`;
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, name);
     await expect(page).toHaveURL(/\/pages\/deckbuilder\?id=guest-[^&]+$/);
     await addTwoCards(page);
 
-    await shareButton(page).click();
+    await share(page, compact);
     const prompt = page.getByRole('dialog', { name: 'Connectez-vous pour partager' });
     await expect(prompt).toContainText('Pour partager ce deck et l’enregistrer sur le serveur, connectez-vous.');
     await evidence(page, testInfo, '41-editor-share-sign-in');
@@ -951,5 +1619,164 @@ test.describe('ReBuilder in the shell · side panels of the editor', () => {
     await expect(filters).toBeVisible();
     await expect(deckPanel).toBeVisible();
     await expect(editor.getByRole('button', { name: 'Masquer le deck' })).toBeFocused();
+  });
+});
+
+test.describe('ReBuilder in the shell · loading', () => {
+  test('requests its modules from <head>, the deck once while they load, and the ownership from the deck ids', async ({ page, compact }) => {
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E chargement ${Date.now()}`);
+    const id = await editorDeckId(page);
+
+    const requests: { url: string; method: string }[] = [];
+    page.on('request', (r) => requests.push({ url: r.url(), method: r.method() }));
+    const failed: string[] = [];
+    page.on('response', (r) => {
+      if (r.url().includes('/plugins/rebuilder/') && r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
+    });
+    const deckAnswer = page.waitForResponse((r) => new URL(r.url()).pathname === `/api/v1/services/decks/api/decks/${id}` && r.request().method() === 'GET');
+    // A fresh load of the editor: the deck was created in this tab before, now only the account says it is alice's.
+    requests.length = 0;
+    await page.goto(`${EDITOR(id)}&lang=fr`);
+    expect(await (await deckAnswer).headerValue('content-encoding')).toBe('gzip');
+    // Once the account's deck ids are in, the owner's actions replace their skeletons: « Partager » on desktop, on phones
+    // the hero of the app bar (« Partager » moves to its « ⋯ » menu).
+    const editor = page.locator('app-editor-page');
+    await expect(compact ? editor.locator('ac-app-bar').getByRole('button', { name: /^Changer de héros/ }) : editor.getByRole('button', { name: 'Partager', exact: true })).toBeVisible();
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
+    await addTwoCards(page);
+    await expectDeckCount(page, compact, 2);
+
+    // The page's modules, preloaded once its stylesheets are in: entry, bootstrap, shared chunks and the editor's.
+    expect(await page.locator('head link[rel="modulepreload"]').count()).toBeGreaterThanOrEqual(5);
+    expect(failed).toEqual([]);
+    const paths = requests.map((r) => ({ ...r, path: new URL(r.url).pathname, query: new URL(r.url).searchParams }));
+    expect(paths.filter((r) => r.method === 'GET' && r.path === `/api/v1/services/decks/api/decks/${id}`)).toHaveLength(1);
+    expect(paths.filter((r) => r.path === '/papi/rebuilder/my-deck-ids')).toHaveLength(1);
+    expect(paths.filter((r) => r.path === '/api/v1/services/decks/api/decks' && r.method === 'GET')).toHaveLength(0);
+
+    // The test hand comes with its own chunk, when its view opens (once the two cards are saved).
+    await saved;
+    await page.goto(`${EDITOR(id)}&view=main&lang=fr`);
+    await expect(page.locator('app-editor-page').getByRole('list', { name: 'Main de départ' })).toBeVisible();
+  });
+
+  test('draws its first screen in place of the server\'s skeleton, without moving it (layout shift)', { tag: '@mobile' }, async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cls: number };
+      w.__cls = 0;
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) if (!e.hadRecentInput) w.__cls += e.value;
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    // The app's scripts wait until the server's skeleton is on screen.
+    let releaseScripts!: () => void;
+    const scripts = new Promise<void>((resolve) => (releaseScripts = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/main-[^/]+\.js/, async (route) => {
+      await scripts;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${DECKS}?lang=fr`, { waitUntil: 'commit' });
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await page.waitForTimeout(300);
+    releaseScripts();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('ac-deck-card').first()).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(await page.evaluate(() => (window as unknown as { __cls: number }).__cls)).toBeLessThan(0.1);
+  });
+
+  test('keeps the server\'s skeleton until the page draws, never an empty frame in between', { tag: '@mobile' }, async ({ page }) => {
+    // A public deck seeded by the stack (docker/stack/seed-decks.php).
+    const [decks, manifestRes] = await Promise.all([
+      page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } }),
+      page.request.get('/plugins/rebuilder/dist/embed-manifest.json'),
+    ]);
+    const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];
+
+    // The deck page's own modules are held: the app starts (its root, its router) but cannot draw the page yet.
+    const manifest = (await manifestRes.json()) as { preload: Record<string, string[]> };
+    const pageChunks = manifest.preload['deck'].filter((chunk) => !manifest.preload['*'].includes(chunk));
+    expect(pageChunks.length).toBeGreaterThan(0);
+    let releasePage!: () => void;
+    const pageModules = new Promise<void>((resolve) => (releasePage = resolve));
+    await page.route((url) => pageChunks.some((chunk) => url.pathname.endsWith(`/${chunk}`)), async (route) => {
+      await pageModules;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
+    // The app's root is drawn: a placeholder taken for the first screen would go at the next frame.
+    await expect(page.locator('app-rebuilder-embed')).toBeAttached();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    // The first paint waits for the skeleton (not the site header over an empty page): <head> names an element after it.
+    const expectLink = page.locator('head link[rel="expect"][blocking="render"]');
+    await expect(expectLink).toHaveAttribute('href', '#ac-spa-rebuilder-parsed');
+    await expect(page.locator('#ac-spa-rebuilder:has(> .ac-spa-placeholder) + #ac-spa-rebuilder-parsed')).toHaveCount(1);
+    // Once the plugin's stylesheets reset its shadow host (`:host { all: initial }`), the skeleton keeps the site's font.
+    await expect.poll(() => page.evaluate(() => [...document.querySelector('#ac-spa-rebuilder')!.shadowRoot!.querySelectorAll('link[rel="stylesheet"]')].every((l) => (l as HTMLLinkElement).sheet))).toBe(true);
+    expect(await page.locator('.ac-spa-placeholder').evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Figtree');
+
+    releasePage();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
+  });
+
+  test('« Mon deck » on a phone: nothing moves or changes look while the owner, the alt-art mode and the rarity icons arrive', { tag: '@mobile' }, async ({ page, compact }) => {
+    test.skip(!compact, 'the « Deck » view is a phone view');
+    await login(page, 'alice', `${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E mon deck ${Date.now()}`);
+    const id = await editorDeckId(page);
+    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${id}`) && r.ok());
+    await addTwoCards(page);
+    await saved;
+
+    // Held: the account's deck ids (the owner, which shows « Illustrations des jetons »), the alt-art mode and the
+    // rarity icons of the summary (sized by their height only).
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/papi\/rebuilder\/my-deck-ids|\/alt-arts\/preference-mode|\/assets\/icons\/rarete-/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${EDITOR(id)}&view=deck&lang=fr`);
+    const section = page.locator('app-deck-list-view ac-deck-section').first();
+    await expect(section).toBeVisible();
+    const before = await section.boundingBox();
+    // The rows have their steppers already, not a read-only « ×1 » replaced once the owner is known.
+    await expect(section.locator('ac-deck-row ac-stepper')).toHaveCount(2);
+    await expect(section.locator('ac-deck-row .qty')).toHaveCount(0);
+
+    release();
+    await expect(page.getByRole('button', { name: 'Illustrations des jetons' })).toBeVisible();
+    await expect(page.locator('ac-rarity-summary img').first()).toHaveJSProperty('complete', true);
+    expect((await section.boundingBox())?.y).toBe(before?.y);
+  });
+
+  test('draws its first screen with its styles: the server\'s skeleton stays while they load', { tag: '@mobile' }, async ({ page }) => {
+    const decks = await page.request.get('/api/v1/services/decks/api/decks/public', { params: { itemsPerPage: 1 }, headers: { Accept: 'application/json' } });
+    const deck = ((await decks.json()) as { member: { id: string; name: string }[] }).member[0];
+    // The plugin's own stylesheet (shadow root) is held: the app draws its page, unstyled, which must not show.
+    let releaseStyles!: () => void;
+    const styles = new Promise<void>((resolve) => (releaseStyles = resolve));
+    await page.route(/\/plugins\/rebuilder\/dist\/browser\/embed\.css/, async (route) => {
+      await styles;
+      await route.continue();
+    });
+    await emptyCache(page);
+    await page.goto(`${DECK(deck.id)}&lang=fr`, { waitUntil: 'commit' });
+    const root = page.locator('.ac-plugin-root');
+    await expect(page.locator('app-deck-page ac-app-bar, app-deck-page app-deck-bar').first()).toBeAttached();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('.ac-spa-placeholder .ac-skeleton').filter({ visible: true }).first()).toBeVisible();
+    await expect(root).toHaveCSS('visibility', 'hidden');
+
+    releaseStyles();
+    await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
+    await expect(root).toHaveCSS('visibility', 'visible');
+    await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
   });
 });

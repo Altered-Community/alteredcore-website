@@ -13,8 +13,10 @@ export class AcEffectSummary {
   readonly effect = input.required<EffectBlock>();
   readonly title = input($localize`:@@ui.effectSummary.title:Effet 1`);
   readonly edit = output<void>();
+  readonly duplicate = output<void>();
   readonly remove = output<void>();
   protected readonly editLabel = computed(() => $localize`:@@ui.effectSummary.edit:Modifier ${this.title()}:title:`);
+  protected readonly duplicateLabel = computed(() => $localize`:@@ui.effectSummary.duplicate:Dupliquer ${this.title()}:title:`);
   protected readonly removeLabel = computed(() => $localize`:@@ui.effectSummary.remove:Supprimer ${this.title()}:title:`);
   protected readonly rows = computed(() => {
     const e = this.effect();

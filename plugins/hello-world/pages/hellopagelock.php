@@ -81,7 +81,7 @@ $greeting  = $db->query(qp("SELECT value FROM {settings} WHERE `key` = 'greeting
                         </tr>
                         <tr>
                             <td><?= h($txt['mail_label']) ?></td>
-                            <td><code><?= h($userMail) ?></code></td>
+                            <td><code><?= ac_masked_email((string)$userMail) ?></code></td>
                             <td class="ac-text-small ac-text-muted"><?= h($txt['mail_note']) ?></td>
                         </tr>
                     </tbody>

@@ -135,10 +135,12 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 | `ownership-search` | Digital ownership scope |
 | `favorites-search` / `favorites-toggle` | Per-user favorites (local PHP DB) |
 | `deck-add-card` | Incremental add: GET deck + PATCH full `deckCards` |
-| `deck-alt-arts` | Alt-art options for a card in a deck |
+| `deck-alt-arts` | Families of illustrations of deck and search references: prints, copies owned, the player's default alt arts (`core/alt-art-defaults.ts`) |
 | `playset` / `playset-cards` | Physical playset dashboard |
 
-Ownership plugin (when enabled): `/papi/ownership/alt-art-search`, `alt-art-set-preference`.
+Ownership plugin (when enabled): `/papi/ownership/alt-art-search` (token illustrations), the alt-art mode is read through the relay (`GET /api/alt-arts/preference-mode`: in « Global », the deck follows the default alt arts and has no brush). Token illustrations are saved through the relay (`PUT /api/alt-arts/preferences`).
+
+Rebuilder plugin: `/papi/rebuilder/deck-alt-arts` keeps the brush's choices for a deck of the signed-in player (table `{rebuilder_deck_alt_arts}`, `sql/migration_009`), because the decks API stores only the deck's references (no order, nothing past its copies). `GET ?deck=` → `{"families": {"<familyId>:<faction>:<rarity>": ["<1st card>", "<2nd>", "<3rd>"]}}`; `POST {deck, family, cards}` saves a family's three cards (`cards: null`: it follows the default alt arts again); `POST {deck}` drops every family of the deck. No row for a family whose three cards take the plain print; a deck deleted through the services relay or the site's deck pages loses its rows (`altArtForgetDeck`, `includes/func.alt-arts.php`). The player's default alt arts stay in the ownership service.
 
 ## Local stack
 

@@ -4,8 +4,18 @@
  * (js/altered-core-host.js), so .ac-plugin-root gets the same defaults as the page.
  */
 
+/* What the browser scrolls to the top (keyboard focus, scrollIntoView, #anchors, find in page) stops under the
+   sticky site header and a plugin's sticky bar instead of behind them (WCAG 2.4.11 Focus Not Obscured). */
+html {
+  scroll-padding-top: calc(var(--ac-page-top) + var(--ac-scroll-top-offset));
+}
+
+/* .ac-spa-placeholder: the server's skeleton of an SPA page (includes/spa.php), shown through a slot of the plugin's
+   shadow root while the plugin loads. A plugin stylesheet that resets its host (`:host { all: initial }`) cuts what the
+   skeleton inherits from the page: without its own font and colour it turns serif once that stylesheet loads. */
 body,
-.ac-plugin-root {
+.ac-plugin-root,
+.ac-spa-placeholder {
   background: var(--ac-color-bg-app);
   color: var(--ac-color-text);
   font: var(--ac-font-body);
@@ -14,7 +24,10 @@ body,
   -webkit-tap-highlight-color: transparent;
 }
 
-.ac-plugin-root {
+/* The page fills the window under the site header, and so does its skeleton: the site footer is never on the first
+   screen while the page loads, where the page's content would push it down (a layout shift). */
+.ac-plugin-root,
+.ac-spa-placeholder {
   display: block;
   min-height: calc(100dvh - var(--ac-page-top));
 }

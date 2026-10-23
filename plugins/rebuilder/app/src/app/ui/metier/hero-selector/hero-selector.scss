@@ -20,6 +20,11 @@
   margin-inline: calc(-1 * var(--bleed));
   padding: var(--ac-space-1-5) var(--bleed);
 }
+/* The row's height for every faction, and while the heroes load: a tile with a name on two lines and the « Indispo. BGA »
+   badge (20 px, hero-tile), so that the form under it does not move. */
+:host(.layout-carousel) .track {
+  min-height: calc(112px * 7 / 5 + 2 * var(--ac-space-2) + 2 * 1.25 * var(--ac-font-size-small) + 20px + 2 * var(--ac-space-1-5));
+}
 :host(.layout-carousel) .track::-webkit-scrollbar {
   display: none;
 }

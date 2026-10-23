@@ -2,10 +2,6 @@
   display: block;
 }
 
-ac-app-bar.static {
-  position: static;
-}
-
 .state {
   padding: var(--ac-space-10) var(--ac-page-padding);
   text-align: center;
@@ -33,6 +29,12 @@ ac-app-bar.static {
 /* « Revenir en haut » sits above the bottom navigation. */
 .search {
   --app-search-bottom-inset: calc(var(--ac-bottom-nav-height) + env(safe-area-inset-bottom));
+}
+
+/* The app bar stays on screen with the hero and the rarities (phones, editable deck): the search head sticks below it. */
+.search.under-app-bar {
+  --app-search-top: var(--ac-app-bar-height);
+  --app-search-safe-top: 0px;
 }
 
 .banner {
@@ -66,7 +68,7 @@ ac-app-bar.static {
   white-space: pre-line;
 }
 
-/* « Partager » / « Terminer » while the deck is being saved first. */
+/* « Partager » while the deck is being saved first. */
 .waiting ::ng-deep .ac-icon {
   animation: ac-icon-spin 1s linear infinite;
 }
@@ -77,79 +79,77 @@ ac-app-bar.static {
   }
 }
 
-.done {
-  padding-inline: var(--ac-space-2-5);
-}
-
 /* ---------- medium and up ---------- */
 @media (min-width: 768px) {
+  /* The deck bar and the modes row span the page; the main column and the deck panel share the row below. */
   .editor {
+    flex-wrap: wrap;
+    row-gap: var(--ac-space-4);
     padding: var(--ac-space-6);
     align-items: flex-start;
   }
 
+  .top {
+    flex: 0 0 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-4);
+  }
+
   .main {
+    flex: 1 1 0;
     gap: var(--ac-space-4);
   }
 
-  .head-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ac-space-4);
-    margin-bottom: calc(-1 * var(--ac-space-3));
+  /* Deck bar actions: two columns of small buttons in « Aperçu », one row in the reduced bar. */
+  .bar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(var(--deck-bar-action-width), max-content));
+    gap: var(--ac-space-1-5);
   }
 
-  .head-top .actions {
+  .bar-actions.row {
     display: flex;
     align-items: center;
-    gap: var(--ac-space-2);
+  }
+
+  .bar-actions > button[acButton] {
+    padding: 0 var(--ac-space-2-5);
+  }
+
+  /* Modes, the board's hint, the save state, the tokens' illustrations. */
+  .modes {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ac-space-3) var(--ac-space-6);
+  }
+
+  /* The mode labels stay whole: the segmented control ellipsizes spans once a button may shrink. */
+  .modes ac-segmented {
     flex-shrink: 0;
   }
 
-  .head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: var(--ac-space-6);
-  }
-
-  /* « Recherche » sits next to « Voir le deck ». The label must stay whole:
-     the segmented control ellipsizes spans once a button is allowed to shrink. */
-  .head ac-segmented {
-    flex-shrink: 0;
-  }
-
-  .head ac-segmented ::ng-deep button {
+  .modes ac-segmented ::ng-deep button {
     min-width: max-content;
     overflow: visible;
   }
 
-  .head ac-segmented ::ng-deep button span {
+  .modes ac-segmented ::ng-deep button span {
     overflow: visible;
     text-overflow: clip;
   }
 
-  .title-block {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ac-space-1);
-    min-width: 0;
+  .hint {
+    flex: 1 1 12rem;
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
   }
 
-  .title-row {
-    display: flex;
-    align-items: center;
-    gap: var(--ac-space-3);
-    min-width: 0;
-  }
-
-  .title-row ac-editable-title {
-    min-width: 0;
-  }
-
-  .title-row ac-save-status {
-    flex-shrink: 0;
+  /* No hint (« Recherche », « Main de départ »): only the space between the modes and the buttons. */
+  .hint:empty {
+    flex-basis: 0;
   }
 
   /* The deck panel and its « Masquer » handle, on the panel's left edge. */
@@ -158,11 +158,15 @@ ac-app-bar.static {
     flex-shrink: 0;
     position: sticky;
     top: calc(var(--ac-sticky-top) + var(--ac-space-6));
-    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+    /* As tall as its cards, the window's height at most (then its list scrolls). */
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
   }
 
   .panel app-deck-panel {
-    height: 100%;
+    flex: 0 1 auto;
+    min-height: 0;
   }
 
   /* Deck hidden: the tab takes its place, against the right edge of the page. */
@@ -177,13 +181,29 @@ ac-app-bar.static {
     color: var(--ac-color-success);
   }
 
+  /* The count takes two digits' room, so the tab keeps its length from 0 to 99 cards. */
+  .deck-tab .count {
+    display: inline-block;
+    min-inline-size: 2ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* While the deck opens: the label's text hidden in its skeleton, which keeps the label's length. */
+  .deck-tab .ac-drawer-tab__label.ac-skeleton {
+    width: auto;
+    color: transparent;
+    border-radius: var(--ac-radius-pill);
+  }
+
   /* The filters tab of the card search reaches the left edge of the page the same way. */
   .search {
     --app-drawer-bleed: var(--ac-space-6);
   }
 }
 
-@media (min-width: 1200px) {
+/* 300 px up to 1440 px: the search results keep three columns of cards from 1332 px (1366 px laptops). */
+@media (min-width: 1440px) {
   .panel {
     width: var(--ac-deck-panel-width);
   }
@@ -192,4 +212,89 @@ ac-app-bar.static {
   display: flex;
   flex-direction: column;
   gap: var(--ac-space-6);
+}
+
+/* ---------- App bar of the search and « Aperçu » views (phones) ---------- */
+/* Projected into ac-app-bar: the hero opens « Choisir un héros », the title « Résumé du deck ». */
+.bar-hero {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.bar-hero-art {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ac-radius-pill);
+  overflow: hidden;
+  background: var(--ac-color-track);
+  box-shadow: 0 0 0 2px var(--ac-color-surface), 0 0 0 3px var(--ac-color-border-control);
+}
+.bar-hero-swap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  color: var(--ac-color-primary-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bar-deck {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  min-height: var(--ac-hit-min);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 var(--ac-space-1);
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: none;
+  color: var(--ac-color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.bar-deck-name {
+  max-width: 100%;
+  font-size: var(--ac-font-size-heading);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-deck-sub {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+  white-space: nowrap;
+}
+/* The hero and the deck title in skeleton (appBarPending): nothing to click yet. */
+.bar-hero:not(button),
+.bar-deck--pending {
+  cursor: default;
+}
+.bar-hero:focus-visible,
+.bar-deck:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: -2px;
 }

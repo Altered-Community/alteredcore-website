@@ -37,7 +37,8 @@ In-page tabs (ARIA tab pattern):
 | `ac-tabs--underline` | 44 px tabs on a bottom border; the active tab has a 2 px primary underline, primary-strong bold text. Scrolls horizontally (scrollbar hidden) when it overflows. |
 | `ac-tabs--pill` | `--ac-control-sm` pills with a control border; the active pill is inverse (dark in light theme). Scrolls horizontally. Suited to compact screens. |
 | `ac-tabs--fill` | With `--underline`: the tabs share the row (centred labels, 8 px side padding) instead of scrolling. On a phone, keep 4 short labels and put the others in a « Plus » tab (`chevron-down` icon) that opens an `ac-menu`; when one of them is active, the « Plus » tab shows its label and the active style. |
-| `ac-tabs__count` | Muted number after the label. |
+| `ac-tabs__count` | Muted number after the label (tabular figures). |
+| `ac-tabs__count-value` | The number in `ac-tabs__count`, at least three digits wide: a count that loads (« … ») or changes does not move the next tabs. |
 
 Active tab: `aria-selected="true"` (tab pattern), `aria-current` (links), or `.is-active`.
 
@@ -102,6 +103,36 @@ opening are up to the page (a `<details>`, a popover, a script); the class only 
 The Bootstrap `.dropdown-menu` is restyled to look the same (see
 [bootstrap-bridge.md](bootstrap-bridge.md)); new code uses `ac-menu`.
 
+## Contents — `ac-toc`
+
+Panel of in-page links for a long page: a title, a list, optional sub-links. The link of the
+section being read carries `aria-current` (set it from a scroll observer); the list has no numbers
+unless `ac-toc--numbered` is set. Collapsing it on narrow screens is the page's job (a button and a
+panel around it).
+
+```php
+<nav class="ac-toc ac-toc--sticky" aria-label="<?= h(t('rules.contents')) ?>">
+  <p class="ac-toc__title"><?= h(t('rules.contents')) ?></p>
+  <ol class="ac-toc__list">
+    <li><a href="#setup" aria-current="true"><?= h(t('rules.setup')) ?></a></li>
+    <li><a href="#day"><?= h(t('rules.day')) ?></a>
+      <ul class="ac-toc__sub">
+        <li><a href="#morning"><?= ac_icon('sun', 'ac-icon--16') ?> <?= h(t('rules.morning')) ?></a></li>
+      </ul>
+    </li>
+  </ol>
+</nav>
+```
+
+| Class | Effect |
+|---|---|
+| `ac-toc` | Surface panel, border, `--ac-radius-lg`. |
+| `ac-toc--sticky` | Sticks under the site header while the page scrolls. |
+| `ac-toc--numbered` | Two-digit counter before each top-level item. |
+| `ac-toc__title` | Centred overline label; may hold a small image. |
+| `ac-toc__list` | The links; `aria-current` on a link = current section. |
+| `ac-toc__sub` | Sub-links under an item, smaller and muted. |
+
 ## Density
 
 | Element | Pointer | Touch |
@@ -133,7 +164,7 @@ The Bootstrap `.dropdown-menu` is restyled to look the same (see
 <ac-breadcrumb [items]="[{ label: 'Decks', route: '/decks' }, { label: deck.name }]" />
 ```
 
-`ac-tabs`: `tabs` (`{ id, label, count? }[]`), two-way `active`, `appearance` (`underline` |
+`ac-tabs`: `tabs` (`{ id, label, count? }[]`, `count: null` while it loads), two-way `active`, `appearance` (`underline` |
 `pill`), `ariaLabel`. Menus are built with the overlay service (`ui/overlay/`) and the
 `ac-menu` classes.
 

@@ -1,0 +1,42 @@
+name: Stack images
+
+# Builds the e2e stack images (web, decks-api) on preprod and writes their layers to the GitHub Actions cache.
+# Pull requests only read that cache (plugins-ci.yml, job e2e): a cache written by a pull request is scoped to its
+# own ref and no other pull request can read it, while every pull request against preprod reads preprod's.
+#   • push on preprod: a merged Dockerfile or decks API commit is cached for the next pull requests;
+#   • weekly: GitHub drops caches unused for 7 days, the schedule keeps this one when nothing is merged.
+on:
+  push:
+    branches: [preprod]
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: stack-images
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cache:
+    name: Build and cache the stack images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the stack images
+        # Same targets and scopes as plugins-ci.yml (job e2e).
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          files: |
+            docker-compose.yml
+            docker-compose.stack.yml
+          targets: web,decks-api
+          set: |
+            web.cache-from=type=gha,scope=stack-web
+            web.cache-to=type=gha,scope=stack-web,mode=max
+            decks-api.cache-from=type=gha,scope=stack-decks-api
+            decks-api.cache-to=type=gha,scope=stack-decks-api,mode=max
