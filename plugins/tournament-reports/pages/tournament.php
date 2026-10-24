@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'duplicat
     $cards = json_decode($_POST['cards'] ?? '[]', true);
     if (!is_array($cards)) $cards = [];
     $name = trim($_POST['name'] ?? '');
-    echo json_encode(trDuplicateDeckToAccount($cards, $name));
+    echo json_encode(trDuplicateDeckToAccount($cards, $name, trim($_POST['format'] ?? '')));
     exit;
 }
 
@@ -117,6 +117,7 @@ $localization   = '';
 $description    = '';
 $notFoundError  = null;
 $loginRequired  = false;
+$deckFormat     = 'standard';   // deckbuilder format of the tournament's mode, used when duplicating a deck
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 if (!$userId) {
@@ -130,6 +131,7 @@ if (!$userId) {
         $localization   = $live['localization'];
         $description    = $live['description'];
         $standings      = $live['standings'];
+        $deckFormat     = trDeckFormatForMode($live['mode'] ?? null);
 
         // Decode every distinct deck each shown player used this tournament
         // (not just the main one) for the decklist rendering pipeline
@@ -284,7 +286,8 @@ var TR_STANDINGS       = <?= json_encode($standings, JSON_HEX_TAG | JSON_UNESCAP
 var TR_TOURNAMENT_DATA = <?= json_encode($tournamentData, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
 var TR_TOURNAMENT_ID = <?= json_encode(h($tournamentId)) ?>;
 var TR_TOURNAMENT_NAME = <?= json_encode(h($tournamentName)) ?>;
-var TR_LOCALIZATION  = <?= json_encode(h($localization)) ?>;
+var TR_DECK_FORMAT   = <?= json_encode($deckFormat) ?>;
+var TR_LOCALIZATION  =<?= json_encode(h($localization)) ?>;
 var TR_CARDS_API_URL = <?= json_encode(defined('CARDS_API_URL') && CARDS_API_URL !== '' ? CARDS_API_URL : null) ?>;
 </script>
 <?php endif; ?>
