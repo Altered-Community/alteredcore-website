@@ -386,7 +386,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}feedback_rate_limit` (
 INSERT INTO `{prefix}footer_links` (`id`, `label_en`, `label_fr`, `url`, `icon`, `column_num`, `sort_order`, `created_at`) VALUES
 (1, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 2, 1, '2026-05-13 18:00:00'),
 (2, 'RSS', 'RSS', '/pages/rss', 'fa-solid fa-square-rss', 2, 4, '2026-05-13 18:02:21'),
-(3, 'Altered.gg', 'Altered.gg', 'https://altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
+(3, 'Altered.gg', 'Altered.gg', 'https://www.altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
 (4, 'Board Game Arena', 'Board Game Arena', 'https://boardgamearena.com/', 'fak fa-bga', 3, 6, '2026-05-13 18:04:11');
 
 INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
