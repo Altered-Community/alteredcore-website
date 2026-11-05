@@ -747,6 +747,7 @@
 
         var body = 'csrf_token=' + encodeURIComponent(TR_CSRF)
             + '&name=' + encodeURIComponent(name)
+            + '&format=' + encodeURIComponent(TR_DECK_FORMAT || 'standard')
             + '&cards=' + encodeURIComponent(JSON.stringify(cards));
 
         fetch(TR_BASE + '/pages/tournament?id=' + encodeURIComponent(TR_TOURNAMENT_ID) + '&ajax=duplicate', {

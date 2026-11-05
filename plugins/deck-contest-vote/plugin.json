@@ -1,0 +1,36 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "deck-contest-vote",
+    "name":         "Deck contest vote",
+    "version":      "1.0.0",
+    "description":  "Community vote of the preconstructed decks contest as a tier list: one signed-in account, only the decks the voter ranks count, a flag for decks that are frustrating to face, decklists shown in place, results in the admin.",
+    "author":       "AlteredCore",
+    "icon":         "vote",
+    "table_prefix": "dcv",
+
+    "pages": [
+        {"slug": "deck-vote", "file": "pages/vote.php", "title_en": "Decks contest: vote", "title_fr": "Concours de decks : vote"}
+    ],
+
+    "admin": [
+        {
+            "section":  "deck-vote",
+            "file":     "admin/results.php",
+            "label_en": "Deck contest vote",
+            "label_fr": "Vote concours de decks",
+            "icon":     "vote"
+        }
+    ],
+
+    "api": [
+        {"endpoint": "vote", "file": "papi/vote.php", "methods": ["POST"], "auth": "user"}
+    ],
+
+    "assets": {
+        "css": ["assets/vote.css"],
+        "js":  ["assets/vote.js"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["decks", "votes", "settings"]
+}

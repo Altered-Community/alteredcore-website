@@ -399,16 +399,40 @@ function trUserApiToken(): ?string
 }
 
 /**
+ * Deckbuilder format key (core-altered-cards' altered.json "formats") matching
+ * a raw GameApi tournament mode, through each format's "gg_format" code — the
+ * same lookup the GG deck import does. Unknown modes (Demo, Sealed…) fall back
+ * to the permissive 'sandbox' format.
+ */
+function trDeckFormatForMode(?string $mode): string
+{
+    $mode = strtoupper(trim((string)$mode));
+    if ($mode !== '') {
+        foreach (loadAlteredData('formats') as $key => $fmt) {
+            if (isset($fmt['gg_format']) && $fmt['gg_format'] === $mode) {
+                return (string)$key;
+            }
+        }
+    }
+    return 'sandbox';
+}
+
+/**
  * Duplicate a decoded decklist onto the logged-in user's own account, the
  * same way core-altered-cards' "Dupliquer" action does for an existing deck
- * (plugins/core-altered-cards/pages/deck.php) — a private, non-draft standard
- * deck with the same cards.
+ * (plugins/core-altered-cards/pages/deck.php) — a private, non-draft deck with
+ * the same cards, in the tournament's deckbuilder format.
  *
  * @param array<int, array{reference: string, quantity: int}> $cards
+ * @param string $format deckbuilder format key; anything unknown becomes 'standard'
  * @return array{ok: bool, id?: string, error?: string}
  */
-function trDuplicateDeckToAccount(array $cards, string $name): array
+function trDuplicateDeckToAccount(array $cards, string $name, string $format = 'standard'): array
 {
+    if (!array_key_exists($format, loadAlteredData('formats'))) {
+        $format = 'standard';
+    }
+
     $token = trUserApiToken();
     if (!$token) {
         return ['ok' => false, 'error' => 'You must be logged in to duplicate a deck.'];
@@ -425,7 +449,7 @@ function trDuplicateDeckToAccount(array $cards, string $name): array
 
     $payload = [
         'name'      => trim($name) !== '' ? trim($name) : 'Deck',
-        'format'    => 'standard',
+        'format'    => $format,
         'isPublic'  => false,
         'isDraft'   => false,
         'deckCards' => $deckCards,
