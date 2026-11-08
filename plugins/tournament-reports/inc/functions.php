@@ -11,6 +11,10 @@
  */
 
 require_once __DIR__ . '/Deckfmt/Deckfmt.php';
+// loadAlteredData() (deckbuilder formats, used by trDeckFormatForMode() and
+// trDuplicateDeckToAccount()) lives in core-altered-cards; the router only loads
+// this plugin's page file, so require it here for every page and admin screen.
+require_once dirname(__DIR__, 2) . '/core-altered-cards/includes/functions.php';
 
 use TournamentReports\Deckfmt\Deckfmt;
 
