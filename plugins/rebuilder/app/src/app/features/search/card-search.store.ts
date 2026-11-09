@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { map, type Observable } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
 import {
+  defaultEnvironment,
   defaultFilters,
   filterChips,
   isAccountSource,
@@ -175,10 +176,13 @@ export class CardSearchStore {
 
   configure(source: CardSource, faction: string | null, format: DeckFormat | null = null): void {
     const changedSource = source !== this.source();
+    const changedFormat = format !== this.format();
     this.source.set(source);
     this.faction.set(faction);
     this.format.set(format);
-    if (changedSource) this.filters.set(defaultFilters(source));
+    if (changedSource) this.filters.set(defaultFilters(source, format));
+    // The deck's format changed under the Uniques tab: Frontier on or off, the other filters kept.
+    else if (changedFormat && source === 'uniques') this.filters.update((f) => ({ ...f, environment: defaultEnvironment(source, format) }));
     this.configured.set(true);
     this.restart();
   }
@@ -197,12 +201,12 @@ export class CardSearchStore {
   }
 
   clearAll(): void {
-    const empty = { ...defaultFilters(this.source()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
+    const empty = { ...defaultFilters(this.source(), this.format()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
     this.apply(empty);
   }
 
   reset(): void {
-    this.apply(defaultFilters(this.source()));
+    this.apply(defaultFilters(this.source(), this.format()));
   }
 
   /** Sentinel visibility from the view. */

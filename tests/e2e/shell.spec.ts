@@ -52,11 +52,13 @@ test.describe('Shell · SPA pages', () => {
         lang: ac['lang'],
         user: ac['user'],
         basePath: ac.page['basePath'],
+        // Frontier season id for the Uniques search (admin setting, 'frontier' by default).
+        uniquesFrontierFormat: ac['uniquesFrontierFormat'],
         methods: ['fetch', 'login', 'setTitle', 'getMount', 'on'].filter((m) => typeof ac[m] === 'function'),
         shadow: !!el.shadowRoot,
       };
     });
-    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/', shadow: true });
+    expect(host).toMatchObject({ version: 1, lang: 'fr', user: null, basePath: '/pages/', uniquesFrontierFormat: 'frontier', shadow: true });
     expect(host.methods).toHaveLength(5);
     // No token API: authenticated services are reached through the site's relay.
     expect(await page.evaluate(() => 'getAccessToken' in (window as unknown as { AlteredCore: object }).AlteredCore)).toBe(false);

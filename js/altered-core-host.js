@@ -56,6 +56,8 @@
         user: config.user || null,
         csrf: config.csrf || '',
         services: config.services || {},
+        // Format id of the Frontier list on services.uniques (admin setting, one id per season).
+        uniquesFrontierFormat: config.uniquesFrontierFormat || 'frontier',
         page: config.page || {},
 
         login: function (returnTo) {

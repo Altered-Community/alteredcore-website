@@ -128,6 +128,33 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(store.hasMore()).toBe(false);
   });
 
+  it('lists only the current Frontier season in the Uniques tab of a Frontier deck', async () => {
+    store.configure('uniques', 'AX', 'frontier');
+    expect(store.filters().environment).toBe('frontier');
+    const [req] = pendingUniques();
+    expect(req.request.params.get('format')).toBe('frontier');
+    req.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    await settle();
+
+    // The deck goes Standard: every Unique, the other filters kept.
+    store.patch({ q: 'kelon' });
+    pendingUniques()[0].flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    store.configure('uniques', 'AX', 'standard');
+    expect(store.filters()).toMatchObject({ environment: 'all', q: 'kelon' });
+    const [std] = pendingUniques();
+    expect(std.request.params.has('format')).toBe(false);
+    std.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    await settle();
+
+    // « Réinitialiser » goes back to the deck's default.
+    store.configure('uniques', 'AX', 'frontier');
+    store.patch({ environment: 'all' });
+    store.reset();
+    expect(store.filters().environment).toBe('frontier');
+    await settle();
+    for (const r of pendingUniques()) r.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+  });
+
   it('flags a page that is still loading after SLOW_MS, and clears it on response', async () => {
     vi.useFakeTimers();
     try {
