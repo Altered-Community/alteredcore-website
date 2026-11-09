@@ -318,6 +318,7 @@ var AlteredCard = {
     isUnique: <?= $_refIsUnique ? 'true' : 'false' ?>,
     apiBase:  <?= json_encode(CARDS_API_URL) ?>,
     uniquesApiBase: <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
+    uniquesFrontierFormat: <?= json_encode(cacUniquesFrontierFormat()) ?>,
     cdnBase:  <?= json_encode(CDN_URL) ?>,
     baseUrl:  <?= json_encode(BASE_URL) ?>,
     factions: <?= json_encode($factionsData) ?>,
@@ -666,7 +667,7 @@ var AlteredCard = {
         // resolved either as legal or (now confirmed) not legal. Left out of both
         // lists if unverifiable, mirroring deckbuilder.php's checkFrontierLegality().
         if (isUnique && UNIQUES_API && pendingFrontierFmts.length) {
-            fetch(UNIQUES_API + '/api/v2/cards?ref=' + encodeURIComponent(ref) + '&format=frontier', { headers: { 'Accept': 'application/json' } })
+            fetch(UNIQUES_API + '/api/v2/cards?ref=' + encodeURIComponent(ref) + '&format=' + encodeURIComponent(AlteredCard.uniquesFrontierFormat || 'frontier'), { headers: { 'Accept': 'application/json' } })
                 .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                 .then(function (data) {
                     var legalRefs = {};

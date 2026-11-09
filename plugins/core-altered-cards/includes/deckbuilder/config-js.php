@@ -199,6 +199,7 @@ var AlteredDB = {
     altArtMarkerImg: <?= json_encode(BASE_URL . '/plugins/ownership/assets/selected_alt.png') ?>,
     altArtSetPreferenceUrl: <?= json_encode($_ownMode ? BASE_URL . '/papi/ownership/alt-art-set-preference' : '') ?>,
     uniquesApiBase:  <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
+    uniquesFrontierFormat: <?= json_encode(cacUniquesFrontierFormat()) ?>,
     cardsApiMaxPerPage: <?= (int) CARDS_API_MAX_PER_PAGE ?>,
     cardsDisplayPerPage: <?= (int) CARDS_DISPLAY_PER_PAGE ?>,
     cardDetailBase: <?= json_encode(BASE_URL . '/pages/card') ?>,
