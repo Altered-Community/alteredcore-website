@@ -241,7 +241,7 @@
         });
         if (!pending.length) return;
         pending.forEach(function(ref) { _frontierCheckInFlight[ref] = true; });
-        fetch(AlteredDB.uniquesApiBase + '/api/v2/cards?ref=' + pending.map(encodeURIComponent).join(',') + '&format=frontier')
+        fetch(AlteredDB.uniquesApiBase + '/api/v2/cards?ref=' + pending.map(encodeURIComponent).join(',') + '&format=' + encodeURIComponent(AlteredDB.uniquesFrontierFormat || 'frontier'))
             .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function(data) {
                 var legal = {};

@@ -626,3 +626,53 @@ function cacStartingHandStatsTxt(string $lang): array
     ];
     return $t[$lang] ?? $t['en'];
 }
+
+// Uniques search API format id used for the Frontier allowlist (`format=<id>`).
+// Each Frontier season is published as its own entry in the formats manifest
+// (frontier, frontier-s04, ...), so the active id is a site setting editable in
+// Admin > Uniques format. Falls back to 'frontier' when unset or invalid.
+function cacIsValidUniquesFormatId(string $id): bool {
+    return preg_match('/^[A-Za-z0-9_.-]{1,32}$/', $id) === 1;
+}
+
+function cacUniquesFrontierFormat(): string {
+    $id = trim(getSetting('uniques_frontier_format', 'frontier'));
+    return cacIsValidUniquesFormatId($id) ? $id : 'frontier';
+}
+
+function cacFormatsManifestUrl(): string {
+    return defined('FORMATS_MANIFEST_URL') && FORMATS_MANIFEST_URL !== ''
+        ? FORMATS_MANIFEST_URL
+        : 'https://altered-reunion-formats-prod.s3.fr-par.scw.cloud/manifest.json';
+}
+
+// Fetch the public formats manifest (array of {id, name, path, version}).
+// Returns the valid entries, or null when the manifest can't be fetched/parsed.
+function cacFetchFormatsManifest(): ?array {
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL            => cacFormatsManifestUrl(),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode !== 200 || $response === false) return null;
+
+    $data = json_decode((string) $response, true);
+    if (!is_array($data)) return null;
+    $entries = [];
+    foreach ($data as $entry) {
+        $id = is_array($entry) ? (string) ($entry['id'] ?? '') : '';
+        if (!cacIsValidUniquesFormatId($id)) continue;
+        $entries[] = [
+            'id'      => $id,
+            'name'    => (string) ($entry['name'] ?? $id),
+            'version' => $entry['version'] ?? null,
+        ];
+    }
+    return $entries;
+}

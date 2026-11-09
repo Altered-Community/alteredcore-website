@@ -70,6 +70,11 @@ define('CARDS_API_URL',     'https://cards.alteredcore.org');
 // Uniques search API (rust-cards-api / uniques-search-api), dev-local only for now.
 // Leave empty to keep the Uniques tab on CARDS_API_URL (old backend).
 define('UNIQUES_API_URL',   'http://localhost:8005');
+// Public formats manifest (JSON array of {id, name, path, version}) listing the
+// uniques search API format ids. Only read by Admin > Uniques format to offer the
+// Frontier format id dropdown. Optional: defaults to the prod manifest below.
+// Preprod: https://altered-reunion-formats-preprod.s3.fr-par.scw.cloud/manifest.json
+define('FORMATS_MANIFEST_URL', 'https://altered-reunion-formats-prod.s3.fr-par.scw.cloud/manifest.json');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
 define('CDN_URL',           'https://cdn.alteredcore.org');
 // Digital ownership service (AlteredOwnership).

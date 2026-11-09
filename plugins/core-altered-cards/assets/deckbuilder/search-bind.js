@@ -153,7 +153,7 @@
         if (!root || !legality) return;
         var wantFrontier = legality.key === 'frontier';
         var targetBtn = root.querySelector(
-            '.filter-toggle[data-filter="format"][data-value="' + (wantFrontier ? 'frontier' : '') + '"]'
+            '.filter-toggle[data-filter="format"][data-value="' + (wantFrontier ? (AlteredDB.uniquesFrontierFormat || 'frontier') : '') + '"]'
         );
         if (targetBtn && !targetBtn.classList.contains('active')) targetBtn.click();
         if (window.updateFilterCount) window.updateFilterCount();
