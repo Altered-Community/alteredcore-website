@@ -6,6 +6,7 @@
  * window.AlteredCore (version 1)
  *   version, baseUrl, siteName, lang ('en' | 'fr'), theme ('light' | 'dark'),
  *   user ({ id, username, sub } | null), csrf, services ({ cards, cdn, uniques, decks, collection, ownership }),
+ *   uniquesFrontierFormat (format id of the Frontier list on services.uniques, e.g. 'frontier_s04'; optional),
  *   page ({ plugin, slug, basePath, subPath, assetsUrl, apiUrl, mount })
  *   Design system: getMount() injects the design system's base and ac-* component stylesheets
  *   into the plugin's shadow root before the plugin's CSS; the --ac-* tokens inherit from

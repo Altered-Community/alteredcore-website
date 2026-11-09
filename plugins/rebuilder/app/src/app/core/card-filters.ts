@@ -1,5 +1,6 @@
 import type { CardOrder, CardSearchParams, DeckFormat } from './models';
 import type { UniquesQuery } from './uniques-api.service';
+import { environment } from '../../environments/environment';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
 import type { OwnedSource } from './owned-cards.service';
@@ -249,7 +250,8 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     sets: filters.sets,
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
-    format: filters.environment === 'frontier' ? 'frontier' : undefined,
+    // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
+    format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
     effects: filters.effects.map((b) => ({
       triggers: b.triggers.map((x) => x.id),
       conditions: b.conditions.map((x) => x.id),
