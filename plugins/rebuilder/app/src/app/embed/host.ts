@@ -15,6 +15,8 @@ export interface AlteredCoreHost {
   readonly csrf: string;
   /** cards / cdn / uniques: public, called directly. decks / collection / ownership: the site's relay, which adds the token. */
   readonly services: { cards?: string; cdn?: string; uniques?: string; decks?: string; collection?: string; ownership?: string };
+  /** `format=` id of the Frontier list on `services.uniques` (admin setting, one id per season); absent from older shells. */
+  readonly uniquesFrontierFormat?: string;
   /** apiUrl: the plugin's own PHP endpoints (`/papi/rebuilder/`, manifest "api"). */
   readonly page: { plugin: string; slug: string; basePath: string; subPath: string; assetsUrl: string; apiUrl: string; mount: 'shadow' | 'light' };
   /** window.fetch for same-origin calls, with the session cookie and X-CSRF-Token on writes. */

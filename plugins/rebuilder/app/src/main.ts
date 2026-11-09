@@ -14,6 +14,7 @@ const host = readHost();
 const env = environment as { -readonly [K in keyof typeof environment]: (typeof environment)[K] };
 env.cardsApiUrl = host.services.cards || env.cardsApiUrl;
 env.uniquesApiUrl = host.services.uniques || env.uniquesApiUrl;
+env.uniquesFrontierFormat = host.uniquesFrontierFormat || env.uniquesFrontierFormat;
 env.decksApiUrl = host.services.decks || env.decksApiUrl;
 env.cdnUrl = host.services.cdn || env.cdnUrl;
 env.ownershipApiUrl = host.services.ownership || env.ownershipApiUrl;

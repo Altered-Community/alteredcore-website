@@ -145,6 +145,17 @@ function spaProxyServices(): array {
     return $out;
 }
 
+/**
+ * Uniques search format id of the Frontier list (`format=<id>`): the site setting `uniques_frontier_format`,
+ * edited in core-altered-cards' admin « Uniques format » (same rule as its cacUniquesFrontierFormat(), whose
+ * file the shell does not load). Each Frontier season is its own entry of the formats manifest
+ * (frontier, frontier_s04, …); 'frontier' when unset or invalid.
+ */
+function spaUniquesFrontierFormat(): string {
+    $id = trim(getSetting('uniques_frontier_format', 'frontier'));
+    return preg_match('/^[A-Za-z0-9_.-]{1,32}$/', $id) === 1 ? $id : 'frontier';
+}
+
 /** The data half of window.AlteredCore (the methods live in js/altered-core-host.js). */
 function spaHostConfig(array $page): array {
     $kcMode   = defined('KC_URL') && KC_URL !== '';
@@ -180,6 +191,9 @@ function spaHostConfig(array $page): array {
         // Public services are called directly; authenticated ones through the same-origin relay,
         // which adds the session's token server-side (the browser never sees it).
         'services' => $services,
+        // Format id to send to services.uniques for the Frontier list (optional member: older
+        // shells omit it, plugins then fall back to 'frontier').
+        'uniquesFrontierFormat' => spaUniquesFrontierFormat(),
         'page'     => [
             'plugin'    => $page['plugin_id'],
             'slug'      => $page['slug'],
