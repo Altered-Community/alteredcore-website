@@ -38,7 +38,7 @@ export class FiltersSheetOverlay {
   constructor() {
     this.ref.title.set(FILTERS_TITLE);
     this.ref.subtitle.set(SOURCE_LABEL[this.ref.data.source]);
-    this.ref.headerAction.set({ label: $localize`:@@search.card.reset:Réinitialiser`, run: () => this.draft.set(defaultFilters(this.ref.data.source)) });
+    this.ref.headerAction.set({ label: $localize`:@@search.card.reset:Réinitialiser`, run: () => this.draft.set(defaultFilters(this.ref.data.source, this.ref.data.format)) });
   }
 
   editEffect(index: number): void {

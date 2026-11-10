@@ -1,5 +1,6 @@
 import type { CardOrder, CardSearchParams, DeckFormat } from './models';
 import type { UniquesQuery } from './uniques-api.service';
+import { environment } from '../../environments/environment';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
 import type { OwnedSource } from './owned-cards.service';
@@ -159,7 +160,15 @@ export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'random', label: $localize`:@@search.filters.order.random:Aléatoire` },
 ];
 
-export function defaultFilters(source: CardSource): SearchFilters {
+/**
+ * The Uniques tab of a Frontier deck lists the current Frontier season only (the site's deck builder does the same);
+ * `null` format (decks section, no deck open) or any other format: every Unique.
+ */
+export function defaultEnvironment(source: CardSource, format: DeckFormat | null = null): SearchFilters['environment'] {
+  return source === 'uniques' && format === 'frontier' ? 'frontier' : 'all';
+}
+
+export function defaultFilters(source: CardSource, format: DeckFormat | null = null): SearchFilters {
   return {
     q: '',
     mainCost: '',
@@ -168,7 +177,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     rarities: source === 'uniques' ? [] : rarityOptionsFor(source).map((r) => r.value),
     types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
     factions: [],
-    environment: 'all',
+    environment: defaultEnvironment(source, format),
     effects: [],
     order: 'setDate-desc',
     noEffect: false,
@@ -249,7 +258,8 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     sets: filters.sets,
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
-    format: filters.environment === 'frontier' ? 'frontier' : undefined,
+    // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
+    format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
     effects: filters.effects.map((b) => ({
       triggers: b.triggers.map((x) => x.id),
       conditions: b.conditions.map((x) => x.id),

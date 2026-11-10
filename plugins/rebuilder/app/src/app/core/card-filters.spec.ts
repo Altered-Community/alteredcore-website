@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { buildUniquesParams } from './uniques-api.service';
 import {
   ALL_CARDS_SETS,
@@ -101,6 +102,18 @@ describe('toUniquesQuery (Uniques search API)', () => {
     expect(first.get('format')).toBe('frontier');
     expect(buildUniquesParams(q, 3591698, 36).get('cursor')).toBe('3591698');
     expect(toUniquesQuery(defaultFilters('uniques'), null).format).toBeUndefined();
+  });
+
+  it('sends the site\'s current Frontier season id (AlteredCore.uniquesFrontierFormat)', () => {
+    const env = environment as { uniquesFrontierFormat: string };
+    const saved = env.uniquesFrontierFormat;
+    env.uniquesFrontierFormat = 'frontier_s04';
+    try {
+      const q = toUniquesQuery({ ...defaultFilters('uniques'), environment: 'frontier' as const }, null);
+      expect(buildUniquesParams(q, null, 36).get('format')).toBe('frontier_s04');
+    } finally {
+      env.uniquesFrontierFormat = saved;
+    }
   });
 
   it('turns an exact reference into a card lookup', () => {

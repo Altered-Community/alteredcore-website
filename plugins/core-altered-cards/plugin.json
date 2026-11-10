@@ -43,6 +43,13 @@
             "label_en": "Altered JSON",
             "label_fr": "Altered JSON",
             "icon":     "fa-solid fa-code"
+        },
+        {
+            "section":  "uniques-format",
+            "file":     "admin/uniques-format.php",
+            "label_en": "Uniques format",
+            "label_fr": "Format des Uniques",
+            "icon":     "fa-solid fa-map"
         }
     ],
 
