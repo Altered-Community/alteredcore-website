@@ -12,7 +12,17 @@ $_factions = [
 ];
 $_cardsApi  = defined('CARDS_API_URL') ? CARDS_API_URL : 'https://cards.alteredcore.org';
 $_cdn       = defined('CDN_URL') ? CDN_URL : '';
-$_worldLang = getLang() === 'fr' ? 'fr' : 'en';
+$_worldLang = in_array(getLang(), ['fr', 'es', 'it', 'de'], true) ? getLang() : 'en';   // card names and images of the cards API
+// Curated references (world-cards.yaml): heros and cards per faction code, one drawn at random for each tab.
+// The file is a two-level list (section, faction code, references), read here without a YAML library.
+$_curated = ['heros' => [], 'cards' => []];
+$_ySection = $_yCode = '';
+foreach (@file(dirname(__DIR__) . '/world-cards.yaml', FILE_IGNORE_NEW_LINES) ?: [] as $_line) {
+    $_line = rtrim(preg_replace('/\s#.*$/', '', $_line));
+    if (preg_match('/^(heros|cards):$/', $_line, $_m)) { $_ySection = $_m[1]; $_yCode = ''; }
+    elseif ($_ySection && preg_match('/^\s+([A-Z]{2}):$/', $_line, $_m)) { $_yCode = $_m[1]; }
+    elseif ($_ySection && $_yCode && preg_match('/^\s+-\s+(ALT_\w+)$/', $_line, $_m)) { $_curated[$_ySection][$_yCode][] = $_m[1]; }
+}
 $_setArt    = [];   // key art of six main sets (assets/img/discover/sets, all 729x409), one picked at random for the introduction tab
 $_setFile   = dirname(__DIR__, 3) . '/plugins/core-altered-cards/data/altered.json';
 $_setData   = is_file($_setFile) ? json_decode(ltrim((string)file_get_contents($_setFile), "ï»¿"), true) : [];
@@ -27,7 +37,8 @@ $_setPick = $_setArt ? $_setArt[array_rand($_setArt)] : null;
 ?>
 <div class="discover-world" id="discover-world"
      data-api="<?= h($_cardsApi) ?>" data-cdn="<?= h($_cdn) ?>" data-locale="<?= h($_worldLang) ?>"
-     data-credit="<?= h($tx['world.credit'] ?? '') ?>">
+     data-credit="<?= h($tx['world.credit'] ?? '') ?>"
+     data-curated="<?= h(json_encode($_curated)) ?>">
 
     <p class="discover-lead"><?= pageText($tx, 'world.lead') ?></p>
 

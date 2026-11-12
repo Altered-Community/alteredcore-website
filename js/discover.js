@@ -145,6 +145,8 @@
   var CDN = (root.getAttribute('data-cdn') || '').replace(/\/$/, '');
   var LOCALE = root.getAttribute('data-locale') || 'en';
   var CREDIT = root.getAttribute('data-credit') || '';
+  var CURATED = { heros: {}, cards: {} };
+  try { CURATED = JSON.parse(root.getAttribute('data-curated')) || CURATED; } catch (e) { /* no curated list: random cards */ }
   var tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
   var panels = {};
   Array.prototype.forEach.call(root.querySelectorAll('[role="tabpanel"]'), function (p) { panels[p.getAttribute('data-faction')] = p; });
@@ -162,7 +164,7 @@
       if (on && focus) t.focus();
     });
     Object.keys(panels).forEach(function (k) { panels[k].hidden = k !== slug; });
-    if (changed) load(slug);
+    if (changed) { load(slug); restart(); }
   }
   tabs.forEach(function (t, i) {
     t.addEventListener('click', function () {
@@ -218,6 +220,40 @@
       return l.filter(function (c) { return usable(c, code) && c.cardType && c.cardType.reference === 'HERO' && c.mainEffect; });
     });
   }
+  // Carousel order: each list is shuffled once per page load, then walked in a loop (the same card never repeats
+  // before the others have been shown).
+  function shuffle(list) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function queue(list) { return { list: shuffle(list), i: 0 }; }
+  function next(q) { var v = q.list[q.i % q.list.length]; q.i++; return v; }
+  var queues = {};
+
+  // Swap an image for another one without a jump: load the new one off screen, fade out, swap, fade in.
+  function swap(img, src, apply) {
+    if (img.getAttribute('src') === src) return;
+    var pre = new Image();
+    pre.onload = function () {
+      img.classList.add('is-changing');
+      setTimeout(function () {
+        img.onload = function () { img.classList.remove('is-changing'); };
+        apply();
+        img.src = src;
+      }, 300);
+    };
+    pre.src = src;
+  }
+
+  // Curated lists (world-cards.yaml): a reference fetched by exact reference (fast), fetched by exact reference (fast).
+  var byRef = {};
+  function curated(ref, code) {
+    if (!ref) return Promise.resolve(null);
+    if (!byRef[ref]) byRef[ref] = fetchList(API + '/api/cards?locale=' + LOCALE + '&reference=' + ref)
+      .then(function (l) { return usable(l[0], code) ? l[0] : null; }, function () { delete byRef[ref]; return null; });
+    return byRef[ref];
+  }
   function candidates(code) {
     if (!pending[code]) {
       var others = fetchList(url(code, 'itemsPerPage=40&random=true&' + TYPES.map(function (t) { return 'cardType[]=' + t; }).concat(RARITIES.map(function (r) { return 'rarity[]=' + r; })).join('&')))
@@ -236,28 +272,45 @@
     figure.hidden = false;
     var img = figure.querySelector('img');
     var frame = figure.querySelector('.discover-art__frame');
-    frame.classList.remove('is-loaded');
-    img.hidden = true;
-    img.alt = card.name || '';
-    img.onload = function () { frame.classList.add('is-loaded'); img.hidden = false; };
+    var credit = figure.querySelector('figcaption');
     // The site's card image CDN (as the cards page), not the API's imagePath, which points at a dev S3 bucket.
-    img.src = CDN + '/cards/' + LOCALE + '/' + card.reference.split('_')[1] + '/' + card.reference + '.webp';
-    figure.querySelector('figcaption').textContent = CREDIT.replace('{artist}', card.artists[0].name);
+    var src = CDN + '/cards/' + LOCALE + '/' + card.reference.split('_')[1] + '/' + card.reference + '.webp';
+    function apply() {
+      img.alt = card.name || '';
+      credit.textContent = CREDIT.replace('{artist}', card.artists[0].name);
+    }
+    if (frame.classList.contains('is-loaded')) { swap(img, src, apply); return; }
+    // First image of this slot: the skeleton stays until it has loaded.
+    img.hidden = true;
+    img.onload = function () { frame.classList.add('is-loaded'); img.hidden = false; };
+    apply();
+    img.src = src;
   }
 
-  // Introduction tab: key art of a set, another one each time the tab is shown.
+  // Introduction tab: key art of a set, the next one of a shuffled loop each time.
   function setArt(panel) {
     var fig = panel.querySelector('.discover-set');
     if (!fig) return;
     var list;
     try { list = JSON.parse(fig.getAttribute('data-images')); } catch (e) { return; }
+    if (!list.length) return;
+    var q = queues.intro || (queues.intro = queue(list));
+    var s = next(q);
     var img = fig.querySelector('img');
-    var others = list.filter(function (s) { return img.src.indexOf(s.src) < 0; });
-    var s = pick(others.length ? others : list);
-    if (!s) return;
-    img.src = s.src;
-    img.alt = (fig.getAttribute('data-alt') || '{set}').replace('{set}', s.name);
-    fig.querySelector('figcaption').textContent = s.name;
+    swap(img, s.src, function () {
+      img.alt = (fig.getAttribute('data-alt') || '{set}').replace('{set}', s.name);
+      fig.querySelector('figcaption').textContent = s.name;
+    });
+  }
+
+  // One slot (hero or card) of a faction goes on to its next illustration.
+  function advance(slug, slot) {
+    var panel = panels[slug], code = panel.getAttribute('data-code'), q = queues[slug];
+    var figure = panel.querySelector('[data-slot="' + slot + '"]');
+    var card = (q && q[slot])
+      ? curated(next(q[slot]), code)
+      : candidates(code).then(function (r) { return pick(slot === 'hero' ? r.heroes : r.cards); });
+    card.then(function (c) { if (c) draw(figure, c); }).catch(function () {});
   }
 
   // The candidates are fetched once per faction; a new pair is drawn each time the faction is shown,
@@ -266,8 +319,15 @@
     var panel = panels[slug];
     if (slug === 'intro') { setArt(panel); return; }
     var art = panel.querySelector('.discover-faction__art');
-    candidates(panel.getAttribute('data-code')).then(function (r) {
-      var hero = pick(r.heroes), card = pick(r.cards);
+    var code = panel.getAttribute('data-code');
+    var h = CURATED.heros[code], c = CURATED.cards[code];
+    var q = queues[slug] || (queues[slug] = (h && h.length && c && c.length) ? { hero: queue(h), card: queue(c) } : {});
+    // A faction missing from the file keeps the old behaviour: random cards from the API.
+    var pair = (h && h.length && c && c.length)
+      ? Promise.all([curated(next(q.hero), code), curated(next(q.card), code)])
+      : candidates(code).then(function (r) { return [pick(r.heroes), pick(r.cards)]; });
+    pair.then(function (r) {
+      var hero = r[0], card = r[1];
       draw(panel.querySelector('[data-slot="hero"]'), hero);
       draw(panel.querySelector('[data-slot="card"]'), card);
       art.classList.toggle('is-empty', !hero && !card);
@@ -276,6 +336,35 @@
       art.classList.add('is-empty');
     });
   }
+
+  // Carousel: the key art of the introduction changes every 5 seconds. On a faction, each card changes every 6 seconds,
+  // the other card (the Hero) 3 seconds later, so the two never change together. It stands still while the pointer is
+  // over the illustrations, when the page is in the background, and for visitors who asked for less motion.
+  var STEP = 6000;
+  var still = false;
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timers = [];
+  function every(ms, delay, fn) {
+    var t = setTimeout(function () {
+      fn();
+      timers.push(setInterval(fn, ms));
+    }, delay);
+    timers.push(t);
+  }
+  function restart() {
+    timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    timers = [];
+    if (calm || !current) return;
+    var go = function (fn) { return function () { if (!still && !document.hidden) fn(); }; };
+    if (current === 'intro') { every(5000, 5000, go(function () { setArt(panels.intro); })); return; }
+    every(STEP, STEP, go(function () { advance(current, 'card'); }));
+    every(STEP, STEP / 2, go(function () { advance(current, 'hero'); }));
+  }
+  Array.prototype.forEach.call(root.querySelectorAll('.discover-faction__art, .discover-set'), function (el) {
+    el.addEventListener('mouseenter', function () { still = true; });
+    el.addEventListener('mouseleave', function () { still = false; restart(); });
+  });
+  restart();
 
   fromHash(true);
   // No hash: the faction selected in the HTML (the first one)

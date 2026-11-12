@@ -1,0 +1,173 @@
+# Illustrations of the Discover page, section "The world and its art" (pages/_discover/sections/world.php).
+# For each faction, one reference of each list is drawn at random; add or remove references freely.
+# heros: the first card of the pair (a Hero). cards: the second one, ideally representative of the faction.
+# A reference is the one of the standard version, as the cards API knows it (ALT_<SET>_B_<FACTION>_<NUMBER>_<RARITY>).
+
+heros:
+  AX:
+    - ALT_DUSTER_B_AX_85_C  # Della & Bolt
+    - ALT_CYCLONE_B_AX_65_C  # Isaree & Pebble
+    - ALT_CORE_B_AX_01_C  # Sierra & Oddball
+    - ALT_CORE_B_AX_03_C  # Subhash & Marmo
+    - ALT_CORE_B_AX_02_C  # Treyst & Rossum
+  BR:
+    - ALT_CORE_B_BR_02_C  # Atsadi & Surge
+    - ALT_CORE_B_BR_03_C  # Basira & Kaizaimon
+    - ALT_EOLE_B_BR_105_C  # Gretel & Rust
+    - ALT_CORE_B_BR_01_C  # Kojo & Booda
+    - ALT_CYCLONE_B_BR_65_C  # Sol & Halua
+  LY:
+    - ALT_CORE_B_LY_02_C  # Auraq & Kibble
+    - ALT_CORE_B_LY_03_C  # Fen & Crowbar
+    - ALT_CYCLONE_B_LY_65_C  # Nadir & Bubbles
+    - ALT_CORE_B_LY_01_C  # Nevenka & Blotch
+    - ALT_EOLE_B_LY_105_C  # Yeong-gi & Ember
+  MU:
+    - ALT_CORE_B_MU_02_C  # Arjun & Spike
+    - ALT_CYCLONE_B_MU_65_C  # Kauri & Puff
+    - ALT_CORE_B_MU_03_C  # Rin & Orchid
+    - ALT_CORE_B_MU_01_C  # Teija & Nauraa
+    - ALT_DUSTER_B_MU_85_C  # Turuun & Benih
+  OR:
+    - ALT_CORE_B_OR_03_C  # Gulrang & Tocsin
+    - ALT_DUSTER_B_OR_85_C  # Matz & Hive
+    - ALT_CORE_B_OR_01_C  # Sigismar & Wingspan
+    - ALT_CORE_B_OR_02_C  # Waru & Mack
+    - ALT_CYCLONE_B_OR_65_C  # Zhen & Zephyr
+  YZ:
+    - ALT_CORE_B_YZ_03_C  # Afanas & Senka
+    - ALT_CORE_B_YZ_01_C  # Akesha & Taru
+    - ALT_CORE_B_YZ_02_C  # Lindiwe & Maw
+    - ALT_CYCLONE_B_YZ_65_C  # Moyo & Silk
+    - ALT_EOLE_B_YZ_105_C  # Sam & Spook
+
+cards:
+  AX:
+    - ALT_CORE_B_AX_07_C  # Mécanicienne de la Fonderie
+    - ALT_CORE_B_AX_04_C  # Élémentaire de Kélon
+    - ALT_CORE_B_AX_16_R1  # Armurière de la Fonderie
+    - ALT_CORE_B_AX_17_C  # Dr Frankenstein
+    - ALT_CORE_B_AX_30_R1  # Ruche des Scarabots
+    - ALT_CORE_B_AX_29_R1  # La Fonderie, Bastion Axiom
+    - ALT_ALIZE_B_AX_40_C  # Gibil
+    - ALT_ALIZE_B_AX_38_R1  # Prototype Défectueux
+    - ALT_BISE_B_AX_53_R1  # Les Grems
+    - ALT_CYCLONE_B_AX_76_C  # Sceau Axiom
+    - ALT_CYCLONE_B_AX_81_C  # Station de Réapprovisionnement
+    - ALT_CYCLONE_B_AX_80_C  # Navette des Scarabots
+    - ALT_CYCLONE_B_AX_74_R1  # Lucan, Léviathan Affamé
+    - ALT_DUSTER_B_AX_90_C  # Thomas Edison
+    - ALT_DUSTER_B_AX_98_C  # Rencontre Technologique
+    - ALT_DUSTER_B_AX_101_R1  # Exposition Axiom
+    - ALT_DUSTER_B_AX_95_E  # Sphura, Hexarque Reka
+    - ALT_EOLE_B_AX_107_C  # Petit Poucet
+    - ALT_EOLE_B_AX_116_R1  # Stigmate de la Stagnation
+    - ALT_CYCLONE_B_AX_70_C  # Paju, Pilote Axiom
+    - ALT_EOLE_B_AX_117_E  # Fléau d'Avarice
+  BR:
+    - ALT_CORE_B_BR_07_C  # Traceuse Bravos
+    - ALT_CORE_B_BR_06_R1  # Petit Djinn
+    - ALT_CORE_B_BR_22_R1  # Shenlong
+    - ALT_CORE_B_BR_24_R1  # Kaibara, Léviathan Asgarthi
+    - ALT_CORE_B_BR_30_C  # Havre, Bastion Bravos
+    - ALT_ALIZE_B_BR_32_C  # Lapin Ardent
+    - ALT_ALIZE_B_BR_45_C  # Barre Énergétique Mangez-Moi
+    - ALT_BISE_B_BR_59_R1  # Hydre de Lerne
+    - ALT_CYCLONE_B_BR_79_C  # Sceau Bravos
+    - ALT_CYCLONE_B_BR_67_C  # Partenaire d'Altrun
+    - ALT_CYCLONE_B_BR_69_C  # Guetteur de Léviathans
+    - ALT_CYCLONE_B_BR_77_R1  # Halua, Léviathan Déchaîné
+    - ALT_CYCLONE_B_BR_80_C  # Rage
+    - ALT_DUSTER_B_BR_101_R1  # Frère Disparu
+    - ALT_DUSTER_B_BR_99_C  # Rencontre au Marché
+    - ALT_EOLE_B_BR_106_C  # Raijū
+    - ALT_EOLE_B_BR_114_R1  # Stigmate de la Lâcheté
+    - ALT_CYCLONE_B_BR_78_C  # La Chasse de Sol
+    - ALT_BISE_B_BR_52_C  # Skateuse Talarienne
+    - ALT_EOLE_B_BR_116_E  # Fléau d'Arrogance
+  LY:
+    - ALT_CORE_B_LY_06_C  # Prestidigitatrice de l'Ouroboros
+    - ALT_CORE_B_LY_07_C  # Hathor
+    - ALT_CORE_B_LY_23_C  # Meunier, Tu Dors
+    - ALT_CORE_B_LY_25_C  # Tapis !
+    - ALT_CORE_B_LY_29_R1  # Festival Lyra
+    - ALT_CORE_B_LY_30_R1  # L'Ouroboros, Bastion Lyra
+    - ALT_ALIZE_B_LY_39_C  # Tour de Passe-Passe
+    - ALT_CYCLONE_B_LY_78_C  # Sceau Lyra
+    - ALT_CYCLONE_B_LY_69_C  # Cartographe Lyra
+    - ALT_CYCLONE_B_LY_68_C  # Nymphe des Mers
+    - ALT_CYCLONE_B_LY_76_C  # Daikokuten
+    - ALT_CYCLONE_B_LY_73_R1  # Nout
+    - ALT_CYCLONE_B_LY_74_R1  # Koï, Léviathan Espiègle
+    - ALT_CYCLONE_B_LY_75_C  # Éris
+    - ALT_DUSTER_B_LY_86_C  # Pinocchio
+    - ALT_DUSTER_B_LY_98_E  # Phoibos, Hexarque Reka
+    - ALT_DUSTER_B_LY_100_C  # Rencontre Romantique
+    - ALT_EOLE_B_LY_115_R1  # Stigmate du Ravage
+    - ALT_CORE_B_LY_11_C  # Esmeralda
+    - ALT_EOLE_B_LY_117_E  # Fléau de Désespoir
+  MU:
+    - ALT_CORE_B_MU_04_C  # Soigneuse Muna
+    - ALT_CORE_B_MU_08_R1  # Champignon Éternueur
+    - ALT_CORE_B_MU_16_R1  # Aloe Vera
+    - ALT_CORE_B_MU_22_R1  # Hydracaena
+    - ALT_CORE_B_MU_30_R1  # Le Fuseau, Bastion Muna
+    - ALT_ALIZE_B_MU_33_C  # Perséphone
+    - ALT_BISE_B_MU_56_R1  # Grand Bois
+    - ALT_BISE_B_MU_61_C  # Nourrissement
+    - ALT_CYCLONE_B_MU_79_C  # Sceau Muna
+    - ALT_CYCLONE_B_MU_72_C  # Dodo Dormeur
+    - ALT_CYCLONE_B_MU_70_R1  # Coucou Chamarré
+    - ALT_CYCLONE_B_MU_74_R1  # Zaratan, Léviathan Sociable
+    - ALT_CYCLONE_B_MU_80_C  # Compter les Moutons
+    - ALT_CYCLONE_B_MU_82_R1  # Champ de Laine
+    - ALT_DUSTER_B_MU_88_C  # Botaniste Muna
+    - ALT_DUSTER_B_MU_97_C  # Fils du Naos
+    - ALT_DUSTER_B_MU_96_E  # Ploutos, Hexarque Reka
+    - ALT_DUSTER_B_MU_98_C  # Rencontre Spirituelle
+    - ALT_DUSTER_B_MU_102_R1  # Le Naos
+    - ALT_EOLE_B_MU_113_C  # Karhu, Seigneur des Ours
+    - ALT_EOLE_B_MU_119_C  # Loup y es-tu ?
+    - ALT_EOLE_B_MU_117_R1  # Stigmate de la Belligérance
+    - ALT_EOLE_B_MU_115_E  # Fléau de Préjugé
+  OR:
+    - ALT_CORE_B_OR_05_R1  # Troupière Ordis
+    - ALT_CORE_B_OR_23_C  # Chargez !
+    - ALT_CORE_B_OR_24_C  # Entraînement à l'Esprit d'Équipe
+    - ALT_CORE_B_OR_27_C  # Jour de Célébration
+    - ALT_CORE_B_OR_28_C  # Le Monolithe, Bastion Ordis
+    - ALT_ALIZE_B_OR_38_C  # Sunisa, Enseigne Dévouée
+    - ALT_ALIZE_B_OR_43_C  # Renforts
+    - ALT_BISE_B_OR_59_C  # Retrait de Licence
+    - ALT_CYCLONE_B_OR_78_C  # Sceau Ordis
+    - ALT_CYCLONE_B_OR_67_C  # Troupière Élevée
+    - ALT_CYCLONE_B_OR_74_R1  # Sagitta, Léviathan Céleste
+    - ALT_DUSTER_B_OR_97_E  # Astrape, Hexarque Reka
+    - ALT_DUSTER_B_OR_98_C  # Rencontre Injuste
+    - ALT_DUSTER_B_OR_102_C  # Le Consulat
+    - ALT_DUSTER_B_OR_101_R1  # Les Retrouvailles
+    - ALT_EOLE_B_OR_116_R1  # Stigmate de la Banalité
+    - ALT_CORE_B_OR_16_R1  # Procuratrice Ordis
+    - ALT_EOLE_B_OR_117_E  # Fléau d'Intolérance
+  YZ:
+    - ALT_CORE_B_YZ_05_R1  # Méduse Lunaire
+    - ALT_CORE_B_YZ_11_C  # Baba Yaga
+    - ALT_CORE_B_YZ_14_C  # Flamel
+    - ALT_CORE_B_YZ_17_C  # Le Kraken
+    - ALT_CORE_B_YZ_18_C  # Sakarabru
+    - ALT_CORE_B_YZ_19_C  # Entraînement Magique
+    - ALT_CORE_B_YZ_21_C  # Zou !
+    - ALT_CORE_B_YZ_30_C  # Le Kadigir, Bastion Yzmir
+    - ALT_ALIZE_B_YZ_37_R1  # Nova Hivernale
+    - ALT_ALIZE_B_YZ_44_R1  # Lanterne aux Phalènes
+    - ALT_ALIZE_B_YZ_45_R1  # Le Nilam, Arbre-Monde Flétri
+    - ALT_BISE_B_YZ_56_R1  # L'Affamé
+    - ALT_CYCLONE_B_YZ_76_C  # Sceau Yzmir
+    - ALT_CYCLONE_B_YZ_72_C  # Caladrius
+    - ALT_CYCLONE_B_YZ_73_R1  # Alelo, Léviathan Énigmatique
+    - ALT_CYCLONE_B_YZ_79_R1  # Lavage de Cerveau
+    - ALT_DUSTER_B_YZ_94_E  # Maleros, Hexarque Reka
+    - ALT_DUSTER_B_YZ_97_C  # Rencontre Sportive
+    - ALT_EOLE_B_YZ_107_R1  # Fantôme Terrifié
+    - ALT_EOLE_B_YZ_115_R1  # Stigmate de la Duperie
+    - ALT_EOLE_B_YZ_116_E  # Fléau d'Ignorance

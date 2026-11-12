@@ -27,7 +27,14 @@ function pageText(array $texts, string $key): string {
     return h($texts[$key] ?? $key);
 }
 
-/** Escaped text where **word** becomes <strong>word</strong> (the only markup a text file may carry). */
+/**
+ * Escaped text with the only markup a text file may carry: **word** becomes <strong>word</strong>, and
+ * [label](https://…) becomes a link that opens in a new tab (https addresses only; the "opens in a new tab" hint comes
+ * from the page's `play.external` text when it has one).
+ */
 function pageRich(array $texts, string $key): string {
-    return preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', h($texts[$key] ?? $key));
+    $hint = isset($texts['play.external']) ? '<span class="ac-sr-only"> (' . h($texts['play.external']) . ')</span>' : '';
+    $html = h($texts[$key] ?? $key);
+    $html = preg_replace('/\[([^\]]+)\]\((https:\/\/[^\s)"<]+)\)/u', '<a href="$2" target="_blank" rel="noopener">$1' . $hint . '</a>', $html);
+    return preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $html);
 }
