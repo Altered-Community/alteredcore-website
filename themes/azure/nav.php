@@ -22,6 +22,8 @@ if (!function_exists('acNavActive')) {
         return navUrlIsCurrent($__parsed['path'] ?? '', $currentPage);
     }
 }
+// Card search (header on desktop, burger menu on mobile): opens the Cards page with ?q=
+$__cardSearch = isset($GLOBALS['_ac_active_plugins']['core-altered-cards']);
 ?>
 
 <header class="az-site-header site-header">
@@ -45,6 +47,15 @@ if (!function_exists('acNavActive')) {
                 <?php endif; ?>
                 <span class="az-brand-name"><?= h(getSiteName()) ?></span>
             </a>
+
+            <?php if ($__cardSearch): ?>
+            <!-- Card search: desktop only (the burger menu has its own) -->
+            <form class="az-search ac-input-icon" role="search" action="<?= BASE_URL ?>/pages/cards" method="get">
+                <?= ac_icon('search') ?>
+                <input class="ac-input" type="search" name="q" enterkeyhint="search"
+                       placeholder="<?= h($_hTxt['search_cards']) ?>" aria-label="<?= h($_hTxt['search_cards']) ?>">
+            </form>
+            <?php endif; ?>
 
             <!-- Account button, opens #azAccountMenu (script below): sign in or the user's links, theme, language, beta -->
             <button class="az-account-btn" type="button" id="azAccountBtn"
@@ -182,6 +193,13 @@ foreach ($__navItems as $__ni) {
 ?>
 <div id="azMobileMenu" class="az-mobile-menu" hidden>
     <nav class="az-mm-nav" aria-label="<?= h($_hTxt['menu']) ?>">
+        <?php if ($__cardSearch): ?>
+        <form class="az-mm-search ac-input-icon" role="search" action="<?= BASE_URL ?>/pages/cards" method="get">
+            <?= ac_icon('search') ?>
+            <input class="ac-input" type="search" name="q" enterkeyhint="search"
+                   placeholder="<?= h($_hTxt['search_cards']) ?>" aria-label="<?= h($_hTxt['search_cards']) ?>">
+        </form>
+        <?php endif; ?>
         <?php if ($__mmLinks): ?>
         <div class="az-mm-links">
             <?php foreach ($__mmLinks as $__ni): ?>
@@ -385,7 +403,7 @@ foreach ($__navItems as $__ni) {
 </script>
 <script>
 // Desktop single bar: shrink the header step by step, only as far as needed
-// for the menu to fit between the brand and the account button: tighter spacing,
+// for the menu to fit between the brand and the card search (or the account button): tighter spacing,
 // then the logo without the site name, then icon-only menu items starting
 // from the last one (classes styled in style.css).
 (function () {
@@ -394,7 +412,7 @@ foreach ($__navItems as $__ni) {
     var desktop = window.matchMedia('(min-width: 768px)');
     var steps   = ['az-nav-tight', 'az-nav-no-name'];
     var nav     = header.querySelector('.az-nav-list');
-    var ctrls   = header.querySelector('.az-account-btn');
+    var ctrls   = header.querySelector('.az-search, .az-account-btn');
     if (!nav || !ctrls) return;
     var items   = Array.prototype.slice.call(nav.children).reverse();
 
