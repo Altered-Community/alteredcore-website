@@ -310,13 +310,30 @@ function resolveUrlLang(string $url): string {
     return $url;
 }
 
-function formatDate(string $date): string {
-    $lang  = getLang();
+// $lang: a page translated in more languages than the UI (es, it, de) passes getLang(); by default French or English.
+function formatDate(string $date, ?string $lang = null): string {
+    $own   = $lang !== null;
+    $lang  = $lang ?? getLang();
     $ts    = strtotime($date);
     if ($lang === 'fr') {
         $months = ['janvier','février','mars','avril','mai','juin',
                    'juillet','août','septembre','octobre','novembre','décembre'];
         return date('j', $ts) . ' ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'es') {
+        $months = ['enero','febrero','marzo','abril','mayo','junio',
+                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        return date('j', $ts) . ' de ' . $months[(int)date('n', $ts) - 1] . ' de ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'it') {
+        $months = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
+                   'luglio','agosto','settembre','ottobre','novembre','dicembre'];
+        return date('j', $ts) . ' ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'de') {
+        $months = ['Januar','Februar','März','April','Mai','Juni',
+                   'Juli','August','September','Oktober','November','Dezember'];
+        return date('j', $ts) . '. ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
     }
     return date('F j, Y', $ts);
 }
@@ -1129,7 +1146,7 @@ function getBanner(): array {
             'title'           => $_heroTitle,
             'subtitle'        => $_heroSubtitle,
             'btn_label'       => $_heroCta,
-            'btn_url'         => BASE_URL . '/pages/news',
+            'btn_url'         => BASE_URL . '/pages/discover',
             'bg_image'        => null,
             'overlay_color'   => '#000000',
             'overlay_opacity' => 0,
@@ -1144,7 +1161,7 @@ function getBanner(): array {
                               ? (strpos($row['btn_url'], '//') !== false
                                     ? resolveUrlLang($row['btn_url'])
                                     : BASE_URL . '/' . ltrim(resolveUrlLang($row['btn_url']), '/'))
-                              : BASE_URL . '/pages/news',
+                              : BASE_URL . '/pages/discover',
         'bg_image'        => $row['bg_image'],
         'overlay_color'   => $row['overlay_color']   ?? '#000000',
         'overlay_opacity' => (int)($row['overlay_opacity'] ?? 0),
