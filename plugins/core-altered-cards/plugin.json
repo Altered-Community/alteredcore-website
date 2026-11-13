@@ -33,7 +33,8 @@
         {"endpoint": "deck-add-card",     "file": "api/deck-add-card.php"},
         {"endpoint": "deck-alt-arts",     "file": "api/deck-alt-arts.php"},
         {"endpoint": "deck-image",        "file": "api/deck-image.php",  "methods": ["GET", "HEAD", "POST"]},
-        {"endpoint": "deck-oembed",       "file": "api/deck-oembed.php", "methods": ["GET", "HEAD"]}
+        {"endpoint": "deck-oembed",       "file": "api/deck-oembed.php", "methods": ["GET", "HEAD"]},
+        {"endpoint": "frontier-format",   "file": "api/frontier-format.php", "methods": ["GET", "HEAD", "OPTIONS"]}
     ],
 
     "admin": [
