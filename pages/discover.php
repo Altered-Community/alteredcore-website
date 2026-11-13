@@ -13,11 +13,12 @@ $pageDescription = $tx['meta.description'] ?? '';
 
 // Section order is the page order; the ids are the anchors the homepage tiles point to.
 $sections = [
-    ['id' => 'gameplay', 'dark' => false],
     ['id' => 'world',    'dark' => false],
+    ['id' => 'gameplay', 'dark' => false],
     ['id' => 'play',     'dark' => false],
     ['id' => 'decks',    'dark' => false],
     ['id' => 'project',  'dark' => false],
+    ['id' => 'join',     'dark' => false],
 ];
 
 include dirname(__DIR__) . '/includes/header.php';
@@ -28,7 +29,7 @@ $_discoverAsset = function (string $rel): string {
 ?>
 <link rel="stylesheet" href="<?= h($_discoverAsset('css/discover.css')) ?>">
 
-<div class="discover">
+<div class="discover container">
 
     <header class="discover-header">
         <h1 class="discover-header__title"><?= pageText($tx, 'header.title') ?></h1>
@@ -56,8 +57,17 @@ $_discoverAsset = function (string $rel): string {
                     <li><a class="discover-toc__out" href="<?= h(BASE_URL) ?>/pages/faq">
                         <?= pageText($tx, 'toc.faq') ?> <?= ac_icon('arrow-right', 'ac-icon--14') ?>
                     </a></li>
+                    <li><a class="discover-toc__out" href="https://boardgamearena.com/preferences?section=account" target="_blank" rel="noopener">
+                        <?= pageText($tx, 'toc.bga_link') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'toc.external') ?>)</span>
+                    </a></li>
                     <li><a class="discover-toc__out" href="https://boardgamearena.com/gamepanel?game=altered" target="_blank" rel="noopener">
                         <?= pageText($tx, 'toc.bga') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'toc.external') ?>)</span>
+                    </a></li>
+                    <li><a class="discover-toc__out" href="https://discord.gg/pSA9HxB7Ky" target="_blank" rel="noopener">
+                        <?= pageText($tx, 'toc.discord') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'toc.external') ?>)</span>
+                    </a></li>
+                    <li><a class="discover-toc__out" href="https://www.helloasso.com/associations/altered-re-union/formulaires/1" target="_blank" rel="noopener">
+                        <?= pageText($tx, 'toc.donate') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'toc.external') ?>)</span>
                     </a></li>
                 </ul>
             </div>
@@ -65,15 +75,23 @@ $_discoverAsset = function (string $rel): string {
 
         <div class="discover-content">
             <?php foreach ($sections as $s): ?>
-                <section class="discover-section<?= $s['dark'] ? ' discover-section--dark' : '' ?>"
+                <?php
+                $_aside = $_asideClass = $_after = '';
+                $_partial = __DIR__ . '/_discover/sections/' . $s['id'] . '.php';
+                ob_start();
+                if (is_file($_partial)) include $_partial;
+                $_sectionBody = ob_get_clean();
+                ?>
+                <section class="discover-section<?= $s['dark'] ? ' discover-section--dark' : '' ?><?= $_aside !== '' ? ' discover-section--aside' . $_asideClass : '' ?>"
                          id="<?= h($s['id']) ?>" aria-labelledby="<?= h($s['id']) ?>-title">
-                    <h2 class="discover-section__title" id="<?= h($s['id']) ?>-title">
-                        <span><?= pageText($tx, 'nav.' . $s['id']) ?></span>
-                    </h2>
-                    <div class="discover-section__body"><?php
-                        $_partial = __DIR__ . '/_discover/sections/' . $s['id'] . '.php';
-                        if (is_file($_partial)) include $_partial;
-                    ?></div>
+                    <?= $_aside ?>
+                    <div class="discover-section__main">
+                        <h2 class="discover-section__title" id="<?= h($s['id']) ?>-title">
+                            <span><?= pageText($tx, 'nav.' . $s['id']) ?></span>
+                        </h2>
+                        <div class="discover-section__body"><?= $_sectionBody ?></div>
+                    </div>
+                    <?= $_after ?>
                 </section>
             <?php endforeach; ?>
         </div>

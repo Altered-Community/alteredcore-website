@@ -19,7 +19,7 @@ $_wipCount       = 4;
             <?php endfor; ?>
         </ul>
         <p class="discover-project__updated">
-            <?= str_replace('{date}', '<time datetime="' . h($_shippedUpdated) . '">' . h(formatDate($_shippedUpdated)) . '</time>', pageText($tx, 'project.updated')) ?>
+            <?= str_replace('{date}', '<time datetime="' . h($_shippedUpdated) . '">' . h(formatDate($_shippedUpdated, getLang())) . '</time>', pageText($tx, 'project.updated')) ?>
         </p>
     </div>
 
@@ -33,9 +33,3 @@ $_wipCount       = 4;
         <p class="discover-project__horizon"><?= pageText($tx, 'project.horizon') ?></p>
     </div>
 </div>
-
-<p class="discover-project__links">
-    <a class="discover-world__link" href="<?= h(BASE_URL) ?>/pages/team-roles"><?= pageText($tx, 'project.team') ?> <?= ac_icon('arrow-right', 'ac-icon--14') ?></a>
-    <a class="discover-world__link" href="https://discord.gg/pSA9HxB7Ky" target="_blank" rel="noopener"><?= pageText($tx, 'project.discord') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'project.external') ?>)</span></a>
-    <a class="discover-world__link" href="https://www.helloasso.com/associations/altered-re-union/formulaires/1" target="_blank" rel="noopener"><?= pageText($tx, 'project.donate') ?> <?= ac_icon('external-link', 'ac-icon--14') ?><span class="ac-sr-only">(<?= pageText($tx, 'project.external') ?>)</span></a>
-</p>

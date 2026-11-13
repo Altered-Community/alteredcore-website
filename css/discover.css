@@ -53,6 +53,8 @@
   border-bottom: 3px solid var(--ac-color-primary);
 }
 .discover-section__body:empty { display: none; }
+.discover-section--aside > .discover-section__main { min-width: 0; }
+.discover-section--aside > .discover-formats { grid-column: 1 / -1; }
 
 /* Contents */
 .discover-toc__toggle {
@@ -287,6 +289,9 @@
   background: color-mix(in srgb, var(--discover-faction) 14%, var(--ac-color-surface));
   border: 2px solid var(--discover-faction);
 }
+.discover-chip { position: relative; }
+/* "Recommended": a badge straddling the top edge of the chip, so every chip keeps the same height */
+.discover-chip__flag { position: absolute; top: calc(var(--ac-space-2) * -1); right: var(--ac-space-2); box-shadow: 0 0 0 2px var(--ac-color-surface); }
 .discover-chip__icon { display: grid; place-items: center; width: var(--ac-space-8); height: var(--ac-space-8); font-size: var(--ac-space-6); line-height: 1; color: var(--discover-faction); }
 .discover-chip__logo { width: var(--ac-space-8); height: var(--ac-space-8); object-fit: contain; }
 @media (hover: hover) {
@@ -346,13 +351,23 @@
 }
 
 /* Introduction tab: key art of a set (729x409 source images) */
-.discover-set { flex: 0 1 24rem; align-self: center; margin: 0; }
-.discover-set__img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--ac-radius-lg); background: var(--ac-color-track); }
+.discover-set { flex: 1 1 24rem; max-width: 50rem; align-self: center; margin: 0; }
+.discover-set__img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--ac-radius-lg); background: var(--ac-color-track); transition: opacity 0.3s; }
 .discover-set__caption { margin-top: var(--ac-space-1-5); text-align: center; font: var(--ac-font-small); color: var(--ac-color-text-muted); }
 
 /* The two illustrations: a Hero (standard version) and another card, side by side */
-.discover-faction__art { display: flex; gap: var(--ac-space-3); align-items: flex-start; justify-content: center; align-self: center; flex: 0 1 28.25rem; }
-.discover-art { flex: 1 1 0; max-width: 16.67rem; margin: 0; }
+/* Fluid pair: two equal columns that shrink down to a minimum width and stop growing at 340px each. */
+.discover-faction__art {
+  --discover-art-max: 18.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(7rem, 1fr));
+  gap: var(--ac-space-3);
+  align-items: start;
+  align-self: center;
+  flex: 1 1 18rem;
+  max-width: calc(2 * var(--discover-art-max) + var(--ac-space-3));
+}
+.discover-art { min-width: 0; margin: 0; }
 .discover-art__frame {
   aspect-ratio: 63 / 88;
   border-radius: var(--ac-radius-md);
@@ -360,7 +375,9 @@
   overflow: hidden;
 }
 .discover-art__frame:not(.is-loaded) { animation: ac-skeleton-pulse 1.4s ease-in-out infinite; }
-.discover-art__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.discover-art__img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
+.discover-art__img.is-changing, .discover-set__img.is-changing { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .discover-art__img, .discover-set__img { transition: none; } }
 .discover-art__credit { text-align: center; margin-top: var(--ac-space-1-5); font: var(--ac-font-small); color: var(--ac-color-text-muted); }
 .discover-art__credit:empty { display: none; }
 .discover-faction__art.is-empty { display: none; }
@@ -383,6 +400,11 @@
   border: 1px solid var(--ac-color-border);
   border-radius: var(--ac-radius-lg);
 }
+.discover-track { position: relative; }
+.discover-track__main { display: flex; flex-direction: column; gap: var(--ac-space-3); }
+.discover-aside { margin: 0 0 var(--ac-space-5); display: flex; flex-direction: column; }
+.discover-aside img { display: block; width: 100%; height: auto; border-radius: var(--ac-radius-md); }
+.discover-aside figcaption { margin-top: var(--ac-space-2); text-align: center; font: var(--ac-font-caption); color: var(--ac-color-primary); }
 .discover-track__title { font: var(--ac-font-body-strong); font-size: var(--ac-font-size-prose); margin: 0; }
 .discover-track__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ac-space-3); counter-reset: step; }
 .discover-track__steps li {
@@ -413,19 +435,24 @@
 .discover-track__note { font: var(--ac-font-caption); font-weight: 500; color: var(--ac-color-text-muted); margin: 0; }
 /* Pinned to the bottom: the buttons line up whatever the content length. */
 .discover-track__cta { margin-top: auto; width: 100%; white-space: normal; text-align: center; }
+/* The official button image, pinned to the bottom like the other buttons. */
+.discover-track__badge { margin-top: auto; align-self: center; line-height: 0; border-radius: var(--ac-radius-md); }
+.discover-track__badge img { display: block; max-width: 100%; height: auto; }
 
 @media (min-width: 768px) {
   .discover-tracks { grid-template-columns: repeat(2, 1fr); }
+  /* A section with an illustration: it runs the full height of the section, title included. */
+  .discover-section--aside { display: grid; grid-template-columns: 17.5rem 1fr; gap: var(--ac-space-8); }
+  .discover-section--aside .discover-aside { margin: 0; min-height: 0; }
+  .discover-section--aside .discover-aside img { flex: 1; min-height: 0; height: 0; object-fit: cover; }
+  /* Whole art, fluid between a minimum and 300px, starting at the top of the section next to the title. */
+  .discover-section--aside-art { grid-template-columns: clamp(8rem, 28%, 18.75rem) minmax(0, 1fr); align-items: start; }
+  .discover-section--aside-art .discover-aside img { flex: none; height: auto; object-fit: fill; }
 }
 
 /* ---------- Section 4: Build your own deck ---------- */
 .discover-decks__top { margin-bottom: var(--ac-space-8); }
 .discover-decks__main .discover-lead { margin-bottom: var(--ac-space-5); }
-
-.discover-features { margin: 0 0 var(--ac-space-5); display: flex; flex-direction: column; gap: var(--ac-space-3); }
-.discover-features__row { display: grid; grid-template-columns: 11rem 1fr; gap: var(--ac-space-1) var(--ac-space-4); align-items: baseline; }
-.discover-features dt { font: var(--ac-font-body-strong); font-weight: 800; }
-.discover-features dd { font: var(--ac-font-body); font-weight: 400; color: var(--ac-color-text-2); margin: 0; }
 
 .discover-figures {
   list-style: none;
@@ -479,7 +506,18 @@
   font: var(--ac-font-caption);
 }
 .discover-flow__title { font: var(--ac-font-body-strong); font-weight: 800; margin: 0; }
+/* Step icon in the top-right corner, 42px; the title keeps clear of it. */
+.discover-flow__corner { position: absolute; top: var(--ac-space-3); right: var(--ac-space-3); width: 2.625rem; height: 2.625rem; border-radius: var(--ac-radius-md); }
+.discover-flow__step--corner .discover-flow__title { padding-right: 3rem; }
+/* The BGA logo has empty margins around its drawing, so it reads smaller than the phoenix at the same size: 56px. */
+.discover-flow__corner--bga { width: 3.5rem; height: 3.5rem; top: var(--ac-space-2); right: var(--ac-space-2); }
+.discover-flow__corner--bga ~ .discover-flow__title { padding-right: 4rem; }
 .discover-flow__text { font: var(--ac-font-body); font-weight: 400; line-height: 1.5; color: var(--ac-color-text-2); margin: 0; }
+.discover-flow__option { display: flex; flex-direction: column; align-items: flex-start; gap: var(--ac-space-1); }
+.discover-flow__sub { font: var(--ac-font-body-strong); margin: 0; color: var(--ac-color-text); }
+/* "or" between the two ways, on a hairline */
+.discover-flow__or { display: flex; align-items: center; gap: var(--ac-space-2); width: 100%; margin: var(--ac-space-1) 0; font: var(--ac-font-small); color: var(--ac-color-text-muted); text-transform: uppercase; }
+.discover-flow__or::before, .discover-flow__or::after { content: ''; flex: 1; border-top: 1px solid var(--ac-color-border); }
 .discover-flow__cta { width: 100%; white-space: normal; text-align: center; margin-top: var(--ac-space-1); }
 .discover-flow__aside { margin: 0; font: var(--ac-font-small); color: var(--ac-color-text-muted); align-self: center; text-align: center; }
 .discover-flow__aside a,
@@ -514,10 +552,9 @@
   .discover-formats .discover-chips { grid-template-columns: repeat(3, 1fr); }
 }
 @media (min-width: 1200px) {
-  .discover-formats .discover-chips { grid-template-columns: repeat(6, 1fr); }
+  .discover-formats .discover-chips { grid-template-columns: repeat(5, 1fr); }
 }
 @media (max-width: 767.98px) {
-  .discover-features__row { grid-template-columns: 1fr; }
   .discover-table { flex-basis: 100%; }
 }
 
@@ -543,8 +580,19 @@
 .discover-project__list--wip .ac-icon { color: var(--ac-color-text-muted); }
 .discover-project__updated { margin: var(--ac-space-3) 0 0; font: var(--ac-font-small); color: var(--ac-color-text-muted); }
 .discover-project__horizon { margin: var(--ac-space-4) 0 0; font: var(--ac-font-body); font-weight: 500; line-height: 1.6; color: var(--ac-color-text-2); }
-.discover-project__links { display: flex; flex-wrap: wrap; gap: var(--ac-space-2) var(--ac-space-6); margin: 0; }
-.discover-project__links .discover-world__link { margin-top: 0; }
+
+/* "Rejoindre l'aventure": three cards, art banner on top, buttons pinned to the bottom. */
+.discover-join { display: grid; gap: var(--ac-space-4); }
+.discover-join__card { display: flex; flex-direction: column; }
+.discover-join__art { aspect-ratio: 16 / 9; overflow: hidden; background: var(--ac-color-track); }
+.discover-join__art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.discover-join__body { display: flex; flex: 1; flex-direction: column; gap: var(--ac-space-2); padding: var(--ac-space-4); }
+.discover-join__title { font: var(--ac-font-body-strong); font-size: var(--ac-font-size-prose); margin: 0; }
+.discover-join__text { font: var(--ac-font-body); line-height: 1.6; color: var(--ac-color-text-2); margin: 0; }
+.discover-join__actions { display: flex; flex-wrap: wrap; gap: var(--ac-space-2); margin-top: auto; padding-top: var(--ac-space-3); }
+@media (min-width: 768px) {
+  .discover-join { grid-template-columns: repeat(3, 1fr); }
+}
 
 @media (min-width: 1200px) {
   .discover-project { grid-template-columns: 1fr 1fr; gap: var(--ac-space-8); }
