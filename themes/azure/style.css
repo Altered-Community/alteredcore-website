@@ -78,6 +78,10 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
 .az-account-label { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .az-account-caret { --ac-icon-size: 14px; color: var(--ac-header-control-caret); }
 
+/* Card search, left of the account button (desktop): opens the Cards page with ?q=.
+   Below 768px it is in the burger menu instead (.az-mm-search). */
+.az-search { display: none; }
+
 /* Row 2: menu */
 .az-navband { border-top: 1px solid var(--ac-header-divider); }
 @media (min-width: 768px) {
@@ -251,6 +255,7 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     }
     html.az-mm-open { overflow: hidden; }
     .az-mm-nav { display: flex; flex-direction: column; gap: var(--ac-space-4); padding-top: var(--ac-space-1-5); margin-bottom: var(--ac-space-4); }
+    .az-mm-search > .ac-input { height: var(--ac-control-lg); }
     .az-mm-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--ac-space-2); }
     .az-mm-pill,
     .az-mm-tile {
@@ -354,6 +359,27 @@ body > .site-wrapper { width: 100%; flex: 1 0 auto; }
     .az-nav-list { flex-wrap: nowrap; align-self: stretch; gap: 0; }
     .az-site-header .az-nav-list .nav-link { height: auto; }
     .az-site-header .az-account-btn { order: 2; }
+    /* Card search: pushed to the right, next to the account button; it narrows before the
+       fit script shrinks the menu */
+    .az-site-header .az-search {
+        display: block;
+        order: 2;
+        flex: 0 1 260px;
+        min-width: 160px;
+        margin-left: auto;
+        margin-right: calc(var(--ac-space-3) - var(--ac-space-6));
+    }
+    .az-site-header .az-search + .az-account-btn { margin-left: 0; }
+    .az-site-header .az-search > .ac-input {
+        height: var(--ac-control-sm);
+        border-color: var(--ac-header-control-border);
+        border-radius: var(--ac-radius-pill);
+        background: var(--ac-header-control-bg);
+        color: var(--ac-header-control-text);
+    }
+    .az-site-header .az-search > .ac-input::placeholder { color: var(--ac-header-control-text); opacity: 0.7; }
+    .az-site-header .az-search > .ac-input:focus { box-shadow: 0 0 0 2px var(--ac-header-focus); }
+    .az-site-header .az-search .ac-icon { color: var(--ac-header-control-caret); }
     .az-site-header .az-brand,
     .az-site-header .az-navband { flex-shrink: 0; }
     .az-burger { order: 3; }
