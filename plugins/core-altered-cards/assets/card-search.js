@@ -105,12 +105,6 @@ function CardSearch(cfg) {
     var _setsDirty      = !!ini.setsExplicit;
     var _variationDirty = !!ini.variationsExplicit;
     var _collDirty      = false;
-    // Track presets automatically applied when entering a tab (Unique / Ownership)
-    // so leaving that tab restores normal defaults without losing explicit user picks.
-    var _rarityAutoPreset = false;
-    var _typeAutoPreset   = false;
-    var _setsAutoExtra    = false;
-    var _promoAutoPreset  = false;
 
     var filters = {
         q:              ini.q              || '',
@@ -1827,55 +1821,26 @@ function CardSearch(cfg) {
         if (elFormatWrap && !UNIQUES_API_BASE) elFormatWrap.style.display = 'none';
     }
 
-    // Switch tab. On URL restore (keepFilters=true), URL-loaded filters stay untouched.
-    // On user tab switch via switchTab(), shared criteria (search text, numeric costs/powers,
-    // factions, explicit sets, etc.) are preserved while tab-specific auto presets apply.
-    function _applyTabPresets(prevTab) {
-        if (prevTab === 'unique') {
-            if (_rarityAutoPreset) { _rarityDirty = false; filters.rarity = DEFAULT_RARITIES.slice(); _rarityAutoPreset = false; }
-            if (_typeAutoPreset)   { _typeDirty   = false; filters.type   = DEFAULT_TYPES.slice();    _typeAutoPreset   = false; }
-            if (_setsAutoExtra) {
-                _setsDirty = false;
-                filters.sets = DEFAULT_SETS.slice();
-                if (tsInst.set) tsInst.set.setValue(filters.sets, true);
-                _setsAutoExtra = false;
-            }
-        }
-        if (prevTab === 'ownership' && _promoAutoPreset) {
-            _promoAutoPreset = false;
-            setShowPromo(false);
-            var _promoOff = document.getElementById(P + '-promo-toggle');
-            if (_promoOff) _promoOff.checked = false;
-        }
-    }
-
-    function setTab(t, keepFilters, applySwitchPresets) {
-        var prevTab = _tab;
+    // Switch tab. Normally callers call resetFilters() first so filters from the old
+    // tab don't carry over; pass keepFilters=true when restoring from the URL.
+    function setTab(t, keepFilters) {
         _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
-        if (applySwitchPresets && prevTab !== _tab) _applyTabPresets(prevTab);
         setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
-        if (_tab === 'unique' && (!keepFilters || applySwitchPresets)) {
-            if (!_rarityDirty) { _rarityAutoPreset = true; _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
-            if (!_typeDirty)   { _typeAutoPreset   = true; _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
+        if (_tab === 'unique' && !keepFilters) {
+            if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
+            if (!_typeDirty)   { _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
             var _uExtra = cfg.uniqueExtraSets || [];
-            if (_uExtra.length && (!_setsDirty || applySwitchPresets)) {
-                var hadUserSets = _setsDirty && !_setsAutoExtra;
-                if (!hadUserSets) {
-                    _setsAutoExtra = true;
-                    _setsDirty = true;
-                    filters.sets = DEFAULT_SETS.slice();
-                }
+            if (_uExtra.length && !_setsDirty) {
+                _setsDirty = true;
+                filters.sets = DEFAULT_SETS.slice();
                 _uExtra.forEach(function(s) { if (filters.sets.indexOf(s) < 0) filters.sets.push(s); });
                 if (tsInst.set) tsInst.set.setValue(filters.sets, true);
             }
         }
-        if (_tab === 'ownership' && (!keepFilters || applySwitchPresets)) {
-            if (!filters.showPromo) {
-                _promoAutoPreset = true;
-                setShowPromo(true);
-                var _promoT = document.getElementById(P + '-promo-toggle');
-                if (_promoT) _promoT.checked = true;
-            }
+        if (_tab === 'ownership' && !keepFilters) {
+            setShowPromo(true);
+            var _promoT = document.getElementById(P + '-promo-toggle');
+            if (_promoT) _promoT.checked = true;
         }
         syncTabButtons();
         applyTabVisibility();
@@ -1991,7 +1956,7 @@ function CardSearch(cfg) {
         t.checked = !!filters.showPromo;
         var panel = document.getElementById(P + '-promo-panel');
         if (panel) panel.style.display = filters.showPromo ? '' : 'none';
-        t.addEventListener('change', function() { _promoAutoPreset = false; setShowPromo(this.checked); });
+        t.addEventListener('change', function() { setShowPromo(this.checked); });
     }
 
     // reset filters
@@ -2002,10 +1967,6 @@ function CardSearch(cfg) {
         _setsDirty      = false;
         _variationDirty = false;
         _collDirty      = false;
-        _rarityAutoPreset = false;
-        _typeAutoPreset   = false;
-        _setsAutoExtra    = false;
-        _promoAutoPreset  = false;
         filters.q              = '';
         filters.faction        = DEFAULT_FACTIONS.slice();
         filters.type           = DEFAULT_TYPES.slice();
@@ -2083,10 +2044,6 @@ function CardSearch(cfg) {
         _typeDirty    = p.has('type[]');
         _rarityDirty  = p.has('rarity[]');
         _setsDirty    = p.has('set[]');
-        _rarityAutoPreset = false;
-        _typeAutoPreset   = false;
-        _setsAutoExtra    = false;
-        _promoAutoPreset  = false;
 
         var _urlTab = p.get('tab');
         if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
@@ -2343,13 +2300,14 @@ function CardSearch(cfg) {
             var btn = e.target.closest('.cs-tab[data-tab]');
             if (!btn || !_root.contains(btn) || btn.disabled) return;
             if (btn.dataset.tab === _tab) return;
-            setTab(btn.dataset.tab, true, true);
+            resetFilters();
+            setTab(btn.dataset.tab);
             // Favorites tab has no Apply button flow — load it immediately, even in deck mode.
             if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
         // Unique-nudge CTA: reuse the real tab button's own click handling
-        // (setTab + scope-appropriate search) instead of duplicating it.
+        // (reset + setTab + scope-appropriate search) instead of duplicating it.
         _root.addEventListener('click', function(e) {
             var btn = e.target.closest('[data-goto-tab]');
             if (!btn || !_root.contains(btn)) return;
@@ -2369,12 +2327,12 @@ function CardSearch(cfg) {
                 return;
             }
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
-            if (key === 'type')    { _typeAutoPreset   = false; if (!_typeDirty)   { _typeDirty   = true; filters.type   = []; } }
+            if (key === 'type')    { if (!_typeDirty)   { _typeDirty   = true; filters.type   = []; } }
             // Seed rarity from what's actually shown active on first interaction so the click
             // toggles in sync with the UI. The ownership tab shows no default rarity; the
             // other tabs show the defaults as active.
-            if (key === 'rarity')  { _rarityAutoPreset = false; if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
-            if (key === 'sets')    { _setsAutoExtra    = false; _setsDirty = true; }
+            if (key === 'rarity')  { if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
+            if (key === 'sets')    { _setsDirty = true; }
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
             var idx = arr.indexOf(val);

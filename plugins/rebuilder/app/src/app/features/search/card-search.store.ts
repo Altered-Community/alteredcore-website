@@ -3,7 +3,6 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { map, type Observable } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
 import {
-  adaptFiltersForSource,
   defaultEnvironment,
   defaultFilters,
   filterChips,
@@ -182,19 +181,12 @@ export class CardSearchStore {
   }
 
   configure(source: CardSource, faction: string | null, format: DeckFormat | null = null): void {
-    const prevSource = this.source();
-    const changedSource = source !== prevSource;
+    const changedSource = source !== this.source();
     const changedFormat = format !== this.format();
     this.source.set(source);
     this.faction.set(faction);
     this.format.set(format);
-    if (changedSource) {
-      this.filters.update((prev) =>
-        this.configured()
-          ? adaptFiltersForSource(prev, prevSource, source, format)
-          : defaultFilters(source, format),
-      );
-    }
+    if (changedSource) this.filters.set(defaultFilters(source, format));
     // The deck's format changed under the Uniques tab: Frontier on or off, the other filters kept.
     else if (changedFormat && source === 'uniques') this.filters.update((f) => ({ ...f, environment: defaultEnvironment(source, format) }));
     this.configured.set(true);

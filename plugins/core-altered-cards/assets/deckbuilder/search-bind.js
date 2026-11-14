@@ -91,9 +91,11 @@
         });
     }
 
-    // CardSearch preserves shared filters (faction, types, costs, search text) across
-    // tab switches in this session, so switching tabs only needs to sync the Uniques
-    // Frontier preset and re-run the deck search (Favoris already searches itself).
+    // card-search.js's tab-click handler calls resetFilters() on every switch,
+    // wiping the hero-faction/default-type/format preselection above just like Reset
+    // does, and in deck mode never re-searches on tab switch. Re-apply the deck
+    // defaults and Frontier preset here, which also triggers the search so the grid
+    // always matches the newly selected tab.
     var _dbLastTab = engine.getTab ? engine.getTab() : 'all';
     var _dbTabsPanel = document.getElementById('db-panel');
     if (_dbTabsPanel) {
@@ -104,7 +106,7 @@
             if (newTab === _dbLastTab) return;
             _dbLastTab = newTab;
             _syncUniqueTabToFormat();
-            if (newTab !== 'favoris') engine.search(1);
+            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
         });
     }
 

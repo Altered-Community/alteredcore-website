@@ -133,7 +133,7 @@ function eq(a, b, msg) {
   eq(cs.numUniquesParts('mainCost', '1-3'), ['mainCost[]=1', 'mainCost[]=2', 'mainCost[]=3'], 'contiguous range expands for uniques API');
 }
 
-// 2. Tab switch preserves shared filters (costs, search text, faction) while managing tab presets
+// 2. Tab switch resets user filters and applies target tab defaults (restoring defaults on return)
 {
   const env = setupEnv();
   const cs = CardSearch({
@@ -148,15 +148,14 @@ function eq(a, b, msg) {
   env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? uniqBtn : null } });
 
   ok(cs.getTab() === 'unique', 'switched to unique tab');
-  ok(cs.filters.mainCost === '3', 'mainCost preserved across tab switch');
-  ok(cs.filters.q === 'kelon', 'search query preserved across tab switch');
+  ok(cs.filters.mainCost === null, 'mainCost reset across tab switch');
+  ok(cs.filters.q === '', 'search query reset across tab switch');
   ok(cs.filters.sets.includes('COREKS'), 'COREKS added automatically on unique tab');
 
   const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
   env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? allBtn : null } });
 
   ok(cs.getTab() === 'all', 'switched back to all tab');
-  ok(cs.filters.mainCost === '3', 'mainCost still preserved returning from unique tab');
   eq(cs.filters.rarity, ['COMMON', 'RARE'], 'default rarities restored cleanly on return');
   ok(!cs.filters.sets.includes('COREKS'), 'auto-added COREKS removed cleanly when leaving unique tab');
 }

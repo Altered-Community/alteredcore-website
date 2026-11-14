@@ -221,53 +221,6 @@ export function hasInvalidNumericFilters(filters: SearchFilters, source: CardSou
 }
 
 /**
- * Preserves shared criteria across source tab switches (text, costs, powers, factions, effects…)
- * while recomputing only source-specific defaults (sets, rarities, types, Frontier environment).
- */
-export function adaptFiltersForSource(
-  prev: SearchFilters,
-  prevSource: CardSource,
-  nextSource: CardSource,
-  format: DeckFormat | null = null,
-): SearchFilters {
-  const nextDefaults = defaultFilters(nextSource, format);
-  const prevDefaults = defaultFilters(prevSource, format);
-
-  const sameAsPrevDefaultSets =
-    prev.sets.length === prevDefaults.sets.length && prev.sets.every((s) => prevDefaults.sets.includes(s));
-  const allowedSets = new Set(setsFor(nextSource).map((s) => s.reference));
-  const sets = sameAsPrevDefaultSets ? nextDefaults.sets : prev.sets.filter((s) => allowedSets.has(s));
-
-  const allowedRarities = new Set(rarityOptionsFor(nextSource).map((r) => r.value));
-  const rarities =
-    nextSource === 'uniques'
-      ? []
-      : prevSource === 'uniques'
-        ? nextDefaults.rarities
-        : prev.rarities.filter((r) => allowedRarities.has(r));
-
-  const types =
-    nextSource === 'uniques'
-      ? []
-      : prevSource === 'uniques'
-        ? nextDefaults.types
-        : prev.types;
-
-  const environment: SearchFilters['environment'] =
-    nextSource === 'uniques'
-      ? (format === 'frontier' ? 'frontier' : prev.environment)
-      : prev.environment;
-
-  return {
-    ...prev,
-    sets,
-    rarities,
-    types,
-    environment,
-  };
-}
-
-/**
  * Parses "3", "1-3", "4+" and comma lists into the explicit values the cards API
  * accepts as `mainCost[]` / `recallCost[]` (it rejects range strings with a 500).
  * Returns null when the expression is invalid, [] when empty.

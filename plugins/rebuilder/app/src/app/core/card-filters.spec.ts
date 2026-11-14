@@ -4,7 +4,6 @@ import {
   ALL_CARDS_SETS,
   UNIQUES_SETS,
   activeFilterCount,
-  adaptFiltersForSource,
   defaultFilters,
   filterChips,
   hasInvalidNumericFilters,
@@ -219,17 +218,7 @@ describe('Favoris filters', () => {
   });
 });
 
-describe('cross-tab preservation & numeric validation', () => {
-  it('preserves shared filters when switching source tabs', () => {
-    const f = { ...defaultFilters('all'), q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'] };
-    const u = adaptFiltersForSource(f, 'all', 'uniques', 'frontier');
-    expect(u).toMatchObject({ q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'], environment: 'frontier', rarities: [], types: [] });
-    expect(u.sets).toContain('COREKS');
-    const back = adaptFiltersForSource(u, 'uniques', 'all', 'frontier');
-    expect(back).toMatchObject({ q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'] });
-    expect(back.rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
-  });
-
+describe('numeric validation', () => {
   it('detects invalid numeric expressions except on favorites where they are disabled', () => {
     const bad = { ...defaultFilters('uniques'), mainCost: 'abc' };
     expect(hasInvalidNumericFilters(bad, 'uniques')).toBe(true);
