@@ -16,6 +16,7 @@ if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) {
 }
 
 if (!defined('KC_URL') || !kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;

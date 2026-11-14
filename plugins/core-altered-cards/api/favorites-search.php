@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/includes/favorites.php';
 header('Content-Type: application/json');
 
 if (!kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized', 'code' => 'FS01']);
     exit;
@@ -16,6 +17,7 @@ if (!kcIsLoggedIn()) {
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 if ($userId <= 0) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized', 'code' => 'FS01']);
     exit;

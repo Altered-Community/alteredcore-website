@@ -69,6 +69,7 @@ function CardSearch(cfg) {
     var elLoading     = q('loading');
     var elEmpty       = q('empty');
     var elError       = q('error');
+    var elAuthError   = q('auth-error');
     var elPagin       = q('pagination');
     var elSearch      = q('search');
     // Playset dashboard (Profile G) — a non-grid tab implemented in its own
@@ -1114,7 +1115,14 @@ function CardSearch(cfg) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body:    body.toString(),
         })
-        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(r) {
+            if (r.status === 401) {
+                cfg.favoritesEnabled = false;
+                if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                return null;
+            }
+            return r.ok ? r.json() : null;
+        })
         .then(function(data) {
             btn.disabled = false;
             if (!data || !data.ok) return;
@@ -1544,10 +1552,11 @@ function CardSearch(cfg) {
         _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
 
         if (!append) {
-            if (elInitial) elInitial.style.display = 'none';
-            if (elEmpty)   elEmpty.style.display   = 'none';
-            if (elError)   elError.style.display   = 'none';
-            if (elGrid)    elGrid.style.display    = 'none';
+            if (elInitial)   elInitial.style.display   = 'none';
+            if (elEmpty)     elEmpty.style.display     = 'none';
+            if (elError)     elError.style.display     = 'none';
+            if (elAuthError) elAuthError.style.display = 'none';
+            if (elGrid)      elGrid.style.display      = 'none';
             if (elPagin)   elPagin.style.setProperty('display', 'none', 'important');
             if (cfg.closeFiltersOnSearch) hideFilterModal();
         }
@@ -1627,7 +1636,8 @@ function CardSearch(cfg) {
             .catch(function(err) {
                 if (err && err.name === 'AbortError') return;
                 if (elLoading) elLoading.style.display = 'none';
-                if (elError)   elError.style.display   = 'block';
+                if (err && err.isAuth && elAuthError) elAuthError.style.display = 'block';
+                else if (elError) elError.style.display = 'block';
                 if (cfg.onError) cfg.onError(err);
                 _abortCtrl = null;
             });
@@ -1671,10 +1681,11 @@ function CardSearch(cfg) {
         if (_abortCtrl) { _abortCtrl.abort(); }
         _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
 
-        if (elInitial) elInitial.style.display  = 'none';
-        if (elEmpty)   elEmpty.style.display    = 'none';
-        if (elError)   elError.style.display    = 'none';
-        if (elGrid)    elGrid.style.display     = 'none';
+        if (elInitial)   elInitial.style.display    = 'none';
+        if (elEmpty)     elEmpty.style.display      = 'none';
+        if (elError)     elError.style.display      = 'none';
+        if (elAuthError) elAuthError.style.display  = 'none';
+        if (elGrid)      elGrid.style.display       = 'none';
         if (elPagin)   elPagin.style.setProperty('display', 'none', 'important');
         if (elLoading) elLoading.style.display  = 'block';
         if (cfg.closeFiltersOnSearch) hideFilterModal();
@@ -1690,6 +1701,12 @@ function CardSearch(cfg) {
         if (DEBUG) console.log('[CardSearch] API call:', url);
         fetch(url, opts)
             .then(function(r) {
+                if (r.status === 401) {
+                    if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                    var authErr = new Error('HTTP 401');
+                    authErr.isAuth = true;
+                    throw authErr;
+                }
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 return r.json();
             })
@@ -1742,7 +1759,8 @@ function CardSearch(cfg) {
             .catch(function(err) {
                 if (err && err.name === 'AbortError') return;
                 if (elLoading) elLoading.style.display = 'none';
-                if (elError)   elError.style.display   = 'block';
+                if (err && err.isAuth && elAuthError) elAuthError.style.display = 'block';
+                else if (elError) elError.style.display = 'block';
                 if (cfg.onError) cfg.onError(err);
                 _abortCtrl = null;
             });
@@ -1854,7 +1872,7 @@ function CardSearch(cfg) {
         if (_tab === 'playset') {
             if (elGrid)  elGrid.style.display = 'none';
             if (elPagin) elPagin.style.setProperty('display', 'none', 'important');
-            [elLoading, elInitial, elEmpty, elError].forEach(function(e) { if (e) e.style.display = 'none'; });
+            [elLoading, elInitial, elEmpty, elError, elAuthError].forEach(function(e) { if (e) e.style.display = 'none'; });
             // search() (which normally syncs the URL) is a no-op here, so reflect
             // the active tab ourselves — unless we're restoring from the URL.
             if (!keepFilters && cfg.pushState && MODE === 'cards') {

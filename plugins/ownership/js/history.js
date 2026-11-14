@@ -12,6 +12,13 @@
         return (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || fallback;
     };
 
+    const authExpiredHtml = () => {
+        window.acNotifyAuthExpired?.();
+        return '<span>' + escapeHtml(t('authExpired', 'Session expired. Please sign in again.')) + '</span> '
+            + '<a href="' + escapeHtml(t('loginUrl', '/pages/login')) + '" class="ac-button ac-button--sm mt-2">'
+            + escapeHtml(t('loginBtn', 'Sign in')) + '</a>';
+    };
+
     const locale = () => document.documentElement.lang || 'en';
 
     let rendererLoading = null;
@@ -184,7 +191,11 @@
         try {
             const res = await fetch('/papi/ownership/history-detail?id=' + encodeURIComponent(id), { credentials: 'same-origin' });
             if (!res.ok) {
-                modalBody.innerHTML = '<div class="text-danger">' + escapeHtml(t('loadError', 'Could not load this event.')) + '</div>';
+                if (res.status === 401) {
+                    modalBody.innerHTML = '<div class="text-danger">' + authExpiredHtml() + '</div>';
+                } else {
+                    modalBody.innerHTML = '<div class="text-danger">' + escapeHtml(t('loadError', 'Could not load this event.')) + '</div>';
+                }
                 return;
             }
             const detail = await res.json();
@@ -206,7 +217,11 @@
 
             if (!res.ok) {
                 errorEl.hidden = false;
-                errorEl.textContent = t('loadError', 'Could not load your history.');
+                if (res.status === 401) {
+                    errorEl.innerHTML = authExpiredHtml();
+                } else {
+                    errorEl.textContent = t('loadError', 'Could not load your history.');
+                }
                 return;
             }
 

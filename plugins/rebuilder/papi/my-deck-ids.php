@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: private, no-store');
 
 function rebuilderMyDeckIdsReply(int $status, array $body): void {
+    if ($status === 401) header('X-Ac-Auth-State: unauthenticated');
     http_response_code($status);
     echo json_encode($body, JSON_UNESCAPED_SLASHES);
 }

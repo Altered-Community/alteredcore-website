@@ -8,6 +8,7 @@ require_once dirname(__DIR__) . '/includes/collection-query.php';
 header('Content-Type: application/json');
 
 if (!defined('KC_URL') || !kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;

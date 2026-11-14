@@ -14,6 +14,13 @@ if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) {
     exit;
 }
 
+if (!kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
 $userId = (int)($_SESSION['user_id'] ?? 0);
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {

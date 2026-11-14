@@ -119,7 +119,7 @@ $notFoundError  = null;
 $loginRequired  = false;
 $deckFormat     = 'standard';   // deckbuilder format of the tournament's mode, used when duplicating a deck
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
 if (!$userId) {
     $loginRequired = true;
 } else {
