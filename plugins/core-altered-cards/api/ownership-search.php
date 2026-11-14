@@ -34,7 +34,8 @@ $arrayMap = [
     'subTypes'  => 'subtype[]',
     'variation' => 'variation[]',
 ];
-// Exact numeric filters: incoming `mainCost[]=N` => ownership `mainCost=N`.
+// Numeric filters: exact (`mainCost=N`), bracketed bounds (`mainCost[gte]=1&mainCost[lte]=3`),
+// or discrete lists (`mainCost[]=1&mainCost[]=3`, narrowed upstream to `[min..max]` and filtered locally).
 $numericMap = [
     'mainCost'      => 'mainCost',
     'recallCost'    => 'recallCost',
@@ -56,11 +57,8 @@ foreach ($arrayMap as $in => $out) {
     }
 }
 
-foreach ($numericMap as $in => $out) {
-    if (!isset($_GET[$in])) continue;
-    $v = is_array($_GET[$in]) ? ($_GET[$in][0] ?? '') : $_GET[$in];
-    if ($v !== '') $parts[] = $out . '=' . rawurlencode($v);
-}
+$localNumeric = [];
+array_push($parts, ...cacNumericQueryParts($_GET, $numericMap, $localNumeric));
 
 foreach (['isBanned', 'isSuspended'] as $flag) {
     if (($_GET[$flag] ?? '') === 'true') $parts[] = $flag . '=true';
@@ -91,6 +89,7 @@ if (is_array($data)) {
         $items[] = $it;
     }
 }
+$items = cacFilterItemsByNumeric($items, $localNumeric);
 
 $total    = count($items);
 $perPage  = max(1, (int)($_GET['itemsPerPage'] ?? 30));

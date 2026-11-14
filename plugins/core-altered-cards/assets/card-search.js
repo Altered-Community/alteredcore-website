@@ -371,33 +371,61 @@ function CardSearch(cfg) {
     //   "1-3"    → { kind:'range', min:1, max:3 }   (bounds reordered if reversed)
     //   "<4" ">2" "<=4" ">=2" → { kind:'bound', op:'lt'|'gt'|'lte'|'gte', val:N }
     //   "4+" (≥4) "4-" (≤4)   → { kind:'bound', op:'gte'|'lte', val:N }
-    function parseNumExpr(raw) {
-        if (raw == null) return null;
-        var s = String(raw).replace(/\s+/g, '');
-        if (!s) return null;
-        var m = s.match(/^(<=|>=|<|>)(\d+)$/);
+    var MAX_NUM_OPEN = 12;
+
+    function _parseNumToken(tok) {
+        var m = tok.match(/^(<=|>=|<|>)(\d{1,2})$/);
         if (m) {
             var op = { '<': 'lt', '>': 'gt', '<=': 'lte', '>=': 'gte' }[m[1]];
             return { kind: 'bound', op: op, val: parseInt(m[2], 10) };
         }
         // Trailing-sign bounds: "4+" → ≥4, "4-" → ≤4.
-        m = s.match(/^(\d+)([+-])$/);
+        m = tok.match(/^(\d{1,2})([+-])$/);
         if (m) {
             return { kind: 'bound', op: m[2] === '+' ? 'gte' : 'lte', val: parseInt(m[1], 10) };
         }
-        m = s.match(/^(\d+)-(\d+)$/);
+        m = tok.match(/^(\d{1,2})-(\d{1,2})$/);
         if (m) {
             var a = parseInt(m[1], 10), b = parseInt(m[2], 10);
             if (a > b) { var t = a; a = b; b = t; }
             return { kind: 'range', min: a, max: b };
         }
-        if (/^\d+(,\d+)*$/.test(s)) {
-            var vals = s.split(',').map(function(v) { return parseInt(v, 10); });
-            var uniq = [];
-            vals.forEach(function(v) { if (uniq.indexOf(v) < 0) uniq.push(v); });
-            return uniq.length === 1 ? { kind: 'exact', val: uniq[0] } : { kind: 'list', vals: uniq };
+        if (/^\d{1,2}$/.test(tok)) {
+            return { kind: 'exact', val: parseInt(tok, 10) };
         }
         return null;
+    }
+
+    function _expandNumToken(p, outMap) {
+        var lo, hi, v;
+        if (p.kind === 'exact') { outMap[p.val] = true; return; }
+        if (p.kind === 'range') {
+            lo = Math.max(0, p.min);
+            hi = Math.min(50, p.max);
+        } else if (p.op === 'lt')  { lo = 0; hi = Math.min(MAX_NUM_OPEN, p.val - 1); }
+        else if (p.op === 'lte')   { lo = 0; hi = Math.min(MAX_NUM_OPEN, p.val); }
+        else if (p.op === 'gt')    { lo = Math.max(0, p.val + 1); hi = MAX_NUM_OPEN; }
+        else                       { lo = Math.max(0, p.val); hi = MAX_NUM_OPEN; }
+        for (v = lo; v <= hi; v++) outMap[v] = true;
+    }
+
+    function parseNumExpr(raw) {
+        if (raw == null) return null;
+        var s = String(raw).replace(/[\u2013\u2014\u2212]/g, '-').replace(/\s+/g, '');
+        if (!s) return null;
+        var tokens = s.replace(/;/g, ',').split(',');
+        if (tokens.some(function(t) { return !t; })) return null;
+        if (tokens.length === 1) return _parseNumToken(tokens[0]);
+
+        var map = {};
+        for (var i = 0; i < tokens.length; i++) {
+            var parsed = _parseNumToken(tokens[i]);
+            if (!parsed) return null;
+            _expandNumToken(parsed, map);
+        }
+        var uniq = Object.keys(map).map(function(k) { return parseInt(k, 10); }).sort(function(a, b) { return a - b; });
+        if (!uniq.length) return null;
+        return uniq.length === 1 ? { kind: 'exact', val: uniq[0] } : { kind: 'list', vals: uniq };
     }
 
     // True when the expression yields an active filter.
@@ -419,32 +447,27 @@ function CardSearch(cfg) {
     function numUniquesParts(api, raw) {
         var p = parseNumExpr(raw);
         if (p && p.kind === 'range') {
-            var out = [];
-            for (var v = p.min; v <= p.max; v++) out.push(api + '[]=' + v);
+            var out = [], hi = Math.min(p.max, 50);
+            for (var v = p.min; v <= hi; v++) out.push(api + '[]=' + v);
             return out;
         }
         return numCardsParts(api, raw);
     }
 
-    // Collection proxy query parts (reads mainCost[gte]/[lte]/[gt]/[lt]).
-    // exact → equal bounds; list → min..max envelope (degraded); range/bound direct.
-    function numCollParts(api, raw) {
+    // Collection & ownership proxy query parts: both proxies accept exact (=N),
+    // bracketed bounds ([gte]/[lte]/[gt]/[lt]), and discrete arrays (field[]=...)
+    // for disjoint lists (narrowed upstream to [min..max] and filtered in PHP).
+    function numProxyParts(api, raw) {
         var p = parseNumExpr(raw);
         if (!p) return [];
-        if (p.kind === 'exact') return [api + '[gte]=' + p.val, api + '[lte]=' + p.val];
-        if (p.kind === 'list') {
-            var mn = Math.min.apply(null, p.vals), mx = Math.max.apply(null, p.vals);
-            return [api + '[gte]=' + mn, api + '[lte]=' + mx];
-        }
+        if (p.kind === 'exact') return [api + '=' + p.val];
         if (p.kind === 'range') return [api + '[gte]=' + p.min, api + '[lte]=' + p.max];
-        return [api + '[' + p.op + ']=' + p.val]; // bound
-    }
-
-    // Ownership proxy supports exact only (mainCost=N). Returns [] for non-exact.
-    function numOwnParts(api, raw) {
-        var p = parseNumExpr(raw);
-        if (p && p.kind === 'exact') return [api + '=' + p.val];
-        return [];
+        if (p.kind === 'bound') return [api + '[' + p.op + ']=' + p.val];
+        var min = p.vals[0], max = p.vals[p.vals.length - 1];
+        if (p.vals.length === max - min + 1) {
+            return [api + '[gte]=' + min, api + '[lte]=' + max];
+        }
+        return p.vals.map(function(v) { return api + '[]=' + v; });
     }
 
     // ── Effect filter ────────────────────────────────────────────────────────
@@ -1020,11 +1043,10 @@ function CardSearch(cfg) {
 
         _statusFilterParts().forEach(function(p) { parts.push(p); });
 
-        // Numeric filters: ownership proxy wants exact (mainCost=N); collection
-        // proxy wants bracketed ranges (mainCost[gte]/[lte]/[gt]/[lt]).
-        var _numFn = _scope === 'ownership' ? numOwnParts : numCollParts;
+        // Numeric filters: collection and ownership proxies both handle exact,
+        // bracketed bounds ([gte]/[lte]/[gt]/[lt]), and discrete arrays for disjoint lists.
         NUM_FIELDS.forEach(function(f) {
-            _numFn(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+            numProxyParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
         });
 
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
@@ -1155,10 +1177,12 @@ function CardSearch(cfg) {
         filters.subtypes      = sv('subtype');
         filters.keywords      = sv('keyword');
         filters.variations    = sv('variation');
-        // Numeric filters: read the raw text expression (null when empty).
+        // Numeric filters: read the raw text expression (null when empty) and mark invalid expressions.
         NUM_FIELDS.forEach(function(f) {
             var el = document.getElementById(P + '-filter-' + f.id);
-            filters[f.key] = el && el.value.trim() !== '' ? el.value.trim() : null;
+            var raw = el ? el.value.trim() : '';
+            filters[f.key] = raw !== '' ? raw : null;
+            if (el) el.classList.toggle('is-invalid', raw !== '' && !numExprActive(raw));
         });
         // Card status is held by data-bool-filter buttons (set on click); nothing to read here.
         var hneEl = document.getElementById(P + '-filter-hasnoeffect');
@@ -1960,7 +1984,7 @@ function CardSearch(cfg) {
         });
         NUM_FIELDS.forEach(function(f) {
             var el = document.getElementById(P + '-filter-' + f.id);
-            if (el) el.value = '';
+            if (el) { el.value = ''; el.classList.remove('is-invalid'); }
         });
         var _hneReset = document.getElementById(P + '-filter-hasnoeffect');
         if (_hneReset) _hneReset.checked = false;
@@ -2206,7 +2230,7 @@ function CardSearch(cfg) {
                 });
             });
         });
-        // Numeric text inputs: set initial expression + live count update
+        // Numeric text inputs: set initial expression + live count update + Enter submit
         var _iniRange = cfg.initial || {};
         NUM_FIELDS.forEach(function(f) {
             var el = document.getElementById(P + '-filter-' + f.id);
@@ -2215,6 +2239,14 @@ function CardSearch(cfg) {
             if (v !== null && v !== undefined && v !== '') el.value = String(v);
             el.addEventListener('input',  updateFilterCount);
             el.addEventListener('change', updateFilterCount);
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (elSearch) filters.q = elSearch.value.trim();
+                    readTsValues();
+                    search(1);
+                }
+            });
         });
 
         // hasNoEffect checkbox

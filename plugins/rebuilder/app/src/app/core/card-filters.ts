@@ -211,13 +211,18 @@ const MAX_COST = 12;
  * Returns null when the expression is invalid, [] when empty.
  */
 export function parseCostExpression(expr: string): number[] | null {
-  const trimmed = expr.trim();
-  if (!trimmed) return [];
+  const normalized = expr
+    .trim()
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+    .replace(/(\d)\s*-\s*(\d)/g, '$1-$2')
+    .replace(/(\d)\s*([+-])(?=\s|$|[,;])/g, '$1$2')
+    .replace(/(<=|>=|<|>)\s*(\d)/g, '$1$2');
+  if (!normalized) return [];
   const values = new Set<number>();
   const span = (a: number, b: number) => {
     for (let v = Math.max(0, a); v <= Math.min(MAX_COST, b); v++) values.add(v);
   };
-  for (const raw of trimmed.split(/[,;\s]+/).filter(Boolean)) {
+  for (const raw of normalized.split(/[,;\s]+/).filter(Boolean)) {
     let m: RegExpExecArray | null;
     if ((m = /^(\d{1,2})$/.exec(raw))) {
       values.add(Number(m[1]));

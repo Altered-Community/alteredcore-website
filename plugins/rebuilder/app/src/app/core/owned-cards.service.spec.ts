@@ -47,6 +47,25 @@ describe('Collection and digital ownership query', () => {
       expect(p.has('rarity')).toBe(false);
     }
   });
+  it('sends contiguous ranges, disjoint lists, recall costs and powers to both collection and ownership proxies', () => {
+    for (const source of ['collection', 'owned'] as const) {
+      const p = ownedParams(
+        source,
+        { ...defaultFilters(source), mainCost: '1-3', recallCost: '1, 4', forestPower: '1-2, 5', mountainPower: '3', oceanPower: '<2' },
+        ['AX'],
+        1,
+        36,
+      );
+      expect(p.get('mainCost[gte]')).toBe('1');
+      expect(p.get('mainCost[lte]')).toBe('3');
+      expect(p.getAll('recallCost[]')).toEqual(['1', '4']);
+      expect(p.getAll('forestPower[]')).toEqual(['1', '2', '5']);
+      expect(p.get('mountainPower[gte]')).toBe('3');
+      expect(p.get('mountainPower[lte]')).toBe('3');
+      expect(p.get('oceanPower[gte]')).toBe('0');
+      expect(p.get('oceanPower[lte]')).toBe('1');
+    }
+  });
 });
 
 describe('OwnedCardsService', () => {

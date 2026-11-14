@@ -19,9 +19,12 @@ describe('parseCostExpression', () => {
     expect(parseCostExpression('')).toEqual([]);
     expect(parseCostExpression('3')).toEqual([3]);
     expect(parseCostExpression('1-3')).toEqual([1, 2, 3]);
+    expect(parseCostExpression('1 - 3')).toEqual([1, 2, 3]);
+    expect(parseCostExpression('1–3')).toEqual([1, 2, 3]);
     expect(parseCostExpression('3-1')).toEqual([1, 2, 3]);
     expect(parseCostExpression('10+')).toEqual([10, 11, 12]);
     expect(parseCostExpression('1, 4-5, 3')).toEqual([1, 3, 4, 5]);
+    expect(parseCostExpression('1-3, 5')).toEqual([1, 2, 3, 5]);
   });
 
   it('reads the site\'s bounds: <, >, <=, >= and « n- »', () => {

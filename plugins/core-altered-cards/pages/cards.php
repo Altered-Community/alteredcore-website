@@ -81,7 +81,6 @@ $sort = in_array($_GET['sort'] ?? '', $validSorts) ? $_GET['sort'] : 'default';
 $cols = (int)($_GET['cols'] ?? $_defaultCols);
 if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
-$validCostPower = array_map('strval', range(0, 12));
 $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
 $types    = array_key_exists('type', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['type']), $validTypes))
@@ -94,11 +93,11 @@ $sets = array_key_exists('set', $_GET)
     : $defaultSets;
 $keywords       = array_values(array_intersect(array_filter((array)($_GET['keyword']       ?? [])), array_keys($keywordsData)));
 $subtypes       = array_values(array_intersect(array_filter((array)($_GET['subtype']       ?? [])), array_keys($subtypesData)));
-$mainCost   = isset($_GET['mainCost'])   && in_array($_GET['mainCost'],   $validCostPower, true) ? $_GET['mainCost']   : null;
-$recallCost = isset($_GET['recallCost']) && in_array($_GET['recallCost'], $validCostPower, true) ? $_GET['recallCost'] : null;
-$forest     = isset($_GET['forest'])     && in_array($_GET['forest'],     $validCostPower, true) ? $_GET['forest']     : null;
-$mountain   = isset($_GET['mountain'])   && in_array($_GET['mountain'],   $validCostPower, true) ? $_GET['mountain']   : null;
-$ocean      = isset($_GET['ocean'])      && in_array($_GET['ocean'],      $validCostPower, true) ? $_GET['ocean']      : null;
+$mainCost   = cacValidateNumExpr($_GET['mainCost']   ?? null);
+$recallCost = cacValidateNumExpr($_GET['recallCost'] ?? null);
+$forest     = cacValidateNumExpr($_GET['forest']     ?? null);
+$mountain   = cacValidateNumExpr($_GET['mountain']   ?? null);
+$ocean      = cacValidateNumExpr($_GET['ocean']      ?? null);
 $kwMode         = ($_GET['kwMode'] ?? '') === 'and' ? 'and' : 'or';
 $hasNoEffect    = ($_GET['hasNoEffect'] ?? '') === 'true';
 $variations = array_key_exists('variation', $_GET)

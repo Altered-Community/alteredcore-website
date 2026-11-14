@@ -85,11 +85,25 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
   add('cardSet[]', f.sets);
   add('subTypes[]', f.subtypes);
   if (f.q.trim()) p = p.set('name', f.q.trim());
-  const costs = parseCostExpression(f.mainCost) ?? [];
-  if (costs.length) {
-    // The collection API takes a range, the ownership API one exact value.
-    if (source === 'collection') p = p.set('mainCost[gte]', Math.min(...costs)).set('mainCost[lte]', Math.max(...costs));
-    else if (costs.length === 1) p = p.append('mainCost[]', costs[0]);
+  // Both collection-search and ownership-search accept `[gte]`/`[lte]` bounds for contiguous spans
+  // and `field[]` arrays for disjoint lists (narrowed upstream + exact-filtered in PHP).
+  const numericFields: readonly [string, string][] = [
+    ['mainCost', f.mainCost],
+    ['recallCost', f.recallCost],
+    ['forestPower', f.forestPower],
+    ['mountainPower', f.mountainPower],
+    ['oceanPower', f.oceanPower],
+  ];
+  for (const [key, expr] of numericFields) {
+    const vals = parseCostExpression(expr) ?? [];
+    if (!vals.length) continue;
+    const min = vals[0];
+    const max = vals[vals.length - 1];
+    if (vals.length === max - min + 1) {
+      p = p.set(`${key}[gte]`, min).set(`${key}[lte]`, max);
+    } else {
+      for (const v of vals) p = p.append(`${key}[]`, v);
+    }
   }
   return p;
 }

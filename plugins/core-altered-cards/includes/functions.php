@@ -1,6 +1,7 @@
 <?php
 // Card/collection helpers for the core-altered-cards plugin.
 // Required by plugin pages and the collection-search API endpoint.
+require_once __DIR__ . '/numeric-filter.php';
 
 function loadSearchSettings(): array {
     static $cfg = null;
