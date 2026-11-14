@@ -806,14 +806,17 @@ function csrfValid(?string $token): bool {
 function kcClearSession(): void {
     foreach (['kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email',
               'kc_username', 'kc_id_token', 'kc_access_token',
-              'kc_access_token_exp', 'user_id'] as $key) {
+              'kc_access_token_exp', 'kc_is_admin', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = request_is_https();
-    setcookie('kc_remember', '', [
-        'expires' => time() - 3600, 'path' => '/',
-        'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
-    ]);
+    if (!headers_sent()) {
+        $secure = request_is_https();
+        setcookie('kc_remember', '', [
+            'expires' => time() - 3600, 'path' => '/',
+            'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
+        ]);
+    }
+    unset($_COOKIE['kc_remember']);
 }
 
 function clearAuthSession(): void {
@@ -873,19 +876,29 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
-    // Verify the refresh token is still in DB — it is nulled on every logout,
-    // which invalidates all concurrent sessions for that user immediately.
+    // Verify the refresh token is still in DB (nulled on logout) and not expired.
     $userId = (int)($_SESSION['user_id'] ?? 0);
-    if ($userId > 0) {
-        try {
-            $stmt = getDB()->prepare(q("SELECT kc_refresh_token FROM {users} WHERE id = :id LIMIT 1"));
-            $stmt->execute([':id' => $userId]);
-            $row = $stmt->fetch();
-            if ($row !== false && empty($row['kc_refresh_token'])) {
-                kcClearSession();
-                return false;
-            }
-        } catch (Throwable $e) {}
+    if ($userId <= 0) {
+        kcClearSession();
+        return false;
+    }
+
+    try {
+        $stmt = getDB()->prepare(q("SELECT kc_refresh_token, kc_token_expiry FROM {users} WHERE id = :id LIMIT 1"));
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch();
+        if ($row === false || empty($row['kc_refresh_token'])) {
+            kcClearSession();
+            return false;
+        }
+        $rtExp = (int)($row['kc_token_expiry'] ?? 0);
+        if ($rtExp > 0 && $rtExp <= time()) {
+            require_once __DIR__ . '/func.keycloak.php';
+            kc_drop_refresh_token($userId);
+            return false;
+        }
+    } catch (Throwable $e) {
+        return false;
     }
 
     // Admin-triggered force-logout
@@ -897,6 +910,14 @@ function kcIsLoggedIn(): bool {
 
     if (!globalLogoutSessionIsValid()) {
         kcClearSession();
+        return false;
+    }
+
+    // Ensure a valid access token is present or refreshable with Keycloak; otherwise
+    // the PHP session outlives Keycloak and the header displays a signed-in user
+    // whose API calls (decks, collection, ownership) fail.
+    require_once __DIR__ . '/func.keycloak.php';
+    if (!kc_get_access_token($userId)) {
         return false;
     }
 
