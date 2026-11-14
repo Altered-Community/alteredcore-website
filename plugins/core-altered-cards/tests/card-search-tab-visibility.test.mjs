@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 
-// Verify tab-visibility CSS precedence (.d-flex !important) and sort state reset on Uniques.
+// Verify tab-visibility CSS precedence (.d-flex !important) and Uniques sort behavior.
 function makeStyle() {
   const props = {};
   return {
@@ -66,16 +66,19 @@ function loadCardSearch() {
   return vm.runInThisContext(`(function(){ ${src}\nreturn CardSearch; })()`);
 }
 
-function setup({ search = '' } = {}) {
+function setup({ search = '', sort = 'default' } = {}) {
   const byId = new Map();
   const pushedUrls = [];
+  const fetchUrls = [];
   const root = makeEl('cs-panel');
-  const sortWrap = makeEl('sort-wrap', 'div', { 'data-tabs': 'all collection ownership' });
+  const sortWrap = makeEl('sort-wrap', 'div', { 'data-tabs': 'all unique collection ownership' });
   const hneWrap = makeEl('hne-wrap', 'label', { 'data-tabs': 'all' });
   const dataTabsEls = [sortWrap, hneWrap];
 
+  const randomOpt = { hidden: false, disabled: false };
   const sortSelect = makeEl('cs-sort', 'select');
-  sortSelect.value = 'default';
+  sortSelect.value = sort;
+  sortSelect.querySelector = (sel) => (sel === 'option[value="random"]' ? randomOpt : null);
   byId.set('cs-panel', root);
   byId.set('cs-sort', sortSelect);
 
@@ -103,13 +106,16 @@ function setup({ search = '' } = {}) {
     getElementById(id) { return byId.get(id) || null; },
     addEventListener() {},
   };
-  globalThis.fetch = () => Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({ member: [], totalItems: 0, iter: { total: 0 }, cards: [] }),
-  });
+  globalThis.fetch = (url) => {
+    fetchUrls.push(url);
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ member: [], totalItems: 0, iter: { total: 0 }, cards: [] }),
+    });
+  };
 
-  return { root, sortWrap, hneWrap, sortSelect, tabButtons, pushedUrls };
+  return { root, sortWrap, hneWrap, sortSelect, randomOpt, tabButtons, pushedUrls, fetchUrls };
 }
 
 const CardSearch = loadCardSearch();
@@ -120,9 +126,9 @@ function ok(cond, msg) {
   else { console.log('  FAIL - ' + msg); process.exitCode = 1; }
 }
 
-// 1. Direct URL load on tab=unique&sort=mana_asc hides .d-flex controls with !important and drops sort
+// 1. Direct URL load on tab=unique&sort=mana_asc keeps sort visible, hides random, and sends sort=mainCost:asc
 {
-  const env = setup({ search: '?tab=unique&sort=mana_asc' });
+  const env = setup({ search: '?tab=unique&sort=mana_asc', sort: 'mana_asc' });
   const cs = CardSearch({
     prefix: 'cs',
     mode: 'cards',
@@ -130,21 +136,38 @@ function ok(cond, msg) {
     uniquesApiBase: 'http://localhost:8005',
     initial: { sort: 'mana_asc' },
   });
-  ok(env.sortWrap.style._prop('display')?.value === 'none' && env.sortWrap.style._prop('display')?.priority === 'important',
-    'sort wrapper hidden with display:none !important on unique tab');
+  ok(env.sortWrap.style._prop('display') === null,
+    'sort wrapper visible on unique tab');
   ok(env.hneWrap.style._prop('display')?.value === 'none' && env.hneWrap.style._prop('display')?.priority === 'important',
     'hasNoEffect wrapper hidden with display:none !important on unique tab');
-  ok(cs.filters.sort === 'default', 'filters.sort reset to default on unique tab');
-  ok(env.sortSelect.value === 'default', 'sort select value reset to default on unique tab');
+  ok(cs.filters.sort === 'mana_asc', 'filters.sort preserved as mana_asc on unique tab');
+  ok(env.sortSelect.value === 'mana_asc', 'sort select value preserved as mana_asc on unique tab');
+  ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option hidden and disabled on unique tab');
   cs.search(1);
-  ok(env.pushedUrls.length === 1 && !env.pushedUrls[0].includes('sort='), 'search URL omits sort on unique tab');
+  ok(env.pushedUrls.length === 1 && env.pushedUrls[0].includes('sort=mana_asc'), 'search URL preserves sort on unique tab');
+  ok(env.fetchUrls.length === 1 && env.fetchUrls[0].includes('sort=mainCost%3Aasc'), 'uniques API fetch sends sort=mainCost:asc');
 
-  // Switching back to all restores display property so .d-flex applies again
+  // Direct URL load on tab=unique&sort=random falls back to default
+  const randEnv = setup({ search: '?tab=unique&sort=random', sort: 'random' });
+  const randCs = CardSearch({
+    prefix: 'cs',
+    mode: 'cards',
+    pushState: true,
+    uniquesApiBase: 'http://localhost:8005',
+    initial: { sort: 'random' },
+  });
+  ok(randCs.filters.sort === 'default', 'random sort reset to default on unique tab');
+  ok(randEnv.sortSelect.value === 'default', 'sort select value reset to default when random requested on unique tab');
+  randCs.search(1);
+  ok(randEnv.pushedUrls.length === 1 && !randEnv.pushedUrls[0].includes('sort='), 'search URL omits sort when random was reset on unique tab');
+
+  // Switching back to all restores display property and random sort option
   const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
   env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? allBtn : null) } });
   ok(env.sortWrap.style._prop('display') === null, 'sort wrapper display cleared when switching back to all tab');
   ok(env.hneWrap.style._prop('display') === null, 'hasNoEffect display cleared when switching back to all tab');
   ok(env.sortSelect.disabled === false, 'sort select enabled on all tab');
+  ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option re-enabled on all tab');
 }
 
 // 2. Collection tab keeps sort wrapper visible (disabled) and resets sort
