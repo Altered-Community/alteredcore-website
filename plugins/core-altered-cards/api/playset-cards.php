@@ -16,6 +16,7 @@ if (!defined('COLLECTION_API_URL') || !COLLECTION_API_URL) {
 }
 
 if (!kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;

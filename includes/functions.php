@@ -196,8 +196,10 @@ function validateSvgUpload(string $svg): bool {
 function initLang(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
-    $userId     = (int)($_SESSION['user_id'] ?? 0);
-    $isLoggedIn = $userId > 0 && (!empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']));
+    // Validate the session first so stale session IDs neither read nor write DB preferences,
+    // while a valid kc_remember/local_remember cookie restores $_SESSION['user_id'] in time.
+    $userId     = 0;
+    $isLoggedIn = kcIsLoggedIn() && ($userId = (int)($_SESSION['user_id'] ?? 0)) > 0;
 
     // Explicit lang change via ?lang=
     if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'fr', 'es', 'it', 'de'], true)) {
@@ -547,13 +549,7 @@ function h(string $str): string {
 function requireAdmin(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return;
-    // Attempt session restore from kc_remember cookie if KC session has expired
-    if (empty($_SESSION['kc_logged_in']) && !empty($_COOKIE['kc_remember'])) {
-        require_once __DIR__ . '/func.keycloak.php';
-        kc_restore_session();
-    }
-    $authenticated = !empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']);
-    if ($authenticated && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g && $g['can_access_admin']) return; // no group = no admin access
     }
@@ -632,6 +628,7 @@ function adminGetUserGroup(): ?array {
     if ($loaded) return $result;
     $loaded = true;
     if (session_status() === PHP_SESSION_NONE) session_start();
+    if (empty($_SESSION['admin_logged_in']) && !kcIsLoggedIn()) return null;
     if (saIsPreviewingGroup()) {
         $gid = (int)$_SESSION['sa_preview_group_id'];
         try {
@@ -743,7 +740,7 @@ function adminHasSection(string $section): bool {
 function canViewAdminPanel(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['kc_logged_in']) && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g) return $g['can_access_admin'];
         return false; // no group assigned = no admin access
@@ -754,7 +751,7 @@ function canViewAdminPanel(): bool {
 function isAdminUser(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         if (isset($_SESSION['kc_is_admin'])) return (bool)$_SESSION['kc_is_admin'];
         try {
             $stmt = getDB()->prepare(q("SELECT is_admin FROM {users} WHERE id = :id"));

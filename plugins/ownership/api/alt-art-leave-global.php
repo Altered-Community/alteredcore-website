@@ -18,9 +18,17 @@ if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) {
     return;
 }
 
+if (!kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    return;
+}
+
 $userId = (int)($_SESSION['user_id'] ?? 0);
 $token = kc_get_access_token($userId);
 if (!$token) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'token']);
     return;

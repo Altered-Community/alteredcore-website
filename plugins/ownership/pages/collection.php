@@ -11,8 +11,10 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $txt = [
     'en' => ['unavailable' => 'The digital ownership service is not configured on this site.', 'anon_login' => 'Log in / Sign up',
+              'login_prompt' => 'Log in to browse your digital ownership.',
               'cards_plugin_missing' => 'The Cards plugin is not active on this site.'],
     'fr' => ['unavailable' => 'Le service de propriété numérique n\'est pas configuré sur ce site.', 'anon_login' => 'Se connecter / S\'inscrire',
+              'login_prompt' => 'Connectez-vous pour parcourir votre propriété numérique.',
               'cards_plugin_missing' => 'Le plugin Cartes n\'est pas actif sur ce site.'],
 ][getUiLang()];
 
@@ -36,9 +38,12 @@ $ownActiveTab = 'collection';
 
     <?php if (!$ownLoggedIn): ?>
     <div class="ac-card">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
-            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
-        </a>
+        <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+        <div class="ac-card__footer">
+            <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+                <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
+            </a>
+        </div>
     </div>
     <?php elseif (!$cacAvailable): ?>
     <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['cards_plugin_missing']) ?></div></div>
@@ -125,7 +130,7 @@ $ownActiveTab = 'collection';
     $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
     $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
-    $_csUserId    = (int)($_SESSION['user_id'] ?? 0);
+    $_csUserId    = $ownLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
     $_collEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
     $_collMode    = $_collEnabled && $_csUserId > 0;
 

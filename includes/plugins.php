@@ -224,8 +224,12 @@ function pluginApiGuard(array $api): ?array {
         $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? pluginApiBody()['csrf_token'] ?? null;
         if (!csrfValid(is_string($token) ? $token : null)) return [403, 'csrf', []];
     }
-    if ($api['auth'] === 'user' && !kcIsLoggedIn()) return [401, 'unauthenticated', []];
-    if ($api['auth'] === 'admin' && !isAdminUser()) return [kcIsLoggedIn() ? 403 : 401, kcIsLoggedIn() ? 'forbidden' : 'unauthenticated', []];
+    if ($api['auth'] === 'user' && !kcIsLoggedIn()) return [401, 'unauthenticated', ['X-Ac-Auth-State: unauthenticated']];
+    if ($api['auth'] === 'admin' && !isAdminUser()) {
+        return kcIsLoggedIn()
+            ? [403, 'forbidden', []]
+            : [401, 'unauthenticated', ['X-Ac-Auth-State: unauthenticated']];
+    }
     return null;
 }
 

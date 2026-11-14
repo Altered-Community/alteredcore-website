@@ -590,6 +590,15 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <p class="small text-muted"><?= h($_csTxt['api_later'] ?? '') ?></p>
     </div>
 
+    <!-- Session expired (401 on authenticated tab) -->
+    <div id="<?= h($_csP) ?>-auth-error" class="ac-state-pane" style="display:none">
+        <i class="fa-solid fa-triangle-exclamation ac-state-icon" style="opacity:1;color:var(--ac-color-required)"></i>
+        <p class="small text-muted mb-2"><?= h($_csLang === 'fr' ? 'Votre session a expiré. Veuillez vous reconnecter.' : 'Your session has expired. Please sign in again.') ?></p>
+        <a href="<?= h($_csBaseUrl) ?>/pages/login" class="ac-button ac-button--sm">
+            <?= h($_csLang === 'fr' ? 'Se connecter' : 'Sign in') ?>
+        </a>
+    </div>
+
     <!-- Grid -->
     <?php $_csGridClass = $_csMode === 'deck' ? 'cards-grid-db' : 'cards-grid'; ?>
     <?php $_csCssVar    = $_csMode === 'deck' ? '--db-cols' : '--cards-cols'; ?>

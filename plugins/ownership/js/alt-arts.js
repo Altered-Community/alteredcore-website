@@ -4,10 +4,21 @@
 
     const cfg = window.OWN_AA_CONFIG || {};
 
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+
     const t = (key, fallback) => {
         const dict = window.OWN_I18N || {};
         const lang = document.documentElement.lang || 'en';
         return (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || fallback;
+    };
+
+    const renderAuthExpired = (el) => {
+        window.acNotifyAuthExpired?.();
+        el.innerHTML = '<span>' + escapeHtml(t('authExpired', 'Session expired. Please sign in again.')) + '</span> '
+            + '<a href="' + escapeHtml(t('loginUrl', '/pages/login')) + '" class="ac-button ac-button--sm mt-2">'
+            + escapeHtml(t('loginBtn', 'Sign in')) + '</a>';
     };
 
     // Shared config passed to every OWN_ALT_ART_WIDGET.createFamilyRow() call on this page.
@@ -104,9 +115,22 @@
         return parts.join('&');
     };
 
+    const showFetchError = (err) => {
+        errorEl.hidden = false;
+        if (err && err.isAuth) {
+            renderAuthExpired(errorEl);
+        } else {
+            errorEl.textContent = t('networkError', 'Network error.');
+        }
+    };
+
     const fetchPage = async (skip) => {
         const res = await fetch(cfg.searchUrl + '?' + buildQuery(skip), { credentials: 'same-origin' });
-        if (!res.ok) throw new Error('load failed');
+        if (!res.ok) {
+            const err = new Error('load failed');
+            if (res.status === 401) err.isAuth = true;
+            throw err;
+        }
         return res.json();
     };
 
@@ -131,11 +155,10 @@
 
             families.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
             loadMoreBtn.hidden = !hasMore;
-        } catch {
+        } catch (err) {
             if (myToken !== searchToken) return;
             loadingEl.hidden = true;
-            errorEl.hidden = false;
-            errorEl.textContent = t('networkError', 'Network error.');
+            showFetchError(err);
         }
     };
 
@@ -153,10 +176,9 @@
 
             page.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
             loadMoreBtn.hidden = !hasMore;
-        } catch {
+        } catch (err) {
             if (myToken !== searchToken) return;
-            errorEl.hidden = false;
-            errorEl.textContent = t('networkError', 'Network error.');
+            showFetchError(err);
         } finally {
             if (myToken === searchToken) loadMoreBtn.disabled = false;
         }

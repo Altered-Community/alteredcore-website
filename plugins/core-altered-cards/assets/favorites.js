@@ -33,7 +33,14 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body:    body.toString(),
         })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) {
+            if (r.status === 401) {
+                CFG.enabled = false;
+                if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                return null;
+            }
+            return r.ok ? r.json() : null;
+        })
         .then(function (data) {
             btn.disabled = false;
             if (!data || !data.ok) return;

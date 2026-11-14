@@ -395,6 +395,7 @@ function trDecodeMainDeck(?string $mainDeck): array
  */
 function trUserApiToken(): ?string
 {
+    if (!kcIsLoggedIn()) return null;
     $userId = (int)($_SESSION['user_id'] ?? 0);
     if (!$userId) return null;
     require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';

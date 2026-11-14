@@ -5,6 +5,10 @@ $txt = [
     'en' => [
         'page_title'    => 'Boosters',
         'anon_login'    => 'Log in / Sign up',
+        'login_prompt'  => 'Log in to view and open your digital boosters.',
+        'authExpired'   => 'Your session has expired. Please sign in again.',
+        'loginBtn'      => 'Sign in',
+        'loginUrl'      => BASE_URL . '/pages/login',
         'loading'       => 'Loading…',
         'empty'         => 'No boosters to open.',
         'loadError'     => 'Could not load your boosters.',
@@ -18,6 +22,10 @@ $txt = [
     'fr' => [
         'page_title'    => 'Boosters',
         'anon_login'    => 'Se connecter / S\'inscrire',
+        'login_prompt'  => 'Connectez-vous pour consulter et ouvrir vos boosters numériques.',
+        'authExpired'   => 'Votre session a expiré. Veuillez vous reconnecter.',
+        'loginBtn'      => 'Se connecter',
+        'loginUrl'      => BASE_URL . '/pages/login',
         'loading'       => 'Chargement…',
         'empty'         => 'Aucun booster à ouvrir.',
         'loadError'     => 'Impossible de charger vos boosters.',
@@ -45,9 +53,12 @@ $ownActiveTab = 'boosters';
 
     <?php if (!$ownLoggedIn): ?>
     <div class="ac-card">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
-            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
-        </a>
+        <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+        <div class="ac-card__footer">
+            <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+                <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
+            </a>
+        </div>
     </div>
     <?php else: ?>
 
