@@ -192,4 +192,19 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(store.total()).toBe(0);
     expect(store.hasMore()).toBe(false);
   });
+
+  it('preserves shared filters (costs, search text) when switching source tabs', async () => {
+    store.configure('all', 'AX', 'frontier');
+    await answer(pending()[0], 1, 1);
+    store.patch({ q: 'kelon', mainCost: '3' });
+    await answer(pending()[0], 1, 1);
+
+    store.configure('uniques', 'AX', 'frontier');
+    expect(store.filters()).toMatchObject({ q: 'kelon', mainCost: '3', environment: 'frontier' });
+    const [uReq] = pendingUniques();
+    expect(uReq.request.params.get('format')).toBe('frontier');
+    expect(uReq.request.params.getAll('mainCost[]')).toEqual(['3']);
+    uReq.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    await settle();
+  });
 });

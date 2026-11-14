@@ -91,34 +91,20 @@
         });
     }
 
-    // card-search.js's tab-click handler calls resetFilters() on every switch
-    // (even back to a tab you were already on before, via a different tab) —
-    // wiping the hero-faction/default-type preselection above just like Reset
-    // does — and, in deck mode, never re-searches on tab switch (unlike the
-    // Cards page), so the grid is left showing the *previous* tab's results
-    // under the new tab's filters until "Rechercher" is clicked. Re-apply the
-    // defaults on every switch, which also (re)searches so the grid always
-    // matches whichever tab is now active. Registered after CardSearch's own
-    // tab listener so setTab() has already run by the time this fires. Tracks
-    // the last tab itself (mirroring the native handler's own no-op guard)
-    // since _tab is private to card-search.js. The playset tab is a dashboard
-    // with no result grid — search() no-ops there, so it needs no special case.
-    var _dbLastTab = 'all';
+    // CardSearch preserves shared filters (faction, types, costs, search text) across
+    // tab switches in this session, so switching tabs only needs to sync the Uniques
+    // Frontier preset and re-run the deck search (Favoris already searches itself).
+    var _dbLastTab = engine.getTab ? engine.getTab() : 'all';
     var _dbTabsPanel = document.getElementById('db-panel');
     if (_dbTabsPanel) {
         _dbTabsPanel.addEventListener('click', function(e) {
             var tabBtn = e.target.closest('.cs-tab[data-tab]');
             if (!tabBtn || tabBtn.disabled) return;
-            var newTab = tabBtn.dataset.tab;
+            var newTab = engine.getTab ? engine.getTab() : tabBtn.dataset.tab;
             if (newTab === _dbLastTab) return;
             _dbLastTab = newTab;
-            // resetFilters() also cleared filters.format back to "all", so a Frontier
-            // deck arrived on the Uniques tab with the Frontier preset unselected.
-            // Re-apply it here for the same reason the defaults above are re-applied.
             _syncUniqueTabToFormat();
-            // Favoris already (re)searched itself in the native handler; the
-            // duplicate here is harmless (search() aborts the in-flight one).
-            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
+            if (newTab !== 'favoris') engine.search(1);
         });
     }
 
@@ -148,15 +134,10 @@
     // above) — updateFilterCount() re-triggers it even when the click below
     // is a no-op (deck format changes but Frontier-preset stays the same).
     function _syncUniqueTabToFormat() {
-        var root = document.getElementById('db-panel');
         var legality = window.getDeckFormatLegality && window.getDeckFormatLegality();
-        if (!root || !legality) return;
-        var wantFrontier = legality.key === 'frontier';
-        var targetBtn = root.querySelector(
-            '.filter-toggle[data-filter="format"][data-value="' + (wantFrontier ? (AlteredDB.uniquesFrontierFormat || 'frontier') : '') + '"]'
-        );
-        if (targetBtn && !targetBtn.classList.contains('active')) targetBtn.click();
-        if (window.updateFilterCount) window.updateFilterCount();
+        if (!legality) return;
+        var wantFormat = legality.key === 'frontier' ? (AlteredDB.uniquesFrontierFormat || 'frontier') : '';
+        if (engine && engine.setFormat) engine.setFormat(wantFormat);
     }
     _syncStatusButtonsToFormat();
     _syncUniqueTabToFormat();

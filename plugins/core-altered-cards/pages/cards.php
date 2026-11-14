@@ -100,6 +100,10 @@ $mountain   = cacValidateNumExpr($_GET['mountain']   ?? null);
 $ocean      = cacValidateNumExpr($_GET['ocean']      ?? null);
 $kwMode         = ($_GET['kwMode'] ?? '') === 'and' ? 'and' : 'or';
 $hasNoEffect    = ($_GET['hasNoEffect'] ?? '') === 'true';
+$_rawFormat     = trim((string)($_GET['format'] ?? ''));
+$format         = ($_rawFormat !== '' && cacIsValidUniquesFormatId($_rawFormat)) ? $_rawFormat : '';
+$_rawCr         = (string)($_GET['costRelation'] ?? '');
+$costRelation   = in_array($_rawCr, ['eq', 'main_gt', 'recall_gt'], true) ? $_rawCr : '';
 $variations = array_key_exists('variation', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['variation']), array_keys($variationsData)))
     : $defaultVariations;
@@ -340,7 +344,6 @@ CardSearch({
     initial: {
         q:              <?= json_encode($q) ?>,
         faction:        <?= json_encode($factions) ?>,
-        faction:        <?= json_encode($factions) ?>,
         factionExplicit:<?= array_key_exists('faction', $_GET) ? 'true' : 'false' ?>,
         type:           <?= json_encode($types) ?>,
         typeExplicit:   <?= array_key_exists('type', $_GET) ? 'true' : 'false' ?>,
@@ -358,6 +361,8 @@ CardSearch({
         ocean:       <?= json_encode($ocean) ?>,
         keywordMode:    <?= json_encode($kwMode) ?>,
         hasNoEffect:    <?= $hasNoEffect ? 'true' : 'false' ?>,
+        costRelation:   <?= json_encode($costRelation) ?>,
+        format:         <?= json_encode($format) ?>,
         isBanned:       <?= $isBanned    ? 'true' : 'false' ?>,
         isErrated:      <?= $isErrated   ? 'true' : 'false' ?>,
         isSuspended:    <?= $isSuspended ? 'true' : 'false' ?>,

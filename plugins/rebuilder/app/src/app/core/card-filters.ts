@@ -203,7 +203,69 @@ export function setsFor(source: CardSource): SetInfo[] {
   return CARD_SETS.filter((s) => refs.includes(s.reference));
 }
 
-const MAX_COST = 12;
+const MAX_COST = 15;
+
+/**
+ * True when any active numeric expression for the current source fails parsing.
+ * Used to avoid firing an unfiltered request while the input displays an error state.
+ */
+export function hasInvalidNumericFilters(filters: SearchFilters, source: CardSource): boolean {
+  if (source === 'favorites') return false;
+  return (
+    parseCostExpression(filters.mainCost) === null ||
+    parseCostExpression(filters.recallCost) === null ||
+    parseCostExpression(filters.forestPower) === null ||
+    parseCostExpression(filters.mountainPower) === null ||
+    parseCostExpression(filters.oceanPower) === null
+  );
+}
+
+/**
+ * Preserves shared criteria across source tab switches (text, costs, powers, factions, effects…)
+ * while recomputing only source-specific defaults (sets, rarities, types, Frontier environment).
+ */
+export function adaptFiltersForSource(
+  prev: SearchFilters,
+  prevSource: CardSource,
+  nextSource: CardSource,
+  format: DeckFormat | null = null,
+): SearchFilters {
+  const nextDefaults = defaultFilters(nextSource, format);
+  const prevDefaults = defaultFilters(prevSource, format);
+
+  const sameAsPrevDefaultSets =
+    prev.sets.length === prevDefaults.sets.length && prev.sets.every((s) => prevDefaults.sets.includes(s));
+  const allowedSets = new Set(setsFor(nextSource).map((s) => s.reference));
+  const sets = sameAsPrevDefaultSets ? nextDefaults.sets : prev.sets.filter((s) => allowedSets.has(s));
+
+  const allowedRarities = new Set(rarityOptionsFor(nextSource).map((r) => r.value));
+  const rarities =
+    nextSource === 'uniques'
+      ? []
+      : prevSource === 'uniques'
+        ? nextDefaults.rarities
+        : prev.rarities.filter((r) => allowedRarities.has(r));
+
+  const types =
+    nextSource === 'uniques'
+      ? []
+      : prevSource === 'uniques'
+        ? nextDefaults.types
+        : prev.types;
+
+  const environment: SearchFilters['environment'] =
+    nextSource === 'uniques'
+      ? (format === 'frontier' ? 'frontier' : prev.environment)
+      : prev.environment;
+
+  return {
+    ...prev,
+    sets,
+    rarities,
+    types,
+    environment,
+  };
+}
 
 /**
  * Parses "3", "1-3", "4+" and comma lists into the explicit values the cards API
@@ -263,6 +325,9 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     sets: filters.sets,
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
+    forestPowers: parseCostExpression(filters.forestPower) ?? [],
+    mountainPowers: parseCostExpression(filters.mountainPower) ?? [],
+    oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
     // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
     format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
     effects: filters.effects.map((b) => ({
@@ -337,13 +402,13 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   if (filters.mainCost.trim()) chips.push({ id: 'mainCost', label: $localize`:@@search.filters.chip.mainCost:Coût main : ${filters.mainCost.trim()}:cost:` });
   if (filters.recallCost.trim()) chips.push({ id: 'recallCost', label: $localize`:@@search.filters.chip.recallCost:Réserve : ${filters.recallCost.trim()}:cost:` });
   if (filters.noEffect) chips.push({ id: 'noEffect', label: $localize`:@@search.filters.chip.noEffect:Sans effet` });
+  const power = (id: 'forestPower' | 'mountainPower' | 'oceanPower', label: string) => {
+    if (filters[id].trim()) chips.push({ id, label: `${label} : ${filters[id].trim()}` });
+  };
+  power('forestPower', $localize`:@@ui.terrain.forest:Forêt`);
+  power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
+  power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
   if (source !== 'uniques') {
-    const power = (id: 'forestPower' | 'mountainPower' | 'oceanPower', label: string) => {
-      if (filters[id].trim()) chips.push({ id, label: `${label} : ${filters[id].trim()}` });
-    };
-    power('forestPower', $localize`:@@ui.terrain.forest:Forêt`);
-    power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
-    power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
     if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
     if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
     if (filters.altArts) chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });

@@ -4,8 +4,10 @@ import {
   ALL_CARDS_SETS,
   UNIQUES_SETS,
   activeFilterCount,
+  adaptFiltersForSource,
   defaultFilters,
   filterChips,
+  hasInvalidNumericFilters,
   newEffectBlock,
   parseCostExpression,
   removeChip,
@@ -22,7 +24,8 @@ describe('parseCostExpression', () => {
     expect(parseCostExpression('1 - 3')).toEqual([1, 2, 3]);
     expect(parseCostExpression('1–3')).toEqual([1, 2, 3]);
     expect(parseCostExpression('3-1')).toEqual([1, 2, 3]);
-    expect(parseCostExpression('10+')).toEqual([10, 11, 12]);
+    expect(parseCostExpression('10+')).toEqual([10, 11, 12, 13, 14, 15]);
+    expect(parseCostExpression('13-15')).toEqual([13, 14, 15]);
     expect(parseCostExpression('1, 4-5, 3')).toEqual([1, 3, 4, 5]);
     expect(parseCostExpression('1-3, 5')).toEqual([1, 2, 3, 5]);
   });
@@ -30,8 +33,8 @@ describe('parseCostExpression', () => {
   it('reads the site\'s bounds: <, >, <=, >= and « n- »', () => {
     expect(parseCostExpression('<3')).toEqual([0, 1, 2]);
     expect(parseCostExpression('<=2')).toEqual([0, 1, 2]);
-    expect(parseCostExpression('>10')).toEqual([11, 12]);
-    expect(parseCostExpression('>=11')).toEqual([11, 12]);
+    expect(parseCostExpression('>10')).toEqual([11, 12, 13, 14, 15]);
+    expect(parseCostExpression('>=11')).toEqual([11, 12, 13, 14, 15]);
     expect(parseCostExpression('2-')).toEqual([0, 1, 2]);
   });
 
@@ -53,7 +56,7 @@ describe('advanced filters (cards API)', () => {
       otherFactions: ['LY'],
     };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
+    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
     expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
@@ -117,6 +120,17 @@ describe('toUniquesQuery (Uniques search API)', () => {
     } finally {
       env.uniquesFrontierFormat = saved;
     }
+  });
+
+  it('sends biome powers for uniques and renders their chips', () => {
+    const f = { ...defaultFilters('uniques'), forestPower: '3', mountainPower: '2-3', environment: 'frontier' as const };
+    const q = toUniquesQuery(f, 'AX');
+    expect(q.forestPowers).toEqual([3]);
+    expect(q.mountainPowers).toEqual([2, 3]);
+    const hp = buildUniquesParams(q, null, 36);
+    expect(hp.getAll('forestPower[]')).toEqual(['3']);
+    expect(hp.getAll('mountainPower[]')).toEqual(['2', '3']);
+    expect(filterChips(f, 'uniques').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'mountainPower']));
   });
 
   it('turns an exact reference into a card lookup', () => {
@@ -202,6 +216,25 @@ describe('Favoris filters', () => {
     const f = { ...defaultFilters('favorites'), q: 'kelon', mainCost: '5', types: ['SPELL'], rarities: ['RARE'], sets: ['CORE'], otherFactions: ['BR'] };
     expect(filterChips(f, 'favorites').map((c) => c.id).sort()).toEqual(['otherFactions', 'rarities', 'sets']);
     expect(activeFilterCount(f, 'favorites')).toBe(3);
+  });
+});
+
+describe('cross-tab preservation & numeric validation', () => {
+  it('preserves shared filters when switching source tabs', () => {
+    const f = { ...defaultFilters('all'), q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'] };
+    const u = adaptFiltersForSource(f, 'all', 'uniques', 'frontier');
+    expect(u).toMatchObject({ q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'], environment: 'frontier', rarities: [], types: [] });
+    expect(u.sets).toContain('COREKS');
+    const back = adaptFiltersForSource(u, 'uniques', 'all', 'frontier');
+    expect(back).toMatchObject({ q: 'kelon', mainCost: '2-3', forestPower: '4', factions: ['AX'] });
+    expect(back.rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
+  });
+
+  it('detects invalid numeric expressions except on favorites where they are disabled', () => {
+    const bad = { ...defaultFilters('uniques'), mainCost: 'abc' };
+    expect(hasInvalidNumericFilters(bad, 'uniques')).toBe(true);
+    expect(hasInvalidNumericFilters(bad, 'favorites')).toBe(false);
+    expect(hasInvalidNumericFilters({ ...bad, mainCost: '1-3' }, 'uniques')).toBe(false);
   });
 });
 

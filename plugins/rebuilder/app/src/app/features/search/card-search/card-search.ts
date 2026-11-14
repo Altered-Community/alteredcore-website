@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { ORDER_OPTIONS, activeFilterCount, hasInvalidNumericFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
@@ -189,6 +189,7 @@ export class CardSearch {
     const prev = this.draft();
     this.draft.set(next);
     clearTimeout(this.applyTimer);
+    if (hasInvalidNumericFilters(next, this.search.source())) return;
     // Free-text fields (name, costs, powers) wait for the typing to pause.
     const textChanged = TEXT_FILTERS.some((key) => prev[key] !== next[key]);
     if (textChanged) this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
@@ -197,7 +198,9 @@ export class CardSearch {
 
   protected applyNow(): void {
     clearTimeout(this.applyTimer);
-    this.search.apply(this.draft());
+    const next = this.draft();
+    if (hasInvalidNumericFilters(next, this.search.source())) return;
+    this.search.apply(next);
     window.scrollTo({ top: 0 });
   }
 

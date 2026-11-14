@@ -105,6 +105,12 @@ function CardSearch(cfg) {
     var _setsDirty      = !!ini.setsExplicit;
     var _variationDirty = !!ini.variationsExplicit;
     var _collDirty      = false;
+    // Track presets automatically applied when entering a tab (Unique / Ownership)
+    // so leaving that tab restores normal defaults without losing explicit user picks.
+    var _rarityAutoPreset = false;
+    var _typeAutoPreset   = false;
+    var _setsAutoExtra    = false;
+    var _promoAutoPreset  = false;
 
     var filters = {
         q:              ini.q              || '',
@@ -118,7 +124,7 @@ function CardSearch(cfg) {
         forest:      ini.forest      != null && ini.forest      !== '' ? String(ini.forest)      : null,
         mountain:    ini.mountain    != null && ini.mountain    !== '' ? String(ini.mountain)    : null,
         ocean:       ini.ocean       != null && ini.ocean       !== '' ? String(ini.ocean)       : null,
-        costRelation:  '',
+        costRelation:  ini.costRelation || '',
         showPromo:     !!ini.showPromo,
         sets:           (_setsDirty ? (ini.sets || []) : DEFAULT_SETS.slice()),
         subtypes:       (ini.subtypes       || []).slice(),
@@ -140,7 +146,7 @@ function CardSearch(cfg) {
         // The single support/echo-line filter (support[t|c|o]), separate from the
         // main effect[N] slots above — see initSupport().
         support:        { trigger: [], condition: [], effect: [] },
-        format:         '',
+        format:         ini.format || '',
         sort:           ini.sort            || DEFAULT_SORT_1,
     };
 
@@ -371,7 +377,7 @@ function CardSearch(cfg) {
     //   "1-3"    → { kind:'range', min:1, max:3 }   (bounds reordered if reversed)
     //   "<4" ">2" "<=4" ">=2" → { kind:'bound', op:'lt'|'gt'|'lte'|'gte', val:N }
     //   "4+" (≥4) "4-" (≤4)   → { kind:'bound', op:'gte'|'lte', val:N }
-    var MAX_NUM_OPEN = 12;
+    var MAX_NUM_OPEN = 15;
 
     function _parseNumToken(tok) {
         var m = tok.match(/^(<=|>=|<|>)(\d{1,2})$/);
@@ -1027,11 +1033,9 @@ function CardSearch(cfg) {
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
         (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
         (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
-        // Ownership scope applies the default editions by default, matching the pre-selected
-        // edition chips in the UI. The collection scope sends nothing by default (no edition
-        // restriction): its API/proxy collapse repeated cardSet params to one, so sending the
-        // default set would wrongly narrow results to a single edition.
-        (_setsDirty ? filters.sets : (_scope === 'ownership' ? DEFAULT_SETS : [])).forEach(function(v) { parts.push('cardSet[]='  + encodeURIComponent(v)); });
+        // Both ownership and collection proxies support multi-value cardSet[] arrays, so
+        // send DEFAULT_SETS when sets haven't been touched to stay aligned with active UI chips.
+        (_setsDirty ? filters.sets : DEFAULT_SETS).forEach(function(v) { parts.push('cardSet[]='  + encodeURIComponent(v)); });
         filters.subtypes.forEach(function(v)  { parts.push('subTypes[]='  + encodeURIComponent(v)); });
         // The collection API filters variation by exact match and can't express "any
         // variation", which would hide promos/alt-arts. Omit it entirely on the collection
@@ -1154,10 +1158,13 @@ function CardSearch(cfg) {
         if (filters.mountain)   parts.push('mountain='   + encodeURIComponent(filters.mountain));
         if (filters.ocean)      parts.push('ocean='      + encodeURIComponent(filters.ocean));
         if (filters.showPromo)   parts.push('promo=true');
-        if (filters.isBanned)    parts.push('isBanned=true');
-        if (filters.isErrated)   parts.push('isErrated=true');
-        if (filters.isSuspended) parts.push('isSuspended=true');
-        if (filters.hasNoEffect) parts.push('hasNoEffect=true');
+        if (filters.isBanned)          parts.push('isBanned=true');
+        if (filters.isErrated)         parts.push('isErrated=true');
+        if (filters.isSuspended)       parts.push('isSuspended=true');
+        if (filters.bannedOrSuspended) parts.push('bannedOrSuspended=true');
+        if (filters.hasNoEffect)       parts.push('hasNoEffect=true');
+        if (filters.costRelation)      parts.push('costRelation=' + encodeURIComponent(filters.costRelation));
+        if (filters.format)            parts.push('format='       + encodeURIComponent(filters.format));
         if (filters.keywordMode === 'and' && filters.keywords.length > 1) parts.push('kwMode=and');
         if (filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1) {
             parts.push('sort=' + encodeURIComponent(filters.sort));
@@ -1166,17 +1173,18 @@ function CardSearch(cfg) {
         return location.pathname + (parts.length ? '?' + parts.join('&') : '');
     }
 
-    // read TomSelect values into filters
+    // read TomSelect values into filters (only overwrite when the matching <select> exists)
     function readTsValues() {
-        function sv(key) {
+        function readSel(key, field) {
             var el = document.getElementById(P + '-filter-' + key);
-            return el ? Array.from(el.selectedOptions).map(function(o) { return o.value; }) : [];
+            if (!el) return;
+            filters[field] = Array.from(el.selectedOptions).map(function(o) { return o.value; });
         }
-        filters.sets          = sv('set');
-        if (tsInst.faction) filters.faction = sv('faction');
-        filters.subtypes      = sv('subtype');
-        filters.keywords      = sv('keyword');
-        filters.variations    = sv('variation');
+        readSel('set',       'sets');
+        if (tsInst.faction) readSel('faction', 'faction');
+        readSel('subtype',   'subtypes');
+        readSel('keyword',   'keywords');
+        readSel('variation', 'variations');
         // Numeric filters: read the raw text expression (null when empty) and mark invalid expressions.
         NUM_FIELDS.forEach(function(f) {
             var el = document.getElementById(P + '-filter-' + f.id);
@@ -1631,12 +1639,30 @@ function CardSearch(cfg) {
             });
     }
 
+    function _firstInvalidNumInput() {
+        if (_scopeFavoris) return null;
+        for (var i = 0; i < NUM_FIELDS.length; i++) {
+            var f = NUM_FIELDS[i];
+            var raw = filters[f.key];
+            if (raw != null && String(raw).trim() !== '' && !numExprActive(raw)) {
+                return document.getElementById(P + '-filter-' + f.id) || true;
+            }
+        }
+        return null;
+    }
+
     // main search
     function search(page, skipPushState) {
         // The playset tab shows a dashboard, not the result grid — never query.
         if (_tab === 'playset') return;
         updateScopeUi();
         readTsValues();
+        // Do not silently fire an unfiltered query when a typed mana/power expression is invalid.
+        var badNum = _firstInvalidNumInput();
+        if (badNum) {
+            if (badNum !== true && typeof badNum.focus === 'function') badNum.focus();
+            return;
+        }
         currentPage = page || 1;
 
         // Uniques tab → rust-cards-api (cursor-based "load more"). Falls through to
@@ -1763,7 +1789,21 @@ function CardSearch(cfg) {
         qa('.filter-toggle[data-filter="sets"]').forEach(function(b) {
             b.classList.toggle('active', effectiveSets.indexOf(b.dataset.value) >= 0);
         });
+        qa('.filter-toggle[data-filter="format"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.value === (filters.format || ''));
+        });
+        var _crSync = document.getElementById(P + '-filter-cost-relation');
+        if (_crSync) _crSync.value = filters.costRelation || '';
         if (tsInst.set && !_setsDirty) tsInst.set.setValue(DEFAULT_SETS, true);
+    }
+
+    function setFormat(val) {
+        var next = val ? String(val) : '';
+        filters.format = next;
+        qa('.filter-toggle[data-filter="format"]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.value === next);
+        });
+        updateFilterCount();
     }
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -1787,35 +1827,55 @@ function CardSearch(cfg) {
         if (elFormatWrap && !UNIQUES_API_BASE) elFormatWrap.style.display = 'none';
     }
 
-    // Switch tab. On a user click, filters are reset first (resetFilters) and the
-    // 'unique' preset is applied. When restoring from the URL (keepFilters=true),
-    // the URL-loaded filters are preserved and only scope/visibility are applied.
-    function setTab(t, keepFilters) {
+    // Switch tab. On URL restore (keepFilters=true), URL-loaded filters stay untouched.
+    // On user tab switch via switchTab(), shared criteria (search text, numeric costs/powers,
+    // factions, explicit sets, etc.) are preserved while tab-specific auto presets apply.
+    function _applyTabPresets(prevTab) {
+        if (prevTab === 'unique') {
+            if (_rarityAutoPreset) { _rarityDirty = false; filters.rarity = DEFAULT_RARITIES.slice(); _rarityAutoPreset = false; }
+            if (_typeAutoPreset)   { _typeDirty   = false; filters.type   = DEFAULT_TYPES.slice();    _typeAutoPreset   = false; }
+            if (_setsAutoExtra) {
+                _setsDirty = false;
+                filters.sets = DEFAULT_SETS.slice();
+                if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+                _setsAutoExtra = false;
+            }
+        }
+        if (prevTab === 'ownership' && _promoAutoPreset) {
+            _promoAutoPreset = false;
+            setShowPromo(false);
+            var _promoOff = document.getElementById(P + '-promo-toggle');
+            if (_promoOff) _promoOff.checked = false;
+        }
+    }
+
+    function setTab(t, keepFilters, applySwitchPresets) {
+        var prevTab = _tab;
         _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
+        if (applySwitchPresets && prevTab !== _tab) _applyTabPresets(prevTab);
         setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
-        if (_tab === 'unique') {
-            if (!keepFilters) {
-                _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice();
-                _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice();
-                // Uniques also live in the KS edition — add it to the default sets.
-                var _uExtra = cfg.uniqueExtraSets || [];
-                if (_uExtra.length) {
+        if (_tab === 'unique' && (!keepFilters || applySwitchPresets)) {
+            if (!_rarityDirty) { _rarityAutoPreset = true; _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
+            if (!_typeDirty)   { _typeAutoPreset   = true; _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
+            var _uExtra = cfg.uniqueExtraSets || [];
+            if (_uExtra.length && (!_setsDirty || applySwitchPresets)) {
+                var hadUserSets = _setsDirty && !_setsAutoExtra;
+                if (!hadUserSets) {
+                    _setsAutoExtra = true;
                     _setsDirty = true;
                     filters.sets = DEFAULT_SETS.slice();
-                    _uExtra.forEach(function(s) { if (filters.sets.indexOf(s) < 0) filters.sets.push(s); });
-                    if (tsInst.set) tsInst.set.setValue(filters.sets, true);
                 }
+                _uExtra.forEach(function(s) { if (filters.sets.indexOf(s) < 0) filters.sets.push(s); });
+                if (tsInst.set) tsInst.set.setValue(filters.sets, true);
             }
-            // Effect search defaults to OR (multi-select). The mode is managed by
-            // the always-visible OR/AND toggle and reset by resetFilters().
         }
-        if (_tab === 'ownership' && !keepFilters) {
-            // Digital-ownership tab: enable alt-art search by default so every owned
-            // printing shows, pulling in the promo (secondary) editions linked to the
-            // pre-selected main sets.
-            setShowPromo(true);
-            var _promoT = document.getElementById(P + '-promo-toggle');
-            if (_promoT) _promoT.checked = true;
+        if (_tab === 'ownership' && (!keepFilters || applySwitchPresets)) {
+            if (!filters.showPromo) {
+                _promoAutoPreset = true;
+                setShowPromo(true);
+                var _promoT = document.getElementById(P + '-promo-toggle');
+                if (_promoT) _promoT.checked = true;
+            }
         }
         syncTabButtons();
         applyTabVisibility();
@@ -1931,7 +1991,7 @@ function CardSearch(cfg) {
         t.checked = !!filters.showPromo;
         var panel = document.getElementById(P + '-promo-panel');
         if (panel) panel.style.display = filters.showPromo ? '' : 'none';
-        t.addEventListener('change', function() { setShowPromo(this.checked); });
+        t.addEventListener('change', function() { _promoAutoPreset = false; setShowPromo(this.checked); });
     }
 
     // reset filters
@@ -1942,6 +2002,10 @@ function CardSearch(cfg) {
         _setsDirty      = false;
         _variationDirty = false;
         _collDirty      = false;
+        _rarityAutoPreset = false;
+        _typeAutoPreset   = false;
+        _setsAutoExtra    = false;
+        _promoAutoPreset  = false;
         filters.q              = '';
         filters.faction        = DEFAULT_FACTIONS.slice();
         filters.type           = DEFAULT_TYPES.slice();
@@ -2019,11 +2083,21 @@ function CardSearch(cfg) {
         _typeDirty    = p.has('type[]');
         _rarityDirty  = p.has('rarity[]');
         _setsDirty    = p.has('set[]');
+        _rarityAutoPreset = false;
+        _typeAutoPreset   = false;
+        _setsAutoExtra    = false;
+        _promoAutoPreset  = false;
+
+        var _urlTab = p.get('tab');
+        if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
+        if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
+        if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
+        var resolvedTab = (_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab)) ? _urlTab : 'all';
 
         filters.q              = p.get('q') || '';
         filters.faction        = _factionDirty ? p.getAll('faction[]') : DEFAULT_FACTIONS.slice();
         filters.type           = _typeDirty   ? p.getAll('type[]')   : DEFAULT_TYPES.slice();
-        filters.rarity         = _rarityDirty ? p.getAll('rarity[]') : [];
+        filters.rarity         = _rarityDirty ? p.getAll('rarity[]') : (resolvedTab === 'ownership' ? [] : DEFAULT_RARITIES.slice());
         filters.mainCost   = p.get('mainCost')   || null;
         filters.recallCost = p.get('recallCost') || null;
         filters.forest     = p.get('forest')     || null;
@@ -2034,11 +2108,14 @@ function CardSearch(cfg) {
         filters.keywords       = p.getAll('keyword[]');
         filters.keywordMode    = p.get('kwMode') === 'or' ? 'or' : 'and';
         filters.variations     = p.getAll('variation[]');
-        filters.isBanned       = p.get('isBanned')    === 'true';
-        filters.isErrated      = p.get('isErrated')   === 'true';
-        filters.isSuspended    = p.get('isSuspended') === 'true';
-        filters.hasNoEffect    = p.get('hasNoEffect') === 'true';
-        filters.showPromo      = p.get('promo')       === 'true';
+        filters.isBanned       = p.get('isBanned')          === 'true';
+        filters.isErrated      = p.get('isErrated')         === 'true';
+        filters.isSuspended    = p.get('isSuspended')       === 'true';
+        filters.bannedOrSuspended = p.get('bannedOrSuspended') === 'true';
+        filters.hasNoEffect    = p.get('hasNoEffect')       === 'true';
+        filters.costRelation   = p.get('costRelation')      || '';
+        filters.format         = p.get('format')            || '';
+        filters.showPromo      = p.get('promo')             === 'true';
         filters.sort           = p.get('sort') || 'default';
         var pg = parseInt(p.get('page') || '1', 10);
 
@@ -2087,6 +2164,8 @@ function CardSearch(cfg) {
         setNativeSel('oceanpower',    filters.ocean);
         // Card status restored onto the data-bool-filter buttons above.
 
+        var _crRestore = document.getElementById(P + '-filter-cost-relation');
+        if (_crRestore) _crRestore.value = filters.costRelation || '';
         var _hneRestore = document.getElementById(P + '-filter-hasnoeffect');
         if (_hneRestore) _hneRestore.checked = !!filters.hasNoEffect;
         var _promoRestore = document.getElementById(P + '-promo-toggle');
@@ -2095,11 +2174,7 @@ function CardSearch(cfg) {
         if (_promoPanelR) _promoPanelR.style.display = filters.showPromo ? '' : 'none';
         if (filters.showPromo) syncPromoDropdown();
 
-        var _urlTab = p.get('tab');
-        if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
-        if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
-        if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
-        setTab(_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab) ? _urlTab : 'all', true);
+        setTab(resolvedTab, true);
 
         updateFilterCount();
         search(pg, true);
@@ -2217,19 +2292,17 @@ function CardSearch(cfg) {
         // changes merge into the set selection; main-set toggles override it.
         tsInst.promoset = makeTs('promoset', { onChange: function() { applyPromoSelection(tsInst.promoset.getValue()); } });
 
-        // In the physical-collection scope, faction/set/subtype/variation only support a
-        // single value (the collection API/proxy collapses repeated params to one). The
-        // digital-ownership API filters these with IN, so it allows multiple values.
-        ['faction', 'set', 'subtype', 'variation'].forEach(function(key) {
-            if (!tsInst[key]) return;
-            tsInst[key].on('item_add', function(value) {
+        // In the physical-collection scope, subTypes is still scalar upstream while
+        // faction[]/cardSet[]/rarity[]/variation[] accept arrays cleanly.
+        if (tsInst.subtype) {
+            tsInst.subtype.on('item_add', function(value) {
                 if (_scope !== 'collection' || !scopeApiUrl()) return;
                 var self = this;
                 this.getValue().forEach(function(v) {
                     if (v !== value) self.removeItem(v, true);
                 });
             });
-        });
+        }
         // Numeric text inputs: set initial expression + live count update + Enter submit
         var _iniRange = cfg.initial || {};
         NUM_FIELDS.forEach(function(f) {
@@ -2270,14 +2343,13 @@ function CardSearch(cfg) {
             var btn = e.target.closest('.cs-tab[data-tab]');
             if (!btn || !_root.contains(btn) || btn.disabled) return;
             if (btn.dataset.tab === _tab) return;
-            resetFilters();
-            setTab(btn.dataset.tab);
+            setTab(btn.dataset.tab, true, true);
             // Favorites tab has no Apply button flow — load it immediately, even in deck mode.
             if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
         // Unique-nudge CTA: reuse the real tab button's own click handling
-        // (reset + setTab + scope-appropriate search) instead of duplicating it.
+        // (setTab + scope-appropriate search) instead of duplicating it.
         _root.addEventListener('click', function(e) {
             var btn = e.target.closest('[data-goto-tab]');
             if (!btn || !_root.contains(btn)) return;
@@ -2292,32 +2364,22 @@ function CardSearch(cfg) {
             var val = btn.dataset.value;
             // Format is a single-value ("radio") filter, unlike the array filters below.
             if (key === 'format') {
-                qa('.filter-toggle[data-filter="format"]').forEach(function(b) { b.classList.remove('active'); });
-                filters.format = val;
-                btn.classList.add('active');
-                updateFilterCount();
+                setFormat(val);
+                if (MODE === 'cards' && _tab === 'unique' && !btn.closest('.modal')) search(1);
                 return;
             }
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
-            if (key === 'type')    { if (!_typeDirty)    { _typeDirty    = true; filters.type    = []; } }
+            if (key === 'type')    { _typeAutoPreset   = false; if (!_typeDirty)   { _typeDirty   = true; filters.type   = []; } }
             // Seed rarity from what's actually shown active on first interaction so the click
             // toggles in sync with the UI. The ownership tab shows no default rarity; the
-            // other tabs (all/unique) show the defaults as active.
-            if (key === 'rarity')  { if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
-            if (key === 'sets')    _setsDirty    = true;
+            // other tabs show the defaults as active.
+            if (key === 'rarity')  { _rarityAutoPreset = false; if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (_tab === 'ownership') ? [] : DEFAULT_RARITIES.slice(); } }
+            if (key === 'sets')    { _setsAutoExtra    = false; _setsDirty = true; }
             var arr = filters[key];
             if (!Array.isArray(arr)) { arr = []; filters[key] = arr; }
             var idx = arr.indexOf(val);
-            if (_scope === 'collection' && scopeApiUrl()) {
-                // Physical-collection scope is single-value only (see TomSelect note above).
-                var wasActive = idx >= 0;
-                qa('.filter-toggle[data-filter="' + key + '"]').forEach(function(b) { b.classList.remove('active'); });
-                arr.length = 0;
-                if (!wasActive) { arr.push(val); btn.classList.add('active'); }
-            } else {
-                if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
-                else          { arr.push(val);       btn.classList.add('active'); }
-            }
+            if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
+            else          { arr.push(val);       btn.classList.add('active'); }
             // Promo linking: toggling a MAIN set recomputes its promo children
             // (only while "show promo" is active), discarding manual promo picks.
             if (key === 'sets' && filters.showPromo && (cfg.subSets || []).indexOf(val) < 0) {
@@ -2569,8 +2631,23 @@ function CardSearch(cfg) {
     return {
         search:            search,
         resetFilters:      resetFilters,
+        setFormat:         setFormat,
+        getTab:            function() { return _tab; },
+        parseNumExpr:      parseNumExpr,
+        numCardsParts:     numCardsParts,
+        numUniquesParts:   numUniquesParts,
+        numProxyParts:     numProxyParts,
+        buildApiUrl:       buildApiUrl,
+        buildUniquesApiUrl:buildUniquesApiUrl,
+        buildCollApiUrl:   buildCollApiUrl,
+        buildPageUrl:      buildPageUrl,
+        restoreFromUrl:    restoreFromUrl,
         updateFilterCount: updateFilterCount,
         filters:           filters,
         tsInstances:       tsInst,
     };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = CardSearch;
 }

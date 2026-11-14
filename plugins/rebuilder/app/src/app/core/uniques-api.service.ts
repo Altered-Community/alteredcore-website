@@ -33,6 +33,9 @@ export interface UniquesQuery {
   sets: string[];
   mainCosts: number[];
   recallCosts: number[];
+  forestPowers?: number[];
+  mountainPowers?: number[];
+  oceanPowers?: number[];
   /** Format configured on the server (`frontier`). */
   format?: string;
   /** AND-ed; empty blocks are left out. */
@@ -210,6 +213,9 @@ function appendCriteria(hp: HttpParams, query: UniquesQuery): HttpParams {
   for (const s of query.sets) hp = hp.append('set[]', s);
   for (const c of query.mainCosts) hp = hp.append('mainCost[]', String(c));
   for (const c of query.recallCosts) hp = hp.append('recallCost[]', String(c));
+  for (const p of query.forestPowers ?? []) hp = hp.append('forestPower[]', String(p));
+  for (const p of query.mountainPowers ?? []) hp = hp.append('mountainPower[]', String(p));
+  for (const p of query.oceanPowers ?? []) hp = hp.append('oceanPower[]', String(p));
   if (query.format) hp = hp.set('format', query.format);
   return hp;
 }
