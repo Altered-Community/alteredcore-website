@@ -257,12 +257,14 @@ function CardSearch(cfg) {
         if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
-            if (active) {
+            if (active || _tab === 'unique' || _scopeFavoris) {
                 // 'default' (not the resolved DEFAULT_SORT_1 key) so the dropdown
                 // still matches a real <option> — set_date_desc itself isn't one.
                 filters.sort      = 'default';
                 elSortSelect.value = 'default';
             }
+        } else if (active || _tab === 'unique' || _scopeFavoris) {
+            filters.sort = 'default';
         }
         if (tsInst.keyword) {
             if (active) {
@@ -1137,7 +1139,7 @@ function CardSearch(cfg) {
         if (filters.isSuspended) parts.push('isSuspended=true');
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
         if (filters.keywordMode === 'and' && filters.keywords.length > 1) parts.push('kwMode=and');
-        if (filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1) {
+        if (_tab !== 'unique' && !_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1) {
             parts.push('sort=' + encodeURIComponent(filters.sort));
         }
         if (page > 1) parts.push('page=' + page);
@@ -1751,11 +1753,17 @@ function CardSearch(cfg) {
 
     // Show/hide filter blocks based on the active tab. Each block opts in via
     // data-tabs="all unique collection ownership".
+    // Use !important when hiding so Bootstrap utility classes (e.g. .d-flex on
+    // the sort wrapper or hasNoEffect checkbox) cannot override display:none.
     function applyTabVisibility() {
         if (!_root) return;
         _root.querySelectorAll('[data-tabs]').forEach(function(el) {
             var tabs = el.getAttribute('data-tabs').split(/\s+/);
-            el.style.display = tabs.indexOf(_tab) >= 0 ? '' : 'none';
+            if (tabs.indexOf(_tab) >= 0) {
+                el.style.removeProperty('display');
+            } else {
+                el.style.setProperty('display', 'none', 'important');
+            }
         });
         // Format only makes sense against rust-cards-api; hide it when falling back
         // to the old Cards API (no UNIQUES_API_BASE configured), even on the Uniques tab.
