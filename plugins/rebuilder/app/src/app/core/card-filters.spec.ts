@@ -237,14 +237,16 @@ describe('numeric validation', () => {
     expect(p.get('recallCost[gt]')).toBe('15');
   });
 
-  it('forwards subtypes, costRelation, noEffect on uniques queries and shows their chips', () => {
+  it('forwards subtypes, costRelation, noEffect and otherFactions on uniques queries and shows their chips', () => {
     const f = {
       ...defaultFilters('uniques'),
       subtypes: ['ANIMAL', 'ROBOT'],
       costRelation: 'mainHigher' as const,
       noEffect: true,
+      otherFactions: ['OR'],
     };
-    const uq = toUniquesQuery(f, null);
+    const uq = toUniquesQuery(f, 'AX');
+    expect(uq.factions).toEqual(['OR']);
     expect(uq.subtypes).toEqual(['ANIMAL', 'ROBOT']);
     expect(uq.costRelation).toBe('mainHigher');
     expect(uq.noEffect).toBe(true);
@@ -255,7 +257,7 @@ describe('numeric validation', () => {
     expect(hp.get('hasNoEffect')).toBe('true');
 
     const chipIds = filterChips(f, 'uniques').map((c) => c.id);
-    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect']));
+    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect', 'otherFactions']));
   });
 });
 

@@ -64,49 +64,53 @@
 }
 
 @if (source() === 'uniques') {
-  <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment">
-    <ac-segmented
-      ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
-      [fullWidth]="true"
-      [options]="environments"
-      [value]="value().environment"
-      (valueChange)="set({ environment: $event ?? 'all' })"
-    />
-  </ac-filter-section>
+  <div class="scope-section scope-section--uniques">
+    <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment">
+      <ac-segmented
+        ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
+        [fullWidth]="true"
+        [options]="environments"
+        [value]="value().environment"
+        (valueChange)="set({ environment: $event ?? 'all' })"
+      />
+    </ac-filter-section>
 
-  <ac-filter-section title="Effets" i18n-title="@@search.filters.effects">
-    <div class="effects">
-      @for (e of value().effects; track e.id) {
-        <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (duplicate)="duplicateEffect($index)" (remove)="removeEffect($index)" />
-        @if (!$last) {
-          <ac-logic-divider />
+    <ac-filter-section title="Effets" i18n-title="@@search.filters.effects">
+      <div class="effects">
+        @for (e of value().effects; track e.id) {
+          <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (duplicate)="duplicateEffect($index)" (remove)="removeEffect($index)" />
+          @if (!$last) {
+            <ac-logic-divider />
+          }
         }
-      }
-      <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
-    </div>
-  </ac-filter-section>
+        <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
+      </div>
+    </ac-filter-section>
+  </div>
 } @else {
-  <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity">
-    <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
-  </ac-filter-section>
-
-  @if (legalFilter() && format()) {
-    <ac-filter-section title="Format" i18n-title="@@search.filters.format">
-      <div class="types">
-        <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
-      </div>
+  <div class="scope-section scope-section--standard">
+    <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity">
+      <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
     </ac-filter-section>
-  }
 
-  <fieldset class="unsupported" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
-    <ac-filter-section title="Type" i18n-title="@@search.filters.type">
-      <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
-        @for (t of types; track t.value) {
-          <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
-        }
-      </div>
-    </ac-filter-section>
-  </fieldset>
+    @if (legalFilter() && format()) {
+      <ac-filter-section title="Format" i18n-title="@@search.filters.format">
+        <div class="types">
+          <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
+        </div>
+      </ac-filter-section>
+    }
+
+    <fieldset class="unsupported" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
+      <ac-filter-section title="Type" i18n-title="@@search.filters.type">
+        <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
+          @for (t of types; track t.value) {
+            <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
+          }
+        </div>
+      </ac-filter-section>
+    </fieldset>
+  </div>
 }
 
 <div class="advanced">
@@ -124,7 +128,7 @@
       </div>
     </fieldset>
     <div class="adv-body">
-      @if (source() !== 'uniques' && !factionFilter()) {
+      @if (!factionFilter()) {
         <div class="adv-field">
           <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
           <div class="types" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
