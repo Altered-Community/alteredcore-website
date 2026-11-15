@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
 import { ICONS } from './card-text';
 import { contentLocale } from './locale';
-import type { Card, CardOrder, Localized } from './models';
+import type { Card, CardCollection, CardOrder, CardSearchParams, Locale, Localized } from './models';
 import { localizedText } from './models';
 import { printKeywordCodes } from './card-vocabulary';
 
@@ -54,12 +54,15 @@ export interface UniquesPage {
   next: number | null;
 }
 
-/** CardV2 of `/api/v2/cards` and `/api/v2/card/{reference}`: locale maps keyed `fr_FR`, `en_US`… */
+/** CardV2 of `/api/v2/cards`, `/api/v2/search`, and `/api/v2/card/{reference}`: locale maps keyed `fr_FR`, `en_US`… */
 interface CardV2 {
+  kind?: 'unique' | 'nonunique';
   reference: string;
   name?: Localized;
   artist?: string;
   set?: { reference: string; name?: string; code?: string };
+  cardType?: { reference?: string; name?: Localized };
+  rarity?: { reference?: string; name?: string };
   cardSubTypes?: { reference?: string; name?: Localized }[];
   mainCost?: number | null;
   recallCost?: number | null;
@@ -69,10 +72,13 @@ interface CardV2 {
   faction?: { code: string; name: string };
   mainEffect?: Localized;
   echoEffect?: Localized;
+  isBanned?: boolean;
+  isErrated?: boolean;
+  isSuspended?: boolean;
 }
 
 interface SearchResponse {
-  iter?: { total?: number; cursor?: number | null };
+  iter?: { total?: number; cursor?: number | null; page?: number | null };
   cards?: CardV2[];
 }
 
@@ -97,7 +103,48 @@ export class UniquesApiService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.uniquesApiUrl.replace(/\/$/, '');
   private readonly searchCache = new Map<string, Observable<UniquesPage>>();
+  private readonly unifiedCache = new Map<string, Observable<CardCollection>>();
   private effects$?: Observable<EffectsResponse>;
+
+  /**
+   * Unified search (`GET /api/v2/search`, page-based): serves the "Toutes les cartes" tab
+   * with accurate global sorting (including mana and localized name) across non-unique prints.
+   */
+  searchUnified(params: CardSearchParams): Observable<CardCollection> {
+    const page = params.page ?? 1;
+    const limit = params.itemsPerPage ?? 36;
+    const q = params.q?.trim();
+    if (q && /^ALT_[A-Z0-9_]+$/i.test(q)) {
+      if (page > 1) return of({ member: [], totalItems: 0, currentPage: page, itemsPerPage: limit, lastPage: 1 });
+      return this.byReference(q).pipe(
+        map((res) => ({ member: res.member, totalItems: res.totalItems, currentPage: page, itemsPerPage: limit, lastPage: 1 })),
+      );
+    }
+    const hp = buildUnifiedSearchParams(params);
+    const key = hp.toString();
+    const hit = this.unifiedCache.get(key);
+    if (hit) {
+      this.unifiedCache.delete(key);
+      this.unifiedCache.set(key, hit);
+      return hit;
+    }
+    const page$ = this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/search`, { params: hp }).pipe(
+      map((body): CardCollection => {
+        const member = (body.cards ?? []).map(toCard);
+        const totalItems = body.iter?.total ?? member.length;
+        const lastPage = Math.max(1, Math.ceil(totalItems / Math.max(1, limit)));
+        return { member, totalItems, currentPage: page, itemsPerPage: limit, lastPage };
+      }),
+      catchError((err: unknown) => {
+        this.unifiedCache.delete(key);
+        return throwError(() => err);
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    this.unifiedCache.set(key, page$);
+    if (this.unifiedCache.size > SEARCH_CACHE_SIZE) this.unifiedCache.delete(this.unifiedCache.keys().next().value!);
+    return page$;
+  }
 
   /**
    * A page of uniques: the first one without `cursor`, the next ones with the `next` of the previous
@@ -178,7 +225,9 @@ export class UniquesApiService {
   }
 }
 
-const SORT_PARAM: Record<Exclude<CardOrder, 'random'>, string> = {
+const V2_LOCALE: Record<Locale, string> = { en: 'en_US', fr: 'fr_FR' };
+
+const SORT_PARAM: Record<Exclude<CardOrder, 'random' | 'name-asc' | 'name-desc'>, string> = {
   'setDate-desc': 'setDate:desc',
   'setDate-asc': 'setDate:asc',
   'number-asc': 'reference:asc',
@@ -196,14 +245,47 @@ const SORT_PARAM: Record<Exclude<CardOrder, 'random'>, string> = {
   'oceanPower-desc': 'oceanPower:desc',
 };
 
+function sortParam(order: CardOrder | undefined, locale: Locale = contentLocale()): string | null {
+  if (!order || order === 'random') return null;
+  if (order === 'name-asc') return `name:${V2_LOCALE[locale]}:asc`;
+  if (order === 'name-desc') return `name:${V2_LOCALE[locale]}:desc`;
+  return SORT_PARAM[order];
+}
+
 /** Query string of `GET /api/v2/cards`. */
 export function buildUniquesParams(query: UniquesQuery, cursor: number | null, limit: number): HttpParams {
   let hp = new HttpParams().set('limit', String(limit));
   if (cursor !== null) hp = hp.set('cursor', String(cursor));
-  if (query.order && query.order !== 'random') hp = hp.set('sort', SORT_PARAM[query.order]);
+  const sort = sortParam(query.order);
+  if (sort) hp = hp.set('sort', sort);
   hp = appendCriteria(hp, query);
   const effects = query.effects.filter(hasCriteria);
   return appendEffects(hp, effects, effectMatchCounts(effects));
+}
+
+/** Query string of `GET /api/v2/search` for the unified "Toutes les cartes" search. */
+export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
+  let hp = new HttpParams()
+    .set('page', String(params.page ?? 1))
+    .set('limit', String(params.itemsPerPage ?? 36));
+  const sort = sortParam(params.order, params.locale ?? contentLocale());
+  if (sort) hp = hp.set('sort', sort);
+  const name = params.q?.trim();
+  if (name) hp = hp.set('name', name);
+  for (const f of params.factions ?? []) hp = hp.append('faction[]', f);
+  for (const t of params.types ?? []) hp = hp.append('cardType[]', t);
+  for (const r of params.rarities ?? []) hp = hp.append('rarity[]', r);
+  for (const s of params.sets ?? []) hp = hp.append('set[]', s);
+  for (const v of params.variations ?? []) if (v !== 'kickstarter') hp = hp.append('variation[]', v);
+  for (const st of params.subtypes ?? []) hp = hp.append('subTypes[]', st);
+  if (params.costRelation) hp = hp.set('costRelation', params.costRelation);
+  if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
+  hp = appendStatValues(hp, 'mainCost', params.mainCosts);
+  hp = appendStatValues(hp, 'recallCost', params.recallCosts);
+  hp = appendStatValues(hp, 'forestPower', params.forestPowers);
+  hp = appendStatValues(hp, 'mountainPower', params.mountainPowers);
+  hp = appendStatValues(hp, 'oceanPower', params.oceanPowers);
+  return hp;
 }
 
 /**
@@ -312,14 +394,17 @@ function fromV2Text(value: Localized | undefined): Localized | undefined {
 
 const CHARACTER = { reference: 'CHARACTER', name: { fr: 'Personnage', en: 'Character', de: 'Charakter', es: 'Personaje', it: 'Personaggio' } };
 
-/** CardV2 → the app's Card (uniques are all Characters). */
+/** CardV2 → the app's Card (preserves rich non-unique metadata; defaults missing fields to Character/Unique). */
 export function toCard(c: CardV2): Card {
+  const cardType = c.cardType?.reference
+    ? { reference: c.cardType.reference, name: fromV2Locales(c.cardType.name) }
+    : CHARACTER;
   return {
     reference: c.reference,
     name: fromV2Locales(c.name),
-    rarity: { reference: 'UNIQUE' },
+    rarity: { reference: c.rarity?.reference ?? 'UNIQUE' },
     faction: c.faction,
-    cardType: CHARACTER,
+    cardType,
     cardSubTypes: (c.cardSubTypes ?? []).map((s) => ({ reference: s.reference, name: fromV2Locales(s.name) })),
     mainCost: c.mainCost,
     recallCost: c.recallCost,
@@ -330,6 +415,9 @@ export function toCard(c: CardV2): Card {
     echoEffect: fromV2Text(c.echoEffect) ?? null,
     artists: c.artist ? [{ name: c.artist }] : [],
     set: c.set ? { reference: c.set.reference, name: c.set.name, code: c.set.code } : undefined,
+    isBanned: c.isBanned,
+    isErrated: c.isErrated,
+    isSuspended: c.isSuspended,
   };
 }
 

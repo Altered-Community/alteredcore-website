@@ -81,6 +81,8 @@ export interface CardCollection {
 export type CardOrder =
   | 'setDate-desc'
   | 'setDate-asc'
+  | 'name-asc'
+  | 'name-desc'
   | 'number-asc'
   | 'collector-asc'
   | 'collector-desc'

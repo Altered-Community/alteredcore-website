@@ -324,4 +324,49 @@ function eq(a, b, msg) {
   ok(cs.filters.sets.includes('COREKS'), 'restoreFromUrl(?tab=unique) adds uniqueExtraSets (COREKS) when set[] omitted');
 }
 
+// 9. Unified /api/v2/search routing on all tab when uniquesApiBase is configured
+{
+  const env = setupEnv();
+  const countEl = { textContent: '' };
+  env.byId.set('cs-count', countEl);
+  const cs = CardSearch({
+    prefix: 'cs', mode: 'cards', apiBase: 'https://cards.alteredcore.org', uniquesApiBase: 'http://localhost:8005', lang: 'fr',
+    typesMerged: { LANDMARK_PERMANENT: ['PERMANENT', 'LANDMARK_PERMANENT'], TOKEN: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT'] },
+    defaults: { factions: ['AX'], types: ['CHARACTER'], rarities: ['COMMON', 'RARE', 'EXALTED'], sets: ['CORE', 'ALIZE'], sort1: 'set_date_desc' },
+  });
+
+  cs.filters.sort = 'mana_asc';
+  const uManaUrl = cs.buildApiUrl(2);
+  ok(uManaUrl.startsWith('http://localhost:8005/api/v2/search?'), 'all tab routes to /api/v2/search when uniquesApiBase is set');
+  ok(uManaUrl.includes('page=2') && uManaUrl.includes('limit=30') && uManaUrl.includes('sort=mainCost%3Aasc'), 'unified URL sends page, limit and mainCost:asc sort');
+  ok(uManaUrl.includes('rarity[]=COMMON') && uManaUrl.includes('rarity[]=RARE') && uManaUrl.includes('rarity[]=EXALTED'), 'unified URL preserves default C/R/E rarities');
+
+  cs.filters.sort = 'name_asc';
+  cs.filters.keywords = ['FUGACE', 'RAVITAILLEZ_EPUISE'];
+  cs.filters.variations = ['standard', 'alt-art', 'kickstarter'];
+  cs.filters.costRelation = 'main_gt';
+  const uKwUrl = cs.buildApiUrl(1);
+  ok(uKwUrl.includes('sort=name%3Afr%3Aasc'), 'unified URL maps name_asc with active lang');
+  ok(uKwUrl.includes('keywords[]=FLEETING') && uKwUrl.includes('keywords[]=RESUPPLY') && uKwUrl.includes('keywordMode=and'), 'unified URL maps French keyword codes and keywordMode=and');
+  ok(uKwUrl.includes('variation[]=standard') && uKwUrl.includes('variation[]=alt-art') && !uKwUrl.includes('kickstarter'), 'unified URL forwards variations without kickstarter');
+  ok(uKwUrl.includes('costRelation=mainHigher'), 'unified URL maps costRelation=main_gt -> mainHigher');
+
+  cs.filters.q = 'alt_core_b_ax_01_c';
+  const refUrl = cs.buildApiUrl(1);
+  ok(refUrl.startsWith('http://localhost:8005/api/v2/search?ref[]=ALT_CORE_B_AX_01_C'), 'ALT_ ref lookup routes to /api/v2/search?ref[]=');
+
+  cs.filters.q = '';
+  globalThis.fetch = (url) => {
+    env.fetches.push(url);
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ iter: { total: 42 }, cards: [{ reference: 'ALT_CORE_B_AX_01_C', name: { fr_FR: 'Sierra & Oddball' } }] }),
+    });
+  };
+  cs.search(1);
+  await new Promise((r) => setTimeout(r, 10));
+  ok(String(countEl.textContent).includes('42'), 'search() parses iter.total from /api/v2/search response');
+}
+
 console.log(`\n${pass} passed`);

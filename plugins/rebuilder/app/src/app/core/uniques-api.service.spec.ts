@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, buildUnifiedSearchParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -258,6 +258,96 @@ describe('buildEffectsFilteredParams', () => {
     expect(hp.getAll('subTypes[]')).toEqual(['ELEMENTAL']);
     expect(hp.get('costRelation')).toBe('recallHigher');
     expect(hp.has('hasNoEffect')).toBe(false);
+  });
+});
+
+describe('unified /api/v2/search', () => {
+  let api: UniquesApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    api = TestBed.inject(UniquesApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('builds /api/v2/search params with localized name sort, variations excluding kickstarter, and >15 stats', () => {
+    const hp = buildUnifiedSearchParams({
+      page: 2,
+      itemsPerPage: 36,
+      locale: 'fr',
+      q: 'sierra',
+      factions: ['AX'],
+      types: ['HERO', 'CHARACTER'],
+      rarities: ['COMMON', 'RARE'],
+      sets: ['CORE', 'FUGUE'],
+      variations: ['standard', 'alt-art', 'kickstarter'],
+      mainCosts: [16],
+      subtypes: ['ENGINEER'],
+      costRelation: 'mainHigher',
+      hasNoEffect: true,
+      order: 'name-asc',
+    });
+    expect(hp.get('page')).toBe('2');
+    expect(hp.get('limit')).toBe('36');
+    expect(hp.get('sort')).toBe('name:fr_FR:asc');
+    expect(hp.get('name')).toBe('sierra');
+    expect(hp.getAll('faction[]')).toEqual(['AX']);
+    expect(hp.getAll('cardType[]')).toEqual(['HERO', 'CHARACTER']);
+    expect(hp.getAll('rarity[]')).toEqual(['COMMON', 'RARE']);
+    expect(hp.getAll('set[]')).toEqual(['CORE', 'FUGUE']);
+    expect(hp.getAll('variation[]')).toEqual(['standard', 'alt-art']);
+    expect(hp.get('mainCost[gt]')).toBe('15');
+    expect(hp.getAll('subTypes[]')).toEqual(['ENGINEER']);
+    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('hasNoEffect')).toBe('true');
+  });
+
+  it('queries /api/v2/search, maps rich non-unique CardV2 metadata, and caches pages', async () => {
+    const p1 = lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/search'));
+    expect(req.request.params.get('sort')).toBe('mainCost:asc');
+    req.flush({
+      iter: { total: 40, page: 1 },
+      cards: [
+        {
+          kind: 'nonunique',
+          reference: 'ALT_CORE_B_AX_01_C',
+          name: { fr_FR: 'Sierra & Oddball', en_US: 'Sierra & Oddball' },
+          cardType: { reference: 'HERO', name: { fr_FR: 'Héros', en_US: 'Hero' } },
+          rarity: { reference: 'COMMON', name: 'Common' },
+          faction: { code: 'AX', name: 'Axiom' },
+          mainCost: null,
+          recallCost: null,
+          forestPower: null,
+          mountainPower: null,
+          oceanPower: null,
+        },
+      ],
+    });
+    const res = await p1;
+    expect(res.totalItems).toBe(40);
+    expect(res.lastPage).toBe(2);
+    expect(res.member[0].rarity?.reference).toBe('COMMON');
+    expect(res.member[0].cardType?.reference).toBe('HERO');
+    expect(res.member[0].mainCost).toBeNull();
+
+    await lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    http.expectNone((r) => r.url.endsWith('/api/v2/search'));
+  });
+
+  it('maps nullable stats and status flags cleanly in toCard', () => {
+    const card = toCard({
+      reference: 'ALT_CORE_B_AX_01_C',
+      cardType: { reference: 'SPELL', name: { fr_FR: 'Sort' } },
+      rarity: { reference: 'RARE' },
+      isBanned: true,
+    });
+    expect(card.rarity).toEqual({ reference: 'RARE' });
+    expect(card.cardType).toEqual({ reference: 'SPELL', name: { fr: 'Sort' } });
+    expect(card.isBanned).toBe(true);
   });
 });
 

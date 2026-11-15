@@ -219,6 +219,15 @@ function CardSearch(cfg) {
         'name_desc':      'name:' + LANG + ':desc',
     };
 
+    // Classic altered.json keyword codes use French stems; uniques-search-api indexes canonical English codes.
+    var KEYWORD_TO_UNIFIED = {
+        'AGUERRI': 'SEASONED', 'ANCRE': 'ANCHORED', 'BOOSTE': 'BOOSTED', 'CORIACE': 'TOUGH',
+        'DEFENSEUR': 'DEFENDER', 'DON': 'GIFT', 'ENDORMI': 'ASLEEP', 'ETERNEL': 'ETERNAL',
+        'FONCER': 'RUSH', 'FUGACE': 'FLEETING', 'GIGANTESQUE': 'GIGANTIC',
+        'RAFRAICHISSEMENT': 'COOLDOWN', 'RAVITAILLEZ': 'RESUPPLY', 'RAVITAILLEZ_EPUISE': 'RESUPPLY',
+        'REPERAGE': 'SCOUT', 'SABOTEZ': 'SABOTAGE', 'ASCENDS': 'ASCEND',
+    };
+
     // Sorts whose field can hold equal values across many cards (name, costs,
     // biome powers), so ties need the default sort's own criteria (set date,
     // then collector number) to stay deterministic. Collector No and Reference
@@ -280,19 +289,19 @@ function CardSearch(cfg) {
         if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
-            var _isUniqTab = _tab === 'unique';
+            var _noRandSort = _tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE);
             var _randOpt = elSortSelect.querySelector ? elSortSelect.querySelector('option[value="random"]') : null;
             if (_randOpt) {
-                _randOpt.hidden   = _isUniqTab;
-                _randOpt.disabled = _isUniqTab;
+                _randOpt.hidden   = _noRandSort;
+                _randOpt.disabled = _noRandSort;
             }
-            if (active || _scopeFavoris || (_isUniqTab && filters.sort === 'random')) {
+            if (active || _scopeFavoris || (_noRandSort && filters.sort === 'random')) {
                 // 'default' (not the resolved DEFAULT_SORT_1 key) so the dropdown
                 // still matches a real <option> — set_date_desc itself isn't one.
                 filters.sort      = 'default';
                 elSortSelect.value = 'default';
             }
-        } else if (active || _scopeFavoris || (_tab === 'unique' && filters.sort === 'random')) {
+        } else if (active || _scopeFavoris || ((_tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE)) && filters.sort === 'random')) {
             filters.sort = 'default';
         }
         if (tsInst.keyword) {
@@ -371,7 +380,7 @@ function CardSearch(cfg) {
 
     // rust-cards-api (Uniques) locale maps use long codes (en_US, fr_FR, ...); the
     // site's LANG/UI strings use short codes (en, fr). Try both.
-    var LOCALE_MAP = { en: 'en_US', fr: 'fr_FR' };
+    var LOCALE_MAP = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', es: 'es_ES', it: 'it_IT' };
     function pickLocale(map, lang) {
         if (!map) return '';
         return map[lang] || map[LOCALE_MAP[lang]] || map.en_US || map.en || Object.values(map)[0] || '';
@@ -905,12 +914,17 @@ function CardSearch(cfg) {
     function buildApiUrl(page) {
         // Reference lookup: bypass all filters and collection scope
         if (filters.q && /^ALT_[A-Z0-9_]+$/i.test(filters.q)) {
+            if (UNIQUES_API_BASE) {
+                return UNIQUES_API_BASE + '/api/v2/search?ref[]=' + encodeURIComponent(filters.q.toUpperCase())
+                    + '&page=' + page + '&limit=' + PER_PAGE;
+            }
             return API_BASE + '/api/cards?reference=' + encodeURIComponent(filters.q.toUpperCase())
                 + '&page=' + page + '&itemsPerPage=' + PER_PAGE;
         }
 
         if (_scopeFavoris && cfg.favApiUrl) return buildFavApiUrl(page);
         if (_scopeCollection && scopeApiUrl()) return buildCollApiUrl(page);
+        if (UNIQUES_API_BASE) return buildUnifiedApiUrl(page);
 
         var parts = [
             'page='         + page,
@@ -996,6 +1010,56 @@ function CardSearch(cfg) {
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
         return API_BASE + '/api/cards?' + parts.join('&');
+    }
+
+    // Unified search (rust-cards-api /api/v2/search) for the "all" tab when UNIQUES_API_BASE
+    // is configured: handles accurate global mana/power/localized-name sorting and filters,
+    // while keeping effect/support filters exclusive to the Uniques tab.
+    function buildUnifiedApiUrl(page) {
+        var parts = [
+            'page='  + page,
+            'limit=' + PER_PAGE,
+        ];
+
+        var sortKey = filters.sort || DEFAULT_SORT_1;
+        var primary = (sortKey === 'default') ? DEFAULT_SORT_1 : sortKey;
+        var uSort = UNIQUES_SORT_MAP[primary];
+        if (uSort) parts.push('sort=' + encodeURIComponent(uSort));
+
+        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
+        expandTypes(_typeDirty ? filters.type : DEFAULT_TYPES).forEach(function(v) {
+            parts.push('cardType[]=' + encodeURIComponent(v));
+        });
+        var _statusActive = (MODE === 'deck' && cfg.getFormatLegality)
+            ? filters.isErrated
+            : (filters.isBanned || filters.isErrated || filters.isSuspended);
+        (_rarityDirty ? filters.rarity : (_statusActive ? [] : DEFAULT_RARITIES)).forEach(function(v) {
+            parts.push('rarity[]=' + encodeURIComponent(v));
+        });
+        (_setsDirty ? filters.sets : DEFAULT_SETS).slice().reverse().forEach(function(v) {
+            parts.push('set[]=' + encodeURIComponent(v));
+        });
+        filters.keywords.forEach(function(v) {
+            parts.push('keywords[]=' + encodeURIComponent(KEYWORD_TO_UNIFIED[v] || v));
+        });
+        if (filters.keywords.length > 1 && filters.keywordMode === 'and') {
+            parts.push('keywordMode=and');
+        }
+        _appendSubtypesParts(parts);
+        filters.variations.forEach(function(v) {
+            if (v !== 'kickstarter') parts.push('variation[]=' + encodeURIComponent(v));
+        });
+
+        NUM_FIELDS.forEach(function(f) {
+            numUniquesParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
+        });
+        _appendCostRelationPart(parts);
+        _statusFilterParts().forEach(function(p) { parts.push(p); });
+        if (filters.hasNoEffect) parts.push('hasNoEffect=true');
+
+        if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
+
+        return UNIQUES_API_BASE + '/api/v2/search?' + parts.join('&');
     }
 
     function _appendSubtypesParts(parts) {
@@ -1251,7 +1315,7 @@ function CardSearch(cfg) {
         if (filters.costRelation)      parts.push('costRelation=' + encodeURIComponent(filters.costRelation));
         if (filters.format)            parts.push('format='       + encodeURIComponent(filters.format));
         if (filters.keywordMode === 'and' && filters.keywords.length > 1) parts.push('kwMode=and');
-        if (!_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1 && !(_tab === 'unique' && filters.sort === 'random')) {
+        if (!_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1 && !((_tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE)) && filters.sort === 'random')) {
             parts.push('sort=' + encodeURIComponent(filters.sort));
         }
         if (page > 1) parts.push('page=' + page);
@@ -1805,8 +1869,8 @@ function CardSearch(cfg) {
                 if (elLoading) elLoading.style.display = 'none';
                 _abortCtrl = null;
 
-                var cards      = data.member     || [];
-                var totalItems = parseInt(data.totalItems || 0, 10);
+                var cards      = data.member     || data.cards || [];
+                var totalItems = parseInt((data.totalItems != null ? data.totalItems : (data.iter && data.iter.total)) || 0, 10);
                 var totalPages = totalItems > 0 ? Math.ceil(totalItems / PER_PAGE) : 1;
 
                 if (!cards.length) {
@@ -2724,6 +2788,7 @@ function CardSearch(cfg) {
         numUniquesParts:   numUniquesParts,
         numProxyParts:     numProxyParts,
         buildApiUrl:       buildApiUrl,
+        buildUnifiedApiUrl:buildUnifiedApiUrl,
         buildUniquesApiUrl:buildUniquesApiUrl,
         buildCollApiUrl:   buildCollApiUrl,
         buildPageUrl:      buildPageUrl,

@@ -169,7 +169,16 @@ function ok(cond, msg) {
   ok(env.sortWrap.style._prop('display') === null, 'sort wrapper display cleared when switching back to all tab');
   ok(env.keywordWrap.style._prop('display') === null, 'keyword display cleared when switching back to all tab');
   ok(env.sortSelect.disabled === false, 'sort select enabled on all tab');
-  ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option re-enabled on all tab');
+  ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option stays hidden and disabled on all tab when unified API is active');
+}
+
+// 1b. Without uniquesApiBase configured, switching back to all re-enables random sort
+{
+  const env = setup({ search: '?tab=unique' });
+  const cs = CardSearch({ prefix: 'cs', mode: 'cards', uniquesApiBase: '' });
+  const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
+  env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? allBtn : null) } });
+  ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option re-enabled on all tab without uniquesApiBase');
 }
 
 // 2. Collection tab keeps sort wrapper visible (disabled) and resets sort
