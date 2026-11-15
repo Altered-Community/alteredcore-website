@@ -191,8 +191,8 @@ function CardSearch(cfg) {
         'mountain_desc':  [['mountainPower','desc']],
         'ocean_asc':      [['oceanPower',   'asc']],
         'ocean_desc':     [['oceanPower',   'desc']],
-        'set_date_asc':   [['set.date',     'asc']],
-        'set_date_desc':  [['set.date',     'desc']],
+        'set_date_asc':   [['setDate',      'asc']],
+        'set_date_desc':  [['setDate',      'desc']],
     };
     SORT_MAP['name_asc']  = [['name.' + LANG, 'asc']];
     SORT_MAP['name_desc'] = [['name.' + LANG, 'desc']];
@@ -892,6 +892,15 @@ function CardSearch(cfg) {
         return parts;
     }
 
+    function expandTypes(types) {
+        var expanded = [];
+        types.forEach(function(v) {
+            var mapped = cfg.typesMerged && cfg.typesMerged[v];
+            (mapped || [v]).forEach(function(t) { if (expanded.indexOf(t) < 0) expanded.push(t); });
+        });
+        return expanded;
+    }
+
     // build direct API URL
     function buildApiUrl(page) {
         // Reference lookup: bypass all filters and collection scope
@@ -936,12 +945,9 @@ function CardSearch(cfg) {
         }
 
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction.code[]=' + encodeURIComponent(v)); });
-        var _tmExpanded = [];
-        (_typeDirty ? filters.type : DEFAULT_TYPES).forEach(function(v) {
-            var mapped = cfg.typesMerged && cfg.typesMerged[v];
-            (mapped || [v]).forEach(function(t) { if (_tmExpanded.indexOf(t) < 0) _tmExpanded.push(t); });
+        expandTypes(_typeDirty ? filters.type : DEFAULT_TYPES).forEach(function(v) {
+            parts.push('cardType[]=' + encodeURIComponent(v));
         });
-        _tmExpanded.forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
         // Cards page: isBanned/isSuspended/isErrated ISOLATE, so dropping the default
         // rarity restriction makes sense — someone browsing "all banned cards" wants
         // every rarity, not just the defaults. Deckbuilder: isBanned/isSuspended mean
@@ -1103,7 +1109,7 @@ function CardSearch(cfg) {
         // one, which silently drops all but one selection (e.g. the promo toggle's
         // "all variations"). The collection/ownership proxies remap these to each API.
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
-        (_typeDirty   ? filters.type   : []).forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
+        expandTypes(_typeDirty ? filters.type : []).forEach(function(v) { parts.push('cardType[]=' + encodeURIComponent(v)); });
         (_rarityDirty ? filters.rarity : []).forEach(function(v) { parts.push('rarity[]='   + encodeURIComponent(v)); });
         // Both ownership and collection proxies support multi-value cardSet[] arrays, so
         // send DEFAULT_SETS when sets haven't been touched to stay aligned with active UI chips.
@@ -1944,9 +1950,13 @@ function CardSearch(cfg) {
     function setTab(t, keepFilters) {
         _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
         setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
-        if (_tab === 'unique' && !keepFilters) {
-            if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
-            if (!_typeDirty)   { _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
+        if (_tab === 'unique') {
+            if (!keepFilters) {
+                if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
+                if (!_typeDirty)   { _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
+            }
+            // Also include extra Uniques-only sets (e.g. COREKS) on direct ?tab=unique loads
+            // when no explicit set[] was supplied in the URL.
             var _uExtra = cfg.uniqueExtraSets || [];
             if (_uExtra.length && !_setsDirty) {
                 _setsDirty = true;

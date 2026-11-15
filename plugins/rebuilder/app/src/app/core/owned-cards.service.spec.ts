@@ -66,6 +66,20 @@ describe('Collection and digital ownership query', () => {
       expect(p.get('oceanPower[lte]')).toBe('1');
     }
   });
+
+  it('sends variation[] and promoSets on owned when altArts toggles, and omits them on collection', () => {
+    const ownedDefault = ownedParams('owned', defaultFilters('owned'), ['AX'], 1, 36);
+    expect(ownedDefault.getAll('variation[]')).toEqual(['standard']);
+    expect(ownedDefault.getAll('cardSet[]')).not.toContain('WCF25');
+
+    const ownedAlt = ownedParams('owned', { ...defaultFilters('owned'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    expect(ownedAlt.getAll('variation[]')).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
+    expect(ownedAlt.getAll('cardSet[]')).toContain('WCF25');
+
+    const collAlt = ownedParams('collection', { ...defaultFilters('collection'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    expect(collAlt.getAll('variation[]')).toBeNull();
+    expect(collAlt.getAll('cardSet[]')).not.toContain('WCF25');
+  });
 });
 
 describe('OwnedCardsService', () => {

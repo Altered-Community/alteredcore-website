@@ -45,6 +45,8 @@ export class FiltersPanel {
   protected readonly sets = computed(() => setsFor(this.source()));
   /** Favoris: the site filters them by faction, set and rarity only; the other fields are disabled. */
   protected readonly limited = computed(() => this.source() === 'favorites');
+  protected readonly supportsCostAndEffect = computed(() => !isAccountSource(this.source()) || this.limited());
+  protected readonly supportsAltArts = computed(() => this.source() === 'all' || this.source() === 'owned' || this.limited());
   protected readonly allSets = computed(() => this.sets().map((s) => s.reference));
   protected readonly setsOpen = signal(false);
   protected readonly advancedOpen = signal(false);

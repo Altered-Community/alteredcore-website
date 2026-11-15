@@ -310,6 +310,16 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
 }
 
 /** Other tabs (cards API). */
+/** Sets augmented with the active promo sub-sets when alt arts are included. */
+export function filterSetsWithPromos(filters: SearchFilters): string[] {
+  return filters.altArts ? [...filters.sets, ...filters.promoSets.filter((p) => !filters.sets.includes(p))] : [...filters.sets];
+}
+
+/** Variation codes matching the `altArts` toggle. */
+export function variationCodes(filters: SearchFilters): string[] {
+  return filters.altArts ? VARIATIONS.map((v) => v.code) : ['standard'];
+}
+
 export function toSearchParams(
   filters: SearchFilters,
   faction: string | null,
@@ -323,11 +333,11 @@ export function toSearchParams(
     q: filters.q.trim() || undefined,
     // The editor searches the hero's faction, or the ones chosen in « Changer de faction ».
     factions: resolvedFactions(filters, faction),
-    sets: filters.altArts ? [...filters.sets, ...filters.promoSets.filter((p) => !filters.sets.includes(p))] : filters.sets,
+    sets: filterSetsWithPromos(filters),
     // Uniques live in their own tab: an empty rarity selection means C · R · E here.
     rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
     types: filters.types,
-    variations: filters.altArts ? VARIATIONS.map((v) => v.code) : ['standard'],
+    variations: variationCodes(filters),
     mainCosts: parseCostExpression(filters.mainCost) ?? [],
     recallCosts: parseCostExpression(filters.recallCost) ?? [],
     forestPowers: parseCostExpression(filters.forestPower) ?? [],
@@ -372,7 +382,7 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   }
   if (filters.mainCost.trim()) chips.push({ id: 'mainCost', label: $localize`:@@search.filters.chip.mainCost:Coût main : ${filters.mainCost.trim()}:cost:` });
   if (filters.recallCost.trim()) chips.push({ id: 'recallCost', label: $localize`:@@search.filters.chip.recallCost:Réserve : ${filters.recallCost.trim()}:cost:` });
-  if (filters.noEffect) chips.push({ id: 'noEffect', label: $localize`:@@search.filters.chip.noEffect:Sans effet` });
+  if (!isAccountSource(source) && filters.noEffect) chips.push({ id: 'noEffect', label: $localize`:@@search.filters.chip.noEffect:Sans effet` });
   const power = (id: 'forestPower' | 'mountainPower' | 'oceanPower', label: string) => {
     if (filters[id].trim()) chips.push({ id, label: `${label} : ${filters[id].trim()}` });
   };
@@ -380,14 +390,14 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
   power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
   if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
-  if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
+  if (!isAccountSource(source) && filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
   if (filters.otherFactions.length) {
     chips.push({
       id: 'otherFactions',
       label: filters.otherFactions.map((c) => FACTION_OPTIONS.find((f) => f.code === c)?.name ?? c).join(' · '),
     });
   }
-  if (source !== 'uniques' && filters.altArts) {
+  if ((source === 'all' || source === 'owned') && filters.altArts) {
     chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
   }
   if (source === 'uniques') {

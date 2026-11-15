@@ -259,5 +259,11 @@ describe('numeric validation', () => {
     const chipIds = filterChips(f, 'uniques').map((c) => c.id);
     expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect', 'otherFactions']));
   });
+
+  it('omits unsupported costRelation, noEffect and collection altArts chips on account tabs', () => {
+    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], costRelation: 'mainHigher' as const, noEffect: true, altArts: true };
+    expect(filterChips(base, 'owned').map((c) => c.id)).toEqual(['altArts']);
+    expect(filterChips({ ...base }, 'collection').map((c) => c.id)).toEqual([]);
+  });
 });
 
