@@ -62,7 +62,8 @@ $localNumeric = [];
 array_push($parts, ...cacNumericQueryParts($_GET, $numericMap, $localNumeric));
 
 foreach (['isBanned', 'isSuspended'] as $flag) {
-    if (($_GET[$flag] ?? '') === 'true') $parts[] = $flag . '=true';
+    $val = $_GET[$flag] ?? '';
+    if ($val === 'true' || $val === 'false') $parts[] = $flag . '=' . $val;
 }
 
 // Case-insensitive name substring search (matched in the requested locale upstream).

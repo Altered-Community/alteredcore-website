@@ -290,4 +290,38 @@ function eq(a, b, msg) {
   ok(fcEl.textContent === 1, 'unique badge counts only supported filters (got ' + fcEl.textContent + ')');
 }
 
+// 8. mana/setDate sorting (order[setDate]), collection typesMerged expansion, and unique URL extra sets
+{
+  setupEnv();
+  const cs = CardSearch({
+    prefix: 'cs', mode: 'cards', apiBase: 'https://cards.alteredcore.org', collApiUrl: '/papi/coll',
+    uniqueExtraSets: ['COREKS'],
+    typesMerged: { LANDMARK_PERMANENT: ['PERMANENT', 'LANDMARK_PERMANENT'], TOKEN: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT'] },
+    defaults: { factions: ['AX'], types: ['CHARACTER'], rarities: ['COMMON', 'RARE'], sets: ['CORE', 'ALIZE'], sort1: 'set_date_desc', sort2: 'num_asc' },
+  });
+
+  cs.filters.sort = 'mana_desc';
+  const manaUrl = cs.buildApiUrl(1);
+  ok(manaUrl.includes('order[mainCost]=desc'), 'mana_desc sorts primarily by mainCost desc');
+  ok(manaUrl.includes('order[setDate]=desc') && !manaUrl.includes('order[set.date]'), 'mana_desc tie-breaker uses order[setDate]=desc (not order[set.date])');
+
+  cs.filters.sort = 'reserve_desc';
+  const recallUrl = cs.buildApiUrl(1);
+  ok(recallUrl.includes('order[recallCost]=desc') && recallUrl.includes('order[setDate]=desc') && !recallUrl.includes('order[set.date]'), 'reserve_desc uses order[setDate]=desc tie-breaker');
+
+  setupEnv();
+  const csColl = CardSearch({
+    prefix: 'cs', mode: 'cards', apiBase: 'https://cards.alteredcore.org', collApiUrl: '/papi/coll',
+    typesMerged: { LANDMARK_PERMANENT: ['PERMANENT', 'LANDMARK_PERMANENT'], TOKEN: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT'] },
+    defaults: { factions: ['AX'], types: ['CHARACTER'], rarities: ['COMMON'], sets: ['CORE'] },
+  });
+  csColl.restoreFromUrl('?tab=collection&type[]=LANDMARK_PERMANENT');
+  const collUrl = csColl.buildCollApiUrl(1);
+  ok(collUrl.includes('cardType[]=PERMANENT') && collUrl.includes('cardType[]=LANDMARK_PERMANENT'), 'collection URL expands typesMerged for LANDMARK_PERMANENT');
+
+  cs.resetFilters();
+  cs.restoreFromUrl('?tab=unique');
+  ok(cs.filters.sets.includes('COREKS'), 'restoreFromUrl(?tab=unique) adds uniqueExtraSets (COREKS) when set[] omitted');
+}
+
 console.log(`\n${pass} passed`);

@@ -180,8 +180,8 @@
         if (AlteredDB.heroSort1) {
             var _s1 = AlteredDB.heroSort1;
             if (_s1 === 'random') { heroParts.push('random=true'); }
-            else if (_s1 === 'set_date_desc') { heroParts.push('order[set.date]=desc'); }
-            else if (_s1 === 'set_date_asc')  { heroParts.push('order[set.date]=asc'); }
+            else if (_s1 === 'set_date_desc') { heroParts.push('order[setDate]=desc'); }
+            else if (_s1 === 'set_date_asc')  { heroParts.push('order[setDate]=asc'); }
             else if (_s1 === 'collector_asc') { heroParts.push('order[collectorNumberFormatedId]=asc'); }
         }
         if (faction) heroParts.push('faction.code[]=' + encodeURIComponent(faction));
