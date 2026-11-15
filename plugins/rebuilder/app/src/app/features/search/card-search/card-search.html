@@ -71,7 +71,7 @@
         <span class="total">{{ totalLabel() }}</span>
         <span class="tools">
           @if (sortable()) {
-            <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+            <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions()" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
           <button
             acIconButton="layout-grid"
@@ -97,7 +97,7 @@
         <ac-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
         <span class="tools">
           @if (sortable()) {
-            <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+            <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions()" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
           <ac-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
         </span>

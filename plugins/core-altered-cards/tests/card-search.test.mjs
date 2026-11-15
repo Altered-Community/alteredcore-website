@@ -226,4 +226,21 @@ function eq(a, b, msg) {
   eq(cs.filters.rarity, ['COMMON', 'RARE'], 'restoreFromUrl keeps default rarities when rarity[] omitted');
 }
 
+// 6. buildUniquesApiUrl maps sort keys cleanly and omits random/default
+{
+  const env = setupEnv();
+  const cs = CardSearch({
+    prefix: 'cs', mode: 'cards', uniquesApiBase: 'http://localhost:8005', lang: 'fr',
+    defaults: { factions: [], types: ['CHARACTER'], rarities: ['UNIQUE'], sets: ['CORE'], sort1: 'set_date_desc' },
+  });
+  cs.filters.sort = 'default';
+  ok(cs.buildUniquesApiUrl(null).includes('sort=setDate%3Adesc'), 'default resolves via sort1 to setDate:desc');
+  cs.filters.sort = 'name_asc';
+  ok(cs.buildUniquesApiUrl(null).includes('sort=name%3Afr%3Aasc'), 'name_asc uses active lang');
+  cs.filters.sort = 'number_desc';
+  ok(cs.buildUniquesApiUrl(36).includes('cursor=36') && cs.buildUniquesApiUrl(36).includes('sort=reference%3Adesc'), 'cursor + reference:desc combined');
+  cs.filters.sort = 'random';
+  ok(!cs.buildUniquesApiUrl(null).includes('sort='), 'random sort omitted from uniques API URL');
+}
+
 console.log(`\n${pass} passed`);

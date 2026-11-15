@@ -283,6 +283,7 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
     // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
     format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
+    order: filters.order !== 'random' ? filters.order : undefined,
     effects: filters.effects.map((b) => ({
       triggers: b.triggers.map((x) => x.id),
       conditions: b.conditions.map((x) => x.id),

@@ -197,6 +197,28 @@ function CardSearch(cfg) {
     SORT_MAP['name_asc']  = [['name.' + LANG, 'asc']];
     SORT_MAP['name_desc'] = [['name.' + LANG, 'desc']];
 
+    // sort key → uniques-search-api `sort=` value (`default` and `random` omitted)
+    var UNIQUES_SORT_MAP = {
+        'collector_asc':  'collector:asc',
+        'collector_desc': 'collector:desc',
+        'number_asc':     'reference:asc',
+        'number_desc':    'reference:desc',
+        'mana_asc':       'mainCost:asc',
+        'mana_desc':      'mainCost:desc',
+        'reserve_asc':    'recallCost:asc',
+        'reserve_desc':   'recallCost:desc',
+        'forest_asc':     'forestPower:asc',
+        'forest_desc':    'forestPower:desc',
+        'mountain_asc':   'mountainPower:asc',
+        'mountain_desc':  'mountainPower:desc',
+        'ocean_asc':      'oceanPower:asc',
+        'ocean_desc':     'oceanPower:desc',
+        'set_date_asc':   'setDate:asc',
+        'set_date_desc':  'setDate:desc',
+        'name_asc':       'name:' + LANG + ':asc',
+        'name_desc':      'name:' + LANG + ':desc',
+    };
+
     // Sorts whose field can hold equal values across many cards (name, costs,
     // biome powers), so ties need the default sort's own criteria (set date,
     // then collector number) to stay deterministic. Collector No and Reference
@@ -258,13 +280,19 @@ function CardSearch(cfg) {
         if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
-            if (active || _tab === 'unique' || _scopeFavoris) {
+            var _isUniqTab = _tab === 'unique';
+            var _randOpt = elSortSelect.querySelector ? elSortSelect.querySelector('option[value="random"]') : null;
+            if (_randOpt) {
+                _randOpt.hidden   = _isUniqTab;
+                _randOpt.disabled = _isUniqTab;
+            }
+            if (active || _scopeFavoris || (_isUniqTab && filters.sort === 'random')) {
                 // 'default' (not the resolved DEFAULT_SORT_1 key) so the dropdown
                 // still matches a real <option> — set_date_desc itself isn't one.
                 filters.sort      = 'default';
                 elSortSelect.value = 'default';
             }
-        } else if (active || _tab === 'unique' || _scopeFavoris) {
+        } else if (active || _scopeFavoris || (_tab === 'unique' && filters.sort === 'random')) {
             filters.sort = 'default';
         }
         if (tsInst.keyword) {
@@ -994,12 +1022,15 @@ function CardSearch(cfg) {
         return parts;
     }
 
-    // build rust-cards-api (Uniques tab) URL — cursor-based, no page/sort/keyword/
+    // build rust-cards-api (Uniques tab) URL — cursor-based, no page/random/keyword/
     // subtype/variation/costRelation/status/hasNoEffect (unsupported by that API;
     // the matching UI controls are hidden on this tab, see includes/card-search.php).
     function buildUniquesApiUrl(cursor) {
         var parts = ['limit=' + PER_PAGE];
         if (cursor != null) parts.push('cursor=' + cursor);
+        var uPrimary = filters.sort === 'default' ? DEFAULT_SORT_1 : filters.sort;
+        var uSort = UNIQUES_SORT_MAP[uPrimary];
+        if (uSort) parts.push('sort=' + encodeURIComponent(uSort));
         parts = parts.concat(_uniquesFilterParts());
         return UNIQUES_API_BASE + '/api/v2/cards?' + parts.join('&');
     }
@@ -1170,7 +1201,7 @@ function CardSearch(cfg) {
         if (filters.costRelation)      parts.push('costRelation=' + encodeURIComponent(filters.costRelation));
         if (filters.format)            parts.push('format='       + encodeURIComponent(filters.format));
         if (filters.keywordMode === 'and' && filters.keywords.length > 1) parts.push('kwMode=and');
-        if (_tab !== 'unique' && !_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1) {
+        if (!_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1 && !(_tab === 'unique' && filters.sort === 'random')) {
             parts.push('sort=' + encodeURIComponent(filters.sort));
         }
         if (page > 1) parts.push('page=' + page);

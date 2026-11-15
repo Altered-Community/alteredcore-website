@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
 import { ICONS } from './card-text';
 import { contentLocale } from './locale';
-import type { Card, Localized } from './models';
+import type { Card, CardOrder, Localized } from './models';
 import { localizedText } from './models';
 import { printKeywordCodes } from './card-vocabulary';
 
@@ -38,6 +38,8 @@ export interface UniquesQuery {
   oceanPowers?: number[];
   /** Format configured on the server (`frontier`). */
   format?: string;
+  /** Single-field sort (`random` is unsupported and omitted). */
+  order?: CardOrder;
   /** AND-ed; empty blocks are left out. */
   effects: UniquesEffect[];
 }
@@ -173,10 +175,29 @@ export class UniquesApiService {
   }
 }
 
+const SORT_PARAM: Record<Exclude<CardOrder, 'random'>, string> = {
+  'setDate-desc': 'setDate:desc',
+  'setDate-asc': 'setDate:asc',
+  'number-asc': 'reference:asc',
+  'collector-asc': 'collector:asc',
+  'collector-desc': 'collector:desc',
+  'mainCost-asc': 'mainCost:asc',
+  'mainCost-desc': 'mainCost:desc',
+  'recallCost-asc': 'recallCost:asc',
+  'recallCost-desc': 'recallCost:desc',
+  'forestPower-asc': 'forestPower:asc',
+  'forestPower-desc': 'forestPower:desc',
+  'mountainPower-asc': 'mountainPower:asc',
+  'mountainPower-desc': 'mountainPower:desc',
+  'oceanPower-asc': 'oceanPower:asc',
+  'oceanPower-desc': 'oceanPower:desc',
+};
+
 /** Query string of `GET /api/v2/cards`. */
 export function buildUniquesParams(query: UniquesQuery, cursor: number | null, limit: number): HttpParams {
   let hp = new HttpParams().set('limit', String(limit));
   if (cursor !== null) hp = hp.set('cursor', String(cursor));
+  if (query.order && query.order !== 'random') hp = hp.set('sort', SORT_PARAM[query.order]);
   hp = appendCriteria(hp, query);
   const effects = query.effects.filter(hasCriteria);
   return appendEffects(hp, effects, effectMatchCounts(effects));

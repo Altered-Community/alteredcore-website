@@ -160,6 +160,20 @@ describe('UniquesApiService', () => {
     expect(await missing).toEqual({ member: [], totalItems: 0, next: null });
   });
 
+  it('maps single-field sort to `sort=` and omits random', async () => {
+    const sorted = lastValueFrom(api.search({ ...QUERY, order: 'mainCost-desc' }, null, 36));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(req.request.params.get('sort')).toBe('mainCost:desc');
+    req.flush({ iter: { total: 1 }, cards: [KELON] });
+    await sorted;
+
+    const rnd = lastValueFrom(api.search({ ...QUERY, order: 'random' }, null, 36));
+    const rndReq = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(rndReq.request.params.has('sort')).toBe(false);
+    rndReq.flush({ iter: { total: 1 }, cards: [KELON] });
+    await rnd;
+  });
+
   it('builds the effect vocabularies from one /api/v2/effects call, main-effect entries only', async () => {
     const triggers = lastValueFrom(api.abilities('triggers'));
     const conditions = lastValueFrom(api.abilities('conditions'));

@@ -51,7 +51,7 @@ Altered-Re-Union/uniques-search-api).
 
 ## Ce que l’API ne fait pas
 
-- Pas de tri : l’ordre est celui de l’index (COREKS d’abord). L’onglet masque « Trier par ».
+- Pas de tri `random` : l’API supporte un tri unique à la fois (`sort=field:dir`), l’option Aléatoire est masquée sur l’onglet Uniques.
 - Pas de « Sans effet » ni d’« Effet d’écho » dans la recherche (déjà masqués sur les Uniques). `support[t|c|o]`
   existe pour l’effet de soutien, pas encore proposé dans l’éditeur.
 - Pas de `rarity`, `cardType`, `collectorNumberFormatedId`, `imagePath` ni `transfuge` dans les cartes : ce sont des

@@ -543,7 +543,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     <div class="cs-controlbar mb-2" data-tabs="all unique collection ownership">
         <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
         <div class="cs-controlbar-end">
-            <div class="d-flex align-items-center gap-1" data-tabs="all collection ownership">
+            <div class="d-flex align-items-center gap-1" data-tabs="all unique collection ownership">
                 <span class="cs-control-label"><?= h($_csLblSortBy) ?></span>
                 <select id="<?= h($_csP) ?>-sort" class="form-select form-select-sm" style="width:auto">
                     <?php foreach ($_csSorts as $_sv => $_sl): ?>

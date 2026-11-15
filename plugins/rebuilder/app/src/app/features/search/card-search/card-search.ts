@@ -78,8 +78,14 @@ export class CardSearch {
     { initialValue: 'all' as CardSource },
   );
 
-  protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
-  protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
+  private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+  private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
+  protected readonly orderOptions = computed(() =>
+    this.search.source() === 'uniques' ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
+  );
+  protected readonly compactOrderOptions = computed(() =>
+    this.search.source() === 'uniques' ? this.allCompactOrderOptions.filter((o) => o.value !== 'random') : this.allCompactOrderOptions,
+  );
   protected readonly layoutOptions = [
     { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },
     { value: 'list' as const, icon: 'list' as const, ariaLabel: $localize`:@@search.card.list:Liste` },
@@ -112,9 +118,8 @@ export class CardSearch {
   );
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
-  /** The Uniques search API returns its own order, with no sort parameter. */
-  // The Uniques search API and the account lists (favorites, collection, ownership) have their own order.
-  protected readonly sortable = computed(() => this.search.source() === 'all');
+  // The account lists (favorites, collection, ownership) have their own order; All & Uniques support sorting.
+  protected readonly sortable = computed(() => this.search.source() === 'all' || this.search.source() === 'uniques');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';
