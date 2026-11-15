@@ -238,3 +238,26 @@ describe('toAbilityRefs', () => {
   });
 });
 
+describe('buildEffectsFilteredParams', () => {
+  it('forwards subtypes, costRelation and hasNoEffect alongside other effect filters', () => {
+    const hp = buildEffectsFilteredParams(
+      {
+        factions: ['AX'],
+        sets: ['CORE'],
+        subtypes: ['ELEMENTAL'],
+        costRelation: 'recallHigher',
+        noEffect: false,
+        mainCosts: [],
+        recallCosts: [],
+        effects: [],
+      },
+      0,
+      { triggers: [24], conditions: [], effects: [] },
+      'effects',
+    );
+    expect(hp.getAll('subTypes[]')).toEqual(['ELEMENTAL']);
+    expect(hp.get('costRelation')).toBe('recallHigher');
+    expect(hp.has('hasNoEffect')).toBe(false);
+  });
+});
+

@@ -107,48 +107,50 @@
       </div>
     </ac-filter-section>
   </fieldset>
+}
 
-  <div class="advanced">
-    <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
-      <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
-      <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
-    </button>
-    @if (advancedOpen()) {
-      <fieldset class="unsupported" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
-        <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
-          <ac-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
+<div class="advanced">
+  <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
+    <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
+    <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
+  </button>
+  @if (advancedOpen()) {
+    <fieldset class="unsupported" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
+      <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
+        <ac-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
+        @if (source() !== 'uniques') {
           <ac-chip shape="square" label="Alt arts" i18n-label="@@search.filters.chip.altArts" [selected]="value().altArts" (selectedChange)="setAltArts($event)" />
+        }
+      </div>
+    </fieldset>
+    <div class="adv-body">
+      @if (source() !== 'uniques' && !factionFilter()) {
+        <div class="adv-field">
+          <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
+          <div class="types" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
+            @for (f of factions; track f.code) {
+              <ac-chip [label]="f.name" [dot]="f.color" [selected]="value().otherFactions.includes(f.code)" (selectedChange)="toggleOtherFaction(f.code, $event)" />
+            }
+          </div>
         </div>
-      </fieldset>
-      <div class="adv-body">
-        @if (!factionFilter()) {
+      }
+      <fieldset class="unsupported adv-rest" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
+        @if (source() !== 'uniques' && value().altArts && promoOptions().length) {
           <div class="adv-field">
-            <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
-            <div class="types" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
-              @for (f of factions; track f.code) {
-                <ac-chip [label]="f.name" [dot]="f.color" [selected]="value().otherFactions.includes(f.code)" (selectedChange)="toggleOtherFaction(f.code, $event)" />
+            <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
+            <div class="types" role="group" aria-label="Éditions promo" i18n-aria-label="@@search.filters.promoEditions">
+              @for (p of promoOptions(); track p.code) {
+                <ac-chip shape="square" [label]="p.label" [selected]="value().promoSets.includes(p.code)" (selectedChange)="togglePromo(p.code, $event)" />
               }
             </div>
           </div>
         }
-        <fieldset class="unsupported adv-rest" [disabled]="limited()" [attr.inert]="limited() ? '' : null">
-          @if (value().altArts && promoOptions().length) {
-            <div class="adv-field">
-              <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
-              <div class="types" role="group" aria-label="Éditions promo" i18n-aria-label="@@search.filters.promoEditions">
-                @for (p of promoOptions(); track p.code) {
-                  <ac-chip shape="square" [label]="p.label" [selected]="value().promoSets.includes(p.code)" (selectedChange)="togglePromo(p.code, $event)" />
-                }
-              </div>
-            </div>
-          }
-          <div class="adv-field">
-            <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
-            <ac-combobox keepOpen [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
-          </div>
-          <ac-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
-        </fieldset>
-      </div>
-    }
-  </div>
-}
+        <div class="adv-field">
+          <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
+          <ac-combobox keepOpen [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
+        </div>
+        <ac-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
+      </fieldset>
+    </div>
+  }
+</div>

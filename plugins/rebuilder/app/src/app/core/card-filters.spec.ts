@@ -225,5 +225,37 @@ describe('numeric validation', () => {
     expect(hasInvalidNumericFilters(bad, 'favorites')).toBe(false);
     expect(hasInvalidNumericFilters({ ...bad, mainCost: '1-3' }, 'uniques')).toBe(false);
   });
+
+  it('drops discrete numbers > 15 and maps >15 uniques stats to sentinel MAX_COST+1', () => {
+    expect(parseCostExpression('20')).toEqual([]);
+    expect(parseCostExpression('2, 20')).toEqual([2]);
+    const uq = toUniquesQuery({ ...defaultFilters('uniques'), mainCost: '20', recallCost: '>15' }, null);
+    expect(uq.mainCosts).toEqual([16]);
+    expect(uq.recallCosts).toEqual([16]);
+    const p = buildUniquesParams(uq, null, 20);
+    expect(p.get('mainCost[gt]')).toBe('15');
+    expect(p.get('recallCost[gt]')).toBe('15');
+  });
+
+  it('forwards subtypes, costRelation, noEffect on uniques queries and shows their chips', () => {
+    const f = {
+      ...defaultFilters('uniques'),
+      subtypes: ['ANIMAL', 'ROBOT'],
+      costRelation: 'mainHigher' as const,
+      noEffect: true,
+    };
+    const uq = toUniquesQuery(f, null);
+    expect(uq.subtypes).toEqual(['ANIMAL', 'ROBOT']);
+    expect(uq.costRelation).toBe('mainHigher');
+    expect(uq.noEffect).toBe(true);
+
+    const hp = buildUniquesParams(uq, null, 20);
+    expect(hp.getAll('subTypes[]')).toEqual(['ANIMAL', 'ROBOT']);
+    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('hasNoEffect')).toBe('true');
+
+    const chipIds = filterChips(f, 'uniques').map((c) => c.id);
+    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect']));
+  });
 });
 

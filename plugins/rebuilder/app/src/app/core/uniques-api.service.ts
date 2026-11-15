@@ -31,6 +31,9 @@ export interface UniquesQuery {
   reference?: string;
   factions: string[];
   sets: string[];
+  subtypes?: string[];
+  costRelation?: '' | 'equal' | 'mainHigher' | 'recallHigher';
+  noEffect?: boolean;
   mainCosts: number[];
   recallCosts: number[];
   forestPowers?: number[];
@@ -226,17 +229,27 @@ function hasCriteria(e: UniquesEffect): boolean {
   return e.triggers.length > 0 || e.conditions.length > 0 || e.effects.length > 0;
 }
 
-/** Name, factions, sets, costs and format. */
+function appendStatValues(hp: HttpParams, param: string, values: number[] | undefined): HttpParams {
+  for (const v of values ?? []) {
+    hp = v > 15 ? hp.append(`${param}[gt]`, '15') : hp.append(`${param}[]`, String(v));
+  }
+  return hp;
+}
+
+/** Name, factions, sets, subtypes, costs, cost relation, no-effect and format. */
 function appendCriteria(hp: HttpParams, query: UniquesQuery): HttpParams {
   const name = query.name?.trim();
   if (name) hp = hp.set('name', name);
   for (const f of query.factions) hp = hp.append('faction[]', f);
   for (const s of query.sets) hp = hp.append('set[]', s);
-  for (const c of query.mainCosts) hp = hp.append('mainCost[]', String(c));
-  for (const c of query.recallCosts) hp = hp.append('recallCost[]', String(c));
-  for (const p of query.forestPowers ?? []) hp = hp.append('forestPower[]', String(p));
-  for (const p of query.mountainPowers ?? []) hp = hp.append('mountainPower[]', String(p));
-  for (const p of query.oceanPowers ?? []) hp = hp.append('oceanPower[]', String(p));
+  for (const st of query.subtypes ?? []) hp = hp.append('subTypes[]', st);
+  if (query.costRelation) hp = hp.set('costRelation', query.costRelation);
+  if (query.noEffect) hp = hp.set('hasNoEffect', 'true');
+  hp = appendStatValues(hp, 'mainCost', query.mainCosts);
+  hp = appendStatValues(hp, 'recallCost', query.recallCosts);
+  hp = appendStatValues(hp, 'forestPower', query.forestPowers);
+  hp = appendStatValues(hp, 'mountainPower', query.mountainPowers);
+  hp = appendStatValues(hp, 'oceanPower', query.oceanPowers);
   if (query.format) hp = hp.set('format', query.format);
   return hp;
 }
