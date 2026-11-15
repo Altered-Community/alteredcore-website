@@ -240,7 +240,8 @@ export function parseCostExpression(expr: string): number[] | null {
   for (const raw of normalized.split(/[,;\s]+/).filter(Boolean)) {
     let m: RegExpExecArray | null;
     if ((m = /^(\d{1,2})$/.exec(raw))) {
-      values.add(Number(m[1]));
+      const n = Number(m[1]);
+      if (n <= MAX_COST) values.add(n);
     } else if ((m = /^(\d{1,2})\s*-\s*(\d{1,2})$/.exec(raw))) {
       const [a, b] = [Number(m[1]), Number(m[2])].sort((x, y) => x - y);
       span(a, b);
@@ -263,6 +264,15 @@ export function parseCostExpression(expr: string): number[] | null {
   return [...values].sort((x, y) => x - y);
 }
 
+function uniquesStatValues(expr: string): number[] {
+  const vals = parseCostExpression(expr);
+  if (vals === null) return [];
+  // Valid non-empty filter whose values all exceeded MAX_COST (e.g. "20", ">15")
+  // must yield 0 results rather than dropping the filter.
+  if (vals.length === 0 && expr.trim() !== '') return [MAX_COST + 1];
+  return vals;
+}
+
 /**
  * Uniques tab (Uniques search API). Effect blocks read « Quand … ou … / Si … / Alors … ou … »:
  * values inside a criterion are OR-ed, blocks are AND-ed, as the API matches them. An exact
@@ -276,11 +286,14 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     reference,
     factions: faction ? [faction] : filters.factions,
     sets: filters.sets,
-    mainCosts: parseCostExpression(filters.mainCost) ?? [],
-    recallCosts: parseCostExpression(filters.recallCost) ?? [],
-    forestPowers: parseCostExpression(filters.forestPower) ?? [],
-    mountainPowers: parseCostExpression(filters.mountainPower) ?? [],
-    oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
+    subtypes: filters.subtypes,
+    costRelation: filters.costRelation || undefined,
+    noEffect: filters.noEffect || undefined,
+    mainCosts: uniquesStatValues(filters.mainCost),
+    recallCosts: uniquesStatValues(filters.recallCost),
+    forestPowers: uniquesStatValues(filters.forestPower),
+    mountainPowers: uniquesStatValues(filters.mountainPower),
+    oceanPowers: uniquesStatValues(filters.oceanPower),
     // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
     format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
     order: filters.order !== 'random' ? filters.order : undefined,
@@ -362,9 +375,9 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   power('forestPower', $localize`:@@ui.terrain.forest:Forêt`);
   power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
   power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
+  if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
+  if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
   if (source !== 'uniques') {
-    if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
-    if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
     if (filters.altArts) chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
     if (filters.otherFactions.length) {
       chips.push({

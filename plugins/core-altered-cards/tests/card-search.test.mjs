@@ -243,4 +243,51 @@ function eq(a, b, msg) {
   ok(!cs.buildUniquesApiUrl(null).includes('sort='), 'random sort omitted from uniques API URL');
 }
 
+// 7. numUniquesParts clamps values > 15 cleanly and uniques URL includes subTypes, costRelation, hasNoEffect, matchCount
+{
+  const env = setupEnv();
+  const fcEl = { textContent: '', style: { display: '' } };
+  env.byId.set('cs-filter-count', fcEl);
+  const effectRows = [
+    { _tsInsts: [{ getValue: () => ['24'] }, { getValue: () => [] }, { getValue: () => ['3'] }] },
+    { _tsInsts: [{ getValue: () => ['24'] }, { getValue: () => [] }, { getValue: () => [] }] },
+  ];
+  const cs = CardSearch({
+    prefix: 'cs', mode: 'cards', uniquesApiBase: 'http://localhost:8005', lang: 'en',
+    defaults: { factions: [], types: ['CHARACTER'], rarities: ['COMMON', 'RARE'], sets: ['CORE'] },
+  });
+  env.byId.set('cs-effect-rows', {
+    querySelectorAll: (sel) => (sel === '.effect-row' ? effectRows : []),
+  });
+  eq(cs.numUniquesParts('mainCost', '20'), ['mainCost[gt]=15'], 'exact > 15 maps to mainCost[gt]=15 (0 results, not 400)');
+  eq(cs.numUniquesParts('mainCost', '13-20'), ['mainCost[]=13', 'mainCost[]=14', 'mainCost[]=15'], 'range clamps upper bound to 15');
+  eq(cs.numUniquesParts('mainCost', '2,20'), ['mainCost[]=2'], 'list drops values > 15');
+  eq(cs.numUniquesParts('mainCost', '<20'), [], 'upper bound > 15 is vacuously true');
+
+  cs.filters.subtypes = ['ELEMENTAL', 'ROBOT'];
+  cs.filters.costRelation = 'main_gt';
+  cs.filters.hasNoEffect = true;
+  const uUrl = cs.buildUniquesApiUrl(null);
+  ok(uUrl.includes('subTypes[]=ELEMENTAL') && uUrl.includes('subTypes[]=ROBOT'), 'uniques URL includes subTypes[]');
+  ok(uUrl.includes('costRelation=mainHigher'), 'uniques URL translates costRelation=main_gt -> mainHigher');
+  ok(uUrl.includes('hasNoEffect=true'), 'uniques URL includes hasNoEffect=true');
+  ok(!uUrl.includes('effect[0][matchCount]='), 'narrower block does not require matchCount=2');
+  ok(uUrl.includes('effect[1][matchCount]=2'), 'covering block gets matchCount=2');
+
+  cs.filters.costRelation = 'eq';
+  ok(cs.buildUniquesApiUrl(null).includes('costRelation=equal'), 'costRelation=eq -> equal');
+  cs.filters.costRelation = 'recall_gt';
+  ok(cs.buildUniquesApiUrl(null).includes('costRelation=recallHigher'), 'costRelation=recall_gt -> recallHigher');
+
+  // Switch to unique tab and confirm forced defaults + unsupported filters don't inflate badge count
+  env.byId.delete('cs-effect-rows');
+  const uniqBtn = env.tabButtons.find((b) => b.dataset.tab === 'unique');
+  env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? uniqBtn : null } });
+  cs.filters.keywords = ['FLEETING'];
+  cs.filters.isBanned = true;
+  cs.filters.subtypes = ['ELEMENTAL'];
+  cs.updateFilterCount();
+  ok(fcEl.textContent === 1, 'unique badge counts only supported filters (got ' + fcEl.textContent + ')');
+}
+
 console.log(`\n${pass} passed`);

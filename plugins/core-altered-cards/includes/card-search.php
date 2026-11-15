@@ -471,7 +471,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         </select>
                     </div>
                     <?php if (!empty($_csSubtypes)): ?>
-                    <div data-tabs="all collection ownership">
+                    <div data-tabs="all unique collection ownership">
                         <div class="filter-label mb-1"><?= h($_csTxt['lbl_subtype'] ?? 'Subtype') ?></div>
                         <select id="<?= h($_csP) ?>-filter-subtype" multiple>
                             <?php foreach ($_csSubtypes as $_sk => $_sv): ?>
@@ -491,7 +491,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <span class="cs-switch-label"><i class="fa-solid fa-ban me-1"></i><i class="fa-solid fa-pause me-1"></i><?= h($_csLblBannedSuspended) ?></span>
                     </label>
                     <?php else: ?>
-                    <span class="filter-label"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
+                    <span class="filter-label" data-tabs="all collection ownership"><?= h($_csTxt['lbl_card_status'] ?? 'Status') ?></span>
                     <button type="button" class="filter-toggle<?= $_csIsBanned ? ' active' : '' ?>" data-bool-filter="isBanned" data-tabs="all collection ownership">
                         <i class="fa-solid fa-ban"></i> <?= h($_csTxt['lbl_banned'] ?? 'Banned') ?>
                     </button>
@@ -504,14 +504,14 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                     </button>
                     <?php endif; ?>
                     <span class="cs-sep" data-tabs="all"></span>
-                    <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all">
+                    <select id="<?= h($_csP) ?>-filter-cost-relation" class="form-select form-select-sm" style="width:auto" data-tabs="all unique">
                         <option value=""><?= h($_csTxt['cost_relation_ph'] ?? ($_csLang === 'fr' ? 'Gestion des coûts' : 'Cost management')) ?></option>
                         <option value="eq"><?= h($_csTxt['cost_main_eq_recall']    ?? ($_csLang === 'fr' ? 'Coût main = réserve'      : 'Main cost = reserve')) ?></option>
                         <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
                         <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
                     </select>
                     <?php if ($_csMode !== 'deck'): ?>
-                    <label class="cs-check d-flex align-items-center gap-1" data-tabs="all">
+                    <label class="cs-check d-flex align-items-center gap-1" data-tabs="all unique">
                         <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
                         <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
                     </label>

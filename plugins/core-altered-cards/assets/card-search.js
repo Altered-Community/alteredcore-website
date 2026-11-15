@@ -472,16 +472,29 @@ function CardSearch(cfg) {
         return [api + '[' + p.op + ']=' + p.val]; // bound
     }
 
-    // rust-cards-api (Uniques) query parts. It does not combine two bounds on one
-    // field: with mainCost[gte]=1&mainCost[lte]=3 only gte applies, so a range is
-    // sent as the explicit list mainCost[]=1&mainCost[]=2&mainCost[]=3.
+    // rust-cards-api (Uniques) query parts. Only values 0..=15 are accepted by
+    // parse_cost_u8 (HTTP 400 above 15), so values above 15 are clamped or mapped
+    // to an impossible in-range predicate (field[gt]=15 => 0 results).
     function numUniquesParts(api, raw) {
         var p = parseNumExpr(raw);
-        if (p && p.kind === 'range') {
-            var out = [], hi = Math.min(p.max, 50);
-            for (var v = p.min; v <= hi; v++) out.push(api + '[]=' + v);
+        if (!p) return [];
+        if (p.kind === 'range') {
+            var lo = Math.max(p.min, 0), hi = Math.min(p.max, 15);
+            if (lo > hi) return [api + '[gt]=15'];
+            var out = [];
+            for (var v = lo; v <= hi; v++) out.push(api + '[]=' + v);
             return out;
         }
+        if (p.kind === 'exact') {
+            return (p.val >= 0 && p.val <= 15) ? [api + '=' + p.val] : [api + '[gt]=15'];
+        }
+        if (p.kind === 'list') {
+            var kept = p.vals.filter(function(v) { return v >= 0 && v <= 15; });
+            return kept.length ? kept.map(function(v) { return api + '[]=' + v; }) : [api + '[gt]=15'];
+        }
+        // bound
+        if ((p.op === 'gt' || p.op === 'gte') && p.val > 15) return [api + '[gt]=15'];
+        if ((p.op === 'lt' || p.op === 'lte') && p.val > 15) return [];
         return numCardsParts(api, raw);
     }
 
@@ -951,15 +964,13 @@ function CardSearch(cfg) {
         if (filters.keywords.length > 1 && filters.keywordMode === 'and') {
             parts.push('effectKeywordMode=and');
         }
-        filters.subtypes.forEach(function(v)   { parts.push('subTypes[]='  + encodeURIComponent(v)); });
+        _appendSubtypesParts(parts);
         filters.variations.forEach(function(v) { parts.push('variation[]=' + encodeURIComponent(v)); });
 
         NUM_FIELDS.forEach(function(f) {
             numCardsParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
         });
-        if (filters.costRelation === 'eq')        parts.push('costRelation=equal');
-        else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
-        else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
+        _appendCostRelationPart(parts);
         _statusFilterParts().forEach(function(p) { parts.push(p); });
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
@@ -979,6 +990,33 @@ function CardSearch(cfg) {
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
         return API_BASE + '/api/cards?' + parts.join('&');
+    }
+
+    function _appendSubtypesParts(parts) {
+        filters.subtypes.forEach(function(v) { parts.push('subTypes[]=' + encodeURIComponent(v)); });
+    }
+
+    function _appendCostRelationPart(parts) {
+        if (filters.costRelation === 'eq')             parts.push('costRelation=equal');
+        else if (filters.costRelation === 'main_gt')   parts.push('costRelation=mainHigher');
+        else if (filters.costRelation === 'recall_gt') parts.push('costRelation=recallHigher');
+    }
+
+    function _effectCovers(a, b) {
+        var part = function(x, y) {
+            return !x.length || (y.length > 0 && y.every(function(id) { return x.indexOf(id) >= 0; }));
+        };
+        return part(a.trigger, b.trigger) && part(a.condition, b.condition) && part(a.effect, b.effect);
+    }
+
+    function _uniquesEffectMatchCounts(effects) {
+        return effects.map(function(e, i) {
+            var count = 1;
+            for (var j = 0; j < effects.length; j++) {
+                if (j !== i && _effectCovers(e, effects[j])) count++;
+            }
+            return Math.min(count, 3);
+        });
     }
 
     // Shared query parts for rust-cards-api, used by both /api/v2/cards (via
@@ -1001,15 +1039,21 @@ function CardSearch(cfg) {
             .filter(function(v) { return _noUniq.indexOf(v) < 0; })
             .forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
 
+        _appendSubtypesParts(parts);
+
         NUM_FIELDS.forEach(function(f) {
             numUniquesParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
         });
+        _appendCostRelationPart(parts);
+        if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
         _readEffectRows();
+        var _efCounts = _uniquesEffectMatchCounts(filters.effects);
         filters.effects.forEach(function(ef, i) {
             if (ef.trigger.length)   parts.push('effect[' + i + '][t]=' + ef.trigger.map(encodeURIComponent).join(','));
             if (ef.condition.length) parts.push('effect[' + i + '][c]=' + ef.condition.map(encodeURIComponent).join(','));
             if (ef.effect.length)    parts.push('effect[' + i + '][o]=' + ef.effect.map(encodeURIComponent).join(','));
+            if (_efCounts[i] > 1)    parts.push('effect[' + i + '][matchCount]=' + _efCounts[i]);
         });
 
         _readSupportRow();
@@ -1023,8 +1067,8 @@ function CardSearch(cfg) {
     }
 
     // build rust-cards-api (Uniques tab) URL — cursor-based, no page/random/keyword/
-    // subtype/variation/costRelation/status/hasNoEffect (unsupported by that API;
-    // the matching UI controls are hidden on this tab, see includes/card-search.php).
+    // variation/status (unsupported by that API; the matching UI controls are hidden
+    // on this tab, see includes/card-search.php).
     function buildUniquesApiUrl(cursor) {
         var parts = ['limit=' + PER_PAGE];
         if (cursor != null) parts.push('cursor=' + cursor);
@@ -1265,13 +1309,19 @@ function CardSearch(cfg) {
     function updateFilterCount() {
         readTsValues();
         _syncUniqueNudge();
+        var isUniques = _tab === 'unique';
+        var _noUniq = cfg.noUniqueSets || [];
+        var setsCount = !_setsDirty ? 0 : (isUniques
+            ? filters.sets.filter(function(v) { return _noUniq.indexOf(v) < 0; }).length
+            : filters.sets.length);
         var n = (_factionDirty ? filters.faction.length : 0)
-            + (_typeDirty   ? filters.type.length   : 0)
-            + (_rarityDirty ? filters.rarity.length : 0)
+            + (!isUniques && _typeDirty   ? filters.type.length   : 0)
+            + (!isUniques && _rarityDirty ? filters.rarity.length : 0)
             + NUM_FIELDS.reduce(function(acc, f) { return acc + (numExprActive(filters[f.key]) ? 1 : 0); }, 0)
-            + (_setsDirty ? filters.sets.length : 0) + filters.subtypes.length + filters.keywords.length
-            + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
+            + setsCount + filters.subtypes.length + (isUniques ? 0 : filters.keywords.length)
+            + (!isUniques && _variationDirty ? filters.variations.length : 0) + (!isUniques && _collDirty ? 1 : 0)
+            + (!isUniques && filters.isBanned ? 1 : 0) + (!isUniques && filters.isErrated ? 1 : 0)
+            + (!isUniques && filters.isSuspended ? 1 : 0) + (!isUniques && filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0)
             + (filters.costRelation ? 1 : 0)
             + (filters.format ? 1 : 0)
@@ -1282,8 +1332,9 @@ function CardSearch(cfg) {
             elFilterCount.style.display = n > 0 ? '' : 'none';
         }
         // Advanced-accordion badge: count of filters living inside the accordion.
-        var advN = filters.subtypes.length + filters.keywords.length
-            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0) + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
+        var advN = filters.subtypes.length + (isUniques ? 0 : filters.keywords.length)
+            + (!isUniques && filters.isBanned ? 1 : 0) + (!isUniques && filters.isErrated ? 1 : 0)
+            + (!isUniques && filters.isSuspended ? 1 : 0) + (!isUniques && filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0) + (filters.costRelation ? 1 : 0)
             + (numExprActive(filters.forest)   ? 1 : 0)
             + (numExprActive(filters.mountain) ? 1 : 0)
@@ -1876,6 +1927,16 @@ function CardSearch(cfg) {
         // to the old Cards API (no UNIQUES_API_BASE configured), even on the Uniques tab.
         var elFormatWrap = document.getElementById(P + '-format-wrap');
         if (elFormatWrap && !UNIQUES_API_BASE) elFormatWrap.style.display = 'none';
+        // Hide the promo sub-panel when switching to a tab that does not offer showPromo.
+        var elPromoPanel = document.getElementById(P + '-promo-panel');
+        if (elPromoPanel) {
+            if (_tab !== 'all' && _tab !== 'ownership') {
+                elPromoPanel.style.setProperty('display', 'none', 'important');
+            } else {
+                elPromoPanel.style.removeProperty('display');
+                elPromoPanel.style.display = filters.showPromo ? '' : 'none';
+            }
+        }
     }
 
     // Switch tab. Normally callers call resetFilters() first so filters from the old

@@ -72,8 +72,9 @@ function setup({ search = '', sort = 'default' } = {}) {
   const fetchUrls = [];
   const root = makeEl('cs-panel');
   const sortWrap = makeEl('sort-wrap', 'div', { 'data-tabs': 'all unique collection ownership' });
-  const hneWrap = makeEl('hne-wrap', 'label', { 'data-tabs': 'all' });
-  const dataTabsEls = [sortWrap, hneWrap];
+  const hneWrap = makeEl('hne-wrap', 'label', { 'data-tabs': 'all unique' });
+  const keywordWrap = makeEl('keyword-wrap', 'div', { 'data-tabs': 'all' });
+  const dataTabsEls = [sortWrap, hneWrap, keywordWrap];
 
   const randomOpt = { hidden: false, disabled: false };
   const sortSelect = makeEl('cs-sort', 'select');
@@ -115,7 +116,7 @@ function setup({ search = '', sort = 'default' } = {}) {
     });
   };
 
-  return { root, sortWrap, hneWrap, sortSelect, randomOpt, tabButtons, pushedUrls, fetchUrls };
+  return { root, sortWrap, hneWrap, keywordWrap, sortSelect, randomOpt, tabButtons, pushedUrls, fetchUrls };
 }
 
 const CardSearch = loadCardSearch();
@@ -138,8 +139,9 @@ function ok(cond, msg) {
   });
   ok(env.sortWrap.style._prop('display') === null,
     'sort wrapper visible on unique tab');
-  ok(env.hneWrap.style._prop('display')?.value === 'none' && env.hneWrap.style._prop('display')?.priority === 'important',
-    'hasNoEffect wrapper hidden with display:none !important on unique tab');
+  ok(env.hneWrap.style._prop('display') === null, 'hasNoEffect wrapper visible on unique tab');
+  ok(env.keywordWrap.style._prop('display')?.value === 'none' && env.keywordWrap.style._prop('display')?.priority === 'important',
+    'keyword wrapper hidden with display:none !important on unique tab');
   ok(cs.filters.sort === 'mana_asc', 'filters.sort preserved as mana_asc on unique tab');
   ok(env.sortSelect.value === 'mana_asc', 'sort select value preserved as mana_asc on unique tab');
   ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option hidden and disabled on unique tab');
@@ -165,7 +167,7 @@ function ok(cond, msg) {
   const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
   env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? allBtn : null) } });
   ok(env.sortWrap.style._prop('display') === null, 'sort wrapper display cleared when switching back to all tab');
-  ok(env.hneWrap.style._prop('display') === null, 'hasNoEffect display cleared when switching back to all tab');
+  ok(env.keywordWrap.style._prop('display') === null, 'keyword display cleared when switching back to all tab');
   ok(env.sortSelect.disabled === false, 'sort select enabled on all tab');
   ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option re-enabled on all tab');
 }
