@@ -258,8 +258,10 @@ export class CardSearchStore {
         }),
       );
     }
-    return this.api
-      .search(toSearchParams(query.filters, query.faction, page, size))
-      .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));
+    const params = toSearchParams(query.filters, query.faction, page, size);
+    const search$ = this.uniquesApi.baseUrl ? this.uniquesApi.searchUnified(params) : this.api.search(params);
+    return search$.pipe(
+      map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })),
+    );
   }
 }

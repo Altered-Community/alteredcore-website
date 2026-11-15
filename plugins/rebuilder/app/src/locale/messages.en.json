@@ -19,6 +19,8 @@
     "search.filters.type.mana": "Mana",
     "search.filters.order.setDateDesc": "Set date ↓",
     "search.filters.order.setDateAsc": "Set date ↑",
+    "search.filters.order.nameAsc": "Name A→Z",
+    "search.filters.order.nameDesc": "Name Z→A",
     "search.filters.order.number": "Number",
     "search.filters.chip.query": "“{$query}”",
     "search.filters.chip.oneFaction": "1 faction",

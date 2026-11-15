@@ -80,11 +80,14 @@ export class CardSearch {
 
   private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
+  private readonly hideRandomSort = computed(
+    () => this.search.source() === 'uniques' || (this.search.source() === 'all' && !!this.uniquesApi.baseUrl),
+  );
   protected readonly orderOptions = computed(() =>
-    this.search.source() === 'uniques' ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
+    this.hideRandomSort() ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
   );
   protected readonly compactOrderOptions = computed(() =>
-    this.search.source() === 'uniques' ? this.allCompactOrderOptions.filter((o) => o.value !== 'random') : this.allCompactOrderOptions,
+    this.hideRandomSort() ? this.allCompactOrderOptions.filter((o) => o.value !== 'random') : this.allCompactOrderOptions,
   );
   protected readonly layoutOptions = [
     { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },

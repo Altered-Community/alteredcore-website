@@ -138,12 +138,14 @@ export const FACTION_OPTIONS = [
 ] as const;
 
 /**
- * Sorts of `GET /api/cards`. Name and reference are left out: the API ignores `order[name.{locale}]` and
- * `order[reference]` (checked 2026-09-30, see docs/api-limitations/cards-api.md).
+ * Sort options for `GET /api/v2/search` & `/api/v2/cards` (and fallback `/api/cards`).
+ * `random` is omitted where the unified search API is active.
  */
 export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'setDate-desc', label: $localize`:@@search.filters.order.setDateDesc:Date set ↓` },
   { value: 'setDate-asc', label: $localize`:@@search.filters.order.setDateAsc:Date set ↑` },
+  { value: 'name-asc', label: $localize`:@@search.filters.order.nameAsc:Nom A→Z` },
+  { value: 'name-desc', label: $localize`:@@search.filters.order.nameDesc:Nom Z→A` },
   { value: 'number-asc', label: $localize`:@@search.filters.order.number:Numéro` },
   { value: 'collector-asc', label: $localize`:@@search.filters.order.collectorAsc:Collector N° ↑` },
   { value: 'collector-desc', label: $localize`:@@search.filters.order.collectorDesc:Collector N° ↓` },
@@ -338,11 +340,11 @@ export function toSearchParams(
     rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
     types: filters.types,
     variations: variationCodes(filters),
-    mainCosts: parseCostExpression(filters.mainCost) ?? [],
-    recallCosts: parseCostExpression(filters.recallCost) ?? [],
-    forestPowers: parseCostExpression(filters.forestPower) ?? [],
-    mountainPowers: parseCostExpression(filters.mountainPower) ?? [],
-    oceanPowers: parseCostExpression(filters.oceanPower) ?? [],
+    mainCosts: uniquesStatValues(filters.mainCost),
+    recallCosts: uniquesStatValues(filters.recallCost),
+    forestPowers: uniquesStatValues(filters.forestPower),
+    mountainPowers: uniquesStatValues(filters.mountainPower),
+    oceanPowers: uniquesStatValues(filters.oceanPower),
     subtypes: filters.subtypes,
     costRelation: filters.costRelation || undefined,
     order: filters.order,

@@ -39,11 +39,11 @@
     // Locale-keyed names: old Cards API uses short codes (en, fr); the Uniques
     // search API (rust-cards-api) uses long codes (en_US, fr_FR) — fall back
     // across both so unique cards don't render with an empty name.
-    var LOCALE_MAP_LONG = { en: 'en_US', fr: 'fr_FR' };
+    var LOCALE_MAP_LONG = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', es: 'es_ES', it: 'it_IT' };
     function cardName(card) {
         var n = card.name;
         if (typeof n !== 'object' || n === null) return n || '';
-        return n[AlteredDB.lang] || n[LOCALE_MAP_LONG[AlteredDB.lang]] || n.en || n.en_US || '';
+        return n[AlteredDB.lang] || n[LOCALE_MAP_LONG[AlteredDB.lang]] || n.en || n.en_US || Object.values(n)[0] || '';
     }
     function factionFromRef(ref) {
         var m = ref.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
