@@ -144,6 +144,7 @@ $_csLblSupportEffect = $_csTxt['lbl_support_effect'] ?? ($_csLang === 'fr' ? 'Ef
 $_csLblBannedSuspended = $_csTxt['lbl_banned_suspended'] ?? ($_csLang === 'fr' ? 'Suspendus et bannis' : 'Suspended & banned');
 $_csLblManage   = $_csTxt['manage_link']    ?? ($_csLang === 'fr' ? 'Gérer' : 'Manage');
 $_csLblManageColl = $_csTxt['manage_coll']  ?? ($_csLang === 'fr' ? 'Importer / gérer ma collection' : 'Import / manage my collection');
+$_csLblUniquesFilters = $_csTxt['uniques_filters'] ?? ($_csLang === 'fr' ? 'Filtres Uniques' : 'Unique filters');
 
 // "Manage" link target for the physical-collection tab → import page.
 $_csCollManageUrl = $_csBaseUrl . '/pages/collection';
@@ -270,8 +271,8 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Faction (+ rarity) — hidden in deckbuilder mode (moved to advanced) -->
-        <?php if (($_csMode !== 'deck') && (!empty($_csFactions) || !empty($_csRarities))): ?>
+        <!-- Factions — shared across Standard, Uniques, Collection, Ownership & Favorites; same slot in cards & deckbuilder -->
+        <?php if (!empty($_csFactions)): ?>
         <div class="filter-row filter-row--scroll cs-faction-row mb-2" data-tabs="all unique collection ownership favoris">
             <?php foreach ($_csFactions as $_fk => $_fv): ?>
             <button type="button"
@@ -282,41 +283,23 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
             </button>
             <?php endforeach; ?>
-            <?php if (!empty($_csRarities)): ?>
-            <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
-            <span class="cs-rarities cs-scroll-x" data-tabs="all ownership favoris">
-                <?php if (!empty($_csFactions)): ?>
-                <span class="cs-sep"></span>
-                <?php endif; ?>
-                <?php foreach ($_csRarities as $_rk => $_rv): ?>
-                <button type="button"
-                        class="filter-toggle filter-toggle--compact<?= in_array($_rk, $_csSelRarities) ? ' active' : '' ?>"
-                        data-filter="rarity" data-value="<?= h($_rk) ?>"
-                        title="<?= h($_csRarityTxt[$_rk] ?? $_rk) ?>">
-                    <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/gems/<?= h($_csRarityGems[$_rk] ?? substr($_rk, 0, 1)) ?>.png"
-                         alt="<?= h($_rk) ?>" style="width:15px;height:15px">
-                    <?= h(mb_strtoupper(mb_substr($_csRarityTxt[$_rk] ?? $_rk, 0, 1))) ?>
-                </button>
-                <?php endforeach; ?>
-            </span>
-            <?php endif; ?>
         </div>
         <?php endif; ?>
 
-        <!-- Type (hidden on Uniques: all characters); in deckbuilder mode the
-             rarity row shares this same line instead of getting its own row. -->
+        <!-- Simple / Standard card filters: Rarities + Types (hidden completely on Uniques) -->
         <?php
-        // In deckbuilder mode, Hero and Token aren't real search targets (the hero
-        // has its own picker; tokens aren't deckbuilder-legal cards), so drop them
-        // from the type filter row. Cards page keeps the full list.
+        // In deckbuilder mode, Hero and Token aren't search targets (the hero has its own
+        // picker and tokens aren't deckbuilder-legal cards), keeping the exact same row position & look.
         $_csTypesFilterRow = ($_csMode === 'deck')
             ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
             : $_csTypes;
-        $_csDeckRarityInline = ($_csMode === 'deck') && !empty($_csRarities);
+        $_csHasRarities = !empty($_csRarities);
+        $_csHasTypes    = !empty($_csTypesFilterRow);
         ?>
-        <?php if (!empty($_csTypesFilterRow) || $_csDeckRarityInline): ?>
-        <div class="filter-row filter-row--scroll cs-rarity-type-row mb-2">
-            <?php if ($_csDeckRarityInline): ?>
+        <?php if ($_csHasRarities || $_csHasTypes): ?>
+        <div class="filter-row filter-row--scroll cs-standard-row mb-2" data-tabs="all collection ownership favoris">
+            <?php if ($_csHasRarities): ?>
+            <!-- Rarities (compact: gem + first letter). Hidden on Uniques (forced) and physical collection (no rarity data). -->
             <span class="cs-rarities cs-scroll-x" data-tabs="all ownership favoris">
                 <?php foreach ($_csRarities as $_rk => $_rv): ?>
                 <button type="button"
@@ -330,13 +313,11 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                 <?php endforeach; ?>
             </span>
             <?php endif; ?>
-            <?php if ($_csDeckRarityInline && !empty($_csTypesFilterRow)): ?>
-            <!-- Grows to fill the gap between the two groups, keeping the bar centered in it -->
-            <span class="cs-rarity-type-spacer" data-tabs="all ownership">
-                <span class="cs-sep"></span>
-            </span>
+            <?php if ($_csHasRarities && $_csHasTypes): ?>
+            <!-- Divider visible only when both Rarities and Types are shown -->
+            <span class="cs-sep" data-tabs="all ownership"></span>
             <?php endif; ?>
-            <?php if (!empty($_csTypesFilterRow)): ?>
+            <?php if ($_csHasTypes): ?>
             <span class="cs-types cs-scroll-x" data-tabs="all collection ownership">
                 <?php foreach ($_csTypesFilterRow as $_tk => $_tv): ?>
                 <button type="button"
@@ -350,38 +331,44 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         </div>
         <?php endif; ?>
 
-        <!-- Format / environment (Uniques tab only) -->
-        <div class="mb-2" id="<?= h($_csP) ?>-format-wrap" data-tabs="unique">
-            <span class="filter-label mb-1 d-block"><?= h($_csLblFormat) ?></span>
-            <div class="filter-row filter-row--scroll">
-                <button type="button" class="filter-toggle active" data-filter="format" data-value="">
-                    <?= h($_csLblFormatAll) ?>
-                </button>
-                <button type="button" class="filter-toggle" data-filter="format" data-value="<?= h(cacUniquesFrontierFormat()) ?>">
-                    <?= h($_csLblFormatFrontier) ?>
-                </button>
-                <!--<button type="button" class="filter-toggle" data-filter="format" data-value="next_frontier">
-                    <?= h($_csLblFormatNextFrontier) ?>
-                </button>-->
+        <!-- Uniques-only filters (cohesive panel occupying the same slot on the Uniques tab) -->
+        <div class="cs-uniques-section mb-2" data-tabs="unique">
+            <div class="cs-uniques-section-head">
+                <i class="fa-solid fa-gem"></i>
+                <span><?= h($_csLblUniquesFilters) ?></span>
             </div>
-        </div>
 
-        <!-- Effects (Uniques tab only) — shown before the advanced section. Rows
-             combine with AND; each dropdown is multi-select and combines with OR. -->
-        <div class="mb-2" data-tabs="unique" style="min-width:0">
-            <span class="filter-label mb-1 d-block"><?= h($_csTxt['lbl_effects'] ?? 'Effects') ?></span>
-            <div id="<?= h($_csP) ?>-effect-rows"></div>
-            <button type="button" id="<?= h($_csP) ?>-effect-add"
-                    class="btn btn-sm btn-outline-secondary mt-1" style="font-size:.8rem">
-                <i class="fa-solid fa-plus me-1"></i><?= h($_csTxt['add_effect'] ?? ($_csLang === 'fr' ? 'Ajouter un effet' : 'Add effect')) ?>
-            </button>
-        </div>
+            <!-- Format / environment -->
+            <div class="mb-2" id="<?= h($_csP) ?>-format-wrap">
+                <span class="filter-label mb-1 d-block"><?= h($_csLblFormat) ?></span>
+                <div class="filter-row filter-row--scroll">
+                    <button type="button" class="filter-toggle active" data-filter="format" data-value="">
+                        <?= h($_csLblFormatAll) ?>
+                    </button>
+                    <button type="button" class="filter-toggle" data-filter="format" data-value="<?= h(cacUniquesFrontierFormat()) ?>">
+                        <?= h($_csLblFormatFrontier) ?>
+                    </button>
+                    <!--<button type="button" class="filter-toggle" data-filter="format" data-value="next_frontier">
+                        <?= h($_csLblFormatNextFrontier) ?>
+                    </button>-->
+                </div>
+            </div>
 
-        <!-- Support effect (Uniques tab only) — a single fixed row, filtered to
-             catalog entries valid on the echo/support line. No matchCount, no add/remove. -->
-        <div class="mb-2" data-tabs="unique" style="min-width:0">
-            <span class="filter-label mb-1 d-block"><?= h($_csLblSupportEffect) ?></span>
-            <div id="<?= h($_csP) ?>-support-row"></div>
+            <!-- Effects — rows combine with AND; each dropdown is multi-select and combines with OR. -->
+            <div class="mb-2" style="min-width:0">
+                <span class="filter-label mb-1 d-block"><?= h($_csTxt['lbl_effects'] ?? 'Effects') ?></span>
+                <div id="<?= h($_csP) ?>-effect-rows"></div>
+                <button type="button" id="<?= h($_csP) ?>-effect-add"
+                        class="btn btn-sm btn-outline-secondary mt-1" style="font-size:.8rem">
+                    <i class="fa-solid fa-plus me-1"></i><?= h($_csTxt['add_effect'] ?? ($_csLang === 'fr' ? 'Ajouter un effet' : 'Add effect')) ?>
+                </button>
+            </div>
+
+            <!-- Support effect — a single fixed row, filtered to catalog entries valid on the echo/support line. -->
+            <div class="mb-0" style="min-width:0">
+                <span class="filter-label mb-1 d-block"><?= h($_csLblSupportEffect) ?></span>
+                <div id="<?= h($_csP) ?>-support-row"></div>
+            </div>
         </div>
 
         <!-- Advanced search + promo toggle (same line) -->
@@ -415,30 +402,14 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
 
             <div class="cs-advanced" style="display:none">
 
-                <!-- Faction (duplicate for deckbuilder mode) -->
-                <?php if ($_csMode === 'deck' && !empty($_csFactions)): ?>
-                <div class="filter-row filter-row--scroll mb-2" data-tabs="all unique collection ownership favoris">
-                    <?php foreach ($_csFactions as $_fk => $_fv): ?>
-                    <button type="button"
-                            class="filter-toggle<?= in_array($_fk, $_csSelFactions) ? ' active' : '' ?>"
-                            data-filter="faction" data-value="<?= h($_fk) ?>"
-                            title="<?= h($_csFactionNames[$_fk] ?? $_fk) ?>">
-                        <img src="<?= h($_csBaseUrl) ?>/plugins/core-altered-cards/assets/faction/<?= h($_fk) ?>.png" alt="<?= h($_fk) ?>">
-                        <?= h($_csFactionNames[$_fk] ?? $_fk) ?>
-                    </button>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-
-                <!-- Biome powers (top of accordion) -->
+                <!-- Biome powers (shared across Standard & Uniques) -->
                 <div class="filter-row flex-wrap mb-2" style="row-gap:.5rem" data-tabs="all unique collection ownership">
                     <?= $_csNumInput('forestpower') ?>
                     <?= $_csNumInput('mountainpower') ?>
                     <?= $_csNumInput('oceanpower') ?>
                 </div>
 
-                <!-- Promo options (shown when "show promo" is on; all-cards tab only).
-                     Deckbuilder has no "show promo" toggle to reveal this, so skip it there. -->
+                <!-- Promo options (shown when "Alt arts" is on; standard all/ownership tabs only) -->
                 <?php if (!empty($_csPromoSets)): ?>
                 <div id="<?= h($_csP) ?>-promo-panel" class="cs-promo-panel mb-2" style="display:none">
                     <div class="cs-promo-variation mb-2">
@@ -510,12 +481,10 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
                         <option value="main_gt"><?= h($_csTxt['cost_main_gt_recall'] ?? ($_csLang === 'fr' ? 'Coût main plus élevé'    : 'Higher main cost')) ?></option>
                         <option value="recall_gt"><?= h($_csTxt['cost_recall_gt_main'] ?? ($_csLang === 'fr' ? 'Coût réserve plus élevé' : 'Higher reserve cost')) ?></option>
                     </select>
-                    <?php if ($_csMode !== 'deck'): ?>
                     <label class="cs-check d-flex align-items-center gap-1" data-tabs="all unique">
                         <input type="checkbox" id="<?= h($_csP) ?>-filter-hasnoeffect">
                         <span><?= h($_csTxt['lbl_no_effect'] ?? ($_csLang === 'fr' ? 'Sans effet' : 'No effect')) ?></span>
                     </label>
-                    <?php endif; ?>
                 </div>
 
             </div><!-- /.cs-advanced -->

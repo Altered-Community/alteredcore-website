@@ -278,13 +278,17 @@ function uniquesStatValues(expr: string): number[] {
  * values inside a criterion are OR-ed, blocks are AND-ed, as the API matches them. An exact
  * reference (`ALT_…`) looks up that card only.
  */
+function resolvedFactions(filters: SearchFilters, faction: string | null): string[] {
+  return faction ? (filters.otherFactions.length ? filters.otherFactions : [faction]) : filters.factions;
+}
+
 export function toUniquesQuery(filters: SearchFilters, faction: string | null): UniquesQuery {
   const q = filters.q.trim();
   const reference = /^ALT_[A-Z0-9_]+$/i.test(q) ? q.toUpperCase() : undefined;
   return {
     name: reference ? undefined : q || undefined,
     reference,
-    factions: faction ? [faction] : filters.factions,
+    factions: resolvedFactions(filters, faction),
     sets: filters.sets,
     subtypes: filters.subtypes,
     costRelation: filters.costRelation || undefined,
@@ -318,7 +322,7 @@ export function toSearchParams(
     locale: contentLocale(),
     q: filters.q.trim() || undefined,
     // The editor searches the hero's faction, or the ones chosen in « Changer de faction ».
-    factions: faction ? (filters.otherFactions.length ? filters.otherFactions : [faction]) : filters.factions,
+    factions: resolvedFactions(filters, faction),
     sets: filters.altArts ? [...filters.sets, ...filters.promoSets.filter((p) => !filters.sets.includes(p))] : filters.sets,
     // Uniques live in their own tab: an empty rarity selection means C · R · E here.
     rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
@@ -377,14 +381,14 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
   if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
   if (filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
-  if (source !== 'uniques') {
-    if (filters.altArts) chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
-    if (filters.otherFactions.length) {
-      chips.push({
-        id: 'otherFactions',
-        label: filters.otherFactions.map((c) => FACTION_OPTIONS.find((f) => f.code === c)?.name ?? c).join(' · '),
-      });
-    }
+  if (filters.otherFactions.length) {
+    chips.push({
+      id: 'otherFactions',
+      label: filters.otherFactions.map((c) => FACTION_OPTIONS.find((f) => f.code === c)?.name ?? c).join(' · '),
+    });
+  }
+  if (source !== 'uniques' && filters.altArts) {
+    chips.push({ id: 'altArts', label: $localize`:@@search.filters.chip.altArts:Alt arts` });
   }
   if (source === 'uniques') {
     chips.push({ id: 'environment', label: filters.environment === 'frontier' ? 'Frontier' : $localize`:@@search.filters.chip.allUniques:Toutes` });
