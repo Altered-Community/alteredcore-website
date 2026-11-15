@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, catchError, map, of, shareReplay, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, shareReplay, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
 import { ICONS } from './card-text';
@@ -215,6 +215,24 @@ export class UniquesApiService {
       .pipe(map((res) => new Set(res.idGds ?? [])));
   }
 
+  /** Hydrate Unique cards by reference via `GET /api/v2/cards?ref[]=...` (e.g. fallback for favorites/collection/deck faces). */
+  byReferences(references: readonly string[]): Observable<Card[]> {
+    const refs = [...new Set(references.map((r) => r.trim().toUpperCase()).filter(Boolean))];
+    if (!refs.length || !this.baseUrl) return of([]);
+    const chunks: string[][] = [];
+    for (let i = 0; i < refs.length; i += 50) chunks.push(refs.slice(i, i + 50));
+    return forkJoin(
+      chunks.map((chunk) => {
+        let params = new HttpParams().set('limit', String(chunk.length));
+        for (const r of chunk) params = params.append('ref[]', r);
+        return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
+          map((res) => (res.cards ?? []).map(toCard)),
+          catchError(() => of([] as Card[])),
+        );
+      }),
+    ).pipe(map((pages) => pages.flat()));
+  }
+
   private byReference(reference: string): Observable<UniquesPage> {
     return this.http.get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.toUpperCase())}`).pipe(
       map((card): UniquesPage => ({ member: [toCard(card)], totalItems: 1, next: null })),
@@ -231,6 +249,7 @@ const SORT_PARAM: Record<Exclude<CardOrder, 'random' | 'name-asc' | 'name-desc'>
   'setDate-desc': 'setDate:desc',
   'setDate-asc': 'setDate:asc',
   'number-asc': 'reference:asc',
+  'number-desc': 'reference:desc',
   'collector-asc': 'collector:asc',
   'collector-desc': 'collector:desc',
   'mainCost-asc': 'mainCost:asc',

@@ -1,11 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, catchError, map, of, shareReplay, throwError } from 'rxjs';
+import { Observable, catchError, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { CardOrder, Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
 import { localizedText } from './models';
 import { contentLocale } from './locale';
 import { uniqueNeedsPrintedEffect } from './deck-view';
+import { UniquesApiService } from './uniques-api.service';
 
 export interface HeroGroup {
   slug: string;
@@ -30,6 +31,7 @@ interface RawCardGroup {
 @Service()
 export class CardsApiService {
   private readonly http = inject(HttpClient);
+  private readonly uniquesApi = inject(UniquesApiService, { optional: true });
   readonly baseUrl = environment.cardsApiUrl.replace(/\/$/, '');
   private readonly searchCache = new Map<string, Observable<CardCollection>>();
   private heroes$?: Observable<HeroGroup[]>;
@@ -85,9 +87,17 @@ export class CardsApiService {
     const missing = refs.filter((r) => !this.faces.has(`${locale}|${r}`));
     if (!missing.length) return of(known());
     return this.batch(missing, locale).pipe(
-      map((full) => {
+      switchMap((full) => {
         full.forEach((c) => this.faces.set(`${locale}|${c.reference}`, c));
-        return known();
+        const stillMissing = missing.filter((r) => !this.faces.has(`${locale}|${r}`));
+        if (!stillMissing.length || !this.uniquesApi?.baseUrl) return of(known());
+        return this.uniquesApi.byReferences(stillMissing).pipe(
+          map((uFull) => {
+            uFull.forEach((c) => this.faces.set(`${locale}|${c.reference}`, c));
+            return known();
+          }),
+          catchError(() => of(known())),
+        );
       }),
       catchError(() => of(known())),
     );
@@ -140,6 +150,7 @@ const ORDER_PARAM: Record<string, [string, string][]> = {
   'setDate-desc': [['order[setDate]', 'desc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
   'setDate-asc': [['order[setDate]', 'asc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
   'number-asc': [['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'number-desc': [['order[cardNumber]', 'desc'], ['order[collectorNumberFormatedId]', 'asc']],
   'collector-asc': [['order[collectorNumberFormatedId]', 'asc']],
   'collector-desc': [['order[collectorNumberFormatedId]', 'desc']],
   ...Object.fromEntries(

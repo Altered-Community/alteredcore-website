@@ -119,6 +119,14 @@ describe('OwnedCardsService', () => {
     expect((await page).member[0]).toEqual(expect.objectContaining({ forestPower: 1, mountainPower: 3, oceanPower: 0 }));
   });
 
+  it('falls back to the Uniques API when /api/cards/batch omits a Unique', async () => {
+    const page = search('owned', [unique]);
+    http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([]);
+    const v2 = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.[0] === unique.reference);
+    v2.flush({ cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Effet v2' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }] });
+    expect((await page).member[0].mainEffect).toEqual({ fr: 'Effet v2' });
+  });
+
   it('asks the cards API nothing without a Unique', async () => {
     expect((await search('collection', [common])).member.length).toBe(1);
   });

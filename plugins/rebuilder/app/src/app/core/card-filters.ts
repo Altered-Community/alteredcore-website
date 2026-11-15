@@ -98,13 +98,13 @@ export const RARITY_OPTIONS = [
   { value: 'EXALTED', short: 'E', label: $localize`:@@search.filters.rarity.exalted:Exaltée`, icon: assetUrl('assets/icons/rarete-exaltee.png') },
 ] as const;
 
-/** The account tabs (Favoris, Collection physique, Propriété numérique) also list the Uniques. */
+/** « Toutes les cartes » and the account tabs (Favoris, Collection physique, Propriété numérique) also list the Uniques. */
 export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@search.filters.rarity.unique:Unique`, icon: assetUrl('assets/icons/rarete-unique.png') };
 
 const RARITY_OPTIONS_WITH_UNIQUE = [...RARITY_OPTIONS, UNIQUE_RARITY];
 
 export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
-  return isAccountSource(source) ? RARITY_OPTIONS_WITH_UNIQUE : RARITY_OPTIONS;
+  return source === 'uniques' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE;
 }
 
 /**
@@ -147,6 +147,7 @@ export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'name-asc', label: $localize`:@@search.filters.order.nameAsc:Nom A→Z` },
   { value: 'name-desc', label: $localize`:@@search.filters.order.nameDesc:Nom Z→A` },
   { value: 'number-asc', label: $localize`:@@search.filters.order.number:Numéro` },
+  { value: 'number-desc', label: $localize`:@@search.filters.order.numberDesc:Numéro ↓` },
   { value: 'collector-asc', label: $localize`:@@search.filters.order.collectorAsc:Collector N° ↑` },
   { value: 'collector-desc', label: $localize`:@@search.filters.order.collectorDesc:Collector N° ↓` },
   { value: 'mainCost-asc', label: $localize`:@@search.filters.order.mainAsc:Main ↑` },
@@ -176,7 +177,8 @@ export function defaultFilters(source: CardSource, format: DeckFormat | null = n
     mainCost: '',
     recallCost: '',
     sets: (source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS).filter((s) => !setsOffByDefault(source).includes(s)),
-    rarities: source === 'uniques' ? [] : rarityOptionsFor(source).map((r) => r.value),
+    // « Toutes les cartes » starts with C · R · E active (U is selectable); account tabs start with all 4.
+    rarities: source === 'uniques' ? [] : (source === 'all' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE).map((r) => r.value),
     types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
     factions: [],
     environment: defaultEnvironment(source, format),
@@ -336,8 +338,8 @@ export function toSearchParams(
     // The editor searches the hero's faction, or the ones chosen in « Changer de faction ».
     factions: resolvedFactions(filters, faction),
     sets: filterSetsWithPromos(filters),
-    // Uniques live in their own tab: an empty rarity selection means C · R · E here.
-    rarities: filters.rarities.length ? filters.rarities : RARITY_OPTIONS.map((r) => r.value),
+    // Empty rarity selection means all rarities (C · R · E · U), matching sets/types and Classic search.
+    rarities: filters.rarities,
     types: filters.types,
     variations: variationCodes(filters),
     mainCosts: uniquesStatValues(filters.mainCost),

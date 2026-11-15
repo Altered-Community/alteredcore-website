@@ -22,6 +22,7 @@
     "search.filters.order.nameAsc": "Name A→Z",
     "search.filters.order.nameDesc": "Name Z→A",
     "search.filters.order.number": "Number",
+    "search.filters.order.numberDesc": "Number ↓",
     "search.filters.chip.query": "“{$query}”",
     "search.filters.chip.oneFaction": "1 faction",
     "search.filters.chip.factions": "{$count} factions",

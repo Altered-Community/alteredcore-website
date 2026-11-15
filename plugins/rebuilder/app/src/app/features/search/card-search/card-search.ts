@@ -146,6 +146,11 @@ export class CardSearch {
     });
 
     effect(() => {
+      const f = this.search.filters();
+      untracked(() => this.draft.set(f));
+    });
+
+    effect(() => {
       if (this.source() !== 'uniques') return;
       untracked(() => this.prefetchAbilities());
     });

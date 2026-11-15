@@ -84,6 +84,7 @@ export type CardOrder =
   | 'name-asc'
   | 'name-desc'
   | 'number-asc'
+  | 'number-desc'
   | 'collector-asc'
   | 'collector-desc'
   | 'mainCost-asc'

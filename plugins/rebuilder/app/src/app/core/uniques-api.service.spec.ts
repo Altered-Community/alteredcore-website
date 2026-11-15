@@ -349,5 +349,36 @@ describe('unified /api/v2/search', () => {
     expect(card.cardType).toEqual({ reference: 'SPELL', name: { fr: 'Sort' } });
     expect(card.isBanned).toBe(true);
   });
+
+  it('maps number-desc to reference:desc in buildUnifiedSearchParams', () => {
+    const params = buildUnifiedSearchParams({
+      order: 'number-desc',
+      page: 1,
+      itemsPerPage: 36,
+      locale: 'fr',
+    });
+    expect(params.get('sort')).toBe('reference:desc');
+  });
+
+  it('fetches Uniques by references in chunks of 50 via /api/v2/cards', async () => {
+    const refs = Array.from({ length: 52 }, (_, i) => `ALT_CORE_B_AX_04_U_${i + 1}`);
+    const pending = lastValueFrom(api.byReferences(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 50);
+    expect(first.request.params.get('limit')).toBe('50');
+    first.flush({
+      cards: [{ reference: refs[0], name: 'U1', mainCost: 2, recallCost: 2, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 2);
+    expect(second.request.params.get('limit')).toBe('2');
+    second.flush({
+      cards: [{ reference: refs[51], name: 'U52', mainCost: 4, recallCost: 3, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[51]]);
+    expect(cards[0].mainCost).toBe(2);
+  });
 });
 

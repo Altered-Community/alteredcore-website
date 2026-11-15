@@ -137,4 +137,12 @@ describe('CardsApiService', () => {
     http.expectOne((r) => r.url.endsWith('/api/cards')).flush({ member: [], totalItems: 5, itemsPerPage: 2 });
     expect(total).toBe(3);
   });
+
+  it('sends descending cardNumber order for number-desc', () => {
+    api.search({ page: 1, order: 'number-desc' }).subscribe();
+    const req = http.expectOne((r) => r.url.endsWith('/api/cards'));
+    expect(req.request.params.get('order[cardNumber]')).toBe('desc');
+    expect(req.request.params.get('order[collectorNumberFormatedId]')).toBe('asc');
+    req.flush({ member: [], totalItems: 0 });
+  });
 });

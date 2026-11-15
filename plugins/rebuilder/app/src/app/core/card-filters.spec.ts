@@ -2,6 +2,7 @@ import { environment } from '../../environments/environment';
 import { buildUniquesParams } from './uniques-api.service';
 import {
   ALL_CARDS_SETS,
+  ORDER_OPTIONS,
   UNIQUES_SETS,
   activeFilterCount,
   defaultFilters,
@@ -9,6 +10,7 @@ import {
   hasInvalidNumericFilters,
   newEffectBlock,
   parseCostExpression,
+  rarityOptionsFor,
   removeChip,
   setsFor,
   toSearchParams,
@@ -152,7 +154,22 @@ describe('toSearchParams (cards API)', () => {
     expect(p.recallCosts).toEqual([4]);
     expect(p.q).toBe('rok');
     expect(p.locale).toBe('fr');
-    expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual([]);
+    expect(toSearchParams({ ...f, rarities: ['UNIQUE'] }, 'YZ', 1, 36).rarities).toEqual(['UNIQUE']);
+    expect(toSearchParams({ ...f, rarities: ['COMMON', 'UNIQUE'] }, 'YZ', 1, 36).rarities).toEqual(['COMMON', 'UNIQUE']);
+  });
+
+  it('exposes UNIQUE rarity on "all" while keeping C/R/E as defaults and supports number-desc', () => {
+    expect(rarityOptionsFor('all').map((r) => r.value)).toEqual(['COMMON', 'RARE', 'EXALTED', 'UNIQUE']);
+    expect(rarityOptionsFor('uniques').map((r) => r.value)).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(defaultFilters('all').rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(ORDER_OPTIONS.map((o) => o.value)).toContain('number-desc');
+
+    const uOnly = filterChips({ ...defaultFilters('all'), rarities: ['UNIQUE'] }, 'all');
+    expect(uOnly.find((c) => c.id === 'rarities')?.label).toBe('U');
+
+    const mixed = filterChips({ ...defaultFilters('all'), rarities: ['COMMON', 'UNIQUE'] }, 'all');
+    expect(mixed.find((c) => c.id === 'rarities')?.label).toBe('C · U');
   });
 });
 
