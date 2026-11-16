@@ -202,7 +202,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <?php endif; ?>
     </div>
 
-    <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership">
+    <div class="card-altered p-3 mb-3" data-tabs="all unique collection ownership favoris">
 
         <!-- Unique-related nudge/warning — content and color swap between a
              gold "try the dedicated Uniques tab" nudge (both pages) and an
@@ -509,7 +509,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
     </div><!-- /.card-altered -->
 
     <!-- Results control bar: count + sort + columns (between search and grid) -->
-    <div class="cs-controlbar mb-2" data-tabs="all unique collection ownership">
+    <div class="cs-controlbar mb-2" data-tabs="all unique collection ownership favoris">
         <span id="<?= h($_csP) ?>-count" class="cs-count"></span>
         <div class="cs-controlbar-end">
             <div class="d-flex align-items-center gap-1" data-tabs="all unique collection ownership">

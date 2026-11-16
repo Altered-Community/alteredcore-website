@@ -106,7 +106,7 @@
             if (newTab === _dbLastTab) return;
             _dbLastTab = newTab;
             _syncUniqueTabToFormat();
-            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' });
+            _restoreDeckDefaults({ skipTypes: newTab === 'unique' || newTab === 'collection' || newTab === 'favoris' });
         });
     }
 

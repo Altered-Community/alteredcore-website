@@ -51,6 +51,8 @@ $renderSearchWidget = static function (string $mode, string $prefix): string {
 foreach (['cards' => 'cs', 'deck' => 'db'] as $mode => $prefix) {
     $html = $renderSearchWidget($mode, $prefix);
 
+    assertSame(1, substr_count($html, 'class="card-altered p-3 mb-3" data-tabs="all unique collection ownership favoris"'), "{$mode}: filter card keeps favoris tab visible");
+    assertSame(1, substr_count($html, 'class="cs-controlbar mb-2" data-tabs="all unique collection ownership favoris"'), "{$mode}: results control bar keeps favoris count visible");
     assertSame(1, substr_count($html, 'class="filter-row filter-row--scroll cs-faction-row'), "{$mode}: single primary faction row");
     assertSame(1, substr_count($html, 'data-filter="faction" data-value="AX"'), "{$mode}: faction button is not duplicated in advanced section");
     assertSame(1, substr_count($html, 'class="filter-row filter-row--scroll cs-standard-row mb-2" data-tabs="all collection ownership favoris"'), "{$mode}: standard-only rarities/types row cleanly scoped to non-unique tabs");
