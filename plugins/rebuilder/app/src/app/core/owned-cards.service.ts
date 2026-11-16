@@ -96,8 +96,13 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
     ['oceanPower', f.oceanPower],
   ];
   for (const [key, expr] of numericFields) {
-    const vals = parseCostExpression(expr) ?? [];
-    if (!vals.length) continue;
+    if (!expr.trim()) continue;
+    const vals = parseCostExpression(expr);
+    if (vals === null) continue;
+    if (!vals.length) {
+      p = p.set(`${key}[gt]`, 15);
+      continue;
+    }
     const min = vals[0];
     const max = vals[vals.length - 1];
     if (vals.length === max - min + 1) {

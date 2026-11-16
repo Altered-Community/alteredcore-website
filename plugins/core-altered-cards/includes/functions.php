@@ -103,11 +103,7 @@ function cacDeckApiUpvote(string $deckId, string $token): ?array
  * @param string     $contentType Content-Type for body (default: application/json)
  * @return array|true|false  Decoded JSON array, true on 204 No Content, false on error
  */
-function collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json') {
-    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
-    $token = kc_get_access_token($userId);
-    if (!$token) return false;
-
+function collApiRequestSend(string $apiUrl, string $method, string $path, string $token, $body = null, string $contentType = 'application/json'): array {
     $headers = [
         'Authorization: Bearer ' . $token,
         'Accept: application/json',
@@ -134,9 +130,36 @@ function collApiRequest(string $apiUrl, string $method, string $path, int $userI
     $err  = curl_errno($ch);
     curl_close($ch);
 
-    if ($err || $code >= 400) return false;
+    if ($err || $raw === false || $code === 0) return [0, null];
+    return [$code, (string)$raw];
+}
+
+/**
+ * Authenticated request returning [statusCode, rawBody] and retrying once on upstream 401.
+ *
+ * @return array{0:int,1:?string}
+ */
+function collApiRequestRaw(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json'): array {
+    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
+    $token = kc_get_access_token($userId);
+    if (!$token) return [401, null];
+
+    [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
+    if ($code === 401) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
+        $token = kc_get_access_token($userId);
+        if (!$token) return [401, $raw];
+        [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
+    }
+    return [$code, $raw];
+}
+
+function collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json') {
+    [$code, $raw] = collApiRequestRaw($apiUrl, $method, $path, $userId, $body, $contentType);
+    if ($code === 0 || $code >= 400) return false;
     if ($code === 204) return true;
-    if ($raw === false || $raw === '') return false;
+    if ($raw === null || $raw === '') return false;
     $decoded = json_decode($raw, true);
     return is_array($decoded) ? $decoded : false;
 }

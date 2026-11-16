@@ -333,20 +333,9 @@ function CardSearch(cfg) {
                 qa('.filter-toggle[data-filter="rarity"]').forEach(function(b) { b.classList.remove('active'); });
             }
             _rarityDirty = false;
-            // Enforce single-select on toggle button groups (faction, type)
-            ['faction', 'type'].forEach(function(key) {
-                var arr = filters[key];
-                if (!Array.isArray(arr) || arr.length <= 1) return;
-                var keep = arr[0];
-                arr.length = 0;
-                arr.push(keep);
-                qa('.filter-toggle[data-filter="' + key + '"]').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.value === keep);
-                });
-                if (key === 'faction' && tsInst.faction) tsInst.faction.setValue([keep], true);
-            });
-            // Enforce single-select on TomSelect dropdowns (set, subtype, variation)
-            ['set', 'subtype', 'variation'].forEach(function(key) {
+            // Enforce single-select on subtype TomSelect dropdown only (faction, type, set,
+            // and variation support multi-select on the collection & ownership proxies).
+            ['subtype'].forEach(function(key) {
                 if (!tsInst[key]) return;
                 var vals = tsInst[key].getValue();
                 if (!Array.isArray(vals) || vals.length <= 1) return;
@@ -503,7 +492,7 @@ function CardSearch(cfg) {
         }
         // bound
         if ((p.op === 'gt' || p.op === 'gte') && p.val > 15) return [api + '[gt]=15'];
-        if ((p.op === 'lt' || p.op === 'lte') && p.val > 15) return [];
+        if ((p.op === 'lte' && p.val > 15) || (p.op === 'lt' && p.val >= 16)) return [api + '[lte]=15'];
         return numCardsParts(api, raw);
     }
 
@@ -1030,10 +1019,7 @@ function CardSearch(cfg) {
         expandTypes(_typeDirty ? filters.type : DEFAULT_TYPES).forEach(function(v) {
             parts.push('cardType[]=' + encodeURIComponent(v));
         });
-        var _statusActive = (MODE === 'deck' && cfg.getFormatLegality)
-            ? filters.isErrated
-            : (filters.isBanned || filters.isErrated || filters.isSuspended);
-        (_rarityDirty ? filters.rarity : (_statusActive ? [] : DEFAULT_RARITIES)).forEach(function(v) {
+        (_rarityDirty ? filters.rarity : DEFAULT_RARITIES).forEach(function(v) {
             parts.push('rarity[]=' + encodeURIComponent(v));
         });
         (_setsDirty ? filters.sets : DEFAULT_SETS).slice().reverse().forEach(function(v) {
@@ -2236,12 +2222,14 @@ function CardSearch(cfg) {
         _typeDirty    = p.has('type[]');
         _rarityDirty  = p.has('rarity[]');
         _setsDirty    = p.has('set[]');
+        _variationDirty = p.has('variation[]');
 
         var _urlTab = p.get('tab');
         if (_urlTab === 'collection' && !cfg.collApiUrl)      _urlTab = null;
         if (_urlTab === 'ownership'  && !cfg.ownershipApiUrl) _urlTab = null;
+        if (_urlTab === 'favoris'    && !cfg.favApiUrl)       _urlTab = null;
         if (_urlTab === 'playset'    && !cfg.playsetApiUrl)   _urlTab = null;
-        var resolvedTab = (_urlTab && /^(unique|collection|ownership|playset)$/.test(_urlTab)) ? _urlTab : 'all';
+        var resolvedTab = (_urlTab && /^(unique|collection|ownership|favoris|playset)$/.test(_urlTab)) ? _urlTab : 'all';
 
         filters.q              = p.get('q') || '';
         filters.faction        = _factionDirty ? p.getAll('faction[]') : DEFAULT_FACTIONS.slice();
@@ -2256,7 +2244,7 @@ function CardSearch(cfg) {
         filters.subtypes       = p.getAll('subtype[]');
         filters.keywords       = p.getAll('keyword[]');
         filters.keywordMode    = p.get('kwMode') === 'or' ? 'or' : 'and';
-        filters.variations     = p.getAll('variation[]');
+        filters.variations     = _variationDirty ? p.getAll('variation[]') : DEFAULT_VARIATIONS.slice();
         filters.isBanned       = p.get('isBanned')          === 'true';
         filters.isErrated      = p.get('isErrated')         === 'true';
         filters.isSuspended    = p.get('isSuspended')       === 'true';
@@ -2765,8 +2753,9 @@ function CardSearch(cfg) {
     var _initTab = (MODE === 'cards') ? new URLSearchParams(location.search).get('tab') : null;
     if (_initTab === 'collection' && !cfg.collApiUrl)      _initTab = null;
     if (_initTab === 'ownership'  && !cfg.ownershipApiUrl) _initTab = null;
+    if (_initTab === 'favoris'    && !cfg.favApiUrl)       _initTab = null;
     if (_initTab === 'playset'    && !cfg.playsetApiUrl)   _initTab = null;
-    if (_initTab && /^(unique|collection|ownership|playset)$/.test(_initTab)) {
+    if (_initTab && /^(unique|collection|ownership|favoris|playset)$/.test(_initTab)) {
         setTab(_initTab, true); // keepFilters: URL already carries the filter state
     } else {
         syncTabButtons();

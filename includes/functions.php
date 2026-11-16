@@ -821,7 +821,7 @@ function clearAuthSession(): void {
         'admin_logged_in', 'admin_logged_in_at', 'admin_username',
         'local_logged_in', 'local_logged_in_at', 'local_email', 'local_username',
         'kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email', 'kc_username', 'kc_id_token',
-        'user_id',
+        'kc_is_admin', 'user_id',
     ] as $key) {
         unset($_SESSION[$key]);
     }
@@ -857,6 +857,8 @@ function globalLogoutSessionIsValid(): bool {
 // keycloak authentication
 
 function kcIsLoggedIn(): bool {
+    static $verifiedUserId = null;
+
     if (!defined('KC_URL') || KC_URL === '') {
         return localIsLoggedIn();
     }
@@ -864,6 +866,7 @@ function kcIsLoggedIn(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
     if (empty($_SESSION['kc_logged_in'])) {
+        $verifiedUserId = null;
         static $restoreAttempted = false;
         if (!$restoreAttempted && !empty($_COOKIE['kc_remember'])) {
             $restoreAttempted = true;
@@ -873,13 +876,19 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
-    // Verify the refresh token is still in DB (nulled on logout) and not expired.
     $userId = (int)($_SESSION['user_id'] ?? 0);
     if ($userId <= 0) {
+        $verifiedUserId = null;
         kcClearSession();
         return false;
     }
 
+    // Memoize DB/Keycloak verification within a single PHP request; re-checks if session cleared or user changed.
+    if ($verifiedUserId === $userId && globalLogoutSessionIsValid()) {
+        return true;
+    }
+
+    // Verify the refresh token is still in DB (nulled on logout) and not expired.
     try {
         $stmt = getDB()->prepare(q("SELECT kc_refresh_token, kc_token_expiry FROM {users} WHERE id = :id LIMIT 1"));
         $stmt->execute([':id' => $userId]);
@@ -918,6 +927,7 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
+    $verifiedUserId = $userId;
     return true;
 }
 

@@ -7,8 +7,8 @@
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: private, no-store');
 
-function rebuilderMyDeckIdsReply(int $status, array $body): void {
-    if ($status === 401) header('X-Ac-Auth-State: unauthenticated');
+function rebuilderMyDeckIdsReply(int $status, array $body, bool $unauthenticated = false): void {
+    if ($status === 401 && $unauthenticated) header('X-Ac-Auth-State: unauthenticated');
     http_response_code($status);
     echo json_encode($body, JSON_UNESCAPED_SLASHES);
 }
@@ -36,12 +36,13 @@ function rebuilderMyDeckIdsFetch(?string $token): ?array {
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 if (!defined('KC_URL') || KC_URL === '' || !defined('DECKS_API_URL') || DECKS_API_URL === '' || $userId <= 0) {
-    rebuilderMyDeckIdsReply(401, ['error' => 'unauthenticated']);
+    rebuilderMyDeckIdsReply(401, ['error' => 'unauthenticated'], true);
     return;
 }
 
 // Release the session lock during the upstream call (the page's other requests of the same user).
 $token = kc_get_access_token($userId) ?: null;
+$authExpired = false;
 session_write_close();
 $res = rebuilderMyDeckIdsFetch($token);
 // A token can be rejected before its expiry (revoked, clock skew): renew once and retry.
@@ -50,7 +51,11 @@ if ($res !== null && $res[0] === 401 && $token !== null) {
     unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
     $token = kc_get_access_token($userId) ?: null;
     session_write_close();
-    if ($token !== null) $res = rebuilderMyDeckIdsFetch($token);
+    if ($token !== null) {
+        $res = rebuilderMyDeckIdsFetch($token);
+    } else {
+        $authExpired = true;
+    }
 }
 
 if ($res === null) {
@@ -59,7 +64,7 @@ if ($res === null) {
 }
 [$status, $body] = $res;
 if ($status !== 200 || !is_array($body)) {
-    rebuilderMyDeckIdsReply($status >= 400 ? $status : 502, ['error' => 'decks_api', 'status' => $status]);
+    rebuilderMyDeckIdsReply($status >= 400 ? $status : 502, ['error' => 'decks_api', 'status' => $status], $status === 401 && ($authExpired || $token === null));
     return;
 }
 $decks = isset($body['member']) && is_array($body['member']) ? $body['member'] : $body;

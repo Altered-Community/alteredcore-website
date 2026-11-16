@@ -395,5 +395,16 @@ describe('unified /api/v2/search', () => {
     expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[200]]);
     expect(cards[1].isBanned).toBe(true);
   });
+
+  it('marks COREKS hero prints as kickstarter in heroVariation so CORE stays standard', () => {
+    const res = toCard({
+      reference: 'ALT_COREKS_B_AX_01_C',
+      set: { reference: 'COREKS', name: 'Beyond the Gates - KS Edition', code: 'BTG' },
+      product: 'B',
+      isSerialized: false,
+      cardType: { reference: 'HERO' },
+    });
+    expect(res.set?.reference).toBe('COREKS');
+  });
 });
 

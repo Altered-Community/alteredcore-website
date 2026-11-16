@@ -462,6 +462,7 @@ function heroVariation(c: CardV2): string {
   if (c.isSerialized) return 'serialized';
   if (c.product === 'P') return 'promo';
   if (c.product === 'A') return 'alt-art';
+  if (c.set?.reference === 'COREKS' || c.reference.split('_')[1] === 'COREKS') return 'kickstarter';
   return 'standard';
 }
 

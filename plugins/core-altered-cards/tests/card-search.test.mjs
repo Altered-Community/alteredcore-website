@@ -262,7 +262,7 @@ function eq(a, b, msg) {
   eq(cs.numUniquesParts('mainCost', '20'), ['mainCost[gt]=15'], 'exact > 15 maps to mainCost[gt]=15 (0 results, not 400)');
   eq(cs.numUniquesParts('mainCost', '13-20'), ['mainCost[]=13', 'mainCost[]=14', 'mainCost[]=15'], 'range clamps upper bound to 15');
   eq(cs.numUniquesParts('mainCost', '2,20'), ['mainCost[]=2'], 'list drops values > 15');
-  eq(cs.numUniquesParts('mainCost', '<20'), [], 'upper bound > 15 is vacuously true');
+  eq(cs.numUniquesParts('mainCost', '<20'), ['mainCost[lte]=15'], 'upper bound > 15 clamps to <= 15 on /api/v2/search');
 
   cs.filters.subtypes = ['ELEMENTAL', 'ROBOT'];
   cs.filters.costRelation = 'main_gt';
@@ -356,6 +356,17 @@ function eq(a, b, msg) {
   ok(refUrl.startsWith('http://localhost:8005/api/v2/search?ref[]=ALT_CORE_B_AX_01_C'), 'ALT_ ref lookup routes to /api/v2/search?ref[]=');
 
   cs.filters.q = '';
+  {
+    const env2 = setupEnv();
+    const cs2 = CardSearch({
+      prefix: 'cs', mode: 'cards', apiBase: 'https://cards.alteredcore.org', uniquesApiBase: 'http://localhost:8005', lang: 'fr',
+      defaults: { factions: ['AX'], types: ['CHARACTER'], rarities: ['COMMON', 'RARE', 'EXALTED'], sets: ['CORE', 'ALIZE'], sort1: 'set_date_desc' },
+    });
+    cs2.filters.isBanned = true;
+    const bannedUniUrl = cs2.buildApiUrl(1);
+    ok(bannedUniUrl.includes('rarity[]=COMMON') && bannedUniUrl.includes('isBanned=true'), 'status flag preserves default C/R/E rarities on /api/v2/search');
+  }
+
   globalThis.fetch = (url) => {
     env.fetches.push(url);
     return Promise.resolve({

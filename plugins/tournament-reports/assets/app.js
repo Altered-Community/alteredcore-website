@@ -199,6 +199,14 @@
         }
 
         chunks.forEach(function (chunk) {
+            var clearChunkLoading = function () {
+                chunk.forEach(function (r) {
+                    cardNamesLoading[r] = false;
+                    delete pendingRefs[r];
+                });
+                updateNamesLoader();
+            };
+
             var req = useUnified
                 ? (function () {
                     var form = chunk.map(function (r) { return 'ref[]=' + encodeURIComponent(r); });
@@ -209,19 +217,26 @@
                         body: form.join('&')
                     })
                     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(function (data) { return (data && Array.isArray(data.cards)) ? data.cards : []; })
+                    .then(function (data) {
+                        var list = (data && Array.isArray(data.cards)) ? data.cards : [];
+                        if (!TR_CARDS_API_URL) return list;
+                        var seen = {};
+                        list.forEach(function (c) { if (c && c.reference) seen[c.reference] = true; });
+                        var missing = chunk.filter(function (r) { return !seen[r]; });
+                        if (!missing.length) return list;
+                        return fetchBatchFallback(missing)
+                            .then(function (extra) { return list.concat(extra); })
+                            .catch(function () { return list; });
+                    })
                     .catch(function () { return fetchBatchFallback(chunk); });
                 })()
                 : fetchBatchFallback(chunk);
 
-            req.then(applyCardsList)
-            .catch(function () {
-                chunk.forEach(function (r) {
-                    cardNamesLoading[r] = false;
-                    delete pendingRefs[r];
-                });
-                updateNamesLoader();
-            });
+            req.then(function (list) {
+                applyCardsList(list);
+                clearChunkLoading();
+            })
+            .catch(clearChunkLoading);
         });
     }
 

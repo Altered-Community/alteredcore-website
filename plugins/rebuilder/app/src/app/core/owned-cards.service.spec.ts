@@ -80,6 +80,19 @@ describe('Collection and digital ownership query', () => {
     expect(collAlt.getAll('variation[]')).toBeNull();
     expect(collAlt.getAll('cardSet[]')).not.toContain('WCF25');
   });
+
+  it('sends [gt]=15 instead of dropping valid out-of-range numeric filters', () => {
+    const p = ownedParams(
+      'owned',
+      { ...defaultFilters('owned'), mainCost: '20', recallCost: '<0', forestPower: '>15' },
+      ['AX'],
+      1,
+      36,
+    );
+    expect(p.get('mainCost[gt]')).toBe('15');
+    expect(p.get('recallCost[gt]')).toBe('15');
+    expect(p.get('forestPower[gt]')).toBe('15');
+  });
 });
 
 describe('OwnedCardsService', () => {
