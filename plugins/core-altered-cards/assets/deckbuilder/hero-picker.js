@@ -163,41 +163,88 @@
             ? AlteredDB.allVariations
             : AlteredDB.heroVariations.slice();
 
-        var heroParts = [
-            'itemsPerPage=' + AlteredDB.cardsApiMaxPerPage,
-            'locale=' + encodeURIComponent(AlteredDB.lang),
-        ];
-        AlteredDB.heroTypes.forEach(function(t)      { heroParts.push('cardType[]='       + encodeURIComponent(t)); });
-        AlteredDB.heroRarities.forEach(function(r)   { heroParts.push('rarity[]='         + encodeURIComponent(r)); });
         var heroSets = altArtsOn
             ? AlteredDB.heroSets.concat(AlteredDB.heroSets.reduce(function(extra, s) {
                   (AlteredDB.setChildren[s] || []).forEach(function(c) { if (extra.indexOf(c) === -1) extra.push(c); });
                   return extra;
               }, []))
             : AlteredDB.heroSets;
-        heroSets.forEach(function(s)                 { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
-        activeVariations.forEach(function(v)         { heroParts.push('variation[]='      + encodeURIComponent(v)); });
-        if (AlteredDB.heroSort1) {
-            var _s1 = AlteredDB.heroSort1;
-            if (_s1 === 'random') { heroParts.push('random=true'); }
-            else if (_s1 === 'set_date_desc') { heroParts.push('order[setDate]=desc'); }
-            else if (_s1 === 'set_date_asc')  { heroParts.push('order[setDate]=asc'); }
-            else if (_s1 === 'collector_asc') { heroParts.push('order[collectorNumberFormatedId]=asc'); }
-        }
-        if (faction) heroParts.push('faction.code[]=' + encodeURIComponent(faction));
 
-        function fetchHeroPage(page, accumulated) {
-            var p = heroParts.concat(['page=' + page]);
-            return fetch('https://cards.alteredcore.org/api/cards?' + p.join('&'))
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (AlteredDB.debug) console.log('[deckbuilder] hero cards API response (page ' + page + '):', data);
-                    var all = accumulated.concat(data.member || []);
-                    return page < (data.lastPage || 1) ? fetchHeroPage(page + 1, all) : all;
-                });
+        function fetchHeroesFromCardsApi() {
+            var heroParts = [
+                'itemsPerPage=' + AlteredDB.cardsApiMaxPerPage,
+                'locale=' + encodeURIComponent(AlteredDB.lang),
+            ];
+            AlteredDB.heroTypes.forEach(function(t)      { heroParts.push('cardType[]='       + encodeURIComponent(t)); });
+            AlteredDB.heroRarities.forEach(function(r)   { heroParts.push('rarity[]='         + encodeURIComponent(r)); });
+            heroSets.forEach(function(s)                 { heroParts.push('set.reference[]='  + encodeURIComponent(s)); });
+            activeVariations.forEach(function(v)         { heroParts.push('variation[]='      + encodeURIComponent(v)); });
+            if (AlteredDB.heroSort1) {
+                var _s1 = AlteredDB.heroSort1;
+                if (_s1 === 'random') { heroParts.push('random=true'); }
+                else if (_s1 === 'set_date_desc') { heroParts.push('order[setDate]=desc'); }
+                else if (_s1 === 'set_date_asc')  { heroParts.push('order[setDate]=asc'); }
+                else if (_s1 === 'collector_asc') { heroParts.push('order[collectorNumberFormatedId]=asc'); }
+            }
+            if (faction) heroParts.push('faction.code[]=' + encodeURIComponent(faction));
+
+            function fetchHeroPage(page, accumulated) {
+                var p = heroParts.concat(['page=' + page]);
+                return fetch('https://cards.alteredcore.org/api/cards?' + p.join('&'))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (AlteredDB.debug) console.log('[deckbuilder] hero cards API response (page ' + page + '):', data);
+                        var all = accumulated.concat(data.member || []);
+                        return page < (data.lastPage || 1) ? fetchHeroPage(page + 1, all) : all;
+                    });
+            }
+            return fetchHeroPage(1, []);
         }
 
-        fetchHeroPage(1, [])
+        function fetchHeroesFromUnifiedApi() {
+            var uParts = ['limit=200'];
+            AlteredDB.heroTypes.forEach(function(t)    { uParts.push('cardType[]=' + encodeURIComponent(t)); });
+            AlteredDB.heroRarities.forEach(function(r) { uParts.push('rarity[]='   + encodeURIComponent(r)); });
+            heroSets.forEach(function(s)               { uParts.push('set[]='      + encodeURIComponent(s)); });
+            activeVariations.forEach(function(v) {
+                if (v !== 'kickstarter') uParts.push('variation[]=' + encodeURIComponent(v));
+            });
+            if (AlteredDB.heroSort1 === 'set_date_desc')     uParts.push('sort=setDate:desc');
+            else if (AlteredDB.heroSort1 === 'set_date_asc') uParts.push('sort=setDate:asc');
+            else if (AlteredDB.heroSort1 === 'collector_asc') uParts.push('sort=collector:asc');
+            if (faction) uParts.push('faction[]=' + encodeURIComponent(faction));
+
+            function normalizeHero(c) {
+                var variation = c.isSerialized ? 'serialized'
+                    : (c.product === 'P' ? 'promo' : (c.product === 'A' ? 'alt-art' : 'standard'));
+                return Object.assign({}, c, { variation: c.variation || variation });
+            }
+
+            function fetchUnifiedPage(page, accumulated) {
+                var p = uParts.concat(['page=' + page]);
+                return fetch(AlteredDB.uniquesApiBase + '/api/v2/search?' + p.join('&'))
+                    .then(function(r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    })
+                    .then(function(data) {
+                        if (AlteredDB.debug) console.log('[deckbuilder] hero unified API response (page ' + page + '):', data);
+                        var cards = (data && data.cards) || [];
+                        var all = accumulated.concat(cards.map(normalizeHero));
+                        var total = (data && data.iter && data.iter.total) || all.length;
+                        return all.length < total && cards.length === 200
+                            ? fetchUnifiedPage(page + 1, all)
+                            : all;
+                    });
+            }
+            return fetchUnifiedPage(1, []);
+        }
+
+        var fetchHeroes = (AlteredDB.uniquesApiBase && AlteredDB.heroSort1 !== 'random')
+            ? fetchHeroesFromUnifiedApi().catch(function() { return fetchHeroesFromCardsApi(); })
+            : fetchHeroesFromCardsApi();
+
+        fetchHeroes
             .then(function(allCards) {
                 loading.style.display = 'none';
                 if (!allCards || !allCards.length) {

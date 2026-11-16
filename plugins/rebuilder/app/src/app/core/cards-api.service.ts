@@ -2,21 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import type { CardOrder, Card, CardCollection, CardSearchParams, Faction, Localized } from './models';
+import type { CardOrder, Card, CardCollection, CardSearchParams, Faction, HeroGroup, Localized } from './models';
 import { localizedText } from './models';
 import { contentLocale } from './locale';
 import { uniqueNeedsPrintedEffect } from './deck-view';
 import { UniquesApiService } from './uniques-api.service';
 
-export interface HeroGroup {
-  slug: string;
-  name: string;
-  faction: string;
-  /** Standard-print reference (ALT_{SET}_B_{FACTION}_NN_C) used in decks and for art. */
-  reference: string;
-  /** Every print of the hero (promo, alt arts, trophy prints), for the « Alt arts » choice. */
-  prints: { reference: string; variation: string }[];
-}
+export type { HeroGroup } from './models';
 
 /** Search pages kept in memory, least recently used first out (a uniques page is ~90 KB of JSON). */
 const SEARCH_CACHE_SIZE = 80;
@@ -69,10 +61,12 @@ export class CardsApiService {
   }
 
   byReference(reference: string, locale = 'en'): Observable<Card> {
-    return this.http.get<Card>(
+    const legacy$ = this.http.get<Card>(
       `${this.baseUrl}/api/cards/reference/${encodeURIComponent(reference)}`,
       { params: { locale } },
     );
+    if (!this.uniquesApi?.baseUrl) return legacy$;
+    return this.uniquesApi.byReferenceCard(reference).pipe(catchError(() => legacy$));
   }
 
   /**
@@ -106,6 +100,22 @@ export class CardsApiService {
   batch(references: string[], locale = 'en'): Observable<Card[]> {
     const refs = [...new Set(references.filter(Boolean))];
     if (!refs.length) return of([]);
+    if (!this.uniquesApi?.baseUrl) return this.batchFromCardsApi(refs, locale);
+    return this.uniquesApi.searchBatch(refs).pipe(
+      switchMap((found) => {
+        const seen = new Set(found.map((c) => c.reference));
+        const missing = refs.filter((r) => !seen.has(r));
+        if (!missing.length) return of(found);
+        return this.batchFromCardsApi(missing, locale).pipe(
+          map((rest) => [...found, ...rest]),
+          catchError(() => of(found)),
+        );
+      }),
+      catchError(() => this.batchFromCardsApi(refs, locale)),
+    );
+  }
+
+  private batchFromCardsApi(refs: string[], locale: string): Observable<Card[]> {
     return this.http
       .post<Card[] | { member: Card[] }>(`${this.baseUrl}/api/cards/batch`, { references: refs }, {
         params: { locale },
@@ -121,14 +131,20 @@ export class CardsApiService {
 
   /** All heroes (36 groups), cached for the session. */
   heroes(): Observable<HeroGroup[]> {
-    this.heroes$ ??= this.http
+    const fromCardsApi$ = this.http
       .get<{ member: RawCardGroup[] }>(`${this.baseUrl}/api/card_groups`, {
         params: { cardType: 'HERO', itemsPerPage: 100 },
       })
-      .pipe(
-        map((body) => (body.member ?? []).map(toHeroGroup).filter((h): h is HeroGroup => !!h)),
+      .pipe(map((body) => (body.member ?? []).map(toHeroGroup).filter((h): h is HeroGroup => !!h)));
+
+    if (this.uniquesApi?.baseUrl) {
+      this.heroes$ ??= this.uniquesApi.heroes().pipe(
+        catchError(() => fromCardsApi$),
         shareReplay(1),
       );
+    } else {
+      this.heroes$ ??= fromCardsApi$.pipe(shareReplay(1));
+    }
     return this.heroes$;
   }
 }

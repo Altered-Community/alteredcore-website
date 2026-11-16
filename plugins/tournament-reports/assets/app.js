@@ -144,8 +144,11 @@
         return refs;
     }
 
+    var TR_V2_LOCALES = { fr: 'fr_FR', en: 'en_US', es: 'es_ES', de: 'de_DE', it: 'it_IT' };
+
     function fetchCardNames(cards) {
-        if (!TR_CARDS_API_URL) { updateNamesLoader(); return; }
+        var useUnified = typeof TR_UNIQUES_API_URL !== 'undefined' && !!TR_UNIQUES_API_URL;
+        if (!useUnified && !TR_CARDS_API_URL) { updateNamesLoader(); return; }
         var refs = collectRefs(cards);
         if (!refs.length) { updateNamesLoader(); return; }
 
@@ -162,33 +165,56 @@
             chunks.push(toFetch.slice(i, i + 200));
         }
 
-        chunks.forEach(function (chunk) {
-            fetch(TR_CARDS_API_URL + '/api/cards/batch?locale=' + encodeURIComponent(TR_LANG), {
+        function applyCardsList(list) {
+            list.forEach(function (card) {
+                if (!card || !card.reference) return;
+                cardNamesLoading[card.reference] = false;
+                delete pendingRefs[card.reference];
+                var nm = card.name;
+                var name;
+                if (nm && typeof nm === 'object' && !Array.isArray(nm)) {
+                    name = nm[TR_LANG] || nm[TR_V2_LOCALES[TR_LANG]] || nm.en || nm.en_US || '';
+                } else {
+                    name = String(nm || '');
+                }
+                if (name) cardNames[card.reference] = name;
+                var cardType = card.cardType && card.cardType.reference;
+                if (cardType === 'HERO') heroRefs[card.reference] = true;
+            });
+            refreshDeckNames();
+            updateNamesLoader();
+        }
+
+        function fetchBatchFallback(chunk) {
+            if (!TR_CARDS_API_URL) return Promise.reject(new Error('No fallback cards API'));
+            return fetch(TR_CARDS_API_URL + '/api/cards/batch?locale=' + encodeURIComponent(TR_LANG), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ references: chunk })
             })
-            .then(function (r) { return r.json(); })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function (list) {
-                list = Array.isArray(list) ? list : (list && Array.isArray(list.member) ? list.member : []);
-                list.forEach(function (card) {
-                    if (!card || !card.reference) return;
-                    cardNamesLoading[card.reference] = false;
-                    delete pendingRefs[card.reference];
-                    var nm = card.name;
-                    var name;
-                    if (nm && typeof nm === 'object' && !Array.isArray(nm)) {
-                        name = nm[TR_LANG] || nm.en || '';
-                    } else {
-                        name = String(nm || '');
-                    }
-                    if (name) cardNames[card.reference] = name;
-                    var cardType = card.cardType && card.cardType.reference;
-                    if (cardType === 'HERO') heroRefs[card.reference] = true;
-                });
-                refreshDeckNames();
-                updateNamesLoader();
-            })
+                return Array.isArray(list) ? list : (list && Array.isArray(list.member) ? list.member : []);
+            });
+        }
+
+        chunks.forEach(function (chunk) {
+            var req = useUnified
+                ? (function () {
+                    var form = chunk.map(function (r) { return 'ref[]=' + encodeURIComponent(r); });
+                    form.push('limit=' + chunk.length);
+                    return fetch(TR_UNIQUES_API_URL + '/api/v2/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                        body: form.join('&')
+                    })
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function (data) { return (data && Array.isArray(data.cards)) ? data.cards : []; })
+                    .catch(function () { return fetchBatchFallback(chunk); });
+                })()
+                : fetchBatchFallback(chunk);
+
+            req.then(applyCardsList)
             .catch(function () {
                 chunk.forEach(function (r) {
                     cardNamesLoading[r] = false;

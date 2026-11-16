@@ -19,6 +19,16 @@ export interface Faction {
   position?: number;
 }
 
+export interface HeroGroup {
+  slug: string;
+  name: string;
+  faction: string;
+  /** Standard-print reference (ALT_{SET}_B_{FACTION}_NN_C) used in decks and for art. */
+  reference: string;
+  /** Every print of the hero (promo, alt arts, trophy prints), for the « Alt arts » choice. */
+  prints: { reference: string; variation: string }[];
+}
+
 export interface CardType {
   id?: number;
   reference: CardTypeRef;

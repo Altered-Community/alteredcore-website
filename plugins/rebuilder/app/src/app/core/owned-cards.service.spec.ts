@@ -101,26 +101,30 @@ describe('OwnedCardsService', () => {
     return page;
   };
 
-  it('fills the effects of the Uniques owned from the cards API, once a session', async () => {
+  it('fills the effects of the Uniques owned from unified search first, once a session', async () => {
     const page = search('owned', [unique, common]);
-    const batch = http.expectOne((r) => r.url.endsWith('/api/cards/batch'));
-    expect(batch.request.body).toEqual({ references: [unique.reference] });
-    batch.flush([{ reference: unique.reference, mainEffect: 'Quand je suis joué…', forestPower: 1, mountainPower: 3, oceanPower: 0 }]);
+    const unified = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST');
+    expect(String(unified.request.body)).toContain(`ref[]=${unique.reference}`);
+    unified.flush({
+      cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Quand je suis joué…' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }],
+    });
     const [owned, other] = (await page).member;
-    expect(owned).toEqual(expect.objectContaining({ mainEffect: 'Quand je suis joué…', forestPower: 1, mountainPower: 3, oceanPower: 0, quantity: 1 }));
+    expect(owned).toEqual(expect.objectContaining({ mainEffect: { fr: 'Quand je suis joué…' }, forestPower: 1, mountainPower: 3, oceanPower: 0, quantity: 1 }));
     expect(other.reference).toBe(common.cardReference);
     // Same Unique again (another page, back on the tab): no second call.
-    expect((await search('owned', [unique])).member[0].mainEffect).toBe('Quand je suis joué…');
+    expect((await search('owned', [unique])).member[0].mainEffect).toEqual({ fr: 'Quand je suis joué…' });
   });
 
-  it('keeps the powers of the ownership API when the cards API fails', async () => {
+  it('keeps the powers of the ownership API when both unified search and cards API fail', async () => {
     const page = search('owned', [unique]);
+    http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('down', { status: 502, statusText: 'Bad Gateway' });
     http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush('down', { status: 502, statusText: 'Bad Gateway' });
     expect((await page).member[0]).toEqual(expect.objectContaining({ forestPower: 1, mountainPower: 3, oceanPower: 0 }));
   });
 
-  it('falls back to the Uniques API when /api/cards/batch omits a Unique', async () => {
+  it('falls back to /api/cards/batch then /api/v2/cards when unified search fails and batch omits a Unique', async () => {
     const page = search('owned', [unique]);
+    http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('down', { status: 404, statusText: 'Not Found' });
     http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([]);
     const v2 = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.[0] === unique.reference);
     v2.flush({ cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Effet v2' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }] });

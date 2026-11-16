@@ -289,5 +289,6 @@ var TR_TOURNAMENT_NAME = <?= json_encode(h($tournamentName)) ?>;
 var TR_DECK_FORMAT   = <?= json_encode($deckFormat) ?>;
 var TR_LOCALIZATION  =<?= json_encode(h($localization)) ?>;
 var TR_CARDS_API_URL = <?= json_encode(defined('CARDS_API_URL') && CARDS_API_URL !== '' ? CARDS_API_URL : null) ?>;
+var TR_UNIQUES_API_URL = <?= json_encode(defined('UNIQUES_API_URL') && UNIQUES_API_URL !== '' ? UNIQUES_API_URL : null) ?>;
 </script>
 <?php endif; ?>

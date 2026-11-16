@@ -380,5 +380,20 @@ describe('unified /api/v2/search', () => {
     expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[51]]);
     expect(cards[0].mainCost).toBe(2);
   });
+
+  it('batches both uniques and non-uniques via POST /api/v2/search in chunks of 200', async () => {
+    const refs = Array.from({ length: 201 }, (_, i) => (i === 200 ? 'ALT_CORE_B_AX_04_U_1' : `ALT_CORE_B_AX_04_C_${i}`));
+    const pending = lastValueFrom(api.searchBatch(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=200'));
+    first.flush({ cards: [{ reference: refs[0], rarity: { reference: 'COMMON' } }] });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=1'));
+    second.flush({ cards: [{ reference: refs[200], rarity: { reference: 'UNIQUE' }, isBanned: true }] });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[200]]);
+    expect(cards[1].isBanned).toBe(true);
+  });
 });
 

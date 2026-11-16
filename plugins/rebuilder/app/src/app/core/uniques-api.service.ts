@@ -1,11 +1,11 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, shareReplay, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
 import { ICONS } from './card-text';
 import { contentLocale } from './locale';
-import type { Card, CardCollection, CardOrder, CardSearchParams, Locale, Localized } from './models';
+import type { Card, CardCollection, CardOrder, CardSearchParams, HeroGroup, Locale, Localized } from './models';
 import { localizedText } from './models';
 import { printKeywordCodes } from './card-vocabulary';
 
@@ -72,6 +72,8 @@ interface CardV2 {
   faction?: { code: string; name: string };
   mainEffect?: Localized;
   echoEffect?: Localized;
+  product?: string;
+  isSerialized?: boolean;
   isBanned?: boolean;
   isErrated?: boolean;
   isSuspended?: boolean;
@@ -213,6 +215,49 @@ export class UniquesApiService {
     return this.http
       .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
       .pipe(map((res) => new Set(res.idGds ?? [])));
+  }
+
+  /** Hydrate Unique and non-Unique cards by reference via `POST /api/v2/search` in chunks of 200. */
+  searchBatch(references: readonly string[]): Observable<Card[]> {
+    const refs = [...new Set(references.map((r) => r.trim().toUpperCase()).filter(Boolean))];
+    if (!refs.length || !this.baseUrl) return of([]);
+    const chunks: string[][] = [];
+    for (let i = 0; i < refs.length; i += 200) chunks.push(refs.slice(i, i + 200));
+    const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' });
+    return forkJoin(
+      chunks.map((chunk) => {
+        const body = [...chunk.map((r) => `ref[]=${encodeURIComponent(r)}`), `limit=${chunk.length}`].join('&');
+        return this.http.post<SearchResponse>(`${this.baseUrl}/api/v2/search`, body, { headers }).pipe(
+          map((res) => (res.cards ?? []).map(toCard)),
+        );
+      }),
+    ).pipe(map((pages) => pages.flat()));
+  }
+
+  /** Fetch a single Unique or non-Unique card by reference via `GET /api/v2/card/{reference}`. */
+  byReferenceCard(reference: string): Observable<Card> {
+    return this.http
+      .get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.trim().toUpperCase())}`)
+      .pipe(map(toCard));
+  }
+
+  /** All heroes (36 groups) fetched from `GET /api/v2/search?cardType[]=HERO`. */
+  heroes(): Observable<HeroGroup[]> {
+    const fetchPage = (page: number) =>
+      this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/search`, {
+        params: new HttpParams().append('cardType[]', 'HERO').set('limit', '200').set('page', String(page)),
+      });
+    return fetchPage(1).pipe(
+      switchMap((first) => {
+        const firstCards = first.cards ?? [];
+        const total = first.iter?.total ?? firstCards.length;
+        const totalPages = Math.max(1, Math.ceil(total / 200));
+        if (totalPages <= 1) return of(firstCards);
+        const rest$ = Array.from({ length: totalPages - 1 }, (_, i) => fetchPage(i + 2).pipe(map((r) => r.cards ?? [])));
+        return forkJoin(rest$).pipe(map((pages) => [...firstCards, ...pages.flat()]));
+      }),
+      map(groupHeroesFromV2),
+    );
   }
 
   /** Hydrate Unique cards by reference via `GET /api/v2/cards?ref[]=...` (e.g. fallback for favorites/collection/deck faces). */
@@ -412,6 +457,37 @@ function fromV2Text(value: Localized | undefined): Localized | undefined {
 }
 
 const CHARACTER = { reference: 'CHARACTER', name: { fr: 'Personnage', en: 'Character', de: 'Charakter', es: 'Personaje', it: 'Personaggio' } };
+
+function heroVariation(c: CardV2): string {
+  if (c.isSerialized) return 'serialized';
+  if (c.product === 'P') return 'promo';
+  if (c.product === 'A') return 'alt-art';
+  return 'standard';
+}
+
+function groupHeroesFromV2(cards: readonly CardV2[]): HeroGroup[] {
+  const byKey = new Map<string, { faction: string; name: string; prints: { reference: string; variation: string }[] }>();
+  for (const c of cards) {
+    const faction = c.faction?.code;
+    if (!faction || !c.reference) continue;
+    const names = fromV2Locales(c.name);
+    const keyName = (c.name?.['en_US'] || c.name?.['en'] || Object.values(names ?? {})[0] || c.reference).toLowerCase();
+    const key = `${faction}:${keyName}`;
+    let entry = byKey.get(key);
+    if (!entry) {
+      entry = { faction, name: localizedText(names, contentLocale()) || c.reference, prints: [] };
+      byKey.set(key, entry);
+    }
+    entry.prints.push({ reference: c.reference, variation: heroVariation(c) });
+  }
+  const groups: HeroGroup[] = [];
+  for (const [slug, entry] of byKey) {
+    const standard = entry.prints.filter((p) => p.variation === 'standard' && /_B_/.test(p.reference));
+    const reference = standard[0]?.reference ?? entry.prints[0]?.reference;
+    if (reference) groups.push({ slug, name: entry.name, faction: entry.faction, reference, prints: entry.prints });
+  }
+  return groups;
+}
 
 /** CardV2 → the app's Card (preserves rich non-unique metadata; defaults missing fields to Character/Unique). */
 export function toCard(c: CardV2): Card {
