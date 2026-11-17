@@ -2,8 +2,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal, type Signal, type WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, concat, of, switchMap } from 'rxjs';
-import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { UniquesApiService, type AbilityKind, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
+import { SUPPORT_TITLE, type AbilityRef, type EffectBlock } from '../../../core/card-filters';
+import { UniquesApiService, type AbilityKind, type EffectSlot, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcCheckList, AcOrValues } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -13,9 +13,10 @@ import { AbilityPickerStep, type AbilityPickerData } from '../ability-picker/abi
 
 export interface EffectEditorData {
   effect: EffectBlock;
-  index: number;
+  /** `effects[index]` of the search, or `'support'`: the support ability (« Effet de réserve »), its own vocabulary. */
+  index: EffectSlot;
   /**
-   * The search the block belongs to, `effects[index]` being this block: each list is narrowed to the
+   * The search the block belongs to, `effects[index]` (or `support`) being this block: each list is narrowed to the
    * values that still give a card. Without it, the lists show every value.
    */
   query?: UniquesQuery;
@@ -115,7 +116,7 @@ export class EffectEditorOverlay {
   /** The values of `kind`, narrowed to those that still give a card. */
   private options(kind: AbilityKind): Signal<AbilityRef[]> {
     const all = toSignal(
-      this.api.abilities(kind).pipe(
+      this.api.abilities(kind, this.ref.data.index === 'support').pipe(
         catchError(() => {
           this.loadError.set(true);
           return of([] as AbilityRef[]);
@@ -163,9 +164,9 @@ export class EffectEditorOverlay {
   }
 }
 
-/** « Effet n », 1-based. */
-export function effectTitle(index: number): string {
-  return $localize`:@@search.effect.title:Effet ${index + 1}:n:`;
+/** « Effet n », 1-based; « Effet de réserve » for the support block. */
+export function effectTitle(index: EffectSlot): string {
+  return index === 'support' ? SUPPORT_TITLE : $localize`:@@search.effect.title:Effet ${index + 1}:n:`;
 }
 
 export function openEffectEditor(overlay: AcOverlayService, data: EffectEditorData) {

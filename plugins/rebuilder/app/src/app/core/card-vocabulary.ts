@@ -2,6 +2,7 @@
 // hand, as `formats.ts`): keywords, subtypes (`subTypes[]`), variations (`variation[]`) and the
 // promo editions (`set.reference[]`, sets of `subtype: sub` with their `parent`).
 import { uiLocale } from './i18n';
+import { KEYWORD_CODES } from './keyword-codes';
 
 export interface Term {
   code: string;
@@ -52,11 +53,14 @@ export const KEYWORDS: readonly Term[] = [
 const BY_API_CODE = new Map(KEYWORDS.map((k) => [k.en.replace(/\d+\/\d+\/\d+/g, '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_'), k]));
 
 /**
- * The printed keyword for a code of the Uniques search API (`[FLEETING]`), `null` when unknown. Variants map to the
- * base keyword (`RESUPPLY_T`, `RESUPPLY_INF` → Ravitaillez, `BOOSTED_CHA_P` → Boosté), a trailing number stays
- * (`TOUGH_1` → Coriace 1): the cards API prints them so.
+ * The printed keyword for a code of the Uniques search API (`[FLEETING]`), `null` when unknown: CardsData's name for
+ * the code (`keyword-codes.ts`: `RESUPPLY_INF` → Ravitailler, `ASCENDED_P` → Élevées, `DUE_TO_ASCENSION` → grâce à
+ * l'Élévation). A code CardsData does not have yet falls back to its base keyword (`BOOSTED_TKN_X` → Boosté), a
+ * trailing number kept (`TOUGH_7` → Coriace 7).
  */
 export function keywordLabel(code: string, locale: 'fr' | 'en'): string | null {
+  const known = KEYWORD_CODES[code];
+  if (known) return known[locale];
   const m = /^(.+?)_(\d+)$/.exec(code);
   const parts = (m ? m[1] : code).split('_');
   for (let i = parts.length; i > 0; i--) {

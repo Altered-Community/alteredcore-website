@@ -2,16 +2,22 @@ import { environment } from '../../environments/environment';
 import { buildUniquesParams } from './uniques-api.service';
 import {
   ALL_CARDS_SETS,
+  ORDER_OPTIONS,
   UNIQUES_SETS,
   activeFilterCount,
   defaultFilters,
+  effectAt,
+  emptySupport,
   filterChips,
+  hasInvalidNumericFilters,
   newEffectBlock,
   parseCostExpression,
+  rarityOptionsFor,
   removeChip,
   setsFor,
   toSearchParams,
   toUniquesQuery,
+  withEditedEffect,
 } from './card-filters';
 
 describe('parseCostExpression', () => {
@@ -19,16 +25,20 @@ describe('parseCostExpression', () => {
     expect(parseCostExpression('')).toEqual([]);
     expect(parseCostExpression('3')).toEqual([3]);
     expect(parseCostExpression('1-3')).toEqual([1, 2, 3]);
+    expect(parseCostExpression('1 - 3')).toEqual([1, 2, 3]);
+    expect(parseCostExpression('1–3')).toEqual([1, 2, 3]);
     expect(parseCostExpression('3-1')).toEqual([1, 2, 3]);
-    expect(parseCostExpression('10+')).toEqual([10, 11, 12]);
+    expect(parseCostExpression('10+')).toEqual([10, 11, 12, 13, 14, 15]);
+    expect(parseCostExpression('13-15')).toEqual([13, 14, 15]);
     expect(parseCostExpression('1, 4-5, 3')).toEqual([1, 3, 4, 5]);
+    expect(parseCostExpression('1-3, 5')).toEqual([1, 2, 3, 5]);
   });
 
   it('reads the site\'s bounds: <, >, <=, >= and « n- »', () => {
     expect(parseCostExpression('<3')).toEqual([0, 1, 2]);
     expect(parseCostExpression('<=2')).toEqual([0, 1, 2]);
-    expect(parseCostExpression('>10')).toEqual([11, 12]);
-    expect(parseCostExpression('>=11')).toEqual([11, 12]);
+    expect(parseCostExpression('>10')).toEqual([11, 12, 13, 14, 15]);
+    expect(parseCostExpression('>=11')).toEqual([11, 12, 13, 14, 15]);
     expect(parseCostExpression('2-')).toEqual([0, 1, 2]);
   });
 
@@ -45,16 +55,49 @@ describe('advanced filters (cards API)', () => {
       forestPower: '>=4',
       subtypes: ['ANIMAL'],
       costRelation: 'mainHigher' as const,
-      altArts: true,
+      altArts: 'with' as const,
       promoSets: ['DUSTEROP'],
       otherFactions: ['LY'],
     };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
+    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
     expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
     expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
+  });
+
+  it('lists the alt arts alone (variations alt-art and promo) with the promo editions of the sets', () => {
+    const f = { ...defaultFilters('all'), altArts: 'only' as const, promoSets: ['EOLECB'] };
+    const p = toSearchParams(f, null, 1, 36);
+    expect(p.variations).toEqual(['alt-art', 'promo']);
+    expect(p.sets).toContain('EOLECB');
+    expect(filterChips(f, 'all').find((c) => c.id === 'altArts')?.label).toBe('Alt arts uniquement');
+    expect(removeChip(f, 'altArts')).toMatchObject({ altArts: 'off', promoSets: [] });
+  });
+
+  it('searches the support effect of the Uniques, with its own chip, and edits it in place', () => {
+    const block = { ...emptySupport(), triggers: [{ id: 432, text: 'Lorsque vous jouez un Sort' }] };
+    const f = { ...defaultFilters('uniques'), support: block };
+    expect(toUniquesQuery(f, null).support).toEqual({ triggers: [432], conditions: [], effects: [] });
+    expect(filterChips(f, 'uniques').map((c) => c.id)).toContain('support');
+    expect(filterChips(defaultFilters('uniques'), 'uniques').map((c) => c.id)).not.toContain('support');
+    expect(removeChip(f, 'support').support).toEqual(emptySupport());
+    expect(effectAt(f, 'support')).toBe(block);
+    expect(withEditedEffect(defaultFilters('uniques'), 'support', block).support).toBe(block);
+    // « Annuler » leaves it as it was; a main effect just added and left empty goes.
+    expect(withEditedEffect(f, 'support', undefined)).toBe(f);
+    const added = { ...defaultFilters('uniques'), effects: [newEffectBlock()] };
+    expect(withEditedEffect(added, 0, undefined).effects).toEqual([]);
+  });
+
+  it('searches the card text on « Toutes les cartes » only', () => {
+    const f = { ...defaultFilters('all'), text: '  piochez une carte ' };
+    expect(toSearchParams(f, null, 1, 36).effectText).toBe('piochez une carte');
+    expect(toSearchParams(defaultFilters('all'), null, 1, 36).effectText).toBeUndefined();
+    expect(filterChips(f, 'all').map((c) => c.id)).toContain('text');
+    expect(filterChips(f, 'uniques').map((c) => c.id)).not.toContain('text');
+    expect(removeChip(f, 'text').text).toBe('');
   });
 });
 
@@ -116,6 +159,17 @@ describe('toUniquesQuery (Uniques search API)', () => {
     }
   });
 
+  it('sends biome powers for uniques and renders their chips', () => {
+    const f = { ...defaultFilters('uniques'), forestPower: '3', mountainPower: '2-3', environment: 'frontier' as const };
+    const q = toUniquesQuery(f, 'AX');
+    expect(q.forestPowers).toEqual([3]);
+    expect(q.mountainPowers).toEqual([2, 3]);
+    const hp = buildUniquesParams(q, null, 36);
+    expect(hp.getAll('forestPower[]')).toEqual(['3']);
+    expect(hp.getAll('mountainPower[]')).toEqual(['2', '3']);
+    expect(filterChips(f, 'uniques').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'mountainPower']));
+  });
+
   it('turns an exact reference into a card lookup', () => {
     const q = toUniquesQuery({ ...defaultFilters('uniques'), q: 'alt_coreks_b_ax_04_u_1' }, null);
     expect(q.reference).toBe('ALT_COREKS_B_AX_04_U_1');
@@ -136,7 +190,22 @@ describe('toSearchParams (cards API)', () => {
     expect(p.recallCosts).toEqual([4]);
     expect(p.q).toBe('rok');
     expect(p.locale).toBe('fr');
-    expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual([]);
+    expect(toSearchParams({ ...f, rarities: ['UNIQUE'] }, 'YZ', 1, 36).rarities).toEqual(['UNIQUE']);
+    expect(toSearchParams({ ...f, rarities: ['COMMON', 'UNIQUE'] }, 'YZ', 1, 36).rarities).toEqual(['COMMON', 'UNIQUE']);
+  });
+
+  it('exposes UNIQUE rarity on "all" while keeping C/R/E as defaults and supports number-desc', () => {
+    expect(rarityOptionsFor('all').map((r) => r.value)).toEqual(['COMMON', 'RARE', 'EXALTED', 'UNIQUE']);
+    expect(rarityOptionsFor('uniques').map((r) => r.value)).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(defaultFilters('all').rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
+    expect(ORDER_OPTIONS.map((o) => o.value)).toContain('number-desc');
+
+    const uOnly = filterChips({ ...defaultFilters('all'), rarities: ['UNIQUE'] }, 'all');
+    expect(uOnly.find((c) => c.id === 'rarities')?.label).toBe('U');
+
+    const mixed = filterChips({ ...defaultFilters('all'), rarities: ['COMMON', 'UNIQUE'] }, 'all');
+    expect(mixed.find((c) => c.id === 'rarities')?.label).toBe('C · U');
   });
 });
 
@@ -199,6 +268,55 @@ describe('Favoris filters', () => {
     const f = { ...defaultFilters('favorites'), q: 'kelon', mainCost: '5', types: ['SPELL'], rarities: ['RARE'], sets: ['CORE'], otherFactions: ['BR'] };
     expect(filterChips(f, 'favorites').map((c) => c.id).sort()).toEqual(['otherFactions', 'rarities', 'sets']);
     expect(activeFilterCount(f, 'favorites')).toBe(3);
+  });
+});
+
+describe('numeric validation', () => {
+  it('detects invalid numeric expressions except on favorites where they are disabled', () => {
+    const bad = { ...defaultFilters('uniques'), mainCost: 'abc' };
+    expect(hasInvalidNumericFilters(bad, 'uniques')).toBe(true);
+    expect(hasInvalidNumericFilters(bad, 'favorites')).toBe(false);
+    expect(hasInvalidNumericFilters({ ...bad, mainCost: '1-3' }, 'uniques')).toBe(false);
+  });
+
+  it('drops discrete numbers > 15 and maps >15 uniques stats to sentinel MAX_COST+1', () => {
+    expect(parseCostExpression('20')).toEqual([]);
+    expect(parseCostExpression('2, 20')).toEqual([2]);
+    const uq = toUniquesQuery({ ...defaultFilters('uniques'), mainCost: '20', recallCost: '>15' }, null);
+    expect(uq.mainCosts).toEqual([16]);
+    expect(uq.recallCosts).toEqual([16]);
+    const p = buildUniquesParams(uq, null, 20);
+    expect(p.get('mainCost[gt]')).toBe('15');
+    expect(p.get('recallCost[gt]')).toBe('15');
+  });
+
+  it('forwards subtypes, costRelation, noEffect and otherFactions on uniques queries and shows their chips', () => {
+    const f = {
+      ...defaultFilters('uniques'),
+      subtypes: ['ANIMAL', 'ROBOT'],
+      costRelation: 'mainHigher' as const,
+      noEffect: true,
+      otherFactions: ['OR'],
+    };
+    const uq = toUniquesQuery(f, 'AX');
+    expect(uq.factions).toEqual(['OR']);
+    expect(uq.subtypes).toEqual(['ANIMAL', 'ROBOT']);
+    expect(uq.costRelation).toBe('mainHigher');
+    expect(uq.noEffect).toBe(true);
+
+    const hp = buildUniquesParams(uq, null, 20);
+    expect(hp.getAll('subTypes[]')).toEqual(['ANIMAL', 'ROBOT']);
+    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('hasNoEffect')).toBe('true');
+
+    const chipIds = filterChips(f, 'uniques').map((c) => c.id);
+    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect', 'otherFactions']));
+  });
+
+  it('omits unsupported costRelation, noEffect and collection altArts chips on account tabs', () => {
+    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], costRelation: 'mainHigher' as const, noEffect: true, altArts: 'with' as const };
+    expect(filterChips(base, 'owned').map((c) => c.id)).toEqual(['altArts']);
+    expect(filterChips({ ...base }, 'collection').map((c) => c.id)).toEqual([]);
   });
 });
 

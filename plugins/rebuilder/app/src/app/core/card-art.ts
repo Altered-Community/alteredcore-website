@@ -64,6 +64,11 @@ export function cardImageSources(ref: string, locale: Locale = contentLocale()):
  * (the `fa-kit` glyph stored on each set in `data/altered.json`). Not the set art
  * in `plugins/core-altered-cards/assets/set/small_bg`.
  */
+/** Set art behind an extension tile (`plugins/core-altered-cards/assets/set/small_bg`, 192 × 108 WebP), as on the site's search. */
+export function setBackgroundUrl(setRef: string): string {
+  return assetUrl(`assets/set-bg/${setRef}.webp`);
+}
+
 export function setImageUrl(setRef: string): string {
   return assetUrl(`assets/set-logos/${setRef}.svg`);
 }

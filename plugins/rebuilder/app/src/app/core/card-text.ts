@@ -16,6 +16,29 @@ export type EffectPart =
   /** `{2}` cost digits, printed as circled numbers. */
   | { kind: 'number'; glyph: string; text: string };
 
+/**
+ * A run of an option's label as the card prints it (`ac-rich-label`): text, bold (a keyword) or an `alteredicons` glyph
+ * with its name.
+ */
+export type RichPart = { text: string; bold?: boolean } | { glyph: string; title: string; scale: number };
+
+/** `{D}`, `[Fugace]`, `{2}` of a one-line text as rich runs, and its plain reading (searched, sorted, read aloud). */
+export function richText(text: string): { rich: RichPart[] | undefined; plain: string } {
+  const parts = effectLines(text).flatMap((line, i) => (i ? [{ kind: 'text', text: ' ' } as EffectPart, ...line] : line));
+  const rich: RichPart[] = parts.map((p) => {
+    if (p.kind === 'icon') return { glyph: p.glyph, title: p.title, scale: p.scale };
+    if (p.kind === 'number') return { text: p.glyph };
+    return p.bold ? { text: p.text, bold: true } : { text: p.text };
+  });
+  const plain = parts
+    .map((p) => (p.kind === 'text' ? p.text : p.kind === 'number' ? p.text : p.title.length > 1 ? p.title : ''))
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const plainOnly = parts.every((p) => p.kind === 'text' && !p.bold && !p.italic && !p.underline && !p.gold);
+  return { rich: plainOnly ? undefined : rich, plain };
+}
+
 /** One printed line: abilities are separated by a double space in the API text. */
 export type EffectLine = EffectPart[];
 

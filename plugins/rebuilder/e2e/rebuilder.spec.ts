@@ -1,4 +1,5 @@
 import { deflateRawSync } from 'node:zlib';
+import type { Locator } from '@playwright/test';
 import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
 import { emptyCache } from '../../../tests/e2e/loading';
 import { createServerDeck } from './decks';
@@ -56,17 +57,36 @@ function decksTab(page: Page, compact: boolean, name: string, lang: Lang = 'fr')
     : page.getByRole('tab', { name });
 }
 
-/** Adds one copy of the first two cards of the search results; returns their names. */
+/**
+ * Adds one copy of two cards of the search results, the first ones not in the deck yet; returns their names.
+ * On a slow runner the results may load again under the click (the list of a new deck) and the click is lost: the
+ * cards in the deck are counted, and a card is added again only while the count has not grown. Not by name: two
+ * versions of a card (common, rare) have the same one.
+ */
 async function addTwoCards(page: Page): Promise<string[]> {
-  const names: string[] = [];
-  for (const i of [0, 1]) {
-    const tile = page.locator('ac-card-tile').nth(i);
-    await expect(tile).toBeVisible();
-    names.push((await tile.getAttribute('aria-label')) ?? '');
-    await tile.getByRole('button', { name: /^Ajouter .* au deck$/ }).click();
-    await expect(tile.getByRole('group', { name: /Exemplaires de/ })).toContainText('1');
+  const tiles = page.locator('app-search-results ac-card-tile');
+  const addButton = (scope: Locator) => scope.getByRole('button', { name: /^Ajouter .* au deck$/ });
+  const inDeck = tiles.filter({ has: page.getByRole('group', { name: /Exemplaires de/ }) });
+  await expect(tiles.first()).toBeVisible();
+  const before = await inDeck.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+  for (const target of [before.length + 1, before.length + 2]) {
+    await expect(async () => {
+      if ((await inDeck.count()) < target) await addButton(tiles.filter({ has: addButton(page) }).first()).click({ timeout: 2_000 });
+      await expect(inDeck).toHaveCount(target, { timeout: 3_000 });
+    }).toPass({ timeout: 20_000 });
   }
-  return names;
+  const after = await inDeck.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+  for (const name of before) after.splice(after.indexOf(name), 1);
+  return after;
+}
+
+/** The PATCH that saves deck `id` holding `copies` cards in all (the hero counts as one). */
+function savedWithCards(page: Page, id: string, copies: number) {
+  return page.waitForResponse((r) => {
+    if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${id}`) || !r.ok()) return false;
+    const lines = (r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? [];
+    return lines.reduce((n, l) => n + l.quantity, 0) === copies;
+  });
 }
 
 async function expectDeckCount(page: Page, compact: boolean, count: number): Promise<void> {
@@ -118,11 +138,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deck = { id: await editorDeckId(page) };
 
     // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
-    const saved = page.waitForResponse((r) => {
-      if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${deck.id}`) || !r.ok()) return false;
-      const lines = ((r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? []);
-      return lines.reduce((n, l) => n + l.quantity, 0) === 3;
-    });
+    const saved = savedWithCards(page, deck.id, 3);
     const cards = await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
     await saved;
@@ -573,7 +589,8 @@ test.describe('ReBuilder in the shell · languages', () => {
       await expect(page.locator('ac-card-tile').first()).toBeVisible();
       await expectEditorLabels(page, compact, lang);
       if (!compact) {
-        await expect(page.getByText(l.rarity, { exact: true })).toBeVisible();
+        // The rarity filter has no title row: its group is named in the language.
+        await expect(page.getByRole('group', { name: l.rarity, exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: l.advanced })).toBeVisible();
         await expect(page.getByRole('button', { name: l.clearAll })).toBeVisible();
       }
@@ -628,7 +645,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
       await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
       await expect(page.getByRole('dialog')).toBeHidden();
     };
-    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
 
     await editEffect(addEffect, [[0, 'Joué depuis la Main'], [1, 'Sans condition'], [2, 'Piochez une carte.']]);
     await editEffect(addEffect, [[2, 'Piochez une carte.']]);
@@ -696,7 +713,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
       await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
       if (!compact) await expect(page.getByRole('dialog')).toBeHidden();
     };
-    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
 
     // Effect 1, nothing else picked: its triggers are those of the hero's faction.
     const first = narrowing('trigger:0');
@@ -764,6 +781,35 @@ test.describe('ReBuilder in the shell · card filters', () => {
     await expect(page.getByRole('listbox', { name: 'Ajouter…' })).toBeHidden();
     if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
     await expect(page.getByText('2 sous-types').first()).toBeVisible();
+  });
+});
+
+test.describe('ReBuilder in the shell · card browser', () => {
+  test('replaces the site’s card search: the card text under the name, the alt arts alone, set art and faction marks', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const search = (check: (q: URLSearchParams) => boolean) =>
+      page.waitForRequest((r) => new URL(r.url()).pathname === '/api/v2/search' && check(new URL(r.url()).searchParams));
+    await page.goto('/pages/cards?lang=fr');
+    await expect(page).toHaveTitle(/^Cartes/);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
+    // Set art behind the extension tiles, the faction marks in the faction chips.
+    await expect(filters.locator('ac-extension-tile button').first()).toHaveCSS('background-image', /assets\/set-bg\/[A-Z]+\.webp/);
+    await expect(filters.getByRole('button', { name: 'Axiom' }).locator('img.ac-chip__img')).toHaveAttribute('src', /assets\/faction\/64\/AX\.webp/);
+
+    const byText = search((q) => q.get('effectText') === 'piochez');
+    await filters.getByRole('textbox', { name: 'Rechercher dans le texte des cartes' }).fill('piochez');
+    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    const onlyAltArts = search((q) => q.get('effectText') === 'piochez' && q.getAll('variation[]').join() === 'alt-art,promo');
+    await filters.getByRole('group', { name: 'Illustrations' }).getByRole('button', { name: 'Alt arts' }).click();
+    await evidence(page, testInfo, '40-card-browser-filters');
+    if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
+    else await byText;
+    await onlyAltArts;
+    await expect(page.getByText('Texte : « piochez »').first()).toBeVisible();
+    await expect(page.getByText('Alt arts uniquement').first()).toBeVisible();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    await evidence(page, testInfo, '41-card-browser-results');
   });
 });
 
@@ -1351,8 +1397,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
 
     test('leaving « Global » writes the default alt arts in every deck, then switches to « par deck »', async ({ page, compact }, testInfo) => {
       test.skip(compact, 'the mode is the account’s: one project at a time');
-      // Every deck of the account is written: a local stack keeps the decks of earlier runs.
-      test.slow();
+      // Every deck of the account is written: a local stack keeps the decks of earlier runs, and the CI's other tests
+      // add theirs. The switch's wait below fails when the progress stalls; the test's own limit only stops a runaway.
+      test.setTimeout(10 * 60_000);
       await login(page, 'bob', `${DECKS}?lang=fr`);
       const id = await createServerDeck(page, `E2E leave global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
       // bob's default alt art for Élémentaire de Kélon: an illustration he owns, on the three copies.
@@ -1377,7 +1424,19 @@ test.describe('ReBuilder in the shell · deck page', () => {
         await expect(dialog).toBeVisible();
         await evidence(page, testInfo, '37-leave-global-confirm');
         await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
-        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 120_000 });
+        // Every deck of bob's account is written, four at a time (« x / total »), then the page reloads: the time it
+        // takes grows with the decks the other tests created. The wait follows the progress: it fails when nothing
+        // moves for 30 s, not after a fixed time.
+        const perDeck = page.getByRole('button', { name: 'Par deck', exact: true });
+        const progress = page.locator('#own-aa-mode-progress-text');
+        const state = async () => {
+          const pressed = await perDeck.getAttribute('aria-pressed', { timeout: 1_000 }).catch(() => null);
+          return pressed === 'true' ? 'done' : ((await progress.textContent({ timeout: 1_000 }).catch(() => null)) ?? '');
+        };
+        for (let seen = await state(); seen !== 'done'; ) {
+          const before = seen;
+          await expect.poll(async () => (seen = await state()), { timeout: 30_000 }).not.toBe(before);
+        }
         await evidence(page, testInfo, '38-per-deck-mode');
         await page.goto(`${DECKS}?lang=fr`);
         // Élémentaire de Kélon's copies, as Board Game Arena showed them (the deck's other cards have one illustration).
@@ -1530,8 +1589,9 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     expect((await created).status()).toBe(201);
     const deck = { id: await editorDeckId(page) };
 
-    // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
-    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
+    // « Partager » right after a change: no wait for the autosave delay, the change is sent first. The save of the
+    // final state (hero + 2 cards): a slow runner may also save the deck before, or each card apart.
+    const saved = savedWithCards(page, deck.id, 3);
     await addTwoCards(page);
     // The deck bar counts the rarities the format caps (from 768 px).
     if (!compact) await expect(page.locator('app-deck-bar').getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');

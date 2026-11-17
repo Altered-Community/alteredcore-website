@@ -68,6 +68,17 @@ Error state:
 The icon (18 px, muted) is placed at the start and ignores clicks; the input gets a 38 px left
 padding.
 
+A picture or a game symbol can take the icon's place: `ac-input-icon__lead` (a 20 px box, the picture kept whole, a
+glyph in `--ac-color-text-2`), the input then gets a 36 px left padding. With no visible label, the input carries
+`aria-label` and `title` (what the picture stands for).
+
+```php
+<div class="ac-input-icon">
+  <span class="ac-input-icon__lead"><img src="<?= h($biome) ?>/F.webp" alt=""></span>
+  <input class="ac-input" aria-label="Forêt" title="Forêt" placeholder="3, 1-3, <4">
+</div>
+```
+
 ## Select — `ac-select`
 
 Write a native `<select>`: on the site's pages `js/ac.js` draws it as a [listbox](listbox.md)

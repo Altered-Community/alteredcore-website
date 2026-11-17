@@ -18,6 +18,11 @@ export function gemSrc(rarity: string): string {
   return assetUrl(`assets/gems/${file}.png`);
 }
 
+/** A faction's mark at 64 px (`assets/faction/64`, WebP, ~3 KB): for the small sizes (chips), not the 1024 px PNG. */
+export function factionIconSrc(code: string): string {
+  return assetUrl(`assets/faction/64/${code.toUpperCase()}.webp`);
+}
+
 export function factionSrc(code: string | undefined | null): string | null {
   if (!code) return null;
   const c = code.toUpperCase();

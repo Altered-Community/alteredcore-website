@@ -7,7 +7,8 @@ require_once dirname(__DIR__) . '/includes/collection-query.php';
 
 header('Content-Type: application/json');
 
-if (!defined('KC_URL') || !kcIsLoggedIn()) {
+if (!defined('KC_URL') || KC_URL === '' || !kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -17,9 +18,17 @@ $userId = (int)($_SESSION['user_id'] ?? 0);
 
 $query = cacCollectionQuery($_GET);
 $path  = '/api/collection' . ($query !== '' ? '?' . $query : '');
-$data = collApiRequest(COLLECTION_API_URL, 'GET', $path, $userId);
+[$code, $raw] = collApiRequestRaw(COLLECTION_API_URL, 'GET', $path, $userId);
 
-if ($data === false) {
+if ($code === 401) {
+    header('X-Ac-Auth-State: unauthenticated');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+$data = ($code > 0 && $code < 400 && $raw !== null && $raw !== '') ? json_decode($raw, true) : false;
+if (!is_array($data)) {
     http_response_code(502);
     echo json_encode(['error' => 'Collection API error']);
     exit;
@@ -30,6 +39,7 @@ $types = cacCollectionLocalTypes($_GET);
 if ($types !== null) {
     $items = array_values(array_filter($items, fn($it) => is_array($it) && in_array($it['cardType'] ?? '', $types, true)));
 }
+$items = cacFilterItemsByNumeric($items, cacCollectionLocalNumeric($_GET));
 $total    = count($items);
 $perPage  = max(1, (int)($_GET['itemsPerPage'] ?? 30));
 $page     = max(1, (int)($_GET['page']         ?? 1));

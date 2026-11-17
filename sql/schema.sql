@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS `{prefix}news` (
     `excerpt_fr`   VARCHAR(500) DEFAULT NULL,
     `image`        VARCHAR(500) DEFAULT NULL,
     `youtube_url`  VARCHAR(500) DEFAULT NULL,
+    `authors`      VARCHAR(500) DEFAULT NULL,
+    `translators`  VARCHAR(500) DEFAULT NULL,
     `published_at` DATETIME DEFAULT NULL,
     `is_published` TINYINT(1) NOT NULL DEFAULT 0,
     `is_pinned`    TINYINT(1) NOT NULL DEFAULT 0,

@@ -1,8 +1,12 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, signal } from '@angular/core';
-import { COST_RELATIONS, TYPE_OPTIONS, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, promoSetsOf, setsFor, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { COST_RELATIONS, SUPPORT_TITLE, TYPE_OPTIONS, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, promoSetsOf, setsFor, supportsTextSearch, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
+import { assetUrl } from '../../../core/asset-url';
+import { ICONS } from '../../../core/card-text';
 import type { DeckFormat } from '../../../core/models';
+import type { EffectSlot } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
@@ -14,7 +18,7 @@ import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  imports: [AcInput, AcSelect, AcCombobox, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
+  imports: [NgTemplateOutlet, AcInput, AcSelect, AcCombobox, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',
   styleUrl: './filters-panel.scss',
@@ -27,12 +31,24 @@ export class FiltersPanel {
   /** Card browser only: the editor locks the faction to the hero's. */
   readonly factionFilter = input(false);
   readonly value = model.required<SearchFilters>();
-  readonly editEffect = output<number>();
+  /** Opens the effect editor on a main effect (its index) or on the support effect. */
+  readonly editEffect = output<EffectSlot>();
+  protected readonly supportTitle = SUPPORT_TITLE;
+  protected readonly emptySupport = emptySupport;
+  protected readonly hasSupport = computed(() => hasEffectCriteria(this.value().support));
 
   protected readonly rarities = computed(() => rarityOptionsFor(this.source()).map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
   protected readonly legalFilter = computed(() => isAccountSource(this.source()));
   protected readonly legalLabel = computed(() => $localize`:@@search.filters.legalOnly:Légales en ${formatInfo(this.format()).label}:format:`);
   protected readonly types = TYPE_OPTIONS;
+  /** In the cost fields: the hand and reserve symbols (`alteredicons`, as the site's search). */
+  protected readonly glyphs = { hand: ICONS['H'].glyph, reserve: ICONS['R'].glyph };
+  /** In the power fields: the terrains. */
+  protected readonly biomes = {
+    forest: assetUrl('assets/biome/F.webp'),
+    mountain: assetUrl('assets/biome/M.webp'),
+    ocean: assetUrl('assets/biome/O.webp'),
+  };
   protected readonly factions = FACTIONS;
   protected readonly environments = [
     { value: 'all' as const, label: $localize`:@@search.filters.allUniques:Toutes les Uniques` },
@@ -43,10 +59,18 @@ export class FiltersPanel {
     all: $localize`:@@search.filters.all:Toutes`,
   };
   protected readonly sets = computed(() => setsFor(this.source()));
-  /** Favoris: the site filters them by faction, set and rarity only; the other fields are disabled. */
+  /** Favoris: the site filters them by faction, set and rarity only (« légales », another faction in the editor); no other field. */
   protected readonly limited = computed(() => this.source() === 'favorites');
+  protected readonly supportsCostAndEffect = computed(() => !isAccountSource(this.source()));
+  protected readonly supportsAltArts = computed(() => this.source() === 'all' || this.source() === 'owned');
+  /** Search in the card's text, under the name field. */
+  protected readonly textSearch = computed(() => supportsTextSearch(this.source()));
+  protected readonly altArtsModes: { value: AltArtsMode; label: string }[] = [
+    { value: 'off', label: $localize`:@@search.filters.prints.standard:Standard` },
+    { value: 'with', label: $localize`:@@search.filters.prints.with:Toutes` },
+    { value: 'only', label: $localize`:@@search.filters.prints.only:Alt arts` },
+  ];
   protected readonly allSets = computed(() => this.sets().map((s) => s.reference));
-  protected readonly setsOpen = signal(false);
   protected readonly advancedOpen = signal(false);
   protected readonly mainInvalid = computed(() => parseCostExpression(this.value().mainCost) === null);
   protected readonly recallInvalid = computed(() => parseCostExpression(this.value().recallCost) === null);
@@ -69,9 +93,14 @@ export class FiltersPanel {
     return values.map((v) => SUBTYPES[v.id]?.code).filter((c): c is string => !!c);
   }
 
-  /** « Alt arts » on: every printing and the promo editions of the chosen sets (as on the site); off: back to standard. */
-  protected setAltArts(on: boolean): void {
-    this.set({ altArts: on, promoSets: on ? promoSetsOf(this.value().sets) : [] });
+  /**
+   * « Toutes » (every printing) or « Alt arts » (the alt arts alone): the promo editions of the chosen sets join the search
+   * (as on the site), the ones already picked kept from one mode to the other; « Standard »: back to the standard prints.
+   */
+  protected setAltArts(mode: AltArtsMode): void {
+    const prev = this.value();
+    const promoSets = mode === 'off' ? [] : prev.altArts === 'off' ? promoSetsOf(prev.sets) : prev.promoSets;
+    this.set({ altArts: mode, promoSets });
   }
 
   protected togglePromo(code: string, on: boolean): void {

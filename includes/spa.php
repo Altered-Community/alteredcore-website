@@ -98,6 +98,8 @@ function spaResolvePage(array $plugin, array $page): array {
         'title_en'      => $page['title_en'] ?? '',
         'title_fr'      => $page['title_fr'] ?? '',
         'fullwidth'     => !array_key_exists('fullwidth', $page) || !empty($page['fullwidth']),
+        // Slugs served full-width whatever `fullwidth` says (rebuilder: the card search, the rest in the content width).
+        'fullwidth_slugs' => array_values(array_filter((array)($page['fullwidth_slugs'] ?? []), 'is_string')),
         'meta_file'     => spaMetaFile($plugin, $page),
         'placeholder_file' => spaPluginFile($plugin, $page['placeholder'] ?? null),
         // Base href of the client routes (pluginFindBetaPage(): /pages/, the routes being the slugs it takes over)

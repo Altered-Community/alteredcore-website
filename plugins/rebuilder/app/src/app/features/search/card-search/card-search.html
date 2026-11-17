@@ -1,8 +1,8 @@
 @if (bp.compact()) {
   <div class="search-head" [class.condensed]="condensed()">
     <div class="search-row">
-      <!-- Favoris: the site's favorites search has no name filter. -->
-      <fieldset class="unsupported" [disabled]="search.source() === 'favorites'" [attr.inert]="search.source() === 'favorites' ? '' : null">
+      <!-- Favoris: the site's favorites search has no name filter, no field. -->
+      @if (search.source() !== 'favorites') {
         <ac-input
           class="q"
           icon="search"
@@ -13,7 +13,7 @@
           [value]="draft().q"
           (valueChange)="setQuery($event)"
         />
-      </fieldset>
+      }
       <button class="filters-btn" acIconButton="sliders-horizontal" variant="primary" [ariaLabel]="filtersLabel()" [iconSize]="20" (click)="openFilters()">
         @if (activeCount()) {
           <span class="badge"><ac-count [value]="activeCount()" /></span>
@@ -71,7 +71,7 @@
         <span class="total">{{ totalLabel() }}</span>
         <span class="tools">
           @if (sortable()) {
-            <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+            <ac-select ariaLabel="Trier par" i18n-ariaLabel="@@search.card.sortBy" [options]="compactOrderOptions()" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
           <button
             acIconButton="layout-grid"
@@ -97,7 +97,7 @@
         <ac-filter-bar class="chips" [chips]="search.chips()" (remove)="removeChip($event)" (clearAll)="clearAll()" />
         <span class="tools">
           @if (sortable()) {
-            <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions" [value]="search.filters().order" (valueChange)="setOrder($event)" />
+            <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions()" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
           <ac-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
         </span>

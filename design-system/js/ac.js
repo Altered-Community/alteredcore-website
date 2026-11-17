@@ -181,6 +181,10 @@
         var wrap = document.createElement('div');
         wrap.className = 'ac-listbox' + (/\b(form-select-sm|ac-select--sm)\b/.test(select.className) ? ' ac-listbox--sm' : '');
         if (select.getAttribute('style')) wrap.setAttribute('style', select.getAttribute('style'));
+        if (select.hasAttribute('data-tabs')) {
+            wrap.setAttribute('data-tabs', select.getAttribute('data-tabs'));
+            select.removeAttribute('data-tabs');
+        }
         select.parentNode.insertBefore(wrap, select);
 
         var trigger = document.createElement('button');

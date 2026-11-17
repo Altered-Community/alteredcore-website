@@ -85,6 +85,23 @@
   pointer-events: none;
 }
 .ac-input-icon > .ac-input { padding-left: 38px; }
+/* A picture or a game symbol in place of the icon (a terrain, the hand cost): 20 px box, kept whole.
+   <div class="ac-input-icon"><span class="ac-input-icon__lead"><img src="…" alt=""></span><input class="ac-input"></div> */
+.ac-input-icon__lead {
+  position: absolute;
+  left: var(--ac-space-2-5);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ac-color-text-2);
+  pointer-events: none;
+}
+.ac-input-icon__lead img { width: 100%; height: 100%; object-fit: contain; }
+.ac-input-icon:has(> .ac-input-icon__lead) > .ac-input { padding-left: 36px; }
 
 /* ---- Select ---- */
 .ac-select {

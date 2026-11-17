@@ -62,7 +62,9 @@ $body = $method === 'GET' ? '' : (string)file_get_contents('php://input', false,
 if (strlen($body) > SERVICE_PROXY_MAX_BODY) serviceProxyReply(413, ['error' => 'body_too_large']);
 
 $kcMode = defined('KC_URL') && KC_URL !== '';
-$userId = kcIsLoggedIn() && $kcMode ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$isLoggedIn = kcIsLoggedIn();
+$userId = $isLoggedIn && $kcMode ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$authExpired = $kcMode && !$isLoggedIn;
 
 /** Access token of the session; with $renew, drops the cached one first (after a 401). */
 function serviceProxyToken(int $userId, bool $renew = false) {
@@ -112,11 +114,19 @@ if ($res !== null && $res[0] === 401 && $token !== null) {
     session_start();
     $token = serviceProxyToken($userId, true);
     session_write_close();
-    if ($token !== null) $res = serviceProxySend($method, $url, $forward, $body, $token);
+    if ($token !== null) {
+        $res = serviceProxySend($method, $url, $forward, $body, $token);
+    } else {
+        $authExpired = true;
+    }
 }
 
 if ($res === null) serviceProxyReply(502, ['error' => 'service_unreachable', 'service' => $service]);
 [$status, $type, $out] = $res;
+// Signal expired/absent session on 401 when no valid token backed the request so the shell UI can flip to guest.
+if ($status === 401 && ($authExpired || $token === null)) {
+    header('X-Ac-Auth-State: unauthenticated');
+}
 // A deck deleted: what the site keeps about it goes too (includes/func.alt-arts.php).
 if ($service === 'decks' && $method === 'DELETE' && $status >= 200 && $status < 300 && preg_match('#^api/decks/([A-Za-z0-9-]{1,64})$#', $path, $m)) {
     require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';

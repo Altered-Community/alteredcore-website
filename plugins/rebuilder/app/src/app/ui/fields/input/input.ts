@@ -19,6 +19,10 @@ export class AcInput extends ValueAccessor<string> {
   readonly placeholder = input('');
   readonly type = input('text');
   readonly icon = input<AcIconName | undefined>(undefined);
+  /** A picture in the icon's place (`ac-input-icon__lead`: a terrain); without a visible label, `ariaLabel` is also its title. */
+  readonly leadImage = input<string | null>(null);
+  /** An `alteredicons` glyph in the icon's place (the hand or reserve symbol). */
+  readonly leadGlyph = input<string | null>(null);
   readonly required = input(false);
   readonly invalid = input(false);
   readonly clearable = input(false);

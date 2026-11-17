@@ -17,7 +17,8 @@
 .ac-notice .ac-icon { --ac-icon-size: 18px; margin-top: 1px; }
 .ac-notice__title { font-weight: 800; margin: 0 0 var(--ac-space-0-5); }
 .ac-notice :is(p:last-child, ul:last-child) { margin-bottom: 0; }
-.ac-notice a { color: inherit; text-decoration: underline; }
+/* Text links take the notice's colour; a link styled as a button keeps the button's. */
+.ac-notice a:not(.ac-button, .ac-icon-button) { color: inherit; text-decoration: underline; }
 .ac-notice--success { background: var(--ac-color-success-soft); color: var(--ac-color-success); }
 .ac-notice--warning { background: var(--ac-color-warning-soft); color: var(--ac-color-warning); }
 .ac-notice--danger { background: var(--ac-color-danger-soft); color: var(--ac-color-danger); }

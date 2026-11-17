@@ -211,6 +211,10 @@ include dirname(__DIR__) . '/includes/header.php';
                     <div class="ac-input-icon"><?= ac_icon('search') ?><input class="ac-input ac-input--subtle" id="ds-subtle" type="search" placeholder="Search"></div>
                 </div>
                 <div class="ac-field">
+                    <label class="ac-field__label" for="ds-forest">Leading picture</label>
+                    <div class="ac-input-icon"><span class="ac-input-icon__lead"><img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/biome/F.webp" alt=""></span><input class="ac-input" id="ds-forest" title="Forest" placeholder="3, 1-3, &lt;4"></div>
+                </div>
+                <div class="ac-field">
                     <label class="ac-field__label" for="ds-format">Format</label>
                     <select class="ac-select" id="ds-format"><option>Standard</option><option>Frontier</option><option>Singleton</option></select>
                 </div>
@@ -304,6 +308,8 @@ include dirname(__DIR__) . '/includes/header.php';
                 <?php foreach ($factions as $i => $f): ?>
                 <button type="button" class="ac-chip" aria-pressed="<?= $i === 0 ? 'true' : 'false' ?>" style="--ac-chip-dot: var(--ac-faction-<?= h($f) ?>)"><span class="ac-chip__dot"></span><?= h(ucfirst($f)) ?></button>
                 <?php endforeach; ?>
+                <button type="button" class="ac-chip" aria-pressed="true"><img class="ac-chip__img" src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/AX.png" alt="">Axiom</button>
+                <button type="button" class="ac-chip ac-chip--icon" aria-pressed="false" aria-label="Bravos" title="Bravos"><img class="ac-chip__img" src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/BR.png" alt=""></button>
                 <button type="button" class="ac-chip ac-chip--square" aria-pressed="true">1–3</button>
                 <button type="button" class="ac-chip">Rare <span class="ac-chip__remove"><?= ac_icon('x', 'ac-icon--14') ?></span></button>
             </div>
@@ -528,6 +534,7 @@ include dirname(__DIR__) . '/includes/header.php';
                 <button type="button" class="ac-button ac-button--secondary ac-button--sm" id="ds-toast-demo">Show a toast</button>
             </div>
             <div class="ac-notice ac-notice--neutral" role="status"><?= ac_icon('info') ?><div>Neutral note, without a tone.</div></div>
+            <div class="ac-notice" role="status"><?= ac_icon('gift') ?><div class="d-flex flex-wrap align-items-center justify-content-between gap-2 flex-grow-1"><p>A notice with one action: a <a href="#">text link</a>, then a link styled as a button.</p><a class="ac-button ac-button--sm" href="#">Enter</a></div></div>
             <div class="ac-notice ac-notice--success" role="status"><?= ac_icon('circle-check') ?><div>Deck saved.</div></div>
             <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div>This deck has 38 cards: a deck needs at least 40.</div></div>
             <div class="ac-notice ac-notice--danger" role="alert"><?= ac_icon('circle-alert') ?><div>The deck could not be saved. Try again.</div></div>

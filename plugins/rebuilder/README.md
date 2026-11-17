@@ -3,9 +3,9 @@
 The decks section of Altered Re:Builder (Angular 22), an SPA page of the shell (manifest v2, `"type": "spa"`,
 Shadow DOM). Re:Builder only exists as this plugin: there is no standalone app any more (no `index.html`, no
 Capacitor build, no auth BFF); it uses the site's session, header, menu and design system. It replaces the
-site's decks pages for the
+site's decks pages and card search for the
 visitors who turn on **Beta Deckbuilder** in the account menu (cookie `ac_beta`, this browser only), at the
-same URLs: `/pages/decks`, `/pages/deck?id=…` and `/pages/deckbuilder?id=…` (manifest `beta_slugs`). Without
+same URLs: `/pages/decks`, `/pages/deck?id=…`, `/pages/deckbuilder?id=…` and `/pages/cards` (manifest `beta_slugs`). Without
 it, those URLs stay the pages of `core-altered-cards`. Shared links, QR codes and the site's own links
 (`card.php`, tournament-reports) therefore open one or the other deckbuilder, and the site's Decks menu keeps
 its single **Decks** entry. The pages it replaces keep answering their own calls (`?ajax=…`, form posts).
@@ -69,6 +69,7 @@ The base href is `/pages/`. The app's routes are `decks/:id/…`; `LegacyUrlSeri
 | `/pages/deck?id={id}` | Deck page (cards; `&tab=deck`, `description`, `main`), actions |
 | `/pages/deckbuilder` | New deck (hero, format, visibility) |
 | `/pages/deckbuilder?id={id}` | Editor (card search and filters, deck list, validation, statistics, settings; `&view=apercu`, `deck`, `main`) |
+| `/pages/cards` | Card browser, in place of the site's card search: the editor's search (every source tab, faction filter, search in the card text, alt arts only), no quantity controls |
 | `/pages/rebuilder/…` | The plugin's own page: its former links (`decks/{id}`, `?id={id}`, `deck?id={id}`) land on the URLs above |
 
 Signed in, decks are listed, created and saved on the decks API through the site's relay

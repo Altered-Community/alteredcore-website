@@ -1,0 +1,14 @@
+@use '../glyph';
+
+:host {
+  display: inline;
+}
+/* Inside the text: no gap of its own, the spaces are the text's. */
+.glyph:not(.lead) {
+  width: auto;
+  margin: 0 1px;
+  font-size: 1em;
+}
+strong {
+  font-weight: 700;
+}

@@ -43,6 +43,8 @@
 }
 
 .filters-btn {
+  /* Alone at the end of its row when there is no name field (Favoris). */
+  margin-left: auto;
   width: 44px;
   height: 44px;
   border-radius: var(--ac-radius-lg);
@@ -266,10 +268,4 @@
   }
 }
 
-/* The query field where the source cannot search by name (Favoris): disabled and faded. */
-.unsupported {
-  display: contents;
-}
-.unsupported:disabled > * {
-  opacity: 0.45;
-}
+

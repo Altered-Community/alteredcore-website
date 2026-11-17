@@ -6,6 +6,12 @@
 :host(.sheet) {
   gap: 22px;
 }
+/* Name and text search, one under the other. */
+.queries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
 .two {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -14,21 +20,38 @@
 :host(.sheet) .two {
   gap: var(--ac-space-2-5);
 }
-.two ::ng-deep .ac-field__label {
-  font-weight: 600;
-}
 .sets {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ac-space-1-5);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ac-space-1);
 }
 :host(.sheet) .sets {
-  gap: var(--ac-space-2);
+  gap: var(--ac-space-1-5);
 }
 .types {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ac-space-1-5);
+}
+/* The six factions on one line, their marks alone, spread over the width. */
+.factions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ac-space-1);
+}
+.scope-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-5);
+}
+:host(.sheet) .scope-section {
+  gap: 22px;
+}
+.scope-section--uniques {
+  padding: var(--ac-space-3);
+  border-radius: var(--ac-radius-control);
+  border-inline-start: 3px solid var(--ac-cards-unique);
+  background: var(--ac-color-bg-subtle);
 }
 .adv {
   margin-top: var(--ac-space-2);
@@ -52,23 +75,16 @@
   align-items: center;
   gap: var(--ac-space-2);
 }
-.pill {
-  height: 20px;
-  padding: 0 7px;
-  border-radius: var(--ac-radius-pill);
-  background: var(--ac-color-primary-soft);
-  color: var(--ac-color-primary-strong);
-  font-size: var(--ac-font-size-caption);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-}
 .chev {
   display: flex;
   transition: transform 0.15s;
 }
 .chev.open {
   transform: rotate(180deg);
+}
+.sets-all {
+  display: block;
+  margin-left: auto;
 }
 .link {
   border: none;
@@ -108,23 +124,5 @@
 :host(.sheet) .three {
   gap: var(--ac-space-2-5);
 }
-.three ::ng-deep .label {
-  font-weight: 600;
-}
 
-/* Fields the source cannot filter by (Favoris): in the flow as if there were no fieldset, disabled and faded. */
-.unsupported {
-  display: contents;
-}
-.unsupported:disabled > *,
-.unsupported:disabled .adv-field {
-  opacity: 0.45;
-}
-.limited {
-  margin: 0;
-  padding: var(--ac-space-2) var(--ac-space-3);
-  border-radius: var(--ac-radius-control);
-  background: var(--ac-color-bg-subtle);
-  font: var(--ac-font-small);
-  color: var(--ac-color-text-2);
-}
+

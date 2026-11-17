@@ -81,7 +81,6 @@ $sort = in_array($_GET['sort'] ?? '', $validSorts) ? $_GET['sort'] : 'default';
 $cols = (int)($_GET['cols'] ?? $_defaultCols);
 if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
-$validCostPower = array_map('strval', range(0, 12));
 $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
 $types    = array_key_exists('type', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['type']), $validTypes))
@@ -94,13 +93,17 @@ $sets = array_key_exists('set', $_GET)
     : $defaultSets;
 $keywords       = array_values(array_intersect(array_filter((array)($_GET['keyword']       ?? [])), array_keys($keywordsData)));
 $subtypes       = array_values(array_intersect(array_filter((array)($_GET['subtype']       ?? [])), array_keys($subtypesData)));
-$mainCost   = isset($_GET['mainCost'])   && in_array($_GET['mainCost'],   $validCostPower, true) ? $_GET['mainCost']   : null;
-$recallCost = isset($_GET['recallCost']) && in_array($_GET['recallCost'], $validCostPower, true) ? $_GET['recallCost'] : null;
-$forest     = isset($_GET['forest'])     && in_array($_GET['forest'],     $validCostPower, true) ? $_GET['forest']     : null;
-$mountain   = isset($_GET['mountain'])   && in_array($_GET['mountain'],   $validCostPower, true) ? $_GET['mountain']   : null;
-$ocean      = isset($_GET['ocean'])      && in_array($_GET['ocean'],      $validCostPower, true) ? $_GET['ocean']      : null;
+$mainCost   = cacValidateNumExpr($_GET['mainCost']   ?? null);
+$recallCost = cacValidateNumExpr($_GET['recallCost'] ?? null);
+$forest     = cacValidateNumExpr($_GET['forest']     ?? null);
+$mountain   = cacValidateNumExpr($_GET['mountain']   ?? null);
+$ocean      = cacValidateNumExpr($_GET['ocean']      ?? null);
 $kwMode         = ($_GET['kwMode'] ?? '') === 'and' ? 'and' : 'or';
 $hasNoEffect    = ($_GET['hasNoEffect'] ?? '') === 'true';
+$_rawFormat     = trim((string)($_GET['format'] ?? ''));
+$format         = ($_rawFormat !== '' && cacIsValidUniquesFormatId($_rawFormat)) ? $_rawFormat : '';
+$_rawCr         = (string)($_GET['costRelation'] ?? '');
+$costRelation   = in_array($_rawCr, ['eq', 'main_gt', 'recall_gt'], true) ? $_rawCr : '';
 $variations = array_key_exists('variation', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['variation']), array_keys($variationsData)))
     : $defaultVariations;
@@ -109,7 +112,8 @@ $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
 $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
 // collection
-$_csUserId         = (int)($_SESSION['user_id'] ?? 0);
+$_csLoggedIn       = kcIsLoggedIn();
+$_csUserId         = $_csLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
 $_collEnabled      = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collMode         = $_collEnabled && $_csUserId > 0;
 
@@ -341,7 +345,6 @@ CardSearch({
     initial: {
         q:              <?= json_encode($q) ?>,
         faction:        <?= json_encode($factions) ?>,
-        faction:        <?= json_encode($factions) ?>,
         factionExplicit:<?= array_key_exists('faction', $_GET) ? 'true' : 'false' ?>,
         type:           <?= json_encode($types) ?>,
         typeExplicit:   <?= array_key_exists('type', $_GET) ? 'true' : 'false' ?>,
@@ -359,6 +362,8 @@ CardSearch({
         ocean:       <?= json_encode($ocean) ?>,
         keywordMode:    <?= json_encode($kwMode) ?>,
         hasNoEffect:    <?= $hasNoEffect ? 'true' : 'false' ?>,
+        costRelation:   <?= json_encode($costRelation) ?>,
+        format:         <?= json_encode($format) ?>,
         isBanned:       <?= $isBanned    ? 'true' : 'false' ?>,
         isErrated:      <?= $isErrated   ? 'true' : 'false' ?>,
         isSuspended:    <?= $isSuspended ? 'true' : 'false' ?>,

@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, buildUniquesParams, buildUnifiedSearchParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -44,10 +44,34 @@ describe('effectMatchCounts', () => {
 
 describe('buildEffectsFilteredParams', () => {
   const fx = (triggers: number[], conditions: number[], effects: number[]): UniquesEffect => ({ triggers, conditions, effects });
-  const params = (query: UniquesQuery, index: number, block: UniquesEffect, kind: 'triggers' | 'conditions' | 'effects') => {
+  const params = (query: UniquesQuery, index: number | 'support', block: UniquesEffect, kind: 'triggers' | 'conditions' | 'effects') => {
     const hp = buildEffectsFilteredParams(query, index, block, kind);
     return Object.fromEntries(hp.keys().map((k) => [k, hp.getAll(k)!.join('|')]));
   };
+
+  it('narrows the support effect on the support line, the main effects kept as searched', () => {
+    const query: UniquesQuery = { ...QUERY, effects: [fx([22], [], []), fx([], [], [])], support: fx([1], [], []) };
+    expect(params(query, 'support', fx([432], [], [90]), 'conditions')).toEqual({
+      'faction[]': 'AX',
+      'effect[0][t]': '22',
+      'support[t]': '432',
+      'support[o]': '90',
+      editing: 'condition:support',
+    });
+  });
+
+  it('keeps the support effect as a constraint while a main effect is edited', () => {
+    const query: UniquesQuery = { ...QUERY, effects: [fx([], [], [])], support: fx([], [], [90]) };
+    expect(params(query, 0, fx([22], [], []), 'effects')).toMatchObject({ 'effect[0][t]': '22', 'support[o]': '90', editing: 'output:0' });
+  });
+
+  it('sends support[t|c|o] to /api/v2/cards, and nothing for an empty support effect', () => {
+    const hp = buildUniquesParams({ ...QUERY, support: fx([432], [191], []) }, null, 36);
+    expect(hp.get('support[t]')).toBe('432');
+    expect(hp.get('support[c]')).toBe('191');
+    expect(hp.has('support[o]')).toBe(false);
+    expect(buildUniquesParams({ ...QUERY, support: fx([], [], []) }, null, 36).keys().some((k) => k.startsWith('support'))).toBe(false);
+  });
 
   it('sends the other criteria and puts the edited block last, in the slot `editing` names', () => {
     const query: UniquesQuery = { ...QUERY, name: 'kelon', sets: ['CORE'], mainCosts: [3], format: 'frontier', effects: [fx([22], [], []), fx([], [], [90])] };
@@ -160,6 +184,20 @@ describe('UniquesApiService', () => {
     expect(await missing).toEqual({ member: [], totalItems: 0, next: null });
   });
 
+  it('maps single-field sort to `sort=` and omits random', async () => {
+    const sorted = lastValueFrom(api.search({ ...QUERY, order: 'mainCost-desc' }, null, 36));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(req.request.params.get('sort')).toBe('mainCost:desc');
+    req.flush({ iter: { total: 1 }, cards: [KELON] });
+    await sorted;
+
+    const rnd = lastValueFrom(api.search({ ...QUERY, order: 'random' }, null, 36));
+    const rndReq = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(rndReq.request.params.has('sort')).toBe(false);
+    rndReq.flush({ iter: { total: 1 }, cards: [KELON] });
+    await rnd;
+  });
+
   it('builds the effect vocabularies from one /api/v2/effects call, main-effect entries only', async () => {
     const triggers = lastValueFrom(api.abilities('triggers'));
     const conditions = lastValueFrom(api.abilities('conditions'));
@@ -175,6 +213,17 @@ describe('UniquesApiService', () => {
     expect(await triggers).toEqual([{ id: 22, text: 'Joué depuis la Main', glyph: '' }]);
     expect(await conditions).toEqual([{ id: 191, text: NO_CONDITION }]);
     expect(await effects).toEqual([{ id: 90, text: 'Piochez une carte.' }]);
+  });
+
+  it('builds the support effect vocabularies from the entries of the support line (isEcho)', async () => {
+    const triggers = lastValueFrom(api.abilities('triggers', true));
+    http.expectOne((r) => r.url.endsWith('/api/v2/effects')).flush({
+      triggers: [
+        { idGd: 22, text: { fr_FR: '{H}' }, isMain: true },
+        { idGd: 432, text: { fr_FR: 'Lorsque vous jouez un Sort' }, isMain: false, isEcho: true },
+      ],
+    });
+    expect((await triggers).map((t) => t.id)).toEqual([432]);
   });
 });
 
@@ -211,6 +260,20 @@ describe('toAbilityRefs', () => {
     ]);
   });
 
+  it('prints the symbols and keywords as the card does, without the trigger’s trailing dash', () => {
+    const refs = toAbilityRefs([
+      { alteredId: 1, text: { fr: 'Lorsqu’une capacité {D} est activée pendant votre tour —' } },
+      { alteredId: 2, text: { fr: 'Lorsqu’un Personnage que vous contrôlez gagne [Fugace] —' } },
+      { alteredId: 3, text: { fr: 'Lorsqu’une carte quitte votre Réserve —' } },
+    ]);
+    const [d, fleeting, plain] = [1, 2, 3].map((id) => refs.find((r) => r.id === id)!);
+    expect(d.text).toBe('Lorsqu’une capacité Défaussez-moi de la Réserve est activée pendant votre tour');
+    expect(d.rich?.find((p) => 'glyph' in p)).toMatchObject({ glyph: '' });
+    expect(fleeting.text).toBe('Lorsqu’un Personnage que vous contrôlez gagne Fugace');
+    expect(fleeting.rich).toContainEqual({ text: 'Fugace', bold: true });
+    expect(plain).toEqual({ id: 3, text: 'Lorsqu’une carte quitte votre Réserve' });
+  });
+
   it('keeps the empty condition first as « Sans condition » when asked', () => {
     const rows = [
       { alteredId: 188, text: { fr: 'Si vous contrôlez un jeton\u00a0:' } },
@@ -221,6 +284,183 @@ describe('toAbilityRefs', () => {
       { id: 188, text: 'Si vous contrôlez un jeton' },
     ]);
     expect(toAbilityRefs(rows).map((r) => r.id)).toEqual([188]);
+  });
+});
+
+describe('buildEffectsFilteredParams', () => {
+  it('forwards subtypes, costRelation and hasNoEffect alongside other effect filters', () => {
+    const hp = buildEffectsFilteredParams(
+      {
+        factions: ['AX'],
+        sets: ['CORE'],
+        subtypes: ['ELEMENTAL'],
+        costRelation: 'recallHigher',
+        noEffect: false,
+        mainCosts: [],
+        recallCosts: [],
+        effects: [],
+      },
+      0,
+      { triggers: [24], conditions: [], effects: [] },
+      'effects',
+    );
+    expect(hp.getAll('subTypes[]')).toEqual(['ELEMENTAL']);
+    expect(hp.get('costRelation')).toBe('recallHigher');
+    expect(hp.has('hasNoEffect')).toBe(false);
+  });
+});
+
+describe('unified /api/v2/search', () => {
+  let api: UniquesApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    api = TestBed.inject(UniquesApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('builds /api/v2/search params with localized name sort, variations excluding kickstarter, and >15 stats', () => {
+    const hp = buildUnifiedSearchParams({
+      page: 2,
+      itemsPerPage: 36,
+      locale: 'fr',
+      q: 'sierra',
+      factions: ['AX'],
+      types: ['HERO', 'CHARACTER'],
+      rarities: ['COMMON', 'RARE'],
+      sets: ['CORE', 'FUGUE'],
+      variations: ['standard', 'alt-art', 'kickstarter'],
+      mainCosts: [16],
+      subtypes: ['ENGINEER'],
+      costRelation: 'mainHigher',
+      hasNoEffect: true,
+      order: 'name-asc',
+    });
+    expect(hp.get('page')).toBe('2');
+    expect(hp.get('limit')).toBe('36');
+    expect(hp.get('sort')).toBe('name:fr_FR:asc');
+    expect(hp.get('name')).toBe('sierra');
+    expect(hp.getAll('faction[]')).toEqual(['AX']);
+    expect(hp.getAll('cardType[]')).toEqual(['HERO', 'CHARACTER']);
+    expect(hp.getAll('rarity[]')).toEqual(['COMMON', 'RARE']);
+    expect(hp.getAll('set[]')).toEqual(['CORE', 'FUGUE']);
+    expect(hp.getAll('variation[]')).toEqual(['standard', 'alt-art']);
+    expect(hp.get('mainCost[gt]')).toBe('15');
+    expect(hp.getAll('subTypes[]')).toEqual(['ENGINEER']);
+    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('hasNoEffect')).toBe('true');
+  });
+
+  it('queries /api/v2/search, maps rich non-unique CardV2 metadata, and caches pages', async () => {
+    const p1 = lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/search'));
+    expect(req.request.params.get('sort')).toBe('mainCost:asc');
+    req.flush({
+      iter: { total: 40, page: 1 },
+      cards: [
+        {
+          kind: 'nonunique',
+          reference: 'ALT_CORE_B_AX_01_C',
+          name: { fr_FR: 'Sierra & Oddball', en_US: 'Sierra & Oddball' },
+          cardType: { reference: 'HERO', name: { fr_FR: 'Héros', en_US: 'Hero' } },
+          rarity: { reference: 'COMMON', name: 'Common' },
+          faction: { code: 'AX', name: 'Axiom' },
+          mainCost: null,
+          recallCost: null,
+          forestPower: null,
+          mountainPower: null,
+          oceanPower: null,
+        },
+      ],
+    });
+    const res = await p1;
+    expect(res.totalItems).toBe(40);
+    expect(res.lastPage).toBe(2);
+    expect(res.member[0].rarity?.reference).toBe('COMMON');
+    expect(res.member[0].cardType?.reference).toBe('HERO');
+    expect(res.member[0].mainCost).toBeNull();
+
+    await lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    http.expectNone((r) => r.url.endsWith('/api/v2/search'));
+  });
+
+  it('maps nullable stats and status flags cleanly in toCard', () => {
+    const card = toCard({
+      reference: 'ALT_CORE_B_AX_01_C',
+      cardType: { reference: 'SPELL', name: { fr_FR: 'Sort' } },
+      rarity: { reference: 'RARE' },
+      isBanned: true,
+    });
+    expect(card.rarity).toEqual({ reference: 'RARE' });
+    expect(card.cardType).toEqual({ reference: 'SPELL', name: { fr: 'Sort' } });
+    expect(card.isBanned).toBe(true);
+  });
+
+  it('sends the card text as effectText to the unified search', () => {
+    const params = buildUnifiedSearchParams({ page: 1, itemsPerPage: 36, effectText: ' piochez ', variations: ['alt-art'] });
+    expect(params.get('effectText')).toBe('piochez');
+    expect(params.getAll('variation[]')).toEqual(['alt-art']);
+    expect(buildUnifiedSearchParams({ page: 1, effectText: '  ' }).has('effectText')).toBe(false);
+  });
+
+  it('maps number-desc to reference:desc in buildUnifiedSearchParams', () => {
+    const params = buildUnifiedSearchParams({
+      order: 'number-desc',
+      page: 1,
+      itemsPerPage: 36,
+      locale: 'fr',
+    });
+    expect(params.get('sort')).toBe('reference:desc');
+  });
+
+  it('fetches Uniques by references in chunks of 50 via /api/v2/cards', async () => {
+    const refs = Array.from({ length: 52 }, (_, i) => `ALT_CORE_B_AX_04_U_${i + 1}`);
+    const pending = lastValueFrom(api.byReferences(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 50);
+    expect(first.request.params.get('limit')).toBe('50');
+    first.flush({
+      cards: [{ reference: refs[0], name: 'U1', mainCost: 2, recallCost: 2, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 2);
+    expect(second.request.params.get('limit')).toBe('2');
+    second.flush({
+      cards: [{ reference: refs[51], name: 'U52', mainCost: 4, recallCost: 3, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[51]]);
+    expect(cards[0].mainCost).toBe(2);
+  });
+
+  it('batches both uniques and non-uniques via POST /api/v2/search in chunks of 200', async () => {
+    const refs = Array.from({ length: 201 }, (_, i) => (i === 200 ? 'ALT_CORE_B_AX_04_U_1' : `ALT_CORE_B_AX_04_C_${i}`));
+    const pending = lastValueFrom(api.searchBatch(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=200'));
+    first.flush({ cards: [{ reference: refs[0], rarity: { reference: 'COMMON' } }] });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=1'));
+    second.flush({ cards: [{ reference: refs[200], rarity: { reference: 'UNIQUE' }, isBanned: true }] });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[200]]);
+    expect(cards[1].isBanned).toBe(true);
+  });
+
+  it('marks COREKS hero prints as kickstarter in heroVariation so CORE stays standard', () => {
+    const res = toCard({
+      reference: 'ALT_COREKS_B_AX_01_C',
+      set: { reference: 'COREKS', name: 'Beyond the Gates - KS Edition', code: 'BTG' },
+      product: 'B',
+      isSerialized: false,
+      cardType: { reference: 'HERO' },
+    });
+    expect(res.set?.reference).toBe('COREKS');
   });
 });
 

@@ -15,7 +15,8 @@ if (!defined('COLLECTION_API_URL') || !COLLECTION_API_URL) {
     exit;
 }
 
-if (!kcIsLoggedIn()) {
+if (!defined('KC_URL') || KC_URL === '' || !kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -47,9 +48,17 @@ if (isset($_GET['name']) && is_string($_GET['name']) && $_GET['name'] !== '') {
 
 $base = rtrim(COLLECTION_API_URL, '/');
 $path = '/api/collection/playset/cards?' . implode('&', $parts);
-$data = collApiRequest($base, 'GET', $path, $userId);
+[$code, $raw] = collApiRequestRaw($base, 'GET', $path, $userId);
 
-if ($data === false) {
+if ($code === 401) {
+    header('X-Ac-Auth-State: unauthenticated');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+$data = ($code > 0 && $code < 400 && $raw !== null && $raw !== '') ? json_decode($raw, true) : false;
+if (!is_array($data)) {
     http_response_code(502);
     echo json_encode(['error' => 'Collection API error']);
     exit;

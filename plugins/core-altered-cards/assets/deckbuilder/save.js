@@ -191,37 +191,71 @@
         updateDeckDisplay();
     }
 
-    // enrich deck cards with ban/suspend status from Cards API
+    // enrich deck cards with ban/suspend status from unified search (or Cards API fallback)
     function enrichDeckCardStatus() {
         var refs = Object.keys(deck.cards);
         if (!refs.length) return;
-        var params = refs.map(function(r) { return 'cards.reference[]=' + encodeURIComponent(r); });
-        params.push('itemsPerPage=' + refs.length);
-        fetch('https://cards.alteredcore.org/api/card_groups?' + params.join('&'))
-            .then(function(r) { return r.ok ? r.json() : null; })
-            .then(function(data) {
-                if (!data || !Array.isArray(data.member)) return;
+        function applyStatusMap(statusMap) {
+            var changed = false;
+            refs.forEach(function(ref) {
+                if (statusMap[ref]) {
+                    deck.cards[ref].isBanned    = statusMap[ref].isBanned;
+                    deck.cards[ref].isSuspended = statusMap[ref].isSuspended;
+                    changed = true;
+                }
+            });
+            if (changed) updateDeckDisplay();
+        }
+        function fetchCardGroupsFallback() {
+            var params = refs.map(function(r) { return 'cards.reference[]=' + encodeURIComponent(r); });
+            params.push('itemsPerPage=' + refs.length);
+            return fetch('https://cards.alteredcore.org/api/card_groups?' + params.join('&'))
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data || !Array.isArray(data.member)) return;
+                    var statusMap = {};
+                    data.member.forEach(function(group) {
+                        var banned    = !!group.isBanned;
+                        var suspended = !!group.isSuspended;
+                        if (Array.isArray(group.cards)) {
+                            group.cards.forEach(function(c) {
+                                if (c.reference) statusMap[c.reference] = { isBanned: banned, isSuspended: suspended };
+                            });
+                        }
+                    });
+                    applyStatusMap(statusMap);
+                });
+        }
+        if (AlteredDB.uniquesApiBase) {
+            var chunks = [];
+            for (var i = 0; i < refs.length; i += 200) chunks.push(refs.slice(i, i + 200));
+            Promise.all(chunks.map(function(chunk) {
+                var form = chunk.map(function(r) { return 'ref[]=' + encodeURIComponent(r); });
+                form.push('limit=' + chunk.length);
+                return fetch(AlteredDB.uniquesApiBase + '/api/v2/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                    body: form.join('&'),
+                }).then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                });
+            }))
+            .then(function(pages) {
                 var statusMap = {};
-                data.member.forEach(function(group) {
-                    var banned    = !!group.isBanned;
-                    var suspended = !!group.isSuspended;
-                    if (Array.isArray(group.cards)) {
-                        group.cards.forEach(function(c) {
-                            if (c.reference) statusMap[c.reference] = { isBanned: banned, isSuspended: suspended };
-                        });
-                    }
+                pages.forEach(function(data) {
+                    ((data && data.cards) || []).forEach(function(c) {
+                        if (c && c.reference) {
+                            statusMap[c.reference] = { isBanned: !!c.isBanned, isSuspended: !!c.isSuspended };
+                        }
+                    });
                 });
-                var changed = false;
-                refs.forEach(function(ref) {
-                    if (statusMap[ref]) {
-                        deck.cards[ref].isBanned    = statusMap[ref].isBanned;
-                        deck.cards[ref].isSuspended = statusMap[ref].isSuspended;
-                        changed = true;
-                    }
-                });
-                if (changed) updateDeckDisplay();
+                applyStatusMap(statusMap);
             })
-            .catch(function() {});
+            .catch(function() { fetchCardGroupsFallback().catch(function() {}); });
+            return;
+        }
+        fetchCardGroupsFallback().catch(function() {});
     }
 
     // Frontier allowlist check — mirrors the backend FrontierFormatValidator,

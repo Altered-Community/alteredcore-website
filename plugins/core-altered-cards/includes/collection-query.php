@@ -1,5 +1,18 @@
 <?php
 // Query string of the collection API (GET /api/collection) from the collection-search proxy's own query.
+require_once __DIR__ . '/numeric-filter.php';
+
+/** @return array<string, string> */
+function cacCollectionNumericFields(): array
+{
+    return [
+        'mainCost'      => 'mainCost',
+        'recallCost'    => 'recallCost',
+        'oceanPower'    => 'oceanPower',
+        'mountainPower' => 'mountainPower',
+        'forestPower'   => 'forestPower',
+    ];
+}
 
 /**
  * List filters go out as `key[]=v` (the API's array form): a repeated `key=v` keeps the last value only, so a
@@ -11,7 +24,6 @@ function cacCollectionQuery(array $get): string
     $arrays = ['faction', 'rarity', 'variation', 'cardSet'];
     if (count(cacCollectionValues($get, 'cardType')) === 1) $arrays[] = 'cardType';
     $scalar = ['isFoil', 'isBanned', 'isSuspended', 'cardReference', 'name', 'subTypes', 'locale'];
-    $range  = ['mainCost', 'recallCost', 'oceanPower', 'mountainPower', 'forestPower'];
 
     $parts = [];
     foreach ($arrays as $k) {
@@ -22,14 +34,14 @@ function cacCollectionQuery(array $get): string
         if (is_array($v)) $v = $v[0] ?? null;
         if (is_string($v) && $v !== '') $parts[] = $k . '=' . rawurlencode($v);
     }
-    foreach ($range as $k) {
-        if (!is_array($get[$k] ?? null)) continue;
-        foreach (['gte', 'lte', 'gt', 'lt'] as $op) {
-            $v = $get[$k][$op] ?? null;
-            if (is_scalar($v) && $v !== '') $parts[] = $k . '[' . $op . ']=' . rawurlencode((string)$v);
-        }
-    }
+    array_push($parts, ...cacNumericQueryParts($get, cacCollectionNumericFields()));
     return implode('&', $parts);
+}
+
+/** Disjoint numeric value sets that the collection proxy enforces in PHP after the upstream `[gte]..[lte]` query. */
+function cacCollectionLocalNumeric(array $get): array
+{
+    return cacNumericLocalFilters($get, cacCollectionNumericFields());
 }
 
 /** The card types the proxy keeps itself (several of them, see cacCollectionQuery); `null` when the API filters. */

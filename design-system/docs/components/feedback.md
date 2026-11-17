@@ -38,8 +38,9 @@ text of the same colour. Default is information (primary-soft / primary-strong).
 | `ac-notice--danger` | danger-soft / danger | Error, action failed |
 | `ac-notice--neutral` | track / text-2 | Note without a tone |
 
-`ac-notice__title` is extra-bold. Links inside take the notice colour and are underlined; the
-last paragraph or list has no bottom margin.
+`ac-notice__title` is extra-bold. Links inside take the notice colour and are underlined, except a
+link styled as a button (`<a class="ac-button ac-button--sm">`, the notice's one action), which keeps the
+button's colours; the last paragraph or list has no bottom margin.
 
 Roles: `role="status"` for a message that appears after an action; `role="alert"` only for an
 error that needs immediate attention; no role for a message present on page load.

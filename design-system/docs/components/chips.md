@@ -46,6 +46,8 @@ Active filter with a remove button (the whole chip removes the filter):
 | `.is-on` | Same look, for a chip that is not a toggle (a removable active filter). |
 | `ac-chip--square` | 8 px radius instead of a pill; selected border in primary. |
 | `ac-chip__dot` | 10 px dot, colour from `--ac-chip-dot` (a faction or terrain token), `currentColor` by default. |
+| `ac-chip__img` | 18 px picture before the label (a faction's mark), `alt=""`: the label names it. Instead of the dot, not with it. |
+| `ac-chip--icon` | The picture alone (`ac-chip__img`, 22 px), no text: the name goes in `aria-label` and `title`. For a row that must fit on one line (the six factions). |
 | `ac-chip__remove` | Muted remove icon at the end. |
 
 ## Badge — `ac-badge`
@@ -133,7 +135,7 @@ counts and avatars have fixed sizes: they are labels, not targets.
 <ac-avatar name="Yutsa" [size]="32" />
 ```
 
-`ac-chip`: `label` (required), `dot`, `removable`, `shape` (`pill` | `square`), two-way
+`ac-chip`: `label` (required), `dot`, `image` (URL of an `ac-chip__img`, instead of the dot), `iconOnly` (`ac-chip--icon`: the image alone, `label` as its name), `removable`, `shape` (`pill` | `square`), two-way
 `selected`, `remove` output. `ac-badge`: `tone` (`blue` | `green` | `violet` | `red` | `orange` |
 `neutral`), `icon`, `size` (24 | 28). `ac-tag`: `tone`. `ac-count`: `value`, `tone` (`dark` |
 `success` | `soft`). `ac-avatar`: `name`, `size` (28 | 32).

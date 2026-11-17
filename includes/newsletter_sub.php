@@ -64,9 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nl_subscribe'])) {
 /** E-mail address of the signed-in account (Keycloak or local), '' when signed out. */
 function newsletterAccountEmail(): string
 {
-    if (!empty($_SESSION['kc_logged_in'])) return (string)($_SESSION['kc_email'] ?? '');
-    if (!empty($_SESSION['local_logged_in'])) return (string)($_SESSION['local_email'] ?? '');
-    return '';
+    if (!kcIsLoggedIn()) return '';
+    return (string)(kcUser()['email'] ?? '');
 }
 
 function renderNewsletterBlock(): void

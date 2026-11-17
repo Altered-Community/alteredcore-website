@@ -1,9 +1,13 @@
 @if (label()) {
   <label [for]="id" class="ac-field__label">{{ label() }}@if (required()) {<span class="ac-field__required"> *</span>}</label>
 }
-<div class="wrap" [class.ac-input-icon]="!!icon()">
+<div class="wrap" [class.ac-input-icon]="!!icon() || !!leadImage() || !!leadGlyph()">
   @if (icon(); as i) {
     <ac-icon [name]="i" [size]="18" />
+  } @else if (leadImage(); as src) {
+    <span class="ac-input-icon__lead"><img [src]="src" alt="" width="20" height="20" /></span>
+  } @else if (leadGlyph(); as g) {
+    <span class="ac-input-icon__lead glyph" aria-hidden="true">{{ g }}</span>
   }
   <input
     #field
@@ -14,6 +18,7 @@
     [attr.inputmode]="inputmode()"
     [attr.enterkeyhint]="enterkeyhint()"
     [attr.aria-label]="label() ? null : ariaLabel() || placeholder()"
+    [attr.title]="!label() && (leadImage() || leadGlyph()) ? ariaLabel() : null"
     [attr.aria-invalid]="invalid() || null"
     [placeholder]="placeholder()"
     [value]="value()"

@@ -97,6 +97,11 @@
                     "type": "string",
                     "description": "spa: PHP file, relative to the plugin, included before the site header with $slug (the requested page) and $subPath (client route under /pages/{slug}/) in scope; it may set $pageTitle, $pageDescription and $pageImage (title and link previews of a client route)."
           },
+          "fullwidth_slugs": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+            "description": "spa: slugs (the page's own or its beta_slugs) shown full-width even when fullwidth is false."
+          },
           "beta_slugs": {
             "type": "array",
             "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },

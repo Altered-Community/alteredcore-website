@@ -25,6 +25,7 @@ function CardSearchPlayset(ctx) {
     // Playset DOM elements (a non-grid tab).
     var elPlaysetLoading = q('playset-loading');
     var elPlaysetError   = q('playset-error');
+    var elAuthError      = q('auth-error');
     var elPlaysetDash    = q('playset-dash');
     var elPlaysetExplore     = q('playset-explore');
     var elPlaysetExploreMeta = q('playset-explore-meta');
@@ -50,6 +51,7 @@ function CardSearchPlayset(ctx) {
         if (!cfg.playsetApiUrl) return;
         _playsetLoaded = true;
         if (elPlaysetError)   elPlaysetError.style.display   = 'none';
+        if (elAuthError)      elAuthError.style.display      = 'none';
 
         var rar = _psRarities || [];
         // No rarity selected → empty universe (don't query: an empty rarity list
@@ -67,7 +69,14 @@ function CardSearchPlayset(ctx) {
         rar.forEach(function(r) { qs += '&rarity[]=' + encodeURIComponent(r); });
 
         fetch(cfg.playsetApiUrl + '?' + qs, { headers: { 'Accept': 'application/json' } })
-            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(r) {
+                if (r.status === 401) {
+                    if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                    var ae = new Error('HTTP 401'); ae.isAuth = true; throw ae;
+                }
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
             .then(function(data) {
                 if (DEBUG) console.log('[CardSearch] playset response:', data);
                 renderPlayset(data);
@@ -75,7 +84,8 @@ function CardSearchPlayset(ctx) {
             .catch(function(err) {
                 _playsetLoaded = false; // allow a retry on the next tab switch
                 if (elPlaysetLoading) elPlaysetLoading.style.display = 'none';
-                if (elPlaysetError)   elPlaysetError.style.display   = '';
+                if (err && err.isAuth && elAuthError) elAuthError.style.display = '';
+                else if (elPlaysetError) elPlaysetError.style.display = '';
                 if (cfg.onError) cfg.onError(err);
             });
     }
@@ -277,6 +287,7 @@ function CardSearchPlayset(ctx) {
 
         if (elPlaysetLoading) elPlaysetLoading.style.display = 'none';
         if (elPlaysetError)   elPlaysetError.style.display   = 'none';
+        if (elAuthError)      elAuthError.style.display      = 'none';
         if (elPlaysetDash)    elPlaysetDash.style.display    = '';
     }
 

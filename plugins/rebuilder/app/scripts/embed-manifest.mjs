@@ -35,6 +35,7 @@ const PRELOAD_ENTRIES = {
   decks: 'src/app/features/decks/decks-page/decks.page.ts',
   deck: 'src/app/features/deck/deck-page/deck.page.ts',
   deckbuilder: 'src/app/features/editor/editor-page/editor.page.ts',
+  cards: 'src/app/features/cards/cards-page/cards.page.ts',
   // English interface: its translations, loaded before the app (main.ts).
   'lang:en': 'src/locale/messages.en.json',
 };

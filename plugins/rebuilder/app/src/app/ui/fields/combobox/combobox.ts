@@ -1,4 +1,5 @@
 import { CdkListbox, CdkOption, type ListboxValueChangeEvent } from '@angular/cdk/listbox';
+import type { RichPart } from '../../../core/card-text';
 import { CdkConnectedOverlay, CdkOverlayOrigin, createRepositionScrollStrategy, type ConnectedPosition } from '@angular/cdk/overlay';
 import { _getEventTarget } from '@angular/cdk/platform';
 import { NgTemplateOutlet } from '@angular/common';
@@ -12,6 +13,8 @@ export interface ComboOption {
   text: string;
   /** `Altered Icons` glyph shown before the text, in the list and on the chip. */
   glyph?: string;
+  /** The text as the card prints it (symbols, keywords), shown by `ac-rich-label` in the check list and the picked values. */
+  rich?: RichPart[];
   /** Thumbnail in the list (a card image). */
   thumb?: string;
   /** Heading of the list: consecutive options of the same group sit under it. */

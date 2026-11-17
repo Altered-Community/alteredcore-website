@@ -190,4 +190,16 @@ describe('EditorAltArts', () => {
     expect(alt.canChooseForDeck()).toBe(false);
     expect(alt.canIllustrate(card(BASE))).toBe(false);
   });
+
+  it('does not query alt-art families for Unique references', () => {
+    const alt = setup();
+    const ownership = TestBed.inject(OwnershipApiService);
+    const spy = vi.spyOn(ownership, 'altArtChoices');
+    const uniqueRef = 'ALT_CORE_B_AX_04_U_1';
+    alt.request([uniqueRef, BASE]);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith([BASE]);
+    answers.next({ [BASE]: kelon });
+    expect(alt.canIllustrate(card(uniqueRef))).toBe(false);
+  });
 });

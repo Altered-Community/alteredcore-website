@@ -552,13 +552,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     exit;
 }
 
-// aJAX proxy: my decks
-if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'my') {
+// aJAX proxy: my decks (handle even when !$isLoggedIn so an expired session receives 401 JSON, not HTML)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'my') {
     header('Content-Type: application/json');
+    if (!$isLoggedIn) {
+        header('X-Ac-Auth-State: unauthenticated');
+        http_response_code(401);
+        echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
+        exit;
+    }
     $token = deckApiToken();
     if (!$token) {
+        header('X-Ac-Auth-State: unauthenticated');
         http_response_code(401);
-        echo json_encode(['error' => $txt['err_api_auth']]);
+        echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
         exit;
     }
     $myPage   = max(1, (int)($_GET['page'] ?? 1));
@@ -618,6 +625,12 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '')
             echo $myResp;
         }
     } else {
+        if ($myCode === 401) {
+            header('X-Ac-Auth-State: unauthenticated');
+            http_response_code(401);
+            echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
+            exit;
+        }
         http_response_code($myCode ?: 500);
         echo json_encode(['error' => sprintf($txt['err_api'], $myCode)]);
     }
@@ -1521,10 +1534,23 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         syncDeckUrl('my');
 
         fetch(fetchUrl)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function(r) {
+                return r.json().then(function(data) { return { status: r.status, data: data }; });
+            })
+            .then(function(res) {
+                var data = res.data || {};
                 if (apiDebug) console.log('[decks] my decks API response:', data);
                 myLoading.style.display = 'none';
+                if (res.status === 401 || data.auth_expired) {
+                    myIsLoggedIn = false;
+                    if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                    myError.innerHTML = ICONS.alert
+                        + '<p class="ac-empty__title">' + escHtml(txt.login_msg) + '</p>'
+                        + '<a href="' + escHtml(baseUrl) + '/pages/login" class="ac-button ac-button--sm">'
+                        + escHtml(txt.login_btn) + '</a>';
+                    myError.style.display = '';
+                    return;
+                }
                 if (data.error) { myError.innerHTML = apiErrorHtml(data.error); myError.style.display = ''; return; }
                 var decks = data.member || data.data || (Array.isArray(data) ? data : []);
                 // Client-side name search filter

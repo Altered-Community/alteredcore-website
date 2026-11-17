@@ -16,6 +16,7 @@ export const SCREENS: Screen[] = [
   { key: 'mon-deck', name: 'editor, Mon deck', path: (id) => `/pages/deckbuilder?id=${id}&view=deck`, deck: true },
   { key: 'main', name: 'editor, Main', path: (id) => `/pages/deckbuilder?id=${id}&view=main`, deck: true },
   { key: 'new', name: 'new deck', path: () => '/pages/deckbuilder', deck: false },
+  { key: 'cards', name: 'card browser', path: () => '/pages/cards', deck: false },
 ];
 
 /** The skeleton of a title replaces these texts: they must never show. */

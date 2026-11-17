@@ -1,5 +1,6 @@
 import { Component, input, model } from '@angular/core';
 import { AcIcon } from '../../icon';
+import { AcRichLabel } from '../rich-label/rich-label';
 import type { ComboOption } from '../combobox/combobox';
 
 /**
@@ -9,7 +10,7 @@ import type { ComboOption } from '../combobox/combobox';
  */
 @Component({
   selector: 'ac-or-values',
-  imports: [AcIcon],
+  imports: [AcIcon, AcRichLabel],
   templateUrl: './or-values.html',
   styleUrl: './or-values.scss',
 })

@@ -15,7 +15,8 @@ if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) {
     exit;
 }
 
-if (!defined('KC_URL') || !kcIsLoggedIn()) {
+if (!defined('KC_URL') || KC_URL === '' || !kcIsLoggedIn()) {
+    header('X-Ac-Auth-State: unauthenticated');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -34,7 +35,8 @@ $arrayMap = [
     'subTypes'  => 'subtype[]',
     'variation' => 'variation[]',
 ];
-// Exact numeric filters: incoming `mainCost[]=N` => ownership `mainCost=N`.
+// Numeric filters: exact (`mainCost=N`), bracketed bounds (`mainCost[gte]=1&mainCost[lte]=3`),
+// or discrete lists (`mainCost[]=1&mainCost[]=3`, narrowed upstream to `[min..max]` and filtered locally).
 $numericMap = [
     'mainCost'      => 'mainCost',
     'recallCost'    => 'recallCost',
@@ -56,14 +58,12 @@ foreach ($arrayMap as $in => $out) {
     }
 }
 
-foreach ($numericMap as $in => $out) {
-    if (!isset($_GET[$in])) continue;
-    $v = is_array($_GET[$in]) ? ($_GET[$in][0] ?? '') : $_GET[$in];
-    if ($v !== '') $parts[] = $out . '=' . rawurlencode($v);
-}
+$localNumeric = [];
+array_push($parts, ...cacNumericQueryParts($_GET, $numericMap, $localNumeric));
 
 foreach (['isBanned', 'isSuspended'] as $flag) {
-    if (($_GET[$flag] ?? '') === 'true') $parts[] = $flag . '=true';
+    $val = $_GET[$flag] ?? '';
+    if ($val === 'true' || $val === 'false') $parts[] = $flag . '=' . $val;
 }
 
 // Case-insensitive name substring search (matched in the requested locale upstream).
@@ -73,9 +73,17 @@ if (isset($_GET['name']) && is_string($_GET['name']) && $_GET['name'] !== '') {
 
 $base = rtrim(OWNERSHIP_API_URL, '/');
 $path = '/api/collection' . ($parts ? '?' . implode('&', $parts) : '');
-$data = collApiRequest($base, 'GET', $path, $userId);
+[$code, $raw] = collApiRequestRaw($base, 'GET', $path, $userId);
 
-if ($data === false) {
+if ($code === 401) {
+    header('X-Ac-Auth-State: unauthenticated');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+$data = ($code > 0 && $code < 400 && $raw !== null && $raw !== '') ? json_decode($raw, true) : false;
+if (!is_array($data)) {
     http_response_code(502);
     echo json_encode(['error' => 'Ownership API error']);
     exit;
@@ -91,6 +99,7 @@ if (is_array($data)) {
         $items[] = $it;
     }
 }
+$items = cacFilterItemsByNumeric($items, $localNumeric);
 
 $total    = count($items);
 $perPage  = max(1, (int)($_GET['itemsPerPage'] ?? 30));

@@ -11,8 +11,10 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $txt = [
     'en' => ['unavailable' => 'The digital ownership service is not configured on this site.', 'anon_login' => 'Log in / Sign up',
+              'login_prompt' => 'Log in to browse your digital ownership.',
               'cards_plugin_missing' => 'The Cards plugin is not active on this site.'],
     'fr' => ['unavailable' => 'Le service de propriété numérique n\'est pas configuré sur ce site.', 'anon_login' => 'Se connecter / S\'inscrire',
+              'login_prompt' => 'Connectez-vous pour parcourir votre propriété numérique.',
               'cards_plugin_missing' => 'Le plugin Cartes n\'est pas actif sur ce site.'],
 ][getUiLang()];
 
@@ -36,9 +38,12 @@ $ownActiveTab = 'collection';
 
     <?php if (!$ownLoggedIn): ?>
     <div class="ac-card">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
-            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
-        </a>
+        <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+        <div class="ac-card__footer">
+            <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+                <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
+            </a>
+        </div>
     </div>
     <?php elseif (!$cacAvailable): ?>
     <div class="ac-notice ac-notice--warning" role="status"><?= ac_icon('triangle-alert') ?><div><?= h($txt['cards_plugin_missing']) ?></div></div>
@@ -98,7 +103,6 @@ $ownActiveTab = 'collection';
     $cols = (int)($_GET['cols'] ?? $_defaultCols);
     if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
-    $validCostPower = array_map('strval', range(0, 12));
     $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
     $types    = array_key_exists('type', $_GET)
         ? array_values(array_intersect(array_filter((array)$_GET['type']), $validTypes))
@@ -111,11 +115,11 @@ $ownActiveTab = 'collection';
         : $defaultSets;
     $keywords = array_values(array_intersect(array_filter((array)($_GET['keyword'] ?? [])), array_keys($keywordsData)));
     $subtypes = array_values(array_intersect(array_filter((array)($_GET['subtype'] ?? [])), array_keys($subtypesData)));
-    $mainCost   = isset($_GET['mainCost'])   && in_array($_GET['mainCost'],   $validCostPower, true) ? $_GET['mainCost']   : null;
-    $recallCost = isset($_GET['recallCost']) && in_array($_GET['recallCost'], $validCostPower, true) ? $_GET['recallCost'] : null;
-    $forest     = isset($_GET['forest'])     && in_array($_GET['forest'],     $validCostPower, true) ? $_GET['forest']     : null;
-    $mountain   = isset($_GET['mountain'])   && in_array($_GET['mountain'],   $validCostPower, true) ? $_GET['mountain']   : null;
-    $ocean      = isset($_GET['ocean'])      && in_array($_GET['ocean'],      $validCostPower, true) ? $_GET['ocean']      : null;
+    $mainCost   = cacValidateNumExpr($_GET['mainCost']   ?? null);
+    $recallCost = cacValidateNumExpr($_GET['recallCost'] ?? null);
+    $forest     = cacValidateNumExpr($_GET['forest']     ?? null);
+    $mountain   = cacValidateNumExpr($_GET['mountain']   ?? null);
+    $ocean      = cacValidateNumExpr($_GET['ocean']      ?? null);
     $kwMode      = ($_GET['kwMode'] ?? '') === 'and' ? 'and' : 'or';
     $hasNoEffect = ($_GET['hasNoEffect'] ?? '') === 'true';
     $variations = array_key_exists('variation', $_GET)
@@ -125,7 +129,7 @@ $ownActiveTab = 'collection';
     $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
     $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
-    $_csUserId    = (int)($_SESSION['user_id'] ?? 0);
+    $_csUserId    = $ownLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
     $_collEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
     $_collMode    = $_collEnabled && $_csUserId > 0;
 

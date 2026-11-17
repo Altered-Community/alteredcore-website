@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
-import { defaultFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { Component, computed, inject, signal } from '@angular/core';
+import { defaultFilters, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
+import type { EffectSlot } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { openEffectEditorStep } from '../effect-editor/effect-editor.overlay';
@@ -34,6 +35,7 @@ const FILTERS_TITLE = $localize`:@@search.card.filters:Filtres`;
 export class FiltersSheetOverlay {
   protected readonly ref = inject<AcOverlayRef<SearchFilters, FiltersSheetData>>(AcOverlayRef);
   protected readonly draft = signal<SearchFilters>(this.ref.data.filters);
+  protected readonly canApply = computed(() => !hasInvalidNumericFilters(this.draft(), this.ref.data.source));
 
   constructor() {
     this.ref.title.set(FILTERS_TITLE);
@@ -41,16 +43,16 @@ export class FiltersSheetOverlay {
     this.ref.headerAction.set({ label: $localize`:@@search.card.reset:Réinitialiser`, run: () => this.draft.set(defaultFilters(this.ref.data.source, this.ref.data.format)) });
   }
 
-  editEffect(index: number): void {
-    const effect = this.draft().effects[index];
+  editEffect(index: EffectSlot): void {
+    const effect = effectAt(this.draft(), index);
     if (!effect) return;
-    openEffectEditorStep(this.ref, { effect, index, query: toUniquesQuery(this.draft(), this.ref.data.faction) }).afterClosed.subscribe((next) => {
-      if (!next) return;
-      this.draft.update((d) => ({ ...d, effects: d.effects.map((e, i) => (i === index ? next : e)) }));
-    });
+    openEffectEditorStep(this.ref, { effect, index, query: toUniquesQuery(this.draft(), this.ref.data.faction) }).afterClosed.subscribe((next) =>
+      this.draft.set(withEditedEffect(this.draft(), index, next)),
+    );
   }
 
   apply(): void {
+    if (!this.canApply()) return;
     this.ref.close(this.draft());
   }
 }

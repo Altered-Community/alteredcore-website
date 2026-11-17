@@ -19,6 +19,16 @@ export interface Faction {
   position?: number;
 }
 
+export interface HeroGroup {
+  slug: string;
+  name: string;
+  faction: string;
+  /** Standard-print reference (ALT_{SET}_B_{FACTION}_NN_C) used in decks and for art. */
+  reference: string;
+  /** Every print of the hero (promo, alt arts, trophy prints), for the « Alt arts » choice. */
+  prints: { reference: string; variation: string }[];
+}
+
 export interface CardType {
   id?: number;
   reference: CardTypeRef;
@@ -81,7 +91,10 @@ export interface CardCollection {
 export type CardOrder =
   | 'setDate-desc'
   | 'setDate-asc'
+  | 'name-asc'
+  | 'name-desc'
   | 'number-asc'
+  | 'number-desc'
   | 'collector-asc'
   | 'collector-desc'
   | 'mainCost-asc'
@@ -114,6 +127,8 @@ export interface CardSearchParams {
   costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
+  /** Words of the card's text (unified search `effectText`; the cards API has no such filter). */
+  effectText?: string;
   locale?: Locale;
 }
 
