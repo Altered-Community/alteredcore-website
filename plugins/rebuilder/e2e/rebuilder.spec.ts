@@ -58,25 +58,26 @@ function decksTab(page: Page, compact: boolean, name: string, lang: Lang = 'fr')
 }
 
 /**
- * Adds one copy of the first two cards of the search results; returns their names.
- * Each card is found by its name, not its place: on a slow runner the results may load again under the click
- * (the list of a new deck), and a click lost that way is made again.
+ * Adds one copy of two cards of the search results, the first ones not in the deck yet; returns their names.
+ * On a slow runner the results may load again under the click (the list of a new deck) and the click is lost: the
+ * cards in the deck are counted, and a card is added again only while the count has not grown. Not by name: two
+ * versions of a card (common, rare) have the same one.
  */
 async function addTwoCards(page: Page): Promise<string[]> {
-  const names: string[] = [];
+  const tiles = page.locator('app-search-results ac-card-tile');
   const addButton = (scope: Locator) => scope.getByRole('button', { name: /^Ajouter .* au deck$/ });
-  for (let i = 0; i < 2; i++) {
-    const next = page.locator('ac-card-tile').filter({ has: addButton(page) }).first();
-    await expect(next).toBeVisible();
-    const name = (await next.getAttribute('aria-label')) ?? '';
-    names.push(name);
-    const tile = page.locator(`ac-card-tile[aria-label="${name.replace(/["\\]/g, '\\$&')}"]`).first();
+  const inDeck = tiles.filter({ has: page.getByRole('group', { name: /Exemplaires de/ }) });
+  await expect(tiles.first()).toBeVisible();
+  const before = await inDeck.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+  for (const target of [before.length + 1, before.length + 2]) {
     await expect(async () => {
-      if (await addButton(tile).isVisible()) await addButton(tile).click({ timeout: 2_000 });
-      await expect(tile.getByRole('group', { name: /Exemplaires de/ })).toContainText('1', { timeout: 3_000 });
+      if ((await inDeck.count()) < target) await addButton(tiles.filter({ has: addButton(page) }).first()).click({ timeout: 2_000 });
+      await expect(inDeck).toHaveCount(target, { timeout: 3_000 });
     }).toPass({ timeout: 20_000 });
   }
-  return names;
+  const after = await inDeck.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+  for (const name of before) after.splice(after.indexOf(name), 1);
+  return after;
 }
 
 /** The PATCH that saves deck `id` holding `copies` cards in all (the hero counts as one). */
