@@ -12,6 +12,13 @@
         return (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || fallback;
     };
 
+    const renderAuthExpired = (el) => {
+        window.acNotifyAuthExpired?.();
+        el.innerHTML = '<span>' + escapeHtml(t('authExpired', 'Session expired. Please sign in again.')) + '</span> '
+            + '<a href="' + escapeHtml(t('loginUrl', '/pages/login')) + '" class="ac-button ac-button--sm mt-2">'
+            + escapeHtml(t('loginBtn', 'Sign in')) + '</a>';
+    };
+
     const locale = () => document.documentElement.lang || 'en';
 
     // The <altered-card> web component is already loaded lazily elsewhere on the site
@@ -89,7 +96,11 @@
 
             if (!res.ok) {
                 errorEl.hidden = false;
-                errorEl.textContent = t('loadError', 'Could not load your boosters.');
+                if (res.status === 401) {
+                    renderAuthExpired(errorEl);
+                } else {
+                    errorEl.textContent = t('loadError', 'Could not load your boosters.');
+                }
                 return;
             }
 
@@ -197,7 +208,12 @@
             if (!res.ok) {
                 openerLoadingEl.hidden = true;
                 errorEl.hidden = false;
-                errorEl.textContent = (await res.text()) || t('openError', 'Could not open this booster.');
+                if (res.status === 401) {
+                    closeOverlay();
+                    renderAuthExpired(errorEl);
+                } else {
+                    errorEl.textContent = (await res.text()) || t('openError', 'Could not open this booster.');
+                }
                 coverEl.onclick = () => revealBooster(booster);
                 openBtn.onclick = () => revealBooster(booster);
                 return;

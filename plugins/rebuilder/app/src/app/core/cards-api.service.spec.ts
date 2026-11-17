@@ -67,9 +67,49 @@ describe('CardsApiService', () => {
 
   afterEach(() => http.verify());
 
-  it('maps hero card groups to their standard booster print and caches them', () => {
+  it('fetches heroes from unified /api/v2/search, groups them, and caches them', () => {
     let first: unknown;
     api.heroes().subscribe((h) => (first = h));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/search') && !!r.params.getAll('cardType[]')?.includes('HERO'));
+    req.flush({
+      iter: { total: 2 },
+      cards: [
+        {
+          reference: 'ALT_CORE_P_AX_01_C',
+          name: { fr_FR: 'Sierra & Oddball', en_US: 'Sierra & Oddball' },
+          faction: { code: 'AX', name: 'Axiom' },
+          product: 'P',
+        },
+        {
+          reference: 'ALT_CORE_B_AX_01_C',
+          name: { fr_FR: 'Sierra & Oddball', en_US: 'Sierra & Oddball' },
+          faction: { code: 'AX', name: 'Axiom' },
+          product: 'B',
+        },
+      ],
+    });
+    expect(first).toEqual([
+      {
+        slug: 'AX:sierra & oddball',
+        name: 'Sierra & Oddball',
+        faction: 'AX',
+        reference: 'ALT_CORE_B_AX_01_C',
+        prints: [
+          { reference: 'ALT_CORE_P_AX_01_C', variation: 'promo' },
+          { reference: 'ALT_CORE_B_AX_01_C', variation: 'standard' },
+        ],
+      },
+    ]);
+    api.heroes().subscribe();
+    http.expectNone((r) => r.url.endsWith('/api/v2/search'));
+  });
+
+  it('falls back to /api/card_groups for heroes when unified search fails', () => {
+    let first: unknown;
+    api.heroes().subscribe((h) => (first = h));
+    http
+      .expectOne((r) => r.url.endsWith('/api/v2/search') && !!r.params.getAll('cardType[]')?.includes('HERO'))
+      .flush('not found', { status: 404, statusText: 'Not Found' });
     const req = http.expectOne((r) => r.url.endsWith('/api/card_groups') && r.params.get('cardType') === 'HERO');
     req.flush({
       member: [
@@ -96,8 +136,24 @@ describe('CardsApiService', () => {
         ],
       },
     ]);
-    api.heroes().subscribe();
-    http.expectNone((r) => r.url.endsWith('/api/card_groups'));
+  });
+
+  it('batches via POST /api/v2/search first and falls back to /api/cards/batch on error', () => {
+    let got: unknown;
+    api.batch(['ALT_CORE_B_AX_04_C'], 'fr').subscribe((cards) => (got = cards));
+    const unified = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST');
+    expect(unified.request.body).toContain('ref[]=ALT_CORE_B_AX_04_C');
+    unified.flush({
+      iter: { total: 1 },
+      cards: [{ reference: 'ALT_CORE_B_AX_04_C', name: { fr_FR: 'Élémentaire de Kélon' }, rarity: { reference: 'COMMON' } }],
+    });
+    expect((got as { reference: string }[])[0].reference).toBe('ALT_CORE_B_AX_04_C');
+
+    let fallbackGot: unknown;
+    api.batch(['ALT_CORE_B_AX_04_C'], 'fr').subscribe((cards) => (fallbackGot = cards));
+    http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('err', { status: 404, statusText: 'Not Found' });
+    http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([{ reference: 'ALT_CORE_B_AX_04_C' }]);
+    expect((fallbackGot as { reference: string }[])[0].reference).toBe('ALT_CORE_B_AX_04_C');
   });
 
   it('replays a search page already fetched and refetches another one', () => {
@@ -136,5 +192,13 @@ describe('CardsApiService', () => {
     api.search({ page: 1, itemsPerPage: 2 }).subscribe((c) => (total = c.lastPage));
     http.expectOne((r) => r.url.endsWith('/api/cards')).flush({ member: [], totalItems: 5, itemsPerPage: 2 });
     expect(total).toBe(3);
+  });
+
+  it('sends descending cardNumber order for number-desc', () => {
+    api.search({ page: 1, order: 'number-desc' }).subscribe();
+    const req = http.expectOne((r) => r.url.endsWith('/api/cards'));
+    expect(req.request.params.get('order[cardNumber]')).toBe('desc');
+    expect(req.request.params.get('order[collectorNumberFormatedId]')).toBe('asc');
+    req.flush({ member: [], totalItems: 0 });
   });
 });

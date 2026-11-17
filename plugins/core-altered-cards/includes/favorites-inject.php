@@ -4,7 +4,7 @@
 // Prérequis : core functions.php chargé (csrfToken, session), $uiLang disponible dans le scope.
 require_once __DIR__ . '/favorites.php';
 
-$_favUserId  = (int)($_SESSION['user_id'] ?? 0);
+$_favUserId  = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
 $_favEnabled = $_favUserId > 0;
 if ($_favEnabled):
     $_favData  = array_fill_keys(cacFavGetRefs($_favUserId), true);

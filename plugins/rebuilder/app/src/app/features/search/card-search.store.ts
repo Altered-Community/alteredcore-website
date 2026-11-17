@@ -50,6 +50,8 @@ interface ResultPage {
   member: Card[];
   totalItems: number;
   next: number | null;
+  /** Number of items excluded client-side on this page (e.g. account « légales » post-filter). */
+  filteredOut?: number;
 }
 
 interface LoadedPage {
@@ -62,6 +64,7 @@ interface LoadedPage {
 interface SearchState {
   cards: Card[];
   total: number | null;
+  dropped: number;
   page: number;
   next: number | null;
   timings: number[];
@@ -71,8 +74,8 @@ const FIRST_PAGE: PageRequest = { page: 1, from: null };
 
 function emptyState(source: CardSource, guest: boolean): SearchState {
   return guest && isAccountSource(source)
-    ? { cards: [], total: 0, page: 0, next: null, timings: [] }
-    : { cards: [], total: null, page: 0, next: null, timings: [] };
+    ? { cards: [], total: 0, dropped: 0, page: 0, next: null, timings: [] }
+    : { cards: [], total: null, dropped: 0, page: 0, next: null, timings: [] };
 }
 
 /**
@@ -129,9 +132,12 @@ export class CardSearchStore {
       const current = prev && prev.source.query === query ? prev.value : emptyState(query.source, !this.auth.isLoggedIn());
       if (!loaded || loaded.query !== query || loaded.page <= current.page) return current;
       const seen = new Set(current.cards.map((c) => c.reference));
+      const cards = [...current.cards, ...loaded.res.member.filter((c) => !seen.has(c.reference))];
+      const dropped = current.dropped + (loaded.res.filteredOut ?? 0);
       return {
-        cards: [...current.cards, ...loaded.res.member.filter((c) => !seen.has(c.reference))],
-        total: loaded.res.totalItems,
+        cards,
+        total: Math.max(cards.length, loaded.res.totalItems - dropped),
+        dropped,
         page: loaded.page,
         next: loaded.res.next,
         timings: [...current.timings, loaded.ms],
@@ -243,12 +249,19 @@ export class CardSearchStore {
       return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
         map((res): ResultPage => {
           const member = format ? res.member.filter((c) => allowedInFormat(c, format)) : res.member;
-          return { member, totalItems: res.totalItems - (res.member.length - member.length), next: page < res.lastPage ? page + 1 : null };
+          return {
+            member,
+            totalItems: res.totalItems,
+            filteredOut: res.member.length - member.length,
+            next: page < res.lastPage ? page + 1 : null,
+          };
         }),
       );
     }
-    return this.api
-      .search(toSearchParams(query.filters, query.faction, page, size))
-      .pipe(map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })));
+    const params = toSearchParams(query.filters, query.faction, page, size);
+    const search$ = this.uniquesApi.baseUrl ? this.uniquesApi.searchUnified(params) : this.api.search(params);
+    return search$.pipe(
+      map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })),
+    );
   }
 }

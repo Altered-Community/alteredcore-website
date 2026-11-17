@@ -196,8 +196,10 @@ function validateSvgUpload(string $svg): bool {
 function initLang(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
-    $userId     = (int)($_SESSION['user_id'] ?? 0);
-    $isLoggedIn = $userId > 0 && (!empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']));
+    // Validate the session first so stale session IDs neither read nor write DB preferences,
+    // while a valid kc_remember/local_remember cookie restores $_SESSION['user_id'] in time.
+    $userId     = 0;
+    $isLoggedIn = kcIsLoggedIn() && ($userId = (int)($_SESSION['user_id'] ?? 0)) > 0;
 
     // Explicit lang change via ?lang=
     if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'fr', 'es', 'it', 'de'], true)) {
@@ -547,13 +549,7 @@ function h(string $str): string {
 function requireAdmin(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return;
-    // Attempt session restore from kc_remember cookie if KC session has expired
-    if (empty($_SESSION['kc_logged_in']) && !empty($_COOKIE['kc_remember'])) {
-        require_once __DIR__ . '/func.keycloak.php';
-        kc_restore_session();
-    }
-    $authenticated = !empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']);
-    if ($authenticated && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g && $g['can_access_admin']) return; // no group = no admin access
     }
@@ -632,6 +628,7 @@ function adminGetUserGroup(): ?array {
     if ($loaded) return $result;
     $loaded = true;
     if (session_status() === PHP_SESSION_NONE) session_start();
+    if (empty($_SESSION['admin_logged_in']) && !kcIsLoggedIn()) return null;
     if (saIsPreviewingGroup()) {
         $gid = (int)$_SESSION['sa_preview_group_id'];
         try {
@@ -743,7 +740,7 @@ function adminHasSection(string $section): bool {
 function canViewAdminPanel(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['kc_logged_in']) && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g) return $g['can_access_admin'];
         return false; // no group assigned = no admin access
@@ -754,7 +751,7 @@ function canViewAdminPanel(): bool {
 function isAdminUser(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         if (isset($_SESSION['kc_is_admin'])) return (bool)$_SESSION['kc_is_admin'];
         try {
             $stmt = getDB()->prepare(q("SELECT is_admin FROM {users} WHERE id = :id"));
@@ -806,14 +803,17 @@ function csrfValid(?string $token): bool {
 function kcClearSession(): void {
     foreach (['kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email',
               'kc_username', 'kc_id_token', 'kc_access_token',
-              'kc_access_token_exp', 'user_id'] as $key) {
+              'kc_access_token_exp', 'kc_is_admin', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = request_is_https();
-    setcookie('kc_remember', '', [
-        'expires' => time() - 3600, 'path' => '/',
-        'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
-    ]);
+    if (!headers_sent()) {
+        $secure = request_is_https();
+        setcookie('kc_remember', '', [
+            'expires' => time() - 3600, 'path' => '/',
+            'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
+        ]);
+    }
+    unset($_COOKIE['kc_remember']);
 }
 
 function clearAuthSession(): void {
@@ -821,7 +821,7 @@ function clearAuthSession(): void {
         'admin_logged_in', 'admin_logged_in_at', 'admin_username',
         'local_logged_in', 'local_logged_in_at', 'local_email', 'local_username',
         'kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email', 'kc_username', 'kc_id_token',
-        'user_id',
+        'kc_is_admin', 'user_id',
     ] as $key) {
         unset($_SESSION[$key]);
     }
@@ -857,6 +857,8 @@ function globalLogoutSessionIsValid(): bool {
 // keycloak authentication
 
 function kcIsLoggedIn(): bool {
+    static $verifiedUserId = null;
+
     if (!defined('KC_URL') || KC_URL === '') {
         return localIsLoggedIn();
     }
@@ -864,6 +866,7 @@ function kcIsLoggedIn(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
     if (empty($_SESSION['kc_logged_in'])) {
+        $verifiedUserId = null;
         static $restoreAttempted = false;
         if (!$restoreAttempted && !empty($_COOKIE['kc_remember'])) {
             $restoreAttempted = true;
@@ -873,19 +876,35 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
-    // Verify the refresh token is still in DB — it is nulled on every logout,
-    // which invalidates all concurrent sessions for that user immediately.
     $userId = (int)($_SESSION['user_id'] ?? 0);
-    if ($userId > 0) {
-        try {
-            $stmt = getDB()->prepare(q("SELECT kc_refresh_token FROM {users} WHERE id = :id LIMIT 1"));
-            $stmt->execute([':id' => $userId]);
-            $row = $stmt->fetch();
-            if ($row !== false && empty($row['kc_refresh_token'])) {
-                kcClearSession();
-                return false;
-            }
-        } catch (Throwable $e) {}
+    if ($userId <= 0) {
+        $verifiedUserId = null;
+        kcClearSession();
+        return false;
+    }
+
+    // Memoize DB/Keycloak verification within a single PHP request; re-checks if session cleared or user changed.
+    if ($verifiedUserId === $userId && globalLogoutSessionIsValid()) {
+        return true;
+    }
+
+    // Verify the refresh token is still in DB (nulled on logout) and not expired.
+    try {
+        $stmt = getDB()->prepare(q("SELECT kc_refresh_token, kc_token_expiry FROM {users} WHERE id = :id LIMIT 1"));
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch();
+        if ($row === false || empty($row['kc_refresh_token'])) {
+            kcClearSession();
+            return false;
+        }
+        $rtExp = (int)($row['kc_token_expiry'] ?? 0);
+        if ($rtExp > 0 && $rtExp <= time()) {
+            require_once __DIR__ . '/func.keycloak.php';
+            kc_drop_refresh_token($userId);
+            return false;
+        }
+    } catch (Throwable $e) {
+        return false;
     }
 
     // Admin-triggered force-logout
@@ -900,6 +919,15 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
+    // Ensure a valid access token is present or refreshable with Keycloak; otherwise
+    // the PHP session outlives Keycloak and the header displays a signed-in user
+    // whose API calls (decks, collection, ownership) fail.
+    require_once __DIR__ . '/func.keycloak.php';
+    if (!kc_get_access_token($userId)) {
+        return false;
+    }
+
+    $verifiedUserId = $userId;
     return true;
 }
 

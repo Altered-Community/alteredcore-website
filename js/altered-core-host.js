@@ -68,6 +68,12 @@
             location.assign(url);
         },
 
+        /** Update the host user state and notify listeners ('auth') when a session expires client-side. */
+        setUser: function (nextUser) {
+            host.user = nextUser || null;
+            emit('auth', { user: host.user });
+        },
+
         fetch: function (url, init) {
             init = Object.assign({ credentials: 'same-origin' }, init || {});
             var headers = new Headers(init.headers || {});

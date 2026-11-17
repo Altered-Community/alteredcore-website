@@ -56,10 +56,9 @@
         if (AlteredDB.isGuest) saveGuestDeck();
     }
 
-    // Sync the (advanced-search) faction filter to the hero's faction when the
-    // hero changes mid-session. No-op at page load: the CardSearch engine
-    // (window.CardSearchInstances.db) is created by a later <script> block and
-    // doesn't exist yet while initFromExisting() runs.
+    // Sync the faction filter to the hero's faction when the hero changes mid-session.
+    // No-op at page load: the CardSearch engine (window.CardSearchInstances.db) is created
+    // by a later <script> block and doesn't exist yet while initFromExisting() runs.
     function updateHeroFactionFilter(faction) {
         var engine = window.CardSearchInstances && window.CardSearchInstances.db;
         if (!engine || !faction) return;

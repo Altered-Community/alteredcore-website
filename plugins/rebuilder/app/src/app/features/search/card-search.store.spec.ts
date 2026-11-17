@@ -10,12 +10,12 @@ const page = (n: number, size: number): Card[] =>
 describe('CardSearchStore (infinite scroll)', () => {
   let store: CardSearchStore;
   let http: HttpTestingController;
-  /** Runs the resource so its request goes out. */
+  /** Runs the resource so its request goes out (`all` tab via unified `/api/v2/search`). */
   const pending = () => {
     TestBed.tick();
-    return http.match((r) => r.url.endsWith('/api/cards'));
+    return http.match((r) => r.url.endsWith('/api/v2/search'));
   };
-  /** Same, on the Uniques search API. */
+  /** Same, on the Uniques tab (`/api/v2/cards`). */
   const pendingUniques = () => {
     TestBed.tick();
     return http.match((r) => r.url.endsWith('/api/v2/cards'));
@@ -26,9 +26,9 @@ describe('CardSearchStore (infinite scroll)', () => {
     await new Promise((resolve) => setTimeout(resolve));
     TestBed.tick();
   };
-  /** Answers a request and lets the response reach the store (it lands in a microtask). */
+  /** Answers a unified search request and lets the response reach the store (it lands in a microtask). */
   const answer = async (req: TestRequest, n: number, last = 4) => {
-    req.flush({ member: page(n, PAGE_SIZE.all), totalItems: PAGE_SIZE.all * last, currentPage: n, itemsPerPage: PAGE_SIZE.all, lastPage: last });
+    req.flush({ iter: { total: PAGE_SIZE.all * last, page: n }, cards: page(n, PAGE_SIZE.all) });
     await settle();
   };
 
@@ -44,8 +44,8 @@ describe('CardSearchStore (infinite scroll)', () => {
     store.configure('all', 'YZ');
     const [req] = pending();
     expect(req.request.params.get('page')).toBe('1');
-    expect(req.request.params.get('faction.code')).toBe('YZ');
-    expect(req.request.params.get('itemsPerPage')).toBe(String(PAGE_SIZE.all));
+    expect(req.request.params.getAll('faction[]')).toEqual(['YZ']);
+    expect(req.request.params.get('limit')).toBe(String(PAGE_SIZE.all));
     await answer(req, 1);
     expect(store.cards().length).toBe(PAGE_SIZE.all);
     expect(store.total()).toBe(PAGE_SIZE.all * 4);
@@ -191,5 +191,20 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(pending()).toHaveLength(0);
     expect(store.total()).toBe(0);
     expect(store.hasMore()).toBe(false);
+  });
+
+  it('resets to the target source defaults when switching source tabs', async () => {
+    store.configure('all', 'AX', 'frontier');
+    await answer(pending()[0], 1, 1);
+    store.patch({ q: 'kelon', mainCost: '3' });
+    await answer(pending()[0], 1, 1);
+
+    store.configure('uniques', 'AX', 'frontier');
+    expect(store.filters()).toMatchObject({ q: '', mainCost: '', environment: 'frontier' });
+    const [uReq] = pendingUniques();
+    expect(uReq.request.params.get('format')).toBe('frontier');
+    expect(uReq.request.params.has('mainCost[]')).toBe(false);
+    uReq.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+    await settle();
   });
 });

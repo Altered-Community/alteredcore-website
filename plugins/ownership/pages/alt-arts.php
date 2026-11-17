@@ -16,6 +16,10 @@ $txt = [
     'en' => [
         'unavailable'   => 'The digital ownership service is not configured on this site.',
         'anon_login'    => 'Log in / Sign up',
+        'login_prompt'  => 'Log in to manage your default alt arts.',
+        'authExpired'   => 'Your session has expired. Please sign in again.',
+        'loginBtn'      => 'Sign in',
+        'loginUrl'      => BASE_URL . '/pages/login',
         'search_ph'     => 'Search by name…',
         'search_btn'    => 'Search',
         'lbl_faction'   => 'Faction',
@@ -53,6 +57,10 @@ $txt = [
     'fr' => [
         'unavailable'   => 'Le service de propriété numérique n\'est pas configuré sur ce site.',
         'anon_login'    => 'Se connecter / S\'inscrire',
+        'login_prompt'  => 'Connectez-vous pour gérer vos arts alternatifs par défaut.',
+        'authExpired'   => 'Votre session a expiré. Veuillez vous reconnecter.',
+        'loginBtn'      => 'Se connecter',
+        'loginUrl'      => BASE_URL . '/pages/login',
         'search_ph'     => 'Rechercher par nom…',
         'search_btn'    => 'Rechercher',
         'lbl_faction'   => 'Faction',
@@ -93,7 +101,7 @@ $ownEnabled  = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $ownLoggedIn = kcIsLoggedIn();
 $ownActiveTab = 'alt-arts';
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = $ownLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
 $isGlobalMode = $ownEnabled && $ownLoggedIn && ownGetAltArtPreferenceMode($userId) === 'Global';
 
 $cacDir = dirname(__DIR__, 2) . '/core-altered-cards';
@@ -127,9 +135,12 @@ $uiLang = getUiLang();
 
     <?php if (!$ownLoggedIn): ?>
     <div class="ac-card">
-        <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
-            <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
-        </a>
+        <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+        <div class="ac-card__footer">
+            <a href="<?= h(BASE_URL) ?>/pages/login" class="ac-button ac-button--sm">
+                <?= ac_icon('log-in') ?><?= h($txt['anon_login']) ?>
+            </a>
+        </div>
     </div>
     <?php else: ?>
 
@@ -275,7 +286,13 @@ $uiLang = getUiLang();
         var request = function (method, url, body) {
             return fetch(url, { method: method, credentials: 'same-origin', headers: headers, body: body ? JSON.stringify(body) : undefined })
                 .then(function (res) {
-                    if (!res.ok) throw new Error(method + ' ' + res.status);
+                    if (!res.ok) {
+                        if (res.status === 401) {
+                            if (window.acNotifyAuthExpired) window.acNotifyAuthExpired();
+                            throw new Error(txt.authExpired || 'Session expired. Please sign in again.');
+                        }
+                        throw new Error(method + ' ' + res.status);
+                    }
                     return res.status === 204 ? null : res.json();
                 });
         };

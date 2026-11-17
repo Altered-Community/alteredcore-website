@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { defaultFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { Component, computed, inject, signal } from '@angular/core';
+import { defaultFilters, hasInvalidNumericFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
@@ -34,6 +34,7 @@ const FILTERS_TITLE = $localize`:@@search.card.filters:Filtres`;
 export class FiltersSheetOverlay {
   protected readonly ref = inject<AcOverlayRef<SearchFilters, FiltersSheetData>>(AcOverlayRef);
   protected readonly draft = signal<SearchFilters>(this.ref.data.filters);
+  protected readonly canApply = computed(() => !hasInvalidNumericFilters(this.draft(), this.ref.data.source));
 
   constructor() {
     this.ref.title.set(FILTERS_TITLE);
@@ -45,12 +46,15 @@ export class FiltersSheetOverlay {
     const effect = this.draft().effects[index];
     if (!effect) return;
     openEffectEditorStep(this.ref, { effect, index, query: toUniquesQuery(this.draft(), this.ref.data.faction) }).afterClosed.subscribe((next) => {
-      if (!next) return;
-      this.draft.update((d) => ({ ...d, effects: d.effects.map((e, i) => (i === index ? next : e)) }));
+      const effects = next
+        ? this.draft().effects.map((e, i) => (i === index ? next : e))
+        : this.draft().effects.filter((e, i) => i !== index || e.triggers.length || e.conditions.length || e.effects.length);
+      this.draft.update((d) => ({ ...d, effects }));
     });
   }
 
   apply(): void {
+    if (!this.canApply()) return;
     this.ref.close(this.draft());
   }
 }

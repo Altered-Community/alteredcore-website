@@ -47,6 +47,52 @@ describe('Collection and digital ownership query', () => {
       expect(p.has('rarity')).toBe(false);
     }
   });
+  it('sends contiguous ranges, disjoint lists, recall costs and powers to both collection and ownership proxies', () => {
+    for (const source of ['collection', 'owned'] as const) {
+      const p = ownedParams(
+        source,
+        { ...defaultFilters(source), mainCost: '1-3', recallCost: '1, 4', forestPower: '1-2, 5', mountainPower: '3', oceanPower: '<2' },
+        ['AX'],
+        1,
+        36,
+      );
+      expect(p.get('mainCost[gte]')).toBe('1');
+      expect(p.get('mainCost[lte]')).toBe('3');
+      expect(p.getAll('recallCost[]')).toEqual(['1', '4']);
+      expect(p.getAll('forestPower[]')).toEqual(['1', '2', '5']);
+      expect(p.get('mountainPower[gte]')).toBe('3');
+      expect(p.get('mountainPower[lte]')).toBe('3');
+      expect(p.get('oceanPower[gte]')).toBe('0');
+      expect(p.get('oceanPower[lte]')).toBe('1');
+    }
+  });
+
+  it('sends variation[] and promoSets on owned when altArts toggles, and omits them on collection', () => {
+    const ownedDefault = ownedParams('owned', defaultFilters('owned'), ['AX'], 1, 36);
+    expect(ownedDefault.getAll('variation[]')).toEqual(['standard']);
+    expect(ownedDefault.getAll('cardSet[]')).not.toContain('WCF25');
+
+    const ownedAlt = ownedParams('owned', { ...defaultFilters('owned'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    expect(ownedAlt.getAll('variation[]')).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
+    expect(ownedAlt.getAll('cardSet[]')).toContain('WCF25');
+
+    const collAlt = ownedParams('collection', { ...defaultFilters('collection'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    expect(collAlt.getAll('variation[]')).toBeNull();
+    expect(collAlt.getAll('cardSet[]')).not.toContain('WCF25');
+  });
+
+  it('sends [gt]=15 instead of dropping valid out-of-range numeric filters', () => {
+    const p = ownedParams(
+      'owned',
+      { ...defaultFilters('owned'), mainCost: '20', recallCost: '<0', forestPower: '>15' },
+      ['AX'],
+      1,
+      36,
+    );
+    expect(p.get('mainCost[gt]')).toBe('15');
+    expect(p.get('recallCost[gt]')).toBe('15');
+    expect(p.get('forestPower[gt]')).toBe('15');
+  });
 });
 
 describe('OwnedCardsService', () => {
@@ -68,22 +114,34 @@ describe('OwnedCardsService', () => {
     return page;
   };
 
-  it('fills the effects of the Uniques owned from the cards API, once a session', async () => {
+  it('fills the effects of the Uniques owned from unified search first, once a session', async () => {
     const page = search('owned', [unique, common]);
-    const batch = http.expectOne((r) => r.url.endsWith('/api/cards/batch'));
-    expect(batch.request.body).toEqual({ references: [unique.reference] });
-    batch.flush([{ reference: unique.reference, mainEffect: 'Quand je suis joué…', forestPower: 1, mountainPower: 3, oceanPower: 0 }]);
+    const unified = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST');
+    expect(String(unified.request.body)).toContain(`ref[]=${unique.reference}`);
+    unified.flush({
+      cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Quand je suis joué…' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }],
+    });
     const [owned, other] = (await page).member;
-    expect(owned).toEqual(expect.objectContaining({ mainEffect: 'Quand je suis joué…', forestPower: 1, mountainPower: 3, oceanPower: 0, quantity: 1 }));
+    expect(owned).toEqual(expect.objectContaining({ mainEffect: { fr: 'Quand je suis joué…' }, forestPower: 1, mountainPower: 3, oceanPower: 0, quantity: 1 }));
     expect(other.reference).toBe(common.cardReference);
     // Same Unique again (another page, back on the tab): no second call.
-    expect((await search('owned', [unique])).member[0].mainEffect).toBe('Quand je suis joué…');
+    expect((await search('owned', [unique])).member[0].mainEffect).toEqual({ fr: 'Quand je suis joué…' });
   });
 
-  it('keeps the powers of the ownership API when the cards API fails', async () => {
+  it('keeps the powers of the ownership API when both unified search and cards API fail', async () => {
     const page = search('owned', [unique]);
+    http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('down', { status: 502, statusText: 'Bad Gateway' });
     http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush('down', { status: 502, statusText: 'Bad Gateway' });
     expect((await page).member[0]).toEqual(expect.objectContaining({ forestPower: 1, mountainPower: 3, oceanPower: 0 }));
+  });
+
+  it('falls back to /api/cards/batch then /api/v2/cards when unified search fails and batch omits a Unique', async () => {
+    const page = search('owned', [unique]);
+    http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('down', { status: 404, statusText: 'Not Found' });
+    http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([]);
+    const v2 = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.[0] === unique.reference);
+    v2.flush({ cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Effet v2' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }] });
+    expect((await page).member[0].mainEffect).toEqual({ fr: 'Effet v2' });
   });
 
   it('asks the cards API nothing without a Unique', async () => {

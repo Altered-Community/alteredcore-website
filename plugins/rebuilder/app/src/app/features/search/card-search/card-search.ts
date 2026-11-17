@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { ORDER_OPTIONS, activeFilterCount, hasInvalidNumericFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
@@ -78,8 +78,17 @@ export class CardSearch {
     { initialValue: 'all' as CardSource },
   );
 
-  protected readonly orderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
-  protected readonly compactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
+  private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+  private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
+  private readonly hideRandomSort = computed(
+    () => this.search.source() === 'uniques' || (this.search.source() === 'all' && !!this.uniquesApi.baseUrl),
+  );
+  protected readonly orderOptions = computed(() =>
+    this.hideRandomSort() ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
+  );
+  protected readonly compactOrderOptions = computed(() =>
+    this.hideRandomSort() ? this.allCompactOrderOptions.filter((o) => o.value !== 'random') : this.allCompactOrderOptions,
+  );
   protected readonly layoutOptions = [
     { value: 'grid' as const, icon: 'layout-grid' as const, ariaLabel: $localize`:@@search.card.grid:Grille` },
     { value: 'list' as const, icon: 'list' as const, ariaLabel: $localize`:@@search.card.list:Liste` },
@@ -112,9 +121,8 @@ export class CardSearch {
   );
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
-  /** The Uniques search API returns its own order, with no sort parameter. */
-  // The Uniques search API and the account lists (favorites, collection, ownership) have their own order.
-  protected readonly sortable = computed(() => this.search.source() === 'all');
+  // The account lists (favorites, collection, ownership) have their own order; All & Uniques support sorting.
+  protected readonly sortable = computed(() => this.search.source() === 'all' || this.search.source() === 'uniques');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';
@@ -135,6 +143,11 @@ export class CardSearch {
           this.draft.set(this.search.filters());
         }
       });
+    });
+
+    effect(() => {
+      const f = this.search.filters();
+      untracked(() => this.draft.set(f));
     });
 
     effect(() => {
@@ -189,6 +202,7 @@ export class CardSearch {
     const prev = this.draft();
     this.draft.set(next);
     clearTimeout(this.applyTimer);
+    if (hasInvalidNumericFilters(next, this.search.source())) return;
     // Free-text fields (name, costs, powers) wait for the typing to pause.
     const textChanged = TEXT_FILTERS.some((key) => prev[key] !== next[key]);
     if (textChanged) this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
@@ -197,7 +211,9 @@ export class CardSearch {
 
   protected applyNow(): void {
     clearTimeout(this.applyTimer);
-    this.search.apply(this.draft());
+    const next = this.draft();
+    if (hasInvalidNumericFilters(next, this.search.source())) return;
+    this.search.apply(next);
     window.scrollTo({ top: 0 });
   }
 

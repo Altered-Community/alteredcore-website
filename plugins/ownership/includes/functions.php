@@ -23,13 +23,7 @@ function ownApiRequest(string $method, string $path, int $userId, $body = null) 
  *
  * @return array{0:int,1:?string}
  */
-function ownApiRequestRaw(string $method, string $path, int $userId, $body = null): array {
-    if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) return [0, null];
-
-    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
-    $token = kc_get_access_token($userId);
-    if (!$token) return [0, null];
-
+function ownApiRequestSend(string $method, string $path, string $token, $body = null): array {
     $headers = [
         'Authorization: Bearer ' . $token,
         'Accept: application/json',
@@ -56,7 +50,25 @@ function ownApiRequestRaw(string $method, string $path, int $userId, $body = nul
     $err  = curl_errno($ch);
     curl_close($ch);
 
-    if ($err || $raw === false) return [0, null];
+    if ($err || $raw === false || $code === 0) return [0, null];
+    return [$code, (string)$raw];
+}
+
+function ownApiRequestRaw(string $method, string $path, int $userId, $body = null): array {
+    if (!defined('OWNERSHIP_API_URL') || !OWNERSHIP_API_URL) return [0, null];
+
+    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
+    $token = kc_get_access_token($userId);
+    if (!$token) return [401, null];
+
+    [$code, $raw] = ownApiRequestSend($method, $path, $token, $body);
+    if ($code === 401) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
+        $token = kc_get_access_token($userId);
+        if (!$token) return [401, $raw];
+        [$code, $raw] = ownApiRequestSend($method, $path, $token, $body);
+    }
     return [$code, $raw];
 }
 

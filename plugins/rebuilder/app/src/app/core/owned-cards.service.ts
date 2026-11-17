@@ -3,7 +3,7 @@ import { Service, inject } from '@angular/core';
 import { map, of, switchMap, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CardsApiService } from './cards-api.service';
-import { parseCostExpression, rarityOptionsFor, type SearchFilters } from './card-filters';
+import { filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
 import { formatInfo } from './formats';
 import { mergeUniqueFace } from './deck-view';
 import { contentLocale } from './locale';
@@ -82,14 +82,34 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
     return p;
   }
   add('cardType[]', f.types);
-  add('cardSet[]', f.sets);
+  add('cardSet[]', source === 'owned' ? filterSetsWithPromos(f) : f.sets);
   add('subTypes[]', f.subtypes);
+  if (source === 'owned') add('variation[]', variationCodes(f));
   if (f.q.trim()) p = p.set('name', f.q.trim());
-  const costs = parseCostExpression(f.mainCost) ?? [];
-  if (costs.length) {
-    // The collection API takes a range, the ownership API one exact value.
-    if (source === 'collection') p = p.set('mainCost[gte]', Math.min(...costs)).set('mainCost[lte]', Math.max(...costs));
-    else if (costs.length === 1) p = p.append('mainCost[]', costs[0]);
+  // Both collection-search and ownership-search accept `[gte]`/`[lte]` bounds for contiguous spans
+  // and `field[]` arrays for disjoint lists (narrowed upstream + exact-filtered in PHP).
+  const numericFields: readonly [string, string][] = [
+    ['mainCost', f.mainCost],
+    ['recallCost', f.recallCost],
+    ['forestPower', f.forestPower],
+    ['mountainPower', f.mountainPower],
+    ['oceanPower', f.oceanPower],
+  ];
+  for (const [key, expr] of numericFields) {
+    if (!expr.trim()) continue;
+    const vals = parseCostExpression(expr);
+    if (vals === null) continue;
+    if (!vals.length) {
+      p = p.set(`${key}[gt]`, 15);
+      continue;
+    }
+    const min = vals[0];
+    const max = vals[vals.length - 1];
+    if (vals.length === max - min + 1) {
+      p = p.set(`${key}[gte]`, min).set(`${key}[lte]`, max);
+    } else {
+      for (const v of vals) p = p.append(`${key}[]`, v);
+    }
   }
   return p;
 }

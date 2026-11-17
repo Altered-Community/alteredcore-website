@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, buildUnifiedSearchParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -160,6 +160,20 @@ describe('UniquesApiService', () => {
     expect(await missing).toEqual({ member: [], totalItems: 0, next: null });
   });
 
+  it('maps single-field sort to `sort=` and omits random', async () => {
+    const sorted = lastValueFrom(api.search({ ...QUERY, order: 'mainCost-desc' }, null, 36));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(req.request.params.get('sort')).toBe('mainCost:desc');
+    req.flush({ iter: { total: 1 }, cards: [KELON] });
+    await sorted;
+
+    const rnd = lastValueFrom(api.search({ ...QUERY, order: 'random' }, null, 36));
+    const rndReq = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(rndReq.request.params.has('sort')).toBe(false);
+    rndReq.flush({ iter: { total: 1 }, cards: [KELON] });
+    await rnd;
+  });
+
   it('builds the effect vocabularies from one /api/v2/effects call, main-effect entries only', async () => {
     const triggers = lastValueFrom(api.abilities('triggers'));
     const conditions = lastValueFrom(api.abilities('conditions'));
@@ -221,6 +235,176 @@ describe('toAbilityRefs', () => {
       { id: 188, text: 'Si vous contrôlez un jeton' },
     ]);
     expect(toAbilityRefs(rows).map((r) => r.id)).toEqual([188]);
+  });
+});
+
+describe('buildEffectsFilteredParams', () => {
+  it('forwards subtypes, costRelation and hasNoEffect alongside other effect filters', () => {
+    const hp = buildEffectsFilteredParams(
+      {
+        factions: ['AX'],
+        sets: ['CORE'],
+        subtypes: ['ELEMENTAL'],
+        costRelation: 'recallHigher',
+        noEffect: false,
+        mainCosts: [],
+        recallCosts: [],
+        effects: [],
+      },
+      0,
+      { triggers: [24], conditions: [], effects: [] },
+      'effects',
+    );
+    expect(hp.getAll('subTypes[]')).toEqual(['ELEMENTAL']);
+    expect(hp.get('costRelation')).toBe('recallHigher');
+    expect(hp.has('hasNoEffect')).toBe(false);
+  });
+});
+
+describe('unified /api/v2/search', () => {
+  let api: UniquesApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    api = TestBed.inject(UniquesApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('builds /api/v2/search params with localized name sort, variations excluding kickstarter, and >15 stats', () => {
+    const hp = buildUnifiedSearchParams({
+      page: 2,
+      itemsPerPage: 36,
+      locale: 'fr',
+      q: 'sierra',
+      factions: ['AX'],
+      types: ['HERO', 'CHARACTER'],
+      rarities: ['COMMON', 'RARE'],
+      sets: ['CORE', 'FUGUE'],
+      variations: ['standard', 'alt-art', 'kickstarter'],
+      mainCosts: [16],
+      subtypes: ['ENGINEER'],
+      costRelation: 'mainHigher',
+      hasNoEffect: true,
+      order: 'name-asc',
+    });
+    expect(hp.get('page')).toBe('2');
+    expect(hp.get('limit')).toBe('36');
+    expect(hp.get('sort')).toBe('name:fr_FR:asc');
+    expect(hp.get('name')).toBe('sierra');
+    expect(hp.getAll('faction[]')).toEqual(['AX']);
+    expect(hp.getAll('cardType[]')).toEqual(['HERO', 'CHARACTER']);
+    expect(hp.getAll('rarity[]')).toEqual(['COMMON', 'RARE']);
+    expect(hp.getAll('set[]')).toEqual(['CORE', 'FUGUE']);
+    expect(hp.getAll('variation[]')).toEqual(['standard', 'alt-art']);
+    expect(hp.get('mainCost[gt]')).toBe('15');
+    expect(hp.getAll('subTypes[]')).toEqual(['ENGINEER']);
+    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('hasNoEffect')).toBe('true');
+  });
+
+  it('queries /api/v2/search, maps rich non-unique CardV2 metadata, and caches pages', async () => {
+    const p1 = lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/search'));
+    expect(req.request.params.get('sort')).toBe('mainCost:asc');
+    req.flush({
+      iter: { total: 40, page: 1 },
+      cards: [
+        {
+          kind: 'nonunique',
+          reference: 'ALT_CORE_B_AX_01_C',
+          name: { fr_FR: 'Sierra & Oddball', en_US: 'Sierra & Oddball' },
+          cardType: { reference: 'HERO', name: { fr_FR: 'Héros', en_US: 'Hero' } },
+          rarity: { reference: 'COMMON', name: 'Common' },
+          faction: { code: 'AX', name: 'Axiom' },
+          mainCost: null,
+          recallCost: null,
+          forestPower: null,
+          mountainPower: null,
+          oceanPower: null,
+        },
+      ],
+    });
+    const res = await p1;
+    expect(res.totalItems).toBe(40);
+    expect(res.lastPage).toBe(2);
+    expect(res.member[0].rarity?.reference).toBe('COMMON');
+    expect(res.member[0].cardType?.reference).toBe('HERO');
+    expect(res.member[0].mainCost).toBeNull();
+
+    await lastValueFrom(api.searchUnified({ page: 1, itemsPerPage: 36, order: 'mainCost-asc', rarities: ['COMMON'] }));
+    http.expectNone((r) => r.url.endsWith('/api/v2/search'));
+  });
+
+  it('maps nullable stats and status flags cleanly in toCard', () => {
+    const card = toCard({
+      reference: 'ALT_CORE_B_AX_01_C',
+      cardType: { reference: 'SPELL', name: { fr_FR: 'Sort' } },
+      rarity: { reference: 'RARE' },
+      isBanned: true,
+    });
+    expect(card.rarity).toEqual({ reference: 'RARE' });
+    expect(card.cardType).toEqual({ reference: 'SPELL', name: { fr: 'Sort' } });
+    expect(card.isBanned).toBe(true);
+  });
+
+  it('maps number-desc to reference:desc in buildUnifiedSearchParams', () => {
+    const params = buildUnifiedSearchParams({
+      order: 'number-desc',
+      page: 1,
+      itemsPerPage: 36,
+      locale: 'fr',
+    });
+    expect(params.get('sort')).toBe('reference:desc');
+  });
+
+  it('fetches Uniques by references in chunks of 50 via /api/v2/cards', async () => {
+    const refs = Array.from({ length: 52 }, (_, i) => `ALT_CORE_B_AX_04_U_${i + 1}`);
+    const pending = lastValueFrom(api.byReferences(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 50);
+    expect(first.request.params.get('limit')).toBe('50');
+    first.flush({
+      cards: [{ reference: refs[0], name: 'U1', mainCost: 2, recallCost: 2, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.length === 2);
+    expect(second.request.params.get('limit')).toBe('2');
+    second.flush({
+      cards: [{ reference: refs[51], name: 'U52', mainCost: 4, recallCost: 3, rarity: { reference: 'UNIQUE' } }],
+    });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[51]]);
+    expect(cards[0].mainCost).toBe(2);
+  });
+
+  it('batches both uniques and non-uniques via POST /api/v2/search in chunks of 200', async () => {
+    const refs = Array.from({ length: 201 }, (_, i) => (i === 200 ? 'ALT_CORE_B_AX_04_U_1' : `ALT_CORE_B_AX_04_C_${i}`));
+    const pending = lastValueFrom(api.searchBatch(refs));
+
+    const first = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=200'));
+    first.flush({ cards: [{ reference: refs[0], rarity: { reference: 'COMMON' } }] });
+
+    const second = http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST' && String(r.body).includes('limit=1'));
+    second.flush({ cards: [{ reference: refs[200], rarity: { reference: 'UNIQUE' }, isBanned: true }] });
+
+    const cards = await pending;
+    expect(cards.map((c) => c.reference)).toEqual([refs[0], refs[200]]);
+    expect(cards[1].isBanned).toBe(true);
+  });
+
+  it('marks COREKS hero prints as kickstarter in heroVariation so CORE stays standard', () => {
+    const res = toCard({
+      reference: 'ALT_COREKS_B_AX_01_C',
+      set: { reference: 'COREKS', name: 'Beyond the Gates - KS Edition', code: 'BTG' },
+      product: 'B',
+      isSerialized: false,
+      cardType: { reference: 'HERO' },
+    });
+    expect(res.set?.reference).toBe('COREKS');
   });
 });
 

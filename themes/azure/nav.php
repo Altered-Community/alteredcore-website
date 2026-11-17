@@ -46,18 +46,31 @@ if (!function_exists('acNavActive')) {
                 <span class="az-brand-name"><?= h(getSiteName()) ?></span>
             </a>
 
+            <?php
+            $__navLoggedIn   = kcIsLoggedIn();
+            $__guestBtnHtml  = ac_icon('user')
+                             . '<span class="az-account-label" aria-hidden="true">' . h($_hTxt['account_btn']) . '</span>'
+                             . ac_icon('chevron-down', 'az-account-caret');
+            $__guestMenuHtml = '<div class="az-am-head az-am-head-guest">'
+                             . '<div class="az-am-guest">'
+                             . '<span class="ac-avatar az-am-avatar" aria-hidden="true">' . ac_icon('user') . '</span>'
+                             . '<span class="az-am-sub">' . h($_hTxt['not_signed_in']) . '</span>'
+                             . '</div>'
+                             . '<a class="ac-button ac-button--full az-am-signin" href="' . BASE_URL . '/pages/login">'
+                             . ac_icon('log-in') . ' ' . h($_hTxt['sign_in']) . '</a>'
+                             . '</div>';
+            ?>
             <!-- Account button, opens #azAccountMenu (script below): sign in or the user's links, theme, language, beta -->
             <button class="az-account-btn" type="button" id="azAccountBtn"
                     aria-controls="azAccountMenu" aria-expanded="false"
                     aria-label="<?= h($_hTxt['account']) ?>">
-                <?php if (kcIsLoggedIn()): $__accName = kcUser()['username'] ?? ''; ?>
+                <?php if ($__navLoggedIn): $__accName = kcUser()['username'] ?? ''; ?>
                 <span class="ac-avatar az-account-initial" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__accName, 0, 1))) ?></span>
                 <span class="az-account-label" aria-hidden="true"><?= h($__accName) ?></span>
-                <?php else: ?>
-                <?= ac_icon('user') ?>
-                <span class="az-account-label" aria-hidden="true"><?= h($_hTxt['account_btn']) ?></span>
-                <?php endif; ?>
                 <?= ac_icon('chevron-down', 'az-account-caret') ?>
+                <?php else: ?>
+                <?= $__guestBtnHtml ?>
+                <?php endif; ?>
             </button>
 
             <!-- Burger button — mobile only, opens #azMobileMenu (script below) -->
@@ -216,7 +229,7 @@ foreach ($__navItems as $__ni) {
 <!-- Account popover: sign in or the user's links, theme, language and « Beta Deckbuilder » -->
 <div id="azAccountBackdrop" class="az-am-backdrop" hidden></div>
 <div id="azAccountMenu" class="az-account-menu" role="dialog" aria-label="<?= h($_hTxt['account']) ?>" hidden>
-    <?php if (kcIsLoggedIn()): $__amUser = kcUser(); ?>
+    <?php if ($__navLoggedIn): $__amUser = kcUser(); ?>
     <div class="az-am-head">
         <span class="ac-avatar az-am-avatar is-user" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($__amUser['username'] ?? '', 0, 1))) ?></span>
         <div class="az-am-who">
@@ -248,15 +261,7 @@ foreach ($__navItems as $__ni) {
         <?php endif; ?>
     </div>
     <?php else: ?>
-    <div class="az-am-head az-am-head-guest">
-        <div class="az-am-guest">
-            <span class="ac-avatar az-am-avatar" aria-hidden="true"><?= ac_icon('user') ?></span>
-            <span class="az-am-sub"><?= h($_hTxt['not_signed_in']) ?></span>
-        </div>
-        <a class="ac-button ac-button--full az-am-signin" href="<?= BASE_URL ?>/pages/login">
-            <?= ac_icon('log-in') ?> <?= h($_hTxt['sign_in']) ?>
-        </a>
-    </div>
+    <?= $__guestMenuHtml ?>
     <?php endif; ?>
 
     <div class="az-am-section">
@@ -291,11 +296,63 @@ foreach ($__navItems as $__ni) {
     </div>
     <?php endif; ?>
 
-    <?php if (kcIsLoggedIn()): ?>
+    <?php if ($__navLoggedIn): ?>
     <?php $_logoutUrl = (defined('KC_URL') && KC_URL !== '') ? BASE_URL . '/auth/keycloak-logout' : BASE_URL . '/auth/local-logout'; ?>
     <a class="az-am-signout" href="<?= $_logoutUrl ?>"><?= ac_icon('log-out') ?> <?= h($_hTxt['sign_out']) ?></a>
+    <template id="azGuestBtnTpl"><?= $__guestBtnHtml ?></template>
+    <template id="azGuestMenuHeadTpl"><?= $__guestMenuHtml ?></template>
     <?php endif; ?>
 </div>
+<script>
+// Client-side auth expiry sync: when any same-origin fetch signals X-Ac-Auth-State: unauthenticated,
+// flip the header account button/menu to the guest state and notify window.AlteredCore (SPA plugins).
+(function () {
+    var downgraded = false;
+    function switchHeaderToGuest() {
+        if (downgraded) return;
+        downgraded = true;
+        var btn = document.getElementById('azAccountBtn');
+        var btnTpl = document.getElementById('azGuestBtnTpl');
+        if (btn && btnTpl) btn.innerHTML = btnTpl.innerHTML;
+        var menu = document.getElementById('azAccountMenu');
+        var headTpl = document.getElementById('azGuestMenuHeadTpl');
+        if (menu && headTpl) {
+            var oldHead = menu.querySelector('.az-am-head');
+            if (oldHead) oldHead.outerHTML = headTpl.innerHTML;
+            menu.querySelectorAll('.az-am-links, .az-am-signout').forEach(function (el) { el.remove(); });
+        }
+    }
+    window.addEventListener('alteredcore:auth', function (e) {
+        if (!e.detail || !e.detail.user) switchHeaderToGuest();
+    });
+    window.acNotifyAuthExpired = function () {
+        switchHeaderToGuest();
+        if (window.AlteredCore && typeof window.AlteredCore.setUser === 'function') {
+            if (window.AlteredCore.user !== null) window.AlteredCore.setUser(null);
+            return;
+        }
+        window.dispatchEvent(new CustomEvent('alteredcore:auth', { detail: { user: null } }));
+    };
+    if (document.getElementById('azGuestBtnTpl') && window.fetch && !window.fetch.__acAuthWrapped) {
+        var origFetch = window.fetch;
+        var wrappedFetch = function (input) {
+            return origFetch.apply(this, arguments).then(function (res) {
+                try {
+                    var rawUrl = typeof input === 'string' ? input : (input && input.url) || '';
+                    if (rawUrl && new URL(rawUrl, location.href).origin === location.origin) {
+                        if (res.headers && res.headers.get('X-Ac-Auth-State') === 'unauthenticated') {
+                            window.acNotifyAuthExpired();
+                        }
+                    }
+                } catch (_) {}
+                return res;
+            });
+        };
+        wrappedFetch.__acAuthWrapped = true;
+        window.fetch = wrappedFetch;
+    }
+}());
+</script>
 <script>
 // Header: the burger (mobile) opens a full-screen menu, the account button a
 // popover. Opening one closes the other; Escape closes either.

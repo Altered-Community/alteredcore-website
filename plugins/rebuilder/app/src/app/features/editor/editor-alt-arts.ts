@@ -5,6 +5,7 @@ import { AuthSession } from '../../core/auth-session';
 import { basePrint, defaultPrints, familyCopies, familyPrints, rankPrints, sameCopies, withRanks } from '../../core/alt-art-defaults';
 import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
 import { DeckStore } from '../../core/deck-store';
+import { isUniqueReference } from '../../core/card-art';
 import { storedFlag } from '../../core/stored-flag';
 import type { Card } from '../../core/models';
 import { OwnershipApiService, familyKey, type AltArtChoice } from '../../core/ownership-api.service';
@@ -128,10 +129,20 @@ export class EditorAltArts {
     });
   }
 
-  /** Asks the families of `refs` not asked yet (search results, deck lines). */
+  /** Asks the families of `refs` not asked yet (search results, deck lines). Uniques never have alt arts. */
   request(refs: readonly string[]): void {
     if (!this.enabled()) return;
-    const missing = [...new Set(refs)].filter((r) => !this.asked.has(r));
+    const unasked = [...new Set(refs)].filter((r) => !this.asked.has(r));
+    const uniqueRefs = unasked.filter(isUniqueReference);
+    if (uniqueRefs.length) {
+      uniqueRefs.forEach((r) => this.asked.add(r));
+      this.known.update((m) => {
+        const next = new Map(m);
+        for (const r of uniqueRefs) next.set(r, null);
+        return next;
+      });
+    }
+    const missing = unasked.filter((r) => !isUniqueReference(r));
     for (let i = 0; i < missing.length; i += CHUNK) {
       const chunk = missing.slice(i, i + CHUNK);
       chunk.forEach((r) => this.asked.add(r));

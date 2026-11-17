@@ -872,10 +872,26 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
 .cs-sep { width: 1px; align-self: stretch; background: var(--ac-color-border-control); margin: 0 4px; flex-shrink: 0; }
 .filter-toggle--compact { padding: 4px 8px; font-weight: 700; }
 
-/* ---- Deckbuilder rarity + type row: rarity left, type right, bar centered
-   in whatever gap remains between them (the spacer grows to fill it). ---- */
+/* ---- Simple / Standard card row (Rarities | Types) & Uniques scope panel ---- */
 .cs-types { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.cs-rarity-type-spacer { flex: 1 1 auto; align-self: stretch; display: flex; justify-content: center; align-items: stretch; min-width: 8px; }
+.cs-uniques-section {
+    padding: 10px 12px;
+    background: var(--ac-color-bg-subtle);
+    border-left: 3px solid var(--ac-cards-unique);
+    border-radius: var(--ac-radius-sm);
+}
+.cs-uniques-section-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--ac-color-text-2);
+}
+.cs-uniques-section-head i { color: var(--ac-cards-unique); }
 
 /* ---- Unique banner: gold "try the dedicated Uniques tab" nudge, or orange
    "this format doesn't allow Uniques" warning — see _syncUniqueNudge() in
@@ -1005,15 +1021,11 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
    would mean dragging one group to reach the other, which are unrelated filters.
    Each group carries .cs-scroll-x, so what overflows stays reachable within it. */
 @media (max-width: 575px) {
-    .cs-faction-row { flex-wrap: wrap; overflow-x: visible; }
-    .cs-faction-row .cs-rarities { flex-basis: 100%; margin-top: 6px; }
-    .cs-faction-row .cs-rarities .cs-sep { display: none; }
-
-    .cs-rarity-type-row { flex-wrap: wrap; overflow-x: visible; }
-    .cs-rarity-type-row .cs-rarities { flex-basis: 100%; }
-    .cs-rarity-type-row .cs-types { flex-basis: 100%; margin-top: 6px; }
-    /* Nothing left to center once the two groups stack instead of sharing the row */
-    .cs-rarity-type-row .cs-rarity-type-spacer { display: none; }
+    .cs-standard-row { flex-wrap: wrap; overflow-x: visible; }
+    .cs-standard-row .cs-rarities { flex-basis: 100%; }
+    .cs-standard-row .cs-types { flex-basis: 100%; margin-top: 6px; }
+    /* No divider needed when the two groups stack instead of sharing the row */
+    .cs-standard-row .cs-sep { display: none; }
 }
 
 /* ============================================================
