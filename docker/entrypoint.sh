@@ -8,10 +8,14 @@
 # transient hiccup doesn't crash-loop the site — the failure is logged for the dev.
 set -e
 
-echo "[entrypoint] applying DB migrations..."
-if ! php /var/www/html/sql/migrate.php; then
-    echo "[entrypoint] WARNING: migrations did not complete cleanly; starting Apache anyway." >&2
-fi
+run_migration() {
+    echo "[entrypoint] applying $1..."
+    if ! php "/var/www/html/sql/$2"; then
+        echo "[entrypoint] WARNING: $1 did not complete cleanly; starting Apache anyway." >&2
+    fi
+}
+run_migration "DB migrations" migrate.php
+run_migration "plugin DB migrations" migrate_plugins.php
 
 # Local / CI stack only: production menu, site name and logo (once), before plugins add theirs,
 # and public decks for the community lists.
