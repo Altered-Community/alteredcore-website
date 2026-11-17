@@ -1,4 +1,5 @@
 import { deflateRawSync } from 'node:zlib';
+import type { Locator } from '@playwright/test';
 import { evidence, expect, login, setBeta, test, type Page } from '../../../tests/e2e/fixtures';
 import { emptyCache } from '../../../tests/e2e/loading';
 import { createServerDeck } from './decks';
@@ -56,15 +57,24 @@ function decksTab(page: Page, compact: boolean, name: string, lang: Lang = 'fr')
     : page.getByRole('tab', { name });
 }
 
-/** Adds one copy of the first two cards of the search results; returns their names. */
+/**
+ * Adds one copy of the first two cards of the search results; returns their names.
+ * Each card is found by its name, not its place: on a slow runner the results may load again under the click
+ * (the list of a new deck), and a click lost that way is made again.
+ */
 async function addTwoCards(page: Page): Promise<string[]> {
   const names: string[] = [];
-  for (const i of [0, 1]) {
-    const tile = page.locator('ac-card-tile').nth(i);
-    await expect(tile).toBeVisible();
-    names.push((await tile.getAttribute('aria-label')) ?? '');
-    await tile.getByRole('button', { name: /^Ajouter .* au deck$/ }).click();
-    await expect(tile.getByRole('group', { name: /Exemplaires de/ })).toContainText('1');
+  const addButton = (scope: Locator) => scope.getByRole('button', { name: /^Ajouter .* au deck$/ });
+  for (let i = 0; i < 2; i++) {
+    const next = page.locator('ac-card-tile').filter({ has: addButton(page) }).first();
+    await expect(next).toBeVisible();
+    const name = (await next.getAttribute('aria-label')) ?? '';
+    names.push(name);
+    const tile = page.locator(`ac-card-tile[aria-label="${name.replace(/["\\]/g, '\\$&')}"]`).first();
+    await expect(async () => {
+      if (await addButton(tile).isVisible()) await addButton(tile).click({ timeout: 2_000 });
+      await expect(tile.getByRole('group', { name: /Exemplaires de/ })).toContainText('1', { timeout: 3_000 });
+    }).toPass({ timeout: 20_000 });
   }
   return names;
 }
@@ -1386,8 +1396,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
 
     test('leaving « Global » writes the default alt arts in every deck, then switches to « par deck »', async ({ page, compact }, testInfo) => {
       test.skip(compact, 'the mode is the account’s: one project at a time');
-      // Every deck of the account is written: a local stack keeps the decks of earlier runs.
-      test.slow();
+      // Every deck of the account is written: a local stack keeps the decks of earlier runs, and the CI's other tests
+      // add theirs. The switch's wait below fails when the progress stalls; the test's own limit only stops a runaway.
+      test.setTimeout(10 * 60_000);
       await login(page, 'bob', `${DECKS}?lang=fr`);
       const id = await createServerDeck(page, `E2E leave global ${Date.now()}`, ['ALT_CORE_B_AX_04_C'], 3);
       // bob's default alt art for Élémentaire de Kélon: an illustration he owns, on the three copies.
@@ -1412,7 +1423,19 @@ test.describe('ReBuilder in the shell · deck page', () => {
         await expect(dialog).toBeVisible();
         await evidence(page, testInfo, '37-leave-global-confirm');
         await dialog.getByRole('button', { name: 'Passer en mode par deck' }).click();
-        await expect(page.getByRole('button', { name: 'Par deck', exact: true })).toHaveAttribute('aria-pressed', 'true', { timeout: 120_000 });
+        // Every deck of bob's account is written, four at a time (« x / total »), then the page reloads: the time it
+        // takes grows with the decks the other tests created. The wait follows the progress: it fails when nothing
+        // moves for 30 s, not after a fixed time.
+        const perDeck = page.getByRole('button', { name: 'Par deck', exact: true });
+        const progress = page.locator('#own-aa-mode-progress-text');
+        const state = async () => {
+          const pressed = await perDeck.getAttribute('aria-pressed', { timeout: 1_000 }).catch(() => null);
+          return pressed === 'true' ? 'done' : ((await progress.textContent({ timeout: 1_000 }).catch(() => null)) ?? '');
+        };
+        for (let seen = await state(); seen !== 'done'; ) {
+          const before = seen;
+          await expect.poll(async () => (seen = await state()), { timeout: 30_000 }).not.toBe(before);
+        }
         await evidence(page, testInfo, '38-per-deck-mode');
         await page.goto(`${DECKS}?lang=fr`);
         // Élémentaire de Kélon's copies, as Board Game Arena showed them (the deck's other cards have one illustration).
