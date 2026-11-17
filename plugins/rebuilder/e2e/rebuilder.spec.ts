@@ -69,6 +69,15 @@ async function addTwoCards(page: Page): Promise<string[]> {
   return names;
 }
 
+/** The PATCH that saves deck `id` holding `copies` cards in all (the hero counts as one). */
+function savedWithCards(page: Page, id: string, copies: number) {
+  return page.waitForResponse((r) => {
+    if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${id}`) || !r.ok()) return false;
+    const lines = (r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? [];
+    return lines.reduce((n, l) => n + l.quantity, 0) === copies;
+  });
+}
+
 async function expectDeckCount(page: Page, compact: boolean, count: number): Promise<void> {
   if (compact) {
     await expect(page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ })).toContainText(String(count));
@@ -118,11 +127,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     const deck = { id: await editorDeckId(page) };
 
     // The save of the final state (hero + 2 cards): with the 400 ms autosave delay, a slow runner may save each card apart.
-    const saved = page.waitForResponse((r) => {
-      if (r.request().method() !== 'PATCH' || !r.url().includes(`/api/decks/${deck.id}`) || !r.ok()) return false;
-      const lines = ((r.request().postDataJSON() as { deckCards?: { quantity: number }[] } | null)?.deckCards ?? []);
-      return lines.reduce((n, l) => n + l.quantity, 0) === 3;
-    });
+    const saved = savedWithCards(page, deck.id, 3);
     const cards = await addTwoCards(page);
     await expectDeckCount(page, compact, 2);
     await saved;
@@ -629,7 +634,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
       await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
       await expect(page.getByRole('dialog')).toBeHidden();
     };
-    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
 
     await editEffect(addEffect, [[0, 'Joué depuis la Main'], [1, 'Sans condition'], [2, 'Piochez une carte.']]);
     await editEffect(addEffect, [[2, 'Piochez une carte.']]);
@@ -697,7 +702,7 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
       await page.getByRole('dialog').getByRole('button', { name: 'Appliquer' }).click();
       if (!compact) await expect(page.getByRole('dialog')).toBeHidden();
     };
-    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet' }).click();
+    const addEffect = () => page.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
 
     // Effect 1, nothing else picked: its triggers are those of the hero's faction.
     const first = narrowing('trigger:0');
@@ -1560,8 +1565,9 @@ test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
     expect((await created).status()).toBe(201);
     const deck = { id: await editorDeckId(page) };
 
-    // « Partager » right after a change: no wait for the autosave delay, the change is sent first.
-    const saved = page.waitForResponse((r) => r.request().method() === 'PATCH' && r.url().includes(`/api/decks/${deck.id}`) && r.ok());
+    // « Partager » right after a change: no wait for the autosave delay, the change is sent first. The save of the
+    // final state (hero + 2 cards): a slow runner may also save the deck before, or each card apart.
+    const saved = savedWithCards(page, deck.id, 3);
     await addTwoCards(page);
     // The deck bar counts the rarities the format caps (from 768 px).
     if (!compact) await expect(page.locator('app-deck-bar').getByRole('group', { name: 'Raretés limitées par le format' })).toContainText('/15');
