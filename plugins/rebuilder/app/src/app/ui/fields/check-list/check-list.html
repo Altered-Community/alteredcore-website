@@ -20,7 +20,7 @@
     }
     <label class="ac-check option" [class.on]="checked().has(o.id)">
       <input type="checkbox" [checked]="checked().has(o.id)" (change)="setChecked(o, $any($event.target).checked)" />
-      <span>@if (o.glyph) {<span class="glyph" aria-hidden="true">{{ o.glyph }}</span>}{{ o.text }}</span>
+      <span><ac-rich-label [value]="o" /></span>
     </label>
   } @empty {
     <p class="empty">{{ query() ? noResults : noValues }}</p>

@@ -573,7 +573,8 @@ test.describe('ReBuilder in the shell · languages', () => {
       await expect(page.locator('ac-card-tile').first()).toBeVisible();
       await expectEditorLabels(page, compact, lang);
       if (!compact) {
-        await expect(page.getByText(l.rarity, { exact: true })).toBeVisible();
+        // The rarity filter has no title row: its group is named in the language.
+        await expect(page.getByRole('group', { name: l.rarity, exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: l.advanced })).toBeVisible();
         await expect(page.getByRole('button', { name: l.clearAll })).toBeVisible();
       }
@@ -764,6 +765,35 @@ test.describe('ReBuilder in the shell · card filters', () => {
     await expect(page.getByRole('listbox', { name: 'Ajouter…' })).toBeHidden();
     if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
     await expect(page.getByText('2 sous-types').first()).toBeVisible();
+  });
+});
+
+test.describe('ReBuilder in the shell · card browser', () => {
+  test('replaces the site’s card search: the card text under the name, the alt arts alone, set art and faction marks', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const search = (check: (q: URLSearchParams) => boolean) =>
+      page.waitForRequest((r) => new URL(r.url()).pathname === '/api/v2/search' && check(new URL(r.url()).searchParams));
+    await page.goto('/pages/cards?lang=fr');
+    await expect(page).toHaveTitle(/^Cartes/);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
+    // Set art behind the extension tiles, the faction marks in the faction chips.
+    await expect(filters.locator('ac-extension-tile button').first()).toHaveCSS('background-image', /assets\/set-bg\/[A-Z]+\.webp/);
+    await expect(filters.getByRole('button', { name: 'Axiom' }).locator('img.ac-chip__img')).toHaveAttribute('src', /assets\/faction\/64\/AX\.webp/);
+
+    const byText = search((q) => q.get('effectText') === 'piochez');
+    await filters.getByRole('textbox', { name: 'Rechercher dans le texte des cartes' }).fill('piochez');
+    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    const onlyAltArts = search((q) => q.get('effectText') === 'piochez' && q.getAll('variation[]').join() === 'alt-art,promo');
+    await filters.getByRole('group', { name: 'Illustrations' }).getByRole('button', { name: 'Alt arts' }).click();
+    await evidence(page, testInfo, '40-card-browser-filters');
+    if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
+    else await byText;
+    await onlyAltArts;
+    await expect(page.getByText('Texte : « piochez »').first()).toBeVisible();
+    await expect(page.getByText('Alt arts uniquement').first()).toBeVisible();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    await evidence(page, testInfo, '41-card-browser-results');
   });
 });
 

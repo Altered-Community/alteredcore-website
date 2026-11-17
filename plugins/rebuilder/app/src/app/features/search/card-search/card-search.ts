@@ -3,8 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, hasInvalidNumericFilters, toUniquesQuery, type CardSource, type SearchFilters } from '../../../core/card-filters';
-import { UniquesApiService } from '../../../core/uniques-api.service';
+import { ORDER_OPTIONS, activeFilterCount, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { UniquesApiService, type EffectSlot } from '../../../core/uniques-api.service';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
@@ -39,7 +39,7 @@ export const CARD_SOURCES: CardSourceTab[] = [
 const COMPACT_SOURCE_TABS = 4;
 
 /** Filters typed into a text field: a change is applied once the typing pauses. */
-const TEXT_FILTERS = ['q', 'mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as const satisfies readonly (keyof SearchFilters)[];
+const TEXT_FILTERS = ['q', 'text', 'mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as const satisfies readonly (keyof SearchFilters)[];
 
 /**
  * Card search shared by the deck editor and the card browser: source tabs (`?source=`), filters
@@ -203,7 +203,7 @@ export class CardSearch {
     this.draft.set(next);
     clearTimeout(this.applyTimer);
     if (hasInvalidNumericFilters(next, this.search.source())) return;
-    // Free-text fields (name, costs, powers) wait for the typing to pause.
+    // Free-text fields (name, card text, costs, powers) wait for the typing to pause.
     const textChanged = TEXT_FILTERS.some((key) => prev[key] !== next[key]);
     if (textChanged) this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
     else this.search.apply(next);
@@ -258,15 +258,12 @@ export class CardSearch {
     });
   }
 
-  protected editEffect(index: number): void {
-    const effect = this.draft().effects[index];
+  protected editEffect(index: EffectSlot): void {
+    const effect = effectAt(this.draft(), index);
     if (!effect) return;
-    openEffectEditor(this.overlay, { effect, index, query: toUniquesQuery(this.draft(), this.search.faction()) }).afterClosed.subscribe((next) => {
-      const effects = next
-        ? this.draft().effects.map((e, i) => (i === index ? next : e))
-        : this.draft().effects.filter((e, i) => i !== index || e.triggers.length || e.conditions.length || e.effects.length);
-      this.onDraft({ ...this.draft(), effects });
-    });
+    openEffectEditor(this.overlay, { effect, index, query: toUniquesQuery(this.draft(), this.search.faction()) }).afterClosed.subscribe((next) =>
+      this.onDraft(withEditedEffect(this.draft(), index, next)),
+    );
   }
 
   protected scrollTop(): void {

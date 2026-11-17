@@ -22,11 +22,12 @@ function syncScrollOffset(root: HTMLElement): void {
  * Sticky under the site header unless `sticky` is false; while stuck, what the browser scrolls to the top (keyboard
  * focus, scrollIntoView, anchors) stops below it (`--ac-scroll-top-offset`, design-system/css/base.css).
  */
+// `title` is an input: a static title="…" would also stay on the host as the browser's tooltip over the whole component.
 @Component({
   selector: 'ac-app-bar',
   templateUrl: './app-bar.html',
   styleUrl: './app-bar.scss',
-  host: { '[style.position]': "sticky() ? null : 'static'" },
+  host: { '[style.position]': "sticky() ? null : 'static'", '[attr.title]': 'null' },
 })
 export class AcAppBar {
   readonly title = input('');

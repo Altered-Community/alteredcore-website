@@ -1,5 +1,6 @@
 import { Component, computed, input, model, signal } from '@angular/core';
 import { AcIcon } from '../../icon';
+import { AcRichLabel } from '../rich-label/rich-label';
 import type { ComboOption } from '../combobox/combobox';
 import { groupStarts, normalizeSearch } from '../option-list';
 
@@ -11,7 +12,7 @@ import { groupStarts, normalizeSearch } from '../option-list';
  */
 @Component({
   selector: 'ac-check-list',
-  imports: [AcIcon],
+  imports: [AcIcon, AcRichLabel],
   templateUrl: './check-list.html',
   styleUrl: './check-list.scss',
 })

@@ -263,6 +263,14 @@ main { min-height: 50vh; }
     margin-bottom: var(--ac-space-4);
 }
 .news-detail-meta { font: var(--ac-font-small); font-weight: 500; color: var(--ac-color-text-muted); }
+/* Authors and translators under the title: « Par A et B · Traduit par C ». */
+.news-detail-credits {
+    display: flex; flex-wrap: wrap; gap: var(--ac-space-1) var(--ac-space-3);
+    margin: 0;
+    font: var(--ac-font-small); color: var(--ac-color-text-2);
+}
+.news-detail-credits strong { font-weight: 700; color: var(--ac-color-text); }
+.news-detail-credits > span + span::before { content: '·'; margin-right: var(--ac-space-3); color: var(--ac-color-text-muted); }
 .news-detail-video {
     position: relative; width: 100%; padding-top: 56.25%; overflow: hidden;
     margin-bottom: var(--ac-space-8);

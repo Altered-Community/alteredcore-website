@@ -4,7 +4,7 @@
     "id":               "rebuilder",
     "name":             "Re:Builder",
     "version":          "0.3.0",
-    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular). With « Beta Deckbuilder » on, it serves the site's decks pages (/pages/decks, /pages/deck, /pages/deckbuilder) at their URLs.",
+    "description":      "Deck list, deck page and deck editor of Altered Re:Builder (Angular). With « Beta Deckbuilder » on, it serves the site's decks pages (/pages/decks, /pages/deck, /pages/deckbuilder) and card search (/pages/cards) at their URLs.",
     "author":           "Yutsa",
     "icon":             "fa-solid fa-pen-ruler",
 
@@ -15,9 +15,10 @@
             "entry":    "dist/embed-manifest.json",
             "mount":    "shadow",
             "fullwidth": false,
+            "fullwidth_slugs": ["cards"],
             "meta":     "meta.php",
             "placeholder": "placeholder.php",
-            "beta_slugs": ["decks", "deck", "deckbuilder"],
+            "beta_slugs": ["decks", "deck", "deckbuilder", "cards"],
             "title_en": "Re:Builder",
             "title_fr": "Re:Builder"
         }

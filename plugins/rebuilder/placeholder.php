@@ -9,7 +9,8 @@
 $id   = (string)($_GET['id'] ?? '');
 $view = (string)($_GET['view'] ?? '');
 $tab  = (string)($_GET['tab'] ?? '');
-if ($slug === 'deck' && $id !== '')            $screen = 'deck';
+if ($slug === 'cards')                         $screen = 'cards';
+elseif ($slug === 'deck' && $id !== '')        $screen = 'deck';
 elseif ($slug === 'deckbuilder' && $id !== '') $screen = 'editor';
 elseif ($slug === 'deckbuilder')               $screen = 'new';
 else                                           $screen = 'decks';
@@ -124,6 +125,35 @@ $board = function () use ($sk): string {
       <div class="rbph-mlist"><?= $sk('ac-skeleton--panel', 5) ?></div>
     </div>
     <?= $bottomNav(3) ?>
+  </div>
+<?php elseif ($screen === 'cards'):
+    // Card browser (features/cards/cards-page): its title and intro as the app writes them (cards.page.title and
+    // cards.page.intro in app/src/locale), source tabs, filters panel (from 1200 px) and results.
+    $fr = getUiLang() === 'fr';
+?>
+  <div class="rbph-desktop rbph-cards">
+    <div class="rbph-cards__head">
+      <h1><?= h($fr ? 'Cartes' : 'Cards') ?></h1>
+      <p><?= h($fr ? 'Toutes les cartes d’Altered et les Uniques, par faction, extension, rareté, type, coût, texte ou effet.' : 'Every Altered card and the Uniques, by faction, set, rarity, type, cost, text or effect.') ?></p>
+    </div>
+    <?= $tabs(['110px', '70px', '60px', '140px', '150px']) ?>
+    <div class="rbph-search">
+      <div class="rbph-panel rbph-filters"><?= $sk('ac-skeleton--control', 2) . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('rbph-chip', 3, '76px') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow') . $sk('ac-skeleton--control rbph-grow') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . $sk('rbph-h200') ?></div>
+      <div class="rbph-results">
+        <div class="rbph-row rbph-toolbar"><?= $sk('ac-skeleton--text', 1, '80px') . $sk('rbph-chip', 1, '110px') . $sk('rbph-chip', 1, '70px') . $sk('rbph-chip', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '110px') . $sk('ac-skeleton--control', 1, '72px') ?></div>
+        <div class="rbph-results__cards"><?= $sk('ac-skeleton--card', 8) ?></div>
+      </div>
+    </div>
+  </div>
+  <div class="rbph-compact">
+    <?= $appBar($barTitle($fr ? 'Cartes' : 'Cards'), 0, false) ?>
+    <div class="rbph-mpage rbph-mpage--cards">
+      <div class="rbph-row"><?= $sk('rbph-h44 rbph-grow') . $sk('rbph-h44', 1, '44px') ?></div>
+      <?= $tabs(['56px', '62px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
+      <div class="rbph-mchips rbph-bleed rbph-mt12"><?= $sk('', 1, '116px') . $sk('', 1, '86px') . $sk('', 1, '80px') ?></div>
+      <div class="rbph-row rbph-row44"><?= $sk('ac-skeleton--text', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('rbph-h44', 1, '150px') . $sk('rbph-icon24') ?></div>
+      <?= $cards('rbph-mcards', 4) ?>
+    </div>
   </div>
 <?php elseif ($screen === 'new'): ?>
   <?php // In the page, what the app draws there (features/decks/new-deck-page): a block of the window's height, its

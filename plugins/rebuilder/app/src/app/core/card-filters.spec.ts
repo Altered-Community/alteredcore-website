@@ -6,6 +6,8 @@ import {
   UNIQUES_SETS,
   activeFilterCount,
   defaultFilters,
+  effectAt,
+  emptySupport,
   filterChips,
   hasInvalidNumericFilters,
   newEffectBlock,
@@ -15,6 +17,7 @@ import {
   setsFor,
   toSearchParams,
   toUniquesQuery,
+  withEditedEffect,
 } from './card-filters';
 
 describe('parseCostExpression', () => {
@@ -52,7 +55,7 @@ describe('advanced filters (cards API)', () => {
       forestPower: '>=4',
       subtypes: ['ANIMAL'],
       costRelation: 'mainHigher' as const,
-      altArts: true,
+      altArts: 'with' as const,
       promoSets: ['DUSTEROP'],
       otherFactions: ['LY'],
     };
@@ -62,6 +65,39 @@ describe('advanced filters (cards API)', () => {
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
     expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
+  });
+
+  it('lists the alt arts alone (variations alt-art and promo) with the promo editions of the sets', () => {
+    const f = { ...defaultFilters('all'), altArts: 'only' as const, promoSets: ['EOLECB'] };
+    const p = toSearchParams(f, null, 1, 36);
+    expect(p.variations).toEqual(['alt-art', 'promo']);
+    expect(p.sets).toContain('EOLECB');
+    expect(filterChips(f, 'all').find((c) => c.id === 'altArts')?.label).toBe('Alt arts uniquement');
+    expect(removeChip(f, 'altArts')).toMatchObject({ altArts: 'off', promoSets: [] });
+  });
+
+  it('searches the support effect of the Uniques, with its own chip, and edits it in place', () => {
+    const block = { ...emptySupport(), triggers: [{ id: 432, text: 'Lorsque vous jouez un Sort' }] };
+    const f = { ...defaultFilters('uniques'), support: block };
+    expect(toUniquesQuery(f, null).support).toEqual({ triggers: [432], conditions: [], effects: [] });
+    expect(filterChips(f, 'uniques').map((c) => c.id)).toContain('support');
+    expect(filterChips(defaultFilters('uniques'), 'uniques').map((c) => c.id)).not.toContain('support');
+    expect(removeChip(f, 'support').support).toEqual(emptySupport());
+    expect(effectAt(f, 'support')).toBe(block);
+    expect(withEditedEffect(defaultFilters('uniques'), 'support', block).support).toBe(block);
+    // « Annuler » leaves it as it was; a main effect just added and left empty goes.
+    expect(withEditedEffect(f, 'support', undefined)).toBe(f);
+    const added = { ...defaultFilters('uniques'), effects: [newEffectBlock()] };
+    expect(withEditedEffect(added, 0, undefined).effects).toEqual([]);
+  });
+
+  it('searches the card text on « Toutes les cartes » only', () => {
+    const f = { ...defaultFilters('all'), text: '  piochez une carte ' };
+    expect(toSearchParams(f, null, 1, 36).effectText).toBe('piochez une carte');
+    expect(toSearchParams(defaultFilters('all'), null, 1, 36).effectText).toBeUndefined();
+    expect(filterChips(f, 'all').map((c) => c.id)).toContain('text');
+    expect(filterChips(f, 'uniques').map((c) => c.id)).not.toContain('text');
+    expect(removeChip(f, 'text').text).toBe('');
   });
 });
 
@@ -278,7 +314,7 @@ describe('numeric validation', () => {
   });
 
   it('omits unsupported costRelation, noEffect and collection altArts chips on account tabs', () => {
-    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], costRelation: 'mainHigher' as const, noEffect: true, altArts: true };
+    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], costRelation: 'mainHigher' as const, noEffect: true, altArts: 'with' as const };
     expect(filterChips(base, 'owned').map((c) => c.id)).toEqual(['altArts']);
     expect(filterChips({ ...base }, 'collection').map((c) => c.id)).toEqual([]);
   });

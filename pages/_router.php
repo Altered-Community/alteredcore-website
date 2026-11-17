@@ -81,7 +81,7 @@ if ($_pluginPage !== null) {
     ob_start();
     if ($_pluginPage['type'] === 'spa') {
         $_pluginPage['sub_path'] = $_subPath;
-        $pageFullwidth = $_pluginPage['fullwidth'];
+        $pageFullwidth = $_pluginPage['fullwidth'] || in_array($_slug, $_pluginPage['fullwidth_slugs'] ?? [], true);
         $GLOBALS['_ac_render_expect'] = spaFirstPaintId($_pluginPage);
         // Manifest `meta`: title and link preview of the client route ($slug, $subPath), set before the header
         // (variables of includes/header.php).

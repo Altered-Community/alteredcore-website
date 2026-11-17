@@ -3,7 +3,7 @@ import { Service, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
-import { ICONS } from './card-text';
+import { ICONS, richText } from './card-text';
 import { contentLocale } from './locale';
 import type { Card, CardCollection, CardOrder, CardSearchParams, HeroGroup, Locale, Localized } from './models';
 import { localizedText } from './models';
@@ -45,7 +45,12 @@ export interface UniquesQuery {
   order?: CardOrder;
   /** AND-ed; empty blocks are left out. */
   effects: UniquesEffect[];
+  /** The support ability (« effet de réserve », the echo line: active in Reserve), `support[t|c|o]`; left out when empty. */
+  support?: UniquesEffect;
 }
+
+/** Where an effect block is matched: a main-effect slot (its index in `UniquesQuery.effects`) or the support line. */
+export type EffectSlot = number | 'support';
 
 /** One page of results; `next` is the cursor of the next page, `null` at the end. */
 export interface UniquesPage {
@@ -186,8 +191,11 @@ export class UniquesApiService {
     );
   }
 
-  /** Trigger / condition / effect vocabularies of the effect editor (main-effect entries). */
-  abilities(kind: AbilityKind): Observable<AbilityRef[]> {
+  /**
+   * Trigger / condition / effect vocabularies of the effect editor: the main-effect entries (`isMain`), or with `support`
+   * the entries of the support line (`isEcho`), as the site's search does.
+   */
+  abilities(kind: AbilityKind, support = false): Observable<AbilityRef[]> {
     this.effects$ ??= this.http.get<EffectsResponse>(`${this.baseUrl}/api/v2/effects`).pipe(
       catchError((err: unknown) => {
         this.effects$ = undefined;
@@ -199,7 +207,7 @@ export class UniquesApiService {
       map((body) => {
         const rows = (kind === 'triggers' ? body.triggers : kind === 'conditions' ? body.conditions : body.output) ?? [];
         return toAbilityRefs(
-          rows.filter((r) => r.isMain !== false).map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {} })),
+          rows.filter((r) => (support ? r.isEcho === true : r.isMain !== false)).map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {} })),
           kind === 'conditions' ? NO_CONDITION : undefined,
         );
       }),
@@ -210,8 +218,8 @@ export class UniquesApiService {
    * Ids of `kind` that still give a card once set in `block`, the effect block at `index` of `query.effects`
    * (see `buildEffectsFilteredParams`). The editor narrows its lists to them.
    */
-  narrowAbilities(query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
-    const params = buildEffectsFilteredParams(query, index, block, kind);
+  narrowAbilities(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
+    const params = buildEffectsFilteredParams(query, slot, block, kind);
     return this.http
       .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
       .pipe(map((res) => new Set(res.idGds ?? [])));
@@ -324,7 +332,7 @@ export function buildUniquesParams(query: UniquesQuery, cursor: number | null, l
   if (sort) hp = hp.set('sort', sort);
   hp = appendCriteria(hp, query);
   const effects = query.effects.filter(hasCriteria);
-  return appendEffects(hp, effects, effectMatchCounts(effects));
+  return appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), query.support);
 }
 
 /** Query string of `GET /api/v2/search` for the unified "Toutes les cartes" search. */
@@ -336,6 +344,9 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
   if (sort) hp = hp.set('sort', sort);
   const name = params.q?.trim();
   if (name) hp = hp.set('name', name);
+  // Effect text of the non-Unique prints: the API leaves the Uniques out of the results with it.
+  const effectText = params.effectText?.trim();
+  if (effectText) hp = hp.set('effectText', effectText);
   for (const f of params.factions ?? []) hp = hp.append('faction[]', f);
   for (const t of params.types ?? []) hp = hp.append('cardType[]', t);
   for (const r of params.rarities ?? []) hp = hp.append('rarity[]', r);
@@ -362,11 +373,27 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
  * `matchCount` they have among themselves: the search may ask more of them once the edited block
  * is filled (`effectMatchCounts`), never less, so no id that gives a card is left out.
  */
-export function buildEffectsFilteredParams(query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind): HttpParams {
-  const others = query.effects.filter((e, i) => i !== index && hasCriteria(e));
+export function buildEffectsFilteredParams(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): HttpParams {
   let hp = appendCriteria(new HttpParams(), query);
+  if (slot === 'support') {
+    // The support block being edited, the main blocks as they are searched.
+    const effects = query.effects.filter(hasCriteria);
+    hp = appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), block, true);
+    return hp.set('editing', `${EDITING_PART[kind]}:support`);
+  }
+  const others = query.effects.filter((e, i) => i !== slot && hasCriteria(e));
   hp = appendEffects(hp, [...others, block], [...effectMatchCounts(others), 1]);
+  hp = appendSupport(hp, query.support);
   return hp.set('editing', `${EDITING_PART[kind]}:${others.length}`);
+}
+
+/** `support[t|c|o]` of the support block, empty parts left out; nothing for an empty block unless `always`. */
+function appendSupport(hp: HttpParams, support: UniquesEffect | undefined, always = false): HttpParams {
+  if (!support || (!always && !hasCriteria(support))) return hp;
+  if (support.triggers.length) hp = hp.set('support[t]', support.triggers.join(','));
+  if (support.conditions.length) hp = hp.set('support[c]', support.conditions.join(','));
+  if (support.effects.length) hp = hp.set('support[o]', support.effects.join(','));
+  return hp;
 }
 
 const EDITING_PART: Record<AbilityKind, string> = { triggers: 'trigger', conditions: 'condition', effects: 'output' };
@@ -544,10 +571,13 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
       seen.add(icon.title);
       continue;
     }
-    const text = cleanAbilityText(raw);
-    if (!text || text === '•' || /^\{[A-Z]\}$/.test(text) || seen.has(text)) continue;
+    const cleaned = cleanAbilityText(raw);
+    if (!cleaned || cleaned === '•' || /^\{[A-Z]\}$/.test(cleaned)) continue;
+    // `{D}`, `{V}` as the card's symbols, `[Fugace]` in bold: `text` keeps the plain reading (search, sort, screen readers).
+    const { rich, plain: text } = richText(cleaned);
+    if (!text || seen.has(text)) continue;
     seen.add(text);
-    out.push({ id: row.alteredId, text });
+    out.push(rich ? { id: row.alteredId, text, rich } : { id: row.alteredId, text });
   }
   out.sort((a, b) => a.text.localeCompare(b.text, contentLocale()));
   return empty ? [empty, ...out] : out;
@@ -558,7 +588,8 @@ function cleanAbilityText(text: string): string {
     .replace(/^\{T\}$/, $localize`:@@rules.icon.exhaustMe:Épuisez-moi`)
     .replace(/^\{D\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.discardMeFromReserve:Défaussez-moi de la Réserve`)
     .replace(/^\{I\}[\s\u00a0]*/, '')
-    .replace(/[\s\u00a0:]+$/g, '')
+    // The trigger's trailing \u00ab \u2014 \u00bb or \u00ab : \u00bb (\u00ab Lorsque \u2026 \u2014 \u00bb), printed before the effect on the card.
+    .replace(/[\s\u00a0:\u2014\u2013]+$/g, '')
     .replace(/[\s\u00a0]+/g, ' ')
     .trim();
 }

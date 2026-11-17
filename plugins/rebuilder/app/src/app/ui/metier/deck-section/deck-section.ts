@@ -3,10 +3,11 @@ import { NgTemplateOutlet } from '@angular/common';
 import { AcIcon } from '../../icon';
 
 /** Titled group of deck cards (Personnages 19 · 9 cartes différentes), optionally foldable. */
+// `title` is an input: a static title="…" would also stay on the host as the browser's tooltip over the whole component.
 @Component({
   selector: 'ac-deck-section',
   imports: [AcIcon, NgTemplateOutlet],
-  host: { '[class.flat]': "appearance() === 'flat'" },
+  host: { '[class.flat]': "appearance() === 'flat'", '[attr.title]': 'null' },
   templateUrl: './deck-section.html',
   styleUrl: './deck-section.scss',
 })

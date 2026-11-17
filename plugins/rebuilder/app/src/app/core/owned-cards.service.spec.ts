@@ -72,11 +72,15 @@ describe('Collection and digital ownership query', () => {
     expect(ownedDefault.getAll('variation[]')).toEqual(['standard']);
     expect(ownedDefault.getAll('cardSet[]')).not.toContain('WCF25');
 
-    const ownedAlt = ownedParams('owned', { ...defaultFilters('owned'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    const ownedAlt = ownedParams('owned', { ...defaultFilters('owned'), altArts: 'with' as const, promoSets: ['WCF25'] }, ['AX'], 1, 36);
     expect(ownedAlt.getAll('variation[]')).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(ownedAlt.getAll('cardSet[]')).toContain('WCF25');
 
-    const collAlt = ownedParams('collection', { ...defaultFilters('collection'), altArts: true, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    const ownedOnly = ownedParams('owned', { ...defaultFilters('owned'), altArts: 'only' as const, promoSets: ['WCF25'] }, ['AX'], 1, 36);
+    expect(ownedOnly.getAll('variation[]')).toEqual(['alt-art', 'promo']);
+    expect(ownedOnly.getAll('cardSet[]')).toContain('WCF25');
+
+    const collAlt = ownedParams('collection', { ...defaultFilters('collection'), altArts: 'with' as const, promoSets: ['WCF25'] }, ['AX'], 1, 36);
     expect(collAlt.getAll('variation[]')).toBeNull();
     expect(collAlt.getAll('cardSet[]')).not.toContain('WCF25');
   });

@@ -174,6 +174,8 @@ function CardSearch(cfg) {
     var _effectLoading = false;
     var _effectQueue   = [];
     var _supportRowEl  = null; // the single support/echo effect row (region 'echo')
+    var _subtypeOptions = null; // every subtype option, as given in cfg.tsOptions
+    var _facetsAbort    = null; // in-flight /api/v2/search/facets call
 
     // sort key → API order params
     var SORT_MAP = {
@@ -1015,6 +1017,13 @@ function CardSearch(cfg) {
         var uSort = UNIQUES_SORT_MAP[primary];
         if (uSort) parts.push('sort=' + encodeURIComponent(uSort));
 
+        return UNIQUES_API_BASE + '/api/v2/search?' + parts.concat(_unifiedFilterParts()).join('&');
+    }
+
+    // Filter params of the unified search, shared with /api/v2/search/facets
+    // (see buildFacetsUrl) so both always describe the exact same card set.
+    function _unifiedFilterParts() {
+        var parts = [];
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
         expandTypes(_typeDirty ? filters.type : DEFAULT_TYPES).forEach(function(v) {
             parts.push('cardType[]=' + encodeURIComponent(v));
@@ -1045,7 +1054,7 @@ function CardSearch(cfg) {
 
         if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
 
-        return UNIQUES_API_BASE + '/api/v2/search?' + parts.join('&');
+        return parts;
     }
 
     function _appendSubtypesParts(parts) {
@@ -1144,6 +1153,68 @@ function CardSearch(cfg) {
         var parts = _uniquesFilterParts();
         parts.push('editing=' + encodeURIComponent(part + ':' + slot));
         return UNIQUES_API_BASE + '/api/v2/effects/filtered?' + parts.join('&');
+    }
+
+    // Subtype facets: /api/v2/search/facets takes the same filters as the search and
+    // returns how many matching cards each subtype keeps. It ignores subTypes[] itself
+    // (its values are OR'd), so picking one subtype keeps the others on offer.
+    // null when the active tab/scope doesn't go through uniques-search-api (old Cards
+    // API, collection/favorites proxies, exact reference lookup): every subtype is
+    // offered then.
+    function buildFacetsUrl() {
+        if (!UNIQUES_API_BASE) return null;
+        if (filters.q && /^ALT_[A-Z0-9_]+$/i.test(filters.q)) return null;
+        if (_tab === 'unique') {
+            return UNIQUES_API_BASE + '/api/v2/search/facets?'
+                + ['kind=unique'].concat(_uniquesFilterParts()).join('&');
+        }
+        if (_scopeFavoris || (_scopeCollection && scopeApiUrl())) return null;
+        return UNIQUES_API_BASE + '/api/v2/search/facets?' + _unifiedFilterParts().join('&');
+    }
+
+    // Hide the subtypes that no longer lead to any card with the current filters.
+    function refreshSubtypeFacets() {
+        if (!tsInst.subtype || !_subtypeOptions) return;
+        if (_facetsAbort) _facetsAbort.abort();
+        _facetsAbort = null;
+        var url = buildFacetsUrl();
+        if (!url) { applySubtypeFacets(null); return; }
+        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        _facetsAbort = ctrl;
+        if (DEBUG) console.log('[CardSearch] Facets API call:', url);
+        fetch(url, ctrl ? { signal: ctrl.signal } : {})
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                if (_facetsAbort === ctrl) _facetsAbort = null;
+                applySubtypeFacets((data && data.subTypes) || {});
+            })
+            .catch(function(err) {
+                if (err && err.name === 'AbortError') return;
+                if (_facetsAbort === ctrl) _facetsAbort = null;
+                if (DEBUG) console.warn('[CardSearch] Facets API failed:', err);
+                // Never leave subtypes hidden because of a failed call.
+                applySubtypeFacets(null);
+            });
+    }
+
+    // counts: { SUBTYPE: n } from the API, or null to offer every subtype. Options
+    // are disabled (and hidden by the subtype option renderer) rather than removed,
+    // so they keep their original order. Selected subtypes always stay visible so
+    // they can be unselected.
+    function applySubtypeFacets(counts) {
+        var ts = tsInst.subtype;
+        if (!ts || !_subtypeOptions) return;
+        var selected = ts.items || [];
+        _subtypeOptions.forEach(function(o) {
+            var off = !!counts && !(counts[o.value] > 0) && selected.indexOf(o.value) < 0;
+            var cur = ts.options[o.value];
+            if (!cur || !!cur.disabled === off) return;
+            ts.updateOption(o.value, Object.assign({}, cur, { disabled: off }));
+        });
+        if (ts.isOpen) ts.refreshOptions(false);
     }
 
     // build collection proxy URL
@@ -1808,6 +1879,7 @@ function CardSearch(cfg) {
             return;
         }
         currentPage = page || 1;
+        refreshSubtypeFacets();
 
         // Uniques tab → rust-cards-api (cursor-based "load more"). Falls through to
         // the code below (old Cards API, numbered pagination) when UNIQUES_API_BASE
@@ -2419,7 +2491,25 @@ function CardSearch(cfg) {
             });
         }
 
-        tsInst.subtype   = makeTs('subtype',   { options: opts.subtypeOptions || [], items: opts.initialSubtypes || [], placeholder: txt.lbl_subtype || 'Subtype' });
+        _subtypeOptions = (opts.subtypeOptions || []).slice();
+        tsInst.subtype   = makeTs('subtype',   {
+            options: _subtypeOptions,
+            items: opts.initialSubtypes || [],
+            placeholder: txt.lbl_subtype || 'Subtype',
+            // Subtypes with no matching card are disabled by applySubtypeFacets(): hide them.
+            render: {
+                option: function(d, e) {
+                    return '<div' + (d.disabled ? ' style="display:none"' : '') + '>' + e(d.text) + '</div>';
+                },
+            },
+        });
+        if (tsInst.subtype) {
+            // Filters may have changed in the panel since the last search: refresh on open.
+            tsInst.subtype.on('dropdown_open', function() {
+                readTsValues();
+                refreshSubtypeFacets();
+            });
+        }
         tsInst.keyword   = makeTs('keyword',   { options: opts.keywordOptions || [], items: opts.initialKeywords || [], placeholder: txt.lbl_keyword || 'Keyword' });
         tsInst.variation = makeTs('variation', { options: opts.variationOptions || [], onChange: function() { _variationDirty = true; updateFilterCount(); } });
         var _initVars = (opts.initialVariations && opts.initialVariations.length) ? opts.initialVariations : DEFAULT_VARIATIONS.slice();

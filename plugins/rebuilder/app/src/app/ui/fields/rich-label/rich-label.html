@@ -1,0 +1,2 @@
+@let v = value();
+@if (v.glyph) {<span class="glyph lead" aria-hidden="true">{{ v.glyph }}</span>}@if (v.rich; as rich) {@for (p of rich; track $index) {@if (isGlyph(p)) {<span class="glyph" role="img" [attr.aria-label]="p.title" [title]="p.title" [style.font-size.em]="p.scale">{{ p.glyph }}</span>} @else if (p.bold) {<strong>{{ p.text }}</strong>} @else {<span>{{ p.text }}</span>}}} @else {{{ v.text }}}

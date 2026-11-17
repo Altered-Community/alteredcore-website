@@ -19,6 +19,12 @@ if ($slug === 'rebuilder') {
     redirect(BASE_URL . '/pages/' . $page . ($qs !== '' ? '?' . $qs : ''));
 }
 
+// The card browser (`/pages/cards` with « Beta Deckbuilder »): the site page's title rather than the plugin's.
+if ($slug === 'cards') {
+    $pageTitle = getUiLang() === 'fr' ? 'Cartes' : 'Cards';
+    return;
+}
+
 // Title and link preview of a deck (`deck?id=`, `deckbuilder?id=`), the same as the site's deck page's: the helper
 // of core-altered-cards (includes/deck-preview/preview.php), when that plugin is active. A guest deck, an unknown
 // deck or an unreachable API keep the page's default title.

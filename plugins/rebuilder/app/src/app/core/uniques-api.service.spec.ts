@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
-import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, buildUnifiedSearchParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
+import { NO_CONDITION, UniquesApiService, buildEffectsFilteredParams, buildUniquesParams, buildUnifiedSearchParams, effectMatchCounts, toAbilityRefs, toCard, type UniquesEffect, type UniquesQuery } from './uniques-api.service';
 
 const QUERY: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
 
@@ -44,10 +44,34 @@ describe('effectMatchCounts', () => {
 
 describe('buildEffectsFilteredParams', () => {
   const fx = (triggers: number[], conditions: number[], effects: number[]): UniquesEffect => ({ triggers, conditions, effects });
-  const params = (query: UniquesQuery, index: number, block: UniquesEffect, kind: 'triggers' | 'conditions' | 'effects') => {
+  const params = (query: UniquesQuery, index: number | 'support', block: UniquesEffect, kind: 'triggers' | 'conditions' | 'effects') => {
     const hp = buildEffectsFilteredParams(query, index, block, kind);
     return Object.fromEntries(hp.keys().map((k) => [k, hp.getAll(k)!.join('|')]));
   };
+
+  it('narrows the support effect on the support line, the main effects kept as searched', () => {
+    const query: UniquesQuery = { ...QUERY, effects: [fx([22], [], []), fx([], [], [])], support: fx([1], [], []) };
+    expect(params(query, 'support', fx([432], [], [90]), 'conditions')).toEqual({
+      'faction[]': 'AX',
+      'effect[0][t]': '22',
+      'support[t]': '432',
+      'support[o]': '90',
+      editing: 'condition:support',
+    });
+  });
+
+  it('keeps the support effect as a constraint while a main effect is edited', () => {
+    const query: UniquesQuery = { ...QUERY, effects: [fx([], [], [])], support: fx([], [], [90]) };
+    expect(params(query, 0, fx([22], [], []), 'effects')).toMatchObject({ 'effect[0][t]': '22', 'support[o]': '90', editing: 'output:0' });
+  });
+
+  it('sends support[t|c|o] to /api/v2/cards, and nothing for an empty support effect', () => {
+    const hp = buildUniquesParams({ ...QUERY, support: fx([432], [191], []) }, null, 36);
+    expect(hp.get('support[t]')).toBe('432');
+    expect(hp.get('support[c]')).toBe('191');
+    expect(hp.has('support[o]')).toBe(false);
+    expect(buildUniquesParams({ ...QUERY, support: fx([], [], []) }, null, 36).keys().some((k) => k.startsWith('support'))).toBe(false);
+  });
 
   it('sends the other criteria and puts the edited block last, in the slot `editing` names', () => {
     const query: UniquesQuery = { ...QUERY, name: 'kelon', sets: ['CORE'], mainCosts: [3], format: 'frontier', effects: [fx([22], [], []), fx([], [], [90])] };
@@ -190,6 +214,17 @@ describe('UniquesApiService', () => {
     expect(await conditions).toEqual([{ id: 191, text: NO_CONDITION }]);
     expect(await effects).toEqual([{ id: 90, text: 'Piochez une carte.' }]);
   });
+
+  it('builds the support effect vocabularies from the entries of the support line (isEcho)', async () => {
+    const triggers = lastValueFrom(api.abilities('triggers', true));
+    http.expectOne((r) => r.url.endsWith('/api/v2/effects')).flush({
+      triggers: [
+        { idGd: 22, text: { fr_FR: '{H}' }, isMain: true },
+        { idGd: 432, text: { fr_FR: 'Lorsque vous jouez un Sort' }, isMain: false, isEcho: true },
+      ],
+    });
+    expect((await triggers).map((t) => t.id)).toEqual([432]);
+  });
 });
 
 describe('toAbilityRefs', () => {
@@ -223,6 +258,20 @@ describe('toAbilityRefs', () => {
       { id: 22, text: 'Joué depuis la Main', glyph: '\ue023' },
       { id: 1, text: 'Joué depuis la Réserve', glyph: '\ue024' },
     ]);
+  });
+
+  it('prints the symbols and keywords as the card does, without the trigger’s trailing dash', () => {
+    const refs = toAbilityRefs([
+      { alteredId: 1, text: { fr: 'Lorsqu’une capacité {D} est activée pendant votre tour —' } },
+      { alteredId: 2, text: { fr: 'Lorsqu’un Personnage que vous contrôlez gagne [Fugace] —' } },
+      { alteredId: 3, text: { fr: 'Lorsqu’une carte quitte votre Réserve —' } },
+    ]);
+    const [d, fleeting, plain] = [1, 2, 3].map((id) => refs.find((r) => r.id === id)!);
+    expect(d.text).toBe('Lorsqu’une capacité Défaussez-moi de la Réserve est activée pendant votre tour');
+    expect(d.rich?.find((p) => 'glyph' in p)).toMatchObject({ glyph: '' });
+    expect(fleeting.text).toBe('Lorsqu’un Personnage que vous contrôlez gagne Fugace');
+    expect(fleeting.rich).toContainEqual({ text: 'Fugace', bold: true });
+    expect(plain).toEqual({ id: 3, text: 'Lorsqu’une carte quitte votre Réserve' });
   });
 
   it('keeps the empty condition first as « Sans condition » when asked', () => {
@@ -348,6 +397,13 @@ describe('unified /api/v2/search', () => {
     expect(card.rarity).toEqual({ reference: 'RARE' });
     expect(card.cardType).toEqual({ reference: 'SPELL', name: { fr: 'Sort' } });
     expect(card.isBanned).toBe(true);
+  });
+
+  it('sends the card text as effectText to the unified search', () => {
+    const params = buildUnifiedSearchParams({ page: 1, itemsPerPage: 36, effectText: ' piochez ', variations: ['alt-art'] });
+    expect(params.get('effectText')).toBe('piochez');
+    expect(params.getAll('variation[]')).toEqual(['alt-art']);
+    expect(buildUnifiedSearchParams({ page: 1, effectText: '  ' }).has('effectText')).toBe(false);
   });
 
   it('maps number-desc to reference:desc in buildUnifiedSearchParams', () => {

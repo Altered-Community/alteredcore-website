@@ -127,6 +127,8 @@ export interface CardSearchParams {
   costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
+  /** Words of the card's text (unified search `effectText`; the cards API has no such filter). */
+  effectText?: string;
   locale?: Locale;
 }
 

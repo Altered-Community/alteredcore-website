@@ -52,8 +52,9 @@ Altered-Re-Union/uniques-search-api).
 ## Ce que l’API ne fait pas
 
 - Pas de tri `random` : l’API supporte un tri unique à la fois (`sort=field:dir`), l’option Aléatoire est masquée sur l’onglet Uniques.
-- Pas de « Sans effet » ni d’« Effet d’écho » dans la recherche (déjà masqués sur les Uniques). `support[t|c|o]`
-  existe pour l’effet de soutien, pas encore proposé dans l’éditeur.
+- Pas de « Sans effet » dans la recherche (déjà masqué sur les Uniques). L’effet de soutien (ligne d’écho, actif en
+  Réserve) est l’« Effet de réserve » des filtres : un seul bloc, `support[t|c|o]`, ses listes réduites aux entrées
+  `isEcho` de `/api/v2/effects` et à ce qui donne encore une carte (`/api/v2/effects/filtered`, `editing=…:support`).
 - Pas de `rarity`, `cardType`, `collectorNumberFormatedId`, `imagePath` ni `transfuge` dans les cartes : ce sont des
   Personnages Uniques (`toCard`), le numéro de collection est déduit de la référence (`collectorNumber`), l’illustration
   vient du CDN comme avant.
@@ -66,8 +67,11 @@ mots-clés en codes, les mêmes dans toutes les langues : `[GIGANTIC]`, `[FLEETI
 `[BOOSTED_CHA_P]`, `[TOUGH_1]`… L'API des cartes les imprime traduits (`[Gigantesque]`, `[Fugace]`, `[Ravitaillez]`,
 `[Boosté]`, `[Coriace 1]`).
 
-**Contournement.** `printKeywordCodes` (`src/app/core/card-vocabulary.ts`) remplace chaque code par le mot-clé en
-français, en anglais pour les autres langues : nom anglais en capitales, variantes ramenées au mot-clé de base,
-nombre final conservé. Un code inconnu reste tel quel.
+**Contournement.** `printKeywordCodes` (`src/app/core/card-vocabulary.ts`) remplace chaque code par son nom imprimé, en
+français ou en anglais, pris dans la table de CardsData (`data/csv/Keywords.csv`, copiée dans `src/app/core/keyword-codes.ts`
+par `node scripts/keyword-codes.mjs <CardsData>/data/csv/Keywords.csv`) : chaque variante dans la grammaire de sa
+phrase (`RESUPPLY_INF` → Ravitailler, `ASCENDED_P` → Élevées, `DUE_TO_ASCENSION` → grâce à l'Élévation). Un code
+absent de la table retombe sur le mot-clé de base (nom anglais en capitales, nombre final conservé) ; un code inconnu
+reste tel quel.
 
 **À faire côté backend.** Renvoyer les mots-clés traduits, comme l'API des cartes.

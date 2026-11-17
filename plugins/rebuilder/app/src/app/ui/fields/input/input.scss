@@ -14,6 +14,12 @@
   color: var(--ac-color-text-muted);
   pointer-events: none;
 }
+/* An `alteredicons` symbol in the icon's place (the picture variant is drawn by the design system). */
+.glyph {
+  font-family: var(--ac-card-icons);
+  font-size: var(--ac-font-size-heading);
+  line-height: 1;
+}
 .clear {
   position: absolute;
   right: var(--ac-space-1);

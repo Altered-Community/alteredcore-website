@@ -211,6 +211,10 @@ include dirname(__DIR__) . '/includes/header.php';
                     <div class="ac-input-icon"><?= ac_icon('search') ?><input class="ac-input ac-input--subtle" id="ds-subtle" type="search" placeholder="Search"></div>
                 </div>
                 <div class="ac-field">
+                    <label class="ac-field__label" for="ds-forest">Leading picture</label>
+                    <div class="ac-input-icon"><span class="ac-input-icon__lead"><img src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/biome/F.webp" alt=""></span><input class="ac-input" id="ds-forest" title="Forest" placeholder="3, 1-3, &lt;4"></div>
+                </div>
+                <div class="ac-field">
                     <label class="ac-field__label" for="ds-format">Format</label>
                     <select class="ac-select" id="ds-format"><option>Standard</option><option>Frontier</option><option>Singleton</option></select>
                 </div>
@@ -304,6 +308,8 @@ include dirname(__DIR__) . '/includes/header.php';
                 <?php foreach ($factions as $i => $f): ?>
                 <button type="button" class="ac-chip" aria-pressed="<?= $i === 0 ? 'true' : 'false' ?>" style="--ac-chip-dot: var(--ac-faction-<?= h($f) ?>)"><span class="ac-chip__dot"></span><?= h(ucfirst($f)) ?></button>
                 <?php endforeach; ?>
+                <button type="button" class="ac-chip" aria-pressed="true"><img class="ac-chip__img" src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/AX.png" alt="">Axiom</button>
+                <button type="button" class="ac-chip ac-chip--icon" aria-pressed="false" aria-label="Bravos" title="Bravos"><img class="ac-chip__img" src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/faction/BR.png" alt=""></button>
                 <button type="button" class="ac-chip ac-chip--square" aria-pressed="true">1–3</button>
                 <button type="button" class="ac-chip">Rare <span class="ac-chip__remove"><?= ac_icon('x', 'ac-icon--14') ?></span></button>
             </div>

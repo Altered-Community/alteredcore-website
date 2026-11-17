@@ -12,3 +12,4 @@ export * from './switch/switch';
 export * from './types';
 export * from './value-accessor';
 export * from './textarea/textarea';
+export * from './rich-label/rich-label';

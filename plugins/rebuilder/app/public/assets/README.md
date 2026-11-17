@@ -15,3 +15,7 @@ the same `icon` each set carries in `plugins/core-altered-cards/data/altered.jso
 (`fa-ext-coreset`, `fa-tbf`, `fa-wfm`, `fa-sky`, `fa-sdu`, `fa-roc`, `fa-nej`,
 `fa-ks-set-icon`). They are not the set art in
 `plugins/core-altered-cards/assets/set/small_bg`.
+
+Set art (`set-bg/{SET}.webp`, 192 × 108) is the site's `plugins/core-altered-cards/assets/set/small_bg`: the
+background of the extension tiles, as on the site's card search. `faction/64/{CODE}.webp` are the faction marks
+above scaled down to 64 px (~3 KB each, for the faction chips), so a chip does not download the 1024 px PNG.

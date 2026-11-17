@@ -45,6 +45,24 @@
   border-radius: 50%;
   background: var(--ac-chip-dot, currentColor);
 }
+/* Picture before the label (a faction's mark): 18 px, kept whole. <img class="ac-chip__img" src="…" alt=""> */
+.ac-chip__img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  margin-inline-start: calc(-1 * var(--ac-space-1));
+}
+/* Picture alone (a faction's mark): the name in aria-label and title. <button class="ac-chip ac-chip--icon" aria-label="Axiom" title="Axiom"><img class="ac-chip__img" …></button> */
+.ac-chip--icon {
+  justify-content: center;
+  padding: 0 var(--ac-space-2-5);
+}
+.ac-chip--icon .ac-chip__img {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
 .ac-chip__remove {
   display: inline-flex;
   margin-right: calc(-1 * var(--ac-space-1));

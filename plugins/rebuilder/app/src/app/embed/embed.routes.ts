@@ -14,9 +14,9 @@ const signIn: CanActivateFn = () => {
 };
 
 /**
- * Re:Builder's decks section. With « Beta Deckbuilder » on, the shell serves it on the site's decks pages, base href
- * `/pages/`: its page URLs are the site's (`decks`, `deck?id=…`, `deckbuilder?id=…`, see LegacyUrlSerializer), the
- * routes below stay `decks/:id/…`.
+ * Re:Builder's decks section and card browser. With « Beta Deckbuilder » on, the shell serves it on the site's decks
+ * pages and card search, base href `/pages/`: its page URLs are the site's (`decks`, `deck?id=…`, `deckbuilder?id=…`,
+ * see LegacyUrlSerializer; `cards`), the routes below stay `decks/:id/…`.
  */
 export const embedRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'decks' },
@@ -41,6 +41,13 @@ export const embedRoutes: Routes = [
   { path: 'decks/:id/main', title: $localize`:@@title.deckHand:Deck — Main de départ`, loadComponent: deck, data: { tab: 'main', nav: NAV_DECKS } },
   { path: 'decks/:id/cartes', redirectTo: ({ params }) => `/decks/${params['id']}` },
   { path: 'decks/:id', title: $localize`:@@title.deck:Deck`, loadComponent: deck, data: { tab: 'cartes', nav: NAV_DECKS } },
+  {
+    // The site's card search page (`/pages/cards`) with « Beta Deckbuilder » on: its menu entry.
+    path: 'cards',
+    title: $localize`:@@title.cards:Cartes`,
+    data: { nav: 'cards' },
+    loadComponent: () => import('../features/cards/cards-page/cards.page').then((m) => m.CardsPage),
+  },
   { path: 'login', canActivate: [signIn], children: [] },
   { path: '**', redirectTo: 'decks' },
 ];
