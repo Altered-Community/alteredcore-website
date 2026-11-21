@@ -11,7 +11,7 @@ import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
 import { AcDrawerHandle, AcDrawerState, AcDrawerTab } from '../../../ui/containers';
 import { storedFlag } from '../../../core/stored-flag';
-import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
+import { AcInput, AcSegmented, AcSelect, AcSlider } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcTabs, type AcTab } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -37,6 +37,27 @@ export const CARD_SOURCES: CardSourceTab[] = [
 /** Compact screens: tabs in the row, the others under « Plus ». */
 const COMPACT_SOURCE_TABS = 4;
 
+/** Cards narrower than this are no longer readable: the most columns the width allows. */
+const MIN_CARD_WIDTH = 140;
+/** Fewest columns: beyond it a card is huge (the zoom shows one card large). */
+const MIN_COLUMNS = 2;
+/** Most columns, whatever the width. */
+const MAX_COLUMNS = 8;
+/** Uniques are read: at most 7 columns. */
+const MAX_READABLE_COLUMNS = 7;
+/** Usual card width where the grid is left alone (expanded, then medium windows). */
+const USUAL_CARD_WIDTH = { expanded: 200, medium: 168 };
+const COLUMNS_KEY = 'rebuilder.search.columns';
+
+function storedColumns(): number | null {
+  try {
+    const n = Number(localStorage.getItem(COLUMNS_KEY));
+    return Number.isInteger(n) && n >= MIN_COLUMNS && n <= MAX_COLUMNS ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Filters typed into a text field: a change is applied once the typing pauses. */
 const TEXT_FILTERS = ['q', 'text', 'mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'] as const satisfies readonly (keyof SearchFilters)[];
 
@@ -47,7 +68,7 @@ const TEXT_FILTERS = ['q', 'text', 'mainCost', 'recallCost', 'forestPower', 'mou
  */
 @Component({
   selector: 'app-card-search',
-  imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
+  imports: [AcTabs, AcSegmented, AcSlider, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
   host: { '[class.compact]': 'bp.compact()', '[class.browse]': 'browse()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
@@ -98,6 +119,37 @@ export class CardSearch {
   };
   protected readonly resultsLayout = signal<'grid' | 'list'>('grid');
   protected readonly condensed = signal(false);
+
+  /** Grid size (from 768 px): the columns chosen with the slider, remembered in this browser; null until the user moves it. */
+  private readonly columnsPref = signal<number | null>(storedColumns());
+  /** Width of the results and gap between cards, measured; 0 until the first measure. */
+  private readonly gridWidth = signal(0);
+  private readonly gridGap = signal(8);
+  protected readonly minColumns = MIN_COLUMNS;
+  /** Uniques are read: the grid keeps at most 7 columns. */
+  protected readonly readable = computed(
+    () =>
+      this.search.source() === 'uniques' ||
+      (this.search.source() === 'all' && (!this.search.filters().rarities.length || this.search.filters().rarities.includes('UNIQUE'))),
+  );
+  /** The most columns the width allows (cards stay at least `MIN_CARD_WIDTH` wide). */
+  protected readonly maxColumns = computed(() => {
+    const cap = this.readable() ? MAX_READABLE_COLUMNS : MAX_COLUMNS;
+    const width = this.gridWidth();
+    if (!width) return cap;
+    const fit = Math.floor((width + this.gridGap()) / (MIN_CARD_WIDTH + this.gridGap()));
+    return Math.max(MIN_COLUMNS, Math.min(cap, fit));
+  });
+  /** Columns shown: the user's choice within what the width allows, else what the usual card width gives; null until measured. */
+  protected readonly columns = computed<number | null>(() => {
+    const width = this.gridWidth();
+    if (!width) return null;
+    const usual = this.bp.expanded() ? USUAL_CARD_WIDTH.expanded : USUAL_CARD_WIDTH.medium;
+    const usualColumns = Math.floor((width + this.gridGap()) / (usual + this.gridGap()));
+    return Math.max(MIN_COLUMNS, Math.min(this.maxColumns(), this.columnsPref() ?? usualColumns));
+  });
+  /** Slider position: more to the right is larger cards, so fewer columns. */
+  protected readonly sizeLevel = computed(() => MIN_COLUMNS + this.maxColumns() - (this.columns() ?? this.maxColumns()));
 
   /** Desktop filters apply live; the draft mirrors the store and debounces text inputs. */
   protected readonly draft = signal<SearchFilters>(this.search.filters());
@@ -166,6 +218,23 @@ export class CardSearch {
       if (this.source() !== 'uniques') return;
       untracked(() => this.prefetchAbilities());
     });
+
+    // The width the grid can use, to bound the slider; read on resize of the results column only.
+    afterNextRender(() => {
+      const results = this.el.querySelector<HTMLElement>('.results');
+      if (!results) return;
+      const measure = () => {
+        const style = getComputedStyle(results);
+        this.gridWidth.set(Math.round(results.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)));
+        const grid = results.querySelector<HTMLElement>('ac-virtual-grid');
+        const gap = grid ? parseFloat(getComputedStyle(grid).columnGap) : NaN;
+        if (Number.isFinite(gap)) this.gridGap.set(gap);
+      };
+      const observer = new ResizeObserver(measure);
+      observer.observe(results);
+      measure();
+      this.injector.get(DestroyRef).onDestroy(() => observer.disconnect());
+    }, { injector: this.injector });
 
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     let measuring = 0;
@@ -263,6 +332,16 @@ export class CardSearch {
     this.draft.update((d) => ({ ...d, q }));
     clearTimeout(this.applyTimer);
     this.applyTimer = setTimeout(() => this.search.apply(this.draft()), 350);
+  }
+
+  protected setSizeLevel(level: number): void {
+    const columns = MIN_COLUMNS + this.maxColumns() - level;
+    this.columnsPref.set(columns);
+    try {
+      localStorage.setItem(COLUMNS_KEY, String(columns));
+    } catch {
+      // Not remembered: the size still applies for this visit.
+    }
   }
 
   protected openFilters(): void {

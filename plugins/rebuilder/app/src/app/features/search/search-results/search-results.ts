@@ -18,6 +18,7 @@ import { EditorAltArts } from '../../editor/editor-alt-arts';
 
 @Component({
   selector: 'app-search-results',
+  host: { '[style.--app-card-cols]': 'columns()' },
   imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid, AcSkeleton],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
@@ -36,6 +37,10 @@ export class SearchResults {
   protected readonly collecting = computed(() => this.browse() && this.collection.enabled());
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
+  /** Columns of the grid (from 768 px); null leaves it to the column width. */
+  readonly columns = input<number | null>(null);
+  /** Uniques are read, not only recognised: the grid keeps at most 7 columns. */
+  readonly readable = input(false);
   protected readonly accountTab = computed(() => isAccountSource(this.search.source()));
   protected readonly skeletons = computed(() => Array.from({ length: this.search.cards().length ? 3 : 6 }));
 

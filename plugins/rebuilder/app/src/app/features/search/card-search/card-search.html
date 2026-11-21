@@ -99,11 +99,14 @@
           @if (sortable()) {
             <ac-select label="Trier par" i18n-label="@@search.card.sortBy" [inlineLabel]="true" [options]="orderOptions()" [value]="search.filters().order" (valueChange)="setOrder($event)" />
           }
+          @if (resultsLayout() === 'grid') {
+            <ac-slider class="size" ariaLabel="Taille des cartes" i18n-ariaLabel="@@search.card.size" [min]="minColumns" [max]="maxColumns()" [value]="sizeLevel()" (valueChange)="setSizeLevel($event)" />
+          }
           <ac-segmented ariaLabel="Affichage des résultats" i18n-ariaLabel="@@search.card.layout" [options]="layoutOptions" [(value)]="resultsLayout" />
         </span>
       </div>
     }
-    <app-search-results [layout]="resultsLayout()" [browse]="browse()" />
+    <app-search-results [layout]="resultsLayout()" [columns]="bp.compact() ? null : columns()" [readable]="readable()" [browse]="browse()" />
     <!-- Desktop: at the bottom right of the results column, clear of the editor's deck panel. -->
     @if (!bp.compact() && condensed()) {
       <button class="to-top in-column" acIconButton="chevron-up" ariaLabel="Revenir en haut" i18n-ariaLabel="@@search.card.toTop" [iconSize]="22" (click)="scrollTop()"></button>
