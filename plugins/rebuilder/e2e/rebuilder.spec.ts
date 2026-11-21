@@ -1899,7 +1899,8 @@ test.describe('ReBuilder in the shell · card browser collection', () => {
     }
     const saved = page.waitForResponse((r) => r.url().includes('/collection-qty') && r.request().method() === 'POST');
     await add.click();
-    expect((await (await saved).json()).ok).toBe(true);
+    // The whole answer on failure: its `code` says why (CQ02 CSRF, CQ03 collection off, CQ05 collection API refused).
+    expect(await (await saved).json()).toMatchObject({ ok: true });
     const stepper = tile.getByRole('group', { name: /dans la collection physique$/ });
     await expect(stepper).toContainText('1');
     // Phones: the stepper on the card's right edge, under the star, not over the text at the bottom.
