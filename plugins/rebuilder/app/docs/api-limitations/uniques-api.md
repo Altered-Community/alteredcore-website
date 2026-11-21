@@ -75,3 +75,17 @@ absent de la table retombe sur le mot-clé de base (nom anglais en capitales, no
 reste tel quel.
 
 **À faire côté backend.** Renvoyer les mots-clés traduits, comme l'API des cartes.
+
+## Artistes, « au moins un 0 », Kuraokami et Sofia (2026-11-20)
+
+Ajoutés à `uniques-search-api` pour le navigateur de cartes (`/pages/cards`, onglet « Toutes les cartes ») ; le front
+les envoie dès maintenant :
+
+- `artist[]` (recherche unifiée) : nom exact de l’artiste, sans casse, OU entre les valeurs. `GET /api/v2/artists` donne
+  la liste (`{ "artists": [...] }`). Tant que l’API déployée ne répond pas à `/api/v2/artists`, le champ « Artiste » est
+  masqué (`UniquesApiService.artists()` renvoie `[]`).
+- `hasZeroPower=true` : au moins une puissance à 0 (Forêt OU Montagne OU Océan). Une API plus ancienne ignore le
+  paramètre : le filtre « Au moins un 0 » ne filtre rien avant son déploiement.
+- Kuraokami (`ALT_ALIZE_P_OR_48_*`) et Sofia (`ALT_BISE_P_BR_64_*`) n’existent qu’en produit `P` mais sont les cartes de
+  base : l’API les compte en variation `standard` (liste `index-core/data/variation_overrides.json`), plus en alt art.
+

@@ -11,6 +11,7 @@ import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcCardTile, AcDeckRow } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
 import { FavoritesService } from '../../../core/favorites.service';
+import { COLLECTION_MAX, CollectionService } from '../../../core/collection.service';
 import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { CardSearchStore } from '../card-search.store';
 import { EditorAltArts } from '../../editor/editor-alt-arts';
@@ -27,9 +28,12 @@ export class SearchResults {
   protected readonly auth = inject(AuthSession);
   private readonly overlay = inject(AcOverlayService);
   protected readonly favorites = inject(FavoritesService);
+  private readonly collection = inject(CollectionService);
   /** Editor: a card's plain print stands for all its prints, a copy added takes its default alt art. */
   private readonly altArts = inject(EditorAltArts, { optional: true });
   readonly layout = input<'grid' | 'list'>('grid');
+  /** Card browser, signed in with the site's collection on: the copies of the physical collection on the cards. */
+  protected readonly collecting = computed(() => this.browse() && this.collection.enabled());
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
   protected readonly accountTab = computed(() => isAccountSource(this.search.source()));
@@ -45,30 +49,36 @@ export class SearchResults {
 
   /** Copies in the deck: the whole family for a plain print, that print otherwise. */
   protected quantityOf(card: Card): number {
+    if (this.browse()) return this.collection.quantity(card.reference);
     if (this.altArts?.isFamilyCard(card)) return this.altArts.familyQuantity(card);
     return this.deck.quantities().get(card.reference) ?? 0;
   }
 
   protected maxOf(card: Card): number {
+    if (this.browse()) return COLLECTION_MAX;
     return this.altArts ? this.altArts.maxFor(card, true) : this.deck.maxFor(card);
   }
 
   protected setQuantity(card: Card, quantity: number): void {
-    if (this.altArts) this.altArts.setQuantity(card, quantity);
+    if (this.browse()) this.collection.set(card.reference, quantity);
+    else if (this.altArts) this.altArts.setQuantity(card, quantity);
     else this.deck.setQuantity(card, quantity);
   }
 
   /** Why a card cannot be added in the deck's format (a Unique in a No Unique format). */
   protected blockedReason(card: Card): string | null {
+    if (this.browse()) return null;
     return addBlockedReason(card, this.deck.format());
   }
 
-  /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox); the card alone in the browser. */
+  /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox), or in the collection in the browser. */
   protected zoom(card: Card): void {
-    const editable = !this.browse() && this.deck.editable() && !this.blockedReason(card);
+    const editable = this.browse() ? this.collecting() : this.deck.editable() && !this.blockedReason(card);
     openCardZoom(this.overlay, {
       card,
-      quantity: editable ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n) } : undefined,
+      quantity: editable
+        ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n), in: this.browse() ? 'collection' : 'deck' }
+        : undefined,
     });
   }
 

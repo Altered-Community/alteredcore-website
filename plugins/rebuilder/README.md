@@ -69,7 +69,7 @@ The base href is `/pages/`. The app's routes are `decks/:id/…`; `LegacyUrlSeri
 | `/pages/deck?id={id}` | Deck page (cards; `&tab=deck`, `description`, `main`), actions |
 | `/pages/deckbuilder` | New deck (hero, format, visibility) |
 | `/pages/deckbuilder?id={id}` | Editor (card search and filters, deck list, validation, statistics, settings; `&view=apercu`, `deck`, `main`) |
-| `/pages/cards` | Card browser, in place of the site's card search: the editor's search (every source tab, faction filter, search in the card text, alt arts only), no quantity controls |
+| `/pages/cards` | Card browser, in place of the site's card search: the editor's search (every source tab, faction filter, heroes and tokens, search in the card text, alt arts only, artists), filters in the URL (the former search's parameters still open the same search), copies of the physical collection on the cards when signed in with the site's collection (`core-altered-cards` endpoint `collection-qty`) |
 | `/pages/rebuilder/…` | The plugin's own page: its former links (`decks/{id}`, `?id={id}`, `deck?id={id}`) land on the URLs above |
 
 Signed in, decks are listed, created and saved on the decks API through the site's relay

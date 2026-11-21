@@ -54,6 +54,42 @@ button[aria-disabled="true"] {
   font-size: var(--ac-font-size-prose);
   font-weight: 800;
 }
+/* vertical overlay: « + » on top (the DOM keeps « − » first), small buttons, a hit area of --ac-hit-min around each.
+   The host can set the ring size (--ac-stepper-ring), the strip and button backgrounds (--ac-stepper-bg,
+   --ac-stepper-inc-bg, --ac-stepper-dec-bg) and the shadow (--ac-stepper-shadow): a card tile matches its faction flag. */
+.group.ac-stepper--overlay.ac-stepper--vertical {
+  flex-direction: column-reverse;
+  gap: 2px;
+  background: var(--ac-stepper-bg, var(--ac-color-overlay-control));
+  box-shadow: var(--ac-stepper-shadow, var(--ac-shadow-e3));
+}
+.ac-stepper--overlay.ac-stepper--vertical .inc .ring {
+  background: var(--ac-stepper-inc-bg, var(--ac-color-primary));
+}
+.ac-stepper--overlay.ac-stepper--vertical .dec .ring {
+  background: var(--ac-stepper-dec-bg, color-mix(in srgb, var(--ac-color-on-strong) 12%, transparent));
+}
+.ac-stepper--overlay.ac-stepper--vertical button {
+  position: relative;
+}
+.ac-stepper--overlay.ac-stepper--vertical button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
+  transform: translate(-50%, -50%);
+}
+.ac-stepper--overlay.ac-stepper--vertical .ring {
+  width: var(--ac-stepper-ring, 28px);
+  height: var(--ac-stepper-ring, 28px);
+}
+.ac-stepper--overlay.ac-stepper--vertical .value {
+  min-width: 0;
+  font-size: var(--ac-font-size-body);
+  line-height: 1.2;
+}
 /* inline (deck rows) */
 .group.ac-stepper--inline {
   color: var(--ac-color-text-2);

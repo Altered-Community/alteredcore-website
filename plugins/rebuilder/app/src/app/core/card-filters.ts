@@ -52,11 +52,14 @@ export interface SearchFilters {
    * echo effect on Uniques only (checked 2026-09-30, see docs/api-limitations/cards-api.md).
    */
   subtypes: string[];
-  costRelation: CostRelation;
+  /** At least one power at 0 (Forêt, Montagne or Océan): `hasZeroPower` of the unified search. */
+  zeroPower: boolean;
+  /** Artists (any of them), exact names: `artist[]` of the unified search. */
+  artists: string[];
   /**
    * Prints listed: `off` the standard ones, `with` every printing, `only` the alt arts in the players' sense: the
    * `alt-art` and `promo` variations (products `A` and `P` of the reference, `ALT_EOLE_A_…`, `ALT_DUSTER_P_…`).
-   * `with` and `only` add the promo editions of the chosen sets (`promoSets`).
+   * `with` and `only` add the promo editions of the chosen sets: the ones picked in `promoSets`, all of them when none is.
    */
   altArts: AltArtsMode;
   promoSets: string[];
@@ -67,16 +70,6 @@ export interface SearchFilters {
 }
 
 export type AltArtsMode = 'off' | 'with' | 'only';
-
-/** Main cost against reserve cost (`costRelation` of the cards API). */
-export type CostRelation = '' | 'equal' | 'mainHigher' | 'recallHigher';
-
-export const COST_RELATIONS: { value: CostRelation; label: string }[] = [
-  { value: '', label: $localize`:@@search.filters.costRelation.any:Gestion des coûts` },
-  { value: 'equal', label: $localize`:@@search.filters.costRelation.equal:Coût main = réserve` },
-  { value: 'mainHigher', label: $localize`:@@search.filters.costRelation.mainHigher:Coût main plus élevé` },
-  { value: 'recallHigher', label: $localize`:@@search.filters.costRelation.recallHigher:Coût réserve plus élevé` },
-];
 
 export interface SetInfo {
   reference: string;
@@ -133,13 +126,40 @@ export function legalFormat(source: CardSource, filters: SearchFilters, format: 
   return isAccountSource(source) && filters.legalOnly ? format : null;
 }
 
-export const TYPE_OPTIONS = [
-  { value: 'CHARACTER', label: $localize`:@@search.filters.type.character:Personnage` },
-  { value: 'SPELL', label: $localize`:@@search.filters.type.spell:Sort` },
-  { value: 'LANDMARK_PERMANENT', label: $localize`:@@search.filters.type.landmark:Repère Permanent` },
-  { value: 'EXPEDITION_PERMANENT', label: $localize`:@@search.filters.type.expedition:Permanent d’Expédition` },
-  { value: 'TOKEN_MANA', label: $localize`:@@search.filters.type.mana:Mana` },
-] as const;
+export interface TypeOption {
+  value: string;
+  label: string;
+  /** `cardType[]` codes the option stands for. */
+  codes: readonly string[];
+  /** Card browser only: not deck cards (heroes, tokens and mana). */
+  browseOnly?: boolean;
+}
+
+/** Card types; tokens and mana in one option (the site's `types_merged`, mana added). */
+export const TYPE_OPTIONS: readonly TypeOption[] = [
+  { value: 'CHARACTER', label: $localize`:@@search.filters.type.character:Personnage`, codes: ['CHARACTER'] },
+  { value: 'SPELL', label: $localize`:@@search.filters.type.spell:Sort`, codes: ['SPELL'] },
+  { value: 'LANDMARK_PERMANENT', label: $localize`:@@search.filters.type.landmark:Repère Permanent`, codes: ['LANDMARK_PERMANENT'] },
+  { value: 'EXPEDITION_PERMANENT', label: $localize`:@@search.filters.type.expedition:Permanent d’Expédition`, codes: ['EXPEDITION_PERMANENT'] },
+  { value: 'HERO', label: $localize`:@@search.filters.type.hero:Héros`, codes: ['HERO'], browseOnly: true },
+  { value: 'TOKEN', label: $localize`:@@search.filters.type.token:Jeton et mana`, codes: ['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA'], browseOnly: true },
+];
+
+/** The types offered: the deck cards in the editor, heroes, tokens and mana too in the card browser. */
+export function typeOptionsFor(browse: boolean): readonly TypeOption[] {
+  return browse ? TYPE_OPTIONS : TYPE_OPTIONS.filter((t) => !t.browseOnly);
+}
+
+/** `cardType[]` codes of the chosen types (an unknown value passes as it is). */
+export function cardTypeCodes(types: readonly string[]): string[] {
+  return [...new Set(types.flatMap((t) => TYPE_OPTIONS.find((o) => o.value === t)?.codes ?? [t]))];
+}
+
+/** The type option of a `cardType` code (`TOKEN_MANA` → `TOKEN`, the site's `PERMANENT` → Repère), for the site's links. */
+export function typeOptionOf(code: string): string | undefined {
+  if (code === 'PERMANENT') return 'LANDMARK_PERMANENT';
+  return TYPE_OPTIONS.find((o) => o.value === code || o.codes.includes(code))?.value;
+}
 
 export const FACTION_OPTIONS = [
   { code: 'AX', name: 'Axiom' },
@@ -193,7 +213,7 @@ export function defaultFilters(source: CardSource, format: DeckFormat | null = n
     sets: (source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS).filter((s) => !setsOffByDefault(source).includes(s)),
     // « Toutes les cartes » starts with C · R · E active (U is selectable); account tabs start with all 4.
     rarities: source === 'uniques' ? [] : (source === 'all' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE).map((r) => r.value),
-    types: source === 'uniques' ? [] : TYPE_OPTIONS.slice(0, 4).map((t) => t.value),
+    types: source === 'uniques' ? [] : typeOptionsFor(false).map((t) => t.value),
     factions: [],
     environment: defaultEnvironment(source, format),
     effects: [],
@@ -204,7 +224,8 @@ export function defaultFilters(source: CardSource, format: DeckFormat | null = n
     mountainPower: '',
     oceanPower: '',
     subtypes: [],
-    costRelation: '',
+    zeroPower: false,
+    artists: [],
     altArts: 'off',
     promoSets: [],
     otherFactions: [],
@@ -310,7 +331,6 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     factions: resolvedFactions(filters, faction),
     sets: filters.sets,
     subtypes: filters.subtypes,
-    costRelation: filters.costRelation || undefined,
     noEffect: filters.noEffect || undefined,
     mainCosts: uniquesStatValues(filters.mainCost),
     recallCosts: uniquesStatValues(filters.recallCost),
@@ -335,9 +355,19 @@ export function hasEffectCriteria(b: EffectBlock): boolean {
 }
 
 /** Other tabs (cards API). */
-/** Sets augmented with the active promo sub-sets when alt arts are included. */
+/**
+ * Promo editions searched with the alt arts: the picked ones among the chosen sets' editions, all of them when none is
+ * picked (every edition ticked or none: the same search).
+ */
+export function searchedPromoSets(filters: SearchFilters): string[] {
+  const offered = promoSetsOf(filters.sets);
+  const picked = offered.filter((p) => filters.promoSets.includes(p));
+  return picked.length ? picked : offered;
+}
+
+/** Sets augmented with the promo editions (`searchedPromoSets`) when alt arts are included. */
 export function filterSetsWithPromos(filters: SearchFilters): string[] {
-  return filters.altArts !== 'off' ? [...filters.sets, ...filters.promoSets.filter((p) => !filters.sets.includes(p))] : [...filters.sets];
+  return filters.altArts !== 'off' ? [...filters.sets, ...searchedPromoSets(filters).filter((p) => !filters.sets.includes(p))] : [...filters.sets];
 }
 
 /** Variation codes matching the `altArts` mode. */
@@ -352,7 +382,20 @@ export function variationCodes(filters: SearchFilters): string[] {
   }
 }
 
+/** « Au moins un 0 » (Forêt, Montagne or Océan): the unified search only, « Toutes les cartes ». */
+export function supportsZeroPower(source: CardSource): boolean {
+  return source === 'all';
+}
+
+export const ZERO_POWER_LABEL = $localize`:@@search.filters.zeroPower:Au moins un 0`;
+
+/** Artists: the unified search only, « Toutes les cartes ». */
+export function supportsArtists(source: CardSource): boolean {
+  return source === 'all';
+}
+
 /** The card's text is searched on « Toutes les cartes » only: `effectText` of the unified search (not the Uniques). */
+
 export function supportsTextSearch(source: CardSource): boolean {
   return source === 'all';
 }
@@ -374,7 +417,7 @@ export function toSearchParams(
     sets: filterSetsWithPromos(filters),
     // Empty rarity selection means all rarities (C · R · E · U), matching sets/types and Classic search.
     rarities: filters.rarities,
-    types: filters.types,
+    types: cardTypeCodes(filters.types),
     variations: variationCodes(filters),
     mainCosts: uniquesStatValues(filters.mainCost),
     recallCosts: uniquesStatValues(filters.recallCost),
@@ -382,9 +425,10 @@ export function toSearchParams(
     mountainPowers: uniquesStatValues(filters.mountainPower),
     oceanPowers: uniquesStatValues(filters.oceanPower),
     subtypes: filters.subtypes,
-    costRelation: filters.costRelation || undefined,
     order: filters.order,
     hasNoEffect: filters.noEffect || undefined,
+    hasZeroPower: filters.zeroPower || undefined,
+    artists: filters.artists,
   };
 }
 
@@ -422,6 +466,7 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   if (filters.mainCost.trim()) chips.push({ id: 'mainCost', label: $localize`:@@search.filters.chip.mainCost:Coût main : ${filters.mainCost.trim()}:cost:` });
   if (filters.recallCost.trim()) chips.push({ id: 'recallCost', label: $localize`:@@search.filters.chip.recallCost:Réserve : ${filters.recallCost.trim()}:cost:` });
   if (!isAccountSource(source) && filters.noEffect) chips.push({ id: 'noEffect', label: $localize`:@@search.filters.chip.noEffect:Sans effet` });
+  if (supportsZeroPower(source) && filters.zeroPower) chips.push({ id: 'zeroPower', label: ZERO_POWER_LABEL });
   const power = (id: 'forestPower' | 'mountainPower' | 'oceanPower', label: string) => {
     if (filters[id].trim()) chips.push({ id, label: `${label} : ${filters[id].trim()}` });
   };
@@ -429,7 +474,9 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
   power('mountainPower', $localize`:@@ui.terrain.mountain:Montagne`);
   power('oceanPower', $localize`:@@ui.terrain.ocean:Océan`);
   if (filters.subtypes.length) chips.push({ id: 'subtypes', label: filters.subtypes.length === 1 ? termLabel(SUBTYPES.find((k) => k.code === filters.subtypes[0]) ?? { code: '', fr: filters.subtypes[0], en: filters.subtypes[0] }) : $localize`:@@search.filters.chip.subtypes:${filters.subtypes.length}:count: sous-types` });
-  if (!isAccountSource(source) && filters.costRelation) chips.push({ id: 'costRelation', label: COST_RELATIONS.find((c) => c.value === filters.costRelation)?.label ?? '' });
+  if (supportsArtists(source) && filters.artists.length) {
+    chips.push({ id: 'artists', label: filters.artists.length === 1 ? filters.artists[0] : $localize`:@@search.filters.chip.artists:${filters.artists.length}:count: artistes` });
+  }
   if (filters.otherFactions.length) {
     chips.push({
       id: 'otherFactions',
@@ -483,8 +530,10 @@ export function removeChip(filters: SearchFilters, id: string): SearchFilters {
       return { ...filters, [id]: '' };
     case 'subtypes':
       return { ...filters, subtypes: [] };
-    case 'costRelation':
-      return { ...filters, costRelation: '' };
+    case 'zeroPower':
+      return { ...filters, zeroPower: false };
+    case 'artists':
+      return { ...filters, artists: [] };
     case 'altArts':
       return { ...filters, altArts: 'off', promoSets: [] };
     case 'otherFactions':

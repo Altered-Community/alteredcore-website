@@ -16,12 +16,12 @@ const LABELS = {
   fr: {
     newDeck: 'Nouveau deck', deckName: 'Nom du deck', create: 'Créer le deck', search: 'Recherche', viewDeck: 'Aperçu', cancel: 'Annuler',
     deckNav: 'Éditeur de deck', decksNav: 'Decks', myDecks: 'Mes decks', community: 'Communauté', communityDecks: 'Decks de la communauté',
-    sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
+    sortBy: 'Trier par', guest: 'Mode invité', rarity: 'Rareté', subtype: 'Sous-type', advanced: 'Recherche avancée', clearAll: 'Tout effacer',
   },
   en: {
     newDeck: 'New deck', deckName: 'Deck name', create: 'Create deck', search: 'Search', viewDeck: 'Preview', cancel: 'Cancel',
     deckNav: 'Deck editor', decksNav: 'Decks', myDecks: 'My decks', community: 'Community', communityDecks: 'Community decks',
-    sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', advanced: 'Advanced search', clearAll: 'Clear all',
+    sortBy: 'Sort by', guest: 'Guest mode', rarity: 'Rarity', subtype: 'Subtype', advanced: 'Advanced search', clearAll: 'Clear all',
   },
 };
 type Lang = keyof typeof LABELS;
@@ -591,7 +591,9 @@ test.describe('ReBuilder in the shell · languages', () => {
       if (!compact) {
         // The rarity filter has no title row: its group is named in the language.
         await expect(page.getByRole('group', { name: l.rarity, exact: true })).toBeVisible();
-        await expect(page.getByRole('button', { name: l.advanced })).toBeVisible();
+        // The side panel shows every filter, no « Recherche avancée » fold (the sheet keeps it).
+        await expect(page.getByRole('button', { name: l.advanced })).toHaveCount(0);
+        await expect(page.getByText(l.subtype, { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: l.clearAll })).toBeVisible();
       }
       await expect(page.getByText(other.advanced)).toHaveCount(0);
@@ -767,18 +769,19 @@ test.describe('ReBuilder in the shell · card filters', () => {
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
     const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
-    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
-    const subtypes = filters.locator('ac-combobox');
-    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
-    const options = page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option');
+    if (compact) await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    // The field is named by its placeholder, « Sous-type » (no title row).
+    const subtypes = filters.locator('ac-combobox').filter({ has: page.getByRole('combobox', { name: 'Sous-type' }) });
+    await subtypes.getByRole('combobox', { name: 'Sous-type' }).click();
+    const options = page.getByRole('listbox', { name: 'Sous-type' }).getByRole('option');
     await options.nth(0).click();
     await options.nth(1).click();
-    await expect(page.getByRole('listbox', { name: 'Ajouter…' }).getByRole('option', { selected: true })).toHaveCount(2);
+    await expect(page.getByRole('listbox', { name: 'Sous-type' }).getByRole('option', { selected: true })).toHaveCount(2);
     await expect(subtypes.locator('.picked')).toHaveCount(2);
     await evidence(page, testInfo, '12-subtypes');
     // The button closes the list; the two subtypes make one filter.
-    await subtypes.getByRole('combobox', { name: 'Ajouter…' }).click();
-    await expect(page.getByRole('listbox', { name: 'Ajouter…' })).toBeHidden();
+    await subtypes.getByRole('combobox', { name: 'Sous-type' }).click();
+    await expect(page.getByRole('listbox', { name: 'Sous-type' })).toBeHidden();
     if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
     await expect(page.getByText('2 sous-types').first()).toBeVisible();
   });
@@ -799,7 +802,7 @@ test.describe('ReBuilder in the shell · card browser', () => {
 
     const byText = search((q) => q.get('effectText') === 'piochez');
     await filters.getByRole('textbox', { name: 'Rechercher dans le texte des cartes' }).fill('piochez');
-    await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    if (compact) await filters.getByRole('button', { name: 'Recherche avancée' }).click();
     const onlyAltArts = search((q) => q.get('effectText') === 'piochez' && q.getAll('variation[]').join() === 'alt-art,promo');
     await filters.getByRole('group', { name: 'Illustrations' }).getByRole('button', { name: 'Alt arts' }).click();
     await evidence(page, testInfo, '40-card-browser-filters');
@@ -1838,5 +1841,82 @@ test.describe('ReBuilder in the shell · loading', () => {
     await expect(page.locator('.ac-spa-placeholder')).toHaveCount(0);
     await expect(root).toHaveCSS('visibility', 'visible');
     await expect(page.locator('app-deck-page').getByText(deck.name).first()).toBeVisible();
+  });
+});
+
+test.describe('ReBuilder in the shell · card browser filters', () => {
+  test('heroes and tokens with mana, no cost management, filters kept in the URL through a reload', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    const search = (check: (q: URLSearchParams) => boolean) =>
+      page.waitForRequest((r) => new URL(r.url()).pathname === '/api/v2/search' && check(new URL(r.url()).searchParams));
+    await page.goto('/pages/cards?lang=fr');
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    // The source tabs carry an icon on wide screens; no page title above them.
+    if (!compact) {
+      await expect(page.getByRole('tab', { name: 'Toutes les cartes' }).locator('svg.ac-icon')).toBeVisible();
+      await expect(page.getByText('Toutes les cartes d’Altered et les Uniques')).toHaveCount(0);
+    }
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    const filters = compact ? page.getByRole('dialog', { name: 'Filtres' }) : page.getByRole('complementary', { name: 'Filtres' });
+    if (compact) await filters.getByRole('button', { name: 'Recherche avancée' }).click();
+    await expect(filters.getByRole('combobox', { name: 'Gestion des coûts' })).toHaveCount(0);
+    await expect(filters.getByText('#Bureaucrate#')).toHaveCount(0);
+    const types = filters.getByRole('group', { name: 'Type de carte' });
+    await expect(types.getByRole('button', { name: 'Mana', exact: true })).toHaveCount(0);
+
+    const heroes = search((q) => q.getAll('cardType[]').includes('HERO') && q.getAll('cardType[]').includes('TOKEN_MANA'));
+    await types.getByRole('button', { name: 'Héros' }).click();
+    await types.getByRole('button', { name: 'Jeton et mana' }).click();
+    await evidence(page, testInfo, '42-card-browser-types');
+    if (compact) await filters.getByRole('button', { name: 'Rechercher' }).click();
+    await heroes;
+    await expect(page).toHaveURL(/type%5B%5D=HERO/);
+
+    // A reload finds the same search.
+    const again = search((q) => q.getAll('cardType[]').includes('HERO') && q.getAll('cardType[]').includes('TOKEN'));
+    await page.reload();
+    await again;
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+
+    // A link of the site's former card search.
+    const legacy = search((q) => q.getAll('faction[]').join() === 'AX' && q.getAll('cardType[]').includes('TOKEN_MANA'));
+    await page.goto('/pages/cards?lang=fr&faction[]=AX&type[]=TOKEN_MANA');
+    await legacy;
+  });
+});
+
+test.describe('ReBuilder in the shell · card browser collection', () => {
+  test('adds a card to the physical collection from the card browser, kept through a reload', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await login(page, 'bob', '/pages/cards?lang=fr&faction[]=YZ');
+    const tile = page.locator('ac-card-tile').first();
+    await expect(tile).toBeVisible();
+    const add = tile.getByRole('button', { name: /^Ajouter .+ à la collection physique$/ });
+    // An earlier run may have left a copy: back to none first.
+    const minus = tile.getByRole('button', { name: /^Retirer un exemplaire/ });
+    while (!(await add.isVisible()) && (await minus.isVisible())) {
+      const saved = page.waitForResponse((r) => r.url().includes('/collection-qty') && r.request().method() === 'POST');
+      await minus.click();
+      await saved;
+    }
+    const saved = page.waitForResponse((r) => r.url().includes('/collection-qty') && r.request().method() === 'POST');
+    await add.click();
+    // The whole answer on failure: its `code` says why (CQ02 CSRF, CQ03 collection off, CQ05 collection API refused).
+    expect(await (await saved).json()).toMatchObject({ ok: true });
+    const stepper = tile.getByRole('group', { name: /dans la collection physique$/ });
+    await expect(stepper).toContainText('1');
+    // Phones: the stepper on the card's right edge, under the star, not over the text at the bottom.
+    if (compact) {
+      const card = await tile.boundingBox();
+      const box = await stepper.boundingBox();
+      expect(box!.x + box!.width).toBeGreaterThan(card!.x + card!.width * 0.75);
+      expect(box!.y + box!.height).toBeLessThan(card!.y + card!.height * 0.75);
+    }
+    await evidence(page, testInfo, '43-card-browser-collection');
+
+    await page.reload();
+    await expect(page.locator('ac-card-tile').first().getByRole('group', { name: /dans la collection physique$/ })).toContainText('1');
+    const removed = page.waitForResponse((r) => r.url().includes('/collection-qty') && r.request().method() === 'POST');
+    await page.locator('ac-card-tile').first().getByRole('button', { name: /^Retirer un exemplaire/ }).click();
+    await removed;
+    await expect(page.locator('ac-card-tile').first().getByRole('button', { name: /à la collection physique$/ })).toBeVisible();
   });
 });

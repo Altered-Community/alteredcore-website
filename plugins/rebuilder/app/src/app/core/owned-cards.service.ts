@@ -3,7 +3,7 @@ import { Service, inject } from '@angular/core';
 import { map, of, switchMap, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CardsApiService } from './cards-api.service';
-import { filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
+import { cardTypeCodes, filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
 import { formatInfo } from './formats';
 import { mergeUniqueFace } from './deck-view';
 import { contentLocale } from './locale';
@@ -81,7 +81,7 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
     add('set[]', f.sets);
     return p;
   }
-  add('cardType[]', f.types);
+  add('cardType[]', cardTypeCodes(f.types));
   add('cardSet[]', source === 'owned' ? filterSetsWithPromos(f) : f.sets);
   add('subTypes[]', f.subtypes);
   if (source === 'owned') add('variation[]', variationCodes(f));

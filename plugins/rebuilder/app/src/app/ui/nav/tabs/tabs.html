@@ -9,7 +9,7 @@
     (click)="active.set(t.id)"
     (keydown.arrowRight)="step($index, 1)"
     (keydown.arrowLeft)="step($index, -1)"
-  >{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
+  >@if (t.icon && !short()) {<ac-icon [name]="t.icon" [size]="18" />}{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
 }
 @if (overflow().length) {
   @let p = picked();

@@ -18,6 +18,18 @@ $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $body   = json_decode(file_get_contents('php://input') ?: 'null', true);
 $user   = mockUser();
 
+// Collection lines by id (`PATCH` / `DELETE /api/collection/{id}`): the card browser's copies, kept per user in /tmp.
+if (preg_match('#^/api/collection/(\d+)$#', $path, $m) && in_array($method, ['PATCH', 'DELETE'], true)) {
+    $lines = collectionLines($user);
+    $id = (int)$m[1];
+    $at = array_search($id, array_column($lines, 'id'), true);
+    if ($at === false) reply(['error' => 'Unknown collection line'], 404);
+    if ($method === 'DELETE' || (int)($body['quantity'] ?? 0) <= 0) array_splice($lines, $at, 1);
+    else $lines[$at]['quantity'] = (int)$body['quantity'];
+    saveState($user, ['collection' => $lines] + state($user));
+    reply($method === 'DELETE' ? null : $lines[$at], $method === 'DELETE' ? 204 : 200);
+}
+
 switch ("$method $path") {
     case 'GET /health':
         reply(['status' => 'ok']);
@@ -54,7 +66,15 @@ switch ("$method $path") {
     case 'POST /api/alt-arts/apply-to-deck':
         reply(['lines' => applyToDeck((array)$body, $user)]);
     case 'GET /api/collection':
-        reply(collection());
+        reply(collection($user));
+    case 'POST /api/collection':
+        $ref = strtoupper((string)($body['cardReference'] ?? ''));
+        if (!preg_match('/^ALT_[A-Z0-9_]+$/', $ref) || (int)($body['quantity'] ?? 0) <= 0) reply(['error' => 'cardReference and quantity required'], 422);
+        $lines = collectionLines($user);
+        $line = ['id' => max([0, ...array_column($lines, 'id')]) + 1, 'reference' => $ref, 'quantity' => (int)$body['quantity']] + refFields($ref);
+        $lines[] = $line;
+        saveState($user, ['collection' => $lines] + state($user));
+        reply($line, 201);
     default:
         reply(['error' => "No mock for $method $path"], 404);
 }
@@ -211,8 +231,11 @@ function search(string $user): array {
  * A few owned cards (the same for every user), filtered as the services do: `key[]` lists, `name` substring. Also the
  * stack's collection API (COLLECTION_API_URL, same path): its filters are named `cardType` / `cardSet`.
  */
-function collection(): array {
-    $owned = [
+/** The user's collection lines: the starting ones, then the user's changes (kept in /tmp). */
+function collectionLines(string $user): array {
+    $saved = state($user)['collection'] ?? null;
+    if (is_array($saved)) return $saved;
+    $lines = [
         ['reference' => 'ALT_CORE_B_AX_08_C', 'quantity' => 3, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
         ['reference' => 'ALT_CORE_B_AX_08_R1', 'quantity' => 1, 'name' => 'Récupérateur Axiom', 'faction' => 'AX', 'rarity' => 'RARE', 'type' => 'CHARACTER', 'set' => 'CORE'],
         ['reference' => 'ALT_CORE_B_AX_15_C', 'quantity' => 2, 'name' => 'Brouilleur Axiom', 'faction' => 'AX', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
@@ -220,6 +243,19 @@ function collection(): array {
         ['reference' => 'ALT_ALIZE_B_AX_32_U_2', 'quantity' => 1, 'name' => 'La Machine dans la Glace', 'faction' => 'AX', 'rarity' => 'UNIQUE', 'type' => 'CHARACTER', 'set' => 'ALIZE'],
         ['reference' => 'ALT_CORE_B_BR_10_C', 'quantity' => 3, 'name' => 'Red', 'faction' => 'BR', 'rarity' => 'COMMON', 'type' => 'CHARACTER', 'set' => 'CORE'],
     ];
+    foreach ($lines as $i => &$l) $l['id'] = $i + 1;
+    return $lines;
+}
+
+/** Faction, rarity and set read from a reference (`ALT_CORE_B_AX_08_R1`); the type and name are not known. */
+function refFields(string $ref): array {
+    $p = explode('_', $ref);
+    $rarity = ['C' => 'COMMON', 'R1' => 'RARE', 'R2' => 'RARE', 'U' => 'UNIQUE'][$p[5] ?? ''] ?? 'COMMON';
+    return ['name' => $ref, 'faction' => $p[3] ?? '', 'rarity' => $rarity, 'type' => 'CHARACTER', 'set' => $p[1] ?? ''];
+}
+
+function collection(string $user): array {
+    $owned = collectionLines($user);
     // The collection API (cardType[], cardSet[]) fails on several card types, like the real one: its proxy filters them.
     if (count((array)($_GET['cardType'] ?? [])) > 1) reply(['error' => 'several cardType'], 500);
     $name = mb_strtolower(trim((string)($_GET['name'] ?? '')));

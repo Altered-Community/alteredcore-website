@@ -1,6 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, model, output, signal } from '@angular/core';
-import { COST_RELATIONS, SUPPORT_TITLE, TYPE_OPTIONS, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, promoSetsOf, setsFor, supportsTextSearch, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { Component, computed, inject, input, model, output, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import { uiLocale } from '../../../core/i18n';
+import { subtypeFacetParams } from '../../../core/subtype-facets';
+import { SUPPORT_TITLE, ZERO_POWER_LABEL, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, setsFor, supportsArtists, supportsTextSearch, supportsZeroPower, typeOptionsFor, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { UniquesApiService } from '../../../core/uniques-api.service';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
 import { assetUrl } from '../../../core/asset-url';
@@ -11,25 +16,28 @@ import { AcButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
 import { AcFilterSection } from '../../../ui/containers';
-import { AcCombobox, AcInput, AcSegmented, AcSelect, type ComboOption } from '../../../ui/fields';
+import { AcCombobox, AcInput, AcSegmented, type ComboOption } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
 
 /** Filter controls shared by the desktop aside and the mobile « Filtres » sheet. */
 @Component({
   selector: 'app-filters-panel',
-  imports: [NgTemplateOutlet, AcInput, AcSelect, AcCombobox, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
+  imports: [NgTemplateOutlet, AcInput, AcCombobox, AcFilterSection, AcExtensionTile, AcIconToggleGroup, AcChip, AcSegmented, AcEffectSummary, AcLogicDivider, AcButton, AcIcon],
   host: { '[class.sheet]': "mode() === 'sheet'" },
   templateUrl: './filters-panel.html',
   styleUrl: './filters-panel.scss',
 })
 export class FiltersPanel {
+  private readonly uniquesApi = inject(UniquesApiService);
   readonly source = input<CardSource>('all');
   readonly mode = input<'aside' | 'sheet'>('aside');
   /** Editor: the deck's format, for the « légales » filter of the account tabs. */
   readonly format = input<DeckFormat | null>(null);
   /** Card browser only: the editor locks the faction to the hero's. */
   readonly factionFilter = input(false);
+  /** Editor: the hero's faction the search is locked to (the subtypes offered are counted in it). */
+  readonly faction = input<string | null>(null);
   readonly value = model.required<SearchFilters>();
   /** Opens the effect editor on a main effect (its index) or on the support effect. */
   readonly editEffect = output<EffectSlot>();
@@ -40,7 +48,10 @@ export class FiltersPanel {
   protected readonly rarities = computed(() => rarityOptionsFor(this.source()).map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
   protected readonly legalFilter = computed(() => isAccountSource(this.source()));
   protected readonly legalLabel = computed(() => $localize`:@@search.filters.legalOnly:Légales en ${formatInfo(this.format()).label}:format:`);
-  protected readonly types = TYPE_OPTIONS;
+  /** Heroes, tokens and mana in the card browser too (`factionFilter`: the card browser). */
+  protected readonly types = computed(() => typeOptionsFor(this.factionFilter()));
+  protected readonly zeroPower = computed(() => supportsZeroPower(this.source()));
+  protected readonly zeroPowerLabel = ZERO_POWER_LABEL;
   /** In the cost fields: the hand and reserve symbols (`alteredicons`, as the site's search). */
   protected readonly glyphs = { hand: ICONS['H'].glyph, reserve: ICONS['R'].glyph };
   /** In the power fields: the terrains. */
@@ -78,35 +89,76 @@ export class FiltersPanel {
     const v = this.value();
     return { forest: parseCostExpression(v.forestPower) === null, mountain: parseCostExpression(v.mountainPower) === null, ocean: parseCostExpression(v.oceanPower) === null };
   });
-  protected readonly costRelations = COST_RELATIONS;
-  protected readonly subtypeOptions: ComboOption[] = SUBTYPES.map((k, id) => ({ id, text: termLabel(k) }));
-  /** Promo editions of the chosen sets. */
-  protected readonly promoOptions = computed(() =>
-    PROMO_SETS.filter((p) => this.value().sets.includes(p.parent)).map((p) => ({ code: p.code, label: termLabel(p) })),
+  /** Every subtype (`id`: index in `SUBTYPES`), as shown once picked: name alone. */
+  protected readonly allSubtypes: ComboOption[] = SUBTYPES.map((k, id) => ({ id, text: termLabel(k) }));
+  /**
+   * Cards per subtype with the other filters (`/api/v2/search/facets`), « Toutes les cartes » and « Uniques »; `null`
+   * elsewhere, while it loads the first time, or when the API cannot count. Asked again once the filters stay still.
+   */
+  private readonly facets = toSignal(
+    toObservable(computed(() => subtypeFacetParams(this.source(), this.value(), this.faction()))).pipe(
+      map((params) => ({ params, key: params?.toString() ?? '' })),
+      distinctUntilChanged((a, b) => a.key === b.key),
+      debounceTime(250),
+      switchMap(({ params }) => (params ? this.uniquesApi.subtypeFacets(params) : of(null))),
+    ),
+    { initialValue: null },
   );
+  /**
+   * The subtypes offered: those still giving cards, with their count (« Mage · 10 »), and the ones picked (to untick
+   * them, even at 0); every subtype when there is no count.
+   */
+  protected readonly subtypeOptions = computed<ComboOption[]>(() => {
+    const facets = this.facets();
+    if (!facets) return this.allSubtypes;
+    const picked = new Set(this.value().subtypes);
+    const fmt = new Intl.NumberFormat(uiLocale());
+    return SUBTYPES.flatMap((k, id) => {
+      const n = facets[k.code] ?? 0;
+      if (!n && !picked.has(k.code)) return [];
+      const text = `${termLabel(k)} · ${fmt.format(n)}`;
+      // The same object while the count holds: the list (CDK listbox) keeps its checked options by reference.
+      const key = `${id}|${text}`;
+      let option = this.countedSubtypes.get(key);
+      if (!option) this.countedSubtypes.set(key, (option = { id, text }));
+      return [option];
+    });
+  });
+  private readonly countedSubtypes = new Map<string, ComboOption>();
+  /** Promo editions of the chosen sets (`id`: index in `PROMO_SETS`). */
+  protected readonly promoOptions = computed<ComboOption[]>(() =>
+    PROMO_SETS.flatMap((p, id) => (this.value().sets.includes(p.parent) ? [{ id, text: termLabel(p) }] : [])),
+  );
+  protected readonly pickedPromos = computed(() => this.promoOptions().filter((o) => this.value().promoSets.includes(PROMO_SETS[o.id].code)));
+  /** Every artist of the catalog (empty until the search API lists them: no field). */
+  private readonly artists = toSignal(this.uniquesApi.artists(), { initialValue: [] as string[] });
+  protected readonly artistOptions = computed<ComboOption[]>(() => (supportsArtists(this.source()) ? this.artists().map((text, id) => ({ id, text })) : []));
+  protected readonly pickedArtists = computed(() => this.artistOptions().filter((o) => this.value().artists.includes(o.text)));
 
   protected picked(codes: string[]): ComboOption[] {
-    return codes.map((c) => this.subtypeOptions[SUBTYPES.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);
+    return codes.map((c) => this.allSubtypes[SUBTYPES.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);
   }
 
   protected codes(values: ComboOption[]): string[] {
     return values.map((v) => SUBTYPES[v.id]?.code).filter((c): c is string => !!c);
   }
 
-  /**
-   * « Toutes » (every printing) or « Alt arts » (the alt arts alone): the promo editions of the chosen sets join the search
-   * (as on the site), the ones already picked kept from one mode to the other; « Standard »: back to the standard prints.
-   */
-  protected setAltArts(mode: AltArtsMode): void {
-    const prev = this.value();
-    const promoSets = mode === 'off' ? [] : prev.altArts === 'off' ? promoSetsOf(prev.sets) : prev.promoSets;
-    this.set({ altArts: mode, promoSets });
+  protected artistNames(values: ComboOption[]): string[] {
+    return values.map((v) => v.text);
   }
 
-  protected togglePromo(code: string, on: boolean): void {
-    const cur = this.value().promoSets.filter((p) => p !== code);
-    this.set({ promoSets: on ? [...cur, code] : cur });
+  /**
+   * « Toutes » (every printing) or « Alt arts » (the alt arts alone): the promo editions of the chosen sets join the search
+   * (as on the site), all of them until some are picked; « Standard »: back to the standard prints.
+   */
+  protected setAltArts(mode: AltArtsMode): void {
+    this.set({ altArts: mode, promoSets: mode === 'off' ? [] : this.value().promoSets });
   }
+
+  protected setPromos(values: ComboOption[]): void {
+    this.set({ promoSets: values.map((v) => PROMO_SETS[v.id]?.code).filter((c): c is string => !!c) });
+  }
+
 
   protected effectTitle(index: number): string {
     return effectTitle(index);

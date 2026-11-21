@@ -1,7 +1,7 @@
 import { CdkMenu, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Component, ElementRef, computed, input, model, viewChildren } from '@angular/core';
 import { nextId } from '../../fields/value-accessor';
-import { AcIcon } from '../../icon';
+import { AcIcon, type AcIconName } from '../../icon';
 
 export interface AcTab {
   id: string;
@@ -10,6 +10,8 @@ export interface AcTab {
   short?: string;
   /** A number after the label; `null` while it loads (« … », at the width of a three-digit number). */
   count?: number | null;
+  /** Icon before the label (Lucide), left out in the shared row of `maxTabs` (room) and in the « Plus » menu. */
+  icon?: AcIconName;
 }
 
 /**

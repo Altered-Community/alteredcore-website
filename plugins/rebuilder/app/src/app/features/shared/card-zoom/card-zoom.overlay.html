@@ -7,7 +7,11 @@
     <div class="controls">
       @if (data.quantity; as q) {
         <div class="qty">
-          <span i18n="@@cardZoom.inDeck">Dans le deck</span>
+          @if (q.in === 'collection') {
+            <span i18n="@@cardZoom.inCollection">Dans la collection physique</span>
+          } @else {
+            <span i18n="@@cardZoom.inDeck">Dans le deck</span>
+          }
           <ac-stepper appearance="box" [label]="name()" [itemName]="name()" [value]="quantity()" [max]="q.max" (valueChange)="setQuantity($event)" />
         </div>
       }
