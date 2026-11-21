@@ -34,6 +34,8 @@ export interface UniquesQuery {
   subtypes?: string[];
   costRelation?: '' | 'equal' | 'mainHigher' | 'recallHigher';
   noEffect?: boolean;
+  /** At least one power at 0 (Forêt, Montagne or Océan). */
+  hasZeroPower?: boolean;
   mainCosts: number[];
   recallCosts: number[];
   forestPowers?: number[];
@@ -460,6 +462,7 @@ function appendCriteria(hp: HttpParams, query: UniquesQuery): HttpParams {
   for (const st of query.subtypes ?? []) hp = hp.append('subTypes[]', st);
   if (query.costRelation) hp = hp.set('costRelation', query.costRelation);
   if (query.noEffect) hp = hp.set('hasNoEffect', 'true');
+  if (query.hasZeroPower) hp = hp.set('hasZeroPower', 'true');
   hp = appendStatValues(hp, 'mainCost', query.mainCosts);
   hp = appendStatValues(hp, 'recallCost', query.recallCosts);
   hp = appendStatValues(hp, 'forestPower', query.forestPowers);
