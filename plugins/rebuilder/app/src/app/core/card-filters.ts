@@ -332,6 +332,7 @@ export function toUniquesQuery(filters: SearchFilters, faction: string | null): 
     sets: filters.sets,
     subtypes: filters.subtypes,
     noEffect: filters.noEffect || undefined,
+    hasZeroPower: filters.zeroPower || undefined,
     mainCosts: uniquesStatValues(filters.mainCost),
     recallCosts: uniquesStatValues(filters.recallCost),
     forestPowers: uniquesStatValues(filters.forestPower),
@@ -382,9 +383,9 @@ export function variationCodes(filters: SearchFilters): string[] {
   }
 }
 
-/** « Au moins un 0 » (Forêt, Montagne or Océan): the unified search only, « Toutes les cartes ». */
+/** « Au moins un 0 » (Forêt, Montagne or Océan): « Toutes les cartes » and « Uniques » (the search API's tabs). */
 export function supportsZeroPower(source: CardSource): boolean {
-  return source === 'all';
+  return source === 'all' || source === 'uniques';
 }
 
 export const ZERO_POWER_LABEL = $localize`:@@search.filters.zeroPower:Au moins un 0`;

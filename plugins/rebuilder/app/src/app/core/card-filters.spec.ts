@@ -355,6 +355,17 @@ describe('search feedback (types, promo editions, zero power, artists)', () => {
     expect(chips.find((c) => c.id === 'artists')?.label).toBe('2 artistes');
     expect(removeChip(f, 'zeroPower').zeroPower).toBe(false);
     expect(removeChip(f, 'artists').artists).toEqual([]);
-    expect(filterChips(f, 'uniques').map((c) => c.id)).not.toContain('zeroPower');
+    expect(filterChips(f, 'collection').map((c) => c.id)).not.toContain('zeroPower');
+  });
+});
+
+describe('« Au moins un 0 » on the Uniques', () => {
+  it('sends hasZeroPower to the Uniques search and shows its chip', () => {
+    const f = { ...defaultFilters('uniques'), zeroPower: true };
+    const uq = toUniquesQuery(f, null);
+    expect(uq.hasZeroPower).toBe(true);
+    expect(buildUniquesParams(uq, null, 20).get('hasZeroPower')).toBe('true');
+    expect(buildUniquesParams(toUniquesQuery(defaultFilters('uniques'), null), null, 20).has('hasZeroPower')).toBe(false);
+    expect(filterChips(f, 'uniques').map((c) => c.id)).toContain('zeroPower');
   });
 });
