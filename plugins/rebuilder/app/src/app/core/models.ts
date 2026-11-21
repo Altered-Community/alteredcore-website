@@ -127,6 +127,10 @@ export interface CardSearchParams {
   costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;
   hasNoEffect?: boolean;
+  /** At least one power at 0 (unified search `hasZeroPower`). */
+  hasZeroPower?: boolean;
+  /** Artists, exact names (unified search `artist[]`). */
+  artists?: string[];
   /** Words of the card's text (unified search `effectText`; the cards API has no such filter). */
   effectText?: string;
   locale?: Locale;

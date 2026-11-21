@@ -81,7 +81,6 @@ export function printKeywordCodes(text: string, locale: string): string {
 
 /** Card subtypes (Animal, Ingénieur…), French order. */
 export const SUBTYPES: readonly Term[] = [
-  { code: "BUREAUCRATOOF", fr: "#Bureaucrate#", en: "#Bureaucrat#" },
   { code: "ANIMAL", fr: "Animal", en: "Animal" },
   { code: "APPRENTICE", fr: "Apprenti", en: "Apprentice" },
   { code: "ARTIST", fr: "Artiste", en: "Artist" },

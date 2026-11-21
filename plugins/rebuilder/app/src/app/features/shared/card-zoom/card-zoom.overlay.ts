@@ -10,8 +10,11 @@ import { openAltArtPicker, type AltArtPickerData } from '../../editor/alt-art-pi
 
 export interface CardZoomData {
   card: Card;
-  /** Editor: copies in the deck, changed from the window (as the site's deck builder lightbox). */
-  quantity?: { value: number; max: number; change: (quantity: number) => void };
+  /**
+   * Editor: copies in the deck, changed from the window (as the site's deck builder lightbox); card browser: copies in the
+   * physical collection (`in: 'collection'`).
+   */
+  quantity?: { value: number; max: number; change: (quantity: number) => void; in?: 'deck' | 'collection' };
   /** Editor, a card with several illustrations: « Choisir les illustrations » opens its brush in place of this window. */
   illustrations?: AltArtPickerData;
 }

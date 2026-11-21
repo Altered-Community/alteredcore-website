@@ -30,6 +30,7 @@
         {"endpoint": "playset-cards",     "file": "api/playset-cards.php"},
         {"endpoint": "favorites-search",  "file": "api/favorites-search.php"},
         {"endpoint": "favorites-toggle",  "file": "api/favorites-toggle.php"},
+        {"endpoint": "collection-qty",    "file": "api/collection-qty.php", "methods": ["GET", "POST"]},
         {"endpoint": "deck-add-card",     "file": "api/deck-add-card.php"},
         {"endpoint": "deck-alt-arts",     "file": "api/deck-alt-arts.php"},
         {"endpoint": "deck-image",        "file": "api/deck-image.php",  "methods": ["GET", "HEAD", "POST"]},

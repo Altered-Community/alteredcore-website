@@ -91,15 +91,45 @@
   @if (!limited()) {
     <ac-filter-section title="Type" i18n-title="@@search.filters.type" [headless]="true">
       <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
-        @for (t of types; track t.value) {
+        @for (t of types(); track t.value) {
           <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
         }
       </div>
     </ac-filter-section>
+    <ng-container *ngTemplateOutlet="subtypeField" />
     <ng-container *ngTemplateOutlet="costs" />
+    @if (supportsAltArts()) {
+      <ng-container *ngTemplateOutlet="prints" />
+    }
     <ng-container *ngTemplateOutlet="powers" />
   }
 }
+
+<!-- Subtypes: no title row, the field's placeholder names it (and is its accessible name). -->
+<ng-template #subtypeField>
+  <ac-combobox keepOpen [options]="subtypeOptions()" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Sous-type" i18n-placeholder="@@search.filters.subtype" />
+</ng-template>
+
+<!-- Prints (standard, all, alt arts alone) and, with the alt arts, the promo editions of the chosen sets, ticked to
+     narrow: none ticked searches them all. -->
+<ng-template #prints>
+  <div class="adv-field">
+    <span class="adv-label" aria-hidden="true" i18n="@@search.filters.prints">Illustrations</span>
+    <ac-segmented
+      ariaLabel="Illustrations" i18n-ariaLabel="@@search.filters.prints"
+      [fullWidth]="true"
+      [options]="altArtsModes"
+      [value]="value().altArts"
+      (valueChange)="setAltArts($event ?? 'off')"
+    />
+  </div>
+  @if (value().altArts !== 'off' && promoOptions().length) {
+    <div class="adv-field">
+      <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
+      <ac-combobox keepOpen [options]="promoOptions()" [values]="pickedPromos()" (valuesChange)="setPromos($event)" placeholder="Toutes les éditions" i18n-placeholder="@@search.filters.promoAll" />
+    </div>
+  }
+</ng-template>
 
 <!-- Main and reserve costs: the hand and reserve symbols in the fields. -->
 <ng-template #costs>
@@ -131,44 +161,39 @@
 </ng-template>
 
 <ng-template #setTiles>
-  <ac-filter-section title="Extensions" i18n-title="@@search.filters.sets" [headless]="true">
+  <!-- Title row with « Toutes » / « Aucune » on its right: the link reads as the sets' own. -->
+  <ac-filter-section title="Extensions" i18n-title="@@search.filters.sets">
+    <button action type="button" class="link" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? labels.none : labels.all }}</button>
     <div class="sets" role="group" aria-label="Extensions" i18n-aria-label="@@search.filters.sets">
       @for (s of sets(); track s.reference) {
         <ac-extension-tile [extension]="s" [selected]="value().sets.includes(s.reference)" (selectedChange)="toggleSet(s.reference, $event)" />
       }
     </div>
-    <!-- Sheet: every set or none in one tap, under the tiles. -->
-    @if (mode() === 'sheet') {
-      <button type="button" class="link sets-all" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? labels.none : labels.all }}</button>
-    }
   </ac-filter-section>
 </ng-template>
 
+<!--
+  The other filters: shown as they are in the side panel (it scrolls on its own); folded under « Recherche avancée » in the
+  sheet, where the height is short.
+-->
 @if (!limited() || !factionFilter()) {
   <div class="advanced">
-    <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
-      <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
-      <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
-    </button>
-    @if (advancedOpen()) {
+    @if (mode() === 'sheet') {
+      <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
+        <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
+        <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
+      </button>
+    }
+    @if (mode() === 'aside' || advancedOpen()) {
       @if (supportsCostAndEffect()) {
-        <div class="types adv" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
+        <div class="types" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
+          @if (zeroPower()) {
+            <ac-chip shape="square" [label]="zeroPowerLabel" [selected]="value().zeroPower" (selectedChange)="set({ zeroPower: $event })" />
+          }
           <ac-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
         </div>
       }
       <div class="adv-body">
-        @if (supportsAltArts()) {
-          <div class="adv-field">
-              <span class="adv-label" aria-hidden="true" i18n="@@search.filters.prints">Illustrations</span>
-              <ac-segmented
-                ariaLabel="Illustrations" i18n-ariaLabel="@@search.filters.prints"
-                [fullWidth]="true"
-                [options]="altArtsModes"
-                [value]="value().altArts"
-                (valueChange)="setAltArts($event ?? 'off')"
-              />
-          </div>
-        }
         @if (!factionFilter()) {
           <div class="adv-field">
             <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
@@ -180,22 +205,12 @@
           </div>
         }
         @if (!limited()) {
-          @if (supportsAltArts() && value().altArts !== 'off' && promoOptions().length) {
-            <div class="adv-field">
-              <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
-              <div class="types" role="group" aria-label="Éditions promo" i18n-aria-label="@@search.filters.promoEditions">
-                @for (p of promoOptions(); track p.code) {
-                  <ac-chip shape="square" [label]="p.label" [selected]="value().promoSets.includes(p.code)" (selectedChange)="togglePromo(p.code, $event)" />
-                }
-              </div>
-            </div>
+          <!-- The Uniques have no type row: their subtypes stay here. -->
+          @if (source() === 'uniques') {
+            <ng-container *ngTemplateOutlet="subtypeField" />
           }
-          <div class="adv-field">
-            <span class="adv-label" i18n="@@search.filters.subtype">Sous-type</span>
-            <ac-combobox keepOpen [options]="subtypeOptions" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Ajouter…" i18n-placeholder="@@search.filters.add" />
-          </div>
-          @if (supportsCostAndEffect()) {
-            <ac-select ariaLabel="Gestion des coûts" i18n-ariaLabel="@@search.filters.costRelation.any" [options]="costRelations" [value]="value().costRelation" (valueChange)="set({ costRelation: $any($event) })" />
+          @if (artistOptions().length) {
+            <ac-combobox keepOpen [options]="artistOptions()" [values]="pickedArtists()" (valuesChange)="set({ artists: artistNames($event) })" placeholder="Artiste" i18n-placeholder="@@search.filters.artist" />
           }
         }
       </div>

@@ -151,6 +151,14 @@
     gap: var(--ac-space-4);
   }
 
+  /* Card browser: the source tabs stay in view under the site's header (not on phones: the search head sticks there). */
+  :host(.browse) ac-tabs {
+    position: sticky;
+    top: var(--ac-sticky-top);
+    z-index: 16;
+    background: var(--ac-color-bg-app);
+  }
+
   .chips {
     margin: 0;
     --ac-filter-bar-bg: var(--ac-color-bg-app);
@@ -186,6 +194,16 @@
 
 
 @media (min-width: 1200px) {
+  /* Where the side panel and its tab stick: under the header, and under the source tabs in the card browser
+     (`--app-tabs-height`, measured by the component). */
+  :host {
+    --app-filters-top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+  }
+
+  :host(.browse) {
+    --app-filters-top: calc(var(--ac-sticky-top) + var(--app-tabs-height, 0px) + var(--ac-space-4));
+  }
+
   .toolbar {
     flex-wrap: nowrap;
   }
@@ -202,12 +220,12 @@
     width: calc(var(--ac-filter-panel-width) + var(--ac-space-8) + var(--ac-space-6));
     flex-shrink: 0;
     position: sticky;
-    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    top: var(--app-filters-top);
     /* Stay inside the viewport under the page header. `--app-filters-offset` (set by the component) is how far
        the panel still sits below its sticky position: it grows as the page scrolls, up to the whole height under
        the header. The footer is a flex sibling of the scroller, so the action row is never scrolled away. */
-    height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6) - var(--app-filters-offset, 0px));
-    max-height: calc(100dvh - var(--ac-sticky-top) - 2 * var(--ac-space-6));
+    height: calc(100dvh - var(--app-filters-top) - var(--ac-space-6) - var(--app-filters-offset, 0px));
+    max-height: calc(100dvh - var(--app-filters-top) - var(--ac-space-6));
     transition: height 120ms ease-out;
   }
 
@@ -227,7 +245,7 @@
   .filters-tab {
     flex-shrink: 0;
     position: sticky;
-    top: calc(var(--ac-sticky-top) + var(--ac-space-6));
+    top: var(--app-filters-top);
     margin-left: calc(-1 * var(--app-drawer-bleed, 0px));
   }
 

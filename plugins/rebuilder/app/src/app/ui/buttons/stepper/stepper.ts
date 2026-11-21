@@ -13,6 +13,11 @@ export class AcStepper {
   readonly min = input(0);
   readonly max = input(3);
   readonly appearance = input<'overlay' | 'inline' | 'box'>('inline');
+  /**
+   * `vertical` (overlay): « + » on top, the count, « − » below, smaller buttons (28 px) whose hit area stays
+   * `--ac-hit-min`; on the edge of a card tile on phones, clear of the card's text.
+   */
+  readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
   readonly label = input('');
   readonly itemName = input('');
 
@@ -25,7 +30,7 @@ export class AcStepper {
     const name = this.itemName();
     return name ? $localize`:@@ui.stepper.addOneOf:Ajouter un exemplaire de ${name}:name:` : $localize`:@@ui.stepper.addOne:Ajouter un exemplaire`;
   });
-  protected readonly iconSize = computed(() => (this.appearance() === 'overlay' ? 16 : 14));
+  protected readonly iconSize = computed(() => (this.appearance() === 'overlay' && this.orientation() === 'horizontal' ? 16 : 14));
 
   step(delta: number): void {
     const next = Math.max(this.min(), Math.min(this.max(), this.value() + delta));

@@ -3,8 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { ORDER_OPTIONS, activeFilterCount, defaultFilters, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService, type EffectSlot } from '../../../core/uniques-api.service';
+import { filtersFromParams, filtersToParams, sourceFromParams } from '../../../core/search-url';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
@@ -12,7 +13,7 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab } from '../../../ui/containe
 import { storedFlag } from '../../../core/stored-flag';
 import { AcInput, AcSegmented, AcSelect } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
-import { AcTabs } from '../../../ui/nav';
+import { AcTabs, type AcTab } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { CardSearchStore } from '../card-search.store';
 import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
@@ -20,19 +21,17 @@ import { FiltersPanel } from '../filters-panel/filters-panel';
 import { openFiltersSheet } from '../filters-sheet/filters-sheet.overlay';
 import { SearchResults } from '../search-results/search-results';
 
-export interface CardSourceTab {
+export interface CardSourceTab extends AcTab {
   id: CardSource;
-  label: string;
-  /** Label in the compact tab row. */
-  short?: string;
 }
 
+/** The icons (wide screens) say each source at a glance, as the site's tabs. */
 export const CARD_SOURCES: CardSourceTab[] = [
-  { id: 'all', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
-  { id: 'uniques', label: $localize`:@@search.source.uniques:Uniques` },
-  { id: 'favorites', label: $localize`:@@search.source.favorites:Favoris` },
-  { id: 'collection', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
-  { id: 'owned', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
+  { id: 'all', icon: 'layers', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
+  { id: 'uniques', icon: 'gem', label: $localize`:@@search.source.uniques:Uniques` },
+  { id: 'favorites', icon: 'star', label: $localize`:@@search.source.favorites:Favoris` },
+  { id: 'collection', icon: 'archive', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
+  { id: 'owned', icon: 'monitor-cloud', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
 ];
 
 /** Compact screens: tabs in the row, the others under « Plus ». */
@@ -49,7 +48,7 @@ const TEXT_FILTERS = ['q', 'text', 'mainCost', 'recallCost', 'forestPower', 'mou
 @Component({
   selector: 'app-card-search',
   imports: [AcTabs, AcSegmented, AcSelect, AcInput, AcIconButton, AcButton, AcCount, AcFilterBar, AcDrawerHandle, AcDrawerTab, FiltersPanel, SearchResults],
-  host: { '[class.compact]': 'bp.compact()' },
+  host: { '[class.compact]': 'bp.compact()', '[class.browse]': 'browse()' },
   templateUrl: './card-search.html',
   styleUrl: './card-search.scss',
 })
@@ -74,7 +73,7 @@ export class CardSearch {
   readonly browse = input(false);
 
   protected readonly source = toSignal(
-    this.route.queryParamMap.pipe(map((q) => (q.get('source') as CardSource) || 'all')),
+    this.route.queryParamMap.pipe(map((q) => sourceFromParams((k) => q.get(k)))),
     { initialValue: 'all' as CardSource },
   );
 
@@ -139,7 +138,7 @@ export class CardSearch {
       if (!this.ready()) return;
       untracked(() => {
         if (!this.search.configured() || source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
-          this.search.configure(source, faction, format);
+          this.search.configure(source, faction, format, this.browse() ? this.urlFilters(source, format) : undefined);
           this.draft.set(this.search.filters());
         }
       });
@@ -148,6 +147,19 @@ export class CardSearch {
     effect(() => {
       const f = this.search.filters();
       untracked(() => this.draft.set(f));
+    });
+
+    // Card browser: the filters applied go in the URL (reload, shared link), in place of the current entry.
+    effect(() => {
+      const filters = this.search.filters();
+      const source = this.search.source();
+      if (!this.browse() || !this.search.configured()) return;
+      untracked(() => {
+        const params = filtersToParams(filters, defaultFilters(source, this.search.format()));
+        const next = this.router.createUrlTree([], { relativeTo: this.route, queryParams: params, queryParamsHandling: 'merge' });
+        if (this.router.serializeUrl(next) === this.router.url) return;
+        void this.router.navigateByUrl(next, { replaceUrl: true });
+      });
     });
 
     effect(() => {
@@ -166,6 +178,9 @@ export class CardSearch {
       if (measuring || this.bp.compact()) return;
       measuring = requestAnimationFrame(() => {
         measuring = 0;
+        // Card browser: the source tabs stick above the panel, which sits under them.
+        const tabs = host.querySelector<HTMLElement>('ac-tabs');
+        if (tabs) host.style.setProperty('--app-tabs-height', `${tabs.offsetHeight}px`);
         const drawer = host.querySelector<HTMLElement>('.filters-drawer');
         if (!drawer) return;
         const below = drawer.getBoundingClientRect().top - (parseFloat(getComputedStyle(drawer).top) || 0);
@@ -194,8 +209,15 @@ export class CardSearch {
     else setTimeout(run, 300);
   }
 
+  /** Another tab starts from its own default filters: the URL keeps the tab alone. */
   protected setSource(id: string): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: { source: id === 'all' ? null : id }, replaceUrl: true });
+  }
+
+  /** The card browser's URL filters over the tab's defaults. */
+  private urlFilters(source: CardSource, format: DeckFormat | null): SearchFilters {
+    const q = this.route.snapshot.queryParamMap;
+    return filtersFromParams(defaultFilters(source, format), (k) => q.getAll(k), (k) => q.get(k));
   }
 
   protected onDraft(next: SearchFilters): void {

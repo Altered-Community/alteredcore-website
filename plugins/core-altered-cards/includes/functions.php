@@ -240,6 +240,34 @@ function collGetUserCollection(string $apiUrl, int $userId): array {
 }
 
 /**
+ * Sets the quantity of one card in the user's physical collection (0 removes it), then drops the session cache of
+ * collGetUserCollection(). `$entryId`: the collection line of the card, 0 when it has none yet.
+ * Returns ['ok' => bool, 'ref' => string, 'qty' => int, 'entry_id' => int].
+ */
+function collSetQuantity(string $apiUrl, int $userId, string $ref, int $qty, int $entryId): array {
+    $qty = max(0, min(99, $qty));
+    if ($entryId > 0 && $qty === 0) {
+        $r      = collApiRequest($apiUrl, 'DELETE', '/api/collection/' . $entryId, $userId);
+        $result = ['ok' => $r !== false, 'ref' => $ref, 'qty' => 0, 'entry_id' => 0];
+    } elseif ($entryId > 0) {
+        $r      = collApiRequest($apiUrl, 'PATCH', '/api/collection/' . $entryId, $userId,
+            ['quantity' => $qty], 'application/merge-patch+json');
+        $result = ['ok' => is_array($r), 'ref' => $ref, 'qty' => $qty, 'entry_id' => $entryId];
+    } elseif ($qty === 0) {
+        $result = ['ok' => true, 'ref' => $ref, 'qty' => 0, 'entry_id' => 0];
+    } else {
+        $r      = collApiRequest($apiUrl, 'POST', '/api/collection', $userId,
+            ['cardReference' => $ref, 'quantity' => $qty, 'isFoil' => false]);
+        $result = is_array($r)
+            ? ['ok' => true, 'ref' => $ref, 'qty' => $qty, 'entry_id' => (int)($r['id'] ?? 0)]
+            : ['ok' => false, 'ref' => $ref, 'qty' => $qty, 'entry_id' => 0];
+    }
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    unset($_SESSION['_coll_' . $userId], $_SESSION['_coll_ts_' . $userId]);
+    return $result;
+}
+
+/**
  * Formats API violation objects into a human-readable string.
  * Used when an API returns a 422 response with a "violations" array.
  */

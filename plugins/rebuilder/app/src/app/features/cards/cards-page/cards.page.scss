@@ -17,24 +17,6 @@
     padding: var(--ac-space-6);
   }
 
-  .head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ac-space-1);
-  }
-
-  h1 {
-    margin: 0;
-    font: var(--ac-font-display);
-    letter-spacing: var(--ac-letter-spacing-display);
-  }
-
-  .head p {
-    margin: 0;
-    font: var(--ac-font-body);
-    color: var(--ac-color-text-2);
-  }
-
   /* The filters tab of the card search reaches the left edge of the page. */
   .search {
     --app-drawer-bleed: var(--ac-space-6);

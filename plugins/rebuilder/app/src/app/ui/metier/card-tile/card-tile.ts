@@ -15,7 +15,7 @@ import { contentLocale } from '../../../core/locale';
 @Component({
   selector: 'ac-card-tile',
   imports: [NgTemplateOutlet, AcCardArt, AcCardAdd, AcStepper, AcUniqueCard, AcBadge, AcIcon],
-  host: { role: 'article', '[attr.aria-label]': 'name()' },
+  host: { role: 'article', '[attr.aria-label]': 'name()', '[class.has-copies]': 'quantity() > 0' },
   templateUrl: './card-tile.html',
   styleUrl: './card-tile.scss',
 })
@@ -28,6 +28,8 @@ export class AcCardTile {
   readonly readonly = input(false);
   /** Card browser: the card alone, without « + », stepper or ×n. */
   readonly plain = input(false);
+  /** What the copies are counted in: the deck, or the physical collection (card browser). */
+  readonly target = input<'deck' | 'collection'>('deck');
   readonly eager = input(false);
   /** Why the card cannot be added (`max` is 0), shown in place of « + ». */
   readonly blockedReason = input<string | null>(null);
@@ -49,8 +51,16 @@ export class AcCardTile {
   );
   protected readonly zoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.name()}:name:`);
   protected readonly illustrateLabel = computed(() => $localize`:@@ui.cardTile.illustrate:Choisir les illustrations de ${this.name()}:name:`);
-  protected readonly addLabel = computed(() => $localize`:@@ui.cardTile.add:Ajouter ${this.name()}:name: au deck`);
-  protected readonly copiesLabel = computed(() => $localize`:@@ui.cardTile.copiesInDeck:Exemplaires de ${this.name()}:name: dans le deck`);
+  protected readonly addLabel = computed(() =>
+    this.target() === 'collection'
+      ? $localize`:@@ui.cardTile.addToCollection:Ajouter ${this.name()}:name: à la collection physique`
+      : $localize`:@@ui.cardTile.add:Ajouter ${this.name()}:name: au deck`,
+  );
+  protected readonly copiesLabel = computed(() =>
+    this.target() === 'collection'
+      ? $localize`:@@ui.cardTile.copiesInCollection:Exemplaires de ${this.name()}:name: dans la collection physique`
+      : $localize`:@@ui.cardTile.copiesInDeck:Exemplaires de ${this.name()}:name: dans le deck`,
+  );
   protected readonly quantityLabel = computed(() => {
     const n = this.quantity();
     return n === 1 ? $localize`:@@ui.cardTile.quantityOne:${n}:count: exemplaire(s)` : $localize`:@@ui.cardTile.quantity:${n}:count: exemplaire(s)`;

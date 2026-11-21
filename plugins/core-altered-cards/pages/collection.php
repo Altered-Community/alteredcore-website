@@ -195,23 +195,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['ok' => false, 'error' => 'Invalid ref']);
             exit;
         }
-        if ($entryId > 0 && $qty === 0) {
-            $r = collApiRequest(COLLECTION_API_URL, 'DELETE', '/api/collection/' . $entryId, $userId);
-            echo json_encode(['ok' => $r !== false, 'ref' => $ref, 'qty' => 0, 'entry_id' => 0]);
-        } elseif ($entryId > 0) {
-            $r = collApiRequest(COLLECTION_API_URL, 'PATCH', '/api/collection/' . $entryId, $userId,
-                ['quantity' => $qty], 'application/merge-patch+json');
-            echo json_encode(['ok' => is_array($r), 'ref' => $ref, 'qty' => $qty, 'entry_id' => $entryId]);
-        } else {
-            $r = collApiRequest(COLLECTION_API_URL, 'POST', '/api/collection', $userId,
-                ['cardReference' => $ref, 'quantity' => $qty, 'isFoil' => false]);
-            if (is_array($r)) {
-                echo json_encode(['ok' => true, 'ref' => $ref, 'qty' => $qty, 'entry_id' => (int)($r['id'] ?? 0)]);
-            } else {
-                echo json_encode(['ok' => false, 'error' => 'API error']);
-            }
-        }
-        unset($_SESSION['_coll_' . $userId], $_SESSION['_coll_ts_' . $userId]);
+        $result = collSetQuantity(COLLECTION_API_URL, $userId, $ref, $qty, $entryId);
+        echo json_encode($result['ok'] ? $result : ['ok' => false, 'error' => 'API error']);
         exit;
     }
 

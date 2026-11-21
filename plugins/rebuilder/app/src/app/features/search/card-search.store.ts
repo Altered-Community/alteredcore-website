@@ -180,13 +180,15 @@ export class CardSearchStore {
     });
   }
 
-  configure(source: CardSource, faction: string | null, format: DeckFormat | null = null): void {
+  /** `initial`: the filters to start from (the card browser's URL) in place of the tab's defaults. */
+  configure(source: CardSource, faction: string | null, format: DeckFormat | null = null, initial?: SearchFilters): void {
     const changedSource = source !== this.source();
     const changedFormat = format !== this.format();
     this.source.set(source);
     this.faction.set(faction);
     this.format.set(format);
-    if (changedSource) this.filters.set(defaultFilters(source, format));
+    if (initial) this.filters.set(initial);
+    else if (changedSource) this.filters.set(defaultFilters(source, format));
     // The deck's format changed under the Uniques tab: Frontier on or off, the other filters kept.
     else if (changedFormat && source === 'uniques') this.filters.update((f) => ({ ...f, environment: defaultEnvironment(source, format) }));
     this.configured.set(true);

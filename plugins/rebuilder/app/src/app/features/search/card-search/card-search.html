@@ -45,7 +45,7 @@
       <div class="filters-drawer" [class.ac-drawer-leave--start]="filters.leaving()" [animate.enter]="filters.enter()" (animationend)="filters.left($event)">
         <aside id="search-filters" class="filters" aria-label="Filtres" i18n-aria-label="@@search.card.filters">
           <div class="filters-scroll">
-            <app-filters-panel [source]="search.source()" [format]="search.format()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
+            <app-filters-panel [source]="search.source()" [format]="search.format()" [faction]="search.faction()" [factionFilter]="browse()" [value]="draft()" (valueChange)="onDraft($event)" (editEffect)="editEffect($event)" />
           </div>
           <div class="filters-foot">
             <button acButton variant="secondary" (click)="resetFilters()" i18n="@@search.card.reset">Réinitialiser</button>

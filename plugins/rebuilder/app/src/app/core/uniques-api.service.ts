@@ -112,6 +112,8 @@ export class UniquesApiService {
   private readonly searchCache = new Map<string, Observable<UniquesPage>>();
   private readonly unifiedCache = new Map<string, Observable<CardCollection>>();
   private effects$?: Observable<EffectsResponse>;
+  private artists$?: Observable<string[]>;
+  private readonly facetsCache = new Map<string, Observable<Record<string, number> | null>>();
 
   /**
    * Unified search (`GET /api/v2/search`, page-based): serves the "Toutes les cartes" tab
@@ -195,6 +197,44 @@ export class UniquesApiService {
    * Trigger / condition / effect vocabularies of the effect editor: the main-effect entries (`isMain`), or with `support`
    * the entries of the support line (`isEcho`), as the site's search does.
    */
+  /**
+   * Cards per subtype for a search query (`GET /api/v2/search/facets`, see `subtypeFacetParams`): the subtypes still giving
+   * cards with the other filters. `null` when the API has no such endpoint or fails (then every subtype is offered).
+   * Answers kept for the session (least recently used out), errors not.
+   */
+  subtypeFacets(params: HttpParams): Observable<Record<string, number> | null> {
+    if (!this.baseUrl) return of(null);
+    const key = params.toString();
+    const hit = this.facetsCache.get(key);
+    if (hit) {
+      this.facetsCache.delete(key);
+      this.facetsCache.set(key, hit);
+      return hit;
+    }
+    const facets$ = this.http.get<{ subTypes?: Record<string, number> }>(`${this.baseUrl}/api/v2/search/facets`, { params }).pipe(
+      map((res) => res.subTypes ?? {}),
+      catchError(() => {
+        this.facetsCache.delete(key);
+        return of(null);
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    this.facetsCache.set(key, facets$);
+    if (this.facetsCache.size > SEARCH_CACHE_SIZE) this.facetsCache.delete(this.facetsCache.keys().next().value!);
+    return facets$;
+  }
+
+  /** Every artist of the catalog (`GET /api/v2/artists`), once a session; `[]` when the API does not list them. */
+  artists(): Observable<string[]> {
+    if (!this.baseUrl) return of([]);
+    this.artists$ ??= this.http.get<{ artists?: string[] }>(`${this.baseUrl}/api/v2/artists`).pipe(
+      map((res) => (res.artists ?? []).filter((a) => !!a?.trim())),
+      catchError(() => of([])),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    return this.artists$;
+  }
+
   abilities(kind: AbilityKind, support = false): Observable<AbilityRef[]> {
     this.effects$ ??= this.http.get<EffectsResponse>(`${this.baseUrl}/api/v2/effects`).pipe(
       catchError((err: unknown) => {
@@ -355,6 +395,8 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
   for (const st of params.subtypes ?? []) hp = hp.append('subTypes[]', st);
   if (params.costRelation) hp = hp.set('costRelation', params.costRelation);
   if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
+  if (params.hasZeroPower) hp = hp.set('hasZeroPower', 'true');
+  for (const a of params.artists ?? []) hp = hp.append('artist[]', a);
   hp = appendStatValues(hp, 'mainCost', params.mainCosts);
   hp = appendStatValues(hp, 'recallCost', params.recallCosts);
   hp = appendStatValues(hp, 'forestPower', params.forestPowers);

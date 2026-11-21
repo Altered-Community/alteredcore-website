@@ -11,5 +11,7 @@ import { AcIcon } from '../../icon';
 export class AcCardAdd {
   readonly label = input($localize`:@@ui.cardAdd.label:Ajouter au deck`);
   readonly disabled = input(false);
+  /** `sm`: 28 px (on the edge of a card tile on phones), its hit area still `--ac-hit-min`. */
+  readonly size = input<'md' | 'sm'>('md');
   readonly add = output<void>();
 }

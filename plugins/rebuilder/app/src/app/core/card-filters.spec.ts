@@ -1,6 +1,10 @@
 import { environment } from '../../environments/environment';
-import { buildUniquesParams } from './uniques-api.service';
+import { buildUniquesParams, buildUnifiedSearchParams } from './uniques-api.service';
 import {
+  cardTypeCodes,
+  searchedPromoSets,
+  typeOptionOf,
+  typeOptionsFor,
   ALL_CARDS_SETS,
   ORDER_OPTIONS,
   UNIQUES_SETS,
@@ -49,22 +53,21 @@ describe('parseCostExpression', () => {
 });
 
 describe('advanced filters (cards API)', () => {
-  it('sends powers, subtypes, cost relation, alt arts with promo editions, another faction', () => {
+  it('sends powers, subtypes, alt arts with promo editions, another faction', () => {
     const f = {
       ...defaultFilters('all'),
       forestPower: '>=4',
       subtypes: ['ANIMAL'],
-      costRelation: 'mainHigher' as const,
       altArts: 'with' as const,
       promoSets: ['DUSTEROP'],
       otherFactions: ['LY'],
     };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], subtypes: ['ANIMAL'], costRelation: 'mainHigher', factions: ['LY'] });
+    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], subtypes: ['ANIMAL'], factions: ['LY'] });
     expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
-    expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'costRelation', 'altArts', 'otherFactions']));
+    expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'subtypes', 'altArts', 'otherFactions']));
   });
 
   it('lists the alt arts alone (variations alt-art and promo) with the promo editions of the sets', () => {
@@ -290,33 +293,68 @@ describe('numeric validation', () => {
     expect(p.get('recallCost[gt]')).toBe('15');
   });
 
-  it('forwards subtypes, costRelation, noEffect and otherFactions on uniques queries and shows their chips', () => {
+  it('forwards subtypes, noEffect and otherFactions on uniques queries and shows their chips', () => {
     const f = {
       ...defaultFilters('uniques'),
       subtypes: ['ANIMAL', 'ROBOT'],
-      costRelation: 'mainHigher' as const,
       noEffect: true,
       otherFactions: ['OR'],
     };
     const uq = toUniquesQuery(f, 'AX');
     expect(uq.factions).toEqual(['OR']);
     expect(uq.subtypes).toEqual(['ANIMAL', 'ROBOT']);
-    expect(uq.costRelation).toBe('mainHigher');
     expect(uq.noEffect).toBe(true);
 
     const hp = buildUniquesParams(uq, null, 20);
     expect(hp.getAll('subTypes[]')).toEqual(['ANIMAL', 'ROBOT']);
-    expect(hp.get('costRelation')).toBe('mainHigher');
+    expect(hp.get('costRelation')).toBeNull();
     expect(hp.get('hasNoEffect')).toBe('true');
 
     const chipIds = filterChips(f, 'uniques').map((c) => c.id);
-    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'costRelation', 'noEffect', 'otherFactions']));
+    expect(chipIds).toEqual(expect.arrayContaining(['subtypes', 'noEffect', 'otherFactions']));
   });
 
-  it('omits unsupported costRelation, noEffect and collection altArts chips on account tabs', () => {
-    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], costRelation: 'mainHigher' as const, noEffect: true, altArts: 'with' as const };
+  it('omits unsupported noEffect, zero power, artists and collection altArts chips on account tabs', () => {
+    const base = { ...defaultFilters('owned'), sets: [], rarities: [], types: [], noEffect: true, zeroPower: true, artists: ['Zero Wen'], altArts: 'with' as const };
     expect(filterChips(base, 'owned').map((c) => c.id)).toEqual(['altArts']);
     expect(filterChips({ ...base }, 'collection').map((c) => c.id)).toEqual([]);
   });
 });
 
+describe('search feedback (types, promo editions, zero power, artists)', () => {
+  it('offers heroes and tokens with mana in the card browser only, and sends their cardType codes', () => {
+    expect(typeOptionsFor(false).map((t) => t.value)).toEqual(['CHARACTER', 'SPELL', 'LANDMARK_PERMANENT', 'EXPEDITION_PERMANENT']);
+    expect(typeOptionsFor(true).map((t) => t.value)).toEqual(['CHARACTER', 'SPELL', 'LANDMARK_PERMANENT', 'EXPEDITION_PERMANENT', 'HERO', 'TOKEN']);
+    expect(defaultFilters('all').types).toEqual(['CHARACTER', 'SPELL', 'LANDMARK_PERMANENT', 'EXPEDITION_PERMANENT']);
+    const p = toSearchParams({ ...defaultFilters('all'), types: ['HERO', 'TOKEN'] }, null, 1, 36);
+    expect(p.types).toEqual(['HERO', 'TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA']);
+    expect(cardTypeCodes(['TOKEN', 'TOKEN'])).toEqual(['TOKEN', 'TOKEN_LANDMARK_PERMANENT', 'TOKEN_MANA']);
+    expect(typeOptionOf('TOKEN_MANA')).toBe('TOKEN');
+    expect(typeOptionOf('PERMANENT')).toBe('LANDMARK_PERMANENT');
+  });
+
+  it('searches every promo edition of the chosen sets until some are picked', () => {
+    const f = { ...defaultFilters('all'), sets: ['DUSTER'], altArts: 'with' as const, promoSets: [] };
+    expect(searchedPromoSets(f)).toEqual(['DUSTEROP', 'DUSTERTOP', 'DUSTERCB', 'WCS26']);
+    expect(searchedPromoSets({ ...f, promoSets: ['DUSTERCB'] })).toEqual(['DUSTERCB']);
+    // An edition picked for a set taken off the search: back to all the editions of the chosen sets.
+    expect(searchedPromoSets({ ...f, promoSets: ['EOLECB'] })).toEqual(['DUSTEROP', 'DUSTERTOP', 'DUSTERCB', 'WCS26']);
+    expect(toSearchParams({ ...f, altArts: 'off' }, null, 1, 36).sets).toEqual(['DUSTER']);
+  });
+
+  it('sends hasZeroPower and artist[] on « Toutes les cartes » with their chips', () => {
+    const f = { ...defaultFilters('all'), zeroPower: true, artists: ['Zero Wen', 'HuoMiao Studio'] };
+    const p = toSearchParams(f, null, 1, 36);
+    expect(p).toMatchObject({ hasZeroPower: true, artists: ['Zero Wen', 'HuoMiao Studio'] });
+    const hp = buildUnifiedSearchParams(p);
+    expect(hp.get('hasZeroPower')).toBe('true');
+    expect(hp.getAll('artist[]')).toEqual(['Zero Wen', 'HuoMiao Studio']);
+    expect(buildUnifiedSearchParams(toSearchParams(defaultFilters('all'), null, 1, 36)).has('hasZeroPower')).toBe(false);
+    const chips = filterChips(f, 'all');
+    expect(chips.find((c) => c.id === 'zeroPower')?.label).toBe('Au moins un 0');
+    expect(chips.find((c) => c.id === 'artists')?.label).toBe('2 artistes');
+    expect(removeChip(f, 'zeroPower').zeroPower).toBe(false);
+    expect(removeChip(f, 'artists').artists).toEqual([]);
+    expect(filterChips(f, 'uniques').map((c) => c.id)).not.toContain('zeroPower');
+  });
+});

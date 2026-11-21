@@ -3,6 +3,20 @@
   display: block;
   container-type: inline-size;
   contain: layout style;
+  /* The column of the star, « + » and the stepper: under the printed faction flag, at its width (measured on the cards:
+     the flag spans 84.3–95.2 % of the width, its tip at 16.8 % of the height, i.e. 23.5 % of the width at 5:7). */
+  --app-tile-col-w: max(10.9cqw, 20px);
+  --app-tile-col-right: calc(10.2cqw - var(--app-tile-col-w) / 2);
+  --app-tile-col-top: calc(23.5cqw + var(--ac-space-1));
+  /* Discreet on the artwork: the dark translucent fill of the cost chips. */
+  --ac-stepper-ring: var(--app-tile-col-w);
+  --ac-stepper-bg: var(--ac-color-overlay-chip);
+  --ac-stepper-inc-bg: transparent;
+  --ac-stepper-dec-bg: transparent;
+  --ac-stepper-shadow: none;
+  --ac-card-add-size: var(--app-tile-col-w);
+  --ac-card-add-bg: var(--ac-color-overlay-chip);
+  --ac-card-add-shadow: none;
 }
 .visual {
   position: relative;
@@ -24,10 +38,75 @@ button.visual:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }
+/* The column under the faction flag: « + » or the stepper, then the star. */
+.col {
+  position: absolute;
+  top: var(--app-tile-col-top);
+  right: var(--app-tile-col-right);
+  z-index: 2;
+  width: var(--app-tile-col-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  /* The gaps leave the card's zoom underneath clickable. */
+  pointer-events: none;
+}
+.col > * {
+  pointer-events: auto;
+}
 .action {
+  display: block;
+}
+.blocked {
   position: absolute;
   right: 10px;
   bottom: 10px;
+}
+/* Copies out of hover (pointer screens): « ×n » at the top of the column, over the stepper's place. */
+.qty.idle {
+  top: 0;
+  right: auto;
+  bottom: auto;
+  min-width: var(--app-tile-col-w);
+  height: auto;
+  padding: 2px var(--ac-space-1);
+  box-sizing: border-box;
+  background: var(--ac-color-overlay-chip);
+  box-shadow: none;
+  font-size: var(--ac-font-size-caption);
+  pointer-events: none;
+  display: none;
+}
+/* Pointer screens from 768 px: the controls with the hover or the keyboard focus only (the deck builder's pile; a click
+   leaves the focus on the button, so not :focus-within), the star too unless the card is a favorite; touch screens and
+   phone widths: always. The hidden stepper keeps its place, so the star does not move on hover. */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  /* Still clickable while hidden: the pointer is over the card, so they show as it gets there. */
+  .action,
+  .favorite:not(.on) {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  :host(:hover) .action,
+  :host(:has(:focus-visible)) .action,
+  :host(:hover) .favorite,
+  .favorite:focus-visible {
+    opacity: 1;
+  }
+  :host(.has-copies) .qty.idle {
+    display: flex;
+  }
+  :host(:hover) .qty.idle,
+  :host(:has(:focus-visible)) .qty.idle {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .favorite {
+    transition: none;
+  }
 }
 .blocked {
   display: flex;
@@ -94,14 +173,11 @@ button.visual:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }
-/* Favorite star: top right, shown on hover or focus (always on touch screens, and once a favorite). */
+/* Favorite star: in the column under the faction flag, after the copies (shown as the controls are, above). */
 .favorite {
-  position: absolute;
-  top: var(--ac-space-1-5);
-  right: var(--ac-space-1-5);
-  z-index: 2;
-  width: 28px;
-  height: 28px;
+  position: relative;
+  width: var(--app-tile-col-w);
+  height: var(--app-tile-col-w);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,22 +187,6 @@ button.visual:focus-visible {
   background: var(--ac-color-overlay-chip);
   color: var(--ac-color-on-strong);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.favorite:focus-visible,
-.favorite.on {
-  opacity: 1;
-}
-@media (hover: hover) {
-  :host(:hover) .favorite {
-    opacity: 1;
-  }
-}
-@media (hover: none), (pointer: coarse) {
-  .favorite {
-    opacity: 1;
-  }
 }
 .favorite.on {
   color: var(--ac-cards-favorite);
