@@ -408,9 +408,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await decksTab(page, compact, 'Communauté').click();
     await listed;
     await expect(page).toHaveURL(/\/pages\/decks\?(.*&)?tab=community/);
-    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1.
+    // The stack seeds public decks (docker/stack/seed-decks.php); the list shows the legal ones of page 1, the decks
+    // imported from tournaments included (`source=all`: the API lists the deckbuilders' decks only by default).
     const res = await page.request.get('/api/v1/services/decks/api/decks/public', {
-      params: { page: 1, itemsPerPage: 24, 'order[updatedAt]': 'desc' },
+      params: { page: 1, itemsPerPage: 24, 'order[updatedAt]': 'desc', source: 'all' },
       headers: { Accept: 'application/json' },
     });
     expect(res.status()).toBe(200);
@@ -450,7 +451,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(list.locator('ac-deck-card').first()).toBeVisible();
     expect(illegalName).not.toBe('');
     await expect(list.locator('ac-deck-card', { hasText: illegalName })).toHaveCount(0);
-    await expect(list.getByText('Non légal')).toHaveCount(0);
+    await expect(list.getByRole('button', { name: /^Non légal/ })).toHaveCount(0);
 
     if (compact) {
       await page.getByRole('button', { name: /^Filtres/ }).first().click();
@@ -466,7 +467,7 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(page).toHaveURL(/[?&]legal=all(&|$)/);
     const illegal = list.locator('ac-deck-card', { hasText: illegalName });
     await expect(illegal).toHaveCount(1);
-    await expect(illegal.getByText('Non légal')).toBeVisible();
+    await expect(illegal.getByRole('button', { name: /^Non légal/ })).toBeVisible();
     await evidence(page, testInfo, '05d-community-with-illegal');
   });
 
@@ -1422,6 +1423,34 @@ test.describe('ReBuilder in the shell · guest', () => {
     await page.goto(`${DECKS}?tab=public&faction=MU&sort=name:asc&lang=fr`);
     await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
     await expect(page).toHaveURL(/\/decks\?faction=MU&sort=name(&|$)/);
+  });
+
+  test('filters the community decks on a card suggested by the search API', async ({ page, compact }) => {
+    // A card a listed deck has: the hero of a legal public deck (« Légaux uniquement » is on).
+    const res = await page.request.get('/api/v1/services/decks/api/decks/public', {
+      params: { page: 1, itemsPerPage: 24, source: 'all' },
+      headers: { Accept: 'application/json' },
+    });
+    const decks = ((await res.json()) as { member: { legal: boolean; stats: { hero: { reference: string; name: string } } }[] }).member;
+    const hero = decks.find((d) => d.legal)!.stats.hero;
+    await page.goto(`${DECKS}?tab=community&lang=fr`);
+    await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
+    if (compact) await page.getByRole('button', { name: /^Filtres/ }).click();
+    const field = page.getByRole('combobox', { name: 'Contient la carte' });
+    // A full reference is looked up exactly on the search API.
+    await field.fill(hero.reference);
+    const option = page.getByRole('option', { name: hero.name });
+    await expect(option).toBeVisible();
+    const filtered = page.waitForResponse((r) => {
+      const url = new URL(r.url());
+      return url.pathname === '/api/v1/services/decks/api/decks/public' && url.searchParams.get('cardReference') === hero.reference && r.ok();
+    });
+    await option.click();
+    await expect(field).toHaveValue(hero.name);
+    if (compact) await page.getByRole('button', { name: 'Appliquer' }).click();
+    await filtered;
+    await expect(page).toHaveURL(new RegExp(`[?&]card=${hero.reference}(&|$)`));
+    await expect(page.getByRole('list', { name: FR.communityDecks }).locator('ac-deck-card').first()).toBeVisible();
   });
 
   test('keeps a guest deck in this browser across reloads', async ({ page, compact }) => {

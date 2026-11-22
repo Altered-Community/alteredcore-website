@@ -10,6 +10,7 @@ export interface Screen {
 
 export const SCREENS: Screen[] = [
   { key: 'decks', name: 'Mes decks', path: () => '/pages/decks', deck: false },
+  { key: 'community', name: 'Communauté', path: () => '/pages/decks?tab=community', deck: false },
   { key: 'deck', name: 'deck page', path: (id) => `/pages/deck?id=${id}`, deck: true },
   { key: 'search', name: 'editor, Recherche', path: (id) => `/pages/deckbuilder?id=${id}`, deck: true },
   { key: 'apercu', name: 'editor, Aperçu', path: (id) => `/pages/deckbuilder?id=${id}&view=apercu`, deck: true },

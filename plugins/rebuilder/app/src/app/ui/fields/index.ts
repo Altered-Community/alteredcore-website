@@ -14,3 +14,4 @@ export * from './types';
 export * from './value-accessor';
 export * from './textarea/textarea';
 export * from './rich-label/rich-label';
+export * from './autocomplete/autocomplete';

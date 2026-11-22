@@ -15,6 +15,13 @@ export interface PublicDeckQuery {
   /** Hero reference (the API matches its base and promo prints). */
   hero?: string;
   format?: string;
+  /** Canonical reference of a card the deck holds (exact match on the decks API's stored references). */
+  cardReference?: string;
+  /**
+   * Which decks: without it the API lists the deckbuilders' decks only (`user`); `tournament`: the decks imported from
+   * the BGA tournament lists only; `all`: both.
+   */
+  source?: 'user' | 'tournament' | 'all';
   order?: 'updatedAt' | 'createdAt' | 'name' | 'upvoteCount' | 'viewCount';
   /** Direction of `order`: ascending for `name`, descending otherwise when absent. */
   dir?: 'asc' | 'desc';
@@ -119,6 +126,8 @@ export class DecksApiService {
     if (query.faction) params['faction'] = query.faction;
     if (query.hero) params['hero'] = query.hero;
     if (query.format) params['format'] = query.format;
+    if (query.cardReference) params['cardReference'] = query.cardReference;
+    if (query.source) params['source'] = query.source;
     if (query.order) params[`order[${query.order}]`] = query.dir ?? (query.order === 'name' ? 'asc' : 'desc');
     const url = `${this.baseUrl}/api/decks/public`;
     const startedWithToken = !!this.auth.token();

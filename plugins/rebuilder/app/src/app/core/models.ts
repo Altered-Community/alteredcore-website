@@ -206,6 +206,18 @@ export interface AltArtOverrides {
   tokens?: PrintQuantity[] | null;
 }
 
+/** A tournament a deck was played in (decks API `tournaments`, synced from the BGA tournaments). */
+export interface DeckTournamentResult {
+  tournamentParentId?: number;
+  name?: string | null;
+  /** `bo1`, `bo3`… */
+  mode?: string | null;
+  games?: number;
+  wins?: number;
+  losses?: number;
+  lastPlayedAt?: string | null;
+}
+
 export interface Deck {
   id: string;
   name: string;
@@ -236,6 +248,10 @@ export interface Deck {
   user?: { username?: string | null } | unknown[] | null;
   /** Owner's pseudo, on public decks and public listings. */
   owner?: { pseudo?: string | null } | null;
+  /** `tournament`: imported from a BGA tournament list; `user`: made in a deckbuilder. */
+  source?: 'user' | 'tournament' | null;
+  /** Tournaments the deck was played in, with its record in each. */
+  tournaments?: DeckTournamentResult[] | null;
   createdAt?: string;
   updatedAt?: string | null;
   /** Local-only guest deck (never sent to DECKS_API). */

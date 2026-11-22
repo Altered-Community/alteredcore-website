@@ -21,9 +21,24 @@ export interface DeckFilters {
   sort: DeckSort;
   /** Community tab: illegal decks are hidden (on by default). */
   legalOnly: boolean;
+  /** Community tab: decks played in a BGA tournament only. */
+  tournament: boolean;
+  /** Community tab: canonical reference of a card the decks must hold (`''`: any). */
+  card: string;
 }
 
-export const EMPTY_DECK_FILTERS: DeckFilters = { q: '', format: '', hero: '', visibility: 'all', status: 'active', factions: [], sort: 'updated', legalOnly: true };
+export const EMPTY_DECK_FILTERS: DeckFilters = {
+  q: '',
+  format: '',
+  hero: '',
+  visibility: 'all',
+  status: 'active',
+  factions: [],
+  sort: 'updated',
+  legalOnly: true,
+  tournament: false,
+  card: '',
+};
 
 /** The decks that match the filters, in the order of `items` (`f.sort` is not used). */
 export function matchDecks(items: DeckListItem[], f: DeckFilters): DeckListItem[] {

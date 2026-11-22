@@ -1,8 +1,9 @@
 import { Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
-import { concatMap, finalize, from, map, switchMap, timer, toArray } from 'rxjs';
+import { concatMap, finalize, from, map, of, switchMap, timer, toArray } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
+import { type CardSuggestion } from '../../../core/card-suggestions';
 import { CommunityBuildersService } from '../../../core/community-builders.service';
 import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
 import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
@@ -11,14 +12,16 @@ import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
+import { UniquesApiService } from '../../../core/uniques-api.service';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcSkeleton } from '../../../ui/containers';
 import { AcChip, AcCount } from '../../../ui/chips';
-import { AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
+import { type AcSegment, type AcSuggestion, AcAutocomplete, AcInput, AcSegmented, AcSelect, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
 import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcDeckCard, FACTIONS } from '../../../ui/metier';
+import { rarityIcon } from '../../../ui/chips/rarity';
 import { AcAppBar, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openConfirm } from '../../shared/confirm/confirm.overlay';
@@ -28,7 +31,7 @@ import { openCommunityBuilders } from '../community-builders/community-builders.
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
 import { type Visibility, type DeckStatus, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
-import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
+import { DeckFiltersSheet, type DeckFiltersResult } from '../deck-filters-sheet/deck-filters-sheet';
 import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
 import { type CommunityQuery, type CommunityState, EMPTY_COMMUNITY, addCommunityPage, toCommunityQuery } from '../community-pages';
 
@@ -37,6 +40,15 @@ type Tab = 'mine' | 'community' | 'contest';
 const TABS: readonly Tab[] = ['mine', 'community', 'contest'];
 
 const SEARCH_DEBOUNCE_MS = 300;
+/** Card filter: suggestions wait for a pause in the typing. */
+const SUGGEST_DEBOUNCE_MS = 250;
+
+/** A card suggestion of the search API as an `ac-autocomplete` option: rarity (and « hors faction » for R2) on the right. */
+export function cardOption(s: CardSuggestion): AcSuggestion {
+  const rarity = rarityIcon(s.rarity).label;
+  const meta = s.rarity === 'R2' ? $localize`:@@decks.cardFilter.outOfFaction:${rarity}:rarity: · hors faction` : rarity;
+  return { value: s.reference, label: s.name, meta, thumb: s.image };
+}
 
 function tabFromParam(value: string | null): Tab | undefined {
   if (value === 'my') return 'mine';
@@ -75,7 +87,7 @@ type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
 
 @Component({
   selector: 'app-decks-page',
-  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel, AcSkeleton],
+  imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcAutocomplete, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel, AcSkeleton],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
 })
@@ -86,6 +98,7 @@ export class DecksPage {
   private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
+  private readonly uniques = inject(UniquesApiService);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(AcBreakpointService);
   /** The site's community deckbuilders: a banner above the tabs on wide screens, as on the site's decks page. */
@@ -283,14 +296,45 @@ export class DecksPage {
     const choices = [...byName.values()].sort((a, b) => a.label.localeCompare(b.label, uiLocale()));
     return heroOptions(choices, factions, all);
   }
-  protected readonly visibilities = [
-    { value: 'all' as Visibility, label: $localize`:@@decks.page.visibilityAll:Tous` },
-    { value: 'public' as Visibility, label: $localize`:@@decks.page.visibilityPublic:Publics` },
-    { value: 'private' as Visibility, label: $localize`:@@decks.page.visibilityPrivate:Privés` },
+  /** Text typed in the card filter; suggestions from the search API (`UniquesApiService.suggestCards`). */
+  private readonly cardQuery = signal('');
+  private readonly cardSuggestRes = rxResource({
+    params: () => {
+      const q = this.cardQuery().trim();
+      return this.tab() === 'community' && q.length >= 2 ? { q, locale: contentLocale() } : undefined;
+    },
+    stream: ({ params }) => timer(SUGGEST_DEBOUNCE_MS).pipe(switchMap(() => this.uniques.suggestCards(params.q, params.locale))),
+  });
+  protected readonly cardOptions = linkedSignal<AcSuggestion[] | undefined, AcSuggestion[]>({
+    source: () => (this.cardSuggestRes.hasValue() ? this.cardSuggestRes.value().map(cardOption) : undefined),
+    computation: (options, prev) => options ?? prev?.value ?? [],
+  });
+  protected readonly cardSuggesting = computed(() => this.cardSuggestRes.isLoading());
+  /** The suggestion picked in this page; a card of the URL is looked up (name, picture) on the search API. */
+  private readonly pickedCard = signal<AcSuggestion | null>(null);
+  private readonly cardLookup = rxResource({
+    params: () => {
+      const ref = this.filters().card;
+      return ref && this.pickedCard()?.value !== ref ? ref : undefined;
+    },
+    stream: ({ params }) => this.uniques.suggestionOf(params, contentLocale()).pipe(map((s) => (s ? cardOption(s) : null))),
+  });
+  protected readonly cardChoice = computed<AcSuggestion | null>(() => {
+    const ref = this.filters().card;
+    if (!ref) return null;
+    const picked = this.pickedCard();
+    if (picked?.value === ref) return picked;
+    const found = this.cardLookup.hasValue() ? this.cardLookup.value() : null;
+    return found ?? { value: ref, label: ref };
+  });
+  protected readonly visibilities: AcSegment<Visibility>[] = [
+    { value: 'all', label: $localize`:@@decks.page.visibilityAll:Tous` },
+    { value: 'public', icon: 'eye', label: $localize`:@@decks.page.visibilityPublic:Publics` },
+    { value: 'private', icon: 'lock', label: $localize`:@@decks.page.visibilityPrivate:Privés` },
   ];
-  protected readonly statuses = [
-    { value: 'active' as DeckStatus, label: $localize`:@@decks.page.statusActive:Actifs` },
-    { value: 'archived' as DeckStatus, label: $localize`:@@decks.page.statusArchived:Archivés` },
+  protected readonly statuses: AcSegment<DeckStatus>[] = [
+    { value: 'active', label: $localize`:@@decks.page.statusActive:Actifs` },
+    { value: 'archived', icon: 'archive', label: $localize`:@@decks.page.statusArchived:Archivés` },
   ];
   protected readonly sorts = SORTS;
   protected readonly factions = FACTIONS;
@@ -299,7 +343,7 @@ export class DecksPage {
     const tab = this.tab();
     // « Légaux uniquement » is on by default: turned off, it counts as a filter.
     return (
-      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (f.status === 'archived' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + f.factions.length
+      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (f.status === 'archived' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + (tab === 'community' ? (f.tournament ? 1 : 0) + (f.card ? 1 : 0) : 0) + f.factions.length
     );
   });
   protected readonly countLabel = computed(() => {
@@ -347,6 +391,8 @@ export class DecksPage {
         factions,
         sort: sortFromParam(initial.get('sort')) ?? 'updated',
         legalOnly: initial.get('legal') !== 'all',
+        tournament: this.tab() === 'community' && initial.get('tournament') === '1',
+        card: this.tab() === 'community' && /^ALT_/i.test(initial.get('card') ?? '') ? (initial.get('card') ?? '').toUpperCase() : '',
       });
     }
     // « Mes decks »: a hero reference of the URL (site link) becomes the name of that hero once the decks are loaded.
@@ -410,6 +456,8 @@ export class DecksPage {
               archived: tab === 'mine' && f.status === 'archived' ? '1' : null,
               sort: f.sort !== 'updated' ? f.sort : null,
               legal: tab === 'community' && !f.legalOnly ? 'all' : null,
+              tournament: tab === 'community' && f.tournament ? '1' : null,
+              card: tab === 'community' && f.card ? f.card : null,
             };
       untracked(() => {
         if (!isDecksListUrl(this.router.url)) return;
@@ -486,6 +534,16 @@ export class DecksPage {
 
   protected patch(p: Partial<DeckFilters>): void {
     this.filters.update((f) => ({ ...f, ...p }));
+  }
+
+  /** Card filter: a suggestion picked, or cleared (typing again clears it too). */
+  protected setCard(choice: AcSuggestion | null): void {
+    this.pickedCard.set(choice);
+    if ((choice?.value ?? '') !== this.filters().card) this.patch({ card: choice?.value ?? '' });
+  }
+
+  protected onCardQuery(q: string): void {
+    this.cardQuery.set(q);
   }
 
   /** The hero filter is dropped when the other set has no deck with that hero. */
@@ -597,7 +655,7 @@ export class DecksPage {
 
   protected openFilters(): void {
     this.overlay
-      .open<DeckFiltersSheet, DeckFilters>(DeckFiltersSheet, {
+      .open<DeckFiltersSheet, DeckFiltersResult>(DeckFiltersSheet, {
         title: $localize`:@@decks.page.filters:Filtres`,
         data: {
           filters: this.filters(),
@@ -611,9 +669,17 @@ export class DecksPage {
           showHero: true,
           showVisibility: this.tab() === 'mine',
           showLegalOnly: this.tab() === 'community',
+          showCommunity: this.tab() === 'community',
+          cardChoice: this.cardChoice(),
+          suggestCards: (q: string) => (q.trim().length >= 2 ? this.uniques.suggestCards(q, contentLocale()).pipe(map((list) => list.map(cardOption))) : of([])),
         },
       })
-      .afterClosed.subscribe((f) => f && this.filters.set(f));
+      .afterClosed.subscribe((res) => {
+        if (!res) return;
+        const { cardChoice, ...f } = res;
+        this.pickedCard.set(cardChoice);
+        this.filters.set(f);
+      });
   }
 
   /** Optimistic toggle, then the count the API returns; guests go to the login page (the upvote needs a token). */

@@ -104,7 +104,7 @@ an unknown set is a 400 (`FUGUE` has no uniques and is not offered). Measures an
 
 The C# DeckApi (drop-in replacement of the PHP `altered-core-decks-api`: same routes and shapes, additive fields; contract
 in its `README.md`). Reached through the site's relay. Anonymous reads: `GET /api/decks/public` (`page`, `itemsPerPage`,
-`name`, `faction`, `format`, `hero`, `family`, `legal`, `order[field]`), `GET /api/decks/public/heroes?locale=`,
+`name`, `faction`, `format`, `hero`, `family`, `legal`, `cardReference`, `cardName`, `source`, `order[field]`), `GET /api/decks/public/heroes?locale=`,
 `GET /api/decks/{uuid}` for public decks and `GET /api/formats`. The rest needs the session's token
 (`read-decks` / `write-deck` scopes).
 
@@ -138,6 +138,17 @@ with the former API) and writes canonical references + overrides (`core/deck-pri
 reference it cannot tell is sent by its print, which the API resolves). A deck's own prints win; its other copies
 follow the player's global preferences (ownership `PUT /api/alt-arts/preferences`), and Board Game Arena checks
 ownership. Public decks carry `owner: { pseudo }` (shown on the deck page and the community cards).
+
+**Tournaments.** DeckApi syncs the BGA tournament lists (GameApi): a deck imported that way has `source: "tournament"`
+(`"user"` otherwise), and every deck carries `tournaments: [{ tournamentParentId, name, mode, games, wins, losses,
+lastPlayedAt }]`, its record in each tournament it was played in. `GET /api/decks/public` lists the `user` decks only unless
+`source` says otherwise (`tournament`, or `all` for both): the community tab sends `source=all`, and `source=tournament`
+with its « Joués en tournoi » filter. It shows the sum of `wins` / `losses` and the share of games won on each card
+(`tournamentRecordOf`, `core/deck-view.ts`). Its « Contient la carte » filter sends `cardReference`: an exact match on the
+canonical references the deck stores (`ALT_ALIZE_B_LY_02_C` does not find a deck holding `ALT_CORE_B_LY_02_C`; `cardName`
+is a prefix match on the card names). The suggestions come from the search API (`UniquesApiService.suggestCards`: a full
+reference looked up with `ref[]` first, otherwise `name` on the non-Unique booster prints), one per gameplay card on its
+canonical reference (`core/card-suggestions.ts`).
 
 Known gaps: see [api-limitations/decks-api.md](api-limitations/decks-api.md).
 

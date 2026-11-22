@@ -102,6 +102,10 @@ $board = function () use ($sk): string {
         $builders = [];
     }
     $fr = getUiLang() === 'fr';
+    // « Communauté » has a second row of filters (card, tournament, legality). It is the tab of `?tab=community|public`,
+    // and the default tab of a guest (one with guest decks on the device lands on « Mes decks », unknown here).
+    $loggedIn = function_exists('kcIsLoggedIn') && kcIsLoggedIn() && !empty($_SESSION['user_id']);
+    $community = in_array($tab, ['community', 'public'], true) || ($tab === '' && !$loggedIn);
 ?>
   <div class="rbph-desktop rbph-decks">
     <div class="rbph-decks__head"><?= $sk('ac-skeleton--title', 1, '120px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '110px') . $sk('ac-skeleton--control', 1, '150px') ?></div>
@@ -114,6 +118,9 @@ $board = function () use ($sk): string {
 <?php endif; ?>
     <?= $tabs(['110px', '100px', '180px']) ?>
     <div class="rbph-decks__filters"><?= $sk('ac-skeleton--control', 1, '300px') . $sk('ac-skeleton--control', 2, '140px') . $sk('ac-skeleton--control', 1, '200px') ?><span class="rbph-grow"></span><?= $sk('ac-skeleton--control', 1, '220px') ?></div>
+<?php if ($community): ?>
+    <div class="rbph-decks__filters rbph-decks__filters--community"><?= $sk('ac-skeleton--control', 1, '360px') . $sk('ac-skeleton--text', 2, '160px') ?></div>
+<?php endif; ?>
     <div class="rbph-decks__factions"><?= $sk('ac-skeleton--text', 1, '56px') . $sk('rbph-chip', 7, '76px') ?></div>
     <div class="rbph-decks__grid"><?= $sk('ac-skeleton--panel', 10) ?></div>
   </div>

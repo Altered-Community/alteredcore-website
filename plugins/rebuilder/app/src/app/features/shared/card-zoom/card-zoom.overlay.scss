@@ -28,6 +28,10 @@
   .detail {
     margin-inline: var(--side);
   }
+  /* The link's full width (100 %) plus these margins would overflow the window, which clips it: stretched instead. */
+  .detail {
+    width: auto;
+  }
 }
 .arrow {
   align-self: center;

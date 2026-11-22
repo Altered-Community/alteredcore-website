@@ -241,6 +241,24 @@
   color: var(--ac-color-text-muted);
 }
 
+/* ---- Suggestions: a text field (.ac-input) whose panel lists what matches the text typed ----
+   Options may carry a thumbnail (a card) and a muted detail on the right (rarity, set). */
+.ac-listbox__thumb {
+  width: 28px;
+  aspect-ratio: 5 / 7;
+  flex-shrink: 0;
+  border-radius: var(--ac-radius-xs);
+  background: var(--ac-color-bg-subtle);
+  object-fit: cover;
+}
+.ac-listbox__meta {
+  flex-shrink: 0;
+  font: var(--ac-font-caption);
+  font-weight: 600;
+  color: var(--ac-color-text-muted);
+}
+.ac-listbox__panel--suggestions { min-width: 280px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .ac-listbox__panel { animation: ac-listbox-in var(--ac-duration-fast) ease-out; }
 }

@@ -1,0 +1,39 @@
+/*
+ * Field and label: .ac-field / .ac-input / .ac-input-icon (field.css); list: .ac-listbox__panel--suggestions
+ * (listbox.css). Here: the leading icon, whose <svg> sits inside the <ac-icon> element (the design system expects it
+ * as a direct child), and the clear button (as `ac-input`).
+ */
+.wrap {
+  position: relative;
+}
+.wrap > ac-icon ::ng-deep .ac-icon {
+  position: absolute;
+  left: var(--ac-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ac-color-text-muted);
+  pointer-events: none;
+}
+.ac-input.has-clear {
+  padding-right: var(--ac-hit-min);
+  text-overflow: ellipsis;
+}
+.clear {
+  position: absolute;
+  right: var(--ac-space-1);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--ac-hit-min);
+  height: var(--ac-hit-min);
+  border: none;
+  background: none;
+  color: var(--ac-color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+/* In the CDK overlay pane, as wide as the field (280 px at least: listbox.css). */
+.ac-listbox__panel {
+  width: 100%;
+}
