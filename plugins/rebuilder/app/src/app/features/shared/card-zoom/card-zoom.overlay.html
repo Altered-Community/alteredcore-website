@@ -1,11 +1,21 @@
-<div class="ac-overlay-body">
-  <div class="stage">
-    <ac-card-tile class="card" [card]="data.card" [plain]="true" [eager]="true" />
+<div class="ac-overlay-body" [class.navigable]="navigable">
+  <div class="viewer">
+    @if (navigable) {
+      <button type="button" class="arrow" acIconButton="chevron-left" [ariaLabel]="labels.previous" (click)="go(-1)"></button>
+    }
+    <div class="stage">
+      @for (card of [data().card]; track card.reference) {
+        <ac-card-tile class="card" [card]="card" [plain]="true" [eager]="true" />
+      }
+    </div>
+    @if (navigable) {
+      <button type="button" class="arrow" acIconButton="chevron-right" [ariaLabel]="labels.next" (click)="go(1)"></button>
+    }
   </div>
   <!-- Editor controls sit on a surface; the card and the link alone lie on the backdrop (the site's lightbox). -->
-  @if (data.quantity || data.illustrations) {
+  @if (data().quantity || data().illustrations) {
     <div class="controls">
-      @if (data.quantity; as q) {
+      @if (data().quantity; as q) {
         <div class="qty">
           @if (q.in === 'collection') {
             <span i18n="@@cardZoom.inCollection">Dans la collection physique</span>
@@ -15,10 +25,10 @@
           <ac-stepper appearance="box" [label]="name()" [itemName]="name()" [value]="quantity()" [max]="q.max" (valueChange)="setQuantity($event)" />
         </div>
       }
-      @if (data.illustrations) {
+      @if (data().illustrations) {
         <button acButton variant="secondary" icon="brush" [fullWidth]="true" aria-haspopup="dialog" (click)="chooseIllustrations()" i18n="@@cardZoom.chooseIllustrations">Choisir les illustrations</button>
       }
     </div>
   }
-  <a acButton class="detail" icon="info" [fullWidth]="true" [href]="detailUrl" i18n="@@cardZoom.detail">Accéder au détail</a>
+  <a acButton class="detail" icon="info" [fullWidth]="true" [href]="detailUrl()" i18n="@@cardZoom.detail">Accéder au détail</a>
 </div>

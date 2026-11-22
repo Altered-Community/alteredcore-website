@@ -640,6 +640,8 @@
     "format.test.short": "4 to 100 cards · BGA test format",
     "ui.cardTile.zoom": "Enlarge {$name}",
     "cardZoom.inDeck": "In the deck",
+    "cardZoom.previous": "Previous card",
+    "cardZoom.next": "Next card",
     "cardZoom.detail": "View detail",
     "core.deckStore.makePublicFailed": "Could not make this deck public (HTTP {$status}).",
     "deck.share.qr": "QR code of the link",
