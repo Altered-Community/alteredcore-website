@@ -1178,12 +1178,22 @@ var AlteredCard = {
 
     function renderLore(loreData, l) {
         var entries = (loreData && !Array.isArray(loreData)) ? (loreData[l] || loreData.en || []) : [];
-        var entry = null;
-        for (var i = 0; i < entries.length && !entry; i++) {
-            for (var j = 0; j < (entries[i].elements || []).length; j++) {
-                if (entries[i].elements[j].text) { entry = entries[i]; break; }
+        function val(e, type) {
+            var els = e.elements || [];
+            for (var k = 0; k < els.length; k++) {
+                var t = els[k].text;
+                if (els[k].type === type && t && t !== '#N/A' && t !== 'N/A') return t;
             }
+            return '';
         }
+        // The API can return several entries per language, some with the narrator
+        // and date left empty: keep the most complete one (first wins on a tie).
+        var entry = null, best = 0;
+        entries.forEach(function (e) {
+            if (!val(e, 'FLAVOR_TEXT') && !val(e, 'STORY')) return;
+            var score = 1 + (val(e, 'NARRATOR') ? 1 : 0) + (val(e, 'DATE') ? 1 : 0);
+            if (score > best) { entry = e; best = score; }
+        });
         if (!entry) return '';
         var html = '<div class="card-altered p-3">';
         (entry.elements || []).forEach(function (el) {
@@ -1194,6 +1204,11 @@ var AlteredCard = {
             else if (el.type === 'STORY')   html += '<p style="font-size:.88rem;color:var(--ac-color-text-2);line-height:1.65;margin:0 0 .5rem 0">' + esc.replace(/\n/g, '<br>') + '</p>';
             else if (el.type === 'NARRATOR') html += '<p style="font-size:.8rem;color:var(--ac-color-text-muted);text-align:right;font-style:italic;margin:0">— ' + esc + '</p>';
         });
+        var narrator = val(entry, 'NARRATOR'), date = val(entry, 'DATE');
+        if (narrator || date) {
+            html += '<p style="font-size:.8rem;color:var(--neutral-500);text-align:right;font-style:italic;margin:0">— '
+                + escHtml([narrator, date].filter(Boolean).join(', ')) + '</p>';
+        }
         return html + '</div>';
     }
 
