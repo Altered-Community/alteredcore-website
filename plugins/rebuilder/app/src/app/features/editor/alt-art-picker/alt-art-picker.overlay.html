@@ -1,5 +1,14 @@
 <div class="ac-overlay-body">
-  <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix ne valent que pour ce deck : vos arts par défaut ne changent pas.</p>
+  <div class="scope">
+    <ac-segmented [ariaLabel]="scopeLabel" [options]="scopes" [value]="scope()" (valueChange)="scope.set($event ?? 'deck')" />
+    <p class="defaults-note">
+      @if (scope() === 'deck') {
+        <ng-container i18n="@@editor.altArtPicker.noteDeck">Ce choix ne vaut que pour ce deck : vos arts par défaut ne changent pas.</ng-container>
+      } @else {
+        <ng-container i18n="@@editor.altArtPicker.noteGlobal">Ce choix change vos arts par défaut : tous vos decks qui n’ont pas leur propre illustration pour cette carte la suivent.</ng-container>
+      }
+    </p>
+  </div>
   <div class="stage">
     <section class="pool" aria-labelledby="alt-art-picker-hint">
       <h3 class="step">
@@ -55,7 +64,7 @@
 </div>
 <div class="ac-overlay-footer">
   <a class="settings" [href]="settingsUrl" i18n="@@editor.altArtPicker.settings">Modifier mes arts par défaut</a>
-  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="followsDefaults()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
+  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="followsDefaults()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.useDefaults">Utiliser mes arts par défaut</button>
   <button acButton (click)="ref.close()" i18n="@@editor.altArtPicker.close">Fermer</button>
 </div>
 

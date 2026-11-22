@@ -89,6 +89,7 @@ describe('ImportDeckOverlay (list)', () => {
         name: 'Moyo',
         format: 'nuc',
         isPublic: false,
+        isDraft: false,
         deckCards: [
           { cardReference: HERO.reference, quantity: 1 },
           { cardReference: ZOU.reference, quantity: 3 },

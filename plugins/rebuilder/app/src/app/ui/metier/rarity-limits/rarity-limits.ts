@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import type { RarityLimit } from '../../../core/deck-rules';
+import type { RarityLimit } from '../../../core/format-rules';
 import { AcBadge, RARITY_ICONS } from '../../chips';
 
 /** A capped rarity as shown: its icon, its name, `under` / `at` / `over` the cap, and « Rare : 12 sur 15 maximum ». */

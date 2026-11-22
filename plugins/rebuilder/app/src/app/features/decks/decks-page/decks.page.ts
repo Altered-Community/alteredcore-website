@@ -27,7 +27,7 @@ import { openLegalityDetails } from '../../shared/legality-details/legality-deta
 import { openCommunityBuilders } from '../community-builders/community-builders.overlay';
 import { isDecksListUrl } from '../decks-list-reuse';
 import { openImportDeck } from '../import-deck/import-deck.overlay';
-import { type Visibility, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
+import { type Visibility, type DeckStatus, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
 import { DeckFiltersSheet } from '../deck-filters-sheet/deck-filters-sheet';
 import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
 import { type CommunityQuery, type CommunityState, EMPTY_COMMUNITY, addCommunityPage, toCommunityQuery } from '../community-pages';
@@ -146,7 +146,10 @@ export class DecksPage {
   });
   protected readonly localSaving = signal(false);
   protected readonly localError = signal<string | null>(null);
-  protected readonly mineFiltered = computed(() => filterDecks(this.mine(), this.filters()));
+  protected readonly mineFiltered = computed(() => {
+    const archived = this.filters().status === 'archived';
+    return filterDecks(this.mine().filter((d) => d.draft === archived), this.filters());
+  });
 
   /** Starter Deck Contest snapshot, loaded the first time the tab opens. */
   private readonly contestRes = rxResource({
@@ -285,6 +288,10 @@ export class DecksPage {
     { value: 'public' as Visibility, label: $localize`:@@decks.page.visibilityPublic:Publics` },
     { value: 'private' as Visibility, label: $localize`:@@decks.page.visibilityPrivate:Privés` },
   ];
+  protected readonly statuses = [
+    { value: 'active' as DeckStatus, label: $localize`:@@decks.page.statusActive:Actifs` },
+    { value: 'archived' as DeckStatus, label: $localize`:@@decks.page.statusArchived:Archivés` },
+  ];
   protected readonly sorts = SORTS;
   protected readonly factions = FACTIONS;
   protected readonly activeFilters = computed(() => {
@@ -292,7 +299,7 @@ export class DecksPage {
     const tab = this.tab();
     // « Légaux uniquement » is on by default: turned off, it counts as a filter.
     return (
-      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + f.factions.length
+      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (f.status === 'archived' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + f.factions.length
     );
   });
   protected readonly countLabel = computed(() => {
@@ -336,6 +343,7 @@ export class DecksPage {
         format: visibleFormats().some((f) => f.value === format) ? format : '',
         hero: this.tab() === 'community' ? hero.toUpperCase() : hero,
         visibility: this.tab() === 'mine' ? visibility : 'all',
+        status: this.tab() === 'mine' && initial.get('archived') === '1' ? 'archived' : 'active',
         factions,
         sort: sortFromParam(initial.get('sort')) ?? 'updated',
         legalOnly: initial.get('legal') !== 'all',
@@ -399,6 +407,7 @@ export class DecksPage {
               format: f.format || null,
               ...common,
               visibility: tab === 'mine' && f.visibility !== 'all' ? f.visibility : null,
+              archived: tab === 'mine' && f.status === 'archived' ? '1' : null,
               sort: f.sort !== 'updated' ? f.sort : null,
               legal: tab === 'community' && !f.legalOnly ? 'all' : null,
             };
@@ -519,7 +528,7 @@ export class DecksPage {
     openLegalityDetails(this.overlay, { format: deck.formatLabel, legality: deck.legality });
   }
 
-  /** « Enregistrer sur mon compte »: each guest deck becomes a private draft of the account, then leaves this device. */
+  /** « Enregistrer sur mon compte »: each guest deck becomes a private deck of the account, then leaves this device. */
   protected saveLocalDecks(): void {
     const decks = this.localDecks();
     if (!decks.length || this.localSaving()) return;
@@ -534,7 +543,8 @@ export class DecksPage {
               description: d.description ?? '',
               format: d.format,
               isPublic: false,
-              isDraft: true,
+              // Not a draft: the decks API validates the deck (its prints are kept as the deck's own).
+              isDraft: false,
               deckCards: [
                 ...(d.hero ? [{ cardReference: d.hero.reference, quantity: 1 }] : []),
                 ...(d.deckCards ?? []).filter((l) => l.cardReference !== d.hero?.reference).map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
@@ -596,6 +606,7 @@ export class DecksPage {
           heroesFor: (factions: string[]) => this.heroOptions(factions),
           clearHeroOnFaction: this.tab() === 'contest',
           visibilities: this.visibilities,
+          statuses: this.statuses,
           showFormat: this.tab() !== 'contest',
           showHero: true,
           showVisibility: this.tab() === 'mine',

@@ -153,7 +153,7 @@
         elDeckFormat.value = (d.format || 'standard').toLowerCase();
         elDeckPublic.value = d.isPublic ? '1' : '0';
 
-        // isDraft mode: if deck was saved as draft, pre-select draft mode
+        // Archived deck (isDraft): stays archived when saved from the builder
         if (d.isDraft) {
             deck.isDraftMode = 'draft';
             if (elDeckDraft) elDeckDraft.value = 'draft';

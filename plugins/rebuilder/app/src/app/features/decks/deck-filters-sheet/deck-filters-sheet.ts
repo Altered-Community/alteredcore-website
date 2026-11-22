@@ -4,7 +4,7 @@ import { AcChip } from '../../../ui/chips';
 import { type AcOption, AcCheckbox, AcSegmented, AcSelect } from '../../../ui/fields';
 import { FACTIONS } from '../../../ui/metier';
 import { AcOverlayRef } from '../../../ui/overlay';
-import { type Visibility, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
+import { type Visibility, type DeckStatus, type DeckFilters, EMPTY_DECK_FILTERS } from '../deck-filters';
 
 /** Mobile filter sheet of the decks page (format, héros, visibilité, légalité, faction: what the tab supports). */
 @Component({
@@ -27,6 +27,8 @@ export class DeckFiltersSheet {
         /** A faction change clears the hero (contest tab, as on the site). */
         clearHeroOnFaction?: boolean;
         visibilities: { value: Visibility; label: string }[];
+        /** « Actifs | Archivés » (shown with the visibility, « Mes decks »). */
+        statuses?: { value: DeckStatus; label: string }[];
         showFormat: boolean;
         showHero: boolean;
         showVisibility: boolean;

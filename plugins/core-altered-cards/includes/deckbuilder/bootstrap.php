@@ -18,7 +18,10 @@ $_collectionEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
 $_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
 $_ownMode           = $_ownEnabled && !$isGuest && $_dbUserId > 0;
-$_altArtGlobalMode  = $_ownMode && cacIsAltArtGlobalMode($_dbUserId);
+// The Global/PerDeck alt-art mode is gone (decks API: a deck's own altArtOverrides win, the player's global
+// preferences apply to the other cards at render time). This old deck builder keeps its PerDeck behaviour: it writes
+// the chosen prints in the deck list, which the decks API turns into the deck's altArtOverrides.
+$_altArtGlobalMode  = false;
 $_ownAltArtActive   = ownershipIsActive() && $_altArtGlobalMode;
 $ownAltArtCfg = $_ownAltArtActive ? [
     'enabled'          => true,

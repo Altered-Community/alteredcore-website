@@ -20,7 +20,14 @@ $txt = [
         'err_api'         => 'API error (HTTP %d).',
         'err_connect'     => 'Connection error.',
         'api_later'       => 'The API is currently unavailable. Please try again later.',
-        'draft'           => 'Draft',
+        'draft'           => 'Archived',
+        'archive_btn'     => 'Archive',
+        'unarchive_btn'   => 'Unarchive',
+        'archive_hint'    => 'Archived decks are hidden in BGA. They stay in your decks and stay shared when public.',
+        'archived_ok'     => 'Deck archived.',
+        'unarchived_ok'   => 'Deck restored.',
+        'archive_err'     => 'Could not change the deck status (HTTP %d).',
+        'legacy_deleted'  => 'This deck was deleted on the old AlteredCore site on %s, so it was archived here. Unarchive it to bring it back.',
         'deck_valid'      => 'Valid',
         'deck_invalid'    => 'Invalid',
         'public'          => 'Public',
@@ -54,6 +61,7 @@ $txt = [
         'duplicating'           => 'Duplicating…',
         'duplicate_suffix'      => ' (Copy)',
         'duplicate_err'         => 'Could not duplicate this deck (HTTP %d).',
+        'owner_by'            => 'by %s',
         'legal'               => 'Legal',
         'illegal'             => 'Illegal',
         'format_errors_title' => 'Format errors',
@@ -68,10 +76,13 @@ $txt = [
             'sets'              => 'Cards from unauthorized sets',
             'bannedCards'       => 'Deck contains banned cards',
             'suspendedCards'    => 'Deck contains suspended cards',
-            'copies'            => 'Too many copies of a card name',
+            'copies'            => 'Too many copies of a card',
             'uniqueQuantity'    => 'Too many unique cards',
             'rareQuantity'      => 'Too many rare cards',
             'exaltedQuantity'   => 'Too many exalted cards',
+            'frontierUniques'   => 'Unique cards not allowed in this format',
+            'pool'              => 'Cards missing from your sealed pool',
+            'cards'             => 'Unknown cards',
         ],
         'no_description'      => 'No description available for this deck.',
         'copy_btn'        => 'Copy decklist',
@@ -98,7 +109,14 @@ $txt = [
         'err_api'         => 'Erreur API (HTTP %d).',
         'err_connect'     => 'Erreur de connexion.',
         'api_later'       => 'L\'API est actuellement indisponible. Veuillez réessayer plus tard.',
-        'draft'           => 'Brouillon',
+        'draft'           => 'Archivé',
+        'archive_btn'     => 'Archiver',
+        'unarchive_btn'   => 'Désarchiver',
+        'archive_hint'    => 'Un deck archivé est caché dans BGA. Il reste dans vos decks, et reste partagé s\'il est public.',
+        'archived_ok'     => 'Deck archivé.',
+        'unarchived_ok'   => 'Deck désarchivé.',
+        'archive_err'     => 'Impossible de changer le statut du deck (HTTP %d).',
+        'legacy_deleted'  => 'Ce deck a été supprimé sur l\'ancien site AlteredCore le %s : il a été archivé ici. Désarchivez-le pour le récupérer.',
         'deck_valid'      => 'Valide',
         'deck_invalid'    => 'Invalide',
         'public'          => 'Public',
@@ -143,6 +161,7 @@ $txt = [
         'stats_cost_recall' => 'Courbe coût réserve',
         'stats_types'       => 'Types de cartes',
         'stats_powers'      => 'Puissances moy.',
+        'owner_by'            => 'par %s',
         'legal'               => 'Légal',
         'illegal'             => 'Illégal',
         'format_errors_title' => 'Erreurs de format',
@@ -157,10 +176,13 @@ $txt = [
             'sets'              => 'Cartes de sets non autorisés',
             'bannedCards'       => 'Contient des cartes bannies',
             'suspendedCards'    => 'Contient des cartes suspendues',
-            'copies'            => 'Trop de copies d\'un même nom',
+            'copies'            => 'Trop d\'exemplaires d\'une carte',
             'uniqueQuantity'    => 'Trop de cartes uniques',
             'rareQuantity'      => 'Trop de cartes rares',
             'exaltedQuantity'   => 'Trop de cartes exaltées',
+            'frontierUniques'   => 'Cartes uniques non autorisées dans ce format',
+            'pool'              => 'Cartes absentes de votre pool scellé',
+            'cards'             => 'Cartes inconnues',
         ],
         'no_description'      => 'Aucune description disponible pour ce deck.',
         'test_hand'           => 'Main de départ',
@@ -192,6 +214,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         }
     }
     redirect(BASE_URL . '/pages/decks');
+}
+
+// form POST: archive / unarchive deck (isDraft = archived: hidden in BGA only)
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && !isset($_GET['ajax'])
+    && in_array($_POST['action'] ?? '', ['archive_deck', 'unarchive_deck'], true)
+    && csrfValid($_POST['csrf_token'] ?? '')
+    && $isLoggedIn
+    && $deckId !== ''
+) {
+    $archive = $_POST['action'] === 'archive_deck';
+    $token = deckApiToken();
+    if ($token) {
+        $code = cacDeckApiSetArchived($deckId, $archive, $token);
+        if ($code >= 200 && $code < 300) {
+            flash($txt[$archive ? 'archived_ok' : 'unarchived_ok']);
+        } else {
+            flash(sprintf($txt['archive_err'], $code), 'error');
+        }
+    } else {
+        flash($txt['err_api_auth'], 'error');
+    }
+    redirect(BASE_URL . '/pages/deck?id=' . rawurlencode($deckId));
 }
 
 // aJAX proxy for owner actions (delete / rename)
@@ -270,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
             echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $srcCode)]); exit;
         }
         $source = json_decode($srcRes, true);
-        if (!is_array($source) || empty($source['cards'])) {
+        if (!is_array($source) || !cacDeckContentForWrite($source)['deckCards']) {
             echo json_encode(['ok' => false, 'error' => $txt['not_found']]); exit;
         }
 
@@ -278,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         if ($newName === '') {
             $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
         }
-        $payload = cacBuildDuplicateDeckPayload($source, $newName, (int)($_SESSION['user_id'] ?? 0) ?: null);
+        $payload = cacBuildDuplicateDeckPayload($source, $newName);
 
         $ch = curl_init(DECKS_API_URL . '/api/decks');
         curl_setopt_array($ch, [
@@ -554,6 +599,14 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 </button>
             </form>
             <?php endif; ?>
+            <?php $_isArchived = !empty($deck['isDraft']); ?>
+            <form method="post" class="d-inline" action="<?= h(BASE_URL . '/pages/deck?id=' . rawurlencode($deckId)) ?>">
+                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                <input type="hidden" name="action"     value="<?= $_isArchived ? 'unarchive_deck' : 'archive_deck' ?>">
+                <button type="submit" class="btn btn-outline-secondary btn-sm" title="<?= h($txt['archive_hint']) ?>">
+                    <i class="fa-solid <?= $_isArchived ? 'fa-box-open' : 'fa-box-archive' ?> me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt[$_isArchived ? 'unarchive_btn' : 'archive_btn']) ?></span>
+                </button>
+            </form>
             <button type="button" id="deck-rename-btn" class="btn btn-outline-secondary btn-sm d-none">
                 <i class="fa-solid fa-pencil me-sm-1"></i><span class="d-none d-sm-inline"><?= h($txt['rename_btn']) ?></span>
             </button>
@@ -589,6 +642,12 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     </div>
 
     <?php elseif ($deck): ?>
+    <?php if ($isOwner && !empty($deck['legacyDeletedAt'])): ?>
+    <div class="ac-notice ac-notice--warning mb-3" role="note">
+        <?= ac_icon('archive') ?>
+        <div><?= h(sprintf($txt['legacy_deleted'], date('d/m/Y', strtotime($deck['legacyDeletedAt'])))) ?></div>
+    </div>
+    <?php endif; ?>
 
     <!-- Deck header banner -->
     <?php
@@ -617,6 +676,9 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <?php if ($heroName): ?>
                         <div class="deck-hdr-meta"><?= h($heroName) ?></div>
                         <?php endif; ?>
+                        <?php if (($_ownerPseudo = cacDeckOwnerPseudo($deck)) !== null): ?>
+                        <div class="deck-hdr-meta"><?= ac_icon('user', 'me-1') ?><?= h(sprintf($txt['owner_by'], $_ownerPseudo)) ?></div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
@@ -631,25 +693,18 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     ?>
                     <span class="badge" style="<?= h($fmtStyle) ?>"><?= h($fmtLabel) ?></span>
                     <?php
-                    $_deckLegal   = $deck['legal'] ?? null;
-                    $_fmtErrors   = is_array($deck['formatErrors'] ?? null) ? $deck['formatErrors'] : [];
-                    $_legalDetail = is_array($deck['legalityDetail'] ?? null) ? $deck['legalityDetail'] : [];
-                    // Only show Illegal when there are actual failing checks; a freshly
-                    // imported draft returns legal=false before the API calculates legality.
-                    $_hasActualErrors = !empty($_fmtErrors);
-                    if (!$_hasActualErrors) {
-                        foreach ($_legalDetail as $_lk => $_lv) {
-                            if ($_lk !== 'global' && $_lv === false) { $_hasActualErrors = true; break; }
-                        }
-                    }
-                    if ($_deckLegal === true): ?>
+                    // The decks API's verdict, never computed here: its translated messages (?locale= on the GET),
+                    // else the labels of the failing legalityDetail rules. A draft (not validated) shows nothing.
+                    $_legality = cacDeckLegalityView($deck);
+                    $_ruleLabels = array_map(fn($r) => $txt['legality_keys'][$r] ?? $r, $_legality['rules']);
+                    if ($_legality['status'] === 'legal'): ?>
                     <span class="ac-badge ac-badge--green">
                         <i class="fa-solid fa-check me-1"></i><?= h($txt['legal']) ?>
                     </span>
-                    <?php elseif ($_deckLegal === false && $_hasActualErrors): ?>
+                    <?php elseif ($_legality['status'] === 'illegal'): ?>
                     <button type="button" class="ac-badge ac-badge--red border-0 js-deck-illegal"
-                            data-errors="<?= h(json_encode($_fmtErrors)) ?>"
-                            data-legality="<?= h(json_encode($_legalDetail)) ?>"
+                            data-errors="<?= h(json_encode($_legality['messages'])) ?>"
+                            data-rules="<?= h(json_encode($_legality['messages'] ? [] : $_ruleLabels)) ?>"
                             data-format="<?= h($fmtLabel) ?>">
                         <i class="fa-solid fa-triangle-exclamation me-1"></i><?= h($txt['illegal']) ?>
                     </button>
@@ -962,7 +1017,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 </div>
 <script>
 (function() {
-    var legalityKeys          = <?= json_encode($txt['legality_keys']) ?>;
     var legalityFormatSection = <?= json_encode($txt['legality_format_section']) ?>;
     var legalityRulesSection  = <?= json_encode($txt['legality_rules_section']) ?>;
     var legalityErrorsSection = <?= json_encode($txt['legality_errors_section']) ?>;
@@ -978,9 +1032,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         var btn = e.target.closest('.js-deck-illegal');
         if (!btn) return;
         e.stopPropagation();
-        var errors = [], detail = {};
+        // Both lists come from the decks API (see cacDeckLegalityView()): its messages, or the failing rules' labels.
+        var errors = [], failures = [];
         try { errors = JSON.parse(btn.dataset.errors || '[]'); } catch(_) {}
-        try { detail = JSON.parse(btn.dataset.legality || '{}'); } catch(_) {}
+        try { failures = JSON.parse(btn.dataset.rules || '[]'); } catch(_) {}
         var deckFormat = btn.dataset.format || '';
 
         var html = '';
@@ -992,12 +1047,6 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
               + '</div>';
 
         // Deck Legality Error section
-        var failures = [];
-        Object.keys(detail).forEach(function(k) {
-            if (k !== 'global' && detail[k] === false) {
-                failures.push(legalityKeys[k] || k);
-            }
-        });
         if (failures.length) {
             html += '<div class="mb-3">'
                   + sectionLabel(legalityRulesSection)
@@ -1082,9 +1131,9 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 <?php
 // Alt-art marker widget + 3D tilt in the card zoom lightbox — requires the ownership
 // plugin itself to be active (not just OWNERSHIP_API_URL configured), see ownershipIsActive().
-// Only shown in Global preference mode — in PerDeck mode (the default), a card's
-// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
-$_ownAltArtActive = ownershipIsActive() && $isLoggedIn && cacIsAltArtGlobalMode((int)($_SESSION['user_id'] ?? 0));
+// It edits the player's global alt-art preferences, which apply to every deck except the
+// cards a deck overrides itself (the deck's altArtOverrides, chosen in the deck builder).
+$_ownAltArtActive = ownershipIsActive() && $isLoggedIn;
 $ownAltArtCfg = $_ownAltArtActive ? [
     'enabled'          => true,
     'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',

@@ -16,33 +16,45 @@ namespace TournamentReports\Deckfmt;
  */
 class DeckfmtConfig
 {
+    private const PRODUCTS = [
+        ['id' => 1, 'code' => 'P'],
+        ['id' => 2, 'code' => 'A'],
+    ];
+
+    private const FACTIONS = [
+        ['id' => 1, 'code' => 'AX'],
+        ['id' => 2, 'code' => 'BR'],
+        ['id' => 3, 'code' => 'LY'],
+        ['id' => 4, 'code' => 'MU'],
+        ['id' => 5, 'code' => 'OR'],
+        ['id' => 6, 'code' => 'YZ'],
+        ['id' => 7, 'code' => 'NE'],
+    ];
+
+    private const RARITIES = [
+        ['id' => 0, 'code' => 'C'],
+        ['id' => 1, 'code' => 'R1'],
+        ['id' => 2, 'code' => 'R2'],
+        ['id' => 3, 'code' => 'U'],
+        ['id' => 4, 'code' => 'E'],
+    ];
+
     /**
-     * Ported verbatim from GameApi/Deckfmt/Config/v1.json. Keep this array in
-     * sync with that file when a new set/faction/rarity/product ships.
+     * Ported verbatim from altered-bga-api's Deckfmt/Config/v*.json. Keep
+     * these arrays in sync with those files when a new set/faction/rarity/
+     * product ships.
+     *
+     *   v1 — initial layout. FROZEN: blobs encoded with it are stored in
+     *        altered-bga-api and must keep decoding exactly as they always did.
+     *   v2 — MUSUBI numberInFactionBits 5 -> 7 (its cards go up to 74, v1
+     *        could only encode up to 31). Everything else identical.
      */
     private const VERSIONS = [
         1 => [
             'instanceNumberAppliesToAllRarities' => true,
-            'products' => [
-                ['id' => 1, 'code' => 'P'],
-                ['id' => 2, 'code' => 'A'],
-            ],
-            'factions' => [
-                ['id' => 1, 'code' => 'AX'],
-                ['id' => 2, 'code' => 'BR'],
-                ['id' => 3, 'code' => 'LY'],
-                ['id' => 4, 'code' => 'MU'],
-                ['id' => 5, 'code' => 'OR'],
-                ['id' => 6, 'code' => 'YZ'],
-                ['id' => 7, 'code' => 'NE'],
-            ],
-            'rarities' => [
-                ['id' => 0, 'code' => 'C'],
-                ['id' => 1, 'code' => 'R1'],
-                ['id' => 2, 'code' => 'R2'],
-                ['id' => 3, 'code' => 'U'],
-                ['id' => 4, 'code' => 'E'],
-            ],
+            'products' => self::PRODUCTS,
+            'factions' => self::FACTIONS,
+            'rarities' => self::RARITIES,
             'sets' => [
                 ['id' => 1, 'code' => 'COREKS', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
                 ['id' => 2, 'code' => 'CORE', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
@@ -63,6 +75,37 @@ class DeckfmtConfig
                 ['id' => 17, 'code' => 'MUSUBI', 'numberInFactionBits' => 5, 'legacyRarityBits' => false],
                 ['id' => 18, 'code' => 'WCF25', 'numberInFactionBits' => 5, 'legacyRarityBits' => false],
                 ['id' => 19, 'code' => 'WCS26', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 20, 'code' => 'EOLETOP', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 21, 'code' => 'EOLEOP', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+            ],
+        ],
+        2 => [
+            'instanceNumberAppliesToAllRarities' => true,
+            'products' => self::PRODUCTS,
+            'factions' => self::FACTIONS,
+            'rarities' => self::RARITIES,
+            'sets' => [
+                ['id' => 1, 'code' => 'COREKS', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
+                ['id' => 2, 'code' => 'CORE', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
+                ['id' => 3, 'code' => 'ALIZE', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
+                ['id' => 4, 'code' => 'BISE', 'numberInFactionBits' => 7, 'legacyRarityBits' => true],
+                ['id' => 5, 'code' => 'TCS3', 'numberInFactionBits' => 6, 'legacyRarityBits' => true],
+                ['id' => 6, 'code' => 'WCQ25', 'numberInFactionBits' => 5, 'legacyRarityBits' => true],
+                ['id' => 7, 'code' => 'WCS25', 'numberInFactionBits' => 5, 'legacyRarityBits' => true],
+                ['id' => 8, 'code' => 'CYCLONE', 'numberInFactionBits' => 7, 'legacyRarityBits' => true],
+                ['id' => 9, 'code' => 'DUSTER', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 10, 'code' => 'DUSTERTOP', 'numberInFactionBits' => 6, 'legacyRarityBits' => false],
+                ['id' => 11, 'code' => 'DUSTERCB', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 12, 'code' => 'DUSTEROP', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 13, 'code' => 'EOLE', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 14, 'code' => 'EOLECB', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 15, 'code' => 'FUGUE', 'numberInFactionBits' => 8, 'legacyRarityBits' => false],
+                ['id' => 16, 'code' => 'JUDGE', 'numberInFactionBits' => 5, 'legacyRarityBits' => false],
+                ['id' => 17, 'code' => 'MUSUBI', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 18, 'code' => 'WCF25', 'numberInFactionBits' => 5, 'legacyRarityBits' => false],
+                ['id' => 19, 'code' => 'WCS26', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 20, 'code' => 'EOLETOP', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
+                ['id' => 21, 'code' => 'EOLEOP', 'numberInFactionBits' => 7, 'legacyRarityBits' => false],
             ],
         ],
     ];

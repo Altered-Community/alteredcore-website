@@ -5,7 +5,6 @@ import { of, throwError, type Observable } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
 import { DecksApiService } from '../../../core/decks-api.service';
 import type { Deck, DeckWrite } from '../../../core/models';
-import { OwnershipApiService, type AltArtChoice } from '../../../core/ownership-api.service';
 import { EquinoxImport } from './equinox-import';
 
 /** A ZIP with one stored entry. */
@@ -62,8 +61,6 @@ describe('EquinoxImport', () => {
   let created: DeckWrite[];
   let failNext: number;
   let mine: Deck[];
-  /** The player's families, by reference (their default alt arts). */
-  let choices: Record<string, AltArtChoice>;
   let mineError: number;
 
   function setup(): Harness {
@@ -86,12 +83,6 @@ describe('EquinoxImport', () => {
             },
           },
         },
-        {
-          provide: OwnershipApiService,
-          useValue: {
-            altArtChoices: (refs: string[]) => of(Object.fromEntries(refs.filter((r) => choices[r]).map((r) => [r, choices[r]]))),
-          },
-        },
       ],
     });
     const fixture = TestBed.createComponent(EquinoxImport);
@@ -104,7 +95,6 @@ describe('EquinoxImport', () => {
     failNext = 0;
     mine = [];
     mineError = 0;
-    choices = {};
   });
   afterEach(() => vi.useRealTimers());
 
@@ -124,27 +114,6 @@ describe('EquinoxImport', () => {
     ]);
     expect(cmp.rows().map((r) => r.status)).toEqual(['imported', 'imported', 'failedFinal']);
     expect(cmp.phase()).toBe('done');
-  });
-
-  it('gives the cards and the hero the player’s default alt arts, within the copies owned', async () => {
-    choices = {
-      ALT_A: family(1, ['ALT_A', 'ALT_A_ALT'], 2, ['ALT_A_ALT', 'ALT_A_ALT', 'ALT_A_ALT']),
-      ALT_HERO: family(2, ['ALT_HERO', 'ALT_HERO_P'], 1, ['ALT_HERO_P']),
-    };
-    const cmp = setup();
-    await run(cmp);
-    expect(created[0].deckCards).toEqual([
-      { cardReference: 'ALT_HERO_P', quantity: 1 },
-      { cardReference: 'ALT_A_ALT', quantity: 2 },
-      { cardReference: 'ALT_A', quantity: 1 },
-    ]);
-  });
-
-  it('keeps the exported cards when the defaults give an invalid card', async () => {
-    choices = { ALT_A: family(1, ['ALT_A', 'oops'], null, ['oops']) };
-    const cmp = setup();
-    await run(cmp);
-    expect(created[0].deckCards).toEqual([{ cardReference: 'ALT_HERO', quantity: 1 }, { cardReference: 'ALT_A', quantity: 3 }]);
   });
 
   it('stops before importing when the session has no token', async () => {
@@ -219,11 +188,3 @@ describe('EquinoxImport', () => {
     expect(cmp.rows().filter((r) => r.status === 'cancelled').length).toBe(2 - importedWhilePaused);
   });
 });
-
-/** A family of `prints` (the plain one first, unlimited; the others owned `owned` times) with the default `slots`. */
-function family(id: number, prints: string[], owned: number | null, slots: string[]): AltArtChoice {
-  return {
-    family: { familyId: id, faction: 'AX', rarity: 'C' },
-    options: { options: prints.map((reference, i) => ({ reference, ownedQuantity: i === 0 ? null : owned })), slots: slots.map((reference, i) => ({ slotIndex: i + 1, reference })) },
-  };
-}

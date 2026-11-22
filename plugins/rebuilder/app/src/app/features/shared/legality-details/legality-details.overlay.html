@@ -12,9 +12,6 @@
             <ac-icon [name]="c.ok ? 'check' : 'x'" [size]="16" [strokeWidth]="2.6" />
             <span class="ac-sr-only">{{ c.ok ? passed : failed }}</span>
             <span class="label">{{ c.label }}</span>
-            @if (c.detail) {
-              <span class="detail">{{ c.detail }}</span>
-            }
           </li>
         }
       </ul>
@@ -28,6 +25,9 @@
         }
       </ul>
     </section>
+  }
+  @if (unknown) {
+    <p class="unknown" i18n="@@deck.legality.unknownNote">La légalité est vérifiée par le serveur quand le deck est enregistré sur votre compte.</p>
   }
   @if (errors.length) {
     <section>

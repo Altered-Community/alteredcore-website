@@ -31,9 +31,12 @@
       </button>
     }
     @if (deck.isDraft()) {
-      <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Brouillon</ac-badge>
+      <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Archivé</ac-badge>
     }
     <ac-badge tone="neutral" [icon]="deck.isPublic() ? 'eye' : 'lock'">{{ deck.isPublic() ? visibilityLabels.public : visibilityLabels.private }}</ac-badge>
+    @if (deck.owner(); as owner) {
+      <span class="owner" i18n="@@deck.page.owner">par {{ owner }}</span>
+    }
   </div>
 </ng-template>
 
@@ -64,7 +67,7 @@
             <!-- Until the owner is known: the actions in skeleton, rather than « Modifier » and « Supprimer » appearing or
                  disappearing once it is. -->
             @if (deck.owned() === null) {
-              @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+              @for (i of [0, 1, 2, 3, 4, 5, 6]; track i) {
                 <span acSkeleton="control-sm"></span>
               }
             } @else {
@@ -78,6 +81,11 @@
             <button acButton variant="secondary" size="sm" icon="copy" (click)="copyList()" i18n="@@deck.page.copyList">Copier la liste</button>
             <button acButton variant="secondary" size="sm" icon="copy-plus" (click)="duplicate()" i18n="@@deck.page.duplicate">Dupliquer</button>
             @if (deck.owned()) {
+              @if (deck.isDraft()) {
+                <button acButton variant="secondary" size="sm" icon="archive-restore" (click)="toggleArchived()" i18n="@@deck.page.unarchive">Désarchiver</button>
+              } @else {
+                <button acButton variant="secondary" size="sm" icon="archive" (click)="toggleArchived()" i18n="@@deck.page.archive">Archiver</button>
+              }
               <button acButton variant="danger" size="sm" icon="trash-2" (click)="remove()" i18n="@@deck.page.delete">Supprimer</button>
             }
             }

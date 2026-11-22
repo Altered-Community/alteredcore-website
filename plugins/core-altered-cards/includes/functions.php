@@ -38,8 +38,8 @@ function deckApiToken(): ?string {
 }
 
 /**
- * Deletes a deck of the signed-in player from the decks API: the HTTP status (0 when unreachable). On a 2xx, what the
- * site keeps about the deck goes too (altArtForgetDeck).
+ * Deletes a deck of the signed-in player from the decks API: the HTTP status (0 when unreachable). The site keeps
+ * nothing else about a deck: its art choices live in the deck itself (`altArtOverrides`).
  */
 function cacDeckApiDelete(string $deckId, string $token): int
 {
@@ -53,10 +53,23 @@ function cacDeckApiDelete(string $deckId, string $token): int
     curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($code >= 200 && $code < 300) {
-        require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-        altArtForgetDeck((int)($_SESSION['user_id'] ?? 0), $deckId);
-    }
+    return $code;
+}
+
+/** Archives (isDraft: true, hidden in BGA) or unarchives a deck; returns the HTTP status. */
+function cacDeckApiSetArchived(string $deckId, bool $archived, string $token): int
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => 'PATCH',
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/merge-patch+json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
+        CURLOPT_POSTFIELDS     => json_encode(['isDraft' => $archived]),
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
     return $code;
 }
 
@@ -279,38 +292,67 @@ function formatApiViolations(array $violations): string {
 }
 
 /**
- * Build the POST /api/decks payload for duplicating an existing deck.
- *
- * Copies every card (including the hero), resets visibility to private,
- * mirrors the source draft flag (falling back to sandbox => draft), and
- * only carries a description when the source has a non-empty one.
- *
- * @param array    $sourceDeck Deck as returned by GET /api/decks/{id}.
- * @param string   $newName    Desired name for the copy (already localized/suffixed by the caller).
- * @param int|null $userId     The copy's new owner. When given and their alt-art mode is
- *                             Global, every card is rewritten through
- *                             cacApplyAltArtPreferencesToCards() before being copied —
- *                             the source deck's own chosen illustrations are irrelevant
- *                             to a Global-mode player, whose preferred art always wins.
- * @return array Payload ready for json_encode().
+ * The {cardReference, quantity} lines of $lines, lines without a reference skipped, quantities as int (at least 1).
  */
-function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName, ?int $userId = null): array
+function cacDeckLines(array $lines): array
 {
-    $deckCards = [];
-    foreach ($sourceDeck['cards'] ?? [] as $card) {
-        if (empty($card['cardReference'])) {
+    $out = [];
+    foreach ($lines as $line) {
+        if (!is_array($line) || empty($line['cardReference']) || !is_string($line['cardReference'])) {
             continue;
         }
-        $deckCards[] = [
-            'cardReference' => $card['cardReference'],
-            'quantity'      => (int)($card['quantity'] ?? 1),
+        $out[] = [
+            'cardReference' => $line['cardReference'],
+            'quantity'      => max(1, (int)($line['quantity'] ?? 1)),
         ];
     }
+    return $out;
+}
 
-    if ($userId !== null && cacIsAltArtGlobalMode($userId)) {
-        $deckCards = cacApplyAltArtPreferencesToCards($deckCards, $userId);
+/**
+ * A deck's content as the decks API stores it, for a write that must keep its art choices: the canonical lines
+ * (`canonicalCards`, one canonical reference per gameplay card) and `altArtOverrides` (the deck's own prints and
+ * tokens) when the API sent them, else the concrete prints (`cards`, or `deckCards`) of an older API, which the API
+ * turns back into canonical lines + overrides on write.
+ *
+ * @return array{deckCards: list<array{cardReference: string, quantity: int}>, altArtOverrides: ?array}
+ */
+function cacDeckContentForWrite(array $deck): array
+{
+    $canonical = is_array($deck['canonicalCards'] ?? null) ? cacDeckLines($deck['canonicalCards']) : [];
+    if ($canonical) {
+        $overrides = is_array($deck['altArtOverrides'] ?? null) ? $deck['altArtOverrides'] : null;
+        if ($overrides !== null) {
+            // A JSON object once decoded: an empty `cards` map must go back as {} (json_encode would send []).
+            $cards  = is_array($overrides['cards'] ?? null) ? $overrides['cards'] : [];
+            $tokens = is_array($overrides['tokens'] ?? null) ? array_values($overrides['tokens']) : [];
+            $overrides = ['cards' => $cards ?: new stdClass(), 'tokens' => $tokens];
+        }
+        return ['deckCards' => $canonical, 'altArtOverrides' => $overrides];
     }
+    $prints = cacDeckLines(is_array($deck['cards'] ?? null) ? $deck['cards'] : []);
+    if (!$prints) {
+        $prints = cacDeckLines(is_array($deck['deckCards'] ?? null) ? $deck['deckCards'] : []);
+    }
+    return ['deckCards' => $prints, 'altArtOverrides' => null];
+}
 
+/**
+ * Build the POST /api/decks payload for duplicating an existing deck.
+ *
+ * Copies every card (including the hero) with the source's art choices (cacDeckContentForWrite()), resets visibility
+ * to private, mirrors the source draft flag (falling back to sandbox => draft), and only carries a description when
+ * the source has a non-empty one. The new owner's global alt-art preferences are not written into the list: the
+ * decks API keeps a deck's own choices in `altArtOverrides`, and AlteredOwnership applies the global preferences to
+ * the other cards when the deck is shown.
+ *
+ * @param array  $sourceDeck Deck as returned by GET /api/decks/{id}.
+ * @param string $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @return array Payload ready for json_encode().
+ */
+function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
+{
+    $content = cacDeckContentForWrite($sourceDeck);
     $format  = $sourceDeck['format'] ?? 'standard';
     $newName = trim($newName);
 
@@ -318,9 +360,12 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName, ?int $
         'name'      => $newName !== '' ? $newName : (string)($sourceDeck['name'] ?? 'Deck'),
         'format'    => $format,
         'isPublic'  => false,
-        'isDraft'   => $sourceDeck['isDraft'] ?? ($format === 'sandbox'),
-        'deckCards' => $deckCards,
+        'isDraft'   => false, // a copy is a new, active deck (isDraft = archived)
+        'deckCards' => $content['deckCards'],
     ];
+    if ($content['altArtOverrides'] !== null) {
+        $payload['altArtOverrides'] = $content['altArtOverrides'];
+    }
 
     $description = trim((string)($sourceDeck['description'] ?? ''));
     if ($description !== '') {
@@ -331,36 +376,177 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName, ?int $
 }
 
 /**
- * The player's alt-art preference mode ("PerDeck", the default, or "Global") — see
- * AltArtPreferenceMode on the ownership service, and ownGetAltArtPreferenceMode() in
- * plugins/ownership/includes/functions.php (this is a self-contained duplicate, same
- * reasoning as collApiRequest() vs ownApiRequestRaw() — this plugin doesn't assume the
- * ownership plugin is active). Shares the same $_SESSION keys so both stay consistent
- * within one session regardless of which plugin's copy last refreshed them.
+ * The PATCH /api/decks/{id} body that adds one copy of $cardRef to $deck (as returned by GET /api/decks/{id}): +1 on
+ * the line of that reference, or a new line. The deck's own art choices (`altArtOverrides`) are sent back unchanged so
+ * the API keeps them (a sent `deckCards` is the whole truth for cards and prints). A print (alt art, promo) of a card
+ * already in the deck becomes a new line, which the API stores as one more copy of the canonical card in that print.
  */
-const CAC_ALT_ART_MODE_CACHE_TTL = 300;
-
-function cacGetAltArtPreferenceMode(int $userId): string {
-    if (isset($_SESSION['alt_art_mode'], $_SESSION['alt_art_mode_at'])
-        && (time() - $_SESSION['alt_art_mode_at']) < CAC_ALT_ART_MODE_CACHE_TTL) {
-        return $_SESSION['alt_art_mode'];
-    }
-
-    $mode = 'PerDeck';
-    if (defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL && $userId > 0) {
-        $data = collApiRequest(rtrim(OWNERSHIP_API_URL, '/'), 'GET', '/api/alt-arts/preference-mode', $userId);
-        if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
-            $mode = $data['mode'];
+function cacDeckAddCardPatch(array $deck, string $cardRef): array
+{
+    $content   = cacDeckContentForWrite($deck);
+    $deckCards = $content['deckCards'];
+    $found     = false;
+    foreach ($deckCards as $i => $line) {
+        if ($line['cardReference'] === $cardRef) {
+            $deckCards[$i]['quantity']++;
+            $found = true;
+            break;
         }
     }
-
-    $_SESSION['alt_art_mode'] = $mode;
-    $_SESSION['alt_art_mode_at'] = time();
-    return $mode;
+    if (!$found) {
+        $deckCards[] = ['cardReference' => $cardRef, 'quantity' => 1];
+    }
+    $patch = ['deckCards' => $deckCards];
+    if ($content['altArtOverrides'] !== null) {
+        $patch['altArtOverrides'] = $content['altArtOverrides'];
+    }
+    return $patch;
 }
 
-function cacIsAltArtGlobalMode(int $userId): bool {
-    return cacGetAltArtPreferenceMode($userId) === 'Global';
+/**
+ * What a page shows of a deck's legality, from the decks API's verdict only (never computed here): `legal` when the
+ * API says so; `illegal` when it says not and gives a reason; `none` otherwise (a draft, an unknown format or a deck
+ * not validated yet: the API sends `legal: false` without errors). `messages` are the API's translated error messages
+ * (`errors[].message`, in the request's `?locale=`; `formatErrors` from an older API); `rules` the failing
+ * `legalityDetail` keys, shown for a deck without messages.
+ *
+ * @return array{status: string, messages: list<string>, rules: list<string>}
+ */
+function cacDeckLegalityView(array $deck): array
+{
+    $messages = [];
+    foreach (is_array($deck['errors'] ?? null) ? $deck['errors'] : [] as $error) {
+        $msg = is_array($error) ? trim((string)($error['message'] ?? '')) : '';
+        if ($msg !== '') $messages[] = $msg;
+    }
+    if (!$messages) {
+        foreach (is_array($deck['formatErrors'] ?? null) ? $deck['formatErrors'] : [] as $msg) {
+            if (is_string($msg) && trim($msg) !== '') $messages[] = trim($msg);
+        }
+    }
+    $rules = [];
+    foreach (is_array($deck['legalityDetail'] ?? null) ? $deck['legalityDetail'] : [] as $rule => $ok) {
+        if ($rule !== 'global' && $ok === false) $rules[] = (string)$rule;
+    }
+    $legal  = $deck['legal'] ?? null;
+    $status = 'none';
+    if ($legal === true) {
+        $status = 'legal';
+    } elseif ($legal === false && ($messages || $rules)) {
+        $status = 'illegal';
+    }
+    return ['status' => $status, 'messages' => $messages, 'rules' => $rules];
+}
+
+/** The deck owner's pseudo, which the decks API gives on public decks (`owner.pseudo`), or null. */
+function cacDeckOwnerPseudo(array $deck): ?string
+{
+    $pseudo = is_array($deck['owner'] ?? null) ? ($deck['owner']['pseudo'] ?? null) : null;
+    if (!is_string($pseudo)) return null;
+    $pseudo = trim($pseudo);
+    return $pseudo !== '' ? $pseudo : null;
+}
+
+/**
+ * The decks API's format rules (GET /api/formats: limits, sets, banned/suspended cards, Unique allowlist), cached for
+ * 10 minutes in the system temp directory; the last good copy is used when the API fails. Null when never fetched.
+ */
+function cacFetchDeckApiFormats(): ?array
+{
+    if (!defined('DECKS_API_URL') || !DECKS_API_URL) return null;
+    $url    = rtrim(DECKS_API_URL, '/') . '/api/formats';
+    $cache  = sys_get_temp_dir() . '/ac-deckapi-formats-' . md5($url) . '.json';
+    $cached = null;
+    if (is_file($cache)) {
+        $cached = json_decode((string)@file_get_contents($cache), true);
+        if (is_array($cached) && (time() - (int)@filemtime($cache)) < 600) return $cached;
+    }
+    // After a failure, wait a minute before asking again: a card page must not wait on a down API every time.
+    $failMark = $cache . '.fail';
+    if (is_file($failMark) && (time() - (int)@filemtime($failMark)) < 60) {
+        return is_array($cached) ? $cached : null;
+    }
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+    ]);
+    $raw  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $data = $code === 200 && is_string($raw) ? json_decode($raw, true) : null;
+    if (is_array($data) && array_is_list($data)) {
+        @file_put_contents($cache, $raw, LOCK_EX);
+        @unlink($failMark);
+        return $data;
+    }
+    @touch($failMark);
+    return is_array($cached) ? $cached : null;
+}
+
+/**
+ * Whether card $ref can be played in $format (one entry of GET /api/formats), from the rules the decks API publishes:
+ * true, false, or null when the card alone can't tell. The API stays the judge of a deck (it validates every save);
+ * this only labels a card page.
+ * - banned / suspended: the format's lists (entries: a reference, a family `BR_06`, a family + rarity `OR_27_R1`);
+ * - a Unique: never in a format without Uniques; only an allowlisted print where the format has an allowlist;
+ * - sets: a card printed in an allowed set is fine. Otherwise null: a reprint in an allowed set makes the card legal,
+ *   and only the API knows the reprints. A format without an allowed set list (sealed: the player's pool) is null too.
+ */
+function cacCardFormatVerdict(string $ref, array $format): ?bool
+{
+    $p = explode('_', strtoupper(trim($ref)));
+    if (count($p) < 6 || $p[0] !== 'ALT' || !ctype_digit($p[4])) return null;
+    $set     = $p[1];
+    $rarity  = $p[5] === 'R' ? 'R1' : $p[5];
+    $family  = $p[3] . '_' . str_pad((string)(int)$p[4], 2, '0', STR_PAD_LEFT);
+    $full    = implode('_', $p);
+    $booster = implode('_', array_replace($p, [2 => 'B']));
+    $matches = function ($entries) use ($full, $booster, $family, $rarity): bool {
+        foreach (is_array($entries) ? $entries : [] as $entry) {
+            if (!is_string($entry)) continue;
+            $e = strtoupper(trim($entry));
+            if (str_starts_with($e, 'ALT_')) {
+                if ($e === $full || $e === $booster) return true;
+                continue;
+            }
+            $ep = explode('_', $e);
+            if (count($ep) < 2 || count($ep) > 3 || !ctype_digit($ep[1])) continue;
+            if ($ep[0] . '_' . str_pad((string)(int)$ep[1], 2, '0', STR_PAD_LEFT) !== $family) continue;
+            if (count($ep) === 2 || ($ep[2] === 'R' ? 'R1' : $ep[2]) === $rarity) return true;
+        }
+        return false;
+    };
+    if (empty($format['allowBanned']) && $matches($format['bannedCards'] ?? [])) return false;
+    if (empty($format['allowSuspended']) && $matches($format['suspendedCards'] ?? [])) return false;
+    if ($rarity === 'U') {
+        if (($format['limits']['unique'] ?? null) === 0 && empty($format['uniqueLimitsByHero'])) return false;
+        $allowlist = $format['uniqueAllowlist'] ?? null;
+        if (is_array($allowlist) && !in_array($full, array_map('strtoupper', array_filter($allowlist, 'is_string')), true)) {
+            return false;
+        }
+    }
+    $allowed   = is_array($format['sets']['allowed'] ?? null) ? $format['sets']['allowed'] : [];
+    $forbidden = is_array($format['sets']['forbidden'] ?? null) ? $format['sets']['forbidden'] : [];
+    if (!$allowed || in_array($set, $forbidden, true) || !in_array($set, $allowed, true)) return null;
+    return true;
+}
+
+/**
+ * cacCardFormatVerdict() for every visible format of $apiFormats (GET /api/formats), keyed by lower-case format code.
+ *
+ * @return array<string, ?bool>
+ */
+function cacCardFormatVerdicts(string $ref, array $apiFormats): array
+{
+    $out = [];
+    foreach ($apiFormats as $format) {
+        if (!is_array($format) || !is_string($format['code'] ?? null) || !empty($format['hidden'])) continue;
+        $out[strtolower($format['code'])] = cacCardFormatVerdict($ref, $format);
+    }
+    return $out;
 }
 
 /**
@@ -376,24 +562,6 @@ function cacHeroPortraitRef(string $ref): string {
         return 'ALT_DUSTER_A_' . ($p[3] ?? '') . '_' . ($p[4] ?? '') . '_' . ($p[5] ?? '');
     }
     return $ref;
-}
-
-/**
- * Rewrites a flat list of {cardReference, quantity} deck lines through the ownership
- * service's POST /api/alt-arts/apply-to-deck (global alt-art preferences applied,
- * falling back to the default print for anything not owned enough) — for server-side
- * callers building or editing a deck (duplicate, Equinox import, quantity changes) while
- * the owning player's mode is Global. Callers must check cacIsAltArtGlobalMode()
- * themselves first; in PerDeck mode a deck's own chosen references are the source of
- * truth and must never be rewritten. Falls back to the input unchanged on any API error,
- * same failure mode as the rest of this plugin's ownership calls.
- */
-function cacApplyAltArtPreferencesToCards(array $deckCards, int $userId): array {
-    if ($userId <= 0) return $deckCards;
-    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
-    require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
-    $token = kc_get_access_token($userId);
-    return ($token ? altArtApplyToDeck($token, $deckCards) : null) ?: $deckCards;
 }
 
 /**

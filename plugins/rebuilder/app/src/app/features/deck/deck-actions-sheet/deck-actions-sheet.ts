@@ -6,6 +6,8 @@ import { runDeckImageAction, type DeckImageAction } from '../deck-image-actions'
 
 export interface DeckActionsData {
   canDelete?: boolean;
+  /** The user's own deck: whether it is archived (« Désarchiver ») or not (« Archiver »); `null` hides the action. */
+  archived?: boolean | null;
   /** The deck's image (« Copier en image »), `null` outside the site. */
   image?: DeckImageSource | null;
   /** The deck's name: the saved image's. */
@@ -16,7 +18,7 @@ export interface DeckActionsData {
  * What the sheet asks the page to do. An image action has already started (the clipboard and the new tab need the
  * click): `image` resolves with the toast's message.
  */
-export type DeckActionsResult = 'copy' | 'duplicate' | 'delete' | { image: Promise<string | null> };
+export type DeckActionsResult = 'copy' | 'duplicate' | 'archive' | 'delete' | { image: Promise<string | null> };
 
 /** « Plus d'actions » sheet on mobile. */
 @Component({
@@ -31,6 +33,7 @@ export class DeckActionsSheet {
   /** « Supprimer » only for the user's own decks. */
   protected readonly canDelete = this.ref.data?.canDelete !== false;
   protected readonly imageSource = this.ref.data?.image ?? null;
+  protected readonly archived = this.ref.data?.archived ?? null;
 
   protected image(action: DeckImageAction): void {
     if (!this.imageSource) return;

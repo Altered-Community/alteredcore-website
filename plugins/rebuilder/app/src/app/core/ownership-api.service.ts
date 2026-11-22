@@ -62,8 +62,8 @@ export class OwnershipApiService {
   }
 
   /**
-   * The token families with several illustrations (tokens are not deck cards: their prints are a preference shared by
-   * every deck), from the site's `alt-art-search` (plugin ownership).
+   * The token families with several illustrations (their prints: the player's preference, or a deck's own choice in its
+   * `altArtOverrides.tokens`), from the site's `alt-art-search` (plugin ownership).
    */
   tokenAltArts(): Observable<(AltArtChoice & { name: string })[]> {
     if (!this.baseUrl) return of([]);
@@ -88,17 +88,5 @@ export class OwnershipApiService {
   /** Which illustration each copy slot of a family shows (`PUT /api/alt-arts/preferences`); errors reach the caller. */
   setAltArtPreference(family: AltArtFamily, slotReferences: string[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/api/alt-arts/preferences`, { ...family, slotReferences });
-  }
-
-  /**
-   * `true` in the « Global » alt-art mode: the ownership service rewrites every deck with the player's default alt
-   * arts, and the deck builders write them in the deck. `false` otherwise or on an error.
-   */
-  globalAltArts(): Observable<boolean> {
-    if (!this.baseUrl) return of(false);
-    return this.http.get<{ mode?: string }>(`${this.baseUrl}/api/alt-arts/preference-mode`).pipe(
-      map((body) => body?.mode === 'Global'),
-      catchError(() => of(false)),
-    );
   }
 }

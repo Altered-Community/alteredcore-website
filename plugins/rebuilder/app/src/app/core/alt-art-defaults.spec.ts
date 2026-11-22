@@ -1,4 +1,5 @@
-import { addedCopyPrint, canRank, defaultPrints, familyPrints, linesWithDefaults, rankPrints, removedCopyPrint, sameCopies, slotChoices, slotDefaults, withFamilyPrints, withRanks } from './alt-art-defaults';
+import { printKey } from './deck-prints';
+import { canRank, defaultPrints, familyPrints, linesWithPins, rankPrints, sameCopies, slotChoices, slotDefaults, withFamilyPrints, withRanks } from './alt-art-defaults';
 import type { HydratedLine } from './models';
 import type { AltArtChoice } from './ownership-api.service';
 
@@ -94,35 +95,6 @@ describe('slotChoices', () => {
   });
 });
 
-describe('addedCopyPrint', () => {
-  it('gives an added copy the next default the copies lack', () => {
-    const choice = fee([MUSUBI, ALT, BASE]);
-    expect(addedCopyPrint(choice, [])).toBe(MUSUBI);
-    expect(addedCopyPrint(choice, [MUSUBI])).toBe(ALT);
-    expect(addedCopyPrint(choice, [MUSUBI, ALT])).toBe(BASE);
-  });
-
-  it('keeps a print chosen in the deck: the next copy takes the first default not used yet', () => {
-    // The deck put its 1st copy on the alt art: the next copy takes the MUSUBI print of the 1st default.
-    expect(addedCopyPrint(fee([MUSUBI, ALT, BASE]), [ALT])).toBe(MUSUBI);
-  });
-
-  it('never gives more copies of a print than owned', () => {
-    // 2 alt arts owned, both in the deck already: the 3rd default (the alt art) falls back to the plain print.
-    expect(addedCopyPrint(fee([ALT, ALT, ALT], 2), [ALT, ALT])).toBe(BASE);
-  });
-});
-
-describe('removedCopyPrint', () => {
-  it('removes the last copy by the defaults, then the plain print, keeping the prints chosen in the deck', () => {
-    const choice = fee([MUSUBI, ALT, BASE]);
-    expect(removedCopyPrint(choice, [MUSUBI, ALT, BASE])).toBe(BASE);
-    expect(removedCopyPrint(choice, [MUSUBI, ALT])).toBe(ALT);
-    // The deck chose the alt art for a copy: the copy on the default goes first.
-    expect(removedCopyPrint(fee([MUSUBI, MUSUBI, BASE]), [ALT, MUSUBI])).toBe(MUSUBI);
-  });
-});
-
 describe('family lines', () => {
   const members = new Set([BASE, MUSUBI]);
 
@@ -140,16 +112,27 @@ describe('family lines', () => {
     expect(next[1].card.name).toBe('Fée Clochette');
   });
 
-  it('applies the defaults to every family, `null` when the deck has them already', () => {
+  it('shows the defaults on every family, `null` when the deck shows them already', () => {
     const choice = fee([MUSUBI, MUSUBI, BASE]);
     const choices = { [BASE]: choice, [MUSUBI]: choice };
-    const out = linesWithDefaults([line(BASE, 3), line('OTHER', 2)], choices);
+    const out = linesWithPins([line(BASE, 3), line('OTHER', 2)], choices);
     expect(out?.map((l) => [l.card.reference, l.quantity])).toEqual([
       [MUSUBI, 2],
       [BASE, 1],
       ['OTHER', 2],
     ]);
-    expect(linesWithDefaults(out ?? [], choices)).toBeNull();
+    expect(linesWithPins(out ?? [], choices)).toBeNull();
+  });
+
+  it('shows the prints the deck pins first, the defaults for its other copies', () => {
+    const choice = fee([MUSUBI, MUSUBI, BASE]);
+    const choices = { [BASE]: choice, [MUSUBI]: choice, [ALT]: choice };
+    const out = linesWithPins([line(BASE, 3)], choices, new Map([[printKey(BASE), [ALT]]]));
+    expect(out?.map((l) => [l.card.reference, l.quantity])).toEqual([
+      [ALT, 1],
+      [MUSUBI, 1],
+      [BASE, 1],
+    ]);
   });
 
   it('compares copies whatever their order', () => {

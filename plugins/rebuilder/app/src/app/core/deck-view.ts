@@ -1,8 +1,8 @@
 import { isUniqueReference } from './card-art';
 import { echoText } from './card-text';
-import { computeDeckStatus, rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
+import { rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
 import { formatInfo } from './formats';
-import { type DeckLegality, legalityFromApi, legalityFromStatus } from './deck-legality';
+import { type DeckLegality, UNKNOWN_LEGALITY, legalityFromApi } from './deck-legality';
 import type { Card, Deck, DeckCardLine, DeckFormat, DeckHero, HydratedLine } from './models';
 import { deckLines, localizedText } from './models';
 import { contentLocale } from './locale';
@@ -116,12 +116,12 @@ export interface DeckListItem {
   formatLabel: string;
   formatTone: 'blue' | 'violet' | 'neutral';
   legal: boolean;
-  /** Verdict and failed rules (the decks API's, or computed for a guest deck), for the « Non légal » badge's window. */
+  /** The decks API's verdict and problems (`unknown` for a guest deck), for the « Non légal » badge's window. */
   legality: DeckLegality;
-  /** `isDraft` of the decks API. */
+  /** `isDraft` of the decks API: archived (hidden in BGA). */
   draft: boolean;
   isPublic: boolean;
-  /** Owner's username, when the API exposes it. */
+  /** Owner's pseudo (`owner.pseudo` on public decks), else the username when the API exposes it. */
   author: string | null;
   total: number;
   rarity: RarityCounts;
@@ -148,11 +148,8 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     ? lines.filter((l) => !isHeroLine(l, hero)).reduce((n, l) => n + l.quantity, 0)
     : deck.stats?.totalCards ?? rarity.C + rarity.R + rarity.U + rarity.E;
   const info = formatInfo(deck.format);
-  const status = deck.legal == null && lines.length
-    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero)
-    : null;
-  const legal = deck.legal ?? status?.legal ?? false;
-  const legality = legalityFromApi(deck) ?? (status ? legalityFromStatus(status, !!hero) : { state: 'unknown' as const, rules: [], errors: [] });
+  const legality = legalityFromApi(deck) ?? UNKNOWN_LEGALITY;
+  const legal = legality.state === 'legal';
   return {
     id: deck.id,
     name: deck.name || $localize`:@@core.deck.untitled:Sans nom`,
@@ -184,7 +181,10 @@ export function lastModified(deck: Pick<Deck, 'createdAt' | 'updatedAt'>): strin
   return dates.reduce((latest, d) => (Date.parse(d) > Date.parse(latest) ? d : latest), dates[0] ?? '');
 }
 
-function authorOf(deck: Deck): string | null {
+/** `owner.pseudo` (public decks), else `user.username`; `null` when the API tells neither. */
+export function authorOf(deck: Pick<Deck, 'owner' | 'user'>): string | null {
+  const pseudo = deck.owner?.pseudo?.trim();
+  if (pseudo) return pseudo;
   const user = deck.user;
   if (!user || Array.isArray(user)) return null;
   return user.username?.trim() || null;

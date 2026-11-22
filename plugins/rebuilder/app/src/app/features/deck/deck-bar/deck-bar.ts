@@ -1,8 +1,8 @@
 import { Component, ElementRef, Injector, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { illegalLabel, type DeckLegality } from '../../../core/deck-legality';
-import { rarityLimits } from '../../../core/deck-rules';
+import { illegalLabel, problemCount, type DeckLegality } from '../../../core/deck-legality';
+import { rarityLimits } from '../../../core/format-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcIconButton } from '../../../ui/buttons';
@@ -48,9 +48,9 @@ export class DeckBar {
   protected readonly border = computed(() => factionColor(this.deck.hero()?.faction));
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
   /** Rares, Exalteds and Uniques against the format's caps. */
-  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
+  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name));
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
-  protected readonly problems = computed(() => this.legality().rules.length + this.legality().errors.length);
+  protected readonly problems = computed(() => problemCount(this.legality()));
   protected readonly illegalLabel = computed(() => illegalLabel(this.editable() ? this.problems() : 0));
   protected readonly labels = {
     legalDetails: $localize`:@@deck.bar.legalDetails:Légal : voir les règles du format`,
