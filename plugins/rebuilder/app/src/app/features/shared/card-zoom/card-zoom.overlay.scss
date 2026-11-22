@@ -10,6 +10,29 @@
 .detail {
   flex-shrink: 0;
 }
+/* The arrows stand beside the card (the window is widened for them, see openCardZoom); the card, the controls and the link keep their width. */
+.ac-overlay-body {
+  --arrow: calc(var(--ac-control-md) + var(--ac-space-2));
+}
+.viewer {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ac-space-2);
+  flex: 0 1 calc((100cqw - 2 * var(--side, 0px)) * 7 / 5);
+  /* Never smaller than 40 % of the screen: below that, the window scrolls. */
+  min-height: min(40dvh, (100cqw - 2 * var(--side, 0px)) * 7 / 5);
+}
+.navigable {
+  --side: var(--arrow);
+  .controls,
+  .detail {
+    margin-inline: var(--side);
+  }
+}
+.arrow {
+  align-self: center;
+  flex-shrink: 0;
+}
 .controls {
   display: flex;
   flex-direction: column;
@@ -19,9 +42,8 @@
   background: var(--ac-color-surface);
 }
 .stage {
-  flex: 0 1 calc(100cqw * 7 / 5);
-  /* Never smaller than 40 % of the screen: below that, the window scrolls. */
-  min-height: min(40dvh, 100cqw * 7 / 5);
+  flex: 1;
+  min-width: 0;
   container-type: size;
 }
 .card {

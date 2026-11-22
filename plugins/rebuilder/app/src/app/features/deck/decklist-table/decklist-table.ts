@@ -22,7 +22,7 @@ export class DecklistTable {
   /** A card name: the card large, as on the site's decklist. */
   protected zoom(ref: string): void {
     const line = this.group().lines.find((l) => l.card.reference === ref);
-    if (line) openCardZoom(this.overlay, { card: line.card });
+    if (line) openCardZoom(this.overlay, { card: line.card, siblings: { cards: this.group().lines.map((l) => l.card) } });
   }
 }
 

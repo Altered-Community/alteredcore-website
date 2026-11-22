@@ -132,10 +132,12 @@ export class DeckBoard {
   /** The card large, with its copies and prints when the deck can be edited (the site's card lightbox). */
   protected zoom(card: Card): void {
     const editable = this.editable();
-    openCardZoom(this.overlay, {
-      card,
-      quantity: editable ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n) } : undefined,
-      illustrations: editable ? (this.altArts?.pickerFor(card) ?? undefined) : undefined,
+    const controls = (c: Card) => ({
+      quantity: editable ? { value: this.quantityOf(c), max: this.maxOf(c), change: (n: number) => this.setQuantity(c, n) } : undefined,
+      illustrations: editable ? (this.altArts?.pickerFor(c) ?? undefined) : undefined,
     });
+    // The board's piles, group by group, in the order they are shown.
+    const cards = this.groups().flatMap((g) => g.lines.map((l) => l.card));
+    openCardZoom(this.overlay, { card, ...controls(card), siblings: { cards, controls } });
   }
 }

@@ -78,13 +78,16 @@ export class SearchResults {
 
   /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox), or in the collection in the browser. */
   protected zoom(card: Card): void {
-    const editable = this.browse() ? this.collecting() : this.deck.editable() && !this.blockedReason(card);
-    openCardZoom(this.overlay, {
-      card,
-      quantity: editable
-        ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n), in: this.browse() ? 'collection' : 'deck' }
-        : undefined,
-    });
+    const controls = (c: Card) => {
+      const editable = this.browse() ? this.collecting() : this.deck.editable() && !this.blockedReason(c);
+      return {
+        quantity: editable
+          ? { value: this.quantityOf(c), max: this.maxOf(c), change: (n: number) => this.setQuantity(c, n), in: this.browse() ? ('collection' as const) : ('deck' as const) }
+          : undefined,
+      };
+    };
+    // The results as loaded when the window opens: ← / → walk through them.
+    openCardZoom(this.overlay, { card, ...controls(card), siblings: { cards: this.search.cards(), controls } });
   }
 
 }
