@@ -871,7 +871,7 @@ describe('DeckStore (signed in, deck prints)', () => {
     const { store, http } = setup();
     await open(store, http, ['source']);
     store.setQuantity({ reference: 'ALT_WCS25_P_LY_10_C', name: 'Promo', cardType: { reference: 'SPELL' } }, 1);
-    store.setTokenPrint(['ALT_CORE_A_LY_31_C', 'ALT_CORE_B_LY_31_C'], 'ALT_CORE_B_LY_31_C');
+    store.setTokenPrint(['ALT_CORE_A_LY_31_C', 'ALT_CORE_B_LY_31_C'], 'ALT_CORE_B_LY_31_C'); // ggignore: a card token print, not a secret
     store.flush();
     const sent = body(http, 'PATCH');
     expect(sent['deckCards']).toContainEqual({ cardReference: 'ALT_WCS25_P_LY_10_C', quantity: 1 });
