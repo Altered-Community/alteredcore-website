@@ -87,7 +87,8 @@ export class GuestDeckService {
       description: partial.description ?? '',
       format: partial.format ?? 'standard',
       isPublic: partial.isPublic ?? false,
-      isDraft: true,
+      // Never archived: isDraft means « archived » (hidden in BGA) now, not « not validated yet ».
+      isDraft: false,
       guest: true,
       hero: partial.hero ?? null,
       deckCards: partial.deckCards ?? [],

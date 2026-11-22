@@ -1174,10 +1174,14 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await dialog.getByRole('button', { name: 'Dupliquer', exact: true }).click();
     const res = await created;
     expect(res.status()).toBe(201);
-    const copy = (await res.json()) as { id: string; isPublic: boolean };
-    expect(copy.isPublic).toBe(false);
+    // The app navigates to the copy right away: its response body may already be gone, so the request is checked
+    // (a private copy) and the copy's id is read from the editor's URL.
+    expect((res.request().postDataJSON() as { isPublic?: boolean }).isPublic).toBe(false);
     // The copy is the user's: it opens in the editor, on « Aperçu ».
-    await expect(page).toHaveURL(at(`${EDITOR(copy.id)}&view=apercu`));
+    await expect(page).toHaveURL(/[?&]view=apercu/);
+    const copyId = new URL(page.url()).searchParams.get('id');
+    expect(copyId).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(page).toHaveURL(at(`${EDITOR(copyId!)}&view=apercu`));
     await expect(page.locator('app-editor-page')).toContainText(`${name} bis`);
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: `${name} bis` })).toBeVisible();

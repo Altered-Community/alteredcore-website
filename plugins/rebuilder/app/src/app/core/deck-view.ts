@@ -159,7 +159,9 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     formatTone: info.badgeTone,
     legal: !!legal && !!hero,
     legality,
-    draft: deck.isDraft === true,
+    // A guest deck is never archived (archiving is an account feature); older guest decks of this device were saved
+    // with isDraft: true, the former « not validated » convention.
+    draft: deck.isDraft === true && !deck.guest,
     isPublic: !!deck.isPublic,
     author: authorOf(deck),
     total,
