@@ -70,8 +70,15 @@ function deckPreviewFormatName(string $format, string $lang): string {
     return (string)($names[$lang] ?? $names['en'] ?? '');
 }
 
-/** The author's username; the API sends `user` as an object, or as an empty list when it hides it. */
+/**
+ * The author's pseudo: `owner.pseudo`, which the decks API sends on public decks; else `user.username` of the older
+ * API, which sends `user` as an object, or as an empty list when it hides it.
+ */
 function deckPreviewAuthor(array $deck): ?string {
+    $owner = $deck['owner'] ?? null;
+    if (is_array($owner) && is_string($owner['pseudo'] ?? null) && trim($owner['pseudo']) !== '') {
+        return trim($owner['pseudo']);
+    }
     $user = $deck['user'] ?? null;
     if (!is_array($user) || !isset($user['username'])) return null;
     $name = trim((string)$user['username']);

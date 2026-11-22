@@ -1,37 +1,44 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { canRank, defaultPrints, rankPrints, sameCopies } from '../../../core/alt-art-defaults';
+import { canRank, rankPrints } from '../../../core/alt-art-defaults';
 import { cardImageUrl } from '../../../core/card-art';
 import type { AltArtChoice } from '../../../core/ownership-api.service';
 import { AcButton } from '../../../ui/buttons';
+import { AcSegmented, type AcSegment } from '../../../ui/fields';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { printLabel, saveFailed } from '../alt-art-labels';
+
+/** Where a choice of the brush applies: this deck only (its overrides) or every deck (the player's preferences). */
+export type AltArtScope = 'deck' | 'global';
 
 export interface AltArtPickerData {
   /** The card's family, with the player's default alt arts. */
   choice: () => AltArtChoice;
   /** The family's copies in the deck, one print a copy. */
   prints: () => readonly string[];
-  /** The illustration of the 1st, 2nd and 3rd card in this deck. */
+  /** The illustration of the 1st, 2nd and 3rd card in this deck (its own choices, then the player's preferences). */
   cards: () => readonly string[];
   /** The family's copies in the deck, one print a copy, copy 1 first (as on the deck board). */
   copies: () => readonly string[];
-  /** The 1st, 2nd and 3rd card take `cards` in this deck, its copies too; errors reach the caller. */
-  setCards: (cards: readonly string[]) => Observable<void>;
-  /** The family follows the default alt arts again in this deck. */
+  /** The deck chooses its own illustrations for this card (overrides), instead of following the preferences. */
+  pinned: () => boolean;
+  /** The 1st, 2nd and 3rd card take `cards` for this deck or everywhere; errors reach the caller. */
+  setCards: (cards: readonly string[], scope: AltArtScope) => Observable<void>;
+  /** The family follows the player's preferences again in this deck. */
   reset: () => void;
 }
 
 /**
- * The brush of a card: its illustrations, each under three keys, its 1st, 2nd and 3rd card (one a copy). A key pressed
- * is a card that takes this illustration in the deck; pressing another key gives the illustration that card. Then what
- * the deck uses (with 2 copies, the 1st and 2nd cards; an added copy takes the 3rd card's). A change here is for this
- * deck only: its copies take it at once, the player's default alt arts stay as they are.
+ * The brush of a card: first where a choice applies, « Ce deck » (the deck's own illustrations, saved with it) or
+ * « Partout » (the player's default alt arts, every deck that does not choose its own); then its illustrations, each
+ * under three keys, its 1st, 2nd and 3rd card (one a copy). A key pressed is a card that takes this illustration;
+ * pressing another key gives the illustration that card. Then what the deck uses. « Utiliser mes arts par défaut »
+ * drops the deck's own choice for the card.
  */
 @Component({
   selector: 'app-alt-art-picker',
-  imports: [AcButton],
+  imports: [AcButton, AcSegmented],
   host: { class: 'ac-overlay-content' },
   templateUrl: './alt-art-picker.overlay.html',
   styleUrl: './alt-art-picker.overlay.scss',
@@ -40,13 +47,18 @@ export class AltArtPickerOverlay {
   protected readonly ref = inject<AcOverlayRef<void, AltArtPickerData>>(AcOverlayRef);
   private readonly data = this.ref.data!;
   private readonly choice = this.data.choice;
-  /** The illustration of each card in this deck, 1st first. */
-  private readonly ranks = this.data.cards;
+  /** Where the next choice applies: this deck by default. */
+  protected readonly scope = signal<AltArtScope>('deck');
+  protected readonly scopes: AcSegment<AltArtScope>[] = [
+    { value: 'deck', label: $localize`:@@editor.altArtPicker.scopeDeck:Pour ce deck` },
+    { value: 'global', label: $localize`:@@editor.altArtPicker.scopeGlobal:Partout` },
+  ];
+  protected readonly scopeLabel = $localize`:@@editor.altArtPicker.scope:Appliquer le choix`;
+  /** The illustration of each card, 1st first: this deck's, or the player's preferences (« Partout »). */
+  private readonly ranks = computed(() => (this.scope() === 'deck' ? this.data.cards() : rankPrints(this.choice())));
   private readonly copies = computed(() => this.data.prints().length);
-  /** The deck's cards and copies are the default alt arts. */
-  protected readonly followsDefaults = computed(
-    () => this.ranks().join() === rankPrints(this.choice()).join() && sameCopies(this.data.prints(), defaultPrints(this.choice(), this.copies())),
-  );
+  /** The deck follows the player's preferences for this card. */
+  protected readonly followsDefaults = computed(() => !this.data.pinned());
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly cardWord = cardWord();
@@ -94,7 +106,7 @@ export class AltArtPickerOverlay {
     if (ranks[rank] === reference || this.saving()) return;
     this.error.set(null);
     this.saving.set(true);
-    this.data.setCards(ranks.map((r, k) => (k === rank ? reference : r))).subscribe({
+    this.data.setCards(ranks.map((r, k) => (k === rank ? reference : r)), this.scope()).subscribe({
       complete: () => this.saving.set(false),
       error: () => {
         this.saving.set(false);
@@ -103,7 +115,7 @@ export class AltArtPickerOverlay {
     });
   }
 
-  /** « Arts par défaut »: the card follows the default alt arts again in this deck. */
+  /** « Utiliser mes arts par défaut »: the card follows the player's preferences again in this deck. */
   protected resetToDefaults(): void {
     this.error.set(null);
     this.data.reset();

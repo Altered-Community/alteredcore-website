@@ -34,9 +34,7 @@ jobs:
           files: |
             docker-compose.yml
             docker-compose.stack.yml
-          targets: web,decks-api
+          targets: web
           set: |
             web.cache-from=type=gha,scope=stack-web
             web.cache-to=type=gha,scope=stack-web,mode=max
-            decks-api.cache-from=type=gha,scope=stack-decks-api
-            decks-api.cache-to=type=gha,scope=stack-decks-api,mode=max

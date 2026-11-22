@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { legalityCheckDetail, legalityCheckLabel, legalityRuleLabel, type DeckLegality } from '../../../core/deck-legality';
+import { legalityCheckLabel, legalityRuleLabel, type DeckLegality } from '../../../core/deck-legality';
 import { AcIcon } from '../../../ui/icon';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
@@ -9,8 +9,8 @@ export interface LegalityDetailsData {
 }
 
 /**
- * « Légalité du deck »: the format's rules, passed or failed (the site's rules modal), or only the failed
- * rules when the decks API gave the verdict; then the API's format errors.
+ * « Légalité du deck »: the decks API's verdict, never computed here: its rules passed or failed (`legalityDetail`),
+ * else its failed rules, then its problems (`errors`, translated). Nothing known yet (guest deck, not validated): a note.
  */
 @Component({
   selector: 'app-legality-details',
@@ -22,12 +22,12 @@ export interface LegalityDetailsData {
 export class LegalityDetailsOverlay {
   protected readonly ref = inject<AcOverlayRef<void, LegalityDetailsData>>(AcOverlayRef);
   protected readonly format = this.ref.data.format;
-  protected readonly checks = (this.ref.data.legality.checks ?? []).map((c) => ({
+  protected readonly checks = this.ref.data.legality.checks.map((c) => ({
     rule: c.rule,
     ok: c.ok,
     label: legalityCheckLabel(c.rule),
-    detail: legalityCheckDetail(c),
   }));
+  protected readonly unknown = this.ref.data.legality.state === 'unknown';
   protected readonly rules = this.ref.data.legality.rules.map(legalityRuleLabel);
   protected readonly errors = this.ref.data.legality.errors;
   protected readonly passed = $localize`:@@deck.legality.passed:Respectée`;

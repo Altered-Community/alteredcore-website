@@ -182,6 +182,30 @@ export interface DeckStats {
   byRarity?: { C?: number; R?: number; U?: number; E?: number } | null;
 }
 
+/** One legality problem of a deck, from the decks API (`errors`), translated with `?locale=`. */
+export interface DeckIssue {
+  /** Stable code (`card.family.copies`, `deck.size`…), see the decks API's `Validation/ValidationError.cs`. */
+  code: string;
+  /** The card the problem is about (canonical reference), `null` for a deck-level problem. */
+  reference: string | null;
+  message: string;
+}
+
+/** A print and its copies (an override line). */
+export interface PrintQuantity {
+  reference: string;
+  quantity: number;
+}
+
+/**
+ * The deck's own art choices (decks API): by canonical reference, the prints its copies take, 1st copy first (the
+ * copies past them follow the player's global preferences); `tokens`: the deck's token prints.
+ */
+export interface AltArtOverrides {
+  cards?: Record<string, PrintQuantity[]> | null;
+  tokens?: PrintQuantity[] | null;
+}
+
 export interface Deck {
   id: string;
   name: string;
@@ -190,10 +214,19 @@ export interface Deck {
   isPublic?: boolean;
   isDraft?: boolean;
   legal?: boolean;
+  /** Messages of `errors` (translated with `?locale=` by the decks API). */
   formatErrors?: string[] | null;
   legalityDetail?: Record<string, boolean> | string[] | null;
+  /** Legality problems (decks API); absent from the former decks API. */
+  errors?: DeckIssue[] | null;
+  /** The concrete prints (deck overrides applied) on the item GET, as the former API. */
   cards?: DeckCardLine[];
   deckCards?: DeckCardLine[];
+  /** Item GET: the stored list, one canonical reference per gameplay card (family + rarity). */
+  canonicalCards?: { cardReference: string; quantity: number }[] | null;
+  altArtOverrides?: AltArtOverrides | null;
+  /** Deckfmt encoding of the list (hero included). */
+  compressed?: string | null;
   stats?: DeckStats | null;
   viewCount?: number;
   upvoteCount?: number;
@@ -201,6 +234,8 @@ export interface Deck {
   hasUpvoted?: boolean;
   /** Owner; the API serialises it as `[]` while no user field is in the `deck:read` group. */
   user?: { username?: string | null } | unknown[] | null;
+  /** Owner's pseudo, on public decks and public listings. */
+  owner?: { pseudo?: string | null } | null;
   createdAt?: string;
   updatedAt?: string | null;
   /** Local-only guest deck (never sent to DECKS_API). */
@@ -213,7 +248,9 @@ export interface DeckHero {
   reference: string;
   name: string;
   faction: string;
-  /** Picked without « Alt arts »: the deck takes the player's default alt art for it (`DeckStore`). */
+  /**
+   * Picked without « Alt arts »: the deck pins no print for it, the player's global preference shows (`DeckStore`).
+   */
   defaultArt?: boolean;
 }
 
@@ -223,7 +260,10 @@ export interface DeckWrite {
   format?: DeckFormat | null;
   isPublic?: boolean;
   isDraft?: boolean;
+  /** Canonical references (one per family + rarity) and their copies, hero included. */
   deckCards: { cardReference: string; quantity: number }[];
+  /** The deck's print choices; absent: the API keeps those of the prints sent in `deckCards`. */
+  altArtOverrides?: AltArtOverrides | null;
 }
 
 export interface HydratedLine {

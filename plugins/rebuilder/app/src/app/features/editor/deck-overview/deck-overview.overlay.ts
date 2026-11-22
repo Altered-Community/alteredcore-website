@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { illegalLabel, legalityCheckDetail, legalityCheckLabel, legalityRuleLabel } from '../../../core/deck-legality';
-import { rarityLimits } from '../../../core/deck-rules';
+import { illegalLabel, legalityRuleLabel, problemCount } from '../../../core/deck-legality';
+import { rarityLimits } from '../../../core/format-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcButton } from '../../../ui/buttons';
@@ -43,18 +43,19 @@ export class DeckOverviewOverlay {
   );
   protected readonly legality = computed(() => editorLegality(this.deck));
   protected readonly legal = computed(() => this.legality().state === 'legal');
-  protected readonly legalityLabel = computed(() =>
-    this.legal() ? $localize`:@@deck.page.legal:Légal` : illegalLabel(this.legality().rules.length + this.legality().errors.length),
-  );
-  /** The failed rules, with their figures when the editor computed them (« Rares : 16 / 15 »). */
+  protected readonly unknown = computed(() => this.legality().state === 'unknown');
+  protected readonly legalityLabel = computed(() => {
+    if (this.legal()) return $localize`:@@deck.page.legal:Légal`;
+    return this.unknown() ? $localize`:@@deck.legality.unknown:Légalité non vérifiée` : illegalLabel(problemCount(this.legality()));
+  });
+  /** The decks API's problems (its messages, else its failed rules). */
   protected readonly problems = computed(() => {
     const l = this.legality();
-    const failed = l.checks ? l.checks.filter((c) => !c.ok).map((c) => [legalityCheckLabel(c.rule), legalityCheckDetail(c)].filter(Boolean).join(' : ')) : l.rules.map(legalityRuleLabel);
-    return [...failed, ...l.errors];
+    return l.errors.length ? l.errors : l.rules.map(legalityRuleLabel);
   });
   /** Rares, Exalteds and Uniques against the format's caps: a bar each, green at the cap, red above it. */
   protected readonly limits = computed(() =>
-    rarityLimitItems(rarityLimits(this.deck.status(), this.deck.format())).map((r) => ({
+    rarityLimitItems(rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name)).map((r) => ({
       ...r,
       tone: BAR_TONES[r.state],
       value: r.limit > 0 ? Math.min(100, (r.count / r.limit) * 100) : r.count > 0 ? 100 : 0,

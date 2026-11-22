@@ -21,12 +21,12 @@ describe('OwnershipApiService', () => {
     env.ownershipApiUrl = '';
   });
 
-  it('reads the « Global » alt-art mode, and treats an error as « par deck »', async () => {
-    const global = lastValueFrom(api.globalAltArts());
-    http.expectOne('/api/v1/services/ownership/api/alt-arts/preference-mode').flush({ mode: 'Global' });
-    expect(await global).toBe(true);
-    const failed = lastValueFrom(api.globalAltArts());
-    http.expectOne('/api/v1/services/ownership/api/alt-arts/preference-mode').flush('no', { status: 500, statusText: 'Error' });
-    expect(await failed).toBe(false);
+  it('saves a family’s default alt arts (« partout ») on the ownership service', async () => {
+    const saved = lastValueFrom(api.setAltArtPreference({ familyId: 4, faction: 'AX', rarity: 'C' }, ['ALT_CORE_A_AX_04_C']), { defaultValue: undefined });
+    const req = http.expectOne('/api/v1/services/ownership/api/alt-arts/preferences');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ familyId: 4, faction: 'AX', rarity: 'C', slotReferences: ['ALT_CORE_A_AX_04_C'] });
+    req.flush(null);
+    await saved;
   });
 });

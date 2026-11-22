@@ -1,7 +1,8 @@
 import { Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { isAccountSource } from '../../../core/card-filters';
-import { addBlockedReason } from '../../../core/deck-rules';
+import { addBlockedReason } from '../../../core/format-rules';
+import { formatInfo } from '../../../core/formats';
 import { DeckStore } from '../../../core/deck-store';
 import { AuthSession } from '../../../core/auth-session';
 import type { Card } from '../../../core/models';
@@ -73,7 +74,7 @@ export class SearchResults {
   /** Why a card cannot be added in the deck's format (a Unique in a No Unique format). */
   protected blockedReason(card: Card): string | null {
     if (this.browse()) return null;
-    return addBlockedReason(card, this.deck.format());
+    return addBlockedReason(card, this.deck.rules(), formatInfo(this.deck.format()).label);
   }
 
   /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox), or in the collection in the browser. */

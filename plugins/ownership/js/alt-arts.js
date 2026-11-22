@@ -209,9 +209,8 @@
             .filter(Boolean).join(' · ');
         const uses = document.createElement('span');
         uses.className = 'own-aa-family__uses';
-        uses.textContent = optData.slots.length === 1 || cfg.isGlobalMode
-            ? t('usesAll', 'All your decks use')
-            : t('usesNew', 'A card added to a deck takes');
+        // The defaults apply to every deck (a deck's own choices, made in the deck builder, win).
+        uses.textContent = t('usesAll', 'All your decks use');
         const fan = document.createElement('div');
         fan.className = 'own-aa-fan';
         if (optData.slots.length === 1) fan.classList.add('own-aa-fan--single');

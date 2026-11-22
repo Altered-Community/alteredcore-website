@@ -1,4 +1,4 @@
-# Full local / CI stack: the site wired to a local Keycloak and a local decks API, with the
+# Full local / CI stack: the site wired to a local Keycloak and a local DeckApi, with the
 # SPA plugins active. Used by the Playwright tests (tests/e2e) and the plugins CI workflow.
 #
 #   (cd plugins/rebuilder/app && npm ci && npm run build)   # SPA bundles are not committed
@@ -87,34 +87,37 @@ services:
       retries: 30
 
   decks-api:
-    # Altered-Community/altered-core-decks-api, pinned: bump the commit to follow the API.
-    image: alteredcore-stack-decks-api
-    build:
-      context: https://github.com/Altered-Community/altered-core-decks-api.git#156d6e83e50d14b2ccf4da449b026ccdc38407c3
-      target: frankenphp_prod
+    # DeckApi (Altered-Re-Union/DeckApi), the decks API the site targets. Public image, pulled.
+    image: ghcr.io/altered-re-union/deckapi:latest
     environment:
-      APP_ENV: prod
-      APP_SECRET: stack-dev-app-secret-not-secret
-      SERVER_NAME: ":80"
-      DEFAULT_URI: http://localhost:8001
-      DATABASE_URL: postgresql://decks:decks@decks-db:5432/altered_deck?serverVersion=16&charset=utf8
-      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
-      KEYCLOAK_BASE_URL: http://auth.altered.local.gd:18080
-      KEYCLOAK_REALM: players
-      KEYCLOAK_CLIENT_ID: main-site
-      KEYCLOAK_CLIENT_SECRET: dev-main-site-secret
-      DEV_AUTH_ENABLED: "false"
-      ALTERED_CORE_URL: https://cards.alteredcore.org
-      CARD_DATA_PROVIDER: altered_core
-      MERCURE_PUBLISHER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
-      MERCURE_SUBSCRIBER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
-      MERCURE_PUBLISHER_JWT_ALG: HS256
-      MERCURE_SUBSCRIBER_JWT_ALG: HS256
-      # The image's Mercure now refuses publisher_jwt / subscriber_jwt outside compatibility mode (the build pulls
-      # the latest FrankenPHP base, so the pinned commit no longer pins it).
-      MERCURE_EXTRA_DIRECTIVES: "protocol_version_compatibility 8"
+      # Development: the stack's Keycloak is plain HTTP (no HTTPS metadata) and the schema is
+      # migrated on startup. The dev signing key and maintenance key are switched off.
+      ASPNETCORE_ENVIRONMENT: Development
+      # The image sets ASPNETCORE_URLS to :8080; the site expects the API on :80.
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__decks: Host=decks-db;Port=5432;Database=altered_deck;Username=decks;Password=decks
+      Database__MigrateOnStartup: "true"
+      Auth__DevSigningKey: ""
+      ApiKeys__Maintenance: ""
+      Keycloak__BaseUrl: http://auth.altered.local.gd:18080
+      Keycloak__Realm: players
+      # The stack's realm has no read-decks / write-deck client scopes.
+      Auth__RequireDeckScopes: "false"
+      # Card catalog (legality, heroes): production search, read-only.
+      UniquesSearch__BaseUrl: https://search.altered.re
+      Legacy__BaseUrl: ""
+      GameApi__BaseUrl: ""
+      Cors__AllowOriginRegex: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
     ports:
       - "127.0.0.1:8001:80"
+    healthcheck:
+      # The image has no curl: HTTP over bash (not sh: /dev/tcp); healthy once the card catalog is loaded.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/80 && printf 'GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '\"cardCatalogLoaded\":true' <&3"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
     depends_on:
       decks-db:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy

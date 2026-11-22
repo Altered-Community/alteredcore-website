@@ -636,13 +636,7 @@
     box-shadow: var(--ac-shadow-dialog);
 }
 
-/* Mode switch bar and search field (pages/alt-arts.php) */
-.own-aa-modebar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ac-space-2);
-}
+/* Search field (pages/alt-arts.php) */
 .own-aa-search {
     max-width: 260px;
 }

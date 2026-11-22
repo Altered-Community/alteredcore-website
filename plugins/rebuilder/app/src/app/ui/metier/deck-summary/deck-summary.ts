@@ -22,6 +22,9 @@ export class AcDeckSummary {
   readonly isPublic = input(false);
   readonly total = input(0);
   readonly legal = input(false);
+  /** Legality not known (guest deck, not validated by the decks API yet): no verdict shown. */
+  readonly unknown = input(false);
+  /** Failed rules of the decks API (`legalityDetail` keys: `hero`, `deckSize`, `faction`…). */
   readonly issues = input<string[]>([]);
   readonly rarity = input.required<RarityCounts>();
   readonly appearance = input<'card' | 'embedded'>('card');
@@ -42,10 +45,10 @@ export class AcDeckSummary {
   protected readonly publicLabel = $localize`:@@ui.deckSummary.public:Public`;
   protected readonly privateLabel = $localize`:@@ui.deckSummary.private:Privé`;
   protected readonly issueLabel = computed(() => {
-    const size = this.issues().find((i) => i.startsWith('size'));
-    if (!this.hero()) return $localize`:@@ui.deckSummary.missingHero:Héros manquant`;
-    if (size) return $localize`:@@ui.deckSummary.invalidSize:Taille invalide`;
-    if (this.issues().some((i) => i.startsWith('faction'))) return $localize`:@@ui.deckSummary.offFaction:Cartes hors faction`;
+    if (!this.hero() || this.issues().includes('hero')) return $localize`:@@ui.deckSummary.missingHero:Héros manquant`;
+    if (this.unknown()) return $localize`:@@deck.legality.unknown:Légalité non vérifiée`;
+    if (this.issues().includes('deckSize')) return $localize`:@@ui.deckSummary.invalidSize:Taille invalide`;
+    if (this.issues().includes('faction')) return $localize`:@@ui.deckSummary.offFaction:Cartes hors faction`;
     return $localize`:@@ui.deckSummary.invalid:Non valide`;
   });
   protected readonly legalityLabel = computed(() =>

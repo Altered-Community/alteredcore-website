@@ -65,6 +65,7 @@
         }
         @if (tab() === 'mine') {
           <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
+          <ac-segmented ariaLabel="Statut" i18n-ariaLabel="@@decks.page.status" [options]="statuses" [value]="filters().status" (valueChange)="patch({ status: $event ?? 'active' })" />
         }
         <span class="grow"></span>
         @if (tab() !== 'contest') {

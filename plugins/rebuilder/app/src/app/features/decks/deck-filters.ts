@@ -5,6 +5,9 @@ import { FACTIONS } from '../../ui/metier';
 
 export type Visibility = 'all' | 'public' | 'private';
 
+/** « Mes decks »: active decks, or archived ones (`isDraft`: hidden in BGA). */
+export type DeckStatus = 'active' | 'archived';
+
 export type DeckSort = 'updated' | 'updated-asc' | 'created' | 'created-asc' | 'name' | 'name-desc' | 'likes';
 
 export interface DeckFilters {
@@ -12,13 +15,15 @@ export interface DeckFilters {
   format: string;
   hero: string;
   visibility: Visibility;
+  /** « Mes decks » only (the community list shows archived public decks too). */
+  status: DeckStatus;
   factions: string[];
   sort: DeckSort;
   /** Community tab: illegal decks are hidden (on by default). */
   legalOnly: boolean;
 }
 
-export const EMPTY_DECK_FILTERS: DeckFilters = { q: '', format: '', hero: '', visibility: 'all', factions: [], sort: 'updated', legalOnly: true };
+export const EMPTY_DECK_FILTERS: DeckFilters = { q: '', format: '', hero: '', visibility: 'all', status: 'active', factions: [], sort: 'updated', legalOnly: true };
 
 /** The decks that match the filters, in the order of `items` (`f.sort` is not used). */
 export function matchDecks(items: DeckListItem[], f: DeckFilters): DeckListItem[] {

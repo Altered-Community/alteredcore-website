@@ -115,7 +115,9 @@ export class DeckBoard {
 
   /** Copies a pile can have: the card's limit on a pile of its prints, shared with its other prints otherwise. */
   protected maxOf(card: Card): number {
-    return this.stacks().has(card.reference) ? this.deck.maxFor(card) : (this.altArts?.maxFor(card, false) ?? this.deck.maxFor(card));
+    // A pile of prints holds the whole family: its cap is the card's (familyCap), not the front print's (maxFor, which
+    // takes off the family's other prints and would clamp « − » on 3 copies down to 1).
+    return this.stacks().has(card.reference) ? this.deck.familyCap(card) : (this.altArts?.maxFor(card, false) ?? this.deck.maxFor(card));
   }
 
   /** `card` has a brush (several illustrations, the deck editable). */

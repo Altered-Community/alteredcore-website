@@ -3,7 +3,20 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { lastValueFrom } from 'rxjs';
 import { defaultFilters, legalFormat } from './card-filters';
+import type { FormatRules } from './format-rules';
 import { OwnedCardsService, listedRarities, ownedParams } from './owned-cards.service';
+
+const rules = (unique: number | null): FormatRules => ({
+  code: unique === 0 ? 'nuc' : 'standard',
+  label: '',
+  minCards: 39,
+  maxCards: 59,
+  allowBanned: false,
+  allowSuspended: false,
+  limits: { unique, rare: 15, exalted: 3, maxCopiesPerName: 3, maxCopiesPerRarity: null },
+});
+const standard = rules(3);
+const nuc = rules(0);
 
 const ACCOUNT_TABS = ['favorites', 'collection', 'owned'] as const;
 
@@ -12,7 +25,7 @@ describe('Account tabs rarities', () => {
     for (const source of ACCOUNT_TABS) {
       const f = defaultFilters(source);
       expect(f.rarities).toEqual(['COMMON', 'RARE', 'EXALTED', 'UNIQUE']);
-      expect(ownedParams(source, f, ['AX'], 1, 36, 'standard').getAll('rarity[]')).toBeNull();
+      expect(ownedParams(source, f, ['AX'], 1, 36, standard).getAll('rarity[]')).toBeNull();
       expect(f.sets).toContain('COREKS');
     }
     expect(defaultFilters('all').sets).not.toContain('COREKS');
@@ -27,11 +40,11 @@ describe('Account tabs rarities', () => {
     expect(legalFormat('all', defaultFilters('all'), 'nuc')).toBeNull();
     for (const source of ACCOUNT_TABS) {
       const f = defaultFilters(source);
-      expect(listedRarities(source, f, 'nuc')).toEqual(['COMMON', 'RARE', 'EXALTED']);
-      expect(ownedParams(source, f, ['AX'], 1, 36, 'nuc').getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(listedRarities(source, f, nuc)).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(ownedParams(source, f, ['AX'], 1, 36, nuc).getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
       expect(legalFormat(source, f, 'nuc')).toBe('nuc');
       expect(legalFormat(source, { ...f, legalOnly: false }, 'nuc')).toBeNull();
-      expect(listedRarities(source, { ...f, rarities: ['UNIQUE'] }, 'nuc')).toEqual([]);
+      expect(listedRarities(source, { ...f, rarities: ['UNIQUE'] }, nuc)).toEqual([]);
     }
   });
 });

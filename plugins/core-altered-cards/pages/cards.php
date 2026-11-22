@@ -128,9 +128,9 @@ $_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
 // Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
 // $_ownMode above (which only drive the existing ownership-search tab): this also
 // requires the ownership plugin itself to be active, not just OWNERSHIP_API_URL configured.
-// Only shown in Global preference mode — in PerDeck mode (the default), a card's
-// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
-$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0 && cacIsAltArtGlobalMode($_csUserId);
+// It edits the player's global alt-art preferences, which apply to every deck except the
+// cards a deck overrides itself (the deck's altArtOverrides on the decks API).
+$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0;
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {

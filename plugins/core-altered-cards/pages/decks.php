@@ -41,6 +41,7 @@ $txt = [
         'filters_toggle'  => 'Show filters',
         'tabs_label'      => 'Deck lists',
         'views_label'     => 'Views',
+        'owner_by'        => 'by %s',
         'upvote_label'    => 'Upvote this deck',
         'delete_btn'      => 'Delete',
         'pagination_label'=> 'Pages',
@@ -57,7 +58,11 @@ $txt = [
         'no_match'        => 'No decks match these filters.',
         'no_public_decks' => 'No public decks found.',
         'loading'         => 'Loading…',
-        'draft'           => 'Draft',
+        'draft'           => 'Archived',
+        'archive_label'   => 'Deck status',
+        'archive_active'  => 'Active',
+        'archive_archived'=> 'Archived',
+        'no_archived'     => 'No archived decks.',
         'public'          => 'Public',
         'private'         => 'Private',
         'unnamed'         => 'Unnamed',
@@ -104,10 +109,13 @@ $txt = [
             'sets'              => 'Cards from unauthorized sets',
             'bannedCards'       => 'Deck contains banned cards',
             'suspendedCards'    => 'Deck contains suspended cards',
-            'copies'            => 'Too many copies of a card name',
+            'copies'            => 'Too many copies of a card',
             'uniqueQuantity'    => 'Too many unique cards',
             'rareQuantity'      => 'Too many rare cards',
             'exaltedQuantity'   => 'Too many exalted cards',
+            'frontierUniques'   => 'Unique cards not allowed in this format',
+            'pool'              => 'Cards missing from your sealed pool',
+            'cards'             => 'Unknown cards',
         ],
         'community_info'        => 'Other deck builders share the same database. Create, edit, or import decks in any of them and continue anywhere. All decks appear on BGA.',
         'community_btn'         => 'View deckbuilders',
@@ -153,6 +161,7 @@ $txt = [
         'filters_toggle'  => 'Afficher les filtres',
         'tabs_label'      => 'Listes de decks',
         'views_label'     => 'Vues',
+        'owner_by'        => 'par %s',
         'upvote_label'    => 'Voter pour ce deck',
         'delete_btn'      => 'Supprimer',
         'pagination_label'=> 'Pages',
@@ -169,7 +178,11 @@ $txt = [
         'no_match'        => 'Aucun deck ne correspond à ces filtres.',
         'no_public_decks' => 'Aucun deck public trouvé.',
         'loading'         => 'Chargement…',
-        'draft'           => 'Brouillon',
+        'draft'           => 'Archivé',
+        'archive_label'   => 'Statut des decks',
+        'archive_active'  => 'Actifs',
+        'archive_archived'=> 'Archivés',
+        'no_archived'     => 'Aucun deck archivé.',
         'public'          => 'Public',
         'private'         => 'Privé',
         'unnamed'         => 'Sans nom',
@@ -216,10 +229,13 @@ $txt = [
             'sets'              => 'Cartes de sets non autorisés',
             'bannedCards'       => 'Contient des cartes bannies',
             'suspendedCards'    => 'Contient des cartes suspendues',
-            'copies'            => 'Trop de copies d\'un même nom',
+            'copies'            => 'Trop d\'exemplaires d\'une carte',
             'uniqueQuantity'    => 'Trop de cartes uniques',
             'rareQuantity'      => 'Trop de cartes rares',
             'exaltedQuantity'   => 'Trop de cartes exaltées',
+            'frontierUniques'   => 'Cartes uniques non autorisées dans ce format',
+            'pool'              => 'Cartes absentes de votre pool scellé',
+            'cards'             => 'Cartes inconnues',
         ],
         'community_info'        => 'D\'autres deck builders partagent la même base de données. Créez, modifiez ou importez vos decks dans l\'un d\'eux et continuez sur un autre. Tous les decks apparaissent sur BGA.',
         'community_btn'         => 'Voir les deckbuilders',
@@ -316,7 +332,7 @@ if ($isLoggedIn
         'name'      => trim($_POST['name'] ?? '') ?: $txt['unnamed'],
         'format'    => $importFormat,
         'isPublic'  => false,
-        'isDraft'   => ($importFormat === 'sandbox'),
+        'isDraft'   => false,
         'deckCards' => $deckCards,
     ];
     $ch = curl_init(DECKS_API_URL . '/api/decks');
@@ -428,7 +444,7 @@ if ($isLoggedIn
         'name'      => $deckName,
         'format'    => $deckFormat,
         'isPublic'  => false,
-        'isDraft'   => ($deckFormat === 'sandbox'),
+        'isDraft'   => false,
         'deckCards' => $deckCards,
     ];
     $ch = curl_init(DECKS_API_URL . '/api/decks');
@@ -527,7 +543,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
     $pubQ = trim($_GET['q'] ?? '');
     if (mb_strlen($pubQ) > 100) $pubQ = mb_substr($pubQ, 0, 100);
 
-    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 24];
+    // locale: the decks API translates the legality messages (errors / formatErrors) with it.
+    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 24, 'locale' => $lang];
     if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
     if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
     if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
@@ -583,7 +600,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'my') {
     $myHero = $_GET['hero'] ?? '';
     if (!preg_match('/^[A-Z0-9_]+$/', $myHero)) $myHero = '';
 
-    $apiParams = ['page' => $myPage, 'itemsPerPage' => 24];
+    $apiParams = ['page' => $myPage, 'itemsPerPage' => 24, 'locale' => $lang];
     if ($myFormat !== '')    $apiParams['format']   = $myFormat;
     if ($myIsPublic !== '')  $apiParams['isPublic'] = $myIsPublic === '1' ? 'true' : 'false';
     if ($myIsDraft  !== '')  $apiParams['isDraft']  = $myIsDraft  === '1' ? 'true' : 'false';
@@ -787,6 +804,10 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
                     <input type="search" id="my-deck-search" class="ac-input" autocomplete="off"
                            placeholder="<?= h($txt['search_ph']) ?>" aria-label="<?= h($txt['search_ph']) ?>">
                 </div>
+                <div class="ac-segmented" role="group" aria-label="<?= h($txt['archive_label']) ?>">
+                    <button type="button" data-my-archived="0" aria-pressed="true"><?= h($txt['archive_active']) ?></button>
+                    <button type="button" data-my-archived="1" aria-pressed="false"><?= ac_icon('archive') ?> <?= h($txt['archive_archived']) ?></button>
+                </div>
                 <button type="button" class="ac-icon-button deck-filter-toggle" aria-expanded="false"
                         aria-label="<?= h($txt['filters_toggle']) ?>"><?= ac_icon('chevron-down') ?></button>
             </div>
@@ -836,7 +857,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         <div id="my-error" class="ac-empty" style="display:none"></div>
         <div id="my-empty" class="ac-empty" style="display:none">
             <?= ac_icon('layers') ?>
-            <p class="ac-empty__title"><?= h($txt['no_decks']) ?></p>
+            <p class="ac-empty__title" id="my-empty-title"><?= h($txt['no_decks']) ?></p>
             <?php if ($showNewDeckBtn): ?>
             <a href="<?= h($newDeckHref) ?>" class="ac-button ac-button--secondary ac-button--sm"><?= ac_icon('plus') ?><?= h($txt['create_btn']) ?></a>
             <?php endif; ?>
@@ -989,6 +1010,8 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         'next'           => $txt['next'],
         'unnamed'        => $txt['unnamed'],
         'draft'          => $txt['draft'],
+        'no_decks'       => $txt['no_decks'],
+        'no_archived'    => $txt['no_archived'],
         'public'         => $txt['public'],
         'private'        => $txt['private'],
         'cards'          => $txt['cards'],
@@ -1009,6 +1032,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         'legalityKeys'          => $txt['legality_keys'],
         'hero_all'              => $txt['hero_all'],
         'views_label'           => $txt['views_label'],
+        'owner_by'              => $txt['owner_by'],
         'upvote_label'          => $txt['upvote_label'],
         'delete_btn'            => $txt['delete_btn'],
         'pagination_label'      => $txt['pagination_label'],
@@ -1027,6 +1051,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
     var ICONS = <?= json_encode([
         'alert'    => ac_icon('triangle-alert'),
         'check'    => ac_icon('check'),
+        'user'     => ac_icon('user'),
         'globe'    => ac_icon('globe'),
         'lock'     => ac_icon('lock'),
         'eye'      => ac_icon('eye'),
@@ -1113,6 +1138,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
     var myHero        = '';
     var myFormat      = '';
     var myVisibility  = '';
+    var myArchived    = '0';   // '0' active decks, '1' archived decks (isDraft)
     var mySortVal     = 'updatedAt:desc';
     var mySearchTimer = null;
     var myAllItems    = [];
@@ -1145,6 +1171,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             if (myFaction)           parts.push('faction='    + encodeURIComponent(myFaction));
             if (myHero)              parts.push('hero='        + encodeURIComponent(myHero));
             if (myVisibility !== '') parts.push('visibility=' + encodeURIComponent(myVisibility));
+            if (myArchived === '1')  parts.push('archived=1');
             if (mySortVal && mySortVal !== DEFAULT_DECK_SORT) parts.push('sort=' + encodeURIComponent(mySortVal));
             var mq = mySearch ? mySearch.value.trim() : '';
             if (mq) parts.push('q=' + encodeURIComponent(mq));
@@ -1190,6 +1217,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             var vb = document.querySelector('[data-my-visibility="' + vis + '"]');
             if (vb) { document.querySelectorAll('[data-my-visibility]').forEach(function(b){ setChip(b, false); }); setChip(vb, true); myVisibility = vis; }
         }
+        if (p.get('archived') === '1') setMyArchived('1');
         var sort = p.get('sort');
         var mySortEl = document.getElementById('my-sort');
         if (sort && mySortEl && mySortEl.querySelector('option[value="' + sort.replace(/[^a-z0-9:]/gi, '') + '"]')) {
@@ -1307,10 +1335,9 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
                 }
             }
         }
-        var formatErrors   = Array.isArray(deck.formatErrors) ? deck.formatErrors : [];
-        var legalityDetail = (deck.legalityDetail && typeof deck.legalityDetail === 'object') ? deck.legalityDetail : {};
-        var legal          = deck.hasOwnProperty('legal') ? deck.legal : null;
         var fmtLabel       = fmtData.label || fmt;
+        // owner.pseudo: given by the decks API on public decks only.
+        var owner          = deck.owner && typeof deck.owner.pseudo === 'string' ? deck.owner.pseudo.trim() : '';
         var factionCode = '';
         var fm = heroRef.match(/^ALT_[^_]+_[^_]+_([A-Z]{2})_/);
         if (fm) factionCode = fm[1];
@@ -1319,6 +1346,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             fmtLabel:     fmtLabel,
             fmtColor:     fmtData.color || 'var(--ac-color-text-muted)',
             heroName:     heroName,
+            ownerPseudo:  owner,
             totalCards:   stats.totalCards != null ? stats.totalCards : null,
             byRarity:     stats.byRarity || {},
             desc:         deck.description || '',
@@ -1326,7 +1354,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             factionColor: factionData.color || 'var(--ac-color-overlay-control)',
             factionImg:   factionCode ? pluginAssetsUrl + '/faction/' + factionCode + '.png' : '',
             heroImgUrl:   heroRef ? cdnUrl + '/cards/hero/' + heroPortraitRef(heroRef) + '_1.webp' : '',
-            legalityHtml: _deckLegalityHtml(legal, _deckHasErrors(formatErrors, legalityDetail), formatErrors, legalityDetail, fmtLabel)
+            legalityHtml: _deckLegalityHtml(_deckLegality(deck), fmtLabel)
         };
     }
 
@@ -1362,24 +1390,41 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         return html + '</span>';
     }
 
-    function _deckHasErrors(formatErrors, legalityDetail) {
-        if (Array.isArray(formatErrors) && formatErrors.length > 0) return true;
-        if (!legalityDetail || typeof legalityDetail !== 'object') return false;
-        for (var k in legalityDetail) {
-            if (k !== 'global' && legalityDetail[k] === false) return true;
+    // The decks API's verdict, never computed here (same rules as cacDeckLegalityView() in includes/functions.php):
+    // legal when it says so; illegal when it says not and gives a reason, its translated messages (errors[].message,
+    // the list's ?locale=; formatErrors from an older API) or else the failing legalityDetail rules; nothing for a
+    // draft or a deck not validated (legal: false without a reason).
+    function _deckLegality(deck) {
+        var messages = [];
+        (Array.isArray(deck.errors) ? deck.errors : []).forEach(function (e) {
+            var m = e && typeof e.message === 'string' ? e.message.trim() : '';
+            if (m) messages.push(m);
+        });
+        if (!messages.length) {
+            (Array.isArray(deck.formatErrors) ? deck.formatErrors : []).forEach(function (m) {
+                if (typeof m === 'string' && m.trim()) messages.push(m.trim());
+            });
         }
-        return false;
+        var rules = [];
+        var detail = (deck.legalityDetail && typeof deck.legalityDetail === 'object') ? deck.legalityDetail : {};
+        Object.keys(detail).forEach(function (k) { if (k !== 'global' && detail[k] === false) rules.push(k); });
+        var status = 'none';
+        if (deck.legal === true) status = 'legal';
+        else if (deck.legal === false && (messages.length || rules.length)) status = 'illegal';
+        return { status: status, messages: messages, rules: rules };
     }
 
-    function _deckLegalityHtml(legal, hasActualErrors, formatErrors, legalityDetail, fmtLabel) {
-        if (legal === true)
+    function _deckLegalityHtml(legality, fmtLabel) {
+        if (legality.status === 'legal')
             return '<span class="ac-badge ac-badge--green">' + ICONS.check + escHtml(txt.legal) + '</span>';
-        if (legal === false && hasActualErrors)
+        if (legality.status === 'illegal') {
+            var ruleLabels = legality.messages.length ? [] : legality.rules.map(function (k) { return txt.legalityKeys[k] || k; });
             return '<button type="button" class="ac-badge ac-badge--red js-deck-illegal"'
-                + ' data-errors="' + escHtml(JSON.stringify(formatErrors)) + '"'
-                + ' data-legality="' + escHtml(JSON.stringify(legalityDetail)) + '"'
+                + ' data-errors="' + escHtml(JSON.stringify(legality.messages)) + '"'
+                + ' data-rules="' + escHtml(JSON.stringify(ruleLabels)) + '"'
                 + ' data-format="' + escHtml(fmtLabel) + '">'
                 + ICONS.alert + escHtml(txt.illegal) + '</button>';
+        }
         return '';
     }
 
@@ -1526,6 +1571,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             + '&dir='   + encodeURIComponent(sortParts[1] || 'desc');
         if (myFormat)     fetchUrl += '&format='   + encodeURIComponent(myFormat);
         if (myVisibility !== '') fetchUrl += '&isPublic=' + encodeURIComponent(myVisibility);
+        fetchUrl += '&isDraft=' + encodeURIComponent(myArchived);
         if (myFaction)    fetchUrl += '&faction='  + encodeURIComponent(myFaction);
         if (myHero)       fetchUrl += '&hero='     + encodeURIComponent(myHero);
         var q = mySearch ? mySearch.value.trim() : '';
@@ -1611,9 +1657,10 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
         var btn = e.target.closest('.js-deck-illegal');
         if (!btn) return;
         e.stopPropagation();
-        var errors = [], detail = {};
+        // Both lists come from the decks API (see _deckLegality()): its messages, or the failing rules' labels.
+        var errors = [], failures = [];
         try { errors = JSON.parse(btn.dataset.errors || '[]'); } catch(_) {}
-        try { detail = JSON.parse(btn.dataset.legality || '{}'); } catch(_) {}
+        try { failures = JSON.parse(btn.dataset.rules || '[]'); } catch(_) {}
         var deckFormat = btn.dataset.format || '';
 
         function sectionLabel(label) {
@@ -1629,12 +1676,6 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
               + '</div>';
 
         // Deck Legality Error section
-        var failures = [];
-        Object.keys(detail).forEach(function(k) {
-            if (k !== 'global' && detail[k] === false) {
-                failures.push(txt.legalityKeys[k] || k);
-            }
-        });
         if (failures.length) {
             html += '<div class="mb-3">'
                   + sectionLabel(txt.legalityRulesSection)
@@ -1679,6 +1720,23 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
                 myHeroSelect.value = '';
                 loadHeroes(function(h) { populateHeroSelect(myHeroSelect, h, myFaction, txt.hero_all); });
             }
+            loadMyDecks(1);
+        });
+    });
+
+    function setMyArchived(v) {
+        myArchived = v;
+        document.querySelectorAll('[data-my-archived]').forEach(function(b) {
+            b.setAttribute('aria-pressed', b.dataset.myArchived === v ? 'true' : 'false');
+        });
+        var emptyTitle = document.getElementById('my-empty-title');
+        if (emptyTitle) emptyTitle.textContent = v === '1' ? txt.no_archived : txt.no_decks;
+    }
+
+    document.querySelectorAll('[data-my-archived]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (myArchived === btn.dataset.myArchived) return;
+            setMyArchived(btn.dataset.myArchived);
             loadMyDecks(1);
         });
     });
@@ -1835,6 +1893,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             + '</div>'
             + '<h3 class="deck-tile__title">' + escHtml(name) + '</h3>'
             + (d.heroName ? '<p class="deck-tile__hero">' + escHtml(d.heroName) + '</p>' : '')
+            + (d.ownerPseudo ? '<p class="deck-tile__hero deck-tile__owner">' + ICONS.user + escHtml(txt.owner_by.replace('%s', d.ownerPseudo)) + '</p>' : '')
             + '<div class="deck-tile__footer">'
             + _deckCountsHtml(d)
             + statsHtml
@@ -2195,7 +2254,7 @@ $_deckFilterChip = function (string $attr, string $value, string $label, string 
             description: '',
             format:    raw.format || 'standard',
             isPublic:  false,
-            isDraft:   true,
+            isDraft:   false,
             deckCards: deckCards,
         };
 

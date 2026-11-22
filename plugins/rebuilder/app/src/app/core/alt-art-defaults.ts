@@ -1,11 +1,12 @@
+import { printKey } from './deck-prints';
 import type { HydratedLine } from './models';
 import { familyKey, type AltArtChoice } from './ownership-api.service';
 
 /**
- * Default alt arts. The player picks once, on the site's « Arts alternatifs par défaut » page, which print each copy of
- * a card takes (1st, 2nd, 3rd copy: the ownership service's slots); a deck only stores the prints it uses. The defaults
- * apply when a card enters a deck and on « Appliquer les arts par défaut »; Board Game Arena plays the deck's prints
- * (the base art for copies the player does not own).
+ * Default alt arts (the player's global preferences). The player picks, on the site's « Arts alternatifs par défaut »
+ * page or « partout » in the editor, which print each copy of a card takes (1st, 2nd, 3rd copy: the ownership service's
+ * slots). A deck stores only the prints it chooses itself (its overrides, « pour ce deck »); its other copies take the
+ * defaults, in the editor as on Board Game Arena (the base art for copies the player does not own).
  */
 
 /** The family's plain illustration, everyone's: the service lists it first. */
@@ -109,31 +110,6 @@ export function familyCopies(choice: AltArtChoice, prints: readonly string[]): s
   return slotDefaults(choice, slotChoices(choice, prints));
 }
 
-/**
- * The print of a copy added to a family whose copies show `current`: the first default (by slot) the copies lack,
- * so that a copy chosen in the deck stays and the next copies follow the defaults; the base print otherwise.
- */
-export function addedCopyPrint(choice: AltArtChoice, current: readonly string[]): string {
-  const left = counts(current);
-  for (const print of defaultPrints(choice, current.length + 1)) {
-    const n = left.get(print) ?? 0;
-    if (n === 0) return print;
-    left.set(print, n - 1);
-  }
-  return basePrint(choice);
-}
-
-/**
- * The print of the copy removed from a family whose copies show `current`: the last copy's default when the deck has
- * it, else the base print, else the last copy; a print chosen in the deck goes last.
- */
-export function removedCopyPrint(choice: AltArtChoice, current: readonly string[]): string {
-  const last = defaultPrints(choice, current.length).at(-1);
-  if (last && current.includes(last)) return last;
-  const base = basePrint(choice);
-  return current.includes(base) ? base : (current.at(-1) ?? base);
-}
-
 /** Copies by print, in the order of `prints`. */
 export function counts(prints: readonly string[]): Map<string, number> {
   const out = new Map<string, number>();
@@ -177,16 +153,22 @@ function familiesOf(references: Iterable<string>, choices: Readonly<Record<strin
 }
 
 /**
- * « Appliquer les arts par défaut »: every multi-art family of `lines` takes the player's defaults for its copies
- * (`defaultPrints`). `null` when every line already matches.
+ * Every multi-art family of `lines` shows the prints the deck pins (`pins`, by `printKey`, 1st copy first), then the
+ * player's defaults for its other copies (`slotDefaults`). `null` when every line already matches.
  */
-export function linesWithDefaults(lines: readonly HydratedLine[], choices: Readonly<Record<string, AltArtChoice>>): HydratedLine[] | null {
+export function linesWithPins(
+  lines: readonly HydratedLine[],
+  choices: Readonly<Record<string, AltArtChoice>>,
+  pins: ReadonlyMap<string, readonly string[]> = new Map(),
+): HydratedLine[] | null {
   let out = [...lines];
   let changed = false;
   for (const members of familiesOf(lines.map((l) => l.card.reference), choices).values()) {
     const current = familyPrints(out, members);
-    const choice = choices[[...members][0]];
-    const next = defaultPrints(choice, current.length);
+    const first = [...members][0];
+    const choice = choices[first];
+    const pinned = (pins.get(printKey(first)) ?? []).slice(0, current.length);
+    const next = slotDefaults(choice, [...pinned, ...Array<null>(current.length - pinned.length).fill(null)]);
     if (sameCopies(current, next)) continue;
     changed = true;
     const template = out.find((l) => members.has(l.card.reference))!.card;

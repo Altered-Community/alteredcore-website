@@ -35,7 +35,7 @@
     @if (legal()) {
       <ac-badge tone="green" icon="check" i18n="@@ui.deckSummary.valid">Valide</ac-badge>
     } @else {
-      <ac-badge tone="orange" icon="circle-alert">{{ issueLabel() }}</ac-badge>
+      <ac-badge [tone]="unknown() && hero() ? 'blue' : 'orange'" [icon]="unknown() && hero() ? undefined : 'circle-alert'">{{ issueLabel() }}</ac-badge>
     }
     <ac-icon name="chevron-right" [size]="16" />
   </button>

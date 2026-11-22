@@ -1,5 +1,14 @@
 <div class="ac-overlay-body">
-  <p class="note" i18n="@@editor.tokenArts.intro">Choisissez une illustration par jeton : elle s’applique à tous ses exemplaires, dans tous vos decks.</p>
+  @if (forDeck) {
+    <ac-segmented [ariaLabel]="scopeLabel" [options]="scopes" [value]="scope()" (valueChange)="scope.set($event ?? 'deck')" />
+  }
+  <p class="note">
+    @if (scope() === 'deck') {
+      <ng-container i18n="@@editor.tokenArts.introDeck">Choisissez une illustration par jeton pour ce deck : vos arts par défaut ne changent pas.</ng-container>
+    } @else {
+      <ng-container i18n="@@editor.tokenArts.introGlobal">Choisissez une illustration par jeton : elle s’applique dans tous vos decks qui n’ont pas choisi la leur.</ng-container>
+    }
+  </p>
   @if (tokens(); as list) {
     @for (t of list; track t.key) {
       <section class="token">
@@ -14,6 +23,9 @@
             }
           </div>
           <span class="note">{{ t.count }}</span>
+          @if (t.ownChoice) {
+            <button acButton variant="secondary" size="sm" (click)="followDefault(t)" i18n="@@editor.tokenArts.useDefault">Utiliser mon art par défaut</button>
+          }
           @if (error(); as e) {
             @if (e.key === t.key) {
               <p class="error" role="alert">{{ e.message }}</p>
