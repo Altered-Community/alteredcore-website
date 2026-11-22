@@ -135,6 +135,34 @@ export interface DeckListItem {
   liked: boolean;
   /** Starter Deck Contest winner (contest tab only). */
   winner?: boolean;
+  /** Record over every tournament the deck was played in; `null` when it has none. */
+  tournament: TournamentRecord | null;
+}
+
+/** A deck's games in tournament, all tournaments together. */
+export interface TournamentRecord {
+  wins: number;
+  losses: number;
+  /** Share of the games won, 0 to 100, rounded; `null` without a won or lost game. */
+  winRate: number | null;
+  /** Names of the tournaments, most recent first. */
+  tournaments: string[];
+}
+
+/** Sums the decks API's `tournaments`; `null` when the deck was never played in one. */
+export function tournamentRecordOf(deck: Pick<Deck, 'tournaments'>): TournamentRecord | null {
+  const list = (deck.tournaments ?? []).filter((t) => !!t);
+  if (!list.length) return null;
+  const count = (n: number | undefined) => (Number.isFinite(n) && (n ?? 0) > 0 ? (n as number) : 0);
+  const wins = list.reduce((n, t) => n + count(t.wins), 0);
+  const losses = list.reduce((n, t) => n + count(t.losses), 0);
+  const played = wins + losses;
+  const time = (d: string | null | undefined) => (d ? Date.parse(d) || 0 : 0);
+  const tournaments = [...list]
+    .sort((a, b) => time(b.lastPlayedAt) - time(a.lastPlayedAt))
+    .map((t) => t.name?.trim() ?? '')
+    .filter(Boolean);
+  return { wins, losses, winRate: played ? Math.round((wins / played) * 100) : null, tournaments };
 }
 
 export function toDeckListItem(deck: Deck): DeckListItem {
@@ -171,6 +199,7 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     createdAt: deck.createdAt && !Number.isNaN(Date.parse(deck.createdAt)) ? deck.createdAt : '',
     likes: deck.upvoteCount ?? 0,
     liked: !!deck.hasUpvoted,
+    tournament: tournamentRecordOf(deck),
   };
 }
 

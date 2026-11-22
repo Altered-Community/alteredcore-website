@@ -32,8 +32,8 @@
     @if (layout() === 'row') {
       <span class="badges-inline">
         <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
-        @if (variant() === 'contest' && deck().legal) {
-          <ac-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ac-badge>
+        @if (deck().legal) {
+          <ng-container *ngTemplateOutlet="legalBadge" />
         }
         @if (showDraft()) {
           <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Archivé</ac-badge>
@@ -52,6 +52,15 @@
       @if (deck().author; as author) {
         <span class="author"><ac-icon name="user" [size]="14" />{{ author }}</span>
       }
+      @if (record(); as r) {
+        <span class="record" [title]="r.title">
+          <ac-icon name="trophy" [size]="14" />
+          <span class="score">{{ r.score }}</span>
+          @if (r.rate) {
+            <span class="rate">{{ r.rate }}</span>
+          }
+        </span>
+      }
       @if (updatedLabel(); as updated) {
         <span class="updated"><time [attr.datetime]="deck().updatedAt" i18n="@@ui.deckCard.updated">Modifié {{ updated }}</time></span>
       }
@@ -64,8 +73,8 @@
 
 <ng-template #gridBadges>
   <ac-badge [tone]="deck().formatTone">{{ deck().formatLabel }}</ac-badge>
-  @if (variant() === 'contest' && deck().legal) {
-    <ac-badge tone="green" icon="check" i18n="@@ui.deckCard.legal">Légal</ac-badge>
+  @if (deck().legal) {
+    <ng-container *ngTemplateOutlet="legalBadge" />
   }
   @if (showDraft()) {
     <ac-badge tone="neutral" i18n="@@ui.deckCard.draft">Archivé</ac-badge>
@@ -74,18 +83,24 @@
     <ac-badge tone="orange" icon="trophy" i18n="@@ui.deckCard.winner">Gagnant</ac-badge>
   }
 </ng-template>
+<ng-template #legalBadge>
+  <ac-badge tone="green" icon="check" [iconOnly]="true" role="img" [attr.aria-label]="legalLabel" [attr.title]="legalLabel" />
+</ng-template>
+<ng-template #illegalBadge>
+  <ac-badge tone="red" icon="x" [iconOnly]="true" [attr.title]="illegalText" />
+</ng-template>
 <!-- « Non légal » opens the rules window: a button, so it sits outside the link, over the same spot. -->
 @if (illegal()) {
   @if (layout() === 'grid') {
     <span class="badges badges--over">
       <ng-container *ngTemplateOutlet="gridBadges" />
       <button type="button" class="illegal" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
-        <ac-badge tone="orange" icon="circle-alert" i18n="@@ui.deckCard.illegal">Non légal</ac-badge>
+        <ng-container *ngTemplateOutlet="illegalBadge" />
       </button>
     </span>
   } @else {
     <button type="button" class="illegal illegal--row" [class.illegal--top]="variant() === 'community'" aria-haspopup="dialog" [attr.aria-label]="illegalLabel()" (click)="legalityClick.emit()">
-      <ac-badge tone="orange" icon="circle-alert" i18n="@@ui.deckCard.illegal">Non légal</ac-badge>
+      <ng-container *ngTemplateOutlet="illegalBadge" />
     </button>
   }
 }

@@ -1,0 +1,78 @@
+@if (label()) {
+  <label [for]="id" class="ac-field__label">{{ label() }}</label>
+}
+<div class="wrap ac-input-icon" cdkOverlayOrigin #origin="cdkOverlayOrigin">
+  @if (selected()?.thumb; as thumb) {
+    <span class="ac-input-icon__lead"><img [src]="thumb" alt="" /></span>
+  } @else {
+    <ac-icon name="search" [size]="18" />
+  }
+  <input
+    #field
+    class="ac-input"
+    type="text"
+    role="combobox"
+    aria-autocomplete="list"
+    autocomplete="off"
+    enterkeyhint="search"
+    [id]="id"
+    [class.has-clear]="!!text()"
+    [attr.aria-label]="label() ? null : ariaLabel() || placeholder()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="open() ? listId : null"
+    [attr.aria-activedescendant]="activeId()"
+    [placeholder]="placeholder()"
+    [value]="text()"
+    (input)="onInput(field.value)"
+    (keydown)="onKey($event)"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+  />
+  @if (text()) {
+    <button type="button" class="clear" [attr.aria-label]="clearLabel" (click)="clear()">
+      <ac-icon name="x" [size]="16" />
+    </button>
+  }
+</div>
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayScrollStrategy]="scrollStrategy"
+  [cdkConnectedOverlayMatchWidth]="true"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayDisableClose]="true"
+  (overlayOutsideClick)="onOutsideClick($event)"
+>
+  <div class="ac-listbox__panel ac-listbox__panel--suggestions">
+    <!-- A press in the list keeps the focus in the field (the field handles the keys, aria-activedescendant). -->
+    <div
+      #list
+      class="ac-listbox__list"
+      role="listbox"
+      [id]="listId"
+      [attr.aria-label]="label() || ariaLabel() || placeholder()"
+      [attr.aria-busy]="loading() || null"
+      (pointerdown)="$event.preventDefault()"
+    >
+      @for (o of options(); track o.value) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+        <div class="ac-listbox__option" role="option" aria-selected="false" [id]="optionId($index)" [class.is-active]="$index === active()" (pointermove)="hover($index)" (click)="pick(o)">
+          @if (o.thumb) {
+            <img class="ac-listbox__thumb" [src]="o.thumb" alt="" loading="lazy" />
+          } @else if (o.color) {
+            <span class="ac-listbox__dot" aria-hidden="true" [style.--ac-listbox-dot]="o.color"></span>
+          }
+          @let h = highlight(o.label);
+          <span class="ac-listbox__label">{{ h.before }}@if (h.match) {<mark>{{ h.match }}</mark>}{{ h.after }}</span>
+          @if (o.meta) {
+            <span class="ac-listbox__meta">{{ o.meta }}</span>
+          }
+        </div>
+      } @empty {
+        <div class="ac-listbox__empty">{{ loading() ? searching : noResults }}</div>
+      }
+    </div>
+  </div>
+</ng-template>

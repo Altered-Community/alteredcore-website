@@ -2,6 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { factionSrc } from '../../../core/assets';
+import { uiLocale } from '../../../core/i18n';
 import { relativeTime } from '../../../core/relative-time';
 import type { DeckListItem } from '../../../core/deck-view';
 import { AcLikeButton } from '../../buttons';
@@ -12,9 +13,11 @@ import { factionName } from '../factions';
 
 /**
  * Deck in the deck list: grid card (expanded) or row (compact).
- * Every variant shows « Non légal » on an illegal deck (it opens the rules: `legalityClick`).
- * `mine`: visibility, draft, card count and rarities. `community`: author, last update and like count instead (every
- * listed deck is public); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
+ * Every variant shows a green check on a legal deck and a red cross on an illegal one (it opens the rules:
+ * `legalityClick`); nothing while the legality is unknown.
+ * `mine`: visibility, draft, card count and rarities. `community`: author, tournament record (wins, losses, share of
+ * games won, over every tournament the deck was played in), last update and like count instead (every listed deck is
+ * public); the like button sits outside the link and emits `likeToggle`. `contest`: card count and rarities, a « Gagnant » badge
  * on the winners of the Starter Deck Contest.
  */
 @Component({
@@ -41,7 +44,9 @@ export class AcDeckCard {
   protected readonly factionLogo = computed(() => factionSrc(this.deck().hero?.faction));
   protected readonly factionLabel = computed(() => factionName(this.deck().hero?.faction));
   protected readonly updatedLabel = computed(() => relativeTime(this.deck().updatedAt));
-  protected readonly publicLabel = $localize`:@@ui.deckCard.public:Public`;
+  protected readonly legalLabel = $localize`:@@ui.deckCard.legal:Légal`;
+  protected readonly illegalText = $localize`:@@ui.deckCard.illegal:Non légal`;
+  protected readonly publicLabel =$localize`:@@ui.deckCard.public:Public`;
   protected readonly privateLabel = $localize`:@@ui.deckCard.private:Privé`;
   protected readonly noHero = $localize`:@@ui.deckCard.noHero:Sans héros`;
   protected readonly likeLabel = computed(() => {
@@ -50,8 +55,34 @@ export class AcDeckCard {
       ? $localize`:@@ui.deckCard.likeOne:J’aime ${name}:name:, ${likes}:likes: j’aime`
       : $localize`:@@ui.deckCard.like:J’aime ${name}:name:, ${likes}:likes: j’aime`;
   });
+  /** « 5 V – 2 D » and « 71 % » (community): the deck's games in tournament. */
+  protected readonly record = computed(() => {
+    const t = this.variant() === 'community' ? this.deck().tournament : null;
+    if (!t) return null;
+    const nf = new Intl.NumberFormat(uiLocale());
+    const pf = new Intl.NumberFormat(uiLocale(), { style: 'percent' });
+    const wins = nf.format(t.wins);
+    const losses = nf.format(t.losses);
+    const rate = t.winRate === null ? null : pf.format(t.winRate / 100);
+    const count = t.tournaments.length;
+    return {
+      score: $localize`:@@ui.deckCard.record:${wins}:wins: V – ${losses}:losses: D`,
+      rate,
+      spoken: rate
+        ? $localize`:@@ui.deckCard.recordSpokenRate:en tournoi ${wins}:wins: victoires, ${losses}:losses: défaites, ${rate}:rate: de victoires`
+        : $localize`:@@ui.deckCard.recordSpoken:en tournoi ${wins}:wins: victoires, ${losses}:losses: défaites`,
+      title:
+        count === 1
+          ? $localize`:@@ui.deckCard.recordTitleOne:Joué en tournoi : ${t.tournaments[0]}:tournament:`
+          : count > 1
+            ? $localize`:@@ui.deckCard.recordTitleMany:Joué dans ${count}:count: tournois : ${t.tournaments.join(', ')}:tournaments:`
+            : $localize`:@@ui.deckCard.recordTitle:Joué en tournoi`,
+    };
+  });
   protected readonly ariaLabel = computed(() => {
     const d = this.deck();
-    return [d.name, d.formatLabel, this.variant() === 'community' && d.author ? $localize`:@@ui.deckCard.by:par ${d.author}:author:` : null].filter(Boolean).join(', ');
+    return [d.name, d.formatLabel, this.variant() === 'community' && d.author ? $localize`:@@ui.deckCard.by:par ${d.author}:author:` : null, this.record()?.spoken]
+      .filter(Boolean)
+      .join(', ');
   });
 }

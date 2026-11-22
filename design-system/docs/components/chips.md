@@ -54,7 +54,8 @@ Active filter with a remove button (the whole chip removes the filter):
 
 Pill, 24 px tall (`ac-badge--lg`: 28 px), 12 px bold text, soft background with the matching
 text colour. `ac-badge--dense` tightens the padding and the gap, for a row of badges where room is short
-(the rarities in a phone's app bar).
+(the rarities in a phone's app bar). `ac-badge--icon` keeps the icon alone in a round badge, as wide as it
+is tall: the meaning goes in `aria-label` and `title` (a deck card's legality: green check, red cross).
 
 ```php
 <span class="ac-badge ac-badge--green"><?= ac_icon('globe', 'ac-icon--14') ?> <?= h(t('decks.public')) ?></span>

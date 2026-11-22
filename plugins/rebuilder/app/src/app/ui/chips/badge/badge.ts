@@ -24,4 +24,6 @@ export class AcBadge {
   readonly size = input<24 | 28>(24);
   /** Tighter padding and gap, for a row of badges where room is short. */
   readonly dense = input(false);
+  /** The icon alone in a round badge (`ac-badge--icon`): give the host `aria-label`, `title` and `role="img"`. */
+  readonly iconOnly = input(false);
 }

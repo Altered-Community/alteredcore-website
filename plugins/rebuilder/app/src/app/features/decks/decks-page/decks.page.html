@@ -60,9 +60,6 @@
           <ac-select ariaLabel="Format" [options]="formats" [value]="filters().format" (valueChange)="patch({ format: $event })" />
         }
         <ac-select ariaLabel="Héros" i18n-ariaLabel="@@decks.page.hero" [options]="heroes()" [value]="filters().hero" (valueChange)="patch({ hero: $event })" />
-        @if (tab() === 'community') {
-          <ac-switch label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="filters().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
-        }
         @if (tab() === 'mine') {
           <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.page.visibility" [options]="visibilities" [value]="filters().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
           <ac-segmented ariaLabel="Statut" i18n-ariaLabel="@@decks.page.status" [options]="statuses" [value]="filters().status" (valueChange)="patch({ status: $event ?? 'active' })" />
@@ -72,6 +69,24 @@
           <ac-select label="Trier par" i18n-label="@@decks.page.sortBy" [inlineLabel]="true" [options]="sorts" [value]="filters().sort" (valueChange)="patch({ sort: $any($event) })" />
         }
       </div>
+      @if (tab() === 'community') {
+        <div class="row community">
+          <ac-autocomplete
+            class="card-filter"
+            ariaLabel="Contient la carte"
+            i18n-ariaLabel="@@decks.cardFilter.label"
+            placeholder="Contient la carte… (nom ou référence)"
+            i18n-placeholder="@@decks.cardFilter.placeholderWide"
+            [options]="cardOptions()"
+            [loading]="cardSuggesting()"
+            [selected]="cardChoice()"
+            (selectedChange)="setCard($event)"
+            (queryChange)="onCardQuery($event)"
+          />
+          <ac-switch label="Joués en tournoi" i18n-label="@@decks.page.tournamentOnly" [checked]="filters().tournament" (checkedChange)="patch({ tournament: $event })" />
+          <ac-switch label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="filters().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
+        </div>
+      }
       <div class="row factions" role="group" aria-label="Faction">
         <span class="overline">Faction</span>
         @for (f of factions; track f.code) {

@@ -846,6 +846,19 @@
     "editor.tokenArts.introDeck": "Choose one illustration per token for this deck: your default alt arts stay as they are.",
     "editor.tokenArts.introGlobal": "Choose one illustration per token: it applies to every deck of yours that has not chosen its own.",
     "editor.tokenArts.useDefault": "Use my default alt art",
-    "deck.legality.unknownNote": "Legality is checked by the server when the deck is saved to your account."
+    "deck.legality.unknownNote": "Legality is checked by the server when the deck is saved to your account.",
+    "decks.cardFilter.outOfFaction": "{$rarity} · out of faction",
+    "decks.cardFilter.label": "Contains the card",
+    "decks.cardFilter.placeholder": "Card name or reference…",
+    "decks.cardFilter.placeholderWide": "Contains the card… (name or reference)",
+    "decks.page.tournamentOnly": "Played in a tournament",
+    "ui.autocomplete.noResults": "No results",
+    "ui.autocomplete.loading": "Searching…",
+    "ui.deckCard.record": "{$wins} W – {$losses} L",
+    "ui.deckCard.recordSpokenRate": "in tournament {$wins} wins, {$losses} losses, {$rate} won",
+    "ui.deckCard.recordSpoken": "in tournament {$wins} wins, {$losses} losses",
+    "ui.deckCard.recordTitleOne": "Played in a tournament: {$tournament}",
+    "ui.deckCard.recordTitleMany": "Played in {$count} tournaments: {$tournaments}",
+    "ui.deckCard.recordTitle": "Played in a tournament"
   }
 }
