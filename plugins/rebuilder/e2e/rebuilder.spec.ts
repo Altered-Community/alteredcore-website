@@ -1097,8 +1097,9 @@ test.describe('ReBuilder in the shell · deck page', () => {
     await deckPage.getByRole('button', { name: 'Non légal : voir le détail' }).first().click();
     const legality = page.getByRole('dialog', { name: 'Légalité du deck' });
     await expect(legality).toContainText('Standard');
-    await expect(legality).toContainText('Nombre de cartes invalide');
-    await expect(legality).toContainText('Deck must contain between 39 and 59 cards');
+    // Every rule of the format with its verdict (legalityDetail), then the API's messages, in the UI language.
+    await expect(legality.locator('li.failed')).toContainText(['Nombre de cartes']);
+    await expect(legality).toContainText('Le deck doit contenir');
     await evidence(page, testInfo, '20-deck-legality');
     await page.keyboard.press('Escape');
     await expect(legality).toBeHidden();
