@@ -894,3 +894,39 @@ function cacFetchFormatsManifest(): ?array {
     }
     return $entries;
 }
+
+// Tell the Deck API that the Frontier format changed (Admin > Uniques format), so
+// deck validity follows the same season: DeckApi reads that season's allowlist
+// from its own formats manifest, makes it the current Frontier season and
+// revalidates every Frontier deck in the background.
+// Needs DECKS_API_URL and DECKS_API_MAINTENANCE_KEY (DeckApi's ApiKeys:Maintenance).
+// Returns null when not configured, else ['ok' => bool, 'season' => ?string, 'error' => ?string].
+function cacNotifyDeckApiFrontierFormat(string $formatId): ?array {
+    $key = defined('DECKS_API_MAINTENANCE_KEY') ? (string) DECKS_API_MAINTENANCE_KEY : '';
+    $base = defined('DECKS_API_URL') ? rtrim((string) DECKS_API_URL, '/') : '';
+    if ($key === '' || $base === '') return null;
+
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL            => $base . '/api/admin/formats/season',
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['formatId' => $formatId]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'X-Api-Key: ' . $key],
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    $data = is_string($response) ? json_decode($response, true) : null;
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return ['ok' => true, 'season' => is_array($data) ? ($data['season'] ?? null) : null, 'error' => null];
+    }
+    $error = is_array($data) ? (string) ($data['detail'] ?? $data['title'] ?? '') : '';
+    if ($error === '') $error = $httpCode > 0 ? 'HTTP ' . $httpCode : ($curlError !== '' ? $curlError : 'no response');
+    error_log('[core-altered-cards] Deck API Frontier format update failed for "' . $formatId . '": ' . $error);
+    return ['ok' => false, 'season' => null, 'error' => $error];
+}

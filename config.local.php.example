@@ -76,6 +76,11 @@ define('UNIQUES_API_URL',   'http://localhost:8005');
 // Preprod: https://altered-reunion-formats-preprod.s3.fr-par.scw.cloud/manifest.json
 define('FORMATS_MANIFEST_URL', 'https://altered-reunion-formats-prod.s3.fr-par.scw.cloud/manifest.json');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
+// DeckApi's ApiKeys:Maintenance. When set, saving Admin > Uniques format also sets
+// the Deck API's current Frontier season (POST /api/admin/formats/season) and
+// revalidates Frontier decks. DeckApi's Formats:ManifestUrl must point to the same
+// manifest as FORMATS_MANIFEST_URL. Leave empty to skip.
+define('DECKS_API_MAINTENANCE_KEY', '');
 define('CDN_URL',           'https://cdn.alteredcore.org');
 // Digital ownership service (AlteredOwnership).
 //   OWNERSHIP_API_URL: server-side base the website proxies to (GET /api/collection).
