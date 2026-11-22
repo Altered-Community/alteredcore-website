@@ -8,6 +8,7 @@ export * from './or-values/or-values';
 export * from './radio-card/radio-card';
 export * from './segmented/segmented';
 export * from './select/select';
+export * from './slider/slider';
 export * from './switch/switch';
 export * from './types';
 export * from './value-accessor';

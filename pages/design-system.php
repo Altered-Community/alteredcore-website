@@ -250,6 +250,7 @@ include dirname(__DIR__) . '/includes/header.php';
                     <label class="ac-check"><input type="radio" name="ds-r" checked> Hand</label>
                     <label class="ac-check"><input type="radio" name="ds-r"> Reserve</label>
                     <label class="ac-switch"><input type="checkbox" role="switch" checked> Public deck</label>
+                    <label class="ac-stack ac-stack--sm">Card size <input type="range" class="ac-slider" min="1" max="2" step="0.1" value="1.5" style="--ac-slider-fill: 50%" aria-label="Card size"></label>
                 </div>
             </div>
         </div>

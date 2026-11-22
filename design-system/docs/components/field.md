@@ -178,6 +178,23 @@ A checkbox drawn as a 36 × 20 px switch: off in the control border colour, on i
 
 Use it for a setting that applies immediately (the page saves it on `change`).
 
+## Slider — `ac-slider`
+
+A native `<input type="range">` with a 4 px track (primary up to the thumb, control border colour
+after it) and a 16 px thumb. The line is `--ac-hit-min` high (32 px, 44 px on touch).
+
+```php
+<label for="size" class="ac-sr-only"><?= h(t('cards.size')) ?></label>
+<input type="range" class="ac-slider" id="size" min="1" max="2" step="0.1" value="1"
+       style="--ac-slider-fill: 0%">
+```
+
+CSS cannot style the part of the track before the thumb in every browser, so the page sets
+`--ac-slider-fill` (the value as a percentage of the range) on `input`. Without it the track is
+plain. Use a slider for a continuous or finely stepped setting that applies at once (a size, a
+zoom); use a [segmented control](segmented.md) for a few named choices. It always needs a label
+(`<label>` or `aria-label`).
+
 ## Density
 
 | Token | Pointer | Touch |
