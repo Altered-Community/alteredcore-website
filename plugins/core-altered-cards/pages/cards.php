@@ -17,6 +17,7 @@ $txt        = array_merge($_sharedTxt, [
         'btn_collection' => 'My collection',
         'lbl_effects' => 'Effects',
         'add_effect'  => 'Add effect',
+        'own_alt_art_save_error' => 'Could not save your choice.',
     ],
     'fr' => [
         'page_title'  => 'Cartes',
@@ -27,6 +28,7 @@ $txt        = array_merge($_sharedTxt, [
         'btn_collection' => 'Ma collection',
         'lbl_effects' => 'Effets',
         'add_effect'  => 'Ajouter un effet',
+        'own_alt_art_save_error' => 'Impossible d\'enregistrer votre choix.',
     ],
 ][$uiLang] ?? []);
 
@@ -66,10 +68,11 @@ $defaultRarities   = array_values(array_intersect((array)($_ss['default_rarities
 $defaultTypes      = array_values(array_intersect((array)($_ss['default_types']      ?? []), $validTypes));
 $defaultVariations  = array_values(array_intersect((array)($_ss['default_variations']  ?? []), array_keys($variationsData)));
 $defaultCollection  = $_ss['default_collection'] ?? 'official';
-$_raw1        = $_ss['default_sort_1'] ?? 'default';
-$_raw2        = $_ss['default_sort_2'] ?? null;
-$defaultSort1 = in_array($_raw1, $validSorts) ? $_raw1 : 'default';
-$defaultSort2 = ($_raw2 && in_array($_raw2, $validSorts)) ? $_raw2 : null;
+// default_sort_1/2 drive the internal sort even when not offered as a UI
+// option (e.g. set_date_desc isn't a selectable choice), so they're trusted
+// from local config directly rather than validated against $validSorts.
+$defaultSort1 = $_ss['default_sort_1'] ?? 'default';
+$defaultSort2 = $_ss['default_sort_2'] ?? null;
 $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 
 // parse URL filter params (passed to JS for initial state)
@@ -78,7 +81,6 @@ $sort = in_array($_GET['sort'] ?? '', $validSorts) ? $_GET['sort'] : 'default';
 $cols = (int)($_GET['cols'] ?? $_defaultCols);
 if (!in_array($cols, [1, 2, 3, 4, 5])) $cols = $_defaultCols;
 
-$validCostPower = array_map('strval', range(0, 12));
 $factions = array_values(array_intersect(array_filter((array)($_GET['faction'] ?? [])), $validFactions));
 $types    = array_key_exists('type', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['type']), $validTypes))
@@ -91,13 +93,17 @@ $sets = array_key_exists('set', $_GET)
     : $defaultSets;
 $keywords       = array_values(array_intersect(array_filter((array)($_GET['keyword']       ?? [])), array_keys($keywordsData)));
 $subtypes       = array_values(array_intersect(array_filter((array)($_GET['subtype']       ?? [])), array_keys($subtypesData)));
-$mainCost   = isset($_GET['mainCost'])   && in_array($_GET['mainCost'],   $validCostPower, true) ? $_GET['mainCost']   : null;
-$recallCost = isset($_GET['recallCost']) && in_array($_GET['recallCost'], $validCostPower, true) ? $_GET['recallCost'] : null;
-$forest     = isset($_GET['forest'])     && in_array($_GET['forest'],     $validCostPower, true) ? $_GET['forest']     : null;
-$mountain   = isset($_GET['mountain'])   && in_array($_GET['mountain'],   $validCostPower, true) ? $_GET['mountain']   : null;
-$ocean      = isset($_GET['ocean'])      && in_array($_GET['ocean'],      $validCostPower, true) ? $_GET['ocean']      : null;
+$mainCost   = cacValidateNumExpr($_GET['mainCost']   ?? null);
+$recallCost = cacValidateNumExpr($_GET['recallCost'] ?? null);
+$forest     = cacValidateNumExpr($_GET['forest']     ?? null);
+$mountain   = cacValidateNumExpr($_GET['mountain']   ?? null);
+$ocean      = cacValidateNumExpr($_GET['ocean']      ?? null);
 $kwMode         = ($_GET['kwMode'] ?? '') === 'and' ? 'and' : 'or';
 $hasNoEffect    = ($_GET['hasNoEffect'] ?? '') === 'true';
+$_rawFormat     = trim((string)($_GET['format'] ?? ''));
+$format         = ($_rawFormat !== '' && cacIsValidUniquesFormatId($_rawFormat)) ? $_rawFormat : '';
+$_rawCr         = (string)($_GET['costRelation'] ?? '');
+$costRelation   = in_array($_rawCr, ['eq', 'main_gt', 'recall_gt'], true) ? $_rawCr : '';
 $variations = array_key_exists('variation', $_GET)
     ? array_values(array_intersect(array_filter((array)$_GET['variation']), array_keys($variationsData)))
     : $defaultVariations;
@@ -106,7 +112,8 @@ $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
 $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
 // collection
-$_csUserId         = (int)($_SESSION['user_id'] ?? 0);
+$_csLoggedIn       = kcIsLoggedIn();
+$_csUserId         = $_csLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
 $_collEnabled      = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collMode         = $_collEnabled && $_csUserId > 0;
 
@@ -118,6 +125,12 @@ $_ownMode          = $_ownEnabled && $_csUserId > 0;
 $_ownWebBase       = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? OWNERSHIP_WEB_URL
                    : ((defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL) ? OWNERSHIP_API_URL : '');
 $_ownWebUrl        = $_ownWebBase ? rtrim($_ownWebBase, '/') . '/' : '';
+// Alt-art marker widget + 3D tilt in the card modal — a separate gate from $_ownEnabled/
+// $_ownMode above (which only drive the existing ownership-search tab): this also
+// requires the ownership plugin itself to be active, not just OWNERSHIP_API_URL configured.
+// Only shown in Global preference mode — in PerDeck mode (the default), a card's
+// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
+$_ownAltArtActive  = ownershipIsActive() && $_csUserId > 0 && cacIsAltArtGlobalMode($_csUserId);
 $_userCollection   = [];
 $_collEntries      = [];
 if ($_collMode) {
@@ -168,6 +181,49 @@ foreach ($setsData as $_sref => $_sd) {
     $subSets[] = $_sref;
     if (!empty($_sd['parent'])) $setChildren[$_sd['parent']][] = $_sref;
 }
+// Sets the uniques API rejects outright (HTTP 400) — see card-search.js.
+$noUniqueSets = array_values(array_keys(array_filter($setsData, fn($s) => ($s['uniques'] ?? true) === false)));
+
+// Playset heatmap metadata: faction rows (canonical order, with colors) and the
+// main-set columns ordered chronologically descending (recent first) — same
+// reverse-of-file-order convention as the quick-filter set bar.
+$playsetFactions = [];
+foreach ($factionsData as $_fk => $_fv) {
+    $playsetFactions[] = ['code' => $_fk, 'name' => $_fv[$uiLang] ?? $_fv['en'] ?? $_fk, 'color' => $_fv['color'] ?? 'var(--ac-color-text-muted)'];
+}
+// The playset API merges the Kickstarter edition (COREKS) into CORE, so only a
+// single "Au-delà des Portes" column appears — flagged with an explanatory note.
+// Label lives under translations.{lang}.playset.core_note in search_settings.json.
+$_psCoreNote = $_sharedTxt['playset']['core_note'] ?? ($uiLang === 'fr'
+    ? 'Regroupe les éditions Au-delà des Portes (CORE) et sa version Kickstarter (COREKS).'
+    : 'Combines the Beyond the Gates (CORE) edition and its Kickstarter version (COREKS).');
+$playsetSets = [];
+foreach (array_reverse(array_filter($setsData, fn($s) => ($s['subtype'] ?? '') === 'main'), true) as $_sk => $_sv) {
+    $_entry = [
+        'code' => $_sk,
+        'name' => $_sv[$uiLang] ?? $_sv['en'] ?? $_sk,
+        'icon' => $_sv['icon'] ?? '',
+    ];
+    if ($_sk === 'CORE') $_entry['note'] = $_psCoreNote;
+    $playsetSets[] = $_entry;
+}
+$playsetSetBg      = BASE_URL . '/plugins/core-altered-cards/assets/set/small_bg/';
+$playsetFactionIcon = BASE_URL . '/plugins/core-altered-cards/assets/faction/';
+$playsetGemBase     = BASE_URL . '/plugins/core-altered-cards/assets/gems/';
+// Rarity display names + gem letters for the exploration version labels.
+$playsetRarities = [];
+foreach (['COMMON', 'RARE', 'EXALTED'] as $_rk) {
+    if (!isset($raritiesData[$_rk])) continue;
+    $playsetRarities[$_rk] = [
+        'name' => $raritiesData[$_rk][$uiLang] ?? $raritiesData[$_rk]['en'] ?? $_rk,
+        'gem'  => $raritiesData[$_rk]['gem'] ?? substr($_rk, 0, 1),
+    ];
+}
+// Card-type code → localized display name (e.g. LANDMARK_PERMANENT → "Repère Permanent").
+$playsetTypes = [];
+foreach ($typesData as $_tk => $_tv) {
+    $playsetTypes[$_tk] = $_tv[$uiLang] ?? $_tv['en'] ?? $_tk;
+}
 
 // widget config for card-search.php
 $_cs = [
@@ -213,6 +269,7 @@ $_cs = [
     'ownership_mode'     => $_ownMode,
     'ownership_enabled'  => $_ownEnabled,
     'ownership_url'      => $_ownWebUrl,
+    'playset_mode'       => $_collMode,
     'favorites_mode'     => $_favMode,
     'base_url'           => BASE_URL,
 ];
@@ -226,11 +283,19 @@ $pageTitle = $txt['page_title'];
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-playset.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search.js"></script>
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
+<?php endif; ?>
 <script>
 CardSearch({
     debug:       <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
     apiBase:     <?= json_encode(defined('CARDS_API_URL') ? CARDS_API_URL : 'https://cards.alteredcore.org') ?>,
+    uniquesApiBase: <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
     lang:        <?= json_encode($lang) ?>,
     uiLang:      <?= json_encode($uiLang) ?>,
     prefix:      'cs',
@@ -248,11 +313,24 @@ CardSearch({
     collectionUrl:     <?= json_encode(BASE_URL . '/pages/collection') ?>,
     collApiUrl:        <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/collection-search' : '') ?>,
     ownershipApiUrl:   <?= json_encode($_ownMode ? BASE_URL . '/papi/core-altered-cards/ownership-search' : '') ?>,
+    playsetApiUrl:     <?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset' : '') ?>,
+    playsetCardsApiUrl:<?= json_encode($_collMode ? BASE_URL . '/papi/core-altered-cards/playset-cards' : '') ?>,
+    playsetMeta:       { factions: <?= json_encode($playsetFactions) ?>, sets: <?= json_encode($playsetSets) ?>, setBg: <?= json_encode($playsetSetBg) ?>, factionIcon: <?= json_encode($playsetFactionIcon) ?>, gemBase: <?= json_encode($playsetGemBase) ?>, rarities: <?= json_encode($playsetRarities) ?>, types: <?= json_encode($playsetTypes) ?> },
     favoritesEnabled:  <?= $_favMode ? 'true' : 'false' ?>,
     favoritesData:     <?= json_encode($_favMode ? (object)$_userFavorites : (object)[]) ?>,
     favoritesCsrf:     <?= json_encode($_favMode ? csrfToken() : '') ?>,
     favToggleUrl:      <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-toggle' : '') ?>,
     favApiUrl:         <?= json_encode($_favMode ? BASE_URL . '/papi/core-altered-cards/favorites-search' : '') ?>,
+    ownAltArt: <?= json_encode($_ownAltArtActive ? [
+        'enabled'          => true,
+        'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+        'cdnUrl'           => CDN_URL,
+        'lang'             => $lang,
+        'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+        'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+        'csrfToken'        => csrfToken(),
+        'txt'              => ['saveError' => $txt['own_alt_art_save_error']],
+    ] : ['enabled' => false]) ?>,
     defaults: {
         factions:   <?= json_encode($defaultFactions) ?>,
         types:      <?= json_encode($defaultTypes) ?>,
@@ -266,7 +344,6 @@ CardSearch({
     },
     initial: {
         q:              <?= json_encode($q) ?>,
-        faction:        <?= json_encode($factions) ?>,
         faction:        <?= json_encode($factions) ?>,
         factionExplicit:<?= array_key_exists('faction', $_GET) ? 'true' : 'false' ?>,
         type:           <?= json_encode($types) ?>,
@@ -285,6 +362,8 @@ CardSearch({
         ocean:       <?= json_encode($ocean) ?>,
         keywordMode:    <?= json_encode($kwMode) ?>,
         hasNoEffect:    <?= $hasNoEffect ? 'true' : 'false' ?>,
+        costRelation:   <?= json_encode($costRelation) ?>,
+        format:         <?= json_encode($format) ?>,
         isBanned:       <?= $isBanned    ? 'true' : 'false' ?>,
         isErrated:      <?= $isErrated   ? 'true' : 'false' ?>,
         isSuspended:    <?= $isSuspended ? 'true' : 'false' ?>,
@@ -304,6 +383,7 @@ CardSearch({
     typesMerged: <?= json_encode($typesMergedData) ?>,
     setChildren:  <?= json_encode($setChildren) ?>,
     subSets:      <?= json_encode($subSets) ?>,
+    noUniqueSets: <?= json_encode($noUniqueSets) ?>,
     uniqueType:   <?= json_encode(['CHARACTER']) ?>,
     uniqueRarity: <?= json_encode(['UNIQUE']) ?>,
     uniqueExtraSets: <?= json_encode(array_values(array_intersect(['COREKS'], $validSets))) ?>,

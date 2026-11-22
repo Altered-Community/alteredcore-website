@@ -1,0 +1,61 @@
+<div class="ac-overlay-body">
+  <p class="defaults-note" i18n="@@editor.altArtPicker.defaultsNote">Ces choix ne valent que pour ce deck : vos arts par défaut ne changent pas.</p>
+  <div class="stage">
+    <section class="pool" aria-labelledby="alt-art-picker-hint">
+      <h3 class="step">
+        <span class="step-num" aria-hidden="true">1</span>
+        <span id="alt-art-picker-hint" i18n="@@editor.altArtPicker.hint">Choisissez l’illustration de chaque carte</span>
+      </h3>
+      <p class="keys-hint" i18n="@@editor.altArtPicker.keysHint">Cliquez sur une case au-dessus d’une illustration pour la lui attribuer.</p>
+      <ul class="prints" aria-label="Illustrations disponibles" i18n-aria-label="@@editor.altArtPicker.available">
+        @for (a of arts(); track a.reference) {
+          <li class="print" [class.unowned]="a.unowned">
+            <div class="ac-keys keys" role="group" [attr.aria-label]="a.keysLabel">
+              @for (k of a.keys; track k.rank) {
+                <button
+                  type="button"
+                  class="ac-key"
+                  [attr.aria-pressed]="k.pressed"
+                  [attr.aria-label]="k.label"
+                  [disabled]="k.disabled"
+                  (click)="choose(a.reference, k.rank)"
+                >
+                  <span class="ac-key__num">{{ k.num }}<sup>{{ k.suffix }}</sup></span>
+                  <span class="ac-key__word">{{ cardWord }}</span>
+                </button>
+              }
+            </div>
+            <img class="art" [src]="a.src" alt="" />
+            <span class="print-label">{{ a.label }}</span>
+            <span class="print-note">{{ a.note }}</span>
+          </li>
+        }
+      </ul>
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+    </section>
+    <aside class="deck" aria-labelledby="alt-art-picker-deck">
+      <h3 class="step">
+        <span class="step-num" aria-hidden="true">2</span>
+        <span id="alt-art-picker-deck" i18n="@@editor.altArtPicker.deckTitle">Ce que le deck utilise</span>
+      </h3>
+      <div class="result">
+        @if (preview().length) {
+          <div class="fan" aria-hidden="true" [style.--n]="preview().length">
+            @for (src of preview(); track $index) {
+              <img [src]="src" alt="" [style.--i]="$index" />
+            }
+          </div>
+        }
+        <p class="summary">{{ summary() }}</p>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="ac-overlay-footer">
+  <a class="settings" [href]="settingsUrl" i18n="@@editor.altArtPicker.settings">Modifier mes arts par défaut</a>
+  <button acButton variant="secondary" class="secondary-action" icon="wand-sparkles" [disabled]="followsDefaults()" (click)="resetToDefaults()" i18n="@@editor.altArtPicker.defaults">Arts par défaut</button>
+  <button acButton (click)="ref.close()" i18n="@@editor.altArtPicker.close">Fermer</button>
+</div>
+

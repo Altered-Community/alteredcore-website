@@ -103,7 +103,7 @@ kc_set_remember_cookie($localUserId);
 
 // Read values to carry over BEFORE regenerating (session data is preserved across
 // regeneration, but reading first makes the intent explicit)
-$returnUrl = $_SESSION['kc_return_url'] ?? BASE_URL . '/';
+$returnUrl = safeReturnUrl($_SESSION['kc_return_url'] ?? null, BASE_URL);
 unset($_SESSION['kc_return_url']);
 
 clearAuthSession();

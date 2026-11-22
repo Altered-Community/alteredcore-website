@@ -9,7 +9,7 @@ $txt = [
 ?>
 
 <div class="admin-header-bar">
-    <h1><i class="fa-solid fa-gear me-2"></i><?= h($txt['title']) ?></h1>
+    <h1><?= ac_icon('settings', 'me-2') ?><?= h($txt['title']) ?></h1>
 </div>
 
 <!-- YOUR CODE HERE -->

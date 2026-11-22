@@ -1,0 +1,16 @@
+@if (label()) {
+  <label [for]="id" class="ac-field__label">{{ label() }}</label>
+}
+<textarea
+  #field
+  class="ac-textarea"
+  [id]="id"
+  [rows]="rows()"
+  [attr.maxlength]="maxlength()"
+  [attr.aria-label]="label() ? null : ariaLabel() || placeholder()"
+  [attr.aria-invalid]="invalid() || null"
+  [placeholder]="placeholder()"
+  [value]="value()"
+  (input)="emit(field.value)"
+  (blur)="onTouched()"
+></textarea>

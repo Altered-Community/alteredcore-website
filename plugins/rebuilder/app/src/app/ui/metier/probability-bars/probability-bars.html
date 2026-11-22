@@ -1,0 +1,9 @@
+<ul [attr.aria-label]="ariaLabel() || null">
+  @for (r of rows(); track r.key) {
+    <li [class.warn]="r.warn">
+      <span class="label">{{ r.label }}</span>
+      <span class="track" aria-hidden="true"><span class="fill" [style.width.%]="width(r.p)"></span></span>
+      <span class="value" [attr.title]="r.p !== null ? precise(r.p) : null">{{ r.p !== null ? pct(r.p) : '' }}</span>
+    </li>
+  }
+</ul>

@@ -1,0 +1,76 @@
+<h2 class="overline" i18n="@@deck.handStats.title">Stats de main de départ</h2>
+<div class="grid">
+  <ac-card class="block third">
+    <h3 i18n="@@deck.handStats.compTitle">Composition moyenne</h3>
+    <p class="sub" i18n="@@deck.handStats.compSub">Types de cartes moyens dans une main d’ouverture de 6 cartes</p>
+    <ac-donut-chart class="body" [segments]="composition()" ariaLabel="Composition moyenne" i18n-ariaLabel="@@deck.handStats.compTitle" />
+  </ac-card>
+
+  <ac-card class="block third">
+    <h3 i18n="@@deck.handStats.heavyTitle">Cartes chères</h3>
+    <p class="sub" i18n="@@deck.handStats.heavySub">Cartes à 4 mana ou plus, injouables dès le premier jour</p>
+    <div class="body">
+      <p class="big" [title]="figures().heavy.precise">{{ figures().heavy.text }}</p>
+      <p class="note" i18n="@@deck.handStats.heavyNote">des mains contiennent 3 cartes chères ou plus — réduit tes choix pour la mise en mana initiale</p>
+    </div>
+    <ac-collapsible class="detail" title="Voir le détail" i18n-title="@@deck.handStats.detail" [bare]="true">
+      <p class="detail-label" i18n="@@deck.handStats.heavyDetail">Nombre de cartes à 4 mana ou plus dans la main de départ</p>
+      <ac-probability-bars [rows]="expensiveBars()" />
+    </ac-collapsible>
+  </ac-card>
+
+  <ac-card class="block third">
+    <h3 i18n="@@deck.handStats.tempoTitle">Réactivité (après-vous)</h3>
+    <p class="sub" i18n="@@deck.handStats.tempoSub">Pouvoir enchaîner plusieurs plays au jour 1 : jouer, voir, puis répondre</p>
+    <div class="body">
+      <p class="big" [title]="figures().tempo.precise">{{ figures().tempo.text }}</p>
+      <p class="note" i18n="@@deck.handStats.tempoNote">des mains te laissent enchaîner 2 plays ou plus au jour 1 (coût cumulé 3 ou moins)</p>
+    </div>
+    <ac-collapsible class="detail" title="Voir le détail" i18n-title="@@deck.handStats.detail" [bare]="true">
+      <p class="detail-label" i18n="@@deck.handStats.tempoDetail">Nombre de plays possibles au jour 1</p>
+      <ac-probability-bars [rows]="playBars()" />
+    </ac-collapsible>
+  </ac-card>
+
+  <ac-card class="block half">
+    <h3 i18n="@@deck.handStats.manaTitle">Mana utilisé au jour 1</h3>
+    <p class="sub" i18n="@@deck.handStats.manaSub">Combien de tes 3 mana tu peux dépenser dès le premier jour</p>
+    <div class="body highlights">
+      <div class="tile">
+        <span class="tile-label" i18n="@@deck.handStats.optimal">Démarrage optimal</span>
+        <span class="tile-value" [title]="figures().optimal.precise">{{ figures().optimal.text }}</span>
+        <span class="tile-note" i18n="@@deck.handStats.optimalNote">des parties te laissent dépenser tes 3 mana</span>
+      </div>
+      <div class="tile warn">
+        <span class="tile-label" i18n="@@deck.handStats.dead">Main morte</span>
+        <span class="tile-value" [title]="figures().dead.precise">{{ figures().dead.text }}</span>
+        <span class="tile-note" i18n="@@deck.handStats.deadNote">aucun jeu possible</span>
+      </div>
+    </div>
+    <ac-collapsible class="detail" title="Voir le détail" i18n-title="@@deck.handStats.detail" [bare]="true">
+      <p class="detail-label" i18n="@@deck.handStats.manaDetail">Répartition par mana consommable</p>
+      <ac-probability-bars [rows]="manaBars()" />
+    </ac-collapsible>
+  </ac-card>
+
+  <ac-card class="block half">
+    <h3 i18n="@@deck.handStats.expTitle">Expéditions contestables au jour 1</h3>
+    <p class="sub" i18n="@@deck.handStats.expSub">Personnages déployables dès le premier jour</p>
+    <div class="body highlights">
+      <div class="tile">
+        <span class="tile-label" i18n="@@deck.handStats.both">Les deux Expéditions</span>
+        <span class="tile-value" [title]="figures().both.precise">{{ figures().both.text }}</span>
+        <span class="tile-note" i18n="@@deck.handStats.bothNote">tu peux déployer 2 ou 3 personnages au jour 1</span>
+      </div>
+      <div class="tile">
+        <span class="tile-label" i18n="@@deck.handStats.none">Aucune Expédition</span>
+        <span class="tile-value" [title]="figures().none.precise">{{ figures().none.text }}</span>
+        <span class="tile-note" i18n="@@deck.handStats.noneNote">aucun personnage jouable au jour 1</span>
+      </div>
+    </div>
+    <ac-collapsible class="detail" title="Voir le détail" i18n-title="@@deck.handStats.detail" [bare]="true">
+      <p class="detail-label" i18n="@@deck.handStats.expDetail">Nombre d’Expéditions contestables au jour 1</p>
+      <ac-probability-bars [rows]="expeditionBars()" labelWidth="wide" />
+    </ac-collapsible>
+  </ac-card>
+</div>

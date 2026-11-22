@@ -26,16 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSetting('og_image',            $ogImage    !== '' ? $ogImage    : null);
         saveSetting('twitter_handle',      $twHandle   !== '' ? $twHandle   : null);
 
-        $navbarWidthMode = $_POST['navbar_width_mode'] ?? 'site';
-        $navbarWidthPx   = (int)($_POST['navbar_width_px'] ?? 0);
-        if ($navbarWidthMode === 'full') {
-            saveSetting('navbar_width', 'full');
-        } elseif ($navbarWidthMode === 'custom' && $navbarWidthPx > 0) {
-            saveSetting('navbar_width', (string)$navbarWidthPx);
-        } else {
-            saveSetting('navbar_width', null);
-        }
-
         flash('Settings saved.');
         redirect(BASE_URL . '/admin/settings');
     }
@@ -48,18 +38,6 @@ $metaDescEn  = getSetting('meta_description_en');
 $metaDescFr  = getSetting('meta_description_fr');
 $ogImage     = getSetting('og_image');
 $twHandle    = getSetting('twitter_handle');
-
-$_nbw = getSetting('navbar_width');
-if ($_nbw === 'full') {
-    $navbarWidthMode = 'full';
-    $navbarWidthPx   = 0;
-} elseif (is_numeric($_nbw) && (int)$_nbw > 0) {
-    $navbarWidthMode = 'custom';
-    $navbarWidthPx   = (int)$_nbw;
-} else {
-    $navbarWidthMode = 'site';
-    $navbarWidthPx   = 0;
-}
 ?>
 
 <div class="admin-header-bar">
@@ -81,9 +59,6 @@ if ($_nbw === 'full') {
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stab-seo" type="button" role="tab">SEO &amp; Social</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stab-nav" type="button" role="tab">Navigation</button>
     </li>
 </ul>
 
@@ -155,43 +130,6 @@ if ($_nbw === 'full') {
                         <label class="form-label">Twitter / X handle <small class="text-muted">(optional)</small></label>
                         <input type="text" name="twitter_handle" class="form-control"
                                placeholder="@AlteredCore" value="<?= h($twHandle) ?>">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Navigation -->
-        <div class="tab-pane fade pt-3" id="stab-nav" role="tabpanel">
-            <div class="card-altered p-3 mb-4">
-                <h6 class="fw-bold mb-1">Navigation bar width</h6>
-                <p class="text-muted small mb-3">Controls the horizontal extent of the top navigation bar.</p>
-                <div class="d-flex flex-column gap-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="navbar_width_mode" id="nbw_site"
-                               value="site" <?= $navbarWidthMode === 'site' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="nbw_site">
-                            Site width <small class="text-muted">(default — stays within the <?= (int)(defined('SITE_MAX_WIDTH') ? SITE_MAX_WIDTH : 1200) ?>px site container)</small>
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="navbar_width_mode" id="nbw_full"
-                               value="full" <?= $navbarWidthMode === 'full' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="nbw_full">
-                            Full browser width <small class="text-muted">(stretches to the full viewport width)</small>
-                        </label>
-                    </div>
-                    <div class="form-check d-flex align-items-center gap-2 flex-wrap">
-                        <input class="form-check-input" type="radio" name="navbar_width_mode" id="nbw_custom"
-                               value="custom" <?= $navbarWidthMode === 'custom' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="nbw_custom">Custom —</label>
-                        <div class="input-group" style="max-width:160px">
-                            <input type="number" name="navbar_width_px" id="navbar_width_px"
-                                   class="form-control form-control-sm"
-                                   min="200" max="3000" step="10"
-                                   value="<?= $navbarWidthPx ?: 1000 ?>"
-                                   onfocus="document.getElementById('nbw_custom').checked=true">
-                            <span class="input-group-text">px</span>
-                        </div>
                     </div>
                 </div>
             </div>

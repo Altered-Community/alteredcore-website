@@ -3,6 +3,7 @@ $adminPageTitle = 'Edit News';
 $adminSection   = 'news';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/content-sanitize.php';
+require_once __DIR__ . '/includes/import-images.php';
 
 $db = getDB();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -19,7 +20,7 @@ if ($id > 0 && !adminCanEdit()) {
 // Load existing or defaults
 $news = ['id'=>0,'category_id'=>null,'title_en'=>'','title_fr'=>'',
          'content_en'=>'','content_fr'=>'','excerpt_en'=>'','excerpt_fr'=>'',
-         'image'=>'','youtube_url'=>'','published_at'=>'','is_published'=>0];
+         'image'=>'','youtube_url'=>'','authors'=>'','translators'=>'','published_at'=>'','is_published'=>0];
 
 if ($id) {
     $stmt = $db->prepare(q("SELECT * FROM {news} WHERE id = :id"));
@@ -57,6 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'excerpt_fr'   => trim($_POST['excerpt_fr']   ?? '') ?: null,
             'image'        => $newImage,
             'youtube_url'  => trim($_POST['youtube_url'] ?? '') ?: null,
+            // Names, comma-separated (newsPeople() reads them back): stored cleaned up, one comma and space between.
+            'authors'      => implode(', ', newsPeople($_POST['authors'] ?? '')) ?: null,
+            'translators'  => implode(', ', newsPeople($_POST['translators'] ?? '')) ?: null,
             'published_at' => !empty($_POST['published_at']) ? $_POST['published_at'] : date('Y-m-d H:i:s'),
             'is_published' => adminCanPublish() ? (isset($_POST['is_published']) ? 1 : 0) : 0,
         ];
@@ -65,8 +69,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($data['title_fr'] === '') $errors[] = 'French title is required.';
         if ($data['content_en'] === '') $errors[] = 'English content is required.';
         if ($data['content_fr'] === '') $errors[] = 'French content is required.';
+        if (mb_strlen((string)$data['authors']) > 500) $errors[] = 'Authors: 500 characters at most.';
+        if (mb_strlen((string)$data['translators']) > 500) $errors[] = 'Translators: 500 characters at most.';
 
         if (empty($errors)) {
+            // Images pasted from elsewhere (Google Docs…) are copied into uploads/editor/.
+            $failedImages = 0;
+            $data['content_en'] = importExternalImages($data['content_en'], $failedImages);
+            $data['content_fr'] = importExternalImages($data['content_fr'], $failedImages);
+
             // Slug: generate if new, or if existing article has no slug yet
             $needSlug = false;
             if ($id) {
@@ -95,18 +106,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $slugSql = isset($data['slug']) ? ', slug=:slug' : '';
                 $sql  = "UPDATE {news} SET category_id=:category_id, title_en=:title_en, title_fr=:title_fr,
                          content_en=:content_en, content_fr=:content_fr, excerpt_en=:excerpt_en, excerpt_fr=:excerpt_fr,
-                         image=:image, youtube_url=:youtube_url, published_at=:published_at, is_published=:is_published{$slugSql}
+                         image=:image, youtube_url=:youtube_url, authors=:authors, translators=:translators,
+                         published_at=:published_at, is_published=:is_published{$slugSql}
                          WHERE id=:id";
                 $data[':id'] = $id;
                 $db->prepare(q($sql))->execute($data);
                 flash('News updated successfully.');
             } else {
                 $sql = "INSERT INTO {news} (category_id, slug, title_en, title_fr, content_en, content_fr,
-                        excerpt_en, excerpt_fr, image, youtube_url, published_at, is_published)
+                        excerpt_en, excerpt_fr, image, youtube_url, authors, translators, published_at, is_published)
                         VALUES (:category_id,:slug,:title_en,:title_fr,:content_en,:content_fr,
-                        :excerpt_en,:excerpt_fr,:image,:youtube_url,:published_at,:is_published)";
+                        :excerpt_en,:excerpt_fr,:image,:youtube_url,:authors,:translators,:published_at,:is_published)";
                 $db->prepare(q($sql))->execute($data);
                 flash('News created successfully.');
+            }
+            if ($failedImages) {
+                flash(($id ? 'News updated' : 'News created') . ", but $failedImages external image(s) could not be copied to the site:"
+                    . ' they are still loaded from their original address, which may stop working.', 'error');
             }
             redirect(BASE_URL . '/admin/news');
         }
@@ -229,7 +245,7 @@ $pubAt      = $news['published_at'] ? date('Y-m-d\TH:i', strtotime($news['publis
                             <div id="news_img_preview" class="mb-2" style="<?= !empty($news['image']) ? '' : 'display:none' ?>">
                                 <div style="position:relative;display:inline-block">
                                     <img src="<?= !empty($news['image']) ? h(assetUrl($news['image'])) : '' ?>" alt=""
-                                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                                 </div>
@@ -244,6 +260,18 @@ $pubAt      = $news['published_at'] ? date('Y-m-d\TH:i', strtotime($news['publis
                     <div class="col-md-4">
                         <label class="form-label">Date <small class="text-muted">(displayed on site)</small></label>
                         <input type="datetime-local" name="published_at" class="form-control" value="<?= h($pubAt) ?>">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="news_authors">Author(s) <small class="text-muted">(optional)</small></label>
+                        <input type="text" name="authors" id="news_authors" class="form-control" maxlength="500"
+                               placeholder="Alice, Bob" value="<?= h($news['authors'] ?? '') ?>">
+                        <div class="form-text">Separate several names with commas. Shown under the title.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="news_translators">Translator(s) <small class="text-muted">(optional)</small></label>
+                        <input type="text" name="translators" id="news_translators" class="form-control" maxlength="500"
+                               placeholder="Carol, Dave" value="<?= h($news['translators'] ?? '') ?>">
+                        <div class="form-text">Separate several names with commas. Shown under the title.</div>
                     </div>
                     <div class="col-12">
                         <?php $canPub = adminCanPublish(); ?>

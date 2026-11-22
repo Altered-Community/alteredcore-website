@@ -231,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <?php if ($row['kc_sub']): ?>
-                    <div class="mt-3 p-2 rounded" style="background:var(--sand-200);font-size:.8rem">
+                    <div class="mt-3 p-2 rounded" style="background:var(--ac-color-track);font-size:.8rem">
                         <i class="fa-solid fa-key me-1 text-muted"></i>
                         <span class="text-muted">Keycloak sub:</span> <code><?= h($row['kc_sub']) ?></code>
                     </div>

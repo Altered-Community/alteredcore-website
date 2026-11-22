@@ -41,7 +41,7 @@ if ($adminUser && password_verify($password, $adminUser['admin_password_hash']))
         $db->prepare(q("UPDATE {users} SET admin_password_hash = :h WHERE id = :id"))
            ->execute([':h' => password_hash($password, PASSWORD_BCRYPT), ':id' => $adminUser['id']]);
     }
-    $returnUrl = $_SESSION['kc_return_url'] ?? BASE_URL . '/';
+    $returnUrl = safeReturnUrl($_SESSION['kc_return_url'] ?? null, BASE_URL);
     clearAuthSession();
     session_regenerate_id(true);
     $_SESSION['admin_logged_in']    = true;
@@ -90,7 +90,7 @@ if ($remember) {
     ]);
 }
 
-$returnUrl = $_SESSION['kc_return_url'] ?? BASE_URL . '/';
+$returnUrl = safeReturnUrl($_SESSION['kc_return_url'] ?? null, BASE_URL);
 clearAuthSession();
 session_regenerate_id(true);
 

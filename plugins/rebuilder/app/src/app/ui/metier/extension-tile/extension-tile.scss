@@ -1,0 +1,71 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+/* The set's art, darkened under the mark and the name (lighter once chosen), as on the site's search. */
+button {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 48px;
+  height: 100%;
+  padding: var(--ac-space-1) var(--ac-space-1);
+  border-radius: var(--ac-radius-control);
+  border: 2px solid transparent;
+  background-color: var(--ac-color-track);
+  background-size: cover;
+  background-position: center;
+  background-clip: padding-box;
+  color: var(--ac-color-on-strong);
+  text-shadow: var(--ac-shadow-on-image);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  text-align: center;
+}
+button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ac-color-overlay-control) 62%, transparent);
+  transition: background 0.2s;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  button:hover::before {
+    background: color-mix(in srgb, var(--ac-color-overlay-control) 40%, transparent);
+  }
+}
+button[aria-pressed='true'] {
+  border-color: var(--ac-color-primary);
+}
+button[aria-pressed='true']::before {
+  background: color-mix(in srgb, var(--ac-color-overlay-control) 12%, transparent);
+}
+.logo,
+.name {
+  position: relative;
+}
+.logo {
+  /* White mark on the art, whatever the theme. */
+  filter: brightness(0) invert(1) drop-shadow(var(--ac-shadow-on-image));
+  width: 28px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+/* Three tiles a row: the name on two lines at most. */
+.name {
+  font-size: var(--ac-font-size-micro);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

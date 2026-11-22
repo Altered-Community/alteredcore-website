@@ -1,0 +1,30 @@
+<div class="rows">
+  @if (deck.opening()) {
+    <div class="group" aria-busy="true">
+      <div class="group-head"><span acSkeleton="text" width="35%"></span></div>
+      @for (r of [0, 1, 2, 3, 4]; track r) {
+        <div class="row-skeleton"><span acSkeleton="text" width="60%"></span><span acSkeleton="text" width="56px"></span></div>
+      }
+    </div>
+  } @else {
+  @for (g of deck.groups(); track g.id) {
+    <div class="group">
+      <div class="group-head"><span>{{ g.label }}</span><span>{{ g.count }}</span></div>
+      @for (l of g.lines; track l.card.reference) {
+        <ac-deck-row
+          appearance="panel"
+          [card]="l.card"
+          [quantity]="l.quantity"
+          [max]="altArts?.maxFor(l.card, false) ?? deck.maxFor(l.card)"
+          [issues]="issues().get(l.card.reference) ?? noIssues"
+          [warning]="altArts?.warnings()?.get(l.card.reference) ?? null"
+          [readonly]="!deck.steppersShown()"
+          (quantityChange)="deck.setQuantity(l.card, $event)"
+        />
+      }
+    </div>
+  } @empty {
+    <p class="empty" i18n="@@panel.empty">Ajoutez des cartes depuis la recherche avec le bouton « + ».</p>
+  }
+  }
+</div>

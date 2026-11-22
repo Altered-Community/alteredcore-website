@@ -1,0 +1,6 @@
+/* Look: ac-toast (design-system/css/components/feedback.css). Above the bottom navigation on phones. */
+@media (max-width: 767.98px) {
+  :host {
+    --ac-toast-offset: var(--ac-bottom-nav-height);
+  }
+}

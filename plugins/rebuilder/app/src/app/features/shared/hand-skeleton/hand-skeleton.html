@@ -1,0 +1,23 @@
+<div class="test-hand" aria-hidden="true">
+  <div class="toolbar">
+    <span acSkeleton="control" width="150px"></span>
+    <span acSkeleton="control" width="170px"></span>
+    @if (!bp.compact()) {
+      <span acSkeleton="control" width="120px"></span>
+    }
+  </div>
+  <span acSkeleton="text" width="min(320px, 80%)"></span>
+  <div class="grid">
+    @for (c of [0, 1, 2, 3, 4, 5]; track c) {
+      <span acSkeleton="card"></span>
+    }
+  </div>
+</div>
+<div class="stats" aria-hidden="true">
+  <span acSkeleton="text" width="200px"></span>
+  <div class="panels">
+    @for (p of [0, 1, 2]; track p) {
+      <span acSkeleton="panel" class="panel"></span>
+    }
+  </div>
+</div>

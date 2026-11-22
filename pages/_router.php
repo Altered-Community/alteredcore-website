@@ -1,30 +1,31 @@
 <?php
 // Central page router — handles both core pages and plugin pages.
 
-// Error logging to logs/php_errors.log (catches fatal errors swallowed by ob_start).
-// The directory must exist first: if it doesn't, both ini_set('error_log') and the
-// shutdown handler's error_log() call silently no-op, so fatal errors (e.g. a blank
-// page from a swallowed fatal) leave no trace anywhere. Create it up front.
-$_logFile = dirname(__DIR__) . '/logs/php_errors.log';
-if (!is_dir(dirname($_logFile))) {
-    @mkdir(dirname($_logFile), 0775, true);
-}
-ini_set('log_errors', '1');
-ini_set('error_log', $_logFile);
-register_shutdown_function(function () use ($_logFile) {
+// Load config first (it sets up the error_log destination — see ERROR_LOG_TARGET
+// in config.local.php) before anything else runs, and register the shutdown
+// handler right away, so fatals swallowed by ob_start() are still caught even if
+// they happen while requiring functions.php below.
+require_once dirname(__DIR__) . '/config.php';
+register_shutdown_function(function () {
     $e = error_get_last();
     if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
         $line = date('[Y-m-d H:i:s]') . ' FATAL ' . $e['type'] . ': ' . $e['message']
-              . ' in ' . $e['file'] . ' on line ' . $e['line'] . PHP_EOL;
-        error_log($line, 3, $_logFile);
+              . ' in ' . $e['file'] . ' on line ' . $e['line'];
+        error_log($line);
         if (ob_get_level() > 0) ob_end_clean();
     }
 });
 
 require_once dirname(__DIR__) . '/includes/functions.php';
 
-$_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-$_slug = preg_replace('/[^a-z0-9_-]/', '', basename(rtrim($_path ?? '', '/')));
+// /pages/{slug} or, for SPA plugin pages only, /pages/{slug}/{sub/path} (client-side routes).
+$_path    = (string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$_slug    = '';
+$_subPath = '';
+if (preg_match('#/pages/([a-z0-9_-]+)(?:/(.*))?$#', $_path, $_m)) {
+    $_slug    = $_m[1];
+    $_subPath = trim($_m[2] ?? '', '/');
+}
 
 if ($_slug === '') {
     include __DIR__ . '/404.php';
@@ -36,18 +37,29 @@ $_SERVER['PHP_SELF'] = '/pages/' . $_slug . '.php';
 
 // Core page
 $_corePath = __DIR__ . '/' . $_slug . '.php';
-if (file_exists($_corePath)) {
+if ($_subPath === '' && file_exists($_corePath)) {
     include $_corePath;
     exit;
 }
 
 // Plugin page
 initPlugins();
-$_pluginPage = pluginFindPage($_slug);
+// Visibility setting (set in Admin → Pages)
+$_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
+if (!is_array($_hiddenPluginSlugs)) $_hiddenPluginSlugs = [];
+// Beta mode (« Beta Deckbuilder »): a plugin's SPA page takes over the slugs of its manifest `beta_slugs`, at the
+// same URLs, unless it is hidden itself. The page it replaces keeps answering its own calls (?ajax=…, form posts).
+$_pluginPage = null;
+if ($_subPath === '' && betaModeOn() && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true) && !isset($_GET['ajax'])) {
+    $_pluginPage = pluginFindBetaPage($_slug);
+    if ($_pluginPage !== null && in_array($_pluginPage['own_slug'], $_hiddenPluginSlugs, true)) $_pluginPage = null;
+}
+$_pluginPage = $_pluginPage ?? pluginFindPage($_slug);
+if ($_pluginPage !== null && $_subPath !== '' && $_pluginPage['type'] !== 'spa') {
+    $_pluginPage = null; // deep paths exist only for client-routed pages
+}
 if ($_pluginPage !== null) {
-    // Respect visibility setting (set in Admin → Pages)
-    $_hiddenPluginSlugs = json_decode(getSetting('plugin_pages_hidden', '[]'), true);
-    if (is_array($_hiddenPluginSlugs) && in_array($_slug, $_hiddenPluginSlugs, true)) {
+    if (in_array($_slug, $_hiddenPluginSlugs, true)) {
         include __DIR__ . '/404.php';
         exit;
     }
@@ -67,7 +79,21 @@ if ($_pluginPage !== null) {
     // Buffer output so requireLogin() / redirect() still work inside the plugin
     // (ob_start only buffers output — headers are not affected).
     ob_start();
-    include $_pluginPage['abs_file'];
+    if ($_pluginPage['type'] === 'spa') {
+        $_pluginPage['sub_path'] = $_subPath;
+        $pageFullwidth = $_pluginPage['fullwidth'] || in_array($_slug, $_pluginPage['fullwidth_slugs'] ?? [], true);
+        $GLOBALS['_ac_render_expect'] = spaFirstPaintId($_pluginPage);
+        // Manifest `meta`: title and link preview of the client route ($slug, $subPath), set before the header
+        // (variables of includes/header.php).
+        if (!empty($_pluginPage['meta_file'])) {
+            (function (string $slug, string $subPath) use (&$pageTitle, &$pageDescription, &$pageImage, &$pageOgTitle, &$pageThemeColor, &$pageOembedUrl, $_pluginPage) {
+                include $_pluginPage['meta_file'];
+            })($_slug, (string)$_subPath);
+        }
+        spaRenderPage($_pluginPage);
+    } else {
+        include $_pluginPage['abs_file'];
+    }
     $_pluginOutput = ob_get_clean();
 
     require_once dirname(__DIR__) . '/includes/header.php';
@@ -75,6 +101,17 @@ if ($_pluginPage !== null) {
     echo $_pluginOutput;
     require_once dirname(__DIR__) . '/includes/footer.php';
     exit;
+}
+
+// Content page (Admin → Pages) without its stub file in pages/, e.g. a database copied without
+// the server's pages/ folder (docker/stack/mirror-prod.php).
+if ($_subPath === '') {
+    $_cpStmt = getDB()->prepare(q("SELECT 1 FROM {pages} WHERE slug = :slug AND type = 'content' LIMIT 1"));
+    $_cpStmt->execute([':slug' => $_slug]);
+    if ($_cpStmt->fetchColumn()) {
+        include dirname(__DIR__) . '/includes/content-page.php';
+        exit;
+    }
 }
 
 // Not found

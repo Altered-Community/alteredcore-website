@@ -211,7 +211,9 @@ if (isset($__tinymce_editor) || isset($__tinymce_footer)):
         remove_script_host:        false,
         content_css: [
             'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+            <?php foreach (['fonts/fonts.css', 'tokens/tokens.css', 'css/base.css', 'icons/fa-shim.css', 'css/bridges/bootstrap.css'] as $_dsCss): ?>
+            <?= json_encode(dsUrl($_dsCss), JSON_UNESCAPED_SLASHES) ?>,
+            <?php endforeach; ?>
             THEME_CSS,
         ],
         content_style: 'body { font-family: inherit; font-size: 15px; padding: 12px; }',

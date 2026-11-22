@@ -1,0 +1,39 @@
+.ac-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  padding: 0;
+  container-type: inline-size;
+}
+/* The card gives way to the controls and the link, which always show whole (phone browsers' bars eat the height). */
+.controls,
+.detail {
+  flex-shrink: 0;
+}
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border-radius: var(--ac-radius-dialog);
+  background: var(--ac-color-surface);
+}
+.stage {
+  flex: 0 1 calc(100cqw * 7 / 5);
+  /* Never smaller than 40 % of the screen: below that, the window scrolls. */
+  min-height: min(40dvh, 100cqw * 7 / 5);
+  container-type: size;
+}
+.card {
+  display: block;
+  width: min(100cqw, 100cqh * 5 / 7);
+  margin-inline: auto;
+}
+.qty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+}

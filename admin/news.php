@@ -115,10 +115,10 @@ function newsPageUrl(int $p): string {
                     $date = $row['published_at'] ?? $row['created_at'];
                 ?>
                 <tr>
-                    <td style="width:50px;color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="width:50px;color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td>
                         <?php if ($row['is_pinned']): ?>
-                            <i class="fa-solid fa-thumbtack me-1" style="color:var(--primary-400);font-size:.8rem" title="Pinned"></i>
+                            <i class="fa-solid fa-thumbtack me-1" style="color:var(--ac-color-primary);font-size:.8rem" title="Pinned"></i>
                         <?php endif; ?>
                         <?= h($row['title_en']) ?>
                     </td>
@@ -136,6 +136,10 @@ function newsPageUrl(int $p): string {
                         <a href="<?= BASE_URL ?>/pages/news-detail?id=<?= $row['id'] ?>&preview=1"
                            target="_blank" class="btn btn-sm btn-outline-secondary me-1" title="Preview">
                             <i class="fa-solid fa-eye"></i>
+                        </a>
+                        <a href="<?= BASE_URL ?>/admin/news-newsletter?id=<?= $row['id'] ?>"
+                           class="btn btn-sm btn-outline-secondary me-1" title="Newsletter e-mail" aria-label="Newsletter e-mail">
+                            <?= ac_icon('mail') ?>
                         </a>
                         <?php if (adminCanEdit()): ?>
                         <a href="?toggle_pin=<?= $row['id'] ?>&<?= http_build_query(array_filter(['q'=>$search,'date'=>$dateQ,'page'=>$page>1?$page:''])) ?>"

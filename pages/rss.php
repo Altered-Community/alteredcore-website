@@ -61,7 +61,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             : $plain;
     }
 
-    $link    = $siteUrl . '/pages/news-detail?slug=' . rawurlencode($news['slug']);
+    $link    = $siteUrl . '/pages/news-detail?slug=' . rawurlencode((string) ($news['slug'] ?? ''));
     $pubDate = !empty($news['published_at'])
         ? date('r', strtotime($news['published_at']))
         : date('r', strtotime($news['created_at']));

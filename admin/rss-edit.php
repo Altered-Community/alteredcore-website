@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-text">Default / English feed.</div>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Feed URL <span class="badge ms-1" style="font-size:.7rem;background:#1d4ed8">FR</span></label>
+                <label class="form-label">Feed URL <span class="badge text-bg-primary ms-1" style="font-size:.7rem">FR</span></label>
                 <input type="url" name="url_fr" class="form-control"
                        value="<?= h($entry['url_fr'] ?? '') ?>" maxlength="1000"
                        placeholder="https://example.com/feed-fr.xml">

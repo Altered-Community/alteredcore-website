@@ -1,0 +1,262 @@
+(() => {
+    const resultsEl = document.getElementById('own-aa-results');
+    if (!resultsEl) return; // this plugin's other pages load this same asset
+
+    const cfg = window.OWN_AA_CONFIG || {};
+
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+
+    const t = (key, fallback) => {
+        const dict = window.OWN_I18N || {};
+        const lang = document.documentElement.lang || 'en';
+        return (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || fallback;
+    };
+
+    const renderAuthExpired = (el) => {
+        window.acNotifyAuthExpired?.();
+        el.innerHTML = '<span>' + escapeHtml(t('authExpired', 'Session expired. Please sign in again.')) + '</span> '
+            + '<a href="' + escapeHtml(t('loginUrl', '/pages/login')) + '" class="ac-button ac-button--sm mt-2">'
+            + escapeHtml(t('loginBtn', 'Sign in')) + '</a>';
+    };
+
+    // Shared config passed to every OWN_ALT_ART_WIDGET.createFamilyRow() call on this page.
+    const widgetCfg = {
+        cdnUrl: cfg.cdnUrl,
+        lang: cfg.lang,
+        setPreferenceUrl: cfg.setPreferenceUrl,
+        csrfToken: cfg.csrfToken,
+        txt: { saveError: t('saveError', 'Could not save your choice.') },
+    };
+
+    const loadingEl = document.getElementById('own-aa-loading');
+    const emptyEl = document.getElementById('own-aa-empty');
+    const errorEl = document.getElementById('own-aa-error');
+    const loadMoreBtn = document.getElementById('own-aa-load-more');
+    const searchInput = document.getElementById('own-aa-search');
+    const searchBtn = document.getElementById('own-aa-search-btn');
+
+    // ---- Filter state ----
+    // hideNonChoices defaults on — the marker-assignment page is only useful for families
+    // that actually offer a choice, and the button starts with the matching "active" class
+    // server-side (see pages/alt-arts.php).
+    const filters = { name: '', factions: new Set(), types: new Set(), rarities: new Set(), mainCost: null, hideNonChoices: true };
+
+    const hideNonChoicesBtn = document.getElementById('own-aa-hide-non-choices');
+    hideNonChoicesBtn?.addEventListener('click', () => {
+        filters.hideNonChoices = !filters.hideNonChoices;
+        hideNonChoicesBtn.classList.toggle('active', filters.hideNonChoices);
+        runSearch();
+    });
+
+    document.querySelectorAll('.filter-toggle[data-filter="faction"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const v = btn.dataset.value;
+            if (filters.factions.has(v)) { filters.factions.delete(v); btn.classList.remove('active'); }
+            else { filters.factions.add(v); btn.classList.add('active'); }
+            runSearch();
+        });
+    });
+    document.querySelectorAll('.filter-toggle[data-filter="type"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const v = btn.dataset.value;
+            if (filters.types.has(v)) { filters.types.delete(v); btn.classList.remove('active'); }
+            else { filters.types.add(v); btn.classList.add('active'); }
+            runSearch();
+        });
+    });
+    document.querySelectorAll('.filter-toggle[data-filter="rarity"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const v = btn.dataset.value;
+            if (filters.rarities.has(v)) { filters.rarities.delete(v); btn.classList.remove('active'); }
+            else { filters.rarities.add(v); btn.classList.add('active'); }
+            runSearch();
+        });
+    });
+    // Mana cost is a single exact value upstream (no multi-value support), so this
+    // group is exclusive: picking one clears any other, re-picking the active one clears it.
+    document.querySelectorAll('.filter-toggle[data-filter="mainCost"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const v = btn.dataset.value;
+            const wasActive = btn.classList.contains('active');
+            document.querySelectorAll('.filter-toggle[data-filter="mainCost"]').forEach((b) => b.classList.remove('active'));
+            filters.mainCost = null;
+            if (!wasActive) { filters.mainCost = v; btn.classList.add('active'); }
+            runSearch();
+        });
+    });
+    searchBtn?.addEventListener('click', () => { filters.name = searchInput.value.trim(); runSearch(); });
+    searchInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { filters.name = searchInput.value.trim(); runSearch(); }
+    });
+
+    // ---- Search ----
+    // families/optionsByKey accumulate across "load more" pages; the server does the
+    // filtering (including "hide non-choices", which needs ownership data this page
+    // doesn't have) and the pagination, returning only the page actually rendered next —
+    // never the whole matching catalog just to have most of it discarded here.
+    let families = [];
+    let optionsByKey = {};
+    let hasMore = false;
+    let searchToken = 0; // guards against a stale in-flight fetch rendering after a newer one
+
+    const groupKeyOf = (familyId, faction, rarity) => familyId + ':' + faction + ':' + rarity;
+
+    const buildQuery = (skip) => {
+        const parts = [];
+        if (filters.name) parts.push('name=' + encodeURIComponent(filters.name));
+        filters.factions.forEach((f) => parts.push('faction[]=' + encodeURIComponent(f)));
+        filters.types.forEach((ty) => parts.push('type[]=' + encodeURIComponent(ty)));
+        filters.rarities.forEach((r) => parts.push('rarity[]=' + encodeURIComponent(r)));
+        if (filters.mainCost !== null) parts.push('mainCost=' + encodeURIComponent(filters.mainCost));
+        parts.push('hideNonChoices=' + (filters.hideNonChoices ? 'true' : 'false'));
+        parts.push('skip=' + skip);
+        return parts.join('&');
+    };
+
+    const showFetchError = (err) => {
+        errorEl.hidden = false;
+        if (err && err.isAuth) {
+            renderAuthExpired(errorEl);
+        } else {
+            errorEl.textContent = t('networkError', 'Network error.');
+        }
+    };
+
+    const fetchPage = async (skip) => {
+        const res = await fetch(cfg.searchUrl + '?' + buildQuery(skip), { credentials: 'same-origin' });
+        if (!res.ok) {
+            const err = new Error('load failed');
+            if (res.status === 401) err.isAuth = true;
+            throw err;
+        }
+        return res.json();
+    };
+
+    const runSearch = async () => {
+        const myToken = ++searchToken;
+        loadingEl.hidden = false;
+        emptyEl.hidden = true;
+        errorEl.hidden = true;
+        resultsEl.innerHTML = '';
+        loadMoreBtn.hidden = true;
+
+        try {
+            const data = await fetchPage(0);
+            if (myToken !== searchToken) return;
+            loadingEl.hidden = true;
+
+            families = data.families || [];
+            optionsByKey = data.options || {};
+            hasMore = !!data.hasMore;
+
+            if (!families.length) { emptyEl.hidden = false; return; }
+
+            families.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
+            loadMoreBtn.hidden = !hasMore;
+        } catch (err) {
+            if (myToken !== searchToken) return;
+            loadingEl.hidden = true;
+            showFetchError(err);
+        }
+    };
+
+    const renderMore = async () => {
+        const myToken = searchToken;
+        loadMoreBtn.disabled = true;
+        try {
+            const data = await fetchPage(families.length);
+            if (myToken !== searchToken) return;
+
+            const page = data.families || [];
+            Object.assign(optionsByKey, data.options || {});
+            families = families.concat(page);
+            hasMore = !!data.hasMore;
+
+            page.forEach((family) => resultsEl.appendChild(renderFamilyRow(family)));
+            loadMoreBtn.hidden = !hasMore;
+        } catch (err) {
+            if (myToken !== searchToken) return;
+            showFetchError(err);
+        } finally {
+            if (myToken === searchToken) loadMoreBtn.disabled = false;
+        }
+    };
+    loadMoreBtn?.addEventListener('click', renderMore);
+
+    // ---- Rendering ----
+    const labelOf = (map, code) => (cfg.labels && cfg.labels[map] && cfg.labels[map][code]) || code;
+
+    // One family: its name, its illustrations under their keys, then what decks take (its cards fanned out, the 1st on
+    // the left).
+    const renderFamilyRow = (family) => {
+        const key = groupKeyOf(family.familyId, family.faction, family.rarity);
+        const optData = optionsByKey[key];
+
+        const row = document.createElement('article');
+        row.className = 'own-aa-family';
+        if (!optData || !optData.options || !optData.options.length) return row; // shouldn't happen
+
+        const info = document.createElement('div');
+        info.className = 'own-aa-family__info';
+        const name = document.createElement('h2');
+        name.className = 'own-aa-family__name';
+        name.textContent = family.name || family.reference || '';
+        const meta = document.createElement('span');
+        meta.className = 'own-aa-family__meta';
+        meta.textContent = [labelOf('type', family.cardType), labelOf('faction', family.faction), labelOf('rarity', family.rarity)]
+            .filter(Boolean).join(' · ');
+        const uses = document.createElement('span');
+        uses.className = 'own-aa-family__uses';
+        uses.textContent = optData.slots.length === 1 || cfg.isGlobalMode
+            ? t('usesAll', 'All your decks use')
+            : t('usesNew', 'A card added to a deck takes');
+        const fan = document.createElement('div');
+        fan.className = 'own-aa-fan';
+        if (optData.slots.length === 1) fan.classList.add('own-aa-fan--single');
+        // The card's name on top; its illustrations and their keys on the left, what decks take on the right (as in
+        // Re:Builder's brush: the choices, then the result).
+        const head = document.createElement('div');
+        head.className = 'own-aa-family__head';
+        head.append(name, meta);
+        info.append(uses, fan);
+        row.appendChild(head);
+
+        // A card large, as on the cards pages (pages/_card-zoom-modal.php of core-altered-cards).
+        const zoom = (ref) => {
+            if (window.acOpenCardZoom) window.acOpenCardZoom(ref, false, cfg.lang, window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref));
+        };
+
+        // One button a card, made once; a change only swaps their images and names.
+        const drawFan = (references, labels) => {
+            fan.style.setProperty('--n', references.length);
+            references.forEach((ref, i) => {
+                let card = fan.children[i];
+                if (!card) {
+                    card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'own-aa-fan__card';
+                    card.style.setProperty('--i', i);
+                    const img = document.createElement('img');
+                    img.alt = '';
+                    img.loading = 'lazy';
+                    card.appendChild(img);
+                    card.addEventListener('click', () => zoom(card.dataset.ref));
+                    fan.appendChild(card);
+                }
+                card.dataset.ref = ref;
+                card.setAttribute('aria-label', labels[i].zoom);
+                const img = card.firstChild;
+                const src = window.OWN_ALT_ART_WIDGET.cdnUrl(cfg, ref);
+                if (img.getAttribute('src') !== src) img.src = src;
+            });
+        };
+
+        const widgetRow = window.OWN_ALT_ART_WIDGET.createFamilyRow(family, optData, { ...widgetCfg, onChange: drawFan, onZoom: zoom });
+        row.append(widgetRow.el, info);
+        return row;
+    };
+
+    runSearch();
+})();

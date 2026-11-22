@@ -14,12 +14,12 @@
     EDI.Debug = {
         // Global panel built from the parse-zip response (name matching, near-misses, fetch status).
         parsePanelHTML: function (pd) {
-            var html = '<div class="card-altered p-3 small font-monospace overflow-auto">';
-            html += '<div class="text-muted mb-2"><i class="fa-solid fa-magnifying-glass me-1"></i>Parse / dedup debug</div>';
+            var html = '<div class="ac-card edi-debug-panel">';
+            html += '<div class="text-muted mb-2">' + (window.acIcon ? window.acIcon('search') : '') + ' Parse / dedup debug</div>';
             html += kv('decks parsed', esc(String(pd.parsed_deck_count != null ? pd.parsed_deck_count : '?')));
             html += kv('token present', pd.token_present ? 'yes' : '<span class="text-danger">no</span>');
             html += kv('dedup warn', pd.dedup_warn
-                ? '<span class="text-warning-emphasis">yes</span> (' + esc(pd.dedup_warn_reason || '') + ')'
+                ? '<span class="text-warning">yes</span> (' + esc(pd.dedup_warn_reason || '') + ')'
                 : 'no');
             if (pd.fetch) {
                 html += kv('fetch http', esc(String(pd.fetch.http != null ? pd.fetch.http : '?')));
@@ -27,7 +27,7 @@
                 if (pd.fetch.curl_error) { html += kv('curl error', '<span class="text-danger">' + esc(pd.fetch.curl_error) + '</span>'); }
                 if (pd.fetch.response_preview) {
                     html += '<div class="text-muted mt-1">response:</div>'
-                          + '<pre class="bg-light p-2 rounded mb-1" style="max-height:200px;white-space:pre-wrap;word-break:break-all">'
+                          + '<pre class="edi-debug-pre">'
                           + esc(pd.fetch.response_preview) + '</pre>';
                 }
             }
@@ -35,7 +35,7 @@
 
             var nm = pd.near_misses || [];
             if (nm.length) {
-                html += '<div class="alert alert-warning p-2 rounded my-2"><strong>Near-misses</strong> (same name, bytes differ):';
+                html += '<div class="ac-notice ac-notice--warning"><strong>Near-misses</strong> (same name, bytes differ):';
                 nm.forEach(function (m) {
                     html += '<div class="mt-1">CSV: "' + esc(m.incoming) + '" <span class="opacity-50">' + esc(m.incoming_hex) + '</span></div>';
                     html += '<div>API: "' + esc(m.api) + '" <span class="opacity-50">' + esc(m.api_hex) + '</span></div>';
@@ -64,9 +64,9 @@
 
         // Per-deck collapsible panel built from the import-deck response.
         deckPanelHTML: function (dbg) {
-            var html = '<details class="edi-debug mt-1"><summary class="small text-muted" style="cursor:pointer">'
-                     + '<i class="fa-solid fa-bug me-1"></i>debug</summary>';
-            html += '<div class="small font-monospace mt-1 p-2 rounded" style="background:rgba(0,0,0,.04)">';
+            var html = '<details class="edi-debug"><summary class="edi-debug-summary">'
+                     + (window.acIcon ? window.acIcon('bug') : '') + ' debug</summary>';
+            html += '<div class="edi-debug-panel edi-debug-panel--inline">';
             if (dbg.request) {
                 var r = dbg.request;
                 html += kv('cards', esc(String(r.card_count)) + ' (normalized ' + esc(String(r.normalized_count)) + ')');
@@ -97,7 +97,7 @@
                 if (im.error) { html += kv('error', '<span class="text-danger">' + esc(im.error) + '</span>'); }
                 if (im.response_preview) {
                     html += '<div class="text-muted mt-1">API response:</div>'
-                          + '<pre class="mb-0" style="max-height:200px;white-space:pre-wrap;word-break:break-all">'
+                          + '<pre class="edi-debug-pre">'
                           + esc(im.response_preview) + '</pre>';
                 }
             }

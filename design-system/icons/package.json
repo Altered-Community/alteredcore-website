@@ -1,0 +1,13 @@
+{
+  "name": "alteredcore-design-system-icons",
+  "private": true,
+  "description": "Dev-time generator of the icon files (npm ci && npm run build). The outputs are committed: the site never runs Node.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "lucide-static": "1.48.0",
+    "simple-icons": "16.33.0"
+  }
+}

@@ -34,7 +34,7 @@ function _sc_render_btn(string $html): string {
         $clsAttr = $cls !== '' ? ' class="' . h($cls) . '"' : '';
         $tgtAttr = $newtab ? ' target="_blank" rel="noopener noreferrer"' : '';
         $iconHtml = $iconCls
-            ? '<i class="' . h($iconCls) . ($iconpos === 'after' ? ' ms-1' : ' me-1') . '"></i>'
+            ? ac_icon($iconCls, $iconpos === 'after' ? 'ms-1' : 'me-1')
             : '';
         $content = $iconpos === 'before' ? $iconHtml . h($text) : h($text) . $iconHtml;
         return '<a href="' . h($url) . '"' . $clsAttr . $tgtAttr . '>' . $content . '</a>';

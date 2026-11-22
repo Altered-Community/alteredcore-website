@@ -1,0 +1,99 @@
+:host {
+  display: flex;
+  gap: var(--ac-space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding-inline: var(--ac-faction-tabs-bleed, 0);
+}
+:host::-webkit-scrollbar {
+  display: none;
+}
+button {
+  flex: 1 0 auto;
+  height: var(--ac-control-md);
+  padding: 0 var(--ac-space-4);
+  border-radius: var(--ac-radius-control);
+  border: 1px solid var(--ac-color-border-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  font-size: var(--ac-font-size-body);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+}
+button:focus-visible {
+  outline-offset: 1px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--ac-radius-pill);
+  background: var(--fc);
+  flex-shrink: 0;
+}
+button[aria-selected='true'] {
+  background: var(--fc);
+  border-color: var(--fc);
+  color: var(--ac-color-on-strong);
+}
+button[aria-selected='true'] .dot {
+  background: var(--ac-color-surface);
+}
+:host(.touch) button {
+  flex: 0 0 auto;
+  border-radius: var(--ac-radius-pill);
+  font-size: var(--ac-font-size-prose);
+  height: var(--ac-control-md);
+}
+
+/* sm: 36 px pills (DS-Metier, Nouveau deck). */
+:host(.sm) {
+  gap: var(--ac-space-1-5);
+}
+:host(.sm) button,
+:host(.sm.touch) button {
+  flex: 0 0 auto;
+  height: calc(var(--ac-control-sm) + var(--ac-space-1));
+  padding: 0 var(--ac-space-3);
+  border-radius: var(--ac-radius-pill);
+  font-size: var(--ac-font-size-small);
+  gap: var(--ac-space-1-5);
+}
+:host(.sm.touch) button {
+  height: var(--ac-control-sm);
+}
+:host(.sm) .dot {
+  width: 9px;
+  height: 9px;
+}
+:host(.sm) button[aria-selected='true'] {
+  font-weight: 800;
+}
+/* Touch: 36 px pill, 44 px hit area (--ac-hit-min); the host pads so the extension is not clipped. */
+:host(.sm.touch) {
+  padding-block: calc((var(--ac-hit-min) - var(--ac-control-sm)) / 2);
+  margin-block: calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2);
+}
+:host(.sm.touch) button::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--ac-control-sm) - var(--ac-hit-min)) / 2) 0;
+}
+
+/* grid: equal columns, no horizontal scroll. */
+:host(.grid) {
+  display: grid;
+  grid-template-columns: repeat(var(--ac-faction-cols, 6), minmax(0, 1fr));
+  gap: var(--ac-space-2);
+  overflow: visible;
+}
+:host(.grid) button,
+:host(.grid.touch) button {
+  min-width: 0;
+  padding: 0 var(--ac-space-2);
+}

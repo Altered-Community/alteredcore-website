@@ -1,0 +1,308 @@
+:host {
+  /* Width of a column of the full bar's actions (two columns of small buttons, deck page and editor « Aperçu »): the
+     same for the actions in skeleton and the buttons (« Copier en image ▾ », the widest, is 170 px), so that the name
+     column keeps its width, and its lines, when the owner is known. */
+  --deck-bar-action-width: 170px;
+  container: deck-bar / inline-size;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--ac-space-5);
+  /* One height for every deck, from its skeleton (placeholder.php, then the deck opening) to the deck: the tallest
+     column, three rows of actions or the text (back link, name with its rename button, meta, badges, counts), whose rows
+     never wrap. */
+  min-height: max(
+    calc(3 * var(--ac-control-sm) + 2 * var(--ac-space-1-5) + 2 * var(--ac-space-3) + 2px),
+    calc(1.3 * var(--ac-font-size-caption) + var(--ac-control-sm) + 1.4 * var(--ac-font-size-small) + var(--ac-badge-height)
+      + 1.35 * var(--ac-font-size-body-strong) + 4 * 2px + 2 * var(--ac-space-2) + 2px)
+  );
+  padding-right: var(--ac-space-5);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  box-shadow: var(--ac-shadow-card);
+}
+.identity {
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+}
+.art {
+  position: relative;
+  flex: 0 0 150px;
+  overflow: hidden;
+  border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+  background: var(--ac-color-track);
+}
+.portrait {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.zoom {
+  cursor: zoom-in;
+}
+.portrait:focus-visible,
+.settings:focus-visible,
+.legality:focus-visible,
+.back:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: -2px;
+}
+.settings {
+  /* A surface-coloured chip with a border and a shadow: it stands out on a dark or a light hero art alike. */
+  position: absolute;
+  right: var(--ac-space-2);
+  bottom: var(--ac-space-2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text);
+  box-shadow: var(--ac-shadow-e3);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .settings:hover {
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-primary);
+  }
+}
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--ac-space-2) var(--ac-space-4);
+  border-left: 4px solid;
+}
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: var(--ac-font-caption);
+  color: var(--ac-color-link);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .back:hover {
+    color: var(--ac-color-link-hover);
+  }
+}
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+  /* The rename button's height, with or without it. */
+  min-height: var(--ac-control-sm);
+}
+/* One line, the whole name in the tooltip; a long one a size smaller. */
+.name {
+  margin: 0;
+  min-width: 0;
+  font: var(--ac-font-title);
+  color: var(--ac-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.name.long {
+  font: var(--ac-font-heading);
+}
+.rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 40rem;
+  margin: 0;
+  padding: 0 var(--ac-space-1-5);
+  height: var(--ac-control-md);
+  font: var(--ac-font-title);
+  color: var(--ac-color-text);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-control);
+}
+.rename.long {
+  font: var(--ac-font-heading);
+}
+.rename:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 0;
+}
+.rename-button {
+  flex-shrink: 0;
+  color: var(--ac-color-text-muted);
+}
+.meta {
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dot {
+  margin-inline: var(--ac-space-2);
+}
+/* One row of whole badges, and of whole counts: what does not fit goes to a second row, hidden. */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  height: var(--ac-badge-height);
+  overflow: hidden;
+}
+.meta strong {
+  color: var(--ac-color-text);
+}
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ac-space-3);
+  height: calc(1.35 * var(--ac-font-size-body-strong));
+  overflow: hidden;
+  white-space: nowrap;
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-2);
+}
+.counts strong {
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+}
+.legality {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--ac-radius-pill);
+}
+.sep {
+  align-self: stretch;
+  width: 1px;
+  flex-shrink: 0;
+  margin: var(--ac-space-3) 0;
+  background: var(--ac-color-divider);
+}
+.terrain {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+}
+.actions {
+  flex-shrink: 0;
+  margin-left: auto;
+  /* Space between the buttons and the bar's top and bottom borders. */
+  padding: var(--ac-space-3) 0;
+}
+.actions:empty {
+  display: none;
+}
+
+/* Reduced bar (editor search, starting hand): one row. */
+:host(.reduced) {
+  gap: var(--ac-space-4);
+  /* The text: back link, name, meta. */
+  min-height: calc(1.3 * var(--ac-font-size-caption) + 1.3 * var(--ac-font-size-heading) + 1.4 * var(--ac-font-size-small) + 2 * 2px
+    + 2 * var(--ac-space-2) + 2px);
+  padding-right: var(--ac-space-4);
+}
+:host(.reduced) .actions {
+  padding: var(--ac-space-2) 0;
+}
+:host(.reduced) .art {
+  flex-basis: 96px;
+}
+:host(.reduced) .settings {
+  right: var(--ac-space-1-5);
+  bottom: var(--ac-space-1-5);
+  width: 28px;
+  height: 28px;
+}
+:host(.reduced) .text {
+  padding: var(--ac-space-2) var(--ac-space-3);
+}
+:host(.reduced) .name-row {
+  min-height: 0;
+}
+:host(.reduced) .name {
+  font: var(--ac-font-heading);
+}
+:host(.reduced) .name.long {
+  font: var(--ac-font-body-strong);
+}
+
+/* Narrower bars (window width, deck panel open): the curve goes first, then the terrain totals and the rarities, so that
+   the name keeps at least 210 px (its column is 1017 px narrower than the bar with everything, 795 px without the curve).
+   Same widths in placeholder.css, as window widths. */
+@container deck-bar (max-width: 1204px) {
+  :host(:not(.reduced)) :is(ac-cost-curve, .curve-skeleton, .sep.curve) {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 993px) {
+  :host(:not(.reduced)) :is(.terrain, .terrain-skeleton),
+  :host(:not(.reduced)) .sep {
+    display: none;
+  }
+}
+/* Reduced bar: the curve, then the terrain totals, then the rarities; the name keeps about 200 px (1228, 1050 and 839 px
+   narrower than the bar). */
+@container deck-bar (max-width: 1409px) {
+  :host(.reduced) :is(ac-cost-curve, .curve-skeleton, .sep.curve) {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 1231px) {
+  :host(.reduced) :is(.terrain, .terrain-skeleton),
+  :host(.reduced) .sep:has(+ :is(.terrain, .terrain-skeleton)) {
+    display: none;
+  }
+}
+@container deck-bar (max-width: 1020px) {
+  :host(.reduced) :is(ac-rarity-limits, .limits-skeleton),
+  :host(.reduced) .sep {
+    display: none;
+  }
+}
+
+/* While the deck opens: the text's rows, and blocks of the size of the curve, the rarity limits and the terrain totals,
+   so that nothing moves when the deck arrives. */
+.badges-skeleton {
+  display: flex;
+  gap: var(--ac-space-1-5);
+}
+.curve-skeleton {
+  flex: 0 0 145px;
+  height: 51px;
+}
+.limits-skeleton {
+  flex: 0 1 230px;
+  height: 30px;
+}
+.terrain-skeleton {
+  flex: 0 0 162px;
+  height: 30px;
+}
+:host(:not(.reduced)) .curve-skeleton {
+  flex-basis: 181px;
+  height: 125px;
+}
+:host(:not(.reduced)) .terrain-skeleton {
+  flex-basis: 216px;
+  height: 103px;
+}

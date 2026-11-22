@@ -1,0 +1,91 @@
+# API de recherche des Uniques : mesures et limites
+
+`https://search.altered.re` (`UNIQUES_API_URL`), utilisée par l’onglet Uniques depuis le 2026-09-29, comme par la page
+cartes et le deckbuilder du site en production.
+
+## Comparaison avec la Cards API (2026-09-29)
+
+Première page de 36 Uniques, 5 essais par requête, depuis un poste en France. Cards API : `/api/cards?rarity[]=UNIQUE`
+(sans `locale`, comme l’ancien onglet Uniques). Uniques : `/api/v2/cards`.
+
+| Requête | Cards API, 1er appel | Cards API, médiane | Uniques, médiane |
+|---|---|---|---|
+| Toutes les Uniques | 366 ms | 266 ms | 221 ms |
+| Faction Axiom | 324 ms | 273 ms | 223 ms |
+| Nom « kelon » | 368 ms | 265 ms | 224 ms |
+| Frontier | 1 724 ms | 373 ms | 230 ms |
+| Axiom + Frontier + {H} | 1 420 ms | 391 ms | 232 ms |
+| Quand {H} ou {J} | 342 ms | 278 ms | 232 ms |
+| Axiom, page 200 (Cards API) / page 50 par curseur (Uniques) | 312 ms | — | 237 ms |
+
+L’écart de vitesse est faible sur les requêtes simples. Le gain est sur Frontier et sur le sens des effets :
+« (Joué depuis la Main ou Joué de partout) et Piochez une carte » est une seule requête
+(`effect[0][t]=22,24&effect[1][o]=90&effectMode=and`), impossible avec `effectSlot[N]`.
+
+## Couverture
+
+Totaux identiques pour CORE, COREKS, CYCLONE, DUSTER et EOLE. BISE : 1 029 202 Uniques contre 1 037 519 dans la Cards
+API (8 317 de moins), ALIZE : une de moins. FUGUE n’a d’Uniques dans aucune des deux ; `set[]=FUGUE` est une 400 ici.
+
+## Une même capacité répond à plusieurs effets
+
+**Constat.** En `effectMode=and`, chaque bloc `effect[N]` devient l’ensemble des cartes qui ont *une* capacité qui lui
+correspond, puis les ensembles sont intersectés : rien n’oblige deux blocs à être satisfaits par deux capacités
+différentes. Axiom, Frontier : « Quand {H} ou {J} · Sans condition · Alors Piochez une carte » donne 10 cartes, et 10
+aussi avec en plus un bloc « Alors Piochez une carte » (la même capacité répond aux deux).
+
+**Contournement.** `effectMatchCounts` (`src/app/core/uniques-api.service.ts`) : un bloc qui en couvre `k` autres
+(toute capacité qui répond à l’un répond à lui) est envoyé avec `effect[N][matchCount]=k+1` (au plus 3). Exact quand
+les blocs couverts sont emboîtés (blocs identiques, « Piochez » après « {J} · Piochez ») : 2 cartes au lieu de 10
+ci-dessus. Deux blocs qui se recoupent sans que l’un couvre l’autre (« Quand {J} · Alors Piochez » et
+« Si Y · Alors Piochez ») restent approximatifs.
+
+**Listes de l’éditeur d’effet.** `/api/v2/effects/filtered` réduit chaque liste aux valeurs qui donnent encore une
+carte. Les autres blocs y gardent le `matchCount` qu’ils ont entre eux, sans le bloc édité : la recherche peut leur en
+demander plus une fois la valeur choisie, jamais moins. Aucune valeur possible n’est cachée (vérifié le 2026-10-02 sur
+24 cas, chaque valeur du catalogue cherchée une à une), mais quand un bloc en couvre un autre, quelques valeurs
+proposées ne donnent aucune carte.
+
+**À faire côté API.** Un mode qui exige des capacités distinctes pour les blocs (issue à ouvrir sur
+Altered-Re-Union/uniques-search-api).
+
+## Ce que l’API ne fait pas
+
+- Pas de tri `random` : l’API supporte un tri unique à la fois (`sort=field:dir`), l’option Aléatoire est masquée sur l’onglet Uniques.
+- Pas de « Sans effet » dans la recherche (déjà masqué sur les Uniques). L’effet de soutien (ligne d’écho, actif en
+  Réserve) est l’« Effet de réserve » des filtres : un seul bloc, `support[t|c|o]`, ses listes réduites aux entrées
+  `isEcho` de `/api/v2/effects` et à ce qui donne encore une carte (`/api/v2/effects/filtered`, `editing=…:support`).
+- Pas de `rarity`, `cardType`, `collectorNumberFormatedId`, `imagePath` ni `transfuge` dans les cartes : ce sont des
+  Personnages Uniques (`toCard`), le numéro de collection est déduit de la référence (`collectorNumber`), l’illustration
+  vient du CDN comme avant.
+- Le total Frontier est celui de la liste du format (30 000 sans faction).
+
+## Mots-clés en codes non traduits (2026-09-30)
+
+**Constat.** Les textes d'effet (`mainEffect`, `echoEffect`, et les capacités de `/api/v2/effects`) écrivent les
+mots-clés en codes, les mêmes dans toutes les langues : `[GIGANTIC]`, `[FLEETING]`, `[RESUPPLY_T]`,
+`[BOOSTED_CHA_P]`, `[TOUGH_1]`… L'API des cartes les imprime traduits (`[Gigantesque]`, `[Fugace]`, `[Ravitaillez]`,
+`[Boosté]`, `[Coriace 1]`).
+
+**Contournement.** `printKeywordCodes` (`src/app/core/card-vocabulary.ts`) remplace chaque code par son nom imprimé, en
+français ou en anglais, pris dans la table de CardsData (`data/csv/Keywords.csv`, copiée dans `src/app/core/keyword-codes.ts`
+par `node scripts/keyword-codes.mjs <CardsData>/data/csv/Keywords.csv`) : chaque variante dans la grammaire de sa
+phrase (`RESUPPLY_INF` → Ravitailler, `ASCENDED_P` → Élevées, `DUE_TO_ASCENSION` → grâce à l'Élévation). Un code
+absent de la table retombe sur le mot-clé de base (nom anglais en capitales, nombre final conservé) ; un code inconnu
+reste tel quel.
+
+**À faire côté backend.** Renvoyer les mots-clés traduits, comme l'API des cartes.
+
+## Artistes, « au moins un 0 », Kuraokami et Sofia (2026-11-20)
+
+Ajoutés à `uniques-search-api` pour le navigateur de cartes (`/pages/cards`, onglet « Toutes les cartes ») ; le front
+les envoie dès maintenant :
+
+- `artist[]` (recherche unifiée) : nom exact de l’artiste, sans casse, OU entre les valeurs. `GET /api/v2/artists` donne
+  la liste (`{ "artists": [...] }`). Tant que l’API déployée ne répond pas à `/api/v2/artists`, le champ « Artiste » est
+  masqué (`UniquesApiService.artists()` renvoie `[]`).
+- `hasZeroPower=true` : au moins une puissance à 0 (Forêt OU Montagne OU Océan). Une API plus ancienne ignore le
+  paramètre : le filtre « Au moins un 0 » ne filtre rien avant son déploiement.
+- Kuraokami (`ALT_ALIZE_P_OR_48_*`) et Sofia (`ALT_BISE_P_BR_64_*`) n’existent qu’en produit `P` mais sont les cartes de
+  base : l’API les compte en variation `standard` (liste `index-core/data/variation_overrides.json`), plus en alt art.
+

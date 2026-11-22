@@ -31,6 +31,9 @@ define('RE_BGA_ADMIN_PACE_OPTIONS', [
     'Real-Time',
 ]);
 
+/** Default bar color for Frontier seasons. */
+define('RE_FRONTIER_DEFAULT_COLOR', '#2f6fed');
+
 function reGetBgaJsonPath(): string
 {
     return dirname(__DIR__) . '/data/bga-tournaments.json';
@@ -71,6 +74,556 @@ function reSaveSetting(string $key, string $value): void
 function reGetApiKey(): string
 {
     return reGetSetting('api_key', '');
+}
+
+/**
+ * Normalize one Frontier season row. Returns null if invalid.
+ *
+ * @param array $raw
+ * @param bool  $generateId When true and id is missing, create a new id
+ */
+function reNormalizeFrontierSeason(array $raw, bool $generateId = true): ?array
+{
+    $name = trim((string)($raw['name'] ?? ''));
+    if ($name === '') {
+        return null;
+    }
+
+    $start = trim((string)($raw['start_date'] ?? ''));
+    $end   = trim((string)($raw['end_date'] ?? ''));
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+        return null;
+    }
+    if ($start > $end) {
+        return null;
+    }
+
+    $color = trim((string)($raw['color'] ?? ''));
+    if ($color === '') {
+        $color = RE_FRONTIER_DEFAULT_COLOR;
+    }
+    if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+        return null;
+    }
+    $color = '#' . strtolower(substr($color, 1));
+
+    $id = trim((string)($raw['id'] ?? ''));
+    if ($id === '' || !preg_match('/^[a-zA-Z0-9_-]{4,64}$/', $id)) {
+        if (!$generateId) {
+            return null;
+        }
+        $id = bin2hex(random_bytes(8));
+    }
+
+    return [
+        'id'         => $id,
+        'name'       => $name,
+        'start_date' => $start,
+        'end_date'   => $end,
+        'color'      => $color,
+    ];
+}
+
+/**
+ * Load and normalize Frontier seasons from plugin settings.
+ *
+ * @return array<int, array{id:string,name:string,start_date:string,end_date:string,color:string}>
+ */
+function reLoadFrontierSeasons(): array
+{
+    $raw = reGetSetting('frontier_seasons', '[]');
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($decoded as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $season = reNormalizeFrontierSeason($row, false);
+        if ($season === null) {
+            // Allow legacy rows missing id by regenerating once on load path callers that save
+            $season = reNormalizeFrontierSeason($row, true);
+        }
+        if ($season !== null) {
+            $out[] = $season;
+        }
+    }
+
+    usort($out, static function (array $a, array $b): int {
+        if ($a['start_date'] === $b['start_date']) {
+            return strcmp($a['name'], $b['name']);
+        }
+        return strcmp($a['start_date'], $b['start_date']);
+    });
+
+    return array_values($out);
+}
+
+/**
+ * Frontier season covering a calendar date, or null if none (seasons do not overlap).
+ *
+ * @param string $date Y-m-d
+ */
+function reFrontierSeasonForDate(string $date, ?array $seasons = null): ?array
+{
+    $date = substr(trim($date), 0, 10);
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return null;
+    }
+    foreach ($seasons ?? reLoadFrontierSeasons() as $season) {
+        if (!is_array($season)) {
+            continue;
+        }
+        $start = (string)($season['start_date'] ?? '');
+        $end   = (string)($season['end_date'] ?? '');
+        if ($start !== '' && $end !== '' && $date >= $start && $date <= $end) {
+            return $season;
+        }
+    }
+    return null;
+}
+
+/**
+ * Persist Frontier seasons JSON to settings.
+ *
+ * @param array $seasons
+ */
+function reSaveFrontierSeasons(array $seasons): bool
+{
+    $normalized = [];
+    foreach ($seasons as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $season = reNormalizeFrontierSeason($row, true);
+        if ($season !== null) {
+            $normalized[] = $season;
+        }
+    }
+
+    usort($normalized, static function (array $a, array $b): int {
+        if ($a['start_date'] === $b['start_date']) {
+            return strcmp($a['name'], $b['name']);
+        }
+        return strcmp($a['start_date'], $b['start_date']);
+    });
+
+    $json = json_encode(array_values($normalized), JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+    reSaveSetting('frontier_seasons', $json);
+    return true;
+}
+
+/**
+ * Upsert one Frontier season into the stored list.
+ *
+ * @param array $raw
+ * @return array{ok:bool,error?:string,seasons?:array}
+ */
+function reUpsertFrontierSeason(array $raw): array
+{
+    $season = reNormalizeFrontierSeason($raw, empty($raw['id']));
+    if ($season === null) {
+        return ['ok' => false, 'error' => 'invalid'];
+    }
+
+    $seasons = reLoadFrontierSeasons();
+    $found = false;
+    foreach ($seasons as $i => $existing) {
+        if ($existing['id'] === $season['id']) {
+            $seasons[$i] = $season;
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        $seasons[] = $season;
+    }
+
+    if (!reSaveFrontierSeasons($seasons)) {
+        return ['ok' => false, 'error' => 'save_failed'];
+    }
+
+    return ['ok' => true, 'seasons' => reLoadFrontierSeasons()];
+}
+
+/**
+ * Delete a Frontier season by id.
+ *
+ * @return array{ok:bool,error?:string,seasons?:array}
+ */
+function reDeleteFrontierSeason(string $id): array
+{
+    $id = trim($id);
+    if ($id === '') {
+        return ['ok' => false, 'error' => 'missing_id'];
+    }
+
+    $seasons = reLoadFrontierSeasons();
+    $next = array_values(array_filter($seasons, static function (array $s) use ($id): bool {
+        return $s['id'] !== $id;
+    }));
+
+    if (count($next) === count($seasons)) {
+        return ['ok' => false, 'error' => 'not_found'];
+    }
+
+    if (!reSaveFrontierSeasons($next)) {
+        return ['ok' => false, 'error' => 'save_failed'];
+    }
+
+    return ['ok' => true, 'seasons' => $next];
+}
+
+function reEventBrandUploadDir(): string
+{
+    // plugins/reunion-events/inc → site root
+    return dirname(__DIR__, 3) . '/uploads/p_reunion-events/brands/';
+}
+
+function reCacheBustedUrl(string $absPath, string $relUrl): string
+{
+    $v = is_file($absPath) ? (int)filemtime($absPath) : time();
+
+    return rtrim(BASE_URL, '/') . $relUrl . '?v=' . $v;
+}
+
+function reUploadedLogoUrl(string $filename): string
+{
+    $filename = basename($filename);
+
+    return reCacheBustedUrl(
+        reEventBrandUploadDir() . $filename,
+        '/uploads/p_reunion-events/brands/' . rawurlencode($filename)
+    );
+}
+
+function reEventBrandLogoUrl(array $brand): string
+{
+    $file = basename((string)($brand['logo_file'] ?? ''));
+    if ($file !== '' && is_file(reEventBrandUploadDir() . $file)) {
+        return reUploadedLogoUrl($file);
+    }
+
+    return '';
+}
+
+function reFrontierLogoUrl(): string
+{
+    $file = basename(reGetSetting('frontier_logo_file', ''));
+    if ($file !== '' && is_file(reEventBrandUploadDir() . $file)) {
+        return reUploadedLogoUrl($file);
+    }
+
+    return '';
+}
+
+function reDeleteUploadedLogoFile(?string $filename): void
+{
+    $filename = basename((string)$filename);
+    if ($filename === '' || strpos($filename, '.') === false) {
+        return;
+    }
+    $path = reEventBrandUploadDir() . $filename;
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+/**
+ * Store an uploaded logo. Returns ['ok'=>true,'filename'=>...] or an error.
+ *
+ * @param array $file $_FILES entry
+ */
+function reStoreUploadedLogo(array $file, string $basename): array
+{
+    if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        return ['ok' => false, 'error' => 'empty_file'];
+    }
+    $err = validateImageUpload($file);
+    if ($err !== null) {
+        return ['ok' => false, 'error' => 'invalid_image', 'message' => $err];
+    }
+
+    $dir = reEventBrandUploadDir();
+    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        return ['ok' => false, 'error' => 'save_fail'];
+    }
+
+    $ext = imageExtFromMime($file['tmp_name']);
+    $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '', $basename) ?: 'logo';
+    $filename = $safeBase . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+    if (!move_uploaded_file($file['tmp_name'], $dir . $filename)) {
+        return ['ok' => false, 'error' => 'save_fail'];
+    }
+
+    return ['ok' => true, 'filename' => $filename];
+}
+
+/**
+ * @return array{id:string,name:string,match_name:string,match_series:string,source:string,show_every_weekday:bool,logo_file:string}|null
+ */
+function reNormalizeEventBrand(array $raw, bool $generateId = true): ?array
+{
+    $name = trim((string)($raw['name'] ?? ''));
+    if ($name === '') {
+        return null;
+    }
+
+    $matchName   = trim((string)($raw['match_name'] ?? ''));
+    $matchSeries = trim((string)($raw['match_series'] ?? ''));
+    $showWeekday = !empty($raw['show_every_weekday']) || !empty($raw['show_every_monday']);
+    if ($matchName === '' && $matchSeries === '' && !$showWeekday) {
+        return null;
+    }
+
+    $source = trim((string)($raw['source'] ?? 'all'));
+    if (!in_array($source, ['all', 'bga', 'physical'], true)) {
+        $source = 'all';
+    }
+
+    $id = trim((string)($raw['id'] ?? ''));
+    if ($id === '' || !preg_match('/^[a-zA-Z0-9_-]{2,64}$/', $id)) {
+        if (!$generateId) {
+            return null;
+        }
+        $id = 'b' . bin2hex(random_bytes(6));
+    }
+
+    $logoFile = basename(trim((string)($raw['logo_file'] ?? '')));
+    if ($logoFile !== '' && !preg_match('/^[a-zA-Z0-9._-]+$/', $logoFile)) {
+        $logoFile = '';
+    }
+
+    return [
+        'id'                => $id,
+        'name'              => mb_substr($name, 0, 120),
+        'match_name'        => mb_substr($matchName, 0, 120),
+        'match_series'      => mb_substr($matchSeries, 0, 120),
+        'source'             => $source,
+        'show_every_weekday' => $showWeekday,
+        'logo_file'          => $logoFile,
+    ];
+}
+
+function reHydrateEventBrand(array $brand): array
+{
+    $brand['logo_url'] = reEventBrandLogoUrl($brand);
+
+    return $brand;
+}
+
+/**
+ * @return array<int, array<string,mixed>>
+ */
+function reLoadEventBrands(): array
+{
+    $raw = reGetSetting('event_brands', '');
+    $decoded = $raw === '' ? [] : json_decode($raw, true);
+    $rows = [];
+    if (is_array($decoded)) {
+        foreach ($decoded as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $brand = reNormalizeEventBrand($row, false);
+            if ($brand !== null) {
+                $rows[] = $brand;
+            }
+        }
+    }
+
+    return array_map('reHydrateEventBrand', $rows);
+}
+
+/**
+ * Public calendar payload for event-brand logos.
+ *
+ * @return array<int, array<string,mixed>>
+ */
+function reEventBrandsForJs(): array
+{
+    $out = [];
+    foreach (reLoadEventBrands() as $brand) {
+        if (empty($brand['logo_url'])) {
+            continue;
+        }
+        $out[] = [
+            'id'                => $brand['id'],
+            'name'              => $brand['name'],
+            'match_name'        => $brand['match_name'],
+            'match_series'      => $brand['match_series'],
+            'source'            => $brand['source'],
+            'show_every_weekday' => !empty($brand['show_every_weekday']),
+            'logo_url'           => $brand['logo_url'],
+        ];
+    }
+
+    return $out;
+}
+
+function reSaveEventBrands(array $brands): bool
+{
+    $normalized = [];
+    foreach ($brands as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $brand = reNormalizeEventBrand($row, true);
+        if ($brand !== null) {
+            $normalized[] = $brand;
+        }
+    }
+
+    $persist = [];
+    foreach ($normalized as $brand) {
+        $persist[] = [
+            'id'                => $brand['id'],
+            'name'              => $brand['name'],
+            'match_name'        => $brand['match_name'],
+            'match_series'      => $brand['match_series'],
+            'source'            => $brand['source'],
+            'show_every_weekday' => $brand['show_every_weekday'] ? 1 : 0,
+            'logo_file'         => $brand['logo_file'],
+        ];
+    }
+
+    $json = json_encode(array_values($persist), JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+    reSaveSetting('event_brands', $json);
+
+    return true;
+}
+
+/**
+ * @param array $raw
+ * @param array|null $file $_FILES entry or null
+ * @return array{ok:bool,error?:string}
+ */
+function reUpsertEventBrand(array $raw, ?array $file = null): array
+{
+    $brands = reLoadEventBrands();
+    $incomingId = trim((string)($raw['id'] ?? ''));
+    $existing = null;
+    foreach ($brands as $b) {
+        if ($incomingId !== '' && $b['id'] === $incomingId) {
+            $existing = $b;
+            break;
+        }
+    }
+
+    if ($existing !== null) {
+        $raw['logo_file'] = $existing['logo_file'] ?? '';
+        if (empty($raw['id'])) {
+            $raw['id'] = $existing['id'];
+        }
+    }
+
+    $hasNewFile = is_array($file) && !empty($file['tmp_name']);
+    if ($existing === null && !$hasNewFile) {
+        return ['ok' => false, 'error' => 'empty_file'];
+    }
+
+    $brand = reNormalizeEventBrand($raw, $existing === null);
+    if ($brand === null) {
+        return ['ok' => false, 'error' => 'invalid'];
+    }
+    if ($existing !== null) {
+        $brand['id'] = $existing['id'];
+        $brand['logo_file'] = $existing['logo_file'] ?? '';
+    }
+
+    if ($hasNewFile) {
+        $stored = reStoreUploadedLogo($file, 'brand_' . $brand['id']);
+        if (empty($stored['ok'])) {
+            return ['ok' => false, 'error' => $stored['error'] ?? 'save_fail'];
+        }
+        if ($brand['logo_file'] !== '') {
+            reDeleteUploadedLogoFile($brand['logo_file']);
+        }
+        $brand['logo_file'] = $stored['filename'];
+    }
+
+    $replaced = false;
+    foreach ($brands as $i => $b) {
+        if ($b['id'] === $brand['id']) {
+            $brands[$i] = $brand;
+            $replaced = true;
+            break;
+        }
+    }
+    if (!$replaced) {
+        $brands[] = $brand;
+    }
+
+    if (!reSaveEventBrands($brands)) {
+        return ['ok' => false, 'error' => 'save_fail'];
+    }
+
+    return ['ok' => true];
+}
+
+function reDeleteEventBrand(string $id): array
+{
+    $id = trim($id);
+    if ($id === '') {
+        return ['ok' => false, 'error' => 'not_found'];
+    }
+
+    $brands = reLoadEventBrands();
+    $found = null;
+    $next = [];
+    foreach ($brands as $b) {
+        if ($b['id'] === $id) {
+            $found = $b;
+            continue;
+        }
+        $next[] = $b;
+    }
+    if ($found === null) {
+        return ['ok' => false, 'error' => 'not_found'];
+    }
+
+    if (!reSaveEventBrands($next)) {
+        return ['ok' => false, 'error' => 'save_fail'];
+    }
+    reDeleteUploadedLogoFile($found['logo_file'] ?? '');
+
+    return ['ok' => true];
+}
+
+function reSaveFrontierLogo(?array $file): array
+{
+    if (!is_array($file) || empty($file['tmp_name'])) {
+        return ['ok' => false, 'error' => 'empty_file'];
+    }
+    $stored = reStoreUploadedLogo($file, 'frontier');
+    if (empty($stored['ok'])) {
+        return ['ok' => false, 'error' => $stored['error'] ?? 'save_fail'];
+    }
+    $old = reGetSetting('frontier_logo_file', '');
+    reSaveSetting('frontier_logo_file', $stored['filename']);
+    if ($old !== '' && $old !== $stored['filename']) {
+        reDeleteUploadedLogoFile($old);
+    }
+
+    return ['ok' => true];
+}
+
+function reRestoreFrontierLogo(): array
+{
+    $old = reGetSetting('frontier_logo_file', '');
+    reSaveSetting('frontier_logo_file', '');
+    reDeleteUploadedLogoFile($old);
+
+    return ['ok' => true];
 }
 
 /**
@@ -888,6 +1441,12 @@ function reBgaDeckFormatLabel(?string $deckFormat): string
     }
 
     return trim(preg_replace('/\s*\([^)]*\)\s*$/u', '', trim($deckFormat)));
+}
+
+function reIsBgaFrontierFormat(?string $deckFormat): bool
+{
+    $label = strtolower(reBgaDeckFormatLabel($deckFormat));
+    return $label !== '' && strpos($label, 'frontier') !== false;
 }
 
 /**

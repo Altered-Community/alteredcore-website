@@ -1,0 +1,24 @@
+{
+    "$schema":     "../plugin.schema.json",
+    "id":          "card-scan",
+    "name":        "Card Scan",
+    "version":     "1.2.0",
+    "description": "QR code scanner for Altered cards. Floating button on every page opens a full-screen scanner.",
+    "author":      "AlteredCore",
+    "icon":        "fa-solid fa-qrcode",
+
+    "pages": [
+        {
+            "slug":     "qrscan",
+            "file":     "pages/qrscan.php",
+            "title_en": "Card Scanner",
+            "title_fr": "Scanner de cartes"
+        }
+    ],
+
+    "assets": {
+        "global_css": ["assets/fab.css", "assets/scanner.css"],
+        "global_js":  ["js/fab.js", "assets/scanner.js"],
+        "global_php": ["assets/global_head.php"]
+    }
+}

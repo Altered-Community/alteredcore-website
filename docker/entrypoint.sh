@@ -8,9 +8,41 @@
 # transient hiccup doesn't crash-loop the site — the failure is logged for the dev.
 set -e
 
-echo "[entrypoint] applying DB migrations..."
-if ! php /var/www/html/sql/migrate.php; then
-    echo "[entrypoint] WARNING: migrations did not complete cleanly; starting Apache anyway." >&2
+run_migration() {
+    echo "[entrypoint] applying $1..."
+    if ! php "/var/www/html/sql/$2"; then
+        echo "[entrypoint] WARNING: $1 did not complete cleanly; starting Apache anyway." >&2
+    fi
+}
+run_migration "DB migrations" migrate.php
+run_migration "plugin DB migrations" migrate_plugins.php
+
+# Local / CI stack only: production menu, site name and logo (once), before plugins add theirs,
+# and public decks for the community lists.
+if [ "${AC_STACK_SEED:-}" = "1" ]; then
+    php /var/www/html/docker/stack/seed.php || echo "[entrypoint] WARNING: stack seed failed." >&2
+    php /var/www/html/docker/stack/seed-decks.php || echo "[entrypoint] WARNING: community decks seed failed." >&2
+fi
+
+# Local stack, opt-in: public content of production (news, pages, settings, images), once.
+if [ "${AC_STACK_MIRROR:-}" = "1" ]; then
+    php /var/www/html/docker/stack/mirror-prod.php || echo "[entrypoint] WARNING: production mirror failed." >&2
+fi
+
+# Optional (local / CI stack): activate plugins listed in AC_ACTIVATE_PLUGINS, like the admin
+# "Activate" button (idempotent; also adds their suggested menu entries once).
+if [ -n "${AC_ACTIVATE_PLUGINS:-}" ]; then
+    echo "[entrypoint] activating plugins: ${AC_ACTIVATE_PLUGINS}"
+    # shellcheck disable=SC2086
+    php /var/www/html/bin/plugins.php activate ${AC_ACTIVATE_PLUGINS} \
+        || echo "[entrypoint] WARNING: plugin activation failed." >&2
+fi
+
+# Local / CI stack only: test spots of hidden-creatures for its e2e specs, when it is active (its real spots stay in
+# the admin, out of the repository).
+if [ "${AC_STACK_SEED:-}" = "1" ]; then
+    php /var/www/html/plugins/hidden-creatures/e2e/fixtures.php \
+        || echo "[entrypoint] WARNING: hidden-creatures fixtures failed." >&2
 fi
 
 exec apache2-foreground

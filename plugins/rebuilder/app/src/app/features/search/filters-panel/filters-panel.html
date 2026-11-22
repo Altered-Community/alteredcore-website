@@ -1,0 +1,219 @@
+<!-- Favoris: only the filters the site's favorites search applies (faction, set, rarity; « légales » and another faction
+     in the editor), the others left out. -->
+@if (!limited() && (mode() === 'aside' || textSearch())) {
+  <div class="queries">
+    @if (mode() === 'aside') {
+      <ac-input
+        icon="search"
+        appearance="subtle"
+        ariaLabel="Rechercher par nom" i18n-ariaLabel="@@search.card.byName"
+        placeholder="Rechercher par nom…" i18n-placeholder="@@search.filters.namePlaceholder"
+        [clearable]="true"
+        enterkeyhint="search"
+        [value]="value().q"
+        (valueChange)="set({ q: $event })"
+      />
+    }
+    <!-- Under the name field; in the sheet, at its top (the name field is in the page head). -->
+    @if (textSearch()) {
+      <ac-input
+        icon="text-search"
+        appearance="subtle"
+        ariaLabel="Rechercher dans le texte des cartes" i18n-ariaLabel="@@search.filters.textLabel"
+        placeholder="Rechercher dans le texte…" i18n-placeholder="@@search.filters.textPlaceholder"
+        [clearable]="true"
+        enterkeyhint="search"
+        [value]="value().text"
+        (valueChange)="set({ text: $event })"
+      />
+    }
+  </div>
+}
+
+<!--
+  No title rows on most sections (room in height): the marks and symbols say what they filter.
+  Uniques: environment, costs, effects, factions, sets, powers, advanced search.
+  Other tabs: factions, sets, rarity, type, costs, powers, advanced search.
+-->
+@if (source() === 'uniques') {
+  <!-- First: the environment narrows every Unique (Frontier list or all). -->
+  <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment" [headless]="true">
+    <ac-segmented
+      ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
+      [fullWidth]="true"
+      [options]="environments"
+      [value]="value().environment"
+      (valueChange)="set({ environment: $event ?? 'all' })"
+    />
+  </ac-filter-section>
+  <ng-container *ngTemplateOutlet="costs" />
+  <div class="scope-section scope-section--uniques">
+    <ac-filter-section title="Effets" i18n-title="@@search.filters.effects" [headless]="true">
+      <div class="effects">
+        @for (e of value().effects; track e.id) {
+          <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (duplicate)="duplicateEffect($index)" (remove)="removeEffect($index)" />
+          @if (!$last) {
+            <ac-logic-divider />
+          }
+        }
+        <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
+      </div>
+    </ac-filter-section>
+
+    <!-- The support ability, the one a card has while in Reserve: one block, its own list of abilities. -->
+    <ac-filter-section title="Effet de réserve" i18n-title="@@search.effect.supportTitle" [headless]="true">
+      <div class="effects">
+        @if (hasSupport()) {
+          <ac-effect-summary [effect]="value().support" [title]="supportTitle" [duplicable]="false" (edit)="editEffect.emit('support')" (remove)="set({ support: emptySupport() })" />
+        } @else {
+          <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="editEffect.emit('support')" i18n="@@search.filters.addSupport">Ajouter un effet de réserve</button>
+        }
+      </div>
+    </ac-filter-section>
+  </div>
+  <ng-container *ngTemplateOutlet="factionRow" />
+  <ng-container *ngTemplateOutlet="setTiles" />
+  <ng-container *ngTemplateOutlet="powers" />
+} @else {
+  <ng-container *ngTemplateOutlet="factionRow" />
+  <ng-container *ngTemplateOutlet="setTiles" />
+  <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity" [headless]="true">
+    <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
+  </ac-filter-section>
+
+  @if (legalFilter() && format()) {
+    <ac-filter-section title="Format" i18n-title="@@search.filters.format">
+      <div class="types">
+        <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
+      </div>
+    </ac-filter-section>
+  }
+  @if (!limited()) {
+    <ac-filter-section title="Type" i18n-title="@@search.filters.type" [headless]="true">
+      <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
+        @for (t of types(); track t.value) {
+          <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
+        }
+      </div>
+    </ac-filter-section>
+    <ng-container *ngTemplateOutlet="subtypeField" />
+    <ng-container *ngTemplateOutlet="costs" />
+    @if (supportsAltArts()) {
+      <ng-container *ngTemplateOutlet="prints" />
+    }
+    <ng-container *ngTemplateOutlet="powers" />
+  }
+}
+
+<!-- Subtypes: no title row, the field's placeholder names it (and is its accessible name). -->
+<ng-template #subtypeField>
+  <ac-combobox keepOpen [options]="subtypeOptions()" [values]="picked(value().subtypes)" (valuesChange)="set({ subtypes: codes($event) })" placeholder="Sous-type" i18n-placeholder="@@search.filters.subtype" />
+</ng-template>
+
+<!-- Prints (standard, all, alt arts alone) and, with the alt arts, the promo editions of the chosen sets, ticked to
+     narrow: none ticked searches them all. -->
+<ng-template #prints>
+  <div class="adv-field">
+    <span class="adv-label" aria-hidden="true" i18n="@@search.filters.prints">Illustrations</span>
+    <ac-segmented
+      ariaLabel="Illustrations" i18n-ariaLabel="@@search.filters.prints"
+      [fullWidth]="true"
+      [options]="altArtsModes"
+      [value]="value().altArts"
+      (valueChange)="setAltArts($event ?? 'off')"
+    />
+  </div>
+  @if (value().altArts !== 'off' && promoOptions().length) {
+    <div class="adv-field">
+      <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
+      <ac-combobox keepOpen [options]="promoOptions()" [values]="pickedPromos()" (valuesChange)="setPromos($event)" placeholder="Toutes les éditions" i18n-placeholder="@@search.filters.promoAll" />
+    </div>
+  }
+</ng-template>
+
+<!-- Main and reserve costs: the hand and reserve symbols in the fields. -->
+<ng-template #costs>
+  <div class="two">
+    <ac-input ariaLabel="Coût en Main" i18n-ariaLabel="@@search.filters.handCostLabel" [leadGlyph]="glyphs.hand" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="mainInvalid()" [value]="value().mainCost" (valueChange)="set({ mainCost: $event })" />
+    <ac-input ariaLabel="Coût en Réserve" i18n-ariaLabel="@@search.filters.reserveCostLabel" [leadGlyph]="glyphs.reserve" placeholder="3, 1-3, 4+" inputmode="text" [invalid]="recallInvalid()" [value]="value().recallCost" (valueChange)="set({ recallCost: $event })" />
+  </div>
+</ng-template>
+
+<!-- Powers: the terrains in the fields. -->
+<ng-template #powers>
+  <div class="three">
+    <ac-input ariaLabel="Puissance en Forêt" i18n-ariaLabel="@@search.filters.forestPowerLabel" [leadImage]="biomes.forest" placeholder="2, 4+" inputmode="text" [invalid]="powerInvalid().forest" [value]="value().forestPower" (valueChange)="set({ forestPower: $event })" />
+    <ac-input ariaLabel="Puissance en Montagne" i18n-ariaLabel="@@search.filters.mountainPowerLabel" [leadImage]="biomes.mountain" placeholder="2, 4+" inputmode="text" [invalid]="powerInvalid().mountain" [value]="value().mountainPower" (valueChange)="set({ mountainPower: $event })" />
+    <ac-input ariaLabel="Puissance en Océan" i18n-ariaLabel="@@search.filters.oceanPowerLabel" [leadImage]="biomes.ocean" placeholder="2, 4+" inputmode="text" [invalid]="powerInvalid().ocean" [value]="value().oceanPower" (valueChange)="set({ oceanPower: $event })" />
+  </div>
+</ng-template>
+
+<ng-template #factionRow>
+  @if (factionFilter()) {
+    <ac-filter-section title="Faction" i18n-title="@@search.filters.faction" [headless]="true">
+      <div class="factions" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
+        @for (f of factions; track f.code) {
+          <ac-chip [label]="f.name" [image]="f.icon" [iconOnly]="true" [selected]="value().factions.includes(f.code)" (selectedChange)="toggleFaction(f.code, $event)" />
+        }
+      </div>
+    </ac-filter-section>
+  }
+</ng-template>
+
+<ng-template #setTiles>
+  <!-- Title row with « Toutes » / « Aucune » on its right: the link reads as the sets' own. -->
+  <ac-filter-section title="Extensions" i18n-title="@@search.filters.sets">
+    <button action type="button" class="link" (click)="set({ sets: value().sets.length ? [] : allSets() })">{{ value().sets.length ? labels.none : labels.all }}</button>
+    <div class="sets" role="group" aria-label="Extensions" i18n-aria-label="@@search.filters.sets">
+      @for (s of sets(); track s.reference) {
+        <ac-extension-tile [extension]="s" [selected]="value().sets.includes(s.reference)" (selectedChange)="toggleSet(s.reference, $event)" />
+      }
+    </div>
+  </ac-filter-section>
+</ng-template>
+
+<!--
+  The other filters: shown as they are in the side panel (it scrolls on its own); folded under « Recherche avancée » in the
+  sheet, where the height is short.
+-->
+@if (!limited() || !factionFilter()) {
+  <div class="advanced">
+    @if (mode() === 'sheet') {
+      <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">
+        <span class="fold-l" i18n="@@search.filters.advanced">Recherche avancée</span>
+        <span class="chev" [class.open]="advancedOpen()"><ac-icon name="chevron-down" [size]="16" /></span>
+      </button>
+    }
+    @if (mode() === 'aside' || advancedOpen()) {
+      @if (supportsCostAndEffect()) {
+        <div class="types" role="group" aria-label="Recherche avancée" i18n-aria-label="@@search.filters.advanced">
+          @if (zeroPower()) {
+            <ac-chip shape="square" [label]="zeroPowerLabel" [selected]="value().zeroPower" (selectedChange)="set({ zeroPower: $event })" />
+          }
+          <ac-chip shape="square" label="Sans effet" i18n-label="@@search.filters.chip.noEffect" [selected]="value().noEffect" (selectedChange)="set({ noEffect: $event })" />
+        </div>
+      }
+      <div class="adv-body">
+        @if (!factionFilter()) {
+          <div class="adv-field">
+            <span class="adv-label" i18n="@@search.filters.otherFaction">Changer de faction</span>
+            <div class="factions" role="group" aria-label="Faction" i18n-aria-label="@@search.filters.faction">
+              @for (f of factions; track f.code) {
+                <ac-chip [label]="f.name" [image]="f.icon" [iconOnly]="true" [selected]="value().otherFactions.includes(f.code)" (selectedChange)="toggleOtherFaction(f.code, $event)" />
+              }
+            </div>
+          </div>
+        }
+        @if (!limited()) {
+          <!-- The Uniques have no type row: their subtypes stay here. -->
+          @if (source() === 'uniques') {
+            <ng-container *ngTemplateOutlet="subtypeField" />
+          }
+          @if (artistOptions().length) {
+            <ac-combobox keepOpen [options]="artistOptions()" [values]="pickedArtists()" (valuesChange)="set({ artists: artistNames($event) })" placeholder="Artiste" i18n-placeholder="@@search.filters.artist" />
+          }
+        }
+      </div>
+    }
+  </div>
+}

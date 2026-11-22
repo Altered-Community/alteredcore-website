@@ -1,0 +1,11 @@
+@if (bp.compact()) {
+  <ac-app-bar title="Cartes" i18n-title="@@cards.page.title" [sticky]="false" />
+}
+
+<main class="page">
+  <!-- No visible title on wide screens either: the source tabs open the page, the height goes to the cards. -->
+  @if (!bp.compact()) {
+    <h1 class="ac-sr-only" i18n="@@cards.page.title">Cartes</h1>
+  }
+  <app-card-search class="search" [browse]="true" />
+</main>

@@ -7,7 +7,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         var form      = document.querySelector('form[enctype="multipart/form-data"]');
-        var container = document.querySelector('.container');
+        var container = document.querySelector('.edi-page');
         if (!form || !container) { return; }
 
         var siteBase = (typeof window.SITE_BASE !== 'undefined') ? window.SITE_BASE : '';

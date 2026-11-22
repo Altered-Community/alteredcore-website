@@ -1,0 +1,30 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-6);
+}
+/* The test hand's layout (features/deck/test-hand): toolbar of buttons, summary line, grid of cards. */
+.test-hand,
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(100px, 28vw, 150px), 1fr));
+  gap: var(--ac-space-3);
+}
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--ac-space-3);
+}
+.panel {
+  height: 200px;
+}

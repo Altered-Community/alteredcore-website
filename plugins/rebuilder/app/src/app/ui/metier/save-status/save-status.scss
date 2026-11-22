@@ -1,0 +1,46 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  min-height: 1lh;
+  font: var(--ac-font-caption);
+  font-weight: 600;
+  color: var(--ac-color-text-muted);
+  white-space: nowrap;
+}
+
+:host(.icon-only) {
+  justify-content: center;
+  min-width: var(--ac-hit-min);
+}
+
+:host(.ac-save-status--saved) {
+  color: var(--ac-color-success);
+}
+
+:host(.ac-save-status--error) {
+  color: var(--ac-color-danger);
+}
+
+.dot {
+  width: var(--ac-space-2);
+  height: var(--ac-space-2);
+  border-radius: 50%;
+  background: currentColor;
+  animation: ac-save-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes ac-save-pulse {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

@@ -1,0 +1,210 @@
+:host {
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  contain: layout style;
+  /* The column of the star, « + » and the stepper: under the printed faction flag, at its width (measured on the cards:
+     the flag spans 84.3–95.2 % of the width, its tip at 16.8 % of the height, i.e. 23.5 % of the width at 5:7). */
+  --app-tile-col-w: max(10.9cqw, 20px);
+  --app-tile-col-right: calc(10.2cqw - var(--app-tile-col-w) / 2);
+  --app-tile-col-top: calc(23.5cqw + var(--ac-space-1));
+  /* Discreet on the artwork: the dark translucent fill of the cost chips. */
+  --ac-stepper-ring: var(--app-tile-col-w);
+  --ac-stepper-bg: var(--ac-color-overlay-chip);
+  --ac-stepper-inc-bg: transparent;
+  --ac-stepper-dec-bg: transparent;
+  --ac-stepper-shadow: none;
+  --ac-card-add-size: var(--app-tile-col-w);
+  --ac-card-add-bg: var(--ac-color-overlay-chip);
+  --ac-card-add-shadow: none;
+}
+.visual {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  max-height: var(--ac-card-tile-max-h, none);
+  border-radius: var(--ac-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--ac-shadow-card);
+  background: var(--ac-color-text-2);
+}
+button.visual {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+button.visual:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+/* The column under the faction flag: « + » or the stepper, then the star. */
+.col {
+  position: absolute;
+  top: var(--app-tile-col-top);
+  right: var(--app-tile-col-right);
+  z-index: 2;
+  width: var(--app-tile-col-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  /* The gaps leave the card's zoom underneath clickable. */
+  pointer-events: none;
+}
+.col > * {
+  pointer-events: auto;
+}
+.action {
+  display: block;
+}
+.blocked {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+/* Copies out of hover (pointer screens): « ×n » at the top of the column, over the stepper's place. */
+.qty.idle {
+  top: 0;
+  right: auto;
+  bottom: auto;
+  min-width: var(--app-tile-col-w);
+  height: auto;
+  padding: 2px var(--ac-space-1);
+  box-sizing: border-box;
+  background: var(--ac-color-overlay-chip);
+  box-shadow: none;
+  font-size: var(--ac-font-size-caption);
+  pointer-events: none;
+  display: none;
+}
+/* Pointer screens from 768 px: the controls with the hover or the keyboard focus only (the deck builder's pile; a click
+   leaves the focus on the button, so not :focus-within), the star too unless the card is a favorite; touch screens and
+   phone widths: always. The hidden stepper keeps its place, so the star does not move on hover. */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  /* Still clickable while hidden: the pointer is over the card, so they show as it gets there. */
+  .action,
+  .favorite:not(.on) {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  :host(:hover) .action,
+  :host(:has(:focus-visible)) .action,
+  :host(:hover) .favorite,
+  .favorite:focus-visible {
+    opacity: 1;
+  }
+  :host(.has-copies) .qty.idle {
+    display: flex;
+  }
+  :host(:hover) .qty.idle,
+  :host(:has(:focus-visible)) .qty.idle {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .favorite {
+    transition: none;
+  }
+}
+.blocked {
+  display: flex;
+  cursor: help;
+  box-shadow: var(--ac-shadow-fab);
+  border-radius: var(--ac-radius-pill);
+}
+.qty {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-control);
+  color: var(--ac-color-on-strong);
+  font-size: var(--ac-font-size-body);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--ac-shadow-fab);
+}
+/* Narrow tiles (5-column deck views, compact 3-column grids). */
+@container (max-width: 150px) {
+  .qty {
+    right: 6px;
+    bottom: 6px;
+    min-width: 28px;
+    height: 24px;
+    font-size: var(--ac-font-size-caption);
+  }
+}
+/* Brush: top left, always shown (the card has several illustrations). */
+.illustrate {
+  position: absolute;
+  top: var(--ac-space-1-5);
+  left: var(--ac-space-1-5);
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-primary);
+  box-shadow: var(--ac-shadow-fab);
+  cursor: pointer;
+}
+.illustrate::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.illustrate:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}
+/* Favorite star: in the column under the faction flag, after the copies (shown as the controls are, above). */
+.favorite {
+  position: relative;
+  width: var(--app-tile-col-w);
+  height: var(--app-tile-col-w);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-overlay-chip);
+  color: var(--ac-color-on-strong);
+  cursor: pointer;
+}
+.favorite.on {
+  color: var(--ac-cards-favorite);
+}
+/* Hit area of at least --ac-hit-min around the 28 px star. */
+.favorite::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--ac-hit-min));
+  height: max(100%, var(--ac-hit-min));
+  transform: translate(-50%, -50%);
+}
+.favorite.on ac-icon ::ng-deep svg {
+  fill: currentColor;
+}
+.favorite:focus-visible {
+  outline: 2px solid var(--ac-color-primary);
+  outline-offset: 2px;
+}

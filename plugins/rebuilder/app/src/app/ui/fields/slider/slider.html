@@ -1,0 +1,11 @@
+<input
+  type="range"
+  class="ac-slider"
+  [attr.aria-label]="ariaLabel()"
+  [min]="min()"
+  [max]="max()"
+  [step]="step()"
+  [value]="value()"
+  [style.--ac-slider-fill]="fill()"
+  (input)="value.set(+$any($event.target).value)"
+/>

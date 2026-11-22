@@ -51,7 +51,7 @@ $logoPath = getSetting('logo_path');
     <?php if ($logoPath): ?>
         <div class="mb-4">
             <div class="fw-bold mb-2">Current logo</div>
-            <div style="background:var(--sand-200);padding:1rem;border-radius:.75rem;display:inline-block">
+            <div style="background:var(--ac-color-track);padding:1rem;border-radius:.75rem;display:inline-block">
                 <img src="<?= h(assetUrl($logoPath)) ?>" alt="Current logo"
                      style="max-height:60px;max-width:200px;display:block">
             </div>
@@ -85,7 +85,7 @@ $logoPath = getSetting('logo_path');
                  data-original="<?= h($logoPath ?? '') ?>"
                  data-can-delete="<?= adminCanDelete() ? '1' : '0' ?>">
                 <div id="logo_img_preview" class="mb-2" style="<?= $logoPath ? '' : 'display:none' ?>">
-                    <div style="position:relative;display:inline-block;background:var(--sand-200);padding:.5rem;border-radius:.5rem">
+                    <div style="position:relative;display:inline-block;background:var(--ac-color-track);padding:.5rem;border-radius:.5rem">
                         <img src="<?= $logoPath ? h(assetUrl($logoPath)) : '' ?>" alt=""
                              style="max-height:60px;max-width:200px;display:block">
                         <button type="button" class="btn btn-sm btn-danger img-picker-clear"

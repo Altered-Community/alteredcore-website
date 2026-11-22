@@ -38,72 +38,93 @@ $txt = [
 $pageTitle = $txt['page_title'];
 $messages  = hwGetMessages();
 ?>
-<div class="container py-4">
+<?php /*
+ * Page layout with the design system (design-system/README.md):
+ *   ac-page / ac-page-header   page column and title
+ *   ac-card, ac-stack          surfaces and vertical spacing
+ *   ac-button                  buttons (--secondary, --ghost, --sm…)
+ *   ac_icon('lucide-name')     inline SVG icons (https://lucide.dev/icons)
+ * The plugin CSS (assets/style.css) only adds layout, with var(--ac-*) tokens.
+ */ ?>
+<div class="ac-page">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="section-title mb-0"><span><?= h($pageTitle) ?></span></div>
-    </div>
-
-    <?php if (empty($messages)): ?>
-    <p class="text-muted"><?= h($txt['no_messages']) ?></p>
-    <?php else: ?>
-    <ul class="hello-world-list mb-4">
-        <?php foreach ($messages as $m): ?>
-        <li><?= h($m['text']) ?></li>
-        <?php endforeach; ?>
-    </ul>
-    <?php endif; ?>
-
-    <!-- Assets demo: static image and JS-wired counter from the assets/ directory -->
-    <div class="card-altered p-4 mb-4">
-        <h6 class="fw-semibold mb-2"><?= h($txt['assets_title']) ?></h6>
-        <p class="text-muted small mb-3"><?= $txt['assets_desc'] ?></p>
-        <img src="<?= BASE_URL ?>/plugins/hello-world/assets/no_rules.png"
-             alt="no_rules" class="d-block mb-3 rounded" style="max-height:120px">
-        <div class="d-flex align-items-center gap-3">
-            <button id="hw-counter-btn" class="btn btn-sm btn-outline-secondary">
-                <?= h($txt['btn_counter']) ?>
-            </button>
-            <span class="text-muted small">
-                <?= h($txt['counter_label']) ?> <strong id="hw-counter-display">0</strong>
-            </span>
+    <header class="ac-page-header">
+        <div>
+            <h1 class="ac-page-header__title"><?= h($pageTitle) ?></h1>
         </div>
-    </div>
+    </header>
 
-    <!-- Global spinner demo -->
-    <div class="card-altered p-4 mb-4">
-        <h6 class="fw-semibold mb-2"><?= h($txt['spinner_title']) ?></h6>
-        <p class="text-muted small mb-3"><?= $txt['spinner_desc'] ?></p>
-        <button id="hw-spinner-btn" class="btn btn-sm btn-outline-secondary">
-            <i class="fa-solid fa-spinner me-1"></i><?= h($txt['spinner_btn']) ?>
-        </button>
-    </div>
-    <script>
-    document.getElementById('hw-spinner-btn').addEventListener('click', function () {
-        window.acSpinner.show('Loading…');
-        setTimeout(function () { window.acSpinner.hide(); }, 2000);
-    });
-    </script>
+    <div class="ac-stack">
 
-    <?php if ($isLoggedIn): ?>
-    <div class="card-altered p-4">
-        <p class="mb-1">
-            <i class="fa-solid fa-circle-check text-success me-1"></i>
-            <?= h($txt['logged_in_as']) ?>
-            <strong><?= h(kcUser()['username']) ?></strong>.
-        </p>
-        <p class="text-muted small mb-0">
-            <a href="<?= BASE_URL ?>/pages/hello-page-lock"><?= h($txt['link_about']) ?></a>
-        </p>
+        <?php if (empty($messages)): ?>
+        <div class="ac-card">
+            <div class="ac-empty">
+                <?= ac_icon('message-square') ?>
+                <p class="ac-empty__title"><?= h($txt['no_messages']) ?></p>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="ac-card ac-card--flush">
+            <ul class="ac-list">
+                <?php foreach ($messages as $m): ?>
+                <li><?= h($m['text']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
+
+        <!-- Assets demo: static image and JS-wired counter from the assets/ directory -->
+        <section class="ac-card">
+            <h2 class="ac-card__title"><?= h($txt['assets_title']) ?></h2>
+            <p class="ac-card__meta"><?= $txt['assets_desc'] ?></p>
+            <img src="<?= BASE_URL ?>/plugins/hello-world/assets/no_rules.png"
+                 alt="no_rules" class="hw-demo-image">
+            <div class="ac-card__footer">
+                <button type="button" id="hw-counter-btn" class="ac-button ac-button--secondary ac-button--sm">
+                    <?= h($txt['btn_counter']) ?>
+                </button>
+                <span class="hw-counter">
+                    <?= h($txt['counter_label']) ?> <strong id="hw-counter-display">0</strong>
+                </span>
+            </div>
+        </section>
+
+        <!-- Global spinner demo -->
+        <section class="ac-card">
+            <h2 class="ac-card__title"><?= h($txt['spinner_title']) ?></h2>
+            <p class="ac-card__meta"><?= $txt['spinner_desc'] ?></p>
+            <div class="ac-card__footer">
+                <button type="button" id="hw-spinner-btn" class="ac-button ac-button--secondary ac-button--sm">
+                    <?= ac_icon('loader-circle') ?><?= h($txt['spinner_btn']) ?>
+                </button>
+            </div>
+        </section>
+        <script>
+        document.getElementById('hw-spinner-btn').addEventListener('click', function () {
+            window.acSpinner.show('Loading…');
+            setTimeout(function () { window.acSpinner.hide(); }, 2000);
+        });
+        </script>
+
+        <?php if ($isLoggedIn): ?>
+        <div class="ac-notice ac-notice--success" role="status">
+            <?= ac_icon('circle-check') ?>
+            <div>
+                <p class="ac-notice__title"><?= h($txt['logged_in_as']) ?> <?= h(kcUser()['username']) ?></p>
+                <p><a href="<?= BASE_URL ?>/pages/hello-page-lock"><?= h($txt['link_about']) ?></a></p>
+            </div>
+        </div>
+        <?php else: ?>
+        <section class="ac-card">
+            <p class="ac-card__meta"><?= h($txt['login_prompt']) ?></p>
+            <div class="ac-card__footer">
+                <a href="<?= BASE_URL ?>/pages/login" class="ac-button ac-button--sm">
+                    <?= ac_icon('log-in') ?><?= h($txt['btn_login']) ?>
+                </a>
+            </div>
+        </section>
+        <?php endif; ?>
+
     </div>
-    <?php else: ?>
-    <div class="card-altered p-4">
-        <p class="mb-2 text-muted"><?= h($txt['login_prompt']) ?></p>
-        <a href="<?= BASE_URL ?>/pages/login" class="btn btn-sm btn-primary-altered">
-            <i class="fa-solid fa-right-to-bracket me-1"></i>
-            <?= h($txt['btn_login']) ?>
-        </a>
-    </div>
-    <?php endif; ?>
 
 </div>

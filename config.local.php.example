@@ -67,6 +67,14 @@ define('GITHUB_REPO', 'owner/community-feedback'); // repo where the App opens i
 
 // ─── External APIs ────────────────────────────────────────────────────────────
 define('CARDS_API_URL',     'https://cards.alteredcore.org');
+// Uniques search API (rust-cards-api / uniques-search-api), dev-local only for now.
+// Leave empty to keep the Uniques tab on CARDS_API_URL (old backend).
+define('UNIQUES_API_URL',   'http://localhost:8005');
+// Public formats manifest (JSON array of {id, name, path, version}) listing the
+// uniques search API format ids. Only read by Admin > Uniques format to offer the
+// Frontier format id dropdown. Optional: defaults to the prod manifest below.
+// Preprod: https://altered-reunion-formats-preprod.s3.fr-par.scw.cloud/manifest.json
+define('FORMATS_MANIFEST_URL', 'https://altered-reunion-formats-prod.s3.fr-par.scw.cloud/manifest.json');
 define('DECKS_API_URL',     'https://decks.alteredcore.org');
 define('CDN_URL',           'https://cdn.alteredcore.org');
 // Digital ownership service (AlteredOwnership).
@@ -90,8 +98,21 @@ define('COLLECTION_USE_API', true);
 // define('TRANSLATE_URL',     'https://libretranslate.com/translate');
 // define('TRANSLATE_API_KEY', 'your-api-key-here');
 
+// ─── Logging ──────────────────────────────────────────────────────────────────
+// Destination for PHP's error_log() (used across the app and every plugin).
+// Leave empty (default) to use the server's own error_log setting — e.g. the
+// shared-hosting Apache error log, unchanged.
+// In a Docker environment (local dev, preprod), set to 'php://stderr' so errors
+// surface in `docker logs` / `docker compose logs` instead of a file no one tails.
+// A plain file path also works (e.g. '/var/www/html/logs/php_errors.log') — its
+// directory is created automatically if missing.
+define('ERROR_LOG_TARGET', 'php://stderr');
+
 // ─── Deployment ───────────────────────────────────────────────────────────────
 define('BASE_URL', '');   // '' if the website is at the root; '/subdir' for sub-directory installs
+// Site origin printed in the QR code of deck link previews (api/deck-image.php), e.g. 'https://altered.re'.
+// Optional: without it, the request's host is used (and the image cached per host).
+// define('SITE_URL', 'https://altered.re');
 define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridden by site_name setting in admin)
 
 // Behind a TLS-terminating reverse proxy, PHP may see the request as plain HTTP,
@@ -99,3 +120,26 @@ define('SITE_NAME',             'AlteredCore'); // Fallback site name (overridde
 // auto-detects X-Forwarded-Proto / -Ssl; uncomment to force HTTPS if your proxy
 // does not send those headers.
 // define('FORCE_HTTPS', true);
+// ─── Newsletter (Listmonk) ───────────────────────────────────────────────────
+// "Newsletter" block of the account page (shows whether the account's e-mail
+// receives the newsletter, subscribe / unsubscribe) and the homepage "Stay
+// informed" form (SHOW_NEWSLETTER), which then subscribes in Listmonk instead
+// of the local newsletter_sub table. Leave LISTMONK_URL empty to hide the
+// account block and keep the homepage form on newsletter_sub. The API user (Listmonk admin ->
+// Users -> API) needs a role with subscribers:get_all, subscribers:manage,
+// subscribers:sql_query, lists:get_all and lists:manage_all, plus campaigns:get_all
+// and campaigns:manage_all to save news e-mails as draft campaigns (admin -> News
+// -> envelope button).
+define('LISTMONK_URL',       '');        // e.g. 'https://newsletter.altered.re'
+define('LISTMONK_API_USER',  '');        // e.g. 'website'
+define('LISTMONK_API_TOKEN', '');
+// Numeric list ids (Lists page, "ID"), NOT the UUIDs.
+define('LISTMONK_LIST_EN',   0);         // id of the "Newsletter EN" list
+define('LISTMONK_LIST_FR',   0);         // id of the "Newsletter FR" list
+// News e-mails are fully built by the website; Listmonk wraps them in this
+// template, which must be a bare passthrough: Campaigns -> Templates -> New,
+// type "Campaign", body exactly {{ template "content" . }}. Numeric id.
+define('LISTMONK_TEMPLATE_ID', 0);
+// Absolute site URL used for the links and images of the e-mails. Empty: the
+// URL the admin is browsed from (wrong when generating from a local install).
+define('NEWSLETTER_SITE_URL', '');       // e.g. 'https://altered.re'

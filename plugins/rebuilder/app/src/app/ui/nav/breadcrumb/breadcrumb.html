@@ -1,0 +1,12 @@
+<nav class="ac-breadcrumb" aria-label="Fil d’Ariane" i18n-aria-label="@@ui.breadcrumb.label">
+  @for (it of items(); track it.label) {
+    @if (it.route && !$last) {
+      <a [routerLink]="it.route">{{ it.label }}</a>
+    } @else {
+      <span [attr.aria-current]="$last ? 'page' : null">{{ it.label }}</span>
+    }
+    @if (!$last) {
+      <span aria-hidden="true">/</span>
+    }
+  }
+</nav>

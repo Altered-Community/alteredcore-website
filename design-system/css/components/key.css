@@ -1,0 +1,100 @@
+/*
+ * Keys — a row of toggle buttons drawn as keys: raised when off, pressed down and filled when on, flat and faded
+ * when disabled.
+ * Used for the 1st, 2nd and 3rd card that take an illustration (alt arts), one row above each illustration.
+ * <div class="ac-keys" role="group" aria-label="…">
+ *   <button type="button" class="ac-key" aria-pressed="true" aria-label="1ère carte">
+ *     <span class="ac-key__num">1<sup>ère</sup></span><span class="ac-key__word">carte</span>
+ *   </button>
+ *   …
+ * </div>
+ * Docs: design-system/docs/components/key.md
+ */
+.ac-keys {
+  display: grid;
+  grid-template-columns: repeat(var(--ac-keys-count, 3), minmax(0, 1fr));
+  gap: var(--ac-space-1-5);
+}
+.ac-key {
+  --ac-key-height: var(--ac-control-lg);
+  --ac-key-border: 1.5px;
+  --ac-key-edge: 4px;
+  box-sizing: border-box;
+  height: var(--ac-key-height);
+  min-width: 0;
+  margin: 0;
+  padding: 0 var(--ac-space-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-0-5);
+  border: var(--ac-key-border) solid var(--ac-color-border-control);
+  border-bottom: var(--ac-key-edge) solid var(--ac-color-border-dashed);
+  border-radius: var(--ac-radius-control);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  font-family: var(--ac-font-family);
+  cursor: pointer;
+  transition:
+    opacity var(--ac-duration-fast),
+    color var(--ac-duration-fast),
+    border-color var(--ac-duration-fast),
+    transform var(--ac-duration-fast);
+}
+.ac-key--sm {
+  --ac-key-height: var(--ac-control-md);
+}
+/* Pressed: the key goes down by its edge, filled. */
+.ac-key[aria-pressed='true'] {
+  height: calc(var(--ac-key-height) - var(--ac-key-edge) + var(--ac-key-border));
+  margin-top: calc(var(--ac-key-edge) - var(--ac-key-border));
+  border-color: var(--ac-color-primary-strong);
+  border-bottom-width: var(--ac-key-border);
+  background: var(--ac-color-primary);
+  color: var(--ac-color-on-primary);
+  box-shadow: inset 0 2px 4px var(--ac-color-overlay-label);
+  opacity: 1;
+  cursor: default;
+}
+.ac-key:not([aria-pressed='true']):not(:disabled):active {
+  transform: translateY(2px);
+}
+/* Disabled: flat (no edge), no fill, faded: it cannot be pressed. */
+.ac-key:disabled:not([aria-pressed='true']) {
+  border-bottom-width: var(--ac-key-border);
+  border-color: var(--ac-color-border);
+  background: transparent;
+  color: var(--ac-color-text-disabled);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ac-key:focus-visible {
+  outline: 2px solid var(--ac-color-focus);
+  outline-offset: 2px;
+  opacity: 1;
+}
+@media (hover: hover) {
+  .ac-key:not([aria-pressed='true']):not(:disabled):hover {
+    border-color: var(--ac-color-primary);
+    color: var(--ac-color-primary);
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+.ac-key__num {
+  font-size: var(--ac-font-size-body-strong);
+  font-weight: 800;
+  line-height: 1;
+}
+.ac-key__num sup {
+  font-size: 0.62em;
+  line-height: 0;
+}
+.ac-key__word {
+  font: var(--ac-font-micro);
+}
+/* A single key with a word only (« Choisir » / « Choisie »). */
+.ac-key__label {
+  font: var(--ac-font-body-strong);
+}

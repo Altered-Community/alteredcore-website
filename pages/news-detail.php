@@ -9,11 +9,15 @@ $txt = [
         'news_not_found' => 'News article not found.',
         'news_back'      => 'Back to news',
         'news_published' => 'Published on',
+        'news_by'        => 'By',
+        'news_translated'=> 'Translated by',
     ],
     'fr' => [
         'news_not_found' => 'Article introuvable.',
         'news_back'      => 'Retour aux actualités',
         'news_published' => 'Publié le',
+        'news_by'        => 'Par',
+        'news_translated'=> 'Traduit par',
     ],
 ][getUiLang()] ?? [];
 
@@ -40,6 +44,8 @@ $date            = $news['published_at'] ?? $news['created_at'];
 $pageTitle       = $title;
 $pageDescription = ($news['excerpt_' . $lang] ?? '') ?: ($news['excerpt_en'] ?? '');
 $pageImage       = !empty($news['image']) ? assetUrl($news['image']) : '';
+$authors         = newsPeople($news['authors'] ?? null);
+$translators     = newsPeople($news['translators'] ?? null);
 
 include dirname(__DIR__) . '/includes/header.php';
 ?>
@@ -66,6 +72,16 @@ include dirname(__DIR__) . '/includes/header.php';
                 </span>
             </div>
             <h1 class="news-detail-title"><?= h($title) ?></h1>
+            <?php if ($authors || $translators): ?>
+                <p class="news-detail-credits">
+                    <?php if ($authors): ?>
+                        <span><?= h($txt['news_by']) ?> <strong><?= h(formatPeopleList($authors, getUiLang())) ?></strong></span>
+                    <?php endif; ?>
+                    <?php if ($translators): ?>
+                        <span><?= h($txt['news_translated']) ?> <strong><?= h(formatPeopleList($translators, getUiLang())) ?></strong></span>
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
         </div>
 
         <?php

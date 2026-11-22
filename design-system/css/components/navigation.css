@@ -1,0 +1,243 @@
+/*
+ * Navigation — tabs, breadcrumb, pagination, menu (dropdown panel).
+ * Docs: design-system/docs/components/navigation.md
+ */
+
+/* ---- Tabs ---- */
+.ac-tabs {
+  display: flex;
+  min-width: 0;
+}
+.ac-tabs--underline {
+  gap: var(--ac-space-1);
+  border-bottom: 1px solid var(--ac-color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ac-tabs--underline > :is(button, a) {
+  height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-body);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+@media (hover: hover) { .ac-tabs--underline > :is(button, a):hover { color: var(--ac-color-text); } }
+.ac-tabs--underline > :is([aria-selected='true'], [aria-current], .is-active) {
+  border-bottom-color: var(--ac-color-primary);
+  color: var(--ac-color-primary-strong);
+  font-weight: 700;
+}
+/* Tabs that share the row, no scrolling (compact screens; extra tabs go in a « Plus » menu, an ac-menu). */
+.ac-tabs--fill { gap: 0; }
+.ac-tabs--fill > :is(button, a) {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  padding: 0 var(--ac-space-2);
+}
+.ac-tabs--pill {
+  gap: var(--ac-space-1-5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ac-tabs--pill::-webkit-scrollbar,
+.ac-tabs--underline::-webkit-scrollbar { display: none; }
+.ac-tabs--pill > :is(button, a) {
+  height: var(--ac-control-sm);
+  padding: 0 14px;
+  flex-shrink: 0;
+  border: 1px solid var(--ac-color-border-control);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-surface);
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-body);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.ac-tabs--pill > :is([aria-selected='true'], [aria-current], .is-active) {
+  border-color: var(--ac-color-inverse);
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+  font-weight: 700;
+}
+.ac-tabs__count { color: var(--ac-color-text-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* A count still loading (« … ») and a count of up to three digits take the same width: the next tabs do not move. */
+.ac-tabs__count-value { display: inline-block; min-width: 3ch; }
+
+/* ---- Breadcrumb ---- */
+.ac-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-muted);
+  margin-bottom: var(--ac-space-3);
+}
+.ac-breadcrumb a { color: var(--ac-color-text-muted); text-decoration: none; }
+@media (hover: hover) { .ac-breadcrumb a:hover { color: var(--ac-color-text); } }
+.ac-breadcrumb [aria-current] { color: var(--ac-color-text); }
+
+/* ---- Pagination ---- */
+.ac-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  list-style: none;
+  margin: var(--ac-space-6) 0 0;
+  padding: 0;
+}
+.ac-pagination :is(a, span) {
+  min-width: var(--ac-control-sm);
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-2);
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+@media (hover: hover) { .ac-pagination a:hover { background: var(--ac-color-track); color: var(--ac-color-text); } }
+.ac-pagination [aria-current] {
+  background: var(--ac-color-inverse);
+  color: var(--ac-color-on-inverse);
+  font-weight: 700;
+}
+
+/* ---- Menu: floating panel of actions or links ---- */
+.ac-menu {
+  min-width: 200px;
+  padding: var(--ac-space-1);
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  box-shadow: var(--ac-shadow-e2);
+  color: var(--ac-color-text);
+  list-style: none;
+  margin: 0;
+}
+.ac-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2-5);
+  width: 100%;
+  min-height: var(--ac-control-md);
+  padding: 0 var(--ac-space-3);
+  border: none;
+  border-radius: var(--ac-radius-md);
+  background: none;
+  color: var(--ac-color-text);
+  font: var(--ac-font-body);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ac-menu__item .ac-icon { color: var(--ac-color-text-muted); --ac-icon-size: 18px; }
+.ac-menu__item:focus-visible { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); }
+@media (hover: hover) { .ac-menu__item:hover { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); } }
+.ac-menu__item:is([aria-current], .is-active) { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
+.ac-menu__item:is([aria-current], .is-active) .ac-icon { color: currentColor; }
+.ac-menu__item--danger,
+.ac-menu__item--danger .ac-icon { color: var(--ac-color-required); }
+.ac-menu__label {
+  padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-1);
+  font: var(--ac-font-overline);
+  text-transform: uppercase;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  color: var(--ac-color-text-muted);
+}
+.ac-menu__divider {
+  height: 1px;
+  margin: var(--ac-space-1) 0;
+  background: var(--ac-color-divider);
+  border: 0;
+}
+
+/*
+ * Contents (table of contents): panel with a list of in-page links, one level of sub-links.
+ * <nav class="ac-toc"><p class="ac-toc__title">Contents</p><ol class="ac-toc__list"><li><a href="#a">A</a></li></ol></nav>
+ * Docs: design-system/docs/components/navigation.md
+ */
+.ac-toc {
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-lg);
+  padding: var(--ac-space-5) var(--ac-space-6);
+}
+.ac-toc--sticky {
+  position: sticky;
+  top: calc(var(--ac-sticky-top) + var(--ac-space-4));
+}
+.ac-toc__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  margin: 0 0 var(--ac-space-3);
+  font: var(--ac-font-overline);
+  text-transform: uppercase;
+  letter-spacing: var(--ac-letter-spacing-overline);
+  color: var(--ac-color-text-muted);
+}
+.ac-toc__list,
+.ac-toc__sub {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ac-toc__list > li { margin-bottom: var(--ac-space-1-5); }
+.ac-toc__list a {
+  color: var(--ac-color-text-2);
+  font: var(--ac-font-body);
+  font-weight: 500;
+  text-decoration: none;
+}
+.ac-toc__list a:focus-visible { color: var(--ac-color-primary-strong); text-decoration: underline; }
+@media (hover: hover) {
+  .ac-toc__list a:hover { color: var(--ac-color-primary-strong); text-decoration: underline; }
+}
+/* Section being read. */
+.ac-toc__list a[aria-current] { color: var(--ac-color-primary-strong); font-weight: 800; }
+
+/* Sub-links under an item (the phases of a turn). */
+.ac-toc__sub { padding: var(--ac-space-1-5) 0 var(--ac-space-0-5); }
+.ac-toc__sub > li { margin-bottom: var(--ac-space-1); }
+.ac-toc__sub a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+  color: var(--ac-color-text-muted);
+  font: var(--ac-font-small);
+}
+
+/* Numbered items (rules, where "see §8" is a real reference). */
+.ac-toc--numbered .ac-toc__list { counter-reset: ac-toc; }
+.ac-toc--numbered .ac-toc__list > li {
+  counter-increment: ac-toc;
+  position: relative;
+  padding-left: var(--ac-space-8);
+}
+.ac-toc--numbered .ac-toc__list > li::before {
+  content: counter(ac-toc, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: var(--ac-space-0-5);
+  font: var(--ac-font-micro);
+  color: var(--ac-color-primary);
+}

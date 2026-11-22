@@ -10,12 +10,18 @@ $txt = [
         'news_view_all'  => 'View all',
         'no_news'        => 'No news at the moment.',
         'news_read_more' => 'Read more',
+        'giveaway_title' => 'Adopt a Woollyback Giveaway',
+        'giveaway_text'  => 'Take part in the giveaway on Gleam.',
+        'giveaway_enter' => 'Enter',
     ],
     'fr' => [
         'news_latest'    => 'Dernières actualités',
         'news_view_all'  => 'Voir tout',
         'no_news'        => 'Aucune actualité pour le moment.',
         'news_read_more' => 'Lire la suite',
+        'giveaway_title' => 'Concours « Adopt a Woollyback »',
+        'giveaway_text'  => 'Participez au concours sur Gleam.',
+        'giveaway_enter' => 'Participer',
     ],
 ][getUiLang()] ?? [];
 
@@ -34,11 +40,11 @@ include dirname(__DIR__) . '/includes/header.php';
 
 <!-- Hero + announcement wrapper -->
 <div class="hero-stack<?= $announcement ? ' has-announcement' : '' ?>">
-<section class="hero"<?= $banner['bg_image'] ? ' style="background-image:url(' . h(BASE_URL . '/' . $banner['bg_image']) . ');background-size:cover;background-position:center center;background-repeat:no-repeat"' : '' ?>>
-    <?php if ($banner['overlay_opacity'] > 0): ?>
-    <div class="hero-overlay" style="background-color:<?= h($banner['overlay_color']) ?>;opacity:<?= round($banner['overlay_opacity'] / 100, 2) ?>"></div>
+<section class="hero<?= $banner['bg_image'] ? ' hero--image' : '' ?>"<?= $banner['bg_image'] ? ' style="background-image:url(' . h(BASE_URL . '/' . $banner['bg_image']) . ')"' : '' ?>>
+    <?php if ($banner['bg_image']): ?>
+    <div class="hero-overlay"></div>
     <?php endif; ?>
-    <div class="hero-content container" style="position:relative;z-index:1">
+    <div class="hero-content container">
         <h1><?= h($banner['title']) ?></h1>
         <p><?= h($banner['subtitle']) ?></p>
         <?php if ($banner['btn_label'] && $banner['btn_url']): ?>
@@ -63,7 +69,7 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
 <div class="hero-announcement alert-<?= h($announcement['color']) ?>" role="alert">
     <div class="container d-flex align-items-start gap-3">
         <?php if ($announcement['icon'] !== ''): ?>
-        <i class="<?= h($announcement['icon']) ?> flex-shrink-0 mt-1"></i>
+        <?= ac_icon((string)$announcement['icon'], 'flex-shrink-0 mt-1') ?>
         <?php endif; ?>
         <div>
             <?php if ($announcement['title'] !== ''): ?>
@@ -79,6 +85,23 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
 </div>
 
 <?php if (function_exists('renderNewsletterBlock')) renderNewsletterBlock(); ?>
+
+<!-- Gleam giveaway: a link, not Gleam's embed (large, and blocked by Firefox's tracking protection) -->
+<section class="container pt-4">
+    <div class="ac-notice">
+        <?= ac_icon('gift') ?>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 flex-grow-1">
+            <div>
+                <p class="ac-notice__title"><?= $txt['giveaway_title'] ?></p>
+                <p><?= $txt['giveaway_text'] ?></p>
+            </div>
+            <a class="ac-button ac-button--sm" href="https://gleam.io/4vicx/adopt-a-woollyback-giveaway"
+               target="_blank" rel="nofollow noopener noreferrer">
+                <?= $txt['giveaway_enter'] ?> <?= ac_icon('external-link') ?>
+            </a>
+        </div>
+    </div>
+</section>
 
 <!-- Latest news -->
 <section class="container py-4">

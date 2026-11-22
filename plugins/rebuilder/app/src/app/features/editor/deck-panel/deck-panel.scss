@@ -1,0 +1,42 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  overflow: hidden;
+  min-height: 0;
+}
+.rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ac-space-2) var(--ac-space-3) var(--ac-space-4);
+}
+.group-head {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--ac-space-3) var(--ac-space-1) var(--ac-space-1-5);
+  font: var(--ac-font-caption);
+  letter-spacing: var(--ac-letter-spacing-overline);
+  text-transform: uppercase;
+  color: var(--ac-color-text-muted);
+}
+.empty {
+  margin: var(--ac-space-4) var(--ac-space-1);
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}
+.group-head .ac-skeleton {
+  margin: 0.2em 0;
+}
+/* While the deck opens: a card row's height (ac-deck-row, panel appearance). */
+.row-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  height: 36px;
+  padding: 0 var(--ac-space-1);
+}

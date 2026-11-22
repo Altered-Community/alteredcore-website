@@ -152,15 +152,15 @@ $total = count($items);
                     <?php if ($isChild): ?>
                         <span class="text-muted me-1" style="padding-left:.75rem">↳</span>
                     <?php else: ?>
-                        <i class="<?= h($item['icon']) ?>"></i>
+                        <?= ac_icon((string)($item['icon'])) ?>
                     <?php endif; ?>
                 </td>
                 <td <?= $isChild ? 'class="ps-3"' : '' ?>>
-                    <?php if ($isChild && empty($item['is_separator'])): ?><i class="<?= h($item['icon']) ?> me-1 text-muted"></i><?php endif; ?>
+                    <?php if ($isChild && empty($item['is_separator'])): ?><?= ac_icon((string)($item['icon']), 'me-1 text-muted') ?><?php endif; ?>
                     <?php if (!empty($item['is_separator'])): ?>
                         <span class="badge bg-light text-dark border" style="font-size:.7rem">separator</span>
                     <?php elseif (!empty($item['is_section_header'])): ?>
-                        <i class="<?= h($item['icon']) ?> me-1 text-muted"></i><?= h($item['label_en']) ?>
+                        <?= ac_icon((string)($item['icon']), 'me-1 text-muted') ?><?= h($item['label_en']) ?>
                         <span class="badge bg-info text-dark ms-1" style="font-size:.7rem">section header</span>
                     <?php else: ?>
                         <?= h($item['label_en']) ?>

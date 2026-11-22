@@ -2,6 +2,7 @@
 $adminPageTitle = 'Edit Announcement';
 $adminSection   = 'announcement';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/icon-field.php';
 
 $db = getDB();
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -33,7 +34,7 @@ $entry = [
     'text_en'      => '',
     'text_fr'      => '',
     'color'        => 'info',
-    'icon'         => 'fa-solid fa-circle-info',
+    'icon'         => 'info',
     'sort_order'   => 0,
     'link_url'     => '',
     'link_target'  => '_self',
@@ -65,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isset($bsColors[$color])) $color = 'info';
 
         $icon = trim($_POST['icon'] ?? '');
-        if ($icon !== '' && !preg_match('#^[\w\s-]+$#', $icon)) $icon = 'fa-solid fa-circle-info';
+        if ($icon !== '' && !preg_match('#^[\w\s-]+$#', $icon)) $icon = 'info';
 
         $linkUrl    = trim($_POST['link_url'] ?? '');
         $linkTarget = ($_POST['link_target'] ?? '_self') === '_blank' ? '_blank' : '_self';
@@ -187,16 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Icon <span class="text-muted small">(Font Awesome class)</span></label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i id="ann_icon_i" class="<?= h($entry['icon']) ?>"></i>
-                    </span>
-                    <input type="text" name="icon" id="ann_icon" class="form-control"
-                           value="<?= h($entry['icon']) ?>" maxlength="100"
-                           placeholder="fa-solid fa-circle-info">
-                </div>
-                <div class="form-text">e.g. <code>fa-solid fa-circle-info</code>, <code>fa-solid fa-triangle-exclamation</code>. Leave blank to hide.</div>
+                <?php adminIconField((string)$entry['icon'], ['id' => 'ann_icon', 'maxlength' => 100, 'placeholder' => 'info', 'help' => 'Leave blank to hide.']); ?>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Sort order</label>
@@ -210,8 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-4">
             <label class="form-label fw-semibold small text-muted text-uppercase">Preview</label>
             <div id="ann_preview" class="alert alert-<?= h($entry['color']) ?> d-flex align-items-start gap-2 mb-0" role="alert">
-                <i id="ann_prev_icon" class="<?= h($entry['icon']) ?> mt-1 flex-shrink-0"
-                   <?= $entry['icon'] === '' ? 'style="display:none"' : '' ?>></i>
+                <span id="ann_prev_icon" class="mt-1 flex-shrink-0"
+                      <?= $entry['icon'] === '' ? 'style="display:none"' : '' ?>><?= adminIconPreview((string)$entry['icon']) ?></span>
                 <div>
                     <div id="ann_prev_title" class="fw-bold"
                          <?= ($entry['title_en'] === '') ? 'style="display:none"' : '' ?>><?= h($entry['title_en'] ?: 'Announcement title') ?></div>
@@ -268,7 +260,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     var iconInput = document.getElementById('ann_icon');
     var preview   = document.getElementById('ann_preview');
     var prevIcon  = document.getElementById('ann_prev_icon');
-    var inpIcon   = document.getElementById('ann_icon_i');
     var titleIn   = document.querySelector('[name="title_en"]');
     var textIn    = document.querySelector('[name="text_en"]');
     var prevTitle = document.getElementById('ann_prev_title');
@@ -283,10 +274,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     function applyIcon() {
-        var cls = iconInput.value.trim();
-        prevIcon.className = cls + ' mt-1 flex-shrink-0';
-        inpIcon.className  = cls;
-        prevIcon.style.display = cls ? '' : 'none';
+        var ref = iconInput.value.trim();
+        window.adminRenderIcon(prevIcon, ref);
+        prevIcon.style.display = ref ? '' : 'none';
     }
 
     colorSel.addEventListener('change', applyColor);

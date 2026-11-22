@@ -1,0 +1,35 @@
+{
+    "$schema":      "../plugin.schema.json",
+    "id":           "hidden-creatures",
+    "name":         "Hidden Creatures",
+    "version":      "1.0.0",
+    "description":  "Illustrations hidden on some pages of the site, falling through the page; a click counts the find (recorded for signed-in players) and shows the spot's contest code. Creatures, spots, codes and finds in the admin.",
+    "author":       "AlteredCore",
+    "icon":         "sparkles",
+    "table_prefix": "hc",
+
+    "api": [
+        { "endpoint": "find", "file": "papi/find.php", "methods": ["POST"] }
+    ],
+
+    "admin": [
+        {
+            "section":  "hidden-creatures",
+            "file":     "admin/hunt.php",
+            "label_en": "Hidden creatures",
+            "label_fr": "Créatures cachées",
+            "icon":     "sparkles"
+        }
+    ],
+
+    "assets": {
+        "global_php": ["assets/global_head.php"]
+    },
+
+    "sql":    "sql/install.sql",
+    "tables": ["creatures", "spots", "finds"],
+
+    "tests": {
+        "e2e": "e2e"
+    }
+}

@@ -183,16 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if ($delId) {
         $token = deckApiToken();
         if ($token) {
-            $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($delId));
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CUSTOMREQUEST  => 'DELETE',
-                CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-                CURLOPT_TIMEOUT        => 15,
-            ]);
-            curl_exec($ch);
-            $delCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $delCode = cacDeckApiDelete($delId, $token);
             if ($delCode >= 200 && $delCode < 300) {
                 flash($txt['deleted_ok']);
             } else {
@@ -218,14 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
     }
     $action = $_POST['action'] ?? '';
     if ($action === 'delete') {
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => 'DELETE',
-            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+        $c = cacDeckApiDelete((string)$deckId, $token);
         if ($c >= 200 && $c < 300) {
             echo json_encode(['ok' => true]);
         } else {
@@ -294,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
         if ($newName === '') {
             $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
         }
-        $payload = cacBuildDuplicateDeckPayload($source, $newName);
+        $payload = cacBuildDuplicateDeckPayload($source, $newName, (int)($_SESSION['user_id'] ?? 0) ?: null);
 
         $ch = curl_init(DECKS_API_URL . '/api/decks');
         curl_setopt_array($ch, [
@@ -365,6 +349,15 @@ if ($deckId) {
 
 // process deck data
 $pageTitle = $deck['name'] ?? $txt['page_title'];
+// Link preview (Discord…) of a public deck, the same as Re:Builder's (plugins/rebuilder/meta.php).
+if (is_array($deck) && $deckId) {
+    require_once dirname(__DIR__) . '/includes/deck-preview/preview.php';
+    $_deckPreview = deckPreviewMeta($deck, $lang);
+    if ($_deckPreview['image'] !== null) {
+        ['description' => $pageDescription, 'image' => $pageImage, 'themeColor' => $pageThemeColor, 'oembed' => $pageOembedUrl] = $_deckPreview;
+        $pageOgTitle = $_deckPreview['title'];
+    }
+}
 // Check ownership: the collection endpoint returns only the current user's decks,
 // so fetching /api/decks and looking for this deck ID is reliable without any API change.
 $isOwner = false;
@@ -483,12 +476,13 @@ $decklistText = implode("\n", $decklistLines);
 $heroCard    = $cardGroups['HERO'][0] ?? null;
 $heroRef     = $heroCard['cardReference'] ?? '';
 $heroName    = $heroCard['name'] ?? null;
-$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . normalizeCardRef($heroRef) . '_1.webp' : null;
+$heroImgUrl  = $heroRef ? CDN_URL . '/cards/hero/' . cacHeroPortraitRef($heroRef) . '_1.webp' : null;
 $factionCode = $heroCard['factionCode'] ?? null;
 $factionsData   = loadAlteredData('factions');
 $formatsData    = loadAlteredData('formats');
 $raritiesData   = loadAlteredData('rarities');
-$factionColor   = $factionsData[$factionCode]['color'] ?? '#ffffff';
+// Faction colour from data/altered.json; the fallback stays dark because the banner text is white.
+$factionColor   = $factionsData[$factionCode]['color'] ?? 'var(--ac-color-overlay-control)';
 $_gemColors = [];
 foreach ($raritiesData as $_rd) {
     if (!empty($_rd['gem'])) $_gemColors[$_rd['gem']] = $_rd['color'] ?? '';
@@ -583,13 +577,13 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 
     <?php if ($isDeckPrivate): ?>
     <div class="text-center py-5">
-        <i class="fa-solid fa-lock" style="font-size:3rem;color:var(--neutral-200);margin-bottom:1.25rem;display:block"></i>
+        <i class="fa-solid fa-lock" style="font-size:3rem;color:var(--ac-color-text-disabled);margin-bottom:1.25rem;display:block"></i>
         <p class="text-muted"><?= h($txt['deck_private']) ?></p>
     </div>
 
     <?php elseif ($apiError): ?>
     <div class="text-center py-5">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:#f87171;margin-bottom:.75rem;display:block"></i>
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:var(--ac-color-required);margin-bottom:.75rem;display:block"></i>
         <p class="text-muted mb-1"><?= h($apiError) ?></p>
         <p class="text-muted small"><?= h($txt['api_later']) ?></p>
     </div>
@@ -599,7 +593,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
     <!-- Deck header banner -->
     <?php
     $hdrStyle = $heroImgUrl
-        ? 'background-image:linear-gradient(to right,' . $factionColor . ' 35%,' . $factionColor . '00 100%),url(' . h($heroImgUrl) . ');background-size:cover;background-position:left top;'
+        ? 'background-image:linear-gradient(to right,' . h($factionColor) . ' 35%,transparent 100%),url(' . h($heroImgUrl) . ');background-size:cover;background-position:left top;'
         : '';
     ?>
     <div class="card-altered deck-hdr-banner p-4 mb-4<?= $heroImgUrl ? ' deck-card-text-white deck-hdr-banner--hero' : '' ?>" style="<?= $hdrStyle ?>"
@@ -630,9 +624,12 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     $fmt      = strtolower($deck['format'] ?? 'standard');
                     $fmtData  = $formatsData[$fmt] ?? null;
                     $fmtLabel = $fmtData ? ($fmtData[$uiLang] ?? $fmtData['en'] ?? ucfirst($fmt)) : ucfirst($fmt);
-                    $fmtColor = $fmtData['color'] ?? 'var(--primary-400)';
+                    // Format colour from data/altered.json (theme-invariant, white text); primary fallback.
+                    $fmtStyle = !empty($fmtData['color'])
+                        ? 'background:' . $fmtData['color'] . ';color:var(--ac-color-on-strong)'
+                        : 'background:var(--ac-color-primary);color:var(--ac-color-on-primary)';
                     ?>
-                    <span class="badge" style="background:<?= $fmtColor ?>;color:#fff"><?= h($fmtLabel) ?></span>
+                    <span class="badge" style="<?= h($fmtStyle) ?>"><?= h($fmtLabel) ?></span>
                     <?php
                     $_deckLegal   = $deck['legal'] ?? null;
                     $_fmtErrors   = is_array($deck['formatErrors'] ?? null) ? $deck['formatErrors'] : [];
@@ -646,11 +643,11 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         }
                     }
                     if ($_deckLegal === true): ?>
-                    <span class="badge bg-success">
+                    <span class="ac-badge ac-badge--green">
                         <i class="fa-solid fa-check me-1"></i><?= h($txt['legal']) ?>
                     </span>
                     <?php elseif ($_deckLegal === false && $_hasActualErrors): ?>
-                    <button type="button" class="badge border-0 bg-danger js-deck-illegal"
+                    <button type="button" class="ac-badge ac-badge--red border-0 js-deck-illegal"
                             data-errors="<?= h(json_encode($_fmtErrors)) ?>"
                             data-legality="<?= h(json_encode($_legalDetail)) ?>"
                             data-format="<?= h($fmtLabel) ?>">
@@ -662,7 +659,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <?= h(!empty($deck['isPublic']) ? $txt['public'] : $txt['private']) ?>
                     </span>
                     <?php if (!isset($deck['isDraft']) || $deck['isDraft']): ?>
-                    <span class="badge bg-secondary"><?= h($txt['draft']) ?></span>
+                    <span class="ac-badge"><?= h($txt['draft']) ?></span>
                     <?php endif; ?>
                     <?php if (!empty($deck['createdAt'])): ?>
                     <span class="<?= $heroImgUrl ? 'deck-hdr-on-bg' : 'text-muted small' ?>"><?= h($txt['created']) ?> <?= date('d/m/Y', strtotime($deck['createdAt'])) ?></span>
@@ -677,7 +674,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                     <?php endif; ?>
                     <?php foreach (['C','R','E','U'] as $r):
                         if (($byRarity[$r] ?? 0) === 0) continue;
-                        $rColor = $heroImgUrl ? 'color:rgba(255,255,255,.85)' : (($_gemColors[$r] ?? '') ? 'color:' . $_gemColors[$r] : ''); ?>
+                        $rColor = $heroImgUrl ? 'color:color-mix(in srgb, var(--ac-color-on-strong) 85%, transparent)' : (($_gemColors[$r] ?? '') ? 'color:' . $_gemColors[$r] : ''); ?>
                     <span class="d-flex align-items-center gap-1">
                         <img src="<?= $pluginAssetsUrl ?>/gems/<?= $r ?>.png" alt="<?= $r ?>" style="width:16px;height:16px;object-fit:contain">
                         <span class="fw-semibold" <?= $rColor ? 'style="'.$rColor.'"' : '' ?>><?= $byRarity[$r] ?></span>
@@ -805,7 +802,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
         <!-- Description view -->
         <div id="deck-desc-view"<?= !empty($deck['cards']) ? ' style="display:none"' : '' ?>>
             <?php if (!empty($deck['description'])): ?>
-            <p style="white-space:pre-wrap;font-size:.9rem;line-height:1.6;color:var(--neutral-600)"><?= h($deck['description']) ?></p>
+            <p style="white-space:pre-wrap;font-size:.9rem;line-height:1.6;color:var(--ac-color-text-2)"><?= h($deck['description']) ?></p>
             <?php else: ?>
             <p class="text-muted" style="font-size:.9rem"><?= h($txt['no_description']) ?></p>
             <?php endif; ?>
@@ -837,17 +834,17 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
             <div class="deck-stat-card">
                 <div class="deck-stat-title"><?= h($txt['stats_cost_main']) ?></div>
                 <?php if ($statsCostCurve): ?>
-                    <?= $renderVCurve($statsCostCurve, $maxCostQty, 'var(--primary-400)') ?>
+                    <?= $renderVCurve($statsCostCurve, $maxCostQty, 'var(--ac-color-chart-main)') ?>
                 <?php else: ?>
-                    <span style="font-size:.78rem;color:var(--neutral-400)">—</span>
+                    <span style="font-size:.78rem;color:var(--ac-color-text-muted)">—</span>
                 <?php endif; ?>
             </div>
             <div class="deck-stat-card">
                 <div class="deck-stat-title"><?= h($txt['stats_cost_recall']) ?></div>
                 <?php if ($statsRecallCurve): ?>
-                    <?= $renderVCurve($statsRecallCurve, $maxRecallQty, 'var(--secondary-400,#a78bfa)') ?>
+                    <?= $renderVCurve($statsRecallCurve, $maxRecallQty, 'var(--ac-color-chart-reserve)') ?>
                 <?php else: ?>
-                    <span style="font-size:.78rem;color:var(--neutral-400)">—</span>
+                    <span style="font-size:.78rem;color:var(--ac-color-text-muted)">—</span>
                 <?php endif; ?>
             </div>
             <div class="deck-stat-card">
@@ -1044,7 +1041,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                         <i class="fa-solid fa-copy me-1"></i><?= h($txt['share_copy']) ?>
                     </button>
                 </div>
-                <div id="deck-share-qr" class="d-flex justify-content-center" style="padding:12px;background:#fff;border-radius:10px;border:1px solid var(--sand-200)"></div>
+                <div id="deck-share-qr" class="d-flex justify-content-center" style="padding:12px;background:var(--ac-card-paper);border-radius:var(--ac-radius-control);border:1px solid var(--ac-color-border)"></div>
             </div>
         </div>
     </div>
@@ -1059,7 +1056,7 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 <h5 class="fw-bold mb-3">
                     <i class="fa-solid fa-lock me-2"></i><?= h($txt['share_private_title']) ?>
                 </h5>
-                <p class="small mb-3" style="color:var(--neutral-600)"><?= h($txt['share_private_body']) ?></p>
+                <p class="small mb-3" style="color:var(--ac-color-text-2)"><?= h($txt['share_private_body']) ?></p>
                 <div id="deck-share-private-error" class="alert alert-danger p-2 mb-3 small" style="display:none"></div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">
@@ -1080,6 +1077,30 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 
 <?php if ($hasUniqueCards): ?>
 <script src="<?= h($rendererSrc) ?>"></script>
+<?php endif; ?>
+
+<?php
+// Alt-art marker widget + 3D tilt in the card zoom lightbox — requires the ownership
+// plugin itself to be active (not just OWNERSHIP_API_URL configured), see ownershipIsActive().
+// Only shown in Global preference mode — in PerDeck mode (the default), a card's
+// illustration preference is never surfaced by clicking it, see AltArtPreferenceMode.
+$_ownAltArtActive = ownershipIsActive() && $isLoggedIn && cacIsAltArtGlobalMode((int)($_SESSION['user_id'] ?? 0));
+$ownAltArtCfg = $_ownAltArtActive ? [
+    'enabled'          => true,
+    'altArtsUrl'       => BASE_URL . '/papi/core-altered-cards/deck-alt-arts',
+    'cdnUrl'           => CDN_URL,
+    'lang'             => $lang,
+    'markerImg'        => BASE_URL . '/plugins/ownership/assets/selected_alt.png',
+    'setPreferenceUrl' => BASE_URL . '/papi/ownership/alt-art-set-preference',
+    'csrfToken'        => csrfToken(),
+    'txt'              => ['saveError' => $uiLang === 'fr' ? 'Impossible d\'enregistrer votre choix.' : 'Could not save your choice.'],
+] : ['enabled' => false];
+?>
+<?php if ($_ownAltArtActive): ?>
+<link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-tilt.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/alt-art-widget.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/ownership/js/card-modal-enhance.js"></script>
 <?php endif; ?>
 
 <!-- Card zoom lightbox (shared) -->
@@ -1189,6 +1210,10 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
 
     urlInput.value = shareUrl;
 
+    function qrColor(token, fallback) {
+        return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+    }
+
     function openShareModal() {
         if (!shareModal) shareModal = new bootstrap.Modal(document.getElementById('deckShareModal'));
         shareModal.show();
@@ -1198,8 +1223,9 @@ $rendererSrc = 'https://cdn.jsdelivr.net/gh/PolluxTroy0/Altered-Card-Renderer@ma
                 text: shareUrl,
                 width: 200,
                 height: 200,
-                colorDark: '#2C2416',
-                colorLight: '#ffffff',
+                // QR codes stay black on white in both themes (scanners expect dark on light).
+                colorDark: qrColor('--ac-card-ink', 'black'),
+                colorLight: qrColor('--ac-card-paper', 'white'),
                 correctLevel: QRCode.CorrectLevel.M,
             });
         }

@@ -41,7 +41,7 @@
     }
 
     // ----- Average-composition card (donut + legend), injected into #ohs-comp -----
-    var TYPE_COLORS = { CHARACTER: '#2f7d57', SPELL: '#C9A84C', REST: '#5b7aa8' };
+    var TYPE_COLORS = { CHARACTER: 'var(--ac-cards-type-character)', SPELL: 'var(--ac-cards-type-spell)', REST: 'var(--ac-cards-type-other)' };
     function compBody() {
         var tc = { CHARACTER: 0, SPELL: 0, REST: 0 };
         handDeckCards.forEach(function (c) {
@@ -152,8 +152,8 @@
         // Selected tag: faded card image as background. Uniques have no static image →
         // a pale-gold gradient instead (opaque so it never shows tom-select's default tint).
         var bg = d.unique
-            ? 'linear-gradient(90deg,#fff 30%,#f3e6c4)'
-            : 'linear-gradient(90deg,#fff 36%,rgba(255,255,255,.35)),url(' + esc(d.img) + ')';
+            ? 'linear-gradient(90deg,var(--ac-color-surface) 30%,color-mix(in srgb, var(--ac-cards-unique) 20%, var(--ac-color-surface)))'
+            : 'linear-gradient(90deg,var(--ac-color-surface) 36%,color-mix(in srgb, var(--ac-color-surface) 35%, transparent)),url(' + esc(d.img) + ')';
         return '<div class="ho-item" style="background-image:' + bg + '">' + esc(d.name) + ' ' + rar(d) + tail(d) + '</div>';
     }
     function optgroupHeader(d) { return '<div class="ho-optgroup-h">' + esc(d.label) + '</div>'; }

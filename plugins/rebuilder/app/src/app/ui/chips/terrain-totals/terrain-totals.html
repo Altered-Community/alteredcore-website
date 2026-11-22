@@ -1,0 +1,6 @@
+@for (t of items(); track t.key) {
+  <span class="pill" [title]="t.title">
+    <img [src]="t.src" [alt]="t.label" />
+    <strong>{{ t.value }}</strong>
+  </span>
+}

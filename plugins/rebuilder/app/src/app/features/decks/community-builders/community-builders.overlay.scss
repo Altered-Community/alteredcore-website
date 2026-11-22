@@ -1,0 +1,40 @@
+.builders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 240px));
+  justify-content: center;
+  gap: var(--ac-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+ac-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-3);
+}
+h3 {
+  margin: 0;
+  font: var(--ac-font-heading);
+}
+p {
+  flex-grow: 1;
+  margin: 0;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+}
+a {
+  align-self: flex-start;
+}

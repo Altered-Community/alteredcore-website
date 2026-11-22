@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="card-altered p-3 mb-3">
         <label class="form-label fw-semibold mb-1">
-            <span class="badge me-1" style="font-size:.7rem;background:#1d4ed8">FR</span> French content
+            <span class="badge text-bg-primary me-1" style="font-size:.7rem">FR</span> French content
         </label>
         <textarea name="content_fr" class="tinymce-editor"><?= h($contentFr) ?></textarea>
     </div>

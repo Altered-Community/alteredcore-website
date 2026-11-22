@@ -1,0 +1,665 @@
+/* =========================================================
+   tournament-reports — Plugin stylesheet
+   Layout only: colours, radii, shadows and fonts are design system tokens
+   (design-system/tokens/tokens.css), which already have dark values — no
+   dark-theme selectors here. Hero rows and banners sit on card artwork, so
+   their text uses --ac-color-on-strong + --ac-shadow-on-image.
+   ========================================================= */
+
+/* Page loader (the spinner is an .ac-spinner) */
+.tr-page-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ac-space-3);
+    padding: 80px var(--ac-space-5);
+    font: var(--ac-font-body);
+    color: var(--ac-color-text-muted);
+}
+.tr-spinner-lg {
+    width: 34px;
+    height: 34px;
+    border-width: 4px;
+}
+.tr-tournament-description {
+    color: var(--ac-color-text-2);
+    font: var(--ac-font-prose);
+    font-size: 15px;
+    white-space: pre-line;
+}
+
+/* Tournament list (pages/tournaments.php) */
+.tr-list-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ac-space-2);
+    margin: 0 0 var(--ac-space-1);
+    font: var(--ac-font-body-strong);
+}
+
+/* Card page (pages/card.php) */
+.tr-card-page {
+    max-width: calc(980px + 2 * var(--ac-page-padding));
+}
+.tr-card-name {
+    margin-bottom: var(--ac-space-2-5);
+}
+.tr-error-state > .ac-icon {
+    color: var(--ac-color-danger);
+}
+
+/* Decklist grid */
+.tr-decklist-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--ac-space-2);
+}
+@media (min-width: 768px) {
+    .tr-decklist-cards { grid-template-columns: repeat(5, 1fr); }
+}
+@media (min-width: 1200px) {
+    .tr-decklist-cards { grid-template-columns: repeat(6, 1fr); }
+}
+
+.tr-card-wrap {
+    position: relative;
+    border-radius: var(--ac-radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--ac-color-track);
+}
+.tr-card-wrap img,
+.tr-card-wrap altered-card {
+    display: block;
+    width: 100%;
+    border-radius: var(--ac-radius-md);
+    aspect-ratio: 63.5 / 88;
+    object-fit: cover;
+    overflow: hidden;
+}
+.tr-card-qty {
+    position: absolute;
+    bottom: var(--ac-space-1);
+    right: var(--ac-space-1);
+    background: var(--ac-color-overlay-strong);
+    color: var(--ac-color-on-strong);
+    font: var(--ac-font-caption);
+    padding: var(--ac-space-0-5) var(--ac-space-1-5);
+    border-radius: var(--ac-radius-xs);
+    border: 1px solid var(--ac-color-overlay-light);
+    pointer-events: none;
+}
+
+/* Standings card */
+.tr-ranking-card {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    padding: var(--ac-space-4);
+    margin-bottom: var(--ac-space-3);
+    overflow-x: auto;
+}
+.tr-ranking-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--ac-space-3);
+}
+.tr-ranking-title {
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text);
+}
+.tr-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--ac-font-body);
+}
+.tr-ranking-table th {
+    text-align: left;
+    padding: var(--ac-space-1-5) var(--ac-space-2-5);
+    font: var(--ac-font-overline);
+    text-transform: uppercase;
+    letter-spacing: var(--ac-letter-spacing-overline);
+    color: var(--ac-color-text-muted);
+    border-bottom: 1px solid var(--ac-color-border);
+}
+.tr-ranking-table td {
+    padding: var(--ac-space-2) var(--ac-space-2-5);
+    border-bottom: 1px solid var(--ac-color-divider);
+    color: var(--ac-color-text-2);
+    vertical-align: middle;
+}
+.tr-ranking-table tr:hover td {
+    background: var(--ac-color-bg-subtle);
+}
+.tr-rank-row-clickable {
+    cursor: pointer;
+}
+/* Hero art is painted on the <tr> itself (inline background-image), so it
+   spans every column. The tints below stay translucent, otherwise the
+   opaque cell backgrounds would hide the art. */
+.tr-rank-row-hero {
+    height: 75px;
+}
+.tr-ranking-table tr.tr-rank-row-hero td {
+    color: var(--ac-color-on-strong);
+    border-bottom-color: var(--ac-color-overlay-light);
+    text-shadow: var(--ac-shadow-on-image);
+}
+.tr-ranking-table tr.tr-rank-row-hero:hover td {
+    background-color: var(--ac-tournament-reports-row-hover);
+}
+.tr-ranking-table tr.tr-rank-row-hero.tr-rank-row-active td {
+    background-color: var(--ac-tournament-reports-row-active);
+}
+/* Hero column — the banner fills the cell edge to edge */
+.tr-rank-hero-cell {
+    padding: 0 !important;
+}
+/* Win/loss (W-L) column */
+.tr-rank-wl {
+    width: 64px;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.tr-standings-card {
+    border-left: 3px solid var(--ac-color-primary);
+}
+.tr-rank-row-active td {
+    background: var(--ac-color-primary-tint);
+}
+
+/* Faction / hero distribution charts */
+.tr-charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-4);
+    margin-bottom: var(--ac-space-4);
+}
+.tr-chart {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    padding: var(--ac-space-4);
+    flex: 1 1 260px;
+    min-width: 240px;
+}
+.tr-chart-title {
+    font: var(--ac-font-overline);
+    text-transform: uppercase;
+    letter-spacing: var(--ac-letter-spacing-overline);
+    color: var(--ac-color-text-muted);
+    margin-bottom: var(--ac-space-3);
+}
+.tr-chart-body {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-4);
+    flex-wrap: wrap;
+}
+.tr-donut {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    position: relative;
+}
+.tr-donut-hole {
+    position: absolute;
+    top: 22%;
+    left: 22%;
+    width: 56%;
+    height: 56%;
+    border-radius: 50%;
+    background: var(--ac-color-surface);
+}
+.tr-chart-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1 1 140px;
+    font: var(--ac-font-small);
+}
+.tr-chart-legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-1-5);
+    padding: var(--ac-space-0-5) 0;
+    color: var(--ac-color-text-2);
+}
+.tr-chart-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--ac-radius-xs);
+    flex: 0 0 auto;
+}
+.tr-chart-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+.tr-chart-label { flex: 1 1 auto; }
+.tr-chart-count {
+    color: var(--ac-color-text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.tr-chart-legend-ellipsis {
+    justify-content: center;
+    color: var(--ac-color-text-muted);
+    letter-spacing: .15em;
+}
+.tr-chart--wide {
+    flex-basis: 420px;
+}
+.tr-chart-legend--cols2 {
+    flex-basis: 280px;
+    column-count: 2;
+    column-gap: var(--ac-space-5);
+}
+.tr-chart-legend--cols2 li {
+    break-inside: avoid;
+}
+@media (max-width: 767.98px) {
+    .tr-chart-legend--cols2 { column-count: 1; }
+}
+.tr-chart-detail-btn {
+    display: flex;
+    margin: var(--ac-space-2-5) auto 0;
+}
+
+/* Chart detail modal (full faction / hero breakdown) */
+.tr-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--ac-color-scrim);
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
+    cursor: pointer;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.tr-modal-panel {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-dialog);
+    box-shadow: var(--ac-shadow-dialog);
+    padding: var(--ac-space-5);
+    max-width: 640px;
+    width: 92vw;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow: auto;
+    position: relative;
+    cursor: default;
+}
+.tr-modal-panel .tr-chart { background: none; border: none; padding: 0; }
+.tr-modal-close-btn {
+    position: absolute;
+    top: var(--ac-space-2-5);
+    right: var(--ac-space-3);
+}
+
+/* Standings filters */
+.tr-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-2);
+    margin-bottom: var(--ac-space-3);
+}
+/* The selects are drawn by the design-system listbox (a wrapper around the hidden <select>). */
+.tr-filter-bar .ac-listbox:has(> .tr-filter-faction) { width: 100%; max-width: 180px; }
+.tr-filter-bar .ac-listbox:has(> .tr-filter-hero) { width: 100%; max-width: 200px; }
+.tr-filter-bar .tr-filter-search { max-width: 220px; }
+
+/* View toggle (images/list) and deck actions */
+.tr-view-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ac-space-1);
+    margin-bottom: var(--ac-space-2-5);
+}
+.tr-view-export,
+.tr-view-btn,
+.tr-deck-variant-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ac-space-1-5);
+    height: var(--ac-control-sm);
+    padding: 0 var(--ac-space-2-5);
+    border-radius: var(--ac-radius-md);
+    font: var(--ac-font-small);
+    border: 1px solid var(--ac-color-border-control);
+    background: var(--ac-color-surface);
+    color: var(--ac-color-text-2);
+    cursor: pointer;
+    transition: background var(--ac-duration-fast), color var(--ac-duration-fast), border-color var(--ac-duration-fast);
+}
+.tr-view-export {
+    margin-right: auto;
+}
+.tr-view-export:hover,
+.tr-view-btn:hover,
+.tr-deck-variant-btn:hover {
+    background: var(--ac-color-bg-subtle);
+    color: var(--ac-color-text);
+}
+.tr-view-export:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.tr-view-btn.active,
+.tr-deck-variant-btn.active {
+    background: var(--ac-color-primary-soft);
+    border-color: var(--ac-color-primary-border);
+    color: var(--ac-color-primary-strong);
+    font-weight: 700;
+}
+
+/* Decklist table view */
+.tr-decklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--ac-font-body);
+}
+.tr-decklist-table th {
+    text-align: left;
+    padding: var(--ac-space-1) var(--ac-space-2);
+    font: var(--ac-font-overline);
+    text-transform: uppercase;
+    letter-spacing: var(--ac-letter-spacing-overline);
+    color: var(--ac-color-text-muted);
+    border-bottom: 1px solid var(--ac-color-border);
+}
+.tr-decklist-table td {
+    padding: var(--ac-space-1) var(--ac-space-2);
+    border-bottom: 1px solid var(--ac-color-divider);
+    color: var(--ac-color-text-2);
+}
+.tr-decklist-table tr:hover td { background: var(--ac-color-bg-subtle); }
+.tr-decklist-table td img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: var(--ac-space-1);
+}
+.tr-decklist-qty {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* Clickable player name in ranking */
+.tr-player-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--ac-color-primary-border);
+    text-underline-offset: 2px;
+    cursor: pointer;
+    transition: color var(--ac-duration-fast), text-decoration-color var(--ac-duration-fast);
+}
+.tr-player-link:hover {
+    text-decoration-color: currentColor;
+}
+
+/* Player status badges (empty deck / multiple decks): .ac-badge, see app.js */
+.tr-badge {
+    margin-left: var(--ac-space-1-5);
+    vertical-align: middle;
+    text-shadow: none;
+}
+
+/* Deck variant tabs (multiple decklists) */
+.tr-deck-variants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ac-space-1);
+    margin-bottom: var(--ac-space-3);
+}
+.tr-deck-variant-btn {
+    border-radius: var(--ac-radius-pill);
+}
+.tr-deck-variant-count {
+    opacity: .7;
+    font-weight: 500;
+}
+
+/* Hero card name beside player name */
+.tr-rank-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ac-space-1);
+    margin-left: var(--ac-space-2);
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-2);
+    background: var(--ac-color-track);
+    border-radius: var(--ac-radius-pill);
+    padding: var(--ac-space-0-5) var(--ac-space-2-5);
+    white-space: nowrap;
+    vertical-align: middle;
+    text-shadow: none;
+}
+.tr-rank-hero-faction {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    display: inline-block;
+}
+
+/* Hero banner in the standings row's Hero column — the art behind it comes
+   from the <tr> (see .tr-rank-row-hero), so this only lays out the faction
+   icon + name on top of it. */
+.tr-rank-hero-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-2);
+    height: 100%;
+    min-height: 44px;
+    padding: 0 var(--ac-space-3);
+    color: var(--ac-color-on-strong);
+    background: transparent;
+}
+.tr-rank-hero-banner-faction {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.tr-rank-hero-banner-name {
+    font: var(--ac-font-body-strong);
+    text-shadow: var(--ac-shadow-on-image);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Card lightbox (self-contained; core plugin CSS may not be loaded) ── */
+#tr-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--ac-color-overlay-strong);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+#tr-lightbox-inner {
+    max-width: 420px;
+    width: 88vw;
+    cursor: default;
+    position: relative;
+}
+.tr-lightbox-card {
+    display: block;
+    max-width: 420px;
+    width: 88vw;
+    border-radius: var(--ac-radius-lg);
+    overflow: hidden;
+}
+.tr-lightbox-detail {
+    margin-top: var(--ac-space-2);
+}
+
+/* ── Side panel ─────────────────────────────────────────────────────────── */
+.tr-panel-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--ac-color-scrim);
+    z-index: var(--ac-z-overlay);
+}
+
+.tr-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(480px, 90vw);
+    height: 100vh;
+    background: var(--ac-color-surface);
+    border-left: 1px solid var(--ac-color-border);
+    box-shadow: var(--ac-shadow-e2);
+    z-index: calc(var(--ac-z-overlay) + 10);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .3s ease, visibility 0s;
+    visibility: hidden;
+}
+.tr-panel.tr-panel-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform .3s ease;
+}
+
+/* On wide screens the panel is pinned beside the page instead of overlaid
+   as a modal: no dimming backdrop, and the page content makes room for it
+   so the standings (W-L column included) stay visible underneath. */
+@media (min-width: 1200px) {
+    .tr-panel-backdrop {
+        display: none !important;
+    }
+    body.tr-panel-pinned-open #tr-page {
+        padding-right: min(480px, 90vw);
+        transition: padding-right .3s ease;
+    }
+}
+
+.tr-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--ac-space-4) var(--ac-space-5);
+    border-bottom: 1px solid var(--ac-color-border);
+    flex-shrink: 0;
+}
+.tr-panel-title {
+    margin: 0;
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text);
+}
+.tr-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-1);
+}
+
+.tr-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--ac-space-5);
+}
+
+.tr-panel-zoom {
+    position: fixed;
+    top: 50%;
+    right: min(480px, 90vw);
+    transform: translateY(-50%) translateX(-16px);
+    width: 300px;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: calc(var(--ac-z-overlay) + 11);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--ac-duration-base) ease;
+}
+.tr-panel-zoom.tr-panel-zoom-visible {
+    opacity: 1;
+}
+.tr-panel-zoom img,
+.tr-panel-zoom altered-card {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: var(--ac-radius-control);
+    box-shadow: var(--ac-shadow-dialog);
+}
+
+.tr-panel-decklist .tr-view-toggle {
+    margin-bottom: var(--ac-space-4);
+}
+.tr-panel-decklist .tr-panel-hero-banner {
+    display: flex;
+    align-items: flex-end;
+    min-height: 132px;
+    border-radius: var(--ac-radius-lg);
+    padding: var(--ac-space-3);
+    margin-bottom: var(--ac-space-4);
+    cursor: pointer;
+    color: var(--ac-color-on-strong);
+    background-color: var(--ac-color-overlay-control);
+}
+.tr-panel-hero-banner .tr-panel-hero-info {
+    display: flex;
+    align-items: center;
+    gap: var(--ac-space-2-5);
+}
+.tr-panel-hero-banner .tr-panel-hero-faction {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+.tr-panel-hero-banner .tr-panel-hero-titles { display: flex; flex-direction: column; }
+.tr-panel-hero-banner .tr-panel-hero-name {
+    font: var(--ac-font-title);
+    font-size: 18px;
+    text-shadow: var(--ac-shadow-on-image);
+}
+.tr-panel-hero-banner .tr-panel-hero-label {
+    font: var(--ac-font-small);
+    color: var(--ac-color-on-hero-muted);
+    margin-top: var(--ac-space-0-5);
+    text-shadow: var(--ac-shadow-on-image);
+}
+.tr-panel-hero-banner:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+}
+.tr-panel-decklist .tr-decklist-cards {
+    grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 768px) {
+    .tr-panel-decklist .tr-decklist-cards { grid-template-columns: repeat(4, 1fr); }
+}
+
+.tr-panel-decklist .tr-decklist-table tbody tr {
+    cursor: pointer;
+    transition: background var(--ac-duration-fast);
+}
+
+@media (max-width: 767.98px) {
+    .tr-panel-zoom { display: none !important; }
+}

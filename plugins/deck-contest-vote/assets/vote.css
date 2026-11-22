@@ -1,0 +1,116 @@
+/* Deck contest vote: tier list layout, from design-system tokens. */
+.dcv-page { --dcv-tile-w: 88px; }
+@media (min-width: 768px) { .dcv-page { --dcv-tile-w: 96px; } }
+
+.dcv-rules { margin-bottom: var(--ac-space-4); }
+.dcv-rules ul { margin: 0; padding-left: var(--ac-space-5); display: grid; gap: var(--ac-space-2); }
+.dcv-legend { display: flex; flex-wrap: wrap; gap: var(--ac-space-2) var(--ac-space-4); margin: var(--ac-space-3) 0 0; }
+
+.dcv-app { display: grid; gap: var(--ac-space-4); }
+
+/* Tier rows */
+.dcv-board { display: grid; gap: var(--ac-space-1); }
+.dcv-tier { display: grid; grid-template-columns: 76px 1fr; min-height: calc(var(--dcv-tile-w) * 7 / 5 * 0.5); }
+@media (min-width: 768px) { .dcv-tier { grid-template-columns: 112px 1fr; } }
+.dcv-tier__label {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ac-space-1);
+    padding: var(--ac-space-2); border: 0; cursor: default; text-align: center;
+    border-radius: var(--ac-radius-md) 0 0 var(--ac-radius-md);
+    background: var(--dcv-tier-color); color: var(--ac-color-on-strong); font: inherit;
+}
+.dcv-tier__label strong { font-size: var(--ac-font-size-title-sm); }
+.dcv-tier__label span { font-size: var(--ac-font-size-small, inherit); line-height: 1.2; text-shadow: var(--ac-shadow-on-image); }
+.dcv-tier--s { --dcv-tier-color: var(--ac-color-success); }
+.dcv-tier--a { --dcv-tier-color: color-mix(in srgb, var(--ac-color-success) 55%, var(--ac-color-warning)); }
+.dcv-tier--b { --dcv-tier-color: var(--ac-color-warning); }
+.dcv-tier--c { --dcv-tier-color: color-mix(in srgb, var(--ac-color-warning) 50%, var(--ac-color-danger)); }
+.dcv-tier--d { --dcv-tier-color: var(--ac-color-danger); }
+.has-selection .dcv-tier__label { cursor: pointer; outline: 2px dashed var(--ac-color-primary); outline-offset: -4px; }
+
+.dcv-drop {
+    display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--ac-space-2); padding: var(--ac-space-2);
+    background: var(--ac-color-surface); border: 1px solid var(--ac-color-border);
+    border-radius: 0 var(--ac-radius-md) var(--ac-radius-md) 0;
+}
+.dcv-drop--pool { border-radius: var(--ac-radius-md); min-height: calc(var(--dcv-tile-w) * 7 / 5 + var(--ac-space-4)); }
+.has-selection .dcv-drop { cursor: pointer; }
+.dcv-drop.is-over { background: var(--ac-color-primary-soft); border-color: var(--ac-color-primary); }
+
+/* Pool */
+.dcv-poolbox { display: grid; gap: var(--ac-space-3); }
+.dcv-poolbox__head p { margin: 0; }
+.dcv-filter { display: flex; flex-wrap: wrap; gap: var(--ac-space-2); }
+
+/* Tile: hero picture, border and builder strip in the colour of the faction; the emoji pill gives the difficulty (🟩🟧🟥) and the deck type */
+.dcv-tile {
+    --dcv-faction: var(--ac-color-text-muted);
+    position: relative; width: var(--dcv-tile-w); aspect-ratio: 5 / 7; flex: none;
+    border-radius: var(--ac-radius-md); overflow: hidden; box-shadow: var(--ac-shadow-e1);
+    border: 3px solid var(--dcv-faction); background: var(--ac-color-bg-subtle);
+}
+.dcv-tile[hidden] { display: none; }
+.dcv-tile--axiom { --dcv-faction: var(--ac-faction-axiom); }
+.dcv-tile--bravos { --dcv-faction: var(--ac-faction-bravos); }
+.dcv-tile--lyra { --dcv-faction: var(--ac-faction-lyra); }
+.dcv-tile--muna { --dcv-faction: var(--ac-faction-muna); }
+.dcv-tile--ordis { --dcv-faction: var(--ac-faction-ordis); }
+.dcv-tile--ysmir { --dcv-faction: var(--ac-faction-yzmir); }
+.dcv-tile[draggable='true'] { cursor: grab; }
+.dcv-tile.is-dragging { opacity: 0.4; }
+.dcv-tile.is-selected { outline: 3px solid var(--ac-color-primary); outline-offset: 2px; }
+
+.dcv-tile__main { position: absolute; inset: 0; padding: 0; border: 0; background: none; display: block; width: 100%; cursor: inherit; }
+.dcv-tile__main img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
+.dcv-tile__noimg { display: flex; height: 100%; align-items: center; justify-content: center; padding: var(--ac-space-2); text-align: center; }
+.dcv-tile__builder {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: var(--ac-space-1) var(--ac-space-1-5);
+    background: var(--dcv-faction); color: var(--ac-color-on-strong);
+    font-size: var(--ac-font-size-small, inherit); font-weight: 700; line-height: 1.2; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dcv-tile__emoji {
+    position: absolute; top: var(--ac-space-1); left: var(--ac-space-1); padding: 0 var(--ac-space-1-5);
+    border-radius: var(--ac-radius-pill); background: var(--ac-color-surface); border: 1px solid var(--dcv-faction);
+    line-height: 1.5; letter-spacing: 1px;
+}
+.dcv-tile__info { position: absolute; top: var(--ac-space-1); right: var(--ac-space-1); }
+
+.dcv-status { margin: 0; color: var(--ac-color-text-muted); }
+.dcv-status--error { color: var(--ac-color-danger); }
+
+/* Decklist dialog */
+.dcv-dialog { width: min(920px, 100%); max-width: 920px; }
+.dcv-sheet { display: grid; gap: var(--ac-space-4); }
+.dcv-sheet__head { display: flex; gap: var(--ac-space-4); align-items: flex-start; }
+.dcv-sheet__hero { width: 160px; max-width: 40%; border-radius: var(--ac-radius-md); box-shadow: var(--ac-shadow-card); }
+.dcv-sheet__meta { display: grid; gap: var(--ac-space-2); }
+.dcv-sheet__meta p { margin: 0; }
+.dcv-chip { display: inline-block; padding: 0 var(--ac-space-2); border-radius: var(--ac-radius-pill); border: 1px solid var(--ac-color-border); }
+.dcv-sheet__type { margin: 0; font-size: var(--ac-font-size-body, inherit); }
+.dcv-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: var(--ac-space-2); }
+.dcv-card { position: relative; margin: 0; aspect-ratio: 5 / 7; border-radius: var(--ac-radius-sm); overflow: hidden; background: var(--ac-color-bg-subtle); }
+.dcv-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dcv-card__noimg { display: flex; height: 100%; align-items: center; justify-content: center; padding: var(--ac-space-1); text-align: center; }
+.dcv-card__qty {
+    position: absolute; right: var(--ac-space-1); bottom: var(--ac-space-1); padding: 0 var(--ac-space-1-5);
+    border-radius: var(--ac-radius-pill); background: var(--ac-color-primary); color: var(--ac-color-on-strong);
+    font-weight: 700; box-shadow: var(--ac-shadow-e3);
+}
+.dcv-card--u { outline: 2px solid var(--ac-color-accent); }
+.dcv-sheet__why > summary { cursor: pointer; color: var(--ac-color-text-2); }
+.dcv-sheet__why > div { white-space: pre-line; margin-top: var(--ac-space-2); }
+.dcv-card altered-card { display: block; width: 100%; height: 100%; }
+.dcv-card { cursor: zoom-in; }
+
+/* Large copy of a hero or a card: follows the pointer, or is pinned in the middle of the screen */
+.dcv-zoom {
+    position: fixed; z-index: 1000; width: min(320px, 90vw); pointer-events: none;
+    border-radius: var(--ac-radius-md); box-shadow: var(--ac-shadow-e3); background: var(--ac-color-surface); overflow: hidden;
+}
+.dcv-zoom[hidden] { display: none; }
+.dcv-zoom--pinned { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, 90vw); pointer-events: auto; cursor: zoom-out; }
+.dcv-zoom__card img, .dcv-zoom__card altered-card { display: block; width: 100%; height: auto; }
+.dcv-zoom__card--ratio { aspect-ratio: 5 / 7; }
+.dcv-zoom__card canvas, .dcv-card canvas { display: block; width: 100%; height: 100%; }
+.dcv-zoom__card--ratio altered-card, .dcv-zoom__card--ratio img { height: 100%; object-fit: cover; }
+.dcv-zoom__caption { margin: 0; padding: var(--ac-space-2); text-align: center; font-weight: 700; }

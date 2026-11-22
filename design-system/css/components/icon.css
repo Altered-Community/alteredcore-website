@@ -1,0 +1,21 @@
+/*
+ * Icon — Lucide stroke icons (brand logos filled), inline SVG.
+ * PHP: ac_icon('house') · site JS: acIcon('house') · Angular: <ac-icon name="house" />
+ * Docs: design-system/docs/components/icon.md
+ */
+.ac-icon {
+  display: inline-block;
+  width: var(--ac-icon-size, 1.15em);
+  height: var(--ac-icon-size, 1.15em);
+  flex-shrink: 0;
+  vertical-align: -0.2em;
+  stroke-width: var(--ac-icon-stroke, 2);
+}
+.ac-icon--14 { --ac-icon-size: 14px; }
+.ac-icon--16 { --ac-icon-size: 16px; }
+.ac-icon--18 { --ac-icon-size: 18px; }
+.ac-icon--20 { --ac-icon-size: 20px; }
+.ac-icon--24 { --ac-icon-size: 24px; }
+.ac-icon--spin { animation: ac-icon-spin 1s linear infinite; }
+@keyframes ac-icon-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ac-icon--spin { animation-duration: 3s; } }

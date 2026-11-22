@@ -1,0 +1,132 @@
+@if (label() && !inlineLabel()) {
+  <label class="ac-field__label" [id]="labelId" [for]="id">{{ label() }}</label>
+}
+<div class="wrap">
+  @if (label() && inlineLabel()) {
+    <label class="inline-label" [id]="labelId" [for]="id">{{ label() }}</label>
+  }
+  <div class="ac-listbox" cdkOverlayOrigin #origin="cdkOverlayOrigin">
+    <button
+      #trigger
+      type="button"
+      class="ac-listbox__trigger"
+      role="combobox"
+      aria-haspopup="listbox"
+      [id]="id"
+      [disabled]="isDisabled()"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="open() ? listId : null"
+      [attr.aria-labelledby]="label() ? labelId + ' ' + valueId : null"
+      [attr.aria-label]="triggerName()"
+      [attr.aria-activedescendant]="activeId()"
+      (click)="toggle()"
+      (keydown)="onTriggerKey($event)"
+      (focusout)="onFocusOut($event)"
+    >
+      <span class="ac-listbox__value" [class.ac-listbox__value--empty]="!selected()?.value" [id]="valueId">
+        @if (selected()?.color; as c) {
+          <span class="ac-listbox__dot" aria-hidden="true" [style.--ac-listbox-dot]="c"></span>
+        }
+        <span>{{ selected()?.label || ' ' }}</span>
+      </span>
+      <ac-icon name="chevron-down" [size]="16" />
+    </button>
+  </div>
+</div>
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayScrollStrategy]="scrollStrategy"
+  [cdkConnectedOverlayMinWidth]="panelMinWidth()"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayDisableClose]="true"
+  (overlayOutsideClick)="onOutsideClick($event)"
+  (overlayKeydown)="onOverlayKey($event)"
+  (detach)="onDetach()"
+>
+  <div class="ac-listbox__panel" (focusout)="onFocusOut($event)">
+    @if (withSearch()) {
+      <div class="ac-listbox__search">
+        <ac-icon name="search" [size]="16" />
+        <input
+          #search
+          type="search"
+          autocomplete="off"
+          enterkeyhint="done"
+          aria-autocomplete="list"
+          [attr.aria-controls]="listId"
+          [attr.aria-activedescendant]="activeId()"
+          [attr.aria-label]="searchPlaceholder()"
+          [placeholder]="searchPlaceholder()"
+          [value]="query()"
+          (input)="setQuery(search.value)"
+          (keydown)="onSearchKey($event)"
+        />
+      </div>
+    }
+    <div
+      #list
+      class="ac-listbox__list"
+      role="listbox"
+      [id]="listId"
+      [attr.aria-labelledby]="label() ? labelId : null"
+      [attr.aria-label]="label() ? null : ariaLabel()"
+      (pointerdown)="$event.preventDefault()"
+    >
+      @for (row of view().loose; track row.option.value) {
+        <ng-container *ngTemplateOutlet="optionTpl; context: { $implicit: row }" />
+      }
+      @if (view().loose.length && view().groups.length) {
+        <div class="ac-listbox__divider" role="presentation"></div>
+      }
+      @for (g of view().groups; track $index; let gi = $index) {
+        @if (g.label) {
+          <div class="ac-listbox__group" role="group" [attr.aria-labelledby]="groupId(gi)">
+            <div class="ac-listbox__group-label" [id]="groupId(gi)">
+              @if (g.color) {
+                <span class="ac-listbox__dot" aria-hidden="true" [style.--ac-listbox-dot]="g.color"></span>
+              }
+              <span>{{ g.label }}</span>
+              <span class="ac-listbox__count">{{ g.rows.length }}</span>
+            </div>
+            @for (row of g.rows; track row.option.value) {
+              <ng-container *ngTemplateOutlet="optionTpl; context: { $implicit: row, groupColor: g.color }" />
+            }
+          </div>
+        } @else {
+          @for (row of g.rows; track row.option.value) {
+            <ng-container *ngTemplateOutlet="optionTpl; context: { $implicit: row }" />
+          }
+        }
+      }
+      @if (!view().rows.length) {
+        <div class="ac-listbox__empty">{{ query().trim() ? noResults() : noOptions }}</div>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #optionTpl let-row let-groupColor="groupColor">
+  <!-- Options are not focused: focus stays on the button or the search field, which handle the keys (aria-activedescendant). -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+  <div
+    class="ac-listbox__option"
+    role="option"
+    [id]="optionId(row.index)"
+    [class.is-active]="row.index === active()"
+    [attr.aria-selected]="row.option.value === value()"
+    [attr.aria-disabled]="row.option.disabled ? true : null"
+    (pointermove)="hover(row)"
+    (click)="pick(row)"
+  >
+    <!-- The dot is on the group header when the whole group has it. -->
+    @if (row.option.color && !groupColor) {
+      <span class="ac-listbox__dot" aria-hidden="true" [style.--ac-listbox-dot]="row.option.color"></span>
+    }
+    @let h = highlight(row.option.label);
+    <span class="ac-listbox__label">{{ h.before }}@if (h.match) {<mark>{{ h.match }}</mark>}{{ h.after }}</span>
+    <ac-icon name="check" [size]="16" />
+  </div>
+</ng-template>

@@ -1,0 +1,7 @@
+@if (!headless()) {
+  <div class="head">
+    <span class="title">{{ title() }}@if (count() !== null) {<span class="count"> · {{ count() }}</span>}</span>
+    <ng-content select="[action]" />
+  </div>
+}
+<ng-content />

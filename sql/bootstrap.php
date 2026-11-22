@@ -85,4 +85,17 @@ $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($sqlDir . '/migrate.php
      . ($baseline ? ' --baseline' : '');
 boot_log('running migrations: ' . ($baseline ? 'baseline' : 'apply pending'));
 passthru($cmd, $rc);
+if ($rc !== 0) {
+    exit($rc);
+}
+
+// ── 6. Plugin migrations (same idea, for plugins/*/sql/update_*.sql) ─────────
+// Step 5 only ever looks at the core schema. Plugin schemas used to move in one
+// place only -- the ZIP-upload branch of admin/plugins.php -- so a git deploy
+// could ship plugin code against older plugin tables, which surfaces as a blank
+// 200 on the first page naming a new column. See migrate_plugins.php.
+$cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($sqlDir . '/migrate_plugins.php')
+     . ($baseline ? ' --baseline' : '');
+boot_log('running plugin migrations: ' . ($baseline ? 'baseline' : 'apply pending'));
+passthru($cmd, $rc);
 exit($rc);

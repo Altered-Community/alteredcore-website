@@ -15,9 +15,7 @@ $action      = $_GET['action'] ?? 'login';
 $_SESSION['kc_state'] = $state;
 // Only allow same-site return URLs to prevent open redirect
 $_rawReturn = $_GET['return'] ?? '';
-$_SESSION['kc_return_url'] = ($_rawReturn !== '' && strpos($_rawReturn, BASE_URL . '/') === 0)
-    ? $_rawReturn
-    : BASE_URL . '/';
+$_SESSION['kc_return_url'] = safeReturnUrl(is_string($_rawReturn) ? $_rawReturn : '', BASE_URL);
 
 $endpoint = ($action === 'register')
     ? KC_URL . '/realms/' . KC_REALM . '/protocol/openid-connect/registrations'

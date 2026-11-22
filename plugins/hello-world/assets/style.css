@@ -1,15 +1,29 @@
-.hello-world-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/*
+ * hello-world — page styles.
+ *
+ * Plugin CSS only lays things out: colours, radii, spacing and fonts come from the design system
+ * tokens (var(--ac-*), design-system/tokens/tokens.css). No hex colours, no dark-theme selectors:
+ * every token already has a dark value.
+ */
+
+.hw-demo-image {
+    display: block;
+    max-height: 120px;
+    width: auto;
+    border-radius: var(--ac-radius-lg);
 }
 
-.hello-world-list li {
-    padding: .6rem .9rem;
-    border-bottom: 1px solid var(--neutral-200);
-    color: var(--neutral-800);
+.hw-counter {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
 }
 
-.hello-world-list li:last-child {
-    border-bottom: none;
+.hw-counter strong {
+    color: var(--ac-color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.hw-user-table td:first-child {
+    width: 160px;
+    color: var(--ac-color-text-muted);
 }

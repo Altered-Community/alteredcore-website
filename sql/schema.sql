@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS `{prefix}news` (
     `excerpt_fr`   VARCHAR(500) DEFAULT NULL,
     `image`        VARCHAR(500) DEFAULT NULL,
     `youtube_url`  VARCHAR(500) DEFAULT NULL,
+    `authors`      VARCHAR(500) DEFAULT NULL,
+    `translators`  VARCHAR(500) DEFAULT NULL,
     `published_at` DATETIME DEFAULT NULL,
     `is_published` TINYINT(1) NOT NULL DEFAULT 0,
     `is_pinned`    TINYINT(1) NOT NULL DEFAULT 0,
@@ -121,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}site_settings` (
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- theme_settings table removed: all visual settings are now global in site_settings.
+-- No visual settings: the look comes from the design system (design-system/).
 
 
 
@@ -145,6 +147,8 @@ CREATE TABLE IF NOT EXISTS `{prefix}nav_items` (
     `parent_id`         INT DEFAULT NULL,
     `label_en`          VARCHAR(100) NOT NULL DEFAULT '',
     `label_fr`          VARCHAR(100) NOT NULL DEFAULT '',
+    `description_en`    VARCHAR(160) NOT NULL DEFAULT '',
+    `description_fr`    VARCHAR(160) NOT NULL DEFAULT '',
     `url`               VARCHAR(500) NOT NULL DEFAULT '#',
     `icon`              VARCHAR(100) NOT NULL DEFAULT 'fa-solid fa-link',
     `sort_order`        SMALLINT NOT NULL DEFAULT 0,
@@ -344,6 +348,21 @@ CREATE TABLE IF NOT EXISTS `{prefix}newsletter_sub` (
     UNIQUE KEY `uq_newsletter_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ─── Default alt arts ─────────────────────────────────────────────────────────
+-- Re:Builder's brush: the illustration a deck gives the 1st, 2nd and 3rd card of a multi-art card
+-- (papi/rebuilder/deck-alt-arts).
+
+CREATE TABLE IF NOT EXISTS `{prefix}rebuilder_deck_alt_arts` (
+    `user_id`    INT          NOT NULL,
+    `deck_id`    VARCHAR(64)  NOT NULL,
+    `family`     VARCHAR(64)  NOT NULL,
+    `card1`      VARCHAR(64)  NOT NULL,
+    `card2`      VARCHAR(64)  NOT NULL,
+    `card3`      VARCHAR(64)  NOT NULL,
+    `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_id`, `deck_id`, `family`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ─── Plugins ──────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS `{prefix}plugins` (
@@ -369,18 +388,16 @@ CREATE TABLE IF NOT EXISTS `{prefix}feedback_rate_limit` (
 INSERT INTO `{prefix}footer_links` (`id`, `label_en`, `label_fr`, `url`, `icon`, `column_num`, `sort_order`, `created_at`) VALUES
 (1, 'News', 'News', '/pages/news', 'fa-solid fa-newspaper', 2, 1, '2026-05-13 18:00:00'),
 (2, 'RSS', 'RSS', '/pages/rss', 'fa-solid fa-square-rss', 2, 4, '2026-05-13 18:02:21'),
-(3, 'Altered.gg', 'Altered.gg', 'https://altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
+(3, 'Altered.gg', 'Altered.gg', 'https://www.altered.gg', 'fak fa-altered-swirl', 3, 5, '2026-05-13 18:03:52'),
 (4, 'Board Game Arena', 'Board Game Arena', 'https://boardgamearena.com/', 'fak fa-bga', 3, 6, '2026-05-13 18:04:11');
 
 INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (1, 1, 'altered-json'),
 (2, 1, 'announcement'),
-(3, 1, 'background'),
 (4, 1, 'banner'),
 (5, 1, 'categories'),
 (6, 1, 'community-builders'),
 (7, 1, 'dashboard'),
-(8, 1, 'font'),
 (9, 1, 'footer'),
 (10, 1, 'groups'),
 (11, 1, 'homepage'),
@@ -396,7 +413,6 @@ INSERT INTO `{prefix}group_permissions` (`id`, `group_id`, `section`) VALUES
 (21, 1, 'projects'),
 (22, 1, 'settings'),
 (23, 1, 'sidebar'),
-(24, 1, 'themes'),
 (25, 1, 'user-menu'),
 (26, 1, 'users'),
 (27, 1, 'rss'),
@@ -423,8 +439,6 @@ INSERT INTO `{prefix}sidebar_items` (`id`, `label_en`, `label_fr`, `url`, `icon`
 (3, 'How to Play', 'Comment jouer ?', 'https://www.altered.gg/the-game/how-to-play', 'fa-solid fa-graduation-cap', 3, 1, 0, 0, 1, '2026-05-13 18:06:46'),
 (4, 'Play Altered Online', 'Joue à Altered en ligne', 'https://boardgamearena.com/gamepanel?game=altered', 'fak fa-bga', 4, 1, 0, 0, 1, '2026-05-13 18:07:12');
 
-INSERT INTO `{prefix}site_settings` (`key`, `value`, `updated_at`) VALUES
-('active_theme', 'azure', '2026-05-13 14:21:02');
 
 INSERT INTO `{prefix}user_groups` (`id`, `name`, `slug`, `color`, `icon`, `can_access_admin`, `can_delete`, `can_publish`, `can_create`, `can_edit`, `can_readonly_all`, `can_preview`, `created_at`) VALUES
 (1, 'Admin', 'admin', '#f59e0b', 'fa-solid fa-crown', 1, 1, 1, 1, 1, 0, 1, '2026-05-13 14:21:02'),

@@ -1,0 +1,53 @@
+/*
+ * Legacy bridge — DEPRECATED variable names, kept so that CSS written before the design system
+ * (plugins outside this repo, pages not migrated yet) follows the new palette in both themes.
+ * Do not use these names in new code: use the --ac-* tokens (tokens/tokens.css).
+ *
+ * Before the design system, the site had a sand/gold palette with dark text on the primary
+ * colour. With the new palette the primary colour takes light text: CSS that puts
+ * var(--neutral-800) text on a var(--primary-*) background must be migrated
+ * (color: var(--ac-color-on-primary)).
+ */
+:root {
+  /* Surfaces */
+  --sand-50: var(--ac-color-surface);
+  --sand-100: var(--ac-color-bg-app);
+  --sand-200: var(--ac-color-track);
+  --sand-300: var(--ac-color-border);
+  /* Brand */
+  --primary-300: var(--ac-color-primary-border);
+  --primary-400: var(--ac-color-primary);
+  --primary-500: var(--ac-color-primary-strong);
+  /* Text and lines */
+  --neutral-800: var(--ac-color-text);
+  --neutral-700: var(--ac-color-text-2);
+  --neutral-600: var(--ac-color-text-2);
+  --neutral-500: var(--ac-color-text-muted);
+  --neutral-400: var(--ac-color-text-muted);
+  --neutral-300: var(--ac-color-border-dashed);
+  --neutral-200: var(--ac-color-border);
+  --neutral-100: var(--ac-color-divider);
+
+  /* Plugin theming variables (plugins/README.html, before the design system) */
+  --notice-warning-bg: var(--ac-color-warning-soft);
+  --notice-warning-border: var(--ac-color-warning);
+  --notice-warning-text: var(--ac-color-warning);
+  --notice-info-bg: var(--ac-color-info-soft);
+  --notice-info-border: var(--ac-color-primary);
+  --notice-info-text: var(--ac-color-info);
+  --card-lightbox-bg: var(--ac-color-overlay-strong);
+  --modal-panel-bg: var(--ac-color-surface);
+  --panel-border: var(--ac-color-border);
+  --overlay-badge-bg: var(--ac-color-overlay-chip);
+  --overlay-bar-bg: var(--ac-color-overlay-chip);
+  --overlay-btn-bg: var(--ac-color-overlay-light);
+  --overlay-qty-bg: var(--ac-color-overlay-strong);
+  --overlay-add-bg: var(--ac-color-scrim);
+  --mobile-nav-bg: var(--ac-color-surface);
+  --mobile-nav-border: var(--ac-color-border);
+
+  /* First public plugin contract (PR 106), superseded by the full token set */
+  --ac-color-bg: var(--ac-color-bg-app);
+  --ac-color-surface-2: var(--ac-color-track);
+  --ac-radius: var(--ac-radius-control);
+}

@@ -1,0 +1,27 @@
+<ng-template #body><ng-content /></ng-template>
+@if (appearance() === 'flat') {
+  <div class="flat-head">
+    <span class="overline">{{ title() }}</span>
+    <span class="overline">{{ count() }}</span>
+  </div>
+  <ng-container [ngTemplateOutlet]="body" />
+} @else {
+  <div class="head">
+    @if (collapsible()) {
+      <button type="button" class="toggle" [attr.aria-expanded]="open()" (click)="open.set(!open())">
+        <span class="chev" [class.closed]="!open()"><ac-icon name="chevron-down" [size]="16" [strokeWidth]="2.4" /></span>
+        <span class="title">{{ title() }}</span>
+        <span class="count">{{ count() }}</span>
+      </button>
+    } @else {
+      <span class="title">{{ title() }}</span>
+      <span class="count">{{ count() }}</span>
+    }
+    @if (distinct() !== null) {
+      <span class="distinct" i18n="@@ui.deckSection.distinct">{distinct(), plural, =0 {0 carte différente} =1 {1 carte différente} other {{{ distinct() }} cartes différentes}}</span>
+    }
+  </div>
+  @if (open()) {
+    <ng-container [ngTemplateOutlet]="body" />
+  }
+}

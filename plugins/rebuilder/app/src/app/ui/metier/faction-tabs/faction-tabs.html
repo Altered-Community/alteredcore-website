@@ -1,0 +1,14 @@
+@for (f of factions; track f.code) {
+  <button
+    #tab
+    type="button"
+    role="tab"
+    [attr.aria-selected]="active() === f.code"
+    [attr.aria-controls]="controls() || null"
+    [tabIndex]="active() === f.code ? 0 : -1"
+    [style.--fc]="f.color"
+    (click)="activate(f.code)"
+  >
+    <span class="dot"></span>{{ f.name }}
+  </button>
+}

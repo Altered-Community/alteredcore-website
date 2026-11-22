@@ -1,6 +1,7 @@
 <?php
 // Card/collection helpers for the core-altered-cards plugin.
 // Required by plugin pages and the collection-search API endpoint.
+require_once __DIR__ . '/numeric-filter.php';
 
 function loadSearchSettings(): array {
     static $cfg = null;
@@ -27,19 +28,6 @@ function loadAlteredData(string $name): array {
     return $all[$name] ?? [];
 }
 
-/**
- * Normalize a card reference for CDN image lookups. Mirrors the client-side
- * normalizeRef()/normalizeHeroRef() helpers in decks.php and deckbuilder.php:
- * promo prints (segment 2 === 'P') fall back to the base booster art ('B'),
- * and BISE-set refs (segment 1 === 'BISE') map to CORE.
- */
-function normalizeCardRef(string $ref): string {
-    $p = explode('_', $ref);
-    if (($p[2] ?? null) === 'P')    $p[2] = 'B';
-    if (($p[1] ?? null) === 'BISE') $p[1] = 'CORE';
-    return implode('_', $p);
-}
-
 function deckApiToken(): ?string {
     if (!kcIsLoggedIn()) return null;
     $userId = (int)($_SESSION['user_id'] ?? 0);
@@ -47,6 +35,29 @@ function deckApiToken(): ?string {
     require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
     $token = kc_get_access_token($userId);
     return $token ?: null;
+}
+
+/**
+ * Deletes a deck of the signed-in player from the decks API: the HTTP status (0 when unreachable). On a 2xx, what the
+ * site keeps about the deck goes too (altArtForgetDeck).
+ */
+function cacDeckApiDelete(string $deckId, string $token): int
+{
+    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => 'DELETE',
+        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) {
+        require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+        altArtForgetDeck((int)($_SESSION['user_id'] ?? 0), $deckId);
+    }
+    return $code;
 }
 
 /** @return array{upvoteCount: int, hasUpvoted: bool}|null */
@@ -92,11 +103,7 @@ function cacDeckApiUpvote(string $deckId, string $token): ?array
  * @param string     $contentType Content-Type for body (default: application/json)
  * @return array|true|false  Decoded JSON array, true on 204 No Content, false on error
  */
-function collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json') {
-    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
-    $token = kc_get_access_token($userId);
-    if (!$token) return false;
-
+function collApiRequestSend(string $apiUrl, string $method, string $path, string $token, $body = null, string $contentType = 'application/json'): array {
     $headers = [
         'Authorization: Bearer ' . $token,
         'Accept: application/json',
@@ -123,9 +130,36 @@ function collApiRequest(string $apiUrl, string $method, string $path, int $userI
     $err  = curl_errno($ch);
     curl_close($ch);
 
-    if ($err || $code >= 400) return false;
+    if ($err || $raw === false || $code === 0) return [0, null];
+    return [$code, (string)$raw];
+}
+
+/**
+ * Authenticated request returning [statusCode, rawBody] and retrying once on upstream 401.
+ *
+ * @return array{0:int,1:?string}
+ */
+function collApiRequestRaw(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json'): array {
+    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
+    $token = kc_get_access_token($userId);
+    if (!$token) return [401, null];
+
+    [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
+    if ($code === 401) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
+        $token = kc_get_access_token($userId);
+        if (!$token) return [401, $raw];
+        [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
+    }
+    return [$code, $raw];
+}
+
+function collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json') {
+    [$code, $raw] = collApiRequestRaw($apiUrl, $method, $path, $userId, $body, $contentType);
+    if ($code === 0 || $code >= 400) return false;
     if ($code === 204) return true;
-    if ($raw === false || $raw === '') return false;
+    if ($raw === null || $raw === '') return false;
     $decoded = json_decode($raw, true);
     return is_array($decoded) ? $decoded : false;
 }
@@ -206,6 +240,34 @@ function collGetUserCollection(string $apiUrl, int $userId): array {
 }
 
 /**
+ * Sets the quantity of one card in the user's physical collection (0 removes it), then drops the session cache of
+ * collGetUserCollection(). `$entryId`: the collection line of the card, 0 when it has none yet.
+ * Returns ['ok' => bool, 'ref' => string, 'qty' => int, 'entry_id' => int].
+ */
+function collSetQuantity(string $apiUrl, int $userId, string $ref, int $qty, int $entryId): array {
+    $qty = max(0, min(99, $qty));
+    if ($entryId > 0 && $qty === 0) {
+        $r      = collApiRequest($apiUrl, 'DELETE', '/api/collection/' . $entryId, $userId);
+        $result = ['ok' => $r !== false, 'ref' => $ref, 'qty' => 0, 'entry_id' => 0];
+    } elseif ($entryId > 0) {
+        $r      = collApiRequest($apiUrl, 'PATCH', '/api/collection/' . $entryId, $userId,
+            ['quantity' => $qty], 'application/merge-patch+json');
+        $result = ['ok' => is_array($r), 'ref' => $ref, 'qty' => $qty, 'entry_id' => $entryId];
+    } elseif ($qty === 0) {
+        $result = ['ok' => true, 'ref' => $ref, 'qty' => 0, 'entry_id' => 0];
+    } else {
+        $r      = collApiRequest($apiUrl, 'POST', '/api/collection', $userId,
+            ['cardReference' => $ref, 'quantity' => $qty, 'isFoil' => false]);
+        $result = is_array($r)
+            ? ['ok' => true, 'ref' => $ref, 'qty' => $qty, 'entry_id' => (int)($r['id'] ?? 0)]
+            : ['ok' => false, 'ref' => $ref, 'qty' => $qty, 'entry_id' => 0];
+    }
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    unset($_SESSION['_coll_' . $userId], $_SESSION['_coll_ts_' . $userId]);
+    return $result;
+}
+
+/**
  * Formats API violation objects into a human-readable string.
  * Used when an API returns a 422 response with a "violations" array.
  */
@@ -223,11 +285,16 @@ function formatApiViolations(array $violations): string {
  * mirrors the source draft flag (falling back to sandbox => draft), and
  * only carries a description when the source has a non-empty one.
  *
- * @param array  $sourceDeck Deck as returned by GET /api/decks/{id}.
- * @param string $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @param array    $sourceDeck Deck as returned by GET /api/decks/{id}.
+ * @param string   $newName    Desired name for the copy (already localized/suffixed by the caller).
+ * @param int|null $userId     The copy's new owner. When given and their alt-art mode is
+ *                             Global, every card is rewritten through
+ *                             cacApplyAltArtPreferencesToCards() before being copied —
+ *                             the source deck's own chosen illustrations are irrelevant
+ *                             to a Global-mode player, whose preferred art always wins.
  * @return array Payload ready for json_encode().
  */
-function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
+function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName, ?int $userId = null): array
 {
     $deckCards = [];
     foreach ($sourceDeck['cards'] ?? [] as $card) {
@@ -238,6 +305,10 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
             'cardReference' => $card['cardReference'],
             'quantity'      => (int)($card['quantity'] ?? 1),
         ];
+    }
+
+    if ($userId !== null && cacIsAltArtGlobalMode($userId)) {
+        $deckCards = cacApplyAltArtPreferencesToCards($deckCards, $userId);
     }
 
     $format  = $sourceDeck['format'] ?? 'standard';
@@ -257,6 +328,72 @@ function cacBuildDuplicateDeckPayload(array $sourceDeck, string $newName): array
     }
 
     return $payload;
+}
+
+/**
+ * The player's alt-art preference mode ("PerDeck", the default, or "Global") — see
+ * AltArtPreferenceMode on the ownership service, and ownGetAltArtPreferenceMode() in
+ * plugins/ownership/includes/functions.php (this is a self-contained duplicate, same
+ * reasoning as collApiRequest() vs ownApiRequestRaw() — this plugin doesn't assume the
+ * ownership plugin is active). Shares the same $_SESSION keys so both stay consistent
+ * within one session regardless of which plugin's copy last refreshed them.
+ */
+const CAC_ALT_ART_MODE_CACHE_TTL = 300;
+
+function cacGetAltArtPreferenceMode(int $userId): string {
+    if (isset($_SESSION['alt_art_mode'], $_SESSION['alt_art_mode_at'])
+        && (time() - $_SESSION['alt_art_mode_at']) < CAC_ALT_ART_MODE_CACHE_TTL) {
+        return $_SESSION['alt_art_mode'];
+    }
+
+    $mode = 'PerDeck';
+    if (defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL && $userId > 0) {
+        $data = collApiRequest(rtrim(OWNERSHIP_API_URL, '/'), 'GET', '/api/alt-arts/preference-mode', $userId);
+        if (is_array($data) && in_array($data['mode'] ?? null, ['PerDeck', 'Global'], true)) {
+            $mode = $data['mode'];
+        }
+    }
+
+    $_SESSION['alt_art_mode'] = $mode;
+    $_SESSION['alt_art_mode_at'] = time();
+    return $mode;
+}
+
+function cacIsAltArtGlobalMode(int $userId): bool {
+    return cacGetAltArtPreferenceMode($userId) === 'Global';
+}
+
+/**
+ * The Collector Booster's individually-serialized hero prints (ALT_DUSTERCB_P_<FACTION>_
+ * <NUM>_<RARITY>_<001-030|XXX>, 6 heroes x 31 serials = 186 refs) have no per-serial
+ * portrait crop generated under /cards/hero/ -- every one of them is a numbered copy of
+ * the set's regular DUSTER alt-art hero print, so callers building a hero portrait URL
+ * resolve through this first instead of requesting (and needing) 186 distinct images.
+ */
+function cacHeroPortraitRef(string $ref): string {
+    $p = explode('_', $ref);
+    if (($p[1] ?? '') === 'DUSTERCB' && count($p) > 6) {
+        return 'ALT_DUSTER_A_' . ($p[3] ?? '') . '_' . ($p[4] ?? '') . '_' . ($p[5] ?? '');
+    }
+    return $ref;
+}
+
+/**
+ * Rewrites a flat list of {cardReference, quantity} deck lines through the ownership
+ * service's POST /api/alt-arts/apply-to-deck (global alt-art preferences applied,
+ * falling back to the default print for anything not owned enough) — for server-side
+ * callers building or editing a deck (duplicate, Equinox import, quantity changes) while
+ * the owning player's mode is Global. Callers must check cacIsAltArtGlobalMode()
+ * themselves first; in PerDeck mode a deck's own chosen references are the source of
+ * truth and must never be rewritten. Falls back to the input unchanged on any API error,
+ * same failure mode as the rest of this plugin's ownership calls.
+ */
+function cacApplyAltArtPreferencesToCards(array $deckCards, int $userId): array {
+    if ($userId <= 0) return $deckCards;
+    require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
+    require_once dirname(__DIR__, 3) . '/includes/func.alt-arts.php';
+    $token = kc_get_access_token($userId);
+    return ($token ? altArtApplyToDeck($token, $deckCards) : null) ?: $deckCards;
 }
 
 /**
@@ -538,4 +675,54 @@ function cacStartingHandStatsTxt(string $lang): array
         ],
     ];
     return $t[$lang] ?? $t['en'];
+}
+
+// Uniques search API format id used for the Frontier allowlist (`format=<id>`).
+// Each Frontier season is published as its own entry in the formats manifest
+// (frontier, frontier-s04, ...), so the active id is a site setting editable in
+// Admin > Uniques format. Falls back to 'frontier' when unset or invalid.
+function cacIsValidUniquesFormatId(string $id): bool {
+    return preg_match('/^[A-Za-z0-9_.-]{1,32}$/', $id) === 1;
+}
+
+function cacUniquesFrontierFormat(): string {
+    $id = trim(getSetting('uniques_frontier_format', 'frontier'));
+    return cacIsValidUniquesFormatId($id) ? $id : 'frontier';
+}
+
+function cacFormatsManifestUrl(): string {
+    return defined('FORMATS_MANIFEST_URL') && FORMATS_MANIFEST_URL !== ''
+        ? FORMATS_MANIFEST_URL
+        : 'https://altered-reunion-formats-prod.s3.fr-par.scw.cloud/manifest.json';
+}
+
+// Fetch the public formats manifest (array of {id, name, path, version}).
+// Returns the valid entries, or null when the manifest can't be fetched/parsed.
+function cacFetchFormatsManifest(): ?array {
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL            => cacFormatsManifestUrl(),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode !== 200 || $response === false) return null;
+
+    $data = json_decode((string) $response, true);
+    if (!is_array($data)) return null;
+    $entries = [];
+    foreach ($data as $entry) {
+        $id = is_array($entry) ? (string) ($entry['id'] ?? '') : '';
+        if (!cacIsValidUniquesFormatId($id)) continue;
+        $entries[] = [
+            'id'      => $id,
+            'name'    => (string) ($entry['name'] ?? $id),
+            'version' => $entry['version'] ?? null,
+        ];
+    }
+    return $entries;
 }

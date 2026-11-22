@@ -161,40 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // activate
     if ($action === 'activate' && $pluginId) {
-        $all = pluginsGetAll();
-        if (!isset($all[$pluginId])) {
-            flash('Plugin not found.', 'error');
+        $activateErrors = pluginActivate($pluginId);
+        if (!empty($activateErrors)) {
+            flash('Plugin cannot be activated — ' . implode(' · ', $activateErrors), 'error');
             redirect(BASE_URL . '/admin/plugins');
         }
-        $m = $all[$pluginId];
-        $conflictErrors = pluginCheckConflicts($m, $pluginId);
-        if (!empty($conflictErrors)) {
-            flash('Plugin cannot be activated — slug conflict(s): ' . implode(' · ', $conflictErrors), 'error');
-            redirect(BASE_URL . '/admin/plugins');
-        }
-        // Ensure a DB row exists (covers plugins present on disk but not uploaded via ZIP)
-        $db->prepare(q("INSERT IGNORE INTO {plugins} (id, version) VALUES (:id, :v)"))
-           ->execute([':id' => $pluginId, ':v' => $m['version'] ?? null]);
-        // Run SQL on first activation
-        $row = $db->prepare(q("SELECT sql_installed_at FROM {plugins} WHERE id = :id"));
-        $row->execute([':id' => $pluginId]);
-        $existing = $row->fetch();
-        if ($existing && $existing['sql_installed_at'] === null && !empty($m['sql'])) {
-            $sqlFile = $m['_dir'] . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $m['sql']), DIRECTORY_SEPARATOR);
-            if (file_exists($sqlFile)) {
-                try {
-                    $GLOBALS['_ac_current_plugin_prefix'] = $m['_table_prefix'] ?? '';
-                    $db->exec(qp(file_get_contents($sqlFile)));
-                    unset($GLOBALS['_ac_current_plugin_prefix']);
-                    $db->prepare(q("UPDATE {plugins} SET sql_installed_at = NOW() WHERE id = :id"))->execute([':id' => $pluginId]);
-                } catch (Exception $e) {
-                    flash('SQL install error: ' . $e->getMessage(), 'error');
-                    redirect(BASE_URL . '/admin/plugins');
-                }
-            }
-        }
-        $db->prepare(q("UPDATE {plugins} SET is_active = 1, version = :v, activated_at = NOW() WHERE id = :id"))
-           ->execute([':v' => $m['version'] ?? null, ':id' => $pluginId]);
         flash('Plugin activated.');
         redirect(BASE_URL . '/admin/plugins');
     }
@@ -273,18 +244,18 @@ try {
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border:none;border-radius:1rem;overflow:hidden">
-            <div class="modal-header" style="border-bottom:1px solid var(--sand-300)">
+            <div class="modal-header" style="border-bottom:1px solid var(--ac-color-border)">
                 <h5 class="modal-title"><i class="fa-solid fa-upload me-2"></i>Install plugin from ZIP</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" enctype="multipart/form-data">
-                <div class="modal-body" style="background:var(--sand-50)">
+                <div class="modal-body" style="background:var(--ac-color-surface)">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="action" value="upload">
                     <p class="text-muted small mb-3">The ZIP must contain a <code>plugin.json</code> manifest at its root (or inside a single top-level folder). If the plugin is already installed and the ZIP has a higher version number, it will be updated automatically.</p>
                     <input type="file" name="plugin_zip" accept=".zip" class="form-control" required>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--sand-300);background:var(--sand-50)">
+                <div class="modal-footer" style="border-top:1px solid var(--ac-color-border);background:var(--ac-color-surface)">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-primary-altered">
                         <i class="fa-solid fa-upload me-1"></i> Install
@@ -299,12 +270,12 @@ try {
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border:none;border-radius:1rem;overflow:hidden">
-            <div class="modal-header" style="border-bottom:1px solid var(--sand-300)">
+            <div class="modal-header" style="border-bottom:1px solid var(--ac-color-border)">
                 <h5 class="modal-title"><i class="fa-solid fa-trash me-2"></i>Delete plugin</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post">
-                <div class="modal-body" style="background:var(--sand-50)">
+                <div class="modal-body" style="background:var(--ac-color-surface)">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="plugin_id" id="deletePluginId">
@@ -322,7 +293,7 @@ try {
                         <p class="small text-danger mt-1 ms-4 mb-0">This is irreversible — all data in these tables will be lost.</p>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--sand-300);background:var(--sand-50)">
+                <div class="modal-footer" style="border-top:1px solid var(--ac-color-border);background:var(--ac-color-surface)">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-danger">
                         <i class="fa-solid fa-trash me-1"></i> Delete
@@ -377,7 +348,7 @@ document.getElementById('deleteModal').addEventListener('show.bs.modal', functio
         ?>
         <tr>
             <td class="text-center">
-                <i class="<?= h($plugin['icon'] ?? 'fa-solid fa-puzzle-piece') ?> text-muted"></i>
+                <?= ac_icon((string)($plugin['icon'] ?? 'puzzle'), 'text-muted') ?>
             </td>
             <td>
                 <div class="fw-semibold"><?= h($plugin['name']) ?></div>

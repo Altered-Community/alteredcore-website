@@ -1,0 +1,41 @@
+/* card-scan — floating QR-scan button, mobile only. Tokens only (design-system/tokens/tokens.css). */
+
+#cs-fab { display: none; }
+
+@media (max-width: 767.98px) {
+    #cs-fab {
+        position: fixed;
+        bottom: var(--ac-space-3);
+        right: var(--ac-space-3);
+        display: inline-flex;
+        align-items: center;
+        gap: var(--ac-space-2);
+        height: var(--ac-control-lg);
+        padding: 0 var(--ac-space-5);
+        border-radius: var(--ac-radius-pill);
+        background: var(--ac-color-primary);
+        color: var(--ac-color-on-primary);
+        font: var(--ac-font-body-strong);
+        text-decoration: none;
+        white-space: nowrap;
+        box-shadow: var(--ac-shadow-fab);
+        z-index: 8000;
+        transition: transform var(--ac-duration-fast) ease, background-color var(--ac-duration-fast) ease;
+    }
+
+    #cs-fab:hover,
+    #cs-fab:focus-visible {
+        transform: translateY(-2px);
+        background: var(--ac-color-primary-strong);
+        color: var(--ac-color-on-primary);
+        text-decoration: none;
+    }
+
+    #cs-fab:active {
+        transform: translateY(0);
+    }
+
+    #cs-fab .ac-icon {
+        --ac-icon-size: 18px;
+    }
+}

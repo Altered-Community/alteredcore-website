@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/url.php';
+require_once __DIR__ . '/news-people.php';
 
 /**
  * True when the *original* request is HTTPS, honouring a TLS-terminating reverse
@@ -39,12 +41,7 @@ function request_scheme(): string {
 // Legacy: THEME_SETTING_KEYS was removed — all settings now live in site_settings.
 // Left as empty const so any third-party code that references it does not fatal.
 const THEME_SETTING_KEYS = [
-    'theme_color', 'bg_color', 'bg_image', 'bg_image_mode',
-    'font_body', 'font_titles', 'font_nav', 'font_user_menu', 'font_footer',
-    'navbar_width', 'logo_path',
-    'footer_bg_image', 'footer_bg_mode',
-    'footer_deco_left', 'footer_deco_right',
-    'footer_deco_left_opacity', 'footer_deco_right_opacity',
+    'logo_path',
     'footer_rights_en', 'footer_rights_fr',
     'footer_col1_title_en', 'footer_col1_title_fr', 'footer_col1_content_en', 'footer_col1_content_fr',
     'footer_col2_title_en', 'footer_col2_title_fr', 'footer_col2_content_en', 'footer_col2_content_fr',
@@ -150,12 +147,6 @@ function validateImageUpload(array $file): ?string {
     return null;
 }
 
-function fontCssFormat(string $filename): string {
-    static $map = ['woff2' => 'woff2', 'woff' => 'woff', 'ttf' => 'truetype', 'otf' => 'opentype'];
-    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    return $map[$ext] ?? 'woff2';
-}
-
 function imageExtFromMime(string $tmpPath): string {
     static $map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -206,8 +197,10 @@ function validateSvgUpload(string $svg): bool {
 function initLang(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
-    $userId     = (int)($_SESSION['user_id'] ?? 0);
-    $isLoggedIn = $userId > 0 && (!empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']));
+    // Validate the session first so stale session IDs neither read nor write DB preferences,
+    // while a valid kc_remember/local_remember cookie restores $_SESSION['user_id'] in time.
+    $userId     = 0;
+    $isLoggedIn = kcIsLoggedIn() && ($userId = (int)($_SESSION['user_id'] ?? 0)) > 0;
 
     // Explicit lang change via ?lang=
     if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'fr', 'es', 'it', 'de'], true)) {
@@ -266,6 +259,49 @@ function getLangUrl(string $targetLang): string {
     return '?' . http_build_query($params);
 }
 
+/**
+ * Page slug a menu URL points at, compared with the current page for highlighting:
+ * `/pages/{slug}/…` gives `{slug}` (deep links of SPA pages), otherwise the file name.
+ */
+function navUrlPage(string $url): string {
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?: '');
+    if (preg_match('#/pages/([a-z0-9_-]+)/#', $path . '/', $m)) return $m[1];
+    return basename($path, '.php');
+}
+
+/**
+ * Whether a menu URL is the current page. `/pages/{slug}/{sub}` entries (client routes of an
+ * SPA page) are compared on the request path: among those of the current page, only the one
+ * with the longest matching prefix is current (…/decks/new rather than …/decks). The SPA can
+ * change it afterwards with AlteredCore.setActiveNav().
+ */
+function navUrlIsCurrent(string $url, string $currentPage): bool {
+    $page = navUrlPage($url);
+    if ($page === '') $page = 'index';
+    if ($page !== $currentPage) return false;
+    $path = rtrim((string)(parse_url($url, PHP_URL_PATH) ?: ''), '/');
+    if (!preg_match('#^/pages/[a-z0-9_-]+/.+#', $path)) return true;
+    return $path === navSpaCurrentUrl($currentPage);
+}
+
+/** Longest `/pages/{slug}/…` menu path that prefixes the request path (see navUrlIsCurrent). */
+function navSpaCurrentUrl(string $currentPage): ?string {
+    static $cache = [];
+    if (array_key_exists($currentPage, $cache)) return $cache[$currentPage];
+    $request = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+    if (BASE_URL !== '' && strpos($request, BASE_URL) === 0) $request = substr($request, strlen(BASE_URL));
+    $best = null;
+    $items = $GLOBALS['__navItems'] ?? [];
+    foreach ($items as $item) $items = array_merge($items, $item['children'] ?? []);
+    foreach ($items as $item) {
+        $path = rtrim((string)(parse_url((string)($item['url'] ?? ''), PHP_URL_PATH) ?: ''), '/');
+        if (!preg_match('#^/pages/' . preg_quote($currentPage, '#') . '/.+#', $path)) continue;
+        if ($request !== $path && strpos($request, $path . '/') !== 0) continue;
+        if ($best === null || strlen($path) > strlen($best)) $best = $path;
+    }
+    return $cache[$currentPage] = $best;
+}
+
 function resolveUrlLang(string $url): string {
     $lang     = getLang();
     $fullMap  = ['en' => 'en-us', 'fr' => 'fr-fr', 'es' => 'es-es', 'it' => 'it-it', 'de' => 'de-de'];
@@ -277,13 +313,30 @@ function resolveUrlLang(string $url): string {
     return $url;
 }
 
-function formatDate(string $date): string {
-    $lang  = getLang();
+// $lang: a page translated in more languages than the UI (es, it, de) passes getLang(); by default French or English.
+function formatDate(string $date, ?string $lang = null): string {
+    $own   = $lang !== null;
+    $lang  = $lang ?? getLang();
     $ts    = strtotime($date);
     if ($lang === 'fr') {
         $months = ['janvier','février','mars','avril','mai','juin',
                    'juillet','août','septembre','octobre','novembre','décembre'];
         return date('j', $ts) . ' ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'es') {
+        $months = ['enero','febrero','marzo','abril','mayo','junio',
+                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        return date('j', $ts) . ' de ' . $months[(int)date('n', $ts) - 1] . ' de ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'it') {
+        $months = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
+                   'luglio','agosto','settembre','ottobre','novembre','dicembre'];
+        return date('j', $ts) . ' ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
+    }
+    if ($own && $lang === 'de') {
+        $months = ['Januar','Februar','März','April','Mai','Juni',
+                   'Juli','August','September','Oktober','November','Dezember'];
+        return date('j', $ts) . '. ' . $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
     }
     return date('F j, Y', $ts);
 }
@@ -497,13 +550,7 @@ function h(string $str): string {
 function requireAdmin(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return;
-    // Attempt session restore from kc_remember cookie if KC session has expired
-    if (empty($_SESSION['kc_logged_in']) && !empty($_COOKIE['kc_remember'])) {
-        require_once __DIR__ . '/func.keycloak.php';
-        kc_restore_session();
-    }
-    $authenticated = !empty($_SESSION['kc_logged_in']) || !empty($_SESSION['local_logged_in']);
-    if ($authenticated && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g && $g['can_access_admin']) return; // no group = no admin access
     }
@@ -534,9 +581,7 @@ function adminSections(): array {
         'rss'         => 'RSS Feeds',
         'banner'      => 'Banner',
         'announcement' => 'Announcement',
-        'background'  => 'Background',
         'logo'        => 'Logo',
-        'font'        => 'Font',
         'footer'      => 'Footer',
         'privacy'     => 'Privacy',
         'shortcodes'  => 'Shortcodes',
@@ -553,7 +598,6 @@ function adminSections(): array {
         'homepage'     => 'Homepage',
         'pages'        => 'Pages',
         'media'        => 'Media Library',
-        'themes'       => 'Themes',
         'plugins'      => 'Plugins',
     ];
 }
@@ -585,6 +629,7 @@ function adminGetUserGroup(): ?array {
     if ($loaded) return $result;
     $loaded = true;
     if (session_status() === PHP_SESSION_NONE) session_start();
+    if (empty($_SESSION['admin_logged_in']) && !kcIsLoggedIn()) return null;
     if (saIsPreviewingGroup()) {
         $gid = (int)$_SESSION['sa_preview_group_id'];
         try {
@@ -696,7 +741,7 @@ function adminHasSection(string $section): bool {
 function canViewAdminPanel(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['kc_logged_in']) && !empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         $g = adminGetUserGroup();
         if ($g) return $g['can_access_admin'];
         return false; // no group assigned = no admin access
@@ -707,7 +752,7 @@ function canViewAdminPanel(): bool {
 function isAdminUser(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (!empty($_SESSION['user_id'])) {
+    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
         if (isset($_SESSION['kc_is_admin'])) return (bool)$_SESSION['kc_is_admin'];
         try {
             $stmt = getDB()->prepare(q("SELECT is_admin FROM {users} WHERE id = :id"));
@@ -759,14 +804,17 @@ function csrfValid(?string $token): bool {
 function kcClearSession(): void {
     foreach (['kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email',
               'kc_username', 'kc_id_token', 'kc_access_token',
-              'kc_access_token_exp', 'user_id'] as $key) {
+              'kc_access_token_exp', 'kc_is_admin', 'user_id'] as $key) {
         unset($_SESSION[$key]);
     }
-    $secure = request_is_https();
-    setcookie('kc_remember', '', [
-        'expires' => time() - 3600, 'path' => '/',
-        'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
-    ]);
+    if (!headers_sent()) {
+        $secure = request_is_https();
+        setcookie('kc_remember', '', [
+            'expires' => time() - 3600, 'path' => '/',
+            'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
+        ]);
+    }
+    unset($_COOKIE['kc_remember']);
 }
 
 function clearAuthSession(): void {
@@ -774,7 +822,7 @@ function clearAuthSession(): void {
         'admin_logged_in', 'admin_logged_in_at', 'admin_username',
         'local_logged_in', 'local_logged_in_at', 'local_email', 'local_username',
         'kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email', 'kc_username', 'kc_id_token',
-        'user_id',
+        'kc_is_admin', 'user_id',
     ] as $key) {
         unset($_SESSION[$key]);
     }
@@ -810,6 +858,8 @@ function globalLogoutSessionIsValid(): bool {
 // keycloak authentication
 
 function kcIsLoggedIn(): bool {
+    static $verifiedUserId = null;
+
     if (!defined('KC_URL') || KC_URL === '') {
         return localIsLoggedIn();
     }
@@ -817,6 +867,7 @@ function kcIsLoggedIn(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
 
     if (empty($_SESSION['kc_logged_in'])) {
+        $verifiedUserId = null;
         static $restoreAttempted = false;
         if (!$restoreAttempted && !empty($_COOKIE['kc_remember'])) {
             $restoreAttempted = true;
@@ -826,19 +877,35 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
-    // Verify the refresh token is still in DB — it is nulled on every logout,
-    // which invalidates all concurrent sessions for that user immediately.
     $userId = (int)($_SESSION['user_id'] ?? 0);
-    if ($userId > 0) {
-        try {
-            $stmt = getDB()->prepare(q("SELECT kc_refresh_token FROM {users} WHERE id = :id LIMIT 1"));
-            $stmt->execute([':id' => $userId]);
-            $row = $stmt->fetch();
-            if ($row !== false && empty($row['kc_refresh_token'])) {
-                kcClearSession();
-                return false;
-            }
-        } catch (Throwable $e) {}
+    if ($userId <= 0) {
+        $verifiedUserId = null;
+        kcClearSession();
+        return false;
+    }
+
+    // Memoize DB/Keycloak verification within a single PHP request; re-checks if session cleared or user changed.
+    if ($verifiedUserId === $userId && globalLogoutSessionIsValid()) {
+        return true;
+    }
+
+    // Verify the refresh token is still in DB (nulled on logout) and not expired.
+    try {
+        $stmt = getDB()->prepare(q("SELECT kc_refresh_token, kc_token_expiry FROM {users} WHERE id = :id LIMIT 1"));
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch();
+        if ($row === false || empty($row['kc_refresh_token'])) {
+            kcClearSession();
+            return false;
+        }
+        $rtExp = (int)($row['kc_token_expiry'] ?? 0);
+        if ($rtExp > 0 && $rtExp <= time()) {
+            require_once __DIR__ . '/func.keycloak.php';
+            kc_drop_refresh_token($userId);
+            return false;
+        }
+    } catch (Throwable $e) {
+        return false;
     }
 
     // Admin-triggered force-logout
@@ -853,6 +920,15 @@ function kcIsLoggedIn(): bool {
         return false;
     }
 
+    // Ensure a valid access token is present or refreshable with Keycloak; otherwise
+    // the PHP session outlives Keycloak and the header displays a signed-in user
+    // whose API calls (decks, collection, ownership) fail.
+    require_once __DIR__ . '/func.keycloak.php';
+    if (!kc_get_access_token($userId)) {
+        return false;
+    }
+
+    $verifiedUserId = $userId;
     return true;
 }
 
@@ -951,21 +1027,12 @@ function assetUrl(string $path): string {
 }
 
 // theme helpers
+// The site has a single theme folder (themes/azure: header, menu, footer templates); its look
+// comes from the design system (design-system/), with light and dark modes only.
+const SITE_THEME_FALLBACK = 'azure';
 
 function getActiveTheme(): string {
-    static $theme = null;
-    if ($theme !== null) return $theme;
-    $slug = getSetting('active_theme');
-    if ($slug === '') $slug = 'default';
-    // Sanitize: only alphanumeric, hyphen, underscore allowed
-    $slug = preg_replace('/[^a-zA-Z0-9_-]/', '', $slug);
-    if ($slug === '') $slug = 'default';
-    // Validate that the theme directory actually exists on disk
-    if (!is_dir(dirname(__DIR__) . '/themes/' . $slug)) {
-        $slug = 'default';
-    }
-    $theme = $slug;
-    return $theme;
+    return SITE_THEME_FALLBACK;
 }
 
 function themeFile(string $file): string {
@@ -973,8 +1040,8 @@ function themeFile(string $file): string {
     $active = getActiveTheme();
     $path   = $root . $active . '/' . $file;
     if (file_exists($path)) return $path;
-    $default = $root . 'default/' . $file;
-    if (file_exists($default)) return $default;
+    $fallback = $root . SITE_THEME_FALLBACK . '/' . $file;
+    if (file_exists($fallback)) return $fallback;
     return $path;
 }
 
@@ -984,8 +1051,8 @@ function themeUrl(string $file): string {
     if (file_exists($root . $active . '/' . $file)) {
         return BASE_URL . '/themes/' . $active . '/' . $file;
     }
-    if (file_exists($root . 'default/' . $file)) {
-        return BASE_URL . '/themes/default/' . $file;
+    if (file_exists($root . SITE_THEME_FALLBACK . '/' . $file)) {
+        return BASE_URL . '/themes/' . SITE_THEME_FALLBACK . '/' . $file;
     }
     return BASE_URL . '/themes/' . $active . '/' . $file;
 }
@@ -1108,7 +1175,7 @@ function getBanner(): array {
             'title'           => $_heroTitle,
             'subtitle'        => $_heroSubtitle,
             'btn_label'       => $_heroCta,
-            'btn_url'         => BASE_URL . '/pages/news',
+            'btn_url'         => BASE_URL . '/pages/discover',
             'bg_image'        => null,
             'overlay_color'   => '#000000',
             'overlay_opacity' => 0,
@@ -1123,7 +1190,7 @@ function getBanner(): array {
                               ? (strpos($row['btn_url'], '//') !== false
                                     ? resolveUrlLang($row['btn_url'])
                                     : BASE_URL . '/' . ltrim(resolveUrlLang($row['btn_url']), '/'))
-                              : BASE_URL . '/pages/news',
+                              : BASE_URL . '/pages/discover',
         'bg_image'        => $row['bg_image'],
         'overlay_color'   => $row['overlay_color']   ?? '#000000',
         'overlay_opacity' => (int)($row['overlay_opacity'] ?? 0),
@@ -1133,24 +1200,27 @@ function getBanner(): array {
 
 function getNavItems(): array {
     $lang = getUiLang();
-    try {
-        $rows = getDB()->query(q(
-            "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
-             FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
-        ))->fetchAll();
-    } catch (Exception $e) {
-        // Fallback: some columns may not exist yet on live DB (pending migration)
+    // Newest schema first; older queries are fallbacks for live DBs with pending migrations
+    $queries = [
+        "SELECT id, parent_id, label_{$lang} AS label, description_{$lang} AS description, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+        "SELECT id, parent_id, label_{$lang} AS label, '' AS description, url, icon, is_iframe, is_blank, is_fullwidth, hide_label, is_sidebar_toggle, is_separator, is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+        "SELECT id, parent_id, label_{$lang} AS label, '' AS description, url, icon, is_iframe,
+                0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
+                0 AS is_separator, 0 AS is_section_header
+         FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id",
+    ];
+    $rows = null;
+    foreach ($queries as $sql) {
         try {
-            $rows = getDB()->query(q(
-                "SELECT id, parent_id, label_{$lang} AS label, url, icon, is_iframe,
-                        0 AS is_blank, 0 AS is_fullwidth, 0 AS hide_label, 0 AS is_sidebar_toggle,
-                        0 AS is_separator, 0 AS is_section_header
-                 FROM {nav_items} WHERE is_visible = 1 ORDER BY sort_order, id"
-            ))->fetchAll();
-        } catch (Exception $e2) {
-            return [];
+            $rows = getDB()->query(q($sql))->fetchAll();
+            break;
+        } catch (Exception $e) {
+            // try the next, older schema
         }
     }
+    if ($rows === null) return [];
     $children = [];
     $parents  = [];
     foreach ($rows as $row) {
@@ -1212,3 +1282,5 @@ function getUserMenuItems(): array {
 }
 require_once __DIR__ . '/func.keycloak.php';
 require_once __DIR__ . '/plugins.php';
+require_once __DIR__ . '/spa.php';
+require_once __DIR__ . '/../design-system/php/ui.php';

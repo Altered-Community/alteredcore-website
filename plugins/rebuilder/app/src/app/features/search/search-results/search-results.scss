@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    column-gap: var(--ac-space-2);
+    row-gap: var(--ac-space-4);
+  }
+}
+@media (min-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    column-gap: var(--ac-space-2);
+    row-gap: var(--ac-space-5);
+  }
+}
+/* Uniques: their text is read, so at most 7 columns; the cards only grow where 7 would be narrower
+   than the usual 200 px (very wide windows). */
+@media (min-width: 1200px) {
+  .grid--readable {
+    grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - 6 * var(--ac-space-2)) / 7)), 1fr));
+  }
+}
+/* A column count chosen with the size slider (card-search): a fixed number of equal columns. */
+@media (min-width: 768px) {
+  .grid.grid--cols {
+    grid-template-columns: repeat(var(--app-card-cols), minmax(0, 1fr));
+  }
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  background: var(--ac-color-surface);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  padding: var(--ac-space-2);
+}
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-10) var(--ac-space-4);
+  text-align: center;
+  color: var(--ac-color-text-2);
+}
+.state p {
+  margin: 0 0 var(--ac-space-2);
+}
+.end {
+  text-align: center;
+  font-size: var(--ac-font-size-small);
+  color: var(--ac-color-text-muted);
+  padding: var(--ac-space-6) 0;
+}
+.slow {
+  margin: 0;
+  padding: var(--ac-space-4) 0;
+  text-align: center;
+  font: var(--ac-font-small);
+  color: var(--ac-color-text-2);
+}
+.sentinel {
+  height: 1px;
+}

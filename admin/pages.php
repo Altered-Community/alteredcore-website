@@ -105,7 +105,7 @@ foreach (pluginsGetAll() as $__pid => $__pm) {
         $__pluginPages[] = [
             'plugin_id'   => $__pid,
             'plugin_name' => $__pm['name'],
-            'plugin_icon' => $__pm['icon'] ?? 'fa-solid fa-puzzle-piece',
+            'plugin_icon' => $__pm['icon'] ?? 'puzzle',
             'slug'        => $__pp['slug'],
             'title_en'    => $__pp['title_en'] ?? '',
             'title_fr'    => $__pp['title_fr'] ?? '',
@@ -185,16 +185,16 @@ if ($status === 'hidden') {
                 <?php foreach ($customRows as $row): ?>
                 <?php $fileExists = file_exists($pagesDir . $row['slug'] . '.php'); ?>
                 <tr>
-                    <td style="color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td>
                         <code><?= h($row['slug']) ?></code>
                         <?php if (($row['type'] ?? 'code') === 'content'): ?>
-                        <span class="badge ms-1" style="font-size:.65rem;background:#0891b2;color:#fff;border-radius:20px;padding:2px 7px">Content</span>
+                        <span class="ac-badge ac-badge--blue ms-1">Content</span>
                         <?php endif; ?>
                     </td>
                     <td><?= h($row['title_en']) ?: '<span class="text-muted">—</span>' ?></td>
                     <td><?= h($row['title_fr']) ?: '<span class="text-muted">—</span>' ?></td>
-                    <td style="font-size:.8rem;color:var(--neutral-500)">
+                    <td style="font-size:.8rem;color:var(--ac-color-text-muted)">
                         <?php if ($fileExists): ?>
                             <i class="fa-solid fa-circle-check text-success me-1" title="File exists"></i>
                         <?php else: ?>
@@ -287,7 +287,7 @@ $__noResults = ($search !== '' || $status !== '')
                 ?>
                 <tr>
                     <td style="white-space:nowrap">
-                        <i class="<?= h($__pp['plugin_icon']) ?> me-1 text-muted"></i>
+                        <?= ac_icon((string)($__pp['plugin_icon']), 'me-1 text-muted') ?>
                         <?= h($__pp['plugin_name']) ?>
                     </td>
                     <td><code><?= h($__pp['slug']) ?></code></td>
@@ -350,11 +350,11 @@ $__noResults = ($search !== '' || $status !== '')
                     $fileExists = file_exists($pagesDir . $row['slug'] . '.php');
                 ?>
                 <tr>
-                    <td style="color:var(--neutral-500);font-size:.85rem"><?= $row['id'] ?></td>
+                    <td style="color:var(--ac-color-text-muted);font-size:.85rem"><?= $row['id'] ?></td>
                     <td><code><?= h($row['slug']) ?></code></td>
                     <td><?= h($row['title_en']) ?: '<span class="text-muted">—</span>' ?></td>
                     <td><?= h($row['title_fr']) ?: '<span class="text-muted">—</span>' ?></td>
-                    <td style="font-size:.8rem;color:var(--neutral-500)">
+                    <td style="font-size:.8rem;color:var(--ac-color-text-muted)">
                         <?php if ($fileExists): ?>
                             <i class="fa-solid fa-circle-check text-success me-1" title="File exists"></i>
                         <?php else: ?>

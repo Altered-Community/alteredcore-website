@@ -1,0 +1,14 @@
+<div class="ac-overlay-body">
+  <p class="message">{{ ref.data.message }}</p>
+</div>
+<div class="ac-overlay-footer">
+  <button acButton variant="secondary" class="secondary-action" (click)="ref.close(false)" i18n="@@shared.confirm.cancel">Annuler</button>
+  <button
+    acButton
+    [variant]="ref.data.danger ? 'danger' : 'primary'"
+    [icon]="ref.data.icon"
+    [size]="bp.compact() ? 'lg' : 'md'"
+    [fullWidth]="bp.compact()"
+    (click)="ref.close(true)"
+  >{{ ref.data.confirmLabel }}</button>
+</div>

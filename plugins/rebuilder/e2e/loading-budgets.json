@@ -1,0 +1,5 @@
+{
+  "_doc": "Largest CLS each screen may reach in loading.spec.ts (key: <project>[@<width>]/<screen key>/<first|second>), measured with the « phone » profile. Default 0.01. Known shifts get a budget a little above today's value and a reason; lower a budget when a fix lands, never raise it to make a test pass.",
+  "default": 0.01,
+  "screens": {}
+}

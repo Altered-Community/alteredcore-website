@@ -1,0 +1,18 @@
+<label class="ac-radio-card" [class.ac-radio-card--stacked]="layout() === 'stacked'" [class.ac-radio-card--compact]="layout() === 'compact'">
+  <input type="radio" [name]="name()" [checked]="checked()" (change)="choose.emit()" />
+  <span class="ac-radio-card__body">
+    <span class="ac-radio-card__head">
+      <span class="ac-radio-card__title">{{ title() }}</span>
+      @if (tag() && layout() === 'row') {
+        <span [class]="'ac-tag ac-tag--' + tag()!.tone">{{ tag()!.label }}</span>
+      }
+    </span>
+    <span class="ac-radio-card__desc" [attr.title]="layout() === 'compact' ? description() : null">{{ description() }}</span>
+    @if (tag() && layout() === 'stacked') {
+      <span [class]="'ac-tag ac-tag--' + tag()!.tone">{{ tag()!.label }}</span>
+    }
+  </span>
+  @if (tag() && layout() === 'compact') {
+    <span [class]="'ac-tag ac-tag--' + tag()!.tone">{{ tag()!.label }}</span>
+  }
+</label>

@@ -1,0 +1,652 @@
+/* Digital Ownership plugin — layout only; colours, radii, shadows and fonts are design system
+   tokens (design-system/tokens/tokens.css), which already have dark values: no dark-theme
+   rules here. The booster stage and the holo effect sit on card artwork, so they use fixed
+   --ac-ownership-* tokens. Ported from AlteredOwnership's wwwroot/css/app.css (.ao-* -> .own-*). */
+
+/* Sub-nav (Collection / Boosters / History / Import): .ac-tabs.ac-tabs--underline, see
+   includes/subnav.php. The boosters counter is an .ac-count. */
+.own-subnav {
+    margin-bottom: var(--ac-space-6);
+}
+
+/* Hub tiles (.ac-card.ac-card--interactive) */
+.own-hub-tile {
+    height: 100%;
+    transition: transform var(--ac-duration-fast) ease, box-shadow var(--ac-duration-fast) ease,
+        border-color var(--ac-duration-fast) ease;
+}
+.own-hub-tile:hover {
+    transform: translateY(-2px);
+}
+.own-hub-tile-icon {
+    --ac-icon-size: 32px;
+    display: block;
+    margin-bottom: var(--ac-space-3);
+    color: var(--ac-color-primary);
+}
+.own-hub-tile-count {
+    margin-top: var(--ac-space-2);
+}
+
+/* Booster tiles */
+.own-booster-tile {
+    width: 100%;
+    cursor: pointer;
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    background: var(--ac-color-surface);
+    color: var(--ac-color-text);
+    padding: var(--ac-space-4);
+    text-align: center;
+    font: var(--ac-font-body);
+    transition: border-color var(--ac-duration-fast), box-shadow var(--ac-duration-fast);
+}
+.own-booster-tile:is(:hover, :focus-visible):not(:disabled) {
+    border-color: var(--ac-color-border-control);
+    box-shadow: var(--ac-shadow-card);
+}
+.own-booster-tile:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+.own-booster-cover-img {
+    max-width: 100%;
+    height: 160px;
+    object-fit: contain;
+}
+.own-booster-name {
+    margin-top: var(--ac-space-2);
+    font: var(--ac-font-body-strong);
+}
+.own-booster-qty {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
+}
+
+/* Booster-opening overlay: a static booster cover slides down on click to reveal the
+   card sitting underneath it. */
+.own-opener-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--ac-color-overlay-strong);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ac-space-4);
+    padding: var(--ac-space-4);
+    z-index: calc(var(--ac-z-overlay) + 30);
+}
+
+.own-opener-stage {
+    position: relative;
+    width: min(94vw, calc(82vh * 63 / 88));
+    aspect-ratio: 63 / 88;
+    perspective: 900px;
+}
+
+.own-opener-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.own-opener-card altered-card,
+.own-tilt-card altered-card,
+.own-opener-card > img {
+    display: block;
+    width: 100%;
+}
+
+.own-opener-card > img {
+    border-radius: var(--ac-radius-dialog);
+}
+
+.own-card-pending {
+    transform: scale(0.8);
+}
+
+@keyframes own-card-reveal {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+}
+
+.own-card-revealing {
+    animation: own-card-reveal 500ms ease-out both;
+}
+
+.own-tilt-card altered-card,
+.own-tilt-card img {
+    border-radius: var(--ac-radius-dialog);
+    overflow: hidden;
+}
+
+.own-opener-cover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transform: translateY(0);
+    transition: transform 500ms ease-in; /* reveal animation, longer than --ac-duration-* */
+    transform-style: preserve-3d;
+}
+
+.own-opener-cover.own-opening {
+    transform: translateY(160vh);
+}
+
+.own-opener-cover img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.own-opener-cover .own-opener-cover-fallback {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.own-opener-cover-art {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(var(--own-tilt-y, 0deg)) rotateX(var(--own-tilt-x, 0deg));
+    transition: transform 400ms ease-out;
+    transform-style: preserve-3d;
+}
+
+.own-opener-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Loading spinner: an .ac-spinner (pages/boosters.php), sized for the stage. */
+.own-opener-loading .ac-spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+}
+
+.own-opener-nav {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    width: var(--ac-control-lg);
+    height: var(--ac-control-lg);
+    border-radius: var(--ac-radius-control);
+    border: none;
+    background: var(--ac-color-overlay-label);
+    box-shadow: var(--ac-shadow-e3);
+    color: var(--ac-color-on-strong);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+.own-opener-nav:is(:hover, :focus-visible) {
+    background: var(--ac-color-overlay-chip);
+}
+.own-opener-nav .ac-icon {
+    --ac-icon-size: 24px;
+}
+.own-opener-nav:disabled {
+    opacity: 0;
+    pointer-events: none;
+}
+.own-opener-nav--prev {
+    left: calc(-1 * (var(--ac-control-lg) + var(--ac-space-3)));
+}
+.own-opener-nav--next {
+    right: calc(-1 * (var(--ac-control-lg) + var(--ac-space-3)));
+}
+@media (max-width: 767.98px) {
+    .own-opener-nav--prev {
+        left: var(--ac-space-2);
+    }
+    .own-opener-nav--next {
+        right: var(--ac-space-2);
+    }
+}
+
+.own-opener-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ac-space-3);
+    text-align: center;
+    color: var(--ac-color-on-strong);
+}
+.own-opener-name {
+    font: var(--ac-font-body-strong);
+}
+.own-opener-qty {
+    font: var(--ac-font-small);
+    opacity: 0.7;
+}
+
+/* The "Open" button is an .ac-button (pages/boosters.php). */
+
+/* History: ± count icons next to each event row (see renderDelta in history.js). */
+.own-delta-icon {
+    width: 20px;
+    height: auto;
+    border-radius: var(--ac-radius-xs);
+}
+
+/* History: clickable card thumbnail (detail modal) that opens the zoom overlay. */
+.own-card-thumb-btn {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+}
+
+/* Perspective ancestor for .own-tilt-card outside the booster opener's own fixed-size
+   stage (.own-opener-stage) — used by card-modal-enhance.js to wrap a card-detail
+   modal's card element so the 3D rotation reads correctly. */
+.own-tilt-stage {
+    position: relative;
+    perspective: 900px;
+}
+
+/* Shared pointer-tilt rotator: the booster cover's inner content and the history "zoom"
+   card both rotate through this same class/timing. */
+.own-tilt-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(var(--own-tilt-y, 0deg)) rotateX(var(--own-tilt-x, 0deg));
+    transition: transform 400ms ease-out;
+    transform-style: preserve-3d;
+}
+
+/* Holo shine/glare (revealed unique cards + their history zoom). card-tilt.js writes
+   --own-tilt-px/-py (pointer position) and --own-tilt-opacity (0 at rest, 1 while
+   interacting); everything else — gradients, blend modes — lives here. */
+.own-tilt-holo {
+    position: relative;
+    border-radius: var(--ac-radius-dialog);
+    overflow: hidden;
+    box-shadow: 0 0 3px -1px var(--ac-color-on-strong),
+        0 0 3px 1px color-mix(in srgb, var(--ac-ownership-holo-glow-gold) calc(var(--own-tilt-opacity, 0) * 100%), transparent),
+        0 0 12px 2px color-mix(in srgb, var(--ac-ownership-holo-glow-cyan) calc(var(--own-tilt-opacity, 0) * 100%), transparent);
+}
+
+.own-tilt-shine,
+.own-tilt-glare {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    transition: opacity 400ms ease-out;
+}
+
+.own-tilt-holo .own-tilt-glare {
+    opacity: var(--own-tilt-opacity, 0);
+    background-image: radial-gradient(
+        farthest-corner circle at var(--own-tilt-px, 50%) var(--own-tilt-py, 50%),
+        var(--ac-ownership-glare-light) 10%,
+        var(--ac-ownership-glare-mid) 30%,
+        var(--ac-ownership-glare-shade) 100%
+    );
+    mix-blend-mode: overlay;
+}
+
+.own-tilt-holo .own-tilt-shine {
+    background-image: repeating-linear-gradient(
+        65deg,
+        var(--ac-ownership-holo-gold) 0%,
+        var(--ac-ownership-holo-gold) 16%,
+        var(--ac-ownership-holo-violet) 20%,
+        var(--ac-ownership-holo-gold) 24%
+    );
+    background-size: 300% 300%;
+    background-position: var(--own-tilt-px, 50%) var(--own-tilt-py, 50%);
+    opacity: calc(var(--own-tilt-opacity, 0) * 0.45);
+    filter: brightness(1.05) contrast(1.05) saturate(0.8);
+    mix-blend-mode: soft-light;
+}
+
+.own-opener-cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 320px;
+    border-radius: var(--ac-radius-card);
+    background: linear-gradient(160deg, var(--ac-color-primary), var(--ac-color-primary-strong));
+    color: var(--ac-color-on-primary);
+}
+.own-opener-cover-fallback .ac-icon {
+    --ac-icon-size: 48px;
+}
+
+/* Default alt arts (pages/alt-arts.php): one row per multi-art family, its name and what decks take on the
+   left (its cards fanned out), its illustrations under their keys on the right. */
+.own-aa-list {
+    background: var(--ac-color-surface);
+    border: 1px solid var(--ac-color-border);
+    border-radius: var(--ac-radius-card);
+    overflow: hidden;
+}
+.own-aa-list:empty {
+    display: none;
+}
+.own-aa-family {
+    --chevron: 44px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--ac-space-4) 0;
+    padding: var(--ac-space-5) var(--ac-space-6);
+    border-bottom: 1px solid var(--ac-color-divider);
+}
+.own-aa-family:last-child {
+    border-bottom: 0;
+}
+.own-aa-family__head {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ac-space-1);
+}
+/* As Re:Builder's brush: the choices on a band ending in a chevron, which fits into the notch of what decks take
+   (centred on its right); on a phone, one under the other, the chevron pointing down. */
+.own-aa-family > .own-aa-row,
+.own-aa-family__info {
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+}
+.own-aa-family > .own-aa-row::before,
+.own-aa-family__info::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+}
+.own-aa-family > .own-aa-row {
+    padding: var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5)) var(--ac-space-4) var(--ac-space-5);
+}
+.own-aa-family > .own-aa-row::before {
+    border-radius: var(--ac-radius-card) 0 0 var(--ac-radius-card);
+    background: var(--ac-color-primary-tint);
+    clip-path: polygon(0 0, calc(100% - var(--chevron)) 0, 100% 50%, calc(100% - var(--chevron)) 100%, 0 100%);
+}
+.own-aa-family__info {
+    flex: 0 1 330px;
+    margin-left: calc(var(--ac-space-4) - var(--chevron));
+    padding: var(--ac-space-4) var(--ac-space-5) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-5));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--ac-space-1);
+}
+.own-aa-family__info::before {
+    border-radius: 0 var(--ac-radius-card) var(--ac-radius-card) 0;
+    background: var(--ac-color-bg-app);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chevron) 50%);
+}
+.own-aa-family__name {
+    margin: 0;
+    font: var(--ac-font-heading);
+    color: var(--ac-color-text);
+}
+.own-aa-family__meta {
+    font: var(--ac-font-small);
+    color: var(--ac-color-text-muted);
+}
+.own-aa-family__uses {
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-2);
+}
+/* The family's cards, 1st on the left, fanned out as in Re:Builder's brush; a token's or a hero's single card large.
+   Each card opens large on a click. */
+.own-aa-fan {
+    --card: 100px;
+    --step: 64px;
+    position: relative;
+    height: calc(var(--card) * 7 / 5 + var(--ac-space-5));
+    margin-left: var(--ac-space-2);
+}
+.own-aa-fan--single {
+    --card: 164px;
+}
+.own-aa-fan__card {
+    position: absolute;
+    top: var(--ac-space-2);
+    left: calc(var(--i) * var(--step));
+    width: var(--card);
+    padding: 0;
+    border: 0;
+    border-radius: var(--ac-radius-sm);
+    background: none;
+    cursor: zoom-in;
+    transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
+    transform-origin: 50% 120%;
+    transition: transform var(--ac-duration-fast);
+}
+.own-aa-fan__card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 7;
+    object-fit: cover;
+    border-radius: inherit;
+    box-shadow: var(--ac-shadow-card);
+}
+.own-aa-fan__card:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+    z-index: 1;
+}
+@media (hover: hover) {
+    .own-aa-fan__card:hover {
+        z-index: 1;
+        transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg)) translateY(calc(-1 * var(--ac-space-1)));
+    }
+}
+.own-aa-family > .own-aa-row {
+    flex: 999 1 420px;
+    min-width: 0;
+}
+@media (max-width: 767.98px) {
+    .own-aa-family {
+        padding: var(--ac-space-4);
+    }
+    .own-aa-family {
+        --chevron: 28px;
+    }
+    .own-aa-family > .own-aa-row {
+        flex-basis: 100%;
+        padding: var(--ac-space-4) var(--ac-space-4) calc(var(--chevron) + var(--ac-space-4));
+    }
+    .own-aa-family > .own-aa-row::before {
+        border-radius: var(--ac-radius-card) var(--ac-radius-card) 0 0;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--chevron)), 50% 100%, 0 calc(100% - var(--chevron)));
+    }
+    .own-aa-family__info {
+        flex-basis: 100%;
+        margin: calc(var(--ac-space-3) - var(--chevron) - var(--ac-space-4)) 0 0;
+        padding: calc(var(--chevron) + var(--ac-space-4)) var(--ac-space-5) var(--ac-space-5);
+        align-items: center;
+        text-align: center;
+    }
+    /* Centred under the chevron: as wide as its cards. */
+    .own-aa-fan {
+        width: calc(var(--card) + (var(--n, 1) - 1) * var(--step));
+        margin-left: 0;
+    }
+    .own-aa-family__info::before {
+        border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
+        clip-path: polygon(0 0, 50% var(--chevron), 100% 0, 100% 100%, 0 100%);
+    }
+}
+
+/* One family's illustrations, each under its keys, on one line that scrolls sideways (js/alt-art-widget.js; also in
+   the card modals). An arrow on each side while there is more that way. */
+.own-aa-scroller {
+    position: relative;
+}
+.own-aa-strip {
+    display: flex;
+    gap: var(--ac-space-5);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--ac-space-1);
+    padding: var(--ac-space-1);
+    margin: calc(-1 * var(--ac-space-1));
+    scrollbar-width: thin;
+}
+.own-aa-strip > .own-aa-print {
+    flex: none;
+    scroll-snap-align: start;
+}
+/* The illustration cut at an edge fades out while there is more that way (any opaque colour: the mask uses alpha). */
+.own-aa-scroller {
+    --fade-start: 0px;
+    --fade-end: 0px;
+}
+.own-aa-scroller--more-start {
+    --fade-start: min(96px, 10%);
+}
+.own-aa-scroller--more-end {
+    --fade-end: min(96px, 10%);
+}
+.own-aa-scroller--more-start .own-aa-strip,
+.own-aa-scroller--more-end .own-aa-strip {
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ac-color-text) var(--fade-start), var(--ac-color-text) calc(100% - var(--fade-end)), transparent);
+}
+.own-aa-scroller__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    border-radius: var(--ac-radius-pill);
+    box-shadow: var(--ac-shadow-e2);
+}
+.own-aa-scroller__arrow[hidden] {
+    display: none;
+}
+.own-aa-scroller__arrow--prev {
+    left: calc(-1 * var(--ac-space-3));
+}
+.own-aa-scroller__arrow--next {
+    right: calc(-1 * var(--ac-space-3));
+}
+.own-aa-print {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ac-space-0-5);
+    text-align: center;
+}
+.own-aa-keys {
+    align-self: stretch;
+    margin-bottom: var(--ac-space-1-5);
+}
+.own-aa-print__art {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--ac-space-1-5);
+    aspect-ratio: 63.5 / 88;
+    object-fit: cover;
+    border-radius: var(--ac-radius-md);
+    background: var(--ac-color-track);
+    transition: transform var(--ac-duration-fast);
+}
+.own-aa-print__zoom {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ac-radius-md);
+    background: none;
+    cursor: zoom-in;
+}
+.own-aa-print__zoom:focus-visible {
+    outline: 2px solid var(--ac-color-focus);
+    outline-offset: 2px;
+}
+@media (hover: hover) {
+    .own-aa-print__zoom:hover .own-aa-print__art {
+        transform: translateY(calc(-1 * var(--ac-space-1)));
+    }
+}
+.own-aa-print--unowned .own-aa-print__art {
+    opacity: .35;
+    filter: grayscale(1);
+}
+.own-aa-print__label {
+    font: var(--ac-font-body-strong);
+    color: var(--ac-color-text);
+}
+.own-aa-print__note {
+    font: var(--ac-font-caption);
+    color: var(--ac-color-text-muted);
+}
+.own-aa-row-error {
+    margin-top: var(--ac-space-2);
+    font: var(--ac-font-small);
+    color: var(--ac-color-danger);
+}
+/* Two illustrations in view on a phone (and a bit of the next one). */
+@media (max-width: 767.98px) {
+    .own-aa-strip {
+        gap: var(--ac-space-4);
+    }
+    .own-aa-strip > .own-aa-print {
+        width: calc((100% - var(--ac-space-4)) / 2.2);
+    }
+}
+
+/* Window over the page (the legacy deckbuilder's token illustrations, assets/deckbuilder/token-arts.js) */
+.own-aa-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--ac-color-scrim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--ac-z-overlay);
+    padding: var(--ac-space-4);
+}
+.own-aa-modal {
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--ac-shadow-dialog);
+}
+
+/* Mode switch bar and search field (pages/alt-arts.php) */
+.own-aa-modebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ac-space-2);
+}
+.own-aa-search {
+    max-width: 260px;
+}
+.own-aa-gem {
+    width: 15px;
+    height: 15px;
+}

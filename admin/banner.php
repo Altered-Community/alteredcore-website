@@ -33,9 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     btn_label_en    = :btn_label_en,
                     btn_label_fr    = :btn_label_fr,
                     btn_url         = :btn_url,
-                    bg_image        = :bg_image,
-                    overlay_color   = :overlay_color,
-                    overlay_opacity = :overlay_opacity
+                    bg_image        = :bg_image
                  WHERE id = 1"
             ))->execute([
                 ':title_en'        => trim($_POST['title_en']     ?? ''),
@@ -46,8 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':btn_label_fr'    => trim($_POST['btn_label_fr'] ?? ''),
                 ':btn_url'         => trim($_POST['btn_url']      ?? ''),
                 ':bg_image'        => $bgImage,
-                ':overlay_color'   => trim($_POST['overlay_color']   ?? '#000000') ?: '#000000',
-                ':overlay_opacity' => max(0, min(100, (int)($_POST['overlay_opacity'] ?? 0))),
             ]);
             flash('Banner updated.');
             redirect(BASE_URL . '/admin/banner');
@@ -62,8 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'btn_label_fr'    => trim($_POST['btn_label_fr'] ?? ''),
             'btn_url'         => trim($_POST['btn_url']      ?? ''),
             'bg_image'        => $bgImage,
-            'overlay_color'   => trim($_POST['overlay_color']   ?? '#000000'),
-            'overlay_opacity' => max(0, min(100, (int)($_POST['overlay_opacity'] ?? 0))),
         ]);
     }
 }
@@ -144,27 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Text overlay (veil over the full banner)</label>
-                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                            <div>
-                                <label class="form-label small mb-1">Color</label>
-                                <input type="color" name="overlay_color" class="form-control form-control-color"
-                                       value="<?= h($row['overlay_color'] ?? '#000000') ?>"
-                                       style="width:56px;height:38px;padding:2px">
-                            </div>
-                            <div style="flex:1;min-width:160px">
-                                <label class="form-label small mb-1">
-                                    Opacity: <span id="overlay-pct"><?= (int)($row['overlay_opacity'] ?? 0) ?></span>%
-                                </label>
-                                <input type="range" name="overlay_opacity" id="overlay-range"
-                                       class="form-range" min="0" max="100" step="1"
-                                       value="<?= (int)($row['overlay_opacity'] ?? 0) ?>">
-                            </div>
-                        </div>
-                        <div class="form-text">Set opacity to 0 to disable the overlay.</div>
-                    </div>
-
-                    <div class="col-md-6">
                         <label class="form-label">Background image</label>
                         <div class="img-picker-widget"
                              data-input="banner_img_input"
@@ -177,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div id="banner_img_preview" class="mb-2" style="<?= !empty($row['bg_image']) ? '' : 'display:none' ?>">
                                 <div style="position:relative;display:inline-block">
                                     <img src="<?= !empty($row['bg_image']) ? h(BASE_URL . '/' . $row['bg_image']) : '' ?>" alt=""
-                                         style="max-height:80px;border-radius:6px;border:1px solid var(--neutral-300)">
+                                         style="max-height:80px;border-radius:var(--ac-radius-sm);border:1px solid var(--ac-color-border)">
                                     <button type="button" class="btn btn-sm btn-danger img-picker-clear"
                                             style="position:absolute;top:-6px;right:-6px;padding:0;width:20px;height:20px;border-radius:50%;font-size:11px;line-height:1">×</button>
                                 </div>
@@ -203,9 +176,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </form>
 
-<script>
-document.getElementById('overlay-range').addEventListener('input', function() {
-    document.getElementById('overlay-pct').textContent = this.value;
-});
-</script>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
