@@ -3,7 +3,7 @@ import { Service, inject } from '@angular/core';
 import { map, of, switchMap, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CardsApiService } from './cards-api.service';
-import { cardTypeCodes, filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
+import { FACTION_OPTIONS, cardTypeCodes, filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
 import { uniquesForbidden, type FormatRules } from './format-rules';
 import { mergeUniqueFace } from './deck-view';
 import { contentLocale } from './locale';
@@ -118,5 +118,15 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
 function collectionCard(c: Card & CollectionItem): Card {
   const reference = c.cardReference || c.reference || '';
   const powers = c.forest === undefined ? {} : { forestPower: c.forest, mountainPower: c.mountain, oceanPower: c.ocean };
-  return { ...c, ...powers, reference, name: c.name ?? reference } as Card;
+  return { ...c, ...powers, reference, name: c.name ?? reference, faction: factionOf(c.faction) } as Card;
+}
+
+/**
+ * The collection and ownership APIs give the faction as a code (`"OR"`); a card carries `{ code, name }`. Left as a
+ * string, `faction?.code` is undefined and a Unique falls back to the faction of its reference (`ALT_EOLE_B_AX_107_U_297`
+ * is an Ordis Unique of an Axiom card): drawn with the Axiom frame.
+ */
+function factionOf(faction: Card['faction'] | string | undefined): Card['faction'] {
+  if (typeof faction !== 'string') return faction;
+  return { code: faction, name: FACTION_OPTIONS.find((f) => f.code === faction)?.name ?? faction };
 }
