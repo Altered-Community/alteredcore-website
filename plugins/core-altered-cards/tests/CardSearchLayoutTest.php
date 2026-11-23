@@ -12,6 +12,13 @@ if (!function_exists('getSetting')) {
         return $default;
     }
 }
+if (!function_exists('ac_icon')) {
+    function ac_icon(string $ref, string $class = '', string $label = ''): string {
+        $classes = trim('ac-icon ' . $class);
+        $aria = $label !== '' ? ' role="img" aria-label="' . h($label) . '"' : ' aria-hidden="true"';
+        return '<svg class="' . h($classes) . '"' . $aria . ' data-icon="' . h($ref) . '"></svg>';
+    }
+}
 
 $renderSearchWidget = static function (string $mode, string $prefix): string {
     $_cs = [

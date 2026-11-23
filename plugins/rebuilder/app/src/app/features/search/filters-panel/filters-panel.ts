@@ -45,7 +45,7 @@ export class FiltersPanel {
   protected readonly emptySupport = emptySupport;
   protected readonly hasSupport = computed(() => hasEffectCriteria(this.value().support));
 
-  protected readonly rarities = computed(() => rarityOptionsFor(this.source()).map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
+  protected readonly rarities = computed(() => rarityOptionsFor().map((r) => ({ value: r.value, icon: r.icon, label: r.label, short: r.short })));
   protected readonly legalFilter = computed(() => isAccountSource(this.source()));
   protected readonly legalLabel = computed(() => $localize`:@@search.filters.legalOnly:Légales en ${formatInfo(this.format()).label}:format:`);
   /** Heroes, tokens and mana in the card browser too (`factionFilter`: the card browser). */
@@ -62,14 +62,15 @@ export class FiltersPanel {
   };
   protected readonly factions = FACTIONS;
   protected readonly environments = [
-    { value: 'all' as const, label: $localize`:@@search.filters.allUniques:Toutes les Uniques` },
+    { value: 'all' as const, label: $localize`:@@search.filters.allFormats:Tous les formats` },
     { value: 'frontier' as const, label: 'Frontier' },
   ];
+  protected readonly supportsEffects = computed(() => this.source() === 'all');
   protected readonly labels = {
     none: $localize`:@@search.filters.none:Aucune`,
     all: $localize`:@@search.filters.all:Toutes`,
   };
-  protected readonly sets = computed(() => setsFor(this.source()));
+  protected readonly sets = computed(() => setsFor());
   /** Favoris: the site filters them by faction, set and rarity only (« légales », another faction in the editor); no other field. */
   protected readonly limited = computed(() => this.source() === 'favorites');
   protected readonly supportsCostAndEffect = computed(() => !isAccountSource(this.source()));

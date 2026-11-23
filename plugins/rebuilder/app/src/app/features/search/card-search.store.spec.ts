@@ -16,12 +16,6 @@ describe('CardSearchStore (infinite scroll)', () => {
     TestBed.tick();
     return http.match((r) => r.url.endsWith('/api/v2/search'));
   };
-  /** Same, on the Uniques tab (`/api/v2/cards`). */
-  const pendingUniques = () => {
-    TestBed.tick();
-    return http.match((r) => r.url.endsWith('/api/v2/cards'));
-  };
-  const uniques = (n: number, size: number) => page(n, size).map((c) => ({ reference: c.reference.replace(/_C$/, '_U_1') }));
   /** Not `whenStable()`: with the sentinel visible the store chains the next page, so the app never goes idle. */
   const settle = async () => {
     await new Promise((resolve) => setTimeout(resolve));
@@ -40,7 +34,10 @@ describe('CardSearchStore (infinite scroll)', () => {
     flushFormats(http);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    http.verify();
+  });
 
   it('loads page 1 scoped to the hero faction', async () => {
     store.configure('all', 'YZ');
@@ -87,7 +84,7 @@ describe('CardSearchStore (infinite scroll)', () => {
     store.configure('all', 'YZ');
     const stale = pending()[0];
     store.patch({ q: 'zou' });
-    const fresh = pending().find((r) => r.request.params.get('name') === 'zou')!;
+    const fresh = pending().find((r) => r.request.params.get('q') === 'zou')!;
     expect(stale.cancelled).toBe(true);
     await answer(fresh, 1, 1);
     expect(store.page()).toBe(1);
@@ -108,67 +105,28 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(store.cards().length).toBe(PAGE_SIZE.all);
   });
 
-  it('queries uniques on the Uniques search API and pages with its cursor', async () => {
-    store.configure('uniques', 'LY');
-    expect(pending()).toHaveLength(0);
-    const [req] = pendingUniques();
-    expect(req.request.params.getAll('faction[]')).toEqual(['LY']);
-    expect(req.request.params.get('limit')).toBe(String(PAGE_SIZE.uniques));
-    expect(req.request.params.has('cursor')).toBe(false);
-    req.flush({ iter: { total: PAGE_SIZE.uniques + 2, cursor: 1234 }, cards: uniques(1, PAGE_SIZE.uniques) });
-    await settle();
-    expect(store.total()).toBe(PAGE_SIZE.uniques + 2);
-    expect(store.hasMore()).toBe(true);
-
-    store.loadMore();
-    const [next] = pendingUniques();
-    expect(next.request.params.get('cursor')).toBe('1234');
-    next.flush({ iter: { total: PAGE_SIZE.uniques + 2 }, cards: uniques(2, 2) });
-    await settle();
-    expect(store.cards().length).toBe(PAGE_SIZE.uniques + 2);
-    expect(store.page()).toBe(2);
-    expect(store.hasMore()).toBe(false);
-  });
-
-  it('lists only the current Frontier season in the Uniques tab of a Frontier deck', async () => {
-    store.configure('uniques', 'AX', 'frontier');
-    expect(store.filters().environment).toBe('frontier');
-    const [req] = pendingUniques();
-    expect(req.request.params.get('format')).toBe('frontier');
-    req.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
-    await settle();
-
-    // The deck goes Standard: every Unique, the other filters kept.
-    store.patch({ q: 'kelon' });
-    pendingUniques()[0].flush({ iter: { total: 1 }, cards: uniques(1, 1) });
-    store.configure('uniques', 'AX', 'standard');
-    expect(store.filters()).toMatchObject({ environment: 'all', q: 'kelon' });
-    const [std] = pendingUniques();
-    expect(std.request.params.has('format')).toBe(false);
-    std.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
-    await settle();
-
-    // « Réinitialiser » goes back to the deck's default.
-    store.configure('uniques', 'AX', 'frontier');
-    store.patch({ environment: 'all' });
-    store.reset();
-    expect(store.filters().environment).toBe('frontier');
-    await settle();
-    for (const r of pendingUniques()) r.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
+  it('forwards effects, support, and format directly through unified /api/v2/search', async () => {
+    store.configure('all', 'AX', 'frontier');
+    store.patch({ environment: 'frontier', rarities: ['COMMON', 'UNIQUE'] });
+    const reqs = pending();
+    const lastReq = reqs.at(-1)!;
+    expect(lastReq.request.params.get('format')).toBe('frontier');
+    expect(lastReq.request.params.getAll('rarity[]')).toEqual(['COMMON', 'UNIQUE']);
+    await answer(lastReq, 1, 1);
+    expect(store.total()).toBe(PAGE_SIZE.all);
   });
 
   it('flags a page that is still loading after SLOW_MS, and clears it on response', async () => {
     vi.useFakeTimers();
     try {
-      store.configure('uniques', 'AX');
-      const [req] = pendingUniques();
+      store.configure('all', 'AX');
+      const [req] = pending();
       vi.advanceTimersByTime(SLOW_MS - 100);
       expect(store.slow()).toBe(false);
       vi.advanceTimersByTime(200);
       expect(store.slow()).toBe(true);
-      req.flush({ iter: { total: 3 }, cards: uniques(1, 3) });
-      await vi.advanceTimersByTimeAsync(0);
-      TestBed.tick();
+      vi.useRealTimers();
+      await answer(req, 1, 1);
       expect(store.loading()).toBe(false);
       expect(store.slow()).toBe(false);
     } finally {
@@ -177,14 +135,13 @@ describe('CardSearchStore (infinite scroll)', () => {
   });
 
   it('exposes timeouts as a retryable error', async () => {
-    store.configure('uniques', 'AX');
-    const [req] = pendingUniques();
+    store.configure('all', 'AX');
+    const [req] = pending();
     req.flush('error code: 504', { status: 504, statusText: 'Gateway Timeout' });
     await settle();
     expect(store.error()).toContain('trop de temps');
     store.retry();
-    pendingUniques()[0].flush({ iter: { total: 1 }, cards: uniques(1, 1) });
-    await settle();
+    await answer(pending()[0], 1, 1);
     expect(store.error()).toBeNull();
   });
 
@@ -201,12 +158,8 @@ describe('CardSearchStore (infinite scroll)', () => {
     store.patch({ q: 'kelon', mainCost: '3' });
     await answer(pending()[0], 1, 1);
 
-    store.configure('uniques', 'AX', 'frontier');
-    expect(store.filters()).toMatchObject({ q: '', mainCost: '', environment: 'frontier' });
-    const [uReq] = pendingUniques();
-    expect(uReq.request.params.get('format')).toBe('frontier');
-    expect(uReq.request.params.has('mainCost[]')).toBe(false);
-    uReq.flush({ iter: { total: 1 }, cards: uniques(1, 1) });
-    await settle();
+    store.configure('collection', 'AX', 'frontier');
+    expect(store.filters()).toMatchObject({ q: '', mainCost: '', environment: 'all' });
+    expect(store.filters().rarities).toContain('UNIQUE');
   });
 });

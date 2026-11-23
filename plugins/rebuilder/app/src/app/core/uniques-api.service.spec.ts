@@ -342,7 +342,7 @@ describe('unified /api/v2/search', () => {
     expect(hp.get('page')).toBe('2');
     expect(hp.get('limit')).toBe('36');
     expect(hp.get('sort')).toBe('name:fr_FR:asc');
-    expect(hp.get('name')).toBe('sierra');
+    expect(hp.get('q')).toBe('sierra');
     expect(hp.getAll('faction[]')).toEqual(['AX']);
     expect(hp.getAll('cardType[]')).toEqual(['HERO', 'CHARACTER']);
     expect(hp.getAll('rarity[]')).toEqual(['COMMON', 'RARE']);

@@ -305,7 +305,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         <!-- Unified effects & format filters (available on the unified All cards tab for both uniques and non-uniques) -->
         <div class="cs-uniques-section mb-2" data-tabs="all">
             <div class="cs-uniques-section-head">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <?= ac_icon('wand-sparkles') ?>
                 <span><?= h($_csLblEffectsFilters) ?></span>
             </div>
 

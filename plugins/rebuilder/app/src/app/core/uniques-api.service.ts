@@ -6,24 +6,19 @@ import type { AbilityRef } from './card-filters';
 import { type CardSuggestion, looksLikeReference, toSuggestions } from './card-suggestions';
 import { ICONS, richText } from './card-text';
 import { contentLocale } from './locale';
-import type { Card, CardCollection, CardOrder, CardSearchParams, HeroGroup, Locale, Localized } from './models';
+import type { Card, CardCollection, CardOrder, CardSearchParams, EffectFilterBlock, HeroGroup, Locale, Localized } from './models';
 import { localizedText } from './models';
 import { printKeywordCodes } from './card-vocabulary';
 
 /**
- * Uniques search of the site (rust-cards-api, `AlteredCore.services.uniques`, `UNIQUES_API_URL`):
- * the Uniques tab. In-memory index, cursor paging, effect criteria as OR lists (effect blocks AND-ed).
+ * Uniques search of the site (rust-cards-api, `AlteredCore.services.uniques`, `UNIQUES_API_URL`).
  * Contract: https://github.com/Altered-Re-Union/uniques-search-api (`docs/api-spec.md`).
  */
 
 export type AbilityKind = 'triggers' | 'conditions' | 'effects';
 
 /** One effect block: ability ids per part, each list OR-ed. */
-export interface UniquesEffect {
-  triggers: number[];
-  conditions: number[];
-  effects: number[];
-}
+export type UniquesEffect = EffectFilterBlock;
 
 export interface UniquesQuery {
   /** Character name, any locale, accent-insensitive. */
@@ -85,6 +80,7 @@ interface CardV2 {
   isBanned?: boolean;
   isErrated?: boolean;
   isSuspended?: boolean;
+  legalFormats?: string[];
 }
 
 interface SearchResponse {
@@ -258,11 +254,14 @@ export class UniquesApiService {
   }
 
   /**
-   * Ids of `kind` that still give a card once set in `block`, the effect block at `index` of `query.effects`
-   * (see `buildEffectsFilteredParams`). The editor narrows its lists to them.
+   * Ids of `kind` that still give a card once set in `block`, the effect block at `slot` of `query.effects`
+   * (accepts both unified `CardSearchParams` and legacy `UniquesQuery`). The editor narrows its lists to them.
    */
-  narrowAbilities(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
-    const params = buildEffectsFilteredParams(query, slot, block, kind);
+  narrowAbilities(query: UniquesQuery | CardSearchParams, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
+    const params =
+      'itemsPerPage' in query || 'rarities' in query || 'effectText' in query
+        ? buildUnifiedEffectsFilteredParams(query, slot, block, kind)
+        : buildEffectsFilteredParams(query as UniquesQuery, slot, block, kind);
     return this.http
       .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
       .pipe(map((res) => new Set(res.idGds ?? [])));
@@ -417,16 +416,9 @@ export function buildUniquesParams(query: UniquesQuery, cursor: number | null, l
   return appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), query.support);
 }
 
-/** Query string of `GET /api/v2/search` for the unified "Toutes les cartes" search. */
-export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
-  let hp = new HttpParams()
-    .set('page', String(params.page ?? 1))
-    .set('limit', String(params.itemsPerPage ?? 36));
-  const sort = sortParam(params.order, params.locale ?? contentLocale());
-  if (sort) hp = hp.set('sort', sort);
-  const name = params.q?.trim();
-  if (name) hp = hp.set('name', name);
-  // Effect text of the non-Unique prints: the API leaves the Uniques out of the results with it.
+function appendUnifiedCriteria(hp: HttpParams, params: CardSearchParams): HttpParams {
+  const q = params.q?.trim();
+  if (q) hp = hp.set('q', q);
   const effectText = params.effectText?.trim();
   if (effectText) hp = hp.set('effectText', effectText);
   for (const f of params.factions ?? []) hp = hp.append('faction[]', f);
@@ -439,6 +431,7 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
   if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
   if (params.hasZeroPower) hp = hp.set('hasZeroPower', 'true');
   for (const a of params.artists ?? []) hp = hp.append('artist[]', a);
+  if (params.format) hp = hp.set('format', params.format);
   hp = appendStatValues(hp, 'mainCost', params.mainCosts);
   hp = appendStatValues(hp, 'recallCost', params.recallCosts);
   hp = appendStatValues(hp, 'forestPower', params.forestPowers);
@@ -447,28 +440,58 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
   return hp;
 }
 
-/**
- * Query string of `GET /api/v2/effects/filtered`: the `kind` ids that, set in `block` (the effect
- * block at `index` of `query.effects`, being edited), still give at least one card.
- *
- * The edited block goes last and `editing` names that slot, so the slot is right whatever the
- * position of the block and the empty blocks around it. The server leaves the edited box out and
- * keeps the block's two other boxes as constraints on the same ability. The other blocks keep the
- * `matchCount` they have among themselves: the search may ask more of them once the edited block
- * is filled (`effectMatchCounts`), never less, so no id that gives a card is left out.
- */
-export function buildEffectsFilteredParams(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): HttpParams {
-  let hp = appendCriteria(new HttpParams(), query);
+/** Query string of `GET /api/v2/search` for unified card search (both uniques and non-uniques). */
+export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
+  let hp = new HttpParams()
+    .set('page', String(params.page ?? 1))
+    .set('limit', String(params.itemsPerPage ?? 36));
+  const sort = sortParam(params.order, params.locale ?? contentLocale());
+  if (sort) hp = hp.set('sort', sort);
+  hp = appendUnifiedCriteria(hp, params);
+  const effects = (params.effects ?? []).filter(hasCriteria);
+  return appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), params.support);
+}
+
+function appendEditingEffects(
+  hp: HttpParams,
+  allEffects: readonly UniquesEffect[],
+  support: UniquesEffect | undefined,
+  slot: EffectSlot,
+  block: UniquesEffect,
+  kind: AbilityKind,
+): HttpParams {
   if (slot === 'support') {
-    // The support block being edited, the main blocks as they are searched.
-    const effects = query.effects.filter(hasCriteria);
+    const effects = allEffects.filter(hasCriteria);
     hp = appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), block, true);
     return hp.set('editing', `${EDITING_PART[kind]}:support`);
   }
-  const others = query.effects.filter((e, i) => i !== slot && hasCriteria(e));
+  const others = allEffects.filter((e, i) => i !== slot && hasCriteria(e));
   hp = appendEffects(hp, [...others, block], [...effectMatchCounts(others), 1]);
-  hp = appendSupport(hp, query.support);
+  hp = appendSupport(hp, support);
   return hp.set('editing', `${EDITING_PART[kind]}:${others.length}`);
+}
+
+/**
+ * Query string of `GET /api/v2/effects/filtered` using unified `CardSearchParams`:
+ * keeps rarities, cardTypes, format, effectText, and all other active filters in sync.
+ */
+export function buildUnifiedEffectsFilteredParams(
+  params: CardSearchParams,
+  slot: EffectSlot,
+  block: UniquesEffect,
+  kind: AbilityKind,
+): HttpParams {
+  const hp = appendUnifiedCriteria(new HttpParams(), params);
+  return appendEditingEffects(hp, params.effects ?? [], params.support, slot, block, kind);
+}
+
+/**
+ * Query string of `GET /api/v2/effects/filtered`: the `kind` ids that, set in `block` (the effect
+ * block at `index` of `query.effects`, being edited), still give at least one card.
+ */
+export function buildEffectsFilteredParams(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): HttpParams {
+  const hp = appendCriteria(new HttpParams(), query);
+  return appendEditingEffects(hp, query.effects, query.support, slot, block, kind);
 }
 
 /** `support[t|c|o]` of the support block, empty parts left out; nothing for an empty block unless `always`. */
@@ -626,6 +649,7 @@ export function toCard(c: CardV2): Card {
     isBanned: c.isBanned,
     isErrated: c.isErrated,
     isSuspended: c.isSuspended,
+    gameplayFormat: c.legalFormats?.map((f) => f.toUpperCase()),
   };
 }
 

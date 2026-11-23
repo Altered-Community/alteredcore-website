@@ -3,14 +3,12 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { map, type Observable } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
 import {
-  defaultEnvironment,
   defaultFilters,
   filterChips,
   isAccountSource,
   legalFormat,
   removeChip,
   toSearchParams,
-  toUniquesQuery,
   type CardSource,
   type SearchFilters,
 } from '../../core/card-filters';
@@ -21,7 +19,7 @@ import { UniquesApiService } from '../../core/uniques-api.service';
 import { OwnedCardsService } from '../../core/owned-cards.service';
 import { AuthSession } from '../../core/auth-session';
 
-export const PAGE_SIZE: Record<CardSource, number> = { all: 36, uniques: 36, collection: 36, owned: 36, favorites: 36 };
+export const PAGE_SIZE: Record<CardSource, number> = { all: 36, collection: 36, owned: 36, favorites: 36 };
 
 /** A page still loading after this long gets a « still searching » notice. */
 export const SLOW_MS = 3000;
@@ -188,14 +186,11 @@ export class CardSearchStore {
   /** `initial`: the filters to start from (the card browser's URL) in place of the tab's defaults. */
   configure(source: CardSource, faction: string | null, format: DeckFormat | null = null, initial?: SearchFilters): void {
     const changedSource = source !== this.source();
-    const changedFormat = format !== this.format();
     this.source.set(source);
     this.faction.set(faction);
     this.format.set(format);
     if (initial) this.filters.set(initial);
-    else if (changedSource) this.filters.set(defaultFilters(source, format));
-    // The deck's format changed under the Uniques tab: Frontier on or off, the other filters kept.
-    else if (changedFormat && source === 'uniques') this.filters.update((f) => ({ ...f, environment: defaultEnvironment(source, format) }));
+    else if (changedSource) this.filters.set(defaultFilters(source));
     this.configured.set(true);
     this.restart();
   }
@@ -214,12 +209,12 @@ export class CardSearchStore {
   }
 
   clearAll(): void {
-    const empty = { ...defaultFilters(this.source(), this.format()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
+    const empty = { ...defaultFilters(this.source()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
     this.apply(empty);
   }
 
   reset(): void {
-    this.apply(defaultFilters(this.source(), this.format()));
+    this.apply(defaultFilters(this.source()));
   }
 
   /** Sentinel visibility from the view. */
@@ -247,7 +242,6 @@ export class CardSearchStore {
 
   private fetchPage(query: SearchQuery, request: PageRequest): Observable<ResultPage> {
     const size = PAGE_SIZE[query.source];
-    if (query.source === 'uniques') return this.uniquesApi.search(toUniquesQuery(query.filters, query.faction), request.from, size);
     const page = request.from ?? 1;
     if (isAccountSource(query.source)) {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;

@@ -41,7 +41,7 @@ describe('card browser URL', () => {
     expect(filtersFromParams(base, url.getAll, url.get)).toEqual(f);
   });
 
-  it('opens the links of the site’s former card search', () => {
+  it('opens the links of the site’s former card search (including ?tab=unique)', () => {
     const map = convertToParamMap({
       tab: 'unique',
       'faction[]': ['AX', 'BR'],
@@ -51,9 +51,18 @@ describe('card browser URL', () => {
       sort: 'set_date_desc',
       mountain: '2+',
     });
-    expect(sourceFromParams((k) => map.get(k))).toBe('uniques');
+    expect(sourceFromParams((k) => map.get(k))).toBe('all');
     const f = filtersFromParams(defaultFilters('all'), (k) => map.getAll(k), (k) => map.get(k));
-    expect(f).toMatchObject({ factions: ['AX', 'BR'], types: ['TOKEN', 'LANDMARK_PERMANENT'], altArts: 'only', noEffect: true, mountainPower: '2+', order: 'setDate-desc' });
+    expect(f).toMatchObject({
+      factions: ['AX', 'BR'],
+      rarities: ['UNIQUE'],
+      types: ['TOKEN', 'LANDMARK_PERMANENT'],
+      altArts: 'only',
+      noEffect: true,
+      mountainPower: '2+',
+      order: 'setDate-desc',
+    });
+    expect(f.sets).toContain('COREKS');
   });
 
   it('prefers ?source= and falls back to « Toutes les cartes »', () => {

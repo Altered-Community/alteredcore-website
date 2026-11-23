@@ -143,7 +143,7 @@ $board = function () use ($sk): string {
       <h1><?= h($fr ? 'Cartes' : 'Cards') ?></h1>
       <p><?= h($fr ? 'Toutes les cartes d’Altered et les Uniques, par faction, extension, rareté, type, coût, texte ou effet.' : 'Every Altered card and the Uniques, by faction, set, rarity, type, cost, text or effect.') ?></p>
     </div>
-    <?= $tabs(['110px', '70px', '60px', '140px', '150px']) ?>
+    <?= $tabs(['110px', '60px', '140px', '150px']) ?>
     <div class="rbph-search">
       <div class="rbph-panel rbph-filters"><?= $sk('ac-skeleton--control', 2) . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('rbph-chip', 3, '76px') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow') . $sk('ac-skeleton--control rbph-grow') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . $sk('rbph-h200') ?></div>
       <div class="rbph-results">
@@ -156,7 +156,7 @@ $board = function () use ($sk): string {
     <?= $appBar($barTitle($fr ? 'Cartes' : 'Cards'), 0, false) ?>
     <div class="rbph-mpage rbph-mpage--cards">
       <div class="rbph-row"><?= $sk('rbph-h44 rbph-grow') . $sk('rbph-h44', 1, '44px') ?></div>
-      <?= $tabs(['56px', '62px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
+      <?= $tabs(['56px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
       <div class="rbph-mchips rbph-bleed rbph-mt12"><?= $sk('', 1, '116px') . $sk('', 1, '86px') . $sk('', 1, '80px') ?></div>
       <div class="rbph-row rbph-row44"><?= $sk('ac-skeleton--text', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('rbph-h44', 1, '150px') . $sk('rbph-icon24') ?></div>
       <?= $cards('rbph-mcards', 4) ?>
@@ -222,7 +222,7 @@ $board = function () use ($sk): string {
 <?php if ($view === 'main'): ?>
       <?= $hand(false) ?>
 <?php else: ?>
-      <?= $tabs(['110px', '70px', '60px', '140px', '150px']) ?>
+      <?= $tabs(['110px', '60px', '140px', '150px']) ?>
       <div class="rbph-search">
         <div class="rbph-panel rbph-filters"><?= $sk('ac-skeleton--control') . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow') . $sk('ac-skeleton--control rbph-grow') . '</div>' . $sk('ac-skeleton--text', 1, '30%') . '<div class="rbph-row">' . $sk('ac-skeleton--control rbph-grow', 3) . '</div>' . $sk('ac-skeleton--text', 1, '30%') . $sk('rbph-h200') ?></div>
         <div class="rbph-results">
@@ -244,7 +244,7 @@ $board = function () use ($sk): string {
     <div class="rbph-mpage">
 <?php if ($view === 'search'): ?>
       <div class="rbph-row"><?= $sk('rbph-h44 rbph-grow') . $sk('rbph-h44', 1, '44px') ?></div>
-      <?= $tabs(['56px', '62px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
+      <?= $tabs(['56px', '58px', '78px', '46px'], 'rbph-bleed rbph-mt12') ?>
       <div class="rbph-mchips rbph-bleed rbph-mt12"><?= $sk('', 1, '116px') . $sk('', 1, '86px') . $sk('', 1, '80px') ?></div>
       <div class="rbph-row rbph-row44"><?= $sk('ac-skeleton--text', 1, '80px') ?><span class="rbph-grow"></span><?= $sk('rbph-h44', 1, '150px') . $sk('rbph-icon24') ?></div>
       <?= $cards('rbph-mcards', 4) ?>

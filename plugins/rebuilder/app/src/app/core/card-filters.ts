@@ -7,7 +7,7 @@ import { contentLocale } from './locale';
 import type { OwnedSource } from './owned-cards.service';
 import { PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
 
-export type CardSource = 'all' | 'uniques' | 'collection' | 'owned' | 'favorites';
+export type CardSource = 'all' | 'collection' | 'owned' | 'favorites';
 
 export interface AbilityRef {
   id: number;
@@ -91,11 +91,11 @@ export const CARD_SETS: readonly SetInfo[] = [
 export const ALL_CARDS_SETS = ['FUGUE', 'EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 export const UNIQUES_SETS = ['EOLE', 'DUSTER', 'CYCLONE', 'BISE', 'ALIZE', 'COREKS', 'CORE'];
 /**
- * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except where
- * Uniques are listed (Uniques and the account tabs).
+ * Offered but left out by default: the set not on BGA yet (FUGUE), and the Kickstarter edition (COREKS) except on
+ * account tabs.
  */
 function setsOffByDefault(source: CardSource): string[] {
-  return source === 'uniques' || isAccountSource(source) ? ['FUGUE'] : ['FUGUE', 'COREKS'];
+  return isAccountSource(source) ? ['FUGUE'] : ['FUGUE', 'COREKS'];
 }
 
 export const RARITY_OPTIONS = [
@@ -109,8 +109,8 @@ export const UNIQUE_RARITY = { value: 'UNIQUE', short: 'U', label: $localize`:@@
 
 const RARITY_OPTIONS_WITH_UNIQUE = [...RARITY_OPTIONS, UNIQUE_RARITY];
 
-export function rarityOptionsFor(source: CardSource): readonly { value: string; short: string; label: string; icon: string }[] {
-  return source === 'uniques' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE;
+export function rarityOptionsFor(): readonly { value: string; short: string; label: string; icon: string }[] {
+  return RARITY_OPTIONS_WITH_UNIQUE;
 }
 
 /**
@@ -196,26 +196,18 @@ export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'random', label: $localize`:@@search.filters.order.random:Aléatoire` },
 ];
 
-/**
- * The Uniques tab of a Frontier deck lists the current Frontier season only (the site's deck builder does the same);
- * `null` format (decks section, no deck open) or any other format: every Unique.
- */
-export function defaultEnvironment(source: CardSource, format: DeckFormat | null = null): SearchFilters['environment'] {
-  return source === 'uniques' && format === 'frontier' ? 'frontier' : 'all';
-}
-
-export function defaultFilters(source: CardSource, format: DeckFormat | null = null): SearchFilters {
+export function defaultFilters(source: CardSource): SearchFilters {
   return {
     q: '',
     text: '',
     mainCost: '',
     recallCost: '',
-    sets: (source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS).filter((s) => !setsOffByDefault(source).includes(s)),
-    // « Toutes les cartes » starts with C · R · E active (U is selectable); account tabs start with all 4.
-    rarities: source === 'uniques' ? [] : (source === 'all' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE).map((r) => r.value),
-    types: source === 'uniques' ? [] : typeOptionsFor(false).map((t) => t.value),
+    sets: ALL_CARDS_SETS.filter((s) => !setsOffByDefault(source).includes(s)),
+    // « Toutes les cartes » starts with C · R · E active (U is unchecked by default); account tabs start with all 4.
+    rarities: (source === 'all' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE).map((r) => r.value),
+    types: typeOptionsFor(false).map((t) => t.value),
     factions: [],
-    environment: defaultEnvironment(source, format),
+    environment: 'all',
     effects: [],
     support: emptySupport(),
     order: 'setDate-desc',
@@ -238,9 +230,8 @@ export function promoSetsOf(sets: readonly string[]): string[] {
   return PROMO_SETS.filter((p) => sets.includes(p.parent)).map((p) => p.code);
 }
 
-export function setsFor(source: CardSource): SetInfo[] {
-  const refs = source === 'uniques' ? UNIQUES_SETS : ALL_CARDS_SETS;
-  return CARD_SETS.filter((s) => refs.includes(s.reference));
+export function setsFor(): SetInfo[] {
+  return CARD_SETS.filter((s) => ALL_CARDS_SETS.includes(s.reference));
 }
 
 const MAX_COST = 15;
@@ -383,9 +374,9 @@ export function variationCodes(filters: SearchFilters): string[] {
   }
 }
 
-/** « Au moins un 0 » (Forêt, Montagne or Océan): « Toutes les cartes » and « Uniques » (the search API's tabs). */
+/** « Au moins un 0 » (Forêt, Montagne or Océan): unified « Toutes les cartes » tab. */
 export function supportsZeroPower(source: CardSource): boolean {
-  return source === 'all' || source === 'uniques';
+  return source === 'all';
 }
 
 export const ZERO_POWER_LABEL = $localize`:@@search.filters.zeroPower:Au moins un 0`;
@@ -430,6 +421,9 @@ export function toSearchParams(
     hasNoEffect: filters.noEffect || undefined,
     hasZeroPower: filters.zeroPower || undefined,
     artists: filters.artists,
+    format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
+    effects: filters.effects.map(effectIds),
+    support: effectIds(filters.support),
   };
 }
 
@@ -455,13 +449,13 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
     });
   }
   if (filters.sets.length) chips.push({ id: 'sets', label: filters.sets.length === 1 ? $localize`:@@search.filters.chip.oneSet:1 extension` : $localize`:@@search.filters.chip.sets:${filters.sets.length}:count: extensions` });
-  if (source !== 'uniques' && filters.rarities.length) {
+  if (filters.rarities.length) {
     chips.push({
       id: 'rarities',
-      label: rarityOptionsFor(source).filter((r) => filters.rarities.includes(r.value)).map((r) => r.short).join(' · '),
+      label: rarityOptionsFor().filter((r) => filters.rarities.includes(r.value)).map((r) => r.short).join(' · '),
     });
   }
-  if (source !== 'uniques' && filters.types.length) {
+  if (filters.types.length) {
     chips.push({ id: 'types', label: filters.types.length === 1 ? TYPE_OPTIONS.find((t) => t.value === filters.types[0])?.label ?? $localize`:@@search.filters.chip.oneType:1 type` : $localize`:@@search.filters.chip.types:${filters.types.length}:count: types` });
   }
   if (filters.mainCost.trim()) chips.push({ id: 'mainCost', label: $localize`:@@search.filters.chip.mainCost:Coût main : ${filters.mainCost.trim()}:cost:` });
@@ -490,8 +484,8 @@ export function filterChips(filters: SearchFilters, source: CardSource): FilterC
       label: filters.altArts === 'only' ? $localize`:@@search.filters.chip.altArtsOnly:Alt arts uniquement` : $localize`:@@search.filters.chip.altArts:Alt arts`,
     });
   }
-  if (source === 'uniques') {
-    chips.push({ id: 'environment', label: filters.environment === 'frontier' ? 'Frontier' : $localize`:@@search.filters.chip.allUniques:Toutes` });
+  if (source === 'all') {
+    if (filters.environment === 'frontier') chips.push({ id: 'environment', label: 'Frontier' });
     const n = filters.effects.filter(hasEffectCriteria).length;
     if (n) chips.push({ id: 'effects', label: n === 1 ? $localize`:@@search.filters.chip.oneEffect:1 effet` : $localize`:@@search.filters.chip.effects:${n}:count: effets` });
     if (hasEffectCriteria(filters.support)) chips.push({ id: 'support', label: SUPPORT_TITLE });
