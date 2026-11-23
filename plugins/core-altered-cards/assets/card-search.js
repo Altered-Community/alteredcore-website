@@ -164,8 +164,8 @@ function CardSearch(cfg) {
     // _scopeCollection so cards keep the normal 'cards' field mapping (the fav proxy returns
     // cards-API-shaped objects).
     var _scopeFavoris      = false;
-    // Active UI tab: 'all' | 'unique' | 'collection' | 'ownership'.
-    // 'unique' uses the cards API (scope 'all') with forced rarity/type presets.
+    // Active UI tab: 'all' | 'collection' | 'ownership' | 'favoris' | 'playset'.
+    // Unique and non-unique cards share the unified 'all' tab (powered by /api/v2/search).
     var _tab               = 'all';
     var tsInst             = {};
     var _collEl            = null;
@@ -291,7 +291,7 @@ function CardSearch(cfg) {
         if (_root) _root.classList.toggle('cs-scope-fav', _scopeFavoris);
         if (elSortSelect) {
             elSortSelect.disabled = active;
-            var _noRandSort = _tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE);
+            var _noRandSort = _tab === 'all' && !!UNIQUES_API_BASE;
             var _randOpt = elSortSelect.querySelector ? elSortSelect.querySelector('option[value="random"]') : null;
             if (_randOpt) {
                 _randOpt.hidden   = _noRandSort;
@@ -303,7 +303,7 @@ function CardSearch(cfg) {
                 filters.sort      = 'default';
                 elSortSelect.value = 'default';
             }
-        } else if (active || _scopeFavoris || ((_tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE)) && filters.sort === 'random')) {
+        } else if (active || _scopeFavoris || (_tab === 'all' && !!UNIQUES_API_BASE && filters.sort === 'random')) {
             filters.sort = 'default';
         }
         if (tsInst.keyword) {
@@ -1003,9 +1003,9 @@ function CardSearch(cfg) {
         return API_BASE + '/api/cards?' + parts.join('&');
     }
 
-    // Unified search (rust-cards-api /api/v2/search) for the "all" tab when UNIQUES_API_BASE
-    // is configured: handles accurate global mana/power/localized-name sorting and filters,
-    // while keeping effect/support filters exclusive to the Uniques tab.
+    // Unified search (rust-cards-api /api/v2/search) for the unified "all" tab when
+    // UNIQUES_API_BASE is configured: handles both unique and non-unique cards with
+    // structured effects, support effects, formats, full-text search, and global sorting.
     function buildUnifiedApiUrl(page) {
         var parts = [
             'page='  + page,
@@ -1020,8 +1020,9 @@ function CardSearch(cfg) {
         return UNIQUES_API_BASE + '/api/v2/search?' + parts.concat(_unifiedFilterParts()).join('&');
     }
 
-    // Filter params of the unified search, shared with /api/v2/search/facets
-    // (see buildFacetsUrl) so both always describe the exact same card set.
+    // Filter params of the unified search, shared with /api/v2/search/facets and
+    // /api/v2/effects/filtered so search, facets, and effect narrowing always describe
+    // the exact same card set across uniques and non-uniques.
     function _unifiedFilterParts() {
         var parts = [];
         (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
@@ -1052,7 +1053,22 @@ function CardSearch(cfg) {
         _statusFilterParts().forEach(function(p) { parts.push(p); });
         if (filters.hasNoEffect) parts.push('hasNoEffect=true');
 
-        if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
+        _readEffectRows();
+        var _efCounts = _uniquesEffectMatchCounts(filters.effects);
+        filters.effects.forEach(function(ef, i) {
+            if (ef.trigger.length)   parts.push('effect[' + i + '][t]=' + ef.trigger.map(encodeURIComponent).join(','));
+            if (ef.condition.length) parts.push('effect[' + i + '][c]=' + ef.condition.map(encodeURIComponent).join(','));
+            if (ef.effect.length)    parts.push('effect[' + i + '][o]=' + ef.effect.map(encodeURIComponent).join(','));
+            if (_efCounts[i] > 1)    parts.push('effect[' + i + '][matchCount]=' + _efCounts[i]);
+        });
+
+        _readSupportRow();
+        if (filters.support.trigger.length)   parts.push('support[t]=' + filters.support.trigger.map(encodeURIComponent).join(','));
+        if (filters.support.condition.length) parts.push('support[c]=' + filters.support.condition.map(encodeURIComponent).join(','));
+        if (filters.support.effect.length)    parts.push('support[o]=' + filters.support.effect.map(encodeURIComponent).join(','));
+
+        if (filters.format) parts.push('format=' + encodeURIComponent(filters.format));
+        if (filters.q)      parts.push('q=' + encodeURIComponent(filters.q));
 
         return parts;
     }
@@ -1144,13 +1160,11 @@ function CardSearch(cfg) {
         return UNIQUES_API_BASE + '/api/v2/cards?' + parts.join('&');
     }
 
-    // Per-combobox autocomplete narrowing: given the current filter state and which
-    // effect box is being edited, /api/v2/effects/filtered returns just the idGds
-    // for that box that would still yield a matching card. slot is a row index
-    // (matching effect[N]) or the literal 'support' (unused here — this site has no
-    // support/echo effect UI).
+    // Per-combobox autocomplete narrowing: given the current unified filter state and
+    // which effect box is being edited, /api/v2/effects/filtered returns the idGds
+    // for that box that still yield a matching card across uniques and non-uniques.
     function buildEffectsFilteredUrl(part, slot) {
-        var parts = _uniquesFilterParts();
+        var parts = _unifiedFilterParts();
         parts.push('editing=' + encodeURIComponent(part + ':' + slot));
         return UNIQUES_API_BASE + '/api/v2/effects/filtered?' + parts.join('&');
     }
@@ -1164,10 +1178,6 @@ function CardSearch(cfg) {
     function buildFacetsUrl() {
         if (!UNIQUES_API_BASE) return null;
         if (filters.q && /^ALT_[A-Z0-9_]+$/i.test(filters.q)) return null;
-        if (_tab === 'unique') {
-            return UNIQUES_API_BASE + '/api/v2/search/facets?'
-                + ['kind=unique'].concat(_uniquesFilterParts()).join('&');
-        }
         if (_scopeFavoris || (_scopeCollection && scopeApiUrl())) return null;
         return UNIQUES_API_BASE + '/api/v2/search/facets?' + _unifiedFilterParts().join('&');
     }
@@ -1372,7 +1382,7 @@ function CardSearch(cfg) {
         if (filters.costRelation)      parts.push('costRelation=' + encodeURIComponent(filters.costRelation));
         if (filters.format)            parts.push('format='       + encodeURIComponent(filters.format));
         if (filters.keywordMode === 'and' && filters.keywords.length > 1) parts.push('kwMode=and');
-        if (!_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1 && !((_tab === 'unique' || (_tab === 'all' && !!UNIQUES_API_BASE)) && filters.sort === 'random')) {
+        if (!_scopeCollection && !_scopeFavoris && filters.sort && filters.sort !== 'default' && filters.sort !== DEFAULT_SORT_1 && !(_tab === 'all' && !!UNIQUES_API_BASE && filters.sort === 'random')) {
             parts.push('sort=' + encodeURIComponent(filters.sort));
         }
         if (page > 1) parts.push('page=' + page);
@@ -1408,47 +1418,33 @@ function CardSearch(cfg) {
         _readSupportRow();
     }
 
-    // "Toutes les cartes" has a plain Unique rarity toggle that quietly returns
-    // basic results — the dedicated Uniques tab (format/effect/support-effect
-    // search) is one click away but easy to miss. Nudge toward it whenever
-    // Unique is selected while still on the "all" tab. On the Uniques tab
-    // itself (deckbuilder only), swap to a warning instead when the deck's
-    // format doesn't allow Uniques at all (cfg.getFormatLegality().maxUnique
-    // === 0) — no data-tabs attribute on the banner on purpose, so this stays
-    // the one place deciding its visibility (see card-search.php comment).
+    // Deckbuilder-only warning when the deck's current format forbids Unique cards
+    // (cfg.getFormatLegality().maxUnique === 0) and the user activates UNIQUE rarity.
     function _syncUniqueNudge() {
         var el = document.getElementById(P + '-unique-banner');
         if (!el) return;
-        var nudgeEl   = el.querySelector('.cs-unique-banner-nudge');
         var blockedEl = el.querySelector('.cs-unique-banner-blocked');
         var legality = cfg.getFormatLegality ? cfg.getFormatLegality() : null;
         var blocked = !!(legality && legality.maxUnique === 0);
-        var show;
-        if (_tab === 'unique')    show = blocked;
-        else if (_tab === 'all')  show = _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
-        else                      show = false;
+        var uniqueSelected = _rarityDirty && filters.rarity.indexOf('UNIQUE') >= 0;
+        var show = _tab === 'all' && blocked && uniqueSelected;
         el.style.display = show ? '' : 'none';
-        if (nudgeEl)   nudgeEl.style.display   = (show && !blocked) ? '' : 'none';
-        if (blockedEl) blockedEl.style.display = (show && blocked)  ? '' : 'none';
+        if (blockedEl) blockedEl.style.display = show ? '' : 'none';
     }
 
     // filter count badge
     function updateFilterCount() {
         readTsValues();
         _syncUniqueNudge();
-        var isUniques = _tab === 'unique';
-        var _noUniq = cfg.noUniqueSets || [];
-        var setsCount = !_setsDirty ? 0 : (isUniques
-            ? filters.sets.filter(function(v) { return _noUniq.indexOf(v) < 0; }).length
-            : filters.sets.length);
+        var setsCount = _setsDirty ? filters.sets.length : 0;
         var n = (_factionDirty ? filters.faction.length : 0)
-            + (!isUniques && _typeDirty   ? filters.type.length   : 0)
-            + (!isUniques && _rarityDirty ? filters.rarity.length : 0)
+            + (_typeDirty   ? filters.type.length   : 0)
+            + (_rarityDirty ? filters.rarity.length : 0)
             + NUM_FIELDS.reduce(function(acc, f) { return acc + (numExprActive(filters[f.key]) ? 1 : 0); }, 0)
-            + setsCount + filters.subtypes.length + (isUniques ? 0 : filters.keywords.length)
-            + (!isUniques && _variationDirty ? filters.variations.length : 0) + (!isUniques && _collDirty ? 1 : 0)
-            + (!isUniques && filters.isBanned ? 1 : 0) + (!isUniques && filters.isErrated ? 1 : 0)
-            + (!isUniques && filters.isSuspended ? 1 : 0) + (!isUniques && filters.bannedOrSuspended ? 1 : 0)
+            + setsCount + filters.subtypes.length + filters.keywords.length
+            + (_variationDirty ? filters.variations.length : 0) + (_collDirty ? 1 : 0)
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0)
+            + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0)
             + (filters.costRelation ? 1 : 0)
             + (filters.format ? 1 : 0)
@@ -1459,9 +1455,9 @@ function CardSearch(cfg) {
             elFilterCount.style.display = n > 0 ? '' : 'none';
         }
         // Advanced-accordion badge: count of filters living inside the accordion.
-        var advN = filters.subtypes.length + (isUniques ? 0 : filters.keywords.length)
-            + (!isUniques && filters.isBanned ? 1 : 0) + (!isUniques && filters.isErrated ? 1 : 0)
-            + (!isUniques && filters.isSuspended ? 1 : 0) + (!isUniques && filters.bannedOrSuspended ? 1 : 0)
+        var advN = filters.subtypes.length + filters.keywords.length
+            + (filters.isBanned ? 1 : 0) + (filters.isErrated ? 1 : 0)
+            + (filters.isSuspended ? 1 : 0) + (filters.bannedOrSuspended ? 1 : 0)
             + (filters.hasNoEffect ? 1 : 0) + (filters.costRelation ? 1 : 0)
             + (numExprActive(filters.forest)   ? 1 : 0)
             + (numExprActive(filters.mountain) ? 1 : 0)
@@ -1881,15 +1877,6 @@ function CardSearch(cfg) {
         currentPage = page || 1;
         refreshSubtypeFacets();
 
-        // Uniques tab → rust-cards-api (cursor-based "load more"). Falls through to
-        // the code below (old Cards API, numbered pagination) when UNIQUES_API_BASE
-        // isn't configured (e.g. no local dev backend wired up yet).
-        if (_tab === 'unique' && UNIQUES_API_BASE) {
-            _uniqueCursor = null;
-            searchUnique(false, skipPushState);
-            return;
-        }
-
         if (_abortCtrl) { _abortCtrl.abort(); }
         _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
 
@@ -2069,16 +2056,17 @@ function CardSearch(cfg) {
 
     // Switch tab. Normally callers call resetFilters() first so filters from the old
     // tab don't carry over; pass keepFilters=true when restoring from the URL.
+    // Legacy `tab=unique` URLs/bookmarks map onto the unified `all` tab with UNIQUE
+    // rarity (and any uniqueExtraSets like COREKS) pre-selected when not explicitly set.
     function setTab(t, keepFilters) {
-        _tab = (t === 'unique' || t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
+        var isLegacyUnique = (t === 'unique');
+        _tab = (t === 'collection' || t === 'ownership' || t === 'favoris' || t === 'playset') ? t : 'all';
         setScope(_tab === 'collection' || _tab === 'ownership' || _tab === 'favoris' ? _tab : 'all');
-        if (_tab === 'unique') {
-            if (!keepFilters) {
-                if (!_rarityDirty) { _rarityDirty = true; filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice(); }
-                if (!_typeDirty)   { _typeDirty   = true; filters.type   = (cfg.uniqueType   || ['CHARACTER']).slice(); }
+        if (isLegacyUnique) {
+            if (!_rarityDirty) {
+                _rarityDirty = true;
+                filters.rarity = (cfg.uniqueRarity || ['UNIQUE']).slice();
             }
-            // Also include extra Uniques-only sets (e.g. COREKS) on direct ?tab=unique loads
-            // when no explicit set[] was supplied in the URL.
             var _uExtra = cfg.uniqueExtraSets || [];
             if (_uExtra.length && !_setsDirty) {
                 _setsDirty = true;
@@ -2576,15 +2564,6 @@ function CardSearch(cfg) {
             if (MODE === 'cards' || _tab === 'favoris') search(1);
         });
 
-        // Unique-nudge CTA: reuse the real tab button's own click handling
-        // (reset + setTab + scope-appropriate search) instead of duplicating it.
-        _root.addEventListener('click', function(e) {
-            var btn = e.target.closest('[data-goto-tab]');
-            if (!btn || !_root.contains(btn)) return;
-            var tabBtn = qa('.cs-tab[data-tab="' + btn.dataset.gotoTab + '"]')[0];
-            if (tabBtn) tabBtn.click();
-        });
-
         _root.addEventListener('click', function(e) {
             var btn = e.target.closest('.filter-toggle[data-filter]');
             if (!btn || !_root.contains(btn)) return;
@@ -2593,7 +2572,7 @@ function CardSearch(cfg) {
             // Format is a single-value ("radio") filter, unlike the array filters below.
             if (key === 'format') {
                 setFormat(val);
-                if (MODE === 'cards' && _tab === 'unique' && !btn.closest('.modal')) search(1);
+                if (MODE === 'cards' && _tab === 'all' && !btn.closest('.modal')) search(1);
                 return;
             }
             if (key === 'faction') { if (!_factionDirty) { _factionDirty = true; filters.faction = []; } }
@@ -2850,6 +2829,7 @@ function CardSearch(cfg) {
     } else {
         syncTabButtons();
         applyTabVisibility();
+        updateScopeUi();
     }
     updateFilterCount();
     if (cfg.autoSearch) {
@@ -2858,23 +2838,25 @@ function CardSearch(cfg) {
     }
 
     return {
-        search:            search,
-        resetFilters:      resetFilters,
-        setFormat:         setFormat,
-        getTab:            function() { return _tab; },
-        parseNumExpr:      parseNumExpr,
-        numCardsParts:     numCardsParts,
-        numUniquesParts:   numUniquesParts,
-        numProxyParts:     numProxyParts,
-        buildApiUrl:       buildApiUrl,
-        buildUnifiedApiUrl:buildUnifiedApiUrl,
-        buildUniquesApiUrl:buildUniquesApiUrl,
-        buildCollApiUrl:   buildCollApiUrl,
-        buildPageUrl:      buildPageUrl,
-        restoreFromUrl:    restoreFromUrl,
-        updateFilterCount: updateFilterCount,
-        filters:           filters,
-        tsInstances:       tsInst,
+        search:                  search,
+        resetFilters:            resetFilters,
+        setFormat:               setFormat,
+        getTab:                  function() { return _tab; },
+        parseNumExpr:            parseNumExpr,
+        numCardsParts:           numCardsParts,
+        numUniquesParts:         numUniquesParts,
+        numProxyParts:           numProxyParts,
+        buildApiUrl:             buildApiUrl,
+        buildUnifiedApiUrl:      buildUnifiedApiUrl,
+        buildUniquesApiUrl:      buildUniquesApiUrl,
+        buildEffectsFilteredUrl: buildEffectsFilteredUrl,
+        buildFacetsUrl:          buildFacetsUrl,
+        buildCollApiUrl:         buildCollApiUrl,
+        buildPageUrl:            buildPageUrl,
+        restoreFromUrl:          restoreFromUrl,
+        updateFilterCount:       updateFilterCount,
+        filters:                 filters,
+        tsInstances:             tsInst,
     };
 }
 

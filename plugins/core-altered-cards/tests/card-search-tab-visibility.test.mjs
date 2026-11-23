@@ -71,8 +71,8 @@ function setup({ search = '', sort = 'default' } = {}) {
   const pushedUrls = [];
   const fetchUrls = [];
   const root = makeEl('cs-panel');
-  const sortWrap = makeEl('sort-wrap', 'div', { 'data-tabs': 'all unique collection ownership' });
-  const hneWrap = makeEl('hne-wrap', 'label', { 'data-tabs': 'all unique' });
+  const sortWrap = makeEl('sort-wrap', 'div', { 'data-tabs': 'all collection ownership' });
+  const hneWrap = makeEl('hne-wrap', 'label', { 'data-tabs': 'all' });
   const keywordWrap = makeEl('keyword-wrap', 'div', { 'data-tabs': 'all' });
   const dataTabsEls = [sortWrap, hneWrap, keywordWrap];
 
@@ -83,7 +83,7 @@ function setup({ search = '', sort = 'default' } = {}) {
   byId.set('cs-panel', root);
   byId.set('cs-sort', sortSelect);
 
-  const tabButtons = ['all', 'unique', 'collection'].map((tab) => {
+  const tabButtons = ['all', 'collection'].map((tab) => {
     const b = makeEl(`tab-${tab}`, 'button');
     b.dataset.tab = tab;
     return b;
@@ -127,7 +127,7 @@ function ok(cond, msg) {
   else { console.log('  FAIL - ' + msg); process.exitCode = 1; }
 }
 
-// 1. Direct URL load on tab=unique&sort=mana_asc keeps sort visible, hides random, and sends sort=mainCost:asc
+// 1. Legacy URL load on tab=unique&sort=mana_asc maps to unified all tab with UNIQUE rarity, keeps sort visible, hides random, and sends sort=mainCost:asc
 {
   const env = setup({ search: '?tab=unique&sort=mana_asc', sort: 'mana_asc' });
   const cs = CardSearch({
@@ -137,19 +137,19 @@ function ok(cond, msg) {
     uniquesApiBase: 'http://localhost:8005',
     initial: { sort: 'mana_asc' },
   });
-  ok(env.sortWrap.style._prop('display') === null,
-    'sort wrapper visible on unique tab');
-  ok(env.hneWrap.style._prop('display') === null, 'hasNoEffect wrapper visible on unique tab');
-  ok(env.keywordWrap.style._prop('display')?.value === 'none' && env.keywordWrap.style._prop('display')?.priority === 'important',
-    'keyword wrapper hidden with display:none !important on unique tab');
-  ok(cs.filters.sort === 'mana_asc', 'filters.sort preserved as mana_asc on unique tab');
-  ok(env.sortSelect.value === 'mana_asc', 'sort select value preserved as mana_asc on unique tab');
-  ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option hidden and disabled on unique tab');
+  ok(cs.getTab() === 'all', 'legacy tab=unique maps onto unified all tab');
+  ok(cs.filters.rarity.includes('UNIQUE'), 'legacy tab=unique pre-selects UNIQUE rarity');
+  ok(env.sortWrap.style._prop('display') === null, 'sort wrapper visible on unified all tab');
+  ok(env.hneWrap.style._prop('display') === null, 'hasNoEffect wrapper visible on unified all tab');
+  ok(env.keywordWrap.style._prop('display') === null, 'keyword wrapper visible on unified all tab');
+  ok(cs.filters.sort === 'mana_asc', 'filters.sort preserved as mana_asc');
+  ok(env.sortSelect.value === 'mana_asc', 'sort select value preserved as mana_asc');
+  ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option hidden and disabled when unified API is active');
   cs.search(1);
-  ok(env.pushedUrls.length === 1 && env.pushedUrls[0].includes('sort=mana_asc'), 'search URL preserves sort on unique tab');
-  ok(env.fetchUrls.length === 1 && env.fetchUrls[0].includes('sort=mainCost%3Aasc'), 'uniques API fetch sends sort=mainCost:asc');
+  ok(env.pushedUrls.length === 1 && env.pushedUrls[0].includes('sort=mana_asc') && !env.pushedUrls[0].includes('tab=unique'), 'search URL preserves sort without legacy tab=unique');
+  ok(env.fetchUrls.length === 1 && env.fetchUrls[0].includes('/api/v2/search?') && env.fetchUrls[0].includes('sort=mainCost%3Aasc') && env.fetchUrls[0].includes('rarity[]=UNIQUE'), 'unified API fetch sends /api/v2/search with sort=mainCost:asc and rarity[]=UNIQUE');
 
-  // Direct URL load on tab=unique&sort=random falls back to default
+  // Direct URL load on tab=unique&sort=random falls back to default when unified API is active
   const randEnv = setup({ search: '?tab=unique&sort=random', sort: 'random' });
   const randCs = CardSearch({
     prefix: 'cs',
@@ -158,13 +158,17 @@ function ok(cond, msg) {
     uniquesApiBase: 'http://localhost:8005',
     initial: { sort: 'random' },
   });
-  ok(randCs.filters.sort === 'default', 'random sort reset to default on unique tab');
-  ok(randEnv.sortSelect.value === 'default', 'sort select value reset to default when random requested on unique tab');
+  ok(randCs.filters.sort === 'default', 'random sort reset to default when unified API is active');
+  ok(randEnv.sortSelect.value === 'default', 'sort select value reset to default when random requested');
   randCs.search(1);
-  ok(randEnv.pushedUrls.length === 1 && !randEnv.pushedUrls[0].includes('sort='), 'search URL omits sort when random was reset on unique tab');
+  ok(randEnv.pushedUrls.length === 1 && !randEnv.pushedUrls[0].includes('sort='), 'search URL omits sort when random was reset');
 
-  // Switching back to all restores display property and random sort option
+  // Switching to collection hides all-only blocks with !important, and switching back restores them
+  const collBtn = env.tabButtons.find((b) => b.dataset.tab === 'collection');
   const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
+  env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? collBtn : null) } });
+  ok(env.keywordWrap.style._prop('display')?.value === 'none' && env.keywordWrap.style._prop('display')?.priority === 'important',
+    'keyword wrapper hidden with display:none !important on collection tab');
   env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? allBtn : null) } });
   ok(env.sortWrap.style._prop('display') === null, 'sort wrapper display cleared when switching back to all tab');
   ok(env.keywordWrap.style._prop('display') === null, 'keyword display cleared when switching back to all tab');
@@ -172,13 +176,11 @@ function ok(cond, msg) {
   ok(env.randomOpt.hidden === true && env.randomOpt.disabled === true, 'random sort option stays hidden and disabled on all tab when unified API is active');
 }
 
-// 1b. Without uniquesApiBase configured, switching back to all re-enables random sort
+// 1b. Without uniquesApiBase configured, random sort stays enabled on all tab
 {
   const env = setup({ search: '?tab=unique' });
-  const cs = CardSearch({ prefix: 'cs', mode: 'cards', uniquesApiBase: '' });
-  const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
-  env.root.dispatch('click', { target: { closest: (s) => (s === '.cs-tab[data-tab]' ? allBtn : null) } });
-  ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option re-enabled on all tab without uniquesApiBase');
+  CardSearch({ prefix: 'cs', mode: 'cards', uniquesApiBase: '' });
+  ok(env.randomOpt.hidden === false && env.randomOpt.disabled === false, 'random sort option enabled on all tab without uniquesApiBase');
 }
 
 // 2. Collection tab keeps sort wrapper visible (disabled) and resets sort

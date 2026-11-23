@@ -405,25 +405,31 @@ var AlteredCard = {
 
     // Adapt a CardV2 object (GET /api/v2/card/{ref}) into the {group, card} shape
     // the rest of this file's renderCard()/switchLang() already expect (modeled on
-    // the old API's /api/card_groups + /api/cards/reference split). Fields the new
-    // API doesn't have (rarity, cardType, isBanned/isSuspended/isErrated,
-    // cardRulings, loreEntries, collectorNumberFormatedId) are left unset — the
-    // existing render code already handles their absence gracefully.
+    // the old API's /api/card_groups + /api/cards/reference split).
     function adaptUniqueCard(c) {
         var group = {
             name: toShortLocaleMap(c.name || {}),
             faction: c.faction,
+            rarity: c.rarity || { reference: 'UNIQUE' },
+            cardType: c.cardType || { reference: 'CHARACTER' },
+            isBanned: !!c.isBanned,
+            isErrated: !!c.isErrated,
+            isSuspended: !!c.isSuspended,
             mainEffect: toShortLocaleMap(c.mainEffect || {}),
             echoEffect: toShortLocaleMap(c.echoEffect || {}),
         };
         var card = {
             set: c.set,
             cardSubTypes: c.cardSubTypes,
+            collectorNumberFormatedId: c.collectorNumber || '',
             mainCost: c.mainCost,
             recallCost: c.recallCost,
             forestPower: c.forestPower,
             mountainPower: c.mountainPower,
             oceanPower: c.oceanPower,
+            permanent: c.permanent,
+            reserve: c.reserve,
+            legalFormats: c.legalFormats || [],
         };
         return { group: group, card: card };
     }
