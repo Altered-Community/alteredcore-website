@@ -271,6 +271,7 @@ var AlteredCard = {
     sets:     <?= json_encode($setsData) ?>,
     subtypes: <?= json_encode($subtypesData) ?>,
     formats:  <?= json_encode($formatsData) ?>,
+    keywordCodes: <?= json_encode(loadKeywordCodes()) ?>,
     // Per format code: true / false / null, from the decks API's published rules (core-altered-cards'
     // cacCardFormatVerdicts()). Null when the API can't be reached.
     formatVerdicts: <?= json_encode(($ref !== '' && ($_apiFormats = cacFetchDeckApiFormats()) !== null) ? (object)cacCardFormatVerdicts($ref, $_apiFormats) : null) ?>,
@@ -312,38 +313,81 @@ var AlteredCard = {
     var uiLang   = AlteredCard.uiLang;
     var isUnique = AlteredCard.isUnique;
     var API      = AlteredCard.apiBase;
-    var UNIQUES_API = isUnique ? (AlteredCard.uniquesApiBase || '') : '';
+    var UNIQUES_API = AlteredCard.uniquesApiBase || '';
+    var KEYWORD_CODES = AlteredCard.keywordCodes || {};
     var CDN      = AlteredCard.cdnBase;
     var BASE     = AlteredCard.baseUrl;
     var txt      = AlteredCard.txt;
 
     var groupData  = null;
     var cardData   = null;
+    var loadedFromUnified = false;
     var altLoaded  = false;
     var rendererLoaded = false;
 
+    function expandKeywordCodes(text, shortLang) {
+        if (!text || text.indexOf('[') === -1) return text;
+        return String(text).replace(/\[([A-Z][A-Z0-9_]*)\]/g, function (all, code) {
+            var entry = KEYWORD_CODES[code];
+            if (entry) {
+                var lbl = entry[shortLang] || entry.en;
+                return lbl ? '[' + lbl + ']' : all;
+            }
+            var m = /^(.+?)_(\d+)$/.exec(code);
+            var base = m ? m[1] : code;
+            var num = m ? m[2] : '';
+            var parts = base.split('_');
+            for (var i = parts.length; i > 0; i--) {
+                var prefix = parts.slice(0, i).join('_');
+                var pe = KEYWORD_CODES[prefix];
+                var stripOne = false;
+                if (!pe && KEYWORD_CODES[prefix + '_1']) {
+                    pe = KEYWORD_CODES[prefix + '_1'];
+                    stripOne = true;
+                }
+                if (pe) {
+                    var pl = pe[shortLang] || pe.en;
+                    if (pl) {
+                        if (stripOne) pl = pl.replace(/[\s\u00a0]+1$/, '');
+                        return '[' + (num ? pl + ' ' + num : pl) + ']';
+                    }
+                }
+            }
+            return all;
+        });
+    }
+
     var LOCALE_MAP_LONG = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', it: 'it_IT', es: 'es_ES' };
-    function toShortLocaleMap(map) {
+    function toShortLocaleMap(map, expandKeywords) {
         var out = {};
         Object.keys(LOCALE_MAP_LONG).forEach(function (short) {
             var long = LOCALE_MAP_LONG[short];
             if (map && (map[long] !== undefined || map[short] !== undefined)) {
-                out[short] = map[long] !== undefined ? map[long] : map[short];
+                var val = map[long] !== undefined ? map[long] : map[short];
+                out[short] = expandKeywords ? expandKeywordCodes(val, short) : val;
             }
         });
         return out;
     }
 
-    function adaptUniqueCard(c) {
+    function adaptV2Card(c) {
         var group = {
-            name: toShortLocaleMap(c.name || {}),
+            name: toShortLocaleMap(c.name || {}, false),
             faction: c.faction,
-            mainEffect: toShortLocaleMap(c.mainEffect || {}),
-            echoEffect: toShortLocaleMap(c.echoEffect || {}),
+            rarity: c.rarity || { reference: 'UNIQUE' },
+            cardType: c.cardType || { reference: 'CHARACTER' },
+            isBanned: !!c.isBanned,
+            isErrated: !!c.isErrated,
+            isSuspended: !!c.isSuspended,
+            mainEffect: toShortLocaleMap(c.mainEffect || {}, true),
+            echoEffect: toShortLocaleMap(c.echoEffect || {}, true),
+            cardRulings: null,
+            loreEntries: null,
         };
         var card = {
             set: c.set,
             cardSubTypes: c.cardSubTypes,
+            collectorNumberFormatedId: c.collectorNumber || '',
             mainCost: c.mainCost,
             recallCost: c.recallCost,
             forestPower: c.forestPower,
@@ -353,22 +397,7 @@ var AlteredCard = {
         return { group: group, card: card };
     }
 
-    if (isUnique && UNIQUES_API) {
-        var altTabBtnEarly = document.getElementById('tab-altered-btn');
-        if (altTabBtnEarly) altTabBtnEarly.style.display = 'none';
-
-        fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (c) {
-                var adapted = adaptUniqueCard(c);
-                groupData = adapted.group;
-                cardData  = adapted.card;
-                renderCard(groupData, cardData, lang);
-            })
-            .catch(function () {
-                showError(txt.err_connect);
-            });
-    } else {
+    function loadLegacyCard() {
         Promise.all([
             fetch(API + '/api/card_groups?cards.reference=' + encodeURIComponent(ref) + '&itemsPerPage=1', { headers: { 'Accept': 'application/json' } })
                 .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
@@ -383,6 +412,52 @@ var AlteredCard = {
         }).catch(function () {
             showError(txt.err_connect);
         });
+    }
+
+    if (isUnique && UNIQUES_API) {
+        var altTabBtnEarly = document.getElementById('tab-altered-btn');
+        if (altTabBtnEarly) altTabBtnEarly.style.display = 'none';
+
+        fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (c) {
+                var adapted = adaptV2Card(c);
+                groupData = adapted.group;
+                cardData  = adapted.card;
+                loadedFromUnified = true;
+                renderCard(groupData, cardData, lang);
+            })
+            .catch(function () {
+                showError(txt.err_connect);
+            });
+    } else if (UNIQUES_API) {
+        var rulingsPromise = API
+            ? fetch(API + '/api/card_groups?cards.reference=' + encodeURIComponent(ref) + '&itemsPerPage=1', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .catch(function () { return null; })
+            : Promise.resolve(null);
+
+        Promise.all([
+            fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+            rulingsPromise,
+        ]).then(function (results) {
+            var adapted = adaptV2Card(results[0]);
+            var cg = results[1] && results[1].member && results[1].member[0] ? results[1].member[0] : null;
+            if (cg) {
+                adapted.group.cardRulings = cg.cardRulings || null;
+                adapted.group.loreEntries = cg.loreEntries || null;
+            }
+            groupData = adapted.group;
+            cardData  = adapted.card;
+            loadedFromUnified = true;
+            renderCard(groupData, cardData, lang);
+        }).catch(function () {
+            if (API) loadLegacyCard();
+            else showError(txt.err_connect);
+        });
+    } else {
+        loadLegacyCard();
     }
 
     function renderCard(group, card, l) {
@@ -658,7 +733,7 @@ var AlteredCard = {
             if (imgEl) imgEl.src = cdnUrl(ref, l);
         }
 
-        if (isUnique && UNIQUES_API) {
+        if (loadedFromUnified) {
             applyLangUpdate(cardData, l);
         } else {
             fetch(API + '/api/cards/reference/' + encodeURIComponent(ref) + '?locale=' + encodeURIComponent(l), { headers: { 'Accept': 'application/json' } })
@@ -687,13 +762,7 @@ var AlteredCard = {
         });
     }
 
-    function loadAlteredCards(l) {
-        var grid = document.getElementById('card-altered-grid');
-        if (!grid) return;
-        grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;padding:var(--ac-space-6)"><span class="ac-spinner" role="status"></span></div>';
-
-        var cardName   = loc(groupData.name, l) || ref;
-        var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
+    function loadAlteredCardsLegacy(grid, cardName, factionCode, l) {
         var url = API + '/api/card_groups?'
             + 'name[' + l + ']=' + encodeURIComponent(cardName)
             + (factionCode ? '&faction.code[]=' + encodeURIComponent(factionCode) : '')
@@ -717,6 +786,39 @@ var AlteredCard = {
             .catch(function () {
                 grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font:var(--ac-font-small)">' + escHtml(txt.err_api) + '</div>';
             });
+    }
+
+    function loadAlteredCards(l) {
+        var grid = document.getElementById('card-altered-grid');
+        if (!grid) return;
+        grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;padding:var(--ac-space-6)"><span class="ac-spinner" role="status"></span></div>';
+
+        var cardName    = loc(groupData.name, l) || ref;
+        var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
+        if (UNIQUES_API) {
+            var uUrl = UNIQUES_API + '/api/v2/search?'
+                + 'name=' + encodeURIComponent(cardName)
+                + (factionCode ? '&faction[]=' + encodeURIComponent(factionCode) : '')
+                + '&kind=nonunique&serialized=false&limit=100';
+            fetch(uUrl, { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    var altCards = [];
+                    (data.cards || []).forEach(function (c) {
+                        var n = loc(toShortLocaleMap(c.name || {}, false), l);
+                        if (n !== cardName) return;
+                        if (c.isSerialized || /_(C|R1|R2|E)_\d{3}$/.test(c.reference || '')) return;
+                        altCards.push(c);
+                    });
+                    renderAlteredGrid(grid, altCards, cardName, l);
+                })
+                .catch(function () {
+                    if (API) loadAlteredCardsLegacy(grid, cardName, factionCode, l);
+                    else grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font:var(--ac-font-small)">' + escHtml(txt.err_api) + '</div>';
+                });
+            return;
+        }
+        loadAlteredCardsLegacy(grid, cardName, factionCode, l);
     }
 
     function renderAlteredGrid(grid, altCards, cardName, l) {

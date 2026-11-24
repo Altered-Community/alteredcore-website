@@ -123,12 +123,6 @@ export class CardsApiService {
       .pipe(map((body) => (Array.isArray(body) ? body : body.member ?? [])));
   }
 
-  factions(): Observable<Faction[]> {
-    return this.http.get<Faction[] | { member: Faction[] }>(`${this.baseUrl}/api/factions`).pipe(
-      map((body) => (Array.isArray(body) ? body : body.member ?? [])),
-    );
-  }
-
   /** All heroes (36 groups), cached for the session. */
   heroes(): Observable<HeroGroup[]> {
     const fromCardsApi$ = this.http

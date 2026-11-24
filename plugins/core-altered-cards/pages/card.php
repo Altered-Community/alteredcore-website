@@ -326,6 +326,7 @@ var AlteredCard = {
     sets:     <?= json_encode($setsData) ?>,
     subtypes: <?= json_encode($subtypesData) ?>,
     formats:  <?= json_encode($formatsData) ?>,
+    keywordCodes: <?= json_encode(loadKeywordCodes()) ?>,
     // Per format code: true (legal), false (not legal) or null (can't tell from the card alone), from the rules the
     // decks API publishes (GET /api/formats), see cacCardFormatVerdict(). Null when the API can't be reached.
     formatVerdicts: <?= json_encode(($ref !== '' && ($_apiFormats = cacFetchDeckApiFormats()) !== null) ? (object)cacCardFormatVerdicts($ref, $_apiFormats) : null) ?>,
@@ -376,28 +377,63 @@ var AlteredCard = {
     var uiLang   = AlteredCard.uiLang;
     var isUnique = AlteredCard.isUnique;
     var API      = AlteredCard.apiBase;
-    // rust-cards-api (Uniques), used instead of API/card_groups when configured —
-    // dev-local only for now. Falls back to the old two-call flow when empty.
-    var UNIQUES_API = isUnique ? (AlteredCard.uniquesApiBase || '') : '';
+    // uniques-search-api (unified unique + non-unique /api/v2/card & /api/v2/search).
+    // Falls back to legacy CARDS_API_URL when unset or unreachable.
+    var UNIQUES_API = AlteredCard.uniquesApiBase || '';
+    var KEYWORD_CODES = AlteredCard.keywordCodes || {};
     var CDN      = AlteredCard.cdnBase;
     var BASE     = AlteredCard.baseUrl;
     var txt      = AlteredCard.txt;
 
     var groupData  = null;
     var cardData   = null;
+    var loadedFromUnified = false;
     var altLoaded  = false;
     var rendererLoaded = false;
+
+    function expandKeywordCodes(text, shortLang) {
+        if (!text || text.indexOf('[') === -1) return text;
+        return String(text).replace(/\[([A-Z][A-Z0-9_]*)\]/g, function (all, code) {
+            var entry = KEYWORD_CODES[code];
+            if (entry) {
+                var lbl = entry[shortLang] || entry.en;
+                return lbl ? '[' + lbl + ']' : all;
+            }
+            var m = /^(.+?)_(\d+)$/.exec(code);
+            var base = m ? m[1] : code;
+            var num = m ? m[2] : '';
+            var parts = base.split('_');
+            for (var i = parts.length; i > 0; i--) {
+                var prefix = parts.slice(0, i).join('_');
+                var pe = KEYWORD_CODES[prefix];
+                var stripOne = false;
+                if (!pe && KEYWORD_CODES[prefix + '_1']) {
+                    pe = KEYWORD_CODES[prefix + '_1'];
+                    stripOne = true;
+                }
+                if (pe) {
+                    var pl = pe[shortLang] || pe.en;
+                    if (pl) {
+                        if (stripOne) pl = pl.replace(/[\s\u00a0]+1$/, '');
+                        return '[' + (num ? pl + ' ' + num : pl) + ']';
+                    }
+                }
+            }
+            return all;
+        });
+    }
 
     // rust-cards-api locale maps use long codes (en_US, fr_FR, ...); the rest of
     // this page's loc()/renderEffects()/etc. already key off short codes (en, fr)
     // since that's what the old Cards API returns. Convert once on fetch.
     var LOCALE_MAP_LONG = { en: 'en_US', fr: 'fr_FR', de: 'de_DE', it: 'it_IT', es: 'es_ES' };
-    function toShortLocaleMap(map) {
+    function toShortLocaleMap(map, expandKeywords) {
         var out = {};
         Object.keys(LOCALE_MAP_LONG).forEach(function (short) {
             var long = LOCALE_MAP_LONG[short];
             if (map && (map[long] !== undefined || map[short] !== undefined)) {
-                out[short] = map[long] !== undefined ? map[long] : map[short];
+                var val = map[long] !== undefined ? map[long] : map[short];
+                out[short] = expandKeywords ? expandKeywordCodes(val, short) : val;
             }
         });
         return out;
@@ -406,17 +442,19 @@ var AlteredCard = {
     // Adapt a CardV2 object (GET /api/v2/card/{ref}) into the {group, card} shape
     // the rest of this file's renderCard()/switchLang() already expect (modeled on
     // the old API's /api/card_groups + /api/cards/reference split).
-    function adaptUniqueCard(c) {
+    function adaptV2Card(c) {
         var group = {
-            name: toShortLocaleMap(c.name || {}),
+            name: toShortLocaleMap(c.name || {}, false),
             faction: c.faction,
             rarity: c.rarity || { reference: 'UNIQUE' },
             cardType: c.cardType || { reference: 'CHARACTER' },
             isBanned: !!c.isBanned,
             isErrated: !!c.isErrated,
             isSuspended: !!c.isSuspended,
-            mainEffect: toShortLocaleMap(c.mainEffect || {}),
-            echoEffect: toShortLocaleMap(c.echoEffect || {}),
+            mainEffect: toShortLocaleMap(c.mainEffect || {}, true),
+            echoEffect: toShortLocaleMap(c.echoEffect || {}, true),
+            cardRulings: null,
+            loreEntries: null,
         };
         var card = {
             set: c.set,
@@ -434,25 +472,7 @@ var AlteredCard = {
         return { group: group, card: card };
     }
 
-    if (isUnique && UNIQUES_API) {
-        // Single call: no cross-rarity "other prints" data exists in this API, so
-        // the "Cartes Altérées" tab (which relies on it) is hidden below.
-        var altTabBtnEarly = document.getElementById('tab-altered-btn');
-        if (altTabBtnEarly) altTabBtnEarly.style.display = 'none';
-
-        fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (c) {
-                var adapted = adaptUniqueCard(c);
-                groupData = adapted.group;
-                cardData  = adapted.card;
-                renderCard(groupData, cardData, lang);
-            })
-            .catch(function () {
-                showError(txt.err_connect);
-            });
-    } else {
-        // fetch both APIs in parallel
+    function loadLegacyCard() {
         Promise.all([
             fetch(API + '/api/card_groups?cards.reference=' + encodeURIComponent(ref) + '&itemsPerPage=1', { headers: { 'Accept': 'application/json' } })
                 .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
@@ -467,6 +487,56 @@ var AlteredCard = {
         }).catch(function () {
             showError(txt.err_connect);
         });
+    }
+
+    if (isUnique && UNIQUES_API) {
+        // Single call: no cross-rarity "other prints" data exists for uniques, so
+        // the "Cartes Altérées" tab is hidden below.
+        var altTabBtnEarly = document.getElementById('tab-altered-btn');
+        if (altTabBtnEarly) altTabBtnEarly.style.display = 'none';
+
+        fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (c) {
+                var adapted = adaptV2Card(c);
+                groupData = adapted.group;
+                cardData  = adapted.card;
+                loadedFromUnified = true;
+                renderCard(groupData, cardData, lang);
+            })
+            .catch(function () {
+                showError(txt.err_connect);
+            });
+    } else if (UNIQUES_API) {
+        // Non-unique: fetch all 5 locales & stats from unified /api/v2/card/{ref} in parallel
+        // with a non-fatal card_groups lookup solely for rulings & lore (not yet in uniques-search-api).
+        var rulingsPromise = API
+            ? fetch(API + '/api/card_groups?cards.reference=' + encodeURIComponent(ref) + '&itemsPerPage=1', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .catch(function () { return null; })
+            : Promise.resolve(null);
+
+        Promise.all([
+            fetch(UNIQUES_API + '/api/v2/card/' + encodeURIComponent(ref), { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+            rulingsPromise,
+        ]).then(function (results) {
+            var adapted = adaptV2Card(results[0]);
+            var cg = results[1] && results[1].member && results[1].member[0] ? results[1].member[0] : null;
+            if (cg) {
+                adapted.group.cardRulings = cg.cardRulings || null;
+                adapted.group.loreEntries = cg.loreEntries || null;
+            }
+            groupData = adapted.group;
+            cardData  = adapted.card;
+            loadedFromUnified = true;
+            renderCard(groupData, cardData, lang);
+        }).catch(function () {
+            if (API) loadLegacyCard();
+            else showError(txt.err_connect);
+        });
+    } else {
+        loadLegacyCard();
     }
 
     // main render
@@ -781,9 +851,9 @@ var AlteredCard = {
             if (imgEl) imgEl.src = cdnUrl(ref, l);
         }
 
-        if (isUnique && UNIQUES_API) {
-            // rust-cards-api already returned every locale on the initial fetch
-            // (adaptUniqueCard converted it to the short-code shape) — no re-fetch.
+        if (loadedFromUnified) {
+            // uniques-search-api already returned all 5 locales on the initial fetch
+            // (adaptV2Card converted it to the short-code shape) — no re-fetch.
             applyLangUpdate(cardData, l);
         } else {
             // Re-fetch localized effects for new language
@@ -814,13 +884,7 @@ var AlteredCard = {
         });
     }
 
-    function loadAlteredCards(l) {
-        var grid = document.getElementById('card-altered-grid');
-        if (!grid) return;
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--ac-color-text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
-
-        var cardName   = loc(groupData.name, l) || ref;
-        var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
+    function loadAlteredCardsLegacy(grid, cardName, factionCode, l) {
         var url = API + '/api/card_groups?'
             + 'name[' + l + ']=' + encodeURIComponent(cardName)
             + (factionCode ? '&faction.code[]=' + encodeURIComponent(factionCode) : '')
@@ -844,6 +908,39 @@ var AlteredCard = {
             .catch(function () {
                 grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font-size:.85rem">' + escHtml(txt.err_api) + '</div>';
             });
+    }
+
+    function loadAlteredCards(l) {
+        var grid = document.getElementById('card-altered-grid');
+        if (!grid) return;
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--ac-color-text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+        var cardName    = loc(groupData.name, l) || ref;
+        var factionCode = (groupData.faction && groupData.faction.code) ? groupData.faction.code : '';
+        if (UNIQUES_API) {
+            var uUrl = UNIQUES_API + '/api/v2/search?'
+                + 'name=' + encodeURIComponent(cardName)
+                + (factionCode ? '&faction[]=' + encodeURIComponent(factionCode) : '')
+                + '&kind=nonunique&serialized=false&limit=100';
+            fetch(uUrl, { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    var altCards = [];
+                    (data.cards || []).forEach(function (c) {
+                        var n = loc(toShortLocaleMap(c.name || {}, false), l);
+                        if (n !== cardName) return;
+                        if (c.isSerialized || /_(C|R1|R2|E)_\d{3}$/.test(c.reference || '')) return;
+                        altCards.push(c);
+                    });
+                    renderAlteredGrid(grid, altCards, cardName, l);
+                })
+                .catch(function () {
+                    if (API) loadAlteredCardsLegacy(grid, cardName, factionCode, l);
+                    else grid.innerHTML = '<div style="grid-column:1/-1;color:var(--ac-color-text-muted);font-size:.85rem">' + escHtml(txt.err_api) + '</div>';
+                });
+            return;
+        }
+        loadAlteredCardsLegacy(grid, cardName, factionCode, l);
     }
 
     function renderAlteredGrid(grid, altCards, cardName, l) {

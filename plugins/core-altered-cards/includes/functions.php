@@ -28,6 +28,140 @@ function loadAlteredData(string $name): array {
     return $all[$name] ?? [];
 }
 
+/**
+ * Localized printed names of keyword codes written by uniques-search-api
+ * (`[FLEETING]`, `[RESUPPLY_T]`, `[TOUGH_2]`...), keyed by UPPER_CODE => [lang => label].
+ */
+function loadKeywordCodes(): array {
+    static $codes = null;
+    if ($codes === null) {
+        $file = dirname(__DIR__) . '/data/keyword_codes.json';
+        if (!file_exists($file)) { $codes = []; return []; }
+        $raw = file_get_contents($file);
+        if (strncmp($raw, "\xEF\xBB\xBF", 3) === 0) $raw = substr($raw, 3);
+        $decoded = json_decode($raw, true);
+        $codes = is_array($decoded) ? $decoded : [];
+    }
+    return $codes;
+}
+
+/**
+ * Expand `[KEYWORD_CODE]` placeholders from uniques-search-api texts into their localized
+ * printed label (`[FLEETING]` -> `[Fugace]` in fr, `[Fleeting]` in en), with prefix fallback
+ * for suffixed variants (`[DEFENDER_TKN_P]` -> `[Défenseur]`, `[TOUGH_7]` -> `[Coriace 7]`).
+ */
+function cacPrintKeywordCodes(string $text, string $locale = 'en'): string {
+    if ($text === '' || strpos($text, '[') === false) return $text;
+    $codes = loadKeywordCodes();
+    if (empty($codes)) return $text;
+    $short = strtolower(substr($locale, 0, 2));
+    return (string)preg_replace_callback('/\[([A-Z][A-Z0-9_]*)\]/', function (array $m) use ($codes, $short): string {
+        $code = $m[1];
+        if (isset($codes[$code])) {
+            $label = $codes[$code][$short] ?? $codes[$code]['en'] ?? reset($codes[$code]);
+            return $label ? '[' . $label . ']' : $m[0];
+        }
+        $num = '';
+        $base = $code;
+        if (preg_match('/^(.+?)_(\d+)$/', $code, $nm)) {
+            $base = $nm[1];
+            $num  = $nm[2];
+        }
+        $parts = explode('_', $base);
+        for ($i = count($parts); $i > 0; $i--) {
+            $prefix = implode('_', array_slice($parts, 0, $i));
+            $entry = $codes[$prefix] ?? null;
+            $stripOne = false;
+            if ($entry === null && isset($codes[$prefix . '_1'])) {
+                $entry = $codes[$prefix . '_1'];
+                $stripOne = true;
+            }
+            if ($entry !== null) {
+                $label = $entry[$short] ?? $entry['en'] ?? reset($entry);
+                if ($label) {
+                    if ($stripOne) {
+                        $label = (string)preg_replace('/[\s\x{00A0}]+1$/u', '', $label);
+                    }
+                    return '[' . ($num !== '' ? $label . ' ' . $num : $label) . ']';
+                }
+            }
+        }
+        return $m[0];
+    }, $text);
+}
+
+/** Convert a CardV2 locale map (`en_US`, `fr_FR`, ...) to short codes (`en`, `fr`, ...). */
+function cacToShortLocaleMap($map, bool $expandKeywords = false): array {
+    if (!is_array($map)) return [];
+    $out = [];
+    foreach ($map as $key => $val) {
+        if (!is_string($val) || $val === '') continue;
+        $short = strtolower(substr((string)$key, 0, 2));
+        if ($short === '') continue;
+        $out[$short] = $expandKeywords ? cacPrintKeywordCodes($val, $short) : $val;
+    }
+    return $out;
+}
+
+/**
+ * Adapt a CardV2 object from uniques-search-api (`POST /api/v2/search` or `GET /api/v2/card/{ref}`)
+ * to the legacy cards-API `card:read` shape expected by favorites-search, card-search.js, and
+ * deck-preview/unique-card.php.
+ */
+function cacAdaptV2Card(array $c): array {
+    $ref = (string)($c['reference'] ?? '');
+    $rarityRef = (string)($c['rarity']['reference'] ?? 'UNIQUE');
+    $cardTypeRef = (string)($c['cardType']['reference'] ?? 'CHARACTER');
+    $cardTypeName = !empty($c['cardType']['name'])
+        ? cacToShortLocaleMap($c['cardType']['name'])
+        : ($cardTypeRef === 'CHARACTER'
+            ? ['en' => 'Character', 'fr' => 'Personnage', 'de' => 'Charakter', 'es' => 'Personaje', 'it' => 'Personaggio']
+            : []);
+
+    $subTypes = [];
+    foreach (is_array($c['cardSubTypes'] ?? null) ? $c['cardSubTypes'] : [] as $st) {
+        if (!is_array($st)) continue;
+        $subTypes[] = [
+            'reference' => (string)($st['reference'] ?? ''),
+            'name'      => cacToShortLocaleMap($st['name'] ?? []),
+        ];
+    }
+
+    $artists = [];
+    if (!empty($c['artist']) && is_string($c['artist'])) {
+        $artists[] = ['name' => $c['artist']];
+    }
+
+    $legalFormats = is_array($c['legalFormats'] ?? null) ? array_values($c['legalFormats']) : [];
+
+    $out = [
+        'reference'                 => $ref,
+        'name'                      => cacToShortLocaleMap($c['name'] ?? []),
+        'faction'                   => is_array($c['faction'] ?? null) ? $c['faction'] : null,
+        'rarity'                    => ['reference' => $rarityRef, 'name' => (string)($c['rarity']['name'] ?? ucfirst(strtolower($rarityRef)))],
+        'cardType'                  => ['reference' => $cardTypeRef, 'name' => $cardTypeName],
+        'cardSubTypes'              => $subTypes,
+        'set'                       => is_array($c['set'] ?? null) ? $c['set'] : null,
+        'mainCost'                  => $c['mainCost'] ?? null,
+        'recallCost'                => $c['recallCost'] ?? null,
+        'forestPower'               => $c['forestPower'] ?? null,
+        'mountainPower'             => $c['mountainPower'] ?? null,
+        'oceanPower'                => $c['oceanPower'] ?? null,
+        'mainEffect'                => cacToShortLocaleMap($c['mainEffect'] ?? [], true),
+        'echoEffect'                => cacToShortLocaleMap($c['echoEffect'] ?? [], true),
+        'collectorNumberFormatedId' => (string)($c['collectorNumber'] ?? ''),
+        'artists'                   => $artists,
+        'isBanned'                  => !empty($c['isBanned']),
+        'isErrated'                 => !empty($c['isErrated']),
+        'isSuspended'               => !empty($c['isSuspended']),
+        'legalFormats'              => $legalFormats,
+    ];
+    if (!empty($legalFormats)) {
+        $out['gameplayFormat'] = array_map('strtoupper', $legalFormats);
+    }
+    return $out;
+}
+
 function deckApiToken(): ?string {
     if (!kcIsLoggedIn()) return null;
     $userId = (int)($_SESSION['user_id'] ?? 0);
@@ -178,17 +312,73 @@ function collApiRequest(string $apiUrl, string $method, string $path, int $userI
 }
 
 /**
- * Fetch several cards by reference in ONE public call (no auth) via POST /api/cards/batch.
- * Used to hydrate a page of favorites. Returns a flat array of card objects (card:read),
- * or [] on error/empty.
+ * Fetch several Unique and/or non-Unique cards by reference via POST UNIQUES_API_URL/api/v2/search
+ * in chunks of 200, adapted to the legacy card:read array shape. Returns [] when UNIQUES_API_URL
+ * is not configured or unreachable.
  *
- * @param string[] $refs    Card references (max 200 per the cards API)
+ * @param string[] $refs
+ */
+function cacUniquesApiBatch(array $refs): array {
+    if (!defined('UNIQUES_API_URL') || UNIQUES_API_URL === '') return [];
+    $url = rtrim(UNIQUES_API_URL, '/') . '/api/v2/search';
+    $out = [];
+    foreach (array_chunk($refs, 200) as $chunk) {
+        $parts = [];
+        foreach ($chunk as $r) {
+            $parts[] = 'ref[]=' . rawurlencode($r);
+        }
+        $parts[] = 'limit=' . count($chunk);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_HTTPHEADER     => [
+                'Accept: application/json',
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => implode('&', $parts),
+        ]);
+        $raw  = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_errno($ch);
+        curl_close($ch);
+
+        if ($err || $code < 200 || $code >= 300 || !$raw) return [];
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || !isset($decoded['cards']) || !is_array($decoded['cards'])) return [];
+        foreach ($decoded['cards'] as $card) {
+            if (is_array($card) && !empty($card['reference'])) {
+                $out[] = cacAdaptV2Card($card);
+            }
+        }
+    }
+    return $out;
+}
+
+/**
+ * Fetch several cards by reference in ONE public call (no auth).
+ * Uses UNIQUES_API_URL (POST /api/v2/search, hydrating both Uniques and non-Uniques) first,
+ * falling back to legacy POST CARDS_API_URL/api/cards/batch for any missing refs or when
+ * UNIQUES_API_URL is unset/unreachable.
+ *
+ * @param string[] $refs    Card references
  * @param string   $locale  'en'|'fr'
  */
 function cacCardsApiBatch(array $refs, string $locale = 'en'): array {
-    $refs = array_values(array_filter($refs, function($r) { return is_string($r) && $r !== ''; }));
+    $refs = array_values(array_unique(array_filter($refs, function($r) { return is_string($r) && $r !== ''; })));
     if (empty($refs)) return [];
-    if (!defined('CARDS_API_URL') || CARDS_API_URL === '') return [];
+
+    $found = cacUniquesApiBatch($refs);
+    $seen  = [];
+    foreach ($found as $card) {
+        if (!empty($card['reference'])) $seen[$card['reference']] = true;
+    }
+    $missing = array_values(array_filter($refs, function ($r) use ($seen) { return !isset($seen[$r]); }));
+    if (empty($missing)) return $found;
+
+    if (!defined('CARDS_API_URL') || CARDS_API_URL === '') return $found;
 
     $url = rtrim(CARDS_API_URL, '/') . '/api/cards/batch?locale=' . rawurlencode($locale);
     $ch  = curl_init($url);
@@ -198,19 +388,19 @@ function cacCardsApiBatch(array $refs, string $locale = 'en'): array {
         CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Content-Type: application/json'],
         CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
         CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['references' => $refs], JSON_UNESCAPED_UNICODE),
+        CURLOPT_POSTFIELDS     => json_encode(['references' => $missing], JSON_UNESCAPED_UNICODE),
     ]);
     $raw  = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err  = curl_errno($ch);
     curl_close($ch);
 
-    if ($err || $code >= 400 || !$raw) return [];
+    if ($err || $code >= 400 || !$raw) return $found;
     $decoded = json_decode($raw, true);
-    if (!is_array($decoded)) return [];
+    if (!is_array($decoded)) return $found;
     // The batch endpoint returns a flat array; tolerate an enveloped {member:[...]} too.
-    if (isset($decoded['member']) && is_array($decoded['member'])) return $decoded['member'];
-    return $decoded;
+    $legacy = (isset($decoded['member']) && is_array($decoded['member'])) ? $decoded['member'] : $decoded;
+    return array_merge($found, $legacy);
 }
 
 /**

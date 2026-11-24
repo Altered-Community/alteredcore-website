@@ -1,0 +1,528 @@
+{
+  "AEROLITH": {
+    "en": "Aerolith",
+    "fr": "Aérolithe",
+    "es": "Aerolito",
+    "de": "Aerolit",
+    "it": "Aerolite"
+  },
+  "AFTER_YOU": {
+    "en": "After You",
+    "fr": "Après vous",
+    "es": "Después de ti",
+    "de": "Nach dir",
+    "it": "Dopo di te"
+  },
+  "ANCHORED": {
+    "en": "Anchored",
+    "fr": "Ancré",
+    "es": "Anclaje",
+    "de": "Verankert",
+    "it": "Ancorato"
+  },
+  "ANCHORED_CHA_P": {
+    "en": "Anchored",
+    "fr": "Ancrés",
+    "es": "Anclaje",
+    "de": "Verankert",
+    "it": "Ancorato"
+  },
+  "ASCEND": {
+    "en": "Ascend",
+    "fr": "s'Élèvent",
+    "es": "Ascienden",
+    "de": "Aufsteigend",
+    "it": "Ascendono"
+  },
+  "ASCENDED_P": {
+    "en": "Ascended",
+    "fr": "Élevées",
+    "es": "Ascendidas",
+    "de": "Aufgestiegen",
+    "it": "Ascese"
+  },
+  "ASCENDED_S": {
+    "en": "Ascended",
+    "fr": "Élevée",
+    "es": "Ascendida",
+    "de": "Aufgestiegen",
+    "it": "Ascesa"
+  },
+  "ASCENDED_Z": {
+    "en": "Ascended",
+    "fr": "Élevées",
+    "es": "Ascendidas",
+    "de": "Aufgestiegenen",
+    "it": "Ascese"
+  },
+  "ASCENDS": {
+    "en": "Ascends",
+    "fr": "s'Élève",
+    "es": "Asciende",
+    "de": "Aufsteigend",
+    "it": "Ascende"
+  },
+  "ASCEND_INF": {
+    "en": "Ascend",
+    "fr": "s'Élever",
+    "es": "Ascender",
+    "de": "Aufzusteigen",
+    "it": "Ascendere"
+  },
+  "ASLEEP": {
+    "en": "Asleep",
+    "fr": "Endormi",
+    "es": "Sueño",
+    "de": "Schlafend",
+    "it": "Dormiente"
+  },
+  "AUGMENT": {
+    "en": "Augment",
+    "fr": "Amplifier",
+    "es": "Aumentar",
+    "de": "Erweitern",
+    "it": "Accrescere"
+  },
+  "AUGMENT_IMP": {
+    "en": "Augment",
+    "fr": "Amplifiez",
+    "es": "Aumenta",
+    "de": "Erweitere",
+    "it": "Accresci"
+  },
+  "BOODA": {
+    "en": "Booda 2/2/2",
+    "fr": "2/2/2 Booda",
+    "es": "Booda 2/2/2",
+    "de": "Booda 2/2/2",
+    "it": "Booda 2/2/2"
+  },
+  "BOOSTED": {
+    "en": "Boosted",
+    "fr": "Boosté",
+    "es": "potenciado",
+    "de": "Verstärkt",
+    "it": "Rinforzato"
+  },
+  "BOOSTED_CHA_P": {
+    "en": "Boosted",
+    "fr": "Boostés",
+    "es": "potenciados",
+    "de": "Verstärkt",
+    "it": "Rinforzato"
+  },
+  "BOOSTED_TKN_P": {
+    "en": "Boosted",
+    "fr": "Boostés",
+    "es": "potenciadas",
+    "de": "Verstärkt",
+    "it": "Rinforzato"
+  },
+  "BRASSBUG": {
+    "en": "Brassbug 2/2/2",
+    "fr": "2/2/2 Scarabot",
+    "es": "Bicholata 2/2/2",
+    "de": "Blechkäfer 2/2/2",
+    "it": "Ottonblatta 2/2/2"
+  },
+  "COMPLETED": {
+    "en": "Completed",
+    "fr": "Accomplie",
+    "es": "Completada",
+    "de": "Vollbracht",
+    "it": "Eseguita"
+  },
+  "COMPLETED_LOW": {
+    "en": "Completed",
+    "fr": "Accomplie",
+    "es": "completada",
+    "de": "Vollbracht",
+    "it": "eseguita"
+  },
+  "COOLDOWN": {
+    "en": "Cooldown",
+    "fr": "Rafraîchissement",
+    "es": "Recuperación",
+    "de": "Abkühlung",
+    "it": "Raffreddamento"
+  },
+  "DEFENDER": {
+    "en": "Defender",
+    "fr": "Défenseur",
+    "es": "Defensor",
+    "de": "Verteidiger",
+    "it": "Difensore"
+  },
+  "DEFENDER_CHA_P": {
+    "en": "Defender",
+    "fr": "Défenseurs",
+    "es": "Defensores",
+    "de": "Verteidiger",
+    "it": "Difensore"
+  },
+  "DEFENDER_FS": {
+    "en": "Defender",
+    "fr": "Défenseuse",
+    "es": "Defensora",
+    "de": "Verteidigerin",
+    "it": "Difensore"
+  },
+  "DRAGON_SHADE": {
+    "en": "Dragon Shade 5/5/5",
+    "fr": "5/5/5 Reflet Draconique",
+    "es": "Dragón del eco 5/5/5",
+    "de": "Drachenecho 5/5/5",
+    "it": "Spirito del Drago 5/5/5"
+  },
+  "DUE_TO_ASCENSION": {
+    "en": "due to Ascension",
+    "fr": "grâce à l'Élévation",
+    "es": "por ascender",
+    "de": "aufgrund von Aufsteigend",
+    "it": "per via dell'Ascesa"
+  },
+  "ECHO": {
+    "en": "Echo 1/1/1",
+    "es": "ECHO",
+    "de": "ECHO",
+    "it": "ECHO"
+  },
+  "ETERNAL": {
+    "en": "Eternal",
+    "fr": "Éternel",
+    "es": "Eterno",
+    "de": "Ewig",
+    "it": "Eterno"
+  },
+  "ETERNAL_FS": {
+    "en": "Eternal",
+    "fr": "Éternelle",
+    "es": "Eterna",
+    "de": "Ewig",
+    "it": "Eterno"
+  },
+  "EXHAUSTED_RESUPPLIES": {
+    "en": "Exhausted Resupplies",
+    "fr": "Ravitaille Épuisé",
+    "es": "reabastece y agota",
+    "de": "Erschöpfter Nachschub",
+    "it": "Rifornisce-Consuma"
+  },
+  "EXHAUSTED_RESUPPLY": {
+    "en": "Exhausted Resupply",
+    "fr": "Ravitaillez Épuisé",
+    "es": "Reabastece y agota",
+    "de": "Erschöpfter Nachschub",
+    "it": "Rifornisci-Consuma"
+  },
+  "EXHAUSTED_RESUPPLY_INF": {
+    "en": "Exhausted Resupply",
+    "fr": "Ravitailler Épuisé",
+    "es": "reabastecer y agotar",
+    "de": "Erschöpfter Nachschub",
+    "it": "Rifornire-Consumare"
+  },
+  "EXHAUSTED_RESUPPLY_LOW": {
+    "en": "Exhausted Resupply",
+    "fr": "Ravitaillez Épuisé",
+    "es": "reabastece y agota",
+    "de": "Erschöpfter Nachschub",
+    "it": "Rifornisci-Consuma"
+  },
+  "FLEETING": {
+    "en": "Fleeting",
+    "fr": "Fugace",
+    "es": "Fugacidad",
+    "de": "Vergänglich",
+    "it": "Fugace"
+  },
+  "FLEETING_CHAR": {
+    "en": "Fleeting",
+    "fr": "Fugace",
+    "es": "Fugacidad",
+    "de": "Vergänglich",
+    "it": "Fugace"
+  },
+  "FLEETING_CHA_P": {
+    "en": "Fleeting",
+    "fr": "Fugaces",
+    "es": "Fugacidad",
+    "de": "Vergängliche",
+    "it": "Fugaci"
+  },
+  "GIFT": {
+    "en": "Gift",
+    "fr": "Don",
+    "es": "Regalo",
+    "de": "Geschenk",
+    "it": "Regalo"
+  },
+  "GIGANTIC": {
+    "en": "Gigantic",
+    "fr": "Gigantesque",
+    "es": "Gigante",
+    "de": "Gigantisch",
+    "it": "Colossale"
+  },
+  "GIGANTIC_CHA_P": {
+    "en": "Gigantic",
+    "es": "Gigante",
+    "de": "Gigantisch",
+    "it": "Colossale"
+  },
+  "GIGANTIC_TKN_P": {
+    "en": "Gigantic",
+    "fr": "Gigantesques",
+    "es": "Gigante",
+    "de": "Gigantisch",
+    "it": "Colossale"
+  },
+  "HALUA": {
+    "en": "Halua 2/2/2",
+    "fr": "2/2/2 Halua",
+    "es": "Halua 2/2/2",
+    "de": "Halua 2/2/2",
+    "it": "Halua 2/2/2"
+  },
+  "IN_CONTACT": {
+    "en": "In Contact",
+    "fr": "En Contact",
+    "es": "En contacto",
+    "de": "in Kontakt",
+    "it": "In contatto"
+  },
+  "MANASEED": {
+    "en": "Manaseed",
+    "fr": "Graine de Mana",
+    "es": "Semilla de maná",
+    "de": "Manasaaten",
+    "it": "Seme di Mana"
+  },
+  "MANA_MOTH": {
+    "en": "Mana Moth 2/2/2",
+    "fr": "2/2/2 Phalène de Mana",
+    "es": "Polilla de maná 2/2/2",
+    "de": "Mana-Motte 2/2/2",
+    "it": "Falena di Mana 2/2/2"
+  },
+  "MAW": {
+    "en": "Maw 0/0/0",
+    "fr": "0/0/0 Maw",
+    "es": "Fauces 0/0/0",
+    "de": "Schlund 0/0/0",
+    "it": "Fauce 0/0/0"
+  },
+  "ORDIS_RECRUIT": {
+    "en": "Ordis Recruit 1/1/1",
+    "fr": "1/1/1 Recrue Ordis",
+    "es": "Recluta de Ordis 1/1/1",
+    "de": "Ordis-Rekrut 1/1/1",
+    "it": "Recluta Ordis 1/1/1"
+  },
+  "RESUPPLIES": {
+    "en": "Resupplies",
+    "fr": "Ravitaille",
+    "es": "reabastece",
+    "de": "Nachschub",
+    "it": "Rifornisce"
+  },
+  "RESUPPLY": {
+    "en": "Resupply",
+    "fr": "Ravitaillez",
+    "es": "Reabastece",
+    "de": "Nachschub",
+    "it": "Rifornisci"
+  },
+  "RESUPPLY_INF": {
+    "en": "Resupply",
+    "fr": "Ravitailler",
+    "es": "reabastecer",
+    "de": "Nachschub",
+    "it": "Rifornire"
+  },
+  "RESUPPLY_LOW": {
+    "en": "Resupply",
+    "fr": "Ravitaillez",
+    "es": "reabastece",
+    "de": "Nachschub",
+    "it": "Rifornisci"
+  },
+  "RESUPPLY_T": {
+    "en": "Resupply",
+    "fr": "Ravitaille",
+    "es": "reabastezca",
+    "de": "Nachschub",
+    "it": "Rifornisce"
+  },
+  "RESUPPLY_THEY_S": {
+    "en": "Resupply",
+    "fr": "Ravitaille",
+    "es": "reabastece",
+    "de": "Nachschub",
+    "it": "Rifornisce"
+  },
+  "RUSH": {
+    "en": "Rush",
+    "fr": "Foncer",
+    "es": "Presionar",
+    "de": "Forcieren",
+    "it": "Incalzare"
+  },
+  "RUST": {
+    "en": "Rust 0/0/0",
+    "fr": "0/0/0 Rust",
+    "es": "Ferros 0/0/0",
+    "de": "Rost 0/0/0",
+    "it": "Ruggine 0/0/0"
+  },
+  "SABOTAGE": {
+    "en": "Sabotage",
+    "fr": "Sabotez",
+    "es": "Sabotea",
+    "de": "Sabotage",
+    "it": "Sabota"
+  },
+  "SABOTAGE_INF": {
+    "en": "Sabotage",
+    "fr": "Saboter",
+    "es": "Sabotear",
+    "de": "Sabotage",
+    "it": "Sabotare"
+  },
+  "SABOTAGE_LOW": {
+    "en": "Sabotage",
+    "fr": "Sabotez",
+    "es": "sabotea",
+    "de": "Sabotage",
+    "it": "Sabota"
+  },
+  "SCOUT_1": {
+    "en": "Scout",
+    "fr": "Repérage",
+    "es": "Explorar",
+    "de": "Spähen",
+    "it": "Esploratore"
+  },
+  "SCOUT_2": {
+    "en": "Scout",
+    "fr": "Repérage",
+    "es": "Explorar",
+    "de": "Spähen",
+    "it": "Esploratore"
+  },
+  "SCOUT_3": {
+    "en": "Scout",
+    "fr": "Repérage",
+    "es": "Explorar",
+    "de": "Spähen",
+    "it": "Esploratore"
+  },
+  "SCOUT_4": {
+    "en": "Scout",
+    "fr": "Repérage",
+    "es": "Explorar",
+    "de": "Spähen",
+    "it": "Esploratore"
+  },
+  "SEASONED": {
+    "en": "Seasoned",
+    "fr": "Aguerri",
+    "es": "Avezado",
+    "de": "Erfahren",
+    "it": "Temprato"
+  },
+  "SEASONED_CHA_P": {
+    "en": "Seasoned",
+    "fr": "Aguerris",
+    "es": "Avezados",
+    "de": "Erfahren",
+    "it": "Temprato"
+  },
+  "SEASONED_ME_FS": {
+    "en": "Seasoned",
+    "fr": "Aguerrie",
+    "es": "Avezada",
+    "de": "Erfahren",
+    "it": "Temprato"
+  },
+  "SHIFT": {
+    "en": "Shift 1/1/1",
+    "es": "SHIFT",
+    "de": "SHIFT",
+    "it": "SHIFT"
+  },
+  "SIGNATURE_TOKEN": {
+    "en": "Signature token",
+    "es": "SIGNATURE_TOKEN",
+    "de": "SIGNATURE_TOKEN",
+    "it": "SIGNATURE_TOKEN"
+  },
+  "TEMPLE": {
+    "en": "Temple",
+    "es": "TEMPLE",
+    "de": "TEMPLE",
+    "it": "TEMPLE"
+  },
+  "TOOT": {
+    "en": "Toot 1/1/1",
+    "es": "TOOT",
+    "de": "TOOT",
+    "it": "TOOT"
+  },
+  "TOUGH_1": {
+    "en": "Tough 1",
+    "fr": "Coriace 1",
+    "es": "Resistencia 1",
+    "de": "Robust 1",
+    "it": "Tenace 1"
+  },
+  "TOUGH_2": {
+    "en": "Tough 2",
+    "fr": "Coriace 2",
+    "es": "Resistencia 2",
+    "de": "Robust 2",
+    "it": "Tenace 2"
+  },
+  "TOUGH_CHA_P_1": {
+    "en": "Tough 1",
+    "fr": "Coriaces 1",
+    "es": "Resistencia 1",
+    "de": "Robust 1",
+    "it": "Tenace 1"
+  },
+  "TOUGH_CHA_P_2": {
+    "en": "Tough 2",
+    "fr": "Coriaces 2",
+    "es": "Resistencia 2",
+    "de": "Robust 2",
+    "it": "Tenace 2"
+  },
+  "TOUGH_CHA_P_5": {
+    "en": "Tough 5",
+    "fr": "Coriaces 5",
+    "es": "Resistencia 5",
+    "de": "Robust 5",
+    "it": "Tenace 5"
+  },
+  "TOUGH_FS_X": {
+    "en": "Tough X",
+    "fr": "Coriace X",
+    "es": "Resistencia X",
+    "de": "Robust X",
+    "it": "Tenace X"
+  },
+  "TOUGH_X": {
+    "en": "Tough X",
+    "fr": "Coriace X",
+    "es": "Resistencia X",
+    "de": "Robust X",
+    "it": "Tenace X"
+  },
+  "WOOLLYBACK": {
+    "en": "Woollyback 1/1/1",
+    "fr": "Dotouffu 1/1/1",
+    "es": "Lanudo 1/1/1",
+    "de": "Wollrücken 1/1/1",
+    "it": "Lanuvola 1/1/1"
+  }
+}
