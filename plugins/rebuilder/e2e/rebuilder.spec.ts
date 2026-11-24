@@ -612,7 +612,7 @@ test.describe('ReBuilder in the shell · Unified search & effects', () => {
     const columns = () => page.locator('ac-virtual-grid.grid').evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     const all = await columns();
-    await page.getByRole('button', { name: 'Unique', exact: true }).click();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     expect(all).toBeGreaterThan(7);
     await expect.poll(columns).toBe(7);
@@ -627,7 +627,7 @@ test.describe('ReBuilder in the shell · Unified search & effects', () => {
     page.on('request', (r) => {
       if (r.url().includes('/api/v2/search')) searches.push(new URL(r.url()));
     });
-    await page.getByRole('button', { name: 'Unique', exact: true }).click();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
 
     /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
@@ -687,7 +687,7 @@ test.describe('ReBuilder in the shell · Unified search & effects', () => {
     await createDeck(page, `E2E uniques narrowing ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
-    await page.getByRole('button', { name: 'Unique', exact: true }).click();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
 
     const narrowing = (editing: string) =>
