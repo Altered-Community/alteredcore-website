@@ -1,4 +1,5 @@
 import { convertToParamMap, type Params } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { defaultFilters } from './card-filters';
 import { SUBTYPES } from './card-vocabulary';
 import { filtersFromParams, filtersToParams, sourceFromParams } from './search-url';
@@ -63,6 +64,19 @@ describe('card browser URL', () => {
       order: 'setDate-desc',
     });
     expect(f.sets).toContain('COREKS');
+  });
+
+  it('accepts custom Frontier season format ids from ?format= URLs', () => {
+    const map = convertToParamMap({ format: 'frontier' });
+    expect(filtersFromParams(defaultFilters('all'), (k) => map.getAll(k), (k) => map.get(k)).environment).toBe('frontier');
+    const saved = environment.uniquesFrontierFormat;
+    environment.uniquesFrontierFormat = 'frontier_s04';
+    try {
+      const seasonMap = convertToParamMap({ format: 'frontier_s04' });
+      expect(filtersFromParams(defaultFilters('all'), (k) => seasonMap.getAll(k), (k) => seasonMap.get(k)).environment).toBe('frontier');
+    } finally {
+      environment.uniquesFrontierFormat = saved;
+    }
   });
 
   it('prefers ?source= and falls back to « Toutes les cartes »', () => {

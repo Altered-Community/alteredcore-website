@@ -187,7 +187,7 @@ export class CardSearch {
       if (!this.ready()) return;
       untracked(() => {
         if (!this.search.configured() || source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
-          this.search.configure(source, faction, format, this.browse() ? this.urlFilters(source) : undefined);
+          this.search.configure(source, faction, format, this.browse() ? this.urlFilters(source, format) : undefined);
           this.draft.set(this.search.filters());
         }
       });
@@ -204,7 +204,7 @@ export class CardSearch {
       const source = this.search.source();
       if (!this.browse() || !this.search.configured()) return;
       untracked(() => {
-        const params = filtersToParams(filters, defaultFilters(source));
+        const params = filtersToParams(filters, defaultFilters(source, this.search.format()));
         const next = this.router.createUrlTree([], { relativeTo: this.route, queryParams: params, queryParamsHandling: 'merge' });
         if (this.router.serializeUrl(next) === this.router.url) return;
         void this.router.navigateByUrl(next, { replaceUrl: true });
@@ -281,9 +281,9 @@ export class CardSearch {
   }
 
   /** The card browser's URL filters over the tab's defaults. */
-  private urlFilters(source: CardSource): SearchFilters {
+  private urlFilters(source: CardSource, format: DeckFormat | null): SearchFilters {
     const q = this.route.snapshot.queryParamMap;
-    return filtersFromParams(defaultFilters(source), (k) => q.getAll(k), (k) => q.get(k));
+    return filtersFromParams(defaultFilters(source, format), (k) => q.getAll(k), (k) => q.get(k));
   }
 
   protected onDraft(next: SearchFilters): void {

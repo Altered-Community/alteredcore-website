@@ -34,7 +34,7 @@
 <ng-container *ngTemplateOutlet="factionRow" />
 <ng-container *ngTemplateOutlet="setTiles" />
 <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity" [headless]="true">
-  <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
+  <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="setRarities($event)" />
 </ac-filter-section>
 
 @if (legalFilter() && format()) {

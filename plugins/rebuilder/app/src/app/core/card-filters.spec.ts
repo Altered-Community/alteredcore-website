@@ -8,6 +8,7 @@ import {
   ALL_CARDS_SETS,
   ORDER_OPTIONS,
   activeFilterCount,
+  defaultEnvironment,
   defaultFilters,
   effectAt,
   emptySupport,
@@ -20,6 +21,7 @@ import {
   setsFor,
   toSearchParams,
   withEditedEffect,
+  withRarities,
 } from './card-filters';
 
 describe('parseCostExpression', () => {
@@ -227,10 +229,21 @@ describe('filter chips', () => {
     expect(filterChips(f, 'all').some((c) => c.label === 'Coût main : 3')).toBe(true);
   });
 
-  it('exposes all sets cleanly on the unified tab', () => {
+  it('exposes all sets cleanly on the unified tab and auto-includes COREKS when turning UNIQUE on', () => {
     expect(setsFor().map((s) => s.reference)).toEqual(ALL_CARDS_SETS);
-    expect(defaultFilters('all').sets).not.toContain('FUGUE');
-    expect(defaultFilters('all').sets).not.toContain('COREKS');
+    const base = defaultFilters('all');
+    expect(base.sets).not.toContain('FUGUE');
+    expect(base.sets).not.toContain('COREKS');
+    expect(defaultEnvironment('all', 'frontier')).toBe('frontier');
+    expect(defaultFilters('all', 'frontier').environment).toBe('frontier');
+    expect(defaultFilters('all', 'standard').environment).toBe('all');
+
+    const withU = withRarities(base, [...base.rarities, 'UNIQUE']);
+    expect(withU.rarities).toContain('UNIQUE');
+    expect(withU.sets).toContain('COREKS');
+    // Unchecking COREKS afterwards keeps it unchecked when toggling other rarities
+    const withoutKs = { ...withU, sets: withU.sets.filter((s) => s !== 'COREKS') };
+    expect(withRarities(withoutKs, ['UNIQUE']).sets).not.toContain('COREKS');
   });
 });
 

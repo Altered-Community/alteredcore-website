@@ -4,7 +4,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { subtypeFacetParams } from '../../../core/subtype-facets';
-import { SUPPORT_TITLE, ZERO_POWER_LABEL, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, setsFor, supportsArtists, supportsTextSearch, supportsZeroPower, typeOptionsFor, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
+import { SUPPORT_TITLE, ZERO_POWER_LABEL, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, setsFor, supportsArtists, supportsTextSearch, supportsZeroPower, typeOptionsFor, withRarities, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService } from '../../../core/uniques-api.service';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
@@ -167,6 +167,10 @@ export class FiltersPanel {
 
   set(partial: Partial<SearchFilters>): void {
     this.value.set({ ...this.value(), ...partial });
+  }
+
+  setRarities(rarities: string[]): void {
+    this.value.set(withRarities(this.value(), rarities));
   }
 
   toggleSet(ref: string, on: boolean): void {

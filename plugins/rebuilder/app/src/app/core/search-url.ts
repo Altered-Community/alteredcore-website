@@ -1,4 +1,5 @@
 import type { Params } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { ORDER_OPTIONS, typeOptionOf, type AltArtsMode, type CardSource, type SearchFilters } from './card-filters';
 import type { CardOrder } from './models';
 
@@ -94,7 +95,8 @@ export function filtersFromParams(base: SearchFilters, getAll: (key: string) => 
   if (prints === 'with' || prints === 'only') f.altArts = prints;
   else f.altArts = legacyPrints(getAll('variation[]'), get('promo')) ?? f.altArts;
   const env = get('env') ?? get('format');
-  if (env === 'all' || env === 'frontier') f.environment = env;
+  if (env === 'all') f.environment = 'all';
+  else if (env === 'frontier' || (env && env === environment.uniquesFrontierFormat)) f.environment = 'frontier';
   const sort = get('sort');
   if (sort && ORDER_OPTIONS.some((o) => o.value === sort)) f.order = sort as CardOrder;
   return f;

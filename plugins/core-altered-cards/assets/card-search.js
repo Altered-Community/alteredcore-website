@@ -1738,118 +1738,6 @@ function CardSearch(cfg) {
         return item;
     }
 
-    // "Load more" footer for the Uniques tab (replaces numbered renderPagination()
-    // for this tab — the API is cursor-based, no arbitrary page jump).
-    function renderLoadMore(hasMore) {
-        if (!elPagin) return;
-        elPagin.innerHTML = '';
-        if (!hasMore) { elPagin.style.setProperty('display', 'none', 'important'); return; }
-        elPagin.style.removeProperty('display');
-        var btn = document.createElement('button');
-        btn.className = 'btn btn-outline-secondary btn-sm';
-        btn.textContent = txt.load_more || (UI_LANG === 'fr' ? 'Charger plus' : 'Load more');
-        btn.onclick = function() { searchUnique(true, true); };
-        elPagin.appendChild(btn);
-    }
-
-    // Uniques tab search (rust-cards-api). append=false: fresh search, clears the
-    // grid. append=true: "load more" click, appends to the grid using _uniqueCursor.
-    function searchUnique(append, skipPushState) {
-        if (_abortCtrl) { _abortCtrl.abort(); }
-        _abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-
-        if (!append) {
-            if (elInitial)   elInitial.style.display   = 'none';
-            if (elEmpty)     elEmpty.style.display     = 'none';
-            if (elError)     elError.style.display     = 'none';
-            if (elAuthError) elAuthError.style.display = 'none';
-            if (elGrid)      elGrid.style.display      = 'none';
-            if (elPagin)   elPagin.style.setProperty('display', 'none', 'important');
-            if (cfg.closeFiltersOnSearch) hideFilterModal();
-        }
-        if (elLoading) elLoading.style.display = 'block';
-        if (cfg.onSearchStart) cfg.onSearchStart();
-
-        if (!append && MODE === 'cards' && cfg.pushState && !skipPushState) {
-            history.pushState({ page: 1 }, '', buildPageUrl(1));
-        }
-
-        var opts = _abortCtrl ? { signal: _abortCtrl.signal } : {};
-
-        // Reference lookup: an exact ALT_... reference bypasses the name filter
-        // (which only matches character names, not references) and every other
-        // filter, same as buildApiUrl()'s old-API reference bypass above.
-        var refMatch = !append && filters.q && /^ALT_[A-Z0-9_]+$/i.test(filters.q);
-        var url, resp;
-        if (refMatch) {
-            url  = UNIQUES_API_BASE + '/api/v2/card/' + encodeURIComponent(filters.q.toUpperCase());
-            resp = fetch(url, opts).then(function(r) {
-                if (r.status === 404 || r.status === 400) return { iter: { total: 0 }, cards: [] };
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json().then(function(card) { return { iter: { total: 1 }, cards: [card] }; });
-            });
-        } else {
-            url  = buildUniquesApiUrl(append ? _uniqueCursor : null);
-            resp = fetch(url, opts).then(function(r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-            });
-        }
-
-        if (DEBUG) console.log('[CardSearch] Uniques API call:', url);
-        resp
-            .then(function(data) {
-                if (DEBUG) console.log('[CardSearch] Uniques API response:', data);
-                if (elLoading) elLoading.style.display = 'none';
-                _abortCtrl = null;
-
-                var cards = data.cards || [];
-                var total = (data.iter && data.iter.total) || 0;
-                _uniqueCursor = data.iter && data.iter.cursor;
-
-                if (!append && !cards.length) {
-                    if (elEmpty) elEmpty.style.display = 'block';
-                    if (elCount) elCount.textContent = '';
-                    if (cfg.onEmpty) cfg.onEmpty();
-                    renderLoadMore(false);
-                    return;
-                }
-
-                if (elGrid) {
-                    if (!append) {
-                        if (_cardVisObserver) _cardVisObserver.disconnect();
-                        elGrid.innerHTML = '';
-                    }
-                    cards.forEach(function(c) {
-                        var norm = normalizeCard(c);
-                        var el = (MODE === 'deck' && cfg.renderDeckCard)
-                            ? cfg.renderDeckCard(norm)
-                            : renderCard(norm);
-                        if (el) elGrid.appendChild(el);
-                    });
-                    elGrid.style.display = '';
-                }
-
-                renderLoadMore(_uniqueCursor != null);
-
-                if (elCount) {
-                    elCount.textContent = cfg.formatCount
-                        ? cfg.formatCount(total)
-                        : (txt.showing ? String(txt.showing).replace('%d', total) : total);
-                }
-
-                if (cfg.onCardsRendered) cfg.onCardsRendered(cards);
-            })
-            .catch(function(err) {
-                if (err && err.name === 'AbortError') return;
-                if (elLoading) elLoading.style.display = 'none';
-                if (err && err.isAuth && elAuthError) elAuthError.style.display = 'block';
-                else if (elError) elError.style.display = 'block';
-                if (cfg.onError) cfg.onError(err);
-                _abortCtrl = null;
-            });
-    }
-
     function _firstInvalidNumInput() {
         if (_scopeFavoris) return null;
         for (var i = 0; i < NUM_FIELDS.length; i++) {
@@ -2587,6 +2475,20 @@ function CardSearch(cfg) {
             var idx = arr.indexOf(val);
             if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
             else          { arr.push(val);       btn.classList.add('active'); }
+            // When the user enables UNIQUE rarity on the unified tab, include Kickstarter
+            // Uniques (cfg.uniqueExtraSets, e.g. COREKS) if CORE is active and COREKS wasn't included.
+            if (key === 'rarity' && val === 'UNIQUE' && idx < 0 && _tab === 'all') {
+                var _uExtra = cfg.uniqueExtraSets || [];
+                var _activeSets = _setsDirty ? filters.sets : DEFAULT_SETS;
+                if (_uExtra.length && _activeSets.indexOf('CORE') >= 0) {
+                    if (!_setsDirty) { _setsDirty = true; filters.sets = DEFAULT_SETS.slice(); }
+                    _uExtra.forEach(function(s) {
+                        if (filters.sets.indexOf(s) < 0) filters.sets.push(s);
+                    });
+                    syncSetButtons();
+                    if (tsInst.set) tsInst.set.setValue(filters.sets, true);
+                }
+            }
             // Promo linking: toggling a MAIN set recomputes its promo children
             // (only while "show promo" is active), discarding manual promo picks.
             if (key === 'sets' && filters.showPromo && (cfg.subSets || []).indexOf(val) < 0) {

@@ -105,14 +105,25 @@ describe('CardSearchStore (infinite scroll)', () => {
     expect(store.cards().length).toBe(PAGE_SIZE.all);
   });
 
-  it('forwards effects, support, and format directly through unified /api/v2/search', async () => {
+  it('defaults to Frontier environment for Frontier decks, syncs on format switch, and forwards effects/format', async () => {
     store.configure('all', 'AX', 'frontier');
-    store.patch({ environment: 'frontier', rarities: ['COMMON', 'UNIQUE'] });
-    const reqs = pending();
-    const lastReq = reqs.at(-1)!;
-    expect(lastReq.request.params.get('format')).toBe('frontier');
-    expect(lastReq.request.params.getAll('rarity[]')).toEqual(['COMMON', 'UNIQUE']);
-    await answer(lastReq, 1, 1);
+    expect(store.filters().environment).toBe('frontier');
+    const firstReq = pending()[0];
+    expect(firstReq.request.params.get('format')).toBe('frontier');
+    await answer(firstReq, 1, 1);
+
+    // Switching the deck to Standard drops Frontier while keeping other filters
+    store.patch({ q: 'kelon', rarities: ['COMMON', 'UNIQUE'] });
+    const patchedReq = pending().at(-1)!;
+    expect(patchedReq.request.params.get('format')).toBe('frontier');
+    expect(patchedReq.request.params.getAll('rarity[]')).toEqual(['COMMON', 'UNIQUE']);
+    await answer(patchedReq, 1, 1);
+
+    store.configure('all', 'AX', 'standard');
+    expect(store.filters()).toMatchObject({ environment: 'all', q: 'kelon' });
+    const stdReq = pending().at(-1)!;
+    expect(stdReq.request.params.has('format')).toBe(false);
+    await answer(stdReq, 1, 1);
     expect(store.total()).toBe(PAGE_SIZE.all);
   });
 

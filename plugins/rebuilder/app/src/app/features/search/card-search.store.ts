@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { map, type Observable } from 'rxjs';
 import { CardsApiService } from '../../core/cards-api.service';
 import {
+  defaultEnvironment,
   defaultFilters,
   filterChips,
   isAccountSource,
@@ -186,11 +187,14 @@ export class CardSearchStore {
   /** `initial`: the filters to start from (the card browser's URL) in place of the tab's defaults. */
   configure(source: CardSource, faction: string | null, format: DeckFormat | null = null, initial?: SearchFilters): void {
     const changedSource = source !== this.source();
+    const changedFormat = format !== this.format();
     this.source.set(source);
     this.faction.set(faction);
     this.format.set(format);
     if (initial) this.filters.set(initial);
-    else if (changedSource) this.filters.set(defaultFilters(source));
+    else if (changedSource) this.filters.set(defaultFilters(source, format));
+    // The deck's format changed on the unified search tab: Frontier on or off, other filters kept.
+    else if (changedFormat && source === 'all') this.filters.update((f) => ({ ...f, environment: defaultEnvironment(source, format) }));
     this.configured.set(true);
     this.restart();
   }
@@ -209,12 +213,12 @@ export class CardSearchStore {
   }
 
   clearAll(): void {
-    const empty = { ...defaultFilters(this.source()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
+    const empty = { ...defaultFilters(this.source(), this.format()), sets: [], rarities: [], types: [], q: '', order: this.filters().order };
     this.apply(empty);
   }
 
   reset(): void {
-    this.apply(defaultFilters(this.source()));
+    this.apply(defaultFilters(this.source(), this.format()));
   }
 
   /** Sentinel visibility from the view. */

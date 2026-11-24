@@ -1,5 +1,5 @@
 import type { CardOrder, CardSearchParams, DeckFormat } from './models';
-import type { EffectSlot, UniquesQuery } from './uniques-api.service';
+import type { EffectSlot } from './uniques-api.service';
 import type { RichPart } from './card-text';
 import { environment } from '../../environments/environment';
 import { assetUrl } from './asset-url';
@@ -196,7 +196,15 @@ export const ORDER_OPTIONS: { value: CardOrder; label: string }[] = [
   { value: 'random', label: $localize`:@@search.filters.order.random:Aléatoire` },
 ];
 
-export function defaultFilters(source: CardSource): SearchFilters {
+/**
+ * In a Frontier deck, the unified search defaults to the current Frontier environment;
+ * `null` format (card browser, no deck open) or any other format: all formats.
+ */
+export function defaultEnvironment(source: CardSource, format: DeckFormat | null = null): SearchFilters['environment'] {
+  return source === 'all' && format === 'frontier' ? 'frontier' : 'all';
+}
+
+export function defaultFilters(source: CardSource, format: DeckFormat | null = null): SearchFilters {
   return {
     q: '',
     text: '',
@@ -207,7 +215,7 @@ export function defaultFilters(source: CardSource): SearchFilters {
     rarities: (source === 'all' ? RARITY_OPTIONS : RARITY_OPTIONS_WITH_UNIQUE).map((r) => r.value),
     types: typeOptionsFor(false).map((t) => t.value),
     factions: [],
-    environment: 'all',
+    environment: defaultEnvironment(source, format),
     effects: [],
     support: emptySupport(),
     order: 'setDate-desc',
@@ -223,6 +231,18 @@ export function defaultFilters(source: CardSource): SearchFilters {
     otherFactions: [],
     legalOnly: true,
   };
+}
+
+/**
+ * Update selected rarities; when `UNIQUE` is newly turned on while `CORE` is active and `COREKS`
+ * is off, automatically add `COREKS` so Kickstarter Uniques are included without an extra click.
+ */
+export function withRarities(filters: SearchFilters, rarities: string[]): SearchFilters {
+  const turningOnUnique = !filters.rarities.includes('UNIQUE') && rarities.includes('UNIQUE');
+  if (turningOnUnique && filters.sets.includes('CORE') && !filters.sets.includes('COREKS')) {
+    return { ...filters, rarities, sets: [...filters.sets, 'COREKS'] };
+  }
+  return { ...filters, rarities };
 }
 
 /** Promo editions of the chosen main sets (« Alt arts » turned on, as on the site). */
@@ -304,37 +324,8 @@ function uniquesStatValues(expr: string): number[] {
   return vals;
 }
 
-/**
- * Uniques tab (Uniques search API). Effect blocks read « Quand … ou … / Si … / Alors … ou … »:
- * values inside a criterion are OR-ed, blocks are AND-ed, as the API matches them. An exact
- * reference (`ALT_…`) looks up that card only.
- */
 function resolvedFactions(filters: SearchFilters, faction: string | null): string[] {
   return faction ? (filters.otherFactions.length ? filters.otherFactions : [faction]) : filters.factions;
-}
-
-export function toUniquesQuery(filters: SearchFilters, faction: string | null): UniquesQuery {
-  const q = filters.q.trim();
-  const reference = /^ALT_[A-Z0-9_]+$/i.test(q) ? q.toUpperCase() : undefined;
-  return {
-    name: reference ? undefined : q || undefined,
-    reference,
-    factions: resolvedFactions(filters, faction),
-    sets: filters.sets,
-    subtypes: filters.subtypes,
-    noEffect: filters.noEffect || undefined,
-    hasZeroPower: filters.zeroPower || undefined,
-    mainCosts: uniquesStatValues(filters.mainCost),
-    recallCosts: uniquesStatValues(filters.recallCost),
-    forestPowers: uniquesStatValues(filters.forestPower),
-    mountainPowers: uniquesStatValues(filters.mountainPower),
-    oceanPowers: uniquesStatValues(filters.oceanPower),
-    // The UI value stays 'frontier'; the id sent is the site's current Frontier season.
-    format: filters.environment === 'frontier' ? environment.uniquesFrontierFormat : undefined,
-    order: filters.order !== 'random' ? filters.order : undefined,
-    effects: filters.effects.map(effectIds),
-    support: effectIds(filters.support),
-  };
 }
 
 function effectIds(b: EffectBlock): { triggers: number[]; conditions: number[]; effects: number[] } {
