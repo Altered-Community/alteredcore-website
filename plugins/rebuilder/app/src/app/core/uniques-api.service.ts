@@ -163,7 +163,7 @@ export class UniquesApiService {
    * page. Pages already fetched this session are replayed; errors are not kept.
    */
   search(query: UniquesQuery, cursor: number | null, limit: number): Observable<UniquesPage> {
-    if (query.reference) return cursor === null ? this.byReference(query.reference) : of({ member: [], totalItems: 0, next: null });
+    if (query.reference) return cursor === null ? this.byReference(query.reference, query.format) : of({ member: [], totalItems: 0, next: null });
     const params = buildUniquesParams(query, cursor, limit);
     const key = params.toString();
     const hit = this.searchCache.get(key);
@@ -368,7 +368,15 @@ export class UniquesApiService {
     ).pipe(map((pages) => pages.flat()));
   }
 
-  private byReference(reference: string): Observable<UniquesPage> {
+  /**
+   * An exact reference. With a `format` (Frontier), through `/api/v2/cards?ref=&format=`: `/api/v2/card/{ref}` has no
+   * `format`, it would show a Unique off the season's list.
+   */
+  private byReference(reference: string, format?: string): Observable<UniquesPage> {
+    if (format) {
+      const params = new HttpParams().set('ref', reference.toUpperCase()).set('format', format);
+      return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(map((res) => ({ ...toPage(res), next: null })));
+    }
     return this.http.get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.toUpperCase())}`).pipe(
       map((card): UniquesPage => ({ member: [toCard(card)], totalItems: 1, next: null })),
       catchError((err: unknown) =>

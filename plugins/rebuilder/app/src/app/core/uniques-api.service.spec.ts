@@ -184,6 +184,19 @@ describe('UniquesApiService', () => {
     expect(await missing).toEqual({ member: [], totalItems: 0, next: null });
   });
 
+  it('looks an exact reference up in the format (Frontier) list: a Unique off the list is no result', async () => {
+    const off = lastValueFrom(api.search({ ...QUERY, reference: 'ALT_EOLE_B_AX_122_U_5274', format: 'frontier_s05' }, null, 36));
+    const req = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
+    expect(req.request.params.get('ref')).toBe('ALT_EOLE_B_AX_122_U_5274');
+    expect(req.request.params.get('format')).toBe('frontier_s05');
+    req.flush({ iter: { total: 0 }, cards: [] });
+    expect(await off).toEqual({ member: [], totalItems: 0, next: null });
+
+    const on = lastValueFrom(api.search({ ...QUERY, reference: KELON.reference, format: 'frontier_s05' }, null, 36));
+    http.expectOne((r) => r.url.endsWith('/api/v2/cards')).flush({ iter: { total: 1 }, cards: [KELON] });
+    expect((await on).member.map((c) => c.reference)).toEqual([KELON.reference]);
+  });
+
   it('maps single-field sort to `sort=` and omits random', async () => {
     const sorted = lastValueFrom(api.search({ ...QUERY, order: 'mainCost-desc' }, null, 36));
     const req = http.expectOne((r) => r.url.endsWith('/api/v2/cards'));
