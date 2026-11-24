@@ -69,7 +69,13 @@ ul {
   background: var(--ac-color-inverse);
   color: var(--ac-color-on-inverse);
 }
+.scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+}
 .defaults-note {
+  margin: 0;
   font: var(--ac-font-small);
   color: var(--ac-color-text-muted);
 }

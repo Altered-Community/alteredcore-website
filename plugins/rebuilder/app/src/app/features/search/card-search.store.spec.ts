@@ -1,3 +1,4 @@
+import { flushFormats } from '../../core/formats.testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -36,6 +37,7 @@ describe('CardSearchStore (infinite scroll)', () => {
     TestBed.configureTestingModule({ providers: [CardSearchStore, provideHttpClient(), provideHttpClientTesting()] });
     store = TestBed.inject(CardSearchStore);
     http = TestBed.inject(HttpTestingController);
+    flushFormats(http);
   });
 
   afterEach(() => http.verify());

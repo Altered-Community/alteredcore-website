@@ -80,6 +80,7 @@
 .rbph-builders p { flex: 1; margin: 0; display: flex; align-items: center; gap: var(--ac-space-2); }
 .rbph-builders p > svg { --ac-icon-size: 16px; flex-shrink: 0; color: var(--ac-color-primary); }
 .rbph-decks__filters { display: flex; align-items: center; gap: var(--ac-space-2); height: 40px; margin: 16px 0 12px; }
+.rbph-decks__filters--community { gap: var(--ac-space-5); margin: 0 0 12px; }
 .rbph-decks__factions { display: flex; align-items: center; gap: var(--ac-space-2); height: 32px; margin-bottom: 20px; }
 .rbph-decks__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--ac-space-4); }
 .rbph-decks__grid > .ac-skeleton { height: 227px; }

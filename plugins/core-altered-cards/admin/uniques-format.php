@@ -23,6 +23,10 @@ $txt = [
         'text_help'        => 'Letters, digits, ".", "_" and "-" only (32 characters max).',
         'btn_save'         => 'Save',
         'flash_saved'      => 'Frontier format id set to "%s".',
+        'flash_deckapi_ok' => 'Deck API: Frontier season %s is now current, Frontier decks are being revalidated.',
+        'flash_deckapi_ko' => 'Deck API not updated (%s): deck validity still follows the previous season.',
+        'deckapi_help'     => 'Saving also sets the Deck API\'s current Frontier season and revalidates every Frontier deck.',
+        'deckapi_off'      => 'The Deck API is not notified (DECKS_API_MAINTENANCE_KEY is not configured): deck validity does not follow this setting.',
         'err_token'        => 'Invalid form token.',
         'err_perm'         => 'You do not have permission to edit this setting.',
         'err_invalid'      => 'Invalid format id — use letters, digits, ".", "_" or "-" (32 characters max).',
@@ -41,6 +45,10 @@ $txt = [
         'text_help'        => 'Lettres, chiffres, « . », « _ » et « - » uniquement (32 caractères max).',
         'btn_save'         => 'Enregistrer',
         'flash_saved'      => 'Identifiant du format Frontier défini sur « %s ».',
+        'flash_deckapi_ok' => 'API des decks : la saison Frontier %s est maintenant la saison courante, les decks Frontier sont en cours de revalidation.',
+        'flash_deckapi_ko' => 'API des decks non mise à jour (%s) : la validité des decks suit toujours la saison précédente.',
+        'deckapi_help'     => 'Enregistrer change aussi la saison Frontier courante de l\'API des decks et revalide tous les decks Frontier.',
+        'deckapi_off'      => 'L\'API des decks n\'est pas prévenue (DECKS_API_MAINTENANCE_KEY n\'est pas configurée) : la validité des decks ne suit pas ce réglage.',
         'err_token'        => 'Jeton de formulaire invalide.',
         'err_perm'         => 'Vous n\'avez pas la permission de modifier ce paramètre.',
         'err_invalid'      => 'Identifiant invalide — lettres, chiffres, « . », « _ » ou « - » uniquement (32 caractères max).',
@@ -63,7 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = $txt['err_invalid'];
         } else {
             saveSetting($settingKey, $value);
-            flash(sprintf($txt['flash_saved'], $value));
+            $message = sprintf($txt['flash_saved'], $value);
+            $type    = 'success';
+            $deckApi = cacNotifyDeckApiFrontierFormat($value);
+            if ($deckApi !== null && $deckApi['ok']) {
+                $message .= ' ' . sprintf($txt['flash_deckapi_ok'], (string) ($deckApi['season'] ?? $value));
+            } elseif ($deckApi !== null) {
+                $message .= ' ' . sprintf($txt['flash_deckapi_ko'], $deckApi['error']);
+                $type     = 'warning';
+            }
+            flash($message, $type);
             redirect($selfUrl);
         }
     }
@@ -89,6 +106,11 @@ $inManifest  = $manifest !== null && in_array($current, array_column($manifest, 
 <div class="ac-card mb-4" style="max-width:560px">
     <h5 class="mb-2"><?= ac_icon('settings', 'me-2') ?><?= h($txt['section']) ?></h5>
     <p class="text-muted small"><?= h($txt['help']) ?></p>
+    <?php if (defined('DECKS_API_MAINTENANCE_KEY') && DECKS_API_MAINTENANCE_KEY !== ''): ?>
+    <p class="text-muted small"><?= h($txt['deckapi_help']) ?></p>
+    <?php else: ?>
+    <div class="alert alert-warning small"><?= h($txt['deckapi_off']) ?></div>
+    <?php endif; ?>
 
     <p class="mb-3">
         <span class="fw-semibold"><?= h($txt['current']) ?></span>

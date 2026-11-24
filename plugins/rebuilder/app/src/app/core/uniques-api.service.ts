@@ -3,6 +3,7 @@ import { Service, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
+import { type CardSuggestion, looksLikeReference, toSuggestions } from './card-suggestions';
 import { ICONS, richText } from './card-text';
 import { contentLocale } from './locale';
 import type { Card, CardCollection, CardOrder, CardSearchParams, HeroGroup, Locale, Localized } from './models';
@@ -265,6 +266,45 @@ export class UniquesApiService {
     return this.http
       .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
       .pipe(map((res) => new Set(res.idGds ?? [])));
+  }
+
+  /**
+   * Suggestions of the community tab's card filter (`GET /api/v2/search`): a full reference is looked up exactly first
+   * (`ref[]`, a Unique included); otherwise, or when no card has it, a name search on the non-Unique booster prints
+   * (`name`, every locale). One suggestion per gameplay card, see `toSuggestions`.
+   */
+  suggestCards(query: string, locale: Locale, limit = 12): Observable<CardSuggestion[]> {
+    const q = query.trim();
+    if (!q || !this.baseUrl) return of([]);
+    const url = `${this.baseUrl}/api/v2/search`;
+    const byName = () =>
+      this.http
+        .get<SearchResponse>(url, {
+          params: new HttpParams()
+            .set('name', q)
+            .append('rarity[]', 'COMMON')
+            .append('rarity[]', 'RARE')
+            .append('rarity[]', 'EXALTED')
+            .append('variation[]', 'standard')
+            .set('limit', '80'),
+        })
+        .pipe(map((res) => toSuggestions((res.cards ?? []).map(toCard), q, locale, limit)));
+    if (!looksLikeReference(q)) return byName();
+    return this.http
+      .get<SearchResponse>(url, { params: new HttpParams().append('ref[]', q.toUpperCase()).set('limit', '1') })
+      .pipe(
+        switchMap((res) => {
+          const cards = (res.cards ?? []).map(toCard);
+          return cards.length ? of(toSuggestions(cards, '', locale, limit)) : byName();
+        }),
+      );
+  }
+
+  /** The suggestion of one canonical reference (a card filter read from the URL), `null` when no card has it. */
+  suggestionOf(reference: string, locale: Locale): Observable<CardSuggestion | null> {
+    return this.suggestCards(reference, locale, 1).pipe(
+      map((list) => list.find((s) => s.reference === reference.toUpperCase()) ?? list[0] ?? null),
+    );
   }
 
   /** Hydrate Unique and non-Unique cards by reference via `POST /api/v2/search` in chunks of 200. */

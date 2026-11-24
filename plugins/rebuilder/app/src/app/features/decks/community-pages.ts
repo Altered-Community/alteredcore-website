@@ -41,6 +41,9 @@ export function toCommunityQuery(f: DeckFilters): CommunityQuery {
     factions: f.factions.length > 1 ? [...f.factions].sort() : undefined,
     hero: f.hero || undefined,
     format: f.format || undefined,
+    cardReference: f.card || undefined,
+    // The API lists the deckbuilders' decks only by default: `all` adds the tournament ones (those with a record).
+    source: f.tournament ? 'tournament' : 'all',
     legalOnly: f.legalOnly || undefined,
     ...API_ORDER[f.sort],
   };

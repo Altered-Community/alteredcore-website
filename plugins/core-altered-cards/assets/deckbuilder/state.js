@@ -63,9 +63,10 @@
         });
         if (deck.hero) deckCards.unshift({ cardReference: deck.hero.cardReference, quantity: 1 });
         var draftMode = elDeckDraft ? elDeckDraft.value : 'auto';
+        // isDraft means "archived" (hidden in BGA): never derived from legality, an existing deck keeps its own.
         var isDraft = (draftMode === 'draft') ? true
                     : (draftMode === 'final') ? false
-                    : !deck._valid;
+                    : deck.isDraftMode === 'draft';
         var payload = {
             name:        elDeckName.value.trim() || AlteredDB.txt.unnamed,
             description: elDeckDesc.value.trim(),

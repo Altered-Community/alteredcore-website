@@ -11,9 +11,7 @@ import { AcProgressBar } from '../../../ui/containers';
 import { AcFileInput } from '../../../ui/fields';
 import { uiLocale } from '../../../core/i18n';
 import { AcBreakpointService } from '../../../ui/layout.services';
-import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, validCards, withHero } from './equinox-csv';
-import { OwnershipApiService } from '../../../core/ownership-api.service';
-import { cardsWithDefaults } from '../../../core/deck-store';
+import { type DeckCardRef, type EquinoxDeck, parseEquinoxCsv, sameDeck, withHero } from './equinox-csv';
 
 export type ImportStatus = 'pending' | 'current' | 'imported' | 'skipped' | 'failed' | 'failedFinal' | 'cancelled';
 
@@ -76,7 +74,6 @@ const DONE: readonly ImportStatus[] = ['imported', 'skipped', 'failedFinal', 'ca
 })
 export class EquinoxImport {
   private readonly decksApi = inject(DecksApiService);
-  private readonly ownership = inject(OwnershipApiService);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(AcBreakpointService);
 
@@ -305,11 +302,9 @@ export class EquinoxImport {
     // A cancel, or a new file, while the request was in flight: its answer is dropped.
     const stale = () => this.cancelled() || run !== this.run;
     try {
-      // The cards and the hero take the user's default alt arts (`cardsWithDefaults`), unless that gives an invalid card.
-      let cards = withHero(row.deck.hero, row.deck.cards);
-      const choices = await lastValueFrom(this.ownership.altArtChoices(cards.map((c) => c.cardReference)));
-      const applied = cardsWithDefaults(cards, choices);
-      if (validCards(applied)) cards = applied;
+      // The prints as exported: the decks API keeps the canonical cards (an alt art or promo becomes the deck's own
+      // print), the other copies show the user's global alt-art preferences.
+      const cards = withHero(row.deck.hero, row.deck.cards);
       const deck = { name: row.deck.name, cards };
       let status: ImportStatus = 'skipped';
       if (!(await this.alreadyThere(deck))) {

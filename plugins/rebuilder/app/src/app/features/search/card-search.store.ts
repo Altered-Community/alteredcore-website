@@ -15,7 +15,8 @@ import {
   type SearchFilters,
 } from '../../core/card-filters';
 import type { Card, DeckFormat } from '../../core/models';
-import { allowedInFormat } from '../../core/deck-rules';
+import { allowedInFormat } from '../../core/format-rules';
+import { FormatsService } from '../../core/formats.service';
 import { UniquesApiService } from '../../core/uniques-api.service';
 import { OwnedCardsService } from '../../core/owned-cards.service';
 import { AuthSession } from '../../core/auth-session';
@@ -31,6 +32,8 @@ interface SearchQuery {
   faction: string | null;
   /** The deck's format in the editor (Favoris: « légales »), `null` on the card browser. */
   format: DeckFormat | null;
+  /** The formats' rules are loaded (decks API): « légales » filters with them from then on. */
+  rulesLoaded: boolean;
   filters: SearchFilters;
   /** Bumped by `restart()` so that applying the same filters still refetches from page 1. */
   run: number;
@@ -88,6 +91,7 @@ export class CardSearchStore {
   private readonly api = inject(CardsApiService);
   private readonly uniquesApi = inject(UniquesApiService);
   private readonly owned = inject(OwnedCardsService);
+  private readonly formats = inject(FormatsService);
   private readonly auth = inject(AuthSession);
 
   readonly source = signal<CardSource>('all');
@@ -106,6 +110,7 @@ export class CardSearchStore {
     source: this.source(),
     faction: this.faction(),
     format: this.format(),
+    rulesLoaded: this.formats.loaded(),
     filters: this.filters(),
     run: this.run(),
   }));
@@ -248,9 +253,11 @@ export class CardSearchStore {
       const factions = query.faction ? (query.filters.otherFactions.length ? query.filters.otherFactions : [query.faction]) : query.filters.factions;
       // Account tabs « légales »: the cards the format forbids are dropped page by page (the total counts them until then).
       const format = legalFormat(query.source, query.filters, query.format);
-      return this.owned.search(query.source, query.filters, factions, page, size, format).pipe(
+      // The format's rules from the decks API (none until loaded: nothing is left out then).
+      const rules = format ? this.formats.rulesFor(format) : null;
+      return this.owned.search(query.source, query.filters, factions, page, size, rules).pipe(
         map((res): ResultPage => {
-          const member = format ? res.member.filter((c) => allowedInFormat(c, format)) : res.member;
+          const member = rules ? res.member.filter((c) => allowedInFormat(c, rules)) : res.member;
           return {
             member,
             totalItems: res.totalItems,

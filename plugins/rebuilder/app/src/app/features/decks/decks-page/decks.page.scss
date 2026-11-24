@@ -266,6 +266,14 @@
     width: 320px;
   }
 
+  .community {
+    gap: var(--ac-space-2-5) var(--ac-space-5);
+  }
+
+  .card-filter {
+    width: 360px;
+  }
+
   .row ac-select ::ng-deep select {
     font-size: var(--ac-font-size-body);
   }

@@ -181,6 +181,47 @@
 .ac-switch input:checked { background: var(--ac-color-primary); }
 .ac-switch input:checked::after { transform: translateX(16px); }
 
+/* ---- Slider: <input type="range" class="ac-slider"> (set --ac-slider-fill, in %, to colour the track up to the thumb) ---- */
+.ac-slider {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: var(--ac-hit-min);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  --ac-slider-fill: 0%;
+}
+.ac-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--ac-radius-pill);
+  background: linear-gradient(to right, var(--ac-color-primary) var(--ac-slider-fill), var(--ac-color-border-control) var(--ac-slider-fill));
+}
+.ac-slider::-moz-range-track {
+  height: 4px;
+  border-radius: var(--ac-radius-pill);
+  background: linear-gradient(to right, var(--ac-color-primary) var(--ac-slider-fill), var(--ac-color-border-control) var(--ac-slider-fill));
+}
+.ac-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ac-color-primary);
+  box-shadow: var(--ac-shadow-e1);
+}
+.ac-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ac-color-primary);
+  box-shadow: var(--ac-shadow-e1);
+}
+.ac-slider:disabled { cursor: default; opacity: 0.5; }
+
 /* ---- File input: a real <input type="file"> stretched over a dashed control ----
  *   <div class="ac-file-input">
  *     <label class="ac-field__label" for="zip">Collection export</label>

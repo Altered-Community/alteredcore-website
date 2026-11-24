@@ -8,7 +8,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { rarityLimits } from '../../../core/deck-rules';
+import { rarityLimits } from '../../../core/format-rules';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -166,7 +166,7 @@ export class EditorPage {
    * name over the rarities against the format's caps (« Résumé du deck »), what the deck bar shows from 768 px.
    */
   protected readonly deckAppBar = computed(() => this.deckTitleView() && this.deck.editable() && !this.deck.loadError());
-  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.status(), this.deck.format()));
+  protected readonly rarityLimits = computed(() => rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name));
   protected readonly heroButtonLabel = computed(() => {
     const name = this.deck.hero()?.name;
     return name ? $localize`:@@editor.changeHeroOf:Changer de héros (${name}:name:)` : $localize`:@@ui.deckSummary.changeHero:Changer de héros`;

@@ -224,11 +224,10 @@ jobs:
           files: |
             docker-compose.yml
             docker-compose.stack.yml
-          targets: web,decks-api
+          targets: web
           load: true
           set: |
             web.cache-from=type=gha,scope=stack-web
-            decks-api.cache-from=type=gha,scope=stack-decks-api
       - name: Start the stack
         run: $COMPOSE up -d --no-build --wait --wait-timeout 600
       - name: Wait for the front-end builds

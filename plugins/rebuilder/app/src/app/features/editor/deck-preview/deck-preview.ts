@@ -45,11 +45,13 @@ export class DeckPreview {
   /** A tile's visual: the card large, with its copies when the deck can be edited (the site's card lightbox). */
   protected zoom(card: Card): void {
     const editable = !this.readonly() && this.deck.editable();
-    openCardZoom(this.overlay, {
-      card,
-      quantity: editable ? { value: this.deck.quantities().get(card.reference) ?? 0, max: this.deck.maxFor(card), change: (n) => this.deck.setQuantity(card, n) } : undefined,
-      illustrations: editable ? (this.altArts?.pickerFor(card) ?? undefined) : undefined,
+    const controls = (c: Card) => ({
+      quantity: editable ? { value: this.deck.quantities().get(c.reference) ?? 0, max: this.deck.maxFor(c), change: (n: number) => this.deck.setQuantity(c, n) } : undefined,
+      illustrations: editable ? (this.altArts?.pickerFor(c) ?? undefined) : undefined,
     });
+    // The cards of the sections left open, in the order they are shown.
+    const cards = this.deck.groups().filter((g) => !this.closed().has(g.id)).flatMap((g) => g.lines.map((l) => l.card));
+    openCardZoom(this.overlay, { card, ...controls(card), siblings: { cards, controls } });
   }
 
   /** `card` has a brush (several illustrations, the deck editable). */

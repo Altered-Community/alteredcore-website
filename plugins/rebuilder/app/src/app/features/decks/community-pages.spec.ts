@@ -25,6 +25,16 @@ describe('toCommunityQuery', () => {
   });
 });
 
+describe('toCommunityQuery: tournament and card', () => {
+  it('lists every deck, the tournament ones only with the filter, and sends the card reference', () => {
+    expect(toCommunityQuery({ ...EMPTY_DECK_FILTERS, tournament: true, card: 'ALT_CORE_B_AX_04_C' })).toMatchObject({
+      source: 'tournament',
+      cardReference: 'ALT_CORE_B_AX_04_C',
+    });
+    expect(toCommunityQuery(EMPTY_DECK_FILTERS)).toMatchObject({ source: 'all', cardReference: undefined });
+  });
+});
+
 describe('addCommunityPage', () => {
   it('drops illegal decks from the API total', () => {
     const query = toCommunityQuery({ ...EMPTY_DECK_FILTERS, sort: 'likes' });

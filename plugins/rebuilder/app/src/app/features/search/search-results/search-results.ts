@@ -1,7 +1,8 @@
 import { Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { isAccountSource } from '../../../core/card-filters';
-import { addBlockedReason } from '../../../core/deck-rules';
+import { addBlockedReason } from '../../../core/format-rules';
+import { formatInfo } from '../../../core/formats';
 import { DeckStore } from '../../../core/deck-store';
 import { AuthSession } from '../../../core/auth-session';
 import type { Card } from '../../../core/models';
@@ -18,6 +19,7 @@ import { EditorAltArts } from '../../editor/editor-alt-arts';
 
 @Component({
   selector: 'app-search-results',
+  host: { '[style.--app-card-cols]': 'columns()' },
   imports: [AcCardTile, AcDeckRow, AcInfiniteSentinel, AcButton, RouterLink, AcVirtualGrid, AcSkeleton],
   templateUrl: './search-results.html',
   styleUrl: './search-results.scss',
@@ -36,6 +38,10 @@ export class SearchResults {
   protected readonly collecting = computed(() => this.browse() && this.collection.enabled());
   /** Card browser: cards without quantity controls. */
   readonly browse = input(false);
+  /** Columns of the grid (from 768 px); null leaves it to the column width. */
+  readonly columns = input<number | null>(null);
+  /** Uniques are read, not only recognised: the grid keeps at most 7 columns. */
+  readonly readable = input(false);
   protected readonly accountTab = computed(() => isAccountSource(this.search.source()));
   protected readonly skeletons = computed(() => Array.from({ length: this.search.cards().length ? 3 : 6 }));
 
@@ -68,18 +74,21 @@ export class SearchResults {
   /** Why a card cannot be added in the deck's format (a Unique in a No Unique format). */
   protected blockedReason(card: Card): string | null {
     if (this.browse()) return null;
-    return addBlockedReason(card, this.deck.format());
+    return addBlockedReason(card, this.deck.rules(), formatInfo(this.deck.format()).label);
   }
 
   /** A result's visual: the card large, with its copies in the deck (the site's deck builder lightbox), or in the collection in the browser. */
   protected zoom(card: Card): void {
-    const editable = this.browse() ? this.collecting() : this.deck.editable() && !this.blockedReason(card);
-    openCardZoom(this.overlay, {
-      card,
-      quantity: editable
-        ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n), in: this.browse() ? 'collection' : 'deck' }
-        : undefined,
-    });
+    const controls = (c: Card) => {
+      const editable = this.browse() ? this.collecting() : this.deck.editable() && !this.blockedReason(c);
+      return {
+        quantity: editable
+          ? { value: this.quantityOf(c), max: this.maxOf(c), change: (n: number) => this.setQuantity(c, n), in: this.browse() ? ('collection' as const) : ('deck' as const) }
+          : undefined,
+      };
+    };
+    // The results as loaded when the window opens: ← / → walk through them.
+    openCardZoom(this.overlay, { card, ...controls(card), siblings: { cards: this.search.cards(), controls } });
   }
 
 }

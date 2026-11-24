@@ -6,9 +6,10 @@ import { of, type Observable } from 'rxjs';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
-import { DeckStore, cardsWithDefaults } from './deck-store';
+import { DeckStore } from './deck-store';
+import { flushFormats } from './formats.testing';
 import { GUEST_DECKS_KEY, GuestDeckService } from './guest-deck.service';
-import { OwnershipApiService, type AltArtChoice } from './ownership-api.service';
+import type { AltArtChoice } from './ownership-api.service';
 import type { Card, Deck } from './models';
 import { localizedText } from './models';
 
@@ -35,6 +36,7 @@ describe('DeckStore (guest mode)', () => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
+    flushFormats(http);
   });
 
   afterEach(() => http.verify());
@@ -65,7 +67,8 @@ describe('DeckStore (guest mode)', () => {
       [zou.reference, 2],
       [unique.reference, 1],
     ]);
-    expect(saved.legal).toBe(false);
+    // No legality computed here: a guest deck's is unknown.
+    expect(store.legality().state).toBe('unknown');
   });
 
   it('applies settings, renames, duplicates and deletes', () => {
@@ -74,7 +77,9 @@ describe('DeckStore (guest mode)', () => {
     store.updateSettings({ format: 'singleton', isPublic: true });
     store.rename('Nouveau nom');
     expect(store.quantityOf(zou.reference)).toBe(2);
-    expect(store.maxFor(zou)).toBe(1);
+    // Singleton: one copy of a card at most (the copies already in the deck stay).
+    expect(store.familyCap(zou)).toBe(1);
+    expect(store.maxFor(zou)).toBe(2);
     store.flush();
     expect(stored()[0]).toMatchObject({ name: 'Nouveau nom', format: 'singleton', isPublic: true });
 
@@ -251,7 +256,7 @@ describe('DeckStore (guest mode)', () => {
       cards: [{ cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1, name: 'Fen & Crowbar', factionCode: 'LY', cardTypeReference: 'HERO' }],
     });
     await settle();
-    expect(store.legality()).toEqual({ state: 'illegal', rules: ['bannedCards'], errors: ['Card ALT_X is banned'] });
+    expect(store.legality()).toMatchObject({ state: 'illegal', rules: ['bannedCards'], errors: ['Card ALT_X is banned'] });
   });
 
   it('refetches the same deck after an error', async () => {
@@ -297,6 +302,7 @@ describe('DeckStore (signed in)', () => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: session }] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
+    flushFormats(http);
     store.load('source');
     TestBed.tick();
     http.expectOne((r) => r.url.endsWith('/api/decks/source')).flush({
@@ -335,6 +341,7 @@ describe('DeckStore (signed in)', () => {
         { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
         { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2 },
       ],
+      altArtOverrides: { cards: {}, tokens: [] },
     });
     req.flush({ id: 'copy', name: 'Ma copie' });
     expect(copyId).toBe('copy');
@@ -352,7 +359,7 @@ describe('DeckStore (signed in)', () => {
 
   const patchReq = () => http.expectOne((r) => r.method === 'PATCH' && r.url.endsWith('/api/decks/source'));
 
-  it('saves name, description and a draft flag that follows the legality', () => {
+  it('saves name, description, never touches isDraft (archived), and shows the legality the API answers', () => {
     store.updateSettings({ name: '  Kojo Contrôle ', description: ' Midrange ' });
     store.flush();
     const req = patchReq();
@@ -361,18 +368,25 @@ describe('DeckStore (signed in)', () => {
       description: 'Midrange',
       format: 'nuc',
       isPublic: true,
-      // 3 cards: not a legal deck, so a draft (as the site's builder does).
-      isDraft: true,
+      // isDraft (archived: hidden in BGA) is not sent: editing an archived deck keeps it archived.
       deckCards: [
         { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
         { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2 },
       ],
+      altArtOverrides: { cards: {}, tokens: [] },
     });
+    expect(req.request.params.get('locale')).toBe('fr');
     expect(req.request.keepalive).toBe(false);
     expect(store.saveState()).toBe('saving');
-    req.flush({ id: 'source', name: 'Kojo Contrôle', legal: false });
+    req.flush({
+      id: 'source',
+      name: 'Kojo Contrôle',
+      legal: false,
+      errors: [{ code: 'deck.size.min', reference: null, message: 'Le deck doit contenir au moins 39 cartes.' }],
+    });
     expect(store.saveState()).toBe('saved');
-    expect(store.isDraft()).toBe(true);
+    expect(store.isDraft()).toBe(false);
+    expect(store.legality()).toMatchObject({ state: 'illegal', errors: ['Le deck doit contenir au moins 39 cartes.'] });
     expect(store.dirty()).toBe(false);
   });
 
@@ -599,11 +613,12 @@ describe('DeckStore.createDeck (signed in)', () => {
     });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
+    flushFormats(http);
   });
 
   afterEach(() => http.verify());
 
-  it('creates a draft with its description on the account', () => {
+  it('creates the deck, not a draft, with its description on the account', () => {
     let id = '';
     store.createDeck(input).subscribe((d) => (id = d.id));
     const req = postReq();
@@ -611,9 +626,10 @@ describe('DeckStore.createDeck (signed in)', () => {
       name: 'Moyo',
       format: 'standard',
       isPublic: false,
-      isDraft: true,
+      isDraft: false,
       description: 'Rush',
       deckCards: [{ cardReference: hero.reference, quantity: 1 }],
+      altArtOverrides: { cards: {}, tokens: [] },
     });
     req.flush({ id: 'new-id', name: 'Moyo' });
     expect(id).toBe('new-id');
@@ -659,6 +675,7 @@ describe('DeckStore.moveToAccount (signed in)', () => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: new SignedIn() }] });
     store = TestBed.inject(DeckStore);
     http = TestBed.inject(HttpTestingController);
+    flushFormats(http);
     store.create({ name: 'Moyo', hero, format: 'standard', isPublic: false, description: 'Rush' });
     store.setQuantity(zou, 2);
   });
@@ -676,12 +693,13 @@ describe('DeckStore.moveToAccount (signed in)', () => {
       name: 'Moyo',
       format: 'standard',
       isPublic: false,
-      isDraft: true,
+      isDraft: false,
       description: 'Rush',
       deckCards: [
         { cardReference: hero.reference, quantity: 1 },
         { cardReference: zou.reference, quantity: 2 },
       ],
+      altArtOverrides: { cards: {}, tokens: [] },
     });
     req.flush({ id: 'account-deck', name: 'Moyo' });
     expect(id).toBe('account-deck');
@@ -719,104 +737,155 @@ describe('GuestDeckService', () => {
   });
 });
 
-describe('DeckStore (signed in, default alt arts)', () => {
+describe('DeckStore (signed in, deck prints)', () => {
+  const B = 'ALT_CORE_B_LY_04_C';
+  const A = 'ALT_CORE_A_LY_04_C';
+  const P = 'ALT_DUSTER_P_LY_04_C';
   const martengale: AltArtChoice = {
     family: { familyId: 9, faction: 'LY', rarity: 'C' },
     options: {
       options: [
-        { reference: 'ALT_CORE_B_LY_04_C', ownedQuantity: null },
-        { reference: 'ALT_CORE_A_LY_04_C', ownedQuantity: 3 },
+        { reference: B, ownedQuantity: null },
+        { reference: A, ownedQuantity: 3 },
+        { reference: P, ownedQuantity: 1 },
       ],
-      slots: [1, 2, 3].map((slotIndex) => ({ slotIndex, reference: 'ALT_CORE_A_LY_04_C' })),
+      slots: [1, 2, 3].map((slotIndex) => ({ slotIndex, reference: A })),
     },
   };
+  const choices = { [B]: martengale, [A]: martengale, [P]: martengale };
 
-  function setup(mine: string[]) {
+  function setup() {
     localStorage.clear();
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: AuthSession, useValue: new SignedIn() },
-        { provide: OwnershipApiService, useValue: { altArtChoices: (refs: string[]) => of(refs.includes('ALT_CORE_B_LY_04_C') ? { ALT_CORE_B_LY_04_C: martengale } : {}) } },
-      ],
-    });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), { provide: AuthSession, useValue: new SignedIn() }] });
     const store = TestBed.inject(DeckStore);
     const http = TestBed.inject(HttpTestingController);
-    return { store, http, mine: mine.map((id) => ({ id })) };
+    flushFormats(http);
+    return { store, http };
   }
 
-  async function open(store: DeckStore, http: HttpTestingController, mine: { id: string }[]) {
+  /** A deck of 3 Martengale, the 1st pinned to the promo (decks API: canonical cards + overrides). */
+  async function open(store: DeckStore, http: HttpTestingController, mine: string[]) {
     store.load('source');
     TestBed.tick();
     http.expectOne((r) => r.url.endsWith('/api/decks/source')).flush({
       id: 'source',
       name: 'Kojo',
       format: 'standard',
+      legal: true,
+      owner: { pseudo: 'kojo-fan' },
+      canonicalCards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+        { cardReference: B, quantity: 3 },
+      ],
+      altArtOverrides: { cards: { [B]: [{ reference: P, quantity: 1 }] }, tokens: [{ reference: 'ALT_CORE_A_LY_31_C', quantity: 1 }] },
       cards: [
         { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1, name: 'Fen & Crowbar', factionCode: 'LY', cardTypeReference: 'HERO' },
-        { cardReference: 'ALT_CORE_B_LY_04_C', quantity: 2, name: 'Martengale', factionCode: 'LY', cardTypeReference: 'CHARACTER' },
+        { cardReference: P, quantity: 1, name: 'Martengale', factionCode: 'LY', cardTypeReference: 'CHARACTER' },
+        { cardReference: B, quantity: 2, name: 'Martengale', factionCode: 'LY', cardTypeReference: 'CHARACTER' },
       ],
     });
     await Promise.resolve();
     TestBed.tick();
-    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush(mine);
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/api/decks')).flush(mine.map((id) => ({ id })));
     await settle();
   }
 
-  it('copies someone else’s deck with the user’s default alt arts', async () => {
-    const { store, http, mine } = setup([]);
-    await open(store, http, mine);
-    store.duplicate('Copie').subscribe();
-    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
-    expect(req.request.body.deckCards.map((c: { cardReference: string; quantity: number }) => [c.cardReference, c.quantity])).toEqual([
-      ['ALT_CORE_B_LY_03_C', 1],
-      ['ALT_CORE_A_LY_04_C', 2],
-    ]);
-    req.flush({ id: 'copy' });
-    http.verify();
-  });
+  const body = (http: HttpTestingController, method: string) => http.expectOne((r) => r.method === method).request.body as Record<string, unknown>;
 
-  it('copies the user’s own deck with its illustrations', async () => {
-    const { store, http, mine } = setup(['source']);
-    await open(store, http, mine);
-    store.duplicate('Copie').subscribe();
-    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/api/decks'));
-    expect(req.request.body.deckCards.map((c: { cardReference: string }) => c.cardReference)).toEqual(['ALT_CORE_B_LY_03_C', 'ALT_CORE_B_LY_04_C']);
-    req.flush({ id: 'copy' });
-    http.verify();
-  });
-
-  it('adds and removes the copies of a family by the defaults, and applies them to the whole deck', async () => {
-    const { store, http, mine } = setup(['source']);
-    await open(store, http, mine);
-    const card = store.lines().find((l) => l.card.reference === 'ALT_CORE_B_LY_04_C')!.card;
-    const members = new Set(['ALT_CORE_B_LY_04_C', 'ALT_CORE_A_LY_04_C']);
-    // 2 plain copies in the deck: the 3rd copy takes the 3rd default.
-    store.setFamilyQuantity(card, martengale, members, 3);
-    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([
-      ['ALT_CORE_B_LY_04_C', 2],
-      ['ALT_CORE_A_LY_04_C', 1],
-    ]);
-    expect(store.lastChange()).toMatchObject({ card: { reference: 'ALT_CORE_A_LY_04_C' }, quantity: 1, delta: 1 });
-    expect(store.applyAltArtDefaults({ ALT_CORE_B_LY_04_C: martengale, ALT_CORE_A_LY_04_C: martengale })).toBe(true);
-    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([['ALT_CORE_A_LY_04_C', 3]]);
-    store.setFamilyQuantity(card, martengale, members, 1);
-    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([['ALT_CORE_A_LY_04_C', 1]]);
+  it('reads the deck’s own prints and its owner, and writes them back as canonical cards and overrides', async () => {
+    const { store, http } = setup();
+    await open(store, http, ['source']);
+    expect(store.owner()).toBe('kojo-fan');
+    expect(store.pins().get('LY_04_C')).toEqual([P]);
+    store.rename('Kojo 2');
     store.flush();
+    const patched = body(http, 'PATCH');
+    expect(patched).not.toHaveProperty('isDraft');
+    expect(patched).toMatchObject({
+      deckCards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+        { cardReference: B, quantity: 3 },
+      ],
+      altArtOverrides: { cards: { [B]: [{ reference: P, quantity: 1 }] }, tokens: [{ reference: 'ALT_CORE_A_LY_31_C', quantity: 1 }] },
+    });
+  });
+
+  it('copies someone else’s deck without its prints (the user’s preferences show), the user’s own deck with them', async () => {
+    const other = setup();
+    await open(other.store, other.http, []);
+    other.store.duplicate('Copie').subscribe();
+    expect(body(other.http, 'POST')).toMatchObject({
+      deckCards: [
+        { cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 },
+        { cardReference: B, quantity: 3 },
+      ],
+      altArtOverrides: { cards: {}, tokens: [] },
+    });
+    TestBed.resetTestingModule();
+    const own = setup();
+    await open(own.store, own.http, ['source']);
+    own.store.duplicate('Copie').subscribe();
+    expect(body(own.http, 'POST')).toMatchObject({ altArtOverrides: { cards: { [B]: [{ reference: P, quantity: 1 }] } } });
+  });
+
+  it('shows the preferences on the copies it does not pin, keeps the pins when copies come and go, and drops them all on demand', async () => {
+    const { store, http } = setup();
+    await open(store, http, ['source']);
+    const card = store.lines().find((l) => l.card.reference === B)!.card;
+    store.showPreferences(choices);
+    // Copy 1: the deck's promo; copies 2 and 3: the player's alt art (what is shown only, nothing to save).
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([
+      [P, 1],
+      [A, 2],
+    ]);
+    expect(store.dirty()).toBe(false);
+    const members = new Set([P, A]);
+    store.setFamilyQuantity(card, martengale, members, 1);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([[P, 1]]);
+    expect(store.lastChange()).toMatchObject({ card: { reference: A }, quantity: 0, delta: -1 });
+    store.pinPrints(card, martengale, new Set([P]), [A]);
+    expect(store.pins().get('LY_04_C')).toEqual([A]);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([[A, 1]]);
+    expect(store.clearPins()).toBe(true);
+    expect(store.pins().size).toBe(0);
+    store.flush();
+    expect(body(http, 'PATCH')).toMatchObject({ deckCards: [{ cardReference: 'ALT_CORE_B_LY_03_C', quantity: 1 }, { cardReference: B, quantity: 1 }], altArtOverrides: { cards: {} } });
+  });
+
+  it('forces the base art in this deck (a pin on the canonical print), shown over the player’s alt art and saved', async () => {
+    const { store, http } = setup();
+    await open(store, http, ['source']);
+    const card = store.lines().find((l) => l.card.reference === B)!.card;
+    store.pinPrints(card, martengale, new Set([P, B]), [B, B, B]);
+    store.showPreferences(choices);
+    expect(store.lines().map((l) => [l.card.reference, l.quantity])).toEqual([[B, 3]]);
+    store.flush();
+    expect(body(http, 'PATCH')).toMatchObject({ altArtOverrides: { cards: { [B]: [{ reference: B, quantity: 3 }] } } });
+    // Adding a canonical copy from the search pins nothing more; « Utiliser mes arts par défaut » drops the pin.
+    store.pinPrints(card, martengale, new Set([B]), []);
+    expect(store.pins().size).toBe(0);
     http.match(() => true);
   });
-});
 
-describe('cardsWithDefaults', () => {
-  it('rewrites deck lines with the defaults, a new print copying its family’s line', () => {
-    const choice: AltArtChoice = {
-      family: { familyId: 1, faction: 'AX', rarity: 'C' },
-      options: { options: [{ reference: 'ALT_B', ownedQuantity: null }, { reference: 'ALT_A', ownedQuantity: 1 }], slots: [{ slotIndex: 1, reference: 'ALT_A' }] },
-    };
-    expect(cardsWithDefaults([{ cardReference: 'ALT_B', quantity: 2, name: 'X' }], { ALT_B: choice })).toEqual([
-      { cardReference: 'ALT_A', quantity: 1, name: 'X' },
-      { cardReference: 'ALT_B', quantity: 1, name: 'X' },
-    ]);
+  it('pins a promo added from the search, and keeps a token print for this deck only', async () => {
+    const { store, http } = setup();
+    await open(store, http, ['source']);
+    store.setQuantity({ reference: 'ALT_WCS25_P_LY_10_C', name: 'Promo', cardType: { reference: 'SPELL' } }, 1);
+    store.setTokenPrint(['ALT_CORE_A_LY_31_C', 'ALT_CORE_B_LY_31_C'], 'ALT_CORE_B_LY_31_C'); // ggignore: a card token print, not a secret
+    store.flush();
+    const sent = body(http, 'PATCH');
+    expect(sent['deckCards']).toContainEqual({ cardReference: 'ALT_WCS25_P_LY_10_C', quantity: 1 });
+    expect(sent['altArtOverrides']).toMatchObject({ tokens: [{ reference: 'ALT_CORE_B_LY_31_C', quantity: 1 }] });
+    expect(store.pins().get('LY_10_C')).toEqual(['ALT_WCS25_P_LY_10_C']);
+  });
+
+  it('caps the copies of a card family across its rarities (`maxCopiesPerName`)', async () => {
+    const { store, http } = setup();
+    await open(store, http, ['source']);
+    const rare: Card = { reference: 'ALT_CORE_B_LY_04_R1', name: 'Martengale', cardType: { reference: 'CHARACTER' }, rarity: { reference: 'RARE' } };
+    expect(store.maxFor(rare)).toBe(0);
+    store.setQuantity(rare, 2);
+    expect(store.quantityOf(rare.reference)).toBe(0);
+    http.match(() => true);
   });
 });

@@ -3,6 +3,8 @@ import { Service, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, defer, expand, map, reduce, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthSession } from './auth-session';
+import type { FormatRules } from './format-rules';
+import { uiLocale } from './i18n';
 import type { Deck, DeckWrite } from './models';
 
 export interface PublicDeckQuery {
@@ -13,6 +15,13 @@ export interface PublicDeckQuery {
   /** Hero reference (the API matches its base and promo prints). */
   hero?: string;
   format?: string;
+  /** Canonical reference of a card the deck holds (exact match on the decks API's stored references). */
+  cardReference?: string;
+  /**
+   * Which decks: without it the API lists the deckbuilders' decks only (`user`); `tournament`: the decks imported from
+   * the BGA tournament lists only; `all`: both.
+   */
+  source?: 'user' | 'tournament' | 'all';
   order?: 'updatedAt' | 'createdAt' | 'name' | 'upvoteCount' | 'viewCount';
   /** Direction of `order`: ascending for `name`, descending otherwise when absent. */
   dir?: 'asc' | 'desc';
@@ -73,6 +82,7 @@ export class DecksApiService {
           page,
           itemsPerPage,
           'order[updatedAt]': 'desc',
+          locale: uiLocale(),
         },
       }),
     );
@@ -110,11 +120,14 @@ export class DecksApiService {
     const params: Record<string, string | number> = {
       page: query.page ?? 1,
       itemsPerPage: query.itemsPerPage ?? 30,
+      locale: uiLocale(),
     };
     if (query.name) params['name'] = query.name;
     if (query.faction) params['faction'] = query.faction;
     if (query.hero) params['hero'] = query.hero;
     if (query.format) params['format'] = query.format;
+    if (query.cardReference) params['cardReference'] = query.cardReference;
+    if (query.source) params['source'] = query.source;
     if (query.order) params[`order[${query.order}]`] = query.dir ?? (query.order === 'name' ? 'asc' : 'desc');
     const url = `${this.baseUrl}/api/decks/public`;
     const startedWithToken = !!this.auth.token();
@@ -134,8 +147,18 @@ export class DecksApiService {
       .pipe(map((heroes) => (Array.isArray(heroes) ? heroes : [])));
   }
 
-  /** Public decks are readable anonymously by UUID; private ones need the owner's token. */
-  get(id: string, locale = 'en'): Observable<Deck> {
+  /** Formats and their rules (anonymous), hidden ones included (`test`, for the BGA test team). */
+  formats(): Observable<FormatRules[]> {
+    return this.http
+      .get<FormatRules[]>(`${this.baseUrl}/api/formats`, { headers: new HttpHeaders({ Accept: 'application/json' }), params: { hiddenFormats: 'true' } })
+      .pipe(map((list) => (Array.isArray(list) ? list : [])));
+  }
+
+  /**
+   * Public decks are readable anonymously by UUID; private ones need the owner's token. `locale`: card names and the
+   * legality messages (`errors`).
+   */
+  get(id: string, locale: string = uiLocale()): Observable<Deck> {
     return this.send(() =>
       this.http.get<Deck>(`${this.baseUrl}/api/decks/${encodeURIComponent(id)}`, {
         headers: this.headers(),
@@ -153,22 +176,26 @@ export class DecksApiService {
     );
   }
 
+  /** The answer's legality messages (`errors`) are in the interface language. */
   create(body: DeckWrite): Observable<Deck> {
     return this.send(() =>
       this.http.post<Deck>(`${this.baseUrl}/api/decks`, body, {
         headers: this.headers(false),
+        params: { locale: uiLocale() },
       }),
     );
   }
 
   /**
    * `keepalive`: the request outlives the page (tab closed, site link followed), like `sendBeacon`
-   * but through the same client, so it keeps the relay's CSRF header (and the token outside the site).
+   * but through the same client, so it keeps the relay's CSRF header (and the token outside the site). The answer's
+   * legality messages (`errors`) are in the interface language.
    */
   patch(id: string, body: Partial<DeckWrite>, options: { keepalive?: boolean } = {}): Observable<Deck> {
     return this.send(() =>
       this.http.patch<Deck>(`${this.baseUrl}/api/decks/${encodeURIComponent(id)}`, body, {
         headers: this.headers(true),
+        params: { locale: uiLocale() },
         keepalive: !!options.keepalive,
       }),
     );

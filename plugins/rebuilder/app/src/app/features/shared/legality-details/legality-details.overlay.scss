@@ -50,10 +50,6 @@ ul.checks {
   flex-grow: 1;
   min-width: 0;
 }
-.detail {
-  flex-shrink: 0;
-  white-space: nowrap;
-  font-size: var(--ac-font-size-caption);
+.unknown {
   color: var(--ac-color-text-muted);
-  font-variant-numeric: tabular-nums;
 }

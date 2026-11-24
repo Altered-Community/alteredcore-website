@@ -1,20 +1,20 @@
-import { legalityFromStatus, lineViolationLabel, withServerVerdict, type DeckLegality } from '../../core/deck-legality';
+import { lineIssuesOf, type DeckLegality } from '../../core/deck-legality';
 import type { DeckStore } from '../../core/deck-store';
 import { formatInfo } from '../../core/formats';
 import type { AcOverlayService } from '../../ui/overlay';
 import { openLegalityDetails } from '../shared/legality-details/legality-details.overlay';
 
 /**
- * Legality shown in the editor: its own checks on the current content (every rule, passed or failed),
- * with the decks API's verdict on top while the deck is unchanged since the server checked it.
+ * Legality shown in the editor: the decks API's answer to the last save (or to the GET), never computed here. A guest
+ * deck, or one the API has not validated yet, is `unknown`.
  */
 export function editorLegality(deck: DeckStore): DeckLegality {
-  return withServerVerdict(legalityFromStatus(deck.status(), !!deck.hero()), deck.legality());
+  return deck.legality();
 }
 
-/** Reasons shown on each deck line, by card reference. */
+/** The API's problems shown on each deck line, by card reference (every print of the card it names). */
 export function lineIssues(deck: DeckStore): ReadonlyMap<string, string[]> {
-  return new Map(Object.entries(deck.status().violations).map(([ref, rules]) => [ref, rules.map(lineViolationLabel)]));
+  return lineIssuesOf(deck.legality(), deck.lines().map((l) => l.card.reference));
 }
 
 export function openEditorLegality(overlay: AcOverlayService, deck: DeckStore): void {

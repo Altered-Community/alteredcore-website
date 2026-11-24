@@ -114,7 +114,7 @@ export class DeckPage {
   };
   protected readonly moreLabel = computed(() =>
     this.deck.owned()
-      ? $localize`:@@deck.page.moreOwned:Plus d’actions (copier en image, copier la liste, dupliquer, supprimer)`
+      ? $localize`:@@deck.page.moreOwned:Plus d’actions (copier en image, copier la liste, dupliquer, archiver, supprimer)`
       : $localize`:@@deck.page.more:Plus d’actions (copier en image, copier la liste, dupliquer)`,
   );
   protected readonly info = computed(() => formatInfo(this.deck.format()));
@@ -194,6 +194,22 @@ export class DeckPage {
     });
   }
 
+  /** An archived deck (isDraft) is hidden in BGA only: it stays in « Mes decks » and stays shared. */
+  protected toggleArchived(): void {
+    const archive = !this.deck.isDraft();
+    this.deck.setArchived(archive).subscribe((ok) => {
+      if (ok) {
+        this.flash(
+          archive
+            ? $localize`:@@deck.page.archived:Deck archivé : il n’apparaît plus dans BGA.`
+            : $localize`:@@deck.page.unarchived:Deck désarchivé.`,
+        );
+      } else {
+        this.flash(this.deck.actionError() ?? '');
+      }
+    });
+  }
+
   protected remove(): void {
     confirmDeleteDeck(this.overlay, this.deck).subscribe((result) => {
       if (result === true) void this.router.navigateByUrl('/decks');
@@ -202,13 +218,15 @@ export class DeckPage {
   }
 
   protected more(): void {
-    const data: DeckActionsData = { canDelete: this.deck.owned() === true, image: this.imageSource(), name: this.deck.name() };
+    const owned = this.deck.owned() === true;
+    const data: DeckActionsData = { canDelete: owned, archived: owned ? this.deck.isDraft() === true : null, image: this.imageSource(), name: this.deck.name() };
     this.overlay
       .open<DeckActionsSheet, DeckActionsResult>(DeckActionsSheet, { title: 'Actions', width: 400, data })
       .afterClosed.subscribe((a) => {
         if (a === 'copy') void this.copyList();
         if (a === 'duplicate') this.duplicate();
         if (a === 'delete') this.remove();
+        if (a === 'archive') this.toggleArchived();
         if (typeof a === 'object') void this.imageDone(a.image);
       });
   }

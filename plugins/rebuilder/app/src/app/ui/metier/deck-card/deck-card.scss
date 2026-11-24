@@ -159,6 +159,29 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Tournament record: « 5 V – 2 D » then the share of games won. */
+.record {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  min-width: 0;
+  margin-top: var(--ac-space-1);
+  font-size: var(--ac-font-size-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.record ac-icon {
+  display: flex;
+  color: var(--ac-color-warning);
+}
+.rate {
+  padding: 0 var(--ac-space-1-5);
+  border-radius: var(--ac-radius-pill);
+  background: var(--ac-color-bg-subtle);
+  color: var(--ac-color-text-2);
+  font-weight: 600;
+}
 /* Pinned to the bottom so the lines align across a grid row. */
 .updated {
   margin-top: auto;
@@ -218,6 +241,10 @@ a {
 }
 :host(.ac-deck-card--row) .author {
   margin-top: var(--ac-space-1);
+  font-size: var(--ac-font-size-body);
+}
+:host(.ac-deck-card--row) .record {
+  margin-top: 0;
   font-size: var(--ac-font-size-body);
 }
 .vis-inline {

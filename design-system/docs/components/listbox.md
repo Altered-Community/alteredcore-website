@@ -119,6 +119,40 @@ the same colour, the dot is on the group header only.
 | `ac-listbox__label mark` | Letters that match the search. |
 | `ac-listbox__empty` | "No match for …". |
 
+## Suggestions (autocomplete)
+
+A text field whose panel lists what matches the text typed, fetched as the user types (the card
+filter of the community decks). Same panel and options, with `ac-listbox__panel--suggestions`
+(280 px wide at least) and two optional parts in an option:
+
+| Class | Role |
+|---|---|
+| `ac-listbox__thumb` | Thumbnail before the label (`<img alt="">`, card ratio 5 / 7). |
+| `ac-listbox__meta` | Muted detail after the label (rarity, set). |
+
+```html
+<div class="ac-field">
+  <label class="ac-field__label" for="card">Card</label>
+  <div class="ac-input-icon">{search}
+    <input class="ac-input" id="card" role="combobox" aria-autocomplete="list" aria-expanded="true"
+           aria-controls="card-list" aria-activedescendant="card-o0">
+  </div>
+</div>
+<div class="ac-listbox__panel ac-listbox__panel--suggestions">
+  <div class="ac-listbox__list" id="card-list" role="listbox">
+    <div class="ac-listbox__option is-active" role="option" id="card-o0" aria-selected="false">
+      <img class="ac-listbox__thumb" src="…" alt=""><span class="ac-listbox__label"><mark>Kélon</mark> Elemental</span>
+      <span class="ac-listbox__meta">Rare</span>
+    </div>
+  </div>
+</div>
+```
+
+Focus stays in the text field: <kbd>↓</kbd> <kbd>↑</kbd> move the active option
+(`aria-activedescendant`), <kbd>Enter</kbd> picks it (the first one when none is active),
+<kbd>Esc</kbd> closes the panel. Angular: `<ac-autocomplete>`
+(`plugins/rebuilder/app/src/app/ui/fields/autocomplete/`).
+
 ## Keyboard
 
 | Key | Closed | Open |

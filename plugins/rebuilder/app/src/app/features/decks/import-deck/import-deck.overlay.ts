@@ -136,7 +136,7 @@ export class ImportDeckOverlay {
         }
         // Signed in: an account deck, as « Nouveau deck » does. On a refusal the window stays open with the list.
         const deckCards = lines.map((l) => ({ cardReference: l.cardReference, quantity: l.quantity }));
-        this.decksApi.create({ name, format, isPublic: false, deckCards }).subscribe({
+        this.decksApi.create({ name, format, isPublic: false, isDraft: false, deckCards }).subscribe({
           next: (deck) => {
             this.setBusy(false);
             this.ref.close({ deckId: deck.id });

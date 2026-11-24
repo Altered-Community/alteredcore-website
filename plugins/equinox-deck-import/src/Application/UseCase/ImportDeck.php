@@ -5,7 +5,6 @@ namespace AlteredCore\EquinoxDeckImport\Application\UseCase;
 use AlteredCore\EquinoxDeckImport\Application\Dto\ImportResult;
 use AlteredCore\EquinoxDeckImport\Domain\Card;
 use AlteredCore\EquinoxDeckImport\Domain\Deck;
-use AlteredCore\EquinoxDeckImport\Port\AltArtPreferenceInterface;
 use AlteredCore\EquinoxDeckImport\Port\DeckApiClientInterface;
 use AlteredCore\EquinoxDeckImport\Port\TokenProviderInterface;
 use DomainException;
@@ -13,19 +12,20 @@ use DomainException;
 /**
  * Use case behind the `import-deck` endpoint: validate one deck, skip it if an
  * identical deck already exists (content hash over the candidate ids the parse
- * step found), otherwise create it via the Deck API.
+ * step found), otherwise create it via the Deck API. The exported card references
+ * are sent as they are: the Deck API keeps a print (alt art, promo) as the deck's own
+ * art choice, and the player's global alt-art preferences apply to the other cards
+ * when the deck is shown (AlteredOwnership), so they are not written into the list.
  */
 final class ImportDeck
 {
     private DeckApiClientInterface $api;
     private TokenProviderInterface $tokens;
-    private AltArtPreferenceInterface $altArts;
 
-    public function __construct(DeckApiClientInterface $api, TokenProviderInterface $tokens, AltArtPreferenceInterface $altArts)
+    public function __construct(DeckApiClientInterface $api, TokenProviderInterface $tokens)
     {
         $this->api = $api;
         $this->tokens = $tokens;
-        $this->altArts = $altArts;
     }
 
     /**
@@ -43,18 +43,6 @@ final class ImportDeck
         $cards = $this->toCards($cardsRaw);
         if ($cards === null) {
             return ImportResult::rejected(400, 'invalid_card', $messages['invalid_card']);
-        }
-
-        // Global mode: the importing player's own alt-art preferences replace whatever
-        // illustration Equinox happened to export — same auto-apply the deckbuilder
-        // performs on open/duplicate. PerDeck mode (the default) leaves the exported
-        // references untouched.
-        if ($this->altArts->isGlobalMode()) {
-            $rewritten = $this->altArts->applyPreferences(array_map(
-                static fn(Card $c): array => $c->toApiArray(),
-                $cards
-            ));
-            $cards = $this->toCards($rewritten) ?? $cards;
         }
 
         if ($this->tokens->accessToken() === '') {

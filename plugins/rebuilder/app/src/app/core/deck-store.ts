@@ -6,15 +6,16 @@ import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
 import { CardsApiService } from './cards-api.service';
 import { DeckCreateFailurePrompt } from './deck-create-failure';
-import { legalityFromApi, legalityFromStatus, type DeckLegality } from './deck-legality';
-import { computeDeckStatus, maxCopiesFor, rarityOf, type DeckStatus } from './deck-rules';
-import { UniquesApiService } from './uniques-api.service';
-import { formatInfo } from './formats';
-import { cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
+import { UNKNOWN_LEGALITY, legalityFromApi, type DeckLegality } from './deck-legality';
+import { typeOf } from './deck-rules';
+import { canonicalFromAnswer, deckWriteCards, familyOf, guessCanonical, isPinnedPrint, printKey, readDeckPrints } from './deck-prints';
+import { maxCopiesFor } from './format-rules';
+import { FormatsService } from './formats.service';
+import { authorOf, cardToLine, deckStats, groupLines, heroOf, isHeroLine, lineToCard, mergeUniqueFace, uniqueNeedsPrintedEffect } from './deck-view';
 import { DecksApiService } from './decks-api.service';
 import { GuestDeckService } from './guest-deck.service';
-import { OwnershipApiService, type AltArtChoice } from './ownership-api.service';
-import { addedCopyPrint, defaultPrints, familyPrints, linesWithDefaults, removedCopyPrint, sameCopies, withFamilyPrints } from './alt-art-defaults';
+import type { AltArtChoice } from './ownership-api.service';
+import { basePrint, counts, defaultPrints, familyPrints, linesWithPins, sameCopies, slotDefaults, withFamilyPrints } from './alt-art-defaults';
 import {
   type Card,
   type Deck,
@@ -22,10 +23,12 @@ import {
   type DeckHero,
   type DeckWrite,
   type HydratedLine,
+  type PrintQuantity,
   deckLines,
   localizedText,
 } from './models';
 import { contentLocale } from './locale';
+import { uiLocale } from './i18n';
 import { heroArtSources } from './card-art';
 
 export interface NewDeckInput {
@@ -50,18 +53,18 @@ export type DeckSaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 /**
  * Editor state for one deck. Guests (no Keycloak token) autosave to localStorage;
- * with a token, changes are PATCHed to decks.alteredcore.org.
+ * with a token, changes are PATCHed to the decks API, which validates each save: the legality shown is its answer.
+ * `lines` are the prints shown; `pins` the prints the deck itself chooses (its `altArtOverrides`, `deck-prints.ts`),
+ * the other copies show the player's global preferences (`EditorAltArts`).
  */
 @Service()
 export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
-  private readonly ownership = inject(OwnershipApiService);
   private readonly cardsApi = inject(CardsApiService);
-  private readonly uniquesApi = inject(UniquesApiService);
+  private readonly formats = inject(FormatsService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);
   private readonly createFailure = inject(DeckCreateFailurePrompt);
-  private readonly frontierPending = new Set<string>();
   /** In-flight fill of unique faces; cancelled when another deck is applied. */
   private uniqueFaces?: Subscription;
 
@@ -70,7 +73,7 @@ export class DeckStore {
   /** Switching id cancels the in-flight request, so a late response never overwrites the current deck. */
   private readonly serverDeck = rxResource({
     params: () => this.serverId() ?? undefined,
-    stream: ({ params: id }) => this.decksApi.get(id, contentLocale()),
+    stream: ({ params: id }) => this.decksApi.get(id, uiLocale()),
   });
 
   readonly loading = computed(() => this.serverDeck.isLoading());
@@ -113,21 +116,30 @@ export class DeckStore {
     return ref ? heroArtSources(ref) : null;
   });
   readonly createdAt = signal<string | null>(null);
+  /** Owner's pseudo (`owner.pseudo` of a public deck), `null` when the API does not tell it. */
+  readonly owner = signal<string | null>(null);
   readonly isGuest = signal(true);
-  /** Non-hero lines. */
+  /** Non-hero lines: the prints shown. */
   readonly lines = signal<HydratedLine[]>([]);
+  /**
+   * The prints the deck chooses itself, 1st copy first, by card (`printKey`, family + rarity): its `altArtOverrides`.
+   * The other copies of a card follow the player's global preferences.
+   */
+  readonly pins = signal<ReadonlyMap<string, readonly string[]>>(new Map());
+  /** The deck's token prints (`altArtOverrides.tokens`). */
+  readonly tokenPrints = signal<readonly PrintQuantity[]>([]);
+  /** Canonical reference of each card the decks API told (`canonicalCards`, override keys), by `printKey`. */
+  private canonical = new Map<string, string>();
 
-  /** Frontier list answers for the Uniques checked so far (reference → on the list); fail closed on an API error. */
-  private readonly frontierChecked = signal<ReadonlyMap<string, boolean>>(new Map());
-  private readonly frontierIllegal = computed(() => new Set([...this.frontierChecked()].filter(([, ok]) => !ok).map(([ref]) => ref)));
-  readonly status = computed<DeckStatus>(() => computeDeckStatus(this.lines(), this.format(), this.hero(), { frontierIllegal: this.frontierIllegal() }));
-  /** `legal` / `legalityDetail` / `formatErrors` of the decks API, until the deck is changed here. */
+  /** The format's rules (decks API), `null` until they are loaded or for an unknown format. */
+  readonly rules = computed(() => this.formats.rulesFor(this.format()));
+  /** `legal` / `errors` / `legalityDetail` of the decks API's last answer (GET, or the answer to the last save). */
   private readonly apiLegality = signal<DeckLegality | null>(null);
-  /** The decks API's verdict for a server deck; the editor's own checks for a guest or edited deck. */
-  readonly legality = computed<DeckLegality>(() => this.apiLegality() ?? legalityFromStatus(this.status(), !!this.hero()));
+  /** The decks API's verdict; `unknown` for a guest deck or before the API has validated the deck. */
+  readonly legality = computed<DeckLegality>(() => this.apiLegality() ?? UNKNOWN_LEGALITY);
   readonly groups = computed(() => groupLines(this.lines()));
   readonly stats = computed(() => deckStats(this.lines()));
-  readonly total = computed(() => this.status().total);
+  readonly total = computed(() => this.lines().reduce((n, l) => (l.quantity > 0 && typeOf(l.card) !== 'HERO' ? n + l.quantity : n), 0));
   readonly distinct = computed(() => this.lines().filter((l) => l.quantity > 0).length);
   readonly quantities = computed(() => new Map(this.lines().map((l) => [l.card.reference, l.quantity])));
   /**
@@ -186,28 +198,6 @@ export class DeckStore {
   private readonly settled = new Subject<void>();
 
   constructor() {
-    // Frontier: the Uniques of the deck not checked yet go to the uniques search API (as the site's deck builder).
-    effect(() => {
-      if (!formatInfo(this.format()).frontierUniques) return;
-      const checked = this.frontierChecked();
-      const refs = this.lines()
-        .filter((l) => l.quantity > 0 && rarityOf(l.card) === 'UNIQUE' && !checked.has(l.card.reference))
-        .map((l) => l.card.reference)
-        .filter((r) => !this.frontierPending.has(r));
-      if (!refs.length) return;
-      untracked(() => {
-        refs.forEach((r) => this.frontierPending.add(r));
-        const release = () => refs.forEach((r) => this.frontierPending.delete(r));
-        this.uniquesApi.frontierLegal(refs).subscribe({
-          next: (legal) => {
-            release();
-            this.frontierChecked.update((m) => new Map([...m, ...refs.map((r) => [r, legal.has(r)] as const)]));
-          },
-          // Unknown, not illegal: a failed check must not turn the deck into a draft. Checked again on the next change.
-          error: release,
-        });
-      });
-    });
     effect(() => {
       const err = this.serverDeck.error();
       if (err) {
@@ -229,8 +219,33 @@ export class DeckStore {
     return this.quantities().get(reference) ?? 0;
   }
 
+  /** Copies of the deck's prints of a card (`printKey`, same family and rarity), `except` one print. */
+  private keyQuantity(key: string, except?: string): number {
+    return this.lines().reduce((n, l) => (l.card.reference !== except && printKey(l.card.reference) === key ? n + l.quantity : n), 0);
+  }
+
+  /**
+   * Copies `card`'s card (family + rarity, all its prints) can have: the format's caps (`GET /api/formats`), its family
+   * sharing `maxCopiesPerName` with its other rarities in the deck.
+   */
+  familyCap(card: Card): number {
+    const rules = this.rules();
+    const cap = maxCopiesFor(card, rules);
+    const perName = rules?.limits.maxCopiesPerName ?? null;
+    const family = familyOf(card.reference);
+    if (!cap || perName === null || !family || typeOf(card) === 'HERO') return cap;
+    const key = printKey(card.reference);
+    const otherRarities = this.lines().reduce(
+      (n, l) => (familyOf(l.card.reference) === family && printKey(l.card.reference) !== key ? n + l.quantity : n),
+      0,
+    );
+    return Math.max(0, Math.min(cap, perName - otherRarities));
+  }
+
+  /** Copies of this print the editor lets the player have: its card's cap less its other prints, never under its copies. */
   maxFor(card: Card): number {
-    return maxCopiesFor(card, this.format());
+    const others = this.keyQuantity(printKey(card.reference), card.reference);
+    return Math.max(this.quantityOf(card.reference), this.familyCap(card) - others);
   }
 
   create(input: NewDeckInput): Deck {
@@ -254,22 +269,21 @@ export class DeckStore {
    */
   createDeck(input: NewDeckInput): Observable<Deck> {
     if (!this.auth.isLoggedIn()) return of(this.create({ ...input, hero: plainHero(input.hero) }));
-    if (input.hero.defaultArt) return this.heroWithDefaultArt(input.hero).pipe(switchMap((hero) => this.createDeck({ ...input, hero })));
     const description = input.description?.trim() ?? '';
     const body: DeckWrite = {
       name: input.name.trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: input.format,
       isPublic: input.isPublic,
-      // Hero only: a draft until the deck is legal, as the site's builder does on save.
-      isDraft: legalityFromStatus(computeDeckStatus([], input.format), true).state !== 'legal',
+      // A new deck is never archived (isDraft: hidden in BGA).
+      isDraft: false,
       ...(description ? { description } : {}),
-      deckCards: [{ cardReference: input.hero.reference, quantity: 1 }],
+      ...deckWriteCards([{ reference: input.hero.reference, quantity: 1 }], heroPins(input.hero), new Map()),
     };
     this.saving.set(true);
     return this.decksApi.create(body).pipe(
       map((created) => {
         this.saving.set(false);
-        const deck: Deck = { ...created, hero: created.hero ?? input.hero, deckCards: created.deckCards ?? [heroLine(input.hero)], guest: false };
+        const deck: Deck = { ...created, hero: created.hero ?? plainHero(input.hero), deckCards: created.deckCards ?? [heroLine(input.hero)], guest: false };
         this.createdIds.update((ids) => new Set([...ids, deck.id]));
         this.serverId.set(null);
         this.apply(deck);
@@ -336,63 +350,139 @@ export class DeckStore {
       next[i] = { ...next[i], quantity: qty };
       return next;
     });
+    this.learn(card.reference);
+    this.repin(card.reference, before, qty);
     this.touch();
   }
 
   /**
-   * The copies of a family (lines whose reference is in `members`) become `prints`, one print a copy: the brush of a
-   * card. New lines copy `template`.
+   * The pins of `reference`'s card after its line went from `before` to `after` copies. An added copy of a print that is
+   * not its card's canonical one is pinned to it (an alt art or a promo picked from the search), unless the line's
+   * copies show the player's preference (not pinned); a removed copy is a free one first.
    */
-  setFamilyPrints(members: ReadonlySet<string>, template: Card, prints: readonly string[]): void {
+  private repin(reference: string, before: number, after: number): void {
+    const key = printKey(reference);
+    const pinned = [...(this.pins().get(key) ?? [])];
+    const own = pinned.filter((r) => r === reference).length;
+    if (after > before && isPinnedPrint(reference, this.canonical.get(key)) && (before === 0 || own >= before)) {
+      pinned.push(...Array<string>(after - before).fill(reference));
+    } else if (after < before) {
+      let drop = Math.max(0, before - after - (before - own));
+      for (let i = pinned.length - 1; i >= 0 && drop > 0; i--) {
+        if (pinned[i] !== reference) continue;
+        pinned.splice(i, 1);
+        drop--;
+      }
+    }
+    const heroCopy = this.hero() && printKey(this.hero()!.reference) === key ? 1 : 0;
+    this.setPinsOf(key, pinned.slice(0, this.keyQuantity(key) + heroCopy));
+  }
+
+  private setPinsOf(key: string, pinned: readonly string[]): void {
+    const current = this.pins().get(key) ?? [];
+    if (current.length === pinned.length && current.every((r, i) => r === pinned[i])) return;
+    this.pins.update((m) => {
+      const next = new Map(m);
+      if (pinned.length) next.set(key, [...pinned]);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  /** Remembers a print's canonical reference when its reference tells it (a booster print added from the search). */
+  private learn(reference: string): void {
+    const key = printKey(reference);
+    if (reference && guessCanonical(reference) === reference && !this.canonical.has(key)) this.canonical.set(key, reference);
+  }
+
+  /** The prints the deck pins for `card`'s card, 1st copy first. */
+  pinsOf(card: Pick<Card, 'reference'>): readonly string[] {
+    return this.pins().get(printKey(card.reference)) ?? [];
+  }
+
+  /**
+   * « Pour ce deck »: the copies of `card`'s card (lines whose reference is in `members`) take `pinned` first, the other
+   * copies the player's preferences (`choice`); `[]`: every copy follows the preferences again. Saved with the deck.
+   */
+  pinPrints(card: Card, choice: AltArtChoice | null, members: ReadonlySet<string>, pinned: readonly string[]): void {
     if (!this.editable()) return;
-    const current = familyPrints(this.lines(), members);
-    if (sameCopies(current, prints)) return;
-    this.lines.set(withFamilyPrints(this.lines(), members, template, prints));
+    const key = printKey(card.reference);
+    const prints = familyPrints(this.lines(), members);
+    const kept = pinned.slice(0, prints.length);
+    const before = this.pinsOf(card);
+    if (before.length === kept.length && before.every((r, i) => r === kept[i])) return;
+    if (choice) this.learn(basePrint(choice));
+    this.setPinsOf(key, kept);
+    if (choice && prints.length) {
+      const shown = slotDefaults(choice, [...kept, ...Array<null>(prints.length - kept.length).fill(null)]);
+      if (!sameCopies(prints, shown)) this.lines.set(withFamilyPrints(this.lines(), members, card, shown));
+    }
     this.touch();
   }
 
   /**
-   * A family's copies as one card (a search result, « Arts alternatifs » off): an added copy takes the player's default
-   * alt art for its copy (`addedCopyPrint`), a removed one leaves the prints chosen in the deck (`removedCopyPrint`).
+   * A card's copies as one (a search result, the deck board's pile): the copies the deck pins stay first, the others
+   * show the player's preferences (`choice`).
    */
   setFamilyQuantity(card: Card, choice: AltArtChoice, members: ReadonlySet<string>, quantity: number): void {
     if (!this.editable()) return;
     const prints = familyPrints(this.lines(), members);
-    const target = Math.max(0, Math.min(this.maxFor(card), Math.round(quantity)));
-    let changed: { reference: string; delta: number } | null = null;
-    while (prints.length < target) {
-      const reference = addedCopyPrint(choice, prints);
-      prints.push(reference);
-      changed = { reference, delta: 1 };
-    }
-    while (prints.length > target) {
-      const reference = removedCopyPrint(choice, prints);
-      prints.splice(prints.lastIndexOf(reference), 1);
-      changed = { reference, delta: -1 };
-    }
-    if (!changed) return;
-    const after = prints.filter((p) => p === changed.reference).length;
-    this.lastChange.set({ card: printOf(card, changed.reference), quantity: after, delta: changed.delta });
-    this.lines.set(withFamilyPrints(this.lines(), members, card, prints));
+    const target = Math.max(0, Math.min(this.familyCap(card), Math.round(quantity)));
+    if (target === prints.length) return;
+    const key = printKey(card.reference);
+    const pinned = (this.pins().get(key) ?? []).slice(0, target);
+    const next = slotDefaults(choice, [...pinned, ...Array<null>(target - pinned.length).fill(null)]);
+    const delta = target > prints.length ? 1 : -1;
+    const was = counts(prints);
+    const now = counts(next);
+    const grew = (r: string) => (now.get(r) ?? 0) > (was.get(r) ?? 0);
+    const shrank = (r: string) => (now.get(r) ?? 0) < (was.get(r) ?? 0);
+    const reference = (delta > 0 ? [...now.keys()].find(grew) : [...was.keys()].find(shrank)) ?? card.reference;
+    this.lastChange.set({ card: printOf(card, reference), quantity: now.get(reference) ?? 0, delta });
+    this.learn(card.reference);
+    this.learn(basePrint(choice));
+    this.setPinsOf(key, pinned);
+    this.lines.set(withFamilyPrints(this.lines(), members, card, next));
     this.touch();
   }
 
   /**
-   * « Appliquer les arts par défaut »: the copies of every multi-art card of the deck, and the hero, take the player's
-   * default alt arts (`choices`: families by reference). `false` when nothing changes.
+   * The copies the deck does not pin show the player's preferences (`choices`: families by reference), the hero too
+   * when it is not pinned. What is shown only: nothing is saved (the decks API keeps the canonical cards and the pins).
    */
-  applyAltArtDefaults(choices: Readonly<Record<string, AltArtChoice>>): boolean {
-    if (!this.editable()) return false;
-    const lines = linesWithDefaults(this.lines(), choices);
+  showPreferences(choices: Readonly<Record<string, AltArtChoice>>): void {
+    for (const choice of new Set(Object.values(choices))) this.learn(basePrint(choice));
+    const lines = linesWithPins(this.lines(), choices, this.pins());
+    if (lines) this.lines.set(lines);
     const hero = this.hero();
     const heroChoice = hero ? choices[hero.reference] : undefined;
-    const heroRef = heroChoice ? defaultPrints(heroChoice, 1)[0] : undefined;
-    const heroChanged = !!hero && !!heroRef && heroRef !== hero.reference;
-    if (!lines && !heroChanged) return false;
-    if (lines) this.lines.set(lines);
-    if (heroChanged && hero && heroRef) this.hero.set({ ...hero, reference: heroRef });
+    if (!hero || !heroChoice || this.pinsOf(hero).length) return;
+    const shown = defaultPrints(heroChoice, 1)[0];
+    if (shown && shown !== hero.reference) this.hero.set({ ...hero, reference: shown });
+  }
+
+  /**
+   * « Arts par défaut »: the deck pins no print anymore, every card (and the hero) follows the player's global
+   * preferences. `false` when the deck pinned none.
+   */
+  clearPins(): boolean {
+    if (!this.editable() || !this.pins().size) return false;
+    this.pins.set(new Map());
     this.touch();
     return true;
+  }
+
+  /** The deck's print of a token family (`family`: its prints), `null` when the deck follows the player's preference. */
+  tokenPrintOf(family: readonly string[]): string | null {
+    return this.tokenPrints().find((t) => family.includes(t.reference))?.reference ?? null;
+  }
+
+  /** « Pour ce deck »: a token family takes `reference` in this deck (`null`: the player's preference again). */
+  setTokenPrint(family: readonly string[], reference: string | null): void {
+    if (!this.editable()) return;
+    const others = this.tokenPrints().filter((t) => !family.includes(t.reference));
+    this.tokenPrints.set(reference ? [...others, { reference, quantity: 1 }] : others);
+    this.touch();
   }
 
   addCard(card: Card): void {
@@ -409,15 +499,12 @@ export class DeckStore {
     if (!this.editable()) return;
     const hero = settings.hero;
     if (hero) {
+      const before = this.hero();
+      if (before) this.setPinsOf(printKey(before.reference), []);
       this.hero.set(plainHero(hero));
-      // Then its default alt art, unless another hero was picked meanwhile.
-      if (hero.defaultArt) {
-        this.heroWithDefaultArt(hero).subscribe((h) => {
-          if (h.reference === hero.reference || this.hero()?.reference !== hero.reference) return;
-          this.hero.set(h);
-          this.touch();
-        });
-      }
+      // A print picked with « Alt arts » is the deck's; otherwise the player's preference shows (`showPreferences`).
+      for (const [key, prints] of heroPins(hero)) this.setPinsOf(key, prints);
+      this.learn(hero.reference);
     }
     if (settings.format) this.format.set(settings.format);
     if (settings.isPublic !== undefined) this.isPublic.set(settings.isPublic);
@@ -444,16 +531,6 @@ export class DeckStore {
     return this.guests.create({ name, description, format: this.format(), isPublic: false, hero: this.hero(), deckCards: this.serializeLines() }).id;
   }
 
-  /** `hero` with the player's default alt art for it (itself without one, or on an error). */
-  private heroWithDefaultArt(hero: DeckHero): Observable<DeckHero> {
-    return this.ownership.altArtChoices([hero.reference]).pipe(
-      map((choices) => {
-        const choice = choices[hero.reference];
-        return { ...plainHero(hero), reference: choice ? defaultPrints(choice, 1)[0] : hero.reference };
-      }),
-    );
-  }
-
   /**
    * Copies the open deck, private, and emits the copy's id: on the account when the user is signed
    * in (like the site's « Dupliquer »), in this browser otherwise. Fails with a displayable message.
@@ -462,19 +539,16 @@ export class DeckStore {
     const deckName = name.trim() || this.duplicateName();
     const description = this.description().trim();
     if (!this.auth.isLoggedIn()) return of(this.duplicateToGuest(deckName));
+    // Someone else's deck: the copy pins no print, the user's own preferences show (their own deck keeps its choices).
     const body: DeckWrite = {
       name: deckName,
       format: this.format(),
       isPublic: false,
-      isDraft: this.isDraft() ?? this.format() === 'sandbox',
+      isDraft: false,
       ...(description ? { description } : {}),
-      deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+      ...(this.owned() === true ? this.writeCards() : deckWriteCards(this.shownLines(), new Map(), this.canonical)),
     };
-    // Someone else's deck: the copy takes the user's default alt arts (their own deck keeps its prints).
-    const cards = body.deckCards ?? [];
-    const withDefaults = this.owned() === true ? of(cards) : this.ownership.altArtChoices(cards.map((c) => c.cardReference)).pipe(map((choices) => cardsWithDefaults(cards, choices)));
-    return withDefaults.pipe(
-      switchMap((deckCards) => this.decksApi.create({ ...body, deckCards })),
+    return this.decksApi.create(body).pipe(
       map((created) => {
         this.createdIds.update((ids) => new Set([...ids, created.id]));
         return created.id;
@@ -498,6 +572,26 @@ export class DeckStore {
       }),
       catchError((err: unknown) => {
         this.actionError.set(apiErrorMessage(err, makePublicErrorHead));
+        return of(false);
+      }),
+    );
+  }
+
+  /**
+   * « Archiver » / « Désarchiver »: only `isDraft` is sent. An archived deck is hidden in BGA, and stays in « Mes decks »
+   * and in the community list when public. `false` on a refusal, with the reason in `actionError`.
+   */
+  setArchived(archived: boolean): Observable<boolean> {
+    const id = this.deckId();
+    if (!id || GuestDeckService.isGuestId(id)) return of(false);
+    this.actionError.set(null);
+    return this.decksApi.patch(id, { isDraft: archived }).pipe(
+      map(() => {
+        this.isDraft.set(archived);
+        return true;
+      }),
+      catchError((err: unknown) => {
+        this.actionError.set(apiErrorMessage(err, archiveErrorHead));
         return of(false);
       }),
     );
@@ -596,9 +690,9 @@ export class DeckStore {
       name: this.name().trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       format: this.format(),
       isPublic: this.isPublic(),
-      isDraft: this.legality().state !== 'legal',
+      isDraft: false,
       ...(description ? { description } : {}),
-      deckCards: lines.map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+      ...this.writeCards(),
     };
     this.saveError.set(null);
     this.saving.set(true);
@@ -642,7 +736,11 @@ export class DeckStore {
     this.isPublic.set(false);
     this.hero.set(null);
     this.createdAt.set(null);
+    this.owner.set(null);
     this.lines.set([]);
+    this.pins.set(new Map());
+    this.tokenPrints.set([]);
+    this.canonical = new Map();
     this.dirty.set(false);
     this.saveError.set(null);
     this.saved.set(false);
@@ -659,7 +757,6 @@ export class DeckStore {
   private touch(): void {
     this.revision++;
     this.dirty.set(true);
-    this.apiLegality.set(null);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
@@ -670,6 +767,17 @@ export class DeckStore {
   private serializeLines() {
     const hero = this.hero();
     return [...(hero ? [heroLine(hero)] : []), ...this.lines().map((l) => cardToLine(l.card, l.quantity))];
+  }
+
+  /** The prints shown, hero first. */
+  private shownLines(): { reference: string; quantity: number }[] {
+    const hero = this.hero();
+    return [...(hero ? [{ reference: hero.reference, quantity: 1 }] : []), ...this.lines().map((l) => ({ reference: l.card.reference, quantity: l.quantity }))];
+  }
+
+  /** `deckCards` (canonical references) and `altArtOverrides` (the pins, the token prints) as written. */
+  private writeCards(): Pick<DeckWrite, 'deckCards' | 'altArtOverrides'> {
+    return deckWriteCards(this.shownLines(), this.pins(), this.canonical, this.tokenPrints());
   }
 
   private save(keepalive = false): void {
@@ -685,7 +793,6 @@ export class DeckStore {
         format: this.format(),
         isPublic: this.isPublic(),
         hero: this.hero(),
-        legal: this.status().legal && !!this.hero(),
         deckCards: this.serializeLines(),
         guest: true,
       });
@@ -709,15 +816,17 @@ export class DeckStore {
     this.send(id, revision, payload, keepalive);
   }
 
-  /** The open deck as PATCHed. As the site's builder: a deck is saved as a draft while it is not legal. */
+  /**
+   * The open deck as PATCHed: its canonical cards and its own prints. `isDraft` (archived: hidden in BGA) is never sent,
+   * so editing an archived deck keeps it archived; `setArchived()` changes it.
+   */
   private payload(): Partial<DeckWrite> {
     return {
       name: this.name().trim() || $localize`:@@core.deck.defaultName:Nouveau deck`,
       description: this.description().trim(),
       format: this.format(),
       isPublic: this.isPublic(),
-      isDraft: this.legality().state !== 'legal',
-      deckCards: this.serializeLines().map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
+      ...this.writeCards(),
     };
   }
 
@@ -735,12 +844,13 @@ export class DeckStore {
             // A newer save answered first: this older state may have been written last.
             this.queued.set(id, { revision: this.revision, payload: this.payload() });
           } else {
-            this.isDraft.set(payload.isDraft ?? null);
             this.saved.set(true);
-            if (revision === this.revision) {
-              this.dirty.set(false);
-              if (!this.saveTimer) this.apiLegality.set(saved ? legalityFromApi(saved) : null);
+            if (saved) {
+              for (const [key, ref] of canonicalFromAnswer(saved)) this.canonical.set(key, ref);
+              // The verdict on what was sent: the newest the API gave, until the next answer.
+              this.apiLegality.set(legalityFromApi(saved));
             }
+            if (revision === this.revision) this.dirty.set(false);
           }
         }
         // Also when the deck was left meanwhile: a queued save may be another deck's.
@@ -795,6 +905,7 @@ export class DeckStore {
     this.isPublic.set(!!deck.isPublic);
     this.hero.set(hero);
     this.createdAt.set(deck.createdAt ?? deck.updatedAt ?? null);
+    this.owner.set(authorOf(deck));
     this.isGuest.set(!!deck.guest || GuestDeckService.isGuestId(deck.id));
     this.apiLegality.set(this.isGuest() ? null : legalityFromApi(deck));
     if (!this.isGuest()) this.mineWanted.set(true);
@@ -803,6 +914,10 @@ export class DeckStore {
         .filter((l) => !isHeroLine(l, hero))
         .map((l) => ({ card: lineToCard(l), quantity: l.quantity })),
     );
+    const prints = readDeckPrints(deck, hero?.reference);
+    this.pins.set(prints.pins);
+    this.canonical = prints.canonical;
+    this.tokenPrints.set(prints.tokens);
     this.dirty.set(false);
     this.saveError.set(null);
     this.saved.set(false);
@@ -857,6 +972,7 @@ const saveErrorHead = (status: number) =>
     ? $localize`:@@core.deckStore.saveRefused:Enregistrement refusé : reconnectez-vous (HTTP ${status}:status:).`
     : $localize`:@@core.deckStore.saveFailed:Échec de l’enregistrement (HTTP ${status}:status:).`;
 const createErrorHead = (status: number) => $localize`:@@core.deckStore.createFailed:Impossible de créer le deck sur votre compte (HTTP ${status}:status:).`;
+const archiveErrorHead = (status: number) => $localize`:@@core.deckStore.archiveFailed:Impossible de changer le statut d’archive de ce deck (HTTP ${status}:status:).`;
 const makePublicErrorHead = (status: number) => $localize`:@@core.deckStore.makePublicFailed:Impossible de rendre ce deck public (HTTP ${status}:status:).`;
 const deleteErrorHead = (status: number) =>
   status === 401 || status === 403
@@ -894,20 +1010,12 @@ function plainHero(hero: DeckHero): DeckHero {
   return { reference: hero.reference, name: hero.name, faction: hero.faction };
 }
 
+/** The hero's pin: the print picked with « Alt arts » when it is not the canonical one; none for its preference. */
+function heroPins(hero: DeckHero): Map<string, string[]> {
+  return !hero.defaultArt && isPinnedPrint(hero.reference) ? new Map([[printKey(hero.reference), [hero.reference]]]) : new Map();
+}
+
 /** `card` as another print of the same card (`reference`). */
 function printOf(card: Card, reference: string): Card {
   return reference === card.reference ? card : { ...card, reference, imagePath: undefined };
-}
-
-/**
- * Deck lines to write (reference and quantity, with the rest of the line) with the player's default alt arts, families
- * by reference in `choices`: an imported deck, or a copy of someone else's deck, takes the user's own illustrations. A
- * new print copies its family's first line.
- */
-export function cardsWithDefaults<T extends { cardReference: string; quantity: number }>(cards: readonly T[], choices: Readonly<Record<string, AltArtChoice>>): T[] {
-  // Each line rides along in its card: `withFamilyPrints` copies a family's first card for its new prints.
-  const lines = cards.map((line) => ({ card: { reference: line.cardReference, line } as Card & { line: T }, quantity: line.quantity }));
-  const next = linesWithDefaults(lines, choices);
-  if (!next) return [...cards];
-  return next.map((l) => ({ ...(l.card as Card & { line: T }).line, cardReference: l.card.reference, quantity: l.quantity }));
 }

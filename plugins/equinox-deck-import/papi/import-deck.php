@@ -8,7 +8,6 @@ use AlteredCore\EquinoxDeckImport\Http\Guards;
 use AlteredCore\EquinoxDeckImport\Http\Json;
 use AlteredCore\EquinoxDeckImport\Infrastructure\CurlDeckApiClient;
 use AlteredCore\EquinoxDeckImport\Infrastructure\KeycloakTokenProvider;
-use AlteredCore\EquinoxDeckImport\Infrastructure\OwnershipAltArtPreferenceProvider;
 use AlteredCore\EquinoxDeckImport\Presentation\Translations;
 
 $lang = function_exists('getUiLang') ? getUiLang() : 'en';
@@ -30,7 +29,7 @@ if (!Guards::csrfValid($body['csrf_token'] ?? null)) {
 }
 
 $tokens = new KeycloakTokenProvider();
-$useCase = new ImportDeck(new CurlDeckApiClient($tokens), $tokens, new OwnershipAltArtPreferenceProvider());
+$useCase = new ImportDeck(new CurlDeckApiClient($tokens), $tokens);
 
 $result = $useCase->execute($body, $msg, !empty($body['debug']));
 Json::send($result->toArray(), $result->status);

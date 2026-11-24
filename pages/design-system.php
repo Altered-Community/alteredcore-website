@@ -229,6 +229,16 @@ include dirname(__DIR__) . '/includes/header.php';
                     </select>
                 </div>
                 <div class="ac-field">
+                    <label class="ac-field__label" for="ds-suggest">Card (suggestions as you type)</label>
+                    <div class="ac-input-icon"><?= ac_icon('search') ?><input class="ac-input" id="ds-suggest" value="kelon" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="ds-suggest-list" aria-activedescendant="ds-suggest-o0"></div>
+                    <div class="ac-listbox__panel ac-listbox__panel--suggestions">
+                        <div class="ac-listbox__list" id="ds-suggest-list" role="listbox" aria-label="Card">
+                            <div class="ac-listbox__option is-active" role="option" id="ds-suggest-o0" aria-selected="false"><img class="ac-listbox__thumb" src="https://cdn.alteredcore.org/cards/en/CORE/ALT_CORE_B_AX_04_C.webp" alt=""><span class="ac-listbox__label"><mark>Kelon</mark> Elemental</span><span class="ac-listbox__meta">Common</span></div>
+                            <div class="ac-listbox__option" role="option" id="ds-suggest-o1" aria-selected="false"><img class="ac-listbox__thumb" src="https://cdn.alteredcore.org/cards/en/CORE/ALT_CORE_B_AX_04_R1.webp" alt=""><span class="ac-listbox__label"><mark>Kelon</mark> Elemental</span><span class="ac-listbox__meta">Rare</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ac-field">
                     <label class="ac-field__label" for="ds-bad">Cost</label>
                     <input class="ac-input" id="ds-bad" value="3-" aria-invalid="true" aria-describedby="ds-bad-err">
                     <p class="ac-field__error" id="ds-bad-err">Use a number or a range: 3, 1-3, 4+.</p>
@@ -250,6 +260,7 @@ include dirname(__DIR__) . '/includes/header.php';
                     <label class="ac-check"><input type="radio" name="ds-r" checked> Hand</label>
                     <label class="ac-check"><input type="radio" name="ds-r"> Reserve</label>
                     <label class="ac-switch"><input type="checkbox" role="switch" checked> Public deck</label>
+                    <label class="ac-stack ac-stack--sm">Card size <input type="range" class="ac-slider" min="1" max="2" step="0.1" value="1.5" style="--ac-slider-fill: 50%" aria-label="Card size"></label>
                 </div>
             </div>
         </div>
@@ -319,6 +330,8 @@ include dirname(__DIR__) . '/includes/header.php';
                 <span class="ac-badge ac-badge--green"><?= ac_icon('globe', 'ac-icon--14') ?> Public</span>
                 <span class="ac-badge ac-badge--orange">Draft</span>
                 <span class="ac-badge ac-badge--red">Invalid</span>
+                <span class="ac-badge ac-badge--green ac-badge--icon" role="img" aria-label="Legal" title="Legal"><?= ac_icon('check', 'ac-icon--14') ?></span>
+                <span class="ac-badge ac-badge--red ac-badge--icon" role="img" aria-label="Not legal" title="Not legal"><?= ac_icon('x', 'ac-icon--14') ?></span>
                 <span class="ac-badge">Neutral</span>
                 <span class="ac-badge ac-badge--lg ac-badge--blue">Large</span>
                 <span class="ac-badge ac-badge--dense">Dense</span>

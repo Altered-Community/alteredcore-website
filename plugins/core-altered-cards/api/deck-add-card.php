@@ -3,7 +3,7 @@
 // Body: deck_id, card_ref, csrf_token. Adds the card (or +1 quantity if already present)
 // to one of the logged-in user's own decks. The deck API has no incremental "add card"
 // operation, so this fetches the deck's current card list and PATCHes back the full
-// deckCards array, mirroring deckbuilder.php's _buildSaveFormData()/saveDeck() flow.
+// deckCards array (and the deck's altArtOverrides), see cacDeckAddCardPatch().
 require_once dirname(__DIR__) . '/includes/functions.php';
 require_once dirname(__DIR__, 3) . '/config.php';
 
@@ -61,29 +61,10 @@ if ($getCode < 200 || $getCode >= 300 || !$getResp) {
 }
 
 $deck = json_decode($getResp, true);
-$existingCards = $deck['deckCards'] ?? $deck['cards'] ?? [];
-
-$deckCards = [];
-$found = false;
-foreach ($existingCards as $c) {
-    $ref = $c['cardReference'] ?? '';
-    $qty = (int)($c['quantity'] ?? 1);
-    if ($ref === $cardRef) {
-        $qty++;
-        $found = true;
-    }
-    $deckCards[] = ['cardReference' => $ref, 'quantity' => $qty];
-}
-if (!$found) {
-    $deckCards[] = ['cardReference' => $cardRef, 'quantity' => 1];
-}
-
-// Global mode: re-resolve every card's illustration against the player's preferences
-// whenever a quantity changes, same as the deckbuilder's own addCard()/removeCard().
-$userId = (int)($_SESSION['user_id'] ?? 0);
-if (cacIsAltArtGlobalMode($userId)) {
-    $deckCards = cacApplyAltArtPreferencesToCards($deckCards, $userId);
-}
+// The deck's canonical lines + its own art choices (altArtOverrides) sent back unchanged, so the
+// card choices made in the deck builder are kept; the player's global alt-art preferences are
+// not baked into the list (AlteredOwnership applies them when the deck is shown).
+$patch = cacDeckAddCardPatch(is_array($deck) ? $deck : [], $cardRef);
 
 $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
 curl_setopt_array($ch, [
@@ -94,7 +75,7 @@ curl_setopt_array($ch, [
         'Accept: application/json',
         'Authorization: Bearer ' . $token,
     ],
-    CURLOPT_POSTFIELDS     => json_encode(['deckCards' => $deckCards]),
+    CURLOPT_POSTFIELDS     => json_encode($patch),
     CURLOPT_TIMEOUT        => 15,
 ]);
 $patchResp = curl_exec($ch);

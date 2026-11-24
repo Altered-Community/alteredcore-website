@@ -157,6 +157,11 @@
   display: flex;
   gap: var(--ac-space-1-5);
   flex-wrap: wrap;
+  align-items: center;
+}
+.owner {
+  font-size: var(--ac-font-size-caption);
+  color: var(--ac-color-text-muted);
 }
 
 .m-counts {

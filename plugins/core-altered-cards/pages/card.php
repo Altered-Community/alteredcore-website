@@ -326,6 +326,9 @@ var AlteredCard = {
     sets:     <?= json_encode($setsData) ?>,
     subtypes: <?= json_encode($subtypesData) ?>,
     formats:  <?= json_encode($formatsData) ?>,
+    // Per format code: true (legal), false (not legal) or null (can't tell from the card alone), from the rules the
+    // decks API publishes (GET /api/formats), see cacCardFormatVerdict(). Null when the API can't be reached.
+    formatVerdicts: <?= json_encode(($ref !== '' && ($_apiFormats = cacFetchDeckApiFormats()) !== null) ? (object)cacCardFormatVerdicts($ref, $_apiFormats) : null) ?>,
     isLoggedIn: <?= $isLoggedIn ? 'true' : 'false' ?>,
     csrf:     <?= json_encode($isLoggedIn ? csrfToken() : '') ?>,
     deckAddUrl: <?= json_encode(BASE_URL . '/papi/core-altered-cards/deck-add-card') ?>,
@@ -611,28 +614,15 @@ var AlteredCard = {
                 + '<span style="width:8px;height:8px;border-radius:50%;background:' + escAttr(fmt.color || 'var(--ac-color-text-muted)') + ';display:inline-block;flex-shrink:0"></span>'
                 + escHtml(label) + '</span>';
         }
-        function appendFormatChip(fmt) {
-            var val = document.getElementById('card-formats-val');
-            if (val) { val.insertAdjacentHTML('beforeend', formatChipHtml(fmt)); return; }
-            infoEl.insertAdjacentHTML('beforeend',
-                '<div class="card-stat-row" id="card-formats-row">'
-                + '<span class="card-stat-label">' + escHtml(txt.lbl_formats) + '</span>'
-                + '<span id="card-formats-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:1rem;row-gap:.4rem">'
-                + formatChipHtml(fmt) + '</span></div>');
-        }
-        function isFormatStaticLegal(fmt) {
-            if (group.isBanned    && fmt.allowBanned    === false) return false;
-            if (group.isSuspended && fmt.allowSuspended === false) return false;
-            if (isUnique && fmt.maxUnique === 0) return false;
-            return true;
-        }
-        var fmtList = Object.keys(AlteredCard.formats || {}).map(function (k) { return AlteredCard.formats[k]; }).filter(function (f) { return !f.hidden; });
-        var immediateFmts = [], pendingFrontierFmts = [];
-        fmtList.forEach(function (f) {
-            if (!isFormatStaticLegal(f)) return;
-            if (isUnique && f.requireUniqueLegality) { pendingFrontierFmts.push(f); return; }
-            immediateFmts.push(f);
-        });
+        // The verdicts come from the decks API's published rules (AlteredCard.formatVerdicts, computed server-side):
+        // nothing is decided here. altered.json only gives each format its label and colour. A format the card alone
+        // can't settle (null), or one the API doesn't know, is left out of both lists.
+        var verdicts = AlteredCard.formatVerdicts || {};
+        var fmtList = Object.keys(AlteredCard.formats || {})
+            .filter(function (k) { return !AlteredCard.formats[k].hidden && Object.prototype.hasOwnProperty.call(verdicts, k); })
+            .map(function (k) { return { fmt: AlteredCard.formats[k], legal: verdicts[k] }; });
+        var immediateFmts = fmtList.filter(function (f) { return f.legal === true; }).map(function (f) { return f.fmt; });
+        var illegalFmts   = fmtList.filter(function (f) { return f.legal === false; }).map(function (f) { return f.fmt; });
         if (immediateFmts.length) {
             infoEl.insertAdjacentHTML('beforeend',
                 '<div class="card-stat-row" id="card-formats-row">'
@@ -643,9 +633,7 @@ var AlteredCard = {
         }
 
         // Non-legal formats — plain text (no dot, no chip styling), light desaturated
-        // red. Row is created up front (hidden if empty) so a later async Frontier
-        // resolution (see below) lands in the right spot even though it may run
-        // after the synchronous BGA banner is inserted.
+        // red. Row is created up front, hidden when empty.
         function illegalChipHtml(fmt) {
             return '<span class="card-format-illegal">' + escHtml(fmt[uiLang] || fmt.en || '') + '</span>';
         }
@@ -659,25 +647,7 @@ var AlteredCard = {
             '<div class="card-stat-row" id="card-formats-illegal-row" style="display:none">'
             + '<span class="card-stat-label">' + escHtml(txt.lbl_formats_illegal) + '</span>'
             + '<span id="card-formats-illegal-val" class="card-stat-val d-flex flex-wrap align-items-center" style="column-gap:.5rem;row-gap:.4rem"></span></div>');
-        var illegalFmts = fmtList.filter(function (f) { return !isFormatStaticLegal(f); });
         illegalFmts.forEach(appendIllegalFormatChip);
-
-        // Frontier requires each Unique print to be on a dynamic allowlist — not
-        // derivable from local data, so it's checked separately and appended once
-        // resolved either as legal or (now confirmed) not legal. Left out of both
-        // lists if unverifiable, mirroring deckbuilder.php's checkFrontierLegality().
-        if (isUnique && UNIQUES_API && pendingFrontierFmts.length) {
-            fetch(UNIQUES_API + '/api/v2/cards?ref=' + encodeURIComponent(ref) + '&format=' + encodeURIComponent(AlteredCard.uniquesFrontierFormat || 'frontier'), { headers: { 'Accept': 'application/json' } })
-                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                .then(function (data) {
-                    var legalRefs = {};
-                    (data.cards || []).forEach(function (c) { if (c.reference) legalRefs[c.reference] = true; });
-                    pendingFrontierFmts.forEach(function (f) {
-                        if (legalRefs[ref]) appendFormatChip(f); else appendIllegalFormatChip(f);
-                    });
-                })
-                .catch(function () {});
-        }
 
         // BGA legality — distinct mention, not mixed into the formats list.
         if (setData.bgalegal === false) {
@@ -1178,12 +1148,22 @@ var AlteredCard = {
 
     function renderLore(loreData, l) {
         var entries = (loreData && !Array.isArray(loreData)) ? (loreData[l] || loreData.en || []) : [];
-        var entry = null;
-        for (var i = 0; i < entries.length && !entry; i++) {
-            for (var j = 0; j < (entries[i].elements || []).length; j++) {
-                if (entries[i].elements[j].text) { entry = entries[i]; break; }
+        function val(e, type) {
+            var els = e.elements || [];
+            for (var k = 0; k < els.length; k++) {
+                var t = els[k].text;
+                if (els[k].type === type && t && t !== '#N/A' && t !== 'N/A') return t;
             }
+            return '';
         }
+        // The API can return several entries per language, some with the narrator
+        // and date left empty: keep the most complete one (first wins on a tie).
+        var entry = null, best = 0;
+        entries.forEach(function (e) {
+            if (!val(e, 'FLAVOR_TEXT') && !val(e, 'STORY')) return;
+            var score = 1 + (val(e, 'NARRATOR') ? 1 : 0) + (val(e, 'DATE') ? 1 : 0);
+            if (score > best) { entry = e; best = score; }
+        });
         if (!entry) return '';
         var html = '<div class="card-altered p-3">';
         (entry.elements || []).forEach(function (el) {
@@ -1194,6 +1174,11 @@ var AlteredCard = {
             else if (el.type === 'STORY')   html += '<p style="font-size:.88rem;color:var(--ac-color-text-2);line-height:1.65;margin:0 0 .5rem 0">' + esc.replace(/\n/g, '<br>') + '</p>';
             else if (el.type === 'NARRATOR') html += '<p style="font-size:.8rem;color:var(--ac-color-text-muted);text-align:right;font-style:italic;margin:0">— ' + esc + '</p>';
         });
+        var narrator = val(entry, 'NARRATOR'), date = val(entry, 'DATE');
+        if (narrator || date) {
+            html += '<p style="font-size:.8rem;color:var(--neutral-500);text-align:right;font-style:italic;margin:0">— '
+                + escHtml([narrator, date].filter(Boolean).join(', ')) + '</p>';
+        }
         return html + '</div>';
     }
 

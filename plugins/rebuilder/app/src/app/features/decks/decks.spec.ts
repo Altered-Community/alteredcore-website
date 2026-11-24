@@ -10,7 +10,7 @@ const item = (p: Partial<DeckListItem>): DeckListItem => ({
   formatLabel: 'Standard All Uniques',
   formatTone: 'blue',
   legal: true,
-  legality: { state: 'legal', rules: [], errors: [] },
+  legality: { state: 'legal', rules: [], errors: [], issues: [], checks: [] },
   draft: false,
   isPublic: p.isPublic ?? false,
   author: null,
@@ -21,6 +21,7 @@ const item = (p: Partial<DeckListItem>): DeckListItem => ({
   createdAt: p.createdAt ?? '2026-01-01',
   likes: p.likes ?? 0,
   liked: false,
+  tournament: null,
 });
 
 describe('filterDecks (Mes decks)', () => {

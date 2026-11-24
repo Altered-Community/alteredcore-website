@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Subject, of, throwError } from 'rxjs';
-import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
 import { AuthSession } from '../../core/auth-session';
 import { DeckStore } from '../../core/deck-store';
+import { printKey } from '../../core/deck-prints';
 import type { Card, HydratedLine } from '../../core/models';
 import { OwnershipApiService, type AltArtChoice } from '../../core/ownership-api.service';
 import { EditorAltArts } from './editor-alt-arts';
@@ -27,22 +27,24 @@ const card = (reference: string): Card => ({ reference, name: 'Élémentaire de 
 describe('EditorAltArts', () => {
   let answers: Subject<Record<string, AltArtChoice>>;
   let lines: ReturnType<typeof signal<HydratedLine[]>>;
+  let pins: ReturnType<typeof signal<ReadonlyMap<string, readonly string[]>>>;
   let familyAdds: number[];
-  let familyChoices: AltArtChoice[];
-  let saved: [string, string, readonly string[] | null][];
-  let saveFails: boolean;
-  let loaded: Record<string, string[]>;
-  let applied: Record<string, AltArtChoice>[];
+  let pinned: (readonly string[])[];
+  let shown: Record<string, AltArtChoice>[];
+  let preferences: [AltArtChoice['family'], string[]][];
+  let preferenceFails: boolean;
+  let cleared: number;
 
-  function setup(cards: Record<string, string[]> = {}, global = false): EditorAltArts {
-    loaded = cards;
-    applied = [];
+  function setup(): EditorAltArts {
     answers = new Subject();
     lines = signal<HydratedLine[]>([]);
+    pins = signal<ReadonlyMap<string, readonly string[]>>(new Map());
     familyAdds = [];
-    familyChoices = [];
-    saved = [];
-    saveFails = false;
+    pinned = [];
+    shown = [];
+    preferences = [];
+    preferenceFails = false;
+    cleared = 0;
     TestBed.configureTestingModule({
       providers: [
         EditorAltArts,
@@ -52,33 +54,30 @@ describe('EditorAltArts', () => {
           useValue: {
             baseUrl: '/ownership',
             altArtChoices: () => answers,
-            globalAltArts: () => of(global),
-          },
-        },
-        {
-          provide: DeckAltArtsApiService,
-          useValue: {
-            load: () => of(loaded),
-            save: (deck: string, family: string, cards: readonly string[] | null) =>
-              saveFails ? throwError(() => new Error('down')) : (saved.push([deck, family, cards]), of(undefined)),
-            clear: () => of(undefined),
+            setAltArtPreference: (family: AltArtChoice['family'], refs: string[]) =>
+              preferenceFails ? throwError(() => new Error('down')) : (preferences.push([family, refs]), of(undefined)),
           },
         },
         {
           provide: DeckStore,
           useValue: {
             lines,
+            pins,
             hero: signal(null),
             editable: signal(true),
-            deckId: signal('d1'),
-            isGuest: signal(false),
-            maxFor: () => 3,
+            owned: signal(true),
+            familyCap: () => 3,
+            maxFor: () => 1,
             quantityOf: (ref: string) => lines().find((l) => l.card.reference === ref)?.quantity ?? 0,
+            pinsOf: (c: Pick<Card, 'reference'>) => pins().get(printKey(c.reference)) ?? [],
             setQuantity: () => undefined,
-            applyAltArtDefaults: (choices: Record<string, AltArtChoice>) => (applied.push(choices), true),
-            setFamilyQuantity: (_card: Card, choice: AltArtChoice, _members: Set<string>, n: number) => (familyAdds.push(n), familyChoices.push(choice)),
-            setFamilyPrints: (_members: Set<string>, _card: Card, prints: string[]) =>
-              lines.set([...new Set(prints)].map((reference) => ({ card: card(reference), quantity: prints.filter((p) => p === reference).length }))),
+            setFamilyQuantity: (_card: Card, _choice: AltArtChoice, _members: Set<string>, n: number) => familyAdds.push(n),
+            pinPrints: (c: Card, _choice: AltArtChoice | null, _members: Set<string>, prints: readonly string[]) => {
+              pinned.push(prints);
+              pins.set(prints.length ? new Map([[printKey(c.reference), prints]]) : new Map());
+            },
+            showPreferences: (choices: Record<string, AltArtChoice>) => shown.push(choices),
+            clearPins: () => (cleared++, true),
           },
         },
       ],
@@ -86,7 +85,13 @@ describe('EditorAltArts', () => {
     return TestBed.inject(EditorAltArts);
   }
 
-  it('waits for a card’s family before adding a copy, so that it takes its default alt art', () => {
+  function ready(alt: EditorAltArts, copies = 2): void {
+    alt.request([BASE]);
+    answers.next({ [BASE]: kelon });
+    lines.set([{ card: card(BASE), quantity: copies }]);
+  }
+
+  it('waits for a card’s family before adding a copy, so that it takes its preferred alt art', () => {
     const alt = setup();
     alt.request([BASE]);
     alt.setQuantity(card(BASE), 1);
@@ -95,100 +100,85 @@ describe('EditorAltArts', () => {
     expect(familyAdds).toEqual([1]);
   });
 
-  it('gives a print the copies its family leaves, and a family card the whole limit', () => {
+  it('gives a family card the whole limit of its card, and a print what its card leaves', () => {
     const alt = setup();
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    lines.set([
-      { card: card(BASE), quantity: 2 },
-      { card: card(ALT), quantity: 1 },
-    ]);
-    expect(alt.maxFor(card(ALT), false)).toBe(1);
-    expect(alt.maxFor(card(BASE), false)).toBe(2);
+    ready(alt);
     expect(alt.maxFor(card(BASE), true)).toBe(3);
-    expect(alt.familyQuantity(card(BASE))).toBe(3);
+    expect(alt.maxFor(card(ALT), false)).toBe(1);
+    expect(alt.familyQuantity(card(BASE))).toBe(2);
   });
 
-  const KEY = '302:AX:C';
-  const slotsOf = (choice: AltArtChoice) => choice.options.slots.map((slot) => slot.reference);
-
-  it('keeps the brush’s cards for the deck, its copies taking them, and an added copy takes the next card’s', () => {
+  it('shows the player’s preferences for the copies the deck does not pin, once the families are known', () => {
     const alt = setup();
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    lines.set([{ card: card(BASE), quantity: 2 }]);
-    alt.setCards(card(BASE), [ALT, BASE, BASE]).subscribe();
-    expect(saved).toEqual([['d1', KEY, [ALT, BASE, BASE]]]);
-    expect(lines().map((l) => [l.card.reference, l.quantity])).toEqual([[ALT, 1], [BASE, 1]]);
-    expect(alt.cardsFor(kelon)).toEqual([ALT, BASE, BASE]);
-    // The default alt arts (ALT on every slot) do not change; the 3rd copy takes the deck's 3rd card.
-    expect(slotsOf(kelon)).toEqual([ALT, ALT, ALT]);
-    alt.setFamilyQuantity(card(BASE), 3);
-    expect(slotsOf(familyChoices[0])).toEqual([ALT, BASE, BASE]);
-  });
-
-  it('keeps no choice for the deck when its three cards take the plain print', () => {
-    const alt = setup();
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    lines.set([{ card: card(BASE), quantity: 2 }]);
-    alt.setCards(card(BASE), [BASE, BASE, BASE]).subscribe();
-    expect(saved).toEqual([['d1', KEY, null]]);
-    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, BASE]);
-  });
-
-  it('reads the deck’s cards, and leaves them while the deck’s copies do not match them', () => {
-    const alt = setup({ [KEY]: [BASE, ALT, BASE] });
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    lines.set([
-      { card: card(BASE), quantity: 1 },
-      { card: card(ALT), quantity: 1 },
-    ]);
+    ready(alt);
     TestBed.tick();
-    expect(alt.cardsFor(kelon)).toEqual([BASE, ALT, BASE]);
-    // Copies changed elsewhere: the cards come from the copies, then the defaults.
-    lines.set([{ card: card(BASE), quantity: 2 }]);
-    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
+    expect(shown.at(-1)).toEqual({ [BASE]: kelon });
   });
 
-  it('puts the deck’s previous cards and copies back when the choice cannot be saved', () => {
+  it('« Pour ce deck »: pins the brush’s cards for the deck’s copies, the preferences unchanged', () => {
     const alt = setup();
-    alt.request([BASE]);
-    answers.next({ [BASE]: kelon });
-    lines.set([{ card: card(BASE), quantity: 2 }]);
-    saveFails = true;
+    ready(alt);
+    expect(alt.cardsFor(kelon)).toEqual([ALT, ALT, ALT]);
+    alt.setCards(card(BASE), [BASE, NONE, ALT], 'deck').subscribe();
+    expect(pinned).toEqual([[BASE, NONE]]);
+    expect(preferences).toEqual([]);
+    expect(alt.cardsFor(kelon)).toEqual([BASE, NONE, ALT]);
+    expect(alt.followsPreferences(kelon)).toBe(false);
+  });
+
+  it('« Pour ce deck »: forces the base art over a player’s default alt art (a pin on the canonical print)', () => {
+    const alt = setup();
+    ready(alt);
+    alt.setCards(card(BASE), [BASE, BASE, BASE], 'deck').subscribe();
+    expect(pinned).toEqual([[BASE, BASE]]);
+    expect(alt.followsPreferences(kelon)).toBe(false);
+    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
+    alt.resetCards(card(BASE));
+    expect(pinned.at(-1)).toEqual([]);
+    expect(alt.followsPreferences(kelon)).toBe(true);
+  });
+
+  it('« Partout »: saves the player’s preferences and drops the deck’s own choice for the card', () => {
+    const alt = setup();
+    ready(alt);
+    alt.setCards(card(BASE), [NONE], 'deck').subscribe();
+    alt.setCards(card(BASE), [BASE, BASE, ALT], 'global').subscribe();
+    expect(preferences).toEqual([[kelon.family, [BASE, BASE, ALT]]]);
+    expect(pinned.at(-1)).toEqual([]);
+    expect(alt.followsPreferences(kelon)).toBe(true);
+    // Every print of the family has the new preferences.
+    expect(alt.cardsFor(alt.choiceFor(ALT)!)).toEqual([BASE, BASE, ALT]);
+  });
+
+  it('« Partout » refused: the error reaches the brush, nothing changes', () => {
+    const alt = setup();
+    ready(alt);
+    preferenceFails = true;
     let failed = false;
-    alt.setCards(card(BASE), [ALT, ALT, BASE]).subscribe({ error: () => (failed = true) });
+    alt.setCards(card(BASE), [BASE, BASE, BASE], 'global').subscribe({ error: () => (failed = true) });
     expect(failed).toBe(true);
-    expect(alt.cardsFor(kelon)).toEqual([BASE, BASE, ALT]);
-    expect(lines()).toEqual([{ card: card(BASE), quantity: 2 }]);
+    expect(alt.cardsFor(kelon)).toEqual([ALT, ALT, ALT]);
+    expect(pinned).toEqual([]);
   });
 
-  it('« par deck » mode: a card with several illustrations has a brush, and the deck keeps its prints', () => {
+  it('« Utiliser mes arts par défaut » unpins the card; « Arts par défaut » unpins the whole deck', () => {
     const alt = setup();
-    lines.set([{ card: card(BASE), quantity: 2 }]);
+    ready(alt);
+    alt.setCards(card(BASE), [NONE], 'deck').subscribe();
+    alt.resetCards(card(BASE));
+    expect(pinned.at(-1)).toEqual([]);
     TestBed.tick();
-    answers.next({ [BASE]: kelon });
-    TestBed.tick();
-    expect(alt.canChooseForDeck()).toBe(true);
-    expect(alt.canIllustrate(card(BASE))).toBe(true);
-    expect(applied).toEqual([]);
+    let applied: boolean | undefined;
+    alt.applyDefaults().subscribe((a) => (applied = a));
+    expect(applied).toBe(true);
+    expect(cleared).toBe(1);
   });
 
-  it('« Global » mode: the deck takes the default alt arts once its families are known and after each change, without a brush', () => {
-    const alt = setup({}, true);
-    lines.set([{ card: card(BASE), quantity: 2 }]);
-    TestBed.tick();
-    expect(applied).toEqual([]);
-    answers.next({ [BASE]: kelon });
-    TestBed.tick();
-    expect(applied).toEqual([{ [BASE]: kelon }]);
-    lines.set([{ card: card(BASE), quantity: 3 }]);
-    TestBed.tick();
-    expect(applied.length).toBe(2);
-    expect(alt.canChooseForDeck()).toBe(false);
-    expect(alt.canIllustrate(card(BASE))).toBe(false);
+  it('gives a brush to a card with several illustrations of an editable deck', () => {
+    const alt = setup();
+    ready(alt);
+    expect(alt.canIllustrate(card(BASE))).toBe(true);
+    expect(alt.pickerFor(card(BASE))?.pinned()).toBe(false);
   });
 
   it('does not query alt-art families for Unique references', () => {

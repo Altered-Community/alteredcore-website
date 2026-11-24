@@ -1,6 +1,6 @@
 import { cardImageSources, isUniqueReference, setImageUrl, uniqueArtSources, uniqueCardId } from './card-art';
 import { CARD_SETS } from './card-filters';
-import { cardToLine, deckStats, decklistText, groupByCost, groupLines, heroOf, lastModified, lineToCard, mergeUniqueFace, toDeckListItem, uniqueNeedsPrintedEffect } from './deck-view';
+import { cardToLine, deckStats, decklistText, groupByCost, groupLines, heroOf, lastModified, lineToCard, mergeUniqueFace, toDeckListItem, tournamentRecordOf, uniqueNeedsPrintedEffect } from './deck-view';
 import type { Card, Deck, HydratedLine } from './models';
 import { localizedText } from './models';
 
@@ -173,3 +173,26 @@ describe('card art', () => {
   });
 });
 
+
+describe('tournamentRecordOf', () => {
+  it('sums wins and losses over every tournament, most recent tournament first', () => {
+    const record = tournamentRecordOf({
+      tournaments: [
+        { tournamentParentId: 124, name: 'Weekly 12', games: 3, wins: 1, losses: 2, lastPlayedAt: '2026-11-19T19:00:00+00:00' },
+        { tournamentParentId: 123, name: 'Re:Union Cup #4', games: 7, wins: 5, losses: 2, lastPlayedAt: '2026-11-22T19:00:00+00:00' },
+      ],
+    });
+    expect(record).toEqual({ wins: 6, losses: 4, winRate: 60, tournaments: ['Re:Union Cup #4', 'Weekly 12'] });
+  });
+
+  it('is null without a tournament, and has no rate without a game won or lost', () => {
+    expect(tournamentRecordOf({})).toBeNull();
+    expect(tournamentRecordOf({ tournaments: [] })).toBeNull();
+    expect(tournamentRecordOf({ tournaments: [{ name: 'Open', wins: 0, losses: 0 }] })).toEqual({ wins: 0, losses: 0, winRate: null, tournaments: ['Open'] });
+  });
+
+  it('is on the deck list item', () => {
+    const item = toDeckListItem({ id: 'd', name: 'D', tournaments: [{ name: 'Cup', wins: 2, losses: 1 }] });
+    expect(item.tournament).toMatchObject({ wins: 2, losses: 1, winRate: 67 });
+  });
+});

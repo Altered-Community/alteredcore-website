@@ -1,8 +1,8 @@
 import { isUniqueReference } from './card-art';
 import { echoText } from './card-text';
-import { computeDeckStatus, rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
+import { rarityCountsFromRefs, rarityOf, typeOf, type RarityCounts } from './deck-rules';
 import { formatInfo } from './formats';
-import { type DeckLegality, legalityFromApi, legalityFromStatus } from './deck-legality';
+import { type DeckLegality, UNKNOWN_LEGALITY, legalityFromApi } from './deck-legality';
 import type { Card, Deck, DeckCardLine, DeckFormat, DeckHero, HydratedLine } from './models';
 import { deckLines, localizedText } from './models';
 import { contentLocale } from './locale';
@@ -116,12 +116,12 @@ export interface DeckListItem {
   formatLabel: string;
   formatTone: 'blue' | 'violet' | 'neutral';
   legal: boolean;
-  /** Verdict and failed rules (the decks API's, or computed for a guest deck), for the « Non légal » badge's window. */
+  /** The decks API's verdict and problems (`unknown` for a guest deck), for the « Non légal » badge's window. */
   legality: DeckLegality;
-  /** `isDraft` of the decks API. */
+  /** `isDraft` of the decks API: archived (hidden in BGA). */
   draft: boolean;
   isPublic: boolean;
-  /** Owner's username, when the API exposes it. */
+  /** Owner's pseudo (`owner.pseudo` on public decks), else the username when the API exposes it. */
   author: string | null;
   total: number;
   rarity: RarityCounts;
@@ -135,6 +135,34 @@ export interface DeckListItem {
   liked: boolean;
   /** Starter Deck Contest winner (contest tab only). */
   winner?: boolean;
+  /** Record over every tournament the deck was played in; `null` when it has none. */
+  tournament: TournamentRecord | null;
+}
+
+/** A deck's games in tournament, all tournaments together. */
+export interface TournamentRecord {
+  wins: number;
+  losses: number;
+  /** Share of the games won, 0 to 100, rounded; `null` without a won or lost game. */
+  winRate: number | null;
+  /** Names of the tournaments, most recent first. */
+  tournaments: string[];
+}
+
+/** Sums the decks API's `tournaments`; `null` when the deck was never played in one. */
+export function tournamentRecordOf(deck: Pick<Deck, 'tournaments'>): TournamentRecord | null {
+  const list = (deck.tournaments ?? []).filter((t) => !!t);
+  if (!list.length) return null;
+  const count = (n: number | undefined) => (Number.isFinite(n) && (n ?? 0) > 0 ? (n as number) : 0);
+  const wins = list.reduce((n, t) => n + count(t.wins), 0);
+  const losses = list.reduce((n, t) => n + count(t.losses), 0);
+  const played = wins + losses;
+  const time = (d: string | null | undefined) => (d ? Date.parse(d) || 0 : 0);
+  const tournaments = [...list]
+    .sort((a, b) => time(b.lastPlayedAt) - time(a.lastPlayedAt))
+    .map((t) => t.name?.trim() ?? '')
+    .filter(Boolean);
+  return { wins, losses, winRate: played ? Math.round((wins / played) * 100) : null, tournaments };
 }
 
 export function toDeckListItem(deck: Deck): DeckListItem {
@@ -148,11 +176,8 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     ? lines.filter((l) => !isHeroLine(l, hero)).reduce((n, l) => n + l.quantity, 0)
     : deck.stats?.totalCards ?? rarity.C + rarity.R + rarity.U + rarity.E;
   const info = formatInfo(deck.format);
-  const status = deck.legal == null && lines.length
-    ? computeDeckStatus(lines.filter((l) => !isHeroLine(l, hero)).map((l) => ({ card: lineToCard(l), quantity: l.quantity })), info.value, hero)
-    : null;
-  const legal = deck.legal ?? status?.legal ?? false;
-  const legality = legalityFromApi(deck) ?? (status ? legalityFromStatus(status, !!hero) : { state: 'unknown' as const, rules: [], errors: [] });
+  const legality = legalityFromApi(deck) ?? UNKNOWN_LEGALITY;
+  const legal = legality.state === 'legal';
   return {
     id: deck.id,
     name: deck.name || $localize`:@@core.deck.untitled:Sans nom`,
@@ -162,7 +187,9 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     formatTone: info.badgeTone,
     legal: !!legal && !!hero,
     legality,
-    draft: deck.isDraft === true,
+    // A guest deck is never archived (archiving is an account feature); older guest decks of this device were saved
+    // with isDraft: true, the former « not validated » convention.
+    draft: deck.isDraft === true && !deck.guest,
     isPublic: !!deck.isPublic,
     author: authorOf(deck),
     total,
@@ -172,6 +199,7 @@ export function toDeckListItem(deck: Deck): DeckListItem {
     createdAt: deck.createdAt && !Number.isNaN(Date.parse(deck.createdAt)) ? deck.createdAt : '',
     likes: deck.upvoteCount ?? 0,
     liked: !!deck.hasUpvoted,
+    tournament: tournamentRecordOf(deck),
   };
 }
 
@@ -184,7 +212,10 @@ export function lastModified(deck: Pick<Deck, 'createdAt' | 'updatedAt'>): strin
   return dates.reduce((latest, d) => (Date.parse(d) > Date.parse(latest) ? d : latest), dates[0] ?? '');
 }
 
-function authorOf(deck: Deck): string | null {
+/** `owner.pseudo` (public decks), else `user.username`; `null` when the API tells neither. */
+export function authorOf(deck: Pick<Deck, 'owner' | 'user'>): string | null {
+  const pseudo = deck.owner?.pseudo?.trim();
+  if (pseudo) return pseudo;
   const user = deck.user;
   if (!user || Array.isArray(user)) return null;
   return user.username?.trim() || null;

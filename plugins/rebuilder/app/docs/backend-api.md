@@ -102,28 +102,59 @@ an unknown set is a 400 (`FUGUE` has no uniques and is not offered). Measures an
 
 ## Decks API (`DECKS_API_URL`)
 
-API Platform. **Unauthenticated `GET /api/decks` returns 401** (probed). Writes always need Bearer.
-Anonymous reads (from `config/packages/security.yaml` in altered-core-decks-api): `GET /api/decks/public`
-(`page`, `itemsPerPage`, `name`, `faction`, `format`, `hero`, `order[field]`), `GET /api/decks/public/heroes?locale=`
-(`[{ reference, name, imagePath }]`, heroes of the community tab's hero filter), `GET /api/decks/{uuid}` for public decks
-(lines embed name, faction, type, costs, powers) and `GET /api/formats` (legality limits).
+The C# DeckApi (drop-in replacement of the PHP `altered-core-decks-api`: same routes and shapes, additive fields; contract
+in its `README.md`). Reached through the site's relay. Anonymous reads: `GET /api/decks/public` (`page`, `itemsPerPage`,
+`name`, `faction`, `format`, `hero`, `family`, `legal`, `cardReference`, `cardName`, `source`, `order[field]`), `GET /api/decks/public/heroes?locale=`,
+`GET /api/decks/{uuid}` for public decks and `GET /api/formats`. The rest needs the session's token
+(`read-decks` / `write-deck` scopes).
 
 | Method | Path | Content-Type | Body / notes |
 |---|---|---|---|
-| GET | `/api/decks` | | Filters: `page`, `itemsPerPage`, `format`, `isPublic`, `isDraft`, `user`, `alteredId`, `name`, `order[createdAt\|updatedAt\|name\|viewCount\|upvoteCount]` |
-| POST | `/api/decks` | `application/json` | `{ name, description?, format?, isPublic?, isDraft?, deckCards: [{ cardReference, quantity }] }` |
-| GET | `/api/decks/{id}` | | Optional `?locale=en\|fr`. Detail includes `cards` **or** `deckCards` (PHP supports both). |
-| PATCH | `/api/decks/{id}` | `application/merge-patch+json` | Partial update; deck contents replaced via `deckCards` |
+| GET | `/api/decks` | | The caller's decks (plain array). Filters: `format`, `legal`, `isDraft`, `cardReference`, `family`, `order[…]`, `locale` |
+| POST | `/api/decks?locale=` | `application/json` | `{ name, description?, format?, isPublic?, isDraft: false, deckCards: [{ cardReference, quantity }], altArtOverrides? }` |
+| GET | `/api/decks/{id}?locale=` | | Detail: `cards` (concrete prints, overrides applied) or `deckCards: []`, plus `canonicalCards` |
+| PATCH | `/api/decks/{id}?locale=` | `application/merge-patch+json` | What the editor autosaves: the whole deck (`deckCards` + `altArtOverrides`), `isDraft: false` |
 | DELETE | `/api/decks/{id}` | | Owner only |
 | POST | `/api/decks/{id}/upvote` | `application/json` | `{}` → `{ upvoteCount, hasUpvoted }` |
+| GET | `/api/formats?hiddenFormats=true` | | Per format: `code`, `label`, `minCards`, `maxCards`, `allowBanned`, `allowSuspended`, `limits{unique, rare, exalted, maxCopiesPerName, maxCopiesPerRarity}`, `uniqueLimitsByHero`, `maxFactions`, `sets{allowed, forbidden}`, `bannedCards`, `suspendedCards` (references, families `BR_06`, family + rarity `OR_27_R1`), `uniqueAllowlist` (`FormatsService`, fetched once) |
 
-Known gaps (author, legality filter, Frontier pool): see [api-limitations/decks-api.md](api-limitations/decks-api.md).
+**Legality comes from the API only.** Every save is validated (not a deck saved with `isDraft: true`: the editor always
+sends `false`). A deck carries `legal`, `errors: [{code, reference, message}]` (translated with `?locale=`, the interface
+language is sent), `formatErrors` (their messages) and `legalityDetail` (`{rule: bool, global}`). The editor shows the
+answer to its last save or to the GET (`core/deck-legality.ts`); a problem with a `reference` is shown on every line of the
+same card (family + rarity). Without `errors` (former API) it falls back on `formatErrors` / `legalityDetail`. A guest
+deck, or a deck not validated yet, has an unknown legality (no badge). The formats' rules are read for UI affordances
+only: copy caps (per family `{FACTION}_{NUM}`, across rarities and prints), « légales » filtering of the account tabs,
+rarity caps (`core/format-rules.ts`).
+
+**Cards and prints.** The API stores one canonical reference per gameplay card (family + rarity; booster print of the
+card's first set, a Unique keeps its own) and the prints the deck chooses in `altArtOverrides`:
+`{ cards: { "<canonical>": [{reference, quantity}] }, tokens: [{reference, quantity}] }` (copy order = list order). An
+override may name the canonical print itself: the base art forced in this deck over the player's global preferences
+(the brush's « Pour ce deck » on the plain illustration); a canonical line in `deckCards` without an override is never
+a pin. The
+editor reads `canonicalCards` + `altArtOverrides` (falling back on `cards` / `deckCards`, alt arts and promos pinned,
+with the former API) and writes canonical references + overrides (`core/deck-prints.ts`; a card whose canonical
+reference it cannot tell is sent by its print, which the API resolves). A deck's own prints win; its other copies
+follow the player's global preferences (ownership `PUT /api/alt-arts/preferences`), and Board Game Arena checks
+ownership. Public decks carry `owner: { pseudo }` (shown on the deck page and the community cards).
+
+**Tournaments.** DeckApi syncs the BGA tournament lists (GameApi): a deck imported that way has `source: "tournament"`
+(`"user"` otherwise), and every deck carries `tournaments: [{ tournamentParentId, name, mode, games, wins, losses,
+lastPlayedAt }]`, its record in each tournament it was played in. `GET /api/decks/public` lists the `user` decks only unless
+`source` says otherwise (`tournament`, or `all` for both): the community tab sends `source=all`, and `source=tournament`
+with its « Joués en tournoi » filter. It shows the sum of `wins` / `losses` and the share of games won on each card
+(`tournamentRecordOf`, `core/deck-view.ts`). Its « Contient la carte » filter sends `cardReference`: an exact match on the
+canonical references the deck stores (`ALT_ALIZE_B_LY_02_C` does not find a deck holding `ALT_CORE_B_LY_02_C`; `cardName`
+is a prefix match on the card names). The suggestions come from the search API (`UniquesApiService.suggestCards`: a full
+reference looked up with `ref[]` first, otherwise `name` on the non-Unique booster prints), one per gameplay card on its
+canonical reference (`core/card-suggestions.ts`).
+
+Known gaps: see [api-limitations/decks-api.md](api-limitations/decks-api.md).
 
 Formats: `standard`, `nuc`, `singleton`, `singleton_nuc`, `sandbox`, `test`, `frontier`, `sealed`.
 
 `cardReference` pattern: `ALT_[A-Z0-9]+_[A-Z0-9]+_[A-Z]+_\d+_[A-Z0-9]+(_\d+)?`
-
-The PHP editor **does not call this API from the browser**. It POSTs to `/pages/deckbuilder?ajax=1` (CSRF + session) and the server proxies with the Keycloak token. This app calls `DECKS_API_URL` **directly**.
 
 ## PHP plugin proxies (`https://alteredcore.org/papi/core-altered-cards/...`)
 
@@ -138,9 +169,9 @@ Cookie + CSRF. Not required for the first milestone (this app is a parallel clie
 | `deck-alt-arts` | Families of illustrations of deck and search references: prints, copies owned, the player's default alt arts (`core/alt-art-defaults.ts`) |
 | `playset` / `playset-cards` | Physical playset dashboard |
 
-Ownership plugin (when enabled): `/papi/ownership/alt-art-search` (token illustrations), the alt-art mode is read through the relay (`GET /api/alt-arts/preference-mode`: in « Global », the deck follows the default alt arts and has no brush). Token illustrations are saved through the relay (`PUT /api/alt-arts/preferences`).
+Ownership plugin (when enabled): `/papi/ownership/alt-art-search` (token illustrations). The player's default alt arts (« partout » in the brush and in « Illustrations des jetons ») are saved through the relay (`PUT /api/alt-arts/preferences`); a deck's own choices (« pour ce deck ») go to the deck's `altArtOverrides`. The former Global / PerDeck mode (`/api/alt-arts/preference-mode`) is no longer read.
 
-Rebuilder plugin: `/papi/rebuilder/deck-alt-arts` keeps the brush's choices for a deck of the signed-in player (table `{rebuilder_deck_alt_arts}`, `sql/migration_009`), because the decks API stores only the deck's references (no order, nothing past its copies). `GET ?deck=` → `{"families": {"<familyId>:<faction>:<rarity>": ["<1st card>", "<2nd>", "<3rd>"]}}`; `POST {deck, family, cards}` saves a family's three cards (`cards: null`: it follows the default alt arts again); `POST {deck}` drops every family of the deck. No row for a family whose three cards take the plain print; a deck deleted through the services relay or the site's deck pages loses its rows (`altArtForgetDeck`, `includes/func.alt-arts.php`). The player's default alt arts stay in the ownership service.
+The former `/papi/rebuilder/deck-alt-arts` endpoint (brush order per deck) is gone: the order is the deck's `altArtOverrides`. Its table `{rebuilder_deck_alt_arts}` (`sql/migration_009`) is unused and can be dropped.
 
 ## Local stack
 

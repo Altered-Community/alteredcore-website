@@ -115,7 +115,9 @@ export class DeckBoard {
 
   /** Copies a pile can have: the card's limit on a pile of its prints, shared with its other prints otherwise. */
   protected maxOf(card: Card): number {
-    return this.stacks().has(card.reference) ? this.deck.maxFor(card) : (this.altArts?.maxFor(card, false) ?? this.deck.maxFor(card));
+    // A pile of prints holds the whole family: its cap is the card's (familyCap), not the front print's (maxFor, which
+    // takes off the family's other prints and would clamp « − » on 3 copies down to 1).
+    return this.stacks().has(card.reference) ? this.deck.familyCap(card) : (this.altArts?.maxFor(card, false) ?? this.deck.maxFor(card));
   }
 
   /** `card` has a brush (several illustrations, the deck editable). */
@@ -132,10 +134,12 @@ export class DeckBoard {
   /** The card large, with its copies and prints when the deck can be edited (the site's card lightbox). */
   protected zoom(card: Card): void {
     const editable = this.editable();
-    openCardZoom(this.overlay, {
-      card,
-      quantity: editable ? { value: this.quantityOf(card), max: this.maxOf(card), change: (n) => this.setQuantity(card, n) } : undefined,
-      illustrations: editable ? (this.altArts?.pickerFor(card) ?? undefined) : undefined,
+    const controls = (c: Card) => ({
+      quantity: editable ? { value: this.quantityOf(c), max: this.maxOf(c), change: (n: number) => this.setQuantity(c, n) } : undefined,
+      illustrations: editable ? (this.altArts?.pickerFor(c) ?? undefined) : undefined,
     });
+    // The board's piles, group by group, in the order they are shown.
+    const cards = this.groups().flatMap((g) => g.lines.map((l) => l.card));
+    openCardZoom(this.overlay, { card, ...controls(card), siblings: { cards, controls } });
   }
 }

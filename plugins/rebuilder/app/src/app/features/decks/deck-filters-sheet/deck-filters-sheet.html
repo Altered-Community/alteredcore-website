@@ -10,9 +10,31 @@
       <span class="label" i18n="@@decks.filters.visibility">Visibilité</span>
       <ac-segmented ariaLabel="Visibilité" i18n-ariaLabel="@@decks.filters.visibility" [fullWidth]="true" [options]="ref.data.visibilities" [value]="draft().visibility" (valueChange)="patch({ visibility: $event ?? 'all' })" />
     </div>
+    @if (ref.data.statuses; as statuses) {
+      <div class="field">
+        <span class="label" i18n="@@decks.filters.status">Statut</span>
+        <ac-segmented ariaLabel="Statut" i18n-ariaLabel="@@decks.filters.status" [fullWidth]="true" [options]="statuses" [value]="draft().status" (valueChange)="patch({ status: $event ?? 'active' })" />
+      </div>
+    }
+  }
+  @if (ref.data.showCommunity) {
+    <ac-autocomplete
+      label="Contient la carte"
+      i18n-label="@@decks.cardFilter.label"
+      placeholder="Nom ou référence d’une carte…"
+      i18n-placeholder="@@decks.cardFilter.placeholder"
+      [options]="cardOptions()"
+      [loading]="cardSuggesting()"
+      [selected]="cardChoice()"
+      (selectedChange)="setCard($event)"
+      (queryChange)="onCardQuery($event)"
+    />
   }
   @if (ref.data.showLegalOnly) {
     <ac-checkbox label="Légaux uniquement" i18n-label="@@decks.page.legalOnly" [checked]="draft().legalOnly" (checkedChange)="patch({ legalOnly: $event })" />
+  }
+  @if (ref.data.showCommunity) {
+    <ac-checkbox label="Joués en tournoi" i18n-label="@@decks.page.tournamentOnly" [checked]="draft().tournament" (checkedChange)="patch({ tournament: $event })" />
   }
   <div class="field">
     <span class="label">Faction</span>
@@ -24,6 +46,6 @@
   </div>
 </div>
 <div class="ac-overlay-footer">
-  <button acButton variant="secondary" class="secondary-action" (click)="draft.set(empty)" i18n="@@decks.filters.reset">Réinitialiser</button>
-  <button acButton size="lg" [fullWidth]="true" (click)="ref.close(draft())" i18n="@@decks.filters.apply">Appliquer</button>
+  <button acButton variant="secondary" class="secondary-action" (click)="reset()" i18n="@@decks.filters.reset">Réinitialiser</button>
+  <button acButton size="lg" [fullWidth]="true" (click)="apply()" i18n="@@decks.filters.apply">Appliquer</button>
 </div>

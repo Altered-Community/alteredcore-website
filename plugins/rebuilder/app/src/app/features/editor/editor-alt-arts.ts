@@ -1,15 +1,14 @@
 import { Service, computed, effect, inject, signal, untracked } from '@angular/core';
-import { EMPTY, type Observable, catchError, filter, map, of, switchMap, take, tap, throwError } from 'rxjs';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { EMPTY, type Observable, filter, map, of, switchMap, take, tap } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthSession } from '../../core/auth-session';
-import { basePrint, defaultPrints, familyCopies, familyPrints, rankPrints, sameCopies, withRanks } from '../../core/alt-art-defaults';
-import { DeckAltArtsApiService } from '../../core/deck-alt-arts-api.service';
+import { basePrint, familyCopies, familyPrints, rankPrints, withRanks } from '../../core/alt-art-defaults';
 import { DeckStore } from '../../core/deck-store';
 import { isUniqueReference } from '../../core/card-art';
 import { storedFlag } from '../../core/stored-flag';
 import type { Card } from '../../core/models';
 import { OwnershipApiService, familyKey, type AltArtChoice } from '../../core/ownership-api.service';
-import type { AltArtPickerData } from './alt-art-picker/alt-art-picker.overlay';
+import type { AltArtPickerData, AltArtScope } from './alt-art-picker/alt-art-picker.overlay';
 import { openConfirm } from '../shared/confirm/confirm.overlay';
 import type { AcOverlayService } from '../../ui/overlay';
 
@@ -17,29 +16,23 @@ import type { AcOverlayService } from '../../ui/overlay';
 const CHUNK = 60;
 
 /**
- * Illustrations in the editor (`core/alt-art-defaults.ts`): a card added from the search takes the player's default alt
- * art for its copy, the brush of a card chooses the illustration of its 1st, 2nd and 3rd card in this deck (kept by
- * `DeckAltArtsApiService`; an added copy takes the next card's), « Appliquer les arts par défaut » rewrites the deck
- * with the defaults, and a print used more times than owned is flagged (Board Game Arena shows the base art for the
- * missing copies). In the « Global » alt-art mode, the deck follows the defaults instead: they are written in it when
- * it opens and after each change, and there is no brush. Needs the ownership service and a signed-in player; nothing
- * happens without.
+ * Illustrations in the editor (`core/alt-art-defaults.ts`). A deck's copies show, first, the prints the deck chooses
+ * itself (its overrides, `DeckStore.pins`, saved with the deck by the decks API), then the player's global preferences
+ * (default alt arts of the ownership service). The brush of a card changes its illustrations « pour ce deck » (the
+ * deck's overrides) or « partout » (the player's preferences, `PUT /api/alt-arts/preferences`); « Arts par défaut »
+ * gives the card, or the whole deck, back to the preferences. A print used more times than owned is flagged (Board Game
+ * Arena shows the base art for the missing copies). Needs the ownership service and a signed-in player.
  */
 @Service({ autoProvided: false })
 export class EditorAltArts {
   private readonly deck = inject(DeckStore);
   private readonly ownership = inject(OwnershipApiService);
   private readonly auth = inject(AuthSession);
-  private readonly deckAltArts = inject(DeckAltArtsApiService);
   readonly enabled = computed(() => !!this.ownership.baseUrl && this.auth.isLoggedIn());
-  /** Alt-art mode: `true` in « Global », `undefined` until the ownership service has answered (or without it). */
-  private readonly mode = toSignal(toObservable(this.enabled).pipe(switchMap((on) => (on ? this.ownership.globalAltArts() : of(undefined)))));
 
   /** Family of each reference asked so far (`null`: one illustration only); the prints of a family share it. */
   private readonly known = signal<ReadonlyMap<string, AltArtChoice | null>>(new Map());
   private readonly asked = new Set<string>();
-  /** The brush's choices for this deck (1st, 2nd, 3rd card), by family key. */
-  private readonly deckCards = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   /** Changes waiting for the family of their reference (a card added before its family arrived). */
   private readonly waiting = new Map<string, (() => void)[]>();
 
@@ -87,45 +80,22 @@ export class EditorAltArts {
   /** The deck board (« Aperçu »): the prints of a card on one pile, copy 1 in front. Remembered in this browser. */
   readonly stackPrints = storedFlag('rebuilder.board.stackPrints', true);
 
-  /** « Arts des jetons »: on an editable deck. */
+  /** « Arts des jetons », « Arts par défaut » and the brush: on an editable deck. */
   readonly canChoose = computed(() => this.enabled() && this.deck.editable());
-  /** « Arts par défaut » and the brush: on an editable deck, in the « par deck » mode. */
-  readonly canChooseForDeck = computed(() => this.canChoose() && this.mode() === false);
-  /** The deck's id when the player's choices for it are kept on the site: a saved deck of theirs; `null` otherwise. */
-  private readonly ownDeckId = computed(() => {
-    const id = this.deck.deckId();
-    return id && this.enabled() && !this.deck.isGuest() && this.deck.editable() === true ? id : null;
-  });
 
   constructor() {
     effect(() => {
       const refs = this.deckRefs();
       if (this.enabled() && this.deck.editable()) untracked(() => this.request(refs));
     });
-    // The brush's choices for the deck. A new deck gets an id on its first save: the choices made before are sent then.
-    let cardsOf: string | null = null;
+    // The copies the deck does not pin show the player's preferences, once the deck's families are known.
     effect(() => {
-      const id = this.ownDeckId();
-      if (!id || id === cardsOf) return;
-      const previous = cardsOf;
-      cardsOf = id;
-      untracked(() => {
-        if (previous === null && this.deckCards().size) {
-          for (const [key, cards] of this.deckCards()) this.deckAltArts.save(id, key, cards).subscribe({ error: () => undefined });
-          return;
-        }
-        this.deckCards.set(new Map());
-        this.deckAltArts.load(id).subscribe((families) => {
-          if (this.deck.deckId() === id) this.deckCards.set(new Map(Object.entries(families)));
-        });
-      });
-    });
-    // « Global » mode: the deck takes the default alt arts once its families are known, and again after each change.
-    effect(() => {
-      if (this.mode() !== true || !this.canChoose() || !this.ready()) return;
+      if (!this.canChoose() || !this.ready()) return;
       const choices = this.choices();
       this.deck.lines();
-      untracked(() => this.deck.applyAltArtDefaults(choices));
+      this.deck.pins();
+      this.deck.hero();
+      untracked(() => this.deck.showPreferences(choices));
     });
   }
 
@@ -166,17 +136,12 @@ export class EditorAltArts {
   }
 
   /**
-   * « Arts des jetons » (`canChoose`): `null` while the deck's owner is not known yet, so that its place is kept (in
-   * skeleton) and the list under it does not move when it comes.
+   * The illustration buttons (`canChoose`): `null` while the deck's owner is not known yet, so that their place is kept
+   * (in skeleton) and the list under them does not move when it comes.
    */
   readonly tokensChoice = computed<boolean | null>(() => {
     if (!this.enabled() || this.deck.owned() === false) return false;
     return this.deck.owned() === null ? null : true;
-  });
-  /** « Arts par défaut » (`canChooseForDeck`): `null` while the deck's owner or the alt-art mode is not known yet. */
-  readonly defaultsChoice = computed<boolean | null>(() => {
-    if (this.tokensChoice() === false || this.mode() === true) return false;
-    return this.tokensChoice() === null || this.mode() === undefined ? null : true;
   });
 
   /** The family of `reference` (`null`: one illustration, or not known yet). */
@@ -200,15 +165,12 @@ export class EditorAltArts {
   }
 
   /**
-   * Copies `card` can have: a print shares its family's limit with the other prints in the deck (never under the copies
+   * Copies `card` can have: a print shares its card's limit with the other prints in the deck (never under the copies
    * it has); a family card (`asFamily`, its plain print) has the whole limit.
    */
   maxFor(card: Card, asFamily: boolean): number {
-    const max = this.deck.maxFor(card);
-    const choice = this.choiceFor(card.reference);
-    if (!choice || (asFamily && this.isFamilyCard(card))) return max;
-    const others = familyPrints(this.deck.lines(), this.members(choice)).filter((r) => r !== card.reference).length;
-    return Math.max(this.deck.quantityOf(card.reference), max - others);
+    if (asFamily && this.isFamilyCard(card)) return this.deck.familyCap(card);
+    return this.deck.maxFor(card);
   }
 
   /** Copies of `card`'s family in the deck, or of `card` alone. */
@@ -219,36 +181,39 @@ export class EditorAltArts {
   }
 
   /**
-   * The copies of `card`'s family in the deck, one print a copy, in the brush's order (copy 1 first: the copies on
-   * their default alt art on their slot); `null` when its family is not known.
+   * The copies of `card`'s family in the deck, one print a copy, in the brush's order (copy 1 first); `null` when its
+   * family is not known.
    */
   copyPrints(card: Card): string[] | null {
     const choice = this.choiceFor(card.reference);
     if (!choice) return null;
-    return familyCopies(this.deckChoice(choice), familyPrints(this.deck.lines(), this.members(choice)));
+    return familyCopies(withRanks(choice, this.cardsFor(choice)), familyPrints(this.deck.lines(), this.members(choice)));
+  }
+
+  /** The prints this deck pins for `choice`'s family, 1st copy first. */
+  private pinsFor(choice: AltArtChoice): readonly string[] {
+    const ref = choice.options.options[0]?.reference;
+    return ref ? this.deck.pinsOf({ reference: ref }) : [];
+  }
+
+  /** The family follows the player's preferences in this deck (no print pinned). */
+  followsPreferences(choice: AltArtChoice): boolean {
+    return this.pinsFor(choice).length === 0;
   }
 
   /**
-   * The illustration of the 1st, 2nd and 3rd card of `choice`'s family in this deck: the brush's choices while the
-   * deck's copies match them, else its copies (in the brush's order) and the default alt arts for the cards past them.
+   * The illustration of the 1st, 2nd and 3rd card of `choice`'s family in this deck: the prints the deck pins, then the
+   * player's preferences.
    */
   cardsFor(choice: AltArtChoice): string[] {
-    const prints = familyPrints(this.deck.lines(), this.members(choice));
-    const saved = this.deckCards().get(familyKey(choice.family));
-    if (saved && sameCopies(prints, defaultPrints(withRanks(choice, saved), prints.length))) return [...saved];
-    const copies = familyCopies(choice, prints);
-    return rankPrints(choice).map((rank, i) => copies[i] ?? rank);
+    const pinned = this.pinsFor(choice);
+    return rankPrints(choice).map((rank, i) => pinned[i] ?? rank);
   }
 
-  /** `choice` with this deck's cards as its slots: what an added copy of the family takes, and the copies' order. */
-  private deckChoice(choice: AltArtChoice): AltArtChoice {
-    return withRanks(choice, this.cardsFor(choice));
-  }
-
-  /** Copies of `card`'s whole family (a pile of its prints): an added copy takes the illustration of its card. */
+  /** Copies of `card`'s whole family (a pile of its prints): the pinned copies stay, the others take the preferences. */
   setFamilyQuantity(card: Card, quantity: number): void {
     const choice = this.choiceFor(card.reference);
-    if (choice) this.deck.setFamilyQuantity(card, this.deckChoice(choice), this.members(choice), quantity);
+    if (choice) this.deck.setFamilyQuantity(card, choice, this.members(choice), quantity);
     else this.deck.setQuantity(card, quantity);
   }
 
@@ -258,9 +223,9 @@ export class EditorAltArts {
     return !!choice && basePrint(choice) === card.reference;
   }
 
-  /** Copies of `card` from the search: by the defaults for a family card (`setFamilyQuantity`), that print otherwise. */
+  /** Copies of `card` from the search: the family's for a family card (`setFamilyQuantity`), that print otherwise. */
   setQuantity(card: Card, quantity: number): void {
-    // Asked but not answered yet: the change waits for the family, so that the copy takes its default alt art.
+    // Asked but not answered yet: the change waits for the family, so that the copy takes its preferred alt art.
     if (this.asked.has(card.reference) && !this.known().has(card.reference)) {
       this.waiting.set(card.reference, [...(this.waiting.get(card.reference) ?? []), () => this.setQuantity(card, quantity)]);
       return;
@@ -269,98 +234,79 @@ export class EditorAltArts {
     else this.deck.setQuantity(card, quantity);
   }
 
-  /** `card` has a brush: several illustrations, in an editable deck, in the « par deck » mode. */
+  /** `card` has a brush: several illustrations, in an editable deck. */
   canIllustrate(card: Card): boolean {
-    return this.canChooseForDeck() && (this.choiceFor(card.reference)?.options.options.length ?? 0) > 1;
+    return this.canChoose() && (this.choiceFor(card.reference)?.options.options.length ?? 0) > 1;
   }
 
   /** The brush of `card` (`canIllustrate`), `null` otherwise. */
   pickerFor(card: Card): AltArtPickerData | null {
     const choice = this.choiceFor(card.reference);
     if (!choice || !this.canIllustrate(card)) return null;
+    const current = () => this.choiceFor(card.reference) ?? choice;
     return {
-      choice: () => this.choiceFor(card.reference) ?? choice,
-      prints: () => familyPrints(this.deck.lines(), this.members(choice)),
-      cards: () => this.cardsFor(this.choiceFor(card.reference) ?? choice),
+      choice: current,
+      prints: () => familyPrints(this.deck.lines(), this.members(current())),
+      cards: () => this.cardsFor(current()),
       copies: () => this.copyPrints(card) ?? [],
-      setCards: (cards) => this.setCards(card, cards),
+      pinned: () => !this.followsPreferences(current()),
+      setCards: (cards, scope) => this.setCards(card, cards, scope),
       reset: () => this.resetCards(card),
     };
   }
 
   /**
-   * The 1st, 2nd and 3rd card of `card`'s family take `cards` in this deck: its copies take them at once, then the choice
-   * is saved for the deck (the default alt arts do not change; three plain prints are no choice to keep); on an error,
-   * the previous choice and copies come back.
+   * The 1st, 2nd and 3rd card of `card`'s family take `cards`. « Pour ce deck » (`deck`): the deck pins them for its
+   * copies (saved with the deck). « Partout » (`global`): the player's preferences change on the ownership service (every
+   * deck that does not pin this card), and this deck gives up its own choice for it; errors reach the caller.
    */
-  setCards(card: Card, cards: readonly string[]): Observable<void> {
+  setCards(card: Card, cards: readonly string[], scope: AltArtScope): Observable<void> {
     const choice = this.choiceFor(card.reference);
     if (!choice) return EMPTY;
-    const key = familyKey(choice.family);
-    const members = this.members(choice);
-    const before = this.deckCards().get(key);
-    const beforePrints = familyPrints(this.deck.lines(), members);
-    this.keepCards(key, [...cards]);
-    this.deck.setFamilyPrints(members, card, defaultPrints(withRanks(choice, cards), beforePrints.length));
-    const id = this.ownDeckId();
-    if (!id) return of(undefined);
-    const base = basePrint(choice);
-    return this.deckAltArts.save(id, key, cards.every((c) => c === base) ? null : cards).pipe(
-      catchError((err: unknown) => {
-        this.keepCards(key, before);
-        this.deck.setFamilyPrints(this.members(choice), card, beforePrints);
-        return throwError(() => err);
+    if (scope === 'deck') {
+      const copies = familyPrints(this.deck.lines(), this.members(choice)).length;
+      this.deck.pinPrints(card, choice, this.members(choice), cards.slice(0, copies));
+      return of(undefined);
+    }
+    return this.ownership.setAltArtPreference(choice.family, [...cards]).pipe(
+      tap(() => {
+        this.setPreferences(choice, withRanks(choice, cards));
+        this.deck.pinPrints(card, this.choiceFor(card.reference), this.members(choice), []);
       }),
+      map(() => undefined),
     );
   }
 
-  /** « Arts par défaut » in the brush: `card`'s family follows the default alt arts again in this deck. */
-  resetCards(card: Card): void {
-    const choice = this.choiceFor(card.reference);
-    if (!choice) return;
+  /** The family of `choice` with the player's new preferences (`next`), for every print of it. */
+  private setPreferences(choice: AltArtChoice, next: AltArtChoice): void {
     const key = familyKey(choice.family);
-    const members = this.members(choice);
-    this.deck.setFamilyPrints(members, card, defaultPrints(choice, familyPrints(this.deck.lines(), members).length));
-    if (!this.deckCards().has(key)) return;
-    this.keepCards(key, undefined);
-    const id = this.ownDeckId();
-    if (id) this.deckAltArts.save(id, key, null).subscribe({ error: () => undefined });
-  }
-
-  /** The brush's choices for family `key` in this deck (`undefined`: none, it follows the default alt arts). */
-  private keepCards(key: string, cards: readonly string[] | undefined): void {
-    this.deckCards.update((m) => {
-      const next = new Map(m);
-      if (cards) next.set(key, cards);
-      else next.delete(key);
-      return next;
+    this.known.update((m) => {
+      const out = new Map(m);
+      for (const [ref, c] of m) if (c && familyKey(c.family) === key) out.set(ref, next);
+      return out;
     });
   }
 
-  /** The whole deck follows the default alt arts again: the brush's choices for it are dropped. */
-  private clearCards(): void {
-    this.deckCards.set(new Map());
-    const id = this.ownDeckId();
-    if (id) this.deckAltArts.clear(id).subscribe();
+  /** « Utiliser mes arts par défaut » in the brush: `card`'s family follows the player's preferences again here. */
+  resetCards(card: Card): void {
+    const choice = this.choiceFor(card.reference);
+    if (choice) this.deck.pinPrints(card, choice, this.members(choice), []);
   }
 
-  /** « Appliquer les arts par défaut », once the deck's families are known: `false` when the deck already has them. */
+  /** « Arts par défaut », once the deck's families are known: `false` when the deck pinned no print. */
   applyDefaults(): Observable<boolean> {
-    return this.ready$.pipe(
-      map(() => this.deck.applyAltArtDefaults(this.choices())),
-      tap(() => this.clearCards()),
-    );
+    return this.ready$.pipe(map(() => this.deck.clearPins()));
   }
 }
 
 /**
- * « Arts par défaut » (deck bar, « Mon deck »): after a confirmation, the deck takes the player's default alt arts.
- * Emits the message to show, `null` when cancelled.
+ * « Arts par défaut » (deck bar, « Mon deck »): after a confirmation, the deck drops its own illustrations and follows
+ * the player's preferences. Emits the message to show, `null` when cancelled.
  */
 export function confirmAltArtDefaults(overlay: AcOverlayService, altArts: EditorAltArts): Observable<string | null> {
   return openConfirm(overlay, {
     title: $localize`:@@editor.altArtDefaults.title:Appliquer vos arts par défaut ?`,
-    message: $localize`:@@editor.altArtDefaults.message:Chaque carte du deck, et le héros, prend vos arts alternatifs par défaut. Les illustrations choisies pour ce deck sont remplacées.`,
+    message: $localize`:@@editor.altArtDefaults.messagePins:Les illustrations choisies pour ce deck sont retirées : chaque carte, et le héros, suit vos arts alternatifs par défaut.`,
     confirmLabel: $localize`:@@editor.altArtDefaults.confirm:Appliquer`,
     icon: 'wand-sparkles',
   }).pipe(
@@ -373,4 +319,3 @@ export function confirmAltArtDefaults(overlay: AcOverlayService, altArts: Editor
     }),
   );
 }
-
