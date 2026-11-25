@@ -1473,6 +1473,43 @@ test.describe('ReBuilder in the shell · guest', () => {
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: 'Deck invité' })).toBeVisible();
   });
+
+  test('keeps the Uniques search of the deck across tabs and views', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques memory ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    const name = page.getByRole('textbox', { name: 'Rechercher par nom' });
+    const uniquesTab = page.getByRole('tab', { name: 'Uniques' });
+
+    await uniquesTab.click();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    // A name every faction has Uniques for; applied once the typing pauses (its chip).
+    await name.fill('e');
+    await expect(page).toHaveURL(/[?&]source=uniques/);
+    await expect(page.getByRole('button', { name: /« e »/ }).first()).toBeVisible();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    const total = page.locator('.results').getByText(/^\d[\d\s]* cartes?$/).first();
+    const found = await total.textContent();
+
+    // Another tab, then back: the Uniques search is the same.
+    await page.getByRole('tab', { name: 'Toutes les cartes' }).or(page.getByRole('tab', { name: 'Toutes', exact: true })).first().click();
+    await expect(name).toHaveValue('');
+    await uniquesTab.click();
+    await expect(name).toHaveValue('e');
+
+    // « Aperçu », then « Recherche »: the Uniques tab and its search again.
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Aperçu/ }).click();
+    else await page.locator('ac-segmented').getByText(FR.viewDeck, { exact: true }).click();
+    await expect(name).toBeHidden();
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: FR.search }).click();
+    else await page.locator('ac-segmented').getByText(FR.search, { exact: true }).click();
+    await expect(page).toHaveURL(/[?&]source=uniques/);
+    await expect(uniquesTab).toHaveAttribute('aria-selected', 'true');
+    await expect(name).toHaveValue('e');
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    await expect(total).toHaveText(found!);
+    await evidence(page, testInfo, 'uniques-search-kept');
+  });
 });
 
 test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
