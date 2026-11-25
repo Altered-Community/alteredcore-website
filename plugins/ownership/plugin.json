@@ -17,6 +17,7 @@
 
     "api": [
         {"endpoint": "boosters-list",       "file": "api/boosters-list.php"},
+        {"endpoint": "boosters-count",      "file": "api/boosters-count.php"},
         {"endpoint": "boosters-open",       "file": "api/boosters-open.php"},
         {"endpoint": "history-list",        "file": "api/history-list.php"},
         {"endpoint": "history-detail",      "file": "api/history-detail.php"},
@@ -28,6 +29,9 @@
 
     "assets": {
         "css": ["assets/style.css"],
+        "global_css": ["assets/booster-alert.css"],
+        "global_js":  ["js/booster-alert.js"],
+        "global_php": ["includes/booster-alert-head.php"],
         "js":  ["js/card-tilt.js", "js/boosters.js", "js/history.js", "js/alt-arts.js", "js/alt-art-widget.js", "js/card-modal-enhance.js"]
     }
 }

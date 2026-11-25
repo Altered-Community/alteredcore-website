@@ -66,6 +66,11 @@
         badge.textContent = total > 99 ? '99+' : String(total);
     };
 
+    // The site-wide indicators (header, menu, cache) follow the real count of this page.
+    const syncGlobalAlert = () => {
+        window.OWN_BOOSTER_ALERT?.set?.(boosterList.reduce((sum, b) => sum + b.quantity, 0));
+    };
+
     const renderGrid = (boosters) => {
         boosterList = boosters;
         gridEl.innerHTML = '';
@@ -84,6 +89,7 @@
             gridEl.appendChild(col);
         });
         updateNavBadge();
+        syncGlobalAlert();
     };
 
     const loadBoosters = async () => {
@@ -105,7 +111,7 @@
             }
 
             const boosters = await res.json();
-            if (!boosters.length) { emptyEl.hidden = false; gridEl.innerHTML = ''; return; }
+            if (!boosters.length) { emptyEl.hidden = false; gridEl.innerHTML = ''; boosterList = []; syncGlobalAlert(); return; }
             renderGrid(boosters);
         } catch {
             loadingEl.hidden = true;
