@@ -5,6 +5,7 @@
     var engine = CardSearch({
         apiBase:     'https://cards.alteredcore.org',
         uniquesApiBase: AlteredDB.uniquesApiBase,
+        keywordCodes: AlteredDB.keywordCodes,
         debug:       AlteredDB.debug,
         lang:        AlteredDB.lang,
         uiLang:      AlteredDB.uiLang,

@@ -285,6 +285,17 @@ describe('toAbilityRefs', () => {
     ]);
     expect(toAbilityRefs(rows).map((r) => r.id)).toEqual([188]);
   });
+
+  it('keeps {T} : trigger with its exhaust glyph and preserves extraIds when two idGds share a localized label', () => {
+    const refs = toAbilityRefs([
+      { alteredId: 1088, text: { fr: '{T} :' } },
+      { alteredId: 688, text: { fr: 'Lorsque vous faites un [Don]\u00a0—' } },
+      { alteredId: 1546, text: { fr: 'Lorsque vous faites un [Don] —' } },
+    ]);
+    expect(refs.find((r) => r.id === 1088)).toEqual({ id: 1088, text: 'Épuisez-moi', glyph: '\ue027' });
+    const gift = refs.find((r) => r.id === 688);
+    expect(gift?.extraIds).toEqual([1546]);
+  });
 });
 
 describe('buildEffectsFilteredParams', () => {

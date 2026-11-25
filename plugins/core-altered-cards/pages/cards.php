@@ -296,6 +296,7 @@ CardSearch({
     debug:       <?= (defined('API_RESPONSE_DEBUG') && API_RESPONSE_DEBUG) ? 'true' : 'false' ?>,
     apiBase:     <?= json_encode(defined('CARDS_API_URL') ? CARDS_API_URL : 'https://cards.alteredcore.org') ?>,
     uniquesApiBase: <?= json_encode(defined('UNIQUES_API_URL') ? UNIQUES_API_URL : '') ?>,
+    keywordCodes: <?= json_encode(function_exists('loadKeywordCodes') ? loadKeywordCodes() : new stdClass()) ?>,
     lang:        <?= json_encode($lang) ?>,
     uiLang:      <?= json_encode($uiLang) ?>,
     prefix:      'cs',

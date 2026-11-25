@@ -11,11 +11,17 @@ export type CardSource = 'all' | 'collection' | 'owned' | 'favorites';
 
 export interface AbilityRef {
   id: number;
+  /** Additional idGds merged into this option when distinct EN wordings share the same localized label. */
+  extraIds?: number[];
   text: string;
-  /** `alteredicons` glyph printed before the text ({H} main, {R} réserve, {J} partout). */
+  /** `alteredicons` glyph printed before the text ({H} main, {R} réserve, {J} partout, {T} épuiser). */
   glyph?: string;
   /** The text as the card prints it (`{D}` symbols, keywords in bold), when it has more than plain words; `text` is its plain reading. */
   rich?: RichPart[];
+}
+
+export function abilityRefIds(a: AbilityRef): number[] {
+  return a.extraIds?.length ? [a.id, ...a.extraIds] : [a.id];
 }
 
 export interface EffectBlock {
@@ -329,7 +335,11 @@ function resolvedFactions(filters: SearchFilters, faction: string | null): strin
 }
 
 function effectIds(b: EffectBlock): { triggers: number[]; conditions: number[]; effects: number[] } {
-  return { triggers: b.triggers.map((x) => x.id), conditions: b.conditions.map((x) => x.id), effects: b.effects.map((x) => x.id) };
+  return {
+    triggers: b.triggers.flatMap(abilityRefIds),
+    conditions: b.conditions.flatMap(abilityRefIds),
+    effects: b.effects.flatMap(abilityRefIds),
+  };
 }
 
 /** The block has a value in one of its criteria at least. */

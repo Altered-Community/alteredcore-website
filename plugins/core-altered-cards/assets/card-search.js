@@ -43,6 +43,7 @@ function CardSearch(cfg) {
     var P        = cfg.prefix      || 'cs';
     var CDN_URL  = cfg.cdnUrl      || '';
     var RENDERER = cfg.rendererSrc || '';
+    var KEYWORD_CODES = cfg.keywordCodes || null;
     var DEBUG    = cfg.debug === true || CARD_SEARCH_DEBUG;
 
     var def = cfg.defaults || {};
@@ -583,9 +584,26 @@ function CardSearch(cfg) {
         });
     }
 
+    function _expandKeywordCodes(text) {
+        if (!KEYWORD_CODES || !text || text.indexOf('[') < 0) return text;
+        var loc = (LANG || 'en').slice(0, 2);
+        return text.replace(/\[([A-Z][A-Z0-9_]*)\]/g, function(all, code) {
+            var entry = KEYWORD_CODES[code];
+            if (entry && (entry[loc] || entry.en)) return entry[loc] || entry.en;
+            var m = /^(.+?)_(\d+)$/.exec(code);
+            if (m) {
+                var base = KEYWORD_CODES[m[1]] || KEYWORD_CODES[m[1] + '_1'];
+                if (base && (base[loc] || base.en)) {
+                    return (base[loc] || base.en).replace(/[\s\u00a0]+1$/, '') + ' ' + m[2];
+                }
+            }
+            return all;
+        });
+    }
+
     function _effectLabel(item) {
         var t = item.translations || {};
-        return pickLocale(t, LANG) || String(item.alteredId);
+        return _expandKeywordCodes(pickLocale(t, LANG) || String(item.alteredId));
     }
 
     function _effectLabelPlain(item) {
@@ -686,6 +704,7 @@ function CardSearch(cfg) {
                     // the current filters (rust-cards-api only — see
                     // buildEffectsFilteredUrl / GET /api/v2/effects/filtered).
                     onDropdownOpen: !UNIQUES_API_BASE ? undefined : function() {
+                        readTsValues();
                         fetch(buildEffectsFilteredUrl(partNames[idx], n))
                             .then(function(r) { return r.ok ? r.json() : null; })
                             .then(function(res) {

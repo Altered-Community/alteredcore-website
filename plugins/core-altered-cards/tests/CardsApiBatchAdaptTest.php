@@ -8,7 +8,8 @@ assertSame('[Vergänglich]', cacPrintKeywordCodes('[FLEETING]', 'de'), 'keyword 
 assertSame('[Fugacidad]', cacPrintKeywordCodes('[FLEETING]', 'es'), 'keyword codes: FLEETING -> es');
 assertSame('[Fugace]', cacPrintKeywordCodes('[FLEETING]', 'it'), 'keyword codes: FLEETING -> it');
 
-assertSame('Les jetons sont [Défenseur].', cacPrintKeywordCodes('Les jetons sont [DEFENDER_TKN_P].', 'fr'), 'keyword codes: suffixed variant prefix fallback');
+assertSame('Les jetons sont [Défenseurs].', cacPrintKeywordCodes('Les jetons sont [DEFENDER_TKN_P].', 'fr'), 'keyword codes: DEFENDER_TKN_P -> fr');
+assertSame('Les jetons sont [Défenseur].', cacPrintKeywordCodes('Les jetons sont [DEFENDER_XYZ_P].', 'fr'), 'keyword codes: suffixed variant prefix fallback');
 assertSame('Gains [Tough 7].', cacPrintKeywordCodes('Gains [TOUGH_7].', 'en'), 'keyword codes: numbered TOUGH_7 -> en');
 assertSame('Gagne [Coriace 7].', cacPrintKeywordCodes('Gagne [TOUGH_7].', 'fr'), 'keyword codes: numbered TOUGH_7 -> fr');
 assertSame('Unknown [NOT_A_REAL_CODE] stays intact', cacPrintKeywordCodes('Unknown [NOT_A_REAL_CODE] stays intact', 'en'), 'keyword codes: unknown code preserved');
@@ -63,6 +64,6 @@ $nuCard = cacAdaptV2Card($nonUniqueV2);
 assertSame('COMMON', $nuCard['rarity']['reference'], 'adapt V2 nonunique: rarity preserved');
 assertSame('HERO', $nuCard['cardType']['reference'], 'adapt V2 nonunique: cardType preserved');
 assertSame('Héros', $nuCard['cardType']['name']['fr'], 'adapt V2 nonunique: cardType fr name');
-assertSame('Les jetons sont [Défenseur].', $nuCard['mainEffect']['fr'], 'adapt V2 nonunique: suffixed keyword expanded');
+assertSame('Les jetons sont [Défenseurs].', $nuCard['mainEffect']['fr'], 'adapt V2 nonunique: suffixed keyword expanded');
 assertSame(true, $nuCard['isErrated'], 'adapt V2 nonunique: isErrated preserved');
 assertSame(false, $nuCard['isBanned'], 'adapt V2 nonunique: isBanned preserved');

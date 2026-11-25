@@ -27,6 +27,13 @@
     "de": "Verankert",
     "it": "Ancorato"
   },
+  "ANCHORED_FS": {
+    "en": "Anchored",
+    "fr": "Ancrée",
+    "es": "Anclaje",
+    "de": "Verankert",
+    "it": "Ancorato"
+  },
   "ASCEND": {
     "en": "Ascend",
     "fr": "s'Élèvent",
@@ -76,6 +83,13 @@
     "de": "Schlafend",
     "it": "Dormiente"
   },
+  "ASLEEP_CHA_P": {
+    "en": "Asleep",
+    "fr": "Endormis",
+    "es": "Sueño",
+    "de": "Schlafend",
+    "it": "Dormiente"
+  },
   "AUGMENT": {
     "en": "Augment",
     "fr": "Amplifier",
@@ -89,6 +103,13 @@
     "es": "Aumenta",
     "de": "Erweitere",
     "it": "Accresci"
+  },
+  "BLAZING_BOODA": {
+    "en": "Blazing Booda",
+    "fr": "Booda Brûlant",
+    "es": "Blazing Booda",
+    "de": "Blazing Booda",
+    "it": "Blazing Booda"
   },
   "BOODA": {
     "en": "Booda 2/2/2",
@@ -165,6 +186,13 @@
     "fr": "Défenseuse",
     "es": "Defensora",
     "de": "Verteidigerin",
+    "it": "Difensore"
+  },
+  "DEFENDER_TKN_P": {
+    "en": "Defender",
+    "fr": "Défenseurs",
+    "es": "Defensores",
+    "de": "Verteidiger",
     "it": "Difensore"
   },
   "DRAGON_SHADE": {
@@ -311,6 +339,20 @@
     "es": "Fauces 0/0/0",
     "de": "Schlund 0/0/0",
     "it": "Fauce 0/0/0"
+  },
+  "MOLTED_MAW": {
+    "en": "Molted Maw",
+    "fr": "Maw Métamorphosé",
+    "es": "Molted Maw",
+    "de": "Molted Maw",
+    "it": "Molted Maw"
+  },
+  "ODDBALL": {
+    "en": "Oddball",
+    "fr": "Oddball",
+    "es": "Estrambot",
+    "de": "Oddball",
+    "it": "Strambo"
   },
   "ORDIS_RECRUIT": {
     "en": "Ordis Recruit 1/1/1",
@@ -510,6 +552,13 @@
     "es": "Resistencia X",
     "de": "Robust X",
     "it": "Tenace X"
+  },
+  "TOUGH_PER_P_1": {
+    "en": "Tough 1",
+    "fr": "Coriaces 1",
+    "es": "Resistencia 1",
+    "de": "Robust 1",
+    "it": "Tenace 1"
   },
   "TOUGH_X": {
     "en": "Tough X",

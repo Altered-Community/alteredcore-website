@@ -656,7 +656,7 @@ export function toCard(c: CardV2): Card {
 /** Label of the conditions' `[]` row: the API matches it on abilities printed without a condition. */
 export const NO_CONDITION = $localize`:@@rules.ability.noCondition:Sans condition`;
 
-/** Symbol-only triggers shown with their glyph: played from hand, from reserve, from anywhere. */
+/** Symbol-only triggers shown with their glyph: played from hand, from reserve, from anywhere, or exhaust ({T} :). */
 const PLAY_TRIGGERS = ['H', 'R', 'J'];
 
 /**
@@ -664,7 +664,7 @@ const PLAY_TRIGGERS = ['H', 'R', 'J'];
  * the `[]` row (no value printed) is kept first under that label instead of being dropped.
  */
 export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], emptyLabel?: string): AbilityRef[] {
-  const seen = new Set<string>();
+  const seen = new Map<string, AbilityRef>();
   const out: AbilityRef[] = [];
   let empty: AbilityRef | undefined;
   for (const row of rows) {
@@ -673,20 +673,31 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
       if (emptyLabel && !empty) empty = { id: row.alteredId, text: emptyLabel };
       continue;
     }
-    const code = /^\{([A-Z])\}$/.exec(raw)?.[1];
-    if (code && PLAY_TRIGGERS.includes(code)) {
+    const code = /^\{([A-Z])\}[\s\u00a0]*:?$/.exec(raw)?.[1];
+    if (code && (PLAY_TRIGGERS.includes(code) || code === 'T')) {
       const icon = ICONS[code];
-      if (!seen.has(icon.title)) out.push({ id: row.alteredId, text: icon.title, glyph: icon.glyph });
-      seen.add(icon.title);
+      if (!seen.has(icon.title)) {
+        const ref: AbilityRef = { id: row.alteredId, text: icon.title, glyph: icon.glyph };
+        out.push(ref);
+        seen.set(icon.title, ref);
+      }
       continue;
     }
     const cleaned = cleanAbilityText(raw);
     if (!cleaned || cleaned === '•' || /^\{[A-Z]\}$/.test(cleaned)) continue;
     // `{D}`, `{V}` as the card's symbols, `[Fugace]` in bold: `text` keeps the plain reading (search, sort, screen readers).
     const { rich, plain: text } = richText(cleaned);
-    if (!text || seen.has(text)) continue;
-    seen.add(text);
-    out.push(rich ? { id: row.alteredId, text, rich } : { id: row.alteredId, text });
+    if (!text) continue;
+    const existing = seen.get(text);
+    if (existing) {
+      if (row.alteredId !== existing.id && !(existing.extraIds?.includes(row.alteredId))) {
+        existing.extraIds = [...(existing.extraIds ?? []), row.alteredId];
+      }
+      continue;
+    }
+    const ref: AbilityRef = rich ? { id: row.alteredId, text, rich } : { id: row.alteredId, text };
+    seen.set(text, ref);
+    out.push(ref);
   }
   out.sort((a, b) => a.text.localeCompare(b.text, contentLocale()));
   return empty ? [empty, ...out] : out;
@@ -694,7 +705,7 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
 
 function cleanAbilityText(text: string): string {
   return text
-    .replace(/^\{T\}$/, $localize`:@@rules.icon.exhaustMe:Épuisez-moi`)
+    .replace(/^\{T\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.exhaustMe:Épuisez-moi`)
     .replace(/^\{D\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.discardMeFromReserve:Défaussez-moi de la Réserve`)
     .replace(/^\{I\}[\s\u00a0]*/, '')
     // The trigger's trailing \u00ab \u2014 \u00bb or \u00ab : \u00bb (\u00ab Lorsque \u2026 \u2014 \u00bb), printed before the effect on the card.
