@@ -11,7 +11,7 @@ import { AcSkeleton } from '../../../ui/containers';
 import { AcIcon } from '../../../ui/icon';
 import { AcCardArt, AcCostCurve, AcRarityLimits, factionColor } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
-import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
+import { openHeroZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
 /** From this length the title takes one type size less, so that two lines keep the bar's height. */
 const LONG_NAME = 40;
@@ -64,10 +64,14 @@ export class DeckBar {
   };
   protected readonly zoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
 
-  /** Read-only: the hero's card large. */
+  /**
+   * The portrait: the hero's card large; on an editable deck, with « Changer de héros » (also the chip on the portrait).
+   * No hero yet on an editable deck: the hero picker straight away.
+   */
   protected zoomHero(): void {
     const hero = this.deck.hero();
-    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
+    if (hero) openHeroZoom(this.overlay, hero, this.editable() ? () => this.changeHero.emit() : undefined);
+    else if (this.editable()) this.changeHero.emit();
   }
 
   protected startRename(): void {

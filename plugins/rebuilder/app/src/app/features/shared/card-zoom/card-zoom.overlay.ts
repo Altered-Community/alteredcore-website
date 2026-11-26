@@ -2,7 +2,7 @@ import { Component, computed, inject, linkedSignal, signal } from '@angular/core
 import { environment } from '../../../../environments/environment';
 import { contentLocale } from '../../../core/locale';
 import type { Card } from '../../../core/models';
-import { localizedText } from '../../../core/models';
+import { localizedText, type DeckHero } from '../../../core/models';
 import { AcButton, AcIconButton, AcStepper } from '../../../ui/buttons';
 import { AcCardTile } from '../../../ui/metier';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
@@ -17,6 +17,8 @@ export interface CardZoomData {
   quantity?: { value: number; max: number; change: (quantity: number) => void; in?: 'deck' | 'collection' };
   /** Editor, a card with several illustrations: « Choisir les illustrations » opens its brush in place of this window. */
   illustrations?: AltArtPickerData;
+  /** Editor, the deck's hero: « Changer de héros » opens the hero picker in place of this window. */
+  changeHero?: () => void;
   /**
    * The cards around this one, in the order the screen shows them: « Précédente » / « Suivante » and the ← / → keys
    * walk through them. `controls` gives the editor controls (copies, brush) of the card reached.
@@ -93,6 +95,14 @@ export class CardZoomOverlay {
     this.ref.close();
     openAltArtPicker(this.overlay, name, data);
   }
+
+  /** The hero picker is a window of its own too: the zoom closes first. */
+  protected changeHero(): void {
+    const change = this.data().changeHero;
+    if (!change) return;
+    this.ref.close();
+    change();
+  }
 }
 
 export function openCardZoom(overlay: AcOverlayService, data: CardZoomData): AcOverlayRef<void, CardZoomData> {
@@ -103,4 +113,10 @@ export function openCardZoom(overlay: AcOverlayService, data: CardZoomData): AcO
     width: data.siblings && data.siblings.cards.length > 1 ? 360 + 2 * ARROW_WIDTH : 360,
     bare: true,
   });
+}
+
+/** The deck's hero card large (the portrait of the deck bar and of the phone app bar); `changeHero`: editable deck. */
+export function openHeroZoom(overlay: AcOverlayService, hero: DeckHero, changeHero?: () => void): AcOverlayRef<void, CardZoomData> {
+  const card: Card = { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } };
+  return openCardZoom(overlay, { card, changeHero });
 }

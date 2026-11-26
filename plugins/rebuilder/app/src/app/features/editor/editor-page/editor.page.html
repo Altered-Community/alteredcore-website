@@ -25,16 +25,21 @@
         }
       </span>
     }
-    <!-- Search and « Aperçu » views of an editable deck: the hero opens « Choisir un héros », the title « Résumé du deck » with the rarities against the caps. -->
+    <!-- Search and « Aperçu » views of an editable deck: the hero shows its card large (with « Changer de héros »), its chip opens
+         « Choisir un héros » straight away, the title « Résumé du deck » with the rarities against the caps. -->
     @if (deckTitle) {
-      <button leading type="button" class="bar-hero" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
-        <span class="bar-hero-art">
-          @if (deck.hero(); as h) {
-            <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 22%" [eager]="true" />
-          }
-        </span>
-        <span class="bar-hero-swap" aria-hidden="true"><ac-icon name="arrow-left-right" [size]="12" [strokeWidth]="2.4" /></span>
-      </button>
+      <span leading class="bar-hero">
+        <button type="button" class="bar-hero-zoom" aria-haspopup="dialog" [attr.aria-label]="heroZoomLabel()" (click)="zoomHero()">
+          <span class="bar-hero-art">
+            @if (deck.hero(); as h) {
+              <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 22%" [eager]="true" />
+            }
+          </span>
+        </button>
+        <button type="button" class="bar-hero-swap" aria-haspopup="dialog" [attr.aria-label]="heroButtonLabel()" [title]="heroButtonLabel()" (click)="changeHero()">
+          <ac-icon name="arrow-left-right" [size]="12" [strokeWidth]="2.4" />
+        </button>
+      </span>
     }
     @if (deckTitle) {
       <button titles type="button" class="bar-deck" aria-haspopup="dialog" [attr.aria-label]="overviewLabel()" (click)="openOverview()">
