@@ -88,9 +88,18 @@
   <span acSkeleton class="terrain-skeleton"></span>
 } @else {
 <ac-cost-curve [main]="deck.stats().main" [reserve]="deck.stats().reserve" [size]="reduced() ? 'sm' : 'md'" [highlight]="highlight()" />
-@if (reduced() && rarityLimits().length) {
+@if (reduced()) {
   <span class="sep" aria-hidden="true"></span>
-  <ac-rarity-limits [limits]="rarityLimits()" />
+  <span class="cards">
+    <ac-badge class="total" [tone]="totalTone()" [title]="totalLabel()">
+      @if (cardCount().bound; as bound) {
+        <ng-container i18n="@@deck.bar.totalOf">{{ deck.total() }}/{{ bound }} cartes</ng-container>
+      } @else {
+        <ng-container i18n="@@deck.bar.totalBadge">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</ng-container>
+      }
+    </ac-badge>
+    <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" />
+  </span>
 }
 <span class="sep" aria-hidden="true"></span>
 <div class="terrain">
@@ -100,7 +109,7 @@
   <ac-terrain-totals [totals]="deck.stats().terrain" />
   @if (!reduced() && rarityLimits().length) {
     <span class="ac-text-overline" i18n="@@deck.bar.rarities">Raretés</span>
-    <ac-rarity-limits [limits]="rarityLimits()" />
+    <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" />
   }
 </div>
 @if (reduced()) {

@@ -14,8 +14,8 @@ export interface AcBottomNavItem {
   queryParams?: Params;
   icon: AcIconName;
   label: string;
-  badge?: number;
-  badgeTone?: 'success' | 'dark';
+  badge?: number | string;
+  badgeTone?: 'success' | 'dark' | 'danger';
   exact?: boolean;
 }
 

@@ -8,7 +8,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { rarityLimits } from '../../../core/format-rules';
+import { cardCount, rarityLimits } from '../../../core/format-rules';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -16,7 +16,7 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from 
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
-import { AcCardArt, AcRarityLimits, AcSaveStatus, rarityLimitItems } from '../../../ui/metier';
+import { AcCardArt, AcRarityLimits, AcSaveStatus, commonItem, rarityLimitItems } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -193,11 +193,17 @@ export class EditorPage {
   protected readonly overviewLabel = computed(() =>
     [
       $localize`:@@editor.overviewOf:Résumé du deck ${this.deck.name()}:name:`,
+      commonItem(this.deck.stats().rarity.C).label,
       ...rarityLimitItems(this.rarityLimits()).map((r) => r.label),
     ].join(', '),
   );
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
+  /** The Deck tab's bubble: the total over the format's minimum (its maximum once over it), red outside them. */
+  private readonly totalBadge = computed(() => {
+    const { total, bound, outside } = cardCount(this.deck.total(), this.deck.rules());
+    return { value: bound === null ? total : `${total}/${bound}`, outside };
+  });
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: this.base(), icon: 'search', label: $localize`:@@editor.search:Recherche` },
     { route: `${this.base()}/apercu`, icon: 'eye', label: $localize`:@@editor.preview:Aperçu` },
@@ -205,8 +211,8 @@ export class EditorPage {
       route: `${this.base()}/deck`,
       icon: 'layers',
       label: $localize`:@@editor.deck:Deck`,
-      badge: this.deck.opening() ? undefined : this.deck.total(),
-      badgeTone: editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
+      badge: this.deck.opening() ? undefined : this.totalBadge().value,
+      badgeTone: this.totalBadge().outside ? 'danger' : editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
     },
     { route: `${this.base()}/main`, icon: 'hand', label: $localize`:@@editor.handShort:Main` },
   ]);

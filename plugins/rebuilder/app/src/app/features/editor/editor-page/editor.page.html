@@ -16,7 +16,7 @@
         <span acSkeleton="title" width="70%"></span>
         @if (deckTitleView()) {
           <span class="bar-deck-sub">
-            @for (i of [0, 1, 2]; track i) {
+            @for (i of [0, 1, 2, 3]; track i) {
               <span acSkeleton="badge" width="52px"></span>
             }
           </span>
@@ -46,7 +46,7 @@
         <span class="bar-deck-name">{{ deck.name() || 'Deck' }}</span>
         <span class="bar-deck-sub">
           @if (rarityLimits().length) {
-            <ac-rarity-limits [limits]="rarityLimits()" [dense]="true" />
+            <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" [dense]="true" />
           } @else {
             {{ subtitle() }}
           }

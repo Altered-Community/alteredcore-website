@@ -1,4 +1,4 @@
-import { addBlockedReason, allowedInFormat, listed, maxCopiesFor, rarityLimits, uniqueLimit, type FormatRules } from './format-rules';
+import { addBlockedReason, allowedInFormat, cardCount, listed, maxCopiesFor, rarityLimits, uniqueLimit, type FormatRules } from './format-rules';
 
 const rules = (patch: Partial<FormatRules> = {}, limits: Partial<FormatRules['limits']> = {}): FormatRules => ({
   code: 'standard',
@@ -58,5 +58,15 @@ describe('format rules (GET /api/formats)', () => {
       { key: 'U', count: 0, limit: 3 },
     ]);
     expect(rarityLimits({ R: 2, E: 1, U: 0 }, null)).toEqual([]);
+  });
+
+  it('measures the card count against the minimum, or against the maximum once over it', () => {
+    const r = rules({ minCards: 39, maxCards: 59 });
+    expect(cardCount(14, r)).toEqual({ total: 14, bound: 39, outside: true });
+    expect(cardCount(39, r)).toEqual({ total: 39, bound: 39, outside: false });
+    expect(cardCount(59, r)).toEqual({ total: 59, bound: 39, outside: false });
+    expect(cardCount(60, r)).toEqual({ total: 60, bound: 59, outside: true });
+    expect(cardCount(12, rules({ minCards: null, maxCards: null }))).toEqual({ total: 12, bound: null, outside: false });
+    expect(cardCount(12, null)).toEqual({ total: 12, bound: null, outside: false });
   });
 });
