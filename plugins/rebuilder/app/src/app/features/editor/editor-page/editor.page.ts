@@ -16,7 +16,7 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from 
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
-import { AcCardArt, AcRarityLimits, AcSaveStatus, rarityLimitItems } from '../../../ui/metier';
+import { AcCardArt, AcRarityLimits, AcSaveStatus, commonItem, rarityLimitItems } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
@@ -191,6 +191,7 @@ export class EditorPage {
   protected readonly overviewLabel = computed(() =>
     [
       $localize`:@@editor.overviewOf:Résumé du deck ${this.deck.name()}:name:`,
+      commonItem(this.deck.stats().rarity.C).label,
       ...rarityLimitItems(this.rarityLimits()).map((r) => r.label),
     ].join(', '),
   );

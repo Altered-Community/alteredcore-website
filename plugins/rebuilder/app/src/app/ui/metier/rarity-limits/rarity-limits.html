@@ -1,3 +1,6 @@
+@if (common(); as c) {
+  <ac-badge tone="neutral" [dense]="dense()" [title]="c.label" [attr.aria-label]="c.label"><img [src]="c.icon" alt="" [width]="c.iconWidth" [height]="c.iconHeight" />{{ c.count }}</ac-badge>
+}
 @for (r of items(); track r.key) {
   <ac-badge [tone]="r.tone" [dense]="dense()" [title]="r.label" [attr.aria-label]="r.label"><img [src]="r.icon" alt="" [width]="r.iconWidth" [height]="r.iconHeight" />{{ r.count }}/{{ r.limit }}</ac-badge>
 }

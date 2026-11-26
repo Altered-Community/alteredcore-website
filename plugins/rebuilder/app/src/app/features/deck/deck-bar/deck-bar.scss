@@ -197,6 +197,17 @@
   margin: var(--ac-space-3) 0;
   background: var(--ac-color-divider);
 }
+/* Reduced bar: the deck's card count, then its Commons and the capped rarities. */
+.cards {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+}
+.total {
+  font-weight: 700;
+  white-space: nowrap;
+}
 .terrain {
   flex-shrink: 0;
   display: flex;
@@ -260,21 +271,21 @@
     display: none;
   }
 }
-/* Reduced bar: the curve, then the terrain totals, then the rarities; the name keeps about 200 px (1228, 1050 and 839 px
+/* Reduced bar: the curve, then the terrain totals, then the rarities; the name keeps about 200 px (1362, 1184 and 973 px
    narrower than the bar). */
-@container deck-bar (max-width: 1409px) {
+@container deck-bar (max-width: 1543px) {
   :host(.reduced) :is(ac-cost-curve, .curve-skeleton, .sep.curve) {
     display: none;
   }
 }
-@container deck-bar (max-width: 1231px) {
+@container deck-bar (max-width: 1365px) {
   :host(.reduced) :is(.terrain, .terrain-skeleton),
   :host(.reduced) .sep:has(+ :is(.terrain, .terrain-skeleton)) {
     display: none;
   }
 }
-@container deck-bar (max-width: 1020px) {
-  :host(.reduced) :is(ac-rarity-limits, .limits-skeleton),
+@container deck-bar (max-width: 1154px) {
+  :host(.reduced) :is(.cards, .limits-skeleton),
   :host(.reduced) .sep {
     display: none;
   }
@@ -291,7 +302,7 @@
   height: 51px;
 }
 .limits-skeleton {
-  flex: 0 1 230px;
+  flex: 0 1 350px;
   height: 30px;
 }
 .terrain-skeleton {

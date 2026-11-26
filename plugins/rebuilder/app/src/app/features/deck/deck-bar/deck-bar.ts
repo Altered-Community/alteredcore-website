@@ -49,6 +49,20 @@ export class DeckBar {
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
   /** Rares, Exalteds and Uniques against the format's caps. */
   protected readonly rarityLimits = computed(() => rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name));
+  /** Green from the format's minimum to its maximum, grey below, red above. */
+  protected readonly totalTone = computed(() => {
+    const total = this.deck.total();
+    const { minCards = null, maxCards = null } = this.deck.rules() ?? {};
+    if (maxCards !== null && total > maxCards) return 'red';
+    return minCards !== null && total >= minCards ? 'green' : 'neutral';
+  });
+  protected readonly totalLabel = computed(() => {
+    const { minCards = null, maxCards = null } = this.deck.rules() ?? {};
+    const total = this.deck.total();
+    if (minCards !== null && maxCards !== null && minCards !== maxCards) return $localize`:@@deck.bar.totalRange:${total}:total: cartes, de ${minCards}:min: à ${maxCards}:max: dans ce format`;
+    if (minCards !== null) return $localize`:@@deck.bar.totalMin:${total}:total: cartes, ${minCards}:min: minimum dans ce format`;
+    return '';
+  });
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly problems = computed(() => problemCount(this.legality()));
   protected readonly illegalLabel = computed(() => illegalLabel(this.editable() ? this.problems() : 0));

@@ -86,7 +86,7 @@
 }
 .ac-badge--lg { height: 28px; }
 /* Dense: tighter padding and gap, for a row of badges where room is short (a phone's app bar). */
-.ac-badge--dense { padding: 0 var(--ac-space-1-5); gap: 3px; }
+.ac-badge--dense { padding: 0 var(--ac-space-1); gap: 2px; }
 /* Icon only: a round badge, as wide as it is tall; the meaning goes in aria-label and title. */
 .ac-badge--icon { width: var(--ac-badge-height); padding: 0; justify-content: center; }
 .ac-badge--lg.ac-badge--icon { width: 28px; }
