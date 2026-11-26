@@ -41,23 +41,24 @@
   padding: 0;
   border: 0;
   background: none;
-  cursor: pointer;
-}
-.zoom {
   cursor: zoom-in;
 }
 .portrait:focus-visible,
-.settings:focus-visible,
+.chip:focus-visible,
 .legality:focus-visible,
 .back:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: -2px;
 }
-.settings {
-  /* A surface-coloured chip with a border and a shadow: it stands out on a dark or a light hero art alike. */
+.chips {
   position: absolute;
   right: var(--ac-space-2);
   bottom: var(--ac-space-2);
+  display: flex;
+  gap: var(--ac-space-1-5);
+}
+.chip {
+  /* A surface-coloured chip with a border and a shadow: it stands out on a dark or a light hero art alike. */
   width: 32px;
   height: 32px;
   display: flex;
@@ -72,7 +73,7 @@
   cursor: pointer;
 }
 @media (hover: hover) {
-  .settings:hover {
+  .chip:hover {
     background: var(--ac-color-bg-subtle);
     color: var(--ac-color-primary);
   }
@@ -227,9 +228,12 @@
 :host(.reduced) .art {
   flex-basis: 96px;
 }
-:host(.reduced) .settings {
+:host(.reduced) .chips {
   right: var(--ac-space-1-5);
   bottom: var(--ac-space-1-5);
+  gap: var(--ac-space-1);
+}
+:host(.reduced) .chip {
   width: 28px;
   height: 28px;
 }

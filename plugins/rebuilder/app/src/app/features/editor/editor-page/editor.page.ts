@@ -22,6 +22,7 @@ import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../..
 import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { openHeroPicker } from '../../shared/hero-picker/hero-picker.overlay';
+import { openHeroZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openDeckOverview } from '../deck-overview/deck-overview.overlay';
 import { EditorAltArts, confirmAltArtDefaults } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
@@ -171,6 +172,7 @@ export class EditorPage {
     const name = this.deck.hero()?.name;
     return name ? $localize`:@@editor.changeHeroOf:Changer de héros (${name}:name:)` : $localize`:@@ui.deckSummary.changeHero:Changer de héros`;
   });
+  protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
   /** Phones, search and « Aperçu » views: the app bar shows the deck title (`deckAppBar`) once the deck is the user's. */
   protected readonly deckTitleView = computed(() => this.bp.compact() && (this.view() === 'search' || this.view() === 'apercu'));
   /**
@@ -392,7 +394,14 @@ export class EditorPage {
     });
   }
 
-  /** The hero portrait's shortcut: « Choisir un héros » alone, the other settings stay behind the settings button. */
+  /** The hero portrait: its card large, with « Changer de héros »; no hero yet, the hero picker straight away. */
+  protected zoomHero(): void {
+    const hero = this.deck.hero();
+    if (hero) openHeroZoom(this.overlay, hero, () => this.changeHero());
+    else this.changeHero();
+  }
+
+  /** The chip on the hero portrait: « Choisir un héros » alone, the other settings stay behind the settings button. */
   protected changeHero(): void {
     openHeroPicker(this.overlay, this.deck.hero()).afterClosed.subscribe((hero) => {
       if (hero) this.deck.updateSettings({ hero });
