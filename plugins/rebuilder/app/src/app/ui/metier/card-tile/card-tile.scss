@@ -38,7 +38,7 @@ button.visual:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }
-/* The column under the faction flag: « + » or the stepper, then the star. */
+/* The column under the faction flag: the star, then « + » or the stepper. */
 .col {
   position: absolute;
   top: var(--app-tile-col-top);
@@ -52,8 +52,17 @@ button.visual:focus-visible {
   /* The gaps leave the card's zoom underneath clickable. */
   pointer-events: none;
 }
-.col > * {
+.col > *,
+.copies > * {
   pointer-events: auto;
+}
+/* « + », or the stepper with « ×n » over its top out of hover: below the star, so their height never moves it. */
+.copies {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
 }
 .action {
   display: block;
@@ -63,7 +72,7 @@ button.visual:focus-visible {
   right: 10px;
   bottom: 10px;
 }
-/* Copies out of hover (pointer screens): « ×n » at the top of the column, over the stepper's place. */
+/* Copies out of hover (pointer screens): « ×n » at the top of the stepper's place, under the star. */
 .qty.idle {
   top: 0;
   right: auto;
@@ -80,7 +89,7 @@ button.visual:focus-visible {
 }
 /* Pointer screens from 768 px: the controls with the hover or the keyboard focus only (the deck builder's pile; a click
    leaves the focus on the button, so not :focus-within), the star too unless the card is a favorite; touch screens and
-   phone widths: always. The hidden stepper keeps its place, so the star does not move on hover. */
+   phone widths: always. */
 @media (hover: hover) and (pointer: fine) and (min-width: 768px) {
   /* Still clickable while hidden: the pointer is over the card, so they show as it gets there. */
   .action,
@@ -173,7 +182,7 @@ button.visual:focus-visible {
   outline: 2px solid var(--ac-color-primary);
   outline-offset: 2px;
 }
-/* Favorite star: in the column under the faction flag, after the copies (shown as the controls are, above). */
+/* Favorite star: first in the column under the faction flag, before the copies (shown as the controls are, above). */
 .favorite {
   position: relative;
   width: var(--app-tile-col-w);

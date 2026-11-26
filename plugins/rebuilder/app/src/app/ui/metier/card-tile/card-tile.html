@@ -19,29 +19,32 @@
     <ac-icon name="brush" [size]="18" />
   </button>
 }
-<!-- Under the printed faction flag, at its width: the copies first, then the star. -->
+<!-- Under the printed faction flag, at its width: the star first, at the same place on every card, then the copies
+     (« + » or the taller stepper grow downward without moving the star). -->
 <div class="col">
-  @if (!plain() && !readonly() && !(quantity() === 0 && max() === 0 && blockedReason())) {
-    @if (quantity() === 0) {
-      <ac-card-add class="action" size="sm" [label]="addLabel()" [disabled]="max() === 0" (add)="changeQuantity(1)" />
-    } @else {
-      <!-- Pointer screens, out of hover: the copies alone, at the top of the stepper's place. -->
-      <span class="qty idle" aria-hidden="true">×{{ quantity() }}</span>
-      <ac-stepper
-        class="action"
-        appearance="overlay"
-        orientation="vertical"
-        [label]="copiesLabel()"
-        [value]="quantity()"
-        [max]="max()"
-        (valueChange)="changeQuantity($event)"
-      />
-    }
-  }
   @if (favorite() !== null) {
     <button type="button" class="favorite" [class.on]="favorite()" [attr.aria-pressed]="favorite()" [attr.aria-label]="favoriteLabel()" [title]="favoriteLabel()" (click)="favoriteToggle.emit()">
       <ac-icon name="star" [size]="15" />
     </button>
+  }
+  @if (!plain() && !readonly() && !(quantity() === 0 && max() === 0 && blockedReason())) {
+    <div class="copies">
+      @if (quantity() === 0) {
+        <ac-card-add class="action" size="sm" [label]="addLabel()" [disabled]="max() === 0" (add)="changeQuantity(1)" />
+      } @else {
+        <!-- Pointer screens, out of hover: the copies alone, at the top of the stepper's place. -->
+        <span class="qty idle" aria-hidden="true">×{{ quantity() }}</span>
+        <ac-stepper
+          class="action"
+          appearance="overlay"
+          orientation="vertical"
+          [label]="copiesLabel()"
+          [value]="quantity()"
+          [max]="max()"
+          (valueChange)="changeQuantity($event)"
+        />
+      }
+    </div>
   }
 </div>
 @if (plain()) {
