@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, linkedSignal, type OnDestroy } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { setOfReference, uniqueArtSources } from '../../../core/card-art';
 import { PEN_GLYPH, cardEffects, linesHtml, printedLength } from '../../../core/card-text';
@@ -8,6 +8,7 @@ import { EFFECT_Y, biomeVariants, collectorNumber, cqw, effectFontPx, qrModules,
 import { AcCardArt } from '../card-art/card-art';
 import { assetUrl } from '../../../core/asset-url';
 import { contentLocale } from '../../../core/locale';
+import { AcUniqueSnapshot } from '../../../core/unique-snapshot';
 
 const ASSETS = assetUrl('assets/unique-card');
 const FACTIONS = ['AX', 'BR', 'LY', 'MU', 'OR', 'YZ'];
@@ -17,6 +18,8 @@ const BIOMES = [
   { key: 'mountain', file: 'MOUNTAIN', label: $localize`:@@ui.terrain.mountain:Montagne`, row: 'm' },
   { key: 'ocean', file: 'OCEAN', label: $localize`:@@ui.terrain.ocean:Océan`, row: 'o' },
 ] as const;
+/** Pointer resting on a card this long before its image is drawn. */
+const SNAPSHOT_DWELL_MS = 150;
 const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } as const;
 
 /**
@@ -32,12 +35,17 @@ const BADGE_FILE = { zero: 'ZERO', small: 'SMALL', normal: 'MID', best: 'BIG' } 
     '[style.--main-fs]': 'mainSize()',
     '[style.--support-fs]': 'supportSize()',
     '[style.--effect-y]': 'effectY()',
+    '(pointerenter)': 'prepareSnapshot($event)',
+    '(pointerleave)': 'cancelSnapshot()',
+    '(pointerdown)': 'prepareSnapshot($event)',
   },
   templateUrl: './unique-card.html',
   styleUrl: './unique-card.scss',
 })
-export class AcUniqueCard {
+export class AcUniqueCard implements OnDestroy {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly snapshots = inject(AcUniqueSnapshot);
   readonly card = input.required<Card>();
   readonly eager = input(false);
 
@@ -98,4 +106,43 @@ export class AcUniqueCard {
    * Modules are cached per reference and drawn as horizontal runs, not one rect per module.
    */
   protected readonly qr = computed(() => qrModules(this.card().reference));
+
+  /**
+   * PNG of the whole face, laid transparent over it: right-click (long press on touch) "Copy image" / "Save image"
+   * then gives the card, not its illustration alone. Drawn on demand (pointer resting on the card, or a touch),
+   * since a grid shows dozens of uniques and most are never copied.
+   */
+  /** What the face prints: a card whose effect arrives later is drawn again. */
+  private readonly snapshotKey = computed(() =>
+    JSON.stringify([contentLocale(), this.card().reference, this.name(), this.type(), this.card().mainCost, this.card().recallCost, this.biomes().map((b) => b.value), this.effects(), this.frame()]),
+  );
+  protected readonly snapshot = linkedSignal<string, string | null>({ source: this.snapshotKey, computation: () => null });
+  private timer?: ReturnType<typeof setTimeout>;
+
+  protected prepareSnapshot(event: PointerEvent): void {
+    if (this.snapshot() || this.timer) return;
+    // A mouse crossing the grid does not draw every card it passes over; a touch may be a long press, draw at once.
+    this.timer = setTimeout(() => void this.drawSnapshot(), event.pointerType === 'mouse' ? SNAPSHOT_DWELL_MS : 0);
+  }
+
+  protected cancelSnapshot(): void {
+    clearTimeout(this.timer);
+    this.timer = undefined;
+  }
+
+  private async drawSnapshot(): Promise<void> {
+    this.timer = undefined;
+    const key = this.snapshotKey();
+    const node = this.host.nativeElement;
+    const art = node.querySelector<HTMLImageElement>('ac-card-art img');
+    // The illustration must be there, or the image would be a frame on grey.
+    if (!art?.complete || !art.naturalWidth) return;
+    await document.fonts.ready;
+    const url = await this.snapshots.snapshot(key, node);
+    if (url && key === this.snapshotKey()) this.snapshot.set(url);
+  }
+
+  ngOnDestroy(): void {
+    this.cancelSnapshot();
+  }
 }
