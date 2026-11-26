@@ -225,10 +225,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
     await expect(page.getByText('Deck vide')).toHaveCount(0);
     await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
-    // Phones: the app bar in skeleton in its final layout (hero, name over the rarities), not « Chargement du deck… ».
+    // Phones: the app bar in skeleton in its final layout (hero, name over the Commons and the rarities), not « Chargement du deck… ».
     const bar = page.locator('ac-app-bar');
     if (compact) {
-      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(4);
+      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(5);
       await expect(bar).not.toContainText('Chargement');
     }
 
@@ -905,11 +905,12 @@ test.describe('ReBuilder in the shell · hero portrait', () => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     await createDeck(page, `E2E hero ${testInfo.project.name} ${Date.now()}`);
-    // The portrait: in the deck bar from 768 px, in the « Deck » view's summary on phones.
+    // From 768 px: the ⇄ chip on the deck bar's portrait (the portrait itself shows the hero's card large).
+    // Phones: the portrait in the « Deck » view's summary.
     if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
-    const portrait = page.getByRole('button', { name: 'Changer de héros' });
-    await expect(portrait.locator('img').first()).toBeVisible();
-    await portrait.click();
+    const change = page.getByRole('button', { name: 'Changer de héros' });
+    await expect((compact ? change : page.locator('app-deck-bar .portrait')).locator('img').first()).toBeVisible();
+    await change.click();
 
     const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
     await expect(picker).toBeVisible();
