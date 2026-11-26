@@ -1821,3 +1821,23 @@ test.describe('ReBuilder in the shell · card browser collection', () => {
     await expect(page.locator('ac-card-tile').first().getByRole('button', { name: /à la collection physique$/ })).toBeVisible();
   });
 });
+
+test.describe('ReBuilder in the shell · unique card image', () => {
+  test('lays the whole printed unique as one image over its face, for the browser\'s « Copy image »', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'Hover: pointer screens');
+    await page.goto('/pages/cards?lang=fr&rarity[]=UNIQUE&faction[]=LY');
+    const unique = page.locator('ac-unique-card').first();
+    await expect(unique.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
+    await unique.hover();
+    const snapshot = unique.locator('img.snapshot');
+    await expect(snapshot).toHaveJSProperty('naturalWidth', 744);
+    await expect(snapshot).toHaveJSProperty('naturalHeight', 1039);
+    // What a right-click lands on: the image, not the illustration under the frame.
+    const hit = await unique.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return (el.getRootNode() as ShadowRoot).elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.className;
+    });
+    expect(hit).toBe('snapshot');
+    await evidence(page, testInfo, '47-unique-snapshot');
+  });
+});
