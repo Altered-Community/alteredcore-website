@@ -2,7 +2,7 @@ import { Component, ElementRef, Injector, afterNextRender, computed, inject, inp
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { illegalLabel, problemCount, type DeckLegality } from '../../../core/deck-legality';
-import { rarityLimits } from '../../../core/format-rules';
+import { cardCount, rarityLimits } from '../../../core/format-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcIconButton } from '../../../ui/buttons';
@@ -49,12 +49,13 @@ export class DeckBar {
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
   /** Rares, Exalteds and Uniques against the format's caps. */
   protected readonly rarityLimits = computed(() => rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name));
-  /** Green from the format's minimum to its maximum, grey below, red above. */
+  /** The total against the format's minimum (its maximum once over it). */
+  protected readonly cardCount = computed(() => cardCount(this.deck.total(), this.deck.rules()));
+  /** Green from the format's minimum to its maximum, red outside. */
   protected readonly totalTone = computed(() => {
-    const total = this.deck.total();
-    const { minCards = null, maxCards = null } = this.deck.rules() ?? {};
-    if (maxCards !== null && total > maxCards) return 'red';
-    return minCards !== null && total >= minCards ? 'green' : 'neutral';
+    const { bound, outside } = this.cardCount();
+    if (bound === null) return 'neutral';
+    return outside ? 'red' : 'green';
   });
   protected readonly totalLabel = computed(() => {
     const { minCards = null, maxCards = null } = this.deck.rules() ?? {};

@@ -131,6 +131,7 @@
 }
 .ac-count--success { background: var(--ac-color-success); color: var(--ac-color-on-strong); }
 .ac-count--soft { background: var(--ac-color-track); color: var(--ac-color-text-2); }
+.ac-count--danger { background: var(--ac-color-danger); color: var(--ac-color-on-strong); }
 
 /* Avatar: initials in a circle. */
 .ac-avatar {

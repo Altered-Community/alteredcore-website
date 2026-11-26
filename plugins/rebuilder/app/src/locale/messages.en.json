@@ -861,6 +861,7 @@
     "ui.deckCard.recordTitleMany": "Played in {$count} tournaments: {$tournaments}",
     "ui.deckCard.recordTitle": "Played in a tournament",
     "ui.rarityLimits.common": "{$rarity}: {$count}",
+    "deck.bar.totalOf": "{$INTERPOLATION}/{$INTERPOLATION_1} cards",
     "deck.bar.totalBadge": "{VAR_PLURAL, plural, =1 {1 card} other {{INTERPOLATION} cards}}",
     "deck.bar.totalRange": "{$total} cards, {$min} to {$max} in this format",
     "deck.bar.totalMin": "{$total} cards, at least {$min} in this format"

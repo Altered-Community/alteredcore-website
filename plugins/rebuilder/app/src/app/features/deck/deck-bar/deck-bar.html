@@ -94,7 +94,13 @@
 @if (reduced()) {
   <span class="sep" aria-hidden="true"></span>
   <span class="cards">
-    <ac-badge class="total" [tone]="totalTone()" [title]="totalLabel()" i18n="@@deck.bar.totalBadge">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</ac-badge>
+    <ac-badge class="total" [tone]="totalTone()" [title]="totalLabel()">
+      @if (cardCount().bound; as bound) {
+        <ng-container i18n="@@deck.bar.totalOf">{{ deck.total() }}/{{ bound }} cartes</ng-container>
+      } @else {
+        <ng-container i18n="@@deck.bar.totalBadge">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</ng-container>
+      }
+    </ac-badge>
     <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" />
   </span>
 }

@@ -128,3 +128,21 @@ export function rarityLimits(
   ];
   return all.filter((r): r is RarityLimit => r.limit !== null);
 }
+
+/**
+ * The deck's card count against the format's bounds: `bound` is the minimum, or the maximum once the deck is over it
+ * (`null` when the format sets neither, or its rules are not known yet); `outside` below the minimum or above the maximum.
+ */
+export interface CardCount {
+  total: number;
+  bound: number | null;
+  outside: boolean;
+}
+
+export function cardCount(total: number, rules: FormatRules | null | undefined): CardCount {
+  const min = rules?.minCards ?? null;
+  const max = rules?.maxCards ?? null;
+  if (max !== null && total > max) return { total, bound: max, outside: true };
+  if (min !== null) return { total, bound: min, outside: total < min };
+  return { total, bound: null, outside: false };
+}
