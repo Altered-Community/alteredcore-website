@@ -1,0 +1,19 @@
+/* « Boosters to open » indicators in the header (global stylesheet, see js/booster-alert.js).
+   The counts reuse ac-count; only their placement is set here. */
+
+/* Count on the account button's avatar, at its top right corner */
+.az-account-btn { position: relative; }
+.own-booster-dot {
+    position: absolute;
+    top: calc(-1 * var(--ac-space-1-5));
+    left: calc(var(--ac-space-4) + var(--ac-space-2));
+    min-width: var(--ac-space-4);
+    height: var(--ac-space-4);
+    padding: 0 var(--ac-space-1);
+    box-shadow: 0 0 0 var(--ac-space-0-5) var(--ac-header-bg);
+    pointer-events: none;
+}
+.own-booster-dot[hidden] { display: none; }
+
+/* Count in the account menu's « Boosters to open » link */
+.own-booster-count[hidden] { display: none; }

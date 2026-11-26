@@ -26,6 +26,10 @@ if ($data === false) {
     exit;
 }
 
+// An empty upstream body (204 No Content: nothing in the inventory) is not a list: ownApiRequest()
+// returns true for it. Answer with an empty list rather than looping over a boolean.
+if (!is_array($data)) $data = [];
+
 // Booster cover art is mirrored locally (assets/boosters/) instead of hot-linking
 // ownership.altered.re images cross-origin — rewrite the upstream relative path
 // (e.g. "/img/boosters/unique-random-lyra.webp") to our own copy by filename. Falls

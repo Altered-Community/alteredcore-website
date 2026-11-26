@@ -111,6 +111,7 @@ function ownIsAltArtGlobalMode(int $userId): bool {
  */
 function ownGetBoosterCount(int $userId): ?int {
     $data = ownApiRequest('GET', '/api/boosters', $userId);
+    if ($data === true) return 0; // empty body (204): nothing in the inventory
     if (!is_array($data)) return null;
     $total = 0;
     foreach ($data as $b) {
