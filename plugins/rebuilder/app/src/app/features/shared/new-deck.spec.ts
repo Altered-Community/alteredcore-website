@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { CardsApiService, type HeroGroup } from '../../core/cards-api.service';
+import { CardCatalogService, type HeroGroup } from '../../core/card-catalog.service';
 import { AcOverlayRef } from '../../ui/overlay';
 import { NewDeckForm } from './new-deck.form';
 import { NewDeckOverlay, type NewDeckResult } from './new-deck/new-deck.overlay';
@@ -96,7 +96,7 @@ describe('NewDeckOverlay', () => {
       providers: [
         provideRouter([]),
         { provide: AcOverlayRef, useValue: ref },
-        { provide: CardsApiService, useValue: { heroes: () => of(heroes) } },
+        { provide: CardCatalogService, useValue: { heroes: () => of(heroes) } },
       ],
     });
     const fixture = TestBed.createComponent(NewDeckOverlay);

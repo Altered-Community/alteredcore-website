@@ -5,59 +5,62 @@ import { environment } from '../../environments/environment';
 import type { AbilityRef } from './card-filters';
 import { type CardSuggestion, looksLikeReference, toSuggestions } from './card-suggestions';
 import { ICONS, richText } from './card-text';
-import { contentLocale } from './locale';
-import type { Card, CardCollection, CardOrder, CardSearchParams, EffectFilterBlock, HeroGroup, Locale, Localized } from './models';
-import { localizedText } from './models';
 import { printKeywordCodes } from './card-vocabulary';
+import { uniqueNeedsPrintedEffect } from './deck-view';
+import { contentLocale } from './locale';
+import type {
+  Card,
+  CardCollection,
+  CardOrder,
+  CardSearchParams,
+  EffectFilterBlock,
+  Faction,
+  HeroGroup,
+  Locale,
+  Localized,
+} from './models';
+import { localizedText } from './models';
+import { encodeLegacyStat, encodeUnifiedStat } from './numeric-filter';
 
-/**
- * Uniques search of the site (rust-cards-api, `AlteredCore.services.uniques`, `UNIQUES_API_URL`).
- * Contract: https://github.com/Altered-Re-Union/uniques-search-api (`docs/api-spec.md`).
- */
+export type { HeroGroup } from './models';
 
 export type AbilityKind = 'triggers' | 'conditions' | 'effects';
 
-/** One effect block: ability ids per part, each list OR-ed. */
-export type UniquesEffect = EffectFilterBlock;
-
-export interface UniquesQuery {
-  /** Character name, any locale, accent-insensitive. */
-  name?: string;
-  /** Exact reference (`ALT_…_U_n`): a single card lookup, other criteria ignored. */
-  reference?: string;
-  factions: string[];
-  sets: string[];
-  subtypes?: string[];
-  costRelation?: '' | 'equal' | 'mainHigher' | 'recallHigher';
-  noEffect?: boolean;
-  /** At least one power at 0 (Forêt, Montagne or Océan). */
-  hasZeroPower?: boolean;
-  mainCosts: number[];
-  recallCosts: number[];
-  forestPowers?: number[];
-  mountainPowers?: number[];
-  oceanPowers?: number[];
-  /** Format configured on the server (`frontier`). */
-  format?: string;
-  /** Single-field sort (`random` is unsupported and omitted). */
-  order?: CardOrder;
-  /** AND-ed; empty blocks are left out. */
-  effects: UniquesEffect[];
-  /** The support ability (« effet de réserve », the echo line: active in Reserve), `support[t|c|o]`; left out when empty. */
-  support?: UniquesEffect;
-}
-
-/** Where an effect block is matched: a main-effect slot (its index in `UniquesQuery.effects`) or the support line. */
+/** Where an effect block is matched: a main-effect slot (its index in `effects`) or the support line. */
 export type EffectSlot = number | 'support';
 
-/** One page of results; `next` is the cursor of the next page, `null` at the end. */
-export interface UniquesPage {
-  member: Card[];
-  totalItems: number;
-  next: number | null;
+/** Pages kept in memory, least recently used first out (a search page is ~90 KB of JSON). */
+const SEARCH_CACHE_SIZE = 80;
+
+/** Bounded LRU cache shared across search, legacy fallback, and subtype facets. */
+class LruCache<K, V> {
+  private readonly entries = new Map<K, V>();
+  constructor(private readonly capacity: number) {}
+
+  get(key: K): V | undefined {
+    const hit = this.entries.get(key);
+    if (hit !== undefined) {
+      this.entries.delete(key);
+      this.entries.set(key, hit);
+    }
+    return hit;
+  }
+
+  set(key: K, value: V): void {
+    this.entries.delete(key);
+    this.entries.set(key, value);
+    if (this.entries.size > this.capacity) {
+      const oldest = this.entries.keys().next().value;
+      if (oldest !== undefined) this.entries.delete(oldest);
+    }
+  }
+
+  delete(key: K): void {
+    this.entries.delete(key);
+  }
 }
 
-/** CardV2 of `/api/v2/cards`, `/api/v2/search`, and `/api/v2/card/{reference}`: locale maps keyed `fr_FR`, `en_US`… */
+/** CardV2 of `/api/v2/search` and `/api/v2/card/{reference}`: locale maps keyed `fr_FR`, `en_US`… */
 interface CardV2 {
   kind?: 'unique' | 'nonunique';
   reference: string;
@@ -93,6 +96,7 @@ interface AbilityV2 {
   text?: Localized;
   isMain?: boolean;
   isEcho?: boolean;
+  spellOnly?: boolean;
 }
 
 interface EffectsResponse {
@@ -101,41 +105,64 @@ interface EffectsResponse {
   output?: AbilityV2[];
 }
 
-/** Pages kept in memory, least recently used first out. */
-const SEARCH_CACHE_SIZE = 80;
+interface RawCardGroup {
+  slug: string;
+  name?: Localized | string;
+  faction?: Faction;
+  cards?: { reference: string; variation?: string }[];
+}
 
+/**
+ * Single deep card catalog boundary for Re:Builder.
+ *
+ * Uses `uniques-search-api` (`/api/v2/search`, `/api/v2/card/{ref}`, `/api/v2/effects`,
+ * `/api/v2/effects/filtered`, `/api/v2/search/facets`, `/api/v2/artists`) as primary backend
+ * and isolates legacy `cards-api` (`/api/cards`, `/api/cards/batch`, `/api/card_groups`)
+ * behind internal fallback adapters when `uniquesApiUrl` is unconfigured or missing a print.
+ */
 @Service()
-export class UniquesApiService {
+export class CardCatalogService {
   private readonly http = inject(HttpClient);
   readonly baseUrl = environment.uniquesApiUrl.replace(/\/$/, '');
-  private readonly searchCache = new Map<string, Observable<UniquesPage>>();
-  private readonly unifiedCache = new Map<string, Observable<CardCollection>>();
+  readonly legacyBaseUrl = environment.cardsApiUrl.replace(/\/$/, '');
+
+  private readonly unifiedCache = new LruCache<string, Observable<CardCollection>>(SEARCH_CACHE_SIZE);
+  private readonly legacyCache = new LruCache<string, Observable<CardCollection>>(SEARCH_CACHE_SIZE);
+  private readonly facetsCache = new LruCache<string, Observable<Record<string, number> | null>>(SEARCH_CACHE_SIZE);
   private effects$?: Observable<EffectsResponse>;
   private artists$?: Observable<string[]>;
-  private readonly facetsCache = new Map<string, Observable<Record<string, number> | null>>();
+  private heroes$?: Observable<HeroGroup[]>;
+  /** Unique faces fetched this session, by `locale|reference`. */
+  private readonly faces = new Map<string, Card>();
+
+  /** True when the unified search API (`uniquesApiUrl`) is configured. */
+  get supportsUnified(): boolean {
+    return !!this.baseUrl;
+  }
 
   /**
-   * Unified search (`GET /api/v2/search`, page-based): serves the "Toutes les cartes" tab
-   * with accurate global sorting (including mana and localized name) across non-unique prints.
+   * Unified card search (`GET /api/v2/search`, page-based), falling back to legacy `/api/cards`
+   * only when `uniquesApiUrl` is unconfigured. Pages already fetched this session are replayed;
+   * errors are not cached.
    */
-  searchUnified(params: CardSearchParams): Observable<CardCollection> {
+  search(params: CardSearchParams): Observable<CardCollection> {
+    if (!this.baseUrl) return this.searchLegacy(params);
+
     const page = params.page ?? 1;
     const limit = params.itemsPerPage ?? 36;
     const q = params.q?.trim();
     if (q && /^ALT_[A-Z0-9_]+$/i.test(q)) {
       if (page > 1) return of({ member: [], totalItems: 0, currentPage: page, itemsPerPage: limit, lastPage: 1 });
-      return this.byReference(q).pipe(
-        map((res) => ({ member: res.member, totalItems: res.totalItems, currentPage: page, itemsPerPage: limit, lastPage: 1 })),
+      return this.byReferenceV2OrEmpty(q).pipe(
+        map((cards) => ({ member: cards, totalItems: cards.length, currentPage: page, itemsPerPage: limit, lastPage: 1 })),
       );
     }
+
     const hp = buildUnifiedSearchParams(params);
     const key = hp.toString();
     const hit = this.unifiedCache.get(key);
-    if (hit) {
-      this.unifiedCache.delete(key);
-      this.unifiedCache.set(key, hit);
-      return hit;
-    }
+    if (hit) return hit;
+
     const page$ = this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/search`, { params: hp }).pipe(
       map((body): CardCollection => {
         const member = (body.cards ?? []).map(toCard);
@@ -150,66 +177,90 @@ export class UniquesApiService {
       shareReplay({ bufferSize: 1, refCount: true }),
     );
     this.unifiedCache.set(key, page$);
-    if (this.unifiedCache.size > SEARCH_CACHE_SIZE) this.unifiedCache.delete(this.unifiedCache.keys().next().value!);
     return page$;
   }
 
+  /** Fetch a single Unique or non-Unique card by reference (`GET /api/v2/card/{ref}` with legacy fallback). */
+  byReference(reference: string, locale = 'en'): Observable<Card> {
+    const legacy$ = this.http.get<Card>(
+      `${this.legacyBaseUrl}/api/cards/reference/${encodeURIComponent(reference)}`,
+      { params: { locale } },
+    );
+    if (!this.baseUrl) return legacy$;
+    return this.http
+      .get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.trim().toUpperCase())}`)
+      .pipe(map(toCard), catchError(() => legacy$));
+  }
+
   /**
-   * A page of uniques: the first one without `cursor`, the next ones with the `next` of the previous
-   * page. Pages already fetched this session are replayed; errors are not kept.
+   * Hydrate Unique and non-Unique cards by reference via `POST /api/v2/search` in chunks of 200,
+   * falling back to legacy `POST /api/cards/batch` only for references missing from the unified index.
    */
-  search(query: UniquesQuery, cursor: number | null, limit: number): Observable<UniquesPage> {
-    if (query.reference) return cursor === null ? this.byReference(query.reference) : of({ member: [], totalItems: 0, next: null });
-    const params = buildUniquesParams(query, cursor, limit);
-    const key = params.toString();
-    const hit = this.searchCache.get(key);
-    if (hit) {
-      this.searchCache.delete(key);
-      this.searchCache.set(key, hit);
-      return hit;
-    }
-    const page$ = this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
-      map(toPage),
-      catchError((err: unknown) => {
-        this.searchCache.delete(key);
-        return throwError(() => err);
+  batch(references: string[], locale = 'en'): Observable<Card[]> {
+    const refs = [...new Set(references.map((r) => r.trim().toUpperCase()).filter(Boolean))];
+    if (!refs.length) return of([]);
+    if (!this.baseUrl) return this.batchFromLegacy(refs, locale);
+
+    return this.searchBatchV2(refs).pipe(
+      switchMap((found) => {
+        const seen = new Set(found.map((c) => c.reference));
+        const missing = refs.filter((r) => !seen.has(r));
+        if (!missing.length) return of(found);
+        return this.batchFromLegacy(missing, locale).pipe(
+          map((rest) => [...found, ...rest]),
+          catchError(() => of(found)),
+        );
       }),
-      shareReplay({ bufferSize: 1, refCount: true }),
-    );
-    this.searchCache.set(key, page$);
-    if (this.searchCache.size > SEARCH_CACHE_SIZE) this.searchCache.delete(this.searchCache.keys().next().value!);
-    return page$;
-  }
-
-  /**
-   * Which of `references` (Uniques) are on the Frontier list: the uniques search API answers only those with
-   * `format=` the site's Frontier format id (`environment.uniquesFrontierFormat`), as the site's deck builder does.
-   */
-  frontierLegal(references: string[]): Observable<Set<string>> {
-    const params = new HttpParams().set('ref', references.join(',')).set('format', environment.uniquesFrontierFormat);
-    return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
-      map((res) => new Set((res.cards ?? []).map((c) => c.reference).filter((r): r is string => !!r))),
+      catchError(() => this.batchFromLegacy(refs, locale)),
     );
   }
 
   /**
-   * Trigger / condition / effect vocabularies of the effect editor: the main-effect entries (`isMain`), or with `support`
-   * the entries of the support line (`isEcho`), as the site's search does.
+   * Faces of the Uniques in `cards` missing their printed effect (`uniqueNeedsPrintedEffect`),
+   * cached for the session by `locale|reference`.
    */
-  /**
-   * Cards per subtype for a search query (`GET /api/v2/search/facets`, see `subtypeFacetParams`): the subtypes still giving
-   * cards with the other filters. `null` when the API has no such endpoint or fails (then every subtype is offered).
-   * Answers kept for the session (least recently used out), errors not.
-   */
+  uniqueFaces(cards: Card[]): Observable<Map<string, Card>> {
+    const locale = contentLocale();
+    const refs = [...new Set(cards.filter(uniqueNeedsPrintedEffect).map((c) => c.reference))];
+    const known = () =>
+      new Map(refs.flatMap((r) => (this.faces.has(`${locale}|${r}`) ? [[r, this.faces.get(`${locale}|${r}`)!] as const] : [])));
+    const missing = refs.filter((r) => !this.faces.has(`${locale}|${r}`));
+    if (!missing.length) return of(known());
+    return this.batch(missing, locale).pipe(
+      map((full) => {
+        full.forEach((c) => this.faces.set(`${locale}|${c.reference}`, c));
+        return known();
+      }),
+      catchError(() => of(known())),
+    );
+  }
+
+  /** All heroes (36 groups), cached for the session (primary `/api/v2/search?cardType[]=HERO`, legacy fallback). */
+  heroes(): Observable<HeroGroup[]> {
+    const legacy$ = this.http
+      .get<{ member: RawCardGroup[] }>(`${this.legacyBaseUrl}/api/card_groups`, {
+        params: { cardType: 'HERO', itemsPerPage: 100 },
+      })
+      .pipe(map((body) => (body.member ?? []).map(toHeroGroup).filter((h): h is HeroGroup => !!h)));
+
+    if (this.baseUrl) {
+      this.heroes$ ??= this.heroesFromV2().pipe(
+        catchError(() => legacy$),
+        shareReplay(1),
+      );
+    } else {
+      this.heroes$ ??= legacy$.pipe(shareReplay(1));
+    }
+    return this.heroes$;
+  }
+
+  /** Cards per subtype for a search query (`GET /api/v2/search/facets`), LRU cached. */
   subtypeFacets(params: HttpParams): Observable<Record<string, number> | null> {
     if (!this.baseUrl) return of(null);
     const key = params.toString();
     const hit = this.facetsCache.get(key);
-    if (hit) {
-      this.facetsCache.delete(key);
-      this.facetsCache.set(key, hit);
-      return hit;
-    }
+    if (hit) return hit;
+
     const facets$ = this.http.get<{ subTypes?: Record<string, number> }>(`${this.baseUrl}/api/v2/search/facets`, { params }).pipe(
       map((res) => res.subTypes ?? {}),
       catchError(() => {
@@ -219,11 +270,10 @@ export class UniquesApiService {
       shareReplay({ bufferSize: 1, refCount: false }),
     );
     this.facetsCache.set(key, facets$);
-    if (this.facetsCache.size > SEARCH_CACHE_SIZE) this.facetsCache.delete(this.facetsCache.keys().next().value!);
     return facets$;
   }
 
-  /** Every artist of the catalog (`GET /api/v2/artists`), once a session; `[]` when the API does not list them. */
+  /** Every artist of the catalog (`GET /api/v2/artists`), once per session. */
   artists(): Observable<string[]> {
     if (!this.baseUrl) return of([]);
     this.artists$ ??= this.http.get<{ artists?: string[] }>(`${this.baseUrl}/api/v2/artists`).pipe(
@@ -234,6 +284,7 @@ export class UniquesApiService {
     return this.artists$;
   }
 
+  /** Trigger / condition / effect vocabularies from `GET /api/v2/effects` (main or echo/support). */
   abilities(kind: AbilityKind, support = false): Observable<AbilityRef[]> {
     this.effects$ ??= this.http.get<EffectsResponse>(`${this.baseUrl}/api/v2/effects`).pipe(
       catchError((err: unknown) => {
@@ -246,7 +297,9 @@ export class UniquesApiService {
       map((body) => {
         const rows = (kind === 'triggers' ? body.triggers : kind === 'conditions' ? body.conditions : body.output) ?? [];
         return toAbilityRefs(
-          rows.filter((r) => (support ? r.isEcho === true : r.isMain !== false)).map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {} })),
+          rows
+            .filter((r) => (support ? r.isEcho === true : r.isMain !== false))
+            .map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {}, spellOnly: r.spellOnly })),
           kind === 'conditions' ? NO_CONDITION : undefined,
         );
       }),
@@ -254,24 +307,17 @@ export class UniquesApiService {
   }
 
   /**
-   * Ids of `kind` that still give a card once set in `block`, the effect block at `slot` of `query.effects`
-   * (accepts both unified `CardSearchParams` and legacy `UniquesQuery`). The editor narrows its lists to them.
+   * Ids of `kind` that still give a matching card once set in `block` at `slot` of `params`.
+   * Accepts the single unified `CardSearchParams` query shape.
    */
-  narrowAbilities(query: UniquesQuery | CardSearchParams, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): Observable<Set<number>> {
-    const params =
-      'itemsPerPage' in query || 'rarities' in query || 'effectText' in query
-        ? buildUnifiedEffectsFilteredParams(query, slot, block, kind)
-        : buildEffectsFilteredParams(query as UniquesQuery, slot, block, kind);
+  narrowAbilities(params: CardSearchParams, slot: EffectSlot, block: EffectFilterBlock, kind: AbilityKind): Observable<Set<number>> {
+    const hp = buildEffectsFilteredParams(params, slot, block, kind);
     return this.http
-      .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params })
+      .get<{ idGds?: number[] }>(`${this.baseUrl}/api/v2/effects/filtered`, { params: hp })
       .pipe(map((res) => new Set(res.idGds ?? [])));
   }
 
-  /**
-   * Suggestions of the community tab's card filter (`GET /api/v2/search`): a full reference is looked up exactly first
-   * (`ref[]`, a Unique included); otherwise, or when no card has it, a name search on the non-Unique booster prints
-   * (`name`, every locale). One suggestion per gameplay card, see `toSuggestions`.
-   */
+  /** Card suggestions for the community deck filter (`GET /api/v2/search`). */
   suggestCards(query: string, locale: Locale, limit = 12): Observable<CardSuggestion[]> {
     const q = query.trim();
     if (!q || !this.baseUrl) return of([]);
@@ -299,17 +345,25 @@ export class UniquesApiService {
       );
   }
 
-  /** The suggestion of one canonical reference (a card filter read from the URL), `null` when no card has it. */
+  /** Suggestion of one canonical reference (card filter read from URL), or `null`. */
   suggestionOf(reference: string, locale: Locale): Observable<CardSuggestion | null> {
     return this.suggestCards(reference, locale, 1).pipe(
       map((list) => list.find((s) => s.reference === reference.toUpperCase()) ?? list[0] ?? null),
     );
   }
 
-  /** Hydrate Unique and non-Unique cards by reference via `POST /api/v2/search` in chunks of 200. */
-  searchBatch(references: readonly string[]): Observable<Card[]> {
-    const refs = [...new Set(references.map((r) => r.trim().toUpperCase()).filter(Boolean))];
-    if (!refs.length || !this.baseUrl) return of([]);
+  // ── Internal V2 & legacy fallback adapters ─────────────────────────────────
+
+  private byReferenceV2OrEmpty(reference: string): Observable<Card[]> {
+    return this.http.get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.toUpperCase())}`).pipe(
+      map((card) => [toCard(card)]),
+      catchError((err: unknown) =>
+        err instanceof HttpErrorResponse && (err.status === 400 || err.status === 404) ? of([] as Card[]) : throwError(() => err),
+      ),
+    );
+  }
+
+  private searchBatchV2(refs: readonly string[]): Observable<Card[]> {
     const chunks: string[][] = [];
     for (let i = 0; i < refs.length; i += 200) chunks.push(refs.slice(i, i + 200));
     const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' });
@@ -323,15 +377,7 @@ export class UniquesApiService {
     ).pipe(map((pages) => pages.flat()));
   }
 
-  /** Fetch a single Unique or non-Unique card by reference via `GET /api/v2/card/{reference}`. */
-  byReferenceCard(reference: string): Observable<Card> {
-    return this.http
-      .get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.trim().toUpperCase())}`)
-      .pipe(map(toCard));
-  }
-
-  /** All heroes (36 groups) fetched from `GET /api/v2/search?cardType[]=HERO`. */
-  heroes(): Observable<HeroGroup[]> {
+  private heroesFromV2(): Observable<HeroGroup[]> {
     const fetchPage = (page: number) =>
       this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/search`, {
         params: new HttpParams().append('cardType[]', 'HERO').set('limit', '200').set('page', String(page)),
@@ -349,33 +395,37 @@ export class UniquesApiService {
     );
   }
 
-  /** Hydrate Unique cards by reference via `GET /api/v2/cards?ref[]=...` (e.g. fallback for favorites/collection/deck faces). */
-  byReferences(references: readonly string[]): Observable<Card[]> {
-    const refs = [...new Set(references.map((r) => r.trim().toUpperCase()).filter(Boolean))];
-    if (!refs.length || !this.baseUrl) return of([]);
-    const chunks: string[][] = [];
-    for (let i = 0; i < refs.length; i += 50) chunks.push(refs.slice(i, i + 50));
-    return forkJoin(
-      chunks.map((chunk) => {
-        let params = new HttpParams().set('limit', String(chunk.length));
-        for (const r of chunk) params = params.append('ref[]', r);
-        return this.http.get<SearchResponse>(`${this.baseUrl}/api/v2/cards`, { params }).pipe(
-          map((res) => (res.cards ?? []).map(toCard)),
-          catchError(() => of([] as Card[])),
-        );
+  private searchLegacy(params: CardSearchParams): Observable<CardCollection> {
+    const hp = buildLegacyCardsSearchParams(params);
+    if (params.order === 'random') {
+      return this.http.get<CardCollection | Card[]>(`${this.legacyBaseUrl}/api/cards`, { params: hp }).pipe(map(normalizeCollection));
+    }
+    const key = hp.toString();
+    const hit = this.legacyCache.get(key);
+    if (hit) return hit;
+
+    const page$ = this.http.get<CardCollection | Card[]>(`${this.legacyBaseUrl}/api/cards`, { params: hp }).pipe(
+      map(normalizeCollection),
+      catchError((err: unknown) => {
+        this.legacyCache.delete(key);
+        return throwError(() => err);
       }),
-    ).pipe(map((pages) => pages.flat()));
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    this.legacyCache.set(key, page$);
+    return page$;
   }
 
-  private byReference(reference: string): Observable<UniquesPage> {
-    return this.http.get<CardV2>(`${this.baseUrl}/api/v2/card/${encodeURIComponent(reference.toUpperCase())}`).pipe(
-      map((card): UniquesPage => ({ member: [toCard(card)], totalItems: 1, next: null })),
-      catchError((err: unknown) =>
-        err instanceof HttpErrorResponse && (err.status === 400 || err.status === 404) ? of({ member: [], totalItems: 0, next: null }) : throwError(() => err),
-      ),
-    );
+  private batchFromLegacy(refs: readonly string[], locale: string): Observable<Card[]> {
+    return this.http
+      .post<Card[] | { member: Card[] }>(`${this.legacyBaseUrl}/api/cards/batch`, { references: refs }, {
+        params: { locale },
+      })
+      .pipe(map((body) => (Array.isArray(body) ? body : body.member ?? [])));
   }
 }
+
+// ── Unified query builders ───────────────────────────────────────────────────
 
 const V2_LOCALE: Record<Locale, string> = { en: 'en_US', fr: 'fr_FR' };
 
@@ -405,17 +455,6 @@ function sortParam(order: CardOrder | undefined, locale: Locale = contentLocale(
   return SORT_PARAM[order];
 }
 
-/** Query string of `GET /api/v2/cards`. */
-export function buildUniquesParams(query: UniquesQuery, cursor: number | null, limit: number): HttpParams {
-  let hp = new HttpParams().set('limit', String(limit));
-  if (cursor !== null) hp = hp.set('cursor', String(cursor));
-  const sort = sortParam(query.order);
-  if (sort) hp = hp.set('sort', sort);
-  hp = appendCriteria(hp, query);
-  const effects = query.effects.filter(hasCriteria);
-  return appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), query.support);
-}
-
 function appendUnifiedCriteria(hp: HttpParams, params: CardSearchParams): HttpParams {
   const q = params.q?.trim();
   if (q) hp = hp.set('q', q);
@@ -432,11 +471,11 @@ function appendUnifiedCriteria(hp: HttpParams, params: CardSearchParams): HttpPa
   if (params.hasZeroPower) hp = hp.set('hasZeroPower', 'true');
   for (const a of params.artists ?? []) hp = hp.append('artist[]', a);
   if (params.format) hp = hp.set('format', params.format);
-  hp = appendStatValues(hp, 'mainCost', params.mainCosts);
-  hp = appendStatValues(hp, 'recallCost', params.recallCosts);
-  hp = appendStatValues(hp, 'forestPower', params.forestPowers);
-  hp = appendStatValues(hp, 'mountainPower', params.mountainPowers);
-  hp = appendStatValues(hp, 'oceanPower', params.oceanPowers);
+  hp = encodeUnifiedStat(hp, 'mainCost', params.mainCosts);
+  hp = encodeUnifiedStat(hp, 'recallCost', params.recallCosts);
+  hp = encodeUnifiedStat(hp, 'forestPower', params.forestPowers);
+  hp = encodeUnifiedStat(hp, 'mountainPower', params.mountainPowers);
+  hp = encodeUnifiedStat(hp, 'oceanPower', params.oceanPowers);
   return hp;
 }
 
@@ -452,14 +491,20 @@ export function buildUnifiedSearchParams(params: CardSearchParams): HttpParams {
   return appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), params.support);
 }
 
-function appendEditingEffects(
-  hp: HttpParams,
-  allEffects: readonly UniquesEffect[],
-  support: UniquesEffect | undefined,
+const EDITING_PART: Record<AbilityKind, string> = { triggers: 'trigger', conditions: 'condition', effects: 'output' };
+
+/**
+ * Query string of `GET /api/v2/effects/filtered` using unified `CardSearchParams`:
+ * keeps rarities, cardTypes, format, effectText, and all other active filters in sync.
+ */
+export function buildEffectsFilteredParams(
+  params: CardSearchParams,
   slot: EffectSlot,
-  block: UniquesEffect,
+  block: EffectFilterBlock,
   kind: AbilityKind,
 ): HttpParams {
+  let hp = appendUnifiedCriteria(new HttpParams(), params);
+  const allEffects = params.effects ?? [];
   if (slot === 'support') {
     const effects = allEffects.filter(hasCriteria);
     hp = appendSupport(appendEffects(hp, effects, effectMatchCounts(effects)), block, true);
@@ -467,35 +512,11 @@ function appendEditingEffects(
   }
   const others = allEffects.filter((e, i) => i !== slot && hasCriteria(e));
   hp = appendEffects(hp, [...others, block], [...effectMatchCounts(others), 1]);
-  hp = appendSupport(hp, support);
+  hp = appendSupport(hp, params.support);
   return hp.set('editing', `${EDITING_PART[kind]}:${others.length}`);
 }
 
-/**
- * Query string of `GET /api/v2/effects/filtered` using unified `CardSearchParams`:
- * keeps rarities, cardTypes, format, effectText, and all other active filters in sync.
- */
-export function buildUnifiedEffectsFilteredParams(
-  params: CardSearchParams,
-  slot: EffectSlot,
-  block: UniquesEffect,
-  kind: AbilityKind,
-): HttpParams {
-  const hp = appendUnifiedCriteria(new HttpParams(), params);
-  return appendEditingEffects(hp, params.effects ?? [], params.support, slot, block, kind);
-}
-
-/**
- * Query string of `GET /api/v2/effects/filtered`: the `kind` ids that, set in `block` (the effect
- * block at `index` of `query.effects`, being edited), still give at least one card.
- */
-export function buildEffectsFilteredParams(query: UniquesQuery, slot: EffectSlot, block: UniquesEffect, kind: AbilityKind): HttpParams {
-  const hp = appendCriteria(new HttpParams(), query);
-  return appendEditingEffects(hp, query.effects, query.support, slot, block, kind);
-}
-
-/** `support[t|c|o]` of the support block, empty parts left out; nothing for an empty block unless `always`. */
-function appendSupport(hp: HttpParams, support: UniquesEffect | undefined, always = false): HttpParams {
+function appendSupport(hp: HttpParams, support: EffectFilterBlock | undefined, always = false): HttpParams {
   if (!support || (!always && !hasCriteria(support))) return hp;
   if (support.triggers.length) hp = hp.set('support[t]', support.triggers.join(','));
   if (support.conditions.length) hp = hp.set('support[c]', support.conditions.join(','));
@@ -503,40 +524,11 @@ function appendSupport(hp: HttpParams, support: UniquesEffect | undefined, alway
   return hp;
 }
 
-const EDITING_PART: Record<AbilityKind, string> = { triggers: 'trigger', conditions: 'condition', effects: 'output' };
-
-function hasCriteria(e: UniquesEffect): boolean {
+function hasCriteria(e: EffectFilterBlock): boolean {
   return e.triggers.length > 0 || e.conditions.length > 0 || e.effects.length > 0;
 }
 
-function appendStatValues(hp: HttpParams, param: string, values: number[] | undefined): HttpParams {
-  for (const v of values ?? []) {
-    hp = v > 15 ? hp.append(`${param}[gt]`, '15') : hp.append(`${param}[]`, String(v));
-  }
-  return hp;
-}
-
-/** Name, factions, sets, subtypes, costs, cost relation, no-effect and format. */
-function appendCriteria(hp: HttpParams, query: UniquesQuery): HttpParams {
-  const name = query.name?.trim();
-  if (name) hp = hp.set('name', name);
-  for (const f of query.factions) hp = hp.append('faction[]', f);
-  for (const s of query.sets) hp = hp.append('set[]', s);
-  for (const st of query.subtypes ?? []) hp = hp.append('subTypes[]', st);
-  if (query.costRelation) hp = hp.set('costRelation', query.costRelation);
-  if (query.noEffect) hp = hp.set('hasNoEffect', 'true');
-  if (query.hasZeroPower) hp = hp.set('hasZeroPower', 'true');
-  hp = appendStatValues(hp, 'mainCost', query.mainCosts);
-  hp = appendStatValues(hp, 'recallCost', query.recallCosts);
-  hp = appendStatValues(hp, 'forestPower', query.forestPowers);
-  hp = appendStatValues(hp, 'mountainPower', query.mountainPowers);
-  hp = appendStatValues(hp, 'oceanPower', query.oceanPowers);
-  if (query.format) hp = hp.set('format', query.format);
-  return hp;
-}
-
-/** `effect[N][t|c|o]` for each block, empty parts left out, with its `matchCount` above 1. */
-function appendEffects(hp: HttpParams, effects: UniquesEffect[], counts: number[]): HttpParams {
+function appendEffects(hp: HttpParams, effects: EffectFilterBlock[], counts: number[]): HttpParams {
   effects.forEach((e, i) => {
     if (e.triggers.length) hp = hp.set(`effect[${i}][t]`, e.triggers.join(','));
     if (e.conditions.length) hp = hp.set(`effect[${i}][c]`, e.conditions.join(','));
@@ -547,36 +539,96 @@ function appendEffects(hp: HttpParams, effects: UniquesEffect[], counts: number[
   return hp;
 }
 
-/** The API accepts `matchCount` 1 to 3. */
 const MAX_MATCH_COUNT = 3;
 
-/**
- * `a` covers `b` when every ability that matches `b` also matches `a`: on each part, `a` is « any »
- * or lists every value of `b`.
- */
-function covers(a: UniquesEffect, b: UniquesEffect): boolean {
+function covers(a: EffectFilterBlock, b: EffectFilterBlock): boolean {
   const part = (x: number[], y: number[]) => !x.length || (y.length > 0 && y.every((id) => x.includes(id)));
   return part(a.triggers, b.triggers) && part(a.conditions, b.conditions) && part(a.effects, b.effects);
 }
 
-/**
- * `matchCount` of each effect block. The API ANDs blocks per card, so one ability of the card can
- * answer several blocks: « {J} Piochez une carte » matches both « Quand {J} · Alors Piochez » and
- * « Alors Piochez ». Each ability should answer one block. A block that covers `k` other blocks
- * needs `k + 1` matching abilities: necessary in every case, and exact when the blocks it covers
- * are nested (identical blocks, or « Piochez » after « {J} · Piochez »). Blocks that overlap
- * without one covering the other stay approximate: the API has no way to ask for distinct abilities.
- */
-export function effectMatchCounts(effects: UniquesEffect[]): number[] {
+/** `matchCount` of each effect block when nested/identical blocks require distinct matching abilities. */
+export function effectMatchCounts(effects: readonly EffectFilterBlock[]): number[] {
   return effects.map((e, i) => Math.min(MAX_MATCH_COUNT, 1 + effects.filter((o, j) => j !== i && covers(e, o)).length));
 }
 
-function toPage(body: SearchResponse): UniquesPage {
-  const cursor = body.iter?.cursor;
-  return { member: (body.cards ?? []).map(toCard), totalItems: body.iter?.total ?? 0, next: typeof cursor === 'number' ? cursor : null };
+// ── Legacy `/api/cards` fallback helpers ─────────────────────────────────────
+
+const LEGACY_TIE_BREAK: [string, string][] = [['order[setDate]', 'desc'], ['order[collectorNumberFormatedId]', 'asc']];
+
+const LEGACY_ORDER_PARAM: Record<string, [string, string][]> = {
+  'setDate-desc': [['order[setDate]', 'desc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'setDate-asc': [['order[setDate]', 'asc'], ['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'number-asc': [['order[cardNumber]', 'asc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'number-desc': [['order[cardNumber]', 'desc'], ['order[collectorNumberFormatedId]', 'asc']],
+  'collector-asc': [['order[collectorNumberFormatedId]', 'asc']],
+  'collector-desc': [['order[collectorNumberFormatedId]', 'desc']],
+  ...Object.fromEntries(
+    ['mainCost', 'recallCost', 'forestPower', 'mountainPower', 'oceanPower'].flatMap((field) =>
+      (['asc', 'desc'] as const).map((dir) => [`${field}-${dir}`, [[`order[${field}]`, dir], ...LEGACY_TIE_BREAK]]),
+    ),
+  ),
+};
+
+export function buildLegacyCardsSearchParams(params: CardSearchParams): HttpParams {
+  let hp = new HttpParams()
+    .set('page', String(params.page ?? 1))
+    .set('itemsPerPage', String(params.itemsPerPage ?? 24));
+
+  if (params.locale) hp = hp.set('locale', params.locale);
+
+  const q = params.q?.trim();
+  if (q) {
+    hp = /^ALT_[A-Z0-9_]+$/i.test(q) ? hp.set('reference', q.toUpperCase()) : hp.set('name', q);
+  }
+
+  const factions = params.factions ?? [];
+  if (factions.length === 1) hp = hp.set('faction.code', factions[0]);
+  else for (const code of factions) hp = hp.append('faction.code[]', code);
+
+  for (const t of params.types ?? []) hp = hp.append('cardType[]', t);
+  for (const r of params.rarities ?? []) hp = hp.append('rarity[]', r);
+  for (const s of params.sets ?? []) hp = hp.append('set.reference[]', s);
+  for (const v of params.variations ?? ['standard']) hp = hp.append('variation[]', v);
+  hp = encodeLegacyStat(hp, 'mainCost', params.mainCosts);
+  hp = encodeLegacyStat(hp, 'recallCost', params.recallCosts);
+  hp = encodeLegacyStat(hp, 'forestPower', params.forestPowers);
+  hp = encodeLegacyStat(hp, 'mountainPower', params.mountainPowers);
+  hp = encodeLegacyStat(hp, 'oceanPower', params.oceanPowers);
+  for (const t of params.subtypes ?? []) hp = hp.append('subTypes[]', t);
+  if (params.costRelation) hp = hp.set('costRelation', params.costRelation);
+  if (params.hasNoEffect) hp = hp.set('hasNoEffect', 'true');
+
+  const order = params.order;
+  if (order === 'random') {
+    hp = hp.set('random', 'true');
+  } else if (order) {
+    for (const [key, dir] of LEGACY_ORDER_PARAM[order] ?? []) hp = hp.set(key, dir);
+  }
+  return hp;
 }
 
-/** `fr_FR` → `fr`: the locale keys of the rest of the app. */
+function normalizeCollection(body: CardCollection | Card[]): CardCollection {
+  if (Array.isArray(body)) {
+    return { member: body, totalItems: body.length, currentPage: 1, itemsPerPage: body.length, lastPage: 1 };
+  }
+  const member = body.member ?? [];
+  const totalItems = body.totalItems ?? member.length;
+  const itemsPerPage = body.itemsPerPage ?? 24;
+  const lastPage = body.lastPage ?? Math.max(1, Math.ceil(totalItems / Math.max(1, itemsPerPage)));
+  return { member, totalItems, currentPage: body.currentPage ?? 1, itemsPerPage, lastPage };
+}
+
+function toHeroGroup(g: RawCardGroup): HeroGroup | null {
+  const faction = g.faction?.code;
+  const standard = (g.cards ?? []).filter((c) => c.variation === 'standard' && /_B_/.test(c.reference));
+  const reference = standard[0]?.reference ?? g.cards?.[0]?.reference;
+  if (!faction || !reference) return null;
+  const prints = (g.cards ?? []).map((c) => ({ reference: c.reference, variation: c.variation ?? '' }));
+  return { slug: g.slug, name: localizedText(g.name, contentLocale()) || reference, faction, reference, prints };
+}
+
+// ── CardV2 & AbilityV2 adaptation ────────────────────────────────────────────
+
 function fromV2Locales(value: Localized | undefined): Localized | undefined {
   if (!value) return undefined;
   const out: Localized = {};
@@ -584,14 +636,16 @@ function fromV2Locales(value: Localized | undefined): Localized | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-/** Effect texts: as `fromV2Locales`, with the `[FLEETING]` keyword codes printed in each language. */
 function fromV2Text(value: Localized | undefined): Localized | undefined {
   const out = fromV2Locales(value);
   if (out) for (const [key, text] of Object.entries(out)) if (text) out[key] = printKeywordCodes(text, key);
   return out;
 }
 
-const CHARACTER = { reference: 'CHARACTER', name: { fr: 'Personnage', en: 'Character', de: 'Charakter', es: 'Personaje', it: 'Personaggio' } };
+const CHARACTER = {
+  reference: 'CHARACTER',
+  name: { fr: 'Personnage', en: 'Character', de: 'Charakter', es: 'Personaje', it: 'Personaggio' },
+};
 
 function heroVariation(c: CardV2): string {
   if (c.isSerialized) return 'serialized';
@@ -656,14 +710,16 @@ export function toCard(c: CardV2): Card {
 /** Label of the conditions' `[]` row: the API matches it on abilities printed without a condition. */
 export const NO_CONDITION = $localize`:@@rules.ability.noCondition:Sans condition`;
 
-/** Symbol-only triggers shown with their glyph: played from hand, from reserve, from anywhere, or exhaust ({T} :). */
 const PLAY_TRIGGERS = ['H', 'R', 'J'];
 
 /**
- * Labels in the content language, sorted, duplicates and placeholders dropped. With `emptyLabel`,
- * the `[]` row (no value printed) is kept first under that label instead of being dropped.
+ * Labels in the content language, sorted (spell-only entries last), duplicates merged via `extraIds`
+ * and placeholders dropped. With `emptyLabel`, the `[]` row stays first.
  */
-export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], emptyLabel?: string): AbilityRef[] {
+export function toAbilityRefs(
+  rows: { alteredId: number; text: Localized; spellOnly?: boolean }[],
+  emptyLabel?: string,
+): AbilityRef[] {
   const seen = new Map<string, AbilityRef>();
   const out: AbilityRef[] = [];
   let empty: AbilityRef | undefined;
@@ -676,30 +732,36 @@ export function toAbilityRefs(rows: { alteredId: number; text: Localized }[], em
     const code = /^\{([A-Z])\}[\s\u00a0]*:?$/.exec(raw)?.[1];
     if (code && (PLAY_TRIGGERS.includes(code) || code === 'T')) {
       const icon = ICONS[code];
-      if (!seen.has(icon.title)) {
-        const ref: AbilityRef = { id: row.alteredId, text: icon.title, glyph: icon.glyph };
+      const existingIcon = seen.get(icon.title);
+      if (!existingIcon) {
+        const ref: AbilityRef = row.spellOnly
+          ? { id: row.alteredId, text: icon.title, glyph: icon.glyph, spellOnly: true }
+          : { id: row.alteredId, text: icon.title, glyph: icon.glyph };
         out.push(ref);
         seen.set(icon.title, ref);
+      } else if (!row.spellOnly) {
+        delete existingIcon.spellOnly;
       }
       continue;
     }
     const cleaned = cleanAbilityText(raw);
     if (!cleaned || cleaned === '•' || /^\{[A-Z]\}$/.test(cleaned)) continue;
-    // `{D}`, `{V}` as the card's symbols, `[Fugace]` in bold: `text` keeps the plain reading (search, sort, screen readers).
     const { rich, plain: text } = richText(cleaned);
     if (!text) continue;
     const existing = seen.get(text);
     if (existing) {
-      if (row.alteredId !== existing.id && !(existing.extraIds?.includes(row.alteredId))) {
+      if (row.alteredId !== existing.id && !existing.extraIds?.includes(row.alteredId)) {
         existing.extraIds = [...(existing.extraIds ?? []), row.alteredId];
       }
+      if (!row.spellOnly) delete existing.spellOnly;
       continue;
     }
     const ref: AbilityRef = rich ? { id: row.alteredId, text, rich } : { id: row.alteredId, text };
+    if (row.spellOnly) ref.spellOnly = true;
     seen.set(text, ref);
     out.push(ref);
   }
-  out.sort((a, b) => a.text.localeCompare(b.text, contentLocale()));
+  out.sort((a, b) => (a.spellOnly ? 1 : 0) - (b.spellOnly ? 1 : 0) || a.text.localeCompare(b.text, contentLocale()));
   return empty ? [empty, ...out] : out;
 }
 
@@ -708,7 +770,6 @@ function cleanAbilityText(text: string): string {
     .replace(/^\{T\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.exhaustMe:Épuisez-moi`)
     .replace(/^\{D\}[\s\u00a0]*:?$/, $localize`:@@rules.icon.discardMeFromReserve:Défaussez-moi de la Réserve`)
     .replace(/^\{I\}[\s\u00a0]*/, '')
-    // The trigger's trailing \u00ab \u2014 \u00bb or \u00ab : \u00bb (\u00ab Lorsque \u2026 \u2014 \u00bb), printed before the effect on the card.
     .replace(/[\s\u00a0:\u2014\u2013]+$/g, '')
     .replace(/[\s\u00a0]+/g, ' ')
     .trim();

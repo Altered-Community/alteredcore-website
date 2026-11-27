@@ -3,8 +3,8 @@ import { Component, computed, inject, signal, type Signal, type WritableSignal }
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, concat, of, switchMap } from 'rxjs';
 import { SUPPORT_TITLE, abilityRefIds, type AbilityRef, type EffectBlock } from '../../../core/card-filters';
-import type { CardSearchParams } from '../../../core/models';
-import { UniquesApiService, type AbilityKind, type EffectSlot, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
+import { CardCatalogService, type AbilityKind, type EffectSlot } from '../../../core/card-catalog.service';
+import type { CardSearchParams, EffectFilterBlock } from '../../../core/models';
 import { AcButton } from '../../../ui/buttons';
 import { AcCheckList, AcOrValues } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -20,7 +20,7 @@ export interface EffectEditorData {
    * The search the block belongs to, `effects[index]` (or `support`) being this block: each list is narrowed to the
    * values that still give a card. Without it, the lists show every value.
    */
-  query?: UniquesQuery | CardSearchParams;
+  query?: CardSearchParams;
 }
 
 const KINDS: AbilityKind[] = ['triggers', 'conditions', 'effects'];
@@ -82,7 +82,7 @@ interface Criterion extends CriterionTexts {
 })
 export class EffectEditorOverlay {
   protected readonly ref = inject<AcOverlayRef<EffectBlock, EffectEditorData>>(AcOverlayRef);
-  private readonly api = inject(UniquesApiService);
+  private readonly catalog = inject(CardCatalogService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly loadError = signal(false);
 
@@ -117,7 +117,7 @@ export class EffectEditorOverlay {
   /** The values of `kind`, narrowed to those that still give a card. */
   private options(kind: AbilityKind): Signal<AbilityRef[]> {
     const all = toSignal(
-      this.api.abilities(kind, this.ref.data.index === 'support').pipe(
+      this.catalog.abilities(kind, this.ref.data.index === 'support').pipe(
         catchError(() => {
           this.loadError.set(true);
           return of([] as AbilityRef[]);
@@ -141,17 +141,17 @@ export class EffectEditorOverlay {
    */
   private narrowing(kind: AbilityKind): Signal<Set<number> | null> {
     const { query, index } = this.ref.data;
-    const exactRef = query && ('reference' in query ? query.reference : ('q' in query ? query.q?.trim() && /^ALT_[A-Z0-9_]+$/i.test(query.q.trim()) : false));
+    const exactRef = !!(query?.q?.trim() && /^ALT_[A-Z0-9_]+$/i.test(query.q.trim()));
     if (!query || exactRef) return signal(null);
     const others = computed(() => KINDS.filter((k) => k !== kind).map((k) => this.picked[k]()));
-    const ids = (values: Record<AbilityKind, AbilityRef[]>): UniquesEffect => ({
+    const ids = (values: Record<AbilityKind, AbilityRef[]>): EffectFilterBlock => ({
       triggers: values.triggers.flatMap(abilityRefIds),
       conditions: values.conditions.flatMap(abilityRefIds),
       effects: values.effects.flatMap(abilityRefIds),
     });
     return toSignal(
       toObservable(others).pipe(
-        switchMap(() => concat(of(null), this.api.narrowAbilities(query, index, ids(this.values()), kind).pipe(catchError(() => of(null))))),
+        switchMap(() => concat(of(null), this.catalog.narrowAbilities(query, index, ids(this.values()), kind).pipe(catchError(() => of(null))))),
       ),
       { initialValue: null },
     );

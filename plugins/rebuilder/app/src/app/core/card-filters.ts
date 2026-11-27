@@ -1,11 +1,14 @@
 import type { CardOrder, CardSearchParams, DeckFormat } from './models';
-import type { EffectSlot } from './uniques-api.service';
+import type { EffectSlot } from './card-catalog.service';
 import type { RichPart } from './card-text';
 import { environment } from '../../environments/environment';
 import { assetUrl } from './asset-url';
 import { contentLocale } from './locale';
+import { parseCostExpression, parseNumericFilter } from './numeric-filter';
 import type { OwnedSource } from './owned-cards.service';
 import { PROMO_SETS, SUBTYPES, VARIATIONS, termLabel } from './card-vocabulary';
+
+export { parseCostExpression, parseNumericFilter, type ParsedNumericFilter } from './numeric-filter';
 
 export type CardSource = 'all' | 'collection' | 'owned' | 'favorites';
 
@@ -18,6 +21,8 @@ export interface AbilityRef {
   glyph?: string;
   /** The text as the card prints it (`{D}` symbols, keywords in bold), when it has more than plain words; `text` is its plain reading. */
   rich?: RichPart[];
+  /** True when this ability part only appears on Spell cards (sorted after character/permanent/unique effects). */
+  spellOnly?: boolean;
 }
 
 export function abilityRefIds(a: AbilityRef): number[] {
@@ -260,8 +265,6 @@ export function setsFor(): SetInfo[] {
   return CARD_SETS.filter((s) => ALL_CARDS_SETS.includes(s.reference));
 }
 
-const MAX_COST = 15;
-
 /**
  * True when any active numeric expression for the current source fails parsing.
  * Used to avoid firing an unfiltered request while the input displays an error state.
@@ -275,59 +278,6 @@ export function hasInvalidNumericFilters(filters: SearchFilters, source: CardSou
     parseCostExpression(filters.mountainPower) === null ||
     parseCostExpression(filters.oceanPower) === null
   );
-}
-
-/**
- * Parses "3", "1-3", "4+" and comma lists into the explicit values the cards API
- * accepts as `mainCost[]` / `recallCost[]` (it rejects range strings with a 500).
- * Returns null when the expression is invalid, [] when empty.
- */
-export function parseCostExpression(expr: string): number[] | null {
-  const normalized = expr
-    .trim()
-    .replace(/[\u2013\u2014\u2212]/g, '-')
-    .replace(/(\d)\s*-\s*(\d)/g, '$1-$2')
-    .replace(/(\d)\s*([+-])(?=\s|$|[,;])/g, '$1$2')
-    .replace(/(<=|>=|<|>)\s*(\d)/g, '$1$2');
-  if (!normalized) return [];
-  const values = new Set<number>();
-  const span = (a: number, b: number) => {
-    for (let v = Math.max(0, a); v <= Math.min(MAX_COST, b); v++) values.add(v);
-  };
-  for (const raw of normalized.split(/[,;\s]+/).filter(Boolean)) {
-    let m: RegExpExecArray | null;
-    if ((m = /^(\d{1,2})$/.exec(raw))) {
-      const n = Number(m[1]);
-      if (n <= MAX_COST) values.add(n);
-    } else if ((m = /^(\d{1,2})\s*-\s*(\d{1,2})$/.exec(raw))) {
-      const [a, b] = [Number(m[1]), Number(m[2])].sort((x, y) => x - y);
-      span(a, b);
-    } else if ((m = /^(\d{1,2})\+$/.exec(raw))) {
-      span(Number(m[1]), MAX_COST);
-    } else if ((m = /^(\d{1,2})-$/.exec(raw))) {
-      // « 4- »: 4 or less (the site's syntax).
-      span(0, Number(m[1]));
-    } else if ((m = /^(<=|>=|<|>)(\d{1,2})$/.exec(raw))) {
-      // « <4 », « >2 », « <=4 », « >=2 » (the site's syntax).
-      const n = Number(m[2]);
-      if (m[1] === '<') span(0, n - 1);
-      else if (m[1] === '<=') span(0, n);
-      else if (m[1] === '>') span(n + 1, MAX_COST);
-      else span(n, MAX_COST);
-    } else {
-      return null;
-    }
-  }
-  return [...values].sort((x, y) => x - y);
-}
-
-function uniquesStatValues(expr: string): number[] {
-  const vals = parseCostExpression(expr);
-  if (vals === null) return [];
-  // Valid non-empty filter whose values all exceeded MAX_COST (e.g. "20", ">15")
-  // must yield 0 results rather than dropping the filter.
-  if (vals.length === 0 && expr.trim() !== '') return [MAX_COST + 1];
-  return vals;
 }
 
 function resolvedFactions(filters: SearchFilters, faction: string | null): string[] {
@@ -412,11 +362,11 @@ export function toSearchParams(
     rarities: filters.rarities,
     types: cardTypeCodes(filters.types),
     variations: variationCodes(filters),
-    mainCosts: uniquesStatValues(filters.mainCost),
-    recallCosts: uniquesStatValues(filters.recallCost),
-    forestPowers: uniquesStatValues(filters.forestPower),
-    mountainPowers: uniquesStatValues(filters.mountainPower),
-    oceanPowers: uniquesStatValues(filters.oceanPower),
+    mainCosts: parseNumericFilter(filters.mainCost),
+    recallCosts: parseNumericFilter(filters.recallCost),
+    forestPowers: parseNumericFilter(filters.forestPower),
+    mountainPowers: parseNumericFilter(filters.mountainPower),
+    oceanPowers: parseNumericFilter(filters.oceanPower),
     subtypes: filters.subtypes,
     order: filters.order,
     hasNoEffect: filters.noEffect || undefined,

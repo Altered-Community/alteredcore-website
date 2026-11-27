@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal, type Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
-import { CardsApiService, type HeroGroup } from '../../../core/cards-api.service';
+import { CardCatalogService, type HeroGroup } from '../../../core/card-catalog.service';
 import { heroOnBga } from '../../../core/formats';
 import { AcChip } from '../../../ui/chips';
 import type { DeckHero } from '../../../core/models';
@@ -12,7 +12,7 @@ import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 
 /** Heroes from the cards API for `ac-hero-selector`: `heroes` is null while loading; `error` on failure. */
 export function injectHeroes(): { heroes: Signal<HeroGroup[] | null>; error: Signal<boolean> } {
-  const api = inject(CardsApiService);
+  const api = inject(CardCatalogService);
   const error = signal(false);
   const heroes = toSignal(
     api.heroes().pipe(

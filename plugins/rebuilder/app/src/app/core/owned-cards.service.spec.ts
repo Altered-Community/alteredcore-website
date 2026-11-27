@@ -152,13 +152,13 @@ describe('OwnedCardsService', () => {
     expect((await page).member[0]).toEqual(expect.objectContaining({ forestPower: 1, mountainPower: 3, oceanPower: 0 }));
   });
 
-  it('falls back to /api/cards/batch then /api/v2/cards when unified search fails and batch omits a Unique', async () => {
+  it('falls back to /api/cards/batch when unified search fails without hitting deprecated /api/v2/cards', async () => {
     const page = search('owned', [unique]);
     http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush('down', { status: 404, statusText: 'Not Found' });
-    http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([]);
-    const v2 = http.expectOne((r) => r.url.endsWith('/api/v2/cards') && r.params.getAll('ref[]')?.[0] === unique.reference);
-    v2.flush({ cards: [{ reference: unique.reference, mainEffect: { fr_FR: 'Effet v2' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }] });
-    expect((await page).member[0].mainEffect).toEqual({ fr: 'Effet v2' });
+    http
+      .expectOne((r) => r.url.endsWith('/api/cards/batch'))
+      .flush([{ reference: unique.reference, mainEffect: { fr: 'Effet legacy' }, forestPower: 1, mountainPower: 3, oceanPower: 0 }]);
+    expect((await page).member[0].mainEffect).toEqual({ fr: 'Effet legacy' });
   });
 
   it('asks the cards API nothing without a Unique', async () => {

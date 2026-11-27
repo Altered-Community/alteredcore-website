@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthSession } from '../../../core/auth-session';
-import { CardsApiService } from '../../../core/cards-api.service';
+import { CardCatalogService } from '../../../core/card-catalog.service';
 import { typeOf } from '../../../core/deck-rules';
 import { cardToLine, factionFromReference } from '../../../core/deck-view';
 import { DecksApiService } from '../../../core/decks-api.service';
@@ -53,7 +53,7 @@ export interface ImportResult {
 export class ImportDeckOverlay {
   protected readonly ref = inject<AcOverlayRef<ImportResult, { mode: ImportMode }>>(AcOverlayRef);
   private readonly router = inject(Router);
-  private readonly api = inject(CardsApiService);
+  private readonly api = inject(CardCatalogService);
   private readonly guests = inject(GuestDeckService);
   private readonly decksApi = inject(DecksApiService);
   private readonly auth = inject(AuthSession);

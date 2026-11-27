@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { defaultFilters, effectAt, hasInvalidNumericFilters, toSearchParams, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
-import type { EffectSlot } from '../../../core/uniques-api.service';
+import type { EffectSlot } from '../../../core/card-catalog.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcOverlayRef, AcOverlayService } from '../../../ui/overlay';
 import { openEffectEditorStep } from '../effect-editor/effect-editor.overlay';

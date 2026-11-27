@@ -1,6 +1,6 @@
 import type { HttpParams } from '@angular/common/http';
 import { toSearchParams, type CardSource, type SearchFilters } from './card-filters';
-import { buildUnifiedSearchParams } from './uniques-api.service';
+import { buildUnifiedSearchParams } from './card-catalog.service';
 
 /**
  * Query of `GET /api/v2/search/facets` for the subtypes still giving cards with the other filters of a tab: the tab's

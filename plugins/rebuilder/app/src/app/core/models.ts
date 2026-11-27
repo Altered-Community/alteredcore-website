@@ -1,3 +1,5 @@
+import type { NumericFilterInput } from './numeric-filter';
+
 export type Locale = 'en' | 'fr';
 
 export type RarityRef = 'COMMON' | 'RARE' | 'UNIQUE' | 'EXALTED' | string;
@@ -124,11 +126,11 @@ export interface CardSearchParams {
   rarities?: string[];
   sets?: string[];
   variations?: string[];
-  mainCosts?: number[];
-  recallCosts?: number[];
-  forestPowers?: number[];
-  mountainPowers?: number[];
-  oceanPowers?: number[];
+  mainCosts?: NumericFilterInput;
+  recallCosts?: NumericFilterInput;
+  forestPowers?: NumericFilterInput;
+  mountainPowers?: NumericFilterInput;
+  oceanPowers?: NumericFilterInput;
   subtypes?: string[];
   costRelation?: 'equal' | 'mainHigher' | 'recallHigher';
   order?: CardOrder;

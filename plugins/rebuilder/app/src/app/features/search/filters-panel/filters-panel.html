@@ -167,7 +167,7 @@
   The other filters: shown as they are in the side panel (it scrolls on its own); folded under « Recherche avancée » in the
   sheet, where the height is short.
 -->
-@if (!limited() || !factionFilter()) {
+@if (hasAdvanced()) {
   <div class="advanced">
     @if (mode() === 'sheet') {
       <button type="button" class="fold" [attr.aria-expanded]="advancedOpen()" (click)="advancedOpen.set(!advancedOpen())">

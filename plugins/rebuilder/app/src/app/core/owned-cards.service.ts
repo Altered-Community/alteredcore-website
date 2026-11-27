@@ -2,8 +2,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { map, of, switchMap, type Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CardsApiService } from './cards-api.service';
-import { cardTypeCodes, filterSetsWithPromos, parseCostExpression, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
+import { CardCatalogService } from './card-catalog.service';
+import { cardTypeCodes, filterSetsWithPromos, rarityOptionsFor, variationCodes, type SearchFilters } from './card-filters';
+import { encodeProxyStat } from './numeric-filter';
 import { uniquesForbidden, type FormatRules } from './format-rules';
 import { mergeUniqueFace } from './deck-view';
 import { contentLocale } from './locale';
@@ -43,7 +44,7 @@ const ENDPOINT: Record<OwnedSource, string> = {
 @Service()
 export class OwnedCardsService {
   private readonly http = inject(HttpClient);
-  private readonly cards = inject(CardsApiService);
+  private readonly catalog = inject(CardCatalogService);
 
   /** `rules`: the format the cards must be legal in (« légales »), `null` for every card. */
   search(source: OwnedSource, filters: SearchFilters, factions: string[], page: number, itemsPerPage: number, rules: FormatRules | null = null): Observable<OwnedPage> {
@@ -56,7 +57,7 @@ export class OwnedCardsService {
         lastPage: res.lastPage ?? 1,
       })),
       switchMap((page) =>
-        this.cards.uniqueFaces(page.member).pipe(
+        this.catalog.uniqueFaces(page.member).pipe(
           map((faces) => ({ ...page, member: page.member.map((c) => (faces.has(c.reference) ? mergeUniqueFace(c, faces.get(c.reference)!) : c)) })),
         ),
       ),
@@ -87,31 +88,11 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
   add('subTypes[]', f.subtypes);
   if (source === 'owned') add('variation[]', variationCodes(f));
   if (f.q.trim()) p = p.set('name', f.q.trim());
-  // Both collection-search and ownership-search accept `[gte]`/`[lte]` bounds for contiguous spans
-  // and `field[]` arrays for disjoint lists (narrowed upstream + exact-filtered in PHP).
-  const numericFields: readonly [string, string][] = [
-    ['mainCost', f.mainCost],
-    ['recallCost', f.recallCost],
-    ['forestPower', f.forestPower],
-    ['mountainPower', f.mountainPower],
-    ['oceanPower', f.oceanPower],
-  ];
-  for (const [key, expr] of numericFields) {
-    if (!expr.trim()) continue;
-    const vals = parseCostExpression(expr);
-    if (vals === null) continue;
-    if (!vals.length) {
-      p = p.set(`${key}[gt]`, 15);
-      continue;
-    }
-    const min = vals[0];
-    const max = vals[vals.length - 1];
-    if (vals.length === max - min + 1) {
-      p = p.set(`${key}[gte]`, min).set(`${key}[lte]`, max);
-    } else {
-      for (const v of vals) p = p.append(`${key}[]`, v);
-    }
-  }
+  p = encodeProxyStat(p, 'mainCost', f.mainCost);
+  p = encodeProxyStat(p, 'recallCost', f.recallCost);
+  p = encodeProxyStat(p, 'forestPower', f.forestPower);
+  p = encodeProxyStat(p, 'mountainPower', f.mountainPower);
+  p = encodeProxyStat(p, 'oceanPower', f.oceanPower);
   return p;
 }
 

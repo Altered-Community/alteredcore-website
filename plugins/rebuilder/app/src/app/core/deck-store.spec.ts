@@ -4,7 +4,7 @@ import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, type Observable } from 'rxjs';
 import { AuthSession } from './auth-session';
-import { CardsApiService } from './cards-api.service';
+import { CardCatalogService } from './card-catalog.service';
 import { DeckCreateFailurePrompt, type DeckCreateFailureChoice } from './deck-create-failure';
 import { DeckStore } from './deck-store';
 import { flushFormats } from './formats.testing';
@@ -120,7 +120,7 @@ describe('DeckStore (guest mode)', () => {
 
   it('fills the printed effect of a unique already in a loaded deck', async () => {
     const calls: { refs: string[]; locale: string }[] = [];
-    TestBed.inject(CardsApiService).batch = (refs, locale = 'en') => {
+    TestBed.inject(CardCatalogService).batch = (refs, locale = 'en') => {
       calls.push({ refs, locale });
       return of([
         {

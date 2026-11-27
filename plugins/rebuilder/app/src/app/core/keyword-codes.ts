@@ -81,7 +81,7 @@ export const KEYWORD_CODES: Readonly<Record<string, { fr: string; en: string }>>
   TOUGH_CHA_P_2: { fr: "Coriaces 2", en: "Tough 2" },
   TOUGH_CHA_P_5: { fr: "Coriaces 5", en: "Tough 5" },
   TOUGH_FS_X: { fr: "Coriace X", en: "Tough X" },
-  TOUGH_PER_P_1: { fr: "Coriaces 1", en: "Tough 1" },
+  TOUGH_PER_P_1: { fr: "Coriaces 1", en: "Tough 1" },
   TOUGH_X: { fr: "Coriace X", en: "Tough X" },
   WOOLLYBACK: { fr: "Dotouffu 1/1/1", en: "Woollyback 1/1/1" },
 };

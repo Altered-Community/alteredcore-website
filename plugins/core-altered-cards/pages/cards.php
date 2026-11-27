@@ -284,6 +284,7 @@ $pageTitle = $txt['page_title'];
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-playset.js"></script>
+<script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-v2.js"></script>
 <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search.js"></script>
 <?php if ($_ownAltArtActive): ?>
 <link rel="stylesheet" href="<?= h(BASE_URL) ?>/plugins/ownership/assets/style.css">

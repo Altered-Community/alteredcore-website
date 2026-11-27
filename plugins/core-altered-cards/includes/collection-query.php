@@ -15,15 +15,19 @@ function cacCollectionNumericFields(): array
 }
 
 /**
- * List filters go out as `key[]=v` (the API's array form): a repeated `key=v` keeps the last value only, so a
- * search on three rarities or several sets came back with one. The API fails (HTTP 500) on several card types:
- * those go out only when there is one, the proxy filters the others itself (cacCollectionLocalTypes).
+ * Single-pass collection query planner returning the upstream query string plus any multi-value
+ * local filters (`cardType`, `subTypes`, disjoint numeric lists) enforced in PHP.
+ *
+ * @return array{query: string, localTypes: ?list<string>, localSubTypes: ?list<string>, localNumeric: array<string, list<int>>}
  */
-function cacCollectionQuery(array $get): string
+function cacPlanCollectionQuery(array $get): array
 {
     $arrays = ['faction', 'rarity', 'variation', 'cardSet'];
-    if (count(cacCollectionValues($get, 'cardType')) === 1) $arrays[] = 'cardType';
-    $scalar = ['isFoil', 'isBanned', 'isSuspended', 'cardReference', 'name', 'subTypes', 'locale'];
+    $types = cacCollectionValues($get, 'cardType');
+    if (count($types) === 1) $arrays[] = 'cardType';
+    $subTypes = cacCollectionValues($get, 'subTypes');
+    $scalar = ['isFoil', 'isBanned', 'isSuspended', 'cardReference', 'name', 'locale'];
+    if (count($subTypes) === 1) $scalar[] = 'subTypes';
 
     $parts = [];
     foreach ($arrays as $k) {
@@ -34,14 +38,31 @@ function cacCollectionQuery(array $get): string
         if (is_array($v)) $v = $v[0] ?? null;
         if (is_string($v) && $v !== '') $parts[] = $k . '=' . rawurlencode($v);
     }
-    array_push($parts, ...cacNumericQueryParts($get, cacCollectionNumericFields()));
-    return implode('&', $parts);
+    $numPlan = cacPlanNumericFilter($get, cacCollectionNumericFields());
+    array_push($parts, ...$numPlan['queryParts']);
+
+    return [
+        'query'         => implode('&', $parts),
+        'localTypes'    => count($types) > 1 ? $types : null,
+        'localSubTypes' => count($subTypes) > 1 ? $subTypes : null,
+        'localNumeric'  => $numPlan['localFilters'],
+    ];
+}
+
+/**
+ * List filters go out as `key[]=v` (the API's array form): a repeated `key=v` keeps the last value only, so a
+ * search on three rarities or several sets came back with one. The API fails (HTTP 500) on several card types:
+ * those go out only when there is one, the proxy filters the others itself (cacCollectionLocalTypes).
+ */
+function cacCollectionQuery(array $get): string
+{
+    return cacPlanCollectionQuery($get)['query'];
 }
 
 /** Disjoint numeric value sets that the collection proxy enforces in PHP after the upstream `[gte]..[lte]` query. */
 function cacCollectionLocalNumeric(array $get): array
 {
-    return cacNumericLocalFilters($get, cacCollectionNumericFields());
+    return cacPlanNumericFilter($get, cacCollectionNumericFields())['localFilters'];
 }
 
 /** The card types the proxy keeps itself (several of them, see cacCollectionQuery); `null` when the API filters. */

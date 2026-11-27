@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { ORDER_OPTIONS, activeFilterCount, defaultFilters, effectAt, hasInvalidNumericFilters, toSearchParams, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
-import { UniquesApiService, type EffectSlot } from '../../../core/uniques-api.service';
+import { CardCatalogService, type EffectSlot } from '../../../core/card-catalog.service';
 import { filtersFromParams, filtersToParams, sourceFromParams } from '../../../core/search-url';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
@@ -76,7 +76,7 @@ export class CardSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(AcOverlayService);
-  private readonly uniquesApi = inject(UniquesApiService);
+  private readonly catalog = inject(CardCatalogService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
   private readonly injector = inject(Injector);
@@ -100,7 +100,7 @@ export class CardSearch {
   private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
   private readonly hideRandomSort = computed(
-    () => this.search.source() === 'all' && !!this.uniquesApi.baseUrl,
+    () => this.search.source() === 'all' && this.catalog.supportsUnified,
   );
   protected readonly orderOptions = computed(() =>
     this.hideRandomSort() ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
@@ -212,7 +212,7 @@ export class CardSearch {
     });
 
     effect(() => {
-      if (this.source() !== 'all' || !this.uniquesApi.baseUrl) return;
+      if (this.source() !== 'all' || !this.catalog.supportsUnified) return;
       untracked(() => this.prefetchAbilities());
     });
 
@@ -270,7 +270,7 @@ export class CardSearch {
 
   /** The effect editor needs the vocabularies (one `/api/v2/effects` call); fetch them while the user reads the uniques. */
   private prefetchAbilities(): void {
-    const run = () => this.uniquesApi.abilities('triggers').subscribe({ error: () => undefined });
+    const run = () => this.catalog.abilities('triggers').subscribe({ error: () => undefined });
     if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2000 });
     else setTimeout(run, 300);
   }

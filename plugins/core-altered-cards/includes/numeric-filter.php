@@ -4,16 +4,23 @@
 
 /**
  * Normalizes and validates a user-entered numeric filter expression
- * (e.g. "3", "1-3", "4+", "4-", "<4", "1,3", "1-3, 5"). Returns null when empty or invalid.
+ * (e.g. "3", "1-3", "4+", "4-", "<4", "1,3", "1 3", "1 - 3").
+ * Aligns whitespace grammar with Re:Builder: spaces around operators/ranges collapse while
+ * space-separated numbers act as a list ("1 3" -> "1,3"). Returns null when empty or invalid.
  */
 function cacValidateNumExpr(?string $raw): ?string
 {
     if (!is_string($raw)) return null;
-    $s = preg_replace('/\s+/', '', str_replace(["\u{2013}", "\u{2014}", "\u{2212}"], '-', trim($raw)));
+    $s = trim(str_replace(["\u{2013}", "\u{2014}", "\u{2212}"], '-', $raw));
+    if ($s === '') return null;
+    $s = preg_replace('/(\d)\s*-\s*(\d)/', '$1-$2', $s);
+    $s = preg_replace('/(\d)\s*([+-])(?=\s|$|[,;])/', '$1$2', (string)$s);
+    $s = preg_replace('/(<=|>=|<|>)\s*(\d)/', '$1$2', (string)$s);
     if ($s === null || $s === '') return null;
-    $tokens = explode(',', str_replace(';', ',', $s));
+    if (preg_match('/^[,;]|[,;]$|[,;]\s*[,;]/', $s)) return null;
+    $tokens = preg_split('/[,;\s]+/', $s, -1, PREG_SPLIT_NO_EMPTY);
+    if (!$tokens) return null;
     foreach ($tokens as $tok) {
-        if ($tok === '') return null;
         if (preg_match('/^(?:<=|>=|<|>)\d{1,2}$/', $tok)) continue;
         if (preg_match('/^\d{1,2}[+-]$/', $tok)) continue;
         if (preg_match('/^\d{1,2}-\d{1,2}$/', $tok)) continue;
@@ -24,18 +31,13 @@ function cacValidateNumExpr(?string $raw): ?string
 }
 
 /**
- * Translates incoming numeric query params (`$in => $out`) for upstream APIs that support
- * exact (`field=N`) and bound (`field[gte|lte|gt|lt]=N`) predicates, but not `IN` lists.
+ * Single-pass numeric filter planner returning both upstream query parts and local disjoint-set
+ * filters so callers never parse numeric query params twice per request.
  *
- * For discrete arrays like `mainCost[]=1&mainCost[]=3`, emits the tight `[gte]`..`[lte]`
- * envelope for the upstream query and populates `$localFilters[$out]` whenever the set
- * has gaps (disjoint values) so the proxy can filter the exact values before paginating.
- *
- * @param array<string, string>      $fieldMap     incoming param => upstream param & item field
- * @param array<string, list<int>>   $localFilters output map of field => allowed integer values
- * @return list<string>
+ * @param array<string, string> $fieldMap incoming param => upstream param & item field
+ * @return array{queryParts: list<string>, localFilters: array<string, list<int>>}
  */
-function cacNumericQueryParts(array $get, array $fieldMap, array &$localFilters = []): array
+function cacPlanNumericFilter(array $get, array $fieldMap): array
 {
     $parts = [];
     $localFilters = [];
@@ -89,7 +91,22 @@ function cacNumericQueryParts(array $get, array $fieldMap, array &$localFilters 
         }
     }
 
-    return $parts;
+    return ['queryParts' => $parts, 'localFilters' => $localFilters];
+}
+
+/**
+ * Translates incoming numeric query params (`$in => $out`) for upstream APIs that support
+ * exact (`field=N`) and bound (`field[gte|lte|gt|lt]=N`) predicates, but not `IN` lists.
+ *
+ * @param array<string, string>      $fieldMap     incoming param => upstream param & item field
+ * @param array<string, list<int>>   $localFilters output map of field => allowed integer values
+ * @return list<string>
+ */
+function cacNumericQueryParts(array $get, array $fieldMap, array &$localFilters = []): array
+{
+    $plan = cacPlanNumericFilter($get, $fieldMap);
+    $localFilters = $plan['localFilters'];
+    return $plan['queryParts'];
 }
 
 /**
@@ -100,9 +117,7 @@ function cacNumericQueryParts(array $get, array $fieldMap, array &$localFilters 
  */
 function cacNumericLocalFilters(array $get, array $fieldMap): array
 {
-    $localFilters = [];
-    cacNumericQueryParts($get, $fieldMap, $localFilters);
-    return $localFilters;
+    return cacPlanNumericFilter($get, $fieldMap)['localFilters'];
 }
 
 /**

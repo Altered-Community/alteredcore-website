@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError, type Observable } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
-import { CardsApiService } from '../../../core/cards-api.service';
+import { CardCatalogService } from '../../../core/card-catalog.service';
 import { DecksApiService } from '../../../core/decks-api.service';
 import { GUEST_DECKS_KEY, GuestDeckService } from '../../../core/guest-deck.service';
 import type { Card, Deck, DeckFormat, DeckWrite } from '../../../core/models';
@@ -55,7 +55,7 @@ describe('ImportDeckOverlay (list)', () => {
         { provide: AcOverlayRef, useValue: ref },
         // An instance: `useClass` would run the factory `Session` inherits from `@Service` (a guest).
         { provide: AuthSession, useValue: new Session() },
-        { provide: CardsApiService, useValue: { batch: () => batch() } },
+        { provide: CardCatalogService, useValue: { batch: () => batch() } },
         {
           provide: DecksApiService,
           useValue: {

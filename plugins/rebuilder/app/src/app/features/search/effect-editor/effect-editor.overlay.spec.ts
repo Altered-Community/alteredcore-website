@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError, type Observable } from 'rxjs';
 import type { AbilityRef, EffectBlock } from '../../../core/card-filters';
-import { NO_CONDITION, UniquesApiService, toAbilityRefs, type AbilityKind, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
+import { CardCatalogService, NO_CONDITION, toAbilityRefs, type AbilityKind } from '../../../core/card-catalog.service';
+import type { CardSearchParams, EffectFilterBlock } from '../../../core/models';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcOverlayRef, type AcStepConfig } from '../../../ui/overlay';
 import type { AbilityPickerData } from '../ability-picker/ability-picker.overlay';
@@ -33,12 +34,12 @@ const ROWS: Record<AbilityKind, { alteredId: number; text: { fr: string } }[]> =
 const api = (kind: AbilityKind) => of(toAbilityRefs(ROWS[kind], kind === 'conditions' ? NO_CONDITION : undefined));
 const EMPTY: EffectBlock = { id: 'e1', triggers: [], conditions: [], effects: [] };
 
-type Narrow = (query: UniquesQuery, index: number, block: UniquesEffect, kind: AbilityKind) => Observable<Set<number>>;
+type Narrow = (query: CardSearchParams, index: number, block: EffectFilterBlock, kind: AbilityKind) => Observable<Set<number>>;
 
 function setup(
   effect: EffectBlock,
   abilities: (kind: AbilityKind) => Observable<AbilityRef[]> = () => of([]),
-  narrow?: { query: UniquesQuery; index: number; narrowAbilities: Narrow },
+  narrow?: { query: CardSearchParams; index: number; narrowAbilities: Narrow },
   width = 1440,
 ) {
   const ref = new AcOverlayRef<EffectBlock, EffectEditorData>({ effect, index: narrow?.index ?? 0, query: narrow?.query });
@@ -46,7 +47,7 @@ function setup(
     imports: [EffectEditorOverlay],
     providers: [
       { provide: AcOverlayRef, useValue: ref },
-      { provide: UniquesApiService, useValue: { abilities, narrowAbilities: narrow?.narrowAbilities } },
+      { provide: CardCatalogService, useValue: { abilities, narrowAbilities: narrow?.narrowAbilities } },
     ],
   });
   TestBed.inject(AcBreakpointService).setWidth(width);
@@ -178,10 +179,10 @@ describe('EffectEditorOverlay compact', () => {
 });
 
 describe('EffectEditorOverlay narrowing', () => {
-  const query: UniquesQuery = { factions: ['AX'], sets: [], mainCosts: [], recallCosts: [], effects: [] };
+  const query: CardSearchParams = { factions: ['AX'], sets: [], effects: [] };
 
   it('lists only the values the API says still give a card, with the block as picked', () => {
-    const calls: { index: number; block: UniquesEffect; kind: AbilityKind }[] = [];
+    const calls: { index: number; block: EffectFilterBlock; kind: AbilityKind }[] = [];
     const allowed: Record<AbilityKind, number[]> = { triggers: [24, 17], conditions: [188], effects: [] };
     const narrowAbilities: Narrow = (_q, index, block, kind) => {
       calls.push({ index, block, kind });
@@ -201,7 +202,7 @@ describe('EffectEditorOverlay narrowing', () => {
   });
 
   it('asks again for the other criteria when a value is checked, never for the list being checked', () => {
-    const asked: [AbilityKind, UniquesEffect][] = [];
+    const asked: [AbilityKind, EffectFilterBlock][] = [];
     const narrowAbilities: Narrow = (_q, _i, block, kind) => {
       asked.push([kind, block]);
       return kind === 'conditions' ? throwError(() => new Error('down')) : of(new Set(kind === 'triggers' ? [24, 22] : [3, 4, 5]));
@@ -223,7 +224,7 @@ describe('EffectEditorOverlay narrowing', () => {
     const narrowAbilities: Narrow = () => {
       throw new Error('not called');
     };
-    const { el } = setup(EMPTY, api, { query: { ...query, reference: 'ALT_CORE_B_AX_04_U_1' }, index: 0, narrowAbilities });
+    const { el } = setup(EMPTY, api, { query: { ...query, q: 'ALT_CORE_B_AX_04_U_1' }, index: 0, narrowAbilities });
     expect(listed(el)).toHaveLength(4);
   });
 });

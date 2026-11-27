@@ -1,7 +1,7 @@
 import { Service, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map, type Observable } from 'rxjs';
-import { CardsApiService } from '../../core/cards-api.service';
+import { CardCatalogService } from '../../core/card-catalog.service';
 import {
   defaultEnvironment,
   defaultFilters,
@@ -16,7 +16,6 @@ import {
 import type { Card, DeckFormat } from '../../core/models';
 import { allowedInFormat } from '../../core/format-rules';
 import { FormatsService } from '../../core/formats.service';
-import { UniquesApiService } from '../../core/uniques-api.service';
 import { OwnedCardsService } from '../../core/owned-cards.service';
 import { AuthSession } from '../../core/auth-session';
 
@@ -87,8 +86,7 @@ function emptyState(source: CardSource, guest: boolean): SearchState {
  */
 @Service({ autoProvided: false })
 export class CardSearchStore {
-  private readonly api = inject(CardsApiService);
-  private readonly uniquesApi = inject(UniquesApiService);
+  private readonly catalog = inject(CardCatalogService);
   private readonly owned = inject(OwnedCardsService);
   private readonly formats = inject(FormatsService);
   private readonly auth = inject(AuthSession);
@@ -266,8 +264,7 @@ export class CardSearchStore {
       );
     }
     const params = toSearchParams(query.filters, query.faction, page, size);
-    const search$ = this.uniquesApi.baseUrl ? this.uniquesApi.searchUnified(params) : this.api.search(params);
-    return search$.pipe(
+    return this.catalog.search(params).pipe(
       map((res): ResultPage => ({ member: res.member, totalItems: res.totalItems, next: page < res.lastPage ? page + 1 : null })),
     );
   }

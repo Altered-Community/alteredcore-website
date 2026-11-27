@@ -27,6 +27,7 @@ require_once __DIR__ . '/../includes/deckbuilder/config-js.php';
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css">
 <link rel="stylesheet" href="<?= h($pluginAssetsUrl) ?>/effect-filters.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= h($pluginAssetsUrl) ?>/card-v2.js"></script>
 <script src="<?= h($pluginAssetsUrl) ?>/card-search.js"></script>
 <script src="<?= h($pluginAssetsUrl) ?>/deckbuilder/search-bind.js"></script>
 

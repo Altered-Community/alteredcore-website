@@ -4,7 +4,7 @@ import { EMPTY, Observable, Subject, Subscription, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 import { AuthSession } from './auth-session';
-import { CardsApiService } from './cards-api.service';
+import { CardCatalogService } from './card-catalog.service';
 import { DeckCreateFailurePrompt } from './deck-create-failure';
 import { UNKNOWN_LEGALITY, legalityFromApi, type DeckLegality } from './deck-legality';
 import { typeOf } from './deck-rules';
@@ -60,7 +60,7 @@ export type DeckSaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 @Service()
 export class DeckStore {
   private readonly decksApi = inject(DecksApiService);
-  private readonly cardsApi = inject(CardsApiService);
+  private readonly cardsApi = inject(CardCatalogService);
   private readonly formats = inject(FormatsService);
   private readonly guests = inject(GuestDeckService);
   private readonly auth = inject(AuthSession);

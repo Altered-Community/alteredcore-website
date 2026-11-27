@@ -227,21 +227,45 @@ function eq(a, b, msg) {
   eq(cs.filters.rarity, ['COMMON', 'RARE'], 'restoreFromUrl keeps default rarities when rarity[] omitted');
 }
 
-// 6. buildUniquesApiUrl maps sort keys cleanly and omits random/default
+// 6. buildUnifiedApiUrl maps sort keys cleanly, omits random, and dead buildUniquesApiUrl is removed
 {
   const env = setupEnv();
   const cs = CardSearch({
     prefix: 'cs', mode: 'cards', uniquesApiBase: 'http://localhost:8005', lang: 'fr',
     defaults: { factions: [], types: ['CHARACTER'], rarities: ['UNIQUE'], sets: ['CORE'], sort1: 'set_date_desc' },
   });
+  ok(cs.buildUniquesApiUrl === undefined, 'dead buildUniquesApiUrl is removed from CardSearch');
   cs.filters.sort = 'default';
-  ok(cs.buildUniquesApiUrl(null).includes('sort=setDate%3Adesc'), 'default resolves via sort1 to setDate:desc');
+  ok(cs.buildUnifiedApiUrl(1).includes('sort=setDate%3Adesc'), 'default resolves via sort1 to setDate:desc');
   cs.filters.sort = 'name_asc';
-  ok(cs.buildUniquesApiUrl(null).includes('sort=name%3Afr%3Aasc'), 'name_asc uses active lang');
+  ok(cs.buildUnifiedApiUrl(1).includes('sort=name%3Afr%3Aasc'), 'name_asc uses active lang');
   cs.filters.sort = 'number_desc';
-  ok(cs.buildUniquesApiUrl(36).includes('cursor=36') && cs.buildUniquesApiUrl(36).includes('sort=reference%3Adesc'), 'cursor + reference:desc combined');
+  ok(cs.buildUnifiedApiUrl(2).includes('page=2') && cs.buildUnifiedApiUrl(2).includes('sort=reference%3Adesc'), 'page + reference:desc combined');
   cs.filters.sort = 'random';
-  ok(!cs.buildUniquesApiUrl(null).includes('sort='), 'random sort omitted from uniques API URL');
+  ok(!cs.buildUnifiedApiUrl(1).includes('sort='), 'random sort omitted from unified API URL');
+
+  // Whitespace grammar parity across JS/PHP/TS: "1 3" is a list, "1 - 3" is a range, ">= 4" is a bound
+  eq(cs.parseNumExpr('1 3'), { kind: 'list', vals: [1, 3] }, '"1 3" parses as list [1, 3] (not exact 13)');
+  eq(cs.parseNumExpr('1 - 3'), { kind: 'range', min: 1, max: 3 }, '"1 - 3" parses as range 1..3');
+  eq(cs.parseNumExpr('>= 4'), { kind: 'bound', op: 'gte', val: 4 }, '">= 4" parses as gte 4');
+  eq(cs.parseNumExpr('4 +'), { kind: 'bound', op: 'gte', val: 4 }, '"4 +" parses as gte 4');
+  ok(cs.parseNumExpr('1,,3') === null, '"1,,3" is rejected as invalid');
+
+  // Shared card-v2.js adapter (keyword expansion + detail-page shape)
+  const cardV2 = require('../assets/card-v2.js');
+  const kw = { FLEETING: { fr: 'Fugace', en: 'Fleeting' }, TOUGH_1: { fr: 'Coriace 1', en: 'Tough 1' }, DEFENDER: { fr: 'Défenseur', en: 'Defender' } };
+  ok(cardV2.expandKeywordCodes('[FLEETING] [TOUGH_7] [DEFENDER_TKN_P]', 'fr', kw) === '[Fugace] [Coriace 7] [Défenseur]', 'expandKeywordCodes expands exact, numbered, and prefix-fallback codes with brackets');
+  ok(cardV2.expandKeywordCodes('[FLEETING]', 'fr', kw, { brackets: false }) === 'Fugace', 'expandKeywordCodes supports brackets:false');
+  const adapted = cardV2.adaptV2CardToDetail({
+    name: { fr_FR: 'Test' },
+    mainEffect: { fr_FR: '[FLEETING]' },
+    permanent: 2,
+    reserve: 1,
+    legalFormats: ['frontier'],
+  }, kw);
+  ok(adapted.group.mainEffect.fr === '[Fugace]', 'adaptV2CardToDetail expands keywords into short locale map');
+  ok(adapted.card.permanent === 2 && adapted.card.reserve === 1, 'adaptV2CardToDetail preserves permanent and reserve');
+  eq(adapted.card.legalFormats, ['frontier'], 'adaptV2CardToDetail preserves legalFormats');
 }
 
 // 7. numUniquesParts clamps values > 15 cleanly and uniques URL includes subTypes, costRelation, hasNoEffect, matchCount

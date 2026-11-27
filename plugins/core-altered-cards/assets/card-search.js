@@ -147,9 +147,6 @@ function CardSearch(cfg) {
     };
 
     var currentPage        = 1;
-    // Uniques tab (rust-cards-api) pagination: opaque cursor, "load more" style.
-    // null = first page; undefined (from the API) = no more pages.
-    var _uniqueCursor      = null;
     var _abortCtrl         = null;
     var _rendererLoaded    = false;
     // Mounts/unmounts the heavy <altered-card> renderer as unique-card wraps enter/leave
@@ -443,9 +440,14 @@ function CardSearch(cfg) {
 
     function parseNumExpr(raw) {
         if (raw == null) return null;
-        var s = String(raw).replace(/[\u2013\u2014\u2212]/g, '-').replace(/\s+/g, '');
+        var s = String(raw)
+            .trim()
+            .replace(/[\u2013\u2014\u2212]/g, '-')
+            .replace(/(\d)\s*-\s*(\d)/g, '$1-$2')
+            .replace(/(\d)\s*([+-])(?=\s|$|[,;])/g, '$1$2')
+            .replace(/(<=|>=|<|>)\s*(\d)/g, '$1$2');
         if (!s) return null;
-        var tokens = s.replace(/;/g, ',').split(',');
+        var tokens = s.replace(/\s*[,;]\s*/g, ',').replace(/\s+/g, ',').split(',');
         if (tokens.some(function(t) { return !t; })) return null;
         if (tokens.length === 1) return _parseNumToken(tokens[0]);
 
@@ -527,6 +529,7 @@ function CardSearch(cfg) {
                 return {
                     alteredId: item.idGd, translations: item.text || {},
                     isMain: !!item.isMain, isEcho: !!item.isEcho,
+                    spellOnly: !!item.spellOnly,
                 };
             });
         }
@@ -584,21 +587,15 @@ function CardSearch(cfg) {
         });
     }
 
+    var _cardV2 = (typeof AlteredCardV2 !== 'undefined' && AlteredCardV2)
+        || (typeof require === 'function' ? require('./card-v2.js') : null);
+
     function _expandKeywordCodes(text) {
         if (!KEYWORD_CODES || !text || text.indexOf('[') < 0) return text;
-        var loc = (LANG || 'en').slice(0, 2);
-        return text.replace(/\[([A-Z][A-Z0-9_]*)\]/g, function(all, code) {
-            var entry = KEYWORD_CODES[code];
-            if (entry && (entry[loc] || entry.en)) return entry[loc] || entry.en;
-            var m = /^(.+?)_(\d+)$/.exec(code);
-            if (m) {
-                var base = KEYWORD_CODES[m[1]] || KEYWORD_CODES[m[1] + '_1'];
-                if (base && (base[loc] || base.en)) {
-                    return (base[loc] || base.en).replace(/[\s\u00a0]+1$/, '') + ' ' + m[2];
-                }
-            }
-            return all;
-        });
+        if (_cardV2 && typeof _cardV2.expandKeywordCodes === 'function') {
+            return _cardV2.expandKeywordCodes(text, LANG, KEYWORD_CODES, { brackets: false });
+        }
+        return text;
     }
 
     function _effectLabel(item) {
@@ -621,11 +618,16 @@ function CardSearch(cfg) {
         return Array.from(sel.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
     }
 
+    function _compareEffectItems(a, b) {
+        var sa = a.spellOnly ? 1 : 0;
+        var sb = b.spellOnly ? 1 : 0;
+        if (sa !== sb) return sa - sb;
+        return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b));
+    }
+
     // Multi-select dropdown of effect items. currentVals may be a value or array.
     function _buildEffectSel(items, currentVals) {
-        var sorted = items.slice().sort(function(a, b) {
-            return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b));
-        });
+        var sorted = items.slice().sort(_compareEffectItems);
         var cur = _asArr(currentVals).map(String);
         var sel = document.createElement('select');
         sel.multiple = true;
@@ -648,7 +650,7 @@ function CardSearch(cfg) {
         idGds.forEach(function(id) { keep[String(id)] = true; });
         _asArr(ts.getValue()).forEach(function(v) { keep[v] = true; });
         var narrowed = items.filter(function(item) { return keep[String(item.alteredId)]; });
-        narrowed.sort(function(a, b) { return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b)); });
+        narrowed.sort(_compareEffectItems);
         ts.clearOptions();
         narrowed.forEach(function(item) {
             ts.addOption({ value: String(item.alteredId), text: _effectLabel(item) });
@@ -1117,66 +1119,6 @@ function CardSearch(cfg) {
             }
             return Math.min(count, 3);
         });
-    }
-
-    // Shared query parts for rust-cards-api, used by both /api/v2/cards (via
-    // buildUniquesApiUrl) and /api/v2/effects/filtered (which reads the exact same
-    // filter params, plus its own 'editing' param — see buildEffectsFilteredUrl).
-    // effectMode is not sent: rows always combine with AND, the API's default when
-    // effectMode is omitted. Each effect field is a comma-separated OR list — one
-    // row is one slot, no cartesian expansion needed (see _cartesianEffectSlots()
-    // for why the old Cards API needs that instead).
-    function _uniquesFilterParts() {
-        var parts = [];
-        (_factionDirty ? filters.faction : DEFAULT_FACTIONS).forEach(function(v) { parts.push('faction[]=' + encodeURIComponent(v)); });
-        // Drop sets the uniques API doesn't know about (cfg.noUniqueSets, from
-        // sets[X].uniques === false). Their quick-filter button is already
-        // hidden on this tab, but the selection survives a switch from another
-        // tab — and a single unknown set makes the API reject the whole query
-        // with HTTP 400 "invalid set value", breaking the search entirely.
-        var _noUniq = cfg.noUniqueSets || [];
-        (_setsDirty ? filters.sets : DEFAULT_SETS)
-            .filter(function(v) { return _noUniq.indexOf(v) < 0; })
-            .forEach(function(v) { parts.push('set[]=' + encodeURIComponent(v)); });
-
-        _appendSubtypesParts(parts);
-
-        NUM_FIELDS.forEach(function(f) {
-            numUniquesParts(f.api, filters[f.key]).forEach(function(p) { parts.push(p); });
-        });
-        _appendCostRelationPart(parts);
-        if (filters.hasNoEffect) parts.push('hasNoEffect=true');
-
-        _readEffectRows();
-        var _efCounts = _uniquesEffectMatchCounts(filters.effects);
-        filters.effects.forEach(function(ef, i) {
-            if (ef.trigger.length)   parts.push('effect[' + i + '][t]=' + ef.trigger.map(encodeURIComponent).join(','));
-            if (ef.condition.length) parts.push('effect[' + i + '][c]=' + ef.condition.map(encodeURIComponent).join(','));
-            if (ef.effect.length)    parts.push('effect[' + i + '][o]=' + ef.effect.map(encodeURIComponent).join(','));
-            if (_efCounts[i] > 1)    parts.push('effect[' + i + '][matchCount]=' + _efCounts[i]);
-        });
-
-        _readSupportRow();
-        if (filters.support.trigger.length)   parts.push('support[t]=' + filters.support.trigger.map(encodeURIComponent).join(','));
-        if (filters.support.condition.length) parts.push('support[c]=' + filters.support.condition.map(encodeURIComponent).join(','));
-        if (filters.support.effect.length)    parts.push('support[o]=' + filters.support.effect.map(encodeURIComponent).join(','));
-
-        if (filters.q) parts.push('name=' + encodeURIComponent(filters.q));
-        if (filters.format) parts.push('format=' + encodeURIComponent(filters.format));
-        return parts;
-    }
-
-    // build rust-cards-api (Uniques tab) URL — cursor-based, no page/random/keyword/
-    // variation/status (unsupported by that API; the matching UI controls are hidden
-    // on this tab, see includes/card-search.php).
-    function buildUniquesApiUrl(cursor) {
-        var parts = ['limit=' + PER_PAGE];
-        if (cursor != null) parts.push('cursor=' + cursor);
-        var uPrimary = filters.sort === 'default' ? DEFAULT_SORT_1 : filters.sort;
-        var uSort = UNIQUES_SORT_MAP[uPrimary];
-        if (uSort) parts.push('sort=' + encodeURIComponent(uSort));
-        parts = parts.concat(_uniquesFilterParts());
-        return UNIQUES_API_BASE + '/api/v2/cards?' + parts.join('&');
     }
 
     // Per-combobox autocomplete narrowing: given the current unified filter state and
@@ -2769,7 +2711,6 @@ function CardSearch(cfg) {
         numProxyParts:           numProxyParts,
         buildApiUrl:             buildApiUrl,
         buildUnifiedApiUrl:      buildUnifiedApiUrl,
-        buildUniquesApiUrl:      buildUniquesApiUrl,
         buildEffectsFilteredUrl: buildEffectsFilteredUrl,
         buildFacetsUrl:          buildFacetsUrl,
         buildCollApiUrl:         buildCollApiUrl,

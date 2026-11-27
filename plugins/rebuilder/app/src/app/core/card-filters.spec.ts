@@ -1,5 +1,5 @@
 import { environment } from '../../environments/environment';
-import { buildUniquesParams, buildUnifiedSearchParams } from './uniques-api.service';
+import { buildUnifiedSearchParams } from './card-catalog.service';
 import {
   cardTypeCodes,
   searchedPromoSets,
@@ -63,7 +63,7 @@ describe('advanced filters (cards API)', () => {
       otherFactions: ['LY'],
     };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ forestPowers: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], subtypes: ['ANIMAL'], factions: ['LY'] });
+    expect(p).toMatchObject({ forestPowers: { kind: 'values', values: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }, subtypes: ['ANIMAL'], factions: ['LY'] });
     expect(p.variations).toEqual(['standard', 'alt-art', 'promo', 'kickstarter', 'serialized']);
     expect(p.sets).toContain('DUSTEROP');
     expect(toSearchParams(defaultFilters('all'), 'AX', 1, 36)).toMatchObject({ factions: ['AX'], variations: ['standard'] });
@@ -134,7 +134,13 @@ describe('unified search effects & formats (toSearchParams + buildUnifiedSearchP
   it('maps q, hero faction, sets, costs and Frontier into unified search params', () => {
     const f = { ...defaultFilters('all'), q: ' kelon ', mainCost: '1-2', recallCost: '4', environment: 'frontier' as const };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p).toMatchObject({ q: 'kelon', factions: ['AX'], mainCosts: [1, 2], recallCosts: [4], format: 'frontier' });
+    expect(p).toMatchObject({
+      q: 'kelon',
+      factions: ['AX'],
+      mainCosts: { kind: 'values', values: [1, 2] },
+      recallCosts: { kind: 'values', values: [4] },
+      format: 'frontier',
+    });
     const hp = buildUnifiedSearchParams(p);
     expect(hp.get('page')).toBe('1');
     expect(hp.get('limit')).toBe('36');
@@ -160,17 +166,12 @@ describe('unified search effects & formats (toSearchParams + buildUnifiedSearchP
   it('sends biome powers cleanly and renders their chips', () => {
     const f = { ...defaultFilters('all'), forestPower: '3', mountainPower: '2-3', environment: 'frontier' as const };
     const p = toSearchParams(f, 'AX', 1, 36);
-    expect(p.forestPowers).toEqual([3]);
-    expect(p.mountainPowers).toEqual([2, 3]);
+    expect(p.forestPowers).toEqual({ kind: 'values', values: [3] });
+    expect(p.mountainPowers).toEqual({ kind: 'values', values: [2, 3] });
     const hp = buildUnifiedSearchParams(p);
     expect(hp.getAll('forestPower[]')).toEqual(['3']);
     expect(hp.getAll('mountainPower[]')).toEqual(['2', '3']);
     expect(filterChips(f, 'all').map((c) => c.id)).toEqual(expect.arrayContaining(['forestPower', 'mountainPower', 'environment']));
-  });
-
-  it('still builds /api/v2/cards params cleanly for buildUniquesParams', () => {
-    const hp = buildUniquesParams({ factions: ['AX'], sets: ['CORE'], mainCosts: [], recallCosts: [], effects: [] }, 3591698, 36);
-    expect(hp.get('cursor')).toBe('3591698');
   });
 });
 
@@ -183,8 +184,8 @@ describe('toSearchParams (cards API)', () => {
     expect(p.factions).toEqual(['YZ']);
     expect(p.rarities).toEqual(['COMMON', 'RARE', 'EXALTED']);
     expect(p.variations).toEqual(['standard']);
-    expect(p.mainCosts).toEqual([1, 2]);
-    expect(p.recallCosts).toEqual([4]);
+    expect(p.mainCosts).toEqual({ kind: 'values', values: [1, 2] });
+    expect(p.recallCosts).toEqual({ kind: 'values', values: [4] });
     expect(p.q).toBe('rok');
     expect(p.locale).toBe('fr');
     expect(toSearchParams({ ...f, rarities: [] }, 'YZ', 1, 36).rarities).toEqual([]);
@@ -287,12 +288,12 @@ describe('numeric validation', () => {
     expect(hasInvalidNumericFilters({ ...bad, mainCost: '1-3' }, 'all')).toBe(false);
   });
 
-  it('drops discrete numbers > 15 and maps >15 stats cleanly', () => {
+  it('drops discrete numbers > 15 and maps impossible >15 filters cleanly without sentinels', () => {
     expect(parseCostExpression('20')).toEqual([]);
     expect(parseCostExpression('2, 20')).toEqual([2]);
     const p = toSearchParams({ ...defaultFilters('all'), mainCost: '20', recallCost: '>15' }, null, 1, 20);
-    expect(p.mainCosts).toEqual([16]);
-    expect(p.recallCosts).toEqual([16]);
+    expect(p.mainCosts).toEqual({ kind: 'impossible' });
+    expect(p.recallCosts).toEqual({ kind: 'impossible' });
     const hp = buildUnifiedSearchParams(p);
     expect(hp.get('mainCost[gt]')).toBe('15');
     expect(hp.get('recallCost[gt]')).toBe('15');

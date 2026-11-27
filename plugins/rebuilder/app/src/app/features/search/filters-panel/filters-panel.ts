@@ -5,13 +5,12 @@ import { debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
 import { subtypeFacetParams } from '../../../core/subtype-facets';
 import { SUPPORT_TITLE, ZERO_POWER_LABEL, emptySupport, hasEffectCriteria, isAccountSource, rarityOptionsFor, newEffectBlock, newEffectId, parseCostExpression, setsFor, supportsArtists, supportsTextSearch, supportsZeroPower, typeOptionsFor, withRarities, type AltArtsMode, type CardSource, type EffectBlock, type SearchFilters } from '../../../core/card-filters';
-import { UniquesApiService } from '../../../core/uniques-api.service';
+import { CardCatalogService, type EffectSlot } from '../../../core/card-catalog.service';
 import { PROMO_SETS, SUBTYPES, termLabel } from '../../../core/card-vocabulary';
 import { formatInfo } from '../../../core/formats';
 import { assetUrl } from '../../../core/asset-url';
 import { ICONS } from '../../../core/card-text';
 import type { DeckFormat } from '../../../core/models';
-import type { EffectSlot } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { effectTitle } from '../effect-editor/effect-editor.overlay';
 import { AcChip, AcIconToggleGroup, AcLogicDivider } from '../../../ui/chips';
@@ -29,7 +28,7 @@ import { AcEffectSummary, AcExtensionTile, FACTIONS } from '../../../ui/metier';
   styleUrl: './filters-panel.scss',
 })
 export class FiltersPanel {
-  private readonly uniquesApi = inject(UniquesApiService);
+  private readonly catalog = inject(CardCatalogService);
   readonly source = input<CardSource>('all');
   readonly mode = input<'aside' | 'sheet'>('aside');
   /** Editor: the deck's format, for the « légales » filter of the account tabs. */
@@ -101,7 +100,7 @@ export class FiltersPanel {
       map((params) => ({ params, key: params?.toString() ?? '' })),
       distinctUntilChanged((a, b) => a.key === b.key),
       debounceTime(250),
-      switchMap(({ params }) => (params ? this.uniquesApi.subtypeFacets(params) : of(null))),
+      switchMap(({ params }) => (params ? this.catalog.subtypeFacets(params) : of(null))),
     ),
     { initialValue: null },
   );
@@ -132,9 +131,12 @@ export class FiltersPanel {
   );
   protected readonly pickedPromos = computed(() => this.promoOptions().filter((o) => this.value().promoSets.includes(PROMO_SETS[o.id].code)));
   /** Every artist of the catalog (empty until the search API lists them: no field). */
-  private readonly artists = toSignal(this.uniquesApi.artists(), { initialValue: [] as string[] });
+  private readonly artists = toSignal(this.catalog.artists(), { initialValue: [] as string[] });
   protected readonly artistOptions = computed<ComboOption[]>(() => (supportsArtists(this.source()) ? this.artists().map((text, id) => ({ id, text })) : []));
   protected readonly pickedArtists = computed(() => this.artistOptions().filter((o) => this.value().artists.includes(o.text)));
+  protected readonly hasAdvanced = computed(
+    () => this.supportsCostAndEffect() || !this.factionFilter() || (!this.limited() && this.artistOptions().length > 0),
+  );
 
   protected picked(codes: string[]): ComboOption[] {
     return codes.map((c) => this.allSubtypes[SUBTYPES.findIndex((t) => t.code === c)]).filter((o): o is ComboOption => !!o);

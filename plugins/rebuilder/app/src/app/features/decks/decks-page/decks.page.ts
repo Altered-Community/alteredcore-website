@@ -12,7 +12,7 @@ import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
 import { contentLocale } from '../../../core/locale';
 import { DeckStore } from '../../../core/deck-store';
-import { UniquesApiService } from '../../../core/uniques-api.service';
+import { CardCatalogService } from '../../../core/card-catalog.service';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcSkeleton } from '../../../ui/containers';
 import { AcChip, AcCount } from '../../../ui/chips';
@@ -98,7 +98,7 @@ export class DecksPage {
   private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
-  private readonly uniques = inject(UniquesApiService);
+  private readonly uniques = inject(CardCatalogService);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(AcBreakpointService);
   /** The site's community deckbuilders: a banner above the tabs on wide screens, as on the site's decks page. */
