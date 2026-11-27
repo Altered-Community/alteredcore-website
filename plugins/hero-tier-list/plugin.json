@@ -1,0 +1,45 @@
+{
+    "$schema":          "../plugin.schema.json",
+    "manifest_version": 2,
+    "id":               "hero-tier-list",
+    "name":             "Hero Tier List",
+    "version":          "1.0.0",
+    "description":      "Tier list of the Altered heroes (Angular): drag the heroes' full arts into tiers, reorder them, rename and recolour the tiers, export the ranking as a PNG. Saved in the browser.",
+    "author":           "AlteredCore",
+    "icon":             "list-ordered",
+
+    "pages": [
+        {
+            "slug":      "hero-tier-list",
+            "type":      "spa",
+            "entry":     "dist/embed-manifest.json",
+            "mount":     "shadow",
+            "fullwidth": true,
+            "title_en":  "Hero tier list",
+            "title_fr":  "Tier list des héros"
+        }
+    ],
+
+    "menu": [
+        {
+            "page":       "hero-tier-list",
+            "label_en":   "Hero tier list",
+            "label_fr":   "Tier list des héros",
+            "icon":       "list-ordered",
+            "parent_url": "https://www.helloasso.com/associations/altered-re-union/formulaires/1"
+        }
+    ],
+
+    "build": {
+        "workdir": "app",
+        "install": "npm ci --no-audit --no-fund",
+        "lint":    "npm run lint",
+        "test":    "npm test",
+        "build":   "npm run build",
+        "output":  "dist"
+    },
+
+    "tests": {
+        "e2e": "e2e"
+    }
+}

@@ -1,0 +1,80 @@
+<div class="head">
+  <h2 class="title">
+    <span i18n="@@pool.title">Héros à classer</span>
+    <span class="ac-count ac-count--soft">{{ store.pool().length }}</span>
+  </h2>
+  <div class="ac-input-icon search">
+    <ac-icon name="search" />
+    <input
+      class="ac-input"
+      type="search"
+      [value]="query()"
+      (input)="query.set(search.value)"
+      #search
+      i18n-placeholder="@@pool.search"
+      placeholder="Rechercher un héros"
+      i18n-aria-label="@@pool.search"
+      aria-label="Rechercher un héros"
+    />
+  </div>
+  <div class="chips" role="group" i18n-aria-label="@@pool.factions" aria-label="Factions">
+    @for (f of factions; track f) {
+      <button type="button" class="ac-chip" [attr.aria-pressed]="factionFilter().has(f)" (click)="toggleFaction(f)">
+        <span class="ac-chip__dot" [style.--ac-chip-dot]="'var(' + factionTokens[f] + ')'"></span>
+        {{ factionNames[f] }}
+      </button>
+    }
+  </div>
+  @if (sets().length > 1) {
+    <select #set class="ac-select" [value]="setFilter()" (change)="setFilter.set(set.value)" i18n-aria-label="@@pool.sets" aria-label="Extensions">
+      <option value="" i18n="@@pool.sets.all">Toutes les extensions</option>
+      @for (s of sets(); track s.id) {
+        <option [value]="s.id">{{ s.name }}</option>
+      }
+    </select>
+  }
+</div>
+
+<div #zone class="zone" role="group" i18n-aria-label="@@pool.title" aria-label="Héros à classer">
+  @switch (store.status()) {
+    @case ('loading') {
+      @for (i of skeletons(); track i) {
+        <div class="ac-skeleton ghost"></div>
+      }
+    }
+    @case ('error') {
+      <div class="ac-notice ac-notice--danger notice" role="alert">
+        <ac-icon name="circle-alert" />
+        <span i18n="@@pool.error">Les héros n’ont pas pu être chargés.</span>
+        <button type="button" class="ac-button ac-button--secondary ac-button--sm" (click)="store.load()" i18n="@@pool.retry">Réessayer</button>
+      </div>
+    }
+    @default {
+      @for (item of items(); track item.key) {
+        @if (item.hero; as hero) {
+          <button
+            #slot
+            type="button"
+            class="slot"
+            [class.is-drag-source]="item.source"
+            [attr.aria-pressed]="store.selectedId() === hero.id"
+            [attr.aria-label]="hero.name"
+            (pointerdown)="drag.start($event, slot, hero.id, listId)"
+            (click)="store.tap(hero.id)"
+          >
+            <ac-hero-tile [hero]="hero" />
+          </button>
+        }
+      } @empty {
+        <div class="ac-empty empty">
+          @if (filtered()) {
+            <p i18n="@@pool.empty.filtered">Aucun héros à classer pour ces filtres.</p>
+            <button type="button" class="ac-button ac-button--ghost ac-button--sm" (click)="clearFilters()" i18n="@@pool.clear">Effacer les filtres</button>
+          } @else {
+            <p i18n="@@pool.empty.done">Tous les héros sont classés. Dépose un héros ici pour le retirer du classement.</p>
+          }
+        </div>
+      }
+    }
+  }
+</div>
