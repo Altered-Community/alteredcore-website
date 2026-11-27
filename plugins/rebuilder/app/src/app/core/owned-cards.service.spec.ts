@@ -40,11 +40,11 @@ describe('Account tabs rarities', () => {
     expect(legalFormat('all', defaultFilters('all'), 'nuc')).toBeNull();
     for (const source of ACCOUNT_TABS) {
       const f = defaultFilters(source);
-      expect(listedRarities(source, f, nuc)).toEqual(['COMMON', 'RARE', 'EXALTED']);
+      expect(listedRarities(f, nuc)).toEqual(['COMMON', 'RARE', 'EXALTED']);
       expect(ownedParams(source, f, ['AX'], 1, 36, nuc).getAll('rarity[]')).toEqual(['COMMON', 'RARE', 'EXALTED']);
       expect(legalFormat(source, f, 'nuc')).toBe('nuc');
       expect(legalFormat(source, { ...f, legalOnly: false }, 'nuc')).toBeNull();
-      expect(listedRarities(source, { ...f, rarities: ['UNIQUE'] }, nuc)).toEqual([]);
+      expect(listedRarities({ ...f, rarities: ['UNIQUE'] }, nuc)).toEqual([]);
     }
   });
 });

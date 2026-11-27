@@ -892,7 +892,8 @@ html.db-scroll-lock, html.db-scroll-lock body { overflow: hidden; }
     text-transform: uppercase;
     color: var(--ac-color-text-2);
 }
-.cs-uniques-section-head i { color: var(--ac-cards-unique); }
+.cs-uniques-section-head i,
+.cs-uniques-section-head .ac-icon { color: var(--ac-cards-unique); }
 
 /* ---- Unique banner: gold "try the dedicated Uniques tab" nudge, or orange
    "this format doesn't allow Uniques" warning — see _syncUniqueNudge() in

@@ -6,14 +6,14 @@ describe('subtype facets query', () => {
     const f = { ...defaultFilters('all'), factions: ['YZ'], subtypes: ['MAGE'], q: 'kadigir' };
     const hp = subtypeFacetParams('all', f, null)!;
     expect(hp.getAll('faction[]')).toEqual(['YZ']);
-    expect(hp.get('name')).toBe('kadigir');
+    expect(hp.get('q')).toBe('kadigir');
     expect(hp.getAll('cardType[]')).toEqual(['CHARACTER', 'SPELL', 'LANDMARK_PERMANENT', 'EXPEDITION_PERMANENT']);
     expect(hp.has('subTypes[]')).toBe(false);
   });
 
-  it('counts the Uniques alone, in the editor hero’s faction', () => {
-    const hp = subtypeFacetParams('uniques', { ...defaultFilters('uniques'), subtypes: ['MAGE'] }, 'LY')!;
-    expect(hp.get('kind')).toBe('unique');
+  it('counts the Uniques when selected in rarity filter, in the editor hero’s faction', () => {
+    const hp = subtypeFacetParams('all', { ...defaultFilters('all'), rarities: ['UNIQUE'], subtypes: ['MAGE'] }, 'LY')!;
+    expect(hp.getAll('rarity[]')).toEqual(['UNIQUE']);
     expect(hp.getAll('faction[]')).toEqual(['LY']);
     expect(hp.has('subTypes[]')).toBe(false);
   });

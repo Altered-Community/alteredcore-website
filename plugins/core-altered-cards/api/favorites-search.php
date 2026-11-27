@@ -1,8 +1,9 @@
 <?php
 // Favorites search endpoint — /papi/core-altered-cards/favorites-search
 // Filtre + pagine les favoris de l'utilisateur EN SQL (colonnes faction/rarity/card_set), puis
-// hydrate les ≤ perPage cartes de la page via POST /api/cards/batch, et renvoie une enveloppe
-// compatible cards-API { member, totalItems, lastPage }.
+// hydrate les ≤ perPage cartes (Uniques + non-Uniques) via POST UNIQUES_API_URL/api/v2/search
+// (avec repli sur POST CARDS_API_URL/api/cards/batch), et renvoie une enveloppe compatible
+// cards-API { member, totalItems, lastPage }.
 require_once dirname(__DIR__) . '/includes/functions.php';
 require_once dirname(__DIR__) . '/includes/favorites.php';
 

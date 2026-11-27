@@ -1,4 +1,5 @@
 import { convertToParamMap, type Params } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { defaultFilters } from './card-filters';
 import { SUBTYPES } from './card-vocabulary';
 import { filtersFromParams, filtersToParams, sourceFromParams } from './search-url';
@@ -41,7 +42,7 @@ describe('card browser URL', () => {
     expect(filtersFromParams(base, url.getAll, url.get)).toEqual(f);
   });
 
-  it('opens the links of the site’s former card search', () => {
+  it('opens the links of the site’s former card search (including ?tab=unique)', () => {
     const map = convertToParamMap({
       tab: 'unique',
       'faction[]': ['AX', 'BR'],
@@ -51,9 +52,31 @@ describe('card browser URL', () => {
       sort: 'set_date_desc',
       mountain: '2+',
     });
-    expect(sourceFromParams((k) => map.get(k))).toBe('uniques');
+    expect(sourceFromParams((k) => map.get(k))).toBe('all');
     const f = filtersFromParams(defaultFilters('all'), (k) => map.getAll(k), (k) => map.get(k));
-    expect(f).toMatchObject({ factions: ['AX', 'BR'], types: ['TOKEN', 'LANDMARK_PERMANENT'], altArts: 'only', noEffect: true, mountainPower: '2+', order: 'setDate-desc' });
+    expect(f).toMatchObject({
+      factions: ['AX', 'BR'],
+      rarities: ['UNIQUE'],
+      types: ['TOKEN', 'LANDMARK_PERMANENT'],
+      altArts: 'only',
+      noEffect: true,
+      mountainPower: '2+',
+      order: 'setDate-desc',
+    });
+    expect(f.sets).toContain('COREKS');
+  });
+
+  it('accepts custom Frontier season format ids from ?format= URLs', () => {
+    const map = convertToParamMap({ format: 'frontier' });
+    expect(filtersFromParams(defaultFilters('all'), (k) => map.getAll(k), (k) => map.get(k)).environment).toBe('frontier');
+    const saved = environment.uniquesFrontierFormat;
+    environment.uniquesFrontierFormat = 'frontier_s04';
+    try {
+      const seasonMap = convertToParamMap({ format: 'frontier_s04' });
+      expect(filtersFromParams(defaultFilters('all'), (k) => seasonMap.getAll(k), (k) => seasonMap.get(k)).environment).toBe('frontier');
+    } finally {
+      environment.uniquesFrontierFormat = saved;
+    }
   });
 
   it('prefers ?source= and falls back to « Toutes les cartes »', () => {

@@ -30,79 +30,70 @@
   </div>
 }
 
-<!--
-  No title rows on most sections (room in height): the marks and symbols say what they filter.
-  Uniques: environment, costs, effects, factions, sets, powers, advanced search.
-  Other tabs: factions, sets, rarity, type, costs, powers, advanced search.
--->
-@if (source() === 'uniques') {
-  <!-- First: the environment narrows every Unique (Frontier list or all). -->
-  <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment" [headless]="true">
-    <ac-segmented
-      ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
-      [fullWidth]="true"
-      [options]="environments"
-      [value]="value().environment"
-      (valueChange)="set({ environment: $event ?? 'all' })"
-    />
+<!-- Unified tab & account tabs: factions, sets, rarity, type, subtype, costs, format & effects, prints, powers, advanced. -->
+<ng-container *ngTemplateOutlet="factionRow" />
+<ng-container *ngTemplateOutlet="setTiles" />
+<ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity" [headless]="true">
+  <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="setRarities($event)" />
+</ac-filter-section>
+
+@if (legalFilter() && format()) {
+  <ac-filter-section title="Format" i18n-title="@@search.filters.format">
+    <div class="types">
+      <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
+    </div>
   </ac-filter-section>
+}
+@if (!limited()) {
+  <ac-filter-section title="Type" i18n-title="@@search.filters.type" [headless]="true">
+    <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
+      @for (t of types(); track t.value) {
+        <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
+      }
+    </div>
+  </ac-filter-section>
+  <ng-container *ngTemplateOutlet="subtypeField" />
   <ng-container *ngTemplateOutlet="costs" />
-  <div class="scope-section scope-section--uniques">
-    <ac-filter-section title="Effets" i18n-title="@@search.filters.effects" [headless]="true">
-      <div class="effects">
-        @for (e of value().effects; track e.id) {
-          <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (duplicate)="duplicateEffect($index)" (remove)="removeEffect($index)" />
-          @if (!$last) {
-            <ac-logic-divider />
+  @if (supportsEffects()) {
+    <div class="scope-section scope-section--uniques">
+      <ac-filter-section title="Environnement" i18n-title="@@search.filters.environment" [headless]="true">
+        <ac-segmented
+          ariaLabel="Environnement" i18n-ariaLabel="@@search.filters.environment"
+          [fullWidth]="true"
+          [options]="environments"
+          [value]="value().environment"
+          (valueChange)="set({ environment: $event ?? 'all' })"
+        />
+      </ac-filter-section>
+
+      <ac-filter-section title="Effets" i18n-title="@@search.filters.effects" [headless]="true">
+        <div class="effects">
+          @for (e of value().effects; track e.id) {
+            <ac-effect-summary [effect]="e" [title]="effectTitle($index)" (edit)="editEffect.emit($index)" (duplicate)="duplicateEffect($index)" (remove)="removeEffect($index)" />
+            @if (!$last) {
+              <ac-logic-divider />
+            }
           }
-        }
-        <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
-      </div>
-    </ac-filter-section>
+          <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="addEffect()" i18n="@@search.filters.addEffect">Ajouter un effet</button>
+        </div>
+      </ac-filter-section>
 
-    <!-- The support ability, the one a card has while in Reserve: one block, its own list of abilities. -->
-    <ac-filter-section title="Effet de réserve" i18n-title="@@search.effect.supportTitle" [headless]="true">
-      <div class="effects">
-        @if (hasSupport()) {
-          <ac-effect-summary [effect]="value().support" [title]="supportTitle" [duplicable]="false" (edit)="editEffect.emit('support')" (remove)="set({ support: emptySupport() })" />
-        } @else {
-          <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="editEffect.emit('support')" i18n="@@search.filters.addSupport">Ajouter un effet de réserve</button>
-        }
-      </div>
-    </ac-filter-section>
-  </div>
-  <ng-container *ngTemplateOutlet="factionRow" />
-  <ng-container *ngTemplateOutlet="setTiles" />
+      <!-- The support ability, the one a card has while in Reserve: one block, its own list of abilities. -->
+      <ac-filter-section title="Effet de réserve" i18n-title="@@search.effect.supportTitle" [headless]="true">
+        <div class="effects">
+          @if (hasSupport()) {
+            <ac-effect-summary [effect]="value().support" [title]="supportTitle" [duplicable]="false" (edit)="editEffect.emit('support')" (remove)="set({ support: emptySupport() })" />
+          } @else {
+            <button acButton variant="add" icon="plus" [fullWidth]="true" (click)="editEffect.emit('support')" i18n="@@search.filters.addSupport">Ajouter un effet de réserve</button>
+          }
+        </div>
+      </ac-filter-section>
+    </div>
+  }
+  @if (supportsAltArts()) {
+    <ng-container *ngTemplateOutlet="prints" />
+  }
   <ng-container *ngTemplateOutlet="powers" />
-} @else {
-  <ng-container *ngTemplateOutlet="factionRow" />
-  <ng-container *ngTemplateOutlet="setTiles" />
-  <ac-filter-section title="Rareté" i18n-title="@@search.filters.rarity" [headless]="true">
-    <ac-icon-toggle-group ariaLabel="Rareté" i18n-ariaLabel="@@search.filters.rarity" [options]="rarities()" [values]="value().rarities" (valuesChange)="set({ rarities: $event })" />
-  </ac-filter-section>
-
-  @if (legalFilter() && format()) {
-    <ac-filter-section title="Format" i18n-title="@@search.filters.format">
-      <div class="types">
-        <ac-chip shape="square" [label]="legalLabel()" [selected]="value().legalOnly" (selectedChange)="set({ legalOnly: $event })" />
-      </div>
-    </ac-filter-section>
-  }
-  @if (!limited()) {
-    <ac-filter-section title="Type" i18n-title="@@search.filters.type" [headless]="true">
-      <div class="types" role="group" aria-label="Type de carte" i18n-aria-label="@@search.filters.cardType">
-        @for (t of types(); track t.value) {
-          <ac-chip shape="square" [label]="t.label" [selected]="value().types.includes(t.value)" (selectedChange)="toggleType(t.value, $event)" />
-        }
-      </div>
-    </ac-filter-section>
-    <ng-container *ngTemplateOutlet="subtypeField" />
-    <ng-container *ngTemplateOutlet="costs" />
-    @if (supportsAltArts()) {
-      <ng-container *ngTemplateOutlet="prints" />
-    }
-    <ng-container *ngTemplateOutlet="powers" />
-  }
 }
 
 <!-- Subtypes: no title row, the field's placeholder names it (and is its accessible name). -->
@@ -205,10 +196,6 @@
           </div>
         }
         @if (!limited()) {
-          <!-- The Uniques have no type row: their subtypes stay here. -->
-          @if (source() === 'uniques') {
-            <ng-container *ngTemplateOutlet="subtypeField" />
-          }
           @if (artistOptions().length) {
             <ac-combobox keepOpen [options]="artistOptions()" [values]="pickedArtists()" (valuesChange)="set({ artists: artistNames($event) })" placeholder="Artiste" i18n-placeholder="@@search.filters.artist" />
           }

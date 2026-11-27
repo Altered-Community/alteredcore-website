@@ -2,7 +2,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal, type Signal, type WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, concat, of, switchMap } from 'rxjs';
-import { SUPPORT_TITLE, type AbilityRef, type EffectBlock } from '../../../core/card-filters';
+import { SUPPORT_TITLE, abilityRefIds, type AbilityRef, type EffectBlock } from '../../../core/card-filters';
+import type { CardSearchParams } from '../../../core/models';
 import { UniquesApiService, type AbilityKind, type EffectSlot, type UniquesEffect, type UniquesQuery } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
 import { AcCheckList, AcOrValues } from '../../../ui/fields';
@@ -19,7 +20,7 @@ export interface EffectEditorData {
    * The search the block belongs to, `effects[index]` (or `support`) being this block: each list is narrowed to the
    * values that still give a card. Without it, the lists show every value.
    */
-  query?: UniquesQuery;
+  query?: UniquesQuery | CardSearchParams;
 }
 
 const KINDS: AbilityKind[] = ['triggers', 'conditions', 'effects'];
@@ -127,7 +128,7 @@ export class EffectEditorOverlay {
     const ids = this.narrowing(kind);
     return computed(() => {
       const keep = ids();
-      return keep ? all().filter((o) => keep.has(o.id)) : all();
+      return keep ? all().filter((o) => abilityRefIds(o).some((id) => keep.has(id))) : all();
     });
   }
 
@@ -140,12 +141,13 @@ export class EffectEditorOverlay {
    */
   private narrowing(kind: AbilityKind): Signal<Set<number> | null> {
     const { query, index } = this.ref.data;
-    if (!query || query.reference) return signal(null);
+    const exactRef = query && ('reference' in query ? query.reference : ('q' in query ? query.q?.trim() && /^ALT_[A-Z0-9_]+$/i.test(query.q.trim()) : false));
+    if (!query || exactRef) return signal(null);
     const others = computed(() => KINDS.filter((k) => k !== kind).map((k) => this.picked[k]()));
     const ids = (values: Record<AbilityKind, AbilityRef[]>): UniquesEffect => ({
-      triggers: values.triggers.map((a) => a.id),
-      conditions: values.conditions.map((a) => a.id),
-      effects: values.effects.map((a) => a.id),
+      triggers: values.triggers.flatMap(abilityRefIds),
+      conditions: values.conditions.flatMap(abilityRefIds),
+      effects: values.effects.flatMap(abilityRefIds),
     });
     return toSignal(
       toObservable(others).pipe(

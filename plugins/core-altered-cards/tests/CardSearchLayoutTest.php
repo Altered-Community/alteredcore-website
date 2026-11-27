@@ -12,6 +12,13 @@ if (!function_exists('getSetting')) {
         return $default;
     }
 }
+if (!function_exists('ac_icon')) {
+    function ac_icon(string $ref, string $class = '', string $label = ''): string {
+        $classes = trim('ac-icon ' . $class);
+        $aria = $label !== '' ? ' role="img" aria-label="' . h($label) . '"' : ' aria-hidden="true"';
+        return '<svg class="' . h($classes) . '"' . $aria . ' data-icon="' . h($ref) . '"></svg>';
+    }
+}
 
 $renderSearchWidget = static function (string $mode, string $prefix): string {
     $_cs = [
@@ -51,17 +58,19 @@ $renderSearchWidget = static function (string $mode, string $prefix): string {
 foreach (['cards' => 'cs', 'deck' => 'db'] as $mode => $prefix) {
     $html = $renderSearchWidget($mode, $prefix);
 
-    assertSame(1, substr_count($html, 'class="card-altered p-3 mb-3" data-tabs="all unique collection ownership favoris"'), "{$mode}: filter card keeps favoris tab visible");
-    assertSame(1, substr_count($html, 'class="cs-controlbar mb-2" data-tabs="all unique collection ownership favoris"'), "{$mode}: results control bar keeps favoris count visible");
+    assertSame(0, substr_count($html, 'data-tab="unique"'), "{$mode}: separate Uniques tab removed");
+    assertSame(0, substr_count($html, 'cs-unique-banner-nudge'), "{$mode}: obsolete Uniques tab nudge removed");
+    assertSame(1, substr_count($html, 'class="card-altered p-3 mb-3" data-tabs="all collection ownership favoris"'), "{$mode}: filter card keeps favoris tab visible");
+    assertSame(1, substr_count($html, 'class="cs-controlbar mb-2" data-tabs="all collection ownership favoris"'), "{$mode}: results control bar keeps favoris count visible");
     assertSame(1, substr_count($html, 'class="filter-row filter-row--scroll cs-faction-row'), "{$mode}: single primary faction row");
     assertSame(1, substr_count($html, 'data-filter="faction" data-value="AX"'), "{$mode}: faction button is not duplicated in advanced section");
-    assertSame(1, substr_count($html, 'class="filter-row filter-row--scroll cs-standard-row mb-2" data-tabs="all collection ownership favoris"'), "{$mode}: standard-only rarities/types row cleanly scoped to non-unique tabs");
+    assertSame(1, substr_count($html, 'class="filter-row filter-row--scroll cs-standard-row mb-2" data-tabs="all collection ownership favoris"'), "{$mode}: rarities/types row cleanly scoped");
     assertSame(1, substr_count($html, 'data-filter="rarity" data-value="COMMON"'), "{$mode}: rarity button rendered once");
     assertSame(1, substr_count($html, '<span class="cs-sep" data-tabs="all ownership"></span>'), "{$mode}: standard-row divider scoped to intersection of rarities and types");
-    assertSame(1, substr_count($html, 'class="cs-uniques-section mb-2" data-tabs="unique"'), "{$mode}: uniques-only filters grouped under .cs-uniques-section");
-    assertTrue(strpos($html, "id=\"{$prefix}-format-wrap\"") !== false, "{$mode}: format selector rendered inside uniques section");
-    assertTrue(strpos($html, "id=\"{$prefix}-effect-rows\"") !== false, "{$mode}: effect rows rendered inside uniques section");
-    assertTrue(strpos($html, "id=\"{$prefix}-support-row\"") !== false, "{$mode}: support row rendered inside uniques section");
+    assertSame(1, substr_count($html, 'class="cs-uniques-section mb-2" data-tabs="all"'), "{$mode}: unified format/effects/support filters available on all tab");
+    assertTrue(strpos($html, "id=\"{$prefix}-format-wrap\"") !== false, "{$mode}: format selector rendered inside effects section");
+    assertTrue(strpos($html, "id=\"{$prefix}-effect-rows\"") !== false, "{$mode}: effect rows rendered inside effects section");
+    assertTrue(strpos($html, "id=\"{$prefix}-support-row\"") !== false, "{$mode}: support row rendered inside effects section");
     assertTrue(strpos($html, "id=\"{$prefix}-filter-hasnoeffect\"") !== false, "{$mode}: hasNoEffect checkbox present in both cards and deck modes");
     assertTrue(strpos($html, "id=\"{$prefix}-filter-cost-relation\"") !== false, "{$mode}: costRelation select present in both cards and deck modes");
     assertTrue(strpos($html, "id=\"{$prefix}-promo-toggle\"") !== false && strpos($html, "id=\"{$prefix}-promo-panel\"") !== false, "{$mode}: alt-arts switch and promo panel both present");

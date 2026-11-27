@@ -73,7 +73,7 @@ function setupEnv({ search = '' } = {}) {
   byId.set('cs-filter-cost-relation', makeEl('cs-filter-cost-relation', 'select'));
   byId.set('cs-filter-hasnoeffect', makeEl('cs-filter-hasnoeffect', 'input'));
 
-  for (const tab of ['all', 'unique', 'collection', 'ownership', 'favoris']) {
+  for (const tab of ['all', 'collection', 'ownership', 'favoris']) {
     const b = makeEl(`tab-${tab}`, 'button');
     b.dataset.tab = tab;
     tabButtons.push(b);
@@ -133,31 +133,31 @@ function eq(a, b, msg) {
   eq(cs.numUniquesParts('mainCost', '1-3'), ['mainCost[]=1', 'mainCost[]=2', 'mainCost[]=3'], 'contiguous range expands for uniques API');
 }
 
-// 2. Tab switch resets user filters and applies target tab defaults (restoring defaults on return)
+// 2. Tab switch resets user filters and restores defaults on return to unified all tab
 {
   const env = setupEnv();
   const cs = CardSearch({
     prefix: 'cs', mode: 'cards', uniquesApiBase: 'http://localhost:8005',
-    uniqueRarity: ['UNIQUE'], uniqueType: ['CHARACTER'], uniqueExtraSets: ['COREKS'],
+    collApiUrl: '/papi/core-altered-cards/collection-search',
+    uniqueRarity: ['UNIQUE'], uniqueExtraSets: ['COREKS'],
     defaults: { factions: [], types: ['CHARACTER', 'SPELL'], rarities: ['COMMON', 'RARE'], sets: ['CORE', 'ALIZE'] },
   });
   env.byId.get('cs-filter-maincost').value = '3';
   cs.filters.q = 'kelon';
 
-  const uniqBtn = env.tabButtons.find((b) => b.dataset.tab === 'unique');
-  env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? uniqBtn : null } });
+  const collBtn = env.tabButtons.find((b) => b.dataset.tab === 'collection');
+  env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? collBtn : null } });
 
-  ok(cs.getTab() === 'unique', 'switched to unique tab');
+  ok(cs.getTab() === 'collection', 'switched to collection tab');
   ok(cs.filters.mainCost === null, 'mainCost reset across tab switch');
   ok(cs.filters.q === '', 'search query reset across tab switch');
-  ok(cs.filters.sets.includes('COREKS'), 'COREKS added automatically on unique tab');
 
   const allBtn = env.tabButtons.find((b) => b.dataset.tab === 'all');
   env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? allBtn : null } });
 
   ok(cs.getTab() === 'all', 'switched back to all tab');
   eq(cs.filters.rarity, ['COMMON', 'RARE'], 'default rarities restored cleanly on return');
-  ok(!cs.filters.sets.includes('COREKS'), 'auto-added COREKS removed cleanly when leaving unique tab');
+  ok(!cs.filters.sets.includes('COREKS'), 'COREKS not added on standard all tab');
 }
 
 // 3. Invalid numeric expression marks is-invalid and does NOT fire an unfiltered request
@@ -216,7 +216,8 @@ function eq(a, b, msg) {
 
   cs.resetFilters();
   cs.restoreFromUrl('?tab=unique&format=frontier&mainCost=2');
-  ok(cs.getTab() === 'unique', 'restoreFromUrl restores tab=unique');
+  ok(cs.getTab() === 'all', 'restoreFromUrl maps legacy tab=unique onto unified all tab');
+  eq(cs.filters.rarity, ['UNIQUE'], 'restoreFromUrl(?tab=unique) pre-selects UNIQUE rarity');
   ok(cs.filters.format === 'frontier', 'restoreFromUrl restores format=frontier');
   ok(cs.filters.mainCost === '2', 'restoreFromUrl restores mainCost');
   const fBtn = env.toggleButtons.find((b) => b.dataset.filter === 'format' && b.dataset.value === 'frontier');
@@ -264,30 +265,36 @@ function eq(a, b, msg) {
   eq(cs.numUniquesParts('mainCost', '2,20'), ['mainCost[]=2'], 'list drops values > 15');
   eq(cs.numUniquesParts('mainCost', '<20'), ['mainCost[lte]=15'], 'upper bound > 15 clamps to <= 15 on /api/v2/search');
 
+  cs.setFormat('frontier');
   cs.filters.subtypes = ['ELEMENTAL', 'ROBOT'];
   cs.filters.costRelation = 'main_gt';
   cs.filters.hasNoEffect = true;
-  const uUrl = cs.buildUniquesApiUrl(null);
-  ok(uUrl.includes('subTypes[]=ELEMENTAL') && uUrl.includes('subTypes[]=ROBOT'), 'uniques URL includes subTypes[]');
-  ok(uUrl.includes('costRelation=mainHigher'), 'uniques URL translates costRelation=main_gt -> mainHigher');
-  ok(uUrl.includes('hasNoEffect=true'), 'uniques URL includes hasNoEffect=true');
+  const uUrl = cs.buildUnifiedApiUrl(1);
+  ok(uUrl.includes('subTypes[]=ELEMENTAL') && uUrl.includes('subTypes[]=ROBOT'), 'unified URL includes subTypes[]');
+  ok(uUrl.includes('costRelation=mainHigher'), 'unified URL translates costRelation=main_gt -> mainHigher');
+  ok(uUrl.includes('hasNoEffect=true'), 'unified URL includes hasNoEffect=true');
+  ok(uUrl.includes('format=frontier'), 'unified URL includes format=frontier');
   ok(!uUrl.includes('effect[0][matchCount]='), 'narrower block does not require matchCount=2');
   ok(uUrl.includes('effect[1][matchCount]=2'), 'covering block gets matchCount=2');
 
-  cs.filters.costRelation = 'eq';
-  ok(cs.buildUniquesApiUrl(null).includes('costRelation=equal'), 'costRelation=eq -> equal');
-  cs.filters.costRelation = 'recall_gt';
-  ok(cs.buildUniquesApiUrl(null).includes('costRelation=recallHigher'), 'costRelation=recall_gt -> recallHigher');
+  const efFiltUrl = cs.buildEffectsFilteredUrl('output', 0);
+  ok(efFiltUrl.includes('/api/v2/effects/filtered?') && efFiltUrl.includes('rarity[]=COMMON') && efFiltUrl.includes('format=frontier') && efFiltUrl.includes('editing=output%3A0'),
+    'buildEffectsFilteredUrl forwards unified filters (rarity[], format, effects) to /api/v2/effects/filtered');
 
-  // Switch to unique tab and confirm forced defaults + unsupported filters don't inflate badge count
+  cs.filters.costRelation = 'eq';
+  ok(cs.buildUnifiedApiUrl(1).includes('costRelation=equal'), 'costRelation=eq -> equal');
+  cs.filters.costRelation = 'recall_gt';
+  ok(cs.buildUnifiedApiUrl(1).includes('costRelation=recallHigher'), 'costRelation=recall_gt -> recallHigher');
+
+  // Unified badge counts every active filter cleanly across both uniques and non-uniques
   env.byId.delete('cs-effect-rows');
-  const uniqBtn = env.tabButtons.find((b) => b.dataset.tab === 'unique');
-  env.root.dispatch('click', { target: { closest: (s) => s === '.cs-tab[data-tab]' ? uniqBtn : null } });
+  cs.resetFilters();
   cs.filters.keywords = ['FLEETING'];
   cs.filters.isBanned = true;
   cs.filters.subtypes = ['ELEMENTAL'];
+  cs.setFormat('frontier');
   cs.updateFilterCount();
-  ok(fcEl.textContent === 1, 'unique badge counts only supported filters (got ' + fcEl.textContent + ')');
+  ok(fcEl.textContent === 4, 'unified badge counts keyword + banned + subtype + format (got ' + fcEl.textContent + ')');
 }
 
 // 8. mana/setDate sorting (order[setDate]), collection typesMerged expansion, and unique URL extra sets
@@ -345,11 +352,13 @@ function eq(a, b, msg) {
   cs.filters.keywords = ['FUGACE', 'RAVITAILLEZ_EPUISE'];
   cs.filters.variations = ['standard', 'alt-art', 'kickstarter'];
   cs.filters.costRelation = 'main_gt';
+  cs.filters.q = 'sabotage';
   const uKwUrl = cs.buildApiUrl(1);
   ok(uKwUrl.includes('sort=name%3Afr%3Aasc'), 'unified URL maps name_asc with active lang');
   ok(uKwUrl.includes('keywords[]=FLEETING') && uKwUrl.includes('keywords[]=RESUPPLY') && uKwUrl.includes('keywordMode=and'), 'unified URL maps French keyword codes and keywordMode=and');
   ok(uKwUrl.includes('variation[]=standard') && uKwUrl.includes('variation[]=alt-art') && !uKwUrl.includes('kickstarter'), 'unified URL forwards variations without kickstarter');
   ok(uKwUrl.includes('costRelation=mainHigher'), 'unified URL maps costRelation=main_gt -> mainHigher');
+  ok(uKwUrl.includes('q=sabotage'), 'unified URL forwards free-text query as q= (name + effect text across uniques & non-uniques)');
 
   cs.filters.q = 'alt_core_b_ax_01_c';
   const refUrl = cs.buildApiUrl(1);

@@ -298,6 +298,17 @@ describe('toAbilityRefs', () => {
     ]);
     expect(toAbilityRefs(rows).map((r) => r.id)).toEqual([188]);
   });
+
+  it('keeps {T} : trigger with its exhaust glyph and preserves extraIds when two idGds share a localized label', () => {
+    const refs = toAbilityRefs([
+      { alteredId: 1088, text: { fr: '{T} :' } },
+      { alteredId: 688, text: { fr: 'Lorsque vous faites un [Don]\u00a0—' } },
+      { alteredId: 1546, text: { fr: 'Lorsque vous faites un [Don] —' } },
+    ]);
+    expect(refs.find((r) => r.id === 1088)).toEqual({ id: 1088, text: 'Épuisez-moi', glyph: '\ue027' });
+    const gift = refs.find((r) => r.id === 688);
+    expect(gift?.extraIds).toEqual([1546]);
+  });
 });
 
 describe('buildEffectsFilteredParams', () => {
@@ -355,7 +366,7 @@ describe('unified /api/v2/search', () => {
     expect(hp.get('page')).toBe('2');
     expect(hp.get('limit')).toBe('36');
     expect(hp.get('sort')).toBe('name:fr_FR:asc');
-    expect(hp.get('name')).toBe('sierra');
+    expect(hp.get('q')).toBe('sierra');
     expect(hp.getAll('faction[]')).toEqual(['AX']);
     expect(hp.getAll('cardType[]')).toEqual(['HERO', 'CHARACTER']);
     expect(hp.getAll('rarity[]')).toEqual(['COMMON', 'RARE']);

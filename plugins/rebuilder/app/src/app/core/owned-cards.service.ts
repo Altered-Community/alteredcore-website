@@ -47,7 +47,7 @@ export class OwnedCardsService {
 
   /** `rules`: the format the cards must be legal in (« légales »), `null` for every card. */
   search(source: OwnedSource, filters: SearchFilters, factions: string[], page: number, itemsPerPage: number, rules: FormatRules | null = null): Observable<OwnedPage> {
-    if (!listedRarities(source, filters, rules).length) return of({ member: [], totalItems: 0, lastPage: 1 });
+    if (!listedRarities(filters, rules).length) return of({ member: [], totalItems: 0, lastPage: 1 });
     const url = `${environment.siteUrl.replace(/\/$/, '')}/papi/core-altered-cards/${ENDPOINT[source]}`;
     return this.http.get<{ member?: (Card & CollectionItem)[]; totalItems?: number; lastPage?: number }>(url, { params: ownedParams(source, filters, factions, page, itemsPerPage, rules) }).pipe(
       map((res) => ({
@@ -65,8 +65,8 @@ export class OwnedCardsService {
 }
 
 /** Rarities a tab lists: the chosen ones (all when none), without the Uniques when the format's `rules` (see legalFormat()) forbid them. */
-export function listedRarities(source: OwnedSource, f: SearchFilters, rules: FormatRules | null): string[] {
-  const picked = f.rarities.length ? f.rarities : rarityOptionsFor(source).map((r) => r.value);
+export function listedRarities(f: SearchFilters, rules: FormatRules | null): string[] {
+  const picked = f.rarities.length ? f.rarities : rarityOptionsFor().map((r) => r.value);
   return uniquesForbidden(rules) ? picked.filter((r) => r !== 'UNIQUE') : picked;
 }
 
@@ -76,8 +76,8 @@ export function ownedParams(source: OwnedSource, f: SearchFilters, factions: str
   const add = (key: string, values: readonly string[]) => values.forEach((v) => (p = p.append(key, v)));
   add('faction[]', factions);
   // Every rarity: no filter, so the cards without a rarity (favorites saved before it was) still show.
-  const rarities = listedRarities(source, f, rules);
-  if (rarities.length < rarityOptionsFor(source).length) add('rarity[]', rarities);
+  const rarities = listedRarities(f, rules);
+  if (rarities.length < rarityOptionsFor().length) add('rarity[]', rarities);
   if (source === 'favorites') {
     add('set[]', f.sets);
     return p;

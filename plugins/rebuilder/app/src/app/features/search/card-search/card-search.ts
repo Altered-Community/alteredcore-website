@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
-import { ORDER_OPTIONS, activeFilterCount, defaultFilters, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { ORDER_OPTIONS, activeFilterCount, defaultFilters, effectAt, hasInvalidNumericFilters, toSearchParams, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { UniquesApiService, type EffectSlot } from '../../../core/uniques-api.service';
 import { filtersFromParams, filtersToParams, sourceFromParams } from '../../../core/search-url';
 import type { CardOrder, DeckFormat } from '../../../core/models';
@@ -29,7 +29,6 @@ export interface CardSourceTab extends AcTab {
 /** The icons (wide screens) say each source at a glance, as the site's tabs. */
 export const CARD_SOURCES: CardSourceTab[] = [
   { id: 'all', icon: 'layers', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
-  { id: 'uniques', icon: 'gem', label: $localize`:@@search.source.uniques:Uniques` },
   { id: 'favorites', icon: 'star', label: $localize`:@@search.source.favorites:Favoris` },
   { id: 'collection', icon: 'archive', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
   { id: 'owned', icon: 'monitor-cloud', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
@@ -107,7 +106,7 @@ export class CardSearch {
   private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
   private readonly hideRandomSort = computed(
-    () => this.search.source() === 'uniques' || (this.search.source() === 'all' && !!this.uniquesApi.baseUrl),
+    () => this.search.source() === 'all' && !!this.uniquesApi.baseUrl,
   );
   protected readonly orderOptions = computed(() =>
     this.hideRandomSort() ? this.allOrderOptions.filter((o) => o.value !== 'random') : this.allOrderOptions,
@@ -134,9 +133,7 @@ export class CardSearch {
   protected readonly minColumns = MIN_COLUMNS;
   /** Uniques are read: the grid keeps at most 7 columns. */
   protected readonly readable = computed(
-    () =>
-      this.search.source() === 'uniques' ||
-      (this.search.source() === 'all' && (!this.search.filters().rarities.length || this.search.filters().rarities.includes('UNIQUE'))),
+    () => this.search.source() === 'all' && (!this.search.filters().rarities.length || this.search.filters().rarities.includes('UNIQUE')),
   );
   /** The most columns the width allows (cards stay at least `MIN_CARD_WIDTH` wide). */
   protected readonly maxColumns = computed(() => {
@@ -178,8 +175,8 @@ export class CardSearch {
   );
   protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
-  // The account lists (favorites, collection, ownership) have their own order; All & Uniques support sorting.
-  protected readonly sortable = computed(() => this.search.source() === 'all' || this.search.source() === 'uniques');
+  // The account lists (favorites, collection, ownership) have their own order; the unified search tab supports sorting.
+  protected readonly sortable = computed(() => this.search.source() === 'all');
   protected readonly totalLabel = computed(() => {
     const t = this.search.total();
     if (t === null) return '…';
@@ -241,7 +238,7 @@ export class CardSearch {
     });
 
     effect(() => {
-      if (this.source() !== 'uniques') return;
+      if (this.source() !== 'all' || !this.uniquesApi.baseUrl) return;
       untracked(() => this.prefetchAbilities());
     });
 
@@ -388,7 +385,7 @@ export class CardSearch {
   protected editEffect(index: EffectSlot): void {
     const effect = effectAt(this.draft(), index);
     if (!effect) return;
-    openEffectEditor(this.overlay, { effect, index, query: toUniquesQuery(this.draft(), this.search.faction()) }).afterClosed.subscribe((next) =>
+    openEffectEditor(this.overlay, { effect, index, query: toSearchParams(this.draft(), this.search.faction(), 1, 1) }).afterClosed.subscribe((next) =>
       this.onDraft(withEditedEffect(this.draft(), index, next)),
     );
   }

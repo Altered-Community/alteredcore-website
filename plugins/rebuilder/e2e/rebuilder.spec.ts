@@ -603,8 +603,8 @@ test.describe('ReBuilder in the shell · languages', () => {
   }
 });
 
-test.describe('ReBuilder in the shell · Uniques search', () => {
-  test('shows the Uniques at most 7 per row, larger, on a very wide window', async ({ page, compact }) => {
+test.describe('ReBuilder in the shell · Unified search & effects', () => {
+  test('shows large 7-per-row cards when Uniques are included on a very wide window', async ({ page, compact }) => {
     test.skip(compact, 'a desktop width');
     await page.setViewportSize({ width: 2560, height: 1440 });
     await page.goto(`${NEW_DECK}?lang=fr`);
@@ -612,23 +612,23 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     const columns = () => page.locator('ac-virtual-grid.grid').evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     const all = await columns();
-    await page.getByRole('tab', { name: 'Uniques' }).click();
-    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
     expect(all).toBeGreaterThan(7);
     await expect.poll(columns).toBe(7);
   });
 
-  test('ORs the values of a criterion and ANDs the effects, on the Uniques search API', async ({ page, compact }, testInfo) => {
+  test('ORs the values of a criterion and ANDs the effects, on the unified search API', async ({ page, compact }, testInfo) => {
     test.skip(compact, 'the effect filter is checked on the desktop panel');
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E uniques ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
     const searches: URL[] = [];
     page.on('request', (r) => {
-      if (r.url().includes('/api/v2/cards')) searches.push(new URL(r.url()));
+      if (r.url().includes('/api/v2/search')) searches.push(new URL(r.url()));
     });
-    await page.getByRole('tab', { name: 'Uniques' }).click();
-    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
 
     /** Checks `text` (exact) in the criterion `index` of the open effect window: its list stays open. */
     const pick = async (index: number, text: string) => {
@@ -686,9 +686,9 @@ test.describe('ReBuilder in the shell · Uniques search', () => {
     await page.goto(`${NEW_DECK}?lang=fr`);
     await createDeck(page, `E2E uniques narrowing ${Date.now()}`);
     await expect(page.locator('ac-card-tile').first()).toBeVisible();
-    await page.getByRole('tab', { name: 'Uniques' }).click();
-    await expect(page.locator('ac-unique-card').first()).toBeVisible();
     if (compact) await page.getByRole('button', { name: /^Filtres/ }).first().click();
+    await page.getByRole('group', { name: 'Rareté' }).getByRole('button', { name: 'U', exact: true }).click();
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
 
     const narrowing = (editing: string) =>
       page.waitForResponse((r) => r.url().includes('/api/v2/effects/filtered') && new URL(r.url()).searchParams.get('editing') === editing);

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { defaultFilters, effectAt, hasInvalidNumericFilters, toUniquesQuery, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
+import { defaultFilters, effectAt, hasInvalidNumericFilters, toSearchParams, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import type { DeckFormat } from '../../../core/models';
 import type { EffectSlot } from '../../../core/uniques-api.service';
 import { AcButton } from '../../../ui/buttons';
@@ -17,7 +17,6 @@ export interface FiltersSheetData {
 
 const SOURCE_LABEL: Record<CardSource, string> = {
   all: $localize`:@@search.source.all:Toutes les cartes`,
-  uniques: $localize`:@@search.source.uniques:Uniques`,
   collection: $localize`:@@search.source.collection:Collection physique`,
   owned: $localize`:@@search.source.owned:Propriété numérique`,
   favorites: $localize`:@@search.source.favorites:Favoris`,
@@ -46,7 +45,7 @@ export class FiltersSheetOverlay {
   editEffect(index: EffectSlot): void {
     const effect = effectAt(this.draft(), index);
     if (!effect) return;
-    openEffectEditorStep(this.ref, { effect, index, query: toUniquesQuery(this.draft(), this.ref.data.faction) }).afterClosed.subscribe((next) =>
+    openEffectEditorStep(this.ref, { effect, index, query: toSearchParams(this.draft(), this.ref.data.faction, 1, 1) }).afterClosed.subscribe((next) =>
       this.draft.set(withEditedEffect(this.draft(), index, next)),
     );
   }

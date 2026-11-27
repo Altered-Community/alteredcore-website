@@ -109,6 +109,12 @@ export type CardOrder =
   | 'oceanPower-desc'
   | 'random';
 
+export interface EffectFilterBlock {
+  triggers: number[];
+  conditions: number[];
+  effects: number[];
+}
+
 export interface CardSearchParams {
   page?: number;
   itemsPerPage?: number;
@@ -133,6 +139,12 @@ export interface CardSearchParams {
   artists?: string[];
   /** Words of the card's text (unified search `effectText`; the cards API has no such filter). */
   effectText?: string;
+  /** Format filter (`frontier`, etc.) applied across uniques and non-uniques. */
+  format?: string;
+  /** Structured AND-ed effect blocks (`effect[N][t|c|o]`). */
+  effects?: EffectFilterBlock[];
+  /** Support / echo ability (`support[t|c|o]`). */
+  support?: EffectFilterBlock;
   locale?: Locale;
 }
 

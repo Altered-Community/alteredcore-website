@@ -1,4 +1,5 @@
 import type { Params } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { ORDER_OPTIONS, typeOptionOf, type AltArtsMode, type CardSource, type SearchFilters } from './card-filters';
 import type { CardOrder } from './models';
 
@@ -9,10 +10,10 @@ import type { CardOrder } from './models';
  * are not (their abilities need the effects vocabulary to be shown again).
  */
 
-/** `?tab=` of the site's former card search → the tab of the search. */
-const LEGACY_TABS: Record<string, CardSource> = { unique: 'uniques', collection: 'collection', ownership: 'owned', favoris: 'favorites' };
+/** `?tab=` of the site's former card search → the tab of the search (`unique` maps onto `all` + UNIQUE rarity). */
+const LEGACY_TABS: Record<string, CardSource> = { unique: 'all', collection: 'collection', ownership: 'owned', favoris: 'favorites' };
 
-const SOURCES: readonly CardSource[] = ['all', 'uniques', 'favorites', 'collection', 'owned'];
+const SOURCES: readonly CardSource[] = ['all', 'favorites', 'collection', 'owned'];
 
 /** The tab in the URL: `?source=`, else the former search's `?tab=`, else « Toutes les cartes ». */
 export function sourceFromParams(get: (key: string) => string | null): CardSource {
@@ -79,6 +80,11 @@ export function filtersFromParams(base: SearchFilters, getAll: (key: string) => 
     if (field === 'types') values = [...new Set(values.map(typeOptionOf).filter((t): t is string => !!t))];
     f[field] = values;
   }
+  const legacyUnique = get('tab') === 'unique' || get('source') === 'uniques';
+  if (legacyUnique) {
+    if (!has('rarity[]')) f.rarities = ['UNIQUE'];
+    if (!has('set[]') && !f.sets.includes('COREKS')) f.sets = [...f.sets, 'COREKS'];
+  }
   for (const [field, key] of Object.entries(TEXTS) as [keyof typeof TEXTS, string][]) {
     const value = get(key);
     if (value !== null) f[field] = value;
@@ -88,8 +94,9 @@ export function filtersFromParams(base: SearchFilters, getAll: (key: string) => 
   const prints = get('prints');
   if (prints === 'with' || prints === 'only') f.altArts = prints;
   else f.altArts = legacyPrints(getAll('variation[]'), get('promo')) ?? f.altArts;
-  const env = get('env');
-  if (env === 'all' || env === 'frontier') f.environment = env;
+  const env = get('env') ?? get('format');
+  if (env === 'all') f.environment = 'all';
+  else if (env === 'frontier' || (env && env === environment.uniquesFrontierFormat)) f.environment = 'frontier';
   const sort = get('sort');
   if (sort && ORDER_OPTIONS.some((o) => o.value === sort)) f.order = sort as CardOrder;
   return f;
