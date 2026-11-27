@@ -13,6 +13,7 @@ $txt = [
         'shop_title'     => 'Your Woollyback awaits you in the shop!',
         'shop_url'       => 'https://shop.altered.re',
         'shop_link'      => 'Go to the shop',
+        'shop_disclaimer' => '*Photo shows prototype samples of the serialized foil token cards. The final product may vary slightly in colour, foil finish and details.',
     ],
     'fr' => [
         'news_latest'    => 'Dernières actualités',
@@ -22,6 +23,7 @@ $txt = [
         'shop_title'     => 'Votre Dotouffu vous attend dans la boutique !',
         'shop_url'       => 'https://shop.altered.re/fr',
         'shop_link'      => 'Aller à la boutique',
+        'shop_disclaimer' => '*Photo de prototypes des cartes jetons foil numérotées. Le produit final peut légèrement différer en couleur, finition foil et détails.',
     ],
 ][getUiLang()] ?? [];
 
@@ -91,10 +93,13 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
     <div class="ac-card ac-card--flush">
         <div class="row g-0 align-items-center">
             <div class="col-md-6">
-                <a href="<?= h($txt['shop_url']) ?>" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                    <img class="d-block w-100 h-auto" src="<?= BASE_URL ?>/assets/img/shop/woollyback.jpg"
-                         width="1280" height="862" alt="">
-                </a>
+                <div class="home-shop__media">
+                    <a href="<?= h($txt['shop_url']) ?>" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                        <img class="d-block w-100 h-auto" src="<?= BASE_URL ?>/assets/img/shop/woollyback.jpg"
+                             width="878" height="386" alt="">
+                    </a>
+                    <p class="home-shop__caption"><?= $txt['shop_disclaimer'] ?></p>
+                </div>
             </div>
             <div class="col-md-6 p-4 d-flex flex-column align-items-start gap-3">
                 <h2 class="ac-text-title m-0"><?= $txt['shop_title'] ?></h2>
