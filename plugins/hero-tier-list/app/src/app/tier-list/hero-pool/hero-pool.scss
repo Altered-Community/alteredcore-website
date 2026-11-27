@@ -1,0 +1,84 @@
+:host {
+  display: flex;
+  transition: border-color 0.15s ease;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  background: var(--ac-color-surface);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-2);
+  padding: var(--ac-space-3) var(--ac-space-3) var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-color-divider);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  margin: 0;
+  font: var(--ac-font-heading);
+  color: var(--ac-color-text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2) var(--ac-space-1-5);
+}
+
+.zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--ac-space-1-5);
+  padding: var(--ac-space-3);
+  min-height: calc(var(--ac-hero-tile-width, 96px) * 4 / 3 + 2 * var(--ac-space-3));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 0 0 var(--ac-radius-card) var(--ac-radius-card);
+  transition: background-color 0.15s ease;
+
+  :host(.is-over) & {
+    background: var(--ac-color-primary-tint);
+  }
+}
+
+.ghost {
+  width: var(--ac-hero-tile-width, 96px);
+  height: auto;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--ac-radius-md);
+}
+
+.notice,
+.empty {
+  flex: 1 1 100%;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+
+  .ac-button {
+    margin-left: auto;
+  }
+}
+
+.empty p {
+  margin: 0 0 var(--ac-space-2);
+}
+
+:host(.is-over) {
+  border-color: var(--ac-color-primary);
+}
+
+/* The hero being dragged stays in place, faded: the pool keeps its order. */
+.slot.is-drag-source {
+  opacity: 0.35;
+}

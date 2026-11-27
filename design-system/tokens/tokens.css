@@ -293,6 +293,15 @@
   --ac-reunion-events-frontier: #2f6fed;            /* season without a colour (RE_FRONTIER_DEFAULT_COLOR) */
   --ac-reunion-events-logo-plate: rgba(6, 9, 16, 0.92); /* series logos are drawn for a dark plate */
   --ac-reunion-events-branded: #1e3a5f;             /* left border of a branded series card */
+  /* hero-tier-list: tier label colours (the classic tier list palette) and their text */
+  --ac-tier-red: #ff7f7f;
+  --ac-tier-orange: #ffbf7f;
+  --ac-tier-yellow: #ffdf7f;
+  --ac-tier-green: #bfef7f;
+  --ac-tier-blue: #7fbfff;
+  --ac-tier-violet: #c7a4ff;
+  --ac-tier-grey: #c4cad6;
+  --ac-tier-on: #14171f;
   /* rebuilder */
 
   /* ---------- Z-index ---------- */
@@ -406,6 +415,15 @@
   --ac-cards-partial-soft: #332d10;
   /* other PHP plugins */
   --ac-reunion-events-branded: #5b86bd;
+  /* hero-tier-list: a little darker on the dark page, same dark text */
+  --ac-tier-red: #e66b6b;
+  --ac-tier-orange: #e6a35e;
+  --ac-tier-yellow: #e6c65e;
+  --ac-tier-green: #a3d164;
+  --ac-tier-blue: #67a6e6;
+  --ac-tier-violet: #ab8ae6;
+  --ac-tier-grey: #a9b0bd;
+  --ac-tier-on: #14171f;
   /* rebuilder */
 
   --ac-shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.5);

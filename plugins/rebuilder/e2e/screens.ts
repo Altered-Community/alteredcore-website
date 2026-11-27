@@ -1,4 +1,4 @@
-// Re:Builder screens for the loading checks (loading.spec.ts) and tests/e2e/loading-timeline.ts (Node runs this file
+// Re:Builder screens (and the other SPA plugins' screens) for the loading checks (loading.spec.ts) and tests/e2e/loading-timeline.ts (Node runs this file
 // with type stripping: type-only imports, explicit extensions). `path` takes the id of a deck of the signed-in account.
 export interface Screen {
   key: string;
@@ -18,6 +18,8 @@ export const SCREENS: Screen[] = [
   { key: 'main', name: 'editor, Main', path: (id) => `/pages/deckbuilder?id=${id}&view=main`, deck: true },
   { key: 'new', name: 'new deck', path: () => '/pages/deckbuilder', deck: false },
   { key: 'cards', name: 'card browser', path: () => '/pages/cards', deck: false },
+  // Plugin hero-tier-list (its own SPA, same recorder).
+  { key: 'hero-tier-list', name: 'hero tier list', path: () => '/pages/hero-tier-list', deck: false },
 ];
 
 /** The skeleton of a title replaces these texts: they must never show. */

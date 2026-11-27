@@ -1,0 +1,150 @@
+/* Tile width per size (the height follows the 3:4 art), one step smaller on phones. Layout values. */
+.page {
+  --ac-hero-tile-width: 96px;
+  --ac-tier-label-width: 96px;
+
+  &[data-size='sm'] {
+    --ac-hero-tile-width: 76px;
+  }
+  &[data-size='lg'] {
+    --ac-hero-tile-width: 124px;
+    --ac-tier-label-width: 112px;
+  }
+
+  @media (max-width: 767.98px) {
+    --ac-hero-tile-width: 72px;
+    --ac-tier-label-width: 64px;
+
+    &[data-size='sm'] {
+      --ac-hero-tile-width: 58px;
+    }
+    &[data-size='lg'] {
+      --ac-hero-tile-width: 92px;
+      --ac-tier-label-width: 72px;
+    }
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-2);
+  margin-bottom: var(--ac-space-4);
+}
+
+.title-input {
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.progress {
+  margin-left: auto;
+  color: var(--ac-color-text-muted);
+  font: var(--ac-font-small);
+  white-space: nowrap;
+}
+
+.workspace {
+  display: grid;
+  gap: var(--ac-space-4);
+  align-items: start;
+
+  @media (min-width: 1200px) {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  }
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1-5);
+  min-width: 0;
+}
+
+.add-tier {
+  align-self: flex-start;
+}
+
+/* Next to the board on wide screens, the pool stays in view and scrolls on its own. */
+.pool {
+  @media (min-width: 1200px) {
+    position: sticky;
+    top: calc(var(--ac-page-top) + var(--ac-space-4));
+    max-height: calc(100dvh - var(--ac-page-top) - 2 * var(--ac-space-4));
+  }
+}
+
+/* Hero picked (tap or keyboard): its tiers, its place, at the bottom of the screen. */
+.action-bar {
+  position: fixed;
+  z-index: var(--ac-z-sticky);
+  inset: auto var(--ac-space-3) max(var(--ac-space-3), env(safe-area-inset-bottom));
+  max-width: 760px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-2) var(--ac-space-2) var(--ac-space-2) var(--ac-space-3);
+  border: 1px solid var(--ac-color-border);
+  border-radius: var(--ac-radius-card);
+  background: var(--ac-color-surface);
+  box-shadow: var(--ac-shadow-sheet);
+}
+
+.action-bar__hero {
+  --ac-hero-tile-width: 44px;
+  flex: none;
+}
+
+.action-bar__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.action-bar__name {
+  margin: 0 0 var(--ac-space-1-5);
+  font: var(--ac-font-body-strong);
+  color: var(--ac-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-bar__tiers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-1-5);
+}
+
+.action-bar__sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--ac-color-divider);
+}
+
+.tier-button {
+  min-width: var(--ac-control-sm);
+  height: var(--ac-control-sm);
+  padding: 0 var(--ac-space-2);
+  border: 2px solid transparent;
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-tier-button);
+  color: var(--ac-tier-on);
+  font: var(--ac-font-body-strong);
+  cursor: pointer;
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &[aria-pressed='true'] {
+    border-color: var(--ac-color-text);
+  }
+}
+
+/* Room under the board for the action bar, so it never hides the last tier. */
+.page:has(.action-bar) {
+  padding-bottom: calc(var(--ac-space-12) * 3);
+}

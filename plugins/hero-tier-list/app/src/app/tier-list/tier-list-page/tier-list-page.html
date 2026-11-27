@@ -1,0 +1,115 @@
+<div class="ac-page ac-page--wide page" [attr.data-size]="store.size()">
+  <header class="ac-page-header">
+    <div>
+      <h1 class="ac-page-header__title">{{ heading() }}</h1>
+      <p class="ac-page-header__subtitle" i18n="@@page.subtitle">
+        Glisse les héros dans les tiers et range-les dans l’ordre que tu veux. Sur mobile, touche un héros puis choisis son tier.
+      </p>
+    </div>
+    <div class="ac-page-header__actions">
+      <button type="button" class="ac-icon-button" [disabled]="!store.canUndo()" (click)="store.undo()" i18n-aria-label="@@action.undo" aria-label="Annuler" i18n-title="@@action.undo" title="Annuler">
+        <ac-icon name="undo-2" />
+      </button>
+      <button type="button" class="ac-icon-button" [disabled]="!store.canRedo()" (click)="store.redo()" i18n-aria-label="@@action.redo" aria-label="Rétablir" i18n-title="@@action.redo" title="Rétablir">
+        <ac-icon name="redo-2" />
+      </button>
+      <button type="button" class="ac-button" [disabled]="exporting() || store.status() !== 'ready'" (click)="exportPng()">
+        <ac-icon [name]="exporting() ? 'loader-circle' : 'download'" />
+        <span i18n="@@action.export">Exporter en PNG</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <input
+      #title
+      class="ac-input title-input"
+      type="text"
+      [value]="store.ranking().title"
+      [maxLength]="maxTitle"
+      i18n-placeholder="@@toolbar.title.placeholder"
+      placeholder="Titre du classement (facultatif)"
+      (change)="rename(title.value)"
+      (keydown.enter)="title.blur()"
+      i18n-aria-label="@@toolbar.title"
+      aria-label="Titre du classement"
+    />
+    <div class="ac-segmented" role="group" i18n-aria-label="@@toolbar.size" aria-label="Taille des héros">
+      @for (s of sizes; track s.id) {
+        <button type="button" [attr.aria-pressed]="store.size() === s.id" (click)="store.setSize(s.id)">{{ s.label }}</button>
+      }
+    </div>
+    <button type="button" class="ac-button ac-button--secondary" [attr.aria-pressed]="editing()" (click)="editing.set(!editing())">
+      <ac-icon [name]="editing() ? 'check' : 'pencil'" />
+      @if (editing()) {
+        <span i18n="@@toolbar.edit.done">Terminer</span>
+      } @else {
+        <span i18n="@@toolbar.edit">Modifier les tiers</span>
+      }
+    </button>
+    <button type="button" class="ac-button ac-button--ghost" [disabled]="!store.rankedCount()" (click)="reset()">
+      <ac-icon name="rotate-ccw" />
+      <span i18n="@@toolbar.reset">Tout retirer</span>
+    </button>
+    <span class="progress" i18n="@@toolbar.progress">{{ store.rankedCount() }} / {{ store.heroes().length }} classés</span>
+  </div>
+
+  <div class="workspace">
+    <section class="board" i18n-aria-label="@@board.label" aria-label="Classement">
+      @for (row of store.rows(); track row.tier.id) {
+        <ac-tier-row [tier]="row.tier" [heroes]="row.heroes" [index]="$index" [count]="$count" [editing]="editing()" />
+      }
+      @if (editing()) {
+        <button type="button" class="ac-button ac-button--add add-tier" [disabled]="store.rows().length >= maxTiers" (click)="addTier()">
+          <ac-icon name="plus" />
+          <span i18n="@@tier.add">Ajouter un tier</span>
+        </button>
+      }
+    </section>
+    <ac-hero-pool class="pool" />
+  </div>
+
+  @if (store.selected(); as hero) {
+    <div class="action-bar" role="region" i18n-aria-label="@@bar.label" aria-label="Placer le héros">
+      <ac-hero-tile class="action-bar__hero" [hero]="hero" [showName]="false" />
+      <div class="action-bar__main">
+        <p class="action-bar__name">{{ hero.name }}</p>
+        <div class="action-bar__tiers">
+          @for (row of store.rows(); track row.tier.id) {
+            <button
+              type="button"
+              class="tier-button"
+              [style.--ac-tier-button]="'var(--ac-tier-' + row.tier.color + ')'"
+              [attr.aria-pressed]="selectedTier()?.id === row.tier.id"
+              (click)="place(row.tier.id)"
+            >
+              {{ row.tier.name }}
+            </button>
+          }
+          @if (selectedTier(); as tier) {
+            <span class="action-bar__sep" aria-hidden="true"></span>
+            <button type="button" class="ac-icon-button ac-icon-button--sm" [disabled]="selectedIndex() <= 0" (click)="shift(-1)" i18n-aria-label="@@bar.left" aria-label="Avancer d’une place" i18n-title="@@bar.left" title="Avancer d’une place">
+              <ac-icon name="chevron-left" />
+            </button>
+            <button type="button" class="ac-icon-button ac-icon-button--sm" [disabled]="selectedIndex() >= tier.heroes.length - 1" (click)="shift(1)" i18n-aria-label="@@bar.right" aria-label="Reculer d’une place" i18n-title="@@bar.right" title="Reculer d’une place">
+              <ac-icon name="chevron-right" />
+            </button>
+            <button type="button" class="ac-button ac-button--ghost ac-button--sm" (click)="place(null)" i18n="@@bar.unrank">Retirer</button>
+          }
+        </div>
+      </div>
+      <button type="button" class="ac-icon-button ac-icon-button--ghost" (click)="store.select(null)" i18n-aria-label="@@bar.close" aria-label="Fermer">
+        <ac-icon name="x" />
+      </button>
+    </div>
+  }
+
+  @if (toast(); as t) {
+    <div class="ac-toast toast" role="status">
+      <span class="ac-toast__message">{{ t.message }}</span>
+      @if (t.undo && canUndoReset()) {
+        <button type="button" class="ac-toast__action" (click)="undoFromToast()" i18n="@@toast.undo">Annuler</button>
+      }
+    </div>
+  }
+</div>

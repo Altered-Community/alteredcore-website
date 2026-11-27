@@ -1,0 +1,8 @@
+<div class="art ac-hatch" [class.is-loaded]="loaded()">
+  @if (src(); as url) {
+    <img [src]="url" alt="" crossorigin="anonymous" decoding="async" draggable="false" (load)="loaded.set(true)" (error)="onError()" />
+  }
+</div>
+@if (showName()) {
+  <span class="name">{{ hero().name }}</span>
+}
