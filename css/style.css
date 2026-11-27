@@ -153,6 +153,18 @@ main { min-height: 50vh; }
     max-width: 560px;
     margin: 0 auto var(--ac-space-8);
 }
+/* Shop promo (home): a caption over the photo, readable on any part of the artwork. */
+.home-shop__media { position: relative; display: block; }
+.home-shop__caption {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    margin: 0;
+    padding: var(--ac-space-1-5) var(--ac-space-3);
+    background: var(--ac-color-overlay-chip);
+    color: var(--ac-color-on-hero);
+    font: var(--ac-font-micro);
+    text-align: center;
+    text-transform: uppercase;
+}
 /* Hero call to action: a large button that stays readable on the gradient and on banner images. */
 .btn-hero {
     display: inline-flex; align-items: center; gap: var(--ac-space-2);

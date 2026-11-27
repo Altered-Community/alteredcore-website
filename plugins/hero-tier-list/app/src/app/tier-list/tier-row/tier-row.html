@@ -1,0 +1,79 @@
+@let t = tier();
+@if (editing()) {
+  <div class="editor">
+    <input
+      #name
+      class="ac-input"
+      type="text"
+      [value]="t.name"
+      [maxLength]="maxName"
+      (change)="rename(name)"
+      i18n-aria-label="@@tier.edit.name"
+      aria-label="Nom du tier"
+    />
+    <div class="swatches" role="radiogroup" i18n-aria-label="@@tier.edit.color" aria-label="Couleur du tier">
+      @for (c of colors; track c) {
+        <button
+          type="button"
+          role="radio"
+          class="swatch"
+          [style.--ac-tier-swatch]="'var(--ac-tier-' + c + ')'"
+          [attr.aria-checked]="t.color === c"
+          [attr.aria-label]="colorNames[c]"
+          [attr.title]="colorNames[c]"
+          (click)="recolor(c)"
+        >
+          @if (t.color === c) {
+            <ac-icon name="check" [size]="14" [strokeWidth]="3" />
+          }
+        </button>
+      }
+    </div>
+    <div class="tools">
+      <button type="button" class="ac-icon-button ac-icon-button--ghost ac-icon-button--sm" [disabled]="index() === 0" (click)="move(-1)" i18n-aria-label="@@tier.edit.up" aria-label="Monter le tier">
+        <ac-icon name="chevron-up" />
+      </button>
+      <button type="button" class="ac-icon-button ac-icon-button--ghost ac-icon-button--sm" [disabled]="index() === count() - 1" (click)="move(1)" i18n-aria-label="@@tier.edit.down" aria-label="Descendre le tier">
+        <ac-icon name="chevron-down" />
+      </button>
+      <button type="button" class="ac-icon-button ac-icon-button--ghost ac-icon-button--sm" [disabled]="count() === 1" (click)="remove()" i18n-aria-label="@@tier.edit.delete" aria-label="Supprimer le tier (ses héros redeviennent à classer)" i18n-title="@@tier.edit.delete" title="Supprimer le tier (ses héros redeviennent à classer)">
+        <ac-icon name="trash-2" />
+      </button>
+    </div>
+  </div>
+} @else if (selected(); as hero) {
+  <button type="button" class="label is-target" (click)="placeSelected()" [attr.aria-label]="placeLabel(hero.name)">
+    <span class="label__text">{{ t.name }}</span>
+  </button>
+} @else {
+  <div class="label">
+    <span class="label__text">{{ t.name }}</span>
+  </div>
+}
+
+<div #zone class="zone" role="group" [attr.aria-label]="t.name">
+  @for (item of items(); track item.key) {
+    @if (item.hero; as hero) {
+      <button
+        #slot
+        type="button"
+        class="slot"
+        [class.is-drag-source]="item.source"
+        [attr.aria-pressed]="store.selectedId() === hero.id"
+        [attr.aria-label]="hero.name"
+        (pointerdown)="drag.start($event, slot, hero.id, t.id)"
+        (click)="store.tap(hero.id)"
+      >
+        <ac-hero-tile [hero]="hero" />
+      </button>
+    } @else {
+      <div class="drop-slot" aria-hidden="true"></div>
+    }
+  } @empty {
+    @for (i of skeletons(); track i) {
+      <div class="ac-skeleton ghost"></div>
+    } @empty {
+      <p class="empty" i18n="@@tier.empty">Glisse un héros ici</p>
+    }
+  }
+</div>

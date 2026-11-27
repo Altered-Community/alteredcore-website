@@ -90,6 +90,7 @@ Number bubble, 20 px tall, at least 20 px wide, 11 px extra-bold.
 | (default) | inverse / on-inverse (dark bubble in light theme, light in dark) |
 | `ac-count--success` | success / on-strong |
 | `ac-count--soft` | track / text-2 |
+| `ac-count--danger` | danger / on-strong |
 
 ```php
 <a class="ac-menu__item" href="…"><?= ac_icon('bell') ?> <?= h(t('nav.notifications')) ?>
@@ -139,7 +140,7 @@ counts and avatars have fixed sizes: they are labels, not targets.
 `ac-chip`: `label` (required), `dot`, `image` (URL of an `ac-chip__img`, instead of the dot), `iconOnly` (`ac-chip--icon`: the image alone, `label` as its name), `removable`, `shape` (`pill` | `square`), two-way
 `selected`, `remove` output. `ac-badge`: `tone` (`blue` | `green` | `violet` | `red` | `orange` |
 `neutral`), `icon`, `size` (24 | 28). `ac-tag`: `tone`. `ac-count`: `value`, `tone` (`dark` |
-`success` | `soft`). `ac-avatar`: `name`, `size` (28 | 32).
+`success` | `soft` | `danger`). `ac-avatar`: `name`, `size` (28 | 32).
 
 - **React**:
 

@@ -1,0 +1,88 @@
+/*
+ * Embedded build (AlteredCore site, plugin `hero-tier-list`): loaded inside the plugin's shadow root, after the
+ * design system's base.css and ac-* component styles that the shell injects there (js/altered-core-host.js). The
+ * --ac-* tokens, data-theme and data-density come from <html>.
+ */
+
+/* Inherited properties (font, color, line-height…) cross the shadow boundary: reset them. */
+:host {
+  all: initial;
+  display: block;
+}
+
+.ac-plugin-root button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Placeholder hatching while an art loads (as in Re:Builder). */
+.ac-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ac-color-on-strong) 8%, transparent) 0 2px,
+    transparent 2px 11px
+  );
+}
+
+/*
+ * Drag and drop of the heroes (tier-list/drag/hero-drag.ts), shared by the tiers and the pool. The art under the
+ * pointer is a copy of the tile appended to the plugin root, outside the lists.
+ */
+.slot {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ac-radius-md);
+  background: none;
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+
+  &[aria-pressed='true'] {
+    outline: 3px solid var(--ac-color-primary);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    &:hover ac-hero-tile {
+      box-shadow: var(--ac-shadow-e2);
+    }
+  }
+}
+
+/* In a tier, the dragged hero leaves its place to the landing slot. */
+ac-tier-row .zone > .slot.is-drag-source {
+  display: none;
+}
+
+.ac-hero-drag-preview {
+  /* position, place and width: set inline by HeroDrag. */
+  z-index: var(--ac-z-overlay);
+  /* Tilt and size: in the transform set by HeroDrag (LIFT). */
+  box-shadow: var(--ac-shadow-dialog);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Where the hero will land: an empty slot of the tile's size. */
+.drop-slot {
+  width: var(--ac-hero-tile-width, 96px);
+  aspect-ratio: 3 / 4;
+  border: 2px dashed var(--ac-color-primary);
+  border-radius: var(--ac-radius-md);
+  background: var(--ac-color-primary-soft);
+}
+
+/* While a hero is dragged, the whole page shows the grabbing hand and selects no text. */
+.ac-plugin-root:has(.ac-hero-drag-preview) {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+
+  .slot {
+    cursor: grabbing;
+  }
+}

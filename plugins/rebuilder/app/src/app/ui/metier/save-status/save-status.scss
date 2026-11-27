@@ -10,8 +10,9 @@
 }
 
 :host(.icon-only) {
+  /* A status, not a control: no touch target to keep, just room for the icon (the phone app bar is short of it). */
   justify-content: center;
-  min-width: var(--ac-hit-min);
+  min-width: var(--ac-space-6);
 }
 
 :host(.ac-save-status--saved) {

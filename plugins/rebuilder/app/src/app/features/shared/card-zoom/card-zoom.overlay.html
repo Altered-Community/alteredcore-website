@@ -13,7 +13,7 @@
     }
   </div>
   <!-- Editor controls sit on a surface; the card and the link alone lie on the backdrop (the site's lightbox). -->
-  @if (data().quantity || data().illustrations) {
+  @if (data().quantity || data().illustrations || data().changeHero) {
     <div class="controls">
       @if (data().quantity; as q) {
         <div class="qty">
@@ -27,6 +27,9 @@
       }
       @if (data().illustrations) {
         <button acButton variant="secondary" icon="brush" [fullWidth]="true" aria-haspopup="dialog" (click)="chooseIllustrations()" i18n="@@cardZoom.chooseIllustrations">Choisir les illustrations</button>
+      }
+      @if (data().changeHero) {
+        <button acButton variant="secondary" icon="arrow-left-right" [fullWidth]="true" aria-haspopup="dialog" (click)="changeHero()" i18n="@@ui.deckSummary.changeHero">Changer de héros</button>
       }
     </div>
   }

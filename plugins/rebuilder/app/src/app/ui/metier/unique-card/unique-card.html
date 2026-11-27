@@ -33,3 +33,7 @@
 <span class="qr-logo" aria-hidden="true"><img [src]="swirlSrc" alt="" /></span>
 
 <span class="foot">{{ foot().before }}@if (foot().artist) {<span class="glyph" aria-hidden="true">{{ pen }}</span>{{ foot().artist }}}{{ foot().after }}</span>
+@if (snapshot(); as s) {
+  <!-- Transparent copy of the face above it: what the browser's image menu copies or saves. -->
+  <img class="snapshot" [src]="s" alt="" draggable="false" />
+}

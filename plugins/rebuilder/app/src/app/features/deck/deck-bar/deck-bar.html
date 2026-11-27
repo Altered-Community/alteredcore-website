@@ -1,25 +1,22 @@
 <div class="identity">
   <div class="art" [class.ac-skeleton]="deck.opening()">
-    <!-- One button for both uses, so that the art stays in place when `editable` arrives after the hero. -->
+    <!-- The portrait shows the hero's card large; on an editable deck, the chips change the hero or open the settings. -->
     @if (editable() || deck.hero()) {
-      <button
-        type="button"
-        class="portrait"
-        [class.zoom]="!editable()"
-        aria-haspopup="dialog"
-        [attr.aria-label]="editable() ? labels.changeHero : zoomLabel()"
-        [title]="editable() ? labels.changeHero : ''"
-        (click)="editable() ? changeHero.emit() : zoomHero()"
-      >
+      <button type="button" class="portrait" aria-haspopup="dialog" [attr.aria-label]="zoomLabel()" (click)="zoomHero()">
         @if (deck.hero(); as h) {
           <ac-card-art [reference]="h.reference" [sources]="deck.heroArt()" [faction]="h.faction" placeholder="" position="center 28%" [eager]="true" />
         }
       </button>
     }
     @if (editable()) {
-      <button type="button" class="settings" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
-        <ac-icon name="sliders-horizontal" [size]="16" />
-      </button>
+      <span class="chips">
+        <button type="button" class="chip" aria-haspopup="dialog" [attr.aria-label]="labels.changeHero" [title]="labels.changeHero" (click)="changeHero.emit()">
+          <ac-icon name="arrow-left-right" [size]="16" />
+        </button>
+        <button type="button" class="chip" aria-haspopup="dialog" [attr.aria-label]="labels.settings" [title]="labels.settings" (click)="openSettings.emit()">
+          <ac-icon name="sliders-horizontal" [size]="16" />
+        </button>
+      </span>
     }
   </div>
   <div class="text" [style.border-left-color]="border()">
@@ -91,9 +88,18 @@
   <span acSkeleton class="terrain-skeleton"></span>
 } @else {
 <ac-cost-curve [main]="deck.stats().main" [reserve]="deck.stats().reserve" [size]="reduced() ? 'sm' : 'md'" [highlight]="highlight()" />
-@if (reduced() && rarityLimits().length) {
+@if (reduced()) {
   <span class="sep" aria-hidden="true"></span>
-  <ac-rarity-limits [limits]="rarityLimits()" />
+  <span class="cards">
+    <ac-badge class="total" [tone]="totalTone()" [title]="totalLabel()">
+      @if (cardCount().bound; as bound) {
+        <ng-container i18n="@@deck.bar.totalOf">{{ deck.total() }}/{{ bound }} cartes</ng-container>
+      } @else {
+        <ng-container i18n="@@deck.bar.totalBadge">{deck.total(), plural, =1 {1 carte} other {{{ deck.total() }} cartes}}</ng-container>
+      }
+    </ac-badge>
+    <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" />
+  </span>
 }
 <span class="sep" aria-hidden="true"></span>
 <div class="terrain">
@@ -103,7 +109,7 @@
   <ac-terrain-totals [totals]="deck.stats().terrain" />
   @if (!reduced() && rarityLimits().length) {
     <span class="ac-text-overline" i18n="@@deck.bar.rarities">Raretés</span>
-    <ac-rarity-limits [limits]="rarityLimits()" />
+    <ac-rarity-limits [limits]="rarityLimits()" [commons]="deck.stats().rarity.C" />
   }
 </div>
 @if (reduced()) {

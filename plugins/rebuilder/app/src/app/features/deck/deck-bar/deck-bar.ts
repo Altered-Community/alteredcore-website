@@ -2,7 +2,7 @@ import { Component, ElementRef, Injector, afterNextRender, computed, inject, inp
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { illegalLabel, problemCount, type DeckLegality } from '../../../core/deck-legality';
-import { rarityLimits } from '../../../core/format-rules';
+import { cardCount, rarityLimits } from '../../../core/format-rules';
 import { DeckStore } from '../../../core/deck-store';
 import { formatInfo } from '../../../core/formats';
 import { AcIconButton } from '../../../ui/buttons';
@@ -11,7 +11,7 @@ import { AcSkeleton } from '../../../ui/containers';
 import { AcIcon } from '../../../ui/icon';
 import { AcCardArt, AcCostCurve, AcRarityLimits, factionColor } from '../../../ui/metier';
 import { AcOverlayService } from '../../../ui/overlay';
-import { openCardZoom } from '../../shared/card-zoom/card-zoom.overlay';
+import { openHeroZoom } from '../../shared/card-zoom/card-zoom.overlay';
 
 /** From this length the title takes one type size less, so that two lines keep the bar's height. */
 const LONG_NAME = 40;
@@ -49,6 +49,21 @@ export class DeckBar {
   protected readonly long = computed(() => this.deck.name().length > LONG_NAME);
   /** Rares, Exalteds and Uniques against the format's caps. */
   protected readonly rarityLimits = computed(() => rarityLimits(this.deck.stats().rarity, this.deck.rules(), this.deck.hero()?.name));
+  /** The total against the format's minimum (its maximum once over it). */
+  protected readonly cardCount = computed(() => cardCount(this.deck.total(), this.deck.rules()));
+  /** Green from the format's minimum to its maximum, red outside. */
+  protected readonly totalTone = computed(() => {
+    const { bound, outside } = this.cardCount();
+    if (bound === null) return 'neutral';
+    return outside ? 'red' : 'green';
+  });
+  protected readonly totalLabel = computed(() => {
+    const { minCards = null, maxCards = null } = this.deck.rules() ?? {};
+    const total = this.deck.total();
+    if (minCards !== null && maxCards !== null && minCards !== maxCards) return $localize`:@@deck.bar.totalRange:${total}:total: cartes, de ${minCards}:min: à ${maxCards}:max: dans ce format`;
+    if (minCards !== null) return $localize`:@@deck.bar.totalMin:${total}:total: cartes, ${minCards}:min: minimum dans ce format`;
+    return '';
+  });
   protected readonly formatLabel = computed(() => formatInfo(this.deck.format()).label);
   protected readonly problems = computed(() => problemCount(this.legality()));
   protected readonly illegalLabel = computed(() => illegalLabel(this.editable() ? this.problems() : 0));
@@ -64,10 +79,14 @@ export class DeckBar {
   };
   protected readonly zoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
 
-  /** Read-only: the hero's card large. */
+  /**
+   * The portrait: the hero's card large; on an editable deck, with « Changer de héros » (also the chip on the portrait).
+   * No hero yet on an editable deck: the hero picker straight away.
+   */
   protected zoomHero(): void {
     const hero = this.deck.hero();
-    if (hero) openCardZoom(this.overlay, { card: { reference: hero.reference, name: hero.name, faction: { code: hero.faction, name: hero.faction }, cardType: { reference: 'HERO' } } });
+    if (hero) openHeroZoom(this.overlay, hero, this.editable() ? () => this.changeHero.emit() : undefined);
+    else if (this.editable()) this.changeHero.emit();
   }
 
   protected startRename(): void {

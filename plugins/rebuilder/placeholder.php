@@ -52,10 +52,10 @@ $appBar = function (string $titles, int $icons, bool $back = true, bool $hero = 
         . '<div class="rbph-appbar__titles">' . $titles . '</div>'
         . '<div class="rbph-appbar__actions">' . ($save ? '<span class="rbph-save"></span>' : '') . $sk('ac-skeleton--circle rbph-icon', $icons) . '</div></div>';
 };
-/** App bar titles: a known title, or the deck's name over its rarities (three badges) or over a line of text. */
+/** App bar titles: a known title, or the deck's name over its rarities (four badges) or over a line of text. */
 $barTitle = fn(string $text): string => '<span class="rbph-appbar__title">' . h($text) . '</span>';
 $barDeck = fn(bool $rarities): string => $sk('ac-skeleton--title', 1, '70%')
-    . ($rarities ? '<span class="rbph-limits">' . $sk('ac-skeleton--badge', 3, '52px') . '</span>' : $sk('ac-skeleton--text', 1, '50%'));
+    . ($rarities ? '<span class="rbph-limits">' . $sk('ac-skeleton--badge', 4, '52px') . '</span>' : $sk('ac-skeleton--text', 1, '50%'));
 /** Phones: bottom navigation with `$n` entries. */
 $bottomNav = function (int $n) use ($sk): string {
     return '<div class="rbph-nav">' . str_repeat('<span class="rbph-nav__item">' . $sk('ac-skeleton--circle') . $sk('ac-skeleton--text') . '</span>', $n) . '</div>';

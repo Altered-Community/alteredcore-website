@@ -225,10 +225,10 @@ test.describe('ReBuilder in the shell · signed in', () => {
     await expect(deckView.locator('.ac-skeleton').first()).toBeVisible();
     await expect(page.getByText('Deck vide')).toHaveCount(0);
     await expect(page.getByText(/^0 cartes?/)).toHaveCount(0);
-    // Phones: the app bar in skeleton in its final layout (hero, name over the rarities), not « Chargement du deck… ».
+    // Phones: the app bar in skeleton in its final layout (hero, name over the Commons and the rarities), not « Chargement du deck… ».
     const bar = page.locator('ac-app-bar');
     if (compact) {
-      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(4);
+      await expect(bar.locator('.bar-deck--pending .ac-skeleton')).toHaveCount(5);
       await expect(bar).not.toContainText('Chargement');
     }
 
@@ -905,11 +905,12 @@ test.describe('ReBuilder in the shell · hero portrait', () => {
     await login(page, 'alice', `${DECKS}?lang=fr`);
     await page.getByRole('button', { name: FR.newDeck }).first().click();
     await createDeck(page, `E2E hero ${testInfo.project.name} ${Date.now()}`);
-    // The portrait: in the deck bar from 768 px, in the « Deck » view's summary on phones.
+    // From 768 px: the ⇄ chip on the deck bar's portrait (the portrait itself shows the hero's card large).
+    // Phones: the portrait in the « Deck » view's summary.
     if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Deck/ }).click();
-    const portrait = page.getByRole('button', { name: 'Changer de héros' });
-    await expect(portrait.locator('img').first()).toBeVisible();
-    await portrait.click();
+    const change = page.getByRole('button', { name: 'Changer de héros' });
+    await expect((compact ? change : page.locator('app-deck-bar .portrait')).locator('img').first()).toBeVisible();
+    await change.click();
 
     const picker = page.getByRole('dialog', { name: 'Choisir un héros' });
     await expect(picker).toBeVisible();
@@ -1473,6 +1474,43 @@ test.describe('ReBuilder in the shell · guest', () => {
     await page.goto(DECKS);
     await expect(page.getByRole('list', { name: 'Mes decks' }).locator('ac-deck-card').filter({ hasText: 'Deck invité' })).toBeVisible();
   });
+
+  test('keeps the Uniques search of the deck across tabs and views', { tag: '@mobile' }, async ({ page, compact }, testInfo) => {
+    await page.goto(`${NEW_DECK}?lang=fr`);
+    await createDeck(page, `E2E uniques memory ${Date.now()}`);
+    await expect(page.locator('ac-card-tile').first()).toBeVisible();
+    const name = page.getByRole('textbox', { name: 'Rechercher par nom' });
+    const uniquesTab = page.getByRole('tab', { name: 'Uniques' });
+
+    await uniquesTab.click();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    // A name every faction has Uniques for; applied once the typing pauses (its chip).
+    await name.fill('e');
+    await expect(page).toHaveURL(/[?&]source=uniques/);
+    await expect(page.getByRole('button', { name: /« e »/ }).first()).toBeVisible();
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    const total = page.locator('.results').getByText(/^\d[\d\s]* cartes?$/).first();
+    const found = await total.textContent();
+
+    // Another tab, then back: the Uniques search is the same.
+    await page.getByRole('tab', { name: 'Toutes les cartes' }).or(page.getByRole('tab', { name: 'Toutes', exact: true })).first().click();
+    await expect(name).toHaveValue('');
+    await uniquesTab.click();
+    await expect(name).toHaveValue('e');
+
+    // « Aperçu », then « Recherche »: the Uniques tab and its search again.
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: /Aperçu/ }).click();
+    else await page.locator('ac-segmented').getByText(FR.viewDeck, { exact: true }).click();
+    await expect(name).toBeHidden();
+    if (compact) await page.getByRole('navigation', { name: FR.deckNav }).getByRole('link', { name: FR.search }).click();
+    else await page.locator('ac-segmented').getByText(FR.search, { exact: true }).click();
+    await expect(page).toHaveURL(/[?&]source=uniques/);
+    await expect(uniquesTab).toHaveAttribute('aria-selected', 'true');
+    await expect(name).toHaveValue('e');
+    await expect(page.locator('ac-unique-card').first()).toBeVisible();
+    await expect(total).toHaveText(found!);
+    await evidence(page, testInfo, 'uniques-search-kept');
+  });
 });
 
 test.describe('ReBuilder in the shell · « Partager » in the editor', () => {
@@ -1819,5 +1857,25 @@ test.describe('ReBuilder in the shell · card browser collection', () => {
     await page.locator('ac-card-tile').first().getByRole('button', { name: /^Retirer un exemplaire/ }).click();
     await removed;
     await expect(page.locator('ac-card-tile').first().getByRole('button', { name: /à la collection physique$/ })).toBeVisible();
+  });
+});
+
+test.describe('ReBuilder in the shell · unique card image', () => {
+  test('lays the whole printed unique as one image over its face, for the browser\'s « Copy image »', async ({ page, compact }, testInfo) => {
+    test.skip(compact, 'Hover: pointer screens');
+    await page.goto('/pages/cards?lang=fr&rarity[]=UNIQUE&faction[]=LY');
+    const unique = page.locator('ac-unique-card').first();
+    await expect(unique.locator('ac-card-art')).toHaveClass(/\bloaded\b/);
+    await unique.hover();
+    const snapshot = unique.locator('img.snapshot');
+    await expect(snapshot).toHaveJSProperty('naturalWidth', 744);
+    await expect(snapshot).toHaveJSProperty('naturalHeight', 1039);
+    // What a right-click lands on: the image, not the illustration under the frame.
+    const hit = await unique.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return (el.getRootNode() as ShadowRoot).elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.className;
+    });
+    expect(hit).toBe('snapshot');
+    await evidence(page, testInfo, '47-unique-snapshot');
   });
 });

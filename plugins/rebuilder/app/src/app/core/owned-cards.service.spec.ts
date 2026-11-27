@@ -161,6 +161,18 @@ describe('OwnedCardsService', () => {
     expect((await page).member[0].mainEffect).toEqual({ fr: 'Effet v2' });
   });
 
+  it('gives the faction of an owned Unique as { code, name }, not the faction of its printed card', async () => {
+    // An Ordis Unique of an Axiom card: the API's faction is a code, the reference says AX.
+    const ordis = { cardReference: 'ALT_EOLE_B_AX_107_U_297', quantity: 1, rarity: 'UNIQUE', faction: 'OR' };
+    for (const source of ['collection', 'owned'] as const) {
+      const page = search(source, [ordis]);
+      http.expectOne((r) => r.url.endsWith('/api/v2/search') && r.method === 'POST').flush({ cards: [] });
+      http.expectOne((r) => r.url.endsWith('/api/cards/batch')).flush([]);
+      http.expectOne((r) => r.url.endsWith('/api/v2/cards')).flush({ cards: [] });
+      expect((await page).member[0].faction).toEqual({ code: 'OR', name: 'Ordis' });
+    }
+  });
+
   it('asks the cards API nothing without a Unique', async () => {
     expect((await search('collection', [common])).member.length).toBe(1);
   });

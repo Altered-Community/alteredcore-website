@@ -1,0 +1,54 @@
+/*
+ * Size from the board: --ac-hero-tile-width (the height follows the 3:4 ratio). Faction colour from the host binding.
+ */
+:host {
+  position: relative;
+  display: block;
+  width: var(--ac-hero-tile-width, 96px);
+  aspect-ratio: 3 / 4;
+  border: 2px solid var(--ac-hero-tile-faction);
+  border-radius: var(--ac-radius-md);
+  overflow: hidden;
+  background: var(--ac-card-ink);
+  box-shadow: var(--ac-shadow-e1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    /* The faces sit in the upper third of the full arts. */
+    object-position: 50% 22%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  &.is-loaded img {
+    opacity: 1;
+  }
+}
+
+.name {
+  position: absolute;
+  inset: auto 0 0;
+  padding: var(--ac-space-5) var(--ac-space-1) var(--ac-space-1);
+  background: linear-gradient(transparent, color-mix(in srgb, var(--ac-card-ink) 85%, transparent));
+  color: var(--ac-color-on-strong);
+  font: var(--ac-font-micro);
+  text-align: center;
+  text-shadow: var(--ac-shadow-on-image);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

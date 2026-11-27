@@ -343,6 +343,7 @@ include dirname(__DIR__) . '/includes/header.php';
                 <span class="ac-count">3</span>
                 <span class="ac-count ac-count--success">40</span>
                 <span class="ac-count ac-count--soft">12</span>
+                <span class="ac-count ac-count--danger">2</span>
                 <span class="ac-avatar">Y</span>
                 <span class="ac-avatar ac-avatar--lg">KH</span>
             </div>

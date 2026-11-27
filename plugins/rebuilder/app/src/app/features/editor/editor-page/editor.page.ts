@@ -8,7 +8,7 @@ import { AuthSession } from '../../../core/auth-session';
 import { DeckStore } from '../../../core/deck-store';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { formatInfo } from '../../../core/formats';
-import { rarityLimits } from '../../../core/format-rules';
+import { cardCount, rarityLimits } from '../../../core/format-rules';
 import { AcButton, AcIconButton, MENU_POSITIONS } from '../../../ui/buttons';
 import { AcSegmented, AcSwitch } from '../../../ui/fields';
 import { AcIcon } from '../../../ui/icon';
@@ -16,12 +16,13 @@ import { AcDrawerHandle, AcDrawerState, AcDrawerTab, AcSkeleton, AcToast } from 
 import { storedFlag } from '../../../core/stored-flag';
 import { contentLocale } from '../../../core/locale';
 import { localizedText, type Card } from '../../../core/models';
-import { AcCardArt, AcRarityLimits, AcSaveStatus, rarityLimitItems } from '../../../ui/metier';
+import { AcCardArt, AcRarityLimits, AcSaveStatus, commonItem, rarityLimitItems } from '../../../ui/metier';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcAppBar, AcBackButton, AcBottomNav, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openDeckSettings } from '../../shared/deck-settings/deck-settings.overlay';
 import { openHeroPicker } from '../../shared/hero-picker/hero-picker.overlay';
+import { openHeroZoom } from '../../shared/card-zoom/card-zoom.overlay';
 import { openDeckOverview } from '../deck-overview/deck-overview.overlay';
 import { EditorAltArts, confirmAltArtDefaults } from '../editor-alt-arts';
 import { CardSearchStore } from '../../search/card-search.store';
@@ -171,6 +172,7 @@ export class EditorPage {
     const name = this.deck.hero()?.name;
     return name ? $localize`:@@editor.changeHeroOf:Changer de héros (${name}:name:)` : $localize`:@@ui.deckSummary.changeHero:Changer de héros`;
   });
+  protected readonly heroZoomLabel = computed(() => $localize`:@@ui.cardTile.zoom:Agrandir ${this.deck.hero()?.name ?? ''}:name:`);
   /** Phones, search and « Aperçu » views: the app bar shows the deck title (`deckAppBar`) once the deck is the user's. */
   protected readonly deckTitleView = computed(() => this.bp.compact() && (this.view() === 'search' || this.view() === 'apercu'));
   /**
@@ -191,11 +193,17 @@ export class EditorPage {
   protected readonly overviewLabel = computed(() =>
     [
       $localize`:@@editor.overviewOf:Résumé du deck ${this.deck.name()}:name:`,
+      commonItem(this.deck.stats().rarity.C).label,
       ...rarityLimitItems(this.rarityLimits()).map((r) => r.label),
     ].join(', '),
   );
   protected readonly effectiveView = computed<EditorView>(() => (this.view() === 'deck' && !this.bp.compact() ? 'search' : this.view()));
   protected readonly base = computed(() => `/decks/${this.id()}/edit`);
+  /** The Deck tab's bubble: the total over the format's minimum (its maximum once over it), red outside them. */
+  private readonly totalBadge = computed(() => {
+    const { total, bound, outside } = cardCount(this.deck.total(), this.deck.rules());
+    return { value: bound === null ? total : `${total}/${bound}`, outside };
+  });
   protected readonly navItems = computed<AcBottomNavItem[]>(() => [
     { route: this.base(), icon: 'search', label: $localize`:@@editor.search:Recherche` },
     { route: `${this.base()}/apercu`, icon: 'eye', label: $localize`:@@editor.preview:Aperçu` },
@@ -203,8 +211,8 @@ export class EditorPage {
       route: `${this.base()}/deck`,
       icon: 'layers',
       label: $localize`:@@editor.deck:Deck`,
-      badge: this.deck.opening() ? undefined : this.deck.total(),
-      badgeTone: editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
+      badge: this.deck.opening() ? undefined : this.totalBadge().value,
+      badgeTone: this.totalBadge().outside ? 'danger' : editorLegality(this.deck).state === 'legal' ? 'success' : 'dark',
     },
     { route: `${this.base()}/main`, icon: 'hand', label: $localize`:@@editor.handShort:Main` },
   ]);
@@ -392,7 +400,14 @@ export class EditorPage {
     });
   }
 
-  /** The hero portrait's shortcut: « Choisir un héros » alone, the other settings stay behind the settings button. */
+  /** The hero portrait: its card large, with « Changer de héros »; no hero yet, the hero picker straight away. */
+  protected zoomHero(): void {
+    const hero = this.deck.hero();
+    if (hero) openHeroZoom(this.overlay, hero, () => this.changeHero());
+    else this.changeHero();
+  }
+
+  /** The chip on the hero portrait: « Choisir un héros » alone, the other settings stay behind the settings button. */
   protected changeHero(): void {
     openHeroPicker(this.overlay, this.deck.hero()).afterClosed.subscribe((hero) => {
       if (hero) this.deck.updateSettings({ hero });

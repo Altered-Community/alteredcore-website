@@ -15,6 +15,7 @@ import { AcInput, AcSegmented, AcSelect, AcSlider } from '../../../ui/fields';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcTabs, type AcTab } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
+import { CardSearchMemory } from '../card-search-memory';
 import { CardSearchStore } from '../card-search.store';
 import { openEffectEditor } from '../effect-editor/effect-editor.overlay';
 import { FiltersPanel } from '../filters-panel/filters-panel';
@@ -80,6 +81,7 @@ export class CardSearch {
   private readonly uniquesApi = inject(UniquesApiService);
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
+  private readonly memory = inject(CardSearchMemory);
   private readonly injector = inject(Injector);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
@@ -92,6 +94,10 @@ export class CardSearch {
   readonly ready = input(true);
   /** Card browser: faction filter, no quantity controls on the cards. */
   readonly browse = input(false);
+  /** Editor: the deck's id. Its last tab and each tab's filters are remembered, found again on coming back to the search. */
+  readonly memoryKey = input<string | null>(null);
+  /** The remembered tab has been put back in the URL (once, when the search opens). */
+  private restoredSource = false;
 
   protected readonly source = toSignal(
     this.route.queryParamMap.pipe(map((q) => sourceFromParams((k) => q.get(k)))),
@@ -187,10 +193,21 @@ export class CardSearch {
       const source = this.source();
       const faction = this.faction();
       const format = this.format();
-      if (!this.ready()) return;
+      const ready = this.ready();
+      const key = this.memoryKey();
+      // Back on the search with no tab in the URL (« Recherche » after « Aperçu »…): the deck's last tab.
+      if (key && !this.restoredSource) {
+        this.restoredSource = true;
+        const remembered = untracked(() => this.memory.source(key));
+        if (remembered && remembered !== source && !this.route.snapshot.queryParamMap.has('source')) {
+          this.setSource(remembered);
+          return;
+        }
+      }
+      if (!ready) return;
       untracked(() => {
         if (!this.search.configured() || source !== this.search.source() || faction !== this.search.faction() || format !== this.search.format() || (this.search.page() === 0 && !this.search.loading())) {
-          this.search.configure(source, faction, format, this.browse() ? this.urlFilters(source, format) : undefined);
+          this.search.configure(source, faction, format, this.browse() ? this.urlFilters(source, format) : key ? this.memory.filters(key, source, format) : undefined);
           this.draft.set(this.search.filters());
         }
       });
@@ -199,6 +216,15 @@ export class CardSearch {
     effect(() => {
       const f = this.search.filters();
       untracked(() => this.draft.set(f));
+    });
+
+    // Editor: the tab and filters applied, remembered for this deck.
+    effect(() => {
+      const key = this.memoryKey();
+      const source = this.search.source();
+      const filters = this.search.filters();
+      if (!key || !this.search.configured()) return;
+      untracked(() => this.memory.save(key, source, filters, this.search.format()));
     });
 
     // Card browser: the filters applied go in the URL (reload, shared link), in place of the current entry.
@@ -278,7 +304,7 @@ export class CardSearch {
     else setTimeout(run, 300);
   }
 
-  /** Another tab starts from its own default filters: the URL keeps the tab alone. */
+  /** Another tab starts from its own default filters (editor: the ones last used there), the URL keeps the tab alone. */
   protected setSource(id: string): void {
     void this.router.navigate([], { relativeTo: this.route, queryParams: { source: id === 'all' ? null : id }, replaceUrl: true });
   }
