@@ -10,18 +10,18 @@ $txt = [
         'news_view_all'  => 'View all',
         'no_news'        => 'No news at the moment.',
         'news_read_more' => 'Read more',
-        'giveaway_title' => 'Adopt a Woollyback Giveaway',
-        'giveaway_text'  => 'Take part in the giveaway on Gleam.',
-        'giveaway_enter' => 'Enter',
+        'shop_title'     => 'Your Woollyback awaits you in the shop!',
+        'shop_url'       => 'https://shop.altered.re',
+        'shop_link'      => 'Go to the shop',
     ],
     'fr' => [
         'news_latest'    => 'Dernières actualités',
         'news_view_all'  => 'Voir tout',
         'no_news'        => 'Aucune actualité pour le moment.',
         'news_read_more' => 'Lire la suite',
-        'giveaway_title' => 'Concours « Adopt a Woollyback »',
-        'giveaway_text'  => 'Participez au concours sur Gleam.',
-        'giveaway_enter' => 'Participer',
+        'shop_title'     => 'Votre Dotouffu vous attend dans la boutique !',
+        'shop_url'       => 'https://shop.altered.re/fr',
+        'shop_link'      => 'Aller à la boutique',
     ],
 ][getUiLang()] ?? [];
 
@@ -86,19 +86,22 @@ if ($_annLinkUrl !== '' && strpos($_annText, '{link}') !== false) {
 
 <?php if (function_exists('renderNewsletterBlock')) renderNewsletterBlock(); ?>
 
-<!-- Gleam giveaway: a link, not Gleam's embed (large, and blocked by Firefox's tracking protection) -->
+<!-- Woollyback in the shop -->
 <section class="container pt-4">
-    <div class="ac-notice">
-        <?= ac_icon('gift') ?>
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 flex-grow-1">
-            <div>
-                <p class="ac-notice__title"><?= $txt['giveaway_title'] ?></p>
-                <p><?= $txt['giveaway_text'] ?></p>
+    <div class="ac-card ac-card--flush">
+        <div class="row g-0 align-items-center">
+            <div class="col-md-6">
+                <a href="<?= h($txt['shop_url']) ?>" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                    <img class="d-block w-100 h-auto" src="<?= BASE_URL ?>/assets/img/shop/woollyback.jpg"
+                         width="1280" height="862" alt="">
+                </a>
             </div>
-            <a class="ac-button ac-button--sm" href="https://gleam.io/4vicx/adopt-a-woollyback-giveaway"
-               target="_blank" rel="nofollow noopener noreferrer">
-                <?= $txt['giveaway_enter'] ?> <?= ac_icon('external-link') ?>
-            </a>
+            <div class="col-md-6 p-4 d-flex flex-column align-items-start gap-3">
+                <h2 class="ac-text-title m-0"><?= $txt['shop_title'] ?></h2>
+                <a class="ac-button" href="<?= h($txt['shop_url']) ?>" target="_blank" rel="noopener noreferrer">
+                    <?= $txt['shop_link'] ?> <?= ac_icon('external-link') ?>
+                </a>
+            </div>
         </div>
     </div>
 </section>
