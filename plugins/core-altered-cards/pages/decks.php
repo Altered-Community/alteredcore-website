@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/deck-service.php';
 $lang   = getLang();
 $uiLang = getUiLang();
 
@@ -278,8 +279,10 @@ $txt = [
 $pageTitle       = $txt['page_title'];
 $pageDescription = $txt['page_desc'];
 
-$isLoggedIn = kcIsLoggedIn();
-$kcUser     = $isLoggedIn ? kcUser() : [];
+$isLoggedIn  = kcIsLoggedIn();
+$kcUser      = $isLoggedIn ? kcUser() : [];
+$userId      = $isLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$deckService = new DeckService();
 
 // handle deck delete
 if ($isLoggedIn
@@ -288,15 +291,12 @@ if ($isLoggedIn
     && csrfValid($_POST['csrf_token'] ?? ''))
 {
     $deleteId = trim($_POST['deck_id'] ?? '');
-    if ($deleteId) {
-        $token = deckApiToken();
-        if ($token) {
-            $deleteCode = cacDeckApiDelete($deleteId, $token);
-            if ($deleteCode >= 200 && $deleteCode < 300) {
-                flash($txt['deleted_ok']);
-            } else {
-                flash(sprintf($txt['deleted_err'], $deleteCode), 'error');
-            }
+    if ($deleteId && $userId > 0) {
+        $delRes = $deckService->delete($deleteId, $userId);
+        if ($delRes->isOk()) {
+            flash($txt['deleted_ok']);
+        } else {
+            flash(sprintf($txt['deleted_err'], $delRes->status), 'error');
         }
     }
     redirect(BASE_URL . '/pages/decks');
@@ -309,57 +309,30 @@ if ($isLoggedIn
     && csrfValid($_POST['csrf_token'] ?? ''))
 {
     header('Content-Type: application/json');
-    $token = deckApiToken();
-    if (!$token) {
+    if ($userId <= 0) {
         echo json_encode(['ok' => false, 'error' => $txt['err_api_auth']]);
         exit;
     }
-    $lines     = explode("\n", str_replace("\r", '', trim($_POST['decklist'] ?? '')));
-    $deckCards = [];
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#') continue;
-        if (preg_match('/^(\d+)\s+(ALT_\S+)$/i', $line, $m)) {
-            $deckCards[] = ['cardReference' => $m[2], 'quantity' => (int)$m[1]];
-        }
-    }
+    $deckCards = DeckService::parseDecklist((string)($_POST['decklist'] ?? ''));
     if (empty($deckCards)) {
         echo json_encode(['ok' => false, 'error' => $txt['import_err_empty']]);
         exit;
     }
     $importFormat = in_array($_POST['format'] ?? '', array_keys(loadAlteredData('formats')), true) ? $_POST['format'] : 'standard';
-    $payload = [
+    $res = $deckService->create([
         'name'      => trim($_POST['name'] ?? '') ?: $txt['unnamed'],
         'format'    => $importFormat,
         'isPublic'  => false,
         'isDraft'   => false,
         'deckCards' => $deckCards,
-    ];
-    $ch = curl_init(DECKS_API_URL . '/api/decks');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'POST',
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-        CURLOPT_POSTFIELDS     => json_encode($payload),
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $response = curl_exec($ch);
-    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($code >= 200 && $code < 300) {
-        $data  = json_decode($response, true);
-        $uuid = $data['id'] ?? null;
-        echo json_encode(['ok' => true, 'id' => $uuid]);
+    ], $userId);
+    if ($res->isOk()) {
+        $data = $res->json();
+        echo json_encode(['ok' => true, 'id' => is_array($data) ? ($data['id'] ?? null) : null]);
     } else {
-        $apiBody  = json_decode($response, true);
-        $detail   = '';
-        if (!empty($apiBody['violations'])) {
-            $detail = formatApiViolations($apiBody['violations']);
-        } elseif (!empty($apiBody['detail'])) {
-            $detail = $apiBody['detail'];
-        }
-        $msg = sprintf($txt['import_err_save'], $code);
-        if ($detail) $msg .= "\n" . $detail;
+        $detail = $res->errorDetail();
+        $msg = sprintf($txt['import_err_save'], $res->status);
+        if ($detail !== '') $msg .= "\n" . $detail;
         echo json_encode(['ok' => false, 'error' => $msg]);
     }
     exit;
@@ -372,107 +345,17 @@ if ($isLoggedIn
     && csrfValid($_POST['csrf_token'] ?? ''))
 {
     header('Content-Type: application/json');
-    $token = deckApiToken();
-    if (!$token) {
+    if ($userId <= 0) {
         echo json_encode(['ok' => false, 'error' => $txt['err_api_auth']]);
         exit;
     }
-
-    $ggInput  = trim($_POST['gg_url'] ?? '');
-    $deckGgId = '';
-    if (preg_match('#altered\.gg/(?:[^/]+/)?decks/([A-Z0-9]+)#i', $ggInput, $m)) {
-        $deckGgId = strtoupper($m[1]);
-    } elseif (preg_match('/^[A-Z0-9]{10,}$/i', $ggInput)) {
-        $deckGgId = strtoupper($ggInput);
-    }
-    if (!$deckGgId) {
-        echo json_encode(['ok' => false, 'error' => $txt['import_gg_err_invalid']]);
-        exit;
-    }
-
-    $ch = curl_init('https://api.altered.gg/deck_user_lists/' . rawurlencode($deckGgId));
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $ggResp = curl_exec($ch);
-    $ggCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($ggCode !== 200 || !$ggResp) {
-        echo json_encode(['ok' => false, 'error' => $txt['import_gg_err_fetch']]);
-        exit;
-    }
-    $ggData = json_decode($ggResp, true);
-    if (!is_array($ggData)) {
-        echo json_encode(['ok' => false, 'error' => $txt['import_gg_err_fetch']]);
-        exit;
-    }
-
-    $deckName   = trim($ggData['name'] ?? '') ?: $txt['unnamed'];
-    $heroRef    = $ggData['alterator']['reference'] ?? null;
-    $ggFormat   = strtoupper(trim($ggData['eventFormat'] ?? ''));
-    $deckFormat = 'sandbox';
-    foreach (loadAlteredData('formats') as $_fmtKey => $_fmtData) {
-        if (isset($_fmtData['gg_format']) && $_fmtData['gg_format'] === $ggFormat) {
-            $deckFormat = $_fmtKey;
-            break;
-        }
-    }
-
-    $deckCards = [];
-    if ($heroRef) {
-        $deckCards[] = ['cardReference' => $heroRef, 'quantity' => 1];
-    }
-    foreach ($ggData['deckCardsByType'] ?? [] as $typeData) {
-        foreach ($typeData['deckUserListCard'] ?? [] as $entry) {
-            $ref = $entry['card']['reference'] ?? null;
-            $qty = (int)($entry['quantity'] ?? 0);
-            if ($ref && $qty > 0) {
-                $deckCards[] = ['cardReference' => $ref, 'quantity' => $qty];
-            }
-        }
-    }
-
-    if (empty($deckCards)) {
-        echo json_encode(['ok' => false, 'error' => $txt['import_gg_err_empty']]);
-        exit;
-    }
-
-    $payload = [
-        'name'      => $deckName,
-        'format'    => $deckFormat,
-        'isPublic'  => false,
-        'isDraft'   => false,
-        'deckCards' => $deckCards,
-    ];
-    $ch = curl_init(DECKS_API_URL . '/api/decks');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'POST',
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-        CURLOPT_POSTFIELDS     => json_encode($payload),
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $response = curl_exec($ch);
-    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($code >= 200 && $code < 300) {
-        $data  = json_decode($response, true);
-        $uuid = $data['id'] ?? null;
-        echo json_encode(['ok' => true, 'id' => $uuid]);
+    $import = $deckService->importFromAlteredGg((string)($_POST['gg_url'] ?? ''), loadAlteredData('formats'), $txt['unnamed'], $userId);
+    if ($import['ok']) {
+        echo json_encode(['ok' => true, 'id' => $import['id'] ?? null]);
     } else {
-        $apiBody = json_decode($response, true);
-        $detail  = '';
-        if (!empty($apiBody['violations'])) {
-            $detail = formatApiViolations($apiBody['violations']);
-        } elseif (!empty($apiBody['detail'])) {
-            $detail = $apiBody['detail'];
-        }
-        $msg = sprintf($txt['import_err_save'], $code);
-        if ($detail) $msg .= "\n" . $detail;
+        $key = $import['errorKey'] ?? 'import_err_save';
+        $msg = $key === 'import_err_save' ? sprintf($txt['import_err_save'], $import['status']) : ($txt[$key] ?? $txt['err_connect']);
+        if (!empty($import['detail'])) $msg .= "\n" . $import['detail'];
         echo json_encode(['ok' => false, 'error' => $msg]);
     }
     exit;
@@ -483,15 +366,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'heroes') 
     header('Content-Type: application/json');
     $heroLocale = in_array($uiLang, ['fr', 'en', 'de', 'es', 'it'], true) ? $uiLang : 'en';
     $heroesUrl = 'https://deckbuilder.alteredcore.org/deck-api-proxy/decks/public/heroes?locale=' . $heroLocale;
-    $ch = curl_init($heroesUrl);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => ['Accept: application/json'], CURLOPT_TIMEOUT => 10]);
-    $heroesResp = curl_exec($ch);
-    $heroesCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($heroesCode >= 200 && $heroesCode < 300 && $heroesResp) {
-        echo $heroesResp;
+    $heroesRes = acServiceRequest(new AcHttpRequest('GET', $heroesUrl, ['Accept: application/json'], null, 10));
+    if ($heroesRes->isOk() && $heroesRes->body) {
+        echo $heroesRes->body;
     } else {
-        http_response_code($heroesCode ?: 500);
+        http_response_code($heroesRes->status ?: 500);
         echo json_encode([]);
     }
     exit;
@@ -499,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'heroes') 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote') {
     header('Content-Type: application/json');
-    if (!csrfValid($_POST['csrf_token'] ?? '') || !$isLoggedIn) {
+    if (!csrfValid($_POST['csrf_token'] ?? '') || !$isLoggedIn || $userId <= 0) {
         echo json_encode(['ok' => false]);
         exit;
     }
@@ -508,12 +387,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote')
         echo json_encode(['ok' => false]);
         exit;
     }
-    $token = deckApiToken();
-    if (!$token) {
-        echo json_encode(['ok' => false]);
-        exit;
-    }
-    $result = cacDeckApiUpvote($upvoteDeckId, $token);
+    $result = $deckService->upvote($upvoteDeckId, $userId);
     if ($result === null) {
         echo json_encode(['ok' => false]);
         exit;
@@ -525,46 +399,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['ajax'] ?? '') === 'upvote')
 // aJAX proxy: public decks
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' && $publicDecksApiPath !== '') {
     header('Content-Type: application/json');
-    $pubPage   = max(1, (int)($_GET['page'] ?? 1));
-    $pubFormat = $_GET['format'] ?? '';
-    if (!preg_match('/^[a-z_]*$/', $pubFormat)) $pubFormat = '';
-    $pubOrder = $_GET['order'] ?? 'updatedAt';
-    $pubDir   = $_GET['dir']   ?? 'desc';
-    $allowedPubOrders = ['createdAt', 'updatedAt', 'name', 'upvoteCount'];
-    $allowedPubDirs   = ['asc', 'desc'];
-    if (!in_array($pubOrder, $allowedPubOrders, true)) $pubOrder = 'updatedAt';
-    if (!in_array($pubDir,   $allowedPubDirs,   true)) $pubDir   = 'desc';
-    if ($pubOrder === 'upvoteCount') $pubDir = 'desc';
-
-    $pubFaction = $_GET['faction'] ?? '';
-    if (!preg_match('/^[A-Z]{2}$/', $pubFaction)) $pubFaction = '';
-    $pubHero = $_GET['hero'] ?? '';
-    if (!preg_match('/^[A-Z0-9_]+$/', $pubHero)) $pubHero = '';
-    $pubQ = trim($_GET['q'] ?? '');
-    if (mb_strlen($pubQ) > 100) $pubQ = mb_substr($pubQ, 0, 100);
-
-    // locale: the decks API translates the legality messages (errors / formatErrors) with it.
-    $apiParams = ['page' => $pubPage, 'itemsPerPage' => 24, 'locale' => $lang];
-    if ($pubFormat  !== '') $apiParams['format']  = strtolower($pubFormat);
-    if ($pubFaction !== '') $apiParams['faction'] = $pubFaction;
-    if ($pubHero    !== '') $apiParams['hero']    = $pubHero;
-    if ($pubQ       !== '') $apiParams['name']    = $pubQ;
-    $headers = ['Accept: application/json'];
-    if ($isLoggedIn) {
-        $token = deckApiToken();
-        if ($token) $headers[] = 'Authorization: Bearer ' . $token;
-    }
-    $pubUrl = DECKS_API_URL . $publicDecksApiPath . '?' . http_build_query($apiParams) . '&order[' . $pubOrder . ']=' . $pubDir;
-    $ch = curl_init($pubUrl);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 10]);
-    $pubResp = curl_exec($ch);
-    $pubCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($pubCode >= 200 && $pubCode < 300 && $pubResp) {
-        echo $pubResp;
+    $pubRes = $deckService->listPublic($_GET, $lang, $userId > 0 ? $userId : null, $publicDecksApiPath);
+    if ($pubRes->isOk() && $pubRes->body) {
+        echo $pubRes->body;
     } else {
-        http_response_code($pubCode ?: 500);
-        echo json_encode(['error' => sprintf($txt['err_api'], $pubCode)]);
+        http_response_code($pubRes->status ?: 500);
+        echo json_encode(['error' => sprintf($txt['err_api'], $pubRes->status)]);
     }
     exit;
 }
@@ -572,84 +412,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'public' &
 // aJAX proxy: my decks (handle even when !$isLoggedIn so an expired session receives 401 JSON, not HTML)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['ajax'] ?? '') === 'my') {
     header('Content-Type: application/json');
-    if (!$isLoggedIn) {
+    if (!$isLoggedIn || $userId <= 0) {
         header('X-Ac-Auth-State: unauthenticated');
         http_response_code(401);
         echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
         exit;
     }
-    $token = deckApiToken();
-    if (!$token) {
-        header('X-Ac-Auth-State: unauthenticated');
-        http_response_code(401);
-        echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
-        exit;
-    }
-    $myPage   = max(1, (int)($_GET['page'] ?? 1));
-    $myFormat = $_GET['format'] ?? '';
-    if (!preg_match('/^[a-z0-9_-]*$/', $myFormat)) $myFormat = '';
-    $myIsPublic = $_GET['isPublic'] ?? '';
-    $myIsDraft  = $_GET['isDraft']  ?? '';
-    $myOrder    = $_GET['order']    ?? 'updatedAt';
-    $myDir      = $_GET['dir']      ?? 'desc';
-    if (!in_array($myOrder, ['createdAt', 'updatedAt', 'name'], true)) $myOrder = 'updatedAt';
-    if (!in_array($myDir,   ['asc', 'desc'],                    true)) $myDir   = 'desc';
-
-    $myFaction = $_GET['faction'] ?? '';
-    if (!preg_match('/^[A-Z]{2}$/', $myFaction)) $myFaction = '';
-    $myHero = $_GET['hero'] ?? '';
-    if (!preg_match('/^[A-Z0-9_]+$/', $myHero)) $myHero = '';
-
-    $apiParams = ['page' => $myPage, 'itemsPerPage' => 24, 'locale' => $lang];
-    if ($myFormat !== '')    $apiParams['format']   = $myFormat;
-    if ($myIsPublic !== '')  $apiParams['isPublic'] = $myIsPublic === '1' ? 'true' : 'false';
-    if ($myIsDraft  !== '')  $apiParams['isDraft']  = $myIsDraft  === '1' ? 'true' : 'false';
-    if ($myFaction !== '')   $apiParams['faction']  = $myFaction;
-    if ($myHero    !== '')   $apiParams['hero']     = $myHero;
-
-    $myUrl = DECKS_API_URL . '/api/decks?' . http_build_query($apiParams) . '&order[' . $myOrder . ']=' . $myDir;
-    $ch = curl_init($myUrl);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Authorization: Bearer ' . $token],
-        CURLOPT_TIMEOUT        => 10,
-    ]);
-    $myResp = curl_exec($ch);
-    $myCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($myCode >= 200 && $myCode < 300 && $myResp) {
-        $myData = json_decode($myResp, true);
+    $listed = $deckService->listMine($_GET, $lang, $userId);
+    $myRes  = $listed['response'];
+    if ($myRes->isOk() && $myRes->body) {
+        $myData = $myRes->json();
         if (is_array($myData)) {
-            // Locate the decks array regardless of response envelope format
-            $sortField = $myOrder;
-            $sortDir   = $myDir;
-            $cmp = function ($a, $b) use ($sortField, $sortDir) {
-                $va = is_array($a) ? ($a[$sortField] ?? '') : '';
-                $vb = is_array($b) ? ($b[$sortField] ?? '') : '';
-                $r  = $sortField === 'name' ? strcasecmp((string)$va, (string)$vb) : strcmp((string)$va, (string)$vb);
-                return $sortDir === 'desc' ? -$r : $r;
-            };
-            // Safety net: re-sort in case the API ignored the order parameter
-            if (isset($myData['member']) && is_array($myData['member'])) {
-                usort($myData['member'], $cmp);
-            } elseif (isset($myData['hydra:member']) && is_array($myData['hydra:member'])) {
-                usort($myData['hydra:member'], $cmp);
-            } elseif (isset($myData[0]) || empty($myData)) {
-                usort($myData, $cmp);
-            }
-            echo json_encode($myData);
+            echo json_encode(DeckService::sortDeckListPayload($myData, $listed['order'], $listed['dir']));
         } else {
-            echo $myResp;
+            echo $myRes->body;
         }
     } else {
-        if ($myCode === 401) {
+        if ($myRes->status === 401) {
             header('X-Ac-Auth-State: unauthenticated');
             http_response_code(401);
             echo json_encode(['error' => $txt['err_expired'], 'auth_expired' => true]);
             exit;
         }
-        http_response_code($myCode ?: 500);
-        echo json_encode(['error' => sprintf($txt['err_api'], $myCode)]);
+        http_response_code($myRes->status ?: 500);
+        echo json_encode(['error' => sprintf($txt['err_api'], $myRes->status)]);
     }
     exit;
 }

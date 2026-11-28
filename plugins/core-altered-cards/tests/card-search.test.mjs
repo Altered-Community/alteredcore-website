@@ -413,4 +413,18 @@ function eq(a, b, msg) {
   ok(String(countEl.textContent).includes('42'), 'search() parses iter.total from /api/v2/search response');
 }
 
+// 10. Direct unit tests on standalone CardSearchQuery (pure codec, no DOM required)
+{
+  const Q = require(path.join(process.cwd(), 'plugins/core-altered-cards/assets/card-search-query.js'));
+  eq(Q.parseNumExpr('2-4'), { kind: 'range', min: 2, max: 4 }, 'CardSearchQuery.parseNumExpr parses range');
+  eq(Q.numProxyParts('mainCost', '1, 3, 5'), ['mainCost[]=1', 'mainCost[]=3', 'mainCost[]=5'], 'CardSearchQuery.numProxyParts keeps disjoint list');
+  eq(Q.numProxyParts('mainCost', '1, 2, 3'), ['mainCost[gte]=1', 'mainCost[lte]=3'], 'CardSearchQuery.numProxyParts collapses contiguous list');
+  const parsed = Q.parseUrlState('?tab=ownership&q=kelon&faction[]=AX&page=3', { ownershipApiUrl: '/papi/own' }, {
+    factions: [], types: [], rarities: ['COMMON'], sets: ['CORE'], variations: ['standard'],
+  });
+  ok(parsed.resolvedTab === 'ownership' && parsed.page === 3, 'CardSearchQuery.parseUrlState extracts tab and page');
+  eq(parsed.values.faction, ['AX'], 'CardSearchQuery.parseUrlState extracts faction[]');
+  eq(parsed.values.rarity, [], 'CardSearchQuery.parseUrlState leaves rarity empty on ownership tab when omitted');
+}
+
 console.log(`\n${pass} passed`);

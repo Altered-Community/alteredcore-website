@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/deck-service.php';
 $lang         = getLang();
 $uiLang       = getUiLang();
 $uniqueLocale = in_array($lang, ['en', 'fr'], true) ? $lang : 'en';
@@ -190,9 +191,11 @@ $txt = [
 ][$uiLang] ?? [];
 $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc strings
 
-$deckId     = trim($_GET['id'] ?? '');
-$isLoggedIn = kcIsLoggedIn();
-$kcUser     = $isLoggedIn ? kcUser() : [];
+$deckId      = trim($_GET['id'] ?? '');
+$isLoggedIn  = kcIsLoggedIn();
+$kcUser      = $isLoggedIn ? kcUser() : [];
+$userId      = $isLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$deckService = new DeckService();
 
 // form POST: delete deck
 if ($_SERVER['REQUEST_METHOD'] === 'POST'
@@ -202,15 +205,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && $isLoggedIn
 ) {
     $delId = trim($_POST['deck_id'] ?? '');
-    if ($delId) {
-        $token = deckApiToken();
-        if ($token) {
-            $delCode = cacDeckApiDelete($delId, $token);
-            if ($delCode >= 200 && $delCode < 300) {
-                flash($txt['deleted_ok']);
-            } else {
-                flash(sprintf($txt['deleted_err'], $delCode), 'error');
-            }
+    if ($delId && $userId > 0) {
+        $delRes = $deckService->delete($delId, $userId);
+        if ($delRes->isOk()) {
+            flash($txt['deleted_ok']);
+        } else {
+            flash(sprintf($txt['deleted_err'], $delRes->status), 'error');
         }
     }
     redirect(BASE_URL . '/pages/decks');
@@ -225,13 +225,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && $deckId !== ''
 ) {
     $archive = $_POST['action'] === 'archive_deck';
-    $token = deckApiToken();
-    if ($token) {
-        $code = cacDeckApiSetArchived($deckId, $archive, $token);
-        if ($code >= 200 && $code < 300) {
+    if ($userId > 0) {
+        $archRes = $deckService->setArchived($deckId, $archive, $userId);
+        if ($archRes->isOk()) {
             flash($txt[$archive ? 'archived_ok' : 'unarchived_ok']);
         } else {
-            flash(sprintf($txt['archive_err'], $code), 'error');
+            flash(sprintf($txt['archive_err'], $archRes->status), 'error');
         }
     } else {
         flash($txt['err_api_auth'], 'error');
@@ -239,114 +238,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     redirect(BASE_URL . '/pages/deck?id=' . rawurlencode($deckId));
 }
 
-// aJAX proxy for owner actions (delete / rename)
+// aJAX proxy for owner actions (delete / rename / make_public / duplicate)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax']) && $deckId) {
     header('Content-Type: application/json');
     if (!csrfValid($_POST['csrf_token'] ?? '')) {
         echo json_encode(['ok' => false, 'error' => 'Invalid token']); exit;
     }
-    if (!$isLoggedIn) {
+    if (!$isLoggedIn || $userId <= 0) {
         echo json_encode(['ok' => false, 'error' => 'Not logged in']); exit;
-    }
-    $token = deckApiToken();
-    if (!$token) {
-        echo json_encode(['ok' => false, 'error' => $txt['err_api_auth']]); exit;
     }
     $action = $_POST['action'] ?? '';
     if ($action === 'delete') {
-        $c = cacDeckApiDelete((string)$deckId, $token);
-        if ($c >= 200 && $c < 300) {
-            echo json_encode(['ok' => true]);
-        } else {
-            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
-        }
+        $res = $deckService->delete((string)$deckId, $userId);
+        echo json_encode($res->isOk() ? ['ok' => true] : ['ok' => false, 'error' => sprintf($txt['err_api'], $res->status)]);
         exit;
     }
     if ($action === 'rename') {
         $name = trim($_POST['name'] ?? '');
         if ($name === '') { echo json_encode(['ok' => false, 'error' => 'Name required']); exit; }
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => 'PATCH',
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/merge-patch+json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['name' => $name]));
-        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-        if ($c >= 200 && $c < 300) {
-            echo json_encode(['ok' => true]);
-        } else {
-            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
-        }
+        $res = $deckService->rename((string)$deckId, $name, $userId);
+        echo json_encode($res->isOk() ? ['ok' => true] : ['ok' => false, 'error' => sprintf($txt['err_api'], $res->status)]);
         exit;
     }
     if ($action === 'make_public') {
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => 'PATCH',
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/merge-patch+json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['isPublic' => true]));
-        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-        if ($c >= 200 && $c < 300) {
-            echo json_encode(['ok' => true]);
-        } else {
-            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $c)]);
-        }
+        $res = $deckService->makePublic((string)$deckId, $userId);
+        echo json_encode($res->isOk() ? ['ok' => true] : ['ok' => false, 'error' => sprintf($txt['err_api'], $res->status)]);
         exit;
     }
     if ($action === 'duplicate') {
-        // Re-fetch the source deck authoritatively. A private deck owned by
-        // another user returns 401/403 here, which naturally enforces the
-        // "own deck or a public deck" rule without any extra ownership check.
-        $srcCh = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($lang));
-        curl_setopt_array($srcCh, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        $srcRes  = curl_exec($srcCh);
-        $srcCode = curl_getinfo($srcCh, CURLINFO_HTTP_CODE);
-        curl_close($srcCh);
-        if ($srcCode < 200 || $srcCode >= 300 || !$srcRes) {
-            echo json_encode(['ok' => false, 'error' => sprintf($txt['err_api'], $srcCode)]); exit;
+        $dup = $deckService->duplicate((string)$deckId, trim($_POST['name'] ?? ''), $txt['duplicate_suffix'], $lang, $userId);
+        if ($dup['ok']) {
+            echo json_encode(['ok' => true, 'id' => $dup['id'] ?? '']); exit;
         }
-        $source = json_decode($srcRes, true);
-        if (!is_array($source) || !cacDeckContentForWrite($source)['deckCards']) {
-            echo json_encode(['ok' => false, 'error' => $txt['not_found']]); exit;
-        }
-
-        $newName = trim($_POST['name'] ?? '');
-        if ($newName === '') {
-            $newName = (string)($source['name'] ?? '') . $txt['duplicate_suffix'];
-        }
-        $payload = cacBuildDuplicateDeckPayload($source, $newName);
-
-        $ch = curl_init(DECKS_API_URL . '/api/decks');
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => 'POST',
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-            CURLOPT_POSTFIELDS     => json_encode($payload),
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        $r = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-        if ($c >= 200 && $c < 300) {
-            $newDeck = json_decode($r, true);
-            echo json_encode(['ok' => true, 'id' => $newDeck['id'] ?? '']); exit;
-        }
-        $msg  = sprintf($txt['duplicate_err'], $c);
-        $body = json_decode($r, true);
-        if (!empty($body['violations']) && is_array($body['violations'])) {
-            $msg .= "\n" . formatApiViolations($body['violations']);
-        } elseif (!empty($body['detail'])) {
-            $msg .= "\n" . $body['detail'];
-        } elseif (!empty($body['title'])) {
-            $msg .= "\n" . $body['title'];
-        }
+        $key = $dup['errorKey'] ?? 'duplicate_err';
+        $msg = $key === 'not_found'
+            ? $txt['not_found']
+            : sprintf($txt[$key] ?? $txt['duplicate_err'], $dup['status']);
+        if (!empty($dup['detail'])) $msg .= "\n" . $dup['detail'];
         echo json_encode(['ok' => false, 'error' => $msg]); exit;
     }
     echo json_encode(['ok' => false, 'error' => 'Unknown action']); exit;
@@ -358,37 +286,18 @@ $apiError      = null;
 $isDeckPrivate = false;
 
 if ($deckId) {
-    $headers = ['Accept: application/json'];
-    if ($isLoggedIn) {
-        $token = deckApiToken();
-        if ($token !== null) {
-            $headers[] = 'Authorization: Bearer ' . $token;
-        }
-    }
-    if (!$apiError) {
-        $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '?locale=' . rawurlencode($lang));
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        $response = curl_exec($ch);
-        $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlErr) {
-            $apiError = $txt['err_connect'];
-        } elseif ($code === 401 || $code === 403) {
-            unset($_SESSION['deck_api_token'], $_SESSION['deck_api_token_sub']);
-            $isDeckPrivate = true;
-        } elseif ($code === 404) {
-            $apiError = $txt['not_found'];
-        } elseif ($code >= 200 && $code < 300 && $response) {
-            $deck = json_decode($response, true);
-        } else {
-            $apiError = sprintf($txt['err_api'], $code);
-        }
+    $res = $deckService->get($deckId, $lang, $userId > 0 ? $userId : null);
+    if ($res->curlError !== '') {
+        $apiError = $txt['err_connect'];
+    } elseif ($res->status === 401 || $res->status === 403) {
+        unset($_SESSION['deck_api_token'], $_SESSION['deck_api_token_sub']);
+        $isDeckPrivate = true;
+    } elseif ($res->status === 404) {
+        $apiError = $txt['not_found'];
+    } elseif ($res->isOk()) {
+        $deck = $res->json();
+    } else {
+        $apiError = sprintf($txt['err_api'], $res->status);
     }
 }
 
@@ -405,24 +314,7 @@ if (is_array($deck) && $deckId) {
 }
 // Check ownership: the collection endpoint returns only the current user's decks,
 // so fetching /api/decks and looking for this deck ID is reliable without any API change.
-$isOwner = false;
-if ($isLoggedIn && $deck && $deckId && !empty($token)) {
-    $ch2 = curl_init(DECKS_API_URL . '/api/decks?' . http_build_query(['itemsPerPage' => 1000]));
-    curl_setopt_array($ch2, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-        CURLOPT_TIMEOUT        => 10,
-    ]);
-    $r2 = curl_exec($ch2);
-    $c2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-    curl_close($ch2);
-    if ($c2 === 200 && $r2) {
-        $d2      = json_decode($r2, true);
-        $d2Items = $d2['data'] ?? (isset($d2[0]['id']) ? $d2 : []);
-        $myIds   = array_column($d2Items, 'id');
-        $isOwner = in_array($deckId, $myIds);
-    }
-}
+$isOwner = ($isLoggedIn && $deck && $deckId && $userId > 0) ? $deckService->isOwnedBy($deckId, $userId) : false;
 
 $typesData       = loadAlteredData('types');
 $typesMergedData = loadAlteredData('types_merged');
