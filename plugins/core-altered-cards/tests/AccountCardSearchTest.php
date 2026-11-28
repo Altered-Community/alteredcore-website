@@ -84,3 +84,42 @@ assertSame(401, $unauth['status'], '401 from upstream propagates cleanly');
 
 $badGw = cacRunAccountSearch('collection', [], 42, static fn(): array => [500, 'oops']);
 assertSame(502, $badGw['status'], 'invalid upstream body maps to 502');
+
+// 4. Regression: cacResolveAccountSearchAuth() must call kcIsLoggedIn() BEFORE reading $_SESSION['user_id'],
+//    because /papi/core-altered-cards/*-search endpoints have no manifest auth guard so session_start() only
+//    runs inside kcIsLoggedIn(). Reading $_SESSION['user_id'] before kcIsLoggedIn() yielded 0 -> 401 ->
+//    X-Ac-Auth-State: unauthenticated -> top-right header flipped to Guest on Beta/Standard pages.
+foreach (['favorites', 'collection', 'ownership'] as $src) {
+    $session = [];
+    $callOrder = [];
+    $auth = cacResolveAccountSearchAuth(
+        $src,
+        true,
+        static function () use (&$session, &$callOrder): bool {
+            $callOrder[] = 'isLoggedIn';
+            $session['user_id'] = 7; // simulates session_start() hydrating $_SESSION
+            return true;
+        },
+        static function () use (&$session, &$callOrder): int {
+            $callOrder[] = 'readUserId';
+            return (int)($session['user_id'] ?? 0);
+        }
+    );
+    assertSame(true, $auth['ok'], "{$src}: auth succeeds when session hydrates during kcIsLoggedIn()");
+    assertSame(7, $auth['userId'], "{$src}: userId is read after kcIsLoggedIn() starts session");
+    assertSame(['isLoggedIn', 'readUserId'], $callOrder, "{$src}: kcIsLoggedIn() executes before reading user_id");
+}
+
+$guestFav = cacResolveAccountSearchAuth('favorites', true, static fn(): bool => false, static fn(): int => 7);
+assertSame(false, $guestFav['ok'], 'favorites rejects unauthenticated user');
+assertSame(['error' => 'Unauthorized', 'code' => 'FS01'], $guestFav['error'], 'favorites preserves FS01 error code');
+
+$zeroUid = cacResolveAccountSearchAuth('collection', true, static fn(): bool => true, static fn(): int => 0);
+assertSame(false, $zeroUid['ok'], 'collection rejects missing/zero userId even if logged-in flag is true');
+
+$localFav = cacResolveAccountSearchAuth('favorites', false, static fn(): bool => true, static fn(): int => 9);
+assertSame(true, $localFav['ok'], 'favorites works without KC_URL (local auth)');
+assertSame(9, $localFav['userId'], 'favorites returns local userId');
+
+$noKcColl = cacResolveAccountSearchAuth('collection', false, static fn(): bool => true, static fn(): int => 9);
+assertSame(false, $noKcColl['ok'], 'collection requires KC_URL');

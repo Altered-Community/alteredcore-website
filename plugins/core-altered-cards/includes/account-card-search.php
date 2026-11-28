@@ -6,6 +6,36 @@ require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/collection-query.php';
 
 /**
+ * Authenticates an account-tab search (`collection` | `ownership` | `favorites`).
+ * Calls `$isLoggedIn()` BEFORE `$readUserId()` so `kcIsLoggedIn()` starts the PHP
+ * session before `$_SESSION['user_id']` is read.
+ *
+ * @return array{ok: bool, userId: int, error?: array<string, string>}
+ */
+function cacResolveAccountSearchAuth(
+    string $source,
+    bool $kcConfigured,
+    callable $isLoggedIn,
+    callable $readUserId
+): array {
+    $err = $source === 'favorites'
+        ? ['error' => 'Unauthorized', 'code' => 'FS01']
+        : ['error' => 'Unauthorized'];
+
+    $kcMissing = ($source !== 'favorites') && !$kcConfigured;
+    if ($kcMissing || !$isLoggedIn()) {
+        return ['ok' => false, 'userId' => 0, 'error' => $err];
+    }
+
+    $userId = (int)$readUserId();
+    if ($userId <= 0) {
+        return ['ok' => false, 'userId' => 0, 'error' => $err];
+    }
+
+    return ['ok' => true, 'userId' => $userId];
+}
+
+/**
  * Executes an account-tab search (`collection` | `ownership` | `favorites`) and emits JSON.
  * Exists as the single seam behind the thin `/papi/core-altered-cards/*-search` route files.
  */
@@ -19,17 +49,20 @@ function cacHandleAccountSearch(string $source): void
         exit;
     }
 
-    $kcMissing = ($source !== 'favorites') && (!defined('KC_URL') || KC_URL === '');
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    if ($kcMissing || !kcIsLoggedIn() || ($source === 'favorites' && $userId <= 0)) {
+    $auth = cacResolveAccountSearchAuth(
+        $source,
+        defined('KC_URL') && KC_URL !== '',
+        static fn(): bool => kcIsLoggedIn(),
+        static fn(): int => (int)($_SESSION['user_id'] ?? 0)
+    );
+    if (!$auth['ok']) {
         header('X-Ac-Auth-State: unauthenticated');
         http_response_code(401);
-        $err = $source === 'favorites' ? ['error' => 'Unauthorized', 'code' => 'FS01'] : ['error' => 'Unauthorized'];
-        echo json_encode($err);
+        echo json_encode($auth['error']);
         exit;
     }
 
-    $result = cacRunAccountSearch($source, $_GET, $userId);
+    $result = cacRunAccountSearch($source, $_GET, $auth['userId']);
     if (isset($result['status']) && $result['status'] !== 200) {
         if ($result['status'] === 401) {
             header('X-Ac-Auth-State: unauthenticated');

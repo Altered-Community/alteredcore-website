@@ -128,6 +128,9 @@ final class AuthSessionManager
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 session_start();
             }
+            if (!isset($_SESSION) || !is_array($_SESSION)) {
+                $_SESSION = [];
+            }
             return $_SESSION;
         }
         return $this->sessionRef;
