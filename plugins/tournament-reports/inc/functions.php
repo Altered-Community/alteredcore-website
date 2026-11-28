@@ -108,33 +108,23 @@ function trGameApiGet(string $path, int $userId): array
     if ($apiUrl === '') {
         return ['ok' => false, 'error' => 'GameApi URL is not configured.'];
     }
-
-    $auth = trGameApiAuthHeader($userId);
-    if (!$auth['ok']) {
-        return ['ok' => false, 'error' => $auth['error']];
+    if (!$userId) {
+        return ['ok' => false, 'error' => 'You must be logged in to view tournament reports.'];
     }
 
-    $ch = curl_init($apiUrl . $path);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json', $auth['header']],
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_FOLLOWLOCATION => true,
-    ]);
-    $response = curl_exec($ch);
-    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr  = curl_error($ch);
-    curl_close($ch);
+    $res = acServiceRequest(new AcHttpRequest('GET', $apiUrl . $path, ['Accept: application/json'], null, 15, 5, true, $userId));
+    error_log('[tournament-reports] GET ' . $apiUrl . $path . ' -> HTTP ' . $res->status . ($res->curlError !== '' ? ' — ' . $res->curlError : ''));
 
-    error_log('[tournament-reports] GET ' . $apiUrl . $path . ' -> HTTP ' . $code . ($curlErr !== '' ? ' — ' . $curlErr : ''));
-
-    if ($curlErr) {
-        return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
+    if ($res->status === 401 && $res->authExpired) {
+        return ['ok' => false, 'error' => 'Unable to obtain an access token for your session.'];
     }
-    if ($code < 200 || $code >= 300) {
-        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $code . ').'];
+    if ($res->curlError !== '') {
+        return ['ok' => false, 'error' => 'Connection error: ' . $res->curlError];
     }
-    $data = json_decode($response, true);
+    if (!$res->isOk()) {
+        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $res->status . ').'];
+    }
+    $data = $res->json();
     if (!is_array($data)) {
         return ['ok' => false, 'error' => 'Invalid GameApi response.'];
     }
@@ -335,37 +325,29 @@ function trSubmitAdjustment(string $tournamentId, string $bgaUserId, int $winsAd
         return ['ok' => false, 'error' => 'GameApi adjustment key is not configured.'];
     }
 
-    $url  = $apiUrl . '/api/tournaments/' . rawurlencode($tournamentId) . '/players/' . rawurlencode($bgaUserId) . '/adjustment';
-    $body = json_encode([
-        'winsAdjustment'   => $winsAdjustment,
-        'lossesAdjustment' => $lossesAdjustment,
-        'note'             => $note,
-    ], JSON_UNESCAPED_UNICODE);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'POST',
-        CURLOPT_POSTFIELDS     => $body,
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'Authorization: Bearer ' . $apiKey,
+    $url = $apiUrl . '/api/tournaments/' . rawurlencode($tournamentId) . '/players/' . rawurlencode($bgaUserId) . '/adjustment';
+    $res = acServiceRequest(AcHttpRequest::json(
+        'POST',
+        $url,
+        [
+            'winsAdjustment'   => $winsAdjustment,
+            'lossesAdjustment' => $lossesAdjustment,
+            'note'             => $note,
         ],
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $response = curl_exec($ch);
-    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr  = curl_error($ch);
-    curl_close($ch);
+        null,
+        'application/json',
+        [],
+        15,
+        $apiKey
+    ));
 
-    if ($curlErr) {
-        return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
+    if ($res->curlError !== '') {
+        return ['ok' => false, 'error' => 'Connection error: ' . $res->curlError];
     }
-    if ($code < 200 || $code >= 300) {
-        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $code . ').'];
+    if (!$res->isOk()) {
+        return ['ok' => false, 'error' => 'GameApi error (HTTP ' . $res->status . ').'];
     }
-    $data = json_decode($response, true);
+    $data = $res->json();
     if (!is_array($data)) {
         return ['ok' => false, 'error' => 'Invalid GameApi response.'];
     }
@@ -438,8 +420,8 @@ function trDuplicateDeckToAccount(array $cards, string $name, string $format = '
         $format = 'standard';
     }
 
-    $token = trUserApiToken();
-    if (!$token) {
+    $userId = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
+    if ($userId <= 0) {
         return ['ok' => false, 'error' => 'You must be logged in to duplicate a deck.'];
     }
     if (empty($cards)) {
@@ -460,26 +442,17 @@ function trDuplicateDeckToAccount(array $cards, string $name, string $format = '
         'deckCards' => $deckCards,
     ];
 
-    $ch = curl_init(DECKS_API_URL . '/api/decks');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'POST',
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-        CURLOPT_POSTFIELDS     => json_encode($payload),
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $response = curl_exec($ch);
-    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr  = curl_error($ch);
-    curl_close($ch);
-
-    if ($curlErr) {
-        return ['ok' => false, 'error' => 'Connection error: ' . $curlErr];
+    $res = acServiceRequest(AcHttpRequest::json('POST', DECKS_API_URL . '/api/decks', $payload, $userId));
+    if ($res->status === 401 && $res->authExpired) {
+        return ['ok' => false, 'error' => 'You must be logged in to duplicate a deck.'];
     }
-    if ($code < 200 || $code >= 300) {
-        return ['ok' => false, 'error' => 'Decks API error (HTTP ' . $code . ').'];
+    if ($res->curlError !== '') {
+        return ['ok' => false, 'error' => 'Connection error: ' . $res->curlError];
     }
-    $data = json_decode($response, true);
+    if (!$res->isOk()) {
+        return ['ok' => false, 'error' => 'Decks API error (HTTP ' . $res->status . ').'];
+    }
+    $data = $res->json();
     return ['ok' => true, 'id' => (string)($data['id'] ?? '')];
 }
 

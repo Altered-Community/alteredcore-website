@@ -1,18 +1,14 @@
-import { Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
-import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink } from '@angular/router';
-import { concatMap, finalize, from, map, of, switchMap, timer, toArray } from 'rxjs';
+import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { AuthSession } from '../../../core/auth-session';
-import { type CardSuggestion } from '../../../core/card-suggestions';
 import { CommunityBuildersService } from '../../../core/community-builders.service';
-import { factionFromReference, toDeckListItem, type DeckListItem } from '../../../core/deck-view';
-import { DecksApiService, type PublicDeckPage } from '../../../core/decks-api.service';
+import { DeckStore } from '../../../core/deck-store';
+import type { DeckListItem } from '../../../core/deck-view';
 import { visibleFormats } from '../../../core/formats';
 import { GuestDeckService } from '../../../core/guest-deck.service';
 import { uiLocale } from '../../../core/i18n';
-import { contentLocale } from '../../../core/locale';
-import { DeckStore } from '../../../core/deck-store';
-import { CardCatalogService } from '../../../core/card-catalog.service';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcSkeleton } from '../../../ui/containers';
 import { AcChip, AcCount } from '../../../ui/chips';
@@ -21,72 +17,25 @@ import { AcIcon } from '../../../ui/icon';
 import { AcInfiniteSentinel } from '../../../ui/infinite';
 import { AcBreakpointService } from '../../../ui/layout.services';
 import { AcDeckCard, FACTIONS } from '../../../ui/metier';
-import { rarityIcon } from '../../../ui/chips/rarity';
-import { AcAppBar, AcBottomNav, AcTabs, type AcBottomNavItem } from '../../../ui/nav';
+import { AcAppBar, AcBottomNav, AcTabs, attachScrollPreservation, type AcBottomNavItem } from '../../../ui/nav';
 import { AcOverlayService } from '../../../ui/overlay';
 import { openConfirm } from '../../shared/confirm/confirm.overlay';
-import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openLegalityDetails } from '../../shared/legality-details/legality-details.overlay';
+import { openNewDeck } from '../../shared/new-deck/new-deck.overlay';
 import { openCommunityBuilders } from '../community-builders/community-builders.overlay';
-import { isDecksListUrl } from '../decks-list-reuse';
-import { openImportDeck } from '../import-deck/import-deck.overlay';
-import { type Visibility, type DeckStatus, type DeckFilters, type DeckSort, type HeroChoice, EMPTY_DECK_FILTERS, filterDecks, heroOptions, matchDecks } from '../deck-filters';
+import type { ContestSet } from '../contest/contest-decks';
+import { EMPTY_DECK_FILTERS, type DeckFilters, type DeckStatus, type Visibility } from '../deck-filters';
 import { DeckFiltersSheet, type DeckFiltersResult } from '../deck-filters-sheet/deck-filters-sheet';
-import { type ContestSet, contestDecksFor, loadContestDecks } from '../contest/contest-decks';
-import { type CommunityQuery, type CommunityState, EMPTY_COMMUNITY, addCommunityPage, toCommunityQuery } from '../community-pages';
+import { DecksCatalogStore, cardOption } from '../decks-catalog.store';
+import { isDecksListUrl } from '../decks-list-reuse';
+import { decodeDecksUrl, encodeDecksUrl, queryParamsEqual, SORTS, tabFromParam, tabQueryParams, TABS, type Tab } from '../decks-url-codec';
+import { openImportDeck } from '../import-deck/import-deck.overlay';
 
-type Tab = 'mine' | 'community' | 'contest';
-
-const TABS: readonly Tab[] = ['mine', 'community', 'contest'];
-
-const SEARCH_DEBOUNCE_MS = 300;
-/** Card filter: suggestions wait for a pause in the typing. */
-const SUGGEST_DEBOUNCE_MS = 250;
-
-/** A card suggestion of the search API as an `ac-autocomplete` option: rarity (and « hors faction » for R2) on the right. */
-export function cardOption(s: CardSuggestion): AcSuggestion {
-  const rarity = rarityIcon(s.rarity).label;
-  const meta = s.rarity === 'R2' ? $localize`:@@decks.cardFilter.outOfFaction:${rarity}:rarity: · hors faction` : rarity;
-  return { value: s.reference, label: s.name, meta, thumb: s.image };
-}
-
-function tabFromParam(value: string | null): Tab | undefined {
-  if (value === 'my') return 'mine';
-  if (value === 'public') return 'community';
-  return TABS.find((t) => t === value);
-}
-
-/** The site's `sort` values (`field:dir`) and Re:Builder's. */
-const SITE_SORTS: Record<string, DeckSort> = {
-  'updatedAt:desc': 'updated',
-  'updatedAt:asc': 'updated-asc',
-  'createdAt:desc': 'created',
-  'createdAt:asc': 'created-asc',
-  'name:asc': 'name',
-  'name:desc': 'name-desc',
-  'upvoteCount:desc': 'likes',
-};
-
-function sortFromParam(value: string | null): DeckSort | undefined {
-  if (!value) return undefined;
-  return SITE_SORTS[value] ?? SORTS.find((s) => s.value === value)?.value;
-}
-
-const SORTS: { value: DeckSort; label: string }[] = [
-  { value: 'updated', label: $localize`:@@decks.page.sortUpdated:Récemment modifié` },
-  { value: 'updated-asc', label: $localize`:@@decks.page.sortUpdatedAsc:Plus ancien modifié` },
-  { value: 'created', label: $localize`:@@decks.page.sortCreated:Récemment créé` },
-  { value: 'created-asc', label: $localize`:@@decks.page.sortCreatedAsc:Plus ancien créé` },
-  { value: 'likes', label: $localize`:@@decks.page.sortLikes:Les plus aimés` },
-  { value: 'name', label: $localize`:@@decks.page.sortName:Nom` },
-  { value: 'name-desc', label: $localize`:@@decks.page.sortNameDesc:Nom Z→A` },
-];
-
-
-type LikeState = Pick<DeckListItem, 'likes' | 'liked'>;
+export { cardOption };
 
 @Component({
   selector: 'app-decks-page',
+  providers: [DecksCatalogStore],
   imports: [RouterLink, AcAppBar, AcBottomNav, AcTabs, AcButton, AcIconButton, AcInput, AcAutocomplete, AcSelect, AcSegmented, AcSwitch, AcChip, AcDeckCard, AcIcon, AcCount, AcInfiniteSentinel, AcSkeleton],
   templateUrl: './decks.page.html',
   styleUrl: './decks.page.scss',
@@ -95,10 +44,9 @@ export class DecksPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly overlay = inject(AcOverlayService);
-  private readonly decksApi = inject(DecksApiService);
   private readonly guests = inject(GuestDeckService);
   private readonly store = inject(DeckStore);
-  private readonly uniques = inject(CardCatalogService);
+  private readonly catalog = inject(DecksCatalogStore);
   protected readonly auth = inject(AuthSession);
   protected readonly bp = inject(AcBreakpointService);
   /** The site's community deckbuilders: a banner above the tabs on wide screens, as on the site's decks page. */
@@ -115,23 +63,30 @@ export class DecksPage {
   protected readonly openInEditor = computed(() => this.tab() === 'mine');
   /** Bumped when the list is shown again, so its filters go back to the URL. */
   private readonly urlSync = signal(0);
-  protected readonly filters = signal<DeckFilters>(EMPTY_DECK_FILTERS);
+  private readonly listSentinel = viewChild<ElementRef<HTMLElement>>('listSentinel');
 
-  /**
-   * Account decks; follows the session, so logging in or out reloads them. Embedded in the site
-   * there is no token in the browser (the relay adds it), hence the user name as the key.
-   */
-  private readonly serverRes = rxResource({
-    params: () => (this.auth.isLoggedIn() ? { token: this.auth.token(), user: this.auth.username() } : undefined),
-    stream: () => this.decksApi.listAllMine(),
-  });
-  /** Account decks on their way (first load, or another session): skeletons instead of the empty state. A reload keeps the list. */
-  protected readonly mineLoading = computed(() => this.serverRes.status() === 'loading');
-  /** The open tab's list is loading: skeletons in its place, « Chargement… » for its count. */
-  protected readonly listLoading = computed(() => {
-    const tab = this.tab();
-    return (tab === 'mine' && this.mineLoading()) || (tab === 'community' && this.communityLoading()) || (tab === 'contest' && this.contestLoading());
-  });
+  protected readonly filters = this.catalog.filters;
+  protected readonly mineLoading = this.catalog.mineLoading;
+  protected readonly listLoading = this.catalog.listLoading;
+  protected readonly serverError = this.catalog.serverError;
+  protected readonly mine = this.catalog.mine;
+  protected readonly localDecks = this.catalog.localDecks;
+  protected readonly localDecksLabel = this.catalog.localDecksLabel;
+  protected readonly localSaving = this.catalog.localSaving;
+  protected readonly localError = this.catalog.localError;
+  protected readonly contestSet = this.catalog.contestSet;
+  protected readonly contestLoading = this.catalog.contestLoading;
+  protected readonly contestError = this.catalog.contestError;
+  protected readonly communityTotal = this.catalog.communityTotal;
+  protected readonly communityComplete = this.catalog.communityComplete;
+  protected readonly communityLoading = this.catalog.communityLoading;
+  protected readonly communityError = this.catalog.communityError;
+  protected readonly list = this.catalog.list;
+  protected readonly heroes = this.catalog.heroes;
+  protected readonly cardOptions = this.catalog.cardOptions;
+  protected readonly cardSuggesting = this.catalog.cardSuggesting;
+  protected readonly cardChoice = this.catalog.cardChoice;
+
   /**
    * Two rows of deck cards from 768 px, a screen of rows on phones. Keyed by the list's length: decks that arrive
    * above them take new skeletons below, rather than pushing the same ones down (a layout shift for the browser).
@@ -140,111 +95,11 @@ export class DecksPage {
     const listed = this.list().length;
     return Array.from({ length: this.bp.compact() ? 5 : 10 }, (_, i) => `${listed}-${i}`);
   });
-  private readonly serverDecks = computed(() => (this.serverRes.hasValue() ? this.serverRes.value() : []));
-  protected readonly serverError = computed(() => {
-    const err = this.serverRes.error();
-    if (!err) return null;
-    return (err as { status?: number }).status === 401
-      ? $localize`:@@decks.page.sessionExpired:Session expirée : les decks du compte ne peuvent pas être chargés (401).`
-      : $localize`:@@decks.page.accountDecksUnavailable:Decks du compte indisponibles.`;
-  });
-  protected readonly mine = computed(() => [...this.guests.decks(), ...this.serverDecks()].map(toDeckListItem));
-  /** Signed in with decks left from guest mode on this device (Re:Builder's, or the site builder's): offered for the account. */
-  protected readonly localDecks = computed(() => (this.auth.isLoggedIn() ? this.guests.decks() : []));
-  protected readonly localDecksLabel = computed(() => {
-    const decks = this.localDecks();
-    if (decks.length !== 1) return $localize`:@@decks.local.many:Vous avez ${decks.length}:count: decks sauvegardés en mode invité sur cet appareil.`;
-    const d = toDeckListItem(decks[0]);
-    return $localize`:@@decks.local.one:${d.name}:name: — ${d.total}:count: cartes — Vous avez un deck sauvegardé en mode invité.`;
-  });
-  protected readonly localSaving = signal(false);
-  protected readonly localError = signal<string | null>(null);
-  protected readonly mineFiltered = computed(() => {
-    const archived = this.filters().status === 'archived';
-    return filterDecks(this.mine().filter((d) => d.draft === archived), this.filters());
-  });
 
-  /** Starter Deck Contest snapshot, loaded the first time the tab opens. */
-  private readonly contestRes = rxResource({
-    params: () => (this.tab() === 'contest' ? true : undefined),
-    stream: () => from(loadContestDecks()),
-  });
-  private readonly contestAll = linkedSignal<DeckListItem[] | undefined, DeckListItem[]>({
-    source: () => (this.contestRes.hasValue() ? this.contestRes.value() : undefined),
-    computation: (items, prev) => items ?? prev?.value ?? [],
-  });
-  protected readonly contestSet = signal<ContestSet>('winners');
-  private readonly contestInSet = computed(() => contestDecksFor(this.contestAll(), this.contestSet()));
   protected readonly contestSets = [
     { value: 'winners' as ContestSet, label: $localize`:@@decks.contest.winners:Gagnants` },
     { value: 'all' as ContestSet, label: $localize`:@@decks.contest.all:Toutes les decklists` },
   ];
-
-  /** API query for the community tab; `undefined` on the other tabs (resource idle). */
-  private readonly communityQuery = computed(
-    () => (this.tab() === 'community' ? toCommunityQuery(this.filters()) : undefined),
-    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
-  );
-  /** Back to page 1 whenever the query changes. */
-  private readonly communityPage = linkedSignal({ source: this.communityQuery, computation: () => 1 });
-  /** A new query or page cancels the pending request; the text search waits 300 ms before firing. */
-  private readonly communityRes = rxResource({
-    params: () => {
-      const query = this.communityQuery();
-      return query && { ...query, page: this.communityPage() };
-    },
-    stream: ({ params }) => {
-      // Tags the response with the query it answers, so a page never lands in another query's list.
-      const query = untracked(this.communityQuery);
-      return timer(params.page === 1 && params.name ? SEARCH_DEBOUNCE_MS : 0).pipe(
-        switchMap(() => this.decksApi.listPublic(params)),
-        map((res) => ({ query, page: params.page, res })),
-      );
-    },
-  });
-  /** Pages accumulated for the current query; a failed page keeps the ones already shown. */
-  private readonly communityState = linkedSignal<
-    { query: CommunityQuery | undefined; loaded: { query: CommunityQuery | undefined; page: number; res: PublicDeckPage } | undefined },
-    CommunityState
-  >({
-    source: () => ({ query: this.communityQuery(), loaded: this.communityRes.hasValue() ? this.communityRes.value() : undefined }),
-    computation: ({ query, loaded }, prev) => {
-      const current = prev && prev.source.query === query ? prev.value : EMPTY_COMMUNITY;
-      if (!loaded || loaded.query !== query || loaded.page <= current.page) return current;
-      return addCommunityPage(current, query, loaded.page, loaded.res);
-    },
-  });
-  protected readonly community = computed(() => this.communityState().items);
-  protected readonly communityTotal = computed(() => this.communityState().total);
-  /** Every page of the query is loaded. */
-  protected readonly communityComplete = computed(() => {
-    const { page, lastPage } = this.communityState();
-    return page > 0 && page >= lastPage;
-  });
-  protected readonly communityLoading = computed(() => this.communityRes.isLoading());
-  protected readonly communityError = computed(() => (this.communityRes.error() ? $localize`:@@decks.page.communityError:Impossible de charger les decks publics.` : null));
-  /** The infinite-scroll sentinel is on screen. */
-  private readonly wantMore = signal(false);
-  /** Window scroll of this list. Kept while a deck is open so Back can return to the same offset. */
-  private listScroll = 0;
-  /** False while another route is showing, so that page's scroll does not overwrite `listScroll`. */
-  private trackScroll = true;
-  private readonly listSentinel = viewChild<ElementRef<HTMLElement>>('listSentinel');
-
-  /** Likes toggled on this page, over what the API listed; dropped when the account changes. */
-  private readonly likes = linkedSignal<string | null, Record<string, LikeState>>({
-    source: () => this.auth.token() ?? this.auth.username(),
-    computation: () => ({}),
-  });
-  private readonly pendingLikes = new Set<string>();
-
-  protected readonly list = computed(() => {
-    const likes = this.likes();
-    const tab = this.tab();
-    // The contest keeps the order of the snapshot, whatever the sort chosen on the other tabs.
-    if (tab === 'contest') return matchDecks(this.contestInSet(), { ...this.filters(), format: '', visibility: 'all' });
-    return (tab === 'mine' ? this.mineFiltered() : this.community()).map((d) => (likes[d.id] ? { ...d, ...likes[d.id] } : d));
-  });
   protected readonly tabs = computed(() => [
     { id: 'mine', label: $localize`:@@decks.page.tabMine:Mes decks`, count: this.mineLoading() ? null : this.mine().length },
     { id: 'community', label: $localize`:@@decks.page.tabCommunity:Communauté` },
@@ -254,7 +109,7 @@ export class DecksPage {
   protected readonly navItems = computed<AcBottomNavItem[]>(() => {
     const item = (tab: Tab, icon: AcBottomNavItem['icon'], label: string): AcBottomNavItem => ({
       route: '.',
-      queryParams: this.tabParams(tab),
+      queryParams: tabQueryParams(tab, this.defaultTab()),
       active: this.tab() === tab,
       icon,
       label,
@@ -265,68 +120,7 @@ export class DecksPage {
       item('contest', 'trophy', $localize`:@@decks.nav.contest:Concours`),
     ];
   });
-  protected readonly contestLoading = computed(() => this.contestRes.isLoading());
-  protected readonly contestError = computed(() =>
-    this.contestRes.error() ? $localize`:@@decks.contest.error:Impossible de charger les decks du concours.` : null,
-  );
   protected readonly formats = [{ value: '', label: $localize`:@@decks.page.allFormats:Tous les formats` }, ...visibleFormats().map((f) => ({ value: f.value, label: f.label }))];
-  /** Heroes that have public decks, loaded the first time the community tab opens. */
-  private readonly publicHeroesRes = rxResource({
-    params: () => (this.tab() === 'community' ? contentLocale() : undefined),
-    stream: ({ params }) => this.decksApi.publicHeroes(params),
-  });
-  private readonly publicHeroes = linkedSignal<HeroChoice[] | undefined, HeroChoice[]>({
-    source: () =>
-      this.publicHeroesRes.hasValue()
-        ? this.publicHeroesRes.value().map((h) => ({ value: h.reference, label: h.name, faction: factionFromReference(h.reference) }))
-        : undefined,
-    computation: (heroes, prev) => heroes ?? prev?.value ?? [],
-  });
-  protected readonly heroes = computed(() => this.heroOptions(this.filters().factions));
-  /**
-   * Hero filter options, grouped by faction (as on the site's decks page). Community tab: the heroes of the public decks,
-   * by reference (the API filters on it). Contest tab: the heroes of the set. Mine: the heroes of the account's decks.
-   */
-  private heroOptions(factions: string[]): { value: string; label: string; group?: string }[] {
-    const all = $localize`:@@decks.page.allHeroes:Tous les héros`;
-    if (this.tab() === 'community') return heroOptions(this.publicHeroes(), factions, all);
-    const decks = this.tab() === 'contest' ? this.contestInSet() : this.mine();
-    const byName = new Map<string, HeroChoice>();
-    for (const d of decks) if (d.hero?.name && !byName.has(d.hero.name)) byName.set(d.hero.name, { value: d.hero.name, label: d.hero.name, faction: d.hero.faction });
-    const choices = [...byName.values()].sort((a, b) => a.label.localeCompare(b.label, uiLocale()));
-    return heroOptions(choices, factions, all);
-  }
-  /** Text typed in the card filter; suggestions from the search API (`UniquesApiService.suggestCards`). */
-  private readonly cardQuery = signal('');
-  private readonly cardSuggestRes = rxResource({
-    params: () => {
-      const q = this.cardQuery().trim();
-      return this.tab() === 'community' && q.length >= 2 ? { q, locale: contentLocale() } : undefined;
-    },
-    stream: ({ params }) => timer(SUGGEST_DEBOUNCE_MS).pipe(switchMap(() => this.uniques.suggestCards(params.q, params.locale))),
-  });
-  protected readonly cardOptions = linkedSignal<AcSuggestion[] | undefined, AcSuggestion[]>({
-    source: () => (this.cardSuggestRes.hasValue() ? this.cardSuggestRes.value().map(cardOption) : undefined),
-    computation: (options, prev) => options ?? prev?.value ?? [],
-  });
-  protected readonly cardSuggesting = computed(() => this.cardSuggestRes.isLoading());
-  /** The suggestion picked in this page; a card of the URL is looked up (name, picture) on the search API. */
-  private readonly pickedCard = signal<AcSuggestion | null>(null);
-  private readonly cardLookup = rxResource({
-    params: () => {
-      const ref = this.filters().card;
-      return ref && this.pickedCard()?.value !== ref ? ref : undefined;
-    },
-    stream: ({ params }) => this.uniques.suggestionOf(params, contentLocale()).pipe(map((s) => (s ? cardOption(s) : null))),
-  });
-  protected readonly cardChoice = computed<AcSuggestion | null>(() => {
-    const ref = this.filters().card;
-    if (!ref) return null;
-    const picked = this.pickedCard();
-    if (picked?.value === ref) return picked;
-    const found = this.cardLookup.hasValue() ? this.cardLookup.value() : null;
-    return found ?? { value: ref, label: ref };
-  });
   protected readonly visibilities: AcSegment<Visibility>[] = [
     { value: 'all', label: $localize`:@@decks.page.visibilityAll:Tous` },
     { value: 'public', icon: 'eye', label: $localize`:@@decks.page.visibilityPublic:Publics` },
@@ -338,12 +132,19 @@ export class DecksPage {
   ];
   protected readonly sorts = SORTS;
   protected readonly factions = FACTIONS;
+
   protected readonly activeFilters = computed(() => {
     const f = this.filters();
     const tab = this.tab();
     // « Légaux uniquement » is on by default: turned off, it counts as a filter.
     return (
-      (f.format && tab !== 'contest' ? 1 : 0) + (f.hero ? 1 : 0) + (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) + (f.status === 'archived' && tab === 'mine' ? 1 : 0) + (!f.legalOnly && tab === 'community' ? 1 : 0) + (tab === 'community' ? (f.tournament ? 1 : 0) + (f.card ? 1 : 0) : 0) + f.factions.length
+      (f.format && tab !== 'contest' ? 1 : 0) +
+      (f.hero ? 1 : 0) +
+      (f.visibility !== 'all' && tab === 'mine' ? 1 : 0) +
+      (f.status === 'archived' && tab === 'mine' ? 1 : 0) +
+      (!f.legalOnly && tab === 'community' ? 1 : 0) +
+      (tab === 'community' ? (f.tournament ? 1 : 0) + (f.card ? 1 : 0) : 0) +
+      f.factions.length
     );
   });
   protected readonly countLabel = computed(() => {
@@ -368,59 +169,18 @@ export class DecksPage {
 
   constructor() {
     this.guests.reload();
-    // Filters and sort come from the URL and are kept there, so a filtered list can be shared, as on the site's decks
-    // page. The site's links are understood too: `set=collection`, `hero=` a hero reference, `visibility=1|0`,
-    // `sort=field:dir`, `tab=my|public`. `legal=all` shows the illegal community decks too.
-    const initial = this.route.snapshot.queryParamMap;
-    const factions = (initial.get('faction') ?? '').toUpperCase().split(',').filter((c) => FACTIONS.some((f) => f.code === c));
-    const hero = initial.get('hero') ?? '';
-    const q = initial.get('q') ?? '';
-    if (this.tab() === 'contest') {
-      if (initial.get('set') === 'all' || initial.get('set') === 'collection') this.contestSet.set('all');
-      this.filters.update((f) => ({ ...f, factions, hero, q }));
-    } else {
-      const format = initial.get('format') ?? '';
-      const vis = initial.get('visibility');
-      const visibility: Visibility = vis === 'public' || vis === '1' ? 'public' : vis === 'private' || vis === '0' ? 'private' : 'all';
-      this.filters.set({
-        q,
-        format: visibleFormats().some((f) => f.value === format) ? format : '',
-        hero: this.tab() === 'community' ? hero.toUpperCase() : hero,
-        visibility: this.tab() === 'mine' ? visibility : 'all',
-        status: this.tab() === 'mine' && initial.get('archived') === '1' ? 'archived' : 'active',
-        factions,
-        sort: sortFromParam(initial.get('sort')) ?? 'updated',
-        legalOnly: initial.get('legal') !== 'all',
-        tournament: this.tab() === 'community' && initial.get('tournament') === '1',
-        card: this.tab() === 'community' && /^ALT_/i.test(initial.get('card') ?? '') ? (initial.get('card') ?? '').toUpperCase() : '',
-      });
-    }
-    // « Mes decks »: a hero reference of the URL (site link) becomes the name of that hero once the decks are loaded.
+    const initialTab = this.tab();
+    this.catalog.tab.set(initialTab);
+    const decoded = decodeDecksUrl(this.route.snapshot.queryParamMap, initialTab);
+    this.catalog.contestSet.set(decoded.contestSet);
+    this.catalog.filters.set(decoded.filters);
+
     effect(() => {
-      const mine = this.mine();
-      if (this.tab() !== 'mine' || !this.serverRes.hasValue()) return;
-      untracked(() => {
-        const hero = this.filters().hero;
-        if (!/^ALT_/i.test(hero)) return;
-        const ref = hero.toUpperCase();
-        const base = ref.replace(/^(ALT_[^_]+)_[BP]_/, '$1_');
-        const match = mine.find((d) => d.hero && (d.hero.reference === ref || d.hero.reference.replace(/^(ALT_[^_]+)_[BP]_/, '$1_') === base));
-        this.patch({ hero: match?.hero?.name ?? '' });
-      });
+      this.catalog.tab.set(this.tab());
     });
-    // Once the snapshot is loaded, a hero of the URL becomes a name of the list, or is dropped.
-    effect(() => {
-      const all = this.contestAll();
-      if (this.tab() !== 'contest' || !all.length) return;
-      untracked(() => {
-        const hero = this.filters().hero;
-        if (!hero || this.heroes().some((o) => o.value === hero)) return;
-        const byRef = this.contestInSet().find((d) => d.hero?.reference === hero.toUpperCase())?.hero?.name;
-        this.patch({ hero: byRef && this.heroes().some((o) => o.value === byRef) ? byRef : '' });
-      });
-    });
+
     // The contest keeps its own filters, apart from « Mes decks » and « Communauté » (as on the site).
-    let shownGroup = this.tab() === 'contest' ? 'contest' : 'decks';
+    let shownGroup = initialTab === 'contest' ? 'contest' : 'decks';
     const saved: Record<string, DeckFilters> = {};
     effect(() => {
       const group = this.tab() === 'contest' ? 'contest' : 'decks';
@@ -432,7 +192,7 @@ export class DecksPage {
       });
     });
     // « Mes decks » filters on the hero's name, « Communauté » on its reference: the hero does not follow a tab change.
-    let heroTab = this.tab();
+    let heroTab = initialTab;
     effect(() => {
       const tab = this.tab();
       untracked(() => {
@@ -442,74 +202,21 @@ export class DecksPage {
     });
     effect(() => {
       this.urlSync();
-      const tab = this.tab();
-      const f = this.filters();
-      const common = { faction: f.factions.join(',') || null, hero: f.hero || null, q: f.q.trim() || null };
-      const queryParams =
-        tab === 'contest'
-          ? { tab, set: this.contestSet() === 'all' ? 'all' : null, ...common }
-          : {
-              tab: tab === this.defaultTab() ? null : tab,
-              format: f.format || null,
-              ...common,
-              visibility: tab === 'mine' && f.visibility !== 'all' ? f.visibility : null,
-              archived: tab === 'mine' && f.status === 'archived' ? '1' : null,
-              sort: f.sort !== 'updated' ? f.sort : null,
-              legal: tab === 'community' && !f.legalOnly ? 'all' : null,
-              tournament: tab === 'community' && f.tournament ? '1' : null,
-              card: tab === 'community' && f.card ? f.card : null,
-            };
+      const queryParams = encodeDecksUrl(this.tab(), this.defaultTab(), this.filters(), this.contestSet());
       untracked(() => {
         if (!isDecksListUrl(this.router.url)) return;
-        const current = this.route.snapshot.queryParamMap;
-        const same = Object.entries(queryParams).every(([k, v]) => current.get(k) === v) && current.keys.every((k) => k in queryParams);
-        if (!same) void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
+        if (!queryParamsEqual(this.route.snapshot.queryParamMap, queryParams)) {
+          void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
+        }
       });
     });
-    // Keeps loading pages while the sentinel stays visible (fast scroll, tall screens).
-    effect(() => {
-      const { page, lastPage } = this.communityState();
-      if (!this.wantMore() || this.communityLoading() || this.communityError() || page === 0 || page >= lastPage) return;
-      untracked(() => this.communityPage.set(page + 1));
-    });
 
-    const destroyRef = inject(DestroyRef);
-    const onScroll = () => {
-      if (this.trackScroll && isDecksListUrl(this.router.url)) this.listScroll = window.scrollY;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
-
-    // The list component stays alive (see DecksListReuseStrategy). Remember its scroll when leaving,
-    // and put that exact offset back when the list is shown again. Never jump to the top.
-    this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
-      if (e instanceof NavigationStart && isDecksListUrl(this.router.url) && !isDecksListUrl(e.url)) {
-        const y = window.scrollY;
-        if (y > 0 || this.listScroll === 0) this.listScroll = y;
-        this.trackScroll = false;
-        this.wantMore.set(false);
-      }
-      if (e instanceof NavigationStart && e.navigationTrigger === 'popstate' && isDecksListUrl(e.url)) {
-        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-      }
-      if ((e instanceof NavigationCancel || e instanceof NavigationError) && isDecksListUrl(this.router.url)) {
-        this.trackScroll = true;
-      }
-      if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects)) this.urlSync.update((n) => n + 1);
-      if (e instanceof NavigationEnd && isDecksListUrl(e.urlAfterRedirects) && !this.trackScroll) {
-        // Decks created, edited, duplicated or deleted meanwhile: the kept list is refreshed in place.
-        if (this.auth.isLoggedIn()) this.serverRes.reload();
-        const y = this.listScroll;
-        // Instant: the site's Bootstrap makes the root scroll smooth, and the app scrolls to the top of each page it opens.
-        const apply = () => window.scrollTo({ top: y, behavior: 'instant' });
-        apply();
-        requestAnimationFrame(() => {
-          apply();
-          this.trackScroll = true;
-          this.syncSentinel();
-          if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
-        });
-      }
+    attachScrollPreservation({
+      isTargetUrl: isDecksListUrl,
+      onLeave: () => this.catalog.wantMore.set(false),
+      onRouteMatch: () => this.urlSync.update((n) => n + 1),
+      onReturn: () => this.catalog.reloadMine(),
+      onRestored: () => this.syncSentinel(),
     });
   }
 
@@ -519,48 +226,32 @@ export class DecksPage {
     if (!el || this.tab() !== 'community') return;
     const rect = el.getBoundingClientRect();
     const lookahead = window.innerHeight * 3;
-    this.wantMore.set(rect.top < window.innerHeight + lookahead && rect.bottom > 0);
+    this.catalog.wantMore.set(rect.top < window.innerHeight + lookahead && rect.bottom > 0);
   }
 
   protected setTab(id: string): void {
     const tab = TABS.find((t) => t === id) ?? 'mine';
-    void this.router.navigate([], { queryParams: this.tabParams(tab), replaceUrl: true });
-  }
-
-  /** Only `tab` is kept: the URL effect then writes the filters of the tab shown. */
-  private tabParams(tab: Tab): { tab: Tab | null } {
-    return { tab: tab === this.defaultTab() ? null : tab };
+    void this.router.navigate([], { queryParams: tabQueryParams(tab, this.defaultTab()), replaceUrl: true });
   }
 
   protected patch(p: Partial<DeckFilters>): void {
-    this.filters.update((f) => ({ ...f, ...p }));
+    this.catalog.patchFilters(p);
   }
 
-  /** Card filter: a suggestion picked, or cleared (typing again clears it too). */
   protected setCard(choice: AcSuggestion | null): void {
-    this.pickedCard.set(choice);
-    if ((choice?.value ?? '') !== this.filters().card) this.patch({ card: choice?.value ?? '' });
+    this.catalog.setCard(choice);
   }
 
   protected onCardQuery(q: string): void {
-    this.cardQuery.set(q);
+    this.catalog.setCardQuery(q);
   }
 
-  /** The hero filter is dropped when the other set has no deck with that hero. */
   protected setContestSet(set: ContestSet | undefined): void {
-    this.contestSet.set(set ?? 'winners');
-    const hero = this.filters().hero;
-    if (hero && !this.contestInSet().some((d) => d.hero?.name === hero)) this.patch({ hero: '' });
+    this.catalog.setContestSet(set);
   }
 
   protected toggleFaction(code: string, on: boolean): void {
-    // On the contest tab the hero list follows the factions, so the hero is cleared (as on the site). Elsewhere the
-    // hero stays while the list still offers it.
-    this.filters.update((f) => {
-      const factions = on ? [...f.factions, code] : f.factions.filter((c) => c !== code);
-      const keep = this.tab() !== 'contest' && (!f.hero || this.heroOptions(factions).some((o) => o.value === f.hero));
-      return { ...f, hero: keep ? f.hero : '', factions };
-    });
+    this.catalog.toggleFaction(code, on);
   }
 
   protected newDeck(): void {
@@ -576,7 +267,7 @@ export class DecksPage {
     openImportDeck(this.overlay, this.auth.isLoggedIn() ? 'equinox' : 'list').afterClosed.subscribe((res) => {
       // The export import creates account decks even when the window is closed with its cross mid-import,
       // and the list stays alive behind the deck page (DecksListReuseStrategy): reload it either way.
-      if (this.auth.isLoggedIn()) this.serverRes.reload();
+      this.catalog.reloadMine();
       if (res?.deckId) void this.router.navigate(['/decks', res.deckId]);
     });
   }
@@ -586,49 +277,8 @@ export class DecksPage {
     openLegalityDetails(this.overlay, { format: deck.formatLabel, legality: deck.legality });
   }
 
-  /** « Enregistrer sur mon compte »: each guest deck becomes a private deck of the account, then leaves this device. */
   protected saveLocalDecks(): void {
-    const decks = this.localDecks();
-    if (!decks.length || this.localSaving()) return;
-    this.localSaving.set(true);
-    this.localError.set(null);
-    from(decks)
-      .pipe(
-        concatMap((d) =>
-          this.decksApi
-            .create({
-              name: d.name,
-              description: d.description ?? '',
-              format: d.format,
-              isPublic: false,
-              // Not a draft: the decks API validates the deck (its prints are kept as the deck's own).
-              isDraft: false,
-              deckCards: [
-                ...(d.hero ? [{ cardReference: d.hero.reference, quantity: 1 }] : []),
-                ...(d.deckCards ?? []).filter((l) => l.cardReference !== d.hero?.reference).map((l) => ({ cardReference: l.cardReference, quantity: l.quantity })),
-              ],
-            })
-            .pipe(
-              map((created) => {
-                this.guests.forgetSiteDeck(d.id);
-                this.guests.delete(d.id);
-                return created;
-              }),
-            ),
-        ),
-        toArray(),
-        finalize(() => this.localSaving.set(false)),
-      )
-      .subscribe({
-        next: (created) => {
-          this.serverRes.reload();
-          if (created.length === 1) void this.router.navigate(['/decks', created[0].id]);
-        },
-        error: () => {
-          this.serverRes.reload();
-          this.localError.set($localize`:@@decks.local.error:Impossible d’enregistrer le deck sur votre compte. Réessayez.`);
-        },
-      });
+    this.catalog.saveLocalDecks((id) => void this.router.navigate(['/decks', id]));
   }
 
   /** « Ignorer »: the guest decks are deleted from this device, after a confirmation (as on the site). */
@@ -640,12 +290,7 @@ export class DecksPage {
       icon: 'trash-2',
       danger: true,
     }).subscribe((confirmed) => {
-      if (!confirmed) return;
-      for (const d of this.localDecks()) {
-        // As « Enregistrer sur mon compte »: the site builder's copy goes too, or it comes back with its next edit.
-        this.guests.forgetSiteDeck(d.id);
-        this.guests.delete(d.id);
-      }
+      if (confirmed) this.catalog.discardLocalDecks();
     });
   }
 
@@ -661,7 +306,7 @@ export class DecksPage {
           filters: this.filters(),
           formats: this.formats,
           heroes: this.heroes(),
-          heroesFor: (factions: string[]) => this.heroOptions(factions),
+          heroesFor: (factions: string[]) => this.catalog.heroOptionsFor(factions),
           clearHeroOnFaction: this.tab() === 'contest',
           visibilities: this.visibilities,
           statuses: this.statuses,
@@ -671,44 +316,22 @@ export class DecksPage {
           showLegalOnly: this.tab() === 'community',
           showCommunity: this.tab() === 'community',
           cardChoice: this.cardChoice(),
-          suggestCards: (q: string) => (q.trim().length >= 2 ? this.uniques.suggestCards(q, contentLocale()).pipe(map((list) => list.map(cardOption))) : of([])),
+          suggestCards: (q: string) => this.catalog.suggestCards(q),
         },
       })
       .afterClosed.subscribe((res) => {
         if (!res) return;
         const { cardChoice, ...f } = res;
-        this.pickedCard.set(cardChoice);
+        this.catalog.pickedCard.set(cardChoice);
         this.filters.set(f);
       });
   }
 
-  /** Optimistic toggle, then the count the API returns; guests go to the login page (the upvote needs a token). */
   protected toggleLike(deck: DeckListItem): void {
-    if (!this.auth.isLoggedIn()) {
-      void this.router.navigateByUrl('/login');
-      return;
-    }
-    if (this.pendingLikes.has(deck.id)) return;
-    this.pendingLikes.add(deck.id);
-    const before = { likes: deck.likes, liked: deck.liked };
-    this.setLike(deck.id, { likes: Math.max(0, deck.likes + (deck.liked ? -1 : 1)), liked: !deck.liked });
-    this.decksApi
-      .upvote(deck.id)
-      .pipe(finalize(() => this.pendingLikes.delete(deck.id)))
-      .subscribe({
-        next: (r) => this.setLike(deck.id, { likes: r.upvoteCount, liked: r.hasUpvoted }),
-        error: (err: { status?: number }) => {
-          this.setLike(deck.id, before);
-          if (err.status === 401) void this.router.navigateByUrl('/login');
-        },
-      });
-  }
-
-  private setLike(id: string, state: LikeState): void {
-    this.likes.update((all) => ({ ...all, [id]: state }));
+    this.catalog.toggleLike(deck, () => void this.router.navigateByUrl('/login'));
   }
 
   protected onSentinel(visible: boolean): void {
-    this.wantMore.set(visible);
+    this.catalog.wantMore.set(visible);
   }
 }

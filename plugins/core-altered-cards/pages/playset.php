@@ -194,6 +194,8 @@ if ($collEnabled && $loggedIn && ($_GET['tab'] ?? '') !== 'playset') {
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
     <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-playset.js"></script>
     <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-v2.js"></script>
+    <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-query.js"></script>
+    <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search-effects.js"></script>
     <script src="<?= h(BASE_URL) ?>/plugins/core-altered-cards/assets/card-search.js"></script>
     <script>
     CardSearch({

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/url.php';
 require_once __DIR__ . '/news-people.php';
+require_once __DIR__ . '/service-client.php';
+require_once __DIR__ . '/auth-session.php';
 
 /**
  * True when the *original* request is HTTPS, honouring a TLS-terminating reverse
@@ -799,44 +801,18 @@ function csrfValid(?string $token): bool {
     return !empty($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
-// session helpers
+// session helpers (thin procedural facades over AuthSessionManager)
 
 function kcClearSession(): void {
-    foreach (['kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email',
-              'kc_username', 'kc_id_token', 'kc_access_token',
-              'kc_access_token_exp', 'kc_is_admin', 'user_id'] as $key) {
-        unset($_SESSION[$key]);
-    }
-    if (!headers_sent()) {
-        $secure = request_is_https();
-        setcookie('kc_remember', '', [
-            'expires' => time() - 3600, 'path' => '/',
-            'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
-        ]);
-    }
-    unset($_COOKIE['kc_remember']);
+    AuthSessionManager::default()->clearKcSession();
 }
 
 function clearAuthSession(): void {
-    foreach ([
-        'admin_logged_in', 'admin_logged_in_at', 'admin_username',
-        'local_logged_in', 'local_logged_in_at', 'local_email', 'local_username',
-        'kc_logged_in', 'kc_logged_in_at', 'kc_sub', 'kc_email', 'kc_username', 'kc_id_token',
-        'kc_is_admin', 'user_id',
-    ] as $key) {
-        unset($_SESSION[$key]);
-    }
+    AuthSessionManager::default()->clearAuthSession();
 }
 
 function localClearSession(): void {
-    foreach (['local_logged_in', 'local_logged_in_at', 'local_email', 'local_username', 'user_id'] as $key) {
-        unset($_SESSION[$key]);
-    }
-    $secure = request_is_https();
-    setcookie('local_remember', '', [
-        'expires' => time() - 3600, 'path' => '/',
-        'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax',
-    ]);
+    AuthSessionManager::default()->clearLocalSession();
 }
 
 // cross-installation logout
@@ -844,103 +820,18 @@ function localClearSession(): void {
 // it. Its value is the Unix timestamp of the last logout. Any session whose
 // logged_in_at predates that timestamp is immediately invalidated.
 
-
 function globalLogoutSessionIsValid(): bool {
-    if (empty($_COOKIE['ac_global_logout'])) return true;
-    $logoutAt   = (int)$_COOKIE['ac_global_logout'];
-    $loggedInAt = (int)max(
-        $_SESSION['kc_logged_in_at']    ?? 0,
-        $_SESSION['local_logged_in_at'] ?? 0
-    );
-    return $loggedInAt > $logoutAt;
+    return AuthSessionManager::default()->globalLogoutSessionIsValid();
 }
 
 // keycloak authentication
 
 function kcIsLoggedIn(): bool {
-    static $verifiedUserId = null;
-
-    if (!defined('KC_URL') || KC_URL === '') {
-        return localIsLoggedIn();
-    }
-
-    if (session_status() === PHP_SESSION_NONE) session_start();
-
-    if (empty($_SESSION['kc_logged_in'])) {
-        $verifiedUserId = null;
-        static $restoreAttempted = false;
-        if (!$restoreAttempted && !empty($_COOKIE['kc_remember'])) {
-            $restoreAttempted = true;
-            require_once __DIR__ . '/func.keycloak.php';
-            return kc_restore_session();
-        }
-        return false;
-    }
-
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    if ($userId <= 0) {
-        $verifiedUserId = null;
-        kcClearSession();
-        return false;
-    }
-
-    // Memoize DB/Keycloak verification within a single PHP request; re-checks if session cleared or user changed.
-    if ($verifiedUserId === $userId && globalLogoutSessionIsValid()) {
-        return true;
-    }
-
-    // Verify the refresh token is still in DB (nulled on logout) and not expired.
-    try {
-        $stmt = getDB()->prepare(q("SELECT kc_refresh_token, kc_token_expiry FROM {users} WHERE id = :id LIMIT 1"));
-        $stmt->execute([':id' => $userId]);
-        $row = $stmt->fetch();
-        if ($row === false || empty($row['kc_refresh_token'])) {
-            kcClearSession();
-            return false;
-        }
-        $rtExp = (int)($row['kc_token_expiry'] ?? 0);
-        if ($rtExp > 0 && $rtExp <= time()) {
-            require_once __DIR__ . '/func.keycloak.php';
-            kc_drop_refresh_token($userId);
-            return false;
-        }
-    } catch (Throwable $e) {
-        return false;
-    }
-
-    // Admin-triggered force-logout
-    $forceAt = getSetting('kc_force_logout_at');
-    if ($forceAt !== '' && (int)($_SESSION['kc_logged_in_at'] ?? 0) <= strtotime($forceAt)) {
-        kcClearSession();
-        return false;
-    }
-
-    if (!globalLogoutSessionIsValid()) {
-        kcClearSession();
-        return false;
-    }
-
-    // Ensure a valid access token is present or refreshable with Keycloak; otherwise
-    // the PHP session outlives Keycloak and the header displays a signed-in user
-    // whose API calls (decks, collection, ownership) fail.
-    require_once __DIR__ . '/func.keycloak.php';
-    if (!kc_get_access_token($userId)) {
-        return false;
-    }
-
-    $verifiedUserId = $userId;
-    return true;
+    return AuthSessionManager::default()->isLoggedIn();
 }
 
 function kcUser(): array {
-    if (!defined('KC_URL') || KC_URL === '') {
-        return localGetUser();
-    }
-    return [
-        'sub'      => $_SESSION['kc_sub']      ?? '',
-        'email'    => $_SESSION['kc_email']    ?? '',
-        'username' => $_SESSION['kc_username'] ?? '',
-    ];
+    return AuthSessionManager::default()->currentUser();
 }
 
 function loginRequired(): void {
@@ -952,72 +843,15 @@ function loginRequired(): void {
 // local authentication
 
 function localRestoreSession(): bool {
-    $token = $_COOKIE['local_remember'] ?? '';
-    if (!$token || strlen($token) !== 64) return false;
-
-    try {
-        $stmt = getDB()->prepare(q(
-            "SELECT id, email, username, local_remember_expiry
-             FROM {users}
-             WHERE local_remember_token = :tok AND local_remember_expiry > :now
-             LIMIT 1"
-        ));
-        $stmt->execute([':tok' => $token, ':now' => time()]);
-        $user = $stmt->fetch();
-    } catch (Throwable $e) { return false; }
-
-    if (!$user) return false;
-
-    // Reject tokens issued before the last global logout
-    $logoutAt = (int)($_COOKIE['ac_global_logout'] ?? 0);
-    if ($logoutAt > 0) {
-        $tokenIat = (int)$user['local_remember_expiry'] - SESSION_LIFETIME_DAYS * 86400;
-        if ($tokenIat <= $logoutAt) return false;
-    }
-
-    session_regenerate_id(true);
-
-    $_SESSION['local_logged_in']    = true;
-    $_SESSION['local_logged_in_at'] = time();
-    $_SESSION['user_id']            = (int)$user['id'];
-    $_SESSION['local_email']        = $user['email']    ?? '';
-    $_SESSION['local_username']     = $user['username'] ?? '';
-
-    return true;
+    return AuthSessionManager::default()->restoreLocalSession();
 }
 
 function localIsLoggedIn(): bool {
-    if (session_status() === PHP_SESSION_NONE) session_start();
-
-    if (empty($_SESSION['local_logged_in'])) {
-        static $restoreAttempted = false;
-        if (!$restoreAttempted && !empty($_COOKIE['local_remember'])) {
-            $restoreAttempted = true;
-            return localRestoreSession();
-        }
-        return false;
-    }
-
-    $forceAt = getSetting('kc_force_logout_at');
-    if ($forceAt !== '' && (int)($_SESSION['local_logged_in_at'] ?? 0) <= strtotime($forceAt)) {
-        localClearSession();
-        return false;
-    }
-
-    if (!globalLogoutSessionIsValid()) {
-        localClearSession();
-        return false;
-    }
-
-    return true;
+    return AuthSessionManager::default()->isLocalLoggedIn();
 }
 
 function localGetUser(): array {
-    return [
-        'sub'      => '',
-        'email'    => $_SESSION['local_email']    ?? '',
-        'username' => $_SESSION['local_username'] ?? '',
-    ];
+    return AuthSessionManager::default()->localUser();
 }
 
 function assetUrl(string $path): string {

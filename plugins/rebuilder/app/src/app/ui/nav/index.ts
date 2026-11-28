@@ -5,3 +5,4 @@ export * from './breadcrumb/breadcrumb';
 export * from './tabs/tabs';
 export * from './back-button/back-button';
 export * from './navigation-history';
+export * from './scroll-preservation';

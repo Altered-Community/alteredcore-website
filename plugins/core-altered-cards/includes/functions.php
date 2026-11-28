@@ -2,6 +2,7 @@
 // Card/collection helpers for the core-altered-cards plugin.
 // Required by plugin pages and the collection-search API endpoint.
 require_once __DIR__ . '/numeric-filter.php';
+require_once dirname(__DIR__, 3) . '/includes/service-client.php';
 
 function loadSearchSettings(): array {
     static $cfg = null;
@@ -177,58 +178,28 @@ function deckApiToken(): ?string {
  */
 function cacDeckApiDelete(string $deckId, string $token): int
 {
-    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'DELETE',
-        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token, 'Accept: application/json'],
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return $code;
+    $url = DECKS_API_URL . '/api/decks/' . rawurlencode($deckId);
+    $res = acServiceRequest(new AcHttpRequest('DELETE', $url, ['Accept: application/json'], null, 15, 5, false, null, $token, false));
+    return $res->status;
 }
 
 /** Archives (isDraft: true, hidden in BGA) or unarchives a deck; returns the HTTP status. */
 function cacDeckApiSetArchived(string $deckId, bool $archived, string $token): int
 {
-    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId));
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'PATCH',
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/merge-patch+json', 'Accept: application/json', 'Authorization: Bearer ' . $token],
-        CURLOPT_POSTFIELDS     => json_encode(['isDraft' => $archived]),
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return $code;
+    $url = DECKS_API_URL . '/api/decks/' . rawurlencode($deckId);
+    $res = acServiceRequest(AcHttpRequest::json('PATCH', $url, ['isDraft' => $archived], null, 'application/merge-patch+json', [], 15, $token));
+    return $res->status;
 }
 
 /** @return array{upvoteCount: int, hasUpvoted: bool}|null */
 function cacDeckApiUpvote(string $deckId, string $token): ?array
 {
-    $ch = curl_init(DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '/upvote');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . $token,
-            'Accept: application/json',
-            'Content-Type: application/json',
-        ],
-        CURLOPT_POSTFIELDS     => '{}',
-        CURLOPT_TIMEOUT        => 15,
-    ]);
-    $raw  = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($code < 200 || $code >= 300 || !$raw) {
+    $url = DECKS_API_URL . '/api/decks/' . rawurlencode($deckId) . '/upvote';
+    $res = acServiceRequest(AcHttpRequest::json('POST', $url, '{}', null, 'application/json', [], 15, $token));
+    if (!$res->isOk()) {
         return null;
     }
-    $data = json_decode($raw, true);
+    $data = $res->json();
     if (!is_array($data)) {
         return null;
     }
@@ -240,66 +211,13 @@ function cacDeckApiUpvote(string $deckId, string $token): ?array
 }
 
 /**
- * Make an authenticated request to the collection API.
- *
- * @param string     $apiUrl      Base URL (no trailing slash)
- * @param string     $method      GET | POST | PATCH | DELETE
- * @param string     $path        Path with leading slash, e.g. '/api/collection'
- * @param int        $userId      Used to retrieve the Keycloak access token
- * @param array|null $body        Data for POST/PATCH (encoded as JSON automatically)
- * @param string     $contentType Content-Type for body (default: application/json)
- * @return array|true|false  Decoded JSON array, true on 204 No Content, false on error
- */
-function collApiRequestSend(string $apiUrl, string $method, string $path, string $token, $body = null, string $contentType = 'application/json'): array {
-    $headers = [
-        'Authorization: Bearer ' . $token,
-        'Accept: application/json',
-    ];
-    if ($body !== null) {
-        $headers[] = 'Content-Type: ' . $contentType;
-    }
-
-    $ch = curl_init($apiUrl . $path);
-    $opts = [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => $headers,
-        CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
-        CURLOPT_CUSTOMREQUEST  => $method,
-    ];
-    if ($body !== null) {
-        $opts[CURLOPT_POSTFIELDS] = json_encode($body, JSON_UNESCAPED_UNICODE);
-    }
-    curl_setopt_array($ch, $opts);
-
-    $raw  = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_errno($ch);
-    curl_close($ch);
-
-    if ($err || $raw === false || $code === 0) return [0, null];
-    return [$code, (string)$raw];
-}
-
-/**
  * Authenticated request returning [statusCode, rawBody] and retrying once on upstream 401.
  *
  * @return array{0:int,1:?string}
  */
 function collApiRequestRaw(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json'): array {
-    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
-    $token = kc_get_access_token($userId);
-    if (!$token) return [401, null];
-
-    [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
-    if ($code === 401) {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
-        $token = kc_get_access_token($userId);
-        if (!$token) return [401, $raw];
-        [$code, $raw] = collApiRequestSend($apiUrl, $method, $path, $token, $body, $contentType);
-    }
-    return [$code, $raw];
+    $res = acServiceRequest(AcHttpRequest::json($method, $apiUrl . $path, $body, $userId, $contentType));
+    return [$res->status, $res->body];
 }
 
 function collApiRequest(string $apiUrl, string $method, string $path, int $userId, $body = null, string $contentType = 'application/json') {
@@ -328,25 +246,15 @@ function cacUniquesApiBatch(array $refs): array {
             $parts[] = 'ref[]=' . rawurlencode($r);
         }
         $parts[] = 'limit=' . count($chunk);
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_HTTPHEADER     => [
-                'Accept: application/json',
-                'Content-Type: application/x-www-form-urlencoded',
-            ],
-            CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => implode('&', $parts),
-        ]);
-        $raw  = curl_exec($ch);
-        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_errno($ch);
-        curl_close($ch);
-
-        if ($err || $code < 200 || $code >= 300 || !$raw) return [];
-        $decoded = json_decode($raw, true);
+        $res = acServiceRequest(new AcHttpRequest(
+            'POST',
+            $url,
+            ['Accept: application/json', 'Content-Type: application/x-www-form-urlencoded'],
+            implode('&', $parts),
+            15
+        ));
+        if (!$res->isOk()) return [];
+        $decoded = $res->json();
         if (!is_array($decoded) || !isset($decoded['cards']) || !is_array($decoded['cards'])) return [];
         foreach ($decoded['cards'] as $card) {
             if (is_array($card) && !empty($card['reference'])) {
@@ -381,22 +289,9 @@ function cacCardsApiBatch(array $refs, string $locale = 'en'): array {
     if (!defined('CARDS_API_URL') || CARDS_API_URL === '') return $found;
 
     $url = rtrim(CARDS_API_URL, '/') . '/api/cards/batch?locale=' . rawurlencode($locale);
-    $ch  = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Content-Type: application/json'],
-        CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['references' => $missing], JSON_UNESCAPED_UNICODE),
-    ]);
-    $raw  = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_errno($ch);
-    curl_close($ch);
-
-    if ($err || $code >= 400 || !$raw) return $found;
-    $decoded = json_decode($raw, true);
+    $res = acServiceRequest(AcHttpRequest::json('POST', $url, ['references' => $missing]));
+    if (!$res->isOk()) return $found;
+    $decoded = $res->json();
     if (!is_array($decoded)) return $found;
     // The batch endpoint returns a flat array; tolerate an enveloped {member:[...]} too.
     $legacy = (isset($decoded['member']) && is_array($decoded['member'])) ? $decoded['member'] : $decoded;
@@ -475,10 +370,7 @@ function collSetQuantity(string $apiUrl, int $userId, string $ref, int $qty, int
  * Used when an API returns a 422 response with a "violations" array.
  */
 function formatApiViolations(array $violations): string {
-    return implode(' — ', array_map(
-        function ($v) { return ($v['propertyPath'] ? $v['propertyPath'] . ': ' : '') . ($v['message'] ?? ''); },
-        $violations
-    ));
+    return AcHttpResponse::formatViolations($violations);
 }
 
 /**
@@ -656,19 +548,10 @@ function cacFetchDeckApiFormats(): ?array
     if (is_file($failMark) && (time() - (int)@filemtime($failMark)) < 60) {
         return is_array($cached) ? $cached : null;
     }
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CONNECTTIMEOUT => 3,
-        CURLOPT_TIMEOUT        => 5,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
-    ]);
-    $raw  = curl_exec($ch);
-    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    $data = $code === 200 && is_string($raw) ? json_decode($raw, true) : null;
+    $res = acServiceRequest(new AcHttpRequest('GET', $url, ['Accept: application/json'], null, 5, 3));
+    $data = $res->status === 200 ? $res->json() : null;
     if (is_array($data) && array_is_list($data)) {
-        @file_put_contents($cache, $raw, LOCK_EX);
+        @file_put_contents($cache, (string)$res->body, LOCK_EX);
         @unlink($failMark);
         return $data;
     }
@@ -764,49 +647,32 @@ function cacHeroPortraitRef(string $ref): string {
  */
 function collApiMultiRequest(string $apiUrl, array $reqs, int $userId): array {
     if (empty($reqs)) return [];
-    require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
-    $token = kc_get_access_token($userId);
-    if (!$token) return array_fill(0, count($reqs), false);
-
-    $baseHeaders = ['Authorization: Bearer ' . $token, 'Accept: application/json'];
-
-    $mh      = curl_multi_init();
-    $handles = [];
+    $httpReqs = [];
     foreach ($reqs as $i => $req) {
-        $body    = $req['body'] ?? null;
-        $headers = $baseHeaders;
-        if ($body !== null) $headers[] = 'Content-Type: ' . ($req['contentType'] ?? 'application/json');
-        $opts = [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_USERAGENT      => 'alteredcore.org/1.0',
-            CURLOPT_CUSTOMREQUEST  => $req['method'],
-        ];
-        if ($body !== null) $opts[CURLOPT_POSTFIELDS] = json_encode($body, JSON_UNESCAPED_UNICODE);
-        $ch = curl_init($apiUrl . $req['path']);
-        curl_setopt_array($ch, $opts);
-        curl_multi_add_handle($mh, $ch);
-        $handles[$i] = $ch;
+        $httpReqs[$i] = AcHttpRequest::json(
+            (string)$req['method'],
+            $apiUrl . $req['path'],
+            $req['body'] ?? null,
+            null,
+            (string)($req['contentType'] ?? 'application/json'),
+            [],
+            30
+        );
     }
-
-    $running = null;
-    do { curl_multi_exec($mh, $running); curl_multi_select($mh); } while ($running > 0);
-
-    $results = [];
-    foreach ($handles as $i => $ch) {
-        $raw  = curl_multi_getcontent($ch);
-        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_errno($ch);
-        curl_multi_remove_handle($mh, $ch);
-        curl_close($ch);
-        if ($err) { $results[$i] = false; continue; }
-        if ($code === 204) { $results[$i] = true; continue; }
-        if (!$raw) { $results[$i] = false; continue; }
-        $decoded = json_decode($raw, true);
+    $responses = acServiceMulti($httpReqs, $userId);
+    $results   = [];
+    foreach ($responses as $i => $res) {
+        if ($res->isUnreachable() || $res->status >= 400) {
+            $results[$i] = false;
+            continue;
+        }
+        if ($res->status === 204) {
+            $results[$i] = true;
+            continue;
+        }
+        $decoded = $res->json();
         $results[$i] = is_array($decoded) ? $decoded : false;
     }
-    curl_multi_close($mh);
     return $results;
 }
 
@@ -1057,20 +923,10 @@ function cacFormatsManifestUrl(): string {
 // Fetch the public formats manifest (array of {id, name, path, version}).
 // Returns the valid entries, or null when the manifest can't be fetched/parsed.
 function cacFetchFormatsManifest(): ?array {
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL            => cacFormatsManifestUrl(),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CONNECTTIMEOUT => 3,
-        CURLOPT_TIMEOUT        => 5,
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($httpCode !== 200 || $response === false) return null;
+    $res = acServiceRequest(new AcHttpRequest('GET', cacFormatsManifestUrl(), ['Accept: application/json'], null, 5, 3));
+    if ($res->status !== 200) return null;
 
-    $data = json_decode((string) $response, true);
+    $data = $res->json();
     if (!is_array($data)) return null;
     $entries = [];
     foreach ($data as $entry) {
@@ -1096,27 +952,22 @@ function cacNotifyDeckApiFrontierFormat(string $formatId): ?array {
     $base = defined('DECKS_API_URL') ? rtrim((string) DECKS_API_URL, '/') : '';
     if ($key === '' || $base === '') return null;
 
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL            => $base . '/api/admin/formats/season',
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['formatId' => $formatId]),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CONNECTTIMEOUT => 3,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Accept: application/json', 'X-Api-Key: ' . $key],
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+    $res = acServiceRequest(AcHttpRequest::json(
+        'POST',
+        $base . '/api/admin/formats/season',
+        ['formatId' => $formatId],
+        null,
+        'application/json',
+        ['X-Api-Key: ' . $key],
+        20
+    ));
 
-    $data = is_string($response) ? json_decode($response, true) : null;
-    if ($httpCode >= 200 && $httpCode < 300) {
+    $data = $res->json();
+    if ($res->isOk()) {
         return ['ok' => true, 'season' => is_array($data) ? ($data['season'] ?? null) : null, 'error' => null];
     }
-    $error = is_array($data) ? (string) ($data['detail'] ?? $data['title'] ?? '') : '';
-    if ($error === '') $error = $httpCode > 0 ? 'HTTP ' . $httpCode : ($curlError !== '' ? $curlError : 'no response');
+    $error = $res->errorDetail();
+    if ($error === '') $error = $res->status > 0 ? 'HTTP ' . $res->status : ($res->curlError !== '' ? $res->curlError : 'no response');
     error_log('[core-altered-cards] Deck API Frontier format update failed for "' . $formatId . '": ' . $error);
     return ['ok' => false, 'season' => null, 'error' => $error];
 }

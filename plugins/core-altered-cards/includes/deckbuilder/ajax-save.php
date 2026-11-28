@@ -15,77 +15,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax'])) {
         echo json_encode(['ok' => false, 'error' => 'Invalid token']);
         exit;
     }
-    if (!$token) {
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    if (!$token || $userId <= 0) {
         header('X-Ac-Auth-State: unauthenticated');
         http_response_code(401);
         echo json_encode(['ok' => false, 'error' => $txt['err_token']]);
         exit;
     }
 
-    $deckId   = trim($_POST['deck_id'] ?? '');
-    $payload  = json_decode($_POST['payload'] ?? '{}', true);
-
-    $method  = $deckId ? 'PATCH' : 'POST';
-    $url     = DECKS_API_URL . '/api/decks' . ($deckId ? '/' . rawurlencode($deckId) : '');
+    $deckId      = trim($_POST['deck_id'] ?? '');
+    $payload     = json_decode($_POST['payload'] ?? '{}', true);
+    $method      = $deckId ? 'PATCH' : 'POST';
+    $url         = DECKS_API_URL . '/api/decks' . ($deckId ? '/' . rawurlencode($deckId) : '');
     $contentType = ($method === 'PATCH') ? 'application/merge-patch+json' : 'application/json';
-    $encodedPayload = json_encode($payload);
 
-    $sendSave = function (string $bearer) use ($url, $method, $contentType, $encodedPayload): array {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => $method,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: ' . $contentType,
-                'Accept: application/json',
-                'Authorization: Bearer ' . $bearer,
-            ],
-            CURLOPT_TIMEOUT        => 15,
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $encodedPayload);
-        $response = curl_exec($ch);
-        $code     = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
-        curl_close($ch);
-        return [$code, $response, $curlErr];
-    };
+    $res = acServiceRequest(AcHttpRequest::json($method, $url, $payload, $userId, $contentType));
 
-    [$code, $response, $curlErr] = $sendSave($token);
-    if (!$curlErr && $code === 401) {
-        unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
-        $renewed = deckApiToken();
-        if ($renewed) {
-            [$code, $response, $curlErr] = $sendSave($renewed);
-        } else {
+    if ($res->isUnreachable()) {
+        if ($res->status === 401 && $res->authExpired) {
             header('X-Ac-Auth-State: unauthenticated');
             http_response_code(401);
             echo json_encode(['ok' => false, 'error' => $txt['err_token']]);
             exit;
         }
-    }
-
-    if ($curlErr) {
         echo json_encode(['ok' => false, 'error' => $txt['err_connect']]);
-    } elseif ($code >= 200 && $code < 300) {
-        $data  = json_decode($response, true);
-        $uuid = $data['id'] ?? $deckId;
+    } elseif ($res->isOk()) {
+        $data = $res->json();
+        $uuid = is_array($data) ? ($data['id'] ?? $deckId) : $deckId;
         echo json_encode(['ok' => true, 'id' => $uuid]);
     } else {
-        if ($code === 401) {
+        if ($res->status === 401) {
             header('X-Ac-Auth-State: unauthenticated');
             http_response_code(401);
+            if ($res->authExpired) {
+                echo json_encode(['ok' => false, 'error' => $txt['err_token']]);
+                exit;
+            }
         }
-        $apiBody   = json_decode($response, true);
-        $apiDetail = '';
-        if (!empty($apiBody['violations']) && is_array($apiBody['violations'])) {
-            $apiDetail = formatApiViolations($apiBody['violations']);
-        } elseif (!empty($apiBody['detail'])) {
-            $apiDetail = $apiBody['detail'];
-        } elseif (!empty($apiBody['title'])) {
-            $apiDetail = $apiBody['title'];
-        }
-        $errorMsg = sprintf($txt['err_save'], $code);
-        if ($apiDetail) $errorMsg .= "\n" . $apiDetail;
+        $apiDetail = $res->errorDetail();
+        $errorMsg  = sprintf($txt['err_save'], $res->status);
+        if ($apiDetail !== '') $errorMsg .= "\n" . $apiDetail;
         echo json_encode(['ok' => false, 'error' => $errorMsg]);
     }
     exit;

@@ -66,13 +66,6 @@ $isLoggedIn = kcIsLoggedIn();
 $userId = $isLoggedIn && $kcMode ? (int)($_SESSION['user_id'] ?? 0) : 0;
 $authExpired = $kcMode && !$isLoggedIn;
 
-/** Access token of the session; with $renew, drops the cached one first (after a 401). */
-function serviceProxyToken(int $userId, bool $renew = false) {
-    if ($userId <= 0) return null;
-    if ($renew) unset($_SESSION['kc_access_token'], $_SESSION['kc_access_token_exp']);
-    return kc_get_access_token($userId) ?: null;
-}
-
 // The client's query string, untouched: rebuilding it from $_GET would rename top-level keys
 // with dots or spaces (a.b → a_b) and keep only the last of repeated keys.
 $query = (string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
@@ -83,52 +76,35 @@ foreach (['HTTP_ACCEPT' => 'Accept', 'CONTENT_TYPE' => 'Content-Type', 'HTTP_ACC
     if (!empty($_SERVER[$key])) $forward[] = $name . ': ' . $_SERVER[$key];
 }
 
-/** One upstream call. Returns [status, content type, body] or null when unreachable. */
-function serviceProxySend(string $method, string $url, array $headers, string $body, ?string $token): ?array {
-    if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST  => $method,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER     => $headers,
-        CURLOPT_FOLLOWLOCATION => false,
-        CURLOPT_ENCODING       => '',
-        CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-    ]);
-    if ($method !== 'GET') curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-    $out = curl_exec($ch);
-    $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    $type = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    curl_close($ch);
-    return $out === false || $status === 0 ? null : [$status, $type, (string)$out];
-}
+// Guest requests ($userId === 0) are forwarded anonymously without a token; signed-in requests
+// pass $userId so AcServiceClient handles session_write_close() and single 401 refresh-retry.
+$req = new AcHttpRequest(
+    $method,
+    $url,
+    $forward,
+    $method === 'GET' ? null : $body,
+    20,
+    5,
+    false,
+    $userId > 0 ? $userId : null
+);
+$res = acServiceRequest($req);
 
-// Release the session lock during the upstream call (concurrent requests of the same user).
-$token = serviceProxyToken($userId);
-session_write_close();
-$res = serviceProxySend($method, $url, $forward, $body, $token);
-// A token can be rejected before its expiry (revoked, clock skew): renew once and retry.
-if ($res !== null && $res[0] === 401 && $token !== null) {
-    session_start();
-    $token = serviceProxyToken($userId, true);
-    session_write_close();
-    if ($token !== null) {
-        $res = serviceProxySend($method, $url, $forward, $body, $token);
-    } else {
-        $authExpired = true;
+if ($res->isUnreachable()) {
+    if ($res->status === 401 && $res->authExpired) {
+        // Signed-in user whose refresh token could not be renewed before calling upstream.
+        header('X-Ac-Auth-State: unauthenticated');
+        serviceProxyReply(401, ['error' => 'unauthenticated']);
     }
+    serviceProxyReply(502, ['error' => 'service_unreachable', 'service' => $service]);
 }
 
-if ($res === null) serviceProxyReply(502, ['error' => 'service_unreachable', 'service' => $service]);
-[$status, $type, $out] = $res;
 // Signal expired/absent session on 401 when no valid token backed the request so the shell UI can flip to guest.
-if ($status === 401 && ($authExpired || $token === null)) {
+if ($res->status === 401 && ($authExpired || $res->authExpired || $userId === 0)) {
     header('X-Ac-Auth-State: unauthenticated');
 }
 require_once dirname(__DIR__, 3) . '/includes/json-gzip.php';
 jsonGzipStart();
-http_response_code($status);
-header('Content-Type: ' . ($type !== '' ? $type : 'application/json'));
-echo $out;
+http_response_code($res->status);
+header('Content-Type: ' . ($res->contentType !== '' ? $res->contentType : 'application/json'));
+echo (string)$res->body;

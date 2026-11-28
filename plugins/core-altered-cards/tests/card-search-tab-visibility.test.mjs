@@ -62,8 +62,11 @@ function makeEl(id, tag = 'div', attrs = {}) {
 }
 
 function loadCardSearch() {
-  const src = fs.readFileSync(path.join(process.cwd(), 'plugins/core-altered-cards/assets/card-search.js'), 'utf8');
-  return vm.runInThisContext(`(function(){ ${src}\nreturn CardSearch; })()`);
+  const assetsDir = path.join(process.cwd(), 'plugins/core-altered-cards/assets');
+  const querySrc = fs.readFileSync(path.join(assetsDir, 'card-search-query.js'), 'utf8');
+  const effectsSrc = fs.readFileSync(path.join(assetsDir, 'card-search-effects.js'), 'utf8');
+  const src = fs.readFileSync(path.join(assetsDir, 'card-search.js'), 'utf8');
+  return vm.runInThisContext(`(function(){ ${querySrc}\n${effectsSrc}\n${src}\nreturn CardSearch; })()`);
 }
 
 function setup({ search = '', sort = 'default' } = {}) {
