@@ -188,12 +188,11 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
             <i class="fa-solid fa-key"></i>
             <span><?= h($_csLblOwn) ?></span>
         </button>
-        <?php if ($_csFavMode): ?>
-        <button type="button" class="cs-tab" data-tab="favoris" data-scope="favoris">
+        <button type="button" class="cs-tab<?= $_csFavMode ? '' : ' cs-tab-soon' ?>"
+                data-tab="favoris" data-scope="favoris"<?= $_csFavMode ? '' : ' disabled' ?>>
             <i class="fa-solid fa-star"></i>
             <span><?= h($_csLblFav) ?></span>
         </button>
-        <?php endif; ?>
     </div>
 
     <div class="card-altered p-3 mb-3" data-tabs="all collection ownership favoris">
@@ -262,7 +261,7 @@ $_csNumInput = function($key) use ($_csP, $_csRangeFields, $_csNumPh, $_csNumTit
         // In deckbuilder mode, Hero and Token aren't search targets (the hero has its own
         // picker and tokens aren't deckbuilder-legal cards), keeping the exact same row position & look.
         $_csTypesFilterRow = ($_csMode === 'deck')
-            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN']))
+            ? array_diff_key($_csTypes, array_flip(['HERO', 'TOKEN', 'TOKEN_MANA']))
             : $_csTypes;
         $_csHasRarities = !empty($_csRarities);
         $_csHasTypes    = !empty($_csTypesFilterRow);

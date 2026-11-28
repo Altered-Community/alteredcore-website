@@ -97,6 +97,7 @@ interface AbilityV2 {
   isMain?: boolean;
   isEcho?: boolean;
   spellOnly?: boolean;
+  cardTypes?: string[];
 }
 
 interface EffectsResponse {
@@ -299,7 +300,7 @@ export class CardCatalogService {
         return toAbilityRefs(
           rows
             .filter((r) => (support ? r.isEcho === true : r.isMain !== false))
-            .map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {}, spellOnly: r.spellOnly })),
+            .map((r) => ({ alteredId: r.idGd, text: fromV2Text(r.text) ?? {}, spellOnly: r.spellOnly, cardTypes: r.cardTypes })),
           kind === 'conditions' ? NO_CONDITION : undefined,
         );
       }),
@@ -713,11 +714,28 @@ export const NO_CONDITION = $localize`:@@rules.ability.noCondition:Sans conditio
 const PLAY_TRIGGERS = ['H', 'R', 'J'];
 
 /**
- * Labels in the content language, sorted (spell-only entries last), duplicates merged via `extraIds`
- * and placeholders dropped. With `emptyLabel`, the `[]` row stays first.
+ * Ordering tier for effect dropdown items (shared rule with `card-search-effects.js`):
+ *   0 = present on at least one Character (including Uniques)
+ *   1 = present on at least one Spell (and not on Characters)
+ *   2 = rest (Permanents, Heroes, Tokens…)
+ * Falls back to `spellOnly` when `cardTypes` is absent (older API responses).
+ */
+export function effectTypeRank(row: { cardTypes?: readonly string[]; spellOnly?: boolean }): 0 | 1 | 2 {
+  const types = row.cardTypes;
+  if (types && types.length) {
+    if (types.includes('CHARACTER')) return 0;
+    if (types.includes('SPELL')) return 1;
+    return 2;
+  }
+  return row.spellOnly ? 1 : 0;
+}
+
+/**
+ * Labels in the content language, sorted (Character → Spell → rest, then alphabetical), duplicates
+ * merged via `extraIds` and placeholders dropped. With `emptyLabel`, the `[]` row stays first.
  */
 export function toAbilityRefs(
-  rows: { alteredId: number; text: Localized; spellOnly?: boolean }[],
+  rows: { alteredId: number; text: Localized; spellOnly?: boolean; cardTypes?: readonly string[] }[],
   emptyLabel?: string,
 ): AbilityRef[] {
   const seen = new Map<string, AbilityRef>();
@@ -729,18 +747,22 @@ export function toAbilityRefs(
       if (emptyLabel && !empty) empty = { id: row.alteredId, text: emptyLabel };
       continue;
     }
+    const rank = effectTypeRank(row);
     const code = /^\{([A-Z])\}[\s\u00a0]*:?$/.exec(raw)?.[1];
     if (code && (PLAY_TRIGGERS.includes(code) || code === 'T')) {
       const icon = ICONS[code];
       const existingIcon = seen.get(icon.title);
       if (!existingIcon) {
-        const ref: AbilityRef = row.spellOnly
-          ? { id: row.alteredId, text: icon.title, glyph: icon.glyph, spellOnly: true }
-          : { id: row.alteredId, text: icon.title, glyph: icon.glyph };
+        const ref: AbilityRef = { id: row.alteredId, text: icon.title, glyph: icon.glyph };
+        if (row.spellOnly) ref.spellOnly = true;
+        if (rank > 0) ref.typeRank = rank;
         out.push(ref);
         seen.set(icon.title, ref);
-      } else if (!row.spellOnly) {
-        delete existingIcon.spellOnly;
+      } else {
+        if (!row.spellOnly) delete existingIcon.spellOnly;
+        const merged = Math.min(existingIcon.typeRank ?? 0, rank) as 0 | 1 | 2;
+        if (merged === 0) delete existingIcon.typeRank;
+        else existingIcon.typeRank = merged;
       }
       continue;
     }
@@ -754,14 +776,18 @@ export function toAbilityRefs(
         existing.extraIds = [...(existing.extraIds ?? []), row.alteredId];
       }
       if (!row.spellOnly) delete existing.spellOnly;
+      const merged = Math.min(existing.typeRank ?? 0, rank) as 0 | 1 | 2;
+      if (merged === 0) delete existing.typeRank;
+      else existing.typeRank = merged;
       continue;
     }
     const ref: AbilityRef = rich ? { id: row.alteredId, text, rich } : { id: row.alteredId, text };
     if (row.spellOnly) ref.spellOnly = true;
+    if (rank > 0) ref.typeRank = rank;
     seen.set(text, ref);
     out.push(ref);
   }
-  out.sort((a, b) => (a.spellOnly ? 1 : 0) - (b.spellOnly ? 1 : 0) || a.text.localeCompare(b.text, contentLocale()));
+  out.sort((a, b) => (a.typeRank ?? (a.spellOnly ? 1 : 0)) - (b.typeRank ?? (b.spellOnly ? 1 : 0)) || a.text.localeCompare(b.text, contentLocale()));
   return empty ? [empty, ...out] : out;
 }
 

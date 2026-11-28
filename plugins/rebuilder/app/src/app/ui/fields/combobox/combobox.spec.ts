@@ -266,6 +266,27 @@ describe('AcCombobox keepOpen', () => {
     expect(fixture.componentInstance.values()).toEqual([MAIN]);
     done();
   });
+
+  it('keeps options checked immediately when parent replaces options with new objects sharing the same id', () => {
+    const { fixture, done } = setup();
+    const sub = fixture.componentInstance.values.subscribe(() => {
+      fixture.componentRef.setInput('options', [
+        { id: MAIN.id, text: MAIN.text },
+        { id: EXPEDITION.id, text: EXPEDITION.text },
+      ]);
+    });
+    options()[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.values().map((v) => v.id)).toEqual([MAIN.id]);
+    expect(options().map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+
+    options()[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.values()).toEqual([]);
+    expect(options().map((o) => o.getAttribute('aria-selected'))).toEqual(['false', 'false']);
+    sub.unsubscribe();
+    done();
+  });
 });
 
 /** The component and its CDK overlay container in a shadow root, as in the plugin (`ShadowOverlayContainer`). */

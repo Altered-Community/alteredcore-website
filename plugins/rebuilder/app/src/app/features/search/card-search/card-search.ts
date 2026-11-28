@@ -3,9 +3,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { uiLocale } from '../../../core/i18n';
+import { AuthSession } from '../../../core/auth-session';
 import { ORDER_OPTIONS, activeFilterCount, defaultFilters, effectAt, hasInvalidNumericFilters, toSearchParams, withEditedEffect, type CardSource, type SearchFilters } from '../../../core/card-filters';
 import { CardCatalogService, type EffectSlot } from '../../../core/card-catalog.service';
 import { filtersFromParams, filtersToParams, sourceFromParams } from '../../../core/search-url';
+import { ALTERED_CORE } from '../../../embed/host';
 import type { CardOrder, DeckFormat } from '../../../core/models';
 import { AcButton, AcIconButton } from '../../../ui/buttons';
 import { AcCount, AcFilterBar } from '../../../ui/chips';
@@ -25,12 +27,12 @@ export interface CardSourceTab extends AcTab {
   id: CardSource;
 }
 
-/** The icons (wide screens) say each source at a glance, as the site's tabs. */
+/** The icons (wide screens) say each source at a glance, in the same canonical order as the site's tabs. */
 export const CARD_SOURCES: CardSourceTab[] = [
   { id: 'all', icon: 'layers', label: $localize`:@@search.source.all:Toutes les cartes`, short: $localize`:@@search.source.allShort:Toutes` },
-  { id: 'favorites', icon: 'star', label: $localize`:@@search.source.favorites:Favoris` },
   { id: 'collection', icon: 'archive', label: $localize`:@@search.source.collection:Collection physique`, short: $localize`:@@search.source.collectionShort:Collection` },
   { id: 'owned', icon: 'monitor-cloud', label: $localize`:@@search.source.owned:Propriété numérique`, short: $localize`:@@search.source.ownedShort:Numérique` },
+  { id: 'favorites', icon: 'star', label: $localize`:@@search.source.favorites:Favoris` },
 ];
 
 /** Compact screens: tabs in the row, the others under « Plus ». */
@@ -77,12 +79,30 @@ export class CardSearch {
   private readonly router = inject(Router);
   private readonly overlay = inject(AcOverlayService);
   private readonly catalog = inject(CardCatalogService);
+  private readonly auth = inject(AuthSession);
+  private readonly host = inject(ALTERED_CORE, { optional: true });
   protected readonly bp = inject(AcBreakpointService);
   protected readonly search = inject(CardSearchStore);
   private readonly injector = inject(Injector);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   readonly sources = input<CardSourceTab[]>(CARD_SOURCES);
+  /**
+   * Tabs rendered in the bar, matching the standard site's card search:
+   * - Signed out: account tabs (« Collection physique », « Propriété numérique », « Favoris ») stay visible but disabled (greyed out).
+   * - Signed in: all tabs are active (collection/ownership also honour the host's configured services when embedded).
+   */
+  protected readonly displayedSources = computed<CardSourceTab[]>(() => {
+    const loggedIn = this.auth.isLoggedIn();
+    const hasCollection = loggedIn && (!this.host || !!this.host.services.collection);
+    const hasOwnership = loggedIn && (!this.host || !!this.host.services.ownership);
+    return this.sources().map((tab) => {
+      if (tab.id === 'favorites') return { ...tab, disabled: tab.disabled || !loggedIn };
+      if (tab.id === 'collection') return { ...tab, disabled: tab.disabled || !hasCollection };
+      if (tab.id === 'owned') return { ...tab, disabled: tab.disabled || !hasOwnership };
+      return tab;
+    });
+  });
   protected readonly compactSourceTabs = COMPACT_SOURCE_TABS;
   readonly faction = input<string | null>(null);
   /** Editor: the deck's format (Favoris show the cards it allows by default). */
@@ -92,10 +112,14 @@ export class CardSearch {
   /** Card browser: faction filter, no quantity controls on the cards. */
   readonly browse = input(false);
 
-  protected readonly source = toSignal(
+  private readonly requestedSource = toSignal(
     this.route.queryParamMap.pipe(map((q) => sourceFromParams((k) => q.get(k)))),
     { initialValue: 'all' as CardSource },
   );
+  protected readonly source = computed<CardSource>(() => {
+    const wanted = this.requestedSource();
+    return this.displayedSources().some((t) => t.id === wanted && !t.disabled) ? wanted : 'all';
+  });
 
   private readonly allOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   private readonly allCompactOrderOptions = ORDER_OPTIONS.map((o) => ({ value: o.value, label: $localize`:@@search.card.sortOption:Tri : ${o.label}:order:` }));
@@ -167,7 +191,7 @@ export class CardSearch {
       injector: this.injector,
     }),
   );
-  protected readonly sourceLabel = computed(() => this.sources().find((s) => s.id === this.search.source())?.label ?? '');
+  protected readonly sourceLabel = computed(() => this.displayedSources().find((s) => s.id === this.search.source())?.label ?? '');
   protected readonly orderLabel = computed(() => ORDER_OPTIONS.find((o) => o.value === this.search.filters().order)?.label ?? '');
   // The account lists (favorites, collection, ownership) have their own order; the unified search tab supports sorting.
   protected readonly sortable = computed(() => this.search.source() === 'all');
@@ -275,8 +299,9 @@ export class CardSearch {
     else setTimeout(run, 300);
   }
 
-  /** Another tab starts from its own default filters: the URL keeps the tab alone. */
+  /** Another tab starts from its own default filters: the URL keeps the tab alone. Disabled/absent tabs are ignored. */
   protected setSource(id: string): void {
+    if (!this.displayedSources().some((t) => t.id === id && !t.disabled)) return;
     void this.router.navigate([], { relativeTo: this.route, queryParams: { source: id === 'all' ? null : id }, replaceUrl: true });
   }
 

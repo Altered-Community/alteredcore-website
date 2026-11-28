@@ -823,7 +823,6 @@
     "search.filters.type.token": "Token and mana",
     "search.filters.zeroPower": "At least one 0",
     "search.filters.chip.artists": "{$count} artists",
-    "search.filters.promoAll": "All editions",
     "search.filters.artist": "Artist",
     "cardZoom.inCollection": "In the physical collection",
     "ui.cardTile.addToCollection": "Add {$name} to the physical collection",

@@ -30,7 +30,12 @@
   white-space: nowrap;
   text-decoration: none;
 }
-@media (hover: hover) { .ac-tabs--underline > :is(button, a):hover { color: var(--ac-color-text); } }
+@media (hover: hover) { .ac-tabs--underline > :is(button, a):hover:not(:disabled) { color: var(--ac-color-text); } }
+.ac-tabs--underline > button:disabled,
+.ac-tabs--pill > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ac-tabs--underline > :is([aria-selected='true'], [aria-current], .is-active) {
   border-bottom-color: var(--ac-color-primary);
   color: var(--ac-color-primary-strong);
@@ -150,7 +155,11 @@
 }
 .ac-menu__item .ac-icon { color: var(--ac-color-text-muted); --ac-icon-size: 18px; }
 .ac-menu__item:focus-visible { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); }
-@media (hover: hover) { .ac-menu__item:hover { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); } }
+@media (hover: hover) { .ac-menu__item:hover:not(:disabled) { background: var(--ac-color-bg-subtle); color: var(--ac-color-text); } }
+.ac-menu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ac-menu__item:is([aria-current], .is-active) { background: var(--ac-color-primary-soft); color: var(--ac-color-primary-strong); }
 .ac-menu__item:is([aria-current], .is-active) .ac-icon { color: currentColor; }
 .ac-menu__item--danger,

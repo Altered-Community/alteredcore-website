@@ -425,6 +425,34 @@ function eq(a, b, msg) {
   ok(parsed.resolvedTab === 'ownership' && parsed.page === 3, 'CardSearchQuery.parseUrlState extracts tab and page');
   eq(parsed.values.faction, ['AX'], 'CardSearchQuery.parseUrlState extracts faction[]');
   eq(parsed.values.rarity, [], 'CardSearchQuery.parseUrlState leaves rarity empty on ownership tab when omitted');
+  // Effect ordering: Character first, then Spell, then other types (Permanents, Heroes…), alphabetical within tier
+  const CardSearchEffects = require(path.join(process.cwd(), 'plugins/core-altered-cards/assets/card-search-effects.js'));
+  eq(CardSearchEffects.effectTypeRank({ cardTypes: ['CHARACTER'] }), 0, 'CHARACTER ranks 0');
+  eq(CardSearchEffects.effectTypeRank({ cardTypes: ['CHARACTER', 'SPELL'] }), 0, 'CHARACTER+SPELL ranks 0');
+  eq(CardSearchEffects.effectTypeRank({ cardTypes: ['SPELL'], spellOnly: true }), 1, 'SPELL ranks 1');
+  eq(CardSearchEffects.effectTypeRank({ cardTypes: ['LANDMARK_PERMANENT'] }), 2, 'LANDMARK_PERMANENT ranks 2');
+  eq(CardSearchEffects.effectTypeRank({ cardTypes: ['HERO'] }), 2, 'HERO ranks 2');
+  eq(CardSearchEffects.effectTypeRank({ spellOnly: true }), 1, 'legacy spellOnly fallback ranks 1');
+
+  const fxCtrl = CardSearchEffects({
+    prefix: 'cs',
+    apiBase: '',
+    lang: 'fr',
+    pickLocale: (t) => t.fr_FR || '',
+  });
+  const fxItems = [
+    { alteredId: 1, translations: { fr_FR: 'Alpha repère' }, cardTypes: ['LANDMARK_PERMANENT'] },
+    { alteredId: 2, translations: { fr_FR: 'Zebra sort' }, cardTypes: ['SPELL'], spellOnly: true },
+    { alteredId: 3, translations: { fr_FR: 'Alpha sort' }, cardTypes: ['SPELL'], spellOnly: true },
+    { alteredId: 4, translations: { fr_FR: 'Zebra perso' }, cardTypes: ['CHARACTER'] },
+    { alteredId: 5, translations: { fr_FR: 'Alpha perso' }, cardTypes: ['CHARACTER', 'SPELL'] },
+    { alteredId: 6, translations: { fr_FR: 'Beta héros' }, cardTypes: ['HERO'] },
+  ];
+  eq(
+    fxItems.slice().sort(fxCtrl.compareItems).map((i) => i.translations.fr_FR),
+    ['Alpha perso', 'Zebra perso', 'Alpha sort', 'Zebra sort', 'Alpha repère', 'Beta héros'],
+    'standard CardSearchEffects sorts Character → Spell → rest alphabetically',
+  );
 }
 
 console.log(`\n${pass} passed`);

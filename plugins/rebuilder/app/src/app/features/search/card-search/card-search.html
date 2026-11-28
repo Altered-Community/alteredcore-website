@@ -34,7 +34,7 @@
 <ac-tabs
   ariaLabel="Source des cartes" i18n-ariaLabel="@@search.card.sources"
   [maxTabs]="bp.compact() ? compactSourceTabs : null"
-  [tabs]="sources()"
+  [tabs]="displayedSources()"
   [active]="search.source()"
   (activeChange)="setSource($event)"
 />

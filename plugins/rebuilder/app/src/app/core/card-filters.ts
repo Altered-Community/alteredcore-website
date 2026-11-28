@@ -21,8 +21,10 @@ export interface AbilityRef {
   glyph?: string;
   /** The text as the card prints it (`{D}` symbols, keywords in bold), when it has more than plain words; `text` is its plain reading. */
   rich?: RichPart[];
-  /** True when this ability part only appears on Spell cards (sorted after character/permanent/unique effects). */
+  /** True when this ability part only appears on Spell cards (legacy fallback when `typeRank` is absent). */
   spellOnly?: boolean;
+  /** Ordering tier in effect pickers: 0 = Character (incl. Uniques), 1 = Spell, 2 = rest (Permanents, Heroes…). */
+  typeRank?: 0 | 1 | 2;
 }
 
 export function abilityRefIds(a: AbilityRef): number[] {

@@ -84,24 +84,31 @@ describe('buildUnifiedSearchParams & effectMatchCounts', () => {
 });
 
 describe('toAbilityRefs & toCard', () => {
-  it('sorts spellOnly outputs after non-spell outputs, merges duplicate labels via extraIds, and clears spellOnly when shared', () => {
+  it('sorts Character first, then Spell, then other card types (Permanents, Heroes), merges duplicates via extraIds, and keeps legacy spellOnly fallback', () => {
     const refs = toAbilityRefs(
       [
-        { alteredId: 10, text: { fr: 'Zebra spell' }, spellOnly: true },
-        { alteredId: 20, text: { fr: 'Alpha spell' }, spellOnly: true },
-        { alteredId: 30, text: { fr: 'Beta common' }, spellOnly: false },
-        { alteredId: 31, text: { fr: 'Alpha spell' }, spellOnly: false },
+        { alteredId: 10, text: { fr: 'Alpha repère' }, cardTypes: ['LANDMARK_PERMANENT'] },
+        { alteredId: 11, text: { fr: 'Zebra sort' }, cardTypes: ['SPELL'], spellOnly: true },
+        { alteredId: 12, text: { fr: 'Alpha sort' }, cardTypes: ['SPELL'], spellOnly: true },
+        { alteredId: 13, text: { fr: 'Zebra perso' }, cardTypes: ['CHARACTER'] },
+        { alteredId: 14, text: { fr: 'Alpha sort' }, cardTypes: ['CHARACTER'], spellOnly: false },
+        { alteredId: 15, text: { fr: 'Beta legacy sort' }, spellOnly: true },
+        { alteredId: 16, text: { fr: 'Beta héros' }, cardTypes: ['HERO'] },
         { alteredId: 99, text: { fr: '[]' } },
       ],
       NO_CONDITION,
     );
-    expect(refs.map((r) => [r.text, !!r.spellOnly])).toEqual([
-      [NO_CONDITION, false],
-      ['Alpha spell', false],
-      ['Beta common', false],
-      ['Zebra spell', true],
+    expect(refs.map((r) => [r.text, r.typeRank ?? 0])).toEqual([
+      [NO_CONDITION, 0],
+      ['Alpha sort', 0],
+      ['Zebra perso', 0],
+      ['Beta legacy sort', 1],
+      ['Zebra sort', 1],
+      ['Alpha repère', 2],
+      ['Beta héros', 2],
     ]);
-    expect(refs[1].extraIds).toEqual([31]);
+    expect(refs[1].extraIds).toEqual([14]);
+    expect(refs[1].spellOnly).toBeUndefined();
   });
 
   it('maps CardV2 locales, expanded keywords, and legalFormats onto Card', () => {

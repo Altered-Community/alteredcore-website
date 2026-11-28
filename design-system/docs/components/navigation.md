@@ -40,7 +40,7 @@ In-page tabs (ARIA tab pattern):
 | `ac-tabs__count` | Muted number after the label (tabular figures). |
 | `ac-tabs__count-value` | The number in `ac-tabs__count`, at least three digits wide: a count that loads (« … ») or changes does not move the next tabs. |
 
-Active tab: `aria-selected="true"` (tab pattern), `aria-current` (links), or `.is-active`.
+Active tab: `aria-selected="true"` (tab pattern), `aria-current` (links), or `.is-active`. Disabled tab (`<button disabled>`): 45% opacity, `not-allowed` cursor, skipped by keyboard navigation.
 
 ## Breadcrumb — `ac-breadcrumb`
 

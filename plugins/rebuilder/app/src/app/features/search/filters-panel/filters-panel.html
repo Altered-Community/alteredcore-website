@@ -104,8 +104,7 @@
 <!-- Prints (standard, all, alt arts alone) and, with the alt arts, the promo editions of the chosen sets, ticked to
      narrow: none ticked searches them all. -->
 <ng-template #prints>
-  <div class="adv-field">
-    <span class="adv-label" aria-hidden="true" i18n="@@search.filters.prints">Illustrations</span>
+  <ac-filter-section title="Illustrations" i18n-title="@@search.filters.prints">
     <ac-segmented
       ariaLabel="Illustrations" i18n-ariaLabel="@@search.filters.prints"
       [fullWidth]="true"
@@ -113,13 +112,10 @@
       [value]="value().altArts"
       (valueChange)="setAltArts($event ?? 'off')"
     />
-  </div>
-  @if (value().altArts !== 'off' && promoOptions().length) {
-    <div class="adv-field">
-      <span class="adv-label" i18n="@@search.filters.promoEditions">Éditions promo</span>
-      <ac-combobox keepOpen [options]="promoOptions()" [values]="pickedPromos()" (valuesChange)="setPromos($event)" placeholder="Toutes les éditions" i18n-placeholder="@@search.filters.promoAll" />
-    </div>
-  }
+    @if (value().altArts !== 'off' && promoOptions().length) {
+      <ac-combobox keepOpen [options]="promoOptions()" [values]="pickedPromos()" (valuesChange)="setPromos($event)" placeholder="Éditions promo" i18n-placeholder="@@search.filters.promoEditions" />
+    }
+  </ac-filter-section>
 </ng-template>
 
 <!-- Main and reserve costs: the hand and reserve symbols in the fields. -->

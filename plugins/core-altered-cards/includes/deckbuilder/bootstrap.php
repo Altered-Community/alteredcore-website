@@ -115,11 +115,11 @@ $defaultFactions = array_values(array_intersect((array)($_ss['default_factions']
 $defaultSets     = array_values(array_intersect((array)($_ss['default_sets']     ?? []), $validSets));
 $defaultRarities = array_values(array_intersect((array)($_ss['default_rarities'] ?? []), $validRarities));
 $defaultTypes    = array_values(array_intersect((array)($_ss['default_types']    ?? []), $validTypes));
-$_raw1        = $_ss['default_sort_1'] ?? 'default';
-$_raw2        = $_ss['default_sort_2'] ?? null;
+// default_sort_1/2 drive the internal sort even when not offered as a UI option
+// (e.g. set_date_desc isn't a selectable choice), matching pages/cards.php.
 $validSorts   = array_keys($txt['sorts'] ?? []);
-$defaultSort1 = in_array($_raw1, $validSorts) ? $_raw1 : 'default';
-$defaultSort2 = ($_raw2 && in_array($_raw2, $validSorts)) ? $_raw2 : null;
+$defaultSort1 = $_ss['default_sort_1'] ?? 'default';
+$defaultSort2 = $_ss['default_sort_2'] ?? null;
 $_defaultDbCols  = max(2, min(4, (int)($_ss['default_cols_db'] ?? 3)));
 
 $_heroSS         = $_ss['default_heroes'] ?? [];

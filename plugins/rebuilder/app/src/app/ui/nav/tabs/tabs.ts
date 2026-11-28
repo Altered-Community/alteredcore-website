@@ -12,6 +12,8 @@ export interface AcTab {
   count?: number | null;
   /** Icon before the label (Lucide), left out in the shared row of `maxTabs` (room) and in the « Plus » menu. */
   icon?: AcIconName;
+  /** Rendered greyed out and non-interactive (e.g. account-only tabs when signed out). */
+  disabled?: boolean;
 }
 
 /**
@@ -54,13 +56,20 @@ export class AcTabs {
   protected readonly picked = computed(() => this.overflow().find((t) => t.id === this.active()) ?? null);
   protected readonly short = computed(() => this.maxTabs() !== null);
 
-  /** Arrow keys from the button at `from`: a tab becomes active, the « Plus » tab only takes the focus. */
+  /** Arrow keys from the button at `from`: a tab becomes active (skipping disabled tabs), the « Plus » tab only takes the focus. */
   step(from: number, delta: number): void {
-    const ids = this.shown().map((t) => t.id);
-    const count = ids.length + (this.overflow().length ? 1 : 0);
+    const shown = this.shown();
+    const hasOverflow = this.overflow().length > 0;
+    const count = shown.length + (hasOverflow ? 1 : 0);
     if (!count) return;
-    const n = (from + delta + count) % count;
-    if (n < ids.length) this.active.set(ids[n]);
-    this.buttons()[n]?.nativeElement.focus();
+    for (let i = 1; i <= count; i++) {
+      const n = (from + delta * i + count * count) % count;
+      if (n < shown.length) {
+        if (shown[n].disabled) continue;
+        this.active.set(shown[n].id);
+      }
+      this.buttons()[n]?.nativeElement.focus();
+      return;
+    }
   }
 }

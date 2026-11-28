@@ -12,6 +12,23 @@
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this), function () {
     'use strict';
 
+    /**
+     * Ordering tier for effect dropdown items:
+     *   0 = present on at least one Character (including Uniques)
+     *   1 = present on at least one Spell (and not on Characters)
+     *   2 = rest (Permanents, Heroes, Tokens, etc.)
+     * Falls back to `spellOnly` when `cardTypes` is absent (older API responses).
+     */
+    function effectTypeRank(item) {
+        var types = item && item.cardTypes;
+        if (Array.isArray(types) && types.length) {
+            if (types.indexOf('CHARACTER') >= 0) return 0;
+            if (types.indexOf('SPELL') >= 0) return 1;
+            return 2;
+        }
+        return item && item.spellOnly ? 1 : 0;
+    }
+
     function CardSearchEffects(deps) {
         var P               = deps.prefix;
         var API_BASE        = deps.apiBase;
@@ -39,6 +56,7 @@
                         isMain:       !!item.isMain,
                         isEcho:       !!item.isEcho,
                         spellOnly:    !!item.spellOnly,
+                        cardTypes:    Array.isArray(item.cardTypes) ? item.cardTypes : [],
                     };
                 });
             }
@@ -120,10 +138,10 @@
         }
 
         function _compareEffectItems(a, b) {
-            var sa = a.spellOnly ? 1 : 0;
-            var sb = b.spellOnly ? 1 : 0;
-            if (sa !== sb) return sa - sb;
-            return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b));
+            var ra = effectTypeRank(a);
+            var rb = effectTypeRank(b);
+            if (ra !== rb) return ra - rb;
+            return _effectLabelPlain(a).localeCompare(_effectLabelPlain(b), LANG);
         }
 
         function _buildEffectSel(items, currentVals) {
@@ -363,8 +381,11 @@
             reset:          reset,
             readEffectRows: readEffectRows,
             readSupportRow: readSupportRow,
+            compareItems:   _compareEffectItems,
         };
     }
+
+    CardSearchEffects.effectTypeRank = effectTypeRank;
 
     return CardSearchEffects;
 });

@@ -125,11 +125,19 @@ export class FiltersPanel {
     });
   });
   private readonly countedSubtypes = new Map<string, ComboOption>();
+  /** Every promo edition (`id`: index in `PROMO_SETS`), allocated once so CDK listbox keeps stable references. */
+  private readonly allPromos: ComboOption[] = PROMO_SETS.map((p, id) => ({ id, text: termLabel(p) }));
   /** Promo editions of the chosen sets (`id`: index in `PROMO_SETS`). */
-  protected readonly promoOptions = computed<ComboOption[]>(() =>
-    PROMO_SETS.flatMap((p, id) => (this.value().sets.includes(p.parent) ? [{ id, text: termLabel(p) }] : [])),
-  );
-  protected readonly pickedPromos = computed(() => this.promoOptions().filter((o) => this.value().promoSets.includes(PROMO_SETS[o.id].code)));
+  protected readonly promoOptions = computed<ComboOption[]>(() => {
+    const sets = this.value().sets;
+    return this.allPromos.filter((_, id) => sets.includes(PROMO_SETS[id].parent));
+  });
+  protected readonly pickedPromos = computed(() => {
+    const offered = new Set(this.promoOptions().map((o) => o.id));
+    return this.value()
+      .promoSets.map((code) => this.allPromos[PROMO_SETS.findIndex((p) => p.code === code)])
+      .filter((o): o is ComboOption => !!o && offered.has(o.id));
+  });
   /** Every artist of the catalog (empty until the search API lists them: no field). */
   private readonly artists = toSignal(this.catalog.artists(), { initialValue: [] as string[] });
   protected readonly artistOptions = computed<ComboOption[]>(() => (supportsArtists(this.source()) ? this.artists().map((text, id) => ({ id, text })) : []));

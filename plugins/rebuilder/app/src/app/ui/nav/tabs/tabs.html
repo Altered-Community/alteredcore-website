@@ -4,9 +4,11 @@
     type="button"
     role="tab"
     [id]="idPrefix + '-' + t.id"
+    [disabled]="!!t.disabled"
+    [attr.aria-disabled]="t.disabled ? 'true' : null"
     [attr.aria-selected]="t.id === active()"
     [attr.tabindex]="t.id === active() ? 0 : -1"
-    (click)="active.set(t.id)"
+    (click)="!t.disabled && active.set(t.id)"
     (keydown.arrowRight)="step($index, 1)"
     (keydown.arrowLeft)="step($index, -1)"
   >@if (t.icon && !short()) {<ac-icon [name]="t.icon" [size]="18" />}{{ short() ? (t.short ?? t.label) : t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
@@ -33,9 +35,11 @@
         type="button"
         class="ac-menu__item"
         cdkMenuItemRadio
+        [disabled]="!!t.disabled"
+        [cdkMenuItemDisabled]="!!t.disabled"
         [cdkMenuItemChecked]="t.id === active()"
         [class.is-active]="t.id === active()"
-        (cdkMenuItemTriggered)="active.set(t.id)"
+        (cdkMenuItemTriggered)="!t.disabled && active.set(t.id)"
       >{{ t.label }}@if (t.count !== undefined) {<span class="ac-tabs__count"> · <span class="ac-tabs__count-value">{{ t.count ?? '…' }}</span></span>}</button>
     }
   </div>

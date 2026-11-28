@@ -66,7 +66,7 @@
       />
     </div>
     @if (filtered().length) {
-      <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxMultiple]="keepOpen()" [cdkListboxValue]="listValue()" (cdkListboxValueChange)="onSelect($event)">
+      <div class="list" cdkListbox [id]="listId" [attr.aria-label]="placeholder()" [cdkListboxMultiple]="keepOpen()" [cdkListboxCompareWith]="compareById" [cdkListboxValue]="listValue()" (cdkListboxValueChange)="onSelect($event)">
         @for (o of filtered(); track o.id) {
           @if (groupStarts().has(o.id)) {
             <div class="group" role="presentation">{{ o.group }}</div>

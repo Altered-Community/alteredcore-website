@@ -37,6 +37,9 @@
 .field {
   position: relative;
 }
+.field + .picked {
+  margin-top: var(--ac-space-1-5);
+}
 .toggle {
   width: 100%;
   height: var(--ac-control-md);

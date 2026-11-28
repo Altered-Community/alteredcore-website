@@ -59,6 +59,8 @@ export class AcCombobox {
   private readonly listbox = viewChild(CdkListbox);
 
   protected readonly positions = POSITIONS;
+  /** Compare options by stable `id` so CDK listbox keeps checkboxes in sync if callers rebuild option objects. */
+  protected readonly compareById = (a: ComboOption, b: ComboOption) => a.id === b.id;
   /** Picked options leave the list, so the listbox itself never keeps a selection. */
   protected readonly noSelection: readonly ComboOption[] = [];
   protected readonly scrollStrategy = createRepositionScrollStrategy(this.injector);

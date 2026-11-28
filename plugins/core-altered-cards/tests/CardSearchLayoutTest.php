@@ -20,8 +20,8 @@ if (!function_exists('ac_icon')) {
     }
 }
 
-$renderSearchWidget = static function (string $mode, string $prefix): string {
-    $_cs = [
+$renderSearchWidget = static function (string $mode, string $prefix, array $overrides = []): string {
+    $_cs = array_merge([
         'prefix'   => $prefix,
         'mode'     => $mode,
         'lang'     => 'fr',
@@ -49,7 +49,7 @@ $renderSearchWidget = static function (string $mode, string $prefix): string {
             'keywords'   => ['FLEETING' => ['fr' => 'Fugace']],
             'variations' => ['standard' => ['fr' => 'Standard']],
         ],
-    ];
+    ], $overrides);
     ob_start();
     include __DIR__ . '/../includes/card-search.php';
     return (string)ob_get_clean();
@@ -92,3 +92,24 @@ assertSame(false, strpos($deckHtml, 'data-filter="type" data-value="HERO"'), 'de
 assertSame(false, strpos($deckHtml, 'data-filter="type" data-value="TOKEN"'), 'deck: TOKEN type omitted');
 assertTrue(strpos($deckHtml, 'data-bool-filter="bannedOrSuspended"') !== false, 'deck: bannedOrSuspended toggle used');
 assertTrue(strpos($cardsHtml, 'data-bool-filter="isBanned"') !== false && strpos($cardsHtml, 'data-bool-filter="isErrated"') !== false, 'cards: status filter buttons kept');
+
+// Guest vs signed-in tab visibility contract (mirrored by Re:Builder CardSearch):
+// signed out => all 3 account tabs (collection, ownership, favorites) stay visible but greyed out/disabled;
+// signed in  => all 4 tabs enabled.
+foreach (['cards' => 'cs', 'deck' => 'db'] as $mode => $prefix) {
+    $guestHtml = $renderSearchWidget($mode, $prefix, [
+        'collection_mode' => false,
+        'ownership_mode'  => false,
+        'favorites_mode'  => false,
+    ]);
+    assertSame(3, substr_count($guestHtml, 'class="cs-tab cs-tab-soon"'), "{$mode} guest: collection, ownership and favorites tabs all marked soon/disabled");
+    assertSame(1, substr_count($guestHtml, 'data-tab="favoris" data-scope="favoris" disabled'), "{$mode} guest: favorites tab stays visible and disabled");
+
+    $authHtml = $renderSearchWidget($mode, $prefix, [
+        'collection_mode' => true,
+        'ownership_mode'  => true,
+        'favorites_mode'  => true,
+    ]);
+    assertSame(0, substr_count($authHtml, 'cs-tab-soon'), "{$mode} signed-in: no disabled tabs");
+    assertSame(1, substr_count($authHtml, 'data-tab="favoris"'), "{$mode} signed-in: favorites tab present and enabled");
+}
