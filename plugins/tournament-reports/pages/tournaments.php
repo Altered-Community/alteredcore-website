@@ -58,7 +58,7 @@ function trTournamentsListUrl(string $mode, int $minPlayers, int $page): string
     return BASE_URL . '/pages/tournaments' . ($query !== '' ? '?' . $query : '');
 }
 
-$userId = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$userId = kcCurrentUserId();
 $liveTournaments = [];
 $modes = [];
 $totalCount = 0;

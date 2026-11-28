@@ -25,7 +25,7 @@ if ($id < 1) {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $loc = is_string($_GET['locale'] ?? null) && $_GET['locale'] !== '' ? $_GET['locale'] : getUiLang();
 
 $data = ownApiRequest('GET', '/api/history/' . $id . '?locale=' . rawurlencode($loc), $userId);

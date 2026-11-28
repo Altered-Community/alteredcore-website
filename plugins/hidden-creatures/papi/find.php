@@ -20,7 +20,7 @@ if (!hcSeen($_hcSpot)) {
 }
 
 $_hcReply  = ['code' => (hcSpotCodes()[$_hcSpot] ?? '') ?: null];
-$_hcUserId = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$_hcUserId = kcCurrentUserId();
 if ($_hcUserId > 0) {
     $_hcReply['new']   = hcRecordFind($_hcUserId, $_hcSpot);
     $_hcReply['found'] = array_keys(hcUserFinds($_hcUserId));

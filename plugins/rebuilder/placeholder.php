@@ -104,7 +104,7 @@ $board = function () use ($sk): string {
     $fr = getUiLang() === 'fr';
     // « Communauté » has a second row of filters (card, tournament, legality). It is the tab of `?tab=community|public`,
     // and the default tab of a guest (one with guest decks on the device lands on « Mes decks », unknown here).
-    $loggedIn = function_exists('kcIsLoggedIn') && kcIsLoggedIn() && !empty($_SESSION['user_id']);
+    $loggedIn = function_exists('kcCurrentUserId') && kcCurrentUserId() > 0;
     $community = in_array($tab, ['community', 'public'], true) || ($tab === '' && !$loggedIn);
 ?>
   <div class="rbph-desktop rbph-decks">

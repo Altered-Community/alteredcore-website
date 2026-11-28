@@ -16,12 +16,12 @@
     ],
 
     "api": [
-        {"endpoint": "boosters-list",       "file": "api/boosters-list.php"},
-        {"endpoint": "boosters-open",       "file": "api/boosters-open.php"},
-        {"endpoint": "history-list",        "file": "api/history-list.php"},
-        {"endpoint": "history-detail",      "file": "api/history-detail.php"},
-        {"endpoint": "alt-art-search",      "file": "api/alt-art-search.php"},
-        {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php"}
+        {"endpoint": "boosters-list",          "file": "api/boosters-list.php",          "methods": ["GET"],  "auth": "user"},
+        {"endpoint": "boosters-open",          "file": "api/boosters-open.php",          "methods": ["POST"], "auth": "user"},
+        {"endpoint": "history-list",           "file": "api/history-list.php",           "methods": ["GET"],  "auth": "user"},
+        {"endpoint": "history-detail",         "file": "api/history-detail.php",         "methods": ["GET"],  "auth": "user"},
+        {"endpoint": "alt-art-search",         "file": "api/alt-art-search.php",         "methods": ["GET"],  "auth": "user"},
+        {"endpoint": "alt-art-set-preference", "file": "api/alt-art-set-preference.php", "methods": ["POST"], "auth": "user"}
     ],
 
     "assets": {

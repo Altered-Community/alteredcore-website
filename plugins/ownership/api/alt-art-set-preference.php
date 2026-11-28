@@ -35,7 +35,7 @@ if (!isset($body['familyId'], $body['faction'], $body['rarity'], $body['slotRefe
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 
 $upstreamBody = [
     'familyId'       => (int)$body['familyId'],

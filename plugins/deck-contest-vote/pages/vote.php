@@ -4,7 +4,7 @@
 loginRequired();
 require_once __DIR__ . '/../inc/functions.php';
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $state  = dcvState();
 $lang   = getUiLang();
 

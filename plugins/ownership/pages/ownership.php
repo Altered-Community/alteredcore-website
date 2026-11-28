@@ -42,8 +42,9 @@ $txt = [
 
 $pageTitle    = $txt['page_title'];
 $ownEnabled   = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;
-$ownLoggedIn  = kcIsLoggedIn();
-$ownBoosterCount = $ownLoggedIn ? ownGetBoosterCount((int)($_SESSION['user_id'] ?? 0)) : null;
+$ownUserId       = kcCurrentUserId();
+$ownLoggedIn     = $ownUserId > 0;
+$ownBoosterCount = $ownLoggedIn ? ownGetBoosterCount($ownUserId) : null;
 // AlteredOwnership's own site now only has the import form at its root (the
 // collection/boosters/history pages it used to serve moved here).
 $ownImportUrl = (defined('OWNERSHIP_WEB_URL') && OWNERSHIP_WEB_URL) ? rtrim(OWNERSHIP_WEB_URL, '/') . '/' : '';

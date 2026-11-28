@@ -6,7 +6,7 @@ $uiLang = getUiLang();
 if (!kcIsLoggedIn()) {
     redirect(BASE_URL . '/pages/login?redirect=' . rawurlencode($_SERVER['REQUEST_URI'] ?? ''));
 }
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 if (!$userId) {
     redirect(BASE_URL . '/pages/login');
 }

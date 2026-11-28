@@ -87,7 +87,7 @@ if ($collEnabled && $loggedIn && ($_GET['tab'] ?? '') !== 'playset') {
     $defaultSort2 = ($_raw2 && in_array($_raw2, $validSorts)) ? $_raw2 : null;
     $_defaultCols = max(2, min(5, (int)($_ss['default_cols'] ?? 4)));
 
-    $_csUserId    = (int)($_SESSION['user_id'] ?? 0);
+    $_csUserId    = kcCurrentUserId();
     $_collMode    = true; // gated above: $collEnabled && $loggedIn
 
     $setOptionsJson = json_encode(array_values(array_map(

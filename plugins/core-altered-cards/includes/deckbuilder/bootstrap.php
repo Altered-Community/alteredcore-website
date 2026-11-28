@@ -13,7 +13,7 @@ $isGuest = $guestModeEnabled && !kcIsLoggedIn();
 $kcUser  = $isGuest ? null : kcUser();
 $token   = $isGuest ? null : deckApiToken();
 
-$_dbUserId          = (int)($_SESSION['user_id'] ?? 0);
+$_dbUserId          = kcCurrentUserId();
 $_collectionEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collectionMode    = $_collectionEnabled && !$isGuest && $_dbUserId > 0;
 $_ownEnabled        = defined('OWNERSHIP_API_URL') && OWNERSHIP_API_URL;

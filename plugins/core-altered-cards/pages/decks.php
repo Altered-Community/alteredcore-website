@@ -281,7 +281,7 @@ $pageDescription = $txt['page_desc'];
 
 $isLoggedIn  = kcIsLoggedIn();
 $kcUser      = $isLoggedIn ? kcUser() : [];
-$userId      = $isLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$userId      = kcCurrentUserId();
 $deckService = new DeckService();
 
 // handle deck delete

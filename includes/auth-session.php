@@ -623,6 +623,21 @@ final class AuthSessionManager
         return true;
     }
 
+    /**
+     * Returns the authenticated local DB user ID (`users.id`), or 0 when not signed in.
+     * Always starts and validates the session via `isLoggedIn()` first so callers cannot
+     * read an uninitialized `$_SESSION['user_id']`.
+     */
+    public function currentUserId(): int
+    {
+        if (!$this->isLoggedIn()) {
+            return 0;
+        }
+        $session = &$this->session();
+        $userId  = (int)($session['user_id'] ?? 0);
+        return $userId > 0 ? $userId : 0;
+    }
+
     /** @return array{sub: string, email: string, username: string} */
     public function currentUser(): array
     {

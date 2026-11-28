@@ -19,8 +19,9 @@ $ownSubnavTxt = [
 ][getUiLang()];
 
 $ownBoosterCount = null;
-if (kcIsLoggedIn()) {
-    $ownBoosterCount = ownGetBoosterCount((int)($_SESSION['user_id'] ?? 0));
+$ownSubnavUserId = kcCurrentUserId();
+if ($ownSubnavUserId > 0) {
+    $ownBoosterCount = ownGetBoosterCount($ownSubnavUserId);
 }
 
 // AlteredOwnership's own site now only has the import form at its root (the

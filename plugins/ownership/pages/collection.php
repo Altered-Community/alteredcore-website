@@ -129,7 +129,7 @@ $ownActiveTab = 'collection';
     $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
     $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
-    $_csUserId    = $ownLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+    $_csUserId    = $ownLoggedIn ? kcCurrentUserId() : 0;
     $_collEnabled = defined('COLLECTION_MODE') && COLLECTION_MODE;
     $_collMode    = $_collEnabled && $_csUserId > 0;
 

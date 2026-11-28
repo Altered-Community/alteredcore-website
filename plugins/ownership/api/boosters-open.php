@@ -37,7 +37,7 @@ if ($boosterTypeKey === '') {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $loc    = is_string($body['locale'] ?? null) && $body['locale'] !== '' ? $body['locale'] : getUiLang();
 
 $path = '/api/boosters/' . rawurlencode($boosterTypeKey) . '/open?locale=' . rawurlencode($loc);

@@ -14,13 +14,10 @@ final class KeycloakTokenProvider implements TokenProviderInterface
 {
     public function accessToken(): string
     {
-        if (!function_exists('kcIsLoggedIn') || !\kcIsLoggedIn()) {
+        if (!function_exists('kcCurrentUserId') || !function_exists('kc_get_access_token')) {
             return '';
         }
-        if (!function_exists('kc_get_access_token')) {
-            return '';
-        }
-        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        $userId = \kcCurrentUserId();
         if ($userId <= 0) {
             return '';
         }

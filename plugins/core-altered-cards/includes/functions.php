@@ -164,8 +164,7 @@ function cacAdaptV2Card(array $c): array {
 }
 
 function deckApiToken(): ?string {
-    if (!kcIsLoggedIn()) return null;
-    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $userId = kcCurrentUserId();
     if (!$userId) return null;
     require_once dirname(dirname(dirname(__DIR__))) . '/includes/func.keycloak.php';
     $token = kc_get_access_token($userId);

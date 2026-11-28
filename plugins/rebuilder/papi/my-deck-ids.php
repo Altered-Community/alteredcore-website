@@ -13,7 +13,7 @@ function rebuilderMyDeckIdsReply(int $status, array $body, bool $unauthenticated
     echo json_encode($body, JSON_UNESCAPED_SLASHES);
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 if (!defined('KC_URL') || KC_URL === '' || !defined('DECKS_API_URL') || DECKS_API_URL === '' || $userId <= 0) {
     rebuilderMyDeckIdsReply(401, ['error' => 'unauthenticated'], true);
     return;

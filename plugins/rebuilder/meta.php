@@ -35,9 +35,10 @@ $id = in_array($slug, ['deck', 'deckbuilder'], true) ? (string)($_GET['id'] ?? '
 if (!deckPreviewValidId($id)) return;
 
 // The owner's private deck needs the session's token (the relay's, kc_get_access_token refreshes it).
-$token = null;
-if (kcIsLoggedIn() && defined('KC_URL') && KC_URL !== '' && function_exists('kc_get_access_token')) {
-    $token = kc_get_access_token((int)($_SESSION['user_id'] ?? 0)) ?: null;
+$token  = null;
+$userId = kcCurrentUserId();
+if ($userId > 0 && defined('KC_URL') && KC_URL !== '' && function_exists('kc_get_access_token')) {
+    $token = kc_get_access_token($userId) ?: null;
 }
 $deck = deckPreviewFetch($id, getLang(), $token);
 if ($deck === null || trim((string)($deck['name'] ?? '')) === '') return;

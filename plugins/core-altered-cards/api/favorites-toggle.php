@@ -26,7 +26,7 @@ if (!csrfValid($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $ref    = cacFavNormalizeRef($_POST['card_ref'] ?? '');
 
 if ($userId <= 0 || $ref === '') {

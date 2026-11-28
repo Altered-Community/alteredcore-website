@@ -22,7 +22,7 @@ if (!defined('KC_URL') || KC_URL === '' || !kcIsLoggedIn()) {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 
 $loc   = is_string($_GET['locale'] ?? null) ? $_GET['locale'] : 'en';
 $parts = ['locale=' . rawurlencode($loc)];

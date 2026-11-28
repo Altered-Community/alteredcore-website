@@ -15,7 +15,7 @@ if (dcvState() !== 'open') {
 $_dcvBody   = pluginApiBody();
 $_dcvDeck   = $_dcvBody['deck'] ?? null;
 $_dcvTier   = $_dcvBody['tier'] ?? null;
-$_dcvUserId = (int)($_SESSION['user_id'] ?? 0);
+$_dcvUserId = kcCurrentUserId();
 
 if (!is_string($_dcvDeck) || $_dcvUserId <= 0 || ($_dcvTier !== null && !is_int($_dcvTier))
     || !dcvSaveVote($_dcvUserId, $_dcvDeck, $_dcvTier, !empty($_dcvBody['frustrating']))) {

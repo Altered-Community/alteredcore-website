@@ -24,7 +24,7 @@ if (!kcIsLoggedIn()) {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 
 $references = [];
 foreach ((array)($_GET['ref'] ?? []) as $r) {

@@ -16,7 +16,7 @@ if (!kcIsLoggedIn()) {
     exit;
 }
 
-$userId  = (int)($_SESSION['user_id'] ?? 0);
+$userId  = kcCurrentUserId();
 $enabled = defined('COLLECTION_MODE') && COLLECTION_MODE && defined('COLLECTION_API_URL') && COLLECTION_API_URL && $userId > 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

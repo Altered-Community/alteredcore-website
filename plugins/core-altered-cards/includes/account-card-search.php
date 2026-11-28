@@ -53,7 +53,7 @@ function cacHandleAccountSearch(string $source): void
         $source,
         defined('KC_URL') && KC_URL !== '',
         static fn(): bool => kcIsLoggedIn(),
-        static fn(): int => (int)($_SESSION['user_id'] ?? 0)
+        static fn(): int => kcCurrentUserId()
     );
     if (!$auth['ok']) {
         header('X-Ac-Auth-State: unauthenticated');

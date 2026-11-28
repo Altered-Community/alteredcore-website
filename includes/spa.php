@@ -161,12 +161,12 @@ function spaUniquesFrontierFormat(): string {
 /** The data half of window.AlteredCore (the methods live in js/altered-core-host.js). */
 function spaHostConfig(array $page): array {
     $kcMode   = defined('KC_URL') && KC_URL !== '';
-    $loggedIn = kcIsLoggedIn();
+    $userId   = kcCurrentUserId();
     $user     = null;
-    if ($loggedIn) {
+    if ($userId > 0) {
         $u    = kcUser();
         $user = [
-            'id'       => (int)($_SESSION['user_id'] ?? 0),
+            'id'       => $userId,
             'username' => (string)($u['username'] ?? ''),
             'sub'      => ($u['sub'] ?? '') !== '' ? $u['sub'] : null,
         ];

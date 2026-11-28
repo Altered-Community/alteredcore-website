@@ -5,7 +5,7 @@ loginRequired();
 // kcUser() works in both SSO and local account modes.
 // $user['sub'] is empty in local account mode (no SSO UUID available).
 $user     = kcUser();
-$userId   = (int)($_SESSION['user_id'] ?? 0);
+$userId   = kcCurrentUserId();
 $userName = $user['username'];
 $userMail = $user['email'];
 $userSub  = $user['sub'];

@@ -24,18 +24,18 @@
     ],
 
     "api": [
-        {"endpoint": "collection-search", "file": "api/collection-search.php"},
-        {"endpoint": "ownership-search",  "file": "api/ownership-search.php"},
-        {"endpoint": "playset",           "file": "api/playset.php"},
-        {"endpoint": "playset-cards",     "file": "api/playset-cards.php"},
-        {"endpoint": "favorites-search",  "file": "api/favorites-search.php"},
-        {"endpoint": "favorites-toggle",  "file": "api/favorites-toggle.php"},
-        {"endpoint": "collection-qty",    "file": "api/collection-qty.php", "methods": ["GET", "POST"]},
-        {"endpoint": "deck-add-card",     "file": "api/deck-add-card.php"},
-        {"endpoint": "deck-alt-arts",     "file": "api/deck-alt-arts.php"},
-        {"endpoint": "deck-image",        "file": "api/deck-image.php",  "methods": ["GET", "HEAD", "POST"]},
-        {"endpoint": "deck-oembed",       "file": "api/deck-oembed.php", "methods": ["GET", "HEAD"]},
-        {"endpoint": "frontier-format",   "file": "api/frontier-format.php", "methods": ["GET", "HEAD", "OPTIONS"]}
+        {"endpoint": "collection-search", "file": "api/collection-search.php", "methods": ["GET"], "auth": "user"},
+        {"endpoint": "ownership-search",  "file": "api/ownership-search.php",  "methods": ["GET"], "auth": "user"},
+        {"endpoint": "playset",           "file": "api/playset.php",           "methods": ["GET"], "auth": "user"},
+        {"endpoint": "playset-cards",     "file": "api/playset-cards.php",     "methods": ["GET"], "auth": "user"},
+        {"endpoint": "favorites-search",  "file": "api/favorites-search.php",  "methods": ["GET"], "auth": "user"},
+        {"endpoint": "favorites-toggle",  "file": "api/favorites-toggle.php",  "methods": ["POST"], "auth": "user"},
+        {"endpoint": "collection-qty",    "file": "api/collection-qty.php",    "methods": ["GET", "POST"], "auth": "user"},
+        {"endpoint": "deck-add-card",     "file": "api/deck-add-card.php",     "methods": ["POST"], "auth": "user"},
+        {"endpoint": "deck-alt-arts",     "file": "api/deck-alt-arts.php",     "methods": ["GET"], "auth": "user"},
+        {"endpoint": "deck-image",        "file": "api/deck-image.php",        "methods": ["GET", "HEAD", "POST"]},
+        {"endpoint": "deck-oembed",       "file": "api/deck-oembed.php",       "methods": ["GET", "HEAD"]},
+        {"endpoint": "frontier-format",   "file": "api/frontier-format.php",   "methods": ["GET", "HEAD", "OPTIONS"]}
     ],
 
     "admin": [

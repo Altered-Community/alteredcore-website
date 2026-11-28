@@ -377,8 +377,7 @@ function trDecodeMainDeck(?string $mainDeck): array
  */
 function trUserApiToken(): ?string
 {
-    if (!kcIsLoggedIn()) return null;
-    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $userId = kcCurrentUserId();
     if (!$userId) return null;
     require_once dirname(__DIR__, 3) . '/includes/func.keycloak.php';
     $token = kc_get_access_token($userId);
@@ -420,7 +419,7 @@ function trDuplicateDeckToAccount(array $cards, string $name, string $format = '
         $format = 'standard';
     }
 
-    $userId = kcIsLoggedIn() ? (int)($_SESSION['user_id'] ?? 0) : 0;
+    $userId = kcCurrentUserId();
     if ($userId <= 0) {
         return ['ok' => false, 'error' => 'You must be logged in to duplicate a deck.'];
     }

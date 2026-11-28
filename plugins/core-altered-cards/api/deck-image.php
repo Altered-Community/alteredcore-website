@@ -51,9 +51,10 @@ if ($cached !== null && is_file($cached)) {
     exit;
 }
 
-$token = null;
-if (kcIsLoggedIn() && defined('KC_URL') && KC_URL !== '' && function_exists('kc_get_access_token')) {
-    $token = kc_get_access_token((int)($_SESSION['user_id'] ?? 0)) ?: null;
+$token  = null;
+$userId = kcCurrentUserId();
+if ($userId > 0 && defined('KC_URL') && KC_URL !== '' && function_exists('kc_get_access_token')) {
+    $token = kc_get_access_token($userId) ?: null;
 }
 // Drawing takes seconds: the session's lock would hold the user's other requests.
 if (session_status() === PHP_SESSION_ACTIVE) session_write_close();

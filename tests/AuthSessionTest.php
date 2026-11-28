@@ -176,3 +176,56 @@ $mgr6 = new AuthSessionManager(
     $s6, $c6
 );
 assertSame(false, $mgr6->isLoggedIn(), 'kc_force_logout_at invalidates older session');
+
+// 6. currentUserId() always validates session first and returns 0 when unauthenticated
+assertSame(5, $mgr2->currentUserId(), 'currentUserId returns verified KC user_id');
+assertSame(1, $db2->selectCount, 'currentUserId reuses memoized verification without extra DB SELECT');
+
+$s7 = ['user_id' => 99]; // stale user_id without kc_logged_in flag
+$c7 = [];
+$mgr7 = new AuthSessionManager(
+    ['ENCRYPTION_KEY' => $key, 'KC_URL' => 'https://kc.test', 'KC_REALM' => 'altered'],
+    static fn() => $db5,
+    static fn(string $k, string $d = ''): string => $d,
+    static fn(): int => $now,
+    null, null,
+    static function (string $n, string $v, array $o): void {},
+    static function (): void {},
+    static fn(): bool => true,
+    static fn(string $sql): string => $sql,
+    $s7, $c7
+);
+assertSame(0, $mgr7->currentUserId(), 'currentUserId returns 0 when session is not authenticated even if user_id is present');
+
+// Local auth mode: currentUserId returns local user_id only when local_logged_in is true
+$s8 = ['local_logged_in' => true, 'local_logged_in_at' => $now - 5, 'user_id' => 42];
+$c8 = [];
+$mgr8 = new AuthSessionManager(
+    ['ENCRYPTION_KEY' => $key, 'KC_URL' => ''],
+    static fn() => null,
+    static fn(string $k, string $d = ''): string => $d,
+    static fn(): int => $now,
+    null, null,
+    static function (string $n, string $v, array $o): void {},
+    static function (): void {},
+    static fn(): bool => true,
+    static fn(string $sql): string => $sql,
+    $s8, $c8
+);
+assertSame(42, $mgr8->currentUserId(), 'currentUserId returns user_id in local auth mode');
+
+$s9 = ['user_id' => 42]; // local_logged_in missing
+$c9 = [];
+$mgr9 = new AuthSessionManager(
+    ['ENCRYPTION_KEY' => $key, 'KC_URL' => ''],
+    static fn() => null,
+    static fn(string $k, string $d = ''): string => $d,
+    static fn(): int => $now,
+    null, null,
+    static function (string $n, string $v, array $o): void {},
+    static function (): void {},
+    static fn(): bool => true,
+    static fn(string $sql): string => $sql,
+    $s9, $c9
+);
+assertSame(0, $mgr9->currentUserId(), 'currentUserId returns 0 in local auth mode when not logged in');

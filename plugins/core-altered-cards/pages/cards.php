@@ -112,8 +112,8 @@ $isErrated   = ($_GET['isErrated']   ?? '') === 'true';
 $isSuspended = ($_GET['isSuspended'] ?? '') === 'true';
 
 // collection
-$_csLoggedIn       = kcIsLoggedIn();
-$_csUserId         = $_csLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$_csUserId         = kcCurrentUserId();
+$_csLoggedIn       = $_csUserId > 0;
 $_collEnabled      = defined('COLLECTION_MODE') && COLLECTION_MODE;
 $_collMode         = $_collEnabled && $_csUserId > 0;
 

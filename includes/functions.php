@@ -201,8 +201,8 @@ function initLang(): void {
 
     // Validate the session first so stale session IDs neither read nor write DB preferences,
     // while a valid kc_remember/local_remember cookie restores $_SESSION['user_id'] in time.
-    $userId     = 0;
-    $isLoggedIn = kcIsLoggedIn() && ($userId = (int)($_SESSION['user_id'] ?? 0)) > 0;
+    $userId     = kcCurrentUserId();
+    $isLoggedIn = $userId > 0;
 
     // Explicit lang change via ?lang=
     if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'fr', 'es', 'it', 'de'], true)) {
@@ -552,7 +552,7 @@ function h(string $str): string {
 function requireAdmin(): void {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return;
-    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
+    if (kcCurrentUserId() > 0) {
         $g = adminGetUserGroup();
         if ($g && $g['can_access_admin']) return; // no group = no admin access
     }
@@ -660,7 +660,7 @@ function adminGetUserGroup(): ?array {
         } catch (Exception $e) {}
         return null;
     }
-    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $userId = kcCurrentUserId();
     if (!$userId) return null;
     try {
         $stmt = getDB()->prepare(q(
@@ -743,7 +743,7 @@ function adminHasSection(string $section): bool {
 function canViewAdminPanel(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
+    if (kcCurrentUserId() > 0) {
         $g = adminGetUserGroup();
         if ($g) return $g['can_access_admin'];
         return false; // no group assigned = no admin access
@@ -754,11 +754,12 @@ function canViewAdminPanel(): bool {
 function isAdminUser(): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (!empty($_SESSION['admin_logged_in'])) return true;
-    if (kcIsLoggedIn() && !empty($_SESSION['user_id'])) {
+    $userId = kcCurrentUserId();
+    if ($userId > 0) {
         if (isset($_SESSION['kc_is_admin'])) return (bool)$_SESSION['kc_is_admin'];
         try {
             $stmt = getDB()->prepare(q("SELECT is_admin FROM {users} WHERE id = :id"));
-            $stmt->execute([':id' => (int)$_SESSION['user_id']]);
+            $stmt->execute([':id' => $userId]);
             $val = (bool)$stmt->fetchColumn();
             $_SESSION['kc_is_admin'] = $val;
             return $val;
@@ -828,6 +829,10 @@ function globalLogoutSessionIsValid(): bool {
 
 function kcIsLoggedIn(): bool {
     return AuthSessionManager::default()->isLoggedIn();
+}
+
+function kcCurrentUserId(): int {
+    return AuthSessionManager::default()->currentUserId();
 }
 
 function kcUser(): array {

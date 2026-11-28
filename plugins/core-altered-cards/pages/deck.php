@@ -194,7 +194,7 @@ $txt += cacStartingHandStatsTxt($uiLang);   // shared Starting-hand stats/calc s
 $deckId      = trim($_GET['id'] ?? '');
 $isLoggedIn  = kcIsLoggedIn();
 $kcUser      = $isLoggedIn ? kcUser() : [];
-$userId      = $isLoggedIn ? (int)($_SESSION['user_id'] ?? 0) : 0;
+$userId      = kcCurrentUserId();
 $deckService = new DeckService();
 
 // form POST: delete deck

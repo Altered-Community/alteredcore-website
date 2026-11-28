@@ -69,7 +69,7 @@ function trAdminTournamentsListUrl(string $mode, int $minPlayers, int $page): st
 // ── Build the list: GameApi's live index ────────────────────────────────────
 $rows = [];
 $modes = [];
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $liveError = null;
 $totalCount = 0;
 $totalPages = 0;

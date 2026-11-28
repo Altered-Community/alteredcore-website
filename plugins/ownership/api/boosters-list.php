@@ -17,7 +17,7 @@ if (!kcIsLoggedIn()) {
     exit;
 }
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $data = ownApiRequest('GET', '/api/boosters', $userId);
 
 if ($data === false) {

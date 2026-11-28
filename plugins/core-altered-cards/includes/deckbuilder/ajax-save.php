@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['ajax'])) {
         echo json_encode(['ok' => false, 'error' => 'Invalid token']);
         exit;
     }
-    $userId = (int)($_SESSION['user_id'] ?? 0);
+    $userId = kcCurrentUserId();
     if (!$token || $userId <= 0) {
         header('X-Ac-Auth-State: unauthenticated');
         http_response_code(401);

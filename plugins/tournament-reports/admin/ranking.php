@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── Load standings ───────────────────────────────────────────────────────────
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = kcCurrentUserId();
 $live = trFetchLiveTournament($tournamentExtId, $userId);
 if (!$live['ok']) {
     flash(sprintf($txt['live_error'], $live['error'] ?? 'Unknown error'), 'error');
